@@ -11,6 +11,8 @@ import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import findIndex from 'core-js-pure/features/array/find-index.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { config } from '../src/config.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -21,7 +23,11 @@ const _set = (obj, path, val, override) => {
     const keys = path.split('.');
     const lastKey = keys.pop();
     const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, obj);
-    lastObj[lastKey] = (override === true || !lastObj[lastKey] ? val : lastObj[lastKey]);
+    if (Array.isArray(lastObj[lastKey]) && Array.isArray(val) && override !== true) {
+      lastObj[lastKey] = arrayUnique(lastObj[lastKey].concat(val));
+    } else {
+      lastObj[lastKey] = override === true || !lastObj[lastKey] ? val : lastObj[lastKey];
+    }
   } catch (e) { utils.logError(e); }
 };
 
@@ -40,16 +46,28 @@ export function hasOwnDeepProperty(obj, prop) {
   return false;
 }
 
-export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userConsent) {
-  const globalConfig = getGlobal();
-  const adUnits = reqBidsConfigObj.adUnits || globalConfig.adUnits;
-  config.params = config.params || {};
+function arrayUnique (array) {
+  const a = array.concat()
+  for (let i = 0; i < a.length; ++i) {
+    for (let j = i + 1; j < a.length; ++j) {
+      if (a[i] === a[j]) {
+        a.splice(j--, 1)
+      }
+    }
+  }
+
+  return a;
+}
+
+export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+  moduleConfig.params = moduleConfig.params || {};
 
   var tcString = (userConsent && userConsent.gdpr && userConsent.gdpr.consentString ? userConsent.gdpr.consentString : '');
   var gdprApplies = (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies ? userConsent.gdpr.gdprApplies : '');
 
-  config.params.partnerId = config.params.partnerId ? config.params.partnerId : 1;
-  config.params.key = config.params.key ? config.params.key : 1;
+  moduleConfig.params.partnerId = moduleConfig.params.partnerId ? moduleConfig.params.partnerId : 1;
+  moduleConfig.params.key = moduleConfig.params.key ? moduleConfig.params.key : 1;
 
   var sirdataDomain;
   var sendWithCredentials;
@@ -60,7 +78,7 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userC
     sendWithCredentials = false;
     gdprApplies = null;
     tcString = '';
-  } else if (hasOwnDeepProperty(globalConfig, 'gdpr')) {
+  } else if (hasOwnDeepProperty(getGlobal(), 'gdpr')) {
   // Default endpoint is cookieless if gdpr management is set. Needed because the cookie-based endpoint will fail and return error if user is located in Europe and no consent has been given
     sirdataDomain = 'cookieless-data.com';
     sendWithCredentials = false;
@@ -72,24 +90,16 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userC
     sendWithCredentials = true;
   }
 
-  var actualUrl = null;
-  try {
-    actualUrl = window.top.location.href;
-  } catch (e) { utils.logError(e); }
-  if (!actualUrl && config.params.actualUrl) {
-    try {
-      actualUrl = new URL(config.params.actualUrl);
-    } catch (e) { utils.logError(e); }
-  }
+  var actualUrl = moduleConfig.params.actualUrl || getRefererInfo().referer;
 
-  const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + config.params.partnerId + '/d/' + config.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + actualUrl : '');
+  const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + moduleConfig.params.partnerId + '/d/' + moduleConfig.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + actualUrl : '');
   ajax(url, {
     success: function (response, req) {
       if (req.status === 200) {
         try {
           const data = JSON.parse(response);
           if (data && data.segments) {
-            addSegmentData(adUnits, data, config, onDone, globalConfig);
+            addSegmentData(adUnits, data, moduleConfig, onDone);
           } else {
             onDone();
           }
@@ -116,26 +126,13 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userC
   });
 }
 
-export function setGlobalOrtb2(segments, categories, globalConfig) {
+export function setGlobalOrtb2(segments, categories) {
   try {
-    globalConfig.setConfig({
-      ortb2: {
-        site: {
-          ext: {
-            data: {
-              sd_rtd: categories
-            }
-          }
-        },
-        user: {
-          ext: {
-            data: {
-              sd_rtd: segments
-            }
-          }
-        }
-      }
-    });
+    let addOrtb2 = {};
+    _set(addOrtb2, 'user.ext.data.sd_rtd', segments || {}, false);
+    _set(addOrtb2, 'site.ext.data.sd_rtd', categories || {}, false);
+    let ortb2 = {ortb2: utils.mergeDeep({}, getGlobal().getConfig('ortb2') || {}, addOrtb2)};
+    getGlobal().setConfig(ortb2);
   } catch (e) {
     utils.logError(e)
   }
@@ -143,29 +140,14 @@ export function setGlobalOrtb2(segments, categories, globalConfig) {
   return true;
 }
 
-export function setBidderOrtb2(bidder, segments, categories, globalConfig) {
+export function setBidderOrtb2(bidder, segments, categories) {
   try {
-    globalConfig.setBidderConfig({
-      bidders: [bidder],
-      config: {
-        ortb2: {
-          site: {
-            ext: {
-              data: {
-                sd_rtd: categories,
-              }
-            }
-          },
-          user: {
-            ext: {
-              data: {
-                sd_rtd: segments
-              }
-            }
-          }
-        }
-      }
-    });
+    let addOrtb2 = {};
+    _set(addOrtb2, 'user.ext.data.sd_rtd', segments || {}, false);
+    _set(addOrtb2, 'site.ext.data.sd_rtd', categories || {}, false);
+    let testBidder = config.getBidderConfig(bidder);
+    let ortb2 = {ortb2: utils.mergeDeep({}, ((testBidder.rubicon && testBidder.rubicon.ortb2) ? testBidder.rubicon.ortb2 : {}), addOrtb2)};
+    getGlobal().setBidderConfig({ bidders: [bidder], config: ortb2 });
   } catch (e) {
     utils.logError(e)
   }
@@ -205,10 +187,10 @@ export function getSegAndCatsArray(data, minScore) {
   return sirdataData;
 }
 
-export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
-  config = config || {};
-  config.params = config.params || {};
-  const minScore = config.params.hasOwnProperty('contextualMinRelevancyScore') ? config.params.contextualMinRelevancyScore : 30;
+export function addSegmentData(adUnits, data, moduleConfig, onDone) {
+  moduleConfig = moduleConfig || {};
+  moduleConfig.params = moduleConfig.params || {};
+  const minScore = moduleConfig.params.hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.contextualMinRelevancyScore : 30;
   var sirdataData = getSegAndCatsArray(data, minScore);
 
   if (!sirdataData || (sirdataData.segments.length < 1 && sirdataData.categories.length < 1)) { utils.logError('no cats'); onDone(); return adUnits; }
@@ -217,17 +199,17 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
 
   var curationData = {'segments': [], 'categories': []};
   var curationId = '1';
-  const biddersParamsExist = (!!(config.params && config.params.bidders));
+  const biddersParamsExist = (!!(moduleConfig.params && moduleConfig.params.bidders));
 
   // Global ortb2
   if (!biddersParamsExist) {
-    setGlobalOrtb2(sirdataData.segments, sirdataData.categories, globalConfig);
+    setGlobalOrtb2(sirdataData.segments, sirdataData.categories);
   }
 
   // Google targeting
-  if (typeof window.googletag !== 'undefined' && (config.params.setGptKeyValues || !config.params.hasOwnProperty('setGptKeyValues'))) {
+  if (typeof window.googletag !== 'undefined' && (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues'))) {
     // For curation Google is pid 27449
-    curationId = (config.params.gptCurationId ? config.params.gptCurationId : '27449');
+    curationId = (moduleConfig.params.gptCurationId ? moduleConfig.params.gptCurationId : '27449');
     if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
       curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
     }
@@ -248,12 +230,12 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
     }
 
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
-      bidderIndex = (config.params.hasOwnProperty('bidders') ? findIndex(config.params.bidders, function(i) { return i.bidder === bid.bidder; }) : false);
+      bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? findIndex(moduleConfig.params.bidders, function(i) { return i.bidder === bid.bidder; }) : false);
       indexFound = (!!(typeof bidderIndex == 'number' && bidderIndex >= 0));
       try {
         curationData = {'segments': [], 'categories': []};
 
-        if (!biddersParamsExist || (indexFound && (!config.params.bidders[bidderIndex].hasOwnProperty('adUnitCodes') || config.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
+        if (!biddersParamsExist || (indexFound && (!moduleConfig.params.bidders[bidderIndex].hasOwnProperty('adUnitCodes') || moduleConfig.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
           switch (bid.bidder) {
             case 'appnexus':
             case 'appnexusAst':
@@ -272,12 +254,12 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
             case 'msq_max':
             case '366_apx':
               // For curation Xandr is pid 27446
-              curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27446');
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27446');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
+              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
                 _set(bid, 'params.keywords.sd_rtd', sirdataList.concat(curationData.segments).concat(curationData.categories), true);
               }
@@ -290,12 +272,12 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
                 target.push(bid.params.target);
               }
               // For curation Smart is pid 27440
-              curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27440');
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27440');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
+              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
                 sirdataList.concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
                   if (target.indexOf('sd_rtd=' + entry) === -1) {
@@ -308,31 +290,31 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
 
             case 'rubicon':
               // For curation Magnite is pid 27518
-              curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27452');
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27452');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
+              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories), globalConfig);
+                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
               }
               break;
 
             case 'ix':
-              var ixConfig = globalConfig.getConfig('ix.firstPartyData.sd_rtd');
+              var ixConfig = getGlobal().getConfig('ix.firstPartyData.sd_rtd');
               if (!ixConfig) {
                 // For curation index is pid 27248
-                curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27248');
+                curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27248');
                 if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                   curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
                 }
-                if (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                  loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
+                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
                 } else {
                   var cappIxCategories = [];
                   var ixLength = 0;
-                  var ixLimit = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('sizeLimit') ? config.params.bidders[bidderIndex].sizeLimit : 1000);
+                  var ixLimit = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('sizeLimit') ? moduleConfig.params.bidders[bidderIndex].sizeLimit : 1000);
                   // Push ids For publisher use and for curation if exists but limit size because the bidder uses GET parameters
                   sirdataList.concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
                     if (ixLength < ixLimit) {
@@ -340,21 +322,21 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
                       ixLength += entry.toString().length;
                     }
                   });
-                  globalConfig.setConfig({ix: {firstPartyData: {sd_rtd: cappIxCategories}}});
+                  getGlobal().setConfig({ix: {firstPartyData: {sd_rtd: cappIxCategories}}});
                 }
               }
               break;
 
             case 'proxistore':
               // For curation Proxistore is pid 27484
-              curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27484');
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27484');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               } else {
                 data.shared_taxonomy[curationId] = {contextual_categories: {}};
               }
-              if (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
+              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
                 _set(bid, 'ortb2.user.ext.data', {segments: sirdataData.segments.concat(curationData.segments), contextual_categories: {...data.contextual_categories, ...data.shared_taxonomy[curationId].contextual_categories}}, true);
               }
@@ -362,54 +344,54 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
 
             case 'criteo':
               // For curation Smart is pid 27443
-              curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27443');
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27443');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
+              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
-                setBidderOrtb2(bid.bidder, sirdataList.concat(curationData.segments).concat(curationData.categories), sirdataList.concat(curationData.segments).concat(curationData.categories), globalConfig);
+                setBidderOrtb2(bid.bidder, sirdataList.concat(curationData.segments).concat(curationData.categories), sirdataList.concat(curationData.segments).concat(curationData.categories));
               }
               break;
 
             case 'triplelift':
               // For curation Triplelift is pid 27518
-              curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27518');
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27518');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
+              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories), globalConfig);
+                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
               }
               break;
 
             case 'avct':
             case 'avocet':
               // For curation Avocet is pid 27522
-              curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27522');
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27522');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
+              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories), globalConfig);
+                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
               }
               break;
 
             case 'smaato':
               // For curation Smaato is pid 27520
-              curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27520');
+              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27520');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               }
-              if (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
+              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories), globalConfig);
+                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
               }
               break;
 

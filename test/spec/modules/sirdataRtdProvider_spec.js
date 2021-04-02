@@ -37,12 +37,12 @@ describe('sirdataRtdProvider', function() {
         }
       ];
 
-      const data = {
+      let data = {
         segments: [111111, 222222],
         contextual_categories: {'333333': 100}
       };
 
-      addSegmentData(adUnits, data, config, () => {}, {});
+      addSegmentData(adUnits, data, config, () => {});
       expect(adUnits[0].bids[0].params.keywords).to.have.deep.property('sd_rtd', ['111111', '222222', '333333']);
       expect(adUnits[0].bids[1].ortb2.site.ext.data).to.have.deep.property('sd_rtd', ['333333']);
       expect(adUnits[0].bids[1].ortb2.user.ext.data).to.have.deep.property('sd_rtd', ['111111', '222222']);
@@ -76,7 +76,7 @@ describe('sirdataRtdProvider', function() {
         }]
       };
 
-      const data = {
+      let data = {
         segments: [111111, 222222],
         contextual_categories: {'333333': 100}
       };
