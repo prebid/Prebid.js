@@ -6,6 +6,8 @@ import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
+const ALIAS_BIDDER_CODE = 'roundel';
+const GLOBAL_VENDOR_ID = 10;
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BANNER_ENDPOINT_VERSION = 7.2;
@@ -345,6 +347,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       }
     }
   }
+
+  // If `roundel` alias bidder, only send requests if liveramp ids exist.
+  if (bidderRequest && bidderRequest.bidderCode === ALIAS_BIDDER_CODE && !eidInfo.seenSources['liveramp.com']) {
+    return [];
+  }
+
   const r = {};
 
   // Since bidderRequestId are the same for different bid request, just use the first one.
@@ -697,7 +705,12 @@ function createMissingBannerImp(bid, imp, newSize) {
 export const spec = {
 
   code: BIDDER_CODE,
-  gvlid: 10,
+  gvlid: GLOBAL_VENDOR_ID,
+  aliases: [{
+    code: ALIAS_BIDDER_CODE,
+    gvlid: GLOBAL_VENDOR_ID,
+    skipPbsAliasing: false
+  }],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
