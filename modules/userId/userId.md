@@ -84,7 +84,20 @@ pbjs.setConfig({
                 partnerId: 0000,
                 uid: '12345xyz'
             }
-        }, {
+        },{
+            name: "merkleId",
+            params: {
+                vendor:'sdfg',
+                sv_cid:'dfg',
+                sv_pubid:'xcv',
+                sv_domain:'zxv'
+            },
+            storage: {
+                type: "cookie",
+                name: "merkleId",
+                expires: 30
+            } 
+        },{
             name: 'uid2'
         }
         }],
@@ -170,6 +183,19 @@ pbjs.setConfig({
                  name: '_criteoId',
                  expires: 1
         }
+        },{
+            name: "merkleId",
+            params: {
+                vendor:'sdfg',
+                sv_cid:'dfg',
+                sv_pubid:'xcv',
+                sv_domain:'zxv'
+            },
+            storage: {
+                type: "html5",
+                name: "merkleId",
+                expires: 30
+            } 
         }],
         syncDelay: 5000
     }
