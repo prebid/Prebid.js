@@ -791,7 +791,7 @@ describe('Richaudience adapter tests', function () {
   describe('userSync', function () {
     it('Verifies user syncs iframe include', function () {
       config.setConfig({
-        'userSync': {filterSettings:{ iframe: {bidders: '*', filter: 'include'}}}
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
       })
 
       var syncs = spec.getUserSyncs({
@@ -831,7 +831,7 @@ describe('Richaudience adapter tests', function () {
     });
     it('Verifies user syncs iframe exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings: { iframe: {bidders: '*', filter: 'exclude'}}}
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}}}
       })
 
       var syncs = spec.getUserSyncs({
@@ -871,7 +871,7 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs image include', function () {
       config.setConfig({
-        'userSync': {filterSettings:{ image: {bidders: '*', filter: 'include'}}}
+        'userSync': {filterSettings: {image: {bidders: '*', filter: 'include'}}}
       })
 
       var syncs = spec.getUserSyncs({
@@ -910,7 +910,7 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs image exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings:{ image: {bidders: '*', filter: 'exclude'}}}
+        'userSync': {filterSettings: {image: {bidders: '*', filter: 'exclude'}}}
       })
 
       var syncs = spec.getUserSyncs({
@@ -946,7 +946,7 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs iframe/image include', function () {
       config.setConfig({
-        'userSync': {filterSettings:{ iframe: {bidders: '*', filter: 'include'}, image: {bidders: '*', filter: 'include'}}}
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}, image: {bidders: '*', filter: 'include'}}}
       })
 
       var syncs = spec.getUserSyncs({
@@ -992,7 +992,7 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs iframe/image exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings:{ iframe: {bidders: '*', filter: 'exclude'}, image: {bidders: '*', filter: 'exclude'}}}
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}, image: {bidders: '*', filter: 'exclude'}}}
       })
 
       var syncs = spec.getUserSyncs({
@@ -1037,7 +1037,7 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs iframe exclude / image include', function () {
       config.setConfig({
-        'userSync': {filterSettings:{ iframe: {bidders: '*', filter: 'exclude'}, image: {bidders: '*', filter: 'include'}}}
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}, image: {bidders: '*', filter: 'include'}}}
       })
 
       var syncs = spec.getUserSyncs({
@@ -1083,7 +1083,7 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs iframe include / image exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings:{ iframe: {bidders: '*', filter: 'include'}, image: {bidders: '*', filter: 'exclude'}}}
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}, image: {bidders: '*', filter: 'exclude'}}}
       })
 
       var syncs = spec.getUserSyncs({
