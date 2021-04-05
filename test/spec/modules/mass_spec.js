@@ -3,6 +3,10 @@ import {
   init,
   addBidResponseHook,
   addListenerOnce,
+  isMassBid,
+  useDefaultMatch,
+  useDefaultRender,
+  updateRenderers,
   listenerAdded,
   isEnabled
 } from 'modules/mass';
@@ -112,5 +116,36 @@ describe('MASS Module', function() {
   it('should add a message listener', function() {
     addListenerOnce();
     expect(listenerAdded).to.equal(true);
+  });
+
+  it('should support custom renderers', function() {
+    init({
+      renderUrl: 'http://...',
+      custom: [
+        {
+          dealIdPattern: /abc/,
+          render: function() {}
+        }
+      ]
+    });
+
+    const renderers = updateRenderers();
+
+    expect(renderers.length).to.equal(2);
+  });
+
+  it('should match bids by deal ID with the default matcher', function() {
+    const match = useDefaultMatch(/abc/);
+
+    expect(match({dealId: 'abc'})).to.equal(true);
+    expect(match({dealId: 'xyz'})).to.equal(false);
+  });
+
+  it('should have a default renderer', function() {
+    const render = useDefaultRender('http://example.com/render.js', 'abc');
+    render({});
+
+    expect(window.abc.loaded).to.equal(true);
+    expect(window.abc.queue.length).to.equal(1);
   });
 });

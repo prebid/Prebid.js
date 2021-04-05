@@ -46,7 +46,7 @@ export function init(userCfg) {
 /**
  * Update the list of renderers based on current config.
  */
-function updateRenderers() {
+export function updateRenderers() {
   renderers = [];
 
   // official MASS renderer:
@@ -71,6 +71,8 @@ function updateRenderers() {
       renderers.push(renderer);
     }
   });
+
+  return renderers;
 }
 
 /**
