@@ -639,7 +639,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.gdpr_consent).is.undefined;
       });
 
-      it('checks gdpr info gets added to cookie_sync request: consent data unknown', function () {
+      it('checks gdpr info gets added to cookie_sync request: applies is false', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
         cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
@@ -649,7 +649,7 @@ describe('S2S Adapter', function () {
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
         gdprBidRequest[0].gdprConsent = {
           consentString: undefined,
-          gdprApplies: undefined
+          gdprApplies: false
         };
 
         const s2sBidRequest = utils.deepClone(REQUEST);
@@ -658,7 +658,7 @@ describe('S2S Adapter', function () {
         adapter.callBids(s2sBidRequest, gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
-        expect(requestBid.gdpr).is.undefined;
+        expect(requestBid.gdpr).is.equal(0);
         expect(requestBid.gdpr_consent).is.undefined;
       });
     });
@@ -1575,6 +1575,30 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.source.ext.schain).to.deep.equal(schainObject);
     });
 
+    it('passes multibid array in request', function () {
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      const multibid = [{
+        bidder: 'bidderA',
+        maxBids: 2
+      }, {
+        bidder: 'bidderB',
+        maxBids: 2
+      }];
+      const expected = [{
+        bidder: 'bidderA',
+        maxbids: 2
+      }, {
+        bidder: 'bidderB',
+        maxbids: 2
+      }];
+
+      config.setConfig({multibid: multibid});
+
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+      expect(parsedRequestBody.ext.prebid.multibid).to.deep.equal(expected);
+    });
+
     it('passes first party data in request', () => {
       const s2sBidRequest = utils.deepClone(REQUEST);
       const bidRequests = utils.deepClone(BID_REQUESTS);
@@ -1607,20 +1631,43 @@ describe('S2S Adapter', function () {
 
       const expected = allowedBidders.map(bidder => ({
         bidders: [ bidder ],
-        config: { fpd: { site: context, user } }
+        config: {
+          ortb2: {
+            site: {
+              content: { userrating: 4 },
+              ext: {
+                data: {
+                  pageType: 'article',
+                  category: 'tools'
+                }
+              }
+            },
+            user: {
+              yob: '1984',
+              geo: { country: 'ca' },
+              ext: {
+                data: {
+                  registered: true,
+                  interests: ['cars']
+                }
+              }
+            }
+          }
+        }
       }));
+      const commonContextExpected = utils.mergeDeep({'page': 'http://mytestpage.com', 'publisher': {'id': '1'}}, commonContext);
 
       config.setConfig({ fpd: { context: commonContext, user: commonUser } });
       config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
-      expect(parsedRequestBody.site.ext.data).to.deep.equal(commonContext);
-      expect(parsedRequestBody.user.ext.data).to.deep.equal(commonUser);
+      expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
+      expect(parsedRequestBody.user).to.deep.equal(commonUser);
     });
 
     describe('pbAdSlot config', function () {
-      it('should not send \"imp.ext.context.data.pbadslot\" if \"fpd.context\" is undefined', function () {
+      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext\" is undefined', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
@@ -1630,30 +1677,32 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.pbadslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
       });
 
-      it('should not send \"imp.ext.context.data.pbadslot\" if \"fpd.context.pbAdSlot\" is undefined', function () {
+      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" is undefined', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {};
+        bidRequest.ad_units[0].ortb2Imp = {};
 
         adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
         const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.pbadslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
       });
 
-      it('should not send \"imp.ext.context.data.pbadslot\" if \"fpd.context.pbAdSlot\" is empty string', function () {
+      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" is empty string', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            pbAdSlot: ''
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              pbadslot: ''
+            }
           }
         };
 
@@ -1662,16 +1711,18 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.pbadslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
       });
 
-      it('should send \"imp.ext.context.data.pbadslot\" if \"fpd.context.pbAdSlot\" value is a non-empty string', function () {
+      it('should send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" value is a non-empty string', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            pbAdSlot: '/a/b/c'
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              pbadslot: '/a/b/c'
+            }
           }
         };
 
@@ -1680,13 +1731,13 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.pbadslot');
-        expect(parsedRequestBody.imp[0].ext.context.data.pbadslot).to.equal('/a/b/c');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.data.pbadslot');
+        expect(parsedRequestBody.imp[0].ext.data.pbadslot).to.equal('/a/b/c');
       });
     });
 
     describe('GAM ad unit config', function () {
-      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context\" is undefined', function () {
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext\" is undefined', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
@@ -1696,31 +1747,33 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context.adserver.adSlot\" is undefined', function () {
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext.data.adserver.adslot\" is undefined', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {};
+        bidRequest.ad_units[0].ortb2Imp = {};
 
         adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
         const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context.adserver.adSlot\" is empty string', function () {
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext.data.adserver.adslot\" is empty string', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            adServer: {
-              adSlot: ''
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              adserver: {
+                adslot: ''
+              }
             }
           }
         };
@@ -1730,18 +1783,20 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should send both \"adslot\" and \"name\" from \"imp.ext.context.data.adserver\" if \"fpd.context.adserver.adSlot\" and \"fpd.context.adserver.name\" values are non-empty strings', function () {
+      it('should send both \"adslot\" and \"name\" from \"imp.ext.data.adserver\" if \"ortb2Imp.ext.data.adserver.adslot\" and \"ortb2Imp.ext.data.adserver.name\" values are non-empty strings', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            adserver: {
-              adSlot: '/a/b/c',
-              name: 'adserverName1'
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              adserver: {
+                adslot: '/a/b/c',
+                name: 'adserverName1'
+              }
             }
           }
         };
@@ -1751,10 +1806,10 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.adserver.adslot');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.adserver.name');
-        expect(parsedRequestBody.imp[0].ext.context.data.adserver.adslot).to.equal('/a/b/c');
-        expect(parsedRequestBody.imp[0].ext.context.data.adserver.name).to.equal('adserverName1');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.data.adserver.adslot');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.data.adserver.name');
+        expect(parsedRequestBody.imp[0].ext.data.adserver.adslot).to.equal('/a/b/c');
+        expect(parsedRequestBody.imp[0].ext.data.adserver.name).to.equal('adserverName1');
       });
     });
   });
