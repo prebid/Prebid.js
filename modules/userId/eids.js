@@ -172,6 +172,10 @@ const USER_IDS_CONFIG = {
   'tapadId': {
     source: 'tapad.com',
     atype: 1
+  },
+  'deepintentId': {
+    source: 'deepintent.com',
+    atype: 1
   }
 };
 
