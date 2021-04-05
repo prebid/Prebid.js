@@ -78,6 +78,29 @@ pbjs.setConfig({
                  expires: 1
               }
         }, {
+            name: 'mwOpenLinkId',
+            params: {
+                accountId: 0000,
+                partnerId: 0000,
+                uid: '12345xyz'
+            }
+        },{
+            name: "merkleId",
+            params: {
+                vendor:'sdfg',
+                sv_cid:'dfg',
+                sv_pubid:'xcv',
+                sv_domain:'zxv'
+            },
+            storage: {
+                type: "cookie",
+                name: "merkleId",
+                expires: 30
+            } 
+        },{
+            name: 'uid2'
+        }
+        }, {
               name: 'admixerId',
               params: {
                   pid: "4D393FAC-B6BB-4E19-8396-0A4813607316", // example id
@@ -161,12 +184,30 @@ pbjs.setConfig({
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
+                name: 'nextrollId',
+                params: {
+                    partnerId: "1009",         // Set your real NextRoll partner ID here for production
+                }
+        }, {
              name: 'criteo',
              storage: {              // It is best not to specify this parameter since the module needs to be called as many times as possible
                  type: 'html5',
                  name: '_criteoId',
                  expires: 1
-              }
+             }
+        },{
+            name: "merkleId",
+            params: {
+                vendor:'sdfg',
+                sv_cid:'dfg',
+                sv_pubid:'xcv',
+                sv_domain:'zxv'
+            },
+            storage: {
+                type: "html5",
+                name: "merkleId",
+                expires: 30
+            } 
         }, {
               name: 'admixerId',
               params: {
@@ -176,7 +217,7 @@ pbjs.setConfig({
               },
               storage: {
                   type: 'html5',
-                  name: '__adm__admixer',
+                  name: 'admixerId',
                   expires: 30
               }
         }],
@@ -206,6 +247,10 @@ pbjs.setConfig({
         {
             name: "criteo",
             value: { "criteoId": "wK-fkF8zaEIlMkZMbHl3eFo4NEtoNmZaeXJtYkFjZlVuWjBhcjJMaTRYd3pZNSUyQnlKRHNGRXlpdzdjd3pjVzhjcSUyQmY4eTFzN3VSZjV1ZyUyRlA0U2ZiR0UwN2I4bDZRJTNEJTNE" }
+        },
+        {
+            name: "novatiq",
+            value: { "snowflake": "81b001ec-8914-488c-a96e-8c220d4ee08895ef" }
         }],
         syncDelay: 5000
     }

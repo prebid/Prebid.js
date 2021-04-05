@@ -827,7 +827,8 @@ describe('AppNexusAdapter', function () {
         userId: {
           tdid: 'sample-userid',
           criteoId: 'sample-criteo-userid',
-          netId: 'sample-netId-userid'
+          netId: 'sample-netId-userid',
+          idl_env: 'sample-idl-userid'
         }
       });
 
@@ -848,6 +849,11 @@ describe('AppNexusAdapter', function () {
         source: 'netid.de',
         id: 'sample-netId-userid',
       });
+
+      expect(payload.eids).to.deep.include({
+        source: 'liveramp.com',
+        id: 'sample-idl-userid'
+      })
     });
 
     it('should populate iab_support object at the root level if omid support is detected', function () {

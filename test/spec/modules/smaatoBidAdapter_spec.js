@@ -42,7 +42,7 @@ const ADTYPE_IMG = 'Img';
 const ADTYPE_RICHMEDIA = 'Richmedia';
 const ADTYPE_VIDEO = 'Video';
 
-const context = {
+const site = {
   keywords: 'power tools,drills'
 };
 
@@ -439,8 +439,8 @@ describe('smaatoBidAdapterTest', () => {
     it('sends fp data', () => {
       this.sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
-          fpd: {
-            context,
+          ortb2: {
+            site,
             user
           }
         };
