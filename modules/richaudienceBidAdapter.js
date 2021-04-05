@@ -141,11 +141,15 @@ export const spec = {
     var syncUrl = '';
     var consent = '';
 
+    var raiSync = [];
+
+    raiSync = raiGetSyncInclude(config);
+
     if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString != 'undefined') {
       consent = `consentString=${gdprConsent.consentString}`
     }
 
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled && raiSync.filter(e => e.raiIframe)[0].raiIframe != 'exclude') {
       syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand
       if (consent != '') {
         syncUrl += `&${consent}`
@@ -156,7 +160,7 @@ export const spec = {
       });
     }
 
-    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0) {
+    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0 && raiSync.filter(e => e.raiImage)[0].raiImage != 'exclude') {
       syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
       if (consent != '') {
         syncUrl += `&${consent}`
@@ -262,4 +266,27 @@ function raiGetResolution() {
     resolution = window.screen.width + 'x' + window.screen.height;
   }
   return resolution;
+}
+
+function raiGetSyncInclude(config) {
+  try {
+    let raConfig = null;
+    let raiSync = [];
+    if (config.getConfig('userSync').filterSettings != null) {
+      raConfig = config.getConfig('userSync').filterSettings
+      if (raConfig.iframe != null) {
+        if (raConfig.iframe.bidders == 'richaudience' || raConfig.iframe.bidders == '*') {
+          raiSync.push({'raiIframe': raConfig.iframe.filter})
+        }
+      }
+      if (raConfig.image != null) {
+        if (raConfig.image.bidders == 'richaudience' || raConfig.image.bidders == '*') {
+          raiSync.push({'raiImage': raConfig.image.filter})
+        }
+      }
+    }
+    return raiSync;
+  } catch (e) {
+    return null;
+  }
 }
