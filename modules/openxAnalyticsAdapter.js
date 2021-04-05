@@ -437,7 +437,18 @@ function onBidWon(bidResponse) {
     `${auctionId}.adUnitCodeToAdUnitMap.${adUnitCode}.bidRequestsMap.${requestId}.bids.${adId}`);
 
   if (winningBid) {
-    winningBid.winner = true
+    winningBid.winner = true;
+    const auction = auctionMap[auctionId];
+    if (auction.sent) {
+      const endpoint = (analyticsConfig.endpoint || ENDPOINT) + 'event';
+      const bidder = auction.adUnitCodeToAdUnitMap[adUnitCode].bidRequestsMap[requestId].bidder;
+      ajax(`${endpoint}?t=win&b=${adId}&a=${analyticsConfig.orgId}&bidder=${bidder}&ts=${auction.startTime}`,
+        () => {
+          utils.logInfo(`Openx Analytics - Sending complete impression event for ${adId} at ${Date.now()}`)
+        });
+    } else {
+      utils.logInfo(`Openx Analytics - impression event for ${adId} will be sent with auction data`)
+    }
   }
 }
 
@@ -529,17 +540,20 @@ function getPageOffset() {
 }
 
 function delayedSend(auction) {
+  if (auction.sent) {
+    return;
+  }
   const delayTime = auction.adunitCodesRenderedCount === auction.adUnitCodesCount
     ? analyticsConfig.payloadWaitTime
     : analyticsConfig.payloadWaitTime + analyticsConfig.payloadWaitTimePadding;
 
   auction.auctionSendDelayTimer = setTimeout(() => {
+    auction.sent = true; // any BidWon emitted after this will be recorded separately
     let payload = JSON.stringify([buildAuctionPayload(auction)]);
-    ajax(analyticsConfig.endpoint || ENDPOINT, deleteAuctionMap, payload, { contentType: 'application/json' });
 
-    function deleteAuctionMap() {
-      delete auctionMap[auction.id];
-    }
+    ajax(analyticsConfig.endpoint || ENDPOINT, () => {
+      utils.logInfo(`OpenX Analytics - Sending complete auction at ${Date.now()}`);
+    }, payload, { contentType: 'application/json' });
   }, delayTime);
 }
 
@@ -655,6 +669,7 @@ function buildAuctionPayload(auction) {
             timedOut,
             bidResponses: utils._map(bidRequest.bids, (bidderBidResponse) => {
               let {
+                adId,
                 cpm,
                 creativeId,
                 ts,
@@ -673,6 +688,7 @@ function buildAuctionPayload(auction) {
               } = bidderBidResponse;
 
               return {
+                bidId: adId,
                 microCpm: cpm * 1000000,
                 netRevenue,
                 currency,
