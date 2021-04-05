@@ -175,9 +175,9 @@ const USER_IDS_CONFIG = {
   },
 
   // Admixer Id
-  '__adm__admixer': {
+  'admixerId': {
     source: 'admixer.net',
-    atype: 1
+    atype: 3
   }
 };
 

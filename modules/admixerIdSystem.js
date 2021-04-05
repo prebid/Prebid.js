@@ -28,16 +28,16 @@ export const admixerIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{__adm__admixer:string}}
+   * @returns {{admixerId:string}}
    */
   decode(value) {
-    return { '__adm__admixer': value }
+    return { 'admixerId': value }
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {ConsentData} [consentData]
    * @param {SubmoduleConfig} [config]
+   * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
