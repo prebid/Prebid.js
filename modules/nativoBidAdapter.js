@@ -1,10 +1,10 @@
-import * as utils from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import * as utils from "../src/utils.js"
+import { registerBidder } from "../src/adapters/bidderFactory.js"
+import { BANNER } from "../src/mediaTypes.js"
 // import { config } from 'src/config'
 
-const BIDDER_CODE = 'nativo'
-const BIDDER_ENDPOINT = 'https://jadserve.postrelease.com/prebid'
+const BIDDER_CODE = "nativo"
+const BIDDER_ENDPOINT = "https://jadserve.postrelease.com/prebid"
 
 const TIME_TO_LIVE = 360
 
@@ -16,7 +16,7 @@ const bidRequestMap = {}
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['ntv'], // short code
+  aliases: ["ntv"], // short code
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
@@ -44,19 +44,38 @@ export const spec = {
     validBidRequests.forEach((request) => {
       placementId = request.params.placementId
       placementIds.push(placementId)
-      placmentBidIdMap[placementId] = request.bidId
+      placmentBidIdMap[placementId] = {
+        bidId: request.bidId,
+        size: getLargestSize(request.sizes),
+      }
     })
     bidRequestMap[bidderRequest.bidderRequestId] = placmentBidIdMap
 
-    let params = {
-      ntv_ptd: placementIds.toString(),
-      ntv_pb_rid: bidderRequest.bidderRequestId,
-      ntv_url: encodeURIComponent(bidderRequest.refererInfo.referer),
+    let params = [
+      { key: "ntv_ptd", value: placementIds.toString() },
+      { key: "ntv_pb_rid", value: bidderRequest.bidderRequestId },
+      {
+        key: "ntv_url",
+        value: encodeURIComponent(bidderRequest.refererInfo.referer),
+      },
+    ]
+
+    if (bidderRequest.gdprConsent) {
+      // Put on the beginning of the qs param array
+      params.unshift({
+        key: "ntv_gdpr_consent",
+        value: bidderRequest.gdprConsent.consentString,
+      })
+    }
+
+    if (bidderRequest.uspConsent) {
+      // Put on the beginning of the qs param array
+      params.unshift({ key: "us_privacy", value: bidderRequest.uspConsent })
     }
 
     let serverRequest = {
-      method: 'GET',
-      url: BIDDER_ENDPOINT + objectToQS(params),
+      method: "GET",
+      url: BIDDER_ENDPOINT + arrayToQS(params),
     }
 
     return serverRequest
@@ -76,20 +95,25 @@ export const spec = {
     if (!response || !response.body || utils.isEmpty(response.body)) return []
 
     try {
-      const body = response.body
+      const body =
+        typeof response.body === "string"
+          ? JSON.parse(response.body)
+          : response.body
+
       const bidResponses = []
       const seatbids = body.seatbid
 
       // Step through and grab pertinent data
-      let bidResponse
+      let bidResponse, adUnit
       seatbids.forEach((seatbid) => {
         seatbid.bid.forEach((bid) => {
+          adUnit = this.getRequestId(body.id, bid.impid)
           bidResponse = {
-            requestId: this.getRequestId(body.id, bid.impid),
+            requestId: adUnit.bidId,
             cpm: bid.price,
             currency: body.cur,
-            width: bid.w,
-            height: bid.h,
+            width: bid.w || adUnit.size[0],
+            height: bid.h || adUnit.size[1],
             creativeId: bid.crid,
             dealId: bid.id,
             netRevenue: true,
@@ -131,25 +155,25 @@ export const spec = {
     uspConsent
   ) {
     // Generate consent qs string
-    let params = ''
+    let params = ""
     // GDPR
     if (gdprConsent) {
       params = appendQSParamString(
         params,
-        'gdpr',
+        "gdpr",
         gdprConsent.gdprApplies ? 1 : 0
       )
       params = appendQSParamString(
         params,
-        'gdpr_consent',
-        encodeURIComponent(gdprConsent.consentString || '')
+        "gdpr_consent",
+        encodeURIComponent(gdprConsent.consentString || "")
       )
     }
     // CCPA
     if (uspConsent) {
       params = appendQSParamString(
         params,
-        'us_privacy',
+        "us_privacy",
         encodeURIComponent(uspConsent.uspConsent)
       )
     }
@@ -163,21 +187,27 @@ export const spec = {
 
     let body
     serverResponses.forEach((response) => {
-      if (!response) return
+      // If the bid response was empty, return []
+      if (!response || !response.body || utils.isEmpty(response.body)) {
+        return syncs
+      }
 
-      body = response.body
+      body =
+        typeof response.body === "string"
+          ? JSON.parse(response.body)
+          : response.body
 
       // Make sure we have valid content
-      if (!body && !body.seatbid && body.seatbid.length === 0) return
+      if (!body || !body.seatbid || body.seatbid.length === 0) return
 
       body.seatbid.forEach((seatbid) => {
         // Grab the syncs for each seatbid
         seatbid.syncUrls.forEach((sync) => {
           if (types[sync.type]) {
-            if (sync.url.trim() !== '') {
+            if (sync.url.trim() !== "") {
               syncs.push({
                 type: sync.type,
-                url: sync.url.replace('{GDPR_params}', params),
+                url: sync.url.replace("{GDPR_params}", params),
               })
             }
           }
@@ -231,7 +261,7 @@ registerBidder(spec)
  * @returns
  */
 function appendQSParamString(str, key, value) {
-  return str + `${str.length ? '&' : ''}${key}=${value}`
+  return str + `${str.length ? "&" : ""}${key}=${value}`
 }
 
 /**
@@ -239,11 +269,36 @@ function appendQSParamString(str, key, value) {
  * @param {Object} obj - Object to convert
  * @returns
  */
-function objectToQS(obj) {
+function arrayToQS(arr) {
   return (
-    '?' +
-    Object.keys(obj).reduce((value, key) => {
-      return appendQSParamString(value, key, obj[key])
-    }, '')
+    "?" +
+    arr.reduce((value, obj) => {
+      return appendQSParamString(value, obj.key, obj.value)
+    }, "")
   )
 }
+
+/**
+ * Get the largest size array
+ * @param {Array} sizes - Array of size arrays
+ * @returns Size array with the largest area
+ */
+function getLargestSize(sizes, method = area) {
+  if (!sizes || sizes.length === 0) return []
+  if (sizes.length === 1) return sizes[0]
+
+  return sizes.reduce((prev, current) => {
+    if (method(current) > method(prev)) {
+      return current
+    } else {
+      return prev
+    }
+  })
+}
+
+/**
+ * Calculate the area
+ * @param {Array} size - [width, height]
+ * @returns The calculated area
+ */
+const area = (size) => size[0] * size[1]
