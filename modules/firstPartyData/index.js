@@ -91,7 +91,6 @@ function setCurrency() {
   if (cur.adServerCurrency) {
     utils.mergeDeep(ortb2, { cur: cur.adServerCurrency });
   }
-
 }
 
 /**
