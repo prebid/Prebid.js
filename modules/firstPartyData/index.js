@@ -88,9 +88,10 @@ function setKeywords() {
 function setCurrency() {
   let cur = { ...config.getConfig('currency') };
 
-  if (cur && cur.adServerCurrency) {
+  if (cur.adServerCurrency) {
     utils.mergeDeep(ortb2, { cur: cur.adServerCurrency });
   }
+
 }
 
 /**
