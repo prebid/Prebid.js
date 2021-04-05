@@ -3,11 +3,78 @@ import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import {getRefererInfo} from 'src/refererDetection.js';
 import {
-  filterData,
+  filterArrayData,
   validateFpd,
   init,
   resetOrtb2
 } from 'modules/firstPartyData/index.js';
+
+let adapterManager = require('src/adapterManager').default;
+
+/**
+ * @param {Object} [opts]
+ * @returns {Bid}
+ */
+function mockBid(opts) {
+  let bidderCode = opts && opts.bidderCode;
+
+  return {
+    'ad': 'creative',
+    'cpm': '1.99',
+    'width': 300,
+    'height': 250,
+    'bidderCode': bidderCode || BIDDER_CODE,
+    'requestId': utils.getUniqueIdentifierStr(),
+    'creativeId': 'id',
+    'currency': 'USD',
+    'netRevenue': true,
+    'ttl': 360,
+    getSize: () => '300x250'
+  };
+}
+
+/**
+ * @param {Bid} bid
+ * @param {Object} [opts]
+ * @returns {BidRequest}
+ */
+function mockBidRequest(bid, opts) {
+  if (!bid) {
+    throw new Error('bid required');
+  }
+  let bidderCode = opts && opts.bidderCode;
+  let adUnitCode = opts && opts.adUnitCode;
+  let defaultMediaType = {
+    banner: {
+      sizes: [[300, 250], [300, 600]]
+    }
+  }
+  let mediaType = (opts && opts.mediaType) ? opts.mediaType : defaultMediaType;
+
+  let requestId = utils.getUniqueIdentifierStr();
+
+  return {
+    'bidderCode': bidderCode || bid.bidderCode,
+    'auctionId': '20882439e3238c',
+    'bidderRequestId': requestId,
+    'bids': [
+      {
+        'bidder': bidderCode || bid.bidderCode,
+        'params': {
+          'placementId': 'id'
+        },
+        'adUnitCode': adUnitCode || ADUNIT_CODE,
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': bid.requestId,
+        'bidderRequestId': requestId,
+        'auctionId': '20882439e3238c',
+        'mediaTypes': mediaType
+      }
+    ],
+    'auctionStart': 1505250713622,
+    'timeout': 3000
+  };
+}
 
 describe('the first party data module', function () {
   let sandbox;
@@ -77,125 +144,55 @@ describe('the first party data module', function () {
     resetOrtb2();
   });
 
-  describe('filtering first party data', function () {
-    it('returns null if empty data array should', function () {
-      let validated;
-      let duplicate = utils.deepClone(ortb2);
-      duplicate.user.data = [];
-      duplicate.site.content.data = [];
-
-      validated = filterData(duplicate.user.data, 'user');
-      expect(validated).to.equal(null);
-      validated = filterData(duplicate.site.content.data, 'site');
-      expect(validated).to.equal(null);
+  describe('filtering first party array data', function () {
+    it('returns empty array if no valid data', function () {
+      let arr = [{}];
+      let path = 'site.children.cat';
+      let child = {type: 'string'};
+      let parent = 'site';
+      let key = 'cat';
+      let validated = filterArrayData(arr, child, path, parent, key);
+      expect(validated).to.deep.equal([]);
     });
 
-    it('returns null if name does not exist', function () {
-      let validated;
-      let duplicate = utils.deepClone(ortb2);
-      delete duplicate.user.data[0].name;
-      delete duplicate.site.content.data[0].name;
-
-      validated = filterData(duplicate.user.data, 'user');
-      expect(validated).to.equal(null);
-      validated = filterData(duplicate.site.content.data, 'site');
-      expect(validated).to.equal(null);
+    it('filters invalid type of array data', function () {
+      let arr = ['foo', {test: 1}];
+      let path = 'site.children.cat';
+      let child = {type: 'string'};
+      let parent = 'site';
+      let key = 'cat';
+      let validated = filterArrayData(arr, child, path, parent, key);
+      expect(validated).to.deep.equal(['foo']);
     });
 
-    it('returns null if segment does not exist', function () {
-      let validated;
-      let duplicate = utils.deepClone(ortb2);
-      delete duplicate.user.data[0].segment;
-      delete duplicate.site.content.data[0].segment;
-
-      validated = filterData(duplicate.user.data, 'user');
-      expect(validated).to.equal(null);
-      validated = filterData(duplicate.site.content.data, 'site');
-      expect(validated).to.equal(null);
+    it('filters all data for missing required children', function () {
+      let arr = [{test: 1}];
+      let path = 'site.children.content.children.data';
+      let child = {type: 'object'};
+      let parent = 'site';
+      let key = 'data';
+      let validated = filterArrayData(arr, child, path, parent, key);
+      expect(validated).to.deep.equal([]);
     });
 
-    it('returns unfiltered data', function () {
-      let validated;
-      let duplicate = utils.deepClone(ortb2);
-
-      delete duplicate.user.data[0].ext;
-
-      validated = filterData(duplicate.user.data, 'user');
-      expect(validated).to.deep.equal(duplicate.user.data);
-      validated = filterData(duplicate.site.content.data, 'site');
-      expect(validated).to.deep.equal(duplicate.site.content.data);
+    it('filters all data for invalid required children types', function () {
+      let arr = [{name: 'foo', segment: 1}];
+      let path = 'site.children.content.children.data';
+      let child = {type: 'object'};
+      let parent = 'site';
+      let key = 'data';
+      let validated = filterArrayData(arr, child, path, parent, key);
+      expect(validated).to.deep.equal([]);
     });
 
-    it('returns data filtering data[0].ext for wrong type', function () {
-      let validated;
-      let duplicate = utils.deepClone(ortb2);
-      let expected = {
-        user: [{
-          segment: [{
-            id: 'foo'
-          }],
-          name: 'bar'
-        }],
-        site: [{
-          segment: [{
-            id: 'test'
-          }],
-          name: 'content',
-        }]
-      };
-
-      duplicate.site.content.data[0].ext = [1, 3, 5];
-
-      validated = filterData(duplicate.user.data, 'user');
-      expect(validated).to.deep.equal(expected.user);
-      validated = filterData(duplicate.site.content.data, 'user');
-      expect(validated).to.deep.equal(expected.site);
-    });
-
-    it('returns user data filtering data[0].segment[1] for missing id', function () {
-      let duplicate = utils.deepClone(ortb2);
-      let expected = [{
-        segment: [{
-          id: 'foo'
-        }],
-        name: 'bar'
-      }];
-      duplicate.user.data[0].segment.push({foo: 'bar'});
-
-      let validated = filterData(duplicate.user.data, 'user');
-      expect(validated).to.deep.equal(expected);
-    });
-
-    it('returns undefined for data[0].segment[0] for missing id', function () {
-      let duplicate = utils.deepClone(ortb2);
-      duplicate.user.data[0].segment[0] = [{test: 1}];
-
-      let validated = filterData(duplicate.user.data, 'user');
-      expect(validated).to.equal(null);
-    });
-
-    it('returns data filtering data[0].segement[1] and data[0].ext', function () {
-      let duplicate = utils.deepClone(ortb2);
-      let expected = [{
-        segment: [{
-          id: 'foo'
-        }],
-        name: 'bar'
-      }, {
-        segment: [{
-          id: '123'
-        }],
-        name: 'test-2',
-        ext: {
-          foo: 'bar'
-        }
-      }];
-
-      duplicate.user.data[0].segment.push({test: 3});
-      duplicate.user.data.push({segment: [{id: '123'}], name: 'test-2', ext: {foo: 'bar'}});
-
-      let validated = filterData(duplicate.user.data, 'user');
-      expect(validated).to.deep.equal(expected);
+    it('returns only data with valid required nested children types', function () {
+      let arr = [{name: 'foo', segment: [{id: '1'}, {id: 2}, 'foobar']}];
+      let path = 'site.children.content.children.data';
+      let child = {type: 'object'};
+      let parent = 'site';
+      let key = 'data';
+      let validated = filterArrayData(arr, child, path, parent, key);
+      expect(validated).to.deep.equal([{name: 'foo', segment: [{id: '1'}]}]);
     });
   });
 
@@ -285,6 +282,83 @@ describe('the first party data module', function () {
     it('filters user.data[0].ext and site.content.data[0].segement[1] for invalid data', function () {
       let validated;
       let duplicate = utils.deepClone(ortb2);
+      let expected = {
+        device: {
+          h: 911,
+          w: 1733
+        },
+        user: {
+          data: [{
+            segment: [{
+              id: 'foo'
+            }],
+            name: 'bar'
+          }]
+        },
+        site: {
+          content: {
+            data: [{
+              segment: [{
+                id: 'test'
+              }],
+              name: 'content',
+              ext: {
+                foo: 'bar'
+              }
+            }]
+          }
+        }
+      };
+
+      duplicate.site.content.data[0].segment.push({test: 3});
+
+      validated = validateFpd(duplicate);
+      expect(validated).to.deep.equal(expected);
+    });
+
+    it('filters device for invalid data types', function () {
+      let validated;
+      let duplicate = utils.deepClone(ortb2);
+      duplicate.device = {
+        h: '1',
+        w: '1'
+      }
+
+      let expected = {
+        user: {
+          data: [{
+            segment: [{
+              id: 'foo'
+            }],
+            name: 'bar'
+          }]
+        },
+        site: {
+          content: {
+            data: [{
+              segment: [{
+                id: 'test'
+              }],
+              name: 'content',
+              ext: {
+                foo: 'bar'
+              }
+            }]
+          }
+        }
+      };
+
+      duplicate.site.content.data[0].segment.push({test: 3});
+
+      validated = validateFpd(duplicate);
+      expect(validated).to.deep.equal(expected);
+    });
+
+    it('filters cur for invalid data type', function () {
+      let validated;
+      let duplicate = utils.deepClone(ortb2);
+      duplicate.cur = 8;
+
       let expected = {
         device: {
           h: 911,
@@ -519,6 +593,49 @@ describe('the first party data module', function () {
 
       validated = config.getConfig('ortb2');
       expect(validated.cur).to.equal('USD');
+    });
+
+    it('should filter all data', function () {
+      let validated;
+      let conf = {
+        imp: [],
+        site: {
+          name: 123,
+          domain: 456,
+          page: 789,
+          ref: 987,
+          keywords: ['keywords'],
+          search: 654,
+          cat: 'cat',
+          sectioncat: 'sectioncat',
+          pagecat: 'pagecat',
+          content: {
+            data: [{
+              name: 1,
+              segment: []
+            }]
+          }
+        },
+        user: {
+          yob: 'twenty',
+          gender: 0,
+          keywords: ['foobar'],
+          data: ['test']
+        },
+        device: [800, 450],
+        cur: {
+          adServerCurrency: 'USD'
+        }
+      };
+
+      config.setConfig({'firstPartyData': {skipEnrichments: true}});
+
+      config.setConfig({ortb2: conf});
+
+      init();
+
+      validated = config.getConfig('ortb2');
+      expect(validated).to.deep.equal({});
     });
 
     it('should filter bidderConfig data', function () {
