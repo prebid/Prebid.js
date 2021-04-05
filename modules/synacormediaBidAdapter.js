@@ -219,7 +219,6 @@ export const spec = {
           }
           const bidObj = {
             requestId: impid,
-            adId: bid.id.replace(/~/g, '-'),
             cpm: parseFloat(bid.price),
             width: parseInt(width, 10),
             height: parseInt(height, 10),
