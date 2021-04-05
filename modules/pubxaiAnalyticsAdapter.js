@@ -35,7 +35,7 @@ var pubxaiAnalyticsAdapter = Object.assign(adapter(
         events.floorDetail = {};
         events.bids = [];
         const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
-        if (typeof args.bidderRequests[0].bids[0] !== 'undefined' && typeof floorData !== 'undefined') {
+        if (typeof floorData !== 'undefined') {
           Object.assign(events.floorDetail, floorData);
         }
         auctionTimestamp = args.timestamp;
@@ -54,7 +54,7 @@ var pubxaiAnalyticsAdapter = Object.assign(adapter(
 });
 
 function mapBidResponse(bidResponse, status) {
-  if (typeof bidResponse !== 'undefined' && bidResponse) {
+  if (typeof bidResponse !== 'undefined') {
     let bid = {
       adUnitCode: bidResponse.adUnitCode,
       auctionId: bidResponse.auctionId,
@@ -104,23 +104,13 @@ export function getDeviceType() {
 }
 
 export function getBrowser() {
-  var isChrome =
-    /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-  var isCriOS = navigator.userAgent.match('CriOS');
-  var isSafari =
-    /Safari/.test(navigator.userAgent) &&
-    /Apple Computer/.test(navigator.vendor);
-  var isFirefox = /Firefox/.test(navigator.userAgent);
-  var isIE =
-    /Trident/.test(navigator.userAgent) || /MSIE/.test(navigator.userAgent);
-  var isEdge = /Edge/.test(navigator.userAgent);
-  if (isIE) return 'Internet Explorer';
-  if (isEdge) return 'Microsoft Edge';
-  if (isCriOS) return 'Chrome';
-  if (isSafari) return 'Safari';
-  if (isFirefox) return 'Firefox';
-  if (isChrome) return 'Chrome';
-  return 'Others';
+  if (/Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)) return 'Chrome';
+  else if (navigator.userAgent.match('CriOS')) return 'Chrome';
+  else if (/Firefox/.test(navigator.userAgent)) return 'Firefox';
+  else if (/Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor)) return 'Safari';
+  else if (/Edge/.test(navigator.userAgent)) return 'Microsoft Edge';
+  else if (/Trident/.test(navigator.userAgent) || /MSIE/.test(navigator.userAgent)) return 'Internet Explorer';
+  else return 'Others';
 }
 
 export function getOS() {
