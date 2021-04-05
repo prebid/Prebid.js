@@ -38,7 +38,7 @@ General gulp commands include separate commands for serving the codebase on a bu
 Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
 Follow steps above for general review process. In addition, please verify the following:
-- Verify the biddercode is valid:
+- Verify the biddercode and aliases are valid:
     - Lower case alphanumeric with the only special character allowed is underscore.
     - The bidder code should be unique for the first 6 characters
     - Reserved words that cannot be used as bidder names: all, context, data, general, prebid, and skadn
