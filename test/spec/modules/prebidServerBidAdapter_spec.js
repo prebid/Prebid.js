@@ -1153,6 +1153,67 @@ describe('S2S Adapter', function () {
       });
     });
 
+    it('skips pbs alias when skipPbsAliasing is enabled in adapter', function() {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({ s2sConfig: s2sConfig });
+
+      const aliasBidder = {
+        bidder: 'mediafuse',
+        params: { aid: 123 }
+      };
+
+      const request = utils.deepClone(REQUEST);
+      request.ad_units[0].bids = [aliasBidder];
+
+      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext).to.deep.equal({
+        prebid: {
+          auctiontimestamp: 1510852447530,
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
+          }
+        }
+      });
+    });
+
+    it('skips dynamic aliases to request when skipPbsAliasing enabled', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({ s2sConfig: s2sConfig });
+
+      const alias = 'foobar_1';
+      const aliasBidder = {
+        bidder: alias,
+        params: { aid: 123456 }
+      };
+
+      const request = utils.deepClone(REQUEST);
+      request.ad_units[0].bids = [aliasBidder];
+
+      // TODO: stub this
+      $$PREBID_GLOBAL$$.aliasBidder('appnexus', alias, { skipPbsAliasing: true });
+      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext).to.deep.equal({
+        prebid: {
+          auctiontimestamp: 1510852447530,
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
+          }
+        }
+      });
+    });
+
     it('converts appnexus params to expected format for PBS', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'

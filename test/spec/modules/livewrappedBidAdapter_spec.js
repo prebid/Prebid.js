@@ -822,6 +822,25 @@ describe('Livewrapped adapter tests', function () {
     expect(data.rtbData.user.ext.eids).to.deep.equal(testbidRequest.bids[0].userIdAsEids);
   });
 
+  it('should make use of criteoId if available', function() {
+    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+    let testbidRequest = clone(bidderRequest);
+    delete testbidRequest.bids[0].params.userId;
+    testbidRequest.bids[0].userId = {};
+    testbidRequest.bids[0].userId.criteoId = 'criteo-id';
+    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+    let data = JSON.parse(result.data);
+
+    expect(data.rtbData.user.ext.eids).to.deep.equal([{
+      'source': 'criteo.com',
+      'uids': [{
+        'id': 'criteo-id',
+        'atype': 1
+      }]
+    }]);
+  });
+
   it('should send schain object if available', function() {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
     sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);

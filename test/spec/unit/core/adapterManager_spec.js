@@ -1471,7 +1471,7 @@ describe('adapterManager tests', function () {
       checkServerCalled(2, 1, 0);
 
       // appnexus
-      sinon.assert.notCalled(appnexusAdapterMock.callBids);
+      checkClientCalled(appnexusAdapterMock, 2);
 
       // adequant
       sinon.assert.notCalled(adequantAdapterMock.callBids);
@@ -1623,7 +1623,6 @@ describe('adapterManager tests', function () {
 
     it('should make separate bidder request objects for each bidder', () => {
       adUnits = [utils.deepClone(getAdUnits()[0])];
-
       let bidRequests = adapterManager.makeBidRequests(
         adUnits,
         Date.now(),
@@ -1631,13 +1630,11 @@ describe('adapterManager tests', function () {
         function callback() {},
         []
       );
-
       let sizes1 = bidRequests[1].bids[0].sizes;
       let sizes2 = bidRequests[0].bids[0].sizes;
 
       // mutate array
       sizes1.splice(0, 1);
-
       expect(sizes1).not.to.deep.equal(sizes2);
     });
 

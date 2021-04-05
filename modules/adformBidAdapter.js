@@ -13,6 +13,7 @@ const BIDDER_CODE = 'adform';
 const GVLID = 50;
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['adform2', 'adform3'],
   gvlid: GVLID,
   supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {

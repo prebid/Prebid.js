@@ -59,6 +59,7 @@ var adVideoAdUnits = [
       params: {
         publisherId: '156209',                  // required
         adSlot: 'pubmatic_video1',              // optional
+        oustreamAU: 'pubmatic-test',            // required if mediaTypes-> video-> context is 'outstream'. This value can be get by BlueBillyWig Team.
         video: {
           mimes: ['video/mp4','video/x-flv'],   // required
           skippable: true,                      // optional

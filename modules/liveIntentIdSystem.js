@@ -83,6 +83,9 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
+  if (configParams.emailHash) {
+    liveConnectConfig.eventSource = { hash: configParams.emailHash }
+  }
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;

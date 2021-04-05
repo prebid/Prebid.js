@@ -330,7 +330,7 @@ var validBidderRequest1OutstreamVideo2020 = {
           ]
         },
         'userId': {
-          'id5id': 'ID5-ZHMOpSv9CkZNiNd1oR4zc62AzCgSS73fPjmQ6Od7OA',
+          'id5id': { uid: 'ID5-ZHMOpSv9CkZNiNd1oR4zc62AzCgSS73fPjmQ6Od7OA' },
           'pubcid': '2ada6ae6-aeca-4e07-8922-a99b3aaf8a56'
         },
         'userIdAsEids': [
@@ -2016,7 +2016,7 @@ describe('ozone Adapter', function () {
       bidRequests[0]['userId'] = {
         'criteortus': '1111',
         'digitrustid': {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
-        'id5id': '2222',
+        'id5id': {'uid': '2222'},
         'idl_env': '3333',
         'lipb': {'lipbid': '4444'},
         'parrableid': 'eidVersion.encryptionKeyReference.encryptedValue',
@@ -2037,7 +2037,7 @@ describe('ozone Adapter', function () {
       bidRequests[0]['userId'] = {
         'criteortus': '1111',
         'digitrustid': {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
-        'id5id': '2222',
+        'id5id': {'uid': '2222'},
         'idl_env': '3333',
         'lipb': {'lipbid': '4444'},
         'parrableid': 'eidVersion.encryptionKeyReference.encryptedValue',

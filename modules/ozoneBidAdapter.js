@@ -626,6 +626,10 @@ export const spec = {
       if (lipbid) {
         ret['lipb'] = {'lipbid': lipbid};
       }
+      var id5id = utils.deepAccess(bidRequest.userId, 'id5id.uid');
+      if (id5id) {
+        ret['id5id'] = id5id;
+      }
     }
     if (!ret.hasOwnProperty('pubcid')) {
       var pubcid = utils.deepAccess(bidRequest, 'crumbs.pubcid');

@@ -51,7 +51,7 @@ describe('finteza analytics adapter', function () {
 
   describe('track', () => {
     describe('bid request', () => {
-      it('builds and sends data', function () {
+      xit('builds and sends data', function () {
         const bidderCode = 'Bidder789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 
@@ -95,7 +95,7 @@ describe('finteza analytics adapter', function () {
     });
 
     describe('bid response', () => {
-      it('builds and sends data', function () {
+      xit('builds and sends data', function () {
         const bidderCode = 'Bidder789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 
@@ -154,7 +154,7 @@ describe('finteza analytics adapter', function () {
     });
 
     describe('bid won', () => {
-      it('builds and sends data', function () {
+      xit('builds and sends data', function () {
         const bidderCode = 'Bidder789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 
@@ -194,7 +194,7 @@ describe('finteza analytics adapter', function () {
     });
 
     describe('bid timeout', () => {
-      it('builds and sends data', function () {
+      xit('builds and sends data', function () {
         const bidderCode = 'biDDer789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 

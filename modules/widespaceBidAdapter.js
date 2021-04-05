@@ -7,7 +7,6 @@ import {
 import includes from 'core-js-pure/features/array/includes.js';
 import find from 'core-js-pure/features/array/find.js';
 import { getStorageManager } from '../src/storageManager.js';
-
 export const storage = getStorageManager();
 
 const BIDDER_CODE = 'widespace';

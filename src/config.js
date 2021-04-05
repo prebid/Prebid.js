@@ -29,9 +29,7 @@ const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
-
 const DEFAULT_TIMEOUTBUFFER = 400;
-
 export const RANDOM = 'random';
 const FIXED = 'fixed';
 

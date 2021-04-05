@@ -60,8 +60,11 @@ function wrapURI(uri, impUrl) {
  * @param {CacheableBid} bid
  */
 function toStorageRequest(bid) {
-  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
-
+  let vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+  /* istanbul ignore next */
+  if (window && window.PWT) {
+    vastValue = window.PWT.UpdateVastWithTracker(bid, vastValue);
+  }
   let payload = {
     type: 'xml',
     value: vastValue,

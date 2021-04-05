@@ -14,7 +14,7 @@ export const spec = {
   version: '7.3.0',
   code: BIDDER_CODE,
   gvlid: 253,
-  aliases: ['id'],
+  aliases: ['id', 'weborama'],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**

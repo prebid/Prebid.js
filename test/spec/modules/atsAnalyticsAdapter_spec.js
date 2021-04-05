@@ -147,7 +147,6 @@ describe('ats analytics adapter', function () {
       let requests = server.requests.filter(req => {
         return req.url.indexOf(analyticsUrl) > -1;
       });
-
       expect(requests.length).to.equal(1);
 
       let realAfterBid = JSON.parse(requests[0].requestBody);
