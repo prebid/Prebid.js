@@ -251,9 +251,9 @@ export function validateFpd(fpd, path = '', parent = '') {
         return result;
       }
 
-      modified = (mapping && mapping.type === 'object' && !mapping.isArray)
+      modified = (mapping.type === 'object' && !mapping.isArray)
         ? validateFpd(fpd[key], path + key + '.children.', parent + key + '.')
-        : (mapping && mapping.isArray && mapping.childType)
+        : (mapping.isArray && mapping.childType)
           ? filterArrayData(fpd[key], { type: mapping.childType, isArray: mapping.childisArray }, path + key, parent + key) : fpd[key];
 
       // Check if modified data has data and return
