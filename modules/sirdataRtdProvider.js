@@ -78,7 +78,7 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
     sendWithCredentials = false;
     gdprApplies = null;
     tcString = '';
-  } else if (hasOwnDeepProperty(getGlobal(), 'gdpr')) {
+  } else if (getGlobal().getConfig('consentManagement.gdpr')) {
   // Default endpoint is cookieless if gdpr management is set. Needed because the cookie-based endpoint will fail and return error if user is located in Europe and no consent has been given
     sirdataDomain = 'cookieless-data.com';
     sendWithCredentials = false;
