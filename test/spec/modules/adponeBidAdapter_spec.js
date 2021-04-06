@@ -126,9 +126,6 @@ describe('adponeBidAdapter', function () {
                   impid: '2579e20c0bb89_0',
                   price: 1,
                   adm: '<html><a href="https://www.adpone.com" target="_blank"><img src ="https://placehold.it/300x250" /></a></html>',
-                  adomain: [
-                    'www.addomain.com'
-                  ],
                   iurl: 'https://localhost11',
                   crid: 'creative111',
                   h: 250,
