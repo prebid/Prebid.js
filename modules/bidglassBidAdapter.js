@@ -67,18 +67,39 @@ export const spec = {
       return ori;
     };
 
+    let bidglass = window['bidglass'];
+
     utils._each(validBidRequests, function(bid) {
       bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
       bid.sizes = bid.sizes.filter(size => utils.isArray(size));
 
+<<<<<<< HEAD
       var options = utils.deepClone(bid.params);
       delete options.adUnitId;
 
+=======
+      var adUnitId = utils.getBidIdParameter('adUnitId', bid.params);
+      var options = utils.deepClone(bid.params);
+
+      delete options.adUnitId;
+
+      // Merge externally set targeting params
+      if (typeof bidglass === 'object' && bidglass.getTargeting) {
+        let targeting = bidglass.getTargeting(adUnitId, options.targeting);
+
+        if (targeting && Object.keys(targeting).length > 0) options.targeting = targeting;
+      }
+
+>>>>>>> 315f286dd509870088c1874d9c679390ded83847
       // Stuff to send: [bid id, sizes, adUnitId, options]
       imps.push({
         bidId: bid.bidId,
         sizes: bid.sizes,
+<<<<<<< HEAD
         adUnitId: utils.getBidIdParameter('adUnitId', bid.params),
+=======
+        adUnitId: adUnitId,
+>>>>>>> 315f286dd509870088c1874d9c679390ded83847
         options: options
       });
     });

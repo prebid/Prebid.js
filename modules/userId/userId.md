@@ -84,6 +84,25 @@ pbjs.setConfig({
                 partnerId: 0000,
                 uid: '12345xyz'
             }
+<<<<<<< HEAD
+=======
+        },{
+            name: "merkleId",
+            params: {
+                vendor:'sdfg',
+                sv_cid:'dfg',
+                sv_pubid:'xcv',
+                sv_domain:'zxv'
+            },
+            storage: {
+                type: "cookie",
+                name: "merkleId",
+                expires: 30
+            } 
+        },{
+            name: 'uid2'
+        }
+>>>>>>> 315f286dd509870088c1874d9c679390ded83847
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -155,13 +174,31 @@ pbjs.setConfig({
                 expires: 90,          // Expiration in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
-        }, {
+    }, {
+            name: 'nextrollId',
+            params: {
+                partnerId: "1009",         // Set your real NextRoll partner ID here for production
+            }
+    }, {
              name: 'criteo',
              storage: {              // It is best not to specify this parameter since the module needs to be called as many times as possible
                  type: 'html5',
                  name: '_criteoId',
                  expires: 1
-              }
+        }
+        },{
+            name: "merkleId",
+            params: {
+                vendor:'sdfg',
+                sv_cid:'dfg',
+                sv_pubid:'xcv',
+                sv_domain:'zxv'
+            },
+            storage: {
+                type: "html5",
+                name: "merkleId",
+                expires: 30
+            } 
         }],
         syncDelay: 5000
     }
