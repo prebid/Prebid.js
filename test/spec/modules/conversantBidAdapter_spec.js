@@ -339,6 +339,7 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('creativeId', '1000');
     expect(bid).to.have.property('width', 300);
     expect(bid).to.have.property('height', 250);
+    expect(bid.meta.advertiserDomains).to.deep.equal(['https://example.com']);
     expect(bid).to.have.property('ad', 'markup000<img src="notify000" />');
     expect(bid).to.have.property('ttl', 300);
     expect(bid).to.have.property('netRevenue', true);

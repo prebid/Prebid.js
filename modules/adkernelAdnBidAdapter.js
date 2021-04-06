@@ -1,11 +1,13 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
 const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
 const DEFAULT_APIS = [1, 2];
+const GVLID = 14;
 
 function isRtbDebugEnabled(refInfo) {
   return refInfo.referer.indexOf('adk_debug=true') !== -1;
@@ -67,6 +69,9 @@ function buildRequestParams(tags, bidderRequest) {
   if (uspConsent) {
     utils.deepSetValue(req, 'user.us_privacy', uspConsent);
   }
+  if (config.getConfig('coppa')) {
+    utils.deepSetValue(req, 'user.coppa', 1);
+  }
   return req;
 }
 
@@ -110,6 +115,7 @@ function buildBid(tag) {
 
 export const spec = {
   code: 'adkernelAdn',
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['engagesimply'],
 

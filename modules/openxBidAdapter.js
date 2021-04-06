@@ -14,13 +14,24 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   britepoolid: 'britepoolid', // BritePool ID
   criteoId: 'criteoid', // CriteoID
   digitrustid: 'digitrustid', // DigiTrust
+  fabrickId: 'nuestarid', // Fabrick ID by Nuestar
+  haloId: 'audigentid', // Halo ID from Audigent
   id5id: 'id5id', // ID5 ID
   idl_env: 'lre', // LiveRamp IdentityLink
+  IDP: 'zeotapid', // zeotapIdPlus ID+
+  idxId: 'idxid', // idIDx,
+  intentIqId: 'intentiqid', // IntentIQ ID
   lipb: 'lipbid', // LiveIntent ID
+  lotamePanoramaId: 'lotameid', // Lotame Panorama ID
+  merkleId: 'merkleid', // Merkle ID
   netId: 'netid', // netID
   parrableId: 'parrableid', // Parrable ID
   pubcid: 'pubcid', // PubCommon ID
+  quantcastId: 'quantcastid', // Quantcast ID
+  sharedId: 'sharedid', // Shared ID User ID
+  tapadId: 'tapadid', // Tapad Id
   tdid: 'ttduuid', // The Trade Desk Unified ID
+  verizonMediaId: 'verizonmediaid', // Verizon Media ConnectID
 };
 
 export const spec = {

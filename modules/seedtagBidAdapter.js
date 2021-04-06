@@ -226,8 +226,8 @@ export const spec = {
    * @param {data} Containing timeout specific data
    */
   onTimeout(data) {
-    getTimeoutUrl(data);
-    utils.triggerPixel(SEEDTAG_SSP_ONTIMEOUT_ENDPOINT);
+    const url = getTimeoutUrl(data);
+    utils.triggerPixel(url);
   },
 
   /**
