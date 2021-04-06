@@ -167,8 +167,9 @@ function addPlacement(request) {
     if (request.params.placementId) {
       placementInfo.ym_placement_id = request.params.placementId;
     }
-    if (request.params.bidFloor) {
-      placementInfo.bidFloor = request.params.bidFloor;
+    const bidfloor = getBidFloor(request, BANNER);
+    if (bidfloor) {
+      placementInfo.bidFloor = bidfloor;
     }
   }
   return JSON.stringify(placementInfo);
@@ -288,7 +289,7 @@ function openRtbImpression(bidRequest) {
   const imp = {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode,
-    bidfloor: bidRequest.params.bidfloor || 0,
+    bidfloor: getBidFloor(bidRequest, VIDEO),
     ext: {
       placement_id: bidRequest.params.placementId
     },
@@ -310,6 +311,16 @@ function openRtbImpression(bidRequest) {
   }
 
   return imp;
+}
+
+function getBidFloor(bidRequest, mediaType) {
+  let floorInfo = {};
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({ currency: CURRENCY, mediaType, size: '*' });
+  }
+
+  return floorInfo.floor || bidRequest.params.bidfloor || bidRequest.params.bidFloor || 0;
 }
 
 /**
