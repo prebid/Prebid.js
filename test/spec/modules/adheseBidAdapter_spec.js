@@ -129,15 +129,12 @@ describe('AdheseAdapter', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
       expect(JSON.parse(req.data)).to.not.have.key('eids');
-<<<<<<< HEAD
-=======
     });
 
     it('should request vast content as url', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
       expect(JSON.parse(req.data).vastContentAsUrl).to.equal(true);
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
     });
 
     it('should include bids', function () {

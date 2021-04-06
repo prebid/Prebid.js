@@ -88,20 +88,6 @@ export const spec = {
         let mediatype = getMediatype(bidReq);
         let sizesArray = getSizeArray(bidReq);
         let size = getSize(sizesArray);
-<<<<<<< HEAD
-        accumulator[bid.bidId] = {};
-        accumulator[bid.bidId].PlacementID = bid.params.placement;
-        accumulator[bid.bidId].TransactionID = bid.transactionId;
-        accumulator[bid.bidId].Width = size.width;
-        accumulator[bid.bidId].Height = size.height;
-        accumulator[bid.bidId].AvailableSizes = sizesArray.join(',');
-        if (bid.mediaTypes && bid.mediaTypes.native) {
-          let nativeReq = bid.mediaTypes.native;
-          if (nativeReq.type === 'image') {
-            nativeReq = Object.assign({}, NATIVE_IMAGE, nativeReq);
-          }
-          accumulator[bid.bidId].Native = nativeReq;
-=======
         accumulator[bidReq.bidId] = {};
         accumulator[bidReq.bidId].PlacementID = bidReq.params.placement;
         accumulator[bidReq.bidId].TransactionID = bidReq.transactionId;
@@ -120,7 +106,6 @@ export const spec = {
         }
         if (mediatype === VIDEO) {
           accumulator[bidReq.bidId].Video = bidReq.mediaTypes.video;
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
         }
         return accumulator;
       }, {}),

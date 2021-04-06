@@ -70,9 +70,6 @@ describe('qwarryBidAdapter', function () {
 
   describe('buildRequests', function () {
     let bidRequests = [REQUEST]
-<<<<<<< HEAD
-    const bidderRequest = spec.buildRequests(bidRequests, { bidderRequestId: '123', refererInfo: { referer: 'http://test.com/path.html' } })
-=======
     const bidderRequest = spec.buildRequests(bidRequests, {
       bidderRequestId: '123',
       gdprConsent: {
@@ -83,7 +80,6 @@ describe('qwarryBidAdapter', function () {
         referer: 'http://test.com/path.html'
       }
     })
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
 
     it('sends bid request to ENDPOINT via POST', function () {
       expect(bidderRequest.method).to.equal('POST')

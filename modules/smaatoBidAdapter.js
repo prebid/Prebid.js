@@ -98,17 +98,10 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     }
   };
 
-<<<<<<< HEAD
-  let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
-
-  Object.assign(request.user, fpd.user);
-  Object.assign(request.site, fpd.context);
-=======
   let ortb2 = config.getConfig('ortb2') || {};
 
   Object.assign(request.user, ortb2.user);
   Object.assign(request.site, ortb2.site);
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);

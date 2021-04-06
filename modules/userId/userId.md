@@ -84,8 +84,6 @@ pbjs.setConfig({
                 partnerId: 0000,
                 uid: '12345xyz'
             }
-<<<<<<< HEAD
-=======
         },{
             name: "merkleId",
             params: {
@@ -102,7 +100,6 @@ pbjs.setConfig({
         },{
             name: 'uid2'
         }
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
         }],
         syncDelay: 5000,
         auctionDelay: 1000

@@ -47,18 +47,8 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT,
-<<<<<<< HEAD
-      data: { requestId: bidderRequest.bidderRequestId, bids, referer: bidderRequest.refererInfo.referer },
-      options: {
-        contentType: 'application/json',
-        customHeaders: {
-          'Rtb-Direct': true
-        }
-      }
-=======
       data: payload,
       options
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
     };
   },
 

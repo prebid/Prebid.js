@@ -14,11 +14,7 @@ import { OUTSTREAM } from '../src/video.js';
 
 export const BIDDER_CODE = 'adagio';
 export const LOG_PREFIX = 'Adagio:';
-<<<<<<< HEAD
-export const VERSION = '2.7.0';
-=======
 export const VERSION = '2.8.0';
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
 export const FEATURES_VERSION = '1';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
 export const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];

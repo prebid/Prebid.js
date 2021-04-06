@@ -34,10 +34,7 @@ export const spec = {
     const payload = {
       slots: slots,
       parameters: commonParams,
-<<<<<<< HEAD
-=======
       vastContentAsUrl: true,
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
       user: {
         ext: {
           eids: getEids(validBidRequests),

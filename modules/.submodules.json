@@ -23,12 +23,8 @@
     "pubProvidedIdSystem",
     "mwOpenLinkIdSystem",
     "tapadIdSystem",
-<<<<<<< HEAD
-    "novatiqIdSystem"
-=======
     "novatiqIdSystem",
     "uid2IdSystem"
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
   ],
   "adpod": [
     "freeWheelAdserverVideo",

@@ -199,8 +199,6 @@ const USER_IDS_CONFIG = {
     },
     source: 'novatiq.com',
     atype: 1
-<<<<<<< HEAD
-=======
   },
   'uid2': {
     source: 'uidapi.com',
@@ -208,7 +206,6 @@ const USER_IDS_CONFIG = {
     getValue: function(data) {
       return data.id;
     }
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
   }
 };
 

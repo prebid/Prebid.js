@@ -336,12 +336,6 @@ describe('ApacdexBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
     });
-<<<<<<< HEAD
-    it('should return a properly formatted request with pbjs_debug is true', function () {
-      config.setConfig({debug: true});
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.test).to.equal(1)
-=======
     describe('debug test', function() {
       beforeEach(function() {
         config.setConfig({debug: true});
@@ -353,7 +347,6 @@ describe('ApacdexBidAdapter', function () {
         const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
         expect(bidRequests.data.test).to.equal(1);
       });
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
     });
   });
 
