@@ -206,6 +206,12 @@ const USER_IDS_CONFIG = {
     getValue: function(data) {
       return data.id;
     }
+  },
+
+  // Admixer Id
+  'admixerId': {
+    source: 'admixer.net',
+    atype: 3
   }
 };
 
