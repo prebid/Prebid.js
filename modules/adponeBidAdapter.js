@@ -58,18 +58,27 @@ export const spec = {
 
     serverResponse.body.seatbid.forEach(seatbid => {
       if (seatbid.bid.length) {
-        answer = [...answer, ...seatbid.bid.filter(bid => bid.price > 0).map(bid => ({
-          id: bid.id,
-          requestId: bidRequest.data.id,
-          cpm: bid.price,
-          ad: bid.adm,
-          width: bid.w || 0,
-          height: bid.h || 0,
-          currency: serverResponse.body.cur || ADPONE_CURRENCY,
-          netRevenue: true,
-          ttl: 300,
-          creativeId: bid.crid || 0
-        }))];
+        answer = [...answer, ...seatbid.bid.filter(bid => bid.price > 0).map(adponeBid => {
+          const bid = {
+            id: adponeBid.id,
+            requestId: bidRequest.data.id,
+            cpm: adponeBid.price,
+            ad: adponeBid.adm,
+            width: adponeBid.w || 0,
+            height: adponeBid.h || 0,
+            currency: serverResponse.body.cur || ADPONE_CURRENCY,
+            netRevenue: true,
+            ttl: 300,
+            creativeId: adponeBid.crid || 0
+          };
+
+          if (adponeBid.adomain && adponeBid.adomain.length > 0) {
+            bid.meta = {};
+            bid.meta.advertiserDomains = adponeBid.adomain;
+          }
+
+          return bid
+        })];
       }
     });
 
