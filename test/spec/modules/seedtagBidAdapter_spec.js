@@ -468,5 +468,4 @@ describe('Seedtag Adapter', function() {
       })
     })
   })
-
 })
