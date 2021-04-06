@@ -170,9 +170,6 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
-<<<<<<< HEAD
-    }
-=======
     },
      {
         source: 'uidapi.com',
@@ -181,6 +178,5 @@ userIdAsEids = [
              atype: 3
         }]
      }
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
 ]
 ```

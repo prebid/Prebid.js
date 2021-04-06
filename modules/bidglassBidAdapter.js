@@ -73,7 +73,6 @@ export const spec = {
       bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
       bid.sizes = bid.sizes.filter(size => utils.isArray(size));
 
-
       var adUnitId = utils.getBidIdParameter('adUnitId', bid.params);
       var options = utils.deepClone(bid.params);
 
