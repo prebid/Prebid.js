@@ -29,12 +29,6 @@ Module that connects to Zeta's SSP
                                 uid: 12345,
                                 buyeruid: 12345
                             },
-                            device: {
-                                ip: '111.222.33.44',
-                                geo: {
-                                    country: 'USA'
-                                }
-                            },
                             tags: {
                                 someTag: 123
                             },
