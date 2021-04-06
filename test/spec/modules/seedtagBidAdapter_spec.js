@@ -469,32 +469,4 @@ describe('Seedtag Adapter', function() {
     })
   })
 
-  describe('onBidWon', function () {
-    beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel')
-    })
-
-    afterEach(function() {
-      utils.triggerPixel.restore()
-    })
-
-    describe('without nurl', function() {
-      const bid = {}
-
-      it('does not create pixel ', function() {
-        spec.onBidWon(bid)
-        expect(utils.triggerPixel.called).to.equal(false);
-      })
-    })
-
-    describe('with nurl', function () {
-      const nurl = 'http://seedtag_domain/won'
-      const bid = { nurl }
-
-      it('creates nurl pixel if bid nurl', function() {
-        spec.onBidWon({ nurl })
-        expect(utils.triggerPixel.calledWith(nurl)).to.equal(true);
-      })
-    })
-  })
 })

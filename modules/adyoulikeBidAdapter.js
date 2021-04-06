@@ -33,30 +33,6 @@ const NATIVE_IMAGE = {
   }
 };
 
-const NATIVE_IMAGE = {
-  image: {
-    required: true
-  },
-  title: {
-    required: true
-  },
-  sponsoredBy: {
-    required: true
-  },
-  clickUrl: {
-    required: true
-  },
-  body: {
-    required: false
-  },
-  icon: {
-    required: false
-  },
-  cta: {
-    required: false
-  }
-};
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
