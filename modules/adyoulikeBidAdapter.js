@@ -358,11 +358,7 @@ function getNativeAssets(response, nativeConfig) {
       native.impressionTrackers = [];
     }
 
-<<<<<<< HEAD
-    native.impressionTrackers.push(impressionUrl);
-=======
     native.impressionTrackers.push(impressionUrl, insertionUrl);
->>>>>>> 315f286dd509870088c1874d9c679390ded83847
   }
 
   Object.keys(nativeConfig).map(function(key, index) {
