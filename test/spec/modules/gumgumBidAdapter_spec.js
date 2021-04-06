@@ -1,3 +1,5 @@
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
@@ -34,7 +36,7 @@ describe('gumgumAdapter', function () {
 
     it('should return true when required params found', function () {
       const zoneBid = { ...bid, params: { 'zone': '123' } };
-      const pubIdBid = { ...bid, params: { 'pubId': '123' } };
+      const pubIdBid = { ...bid, params: { 'pubId': 123 } };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
       expect(spec.isBidRequestValid(zoneBid)).to.equal(true);
       expect(spec.isBidRequestValid(pubIdBid)).to.equal(true);
@@ -142,23 +144,54 @@ describe('gumgumAdapter', function () {
         protocols: [1, 2]
       }
     };
+    const zoneParam = { 'zone': '123a' };
+    const pubIdParam = { 'pubId': 123 };
 
-    describe('zone param', function () {
-      const zoneParam = { 'zone': '123a' };
+    it('should set pubId param if found', function () {
+      const request = { ...bidRequests[0], params: pubIdParam };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.pubId).to.equal(pubIdParam.pubId);
+    });
 
-      it('should set t and pi param', function () {
-        const request = { ...bidRequests[0], params: zoneParam };
-        const bidRequest = spec.buildRequests([request])[0];
-        expect(bidRequest.data.t).to.equal(zoneParam.zone);
-        expect(bidRequest.data.pi).to.equal(2);
-      });
-      it('should set the correct pi param if slot param is found', function () {
-        const request = { ...bidRequests[0], params: { ...zoneParam, 'slot': 1 } };
-        const bidRequest = spec.buildRequests([request])[0];
-        expect(bidRequest.data.pi).to.equal(3);
-      });
+    it('should set t param when zone param is found', function () {
+      const request = { ...bidRequests[0], params: zoneParam };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.t).to.equal(zoneParam.zone);
+    });
+
+    it('should set the iriscat param when found', function () {
+      const request = { ...bidRequests[0], params: { iriscat: 'abc123' } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.have.property('iriscat');
+    });
+
+    it('should not set the iriscat param when not found', function () {
+      const request = { ...bidRequests[0] }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('iriscat');
+    });
+
+    it('should set the irisid param when found', function () {
+      const request = { ...bidRequests[0], params: { irisid: 'abc123' } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.have.property('irisid');
+    });
+
+    it('should not set the irisid param when not found', function () {
+      const request = { ...bidRequests[0] }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('irisid');
+    });
+
+    it('should not set the irisid param when not of type string', function () {
+      const request = { ...bidRequests[0], params: { irisid: 123456 } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('irisid');
+    });
+
+    describe('product id', function () {
       it('should set the correct pi param if native param is found', function () {
-        const request = { ...bidRequests[0], params: { ...zoneParam, 'native': 2 } };
+        const request = { ...bidRequests[0], params: { ...zoneParam, native: 2 } };
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.pi).to.equal(5);
       });
@@ -173,25 +206,18 @@ describe('gumgumAdapter', function () {
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.pi).to.equal(6);
       });
-    });
-
-    describe('pubId zone', function () {
-      const pubIdParam = { 'pubId': 'abc' };
-
-      it('should set t param', function () {
-        const request = { ...bidRequests[0], params: pubIdParam };
+      it('should set the correct pi param if slot param is found', function () {
+        const request = { ...bidRequests[0], params: { ...zoneParam, slot: '123s' } };
         const bidRequest = spec.buildRequests([request])[0];
-        expect(bidRequest.data.pubId).to.equal(pubIdParam.pubId);
+        expect(bidRequest.data.pi).to.equal(3);
       });
-
-      it('should set the correct pi depending on what is found in mediaTypes', function () {
-        const request = { ...bidRequests[0], params: pubIdParam };
-        const bidRequest = spec.buildRequests([request])[0];
-        const vidRequest = { ...bidRequests[0], mediaTypes: vidMediaTypes, params: { 'videoPubID': 123 } };
-        const vidBidRequest = spec.buildRequests([vidRequest])[0];
-
-        expect(bidRequest.data.pi).to.equal(2);
-        expect(vidBidRequest.data.pi).to.equal(7);
+      it('should default the pi param to 2 if only zone or pubId param is found', function () {
+        const zoneRequest = { ...bidRequests[0], params: zoneParam };
+        const pubIdRequest = { ...bidRequests[0], params: pubIdParam };
+        const zoneBidRequest = spec.buildRequests([zoneRequest])[0];
+        const pubIdBidRequest = spec.buildRequests([pubIdRequest])[0];
+        expect(zoneBidRequest.data.pi).to.equal(2);
+        expect(pubIdBidRequest.data.pi).to.equal(2);
       });
     });
 
@@ -232,6 +258,10 @@ describe('gumgumAdapter', function () {
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.fp).to.equal(bidfloor);
       });
+      it('should return a floor currency', function () {
+        const request = spec.buildRequests(bidRequests)[0];
+        expect(request.data.fpc).to.equal(floorTestData.currency);
+      })
     });
 
     it('sends bid request to ENDPOINT via GET', function () {
@@ -431,60 +461,85 @@ describe('gumgumAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    let serverResponse = {
-      'ad': {
-        'id': 29593,
-        'width': 300,
-        'height': 250,
-        'ipd': 2000,
-        'markup': '<html><h3>I am an ad</h3></html>',
-        'ii': true,
-        'du': null,
-        'price': 0,
-        'zi': 0,
-        'impurl': 'http://g2.gumgum.com/ad/view',
-        'clsurl': 'http://g2.gumgum.com/ad/close'
+    const metaData = { adomain: ['advertiser.com'], mediaType: BANNER }
+    const serverResponse = {
+      ad: {
+        id: 29593,
+        width: 300,
+        height: 250,
+        ipd: 2000,
+        markup: '<html><h3>I am an ad</h3></html>',
+        ii: true,
+        du: null,
+        price: 0,
+        zi: 0,
+        impurl: 'http://g2.gumgum.com/ad/view',
+        clsurl: 'http://g2.gumgum.com/ad/close'
       },
-      'pag': {
-        't': 'ggumtest',
-        'pvid': 'aa8bbb65-427f-4689-8cee-e3eed0b89eec',
-        'css': 'html { overflow-y: auto }',
-        'js': 'console.log("environment", env);'
+      pag: {
+        t: 'ggumtest',
+        pvid: 'aa8bbb65-427f-4689-8cee-e3eed0b89eec',
+        css: 'html { overflow-y: auto }',
+        js: 'console.log("environment", env);'
       },
-      'jcsi': { t: 0, rq: 8 },
-      'thms': 10000
+      jcsi: { t: 0, rq: 8 },
+      thms: 10000,
+      meta: metaData
     }
-    let bidRequest = {
+    const bidRequest = {
       id: 12345,
       sizes: [[300, 250], [1, 1]],
       url: ENDPOINT,
       method: 'GET',
       pi: 3
     }
-    let expectedResponse = {
-      'ad': '<html><h3>I am an ad</h3></html>',
-      'cpm': 0,
-      'creativeId': 29593,
-      'currency': 'USD',
-      'height': '250',
-      'netRevenue': true,
-      'requestId': 12345,
-      'width': '300',
-      // dealId: DEAL_ID,
-      // referrer: REFERER,
-      ttl: 60
+    const expectedMetaData = { advertiserDomains: ['advertiser.com'], mediaType: BANNER };
+    const expectedResponse = {
+      ad: '<html><h3>I am an ad</h3></html>',
+      cpm: 0,
+      creativeId: 29593,
+      currency: 'USD',
+      height: '250',
+      netRevenue: true,
+      requestId: 12345,
+      width: '300',
+      mediaType: BANNER,
+      ttl: 60,
+      meta: expectedMetaData
     };
 
     it('should get correct bid response', function () {
       expect(spec.interpretResponse({ body: serverResponse }, bidRequest)).to.deep.equal([expectedResponse]);
     });
 
+    it('should set a default value for advertiserDomains if adomain is not found', function () {
+      const meta = { ...metaData };
+      delete meta.adomain;
+
+      const response = { ...serverResponse, meta };
+      const expectedMeta = { ...expectedMetaData, advertiserDomains: [] };
+      const expected = { ...expectedResponse, meta: expectedMeta };
+
+      expect(spec.interpretResponse({ body: response }, bidRequest)).to.deep.equal([expected]);
+    });
+
+    it('should set a default value for meta.mediaType if mediaType is not found in the response', function () {
+      const meta = { ...metaData };
+      delete meta.mediaType;
+      const response = { ...serverResponse, meta };
+      const expected = { ...expectedResponse };
+
+      expect(spec.interpretResponse({ body: response }, bidRequest)).to.deep.equal([expected]);
+    });
+
     it('should pass correct currency if found in bid response', function () {
       const cur = 'EURO';
-      let response = Object.assign({}, serverResponse);
-      let expected = Object.assign({}, expectedResponse);
+      const response = { ...serverResponse };
       response.ad.cur = cur;
+
+      const expected = { ...expectedResponse };
       expected.currency = cur;
+
       expect(spec.interpretResponse({ body: response }, bidRequest)).to.deep.equal([expected]);
     });
 
@@ -551,6 +606,20 @@ describe('gumgumAdapter', function () {
       const bidResponse = spec.interpretResponse({ body: response }, bidRequest)[0].ad;
       const decodedResponse = JSON.parse(atob(bidResponse));
       expect(decodedResponse.jcsi).to.eql(JCSI);
+    });
+
+    it('sets the correct mediaType depending on product', function () {
+      const bannerBidResponse = spec.interpretResponse({ body: serverResponse }, bidRequest)[0];
+      const invideoBidResponse = spec.interpretResponse({ body: serverResponse }, { ...bidRequest, data: { pi: 6 } })[0];
+      const videoBidResponse = spec.interpretResponse({ body: serverResponse }, { ...bidRequest, data: { pi: 7 } })[0];
+      expect(bannerBidResponse.mediaType).to.equal(BANNER);
+      expect(invideoBidResponse.mediaType).to.equal(VIDEO);
+      expect(videoBidResponse.mediaType).to.equal(VIDEO);
+    });
+
+    it('sets a vastXml property if mediaType is video', function () {
+      const videoBidResponse = spec.interpretResponse({ body: serverResponse }, { ...bidRequest, data: { pi: 7 } })[0];
+      expect(videoBidResponse.vastXml).to.exist;
     });
   })
   describe('getUserSyncs', function () {

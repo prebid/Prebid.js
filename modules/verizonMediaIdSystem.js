@@ -8,11 +8,12 @@
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const MODULE_NAME = 'verizonMediaId';
 const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
-const VMUID_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
+const VMCID_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 
 function isEUConsentRequired(consentData) {
   return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
@@ -33,13 +34,14 @@ export const verizonMediaIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @returns {{vmuid: string} | undefined}
+   * @returns {{connectid: string} | undefined}
    */
   decode(value) {
-    return (value && typeof value.vmuid === 'string') ? {vmuid: value.vmuid} : undefined;
+    return (typeof value === 'object' && (value.connectid || value.vmuid))
+      ? {connectid: value.connectid || value.vmuid} : undefined;
   },
   /**
-   * get the VerizonMedia Id
+   * Gets the Verizon Media Connect ID
    * @function
    * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
@@ -54,10 +56,10 @@ export const verizonMediaIdSubmodule = {
     }
 
     const data = {
-      '1p': [1, '1', true].includes(params['1p']) ? '1' : '0',
+      '1p': includes([1, '1', true], params['1p']) ? '1' : '0',
       he: params.he,
       gdpr: isEUConsentRequired(consentData) ? '1' : '0',
-      euconsent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
+      gdpr_consent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
       us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
     };
 
@@ -83,7 +85,7 @@ export const verizonMediaIdSubmodule = {
           callback();
         }
       };
-      const endpoint = VMUID_ENDPOINT.replace(PLACEHOLDER, params.pixelId);
+      const endpoint = VMCID_ENDPOINT.replace(PLACEHOLDER, params.pixelId);
       let url = `${params.endpoint || endpoint}?${utils.formatQS(data)}`;
       verizonMediaIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
     };

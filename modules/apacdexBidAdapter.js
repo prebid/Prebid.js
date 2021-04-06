@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'apacdex';
 const CONFIG = {
@@ -49,11 +50,34 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    let siteId;
+    let schain;
+    let eids;
+    let geo;
+    let test;
+
     var bids = JSON.parse(JSON.stringify(validBidRequests))
     bidderConfig = CONFIG[bids[0].bidder];
-    const payload = {};
+
+    test = config.getConfig('debug');
 
     bids.forEach(bidReq => {
+      siteId = siteId || bidReq.params.siteId;
+
+      if (bidReq.schain) {
+        schain = schain || bidReq.schain
+      }
+
+      if (bidReq.userIdAsEids) {
+        eids = eids || bidReq.userIdAsEids
+      }
+
+      if (bidReq.params && bidReq.params.geo) {
+        if (validateGeoObject(bidReq.params.geo)) {
+          geo = bidReq.params.geo;
+        }
+      }
+
       var targetKey = 0;
       if (bySlotTargetKey[bidReq.adUnitCode] != undefined) {
         targetKey = bySlotTargetKey[bidReq.adUnitCode];
@@ -73,34 +97,53 @@ export const spec = {
       bidReq.targetKey = targetKey;
     });
 
+    const payload = {};
+    payload.tmax = bidderRequest.timeout;
+    if (test) {
+      payload.test = 1;
+    }
+
     payload.device = {};
     payload.device.ua = navigator.userAgent;
-    payload.device.height = window.top.innerHeight;
-    payload.device.width = window.top.innerWidth;
+    payload.device.height = window.screen.width;
+    payload.device.width = window.screen.height;
     payload.device.dnt = _getDoNotTrack();
     payload.device.language = navigator.language;
 
+    var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};
-    payload.site.id = bids[0].params.siteId;
-    payload.site.page = _extractTopWindowUrlFromBidderRequest(bidderRequest);
+    payload.site.id = siteId;
+    payload.site.page = pageUrl
     payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
-    payload.site.hostname = window.top.location.hostname;
+    payload.site.hostname = getDomain(pageUrl);
 
     // Apply GDPR parameters to request.
-    payload.gdpr = {};
     if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr = {};
       payload.gdpr.gdprApplies = !!bidderRequest.gdprConsent.gdprApplies;
       if (bidderRequest.gdprConsent.consentString) {
         payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
       }
     }
-    // Apply schain.
-    if (bids[0].schain) {
-      payload.schain = bids[0].schain
-    }
+
     // Apply us_privacy.
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
+    }
+
+    // Apply schain.
+    if (schain) {
+      payload.schain = schain
+    }
+
+    // Apply eids.
+    if (eids) {
+      payload.eids = eids
+    }
+
+    // Apply geo
+    if (geo) {
+      payload.geo = geo;
     }
 
     payload.bids = bids;
@@ -115,12 +158,12 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
-    const serverBids = serverBody.bids;
-    // check overall response
-    if (!serverBody || typeof serverBody !== 'object') {
+    if (!serverBody || !utils.isPlainObject(serverBody)) {
       return [];
     }
-    if (!serverBids || typeof serverBids !== 'object') {
+
+    const serverBids = serverBody.bids;
+    if (!serverBids || !utils.isArray(serverBids)) {
       return [];
     }
 
@@ -192,15 +235,25 @@ function _getBiggestSize(sizes) {
 }
 
 function _getDoNotTrack() {
-  if (window.top.doNotTrack || navigator.doNotTrack || navigator.msDoNotTrack) {
-    if (window.top.doNotTrack == '1' || navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') {
+  try {
+    if (window.top.doNotTrack && window.top.doNotTrack == '1') {
       return 1;
-    } else {
-      return 0;
     }
-  } else {
-    return 0;
-  }
+  } catch (e) { }
+
+  try {
+    if (navigator.doNotTrack && (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1')) {
+      return 1;
+    }
+  } catch (e) { }
+
+  try {
+    if (navigator.msDoNotTrack && navigator.msDoNotTrack == '1') {
+      return 1;
+    }
+  } catch (e) { }
+
+  return 0
 }
 
 /**
@@ -210,8 +263,11 @@ function _getDoNotTrack() {
  * @returns {string}
  */
 function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
-  if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl')) {
-    return bidderRequest.refererInfo.canonicalUrl;
+  if (config.getConfig('pageUrl')) {
+    return config.getConfig('pageUrl');
+  }
+  if (utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
+    return bidderRequest.refererInfo.referer;
   }
 
   try {
@@ -237,6 +293,47 @@ function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
   } catch (e) {
     return window.document.referrer;
   }
+}
+
+/**
+ * Extracts the domain from given page url
+ *
+ * @param {string} url
+ * @returns {string}
+ */
+export function getDomain(pageUrl) {
+  if (config.getConfig('publisherDomain')) {
+    var publisherDomain = config.getConfig('publisherDomain');
+    return publisherDomain.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
+  }
+
+  if (!pageUrl) {
+    return pageUrl;
+  }
+
+  return pageUrl.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
+}
+
+/**
+ * Validate geo object
+ *
+ * @param {Object} geo
+ * @returns {boolean}
+ */
+export function validateGeoObject(geo) {
+  if (!utils.isPlainObject(geo)) {
+    return false;
+  }
+  if (!geo.lat) {
+    return false;
+  }
+  if (!geo.lon) {
+    return false;
+  }
+  if (!geo.accuracy) {
+    return false;
+  }
+  return true;
 }
 
 registerBidder(spec);

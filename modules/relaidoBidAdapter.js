@@ -6,17 +6,13 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.2';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
 const storage = getStorageManager();
 
 function isBidRequestValid(bid) {
-  if (!utils.isSafariBrowser() && !hasUuid()) {
-    utils.logWarn('uuid is not found.');
-    return false;
-  }
   if (!utils.deepAccess(bid, 'params.placementId')) {
     utils.logWarn('placementId param is reqeuired.');
     return false;
@@ -64,7 +60,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     };
 
     if (hasVideoMediaType(bidRequest)) {
-      const playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+      const playerSize = getValidSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
       payload.width = playerSize[0][0];
       payload.height = playerSize[0][1];
     } else if (hasBannerMediaType(bidRequest)) {
@@ -99,10 +95,6 @@ function interpretResponse(serverResponse, bidRequest) {
   const body = serverResponse.body;
   if (!body || body.status != 'ok') {
     return [];
-  }
-
-  if (body.uuid) {
-    storage.setDataInLocalStorage(UUID_KEY, body.uuid);
   }
 
   const playerUrl = bidRequest.player || body.playerUrl;
@@ -141,7 +133,6 @@ function getUserSyncs(syncOptions, serverResponses) {
   if (serverResponses.length > 0) {
     syncUrl = utils.deepAccess(serverResponses, '0.body.syncUrl') || syncUrl;
   }
-  receiveMessage();
   return [{
     type: 'iframe',
     url: syncUrl
@@ -219,17 +210,6 @@ function outstreamRender(bid) {
   });
 }
 
-function receiveMessage() {
-  window.addEventListener('message', setUuid);
-}
-
-function setUuid(e) {
-  if (utils.isPlainObject(e.data) && e.data.relaido_uuid) {
-    storage.setDataInLocalStorage(UUID_KEY, e.data.relaido_uuid);
-    window.removeEventListener('message', setUuid);
-  }
-}
-
 function isBannerValid(bid) {
   if (!isMobile()) {
     return false;
@@ -242,8 +222,8 @@ function isBannerValid(bid) {
 }
 
 function isVideoValid(bid) {
-  const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-  if (playerSize && utils.isArray(playerSize) && playerSize.length > 0) {
+  const playerSize = getValidSizes(utils.deepAccess(bid, 'mediaTypes.video.playerSize'));
+  if (playerSize.length > 0) {
     const context = utils.deepAccess(bid, 'mediaTypes.video.context');
     if (context && context === 'outstream') {
       return true;
@@ -252,12 +232,12 @@ function isVideoValid(bid) {
   return false;
 }
 
-function hasUuid() {
-  return !!storage.getDataFromLocalStorage(UUID_KEY);
-}
-
 function getUuid() {
-  return storage.getDataFromLocalStorage(UUID_KEY) || '';
+  const id = storage.getCookie(UUID_KEY)
+  if (id) return id;
+  const newId = utils.generateUUID();
+  storage.setCookie(UUID_KEY, newId);
+  return newId;
 }
 
 export function isMobile() {

@@ -21,6 +21,7 @@ const TIME_MAX = Math.pow(2, 48) - 1;
 const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 const id = factory();
+const GVLID = 887;
 /**
  * Constructs cookie value
  * @param value
@@ -275,6 +276,17 @@ function detectPrng(root) {
   return () => Math.random();
 }
 
+/**
+ * Builds and returns the shared Id URL with attached consent data if applicable
+ * @param {Object} consentData
+ * @return {string}
+ */
+function sharedIdUrl(consentData) {
+  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return ID_SVC;
+
+  return `${ID_SVC}?gdpr=1&gdpr_consent=${consentData.consentString}`
+}
+
 /** @type {Submodule} */
 export const sharedIdSubmodule = {
   /**
@@ -283,6 +295,11 @@ export const sharedIdSubmodule = {
    */
   name: MODULE_NAME,
 
+  /**
+   * Vendor id of Prebid
+   * @type {Number}
+   */
+  gvlid: GVLID,
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -297,12 +314,13 @@ export const sharedIdSubmodule = {
    * performs action to obtain id and return a value.
    * @function
    * @param {SubmoduleConfig} [config]
+   * @param {ConsentData|undefined} consentData
    * @returns {sharedId}
    */
-  getId(config) {
+  getId(config, consentData) {
     const resp = function (callback) {
       utils.logInfo('SharedId: Sharedid doesnt exists, new cookie creation');
-      ajax(ID_SVC, idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
+      ajax(sharedIdUrl(consentData), idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};
   },
@@ -310,10 +328,11 @@ export const sharedIdSubmodule = {
   /**
    * performs actions even if the id exists and returns a value
    * @param config
+   * @param consentData
    * @param storedId
    * @returns {{callback: *}}
    */
-  extendId(config, storedId) {
+  extendId(config, consentData, storedId) {
     const configParams = (config && config.params) || {};
     utils.logInfo('SharedId: Existing shared id ' + storedId.id);
     const resp = function (callback) {
@@ -323,7 +342,7 @@ export const sharedIdSubmodule = {
         const sharedIdPayload = {};
         sharedIdPayload.sharedId = storedId.id;
         const payloadString = JSON.stringify(sharedIdPayload);
-        ajax(ID_SVC, existingIdCallback(storedId, callback), payloadString, {method: 'POST', withCredentials: true});
+        ajax(sharedIdUrl(consentData), existingIdCallback(storedId, callback), payloadString, {method: 'POST', withCredentials: true});
       }
     };
     return {callback: resp};

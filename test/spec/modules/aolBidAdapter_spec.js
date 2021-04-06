@@ -93,7 +93,7 @@ describe('AolAdapter', function () {
 
   const USER_ID_DATA = {
     criteoId: SUPPORTED_USER_ID_SOURCES['criteo.com'],
-    vmuid: SUPPORTED_USER_ID_SOURCES['verizonmedia.com'],
+    connectid: SUPPORTED_USER_ID_SOURCES['verizonmedia.com'],
     idl_env: SUPPORTED_USER_ID_SOURCES['liveramp.com'],
     lipb: {
       lipbid: SUPPORTED_USER_ID_SOURCES['liveintent.com'],
