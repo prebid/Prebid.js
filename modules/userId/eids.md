@@ -120,6 +120,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'nextroll.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'audigent.com',
         uids: [{
             id: 'some-random-id-value',
@@ -162,6 +170,13 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
-    }
+    },
+     {
+        source: 'uidapi.com',
+        uids: [{
+            id: 'some-random-id-value',
+             atype: 3
+        }]
+     }
 ]
 ```

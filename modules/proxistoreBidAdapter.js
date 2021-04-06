@@ -1,60 +1,81 @@
-
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
+
 const BIDDER_CODE = 'proxistore';
-const storage = getStorageManager();
 const PROXISTORE_VENDOR_ID = 418;
 
 function _createServerRequest(bidRequests, bidderRequest) {
-  const sizeIds = [];
-
+  var sizeIds = [];
   bidRequests.forEach(function (bid) {
-    const sizeId = {
+    var sizeId = {
       id: bid.bidId,
       sizes: bid.sizes.map(function (size) {
         return {
           width: size[0],
-          height: size[1]
+          height: size[1],
         };
-      })
+      }),
+      floor: _assignFloor(bid),
+      segments: _assignSegments(bid),
     };
     sizeIds.push(sizeId);
   });
-  const payload = {
+  var payload = {
     auctionId: bidRequests[0].auctionId,
     transactionId: bidRequests[0].auctionId,
     bids: sizeIds,
     website: bidRequests[0].params.website,
     language: bidRequests[0].params.language,
     gdpr: {
-      applies: false
-    }
-  };
-  const options = {
-    contentType: 'application/json',
-    withCredentials: true
+      applies: false,
+    },
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) {
+    if (
+      typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' &&
+      bidderRequest.gdprConsent.gdprApplies
+    ) {
       payload.gdpr.applies = true;
     }
 
-    if (typeof bidderRequest.gdprConsent.consentString === 'string' && bidderRequest.gdprConsent.consentString) {
+    if (
+      typeof bidderRequest.gdprConsent.consentString === 'string' &&
+      bidderRequest.gdprConsent.consentString
+    ) {
       payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
     }
 
-    if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents && typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
-      payload.gdpr.consentGiven = !!bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
+    if (
+      bidderRequest.gdprConsent.vendorData &&
+      bidderRequest.gdprConsent.vendorData.vendorConsents &&
+      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined'
+    ) {
+      payload.gdpr.consentGiven = !!bidderRequest.gdprConsent.vendorData
+        .vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
     }
   }
 
+  const options = {
+    contentType: 'application/json',
+    withCredentials: !!payload.gdpr.consentGiven,
+  };
+  const endPointUri = payload.gdpr.consentGiven || !payload.gdpr.applies
+    ? `https://abs.proxistore.com/${payload.language}/v3/rtb/prebid/multi`
+    : `https://abs.proxistore.com/${payload.language}/v3/rtb/prebid/multi/cookieless`;
+
   return {
     method: 'POST',
-    url: bidRequests[0].params.url || 'https://abs.proxistore.com/' + payload.language + '/v3/rtb/prebid/multi',
+    url: endPointUri,
     data: JSON.stringify(payload),
-    options: options
+    options: options,
   };
+}
+
+function _assignSegments(bid) {
+  if (bid.ortb2 && bid.ortb2.user && bid.ortb2.user.ext && bid.ortb2.user.ext.data) {
+    return bid.ortb2.user.ext.data || {segments: [], contextual_categories: {}};
+  }
+  return {segments: [], contextual_categories: {}};
 }
 
 function _createBidResponse(response) {
@@ -70,7 +91,7 @@ function _createBidResponse(response) {
     netRevenue: response.netRevenue,
     vastUrl: response.vastUrl,
     vastXml: response.vastXml,
-    dealId: response.dealId
+    dealId: response.dealId,
   };
 }
 /**
@@ -81,23 +102,8 @@ function _createBidResponse(response) {
  */
 
 function isBidRequestValid(bid) {
-  const hasNoAd = function() {
-    if (!storage.hasLocalStorage()) {
-      return false;
-    }
-    const pxNoAds = storage.getDataFromLocalStorage(`PX_NoAds_${bid.params.website}`);
-    if (!pxNoAds) {
-      return false;
-    } else {
-      const storedDate = new Date(pxNoAds);
-      const now = new Date();
-      const diff = Math.abs(storedDate.getTime() - now.getTime()) / 60000;
-      return diff <= 5;
-    }
-  }
-  return !!(bid.params.website && bid.params.language) && !hasNoAd();
+  return !!(bid.params.website && bid.params.language);
 }
-
 /**
  * Make a server request from the list of BidRequests.
  *
@@ -107,7 +113,7 @@ function isBidRequestValid(bid) {
  */
 
 function buildRequests(bidRequests, bidderRequest) {
-  const request = _createServerRequest(bidRequests, bidderRequest);
+  var request = _createServerRequest(bidRequests, bidderRequest);
   return request;
 }
 /**
@@ -119,34 +125,23 @@ function buildRequests(bidRequests, bidderRequest) {
  */
 
 function interpretResponse(serverResponse, bidRequest) {
-  const itemName = `PX_NoAds_${websiteFromBidRequest(bidRequest)}`;
-  if (serverResponse.body.length > 0) {
-    storage.removeDataFromLocalStorage(itemName, true);
-    return serverResponse.body.map(_createBidResponse);
-  } else {
-    storage.setDataInLocalStorage(itemName, new Date());
-    return [];
-  }
+  return serverResponse.body.map(_createBidResponse);
 }
 
-const websiteFromBidRequest = function(bidR) {
-  if (bidR.data) {
-    return JSON.parse(bidR.data).website
-  } else if (bidR.params.website) {
-    return bidR.params.website;
+function _assignFloor(bid) {
+  if (typeof bid.getFloor === 'function') {
+    var floorInfo = bid.getFloor({
+      currency: 'EUR',
+      mediaType: 'banner',
+      size: '*',
+    });
+
+    if (floorInfo.currency === 'EUR') {
+      return floorInfo.floor;
+    }
   }
-}
 
-/**
- * Register the user sync pixels which should be dropped after the auction.
- *
- * @param syncOptions Which user syncs are allowed?
- * @param serverResponses List of server's responses.
- * @return The user syncs which should be dropped.
- */
-
-function getUserSyncs(syncOptions, serverResponses) {
-  return [];
+  return null;
 }
 
 export const spec = {
@@ -154,7 +149,7 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
-  getUserSyncs: getUserSyncs
+
 };
 
 registerBidder(spec);

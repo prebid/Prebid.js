@@ -336,10 +336,17 @@ describe('ApacdexBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
     });
-    it('should return a properly formatted request with pbjs_debug is true', function () {
-      config.setConfig({debug: true});
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.test).to.equal(1)
+    describe('debug test', function() {
+      beforeEach(function() {
+        config.setConfig({debug: true});
+      });
+      afterEach(function() {
+        config.setConfig({debug: false});
+      });
+      it('should return a properly formatted request with pbjs_debug is true', function () {
+        const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+        expect(bidRequests.data.test).to.equal(1);
+      });
     });
   });
 

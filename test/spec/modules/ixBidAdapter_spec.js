@@ -26,7 +26,7 @@ describe('IndexexchangeAdapter', function () {
       }
     ]
   };
-  var div_many_sizes = [
+  const div_many_sizes = [
     [300, 250],
     [600, 410],
     [336, 280],
@@ -94,6 +94,62 @@ describe('IndexexchangeAdapter', function () {
     [600, 40],
     [600, 30]
   ];
+
+  const ONE_VIDEO = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '456',
+        video: {
+          skippable: false,
+          mimes: [
+            'video/mp4',
+            'video/webm'
+          ],
+          minduration: 0,
+          maxduration: 60,
+          protocols: [2]
+        },
+        size: [400, 100]
+      },
+      sizes: [[400, 100]],
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [[400, 100]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
+  const ONE_BANNER = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '123',
+        size: [300, 250]
+      },
+      sizes: [[300, 250]],
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748561-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
+      bidId: '1a2b3c4d',
+      bidderRequestId: '11a22b33c44d',
+      auctionId: '1aa2bb3cc4dd',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
   const DEFAULT_BANNER_VALID_BID = [
     {
       bidder: 'ix',
@@ -604,6 +660,34 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
+  describe('Roundel alias adapter', function () {
+    const vaildBids = [DEFAULT_BANNER_VALID_BID, DEFAULT_VIDEO_VALID_BID, DEFAULT_MULTIFORMAT_BANNER_VALID_BID, DEFAULT_MULTIFORMAT_VIDEO_VALID_BID];
+    const ALIAS_OPTIONS = Object.assign({
+      bidderCode: 'roundel'
+    }, DEFAULT_OPTION);
+
+    it('should not build requests for mediaTypes if liveramp data is unavaliable', function () {
+      vaildBids.forEach((validBid) => {
+        const request = spec.buildRequests(validBid, ALIAS_OPTIONS);
+        expect(request).to.be.an('array');
+        expect(request).to.have.lengthOf(0);
+      });
+    });
+
+    it('should build requests for mediaTypes if liveramp data is avaliable', function () {
+      vaildBids.forEach((validBid) => {
+        const cloneValidBid = utils.deepClone(validBid);
+        cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
+        const request = spec.buildRequests(cloneValidBid, ALIAS_OPTIONS);
+        const payload = JSON.parse(request[0].data.r);
+        expect(request).to.be.an('array');
+        expect(request).to.have.lengthOf(1);
+        expect(payload.user.eids).to.have.lengthOf(4);
+        expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+      });
+    });
+  });
+
   describe('buildRequestsIdentity', function () {
     let request;
     let query;
@@ -1057,6 +1141,84 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.sid).to.equal(sidValue);
     });
 
+    it('video impression has #priceFloors floors', function () {
+      const bid = utils.deepClone(ONE_VIDEO[0]);
+      const flr = 5.5
+      const floorInfo = {floor: flr, currency: 'USD'};
+      bid.getFloor = function () {
+        return floorInfo;
+      }
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(flr);
+      expect(imp1.bidfloorcur).to.equal('USD');
+      expect(imp1.ext.fl).to.equal('p');
+    });
+
+    it('banner imp has floors from #priceFloors module', function () {
+      const floor300x250 = 3.25
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0])
+
+      const floorInfo = { floor: floor300x250, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+
+      expect(imp1.bidfloorcur).to.equal('USD');
+      expect(imp1.bidfloor).to.equal(floor300x250);
+      expect(imp1.ext.fl).to.equal('p');
+    });
+
+    it('ix adapter floors chosen over #priceFloors ', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const floorhi = 4.5
+      const floorlow = 3.5
+
+      bid.params.bidFloor = floorhi
+      bid.params.bidFloorCur = 'USD'
+
+      const floorInfo = { floor: floorlow, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(floorhi);
+      expect(imp1.bidfloorcur).to.equal(bid.params.bidFloorCur);
+      expect(imp1.ext.fl).to.equal('x');
+    });
+
+    it(' #priceFloors floors chosen over ix adapter floors', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const floorhi = 4.5
+      const floorlow = 3.5
+
+      bid.params.bidFloor = floorlow
+      bid.params.bidFloorCur = 'USD'
+
+      const floorInfo = { floor: floorhi, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(floorhi);
+      expect(imp1.bidfloorcur).to.equal(bid.params.bidFloorCur);
+      expect(imp1.ext.fl).to.equal('p');
+    });
+
     it('impression should have bidFloor and bidFloorCur if configured', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
@@ -1066,6 +1228,73 @@ describe('IndexexchangeAdapter', function () {
 
       expect(impression.bidfloor).to.equal(bid.params.bidFloor);
       expect(impression.bidfloorcur).to.equal(bid.params.bidFloorCur);
+      expect(impression.ext.fl).to.equal('x');
+    });
+
+    it('missing sizes #priceFloors ', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+      bid.mediaTypes.banner.sizes.push([500, 400])
+
+      const floorInfo = { floor: 3.25, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      sinon.spy(bid, 'getFloor');
+
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      // called getFloor with 300 x 250
+      expect(bid.getFloor.getCall(0).args[0].mediaType).to.equal('banner');
+      expect(bid.getFloor.getCall(0).args[0].size[0]).to.equal(300);
+      expect(bid.getFloor.getCall(0).args[0].size[1]).to.equal(250);
+
+      // called getFloor with 500 x 400
+      expect(bid.getFloor.getCall(1).args[0].mediaType).to.equal('banner');
+      expect(bid.getFloor.getCall(1).args[0].size[0]).to.equal(500);
+      expect(bid.getFloor.getCall(1).args[0].size[1]).to.equal(400);
+
+      // both will have same floors due to mock getFloor
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(3.25);
+      expect(imp1.bidfloorcur).to.equal('USD');
+
+      const imp2 = JSON.parse(requestBidFloor.data.r).imp[1];
+      expect(imp2.bidfloor).to.equal(3.25);
+      expect(imp2.bidfloorcur).to.equal('USD');
+    });
+
+    it('#pricefloors inAdUnit, banner impressions should have floors', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const flr = 4.3
+      bid.floors = {
+        currency: 'USD',
+        schema: {
+          delimiter: '|',
+          fields: ['mediaType', 'size']
+        },
+        values: {
+          'banner|300x250': flr,
+          'banner|600x500': 6.5,
+          'banner|*': 7.5
+        }
+      };
+      const floorInfo = { floor: flr, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      sinon.spy(bid, 'getFloor');
+
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      // called getFloor with 300 x 250
+      expect(bid.getFloor.getCall(0).args[0].mediaType).to.equal('banner');
+      expect(bid.getFloor.getCall(0).args[0].size[0]).to.equal(300);
+      expect(bid.getFloor.getCall(0).args[0].size[1]).to.equal(250);
+
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(flr);
+      expect(imp1.bidfloorcur).to.equal('USD');
     });
 
     it('payload without mediaType should have correct format and value', function () {
@@ -1145,7 +1374,6 @@ describe('IndexexchangeAdapter', function () {
       const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       const pageUrl = JSON.parse(requestWithFirstPartyData.data.r).site.page;
       const expectedPageUrl = DEFAULT_OPTION.refererInfo.referer + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
-
       expect(pageUrl).to.equal(expectedPageUrl);
     });
 
@@ -1492,7 +1720,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.video.mimes[0]).to.not.equal('video/override');
     });
 
-    it('should not add video adunit level properties in imp object if they are not whitelisted', function () {
+    it('should not add video adunit level properties in imp object if they are not allowlisted', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.mediaTypes.video.context = 'outstream';
       bid.mediaTypes.video.random = true;
@@ -1502,7 +1730,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.video.random).to.not.exist;
     });
 
-    it('should add whitelisted adunit level video properties in imp object if they are not configured at params level', function () {
+    it('should add allowlisted adunit level video properties in imp object if they are not configured at params level', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.mediaTypes.video.context = 'outstream';
       delete bid.params.video.protocols;
@@ -1571,7 +1799,7 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.ou).to.equal(1);
         expect(diagObj.ren).to.equal(false);
         expect(diagObj.mfu).to.equal(1);
-        expect(diagObj.allU).to.equal(1);
+        expect(diagObj.allu).to.equal(1);
         expect(diagObj.version).to.equal('$prebid.version$');
       });
     });
