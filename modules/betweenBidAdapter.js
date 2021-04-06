@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
+import { getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'between';
@@ -37,6 +37,8 @@ export const spec = {
         tz: getTz(),
         fl: getFl(),
         rr: getRr(),
+        shid: getSharedId(i)('id'),
+        shid3: getSharedId(i)('third'),
         s: i.params.s,
         bidid: i.bidId,
         transactionid: i.transactionId,
@@ -141,6 +143,15 @@ export const spec = {
       url: 'https://ads.betweendigital.com/sspmatch-iframe'
     });
     return syncs;
+  }
+}
+
+function getSharedId(bid) {
+  const id = deepAccess(bid, 'userId.sharedid.id');
+  const third = deepAccess(bid, 'userId.sharedid.third');
+  return function(kind) {
+    if (kind === 'id') return id || '';
+    return third || '';
   }
 }
 
