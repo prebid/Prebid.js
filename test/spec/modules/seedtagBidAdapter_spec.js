@@ -429,7 +429,7 @@ describe('Seedtag Adapter', function() {
       )
     })
 
-    it('shoud set the timeout pixel', function() {
+    it('should set the timeout pixel', function() {
       const params = { publisherId: '0000', adUnitId: '11111' }
       const timeoutData = [{ params: [ params ] }];
       spec.onTimeout(timeoutData)
