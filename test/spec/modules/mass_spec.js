@@ -81,7 +81,7 @@ describe('MASS Module', function() {
   });
 
   it('should only affect MASS bids', function() {
-    init({renderUrl: 'http://...'});
+    init({renderUrl: 'https://...'});
     mockedNonMassBids.forEach(function(mockedBid) {
       const originalBid = Object.assign({}, mockedBid);
       const bid = Object.assign({}, originalBid);
@@ -95,7 +95,7 @@ describe('MASS Module', function() {
   });
 
   it('should only update the ad markup field', function() {
-    init({renderUrl: 'http://...'});
+    init({renderUrl: 'https://...'});
     mockedMassBids.forEach(function(mockedBid) {
       const originalBid = Object.assign({}, mockedBid);
       const bid = Object.assign({}, originalBid);
@@ -120,7 +120,7 @@ describe('MASS Module', function() {
 
   it('should support custom renderers', function() {
     init({
-      renderUrl: 'http://...',
+      renderUrl: 'https://...',
       custom: [
         {
           dealIdPattern: /abc/,
@@ -142,7 +142,7 @@ describe('MASS Module', function() {
   });
 
   it('should have a default renderer', function() {
-    const render = useDefaultRender('http://example.com/render.js', 'abc');
+    const render = useDefaultRender('https://example.com/render.js', 'abc');
     render({});
 
     expect(window.abc.loaded).to.equal(true);
