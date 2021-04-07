@@ -1,7 +1,7 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'adnuntius';
-const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=-60&format=json';
+const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -14,6 +14,7 @@ export const spec = {
     const networks = {};
     const bidRequests = {};
     const requests = [];
+    const tzo = new Date().getTimezoneOffset();
 
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
@@ -23,7 +24,7 @@ export const spec = {
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
-      networks[network].adUnits.push({ ...bid.params.targeting, auId: bid.params.auId });
+      networks[network].adUnits.push({ ...bid.params.targeting, auId: bid.params.auId, targetId: bid.bidId });
     }
 
     const networkKeys = Object.keys(networks)
@@ -31,7 +32,7 @@ export const spec = {
       const network = networkKeys[j];
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL,
+        url: ENDPOINT_URL + tzo + '&format=json',
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });
@@ -50,11 +51,11 @@ export const spec = {
         const bid = adUnit.ads[0];
         bidResponses.push({
           requestId: bidRequest.bid[k].bidId,
-          cpm: (bid.cpm) ? bid.cpm.amount : 0,
+          cpm: (bid.bid) ? bid.bid.amount : 0,
           width: Number(bid.creativeWidth),
           height: Number(bid.creativeHeight),
           creativeId: bid.creativeId,
-          currency: (bid.cpm) ? bid.cpm.currency : 'EUR',
+          currency: (bid.bid) ? bid.bid.currency : 'EUR',
           netRevenue: false,
           ttl: 360,
           ad: adUnit.html
