@@ -204,7 +204,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     referer: data.refererInfo.referer,
     transactionId: bid.transactionId
   });
-  if (bidderRequest && bidderRequest.gdprConsent) {
+  if (bidderRequest.gdprConsent) {
     data.consentIabTcf = bidderRequest.gdprConsent.consentString;
     data.gdprApplies = bidderRequest.gdprConsent.gdprApplies;
   }
