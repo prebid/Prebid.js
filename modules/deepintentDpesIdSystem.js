@@ -5,7 +5,6 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -14,7 +13,6 @@ export const storage = getStorageManager(null, MODULE_NAME);
 const DEEPINTENT_DPES_ID = 'di_dpes';
 
 function readCookie(cookieName) {
-  // return 1231231;
   const val = storage.cookiesAreEnabled ? storage.getCookie(cookieName) : null;
   return JSON.parse(val);
 }
@@ -48,7 +46,11 @@ export const deepintentDpesSubmodule = {
       } else if (configParams.identityKey === 'hashedNPI') {
         value = {'deepintentId': value.npi}
         return value;
+      } else {
+        return undefined;
       }
+    } else {
+      return undefined;
     }
   },
   /**
@@ -63,14 +65,11 @@ export const deepintentDpesSubmodule = {
     let id = null;
     if (
       configStorage &&
-      Array.isArray(configStorage.identifiersToResolve) &&
-      configStorage.identifiersToResolve.length > 0 &&
       configStorage.name &&
       configStorage.type === 'cookie'
     ) {
       id = readCookie(configStorage.name);
-    }
-    if (configStorage && configStorage.type === 'html5') {
+    } else if (configStorage && configStorage.type === 'html5') {
       id = readFromLocalStorage();
     }
 
