@@ -13,7 +13,7 @@ describe('FeedAdAdapter', function () {
     it('should only support video and banner ads', function () {
       expect(spec.supportedMediaTypes).to.be.a('array');
       expect(spec.supportedMediaTypes).to.include(BANNER);
-      expect(spec.supportedMediaTypes).to.include(VIDEO);
+      expect(spec.supportedMediaTypes).not.to.include(VIDEO);
       expect(spec.supportedMediaTypes).not.to.include(NATIVE);
     });
     it('should export the BidderSpec functions', function () {

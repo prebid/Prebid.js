@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 
 /**
@@ -71,7 +71,7 @@ const BIDDER_CODE = 'feedad';
  * The media types supported by FeedAd
  * @type {MediaType[]}
  */
-const MEDIA_TYPES = [VIDEO, BANNER];
+const MEDIA_TYPES = [BANNER];
 
 /**
  * Tag for logging
