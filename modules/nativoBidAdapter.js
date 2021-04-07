@@ -1,10 +1,10 @@
-import * as utils from "../src/utils.js"
-import { registerBidder } from "../src/adapters/bidderFactory.js"
-import { BANNER } from "../src/mediaTypes.js"
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
 // import { config } from 'src/config'
 
-const BIDDER_CODE = "nativo"
-const BIDDER_ENDPOINT = "https://exchange.postrelease.com/prebid"
+const BIDDER_CODE = 'nativo'
+const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid'
 
 const TIME_TO_LIVE = 360
 
@@ -16,7 +16,7 @@ const bidRequestMap = {}
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ["ntv"], // short code
+  aliases: ['ntv'], // short code
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
@@ -52,10 +52,10 @@ export const spec = {
     bidRequestMap[bidderRequest.bidderRequestId] = placmentBidIdMap
 
     let params = [
-      { key: "ntv_ptd", value: placementIds.toString() },
-      { key: "ntv_pb_rid", value: bidderRequest.bidderRequestId },
+      { key: 'ntv_ptd', value: placementIds.toString() },
+      { key: 'ntv_pb_rid', value: bidderRequest.bidderRequestId },
       {
-        key: "ntv_url",
+        key: 'ntv_url',
         value: encodeURIComponent(bidderRequest.refererInfo.referer),
       },
     ]
@@ -63,18 +63,18 @@ export const spec = {
     if (bidderRequest.gdprConsent) {
       // Put on the beginning of the qs param array
       params.unshift({
-        key: "ntv_gdpr_consent",
+        key: 'ntv_gdpr_consent',
         value: bidderRequest.gdprConsent.consentString,
       })
     }
 
     if (bidderRequest.uspConsent) {
       // Put on the beginning of the qs param array
-      params.unshift({ key: "us_privacy", value: bidderRequest.uspConsent })
+      params.unshift({ key: 'us_privacy', value: bidderRequest.uspConsent })
     }
 
     let serverRequest = {
-      method: "GET",
+      method: 'GET',
       url: BIDDER_ENDPOINT + arrayToQS(params),
     }
 
@@ -96,7 +96,7 @@ export const spec = {
 
     try {
       const body =
-        typeof response.body === "string"
+        typeof response.body === 'string'
           ? JSON.parse(response.body)
           : response.body
 
@@ -155,25 +155,25 @@ export const spec = {
     uspConsent
   ) {
     // Generate consent qs string
-    let params = ""
+    let params = ''
     // GDPR
     if (gdprConsent) {
       params = appendQSParamString(
         params,
-        "gdpr",
+        'gdpr',
         gdprConsent.gdprApplies ? 1 : 0
       )
       params = appendQSParamString(
         params,
-        "gdpr_consent",
-        encodeURIComponent(gdprConsent.consentString || "")
+        'gdpr_consent',
+        encodeURIComponent(gdprConsent.consentString || '')
       )
     }
     // CCPA
     if (uspConsent) {
       params = appendQSParamString(
         params,
-        "us_privacy",
+        'us_privacy',
         encodeURIComponent(uspConsent.uspConsent)
       )
     }
@@ -193,7 +193,7 @@ export const spec = {
       }
 
       body =
-        typeof response.body === "string"
+        typeof response.body === 'string'
           ? JSON.parse(response.body)
           : response.body
 
@@ -204,10 +204,10 @@ export const spec = {
         // Grab the syncs for each seatbid
         seatbid.syncUrls.forEach((sync) => {
           if (types[sync.type]) {
-            if (sync.url.trim() !== "") {
+            if (sync.url.trim() !== '') {
               syncs.push({
                 type: sync.type,
-                url: sync.url.replace("{GDPR_params}", params),
+                url: sync.url.replace('{GDPR_params}', params),
               })
             }
           }
@@ -261,7 +261,7 @@ registerBidder(spec)
  * @returns
  */
 function appendQSParamString(str, key, value) {
-  return str + `${str.length ? "&" : ""}${key}=${value}`
+  return str + `${str.length ? '&' : ''}${key}=${value}`
 }
 
 /**
@@ -271,10 +271,10 @@ function appendQSParamString(str, key, value) {
  */
 function arrayToQS(arr) {
   return (
-    "?" +
+    '?' +
     arr.reduce((value, obj) => {
       return appendQSParamString(value, obj.key, obj.value)
-    }, "")
+    }, '')
   )
 }
 
