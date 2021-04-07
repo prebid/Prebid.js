@@ -202,7 +202,7 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
     )
   }
 
-  if (Array.isArray(bidRequest.userIdAsEids)) {
+  if (Array.isArray(bidRequest.userIdAsEids) && bidRequest.userIdAsEids.length > 0) {
     ttxRequest.user = setExtension(
       ttxRequest.user,
       'eids',
