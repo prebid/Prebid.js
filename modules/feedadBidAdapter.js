@@ -204,6 +204,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     referer: data.refererInfo.referer,
     transactionId: bid.transactionId
   });
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    data.consentIabTcf = bidderRequest.gdprConsent.consentString;
+    data.gdprApplies = bidderRequest.gdprConsent.gdprApplies;
+  }
   return {
     method: 'POST',
     url: `${API_ENDPOINT}${API_PATH_BID_REQUEST}`,

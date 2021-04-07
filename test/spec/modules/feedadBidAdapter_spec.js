@@ -248,6 +248,40 @@ describe('FeedAdAdapter', function () {
       let result = spec.buildRequests([bid, bid, bid]);
       expect(result).to.be.empty;
     });
+    it('should not include GDPR data if the bidder request has none available', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.data.gdprApplies).to.be.undefined;
+      expect(result.data.consentIabTcf).to.be.undefined;
+    });
+    it('should include GDPR data if the bidder requests contains it', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let request = Object.assign({}, bidderRequest, {
+        gdprConsent: {
+          consentString: 'the consent string',
+          gdprApplies: true
+        }
+      });
+      let result = spec.buildRequests([bid], request);
+      expect(result.data.gdprApplies).to.equal(request.gdprConsent.gdprApplies);
+      expect(result.data.consentIabTcf).to.equal(request.gdprConsent.consentString);
+    });
   });
 
   describe('interpretResponse', function () {
