@@ -58,7 +58,6 @@ const html5Config = {
   }
 };
 
-
 describe('Deepintent DPES System', () => {
   let getDataFromLocalStorageStub, localStorageIsEnabledStub;
   let getCookieStub, cookiesAreEnabledStub;
