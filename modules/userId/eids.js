@@ -204,6 +204,11 @@ const USER_IDS_CONFIG = {
     atype: 1,
     getValue: function(data) {
       return data.id;
+    },
+    getUidExt: function(data) {
+      return (data && data.ver) ? {
+        ver: data.ver
+      } : undefined;
     }
   }
 };
