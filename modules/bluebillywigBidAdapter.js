@@ -28,7 +28,7 @@ const BB_CONSTANTS = {
 const getConfig = config.getConfig;
 
 // Helper Functions
-export const BB_HELPERS = {
+const BB_HELPERS = {
   addSiteAppDevice: function(request, pageUrl) {
     if (typeof getConfig('app') === 'object') request.app = getConfig('app');
     else {
