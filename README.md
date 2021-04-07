@@ -265,7 +265,7 @@ directory you will have sourcemaps available in your browser's developer tools.
 
 To run the example file, go to:
 
-+ `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html`
++ `http://localhost:9999/integrationExamples/gpt/hello_world.html`
 
 As you make code changes, the bundles will be rebuilt and the page reloaded automatically.
 

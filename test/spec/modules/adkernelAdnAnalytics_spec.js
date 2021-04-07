@@ -1,6 +1,6 @@
-import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter.js';
+import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter';
 import {expect} from 'chai';
-import adapterManager from 'src/adapterManager.js';
+import adapterManager from 'src/adapterManager';
 import CONSTANTS from 'src/constants.json';
 
 const events = require('../../../src/events');
@@ -158,11 +158,16 @@ describe('', function () {
       sizes: [[300, 250]],
       bidId: '208750227436c1',
       bidderRequestId: '1a6fc81528d0f6',
-      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+      gdprConsent: {
+        consentString: 'CONSENT',
+        gdprApplies: true,
+        apiVersion: 2
+      },
+      uspConsent: '1---'
     }],
     auctionStart: 1509369418387,
-    timeout: 3000,
-    start: 1509369418389
+    timeout: 3000
   };
 
   const RESPONSE = {
@@ -202,6 +207,10 @@ describe('', function () {
       events.getEvents.restore();
     });
 
+    after(function() {
+      sandbox.restore();
+    });
+
     it('should be configurable', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'adkernelAdn',
@@ -221,7 +230,7 @@ describe('', function () {
     });
 
     it('should handle auction init event', function () {
-      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {config: {}, timeout: 3000});
+      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {config: {}, bidderRequests: [REQUEST], timeout: 3000});
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(1);
       expect(ev[0]).to.be.eql({event: 'auctionInit'});

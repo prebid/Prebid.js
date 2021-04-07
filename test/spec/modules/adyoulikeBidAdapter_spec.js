@@ -596,7 +596,8 @@ describe('Adyoulike Adapter', function () {
           },
           impressionTrackers: [
             'https://testPixelIMP.com/fake',
-            'https://tracking.omnitagjs.com/tracking/pixel?event_kind=IMPRESSION&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991'
+            'https://tracking.omnitagjs.com/tracking/pixel?event_kind=IMPRESSION&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991',
+            'https://tracking.omnitagjs.com/tracking/pixel?event_kind=INSERTION&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991'
           ],
           javascriptTrackers: [
             'https://testJsIMP.com/fake.js'
