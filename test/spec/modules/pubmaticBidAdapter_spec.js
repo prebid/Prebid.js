@@ -1695,7 +1695,7 @@ describe('PubMatic adapter', function () {
               'source': 'liveramp.com',
               'uids': [{
                 'id': 'identity-link-user-id',
-                'atype': 1
+                'atype': 3
               }]
             }]);
           });
@@ -1736,7 +1736,7 @@ describe('PubMatic adapter', function () {
               'source': 'liveintent.com',
               'uids': [{
                 'id': 'live-intent-user-id',
-                'atype': 1
+                'atype': 3
               }]
             }]);
           });
@@ -1818,7 +1818,7 @@ describe('PubMatic adapter', function () {
               'source': 'britepool.com',
               'uids': [{
                 'id': 'britepool-user-id',
-                'atype': 1
+                'atype': 3
               }]
             }]);
           });

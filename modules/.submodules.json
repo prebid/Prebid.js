@@ -16,12 +16,20 @@
     "zeotapIdPlusIdSystem",
     "haloIdSystem",
     "quantcastIdSystem",
+<<<<<<< HEAD
     "deepintentDpesIdSystem",
+=======
+    "nextrollIdSystem",
+>>>>>>> 81fc1ce9b8471cadb33ebc10a270e8c6d001ea98
     "idxIdSystem",
     "fabrickIdSystem",
     "verizonMediaIdSystem",
     "pubProvidedIdSystem",
-    "tapadIdSystem"
+    "mwOpenLinkIdSystem",
+    "tapadIdSystem",
+    "novatiqIdSystem",
+    "uid2IdSystem",
+    "admixerIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
