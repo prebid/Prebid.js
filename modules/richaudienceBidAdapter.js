@@ -2,30 +2,32 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 108,
   aliases: ['ra'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***
-     * Determines whether or not the given bid request is valid
-     *
-     * @param {bidRequest} bid The bid params to validate.
-     * @returns {boolean} True if this is a valid bid, and false otherwise
-     */
+   * Determines whether or not the given bid request is valid
+   *
+   * @param {bidRequest} bid The bid params to validate.
+   * @returns {boolean} True if this is a valid bid, and false otherwise
+   */
   isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.pid && bid.params.supplyType);
   },
   /***
-     * Build a server request from the list of valid BidRequests
-     * @param {validBidRequests} is an array of the valid bids
-     * @param {bidderRequest} bidder request object
-     * @returns {ServerRequest} Info describing the request to the server
-     */
+   * Build a server request from the list of valid BidRequests
+   * @param {validBidRequests} is an array of the valid bids
+   * @param {bidderRequest} bidder request object
+   * @returns {ServerRequest} Info describing the request to the server
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
       var payload = {
@@ -46,8 +48,11 @@ export const spec = {
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         user: raiSetEids(bid),
-        demand: raiGetDemandType(bid) ? 'video' : 'display',
-        videoData: raiGetVideoInfo(bid)
+        demand: raiGetDemandType(bid),
+        videoData: raiGetVideoInfo(bid),
+        scr_rsl: raiGetResolution(),
+        cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
+        kws: (!utils.isEmpty(bid.params.keywords) ? bid.params.keywords : null)
       };
 
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
@@ -72,11 +77,11 @@ export const spec = {
     });
   },
   /***
-     * Read the response from the server and build a list of bids
-     * @param {serverResponse} Response from the server.
-     * @param {bidRequest} Bid request object
-     * @returns {bidResponses} Array of bids which were nested inside the server
-     */
+   * Read the response from the server and build a list of bids
+   * @param {serverResponse} Response from the server.
+   * @param {bidRequest} Bid request object
+   * @returns {bidResponses} Array of bids which were nested inside the server
+   */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     // try catch
@@ -97,8 +102,24 @@ export const spec = {
 
       if (response.media_type === 'video') {
         bidResponse.vastXml = response.vastXML;
+        try {
+          if (bidResponse.vastXml != null) {
+            if (JSON.parse(bidRequest.data).videoData.format == 'outstream' || JSON.parse(bidRequest.data).videoData.format == 'banner') {
+              bidResponse.renderer = Renderer.install({
+                id: bidRequest.bidId,
+                adunitcode: bidRequest.tagId,
+                loaded: false,
+                config: response.media_type,
+                url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
+              });
+            }
+            bidResponse.renderer.setRender(renderer);
+          }
+        } catch (e) {
+          bidResponse.ad = response.adm;
+        }
       } else {
-        bidResponse.ad = response.adm
+        bidResponse.ad = response.adm;
       }
 
       bidResponses.push(bidResponse);
@@ -106,13 +127,13 @@ export const spec = {
     return bidResponses
   },
   /***
-     * User Syncs
-     *
-     * @param {syncOptions} Publisher prebid configuration
-     * @param {serverResponses} Response from the server
-     * @param {gdprConsent} GPDR consent object
-     * @returns {Array}
-     */
+   * User Syncs
+   *
+   * @param {syncOptions} Publisher prebid configuration
+   * @param {serverResponses} Response from the server
+   * @param {gdprConsent} GPDR consent object
+   * @returns {Array}
+   */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
 
@@ -121,7 +142,7 @@ export const spec = {
     var consent = '';
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString != 'undefined') {
-      consent = `pubconsent='${gdprConsent.consentString}'&euconsent='${gdprConsent.consentString}'`
+      consent = `consentString=${gdprConsent.consentString}`
     }
 
     if (syncOptions.iframeEnabled) {
@@ -165,20 +186,27 @@ function raiGetSizes(bid) {
 }
 
 function raiGetDemandType(bid) {
+  let raiFormat = 'display';
   if (bid.mediaTypes != undefined) {
     if (bid.mediaTypes.video != undefined) {
-      return true;
+      raiFormat = 'video';
     }
   }
-  return false;
+  return raiFormat;
 }
 
 function raiGetVideoInfo(bid) {
-  let videoData = [];
-  if (raiGetDemandType(bid)) {
-    videoData.push({format: bid.mediaTypes.video.context});
-    videoData.push({playerSize: bid.mediaTypes.video.playerSize});
-    videoData.push({mimes: bid.mediaTypes.video.mimes});
+  let videoData;
+  if (raiGetDemandType(bid) == 'video') {
+    videoData = {
+      format: bid.mediaTypes.video.context,
+      playerSize: bid.mediaTypes.video.playerSize,
+      mimes: bid.mediaTypes.video.mimes
+    };
+  } else {
+    videoData = {
+      format: 'banner'
+    }
   }
   return videoData;
 }
@@ -187,7 +215,7 @@ function raiSetEids(bid) {
   let eids = [];
 
   if (bid && bid.userId) {
-    raiSetUserId(bid, eids, 'id5-sync.com', utils.deepAccess(bid, `userId.id5id`));
+    raiSetUserId(bid, eids, 'id5-sync.com', utils.deepAccess(bid, `userId.id5id.uid`));
     raiSetUserId(bid, eids, 'pubcommon', utils.deepAccess(bid, `userId.pubcid`));
     raiSetUserId(bid, eids, 'criteo.com', utils.deepAccess(bid, `userId.criteoId`));
     raiSetUserId(bid, eids, 'liveramp.com', utils.deepAccess(bid, `userId.idl_env`));
@@ -205,4 +233,33 @@ function raiSetUserId(bid, eids, source, value) {
       source: source
     });
   }
+}
+
+function renderer(bid) {
+  bid.renderer.push(() => {
+    renderAd(bid)
+  });
+}
+
+function renderAd(bid) {
+  let raOutstreamHBPassback = `${bid.vastXml}`;
+  let raPlayerHB = {
+    config: bid.params[0].player != undefined ? {
+      end: bid.params[0].player.end != null ? bid.params[0].player.end : 'close',
+      init: bid.params[0].player.init != null ? bid.params[0].player.init : 'close',
+      skin: bid.params[0].player.skin != null ? bid.params[0].player.skin : 'light',
+    } : {end: 'close', init: 'close', skin: 'light'},
+    pid: bid.params[0].pid,
+    adUnit: bid.adUnitCode
+  };
+
+  window.raParams(raPlayerHB, raOutstreamHBPassback, true);
+}
+
+function raiGetResolution() {
+  let resolution = '';
+  if (typeof window.screen != 'undefined') {
+    resolution = window.screen.width + 'x' + window.screen.height;
+  }
+  return resolution;
 }

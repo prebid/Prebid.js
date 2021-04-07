@@ -27,11 +27,25 @@ OneTag Bid Adapter supports banner and video at present.
                 }
             }]
         }, {
-            code: 'video-space',
+            code: 'video-instream-space',
             mediaTypes: {
                 video: {
                     context: "instream",
                     mimes: ["video/mp4", "video/webm", "application/javascript", "video/ogg"],
+                    playerSize: [640,480]
+                }
+            },
+            bids: [{
+                bidder: "onetag",
+                params: {
+                    pubId: "your_publisher_id" // required, testing pubId: "386276e072"
+                }
+            }]
+        }, {
+            code: 'video-outstream-space',
+            mediaTypes: {
+                video: {
+                    context: "outstream",
                     playerSize: [640,480]
                 }
             },

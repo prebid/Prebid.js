@@ -1,9 +1,6 @@
 const includes = require('core-js-pure/features/array/includes.js');
 const expect = require('chai').expect;
-const testServer = require('../../../helpers/testing-utils');
-
-const host = testServer.host;
-const protocol = testServer.protocol;
+const { host, protocol, waitForElement } = require('../../../helpers/testing-utils');
 
 const validDurations = ['15s', '30s'];
 const validCpms = ['15.00', '14.00', '13.00', '10.00'];
@@ -13,19 +10,19 @@ const uuidRegex = /(\d|\w){8}-((\d|\w){4}-){3}(\d|\w){12}/;
 describe('longform ads without using brandCategoryExclusion', function() {
   this.retries(3);
   it('process the bids successfully', function() {
-    browser
-      .url(protocol + '://' + host + ':9999/integrationExamples/longform/basic_wo_brandCategoryExclusion.html?pbjs_debug=true')
-      .pause(10000);
+    browser.url(protocol + '://' + host + ':9999/integrationExamples/longform/basic_wo_brandCategoryExclusion.html?pbjs_debug=true');
+    browser.pause(7000);
 
     const loadPrebidBtnXpath = '//*[@id="loadPrebidRequestBtn"]';
-    browser.waitForExist(loadPrebidBtnXpath);
-    $(loadPrebidBtnXpath).click();
-    browser.pause(3000);
+    waitForElement(loadPrebidBtnXpath);
+    const prebidBtn = $(loadPrebidBtnXpath);
+    prebidBtn.click();
+    browser.pause(5000);
 
     const listOfCpmsXpath = '/html/body/div[1]/div/div/div/div[1]/div[2]/div/table/tbody/tr/td[2]';
     const listOfDurationsXpath = '/html/body/div[1]/div/div/div/div[1]/div[2]/div/table/tbody/tr/td[4]';
 
-    browser.waitForExist(listOfCpmsXpath);
+    waitForElement(listOfCpmsXpath);
 
     let listOfCpms = $$(listOfCpmsXpath);
     let listOfDuras = $$(listOfDurationsXpath);
@@ -42,8 +39,8 @@ describe('longform ads without using brandCategoryExclusion', function() {
   it('formats the targeting keys properly', function () {
     const listOfKeyElementsXpath = '/html/body/div[1]/div/div/div/div[2]/div[2]/div/table/tbody/tr/td[1]';
     const listOfKeyValuesXpath = '/html/body/div[1]/div/div/div/div[2]/div[2]/div/table/tbody/tr/td[2]';
-    browser.waitForExist(listOfKeyElementsXpath);
-    browser.waitForExist(listOfKeyValuesXpath);
+    waitForElement(listOfKeyElementsXpath);
+    waitForElement(listOfKeyValuesXpath);
 
     let listOfKeyElements = $$(listOfKeyElementsXpath);
     let listOfKeyValues = $$(listOfKeyValuesXpath);

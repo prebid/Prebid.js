@@ -1,4 +1,3 @@
-import { config } from '../src/config.js';
 import { setS2STestingModule } from '../src/adapterManager.js';
 
 let s2sTesting = {};
@@ -9,39 +8,31 @@ const CLIENT = 'client';
 s2sTesting.SERVER = SERVER;
 s2sTesting.CLIENT = CLIENT;
 
-var testing = false; // whether testing is turned on
-var bidSource = {}; // store bidder sources determined from s2sConfing bidderControl
+s2sTesting.bidSource = {}; // store bidder sources determined from s2sConfig bidderControl
 s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB should be server-side, make it the same 10%
 
-// load s2sConfig
-config.getConfig('s2sConfig', config => {
-  testing = config.s2sConfig && config.s2sConfig.testing;
-  s2sTesting.calculateBidSources(config.s2sConfig);
-});
-
-s2sTesting.getSourceBidderMap = function(adUnits = []) {
+s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
   var sourceBidders = {[SERVER]: {}, [CLIENT]: {}};
-
-  // bail if testing is not turned on
-  if (!testing) {
-    return {[SERVER]: [], [CLIENT]: []};
-  }
 
   adUnits.forEach((adUnit) => {
     // if any adUnit bidders specify a bidSource, include them
     (adUnit.bids || []).forEach((bid) => {
+      // When a s2sConfig does not have testing=true and did not calc bid sources
+      if (allS2SBidders.indexOf(bid.bidder) > -1 && !s2sTesting.bidSource[bid.bidder]) {
+        s2sTesting.bidSource[bid.bidder] = SERVER;
+      }
       // calculate the source once and store on bid object
       bid.calcSource = bid.calcSource || s2sTesting.getSource(bid.bidSource);
       // if no bidSource at bid level, default to bidSource from bidder
-      bid.finalSource = bid.calcSource || bidSource[bid.bidder] || CLIENT; // default to client
+      bid.finalSource = bid.calcSource || s2sTesting.bidSource[bid.bidder] || CLIENT; // default to client
       // add bidder to sourceBidders data structure
       sourceBidders[bid.finalSource][bid.bidder] = true;
     });
   });
 
   // make sure all bidders in bidSource are in sourceBidders
-  Object.keys(bidSource).forEach((bidder) => {
-    sourceBidders[bidSource[bidder]][bidder] = true;
+  Object.keys(s2sTesting.bidSource).forEach((bidder) => {
+    sourceBidders[s2sTesting.bidSource[bidder]][bidder] = true;
   });
 
   // return map of source => array of bidders
@@ -53,18 +44,14 @@ s2sTesting.getSourceBidderMap = function(adUnits = []) {
 
 /**
  * @function calculateBidSources determines the source for each s2s bidder based on bidderControl weightings.  these can be overridden at the adUnit level
- * @param s2sConfig server-to-server configuration
+ * @param s2sConfigs server-to-server configuration
  */
 s2sTesting.calculateBidSources = function(s2sConfig = {}) {
-  // bail if testing is not turned on
-  if (!testing) {
-    return;
-  }
-  bidSource = {}; // reset bid sources
   // calculate bid source (server/client) for each s2s bidder
+
   var bidderControl = s2sConfig.bidderControl || {};
   (s2sConfig.bidders || []).forEach((bidder) => {
-    bidSource[bidder] = s2sTesting.getSource(bidderControl[bidder] && bidderControl[bidder].bidSource) || SERVER; // default to server
+    s2sTesting.bidSource[bidder] = s2sTesting.getSource(bidderControl[bidder] && bidderControl[bidder].bidSource) || SERVER; // default to server
   });
 };
 

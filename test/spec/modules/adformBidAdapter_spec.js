@@ -2,6 +2,7 @@ import {assert, expect} from 'chai';
 import {spec} from 'modules/adformBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Adform adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -129,25 +130,82 @@ describe('Adform adapter', function () {
       assert.equal(parsedUrl.query.pt, 'gross');
     });
 
-    describe('gdpr', function () {
+    it('should pass extended ids', function () {
+      bids[0].userIdAsEids = createEidsArray({
+        tdid: 'TTD_ID_FROM_USER_ID_MODULE',
+        pubcid: 'pubCommonId_FROM_USER_ID_MODULE'
+      });
+      let request = spec.buildRequests(bids);
+      let eids = parseUrl(request.url).query.eids;
+
+      assert.equal(eids, 'eyJhZHNlcnZlci5vcmciOnsiVFREX0lEX0ZST01fVVNFUl9JRF9NT0RVTEUiOlsxXX0sInB1YmNpZC5vcmciOnsicHViQ29tbW9uSWRfRlJPTV9VU0VSX0lEX01PRFVMRSI6WzFdfX0%3D');
+      assert.deepEqual(JSON.parse(atob(decodeURIComponent(eids))), {
+        'adserver.org': {
+          'TTD_ID_FROM_USER_ID_MODULE': [1]
+        },
+        'pubcid.org': {
+          'pubCommonId_FROM_USER_ID_MODULE': [1]
+        }
+      });
+    });
+
+    it('should allow to pass custom extended ids', function () {
+      bids[0].params.eids = 'some_id_value';
+      let request = spec.buildRequests(bids);
+      let eids = parseUrl(request.url).query.eids;
+
+      assert.equal(eids, 'some_id_value');
+    });
+
+    it('should add parameter to global parameters if it exists in all bids', function () {
+      const _bids = [];
+      _bids.push(bids[0]);
+      _bids.push(bids[1]);
+      _bids.push(bids[2]);
+      _bids[0].params.mkv = 'key:value,key1:value1';
+      _bids[1].params.mkv = 'key:value,key1:value1,keyR:removed';
+      _bids[2].params.mkv = 'key:value,key1:value1,keyR:removed,key8:value1';
+      _bids[0].params.mkw = 'targeting';
+      _bids[1].params.mkw = 'targeting';
+      _bids[2].params.mkw = 'targeting,targeting2';
+      _bids[0].params.msw = 'search:word,search:word2';
+      _bids[1].params.msw = 'search:word';
+      _bids[2].params.msw = 'search:word,search:word5';
+      let bidList = _bids;
+      let request = spec.buildRequests(bidList);
+      let parsedUrl = parseUrl(request.url);
+      assert.equal(parsedUrl.query.mkv, encodeURIComponent('key:value,key1:value1'));
+      assert.equal(parsedUrl.query.mkw, 'targeting');
+      assert.equal(parsedUrl.query.msw, encodeURIComponent('search:word'));
+      assert.ok(!parsedUrl.items[0].mkv);
+      assert.ok(!parsedUrl.items[0].mkw);
+      assert.equal(parsedUrl.items[0].msw, 'search:word2');
+      assert.equal(parsedUrl.items[1].mkv, 'keyR:removed');
+      assert.ok(!parsedUrl.items[1].mkw);
+      assert.ok(!parsedUrl.items[1].msw);
+      assert.equal(parsedUrl.items[2].mkv, 'keyR:removed,key8:value1');
+      assert.equal(parsedUrl.items[2].mkw, 'targeting2');
+      assert.equal(parsedUrl.items[2].msw, 'search:word5');
+    });
+
+    describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
-        let resultBids = JSON.parse(JSON.stringify(bids[0]));
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
         let parsedUrl = parseUrl(request.url).query;
 
-        assert.equal(parsedUrl.gdpr, 'true');
+        assert.equal(parsedUrl.gdpr, '1');
         assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
       });
 
-      it('should not send GDPR Consent data to adform if gdprApplies is false or undefined', function () {
-        let resultBids = JSON.parse(JSON.stringify(bids[0]));
+      it('should not send GDPR Consent data to adform if gdprApplies is undefined', function () {
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: false, consentString: 'concentDataString'}});
         let parsedUrl = parseUrl(request.url).query;
 
-        assert.ok(!parsedUrl.gdpr);
-        assert.ok(!parsedUrl.gdpr_consent);
+        assert.equal(parsedUrl.gdpr, '0');
+        assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
 
         request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: undefined, consentString: 'concentDataString'}});
+        parsedUrl = parseUrl(request.url).query;
         assert.ok(!parsedUrl.gdpr);
         assert.ok(!parsedUrl.gdpr_consent);
       });
@@ -162,6 +220,13 @@ describe('Adform adapter', function () {
 
         request = spec.buildRequests([bids[0]]);
         assert.ok(!request.gdpr);
+      });
+
+      it('should send CCPA Consent data to adform', function () {
+        const request = spec.buildRequests([bids[0]], {uspConsent: '1YA-'});
+        const parsedUrl = parseUrl(request.url).query;
+
+        assert.equal(parsedUrl.us_privacy, '1YA-');
       });
     });
   });
@@ -247,14 +312,14 @@ describe('Adform adapter', function () {
       for (let i = 0; i < result.length; i++) {
         assert.equal(result[i].gdpr, true);
         assert.equal(result[i].gdpr_consent, 'ERW342EIOWT34234KMGds');
-      };
+      }
 
       bidRequest.gdpr = undefined;
       result = spec.interpretResponse(serverResponse, bidRequest);
       for (let i = 0; i < result.length; i++) {
         assert.ok(!result[i].gdpr);
         assert.ok(!result[i].gdpr_consent);
-      };
+      }
     });
 
     it('should set a renderer only for an outstream context', function () {
@@ -302,13 +367,13 @@ describe('Adform adapter', function () {
         serverResponse.body = [serverResponse.body[0]];
         bidRequest.bids = [bidRequest.bids[0]];
 
-        bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']]
+        bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']];
         let result = spec.interpretResponse(serverResponse, bidRequest);
 
         assert.equal(result[0].width, 300);
         assert.equal(result[0].height, 600);
       });
-    })
+    });
   });
 
   beforeEach(function () {

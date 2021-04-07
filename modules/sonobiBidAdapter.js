@@ -1,14 +1,12 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
-
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
-const SONOBI_DIGITRUST_KEY = 'fhnS5drwmH';
 const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/sbi_outstream_renderer.js';
 
 export const spec = {
@@ -114,18 +112,22 @@ export const spec = {
       }
     }
 
-    const digitrust = _getDigiTrustObject(SONOBI_DIGITRUST_KEY);
-
-    if (digitrust) {
-      payload.digid = digitrust.id;
-      payload.digkeyv = digitrust.keyv;
-    }
-
     if (validBidRequests[0].schain) {
       payload.schain = JSON.stringify(validBidRequests[0].schain)
     }
     if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
-      payload.userid = JSON.stringify(validBidRequests[0].userId);
+      const userIds = deepClone(validBidRequests[0].userId);
+
+      if (userIds.id5id) {
+        userIds.id5id = deepAccess(userIds, 'id5id.uid');
+      }
+
+      payload.userid = JSON.stringify(userIds);
+    }
+
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (Array.isArray(eids) && eids.length > 0) {
+      payload.eids = JSON.stringify(eids);
     }
 
     let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
@@ -334,20 +336,6 @@ export function _getPlatform(context = window) {
     return 'tablet'
   }
   return 'desktop';
-}
-
-// https://github.com/digi-trust/dt-cdn/wiki/Integration-Guide
-function _getDigiTrustObject(key) {
-  function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-  return digiTrustId;
 }
 
 function newRenderer(adUnitCode, bid, rendererOptions = {}) {

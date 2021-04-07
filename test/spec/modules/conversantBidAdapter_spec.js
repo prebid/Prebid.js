@@ -210,7 +210,7 @@ describe('Conversant adapter tests', function() {
     };
     const request = spec.buildRequests(bidRequests, bidderRequest);
     expect(request.method).to.equal('POST');
-    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/s2s/header/24');
+    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25');
     const payload = request.data;
 
     expect(payload).to.have.property('id', 'req000');
@@ -339,6 +339,7 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('creativeId', '1000');
     expect(bid).to.have.property('width', 300);
     expect(bid).to.have.property('height', 250);
+    expect(bid.meta.advertiserDomains).to.deep.equal(['https://example.com']);
     expect(bid).to.have.property('ad', 'markup000<img src="notify000" />');
     expect(bid).to.have.property('ttl', 300);
     expect(bid).to.have.property('netRevenue', true);
@@ -483,7 +484,7 @@ describe('Conversant adapter tests', function() {
       const payload = spec.buildRequests(requests).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
         {source: 'adserver.org', uids: [{id: '223344', atype: 1, ext: {rtiPartner: 'TDID'}}]},
-        {source: 'liveramp.com', uids: [{id: '334455', atype: 1}]}
+        {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}
       ]);
     });
   });

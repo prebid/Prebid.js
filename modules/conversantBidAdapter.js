@@ -7,7 +7,7 @@ const GVLID = 24;
 export const storage = getStorageManager(GVLID);
 
 const BIDDER_CODE = 'conversant';
-const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
+const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -205,6 +205,10 @@ export const spec = {
               ttl: 300,
               netRevenue: true
             };
+            bid.meta = {};
+            if (conversantBid.adomain && conversantBid.adomain.length > 0) {
+              bid.meta.advertiserDomains = conversantBid.adomain;
+            }
 
             if (request.video) {
               if (responseAd.charAt(0) === '<') {
@@ -331,7 +335,6 @@ function collectEids(bidRequests) {
       'criteo.com': 1,
       'id5-sync.com': 1,
       'parrable.com': 1,
-      'digitru.st': 1,
       'liveintent.com': 1
     };
     request.userIdAsEids.forEach(function(eid) {
