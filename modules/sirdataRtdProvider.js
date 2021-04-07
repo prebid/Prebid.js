@@ -18,47 +18,6 @@ import { config } from '../src/config.js';
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'SirdataRTDModule';
 
-const _set = (obj, path, val, override) => {
-  try {
-    const keys = path.split('.');
-    const lastKey = keys.pop();
-    const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, obj);
-    if (Array.isArray(lastObj[lastKey]) && Array.isArray(val) && override !== true) {
-      lastObj[lastKey] = arrayUnique(lastObj[lastKey].concat(val));
-    } else {
-      lastObj[lastKey] = override === true || !lastObj[lastKey] ? val : lastObj[lastKey];
-    }
-  } catch (e) { utils.logError(e); }
-};
-
-export function hasOwnDeepProperty(obj, prop) {
-  if (typeof obj === 'object' && obj !== null) { // only performs property checks on objects (taking care of the corner case for null as well)
-    if (obj.hasOwnProperty(prop)) { // if this object already contains the property, we are done
-      return true;
-    }
-    for (var p in obj) { // otherwise iterate on all the properties of this object.
-      if (obj.hasOwnProperty(p) && // and as soon as you find the property you are looking for, return true
-          hasOwnDeepProperty(obj[p], prop)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-function arrayUnique (array) {
-  const a = array.concat()
-  for (let i = 0; i < a.length; ++i) {
-    for (let j = i + 1; j < a.length; ++j) {
-      if (a[i] === a[j]) {
-        a.splice(j--, 1)
-      }
-    }
-  }
-
-  return a;
-}
-
 export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   moduleConfig.params = moduleConfig.params || {};
@@ -85,7 +44,7 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
   }
 
   // default global endpoint is cookie-based if no rules falls into cookieless or consent has been given or GDPR doesn't apply
-  if (!sirdataDomain || !gdprApplies || (hasOwnDeepProperty(userConsent, 'consents') && userConsent.gdpr.vendorData.vendor.consents[53] && userConsent.gdpr.vendorData.purpose.consents[1] && userConsent.gdpr.vendorData.purpose.consents[4])) {
+  if (!sirdataDomain || !gdprApplies || (utils.deepAccess(userConsent, 'gdpr.vendorData.vendor.consents') && userConsent.gdpr.vendorData.vendor.consents[53] && userConsent.gdpr.vendorData.purpose.consents[1] && userConsent.gdpr.vendorData.purpose.consents[4])) {
     sirdataDomain = 'sddan.com';
     sendWithCredentials = true;
   }
@@ -129,10 +88,17 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
 export function setGlobalOrtb2(segments, categories) {
   try {
     let addOrtb2 = {};
-    _set(addOrtb2, 'user.ext.data.sd_rtd', segments || {}, false);
-    _set(addOrtb2, 'site.ext.data.sd_rtd', categories || {}, false);
-    let ortb2 = {ortb2: utils.mergeDeep({}, getGlobal().getConfig('ortb2') || {}, addOrtb2)};
-    getGlobal().setConfig(ortb2);
+    let testGlobal = getGlobal().getConfig('ortb2');
+    if (!testGlobal || !utils.deepAccess(testGlobal, 'user.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.user.ext.data.sd_rtd, segments)) {
+      utils.deepSetValue(addOrtb2, 'user.ext.data.sd_rtd', segments || {});
+    }
+    if (!testGlobal || !utils.deepAccess(testGlobal, 'site.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.site.ext.data.sd_rtd, categories)) {
+      utils.deepSetValue(addOrtb2, 'site.ext.data.sd_rtd', categories || {});
+    }
+    if (addOrtb2) {
+      let ortb2 = {ortb2: utils.mergeDeep({}, ((testGlobal && testGlobal.ortb2) ? testGlobal.ortb2 : {}), addOrtb2)};
+      getGlobal().setConfig(ortb2);
+    }
   } catch (e) {
     utils.logError(e)
   }
@@ -143,11 +109,17 @@ export function setGlobalOrtb2(segments, categories) {
 export function setBidderOrtb2(bidder, segments, categories) {
   try {
     let addOrtb2 = {};
-    _set(addOrtb2, 'user.ext.data.sd_rtd', segments || {}, false);
-    _set(addOrtb2, 'site.ext.data.sd_rtd', categories || {}, false);
     let testBidder = config.getBidderConfig(bidder);
-    let ortb2 = {ortb2: utils.mergeDeep({}, ((testBidder.rubicon && testBidder.rubicon.ortb2) ? testBidder.rubicon.ortb2 : {}), addOrtb2)};
-    getGlobal().setBidderConfig({ bidders: [bidder], config: ortb2 });
+    if (!testBidder[bidder] || !utils.deepAccess(testBidder[bidder], 'ortb2.user.ext.data.sd_rtd') || !utils.deepEqual(testBidder[bidder].ortb2.user.ext.data.sd_rtd, segments)) {
+      utils.deepSetValue(addOrtb2, 'user.ext.data.sd_rtd', segments || {});
+    }
+    if (!testBidder[bidder] || !utils.deepAccess(testBidder[bidder], 'ortb2.site.ext.data.sd_rtd') || !utils.deepEqual(testBidder[bidder].ortb2.site.ext.data.sd_rtd, categories)) {
+      utils.deepSetValue(addOrtb2, 'site.ext.data.sd_rtd', categories || {});
+    }
+    if (addOrtb2) {
+      let ortb2 = {ortb2: utils.mergeDeep({}, ((testBidder[bidder] && testBidder[bidder].ortb2) ? testBidder[bidder].ortb2 : {}), addOrtb2)};
+      getGlobal().setBidderConfig({ bidders: [bidder], config: ortb2 });
+    }
   } catch (e) {
     utils.logError(e)
   }
@@ -190,8 +162,8 @@ export function getSegAndCatsArray(data, minScore) {
 export function addSegmentData(adUnits, data, moduleConfig, onDone) {
   moduleConfig = moduleConfig || {};
   moduleConfig.params = moduleConfig.params || {};
-  const minScore = moduleConfig.params.hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.contextualMinRelevancyScore : 30;
-  var sirdataData = getSegAndCatsArray(data, minScore);
+  const globalMinScore = moduleConfig.params.hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.contextualMinRelevancyScore : 30;
+  var sirdataData = getSegAndCatsArray(data, globalMinScore);
 
   if (!sirdataData || (sirdataData.segments.length < 1 && sirdataData.categories.length < 1)) { utils.logError('no cats'); onDone(); return adUnits; }
 
@@ -208,16 +180,18 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
 
   // Google targeting
   if (typeof window.googletag !== 'undefined' && (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues'))) {
-    // For curation Google is pid 27449
-    curationId = (moduleConfig.params.gptCurationId ? moduleConfig.params.gptCurationId : '27449');
-    if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-      curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
-    }
-    window.googletag.pubads().getSlots().forEach(function(n) {
-      if (typeof n.setTargeting !== 'undefined') {
-        n.setTargeting('sd_rtd', sirdataList.concat(curationData.segments).concat(curationData.categories));
+    try {
+      // For curation Google is pid 27449
+      curationId = (moduleConfig.params.gptCurationId ? moduleConfig.params.gptCurationId : '27449');
+      if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
+        curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], globalMinScore);
       }
-    })
+      window.googletag.pubads().getSlots().forEach(function(n) {
+        if (typeof n.setTargeting !== 'undefined') {
+          n.setTargeting('sd_rtd', sirdataList.concat(curationData.segments).concat(curationData.categories));
+        }
+      })
+    } catch (e) { utils.logError(e); }
   }
 
   // Bid targeting level for FPD non-generic biders
@@ -225,8 +199,8 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
   var indexFound = false;
 
   adUnits.forEach(adUnit => {
-    if (!biddersParamsExist && !hasOwnDeepProperty(adUnit, 'sd_rtd')) {
-      _set(adUnit, 'ortb2Imp.ext.data.sd_rtd', sirdataList, false);
+    if (!biddersParamsExist && !utils.deepAccess(adUnit, 'ortb2Imp.ext.data.sd_rtd')) {
+      utils.deepSetValue(adUnit, 'ortb2Imp.ext.data.sd_rtd', sirdataList);
     }
 
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
@@ -234,6 +208,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
       indexFound = (!!(typeof bidderIndex == 'number' && bidderIndex >= 0));
       try {
         curationData = {'segments': [], 'categories': []};
+        let minScore = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.bidders[bidderIndex].contextualMinRelevancyScore : globalMinScore)
 
         if (!biddersParamsExist || (indexFound && (!moduleConfig.params.bidders[bidderIndex].hasOwnProperty('adUnitCodes') || moduleConfig.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
           switch (bid.bidder) {
@@ -261,7 +236,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
                 loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
-                _set(bid, 'params.keywords.sd_rtd', sirdataList.concat(curationData.segments).concat(curationData.categories), true);
+                utils.deepSetValue(bid, 'params.keywords.sd_rtd', sirdataList.concat(curationData.segments).concat(curationData.categories));
               }
               break;
 
@@ -284,7 +259,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
                     target.push('sd_rtd=' + entry);
                   }
                 });
-                _set(bid, 'params.target', target.join(';'), true);
+                utils.deepSetValue(bid, 'params.target', target.join(';'));
               }
               break;
 
@@ -338,7 +313,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
                 loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
-                _set(bid, 'ortb2.user.ext.data', {segments: sirdataData.segments.concat(curationData.segments), contextual_categories: {...data.contextual_categories, ...data.shared_taxonomy[curationId].contextual_categories}}, true);
+                utils.deepSetValue(bid, 'ortb2.user.ext.data', {segments: sirdataData.segments.concat(curationData.segments), contextual_categories: {...data.contextual_categories, ...data.shared_taxonomy[curationId].contextual_categories}});
               }
               break;
 
@@ -396,9 +371,13 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               break;
 
             default:
-              if ((!biddersParamsExist || indexFound) && !hasOwnDeepProperty(bid, 'sd_rtd')) {
-                _set(bid, 'ortb2.site.ext.data.sd_rtd', sirdataData.categories, false);
-                _set(bid, 'ortb2.user.ext.data.sd_rtd', sirdataData.segments, false);
+              if (!biddersParamsExist || indexFound) {
+                if (!utils.deepAccess(bid, 'ortb2.site.ext.data.sd_rtd')) {
+                  utils.deepSetValue(bid, 'ortb2.site.ext.data.sd_rtd', sirdataData.categories);
+                }
+                if (!utils.deepAccess(bid, 'ortb2.user.ext.data.sd_rtd')) {
+                  utils.deepSetValue(bid, 'ortb2.user.ext.data.sd_rtd', sirdataData.segments);
+                }
               }
           }
         }

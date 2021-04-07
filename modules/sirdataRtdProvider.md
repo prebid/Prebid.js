@@ -51,16 +51,17 @@ pbjs.setConfig(
                 	partnerId: 1,
                     key: 1,
                 	setGptKeyValues: true,
-                	contextualMinRelevancyScore: 50, //Min score to keep contextual category in the bidders (0-100 scale)
+                	contextualMinRelevancyScore: 50, //Min score to filter contextual category globally (0-100 scale)
                 	actualUrl: actual_url, //top location url, for contextual categories
                     bidders: [{
                         bidder: 'appnexus',
                         adUnitCodes: ['adUnit-1','adUnit-2'],
                         customFunction: overrideAppnexus,
-                        curationId: '111'
+                        curationId: '111',
                     },{
                         bidder: 'ix',
-                        sizeLimit: 1200 //specific to Index Exchange
+                        sizeLimit: 1200 //specific to Index Exchange,
+                        contextualMinRelevancyScore: 50, //Min score to filter contextual category for curation in the bidder (0-100 scale)
                     }]
                 }
             }
@@ -80,7 +81,7 @@ pbjs.setConfig(
 | params.partnerId | Integer | Partner ID, required to get results and provided by Sirdata. Use 1 for tests and get one running at bob@sirdata.com | Mandatory. Defaults 1. |
 | params.key | Integer | Key linked to Partner ID, required to get results and provided by Sirdata. Use 1 for tests and get one running at bob@sirdata.com | Mandatory. Defaults 1. |
 | params.setGptKeyValues | Boolean | This parameter Sirdata to set Targeting for GPT/GAM | Optional. Defaults to true. |
-| params.contextualMinRelevancyScore | Integer | Min score to keep contextual category in the bidders (0-100 scale). Optional. Defaults to 30. |
+| params.contextualMinRelevancyScore | Integer | Min score to keep filter category in the bidders (0-100 scale). Optional. Defaults to 30. |
 | params.bidders | Object | Dictionary of bidders you would like to supply Sirdata data for. | Optional. In case no bidder is specified Sirdata will atend to ad data custom and ortb2 to all bidders, adUnits & Globalconfig |
 
 Bidders can receive common setting :
@@ -90,7 +91,9 @@ Bidders can receive common setting :
 | adUnitCodes | Array of String | Use if you want to limit data injection to specified adUnits for the bidder | Optional. Default is false and data shared with the bidder isn't filtered |
 | customFunction | Function | Use it to override the way data is shared with a bidder | Optional. Default is false |
 | curationId | String | Specify the curation ID of the bidder. Provided by Sirdata, request it at bob@sirdata.com | Optional. Default curation ids are specified for main bidders |
+| contextualMinRelevancyScore | Integer | Min score to filter contextual categories for curation in the bidder (0-100 scale). Optional. Defaults to 30 or global params.contextualMinRelevancyScore if exits. |
 | sizeLimit | Integer | used only for bidder 'ix' to limit the size of the get parameter in Index Exchange ad call | Optional. Default is 1000 |
+
 
 ### Overriding data sharing function
 As indicated above, it is possible to provide your own bid augmentation
