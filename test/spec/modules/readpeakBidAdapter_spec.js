@@ -210,6 +210,9 @@ describe('ReadPeakAdapter', function() {
         currency: serverResponse.cur
       });
 
+      expect(bidResponse.meta).to.deep.equal({
+        advertiserDomains: ['readpeak.com'],
+      })
       expect(bidResponse.native.title).to.equal('Title');
       expect(bidResponse.native.body).to.equal('Description');
       expect(bidResponse.native.image).to.deep.equal({

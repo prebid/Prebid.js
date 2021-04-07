@@ -87,6 +87,11 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         currency: bidResponse.cur,
         native: nativeResponse(idToImpMap[id], idToBidMap[id])
       };
+      if (idToBidMap[id].adomain) {
+        bid.meta = {
+          advertiserDomains: idToBidMap[id].adomain
+        }
+      }
       bids.push(bid);
     }
   });
