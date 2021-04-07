@@ -210,19 +210,11 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
     )
   }
 
-  if (gdprConsent.gdprApplies === true) {
-    ttxRequest.regs = setExtension(
-      ttxRequest.regs,
-      'gdpr',
-      1
-    )
-  } else {
-    ttxRequest.regs = setExtension(
-      ttxRequest.regs,
-      'gdpr',
-      0
-    )
-  }
+  ttxRequest.regs = setExtension(
+    ttxRequest.regs,
+    'gdpr',
+    Number(gdprConsent.gdprApplies)
+  );
 
   if (uspConsent) {
     ttxRequest.regs = setExtension(
