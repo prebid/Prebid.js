@@ -187,6 +187,24 @@ describe('ReadPeakAdapter', function() {
       });
       expect(data.cur).to.deep.equal(['EUR']);
     });
+
+    it('should get bid floor from module', function() {
+      const floorModuleData = {
+        currency: 'USD',
+        floor: 3.2,
+      }
+      bidRequest.getFloor = function () {
+        return floorModuleData
+      }
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      const data = JSON.parse(request.data);
+
+      expect(data.source.ext.prebid).to.equal('$prebid.version$');
+      expect(data.id).to.equal(bidRequest.bidderRequestId);
+      expect(data.imp[0].bidfloor).to.equal(floorModuleData.floor);
+      expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency);
+    });
   });
 
   describe('spec.interpretResponse', function() {
