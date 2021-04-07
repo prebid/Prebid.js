@@ -1,5 +1,4 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
 
@@ -44,14 +43,17 @@ function _createServerRequest(bidRequests, bidderRequest) {
     ) {
       payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
     }
-
-    if (
-      bidderRequest.gdprConsent.vendorData &&
-      bidderRequest.gdprConsent.vendorData.vendorConsents &&
-      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined'
-    ) {
-      payload.gdpr.consentGiven = !!bidderRequest.gdprConsent.vendorData
-        .vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
+    if (bidderRequest.gdprConsent.vendorData) {
+      const {vendorData} = bidderRequest.gdprConsent;
+      const {apiVersion} = bidderRequest.gdprConsent;
+      if (apiVersion === 2 && vendorData.vendor && typeof vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
+        payload.gdpr.consentGiven = !!vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)];
+      } else if (apiVersion === 1 && vendorData.vendorConsents &&
+        typeof vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined'
+      ) {
+        payload.gdpr.consentGiven = !!bidderRequest.gdprConsent.vendorData
+          .vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
+      }
     }
   }
 
