@@ -121,7 +121,11 @@ function buildOpenRtbImpObject(validBidRequest) {
       format: buildFormatArray(sizes),
       w: mainSize[0],
       h: mainSize[1],
-      pos: getPosition(validBidRequest)
+      ext: {
+        kobler: {
+          pos: getPosition(validBidRequest)
+        }
+      }
     },
     tagid: validBidRequest.params.placementId,
     bidfloor: floorInfo.floor,

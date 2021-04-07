@@ -170,7 +170,7 @@ describe('KoblerAdapter', function () {
       const openRtbRequest = JSON.parse(result.data);
 
       expect(openRtbRequest.imp.length).to.be.equal(1);
-      expect(openRtbRequest.imp[0].banner.pos).to.be.equal(0);
+      expect(openRtbRequest.imp[0].banner.ext.kobler.pos).to.be.equal(0);
     });
 
     it('should read zip from valid bid requests', function () {
@@ -255,11 +255,11 @@ describe('KoblerAdapter', function () {
       const openRtbRequest = JSON.parse(result.data);
 
       expect(openRtbRequest.imp.length).to.be.equal(3);
-      expect(openRtbRequest.imp[0].banner.pos).to.be.equal(1);
+      expect(openRtbRequest.imp[0].banner.ext.kobler.pos).to.be.equal(1);
       expect(openRtbRequest.imp[0].tagid).to.be.equal(placementId);
-      expect(openRtbRequest.imp[1].banner.pos).to.be.equal(2);
+      expect(openRtbRequest.imp[1].banner.ext.kobler.pos).to.be.equal(2);
       expect(openRtbRequest.imp[1].tagid).to.be.equal(placementId);
-      expect(openRtbRequest.imp[2].banner.pos).to.be.equal(3);
+      expect(openRtbRequest.imp[2].banner.ext.kobler.pos).to.be.equal(3);
       expect(openRtbRequest.imp[2].tagid).to.be.equal(placementId);
     });
 
@@ -430,7 +430,11 @@ describe('KoblerAdapter', function () {
               ],
               w: 400,
               h: 600,
-              pos: 1
+              ext: {
+                kobler: {
+                  pos: 1
+                }
+              }
             },
             tagid: 'pcha322364',
             bidfloor: 5.6234,
@@ -462,7 +466,11 @@ describe('KoblerAdapter', function () {
               ],
               w: 400,
               h: 500,
-              pos: 2
+              ext: {
+                kobler: {
+                  pos: 2
+                }
+              }
             },
             tagid: 'sdfgoi32y4',
             bidfloor: 3.2543,
@@ -489,7 +497,11 @@ describe('KoblerAdapter', function () {
               ],
               w: 800,
               h: 900,
-              pos: 3
+              ext: {
+                kobler: {
+                  pos: 3
+                }
+              }
             },
             tagid: 'gwms2738647',
             bidfloor: 0,
