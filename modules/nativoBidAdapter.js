@@ -4,7 +4,7 @@ import { BANNER } from "../src/mediaTypes.js"
 // import { config } from 'src/config'
 
 const BIDDER_CODE = "nativo"
-const BIDDER_ENDPOINT = "https://jadserve.postrelease.com/prebid"
+const BIDDER_ENDPOINT = "https://exchange.postrelease.com/prebid"
 
 const TIME_TO_LIVE = 360
 
