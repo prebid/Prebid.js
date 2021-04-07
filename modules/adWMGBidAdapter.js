@@ -34,7 +34,6 @@ export const spec = {
     const additional = spec.parseUserAgent(ua);
 
     return validBidRequests.map(bidRequest => {
-
       const checkFloorValue = (value) => {
         if (isNaN(parseFloat(value))) {
           return 0;
@@ -170,60 +169,60 @@ export const spec = {
         options: [],
         header: [navigator.platform, ua, navigator.appVersion, navigator.vendor, window.opera],
         dataos: [{
-            name: 'Windows Phone',
-            value: 'Windows Phone',
-            version: 'OS'
-          },
-          {
-            name: 'Windows',
-            value: 'Win',
-            version: 'NT'
-          },
-          {
-            name: 'iOS',
-            value: 'iPhone',
-            version: 'OS'
-          },
-          {
-            name: 'iOS',
-            value: 'iPad',
-            version: 'OS'
-          },
-          {
-            name: 'Kindle',
-            value: 'Silk',
-            version: 'Silk'
-          },
-          {
-            name: 'Android',
-            value: 'Android',
-            version: 'Android'
-          },
-          {
-            name: 'PlayBook',
-            value: 'PlayBook',
-            version: 'OS'
-          },
-          {
-            name: 'BlackBerry',
-            value: 'BlackBerry',
-            version: '/'
-          },
-          {
-            name: 'Macintosh',
-            value: 'Mac',
-            version: 'OS X'
-          },
-          {
-            name: 'Linux',
-            value: 'Linux',
-            version: 'rv'
-          },
-          {
-            name: 'Palm',
-            value: 'Palm',
-            version: 'PalmOS'
-          }
+          name: 'Windows Phone',
+          value: 'Windows Phone',
+          version: 'OS'
+        },
+        {
+          name: 'Windows',
+          value: 'Win',
+          version: 'NT'
+        },
+        {
+          name: 'iOS',
+          value: 'iPhone',
+          version: 'OS'
+        },
+        {
+          name: 'iOS',
+          value: 'iPad',
+          version: 'OS'
+        },
+        {
+          name: 'Kindle',
+          value: 'Silk',
+          version: 'Silk'
+        },
+        {
+          name: 'Android',
+          value: 'Android',
+          version: 'Android'
+        },
+        {
+          name: 'PlayBook',
+          value: 'PlayBook',
+          version: 'OS'
+        },
+        {
+          name: 'BlackBerry',
+          value: 'BlackBerry',
+          version: '/'
+        },
+        {
+          name: 'Macintosh',
+          value: 'Mac',
+          version: 'OS X'
+        },
+        {
+          name: 'Linux',
+          value: 'Linux',
+          version: 'rv'
+        },
+        {
+          name: 'Palm',
+          value: 'Palm',
+          version: 'PalmOS'
+        }
         ],
         init: function () {
           var agent = this.header.join(' ');
