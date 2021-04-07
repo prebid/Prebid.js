@@ -95,7 +95,7 @@ export function setGlobalOrtb2(segments, categories) {
     if (!testGlobal || !utils.deepAccess(testGlobal, 'site.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.site.ext.data.sd_rtd, categories)) {
       utils.deepSetValue(addOrtb2, 'site.ext.data.sd_rtd', categories || {});
     }
-    if (addOrtb2) {
+    if (!utils.isEmpty(addOrtb2)) {
       let ortb2 = {ortb2: utils.mergeDeep({}, ((testGlobal && testGlobal.ortb2) ? testGlobal.ortb2 : {}), addOrtb2)};
       getGlobal().setConfig(ortb2);
     }
@@ -116,7 +116,7 @@ export function setBidderOrtb2(bidder, segments, categories) {
     if (!testBidder[bidder] || !utils.deepAccess(testBidder[bidder], 'ortb2.site.ext.data.sd_rtd') || !utils.deepEqual(testBidder[bidder].ortb2.site.ext.data.sd_rtd, categories)) {
       utils.deepSetValue(addOrtb2, 'site.ext.data.sd_rtd', categories || {});
     }
-    if (addOrtb2) {
+    if (!utils.isEmpty(addOrtb2)) {
       let ortb2 = {ortb2: utils.mergeDeep({}, ((testBidder[bidder] && testBidder[bidder].ortb2) ? testBidder[bidder].ortb2 : {}), addOrtb2)};
       getGlobal().setBidderConfig({ bidders: [bidder], config: ortb2 });
     }
