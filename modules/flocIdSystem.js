@@ -72,7 +72,7 @@ export const flocIdSubmodule = {
       // Example expected output { "id": "14159", "version": "chrome.1.0" }
       const {id, version as ver } = document.interestCohort() || {};
 
-      return { id: cohort.id, ver: cohort.version };
+      return { id, ver };
     }
   }
 };
