@@ -28,6 +28,12 @@ describe('Improve Digital Adapter Tests', function () {
     sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
   };
 
+  const videoParams = {
+    skip: 1,
+    skipmin: 5,
+    skipafter: 30
+  }
+
   const instreamBidRequest = utils.deepClone(simpleBidRequest);
   instreamBidRequest.mediaTypes = {
     video: {
@@ -280,14 +286,23 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.referrer).to.equal('https://blah.com/test.html');
     });
 
+    it('should not add video params for banner', function () {
+      const bidRequest = JSON.parse(JSON.stringify(simpleBidRequest));
+      bidRequest.params.video = videoParams;
+      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.not.exist;
+    });
+
     it('should add ad type for instream video', function () {
-      let bidRequest = Object.assign({}, simpleBidRequest);
+      let bidRequest = JSON.parse(JSON.stringify(simpleBidRequest));
       bidRequest.mediaType = 'video';
       let request = spec.buildRequests([bidRequest], bidderRequest)[0];
       let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
+      expect(params.bid_request.imp[0].video).to.not.exist;
 
-      bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest = JSON.parse(JSON.stringify(simpleBidRequest));
       bidRequest.mediaTypes = {
         video: {
           context: 'instream',
@@ -297,18 +312,89 @@ describe('Improve Digital Adapter Tests', function () {
       request = spec.buildRequests([bidRequest], bidderRequest)[0];
       params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
+      expect(params.bid_request.imp[0].video).to.not.exist;
     });
 
     it('should not set ad type for outstream video', function() {
       const request = spec.buildRequests([outstreamBidRequest])[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].ad_types).to.not.exist;
+      expect(params.bid_request.imp[0].video).to.not.exist;
     });
 
     it('should not set ad type for multi-format bids', function() {
       const request = spec.buildRequests([multiFormatBidRequest], bidderRequest)[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].ad_types).to.not.exist;
+      expect(params.bid_request.imp[0].video).to.not.exist;
+    });
+
+    it('should set video params for instream', function() {
+      const bidRequest = JSON.parse(JSON.stringify(instreamBidRequest));
+      bidRequest.params.video = videoParams;
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal(videoParams);
+    });
+
+    it('should set skip params only if skip=1', function() {
+      const bidRequest = JSON.parse(JSON.stringify(instreamBidRequest));
+      // 1
+      const videoTest = {
+        skip: 1,
+        skipmin: 5,
+        skipafter: 30
+      }
+      bidRequest.params.video = videoTest;
+      let request = spec.buildRequests([bidRequest])[0];
+      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal(videoTest);
+
+      // 0 - leave out skipmin and skipafter
+      videoTest.skip = 0;
+      bidRequest.params.video = videoTest;
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal({ skip: 0 });
+
+      // other
+      videoTest.skip = 'blah';
+      bidRequest.params.video = videoTest;
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.not.exist;
+    });
+
+    it('should ignore invalid/unexpected video params', function() {
+      const bidRequest = JSON.parse(JSON.stringify(instreamBidRequest));
+      // 1
+      const videoTest = {
+        skip: 1,
+        skipmin: 5,
+        skipafter: 30
+      }
+      const videoTestInvParam = Object.assign({}, videoTest);
+      videoTestInvParam.blah = 1;
+      bidRequest.params.video = videoTestInvParam;
+      let request = spec.buildRequests([bidRequest])[0];
+      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal(videoTest);
+    });
+
+    it('should set video params for outstream', function() {
+      const bidRequest = JSON.parse(JSON.stringify(outstreamBidRequest));
+      bidRequest.params.video = videoParams;
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal(videoParams);
+    });
+
+    it('should set video params for multi-format', function() {
+      const bidRequest = JSON.parse(JSON.stringify(multiFormatBidRequest));
+      bidRequest.params.video = videoParams;
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal(videoParams);
     });
 
     it('should not set Prebid sizes in bid request for instream video', function () {
@@ -664,7 +750,6 @@ describe('Improve Digital Adapter Tests', function () {
     const expectedBid = [
       {
         'ad': '<img src=\"https://ice.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"https:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/https%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"https:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");</script>',
-        'adId': '33e9500b21129f',
         'creativeId': '422031',
         'cpm': 1.45888594164456,
         'currency': 'USD',
@@ -681,7 +766,6 @@ describe('Improve Digital Adapter Tests', function () {
       expectedBid[0],
       {
         'ad': '<img src=\"https://link/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"https:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/https%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"https:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");</script>',
-        'adId': '1234',
         'creativeId': '422033',
         'cpm': 1.23,
         'currency': 'USD',
@@ -697,7 +781,6 @@ describe('Improve Digital Adapter Tests', function () {
     const expectedBidNative = [
       {
         mediaType: 'native',
-        adId: '33e9500b21129f',
         creativeId: '422031',
         cpm: 1.45888594164456,
         currency: 'USD',
@@ -746,7 +829,6 @@ describe('Improve Digital Adapter Tests', function () {
     const expectedBidInstreamVideo = [
       {
         'vastXml': '<VAST></VAST>',
-        'adId': '33e9500b21129f',
         'creativeId': '422031',
         'cpm': 1.45888594164456,
         'currency': 'USD',

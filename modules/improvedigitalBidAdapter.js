@@ -4,12 +4,14 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import { createEidsArray } from './userId/eids.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const BIDDER_CODE = 'improvedigital';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const VIDEO_TARGETING = ['skip', 'skipmin', 'skipafter'];
 
 export const spec = {
-  version: '7.1.0',
+  version: '7.3.0',
   code: BIDDER_CODE,
   gvlid: 253,
   aliases: ['id'],
@@ -124,7 +126,6 @@ export const spec = {
       }
 
       // Common properties
-      bid.adId = bidObject.id;
       bid.cpm = parseFloat(bidObject.price);
       bid.creativeId = bidObject.crid;
       bid.currency = bidObject.currency ? bidObject.currency.toUpperCase() : 'USD';
@@ -202,6 +203,21 @@ function isOutstreamVideo(bid) {
   return videoMediaType && context === 'outstream';
 }
 
+function getVideoTargetingParams(bid) {
+  const result = {};
+  Object.keys(Object(bid.mediaTypes.video))
+    .filter(key => includes(VIDEO_TARGETING, key))
+    .forEach(key => {
+      result[ key ] = bid.mediaTypes.video[ key ];
+    });
+  Object.keys(Object(bid.params.video))
+    .filter(key => includes(VIDEO_TARGETING, key))
+    .forEach(key => {
+      result[ key ] = bid.params.video[ key ];
+    });
+  return result;
+}
+
 function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
@@ -254,6 +270,9 @@ function getNormalizedBidRequest(bid) {
   let normalizedBidRequest = {};
   if (isInstreamVideo(bid)) {
     normalizedBidRequest.adTypes = [ VIDEO ];
+  }
+  if (isInstreamVideo(bid) || isOutstreamVideo(bid)) {
+    normalizedBidRequest.video = getVideoTargetingParams(bid);
   }
   if (placementId) {
     normalizedBidRequest.placementId = placementId;
@@ -400,7 +419,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     AD_SERVER_BASE_URL: 'ice.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-6.3.0',
+    CLIENT_VERSION: 'JS-6.4.0',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
       MISSING_PLACEMENT_PARAMS: 2,
@@ -608,6 +627,21 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
     if (placementObject.transactionId) {
       impressionObject.tid = placementObject.transactionId;
+    }
+    if (!utils.isEmpty(placementObject.video)) {
+      const video = Object.assign({}, placementObject.video);
+      // skip must be 0 or 1
+      if (video.skip !== 1) {
+        delete video.skipmin;
+        delete video.skipafter;
+        if (video.skip !== 0) {
+          utils.logWarn(`video.skip: invalid value '${video.skip}'. Expected 0 or 1`);
+          delete video.skip;
+        }
+      }
+      if (!utils.isEmpty(video)) {
+        impressionObject.video = video;
+      }
     }
     if (placementObject.keyValues) {
       for (let key in placementObject.keyValues) {

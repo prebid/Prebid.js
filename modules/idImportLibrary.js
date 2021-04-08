@@ -8,7 +8,7 @@ let email;
 let conf;
 const LOG_PRE_FIX = 'ID-Library: ';
 const CONF_DEFAULT_OBSERVER_DEBOUNCE_MS = 250;
-const CONF_DEFAULT_FULL_BODY_SCAN = true;
+const CONF_DEFAULT_FULL_BODY_SCAN = false;
 const OBSERVER_CONFIG = {
   subtree: true,
   attributes: true,
@@ -38,7 +38,7 @@ function getEmail(value) {
   if (!matched) {
     return null;
   }
-  logInfo('Email found' + matched[0]);
+  logInfo('Email found: ' + matched[0]);
   return matched[0];
 }
 
@@ -200,10 +200,10 @@ function postData() {
     logInfo('No user ids');
     return;
   }
-  logInfo('Users' + JSON.stringify(userIds));
+  logInfo('Users' + userIds);
   const syncPayload = {};
   syncPayload.hid = MD5(email).toString();
-  syncPayload.uids = JSON.stringify(userIds);
+  syncPayload.uids = userIds;
   const payloadString = JSON.stringify(syncPayload);
   logInfo(payloadString);
   ajax(conf.url, syncCallback(), payloadString, {method: 'POST', withCredentials: true});
@@ -240,4 +240,4 @@ export function setConfig(config) {
   associateIds();
 }
 
-config.getConfig('idLibrary', config => setConfig(config.idLibrary));
+config.getConfig('idImportLibrary', config => setConfig(config.idImportLibrary));

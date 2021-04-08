@@ -125,7 +125,8 @@ function impression(slot) {
     id: slot.bidId,
     native: nativeImpression(slot),
     bidfloor: bidFloorFromModule || slot.params.bidfloor || 0,
-    bidfloorcur: (bidFloorFromModule && 'USD') || slot.params.bidfloorcur || 'USD'
+    bidfloorcur: (bidFloorFromModule && 'USD') || slot.params.bidfloorcur || 'USD',
+    tagId: slot.params.tagId || '0'
   };
 }
 

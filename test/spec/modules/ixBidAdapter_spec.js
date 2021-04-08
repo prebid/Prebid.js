@@ -3,6 +3,7 @@ import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/ixBidAdapter.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/cygnus';
@@ -25,7 +26,7 @@ describe('IndexexchangeAdapter', function () {
       }
     ]
   };
-  var div_many_sizes = [
+  const div_many_sizes = [
     [300, 250],
     [600, 410],
     [336, 280],
@@ -93,6 +94,62 @@ describe('IndexexchangeAdapter', function () {
     [600, 40],
     [600, 30]
   ];
+
+  const ONE_VIDEO = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '456',
+        video: {
+          skippable: false,
+          mimes: [
+            'video/mp4',
+            'video/webm'
+          ],
+          minduration: 0,
+          maxduration: 60,
+          protocols: [2]
+        },
+        size: [400, 100]
+      },
+      sizes: [[400, 100]],
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [[400, 100]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
+  const ONE_BANNER = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '123',
+        size: [300, 250]
+      },
+      sizes: [[300, 250]],
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748561-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
+      bidId: '1a2b3c4d',
+      bidderRequestId: '11a22b33c44d',
+      auctionId: '1aa2bb3cc4dd',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
   const DEFAULT_BANNER_VALID_BID = [
     {
       bidder: 'ix',
@@ -126,7 +183,9 @@ describe('IndexexchangeAdapter', function () {
             'video/mp4',
             'video/webm'
           ],
-          minduration: 0
+          minduration: 0,
+          maxduration: 60,
+          protocols: [2]
         },
         size: [400, 100]
       },
@@ -135,6 +194,68 @@ describe('IndexexchangeAdapter', function () {
         video: {
           context: 'instream',
           playerSize: [[400, 100], [200, 400]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
+  const DEFAULT_MULTIFORMAT_BANNER_VALID_BID = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '123',
+        size: [300, 250]
+      },
+      sizes: [[300, 250], [300, 600]],
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          playerSize: [[400, 100]]
+        },
+        banner: {
+          sizes: [[300, 250], [300, 600]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
+  const DEFAULT_MULTIFORMAT_VIDEO_VALID_BID = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '456',
+        video: {
+          skippable: false,
+          mimes: [
+            'video/mp4',
+            'video/webm'
+          ],
+          minduration: 0,
+          maxduration: 60,
+          protocols: [1]
+        },
+        size: [400, 100]
+      },
+      sizes: [[300, 250], [300, 600]],
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          playerSize: [[400, 100]]
+        },
+        banner: {
+          sizes: [[300, 250], [300, 600]]
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
@@ -287,7 +408,12 @@ describe('IndexexchangeAdapter', function () {
 
   const DEFAULT_USERID_DATA = {
     idl_env: '1234-5678-9012-3456', // Liveramp
+    netId: 'testnetid123', // NetId
+    IDP: 'userIDP000', // IDP
+    fabrickId: 'fabrickId9000', // FabrickId
   };
+
+  const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
 
   const DEFAULT_USERID_PAYLOAD = [
     {
@@ -296,6 +422,30 @@ describe('IndexexchangeAdapter', function () {
         id: DEFAULT_USERID_DATA.idl_env,
         ext: {
           rtiPartner: 'idl'
+        }
+      }]
+    }, {
+      source: 'netid.de',
+      uids: [{
+        id: DEFAULT_USERID_DATA.netId,
+        ext: {
+          rtiPartner: 'NETID'
+        }
+      }]
+    }, {
+      source: 'neustar.biz',
+      uids: [{
+        id: DEFAULT_USERID_DATA.fabrickId,
+        ext: {
+          rtiPartner: 'fabrickId'
+        }
+      }]
+    }, {
+      source: 'zeotap.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA.IDP,
+        ext: {
+          rtiPartner: 'zeotapIdPlus'
         }
       }]
     }
@@ -436,6 +586,16 @@ describe('IndexexchangeAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
+    it('should return true for banner bid when there are multiple mediaTypes (banner, outstream)', function () {
+      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true for video bid when there are multiple mediaTypes (banner, outstream)', function () {
+      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
     it('should return false when there is only bidFloor', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
@@ -460,6 +620,71 @@ describe('IndexexchangeAdapter', function () {
       bid.params.bidFloor = 50;
       bid.params.bidFloorCur = 70;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when required video properties are missing on both adunit & param levels', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      delete bid.params.video.mimes;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return true when required video properties are at the adunit level', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      delete bid.params.video.mimes;
+      bid.mediaTypes.video.mimes = ['video/mp4'];
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true if protocols exists but protocol doesn\'t', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      delete bid.params.video.protocols;
+      bid.mediaTypes.video.protocols = 1;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true if protocol exists but protocols doesn\'t', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      delete bid.params.video.protocols;
+      bid.params.video.protocol = 1;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      delete bid.params.video.protocol;
+      bid.mediaTypes.video.protocol = 1;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return false if both protocol/protocols are missing', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      delete bid.params.video.protocols;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
+
+  describe('Roundel alias adapter', function () {
+    const vaildBids = [DEFAULT_BANNER_VALID_BID, DEFAULT_VIDEO_VALID_BID, DEFAULT_MULTIFORMAT_BANNER_VALID_BID, DEFAULT_MULTIFORMAT_VIDEO_VALID_BID];
+    const ALIAS_OPTIONS = Object.assign({
+      bidderCode: 'roundel'
+    }, DEFAULT_OPTION);
+
+    it('should not build requests for mediaTypes if liveramp data is unavaliable', function () {
+      vaildBids.forEach((validBid) => {
+        const request = spec.buildRequests(validBid, ALIAS_OPTIONS);
+        expect(request).to.be.an('array');
+        expect(request).to.have.lengthOf(0);
+      });
+    });
+
+    it('should build requests for mediaTypes if liveramp data is avaliable', function () {
+      vaildBids.forEach((validBid) => {
+        const cloneValidBid = utils.deepClone(validBid);
+        cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
+        const request = spec.buildRequests(cloneValidBid, ALIAS_OPTIONS);
+        const payload = JSON.parse(request[0].data.r);
+        expect(request).to.be.an('array');
+        expect(request).to.have.lengthOf(1);
+        expect(payload.user.eids).to.have.lengthOf(4);
+        expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+      });
     });
   });
 
@@ -650,14 +875,18 @@ describe('IndexexchangeAdapter', function () {
       delete window.headertag;
     });
 
-    it('IX adapter reads LiveRamp IDL envelope from Prebid and adds it to Video', function () {
+    it('IX adapter reads supported user modules from Prebid and adds it to Video', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+      // cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
-      expect(payload.user.eids).to.have.lengthOf(1);
+      expect(payload.user.eids).to.have.lengthOf(4);
       expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
     });
 
     it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {
@@ -711,11 +940,45 @@ describe('IndexexchangeAdapter', function () {
               }
             }
           ]
+        },
+        NetIdIp: {
+          source: 'netid.de',
+          uids: [
+            {
+              id: 'testnetid',
+              ext: {
+                rtiPartner: 'NETID'
+              }
+            }
+          ]
+        },
+        NeustarIp: {
+          source: 'neustar.biz',
+          uids: [
+            {
+              id: 'testfabrick',
+              ext: {
+                rtiPartner: 'fabrickId'
+              }
+            }
+          ]
+        },
+        ZeotapIp: {
+          source: 'zeotap.com',
+          uids: [
+            {
+              id: 'testzeotap',
+              ext: {
+                rtiPartner: 'zeotapIdPlus'
+              }
+            }
+          ]
         }
       };
 
       const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA)
+      // cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
 
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
@@ -756,10 +1019,14 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(3);
+      expect(payload.user.eids).to.have.lengthOf(6);
+
       expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[3]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[4]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[5]);
     });
 
     it('IXL and Prebid are mutually exclusive', function () {
@@ -781,7 +1048,8 @@ describe('IndexexchangeAdapter', function () {
       };
 
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+      // cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
 
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
 
@@ -799,9 +1067,12 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = JSON.parse(request.data.r);
-      expect(payload.user.eids).to.have.lengthOf(2);
+      expect(payload.user.eids).to.have.lengthOf(5);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[3]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[4]);
     });
   });
 
@@ -870,6 +1141,84 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.sid).to.equal(sidValue);
     });
 
+    it('video impression has #priceFloors floors', function () {
+      const bid = utils.deepClone(ONE_VIDEO[0]);
+      const flr = 5.5
+      const floorInfo = {floor: flr, currency: 'USD'};
+      bid.getFloor = function () {
+        return floorInfo;
+      }
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(flr);
+      expect(imp1.bidfloorcur).to.equal('USD');
+      expect(imp1.ext.fl).to.equal('p');
+    });
+
+    it('banner imp has floors from #priceFloors module', function () {
+      const floor300x250 = 3.25
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0])
+
+      const floorInfo = { floor: floor300x250, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+
+      expect(imp1.bidfloorcur).to.equal('USD');
+      expect(imp1.bidfloor).to.equal(floor300x250);
+      expect(imp1.ext.fl).to.equal('p');
+    });
+
+    it('ix adapter floors chosen over #priceFloors ', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const floorhi = 4.5
+      const floorlow = 3.5
+
+      bid.params.bidFloor = floorhi
+      bid.params.bidFloorCur = 'USD'
+
+      const floorInfo = { floor: floorlow, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(floorhi);
+      expect(imp1.bidfloorcur).to.equal(bid.params.bidFloorCur);
+      expect(imp1.ext.fl).to.equal('x');
+    });
+
+    it(' #priceFloors floors chosen over ix adapter floors', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const floorhi = 4.5
+      const floorlow = 3.5
+
+      bid.params.bidFloor = floorlow
+      bid.params.bidFloorCur = 'USD'
+
+      const floorInfo = { floor: floorhi, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(floorhi);
+      expect(imp1.bidfloorcur).to.equal(bid.params.bidFloorCur);
+      expect(imp1.ext.fl).to.equal('p');
+    });
+
     it('impression should have bidFloor and bidFloorCur if configured', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
@@ -879,6 +1228,73 @@ describe('IndexexchangeAdapter', function () {
 
       expect(impression.bidfloor).to.equal(bid.params.bidFloor);
       expect(impression.bidfloorcur).to.equal(bid.params.bidFloorCur);
+      expect(impression.ext.fl).to.equal('x');
+    });
+
+    it('missing sizes #priceFloors ', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+      bid.mediaTypes.banner.sizes.push([500, 400])
+
+      const floorInfo = { floor: 3.25, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      sinon.spy(bid, 'getFloor');
+
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      // called getFloor with 300 x 250
+      expect(bid.getFloor.getCall(0).args[0].mediaType).to.equal('banner');
+      expect(bid.getFloor.getCall(0).args[0].size[0]).to.equal(300);
+      expect(bid.getFloor.getCall(0).args[0].size[1]).to.equal(250);
+
+      // called getFloor with 500 x 400
+      expect(bid.getFloor.getCall(1).args[0].mediaType).to.equal('banner');
+      expect(bid.getFloor.getCall(1).args[0].size[0]).to.equal(500);
+      expect(bid.getFloor.getCall(1).args[0].size[1]).to.equal(400);
+
+      // both will have same floors due to mock getFloor
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(3.25);
+      expect(imp1.bidfloorcur).to.equal('USD');
+
+      const imp2 = JSON.parse(requestBidFloor.data.r).imp[1];
+      expect(imp2.bidfloor).to.equal(3.25);
+      expect(imp2.bidfloorcur).to.equal('USD');
+    });
+
+    it('#pricefloors inAdUnit, banner impressions should have floors', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const flr = 4.3
+      bid.floors = {
+        currency: 'USD',
+        schema: {
+          delimiter: '|',
+          fields: ['mediaType', 'size']
+        },
+        values: {
+          'banner|300x250': flr,
+          'banner|600x500': 6.5,
+          'banner|*': 7.5
+        }
+      };
+      const floorInfo = { floor: flr, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      sinon.spy(bid, 'getFloor');
+
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      // called getFloor with 300 x 250
+      expect(bid.getFloor.getCall(0).args[0].mediaType).to.equal('banner');
+      expect(bid.getFloor.getCall(0).args[0].size[0]).to.equal(300);
+      expect(bid.getFloor.getCall(0).args[0].size[1]).to.equal(250);
+
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(flr);
+      expect(imp1.bidfloorcur).to.equal('USD');
     });
 
     it('payload without mediaType should have correct format and value', function () {
@@ -958,7 +1374,6 @@ describe('IndexexchangeAdapter', function () {
       const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       const pageUrl = JSON.parse(requestWithFirstPartyData.data.r).site.page;
       const expectedPageUrl = DEFAULT_OPTION.refererInfo.referer + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
-
       expect(pageUrl).to.equal(expectedPageUrl);
     });
 
@@ -1292,6 +1707,102 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.video.placement).to.exist;
       expect(impression.video.placement).to.equal(4);
     });
+
+    it('should not override video properties if they are already configured at the params video level', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.protocols = [1];
+      bid.mediaTypes.video.mimes = ['video/override'];
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.video.protocols[0]).to.equal(2);
+      expect(impression.video.mimes[0]).to.not.equal('video/override');
+    });
+
+    it('should not add video adunit level properties in imp object if they are not allowlisted', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.random = true;
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.video.random).to.not.exist;
+    });
+
+    it('should add allowlisted adunit level video properties in imp object if they are not configured at params level', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      delete bid.params.video.protocols;
+      delete bid.params.video.mimes;
+      bid.mediaTypes.video.protocols = [6];
+      bid.mediaTypes.video.mimes = ['video/mp4'];
+      bid.mediaTypes.video.api = 2;
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.video.protocols[0]).to.equal(6);
+      expect(impression.video.api).to.equal(2);
+      expect(impression.video.mimes[0]).to.equal('video/mp4');
+    });
+  });
+
+  describe('buildRequestMultiFormat', function () {
+    describe('only banner bidder params set', function () {
+      const request = spec.buildRequests(DEFAULT_MULTIFORMAT_BANNER_VALID_BID)
+
+      const bannerImp = JSON.parse(request[0].data.r).imp[0];
+      expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(2);
+      expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
+      expect(bannerImp.id).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].bidId);
+      expect(bannerImp.banner).to.exist;
+      expect(bannerImp.banner.w).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[0]);
+      expect(bannerImp.banner.h).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[1]);
+    });
+
+    describe('only video bidder params set', function () {
+      const request = spec.buildRequests(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID);
+
+      const videoImp = JSON.parse(request[0].data.r).imp[0];
+      expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(1);
+      expect(JSON.parse(request[0].data.v)).to.equal(VIDEO_ENDPOINT_VERSION);
+      expect(videoImp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
+      expect(videoImp.video).to.exist;
+      expect(videoImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
+      expect(videoImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
+    });
+    describe('both banner and video bidder params set', function () {
+      const request = spec.buildRequests([DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]]);
+
+      it('should return valid banner and video requests', function () {
+        const bannerImp = JSON.parse(request[0].data.r).imp[0];
+        expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(2);
+        expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
+        expect(bannerImp.id).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].bidId);
+        expect(bannerImp.banner).to.exist;
+        expect(bannerImp.banner.w).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[0]);
+        expect(bannerImp.banner.h).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[1]);
+
+        const videoImp = JSON.parse(request[1].data.r).imp[0];
+        expect(JSON.parse(request[1].data.r).imp).to.have.lengthOf(1);
+        expect(JSON.parse(request[1].data.v)).to.equal(VIDEO_ENDPOINT_VERSION);
+        expect(videoImp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
+        expect(videoImp.video).to.exist;
+        expect(videoImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
+        expect(videoImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
+      });
+
+      it('should contain all correct IXdiag properties', function () {
+        const diagObj = JSON.parse(request[0].data.r).ext.ixdiag;
+        expect(diagObj.iu).to.equal(0);
+        expect(diagObj.nu).to.equal(0);
+        expect(diagObj.ou).to.equal(1);
+        expect(diagObj.ren).to.equal(false);
+        expect(diagObj.mfu).to.equal(1);
+        expect(diagObj.allu).to.equal(1);
+        expect(diagObj.version).to.equal('$prebid.version$');
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -1565,6 +2076,33 @@ describe('IndexexchangeAdapter', function () {
       const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
       expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
       expect(requestWithConsent.regs.ext.us_privacy).to.equal('1YYN');
+    });
+
+    it('should contain `consented_providers_settings.consented_providers` & consent on user.ext when both are provided', function () {
+      const options = {
+        gdprConsent: {
+          consentString: '3huaa11=qu3198ae',
+          addtlConsent: '1~1.35.41.101',
+        }
+      };
+
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+      expect(requestWithConsent.user.ext.consented_providers_settings.consented_providers).to.equal('1~1.35.41.101');
+      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
+    });
+
+    it('should not contain `consented_providers_settings.consented_providers` on user.ext when consent is not provided', function () {
+      const options = {
+        gdprConsent: {
+          addtlConsent: '1~1.35.41.101',
+        }
+      };
+
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+      expect(utils.deepAccess(requestWithConsent, 'user.ext.consented_providers_settings')).to.not.exist;
+      expect(utils.deepAccess(requestWithConsent, 'user.ext.consent')).to.not.exist;
     });
   });
 });

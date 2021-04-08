@@ -51,7 +51,7 @@ export const spec = {
           return false;
         }
         if (!utils.getBidIdParameter('slot', bid.params.outstream_options)) {
-          utils.logError(BIDDER_CODE + ': please define parameters slot outstream_options object in the configuration.');
+          utils.logError(BIDDER_CODE + ': please define parameter slot in outstream_options object in the configuration.');
           return false;
         }
       }
@@ -215,6 +215,12 @@ export const spec = {
         }
       };
 
+      // If the publisher asks to ignore the bidder cache key we need to return the full vast xml
+      // so that it can be cached on the publishes specified server.
+      if (!!config.getConfig('cache') && !!config.getConfig('cache.url') && (config.getConfig('cache.ignoreBidderCacheKey') === true)) {
+        requestPayload['ext']['wrap_response'] = 0;
+      }
+
       if (utils.getBidIdParameter('number_of_ads', bid.params)) {
         requestPayload['ext']['number_of_ads'] = utils.getBidIdParameter('number_of_ads', bid.params);
       }
@@ -245,9 +251,9 @@ export const spec = {
           {
             source: 'id5-sync.com',
             uids: [{
-              id: bid.userId.id5id.uid
-            }],
-            ext: bid.userId.id5id.ext || {}
+              id: bid.userId.id5id.uid,
+              ext: bid.userId.id5id.ext || {}
+            }]
           }
         )
       }
@@ -336,13 +342,17 @@ export const spec = {
             ttl: 360,
             netRevenue: true,
             channel_id: serverResponseBody.id,
-            cache_key: spotxBid.ext.cache_key,
-            vastUrl: 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key,
-            videoCacheKey: spotxBid.ext.cache_key,
             mediaType: VIDEO,
             width: spotxBid.w,
             height: spotxBid.h
           };
+
+          if (!!config.getConfig('cache') && !!config.getConfig('cache.url') && (config.getConfig('cache.ignoreBidderCacheKey') === true)) {
+            bid.vastXml = spotxBid.adm;
+          } else {
+            bid.cache_key = spotxBid.ext.cache_key;
+            bid.vastUrl = 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key
+          }
 
           bid.meta = bid.meta || {};
           if (spotxBid && spotxBid.adomain && spotxBid.adomain.length > 0) {
@@ -382,7 +392,7 @@ export const spec = {
                 }
               });
             } catch (err) {
-              utils.logWarn('Prebid Error calling setRender or setEve,tHandlers on renderer', err);
+              utils.logWarn('Prebid Error calling setRender or setEventHandlers on renderer', err);
             }
             bid.renderer = renderer;
           }
@@ -408,7 +418,7 @@ function createOutstreamScript(bid) {
   dataSpotXParams['data-spotx_content_page_url'] = bid.renderer.config.content_page_url;
   dataSpotXParams['data-spotx_ad_unit'] = 'incontent';
 
-  utils.logMessage('[SPOTX][renderer] Default beahavior');
+  utils.logMessage('[SPOTX][renderer] Default behavior');
   if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
     dataSpotXParams['data-spotx_ad_mute'] = '1';
   }
@@ -419,30 +429,26 @@ function createOutstreamScript(bid) {
 
   const playersizeAutoAdapt = utils.getBidIdParameter('playersize_auto_adapt', bid.renderer.config.outstream_options);
   if (playersizeAutoAdapt && utils.isBoolean(playersizeAutoAdapt) && playersizeAutoAdapt === true) {
-    if (bid.width && utils.isNumber(bid.width) && bid.height && utils.isNumber(bid.height)) {
-      const ratio = bid.width / bid.height;
-      const slotClientWidth = window.document.getElementById(slot).clientWidth;
-      let playerWidth = bid.renderer.config.player_width;
-      let playerHeight = bid.renderer.config.player_height;
-      let contentWidth = 0;
-      let contentHeight = 0;
-      if (slotClientWidth < playerWidth) {
-        playerWidth = slotClientWidth;
-        playerHeight = playerWidth / ratio;
-      }
-      if (ratio <= 1) {
-        contentWidth = Math.round(playerHeight * ratio);
-        contentHeight = playerHeight;
-      } else {
-        contentWidth = playerWidth;
-        contentHeight = Math.round(playerWidth / ratio);
-      }
-
-      dataSpotXParams['data-spotx_content_width'] = '' + contentWidth;
-      dataSpotXParams['data-spotx_content_height'] = '' + contentHeight;
-    } else {
-      utils.logWarn('[SPOTX][renderer] PlayerSize auto adapt: bid.width and bid.height are incorrect');
+    const ratio = bid.width && utils.isNumber(bid.width) && bid.height && utils.isNumber(bid.height) ? bid.width / bid.height : 4 / 3;
+    const slotClientWidth = window.document.getElementById(slot).clientWidth;
+    let playerWidth = bid.renderer.config.player_width;
+    let playerHeight = bid.renderer.config.player_height;
+    let contentWidth = 0;
+    let contentHeight = 0;
+    if (slotClientWidth < playerWidth) {
+      playerWidth = slotClientWidth;
+      playerHeight = playerWidth / ratio;
     }
+    if (ratio <= 1) {
+      contentWidth = Math.round(playerHeight * ratio);
+      contentHeight = playerHeight;
+    } else {
+      contentWidth = playerWidth;
+      contentHeight = Math.round(playerWidth / ratio);
+    }
+
+    dataSpotXParams['data-spotx_content_width'] = '' + contentWidth;
+    dataSpotXParams['data-spotx_content_height'] = '' + contentHeight;
   }
 
   const customOverride = utils.getBidIdParameter('custom_override', bid.renderer.config.outstream_options);
