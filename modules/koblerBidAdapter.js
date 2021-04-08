@@ -11,7 +11,7 @@ const DEFAULT_TIMEOUT = 1000;
 const TIME_TO_LIVE_IN_SECONDS = 10 * 60;
 
 export const isBidRequestValid = function (bid) {
-  return !(!bid || !bid.bidId || !bid.params || !bid.params.placementId);
+  return !!(bid && bid.bidId && bid.params && bid.params.placementId);
 };
 
 export const buildRequests = function (validBidRequests, bidderRequest) {
@@ -55,7 +55,7 @@ export const interpretResponse = function (serverResponse) {
 
 export const onBidWon = function (bid) {
   const cpm = bid.cpm || 0;
-  const adServerPrice = utils.deepAccess(bid, 'adserverTargeting.hb_pb') || 0;
+  const adServerPrice = utils.deepAccess(bid, 'adserverTargeting.hb_pb', 0);
   if (utils.isStr(bid.nurl) && bid.nurl !== '') {
     const winNotificationUrl = utils.replaceAuctionPrice(bid.nurl, cpm)
       .replace(/\${AD_SERVER_PRICE}/g, adServerPrice);
@@ -81,7 +81,7 @@ export const onTimeout = function (timeoutDataArray) {
 };
 
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
-  const imps = validBidRequests.map(br => buildOpenRtbImpObject(br));
+  const imps = validBidRequests.map(buildOpenRtbImpObject);
   const timeout = bidderRequest.timeout || config.getConfig('bidderTimeout') || DEFAULT_TIMEOUT;
   const pageUrl = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer)
     ? bidderRequest.refererInfo.referer
@@ -138,12 +138,12 @@ function getDevice() {
   const ws = utils.getWindowSelf();
   const ua = ws.navigator.userAgent;
 
-  if ((/(tablet|ipad|playbook|silk|android 3.0|xoom|sch-i800|kindle)|(android(?!.*mobi))/i)
+  if (/(tablet|ipad|playbook|silk|android 3.0|xoom|sch-i800|kindle)|(android(?!.*mobi))/i
     .test(ua.toLowerCase())) {
     return 5; // tablet
   }
-  if ((/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series([46])0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i
-    .test(ua.toLowerCase()))) {
+  if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series([46])0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i
+    .test(ua.toLowerCase())) {
     return 4; // phone
   }
   return 2; // personal computers
@@ -163,7 +163,7 @@ function getTest(validBidRequest) {
 }
 
 function getSizes(validBidRequest) {
-  const sizes = utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes') || validBidRequest.sizes;
+  const sizes = utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes', validBidRequest.sizes);
   if (utils.isArray(sizes) && sizes.length > 0) {
     return sizes;
   }
