@@ -1821,16 +1821,6 @@ describe('the rubicon adapter', function () {
           delete bidderRequest.bids[0].mediaTypes.video.protocols;
           expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
 
-          // change maxduration to an string, no good
-          createVideoBidderRequest();
-          bidderRequest.bids[0].mediaTypes.video.maxduration = 'string';
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // delete maxduration, no good
-          createVideoBidderRequest();
-          delete bidderRequest.bids[0].mediaTypes.video.maxduration;
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
           // change linearity to an string, no good
           createVideoBidderRequest();
           bidderRequest.bids[0].mediaTypes.video.linearity = 'string';

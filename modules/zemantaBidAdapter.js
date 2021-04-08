@@ -139,6 +139,10 @@ export const spec = {
           bidObject.width = bidResponse.w;
           bidObject.height = bidResponse.h;
         }
+        bidObject.meta = {};
+        if (bidResponse.adomain && bidResponse.adomain.length > 0) {
+          bidObject.meta.advertiserDomains = bidResponse.adomain;
+        }
         return bidObject;
       }
     }).filter(Boolean);
