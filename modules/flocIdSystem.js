@@ -66,7 +66,7 @@ export const flocIdSubmodule = {
 
       const cohort = document.interestCohort() || {};
 
-      return { id: cohort, ver: window.chrome.version };
+      return { id: cohort.id, ver: cohort.version };
     }
   }
 };
