@@ -30,8 +30,16 @@ const USER_IDS_CONFIG = {
 
   // id5Id
   'id5id': {
+    getValue: function(data) {
+      return data.uid
+    },
     source: 'id5-sync.com',
-    atype: 1
+    atype: 1,
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
   },
 
   // parrableId
@@ -142,6 +150,41 @@ const USER_IDS_CONFIG = {
   'quantcastId': {
     source: 'quantcast.com',
     atype: 1
+  },
+
+  // IDx
+  'idx': {
+    source: 'idx.lat',
+    atype: 1
+  },
+
+  // Verizon Media ConnectID
+  'connectid': {
+    source: 'verizonmedia.com',
+    atype: 1
+  },
+
+  // Neustar Fabrick
+  'fabrickId': {
+    source: 'neustar.biz',
+    atype: 1
+  },
+  // MediaWallah OpenLink
+  'mwOpenLinkId': {
+    source: 'mediawallahscript.com',
+    atype: 1
+  },
+  'tapadId': {
+    source: 'tapad.com',
+    atype: 1
+  },
+  // Novatiq Snowflake
+  'novatiq': {
+    getValue: function(data) {
+      return data.snowflake
+    },
+    source: 'novatiq.com',
+    atype: 1
   }
 };
 
@@ -182,11 +225,37 @@ export function createEidsArray(bidRequestUserId) {
   let eids = [];
   for (const subModuleKey in bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
-      const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
-      if (eid) {
-        eids.push(eid);
+      if (subModuleKey === 'pubProvidedId') {
+        eids = eids.concat(bidRequestUserId['pubProvidedId']);
+      } else {
+        const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
+        if (eid) {
+          eids.push(eid);
+        }
       }
     }
   }
   return eids;
+}
+
+/**
+ * @param {SubmoduleContainer[]} submodules
+ */
+export function buildEidPermissions(submodules) {
+  let eidPermissions = [];
+  submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
+    .forEach(i => {
+      Object.keys(i.idObj).forEach(key => {
+        if (utils.deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
+          utils.deepAccess(USER_IDS_CONFIG, key + '.source')) {
+          eidPermissions.push(
+            {
+              source: USER_IDS_CONFIG[key].source,
+              bidders: i.config.bidders
+            }
+          );
+        }
+      });
+    });
+  return eidPermissions;
 }

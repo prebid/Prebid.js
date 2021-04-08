@@ -98,8 +98,10 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     }
   };
 
-  Object.assign(request.user, config.getConfig('fpd.user'));
-  Object.assign(request.site, config.getConfig('fpd.context'));
+  let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+
+  Object.assign(request.user, fpd.user);
+  Object.assign(request.site, fpd.context);
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
@@ -108,6 +110,18 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
 
   if (bidderRequest.uspConsent !== undefined) {
     utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+  }
+
+  if (utils.deepAccess(validBidRequests[0], 'params.app')) {
+    const geo = utils.deepAccess(validBidRequests[0], 'params.app.geo');
+    utils.deepSetValue(request, 'device.geo', geo);
+    const ifa = utils.deepAccess(validBidRequests[0], 'params.app.ifa')
+    utils.deepSetValue(request, 'device.ifa', ifa);
+  }
+
+  const eids = utils.deepAccess(validBidRequests[0], 'userIdAsEids');
+  if (eids && eids.length) {
+    utils.deepSetValue(request, 'user.ext.eids', eids);
   }
 
   utils.logInfo('[SMAATO] OpenRTB Request:', request);
@@ -185,7 +199,7 @@ export const spec = {
           ttl: ttlSec,
           creativeId: b.crid,
           dealId: b.dealid || null,
-          netRevenue: true,
+          netRevenue: utils.deepAccess(b, 'ext.net', true),
           currency: res.cur,
           meta: {
             advertiserDomains: b.adomain,

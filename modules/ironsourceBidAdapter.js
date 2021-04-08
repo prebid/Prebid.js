@@ -7,7 +7,11 @@ const SUPPORTED_AD_TYPES = [VIDEO];
 const BIDDER_CODE = 'ironsource';
 const BIDDER_VERSION = '4.0.0';
 const TTL = 360;
-const SELLER_ENDPOINT = 'https://hb.yellowblue.io/hb';
+const SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
+const MODES = {
+  PRODUCTION: 'hb',
+  TEST: 'hb-test'
+}
 const SUPPORTED_SYNC_METHODS = {
   IFRAME: 'iframe',
   PIXEL: 'pixel'
@@ -44,7 +48,7 @@ export const spec = {
       creativeId: body.requestId,
       currency: body.currency,
       netRevenue: body.netRevenue,
-      ttl: TTL,
+      ttl: body.ttl || TTL,
       vastXml: body.vastXml,
       mediaType: VIDEO
     };
@@ -86,9 +90,10 @@ registerBidder(spec);
  */
 function buildVideoRequest(bid, bidderRequest) {
   const sellerParams = generateParameters(bid, bidderRequest);
+  const {params} = bid;
   return {
     method: 'GET',
-    url: SELLER_ENDPOINT,
+    url: getEndpoint(params.testMode),
     data: sellerParams
   };
 }
@@ -170,6 +175,17 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
 }
 
 /**
+ * Get the seller endpoint
+ * @param testMode {boolean}
+ * @returns {string}
+ */
+function getEndpoint(testMode) {
+  return testMode
+    ? SELLER_ENDPOINT + MODES.TEST
+    : SELLER_ENDPOINT + MODES.PRODUCTION;
+}
+
+/**
  * Generate query parameters for the request
  * @param bid {bid}
  * @param bidderRequest {bidderRequest}
@@ -195,7 +211,8 @@ function generateParameters(bid, bidderRequest) {
     bid_id: utils.getBidIdParameter('bidId', bid),
     bidder_request_id: utils.getBidIdParameter('bidderRequestId', bid),
     transaction_id: utils.getBidIdParameter('transactionId', bid),
-    session_id: utils.getBidIdParameter('auctionId', bid),
+    session_id: params.sessionId || utils.getBidIdParameter('auctionId', bid),
+    is_wrapper: !!params.isWrapper,
     publisher_name: domain,
     site_domain: domain,
     bidder_version: BIDDER_VERSION
@@ -227,7 +244,7 @@ function generateParameters(bid, bidderRequest) {
 
   if (bidderRequest && bidderRequest.refererInfo) {
     requestParams.referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-    requestParams.page_url = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
+    requestParams.page_url = config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
   }
 
   return requestParams;

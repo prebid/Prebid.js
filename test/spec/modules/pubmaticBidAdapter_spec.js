@@ -1605,7 +1605,7 @@ describe('PubMatic adapter', function () {
         describe('ID5 Id', function() {
           it('send the id5 id if it is present', function() {
             bidRequests[0].userId = {};
-            bidRequests[0].userId.id5id = 'id5-user-id';
+            bidRequests[0].userId.id5id = { uid: 'id5-user-id' };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
@@ -1620,22 +1620,22 @@ describe('PubMatic adapter', function () {
 
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
-            bidRequests[0].userId.id5id = 1;
+            bidRequests[0].userId.id5id = { uid: 1 };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.id5id = [];
+            bidRequests[0].userId.id5id = { uid: [] };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.id5id = null;
+            bidRequests[0].userId.id5id = { uid: null };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.id5id = {};
+            bidRequests[0].userId.id5id = { uid: {} };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
@@ -2614,7 +2614,7 @@ describe('PubMatic adapter', function () {
         }
         expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
         expect(response[0].currency).to.equal('USD');
-        expect(response[0].netRevenue).to.equal(false);
+        expect(response[0].netRevenue).to.equal(true);
         expect(response[0].ttl).to.equal(300);
         expect(response[0].meta.networkId).to.equal(123);
         expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
@@ -2638,7 +2638,7 @@ describe('PubMatic adapter', function () {
         }
         expect(response[1].dealId).to.equal(bidResponses.body.seatbid[1].bid[0].dealid);
         expect(response[1].currency).to.equal('USD');
-        expect(response[1].netRevenue).to.equal(false);
+        expect(response[1].netRevenue).to.equal(true);
         expect(response[1].ttl).to.equal(300);
         expect(response[1].meta.networkId).to.equal(422);
         expect(response[1].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-789');
