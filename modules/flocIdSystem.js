@@ -50,7 +50,9 @@ export const flocIdSubmodule = {
     const isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
 
     // Validate feature is enabled
-    if (isChrome && !!document.featurePolicy && !!document.featurePolicy.features() && document.featurePolicy.features().includes('interest-cohort')) {
+    const isFlocEnabled = !!document.featurePolicy && !!document.featurePolicy.features() && document.featurePolicy.features().includes('interest-cohort'));
+
+    if (isChrome && isFlocEnabled) {
       const configParams = (config && config.params) || {};
       if (!configParams || (typeof configParams.token !== 'string')) {
         utils.logError('User ID - flocId submodule requires token to be defined');
