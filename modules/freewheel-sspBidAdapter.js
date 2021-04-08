@@ -102,22 +102,49 @@ function getCreativeId(xmlNode) {
   return creaId;
 }
 
-function getDealId(xmlNode) {
-  var dealId = '';
+function getValueFromKeyInImpressionNode(xmlNode, key) {
+  var value = '';
   var impNodes = xmlNode.querySelectorAll('Impression'); // Nodelist.forEach is not supported in IE and Edge
-  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
-
+  var isRootViewKeyPresent = false;
+  var isAdsDisplayStartedPresent = false;
   Array.prototype.forEach.call(impNodes, function (el) {
-    var queries = el.textContent.substring(el.textContent.indexOf('?') + 1).split('&');
+    if (isRootViewKeyPresent && isAdsDisplayStartedPresent) {
+      return value;
+    }
+    isRootViewKeyPresent = false;
+    isAdsDisplayStartedPresent = false;
+    var text = el.textContent;
+    var queries = text.substring(el.textContent.indexOf('?') + 1).split('&');
+    var tempValue = '';
     Array.prototype.forEach.call(queries, function (item) {
       var split = item.split('=');
-      if (split[0] == 'dealId') {
-        dealId = split[1];
+      if (split[0] == key) {
+        tempValue = split[1];
+      }
+      if (split[0] == 'reqType' && split[1] == 'AdsDisplayStarted') {
+        isAdsDisplayStartedPresent = true;
+      }
+      if (split[0] == 'rootViewKey') {
+        isRootViewKeyPresent = true;
       }
     });
+    if (isAdsDisplayStartedPresent) {
+      value = tempValue;
+    }
   });
+  return value;
+}
 
-  return dealId;
+function getDealId(xmlNode) {
+  return getValueFromKeyInImpressionNode(xmlNode, 'dealId');
+}
+
+function getBannerId(xmlNode) {
+  return getValueFromKeyInImpressionNode(xmlNode, 'adId');
+}
+
+function getCampaignId(xmlNode) {
+  return getValueFromKeyInImpressionNode(xmlNode, 'campaignId');
 }
 
 /**
@@ -373,7 +400,8 @@ export const spec = {
     const princingData = getPricing(xmlDoc);
     const creativeId = getCreativeId(xmlDoc);
     const dealId = getDealId(xmlDoc);
-
+    const campaignId = getCampaignId(xmlDoc);
+    const bannerId = getBannerId(xmlDoc);
     const topWin = getTopMostWindow();
     if (!topWin.freewheelssp_cache) {
       topWin.freewheelssp_cache = {};
@@ -392,7 +420,9 @@ export const spec = {
         currency: princingData.currency,
         netRevenue: true,
         ttl: 360,
-        dealId: dealId
+        dealId: dealId,
+        campaignId: campaignId,
+        bannerId: bannerId
       };
 
       if (bidrequest.mediaTypes.video) {
@@ -426,6 +456,6 @@ export const spec = {
       return [];
     }
   },
+};
 
-}
 registerBidder(spec);
