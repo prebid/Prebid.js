@@ -189,6 +189,10 @@ function createNewBannerBid(response) {
     netRevenue: NET_REVENUE,
     ttl: TIME_TO_LIVE,
     ad: response.ad,
+    meta: {
+      advertiserDomains: response.adomain || [],
+      mediaType: BANNER,
+    },
   };
 }
 
@@ -209,7 +213,11 @@ function createNewVideoBid(response, bidRequest) {
     netRevenue: NET_REVENUE,
     mediaType: VIDEO,
     ttl: TIME_TO_LIVE,
-    vastXml: response.adm
+    vastXml: response.adm,
+    meta: {
+      advertiserDomains: response.adomain || [],
+      mediaType: VIDEO,
+    },
   };
 }
 
