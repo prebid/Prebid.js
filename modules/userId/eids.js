@@ -209,7 +209,7 @@ const USER_IDS_CONFIG = {
   },
   'deepintentId': {
     source: 'deepintent.com',
-    atype: 1
+    atype: 3
   },
   // Admixer Id
   'admixerId': {
