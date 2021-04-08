@@ -278,6 +278,7 @@ describe('YieldmoAdapter', function () {
         ad: '<html><head></head><body><script>//GEX ad object</script>' +
           '<div id="ym_123" class="ym"></div><script>//js code</script></body></html>',
         creative_id: '9874652394875',
+        adomain: ['www.example.com'],
       }],
       header: 'header?',
     });
@@ -296,6 +297,59 @@ describe('YieldmoAdapter', function () {
         ttl: 300,
         ad: '<html><head></head><body><script>//GEX ad object</script>' +
           '<div id="ym_123" class="ym"></div><script>//js code</script></body></html>',
+        meta: {
+          advertiserDomains: ['www.example.com'],
+          mediaType: 'banner',
+        },
+      });
+    });
+
+    it('should correctly reorder video bids', function () {
+      const response = mockServerResponse();
+      const seatbid = [
+        {
+          bid: {
+            adm: '<?xml version="1.0" encoding="UTF-8"?>',
+            adomain: ['www.example.com'],
+            crid: 'dd65c0a7536aff',
+            impid: '91ea8bba1',
+            price: 1.5,
+          },
+        },
+      ];
+      const bidRequest = {
+        data: {
+          imp: [
+            {
+              id: '91ea8bba1',
+              video: {
+                h: 250,
+                w: 300,
+              },
+            },
+          ],
+        },
+      };
+
+      response.body.seatbid = seatbid;
+
+      const newResponse = spec.interpretResponse(response, bidRequest);
+      expect(newResponse.length).to.be.equal(2);
+      expect(newResponse[1]).to.deep.equal({
+        cpm: 1.5,
+        creativeId: 'dd65c0a7536aff',
+        currency: 'USD',
+        height: 250,
+        mediaType: 'video',
+        meta: {
+          advertiserDomains: ['www.example.com'],
+          mediaType: 'video',
+        },
+        netRevenue: true,
+        requestId: '91ea8bba1',
+        ttl: 300,
+        vastXml: '<?xml version="1.0" encoding="UTF-8"?>',
+        width: 300,
       });
     });
 
