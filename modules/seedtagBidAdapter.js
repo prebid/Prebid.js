@@ -6,10 +6,37 @@ const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
 const SEEDTAG_SSP_ENDPOINT = 'https://s.seedtag.com/c/hb/bid';
 const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = 'https://s.seedtag.com/se/hb/timeout';
-
+const ALLOWED_PLACEMENTS = {
+  inImage: true,
+  inScreen: true,
+  inArticle: true,
+  banner: true,
+  video: true
+}
 const mediaTypesMap = {
   [BANNER]: 'display',
   [VIDEO]: 'video'
+};
+
+const deviceConnection = {
+  FIXED: 'fixed',
+  MOBILE: 'mobile',
+  UNKNOWN: 'unknown'
+};
+
+const getConnectionType = () => {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {}
+  switch (connection.type || connection.effectiveType) {
+    case 'wifi':
+    case 'ethernet':
+      return deviceConnection.FIXED
+    case 'cellular':
+    case 'wimax':
+      return deviceConnection.MOBILE
+    default:
+      const isMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || /android/i.test(navigator.userAgent)
+      return isMobile ? deviceConnection.UNKNOWN : deviceConnection.FIXED
+  }
 };
 
 function mapMediaType(seedtagMediaType) {
@@ -27,10 +54,7 @@ function hasMandatoryParams(params) {
     !!params.publisherId &&
     !!params.adUnitId &&
     !!params.placement &&
-    (params.placement === 'inImage' ||
-      params.placement === 'inScreen' ||
-      params.placement === 'banner' ||
-      params.placement === 'video')
+    !!ALLOWED_PLACEMENTS[params.placement]
   );
 }
 
@@ -52,13 +76,14 @@ function buildBidRequests(validBidRequests) {
         return mediaTypesMap[pbjsType];
       }
     );
+
     const bidRequest = {
       id: validBidRequest.bidId,
       transactionId: validBidRequest.transactionId,
       sizes: validBidRequest.sizes,
       supplyTypes: mediaTypes,
       adUnitId: params.adUnitId,
-      placement: params.placement
+      placement: params.placement,
     };
 
     if (params.adPosition) {
@@ -88,8 +113,10 @@ function buildBid(seedtagBid) {
     currency: seedtagBid.currency,
     netRevenue: true,
     mediaType: mediaType,
-    ttl: seedtagBid.ttl
+    ttl: seedtagBid.ttl,
+    nurl: seedtagBid.nurl
   };
+
   if (mediaType === VIDEO) {
     bid.vastXml = seedtagBid.content;
   } else {
@@ -142,6 +169,7 @@ export const spec = {
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
+      connectionType: getConnectionType(),
       bidRequests: buildBidRequests(validBidRequests)
     };
 
@@ -198,8 +226,18 @@ export const spec = {
    * @param {data} Containing timeout specific data
    */
   onTimeout(data) {
-    getTimeoutUrl(data);
-    utils.triggerPixel(SEEDTAG_SSP_ONTIMEOUT_ENDPOINT);
+    const url = getTimeoutUrl(data);
+    utils.triggerPixel(url);
+  },
+
+  /**
+   * Function to call when the adapter wins the auction
+   * @param {bid} Bid information received from the server
+   */
+  onBidWon: function (bid) {
+    if (bid && bid.nurl) {
+      utils.triggerPixel(bid.nurl);
+    }
   }
 }
 registerBidder(spec);

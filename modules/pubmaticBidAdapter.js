@@ -101,7 +101,7 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
   }
 ]
 
-const NET_REVENUE = false;
+const NET_REVENUE = true;
 const dealChannelValues = {
   1: 'PMP',
   5: 'PREF',
