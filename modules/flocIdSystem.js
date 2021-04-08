@@ -70,7 +70,7 @@ export const flocIdSubmodule = {
       enableOriginTrial(configParams.token);
 
       // Example expected output { "id": "14159", "version": "chrome.1.0" }
-      const cohort = document.interestCohort() || {};
+      const {id, version as ver } = document.interestCohort() || {};
 
       return { id: cohort.id, ver: cohort.version };
     }
