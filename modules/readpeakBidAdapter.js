@@ -46,6 +46,19 @@ export const spec = {
       }
     };
 
+    if (bidderRequest.gdprConsent) {
+      request.user = {
+        ext: {
+          consent: bidderRequest.gdprConsent.consentString
+        },
+      }
+      request.regs = {
+        ext: {
+          gdpr: bidderRequest.gdprConsent.gdprApplies || true
+        }
+      }
+    }
+
     return {
       method: 'POST',
       url: ENDPOINT,

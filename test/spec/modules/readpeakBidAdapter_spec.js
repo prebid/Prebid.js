@@ -186,6 +186,8 @@ describe('ReadPeakAdapter', function() {
         language: navigator.language
       });
       expect(data.cur).to.deep.equal(['EUR']);
+      expect(data.user).to.be.undefined;
+      expect(data.regs).to.be.undefined;
     });
 
     it('should get bid floor from module', function() {
@@ -204,6 +206,30 @@ describe('ReadPeakAdapter', function() {
       expect(data.id).to.equal(bidRequest.bidderRequestId);
       expect(data.imp[0].bidfloor).to.equal(floorModuleData.floor);
       expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency);
+    });
+
+    it('should send gdpr data', function() {
+      const tcString = 'someTCString';
+      const gdprData = {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: tcString
+        }
+      }
+      const request = spec.buildRequests([bidRequest], {...bidderRequest, ...gdprData});
+
+      const data = JSON.parse(request.data);
+
+      expect(data.user).to.deep.equal({
+        ext: {
+          consent: tcString
+        }
+      });
+      expect(data.regs).to.deep.equal({
+        ext: {
+          gdpr: true
+        }
+      });
     });
   });
 
