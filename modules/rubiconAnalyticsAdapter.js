@@ -119,6 +119,7 @@ function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return utils.pick(bid, [
       'bidder',
+      'bidderDetail',
       'bidId', bidId => utils.deepAccess(bid, 'bidResponse.pbsBidId') || utils.deepAccess(bid, 'bidResponse.seatBidId') || bidId,
       'status',
       'error',
@@ -362,6 +363,7 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
       const height = bid.height || bid.playerHeight;
       return (width && height) ? {width, height} : undefined;
     },
+    'pbsBidId',
     'seatBidId',
     'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
     'floorRuleValue', () => utils.deepAccess(bid, 'floorData.floorRuleValue'),
@@ -672,6 +674,13 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         break;
       case BID_RESPONSE:
         let auctionEntry = cache.auctions[args.auctionId];
+
+        if (!auctionEntry.bids[args.requestId] && args.originalRequestId) {
+          auctionEntry.bids[args.requestId] = {...auctionEntry.bids[args.originalRequestId]};
+          auctionEntry.bids[args.requestId].bidId = args.requestId;
+          auctionEntry.bids[args.requestId].bidderDetail = args.targetingBidder;
+        }
+
         let bid = auctionEntry.bids[args.requestId];
         // If floor resolved gptSlot but we have not yet, then update the adUnit to have the adSlot name
         if (!utils.deepAccess(bid, 'adUnit.gam.adSlot') && utils.deepAccess(args, 'floorData.matchedFields.gptSlot')) {

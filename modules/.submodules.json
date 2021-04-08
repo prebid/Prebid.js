@@ -16,12 +16,16 @@
     "zeotapIdPlusIdSystem",
     "haloIdSystem",
     "quantcastIdSystem",
+    "nextrollIdSystem",
     "idxIdSystem",
     "fabrickIdSystem",
     "verizonMediaIdSystem",
     "pubProvidedIdSystem",
+    "mwOpenLinkIdSystem",
     "tapadIdSystem",
-    "novatiqIdSystem"
+    "novatiqIdSystem",
+    "uid2IdSystem",
+    "admixerIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
