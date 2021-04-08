@@ -4,7 +4,8 @@ import { spec } from 'modules/adnuntiusBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('adnuntiusBidAdapter', function () {
-  const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=-60&format=json';
+  const tzo = new Date().getTimezoneOffset();
+  const ENDPOINT_URL = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json`;
   const adapter = newBidder(spec);
   const bidRequests = [
     {
@@ -47,8 +48,8 @@ describe('adnuntiusBidAdapter', function () {
                 'destination': 'http://google.com'
               },
               'cpm': { 'amount': 5.0, 'currency': 'NOK' },
-              'bid': { 'amount': 0.005, 'currency': 'NOK' },
-              'cost': { 'amount': 0.005, 'currency': 'NOK' },
+              'bid': { 'amount': 5.0, 'currency': 'NOK' },
+              'cost': { 'amount': 5.0, 'currency': 'NOK' },
               'impressionTrackingUrls': [],
               'impressionTrackingUrlsEsc': [],
               'adId': 'adn-id-1347343135',
@@ -96,7 +97,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('url');
       expect(request[0].url).to.equal(ENDPOINT_URL);
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{\"adUnits\":[{\"auId\":\"8b6bc\"}]}');
+      expect(request[0].data).to.equal('{\"adUnits\":[{\"auId\":\"8b6bc\",\"targetId\":\"123\"}]}');
     });
   });
 

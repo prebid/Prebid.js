@@ -25,5 +25,12 @@ export const S2S_VENDORS = {
       noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
     },
     timeout: 500
+  },
+  'openx': {
+    adapter: 'prebidServer',
+    enabled: true,
+    endpoint: 'https://prebid.openx.net/openrtb2/auction',
+    syncEndpoint: 'https://prebid.openx.net/cookie_sync',
+    timeout: 1000
   }
 }
