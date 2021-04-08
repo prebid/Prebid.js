@@ -303,7 +303,7 @@ const spec = {
             const bidId = b.params ? b.params.id : 'bidid-' + b.bidId;
             return bidId === serverBid.impid;
           })[0];
-          site.slot = bidRequest && bidRequest.params ? bidRequest.params.slotid : undefined;
+          site.slot = bidRequest && bidRequest.params ? bidRequest.params.id : undefined;
 
           if (serverBid.ext) {
             /*
@@ -322,7 +322,7 @@ const spec = {
 
             const bid = {
               requestId: bidRequest.bidId,
-              creativeId: serverBid.crid || 'mcad_' + request.bidderRequest.auctionId + '_' + request.bidderRequest.params.id,
+              creativeId: serverBid.crid || 'mcad_' + request.bidderRequest.auctionId + '_' + site.slot,
               cpm: serverBid.price,
               currency: response.cur,
               ttl: serverBid.exp || 300,
