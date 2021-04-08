@@ -29,8 +29,14 @@ export const S2S_VENDORS = {
   'openx': {
     adapter: 'prebidServer',
     enabled: true,
-    endpoint: 'https://prebid.openx.net/openrtb2/auction',
-    syncEndpoint: 'https://prebid.openx.net/cookie_sync',
+    endpoint: {
+      p1Consent: 'https://prebid.openx.net/openrtb2/auction',
+      noP1Consent: 'https://prebid.openx.net/openrtb2/auction'
+    },
+    syncEndpoint: {
+      p1Consent: 'https://prebid.openx.net/cookie_sync',
+      noP1Consent: 'https://prebid.openx.net/cookie_sync'
+    },
     timeout: 1000
   }
 }
