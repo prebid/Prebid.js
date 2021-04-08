@@ -31,16 +31,6 @@ export const flocIdSubmodule = {
   name: MODULE_NAME,
 
   /**
-   * decode the stored id value for passing to bid requests
-   * @function
-   * @param {string} value
-   * @returns {{flocId:{ id: string }} or undefined if value doesn't exists
-   */
-  decode(value) {
-    return undefined;
-  },
-
-  /**
    * If chrome and cohort enabled performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} [config]
@@ -50,7 +40,7 @@ export const flocIdSubmodule = {
     const isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
 
     // Validate feature is enabled
-    const isFlocEnabled = !!document.featurePolicy && !!document.featurePolicy.features() && document.featurePolicy.features().includes('interest-cohort'));
+    const isFlocEnabled = !!document.featurePolicy && !!document.featurePolicy.features() && document.featurePolicy.features().includes('interest-cohort');
 
     if (isChrome && isFlocEnabled) {
       const configParams = (config && config.params) || {};
@@ -70,9 +60,7 @@ export const flocIdSubmodule = {
       enableOriginTrial(configParams.token);
 
       // Example expected output { "id": "14159", "version": "chrome.1.0" }
-      const {id, version as ver } = document.interestCohort() || {};
-
-      return { id, ver };
+      return document.interestCohort() || {};
     }
   }
 };

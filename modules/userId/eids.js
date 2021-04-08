@@ -206,8 +206,8 @@ const USER_IDS_CONFIG = {
       return data.id;
     },
     getUidExt: function(data) {
-      return (data && data.ver) ? {
-        ver: data.ver
+      return (data && data.version) ? {
+        ver: data.version
       } : undefined;
     }
   }
