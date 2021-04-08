@@ -26,41 +26,35 @@ function _createServerRequest(bidRequests, bidderRequest) {
     language: bidRequests[0].params.language,
     gdpr: {
       applies: false,
+      consentGiven: false
     },
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    if (
-      typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' &&
-      bidderRequest.gdprConsent.gdprApplies
-    ) {
+    const { gdprConsent } = bidderRequest;
+    if (typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies) {
       payload.gdpr.applies = true;
     }
 
-    if (
-      typeof bidderRequest.gdprConsent.consentString === 'string' &&
-      bidderRequest.gdprConsent.consentString
-    ) {
+    if (typeof gdprConsent.consentString === 'string' && gdprConsent.consentString) {
       payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
     }
-    if (bidderRequest.gdprConsent.vendorData) {
-      const {vendorData} = bidderRequest.gdprConsent;
-      const {apiVersion} = bidderRequest.gdprConsent;
-      if (apiVersion === 2 && vendorData.vendor && typeof vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
+    if (gdprConsent.vendorData) {
+      const {vendorData} = gdprConsent;
+      const {apiVersion} = gdprConsent;
+      if (apiVersion === 2 && vendorData.vendor && vendorData.vendor.consents && typeof vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
         payload.gdpr.consentGiven = !!vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)];
-      } else if (apiVersion === 1 && vendorData.vendorConsents &&
-        typeof vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined'
-      ) {
-        payload.gdpr.consentGiven = !!bidderRequest.gdprConsent.vendorData
-          .vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
+      } else if (apiVersion === 1 && vendorData.vendorConsents && typeof vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
+        payload.gdpr.consentGiven = !!vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
       }
     }
   }
 
   const options = {
     contentType: 'application/json',
-    withCredentials: !!payload.gdpr.consentGiven,
+    withCredentials: payload.gdpr.consentGiven,
   };
+
   const endPointUri = payload.gdpr.consentGiven || !payload.gdpr.applies
     ? `https://abs.proxistore.com/${payload.language}/v3/rtb/prebid/multi`
     : `https://abs.proxistore.com/${payload.language}/v3/rtb/prebid/multi/cookieless`;

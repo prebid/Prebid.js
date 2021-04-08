@@ -2,6 +2,7 @@ import { expect } from 'chai';
 let { spec } = require('modules/proxistoreBidAdapter');
 const BIDDER_CODE = 'proxistore';
 describe('ProxistoreBidAdapter', function () {
+  const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
   const bidderRequest = {
     bidderCode: BIDDER_CODE,
     auctionId: '1025ba77-5463-4877-b0eb-14b205cb9304',
@@ -9,7 +10,7 @@ describe('ProxistoreBidAdapter', function () {
     gdprConsent: {
       apiVersion: 2,
       gdprApplies: true,
-      consentString: 'CONSENT_STRING',
+      consentString: consentString,
       vendorData: {
         vendor: {
           consents: {
@@ -78,6 +79,29 @@ describe('ProxistoreBidAdapter', function () {
       expect(request.url).equal(url.cookieBase);
       // doens't have gpdr consent
       bidderRequest.gdprConsent.vendorData = null;
+
+      request = spec.buildRequests([bid], bidderRequest);
+      expect(request.url).equal(url.cookieLess);
+
+      // api v2
+      bidderRequest.gdprConsent = {
+        gdprApplies: true,
+        allowAuctionWithoutConsent: true,
+        consentString: consentString,
+        vendorData: {
+          vendor: {
+            consents: {
+              '418': true
+            }
+          },
+        },
+        apiVersion: 2
+      };
+      // has gdpr consent
+      request = spec.buildRequests([bid], bidderRequest);
+      expect(request.url).equal(url.cookieBase);
+
+      bidderRequest.gdprConsent.vendorData.vendor = {};
       request = spec.buildRequests([bid], bidderRequest);
       expect(request.url).equal(url.cookieLess);
     });
