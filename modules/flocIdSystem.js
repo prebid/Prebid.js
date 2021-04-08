@@ -49,6 +49,7 @@ export const flocIdSubmodule = {
   getId(config) {
     const isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
 
+    // Validate feature is enabled
     if (isChrome && !!document.featurePolicy && !!document.featurePolicy.features() && document.featurePolicy.features().includes('interest-cohort')) {
       const configParams = (config && config.params) || {};
       if (!configParams || (typeof configParams.token !== 'string')) {
@@ -56,14 +57,17 @@ export const flocIdSubmodule = {
         return;
       }
 
+      // Block usage of storage of cohort ID
       const checkStorage = (config && config.storage) || {};
       if (checkStorage) {
         utils.logError('User ID - flocId submodule requires storage not defined');
         return;
       }
 
+      // Insert meta-tag with token from configuration
       enableOriginTrial(configParams.token);
 
+      // Example expected output { "id": "14159", "version": "chrome.1.0" }
       const cohort = document.interestCohort() || {};
 
       return { id: cohort.id, ver: cohort.version };
