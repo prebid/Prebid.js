@@ -244,6 +244,9 @@ export const spec = {
           h: screen.height
         },
       },
+      user: {
+        ext: {}
+      }
     };
     if (bidderRequest && bidderRequest.timeout > 0) {
       sortableBidReq.tmax = bidderRequest.timeout;
