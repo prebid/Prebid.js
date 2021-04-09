@@ -89,6 +89,7 @@ const SERVER_DISPLAY_RESPONSE = {
   'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
     'ad': '<!-- Creative -->',
+    'adUrl': 'adUrl',
     'requestId': '2e41f65424c87c',
     'creative_id': 342516,
     'cmpId': 342516,
@@ -172,6 +173,7 @@ const displayEqResponse = [{
   netRevenue: true,
   currency: 'USD',
   ad: '<!-- Creative -->',
+  adUrl: 'adUrl',
   height: 250,
   width: 300,
   ttl: 300,
