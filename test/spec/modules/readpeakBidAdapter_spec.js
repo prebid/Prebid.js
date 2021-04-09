@@ -211,8 +211,30 @@ describe('ReadPeakAdapter', function() {
       expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency);
     });
 
-    it('should send gdpr data', function() {
-      const tcString = 'someTCString';
+    it('should send gdpr data when gdpr does not apply', function() {
+      const gdprData = {
+        gdprConsent: {
+          gdprApplies: false,
+          consentString: undefined,
+        }
+      }
+      const request = spec.buildRequests([bidRequest], {...bidderRequest, ...gdprData});
+
+      const data = JSON.parse(request.data);
+
+      expect(data.user).to.deep.equal({
+        ext: {
+          consent: ''
+        }
+      });
+      expect(data.regs).to.deep.equal({
+        ext: {
+          gdpr: false
+        }
+      });
+    });
+
+    it('should send gdpr data when gdpr applies', function() {
       const gdprData = {
         gdprConsent: {
           gdprApplies: true,
