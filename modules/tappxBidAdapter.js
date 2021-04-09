@@ -2,7 +2,7 @@
 
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'tappx';
@@ -15,7 +15,7 @@ var hostDomain;
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -113,18 +113,31 @@ export const spec = {
  * @returns {object} Prebid banner bidObject
  */
 function interpretBannerBid(serverBid, request) {
-  return {
+  let bidReturned = {
     requestId: request.bids.bidId,
     cpm: serverBid.price,
     currency: serverBid.cur ? serverBid.cur : CUR,
     width: serverBid.w,
     height: serverBid.h,
-    ad: serverBid.adm,
     ttl: TTL,
     creativeId: serverBid.crid,
     netRevenue: true,
-    mediaType: BANNER,
   }
+
+  if (serverBid.video) {
+    utils.logMessage('--- VIDEO');
+    bidReturned.vastXml = serverBid.adm;
+    bidReturned.vastUrl = serverBid.lurl;
+    bidReturned.ad = serverBid.adm;
+    bidReturned.mediaType = VIDEO;
+  }
+  if (serverBid.banner) {
+    utils.logMessage('--- BANNER');
+    bidReturned.ad = serverBid.adm;
+    bidReturned.mediaType = BANNER;
+  }
+
+  return bidReturned;
 }
 
 /**
@@ -136,14 +149,14 @@ function interpretBannerBid(serverBid, request) {
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
   HOST = utils.deepAccess(validBidRequests, 'params.host');
-  let hostInfo = getHostInfo(HOST)
-  // hostDomain = HOST.split('/', 1)[0];
+  let hostInfo = getHostInfo(HOST);
   hostDomain = hostInfo.domain;
 
   const ENDPOINT = utils.deepAccess(validBidRequests, 'params.endpoint');
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
   const BIDFLOOR = utils.deepAccess(validBidRequests, 'params.bidfloor');
   const bannerMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.banner');
+  const videoMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.video');
   const { refererInfo } = bidderRequest;
 
   // let requests = [];
@@ -203,6 +216,18 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     banner.format = format;
 
     imp.banner = banner;
+  }
+
+  if (videoMediaType) {
+    let video = {};
+    w = videoMediaType.playerSize[0][0];
+    h = videoMediaType.playerSize[0][1];
+    video.w = w;
+    video.h = h;
+
+    video.mimes = videoMediaType.mimes;
+
+    imp.video = video;
   }
 
   imp.id = validBidRequests.bidId;
@@ -286,9 +311,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  utils.logMessage('-------- PAYLOAD ------------')
-  utils.logMessage(JSON.stringify(payload))
-  utils.logMessage('-------- PAYLOAD ------------')
 
   return {
     method: 'POST',
