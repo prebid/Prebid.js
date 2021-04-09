@@ -6,7 +6,7 @@ import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'trustx';
 const ENDPOINT_URL = 'https://sofia.trustx.org/hb';
-const NEW_ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
+const NEW_ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson?sp=trustx';
 const TIME_TO_LIVE = 360;
 const ADAPTER_SYNC_URL = 'https://sofia.trustx.org/push_sync';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
