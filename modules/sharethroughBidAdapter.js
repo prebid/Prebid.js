@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 
-const VERSION = '3.2.1';
+const VERSION = '3.3.1';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
@@ -30,6 +31,8 @@ export const sharethroughAdapterSpec = {
         strVersion: VERSION
       };
 
+      Object.assign(query, handleUniversalIds(bidRequest));
+
       const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
       query.secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
 
@@ -45,16 +48,20 @@ export const sharethroughAdapterSpec = {
         query.us_privacy = bidderRequest.uspConsent
       }
 
-      if (bidRequest.userId && bidRequest.userId.tdid) {
-        query.ttduid = bidRequest.userId.tdid;
-      }
-
       if (bidRequest.schain) {
         query.schain = JSON.stringify(bidRequest.schain);
       }
 
       if (bidRequest.bidfloor) {
         query.bidfloor = parseFloat(bidRequest.bidfloor);
+      }
+
+      if (bidRequest.params.badv) {
+        query.badv = bidRequest.params.badv;
+      }
+
+      if (bidRequest.params.bcat) {
+        query.bcat = bidRequest.params.bcat;
       }
 
       // Data that does not need to go to the server,
@@ -66,7 +73,7 @@ export const sharethroughAdapterSpec = {
       };
 
       return {
-        method: 'GET',
+        method: 'POST',
         url: STR_ENDPOINT,
         data: query,
         strData: strData
@@ -128,6 +135,36 @@ export const sharethroughAdapterSpec = {
   onSetTargeting: (bid) => {}
 };
 
+function handleUniversalIds(bidRequest) {
+  if (!bidRequest.userId) return {};
+
+  const universalIds = {};
+
+  const ttd = utils.deepAccess(bidRequest, 'userId.tdid');
+  if (ttd) universalIds.ttduid = ttd;
+
+  const pubc = utils.deepAccess(bidRequest, 'userId.pubcid') || utils.deepAccess(bidRequest, 'crumbs.pubcid');
+  if (pubc) universalIds.pubcid = pubc;
+
+  const idl = utils.deepAccess(bidRequest, 'userId.idl_env');
+  if (idl) universalIds.idluid = idl;
+
+  const id5 = utils.deepAccess(bidRequest, 'userId.id5id.uid');
+  if (id5) {
+    universalIds.id5uid = { id: id5 };
+    const id5link = utils.deepAccess(bidRequest, 'userId.id5id.ext.linkType');
+    if (id5link) universalIds.id5uid.linkType = id5link;
+  }
+
+  const lipb = utils.deepAccess(bidRequest, 'userId.lipb.lipbid');
+  if (lipb) universalIds.liuid = lipb;
+
+  const shd = utils.deepAccess(bidRequest, 'userId.sharedid');
+  if (shd) universalIds.shduid = shd; // object with keys: id & third
+
+  return universalIds;
+}
+
 function getLargestSize(sizes) {
   function area(size) {
     return size[0] * size[1];
@@ -181,7 +218,7 @@ function handleIframe () {
       window.document.getElementsByTagName('body')[0].appendChild(sfpIframeBusterJs);
       iframeBusterLoaded = true;
     } catch (e) {
-      console.error(e);
+      utils.logError('Trouble writing frame buster script, error details:', e);
     }
   }
 
@@ -199,7 +236,7 @@ function handleIframe () {
         window.document.getElementsByTagName('body')[0].appendChild(sfpJs);
       }
     } catch (e) {
-      console.error(e);
+      utils.logError('Trouble writing sfp script, error details:', e);
     }
   }
 }

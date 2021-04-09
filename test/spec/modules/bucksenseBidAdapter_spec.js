@@ -104,7 +104,7 @@ describe('Bucksense Adapter', function() {
     beforeEach(function() {
       serverRequest = {
         'method': 'POST',
-        'url': 'https://prebid.bksn.se:445/prebidjs/',
+        'url': 'https://prebid.bksn.se/prebidjs/',
         'data': {
           'pub_id': 'prebid.org',
           'pl_id': '1000',

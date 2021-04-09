@@ -1,9 +1,10 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'admixer';
-const ALIASES = ['go2net'];
-const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.0.aspx';
+const ALIASES = ['go2net', 'adblender'];
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.1.aspx';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
@@ -20,15 +21,37 @@ export const spec = {
   buildRequests: function (validRequest, bidderRequest) {
     const payload = {
       imps: [],
-      referrer: encodeURIComponent(bidderRequest.refererInfo.referer),
+      fpd: config.getLegacyFpd(config.getConfig('ortb2'))
     };
+    let endpointUrl;
+    if (bidderRequest) {
+      const {bidderCode} = bidderRequest;
+      endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      }
+      if (bidderRequest.gdprConsent) {
+        payload.gdprConsent = {
+          consentString: bidderRequest.gdprConsent.consentString,
+          // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
+          gdprApplies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        }
+      }
+      if (bidderRequest.uspConsent) {
+        payload.uspConsent = bidderRequest.uspConsent;
+      }
+    }
     validRequest.forEach((bid) => {
-      payload.imps.push(bid);
+      let imp = {};
+      Object.keys(bid).forEach(key => {
+        (key === 'ortb2Imp') ? imp.fpd = config.getLegacyImpFpd(bid[key]) : imp[key] = bid[key];
+      });
+      payload.imps.push(imp);
     });
     const payloadString = JSON.stringify(payload);
     return {
       method: 'GET',
-      url: ENDPOINT_URL,
+      url: endpointUrl || ENDPOINT_URL,
       data: `data=${payloadString}`,
     };
   },
@@ -37,10 +60,9 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    // loop through serverResponses {
     try {
-      serverResponse = serverResponse.body;
-      serverResponse.forEach((bidResponse) => {
+      const {body: {ads = []} = {}} = serverResponse;
+      ads.forEach((bidResponse) => {
         const bidResp = {
           requestId: bidResponse.bidId,
           cpm: bidResponse.cpm,
@@ -52,6 +74,7 @@ export const spec = {
           netRevenue: bidResponse.netRevenue,
           currency: bidResponse.currency,
           vastUrl: bidResponse.vastUrl,
+          dealId: bidResponse.dealId,
         };
         bidResponses.push(bidResp);
       });
@@ -59,6 +82,19 @@ export const spec = {
       utils.logError(e);
     }
     return bidResponses;
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const pixels = [];
+    serverResponses.forEach(({body: {cm = {}} = {}}) => {
+      const {pixels: img = [], iframes: frm = []} = cm;
+      if (syncOptions.pixelEnabled) {
+        img.forEach((url) => pixels.push({type: 'image', url}));
+      }
+      if (syncOptions.iframeEnabled) {
+        frm.forEach((url) => pixels.push({type: 'iframe', url}));
+      }
+    });
+    return pixels;
   }
 };
 registerBidder(spec);

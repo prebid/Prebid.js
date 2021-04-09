@@ -64,6 +64,13 @@ export const spec = {
       'placements': placements
     };
 
+    if (bidderRequest) {
+      if (bidderRequest.gdprConsent) {
+        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL'
+        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+      }
+    }
+
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
       let traff = bid.params.traffic || BANNER

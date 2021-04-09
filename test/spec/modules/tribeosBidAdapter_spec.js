@@ -75,8 +75,6 @@ describe('tribeosBidAdapter', function() {
     expect(bids).to.have.lengthOf(1);
     let bid = bids[0];
 
-    console.error(JSON.stringify(bid));
-
     expect(bid.cpm).to.equal(1.1);
     expect(bid.currency).to.equal('USD');
     expect(bid.width).to.equal(300);

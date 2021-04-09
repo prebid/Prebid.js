@@ -1,5 +1,4 @@
 import {assert, expect} from 'chai';
-import * as url from 'src/url.js';
 import {spec} from 'modules/etargetBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
@@ -155,6 +154,7 @@ describe('etarget adapter', function () {
       assert.equal(result.height, 250);
       assert.equal(result.currency, 'EUR');
       assert.equal(result.netRevenue, true);
+      assert.isNotNull(result.reason);
       assert.equal(result.ttl, 360);
       assert.equal(result.ad, '<tag1>');
       assert.equal(result.transactionId, '5f33781f-9552-4ca1');

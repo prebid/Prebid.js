@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/smartyadsBidAdapter.js';
+import { config } from '../../../src/config.js';
 
 describe('SmartyadsAdapter', function () {
   let bid = {
@@ -38,9 +39,10 @@ describe('SmartyadsAdapter', function () {
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'coppa');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
+      expect(data.coppa).to.be.a('number');
       expect(data.language).to.be.a('string');
       expect(data.secure).to.be.within(0, 1);
       expect(data.host).to.be.a('string');
@@ -57,6 +59,23 @@ describe('SmartyadsAdapter', function () {
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
+
+  describe('with COPPA', function() {
+    beforeEach(function() {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+    });
+    afterEach(function() {
+      config.getConfig.restore();
+    });
+
+    it('should send the Coppa "required" flag set to "1" in the request', function () {
+      let serverRequest = spec.buildRequests([bid]);
+      expect(serverRequest.data.coppa).to.equal(1);
+    });
+  });
+
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
       const banner = {

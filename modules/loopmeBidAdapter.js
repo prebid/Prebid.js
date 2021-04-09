@@ -123,6 +123,7 @@ export const spec = {
           dealId: responseObj.dealId,
           netRevenue: responseObj.netRevenue,
           vastUrl: responseObj.vastUrl,
+          mediaType: VIDEO,
           renderer
         }
       ];
@@ -139,7 +140,8 @@ export const spec = {
         currency: responseObj.currency,
         creativeId: responseObj.creativeId,
         dealId: responseObj.dealId,
-        netRevenue: responseObj.netRevenue
+        netRevenue: responseObj.netRevenue,
+        mediaType: BANNER
       }
     ];
   }

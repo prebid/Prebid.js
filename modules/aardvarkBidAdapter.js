@@ -15,6 +15,7 @@ export function resetUserSync() {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 52,
   aliases: ['adsparc', 'safereach'],
 
   isBidRequestValid: function(bid) {
