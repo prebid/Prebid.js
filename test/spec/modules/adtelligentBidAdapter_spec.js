@@ -16,6 +16,7 @@ const aliasEP = {
   onefiftytwomedia: 'https://ghb.ads.152media.com/v2/auction/',
   mediafuse: 'https://ghb.hbmp.mediafuse.com/v2/auction/',
   navelix: 'https://ghb.hb.navelix.com/v2/auction/',
+  bidsxchange: 'https://ghb.hbd.bidsxchange.com/v2/auction/',
 };
 
 const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };
