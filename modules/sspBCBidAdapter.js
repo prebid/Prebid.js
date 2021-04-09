@@ -150,11 +150,13 @@ function mapBanner(slot) {
 }
 
 function mapImpression(slot) {
+  const { adUnitCode, bidId, params } = slot;
+  const { id, siteId } = params || {};
   const imp = {
-    id: (slot.params && slot.params.id) ? slot.params.id : 'bidid-' + slot.bidId,
+    id: id && siteId ? id : 'bidid-' + bidId,
     banner: mapBanner(slot),
     /* native: mapNative(slot), */
-    tagid: slot.adUnitCode,
+    tagid: adUnitCode,
   };
 
   const bidfloor = (slot.params && slot.params.bidFloor) ? parseFloat(slot.params.bidFloor) : undefined;
@@ -303,22 +305,32 @@ const spec = {
     let seat;
 
     if (response.seatbid !== undefined) {
+      /*
+        Match response to request, by comparing bid id's
+        'bidid-' prefix indicates oneCode (parameterless) request and response
+      */
       response.seatbid.forEach(seatbid => {
         seat = seatbid.seat;
         seatbid.bid.forEach(serverBid => {
           const bidRequest = request.bidderRequest.bids.filter(b => {
-            const bidId = b.params ? b.params.id : 'bidid-' + b.bidId;
-            return bidId === serverBid.impid;
+            const { bidId, params } = b;
+            const { id, siteId } = params || {};
+            const currentBidId = id && siteId ? id : 'bidid-' + bidId;
+            return currentBidId === serverBid.impid;
           })[0];
-          site.slot = bidRequest && bidRequest.params ? bidRequest.params.id : undefined;
+
+          // get slot id for current bid from request (not a oneCode request)
+          const { params } = bidRequest || {};
+          site.slot = params && params.id;
 
           if (serverBid.ext) {
             /*
               bid response might include ext object containing siteId / slotId, as detected by OneCode
               update site / slot data in this case
             */
-            site.id = serverBid.ext.siteid || site.id;
-            site.slot = serverBid.ext.slotid || site.slot;
+            const { siteid, slotid } = serverBid.ext;
+            site.id = siteid || site.id;
+            site.slot = slotid || site.slot;
           }
 
           if (bidRequest && site.id && !site.id.includes('bidid')) {
