@@ -23,6 +23,9 @@ describe('FeedAdAdapter', function () {
       expect(spec.onTimeout).to.be.a('function');
       expect(spec.onBidWon).to.be.a('function');
     });
+    it('should export the TCF vendor ID', function () {
+      expect(spec.gvlid).to.equal(781);
+    })
   });
 
   describe('isBidRequestValid', function () {

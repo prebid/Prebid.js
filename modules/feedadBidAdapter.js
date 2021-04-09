@@ -62,6 +62,11 @@ const VERSION = '1.0.2';
  */
 
 /**
+ * The IAB TCF 2.0 vendor ID for the FeedAd GmbH
+ */
+const TCF_VENDOR_ID = 781;
+
+/**
  * Bidder network identity code
  * @type {string}
  */
@@ -283,6 +288,7 @@ function trackingHandlerFactory(klass) {
  */
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: TCF_VENDOR_ID,
   supportedMediaTypes: MEDIA_TYPES,
   isBidRequestValid,
   buildRequests,
