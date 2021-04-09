@@ -8,7 +8,7 @@ const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TMAX = 450;
-const BIDDER_VERSION = '4.7';
+const BIDDER_VERSION = '4.8';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
@@ -298,6 +298,7 @@ const spec = {
   },
 
   interpretResponse(serverResponse, request) {
+    const { bidderRequest } = request;
     const response = serverResponse.body;
     const bids = [];
     const site = JSON.parse(request.data).site; // get page and referer data from request
@@ -313,9 +314,9 @@ const spec = {
         seat = seatbid.seat;
         seatbid.bid.forEach(serverBid => {
           // get data from bid response
-          const { adomain, crid, impid, exp, ext, price } = serverBid;
+          const { adomain, crid, impid, exp, ext, price, w, h } = serverBid;
 
-          const bidRequest = request.bidderRequest.bids.filter(b => {
+          const bidRequest = bidderRequest.bids.filter(b => {
             const { bidId, params } = b;
             const { id, siteId } = params || {};
             const currentBidId = id && siteId ? id : 'bidid-' + bidId;
@@ -339,17 +340,19 @@ const spec = {
           }
 
           if (bidRequest && site.id && !site.id.includes('bidid')) {
+            // found a matching request; add this bid
+
             // store site data for future notification
             oneCodeDetection[bidId] = [site.id, site.slot];
 
             const bid = {
               requestId: bidId,
-              creativeId: crid || 'mcad_' + request.bidderRequest.auctionId + '_' + site.slot,
+              creativeId: crid || 'mcad_' + bidderRequest.auctionId + '_' + site.slot,
               cpm: price,
               currency: response.cur,
               ttl: exp || 300,
-              width: serverBid.w,
-              height: serverBid.h,
+              width: w,
+              height: h,
               bidderCode: BIDDER_CODE,
               mediaType: 'banner',
               meta: {
@@ -357,7 +360,7 @@ const spec = {
                 networkName: seat,
               },
               netRevenue: true,
-              ad: renderCreative(site, response.id, serverBid, seat, request.bidderRequest),
+              ad: renderCreative(site, response.id, serverBid, seat, bidderRequest),
             };
 
             if (bid.cpm > 0) {
