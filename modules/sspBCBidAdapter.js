@@ -254,6 +254,7 @@ const spec = {
     }
 
     const siteId = setOnAny(validBidRequests, 'params.siteId');
+    const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.referer;
     const domain = setOnAny(validBidRequests, 'params.domain') || utils.parseUrl(page).hostname;
     const tmax = setOnAny(validBidRequests, 'params.tmax') ? parseInt(setOnAny(validBidRequests, 'params.tmax'), 10) : TMAX;
@@ -269,7 +270,13 @@ const spec = {
 
     const payload = {
       id: bidderRequest.auctionId,
-      site: { id: siteId, page, domain, ref },
+      site: {
+        id: siteId,
+        publisher: publisherId ? { id: publisherId } : undefined,
+        page,
+        domain,
+        ref
+      },
       imp: validBidRequests.map(slot => mapImpression(slot)),
       tmax,
       user: {},
