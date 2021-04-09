@@ -203,7 +203,7 @@ const USER_IDS_CONFIG = {
     source: 'floc.com',
     atype: 1,
     getValue: function(data) {
-      return data.id;
+      return (data && data.id) ? data.id: undefined;
     },
     getUidExt: function(data) {
       return (data && data.version) ? {
