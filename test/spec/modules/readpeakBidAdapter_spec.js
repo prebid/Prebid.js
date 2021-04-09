@@ -235,6 +235,7 @@ describe('ReadPeakAdapter', function() {
     });
 
     it('should send gdpr data when gdpr applies', function() {
+      const tcString = 'sometcstring';
       const gdprData = {
         gdprConsent: {
           gdprApplies: true,

@@ -51,12 +51,12 @@ export const spec = {
         ext: {
           consent: bidderRequest.gdprConsent.consentString || ''
         },
-      }
+      };
       request.regs = {
         ext: {
           gdpr: bidderRequest.gdprConsent.gdprApplies !== undefined ? bidderRequest.gdprConsent.gdprApplies : true
         }
-      }
+      };
     }
 
     return {
