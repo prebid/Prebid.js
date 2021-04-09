@@ -312,45 +312,48 @@ const spec = {
       response.seatbid.forEach(seatbid => {
         seat = seatbid.seat;
         seatbid.bid.forEach(serverBid => {
+          // get data from bid response
+          const { adomain, crid, impid, exp, ext, price } = serverBid;
+
           const bidRequest = request.bidderRequest.bids.filter(b => {
             const { bidId, params } = b;
             const { id, siteId } = params || {};
             const currentBidId = id && siteId ? id : 'bidid-' + bidId;
-            return currentBidId === serverBid.impid;
+            return currentBidId === impid;
           })[0];
 
-          // get slot id for current bid from request (not a oneCode request)
-          const { params } = bidRequest || {};
+          // get data from linked bidRequest
+          const { bidId, params } = bidRequest || {};
+
+          // get slot id for current bid
           site.slot = params && params.id;
 
-          if (serverBid.ext) {
+          if (ext) {
             /*
               bid response might include ext object containing siteId / slotId, as detected by OneCode
               update site / slot data in this case
             */
-            const { siteid, slotid } = serverBid.ext;
+            const { siteid, slotid } = ext;
             site.id = siteid || site.id;
             site.slot = slotid || site.slot;
           }
 
           if (bidRequest && site.id && !site.id.includes('bidid')) {
             // store site data for future notification
-            oneCodeDetection[bidRequest.bidId] = [site.id, site.slot];
-
-            const bidFloor = (bidRequest.params && bidRequest.params.bidFloor) ? bidRequest.params.bidFloor : 0;
+            oneCodeDetection[bidId] = [site.id, site.slot];
 
             const bid = {
-              requestId: bidRequest.bidId,
-              creativeId: serverBid.crid || 'mcad_' + request.bidderRequest.auctionId + '_' + site.slot,
-              cpm: serverBid.price,
+              requestId: bidId,
+              creativeId: crid || 'mcad_' + request.bidderRequest.auctionId + '_' + site.slot,
+              cpm: price,
               currency: response.cur,
-              ttl: serverBid.exp || 300,
+              ttl: exp || 300,
               width: serverBid.w,
               height: serverBid.h,
               bidderCode: BIDDER_CODE,
               mediaType: 'banner',
               meta: {
-                advertiserDomains: serverBid.adomain,
+                advertiserDomains: adomain,
                 networkName: seat,
               },
               netRevenue: true,
@@ -358,7 +361,10 @@ const spec = {
             };
 
             if (bid.cpm > 0) {
-              if (bid.cpm >= bidFloor) {
+              // check bidFloor (if present in params)
+              const { bidFloor } = params || {};
+
+              if (!bidFloor || bid.cpm >= bidFloor) {
                 bids.push(bid);
               } else {
                 utils.logWarn('Discarding bid due to bidFloor setting', bid.cpm, bidFloor);
