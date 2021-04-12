@@ -35,13 +35,14 @@ describe('adriverAdapter', function () {
 
   describe('buildRequests', function () {
     let getAdUnitsStub;
+    const floor = 3;
+
     let bidRequests = [
       {
         'bidder': 'adriver',
         'params': {
           'placementId': '55:test_placement',
           'siteid': 'testSiteID',
-          'bidfloor': 3,
           'dealid': 'dealidTest'
         },
         'adUnitCode': 'adunit-code',
@@ -52,6 +53,14 @@ describe('adriverAdapter', function () {
         'transactionId': '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
     ];
+
+    let floorTestData = {
+      'currency': 'USD',
+      'floor': floor
+    };
+    bidRequests[0].getFloor = _ => {
+      return floorTestData;
+    };
 
     beforeEach(function() {
       getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function() {
@@ -196,6 +205,115 @@ describe('adriverAdapter', function () {
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result.length).to.equal(0);
+    });
+  });
+
+  describe('function _getFloor', function () {
+    let bidRequests = [
+      {
+        bidder: 'adriver',
+        params: {
+          placementId: '55:test_placement',
+          siteid: 'testSiteID',
+          dealid: 'dealidTest',
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250], [300, 600], [300, 250]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
+      }
+    ];
+
+    const floorTestData = {
+      'currency': 'RUB',
+      'floor': 1.50
+    };
+
+    const bitRequestStandard = JSON.parse(JSON.stringify(bidRequests));
+
+    bitRequestStandard[0].getFloor = () => {
+      return floorTestData;
+    };
+
+    it('valid BidRequests', function () {
+      const request = spec.buildRequests(bitRequestStandard);
+      const payload = JSON.parse(request.data);
+
+      expect(typeof bitRequestStandard[0].getFloor).to.equal('function');
+      expect(payload.imp[0].bidfloor).to.equal(1.50);
+      expect(payload.imp[0].bidfloorcur).to.equal('RUB');
+    });
+
+    const bitRequestEmptyCurrency = JSON.parse(JSON.stringify(bidRequests));
+
+    const floorTestDataEmptyCurrency = {
+      'currency': 'RUB',
+      'floor': 1.50
+    };
+
+    bitRequestEmptyCurrency[0].getFloor = () => {
+      return floorTestDataEmptyCurrency;
+    };
+
+    it('empty currency', function () {
+      const request = spec.buildRequests(bitRequestEmptyCurrency);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imp[0].bidfloor).to.equal(1.50);
+      expect(payload.imp[0].bidfloorcur).to.equal('RUB');
+    });
+
+    const bitRequestFloorNull = JSON.parse(JSON.stringify(bidRequests));
+
+    const floorTestDataFloorNull = {
+      'currency': '',
+      'floor': null
+    };
+
+    bitRequestFloorNull[0].getFloor = () => {
+      return floorTestDataFloorNull;
+    };
+
+    it('empty floor', function () {
+      const request = spec.buildRequests(bitRequestFloorNull);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imp[0].bidfloor).to.equal(0);
+    });
+
+    const bitRequestGetFloorNotFunction = JSON.parse(JSON.stringify(bidRequests));
+
+    bitRequestGetFloorNotFunction[0].getFloor = 0;
+
+    it('bid.getFloor is not a function', function () {
+      const request = spec.buildRequests(bitRequestGetFloorNotFunction);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imp[0].bidfloor).to.equal(0);
+      expect(payload.imp[0].bidfloorcur).to.equal('RUB');
+    });
+
+    const bitRequestGetFloorBySized = JSON.parse(JSON.stringify(bidRequests));
+
+    bitRequestGetFloorBySized[0].getFloor = (requestParams = {currency: 'USD', mediaType: '*', size: '*'}) => {
+      if (requestParams.size.length === 2 && requestParams.size[0] === 300 && requestParams.size[1] === 250) {
+        return {
+          'currency': 'RUB',
+          'floor': 3.33
+        }
+      } else {
+        return {}
+      }
+    };
+
+    it('bid.getFloor get size', function () {
+      const request = spec.buildRequests(bitRequestGetFloorBySized);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imp[0].bidfloor).to.equal(3.33);
+      expect(payload.imp[0].bidfloorcur).to.equal('RUB');
     });
   });
 });

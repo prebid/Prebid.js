@@ -1,6 +1,6 @@
 // ADRIVER BID ADAPTER for Prebid 1.13
 import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'adriver';
 const ADRIVER_BID_URL = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
@@ -27,7 +27,7 @@ export const spec = {
     let customID = Math.round(Math.random() * 999999999) + '-' + Math.round(new Date() / 1000) + '-1-46-';
     let siteId = utils.getBidIdParameter('siteid', validBidRequests[0].params) + '';
     let currency = utils.getBidIdParameter('currency', validBidRequests[0].params);
-    currency = currency ? currency + '' : 'RUB';
+    currency = 'RUB';
 
     const payload = {
       'at': 1,
@@ -51,8 +51,13 @@ export const spec = {
 
     utils._each(validBidRequests, (bid) => {
       utils._each(bid.sizes, (sizes) => {
-        let width; let height; let par;
-        let bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
+        let width;
+        let height;
+        let par;
+
+        let floorAndCurrency = _getFloor(bid, currency, sizes);
+
+        let bidFloor = floorAndCurrency.floor;
         let dealId = utils.getBidIdParameter('dealid', bid.params);
         if (typeof sizes[0] === 'number' && typeof sizes[1] === 'number') {
           width = sizes[0];
@@ -66,7 +71,7 @@ export const spec = {
             'h': height || undefined
           },
           'bidfloor': bidFloor || 0,
-          'bidfloorcur': currency,
+          'bidfloorcur': floorAndCurrency.currency,
           'secure': 0
         };
         if (dealId) {
@@ -127,3 +132,54 @@ export const spec = {
 
 };
 registerBidder(spec);
+
+/**
+ * Gets bidfloor
+ * @param {Object} bid
+ * @param currencyPar
+ * @param sizes
+ * @returns {Object} floor
+ */
+function _getFloor(bid, currencyPar, sizes) {
+  const curMediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner';
+  let floor = 0;
+  const currency = currencyPar || 'RUB';
+
+  let currencyResult = '';
+
+  let isSize = false;
+
+  if (typeof sizes[0] === 'number' && typeof sizes[1] === 'number') {
+    isSize = true;
+  }
+
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({
+      currency: currency,
+      mediaType: curMediaType,
+      size: isSize ? sizes : '*'
+    });
+
+    if (typeof floorInfo === 'object' &&
+      !isNaN(parseFloat(floorInfo.floor))) {
+      floor = floorInfo.floor;
+    }
+
+    if (typeof floorInfo === 'object' && floorInfo.currency) {
+      currencyResult = floorInfo.currency;
+    }
+  }
+
+  if (!currencyResult) {
+    currencyResult = currency;
+  }
+
+  if (floor == null) {
+    floor = 0;
+  }
+
+  return {
+    floor: floor,
+    currency: currencyResult
+  };
+}
