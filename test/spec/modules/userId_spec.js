@@ -1657,7 +1657,7 @@ describe('User ID', function () {
 
     it('test hook from floc cookies', function (done) {
       // simulate existing browser local storage values
-      coreStorage.setCookie('flocId', 'Sample_SharedId_Token', (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('flocId', JSON.stringify({id: 'Sample_Cohort', version: 'chrome1.1'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([flocIdSubmodule]);
       init(config);
@@ -1667,44 +1667,14 @@ describe('User ID', function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.flocId');
-            expect(bid.userId.flocId).to.deep.equal({
-              id: 'Sample_SharedId_Token'
-            });
+            expect(bid.userId.flocId).to.deep.equal({id: 'Sample_Cohort', version: 'chrome1.1'});
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'floc.com',
-              uids: [{id: 'Sample_SharedId_Token', atype: 1}]
+              uids: [{id: 'Sample_Cohort', atype: 1, ext: { ver: 'chrome1.1' }}]
             });
           });
         });
         coreStorage.setCookie('flocId', '', EXPIRED_COOKIE_DATE);
-        done();
-      }, {adUnits});
-    });
-
-    it('test hook from floc html5', function (done) {
-      // simulate existing browser local storage values
-      localStorage.setItem('flocId', 'Sample_SharedId_Token');
-      localStorage.setItem('flocId_exp', '');
-
-      setSubmoduleRegistry([flocIdSubmodule]);
-      init(config);
-      config.setConfig(getConfigMock(['originFloc', 'flocId', 'html5']));
-
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.flocId');
-            expect(bid.userId.flocId).to.deep.equal({
-              id: 'Sample_SharedId_Token'
-            });
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'floc.com',
-              uids: [{id: 'Sample_SharedId_Token', atype: 1}]
-            });
-          });
-        });
-        localStorage.removeItem('flocId');
-        localStorage.removeItem('flocId_exp', '');
         done();
       }, {adUnits});
     });
@@ -1726,7 +1696,7 @@ describe('User ID', function () {
       coreStorage.setCookie('storage_criteo', JSON.stringify({'criteoId': 'test_bidid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('mwol', JSON.stringify({eid: 'XX-YY-ZZ-123'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('uid2id', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('flocId', 'Sample_SharedId_Token', (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('flocId', JSON.stringify({id: 'Sample_Cohort', version: 'chrome1.1'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, flocIdSubmodule]);
       init(config);
@@ -1791,9 +1761,7 @@ describe('User ID', function () {
             expect(bid.userId.uid2).to.deep.equal({
               id: 'Sample_AD_Token'
             });
-            expect(bid.userId.flocId).to.deep.equal({
-              id: 'Sample_SharedId_Token'
-            });
+            expect(bid.userId.flocId).to.deep.equal({id: 'Sample_Cohort', version: 'chrome1.1'});
             expect(bid.userIdAsEids.length).to.equal(14);
           });
         });
@@ -1832,7 +1800,7 @@ describe('User ID', function () {
       coreStorage.setCookie('storage_criteo', JSON.stringify({'criteoId': 'test_bidid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('mwol', JSON.stringify({eid: 'XX-YY-ZZ-123'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('uid2id', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('flocId', 'Sample_SharedId_Token', (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('flocId', JSON.stringify({id: 'Sample_Cohort', version: 'chrome1.1'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([]);
 
@@ -1924,9 +1892,7 @@ describe('User ID', function () {
             expect(bid.userId.uid2).to.deep.equal({
               id: 'Sample_AD_Token'
             });
-            expect(bid.userId.flocId).to.deep.equal({
-              id: 'Sample_SharedId_Token'
-            });
+            expect(bid.userId.flocId).to.deep.equal({id: 'Sample_Cohort', version: 'chrome1.1'});
             expect(bid.userIdAsEids.length).to.equal(14);
           });
         });
@@ -2202,7 +2168,7 @@ describe('User ID', function () {
       coreStorage.setCookie('haloId', JSON.stringify({'haloId': 'testHaloId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('__uid2_advertising_token', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('flocId', 'Sample_SharedId_Token', (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('flocId', JSON.stringify({id: 'Sample_Cohort', version: 'chrome1.1'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, uid2IdSubmodule, flocIdSubmodule]);
       init(config);
@@ -2300,9 +2266,7 @@ describe('User ID', function () {
             expect(bid.userId.uid2).to.deep.equal({
               id: 'Sample_AD_Token'
             });
-            expect(bid.userId.flocId).to.deep.equal({
-              id: 'Sample_SharedId_Token'
-            });
+            expect(bid.userId.flocId).to.deep.equal({id: 'Sample_Cohort', version: 'chrome1.1'});
 
             expect(bid.userIdAsEids.length).to.equal(12);
           });

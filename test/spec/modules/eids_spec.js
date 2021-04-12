@@ -304,14 +304,14 @@ describe('eids array generation for known sub-modules', function() {
   });
   it('originFloc', function() {
     const userId = {
-      flocId: {id: 'Sample_Token', ver: 'chrome1.1'}
+      flocId: {id: 'Sample_Cohort', version: 'chrome1.1'}
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'floc.com',
       uids: [{
-        id: 'Sample_Token',
+        id: 'Sample_Cohort',
         atype: 1,
         ext: {
           ver: 'chrome1.1'

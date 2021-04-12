@@ -22,6 +22,21 @@ function enableOriginTrial(token) {
   document.head.appendChild(tokenElement)
 }
 
+/**
+ * Encode the id
+ * @param value
+ * @returns {string|*}
+ */
+function encodeId(value) {
+  const result = {};
+  if (value) {
+    result.flocId = value;
+    utils.logInfo('Decoded value ' + JSON.stringify(result));
+    return result;
+  }
+  return undefined;
+}
+
 /** @type {Submodule} */
 export const flocIdSubmodule = {
   /**
@@ -30,6 +45,15 @@ export const flocIdSubmodule = {
    */
   name: MODULE_NAME,
 
+  /**
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param {string} value
+   * @returns {{flocId:{ id: string }} or undefined if value doesn't exists
+   */
+  decode(value) {
+    return (value) ? encodeId(value) : undefined;
+  },
   /**
    * If chrome and cohort enabled performs action to obtain id and return a value in the callback's response argument
    * @function
@@ -45,15 +69,7 @@ export const flocIdSubmodule = {
     if (isChrome && isFlocEnabled) {
       const configParams = (config && config.params) || {};
       if (!configParams || (typeof configParams.token !== 'string')) {
-        utils.logError('User ID - flocId submodule requires token to be defined');
-        return;
-      }
-
-      // Block usage of storage of cohort ID
-      const checkStorage = (config && config.storage) || {};
-      if (checkStorage) {
-        utils.logError('User ID - flocId submodule requires storage not defined');
-        return;
+        utils.logInfo('User ID - flocId submodule token is not defined');
       }
 
       // Insert meta-tag with token from configuration
