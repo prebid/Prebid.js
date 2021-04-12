@@ -566,7 +566,7 @@ describe('User ID', function () {
           }, {
             name: 'admixerId',
             storage: {name: 'admixerId', type: 'cookie'}
-          },{
+          }, {
             name: 'deepintentId',
             storage: {name: 'deepintentId', type: 'cookie'}
           }]
@@ -2293,7 +2293,7 @@ describe('User ID', function () {
             name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
           }, {
             name: 'uid2'
-          },{
+          }, {
             name: 'deepintentId', storage: {name: 'deepintentId', type: 'cookie'}
           }]
         }
