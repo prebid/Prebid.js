@@ -23,7 +23,8 @@ describe('gnetAdapter', function () {
     let bid = {
       bidder: 'gnet',
       params: {
-        clientId: '123456'
+        websiteId: '4',
+        externalId: '4d52cccf30309282256012cf30309282'
       }
     };
 
@@ -43,7 +44,8 @@ describe('gnetAdapter', function () {
     const bidRequests = [{
       bidder: 'gnet',
       params: {
-        clientId: '123456'
+        websiteId: '4',
+        externalId: '4d52cccf30309282256012cf30309282'
       },
       adUnitCode: '/150790500/4_ZONA_IAB_300x250_5',
       sizes: [
@@ -72,7 +74,8 @@ describe('gnetAdapter', function () {
         'transactionId': '894bdff6-61ec-4bec-a5a9-f36a5bfccef5',
         'sizes': ['300x250'],
         'params': {
-          'clientId': '123456'
+          'websiteId': '4',
+          'externalId': '4d52cccf30309282256012cf30309282'
         }
       }));
     });

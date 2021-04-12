@@ -24,7 +24,8 @@ Module that connects to Example's demand sources
                 {
                     bidder: 'gnet',
                     params: {
-                        clientId: '123456'
+                        websiteId: '4',
+                        externalId: '4d52cccf30309282256012cf30309282'
                     }
                 }
             ]
