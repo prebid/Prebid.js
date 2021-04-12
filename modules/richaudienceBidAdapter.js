@@ -31,7 +31,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
       var payload = {
-        bidfloor: bid.params.bidfloor,
+        bidfloor: raiGetFloor(bid, config),
         ifa: bid.params.ifa,
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
@@ -149,7 +149,7 @@ export const spec = {
       consent = `consentString=${gdprConsent.consentString}`
     }
 
-    if (syncOptions.iframeEnabled && raiSync.filter(e => e.raiIframe)[0].raiIframe != 'exclude') {
+    if (syncOptions.iframeEnabled && raiSync.raiIframe != 'exclude') {
       syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand
       if (consent != '') {
         syncUrl += `&${consent}`
@@ -160,7 +160,7 @@ export const spec = {
       });
     }
 
-    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0 && raiSync.filter(e => e.raiImage)[0].raiImage != 'exclude') {
+    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0 && raiSync.raiImage != 'exclude') {
       syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
       if (consent != '') {
         syncUrl += `&${consent}`
@@ -271,22 +271,38 @@ function raiGetResolution() {
 function raiGetSyncInclude(config) {
   try {
     let raConfig = null;
-    let raiSync = [];
+    let raiSync = {};
     if (config.getConfig('userSync').filterSettings != null) {
       raConfig = config.getConfig('userSync').filterSettings
-      if (raConfig.iframe != null) {
-        if (raConfig.iframe.bidders == 'richaudience' || raConfig.iframe.bidders == '*') {
-          raiSync.push({'raiIframe': raConfig.iframe.filter})
-        }
+      if (raConfig.iframe != null && typeof raConfig.iframe != 'undefined') {
+        raConfig.iframe.bidders == 'richaudience' || raConfig.iframe.bidders == '*' ? raiSync.raiIframe = raConfig.iframe.filter : raiSync.raiIframe = 'exclude';
       }
-      if (raConfig.image != null) {
-        if (raConfig.image.bidders == 'richaudience' || raConfig.image.bidders == '*') {
-          raiSync.push({'raiImage': raConfig.image.filter})
-        }
+      if (raConfig.image != null && typeof raConfig.image != 'undefined') {
+        raConfig.image.bidders == 'richaudience' || raConfig.image.bidders == '*' ? raiSync.raiImage = raConfig.image.filter : raiSync.raiImage = 'exclude';
       }
     }
     return raiSync;
   } catch (e) {
     return null;
+  }
+}
+
+function raiGetFloor(bid, config) {
+  try {
+    let raiFloor;
+    if (bid.params.bidfloor != null) {
+      raiFloor = bid.params.bidfloor;
+    } else if (typeof bid.getFloor == 'function') {
+      let floorSpec = bid.getFloor({
+        currency: config.getConfig('currency.adServerCurrency'),
+        mediaType: bid.mediaType.banner ? 'banner' : 'video',
+        size: '*'
+      })
+
+      raiFloor = floorSpec.floor;
+    }
+    return raiFloor
+  } catch (e) {
+    return 0
   }
 }
