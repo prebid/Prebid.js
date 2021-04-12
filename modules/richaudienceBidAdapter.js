@@ -158,7 +158,7 @@ export const spec = {
         type: 'iframe',
         url: syncUrl
       });
-    } 
+    }
 
     if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0 && raiSync.raiImage != 'exclude') {
       syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
