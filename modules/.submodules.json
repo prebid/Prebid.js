@@ -25,6 +25,7 @@
     "tapadIdSystem",
     "novatiqIdSystem",
     "uid2IdSystem",
+    "admixerIdSystem",
     "flocIdSystem"
   ],
   "adpod": [
@@ -36,6 +37,7 @@
     "haloRtdProvider",
     "jwplayerRtdProvider",
     "reconciliationRtdProvider",
-    "geoedgeRtdProvider"
+    "geoedgeRtdProvider",
+    "sirdataRtdProvider"
   ]
 }
