@@ -10,19 +10,6 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'deepintentId';
 export const storage = getStorageManager(null, MODULE_NAME);
-const DEEPINTENT_DPES_ID = 'di_dpes';
-
-function readCookie(cookieName) {
-  const val = storage.cookiesAreEnabled ? storage.getCookie(cookieName) : null;
-  return JSON.parse(val);
-}
-
-function readFromLocalStorage() {
-  const val = storage.localStorageIsEnabled
-    ? storage.getDataFromLocalStorage(DEEPINTENT_DPES_ID)
-    : null;
-  return JSON.parse(val);
-}
 
 /** @type {Submodule} */
 export const deepintentDpesSubmodule = {
@@ -38,43 +25,27 @@ export const deepintentDpesSubmodule = {
    * @returns {{deepintentId:Object}}
    */
   decode(value, config) {
-    const configParams = (config && config.params) || {};
-    if (configParams && configParams.identityKey && configParams.siteId && value.siteId && configParams.siteId == value.siteId) {
-      if (configParams.identityKey === 'hashedEmail') {
-        value = {'deepintentId': value.email}
-        return value;
-      } else if (configParams.identityKey === 'hashedNPI') {
-        value = {'deepintentId': value.npi}
-        return value;
-      } else {
-        return undefined;
+    if (value) {
+      return {
+        'deepintentId': value
       }
     } else {
-      return undefined;
+      return undefined
     }
   },
+
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} config
+   * @param {ConsentData|undefined} consentData
+   * @param {Object} cacheIdObj - existing id, if any
    * @return {{id: string | undefined} | undefined}
    */
-  getId(config) {
-    const configStorage = (config && config.storage) || {};
+  getId(config, consentData, cacheIdObj) {
+    return cacheIdObj;
+  }
 
-    let id = null;
-    if (
-      configStorage &&
-      configStorage.name &&
-      configStorage.type === 'cookie'
-    ) {
-      id = readCookie(configStorage.name);
-    } else if (configStorage && configStorage.type === 'html5') {
-      id = readFromLocalStorage();
-    }
-
-    return id ? { id } : undefined;
-  },
 };
 
 submodule('userId', deepintentDpesSubmodule);
