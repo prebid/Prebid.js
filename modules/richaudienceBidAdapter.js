@@ -128,7 +128,7 @@ export const spec = {
   },
   /***
    * User Syncs
-   *
+   * 
    * @param {syncOptions} Publisher prebid configuration
    * @param {serverResponses} Response from the server
    * @param {gdprConsent} GPDR consent object
