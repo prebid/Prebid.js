@@ -43,7 +43,8 @@ pbjs.setConfig({
         }, {
             name: 'identityLink',
             params: {
-                pid: '999' // Set your real identityLink placement ID here
+                pid: '999', // Set your real identityLink placement ID here
+                // use3P: false // true/false - If you want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will not be fired. By default this propertt is undefined and 3p request will not be fired.
             },
             storage: {
                 type: 'cookie',
@@ -144,7 +145,8 @@ pbjs.setConfig({
         }, {
             name: 'identityLink',
             params: {
-                pid: '999' // Set your real identityLink placement ID here
+                pid: '999', // Set your real identityLink placement ID here
+                // use3P: false // true/false - If you want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will not be fired. By default this property is undefined and 3p request will not be fired.
             },
             storage: {
                 type: 'html5',
