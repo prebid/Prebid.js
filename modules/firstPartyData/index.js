@@ -82,18 +82,6 @@ function setKeywords() {
 }
 
 /**
- * Checks for currency and if exists merges into ortb2 global data
- * Sets listener for currency if changes occur or doesnt exist when run
- */
-function setCurrency() {
-  let cur = { ...config.getConfig('currency') };
-
-  if (cur.adServerCurrency) {
-    utils.mergeDeep(ortb2, { cur: cur.adServerCurrency });
-  }
-}
-
-/**
  * Check if data passed is empty
  * @param {*} value to test against
  * @returns {Boolean} is value empty
@@ -280,7 +268,6 @@ function runEnrichments(shouldSkipValidate) {
   setDomain();
   setDimensions();
   setKeywords();
-  setCurrency();
 
   if (shouldSkipValidate) config.setConfig({ ortb2: utils.mergeDeep({}, ortb2, config.getConfig('ortb2') || {}) });
 }

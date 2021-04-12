@@ -579,22 +579,6 @@ describe('the first party data module', function () {
       expect(validated.site.ref).to.equal('https://referer.com');
     });
 
-    it('should add currency if currency config exists', function () {
-      let validated;
-      let conf = {
-        currency: {
-          adServerCurrency: 'USD'
-        }
-      };
-
-      config.setConfig(conf);
-
-      init();
-
-      validated = config.getConfig('ortb2');
-      expect(validated.cur).to.equal('USD');
-    });
-
     it('should filter all data', function () {
       let validated;
       let conf = {

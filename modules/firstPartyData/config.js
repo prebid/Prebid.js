@@ -89,7 +89,6 @@ export const ORTB_MAP = {
   },
   user: {
     type: TYPES.object,
-    optoutApplies: true,
     children: {
       yob: { type: TYPES.number },
       gender: { type: TYPES.string },
