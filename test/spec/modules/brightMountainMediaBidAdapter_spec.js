@@ -1,13 +1,18 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/brightMountainMediaBidAdapter.js';
 
+const BIDDER_CODE = 'bmtm';
+const ENDPOINT_URL = 'https://one.elitebidder.com/api/hb';
+const ENDPOINT_URL_SYNC = 'https://console.brightmountainmedia.com:8443/cookieSync';
+const PLACEMENT_ID = 329;
+
 describe('brightMountainMediaBidAdapter_spec', function () {
   let bid = {
     bidId: '2dd581a2b6281d',
-    bidder: 'bmtm',
+    bidder: BIDDER_CODE,
     bidderRequestId: '145e1d6a7837c9',
     params: {
-      placement_id: '123qwerty'
+      placement_id: PLACEMENT_ID
     },
     placementCode: 'placementid_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
@@ -19,7 +24,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
   };
   let bidderRequest = {
-    bidderCode: 'bmtm',
+    bidderCode: BIDDER_CODE,
     auctionId: 'fffffff-ffff-ffff-ffff-ffffffffffff',
     bidderRequestId: 'ffffffffffffff',
     start: 1472239426002,
@@ -55,7 +60,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://one.elitebidder.com/api/hb');
+      expect(serverRequest.url).to.equal(ENDPOINT_URL);
     });
 
     it('Returns valid data if array of bids is valid', function () {
@@ -71,10 +76,10 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'bidId', 'traffic', 'sizes');
-        expect(placement.placementId).to.be.a('string');
-        expect(placement.bidId).to.be.a('string');
+        expect(placement).to.have.all.keys('placementId', 'traffic', 'bidId', 'sizes');
+        expect(placement.placementId).to.be.a('number');
         expect(placement.traffic).to.be.a('string');
+        expect(placement.bidId).to.be.a('string');
         expect(placement.sizes).to.be.an('array');
       }
     });
@@ -133,7 +138,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.exist;
       expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.exist;
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe')
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://console.brightmountainmedia.com:8443/cookieSync')
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal(ENDPOINT_URL_SYNC)
     });
   });
 });
