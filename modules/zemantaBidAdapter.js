@@ -10,6 +10,7 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'zemanta';
+const GVLID = 164;
 const CURRENCY = 'USD';
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
 const NATIVE_PARAMS = {
@@ -23,7 +24,7 @@ const NATIVE_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['outbrain'],
+  gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER ],
   isBidRequestValid: (bid) => {
     return (
@@ -37,6 +38,8 @@ export const spec = {
     const ua = navigator.userAgent;
     const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
+    const bcat = setOnAny(validBidRequests, 'params.bcat');
+    const badv = setOnAny(validBidRequests, 'params.badv');
     const cur = CURRENCY;
     const endpointUrl = config.getConfig('zemanta.bidderUrl') || config.getConfig('outbrain.bidderUrl');
     const timeout = bidderRequest.timeout;
@@ -73,7 +76,9 @@ export const spec = {
       source: { fd: 1 },
       cur: [cur],
       tmax: timeout,
-      imp: imps
+      imp: imps,
+      bcat: bcat,
+      badv: badv,
     };
 
     if (test) {
@@ -131,14 +136,26 @@ export const spec = {
           bidObject.width = bidResponse.w;
           bidObject.height = bidResponse.h;
         }
+        bidObject.meta = {};
+        if (bidResponse.adomain && bidResponse.adomain.length > 0) {
+          bidObject.meta.advertiserDomains = bidResponse.adomain;
+        }
         return bidObject;
       }
     }).filter(Boolean);
   },
-  getUserSyncs: (syncOptions) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     const syncs = [];
-    const syncUrl = config.getConfig('zemanta.usersyncUrl') || config.getConfig('outbrain.usersyncUrl');
+    let syncUrl = config.getConfig('zemanta.usersyncUrl') || config.getConfig('outbrain.usersyncUrl');
     if (syncOptions.pixelEnabled && syncUrl) {
+      if (gdprConsent) {
+        syncUrl += '&gdpr=' + (gdprConsent.gdprApplies & 1);
+        syncUrl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+      }
+      if (uspConsent) {
+        syncUrl += '&us_privacy=' + encodeURIComponent(uspConsent);
+      }
+
       syncs.push({
         type: 'image',
         url: syncUrl

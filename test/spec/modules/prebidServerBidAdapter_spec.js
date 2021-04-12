@@ -639,7 +639,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.gdpr_consent).is.undefined;
       });
 
-      it('checks gdpr info gets added to cookie_sync request: consent data unknown', function () {
+      it('checks gdpr info gets added to cookie_sync request: applies is false', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
         cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
@@ -649,7 +649,7 @@ describe('S2S Adapter', function () {
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
         gdprBidRequest[0].gdprConsent = {
           consentString: undefined,
-          gdprApplies: undefined
+          gdprApplies: false
         };
 
         const s2sBidRequest = utils.deepClone(REQUEST);
@@ -658,7 +658,7 @@ describe('S2S Adapter', function () {
         adapter.callBids(s2sBidRequest, gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
-        expect(requestBid.gdpr).is.undefined;
+        expect(requestBid.gdpr).is.equal(0);
         expect(requestBid.gdpr_consent).is.undefined;
       });
     });
@@ -1573,6 +1573,30 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.source.ext.schain).to.deep.equal(schainObject);
+    });
+
+    it('passes multibid array in request', function () {
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      const multibid = [{
+        bidder: 'bidderA',
+        maxBids: 2
+      }, {
+        bidder: 'bidderB',
+        maxBids: 2
+      }];
+      const expected = [{
+        bidder: 'bidderA',
+        maxbids: 2
+      }, {
+        bidder: 'bidderB',
+        maxbids: 2
+      }];
+
+      config.setConfig({multibid: multibid});
+
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+      expect(parsedRequestBody.ext.prebid.multibid).to.deep.equal(expected);
     });
 
     it('passes first party data in request', () => {
