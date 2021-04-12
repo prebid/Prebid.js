@@ -113,11 +113,14 @@ pbjs.setConfig({
                   name: '__adm__admixer',
                   expires: 30
               }
+<<<<<<< HEAD
         },{
               name: "originFloc",
               params: {
                 token: "SHAREDID_TOKEN"
                 }
+=======
+>>>>>>> master
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -227,7 +230,7 @@ pbjs.setConfig({
                   name: 'admixerId',
                   expires: 30
               }
-        },{
+       },{
               name: "originFloc",
               params: {
                 token: "SHAREDID_TOKEN"
