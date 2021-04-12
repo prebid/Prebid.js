@@ -24,16 +24,31 @@ export const spec = {
       })
     })
 
+    let payload = {
+      requestId: bidderRequest.bidderRequestId,
+      bids,
+      referer: bidderRequest.refererInfo.referer
+    }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdprConsent = {
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false,
+        consentString: bidderRequest.gdprConsent.consentString
+      }
+    }
+
+    const options = {
+      contentType: 'application/json',
+      customHeaders: {
+        'Rtb-Direct': true
+      }
+    }
+
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: { requestId: bidderRequest.bidderRequestId, bids },
-      options: {
-        contentType: 'application/json',
-        customHeaders: {
-          'Rtb-Direct': true
-        }
-      }
+      data: payload,
+      options
     };
   },
 
