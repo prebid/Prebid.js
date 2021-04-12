@@ -15,7 +15,6 @@ bids: [{
       params: {
           siteid: '216200',
           placementId: '55:test_placement',
-          bidfloor: 1
           dealid: 'dealidTest'
       }
 }]
