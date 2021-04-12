@@ -121,6 +121,9 @@ export const spec = {
           currency: serverResponse.body.cur,
           netRevenue: true,
           ttl: TIME_TO_LIVE,
+          meta: {
+            advertiserDomains: bid.adomain
+          },
           ad: '<IFRAME SRC="' + bid.nurl + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" STYLE ="WIDTH:' + bid.w + 'px; HEIGHT:' + bid.h + 'px"></IFRAME>'
         };
         utils.logInfo('bidResponse', bidResponse);

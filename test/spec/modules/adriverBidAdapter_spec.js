@@ -178,6 +178,9 @@ describe('adriverAdapter', function () {
           currency: 'RUB',
           netRevenue: true,
           ttl: 3000,
+          meta: {
+            advertiserDomains: ['http://ikea.com']
+          },
           ad: '<IFRAME SRC="https://ad.adriver.ru/cgi-bin/erle.cgi?expid=D8JW8XU8-L5m7qFMNQGs7i1gcuPvYMEDOKsktw6e9uLy5Eebo9HftVXb0VpKj4R2dXa93i6QmRhjextJVM4y1SqodMAh5vFOb_eVkHA&bid=7121351&wprc=4.29&tuid=-1&custom=207=/19968336/header-bid-tag-0" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" STYLE ="WIDTH:300px; HEIGHT:250px"></IFRAME>'
         }
       ];
@@ -313,6 +316,7 @@ describe('adriverAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.imp[0].bidfloor).to.equal(3.33);
+      expect(payload.imp[0].bidfloorcur).to.equal('RUB');
       expect(payload.imp[0].bidfloorcur).to.equal('RUB');
     });
   });
