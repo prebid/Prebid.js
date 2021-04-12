@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'sortable';
 const SERVER_URL = 'https://c.deployads.com';
@@ -218,6 +219,8 @@ export const spec = {
       return rv;
     });
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+    const bidUserId = validBidReqs[0].userId;
+    const eids = createEidsArray(bidUserId);
     const sortableBidReq = {
       id: utils.getUniqueIdentifierStr(),
       imp: sortableImps,
@@ -241,6 +244,9 @@ export const spec = {
           h: screen.height
         },
       },
+      user: {
+        ext: {}
+      }
     };
     if (bidderRequest && bidderRequest.timeout > 0) {
       sortableBidReq.tmax = bidderRequest.timeout;
@@ -254,6 +260,9 @@ export const spec = {
       if (typeof gdprConsent.gdprApplies == 'boolean') {
         sortableBidReq.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0
       }
+    }
+    if (eids.length) {
+      sortableBidReq.user.ext.eids = eids;
     }
     if (bidderRequest.uspConsent) {
       sortableBidReq.regs.ext.us_privacy = bidderRequest.uspConsent;
