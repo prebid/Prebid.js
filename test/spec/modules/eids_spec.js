@@ -84,13 +84,18 @@ describe('eids array generation for known sub-modules', function() {
 
   it('merkleId', function() {
     const userId = {
-      merkleId: 'some-random-id-value'
+      merkleId: {
+        id: 'some-random-id-value', keyID: 1
+      }
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'merkleinc.com',
-      uids: [{id: 'some-random-id-value', atype: 3}]
+      uids: [{id: 'some-random-id-value',
+        atype: 3,
+        ext: { keyID: 1
+        }}]
     });
   });
 
@@ -302,23 +307,6 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
-  it('originFloc', function() {
-    const userId = {
-      flocId: {id: 'Sample_Cohort', version: 'chrome1.1'}
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'floc.com',
-      uids: [{
-        id: 'Sample_Cohort',
-        atype: 1,
-        ext: {
-          ver: 'chrome1.1'
-        }
-      }]
-    });
-  });
   it('pubProvidedId', function() {
     const userId = {
       pubProvidedId: [{
@@ -351,6 +339,23 @@ describe('eids array generation for known sub-modules', function() {
       source: 'id-partner.com',
       uids: [{
         id: 'value read from cookie or local storage'
+      }]
+    });
+  });
+  it('originFloc', function() {
+    const userId = {
+      flocId: {id: 'Sample_Cohort', version: 'chrome1.1'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'floc.com',
+      uids: [{
+        id: 'Sample_Cohort',
+        atype: 1,
+        ext: {
+          ver: 'chrome1.1'
+        }
       }]
     });
   });
