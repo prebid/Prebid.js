@@ -124,15 +124,12 @@ function interpretBannerBid(serverBid, request) {
     netRevenue: true,
   }
 
-  if (serverBid.video) {
-    utils.logMessage('--- VIDEO');
+  if (request.bids.mediaTypes.video) {
     bidReturned.vastXml = serverBid.adm;
     bidReturned.vastUrl = serverBid.lurl;
     bidReturned.ad = serverBid.adm;
     bidReturned.mediaType = VIDEO;
-  }
-  if (serverBid.banner) {
-    utils.logMessage('--- BANNER');
+  } else {
     bidReturned.ad = serverBid.adm;
     bidReturned.mediaType = BANNER;
   }
@@ -310,7 +307,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.params = params;
   payload.regs = regs;
   // < Payload
-
 
   return {
     method: 'POST',
