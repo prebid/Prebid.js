@@ -1,6 +1,6 @@
 # Deepintent DPES ID
 
-The Deepintent DPES ID or Healthcare Identity is a shared, neutral identifier that publishers and ad tech platforms can use to recognise users even in environments where 3rd party cookies are not available. The Deepintent DPES ID is designed to respect users' privacy choices and publishers’ preferences throughout the advertising value chain. 
+The Deepintent Id  is a shared, healthcare identifier which helps publisher in absence of the 3rd Party cookie matching. This lets publishers set and bid with healthcare identity . Deepintent lets users protect their privacy through advertising value chain, where Healthcare identity when setting the identity takes in consideration of users choices, as well as when passing identity on the cookie itself privacy consent strings are checked. The healthcare identity when set is not stored on Deepintent's servers but is stored on users browsers itself. User can still opt out of the ads by https://option.deepintent.com/adchoices
 
 ## Deepintent DPES ID Registration
 
