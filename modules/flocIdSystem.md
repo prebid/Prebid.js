@@ -16,12 +16,7 @@ pbjs.setConfig({
             name: 'originFloc',
             params: {
                       token: "sharedid's token by default"
-             },
-            storage: {
-                name: 'flocId',
-                type: 'cookie',
-                expires: 28
-            },
+             }
         }]
     }
 });
@@ -35,7 +30,4 @@ The below parameters apply only to the FloC ID User ID Module integration.
 | name | Required | String | ID value for the Floc ID module - `"flocId"` | `"flocId"` |
 | params | Optional | Object | Details for flocId syncing. | |
 | params.token | Optional | Object | SharedId's token by default | 60 |
-| storage | Required | Object | The publisher must specify the local storage in which to store the results of the call to get the user ID. This can be either cookie or HTML5 storage. | |
-| storage.type | Required | String | This is where the results of the user ID will be stored. The recommended method is `localStorage` by specifying `html5`. | `"html5"` |
-| storage.name | Required | String | The name of the cookie or html5 local storage where the user ID will be stored. | `"flocid"` |
-| storage.expires | Optional | Integer | How long (in days) the user ID information will be stored. | `28` |
+| storage | Not Allowed | Object | Will ask browser for cohort everytime. Setting storage will fail id lookup ||

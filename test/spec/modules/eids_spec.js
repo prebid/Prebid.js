@@ -304,7 +304,7 @@ describe('eids array generation for known sub-modules', function() {
   });
   it('originFloc', function() {
     const userId = {
-      flocId: {'id': 'Sample_Token'}
+      flocId: {id: 'Sample_Token', ver: 'chrome1.1'}
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
@@ -312,7 +312,10 @@ describe('eids array generation for known sub-modules', function() {
       source: 'floc.com',
       uids: [{
         id: 'Sample_Token',
-        atype: 1
+        atype: 1,
+        ext: {
+          ver: 'chrome1.1'
+        }
       }]
     });
   });

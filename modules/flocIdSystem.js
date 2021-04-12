@@ -11,21 +11,15 @@ import {submodule} from '../src/hook.js'
 const MODULE_NAME = 'originFloc';
 
 /**
- * Encode the id
- * @param value
- * @returns {string|*}
+ * Add meta tag to support enabling of floc origin trial
+ * @function
+ * @param {string} token - configured token for origin-trial
  */
-function encodeId(value) {
-  const result = {};
-  if (value) {
-    const bidIds = {
-      id: value
-    }
-    result.flocId = bidIds;
-    utils.logInfo('Decoded value ' + JSON.stringify(result));
-    return result;
-  }
-  return undefined;
+function enableOriginTrial(token) {
+  const tokenElement = document.createElement('meta')
+  tokenElement.httpEquiv = 'origin-trial'
+  tokenElement.content = token
+  document.head.appendChild(tokenElement)
 }
 
 /** @type {Submodule} */
@@ -37,27 +31,37 @@ export const flocIdSubmodule = {
   name: MODULE_NAME,
 
   /**
-   * decode the stored id value for passing to bid requests
-   * @function
-   * @param {string} value
-   * @returns {{flocId:{ id: string }} or undefined if value doesn't exists
-   */
-  decode(value) {
-    return (value) ? encodeId(value) : undefined;
-  },
-  /**
-   * performs action to obtain id and return a value in the callback's response argument
+   * If chrome and cohort enabled performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
   getId(config) {
-    const configParams = (config && config.params) || {};
-    if (!configParams || (typeof configParams.token !== 'string')) {
-      utils.logError('User ID - flocId submodule requires token to be defined');
-      return;
+    const isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
+
+    // Validate feature is enabled
+    const isFlocEnabled = !!document.featurePolicy && !!document.featurePolicy.features() && document.featurePolicy.features().includes('interest-cohort');
+
+    if (isChrome && isFlocEnabled) {
+      const configParams = (config && config.params) || {};
+      if (!configParams || (typeof configParams.token !== 'string')) {
+        utils.logError('User ID - flocId submodule requires token to be defined');
+        return;
+      }
+
+      // Block usage of storage of cohort ID
+      const checkStorage = (config && config.storage) || {};
+      if (checkStorage) {
+        utils.logError('User ID - flocId submodule requires storage not defined');
+        return;
+      }
+
+      // Insert meta-tag with token from configuration
+      enableOriginTrial(configParams.token);
+
+      // Example expected output { "id": "14159", "version": "chrome.1.0" }
+      return document.interestCohort() || {};
     }
-    return {id: configParams.token}
   }
 };
 
