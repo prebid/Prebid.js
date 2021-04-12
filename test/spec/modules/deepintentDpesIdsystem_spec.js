@@ -4,59 +4,27 @@ import { storage, deepintentDpesSubmodule } from 'modules/deepintentDpesIdSystem
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { config } from 'src/config.js';
 
-const DI_COOKIE_NAME = '_di';
-const DI_LOCALSTORAGE_ID = 'di_dpes';
-const DI_DUMMY_VALUE = '{"email":"2cf40748c4f7f60d343336e08f80dc99","siteId":"80088"}';
-const DI_COOKIE_STORED = DI_DUMMY_VALUE;
-const DI_EMAIL_DECODE_VALUE = {
-  email: '2cf40748c4f7f60d343336e08f80dc99',
-  siteId: '80088'
-};
-const DI_NPI_DECODE_VALUE = {
-  npi: '2cf40748c4f7f60d343336e08f80dc99',
-  siteId: '80088'
-};
-const DI_COOKIE_OBJECT = {
-  id: {
-    email: '2cf40748c4f7f60d343336e08f80dc99',
-    siteId: '80088'
-  }
-};
+const DI_COOKIE_NAME = '_dpes_id';
+const DI_COOKIE_STORED = '{"id":"2cf40748c4f7f60d343336e08f80dc99"}';
+const DI_COOKIE_OBJECT = {id: '2cf40748c4f7f60d343336e08f80dc99'};
+
 const cookieConfig = {
   name: 'deepintentId',
-  params: {
-    identityKey: 'hashedEmail',
-    siteId: '80088'
-  },
   storage: {
     type: 'cookie',
-    name: '_di',
-    expires: 28
-  }
-};
-const cookieNPIConfig = {
-  name: 'deepintentId',
-  params: {
-    identityKey: 'hashedNPI',
-    siteId: '80088'
-  },
-  storage: {
-    type: 'cookie',
-    name: '_di',
+    name: '_dpes_id',
     expires: 28
   }
 };
 
 const html5Config = {
   name: 'deepintentId',
-  params: {
-    identityKey: 'hashedEmail',
-    siteId: '80088'
-  },
   storage: {
-    type: 'html5'
+    type: 'html5',
+    name: '_dpes_id',
+    expires: 28
   }
-};
+}
 
 describe('Deepintent DPES System', () => {
   let getDataFromLocalStorageStub, localStorageIsEnabledStub;
@@ -84,38 +52,25 @@ describe('Deepintent DPES System', () => {
 
       expect(deepintentDpesSubmodule.getId({params: {}, storage: {}})).to.be.eq(undefined);
       expect(deepintentDpesSubmodule.getId({params: {}, storage: {type: 'cookie'}})).to.be.eq(undefined);
-      expect(deepintentDpesSubmodule.getId({params: {}, storage: {name: '_di'}})).to.be.eq(undefined);
+      expect(deepintentDpesSubmodule.getId({params: {}, storage: {name: '_dpes_id'}})).to.be.eq(undefined);
     });
 
     it('Get value stored in cookie for getId', () => {
       getCookieStub.withArgs(DI_COOKIE_NAME).returns(DI_COOKIE_STORED);
-      let diId = deepintentDpesSubmodule.getId(cookieConfig);
+      let diId = deepintentDpesSubmodule.getId(cookieConfig, undefined, DI_COOKIE_OBJECT);
       expect(diId).to.deep.equal(DI_COOKIE_OBJECT);
     });
 
     it('provides the stored deepintentId if cookie is absent but present in local storage', () => {
-      getDataFromLocalStorageStub.withArgs(DI_LOCALSTORAGE_ID).returns(DI_COOKIE_STORED);
-      let idx = deepintentDpesSubmodule.getId(html5Config);
+      getDataFromLocalStorageStub.withArgs(DI_COOKIE_NAME).returns(DI_COOKIE_STORED);
+      let idx = deepintentDpesSubmodule.getId(html5Config, undefined, DI_COOKIE_OBJECT);
       expect(idx).to.deep.equal(DI_COOKIE_OBJECT);
     });
   });
 
   describe('Deepintent Dpes System : test "decode" method', () => {
-    it('Wrong params passed via config', () => {
-      expect(deepintentDpesSubmodule.decode('test', {params: {}})).to.be.undefined;
-      expect(deepintentDpesSubmodule.decode('test', {params: {identityKey: 'hashedEmail'}})).to.be.undefined;
-      expect(deepintentDpesSubmodule.decode('test', {params: {identityKey: 'hashedNPI'}})).to.be.undefined;
-      expect(deepintentDpesSubmodule.decode('test', {params: {siteId: '80088'}})).to.be.undefined;
-      expect(deepintentDpesSubmodule.decode('test', {params: {siteId: '80088', identityKey: 'hello'}})).to.be.undefined;
-    });
-
     it('Get the correct decoded value for dpes id', () => {
-      expect(deepintentDpesSubmodule.decode(DI_EMAIL_DECODE_VALUE, cookieConfig)).to.deep.equal({'deepintentId': '2cf40748c4f7f60d343336e08f80dc99'});
-      expect(deepintentDpesSubmodule.decode(DI_NPI_DECODE_VALUE, cookieNPIConfig)).to.deep.equal({'deepintentId': '2cf40748c4f7f60d343336e08f80dc99'});
-    });
-
-    it('Check for wrong siteId', () => {
-      expect(deepintentDpesSubmodule.decode(DI_EMAIL_DECODE_VALUE, {params: {siteId: '80090', identityKey: 'hashedEmail'}})).to.be.undefined;
+      expect(deepintentDpesSubmodule.decode(DI_COOKIE_OBJECT, cookieConfig)).to.deep.equal({'deepintentId': {'id': '2cf40748c4f7f60d343336e08f80dc99'}});
     });
   });
 });
