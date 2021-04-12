@@ -6,19 +6,21 @@ import {getStorageManager} from '../../../src/storageManager.js';
 export const storage = getStorageManager();
 
 const pid = '14';
-const defaultConfigParams = { params: {pid: pid} };
+let defaultConfigParams;
 const responseHeader = {'Content-Type': 'application/json'}
 
 describe('IdentityLinkId tests', function () {
   let logErrorStub;
 
   beforeEach(function () {
+    defaultConfigParams = { params: {pid: pid} };
     logErrorStub = sinon.stub(utils, 'logError');
     // remove _lr_retry_request cookie before test
     storage.setCookie('_lr_retry_request', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
   });
 
   afterEach(function () {
+    defaultConfigParams = {};
     logErrorStub.restore();
   });
 
@@ -34,6 +36,7 @@ describe('IdentityLinkId tests', function () {
 
   it('should call the LiveRamp envelope endpoint', function () {
     let callBackSpy = sinon.spy();
+    defaultConfigParams.params.use3P = true;
     let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
@@ -62,6 +65,7 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should call the LiveRamp envelope endpoint with IAB consent string v1', function () {
+    defaultConfigParams.params.use3P = true;
     let callBackSpy = sinon.spy();
     let consentData = {
       gdprApplies: true,
@@ -80,6 +84,7 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should call the LiveRamp envelope endpoint with IAB consent string v2', function () {
+    defaultConfigParams.params.use3P = true;
     let callBackSpy = sinon.spy();
     let consentData = {
       gdprApplies: true,
@@ -101,6 +106,7 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should not throw Uncaught TypeError when envelope endpoint returns empty response', function () {
+    defaultConfigParams.params.use3P = true;
     let callBackSpy = sinon.spy();
     let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
@@ -117,6 +123,7 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should log an error and continue to callback if ajax request errors', function () {
+    defaultConfigParams.params.use3P = true;
     let callBackSpy = sinon.spy();
     let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
@@ -141,7 +148,8 @@ describe('IdentityLinkId tests', function () {
     expect(request).to.be.eq(undefined);
   });
 
-  it('should call the LiveRamp envelope endpoint if cookie _lr_retry_request does not exist', function () {
+  it('should call the LiveRamp envelope endpoint if cookie _lr_retry_request does not exist and use3P config property was set to true', function () {
+    defaultConfigParams.params.use3P = true;
     let callBackSpy = sinon.spy();
     let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
@@ -153,5 +161,22 @@ describe('IdentityLinkId tests', function () {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should not call the LiveRamp envelope endpoint if config property use3P is set to false', function () {
+    defaultConfigParams.params.use3P = false;
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request).to.be.eq(undefined);
+  });
+
+  it('should not call the LiveRamp envelope endpoint if config property use3P is undefined', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request).to.be.eq(undefined);
   });
 });

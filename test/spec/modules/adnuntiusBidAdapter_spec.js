@@ -48,8 +48,8 @@ describe('adnuntiusBidAdapter', function () {
                 'destination': 'http://google.com'
               },
               'cpm': { 'amount': 5.0, 'currency': 'NOK' },
-              'bid': { 'amount': 5.0, 'currency': 'NOK' },
-              'cost': { 'amount': 5.0, 'currency': 'NOK' },
+              'bid': { 'amount': 0.005, 'currency': 'NOK' },
+              'cost': { 'amount': 0.005, 'currency': 'NOK' },
               'impressionTrackingUrls': [],
               'impressionTrackingUrlsEsc': [],
               'adId': 'adn-id-1347343135',
@@ -106,12 +106,14 @@ describe('adnuntiusBidAdapter', function () {
       const request = spec.buildRequests(bidRequests);
       const interpretedResponse = spec.interpretResponse(serverResponse, request[0]);
       const ad = serverResponse.body.adUnits[0].ads[0]
+      const cpm = (ad.cpc && ad.cpm) ? ad.bid.amount + ad.cpm.amount : (ad.cpm) ? ad.cpm.amount : 0;
+
       expect(interpretedResponse).to.have.lengthOf(1);
       expect(interpretedResponse[0].cpm).to.equal(ad.cpm.amount);
       expect(interpretedResponse[0].width).to.equal(Number(ad.creativeWidth));
       expect(interpretedResponse[0].height).to.equal(Number(ad.creativeHeight));
       expect(interpretedResponse[0].creativeId).to.equal(ad.creativeId);
-      expect(interpretedResponse[0].currency).to.equal(ad.cpm.currency);
+      expect(interpretedResponse[0].currency).to.equal(ad.bid.currency);
       expect(interpretedResponse[0].netRevenue).to.equal(false);
       expect(interpretedResponse[0].ad).to.equal(serverResponse.body.adUnits[0].html);
       expect(interpretedResponse[0].ttl).to.equal(360);
