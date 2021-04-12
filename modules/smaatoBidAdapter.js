@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const CLIENT = 'prebid_js_$prebid.version$_1.0'
+const CLIENT = 'prebid_js_$prebid.version$_1.1'
 
 /**
 * Transform BidRequest to OpenRTB-formatted BidRequest Object
@@ -98,8 +98,10 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     }
   };
 
-  Object.assign(request.user, config.getConfig('fpd.user'));
-  Object.assign(request.site, config.getConfig('fpd.context'));
+  let ortb2 = config.getConfig('ortb2') || {};
+
+  Object.assign(request.user, ortb2.user);
+  Object.assign(request.site, ortb2.site);
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
@@ -108,6 +110,18 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
 
   if (bidderRequest.uspConsent !== undefined) {
     utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+  }
+
+  if (utils.deepAccess(validBidRequests[0], 'params.app')) {
+    const geo = utils.deepAccess(validBidRequests[0], 'params.app.geo');
+    utils.deepSetValue(request, 'device.geo', geo);
+    const ifa = utils.deepAccess(validBidRequests[0], 'params.app.ifa')
+    utils.deepSetValue(request, 'device.ifa', ifa);
+  }
+
+  const eids = utils.deepAccess(validBidRequests[0], 'userIdAsEids');
+  if (eids && eids.length) {
+    utils.deepSetValue(request, 'user.ext.eids', eids);
   }
 
   utils.logInfo('[SMAATO] OpenRTB Request:', request);
@@ -185,7 +199,7 @@ export const spec = {
           ttl: ttlSec,
           creativeId: b.crid,
           dealId: b.dealid || null,
-          netRevenue: true,
+          netRevenue: utils.deepAccess(b, 'ext.net', true),
           currency: res.cur,
           meta: {
             advertiserDomains: b.adomain,

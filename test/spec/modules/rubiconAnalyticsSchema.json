@@ -34,6 +34,53 @@
       "type": "string",
       "description": "Version of Prebid.js responsible for the auctions contained within."
     },
+    "fpkvs": {
+      "type": "array",
+      "description": "List of any dynamic key value pairs set by publisher.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "value"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "session": {
+      "type": "object",
+      "description": "The session information for a given event",
+      "required": [
+        "id",
+        "start",
+        "expires"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID of session."
+        },
+        "start": {
+          "type": "integer",
+          "description": "Unix timestamp of time of creation for this session in milliseconds."
+        },
+        "expires": {
+          "type": "integer",
+          "description": "Unix timestamp of the maximum allowed time in milliseconds of the session."
+        },
+        "pvid": {
+          "type": "string",
+          "description": "id to track page view."
+        }
+      }
+    },
     "auctions": {
       "type": "array",
       "minItems": 1,
@@ -125,6 +172,9 @@
                 "zoneId": {
                   "type": "number",
                   "description": "The Rubicon zoneId associated with this adUnit - Removed if null"
+                },
+                "gam": {
+                  "$ref": "#/definitions/gam"
                 }
               }
             }
@@ -197,6 +247,31 @@
     }
   },
   "definitions": {
+    "gam": {
+      "type": "object",
+      "description": "The gam information for a given ad unit",
+      "required": [
+        "adSlot"
+      ],
+      "properties": {
+        "adSlot": {
+          "type": "string"
+        },
+        "advertiserId": {
+          "type": "integer"
+        },
+        "creativeId": {
+          "type": "integer"
+        },
+        "LineItemId": {
+          "type": "integer"
+        },
+        "isSlotEmpty": {
+          "type": "boolean",
+          "enum": [true]
+        }
+      }
+    },
     "adserverTargeting": {
       "type": "object",
       "description": "The adserverTargeting key/value pairs",
@@ -293,7 +368,8 @@
             "success",
             "no-bid",
             "error",
-            "rejected"
+            "rejected-gdpr",
+            "rejected-ipf"
           ]
         },
         "error": {
@@ -333,7 +409,6 @@
         "bidResponse": {
           "type": "object",
           "required": [
-            "dimensions",
             "mediaType",
             "bidPriceUSD"
           ],
