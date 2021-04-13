@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'kobler';
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
@@ -65,6 +66,10 @@ export const onBidWon = function (bid) {
 
 export const onTimeout = function (timeoutDataArray) {
   if (utils.isArray(timeoutDataArray)) {
+    const refererInfo = getRefererInfo();
+    const pageUrl = (refererInfo && refererInfo.referer)
+      ? refererInfo.referer
+      : window.location.href;
     timeoutDataArray.forEach(timeoutData => {
       const query = utils.parseQueryStringParameters({
         ad_unit_code: timeoutData.adUnitCode,
@@ -72,7 +77,7 @@ export const onTimeout = function (timeoutDataArray) {
         bid_id: timeoutData.bidId,
         timeout: timeoutData.timeout,
         placement_id: utils.deepAccess(timeoutData, 'params.0.placementId'),
-        page_url: window.location.href,
+        page_url: pageUrl,
       });
       const timeoutNotificationUrl = `${TIMEOUT_NOTIFICATION_ENDPOINT}?${query}`;
       utils.triggerPixel(timeoutNotificationUrl);

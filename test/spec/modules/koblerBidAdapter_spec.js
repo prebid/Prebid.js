@@ -3,6 +3,7 @@ import {spec} from 'modules/koblerBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
+import {getRefererInfo} from 'src/refererDetection.js';
 
 function createBidderRequest(auctionId, timeout, pageUrl) {
   return {
@@ -705,12 +706,12 @@ describe('KoblerAdapter', function () {
       expect(utils.triggerPixel.getCall(0).args[0]).to.be.equal(
         'https://bid.essrtb.com/notify/prebid_timeout?ad_unit_code=adunit-code&' +
         'auction_id=a1fba829-dd41-409f-acfb-b7b0ac5f30c6&bid_id=ef236c6c-e934-406b-a877-d7be8e8a839a&timeout=100&' +
-        'placement_id=xrwg62731&page_url=' + encodeURIComponent(window.location.href)
+        'placement_id=xrwg62731&page_url=' + encodeURIComponent(getRefererInfo().referer)
       );
       expect(utils.triggerPixel.getCall(1).args[0]).to.be.equal(
         'https://bid.essrtb.com/notify/prebid_timeout?ad_unit_code=adunit-code-2&' +
         'auction_id=a1fba829-dd41-409f-acfb-b7b0ac5f30c6&bid_id=ca4121c8-9a4a-46ba-a624-e9b64af206f2&timeout=100&' +
-        'placement_id=bc482234&page_url=' + encodeURIComponent(window.location.href)
+        'placement_id=bc482234&page_url=' + encodeURIComponent(getRefererInfo().referer)
       );
     });
   });
