@@ -46,6 +46,19 @@ export const spec = {
       }
     };
 
+    if (bidderRequest.gdprConsent) {
+      request.user = {
+        ext: {
+          consent: bidderRequest.gdprConsent.consentString || ''
+        },
+      };
+      request.regs = {
+        ext: {
+          gdpr: bidderRequest.gdprConsent.gdprApplies !== undefined ? bidderRequest.gdprConsent.gdprApplies : true
+        }
+      };
+    }
+
     return {
       method: 'POST',
       url: ENDPOINT,
@@ -87,6 +100,11 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         currency: bidResponse.cur,
         native: nativeResponse(idToImpMap[id], idToBidMap[id])
       };
+      if (idToBidMap[id].adomain) {
+        bid.meta = {
+          advertiserDomains: idToBidMap[id].adomain
+        }
+      }
       bids.push(bid);
     }
   });
@@ -94,11 +112,20 @@ function bidResponseAvailable(bidRequest, bidResponse) {
 }
 
 function impression(slot) {
+  let bidFloorFromModule
+  if (typeof slot.getFloor === 'function') {
+    const floorInfo = slot.getFloor({
+      currency: 'USD',
+      mediaType: 'native',
+      size: '\*'
+    });
+    bidFloorFromModule = floorInfo.currency === 'USD' ? floorInfo.floor : undefined;
+  }
   return {
     id: slot.bidId,
     native: nativeImpression(slot),
-    bidfloor: slot.params.bidfloor || 0,
-    bidfloorcur: slot.params.bidfloorcur || 'USD',
+    bidfloor: bidFloorFromModule || slot.params.bidfloor || 0,
+    bidfloorcur: (bidFloorFromModule && 'USD') || slot.params.bidfloorcur || 'USD',
     tagId: slot.params.tagId || '0'
   };
 }

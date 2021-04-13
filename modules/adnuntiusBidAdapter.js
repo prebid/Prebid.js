@@ -49,9 +49,10 @@ export const spec = {
       const adUnit = serverBody.adUnits[k]
       if (adUnit.matchedAdCount > 0) {
         const bid = adUnit.ads[0];
+        const effectiveCpm = (bid.cpc && bid.cpm) ? bid.bid.amount + bid.cpm.amount : (bid.cpc) ? bid.bid.amount : (bid.cpm) ? bid.cpm.amount : 0;
         bidResponses.push({
           requestId: bidRequest.bid[k].bidId,
-          cpm: (bid.bid) ? bid.bid.amount : 0,
+          cpm: effectiveCpm,
           width: Number(bid.creativeWidth),
           height: Number(bid.creativeHeight),
           creativeId: bid.creativeId,
