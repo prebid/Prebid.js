@@ -363,6 +363,7 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
       const height = bid.height || bid.playerHeight;
       return (width && height) ? {width, height} : undefined;
     },
+    // Handling use case where pbs sends back 0 or '0' bidIds
     'pbsBidId', pbsBidId => pbsBidId == 0 ? utils.generateUUID() : pbsBidId,
     'seatBidId', seatBidId => seatBidId == 0 ? utils.generateUUID() : seatBidId,
     'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
