@@ -7,6 +7,7 @@ const AD_URL = 'https://console.brightmountainmedia.com/hb/bid';
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['brightmountainmedia'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
