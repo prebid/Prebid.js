@@ -3,7 +3,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'bmtm';
-const AD_URL = 'https://console.brightmountainmedia.com/hb/bid';
+const AD_URL = 'https://one.elitebidder.com/api/hb';
 
 export const spec = {
   code: BIDDER_CODE,
