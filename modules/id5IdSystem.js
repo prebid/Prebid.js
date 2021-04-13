@@ -105,24 +105,38 @@ export const id5IdSubmodule = {
 
     const url = `https://id5-sync.com/g/v2/${config.params.partner}.json`;
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+    const usp = uspDataHandler.getConsentData();
     const referer = getRefererInfo();
     const signature = (cacheIdObj && cacheIdObj.signature) ? cacheIdObj.signature : getLegacyCookieSignature();
     const data = {
-      'gdpr': hasGdpr,
-      'gdpr_consent': hasGdpr ? consentData.consentString : '',
       'partner': config.params.partner,
+      'gdpr': hasGdpr,
       'nbPage': incrementNb(config.params.partner),
       'o': 'pbjs',
-      'pd': config.params.pd || '',
-      'provider': config.params.provider || '',
       'rf': referer.referer,
-      's': signature,
       'top': referer.reachedTop ? 1 : 0,
       'u': referer.stack[0] || window.location.href,
-      'us_privacy': uspDataHandler.getConsentData() || '',
       'v': '$prebid.version$'
     };
 
+    // pass in optional data, but only if populated
+    if (hasGdpr && typeof consentData.consentString !== 'undefined' && !utils.isEmpty(consentData.consentString) && !utils.isEmptyStr(consentData.consentString)) {
+      data.gdpr_consent = consentData.consentString;
+    }
+    if (typeof usp !== 'undefined' && !utils.isEmpty(usp) && !utils.isEmptyStr(usp)) {
+      data.us_privacy = usp;
+    }
+    if (typeof signature !== 'undefined' && !utils.isEmptyStr(signature)) {
+      data.s = signature;
+    }
+    if (typeof config.params.pd !== 'undefined' && !utils.isEmptyStr(config.params.pd)) {
+      data.pd = config.params.pd;
+    }
+    if (typeof config.params.provider !== 'undefined' && !utils.isEmptyStr(config.params.provider)) {
+      data.provider = config.params.provider;
+    }
+
+    // pass in feature flags, if applicable
     if (getAbTestingConfig(config).enabled === true) {
       utils.deepSetValue(data, 'features.ab', 1);
     }

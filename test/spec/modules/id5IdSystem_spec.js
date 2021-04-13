@@ -19,7 +19,7 @@ import * as utils from 'src/utils.js';
 
 let expect = require('chai').expect;
 
-describe('ID5 ID System', function() {
+describe.only('ID5 ID System', function() {
   const ID5_MODULE_NAME = 'id5Id';
   const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';
@@ -144,26 +144,26 @@ describe('ID5 ID System', function() {
       expect(request.withCredentials).to.be.true;
       expect(requestBody.partner).to.eq(ID5_TEST_PARTNER_ID);
       expect(requestBody.o).to.eq('pbjs');
-      expect(requestBody.pd).to.eq('');
-      expect(requestBody.s).to.eq('');
-      expect(requestBody.provider).to.eq('');
+      expect(requestBody.pd).to.be.undefined;
+      expect(requestBody.s).to.be.undefined;
+      expect(requestBody.provider).to.be.undefined
       expect(requestBody.v).to.eq('$prebid.version$');
       expect(requestBody.gdpr).to.exist;
-      expect(requestBody.gdpr_consent).to.exist
-      expect(requestBody.us_privacy).to.exist;
+      expect(requestBody.gdpr_consent).to.be.undefined;
+      expect(requestBody.us_privacy).to.be.undefined;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
       expect(callbackSpy.calledOnce).to.be.true;
       expect(callbackSpy.lastCall.lastArg).to.deep.equal(ID5_JSON_RESPONSE);
     });
 
-    it('should call the ID5 server with empty signature field when no stored object', function () {
+    it('should call the ID5 server with no signature field when no stored object', function () {
       let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, undefined).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
       let requestBody = JSON.parse(request.requestBody);
-      expect(requestBody.s).to.eq('');
+      expect(requestBody.s).to.be.undefined;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
@@ -195,7 +195,7 @@ describe('ID5 ID System', function() {
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
 
-    it('should call the ID5 server with empty pd field when pd config is not set', function () {
+    it('should call the ID5 server with no pd field when pd config is not set', function () {
       let id5Config = getId5FetchConfig();
       id5Config.params.pd = undefined;
 
@@ -204,7 +204,7 @@ describe('ID5 ID System', function() {
 
       let request = server.requests[0];
       let requestBody = JSON.parse(request.requestBody);
-      expect(requestBody.pd).to.eq('');
+      expect(requestBody.pd).to.be.undefined;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
