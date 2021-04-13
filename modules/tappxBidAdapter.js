@@ -10,6 +10,8 @@ const TTL = 360;
 const CUR = 'USD';
 const TAPPX_BIDDER_VERSION = '0.1.10413';
 const TYPE_CNN = 'prebidjs';
+const VIDEO_SUPPORT = ['instream'];
+
 var HOST;
 var hostDomain;
 
@@ -24,11 +26,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: function(bid) {
-    if ((bid.params == null) || (bid.params.endpoint == null) || (bid.params.tappxkey == null)) {
-      utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters. ${JSON.stringify(bid)}`);
-      return false;
-    }
-    return true;
+    return validBasic(bid) && validMediaType(bid)
   },
 
   /**
@@ -104,6 +102,31 @@ export const spec = {
       }];
     }
   }
+}
+
+function validBasic(bid) {
+  if (
+    (bid.params == null) ||
+    (bid.params.endpoint == null) ||
+    (bid.params.tappxkey == null)) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters.`);
+    return false;
+  }
+  return true;
+}
+
+function validMediaType(bid) {
+  const video = utils.deepAccess(bid, 'mediaTypes.video');
+
+  // Video validations
+  if (typeof video != 'undefined') {
+    if (VIDEO_SUPPORT.indexOf(video.context) === -1) {
+      utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters for Video. Only "instream" is suported.`);
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
