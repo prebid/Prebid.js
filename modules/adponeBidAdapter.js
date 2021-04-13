@@ -72,9 +72,9 @@ export const spec = {
             creativeId: adponeBid.crid || 0
           };
 
-          if (adponeBid.adomain && adponeBid.adomain.length > 0) {
+          if (adponeBid.meta && adponeBid.meta.adomain && adponeBid.meta.adomain.length > 0) {
             bid.meta = {};
-            bid.meta.advertiserDomains = adponeBid.adomain;
+            bid.meta.advertiserDomains = adponeBid.meta.adomain;
           }
 
           return bid
