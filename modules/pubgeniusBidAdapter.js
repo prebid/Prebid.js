@@ -7,8 +7,8 @@ import {
   deepSetValue,
   inIframe,
   isArrayOfNums,
+  isFn,
   isInteger,
-  isNumber,
   isStr,
   logError,
   parseQueryStringParameters,
@@ -185,9 +185,16 @@ function buildImp(bid) {
     imp.video = buildVideoParams(bid.mediaTypes.video, bid.params.video);
   }
 
-  const bidFloor = bid.params.bidFloor;
-  if (isNumber(bidFloor)) {
-    imp.bidfloor = bidFloor;
+  if (isFn(bid.getFloor)) {
+    const { floor } = bid.getFloor({
+      mediaType: bid.mediaTypes.banner ? 'banner' : 'video',
+      size: '*',
+      currency: 'USD',
+    });
+
+    if (floor) {
+      imp.bidfloor = floor;
+    }
   }
 
   const pos = bid.params.position;

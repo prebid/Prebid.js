@@ -660,6 +660,34 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
+  describe('Roundel alias adapter', function () {
+    const vaildBids = [DEFAULT_BANNER_VALID_BID, DEFAULT_VIDEO_VALID_BID, DEFAULT_MULTIFORMAT_BANNER_VALID_BID, DEFAULT_MULTIFORMAT_VIDEO_VALID_BID];
+    const ALIAS_OPTIONS = Object.assign({
+      bidderCode: 'roundel'
+    }, DEFAULT_OPTION);
+
+    it('should not build requests for mediaTypes if liveramp data is unavaliable', function () {
+      vaildBids.forEach((validBid) => {
+        const request = spec.buildRequests(validBid, ALIAS_OPTIONS);
+        expect(request).to.be.an('array');
+        expect(request).to.have.lengthOf(0);
+      });
+    });
+
+    it('should build requests for mediaTypes if liveramp data is avaliable', function () {
+      vaildBids.forEach((validBid) => {
+        const cloneValidBid = utils.deepClone(validBid);
+        cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
+        const request = spec.buildRequests(cloneValidBid, ALIAS_OPTIONS);
+        const payload = JSON.parse(request[0].data.r);
+        expect(request).to.be.an('array');
+        expect(request).to.have.lengthOf(1);
+        expect(payload.user.eids).to.have.lengthOf(4);
+        expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+      });
+    });
+  });
+
   describe('buildRequestsIdentity', function () {
     let request;
     let query;

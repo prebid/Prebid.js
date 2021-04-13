@@ -1,5 +1,5 @@
 import pubxaiAnalyticsAdapter from 'modules/pubxaiAnalyticsAdapter.js';
-import { getDeviceType } from 'modules/pubxaiAnalyticsAdapter.js';
+import { getDeviceType, getBrowser, getOS } from 'modules/pubxaiAnalyticsAdapter.js';
 import {
   expect
 } from 'chai';
@@ -55,9 +55,9 @@ describe('pubxai analytics adapter', function() {
             'floorData': {
               'skipped': false,
               'skipRate': 0,
-              'modelVersion': 'new model 1.0',
+              'modelVersion': 'test model 1.0',
               'location': 'fetch',
-              'floorProvider': 'PubXFloor',
+              'floorProvider': 'PubXFloorProvider',
               'fetchStatus': 'success'
             }
           }],
@@ -85,9 +85,9 @@ describe('pubxai analytics adapter', function() {
             'floorData': {
               'skipped': false,
               'skipRate': 0,
-              'modelVersion': 'new model 1.0',
+              'modelVersion': 'test model 1.0',
               'location': 'fetch',
-              'floorProvider': 'PubXFloor',
+              'floorProvider': 'PubXFloorProvider',
               'fetchStatus': 'success'
             },
             'mediaTypes': {
@@ -151,9 +151,9 @@ describe('pubxai analytics adapter', function() {
           'floorData': {
             'skipped': false,
             'skipRate': 0,
-            'modelVersion': 'new model 1.0',
+            'modelVersion': 'test model 1.0',
             'location': 'fetch',
-            'floorProvider': 'PubXFloor',
+            'floorProvider': 'PubXFloorProvider',
             'fetchStatus': 'success'
           },
           'mediaTypes': {
@@ -222,9 +222,9 @@ describe('pubxai analytics adapter', function() {
         'originalCurrency': 'USD',
         'floorData': {
           'fetchStatus': 'success',
-          'floorProvider': 'PubXFloor',
+          'floorProvider': 'PubXFloorProvider',
           'location': 'fetch',
-          'modelVersion': 'new model 1.0',
+          'modelVersion': 'test model 1.0',
           'skipRate': 0,
           'skipped': false,
           'floorValue': 0.4,
@@ -243,8 +243,8 @@ describe('pubxai analytics adapter', function() {
           }
         },
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
-        'responseTimestamp': 1603865707449,
-        'requestTimestamp': 1603865707182,
+        'responseTimestamp': 1616654313071,
+        'requestTimestamp': 1616654312804,
         'bidder': 'appnexus',
         'timeToRespond': 267,
         'pbLg': '0.50',
@@ -265,8 +265,8 @@ describe('pubxai analytics adapter', function() {
       },
       'auctionEnd': {
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
-        'timestamp': 1603865707180,
-        'auctionEnd': 1603865707180,
+        'timestamp': 1616654312804,
+        'auctionEnd': 1616654313090,
         'auctionStatus': 'completed',
         'adUnits': [{
           'code': '/19968336/header-bid-tag-1',
@@ -289,9 +289,9 @@ describe('pubxai analytics adapter', function() {
             'floorData': {
               'skipped': false,
               'skipRate': 0,
-              'modelVersion': 'new model 1.0',
+              'modelVersion': 'test model 1.0',
               'location': 'fetch',
-              'floorProvider': 'PubXFloor',
+              'floorProvider': 'PubXFloorProvider',
               'fetchStatus': 'success'
             }
           }],
@@ -319,9 +319,9 @@ describe('pubxai analytics adapter', function() {
             'floorData': {
               'skipped': false,
               'skipRate': 0,
-              'modelVersion': 'new model 1.0',
+              'modelVersion': 'test model 1.0',
               'location': 'fetch',
-              'floorProvider': 'PubXFloor',
+              'floorProvider': 'PubXFloorProvider',
               'fetchStatus': 'success'
             },
             'mediaTypes': {
@@ -390,9 +390,9 @@ describe('pubxai analytics adapter', function() {
           'originalCurrency': 'USD',
           'floorData': {
             'fetchStatus': 'success',
-            'floorProvider': 'PubXFloor',
+            'floorProvider': 'PubXFloorProvider',
             'location': 'fetch',
-            'modelVersion': 'new model 1.0',
+            'modelVersion': 'test model 1.0',
             'skipRate': 0,
             'skipped': false,
             'floorValue': 0.4,
@@ -411,8 +411,8 @@ describe('pubxai analytics adapter', function() {
             }
           },
           'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
-          'responseTimestamp': 1603865707449,
-          'requestTimestamp': 1603865707182,
+          'responseTimestamp': 1616654313071,
+          'requestTimestamp': 1616654312804,
           'bidder': 'appnexus',
           'timeToRespond': 267,
           'pbLg': '0.50',
@@ -464,9 +464,9 @@ describe('pubxai analytics adapter', function() {
         'originalCurrency': 'USD',
         'floorData': {
           'fetchStatus': 'success',
-          'floorProvider': 'PubXFloor',
+          'floorProvider': 'PubXFloorProvider',
           'location': 'fetch',
-          'modelVersion': 'new model 1.0',
+          'modelVersion': 'test model 1.0',
           'skipRate': 0,
           'skipped': false,
           'floorValue': 0.4,
@@ -485,8 +485,8 @@ describe('pubxai analytics adapter', function() {
           }
         },
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
-        'responseTimestamp': 1603865707449,
-        'requestTimestamp': 1603865707182,
+        'responseTimestamp': 1616654313071,
+        'requestTimestamp': 1616654312804,
         'bidder': 'appnexus',
         'timeToRespond': 267,
         'pbLg': '0.50',
@@ -521,11 +521,10 @@ describe('pubxai analytics adapter', function() {
         'bidderCode': 'appnexus',
         'bidId': '248f9a4489835e',
         'adUnitCode': '/19968336/header-bid-tag-1',
-        'requestId': '184cbc05bb90ba',
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         'sizes': '300x250',
         'renderStatus': 2,
-        'requestTimestamp': 1603865707182,
+        'requestTimestamp': 1616654312804,
         'creativeId': 96846035,
         'currency': 'USD',
         'cpm': 0.5,
@@ -534,9 +533,9 @@ describe('pubxai analytics adapter', function() {
         'statusMessage': 'Bid available',
         'floorData': {
           'fetchStatus': 'success',
-          'floorProvider': 'PubXFloor',
+          'floorProvider': 'PubXFloorProvider',
           'location': 'fetch',
-          'modelVersion': 'new model 1.0',
+          'modelVersion': 'test model 1.0',
           'skipRate': 0,
           'skipped': false,
           'floorValue': 0.4,
@@ -555,48 +554,45 @@ describe('pubxai analytics adapter', function() {
           }
         },
         'timeToRespond': 267,
-        'responseTimestamp': 1603865707449,
-        'platform': navigator.platform,
-        'placementId': 13144370,
-        'deviceType': getDeviceType()
+        'responseTimestamp': 1616654313071
       }],
       'pageDetail': {
         'host': location.host,
         'path': location.pathname,
-        'search': location.search
+        'search': location.search,
+        'adUnitCount': 1
       },
       'floorDetail': {
         'fetchStatus': 'success',
-        'floorProvider': 'PubXFloor',
+        'floorProvider': 'PubXFloorProvider',
         'location': 'fetch',
-        'modelVersion': 'new model 1.0',
+        'modelVersion': 'test model 1.0',
         'skipRate': 0,
         'skipped': false
+      },
+      'deviceDetail': {
+        'platform': navigator.platform,
+        'deviceType': getDeviceType(),
+        'deviceOS': getOS(),
+        'browser': getBrowser()
       },
       'initOptions': initOptions
     };
 
     let expectedAfterBidWon = {
       'winningBid': {
-        'bidderCode': 'appnexus',
-        'bidId': '248f9a4489835e',
         'adUnitCode': '/19968336/header-bid-tag-1',
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
-        'renderedSize': '300x250',
-        'renderStatus': 4,
-        'requestTimestamp': 1603865707182,
+        'bidderCode': 'appnexus',
+        'bidId': '248f9a4489835e',
+        'cpm': 0.5,
         'creativeId': 96846035,
         'currency': 'USD',
-        'cpm': 0.5,
-        'netRevenue': true,
-        'mediaType': 'banner',
-        'status': 'rendered',
-        'statusMessage': 'Bid available',
         'floorData': {
           'fetchStatus': 'success',
-          'floorProvider': 'PubXFloor',
+          'floorProvider': 'PubXFloorProvider',
           'location': 'fetch',
-          'modelVersion': 'new model 1.0',
+          'modelVersion': 'test model 1.0',
           'skipRate': 0,
           'skipped': false,
           'floorValue': 0.4,
@@ -614,15 +610,24 @@ describe('pubxai analytics adapter', function() {
             'mediaType': 'banner'
           }
         },
-        'timeToRespond': 267,
-        'responseTimestamp': 1603865707449,
-        'platform': navigator.platform,
-        'deviceType': getDeviceType()
+        'floorProvider': 'PubXFloorProvider',
+        'isWinningBid': true,
+        'mediaType': 'banner',
+        'netRevenue': true,
+        'placementId': 13144370,
+        'renderedSize': '300x250',
+        'renderStatus': 4,
+        'responseTimestamp': 1616654313071,
+        'requestTimestamp': 1616654312804,
+        'status': 'rendered',
+        'statusMessage': 'Bid available',
+        'timeToRespond': 267
       },
-      'pageDetail': {
-        'host': location.host,
-        'path': location.pathname,
-        'search': location.search
+      'deviceDetail': {
+        'platform': navigator.platform,
+        'deviceType': getDeviceType(),
+        'deviceOS': getOS(),
+        'browser': getBrowser()
       },
       'initOptions': initOptions
     }

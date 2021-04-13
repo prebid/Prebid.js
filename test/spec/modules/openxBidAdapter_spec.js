@@ -1044,13 +1044,24 @@ describe('OpenxAdapter', function () {
         britepoolid: '1111-britepoolid',
         criteoId: '1111-criteoId',
         digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
+        fabrickId: '1111-fabrickid',
+        haloId: '1111-haloid',
         id5id: {uid: '1111-id5id'},
         idl_env: '1111-idl_env',
+        IDP: '1111-zeotap-idplusid',
+        idxId: '1111-idxid',
+        intentIqId: '1111-intentiqid',
         lipb: {lipbid: '1111-lipb'},
+        lotamePanoramaId: '1111-lotameid',
+        merkleId: '1111-merkleid',
         netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
         parrableId: { eid: 'eidVersion.encryptionKeyReference.encryptedValue' },
         pubcid: '1111-pubcid',
+        quantcastId: '1111-quantcastid',
+        sharedId: '1111-sharedid',
+        tapadId: '111-tapadid',
         tdid: '1111-tdid',
+        verizonMediaId: '1111-verizonmediaid',
       };
 
       // generates the same set of tests for each id provider
@@ -1841,6 +1852,13 @@ describe('OpenxAdapter', function () {
 
       const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaType);
       expect(JSON.stringify(Object.keys(result[0]).sort())).to.eql(JSON.stringify(Object.keys(expectedResponse[0]).sort()));
+    });
+
+    it('should return correct bid response with MediaType and deal_id', function () {
+      const bidResponseOverride = { 'deal_id': 'OX-mydeal' };
+      const bidResponseWithDealId = Object.assign({}, bidResponse, bidResponseOverride);
+      const result = spec.interpretResponse({body: bidResponseWithDealId}, bidRequestsWithMediaType);
+      expect(result[0].dealId).to.equal(bidResponseOverride.deal_id);
     });
 
     it('should handle nobid responses for bidRequests with MediaTypes', function () {
