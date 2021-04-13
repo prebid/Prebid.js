@@ -8,6 +8,8 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
+const TAPPX_BIDDER_VERSION = '0.1.10329';
+const TYPE_CNN = 'prebidjs';
 var HOST;
 var hostDomain;
 
@@ -134,7 +136,9 @@ function interpretBannerBid(serverBid, request) {
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
   HOST = utils.deepAccess(validBidRequests, 'params.host');
-  hostDomain = HOST.split('/', 1)[0];
+  let hostInfo = getHostInfo(HOST)
+  // hostDomain = HOST.split('/', 1)[0];
+  hostDomain = hostInfo.domain;
 
   const ENDPOINT = utils.deepAccess(validBidRequests, 'params.endpoint');
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
@@ -206,6 +210,14 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   imp.secure = 1;
 
   imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
+
+  let bidder = {};
+  bidder.tappxkey = TAPPXKEY;
+  bidder.endpoint = ENDPOINT;
+  bidder.host = hostInfo.url;
+
+  imp.ext = {};
+  imp.ext.bidder = bidder;
   // < Imp object
 
   // > Device object
@@ -230,8 +242,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // > Params
   let params = {};
   params.host = 'tappx.com';
-  params.tappxkey = TAPPXKEY;
-  params.endpoint = ENDPOINT;
   params.bidfloor = BIDFLOOR;
   // < Params
 
@@ -253,6 +263,14 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
   }
+
+  // Universal ID
+  const eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
+  payload.user = {
+    ext: {
+      eids: eidsArr
+    }
+  };
   // < GDPR
 
   // > Payload
@@ -270,7 +288,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   return {
     method: 'POST',
-    url: `https://${HOST}/${ENDPOINT}?type_cnn=prebidjs`,
+    url: `https://${HOST}/${ENDPOINT}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
     data: JSON.stringify(payload),
     bids: validBidRequests
   };
@@ -284,6 +302,28 @@ function getLanguage() {
 function getOs() {
   let ua = navigator.userAgent;
   if (ua == null) { return 'unknown'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'ios'; } else if (ua.match(/Android/)) { return 'android'; } else if (ua.match(/Window/)) { return 'windows'; } else { return 'unknown'; }
+}
+
+function getHostInfo(hostParam) {
+  let domainInfo = {};
+
+  domainInfo.domain = hostParam.split('/', 1)[0];
+  domainInfo.url = hostParam;
+
+  let regexNewEndpoints = new RegExp(`^(zz.*|testing)\.ssp\.tappx\.com$`, 'i');
+  let regexClassicEndpoints = new RegExp(`^[a-z]{3}\.[a-z]{3}\.tappx\.com$`, 'i');
+
+  if (regexNewEndpoints.test(domainInfo.domain)) {
+    let endpoint = domainInfo.domain.split('.', 1)[0]
+    if (endpoint.toUpperCase().indexOf('TESTING') === -1) {
+      domainInfo.endpoint = endpoint
+      domainInfo.new_endpoint = true;
+    }
+  } else if (regexClassicEndpoints.test(domainInfo.domain)) {
+    domainInfo.new_endpoint = false;
+  }
+
+  return domainInfo;
 }
 
 registerBidder(spec);
