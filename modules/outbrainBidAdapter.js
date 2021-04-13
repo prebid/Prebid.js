@@ -164,7 +164,11 @@ export const spec = {
     return syncs;
   },
   onBidWon: (bid) => {
-    ajax(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm))
+    // for native requests we put the nurl as an imp tracker, otherwise if the auction takes place on prebid server
+    // the server JS adapter puts the nurl in the adm as a tracking pixel and removes the attribute
+    if (bid.nurl) {
+      ajax(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm))
+    }
   }
 };
 
