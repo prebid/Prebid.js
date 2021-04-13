@@ -55,7 +55,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://console.brightmountainmedia.com/hb/bid');
+      expect(serverRequest.url).to.equal('https://one.elitebidder.com/api/hb');
     });
 
     it('Returns valid data if array of bids is valid', function () {
