@@ -197,13 +197,16 @@
                         }, {
                             name: "merkleId",
                             params: {
-                                ptk: '12345678-aaaa-bbbb-cccc-123456789abc', //Set your real merkle partner key here
-                                pubid: 'EXAMPLE' //Set your real merkle publisher id here
-                            },
+                              vendor:'sdfg',
+                              sv_cid:'dfg',
+                              sv_pubid:'xcv',
+                              sv_domain:'zxv'
+                            }
+                            ,
                             storage: {
-                                type: "html5",
-                                name: "merkleId",
-                                expires: 30
+                              type: "html5",
+                              name: "merkleId",
+                              expires: 30
                             },
 
                         },{
@@ -226,7 +229,8 @@
                         },  {
                         name: 'identityLink',
                         params: {
-                            pid: '14' // Set your real identityLink placement ID here
+                            pid: '14', // Set your real identityLink placement ID here
+                            // use3P: false // true/false - If you want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will not be fired. By default this property is undefined and 3p request will not be fired.
                         },
                         storage: {
                             type: 'cookie',
@@ -277,6 +281,9 @@
                         {
                             name: "criteo"
                         },
+                          {
+                            name: "uid2"
+                          }
                         ],
                         syncDelay: 5000,
                         auctionDelay: 1000

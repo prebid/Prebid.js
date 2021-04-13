@@ -101,6 +101,7 @@
  * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
  * @property {(string|undefined)} pd - publisher provided data for reconciling ID5 IDs
  * @property {(string|undefined)} emailHash - if provided, the hashed email address of a user
+ * @property {(string|undefined)} use3P - use to retrieve envelope from 3p endpoint
  */
 
 /**
@@ -247,7 +248,7 @@ function getStoredValue(storage, key = undefined) {
       }
     }
     // support storing a string or a stringified object
-    if (typeof storedValue === 'string' && storedValue.charAt(0) === '{') {
+    if (typeof storedValue === 'string' && storedValue.trim().charAt(0) === '{') {
       storedValue = JSON.parse(storedValue);
     }
   } catch (e) {

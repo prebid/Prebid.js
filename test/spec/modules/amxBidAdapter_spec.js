@@ -439,6 +439,7 @@ describe('AmxBidAdapter', () => {
           ...baseBidResponse.meta,
           mediaType: BANNER,
         },
+        mediaType: BANNER,
         width: 300,
         height: 600, // from the bid itself
         ttl: 90,
@@ -458,6 +459,7 @@ describe('AmxBidAdapter', () => {
           ...baseBidResponse.meta,
           mediaType: VIDEO,
         },
+        mediaType: VIDEO,
         vastXml: sampleVideoAd(''),
         width: 300,
         height: 250,
