@@ -94,7 +94,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
 
   const request = {
     id: bidderRequest.auctionId,
-    at: 1, // TODO: is the auction always first price?
+    at: 1,
     tmax: timeout,
     cur: [getCurrency()],
     imp: imps,
