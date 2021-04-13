@@ -134,6 +134,10 @@ function interpretBid(serverBid, request) {
     bidReturned.mediaType = BANNER;
   }
 
+  if (bidReturned.adomain != undefined || bidReturned.adomain != null) {
+    bidReturned.meta = { advertiserDomains: request.bids.adomain };
+  }
+
   return bidReturned;
 }
 
