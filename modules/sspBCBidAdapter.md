@@ -16,6 +16,7 @@ Required parameters:
 Optional parameters:
 - site id 
 - adslot id
+- publisher id
 - domain
 - page
 - tmax
@@ -37,6 +38,7 @@ var adUnits = [
          params: {
             id: '006',                          // optional
             siteId: '235911',                   // optional
+            publisherId: '728'                  // optional
             domain: 'somesite.pl',              // optional
             page: 'somesite.pl/somepage.html',  // optional
             tmax: 250,                          // optional
