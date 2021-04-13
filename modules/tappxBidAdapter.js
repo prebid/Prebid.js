@@ -124,6 +124,8 @@ function interpretBid(serverBid, request) {
     netRevenue: true,
   }
 
+  if (typeof serverBid.dealId != 'undefined') { bidReturned.dealId = serverBid.dealId }
+
   if (typeof request.bids.mediaTypes != 'undefined' && typeof request.bids.mediaTypes.video != 'undefined') {
     bidReturned.vastXml = serverBid.adm;
     bidReturned.vastUrl = serverBid.lurl;
@@ -134,7 +136,7 @@ function interpretBid(serverBid, request) {
     bidReturned.mediaType = BANNER;
   }
 
-  if (bidReturned.adomain != undefined || bidReturned.adomain != null) {
+  if (typeof bidReturned.adomain != 'undefined' || bidReturned.adomain != null) {
     bidReturned.meta = { advertiserDomains: request.bids.adomain };
   }
 
