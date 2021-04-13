@@ -132,6 +132,16 @@ describe('Tappx bid adapter', function () {
       delete badBidRequest.bids[0].params.endpoint;
       assert.isFalse(spec.isBidRequestValid(badBidRequest.bids[0]));
     });
+
+    it('should return false not instream requests', function () {
+      let badBidRequest_v = c_BIDREQUEST;
+      delete badBidRequest_v.bids[0].mediaTypes.banner;
+      badBidRequest_v.bids[0].mediaTypes.video = {};
+      badBidRequest_v.bids[0].mediaTypes.video.context = 'outstream';
+      badBidRequest_v.bids[0].mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
+      badBidRequest_v.bids[0].mediaTypes.video.playerSize = [320, 250];
+      assert.isFalse(spec.isBidRequestValid(badBidRequest_v.bids[0]));
+    });
   });
 
   /**
