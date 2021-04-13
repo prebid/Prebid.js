@@ -290,7 +290,9 @@ export const spec = {
     },
 
   onBidWon: (bid) => {
-    utils.triggerPixel(utils.replaceAuctionPrice(bid.burl, bid.originalCpm));
+    if (bid.burl) {
+      utils.triggerPixel(utils.replaceAuctionPrice(bid.burl, bid.originalCpm));
+    }
   },
 
   onTimeout(timeoutData) {
