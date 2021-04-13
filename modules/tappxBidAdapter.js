@@ -63,7 +63,7 @@ export const spec = {
     const bids = [];
     responseBody.seatbid.forEach(serverSeatBid => {
       serverSeatBid.bid.forEach(serverBid => {
-        bids.push(interpretBannerBid(serverBid, originalRequest));
+        bids.push(interpretBid(serverBid, originalRequest));
       });
     });
 
@@ -112,7 +112,7 @@ export const spec = {
  * @param {object} serverBid Bid by OpenRTB 2.5
  * @returns {object} Prebid banner bidObject
  */
-function interpretBannerBid(serverBid, request) {
+function interpretBid(serverBid, request) {
   let bidReturned = {
     requestId: request.bids.bidId,
     cpm: serverBid.price,
@@ -124,7 +124,7 @@ function interpretBannerBid(serverBid, request) {
     netRevenue: true,
   }
 
-  if (request.bids.mediaTypes.video) {
+  if (typeof request.bids.mediaTypes != 'undefined' && typeof request.bids.mediaTypes.video != 'undefined') {
     bidReturned.vastXml = serverBid.adm;
     bidReturned.vastUrl = serverBid.lurl;
     bidReturned.ad = serverBid.adm;
