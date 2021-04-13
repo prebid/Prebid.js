@@ -23,7 +23,7 @@ Bright Mountain Media bid adapter currently supports Banner.
       },
       bids: [
           {
-              bidder: 'brightmountainmedia',
+              bidder: 'bmtm',
               params: {
                   placement_id: '5f21784949be82079d08c',
                   traffic: 'banner'
