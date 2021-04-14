@@ -440,6 +440,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
+    if (response.deal_id) {
+      bidResponse.dealId = response.deal_id;
+    }
     // default 5 mins
     bidResponse.ttl = 300;
     // true is net, false is gross
