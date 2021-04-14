@@ -54,8 +54,8 @@ export function Renderer(options) {
       loadExternalScript(url, moduleCode, this.callback);
     } else {
       utils.logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
-      runRender()
     }
+    runRender()
   }.bind(this) // bind the function to this object to avoid 'this' errors
 }
 
