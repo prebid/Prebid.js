@@ -166,6 +166,11 @@ describe('adponeBidAdapter', function () {
       expect(newResponse.length).to.be.equal(1);
       expect(newResponse[0]).to.deep.equal({
         id: '613673EF-A07C-4486-8EE9-3FC71A7DC73D',
+        meta: {
+          advertiserDomains: [
+            'adpone.com'
+          ]
+        },
         requestId: '1234',
         cpm: 1,
         width: 300,
