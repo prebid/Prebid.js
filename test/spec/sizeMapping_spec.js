@@ -93,6 +93,15 @@ describe('sizeMapping', function () {
       expect(utils.logWarn.firstCall.args[0]).to.match(/missing.+?mediaQuery/);
     });
 
+    it('should log a warning message when mediaQuery property is declared as an empty string', function() {
+      const errorConfig = deepClone(sizeConfig);
+      errorConfig[0].mediaQuery = '';
+
+      sandbox.stub(utils, 'logWarn');
+      resolveStatus(undefined, testSizes, undefined, errorConfig);
+      expect(utils.logWarn.firstCall.args[0]).to.match(/missing.+?mediaQuery/);
+    });
+
     it('should allow deprecated adUnit.sizes', function() {
       matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
 
