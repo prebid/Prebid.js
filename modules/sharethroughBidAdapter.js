@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const VERSION = '3.3.1';
 const BIDDER_CODE = 'sharethrough';
@@ -46,6 +47,10 @@ export const sharethroughAdapterSpec = {
 
       if (bidderRequest && bidderRequest.uspConsent) {
         query.us_privacy = bidderRequest.uspConsent
+      }
+
+      if (config.getConfig('coppa') === true) {
+        query.coppa = 1
       }
 
       if (bidRequest.schain) {
