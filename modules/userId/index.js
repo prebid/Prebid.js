@@ -101,7 +101,7 @@
  * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
  * @property {(string|undefined)} pd - publisher provided data for reconciling ID5 IDs
  * @property {(string|undefined)} emailHash - if provided, the hashed email address of a user
- * @property {(string|undefined)} use3P - use to retrieve envelope from 3p endpoint
+ * @property {(string|undefined)} notUse3P - use to retrieve envelope from 3p endpoint
  */
 
 /**
