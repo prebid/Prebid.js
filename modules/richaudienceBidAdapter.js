@@ -141,7 +141,7 @@ export const spec = {
     var syncUrl = '';
     var consent = '';
 
-    var raiSync = [];
+    var raiSync = {};
 
     raiSync = raiGetSyncInclude(config);
 
@@ -272,13 +272,13 @@ function raiGetSyncInclude(config) {
   try {
     let raConfig = null;
     let raiSync = {};
-    if (config.getConfig('userSync').filterSettings != null) {
+    if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
       raConfig = config.getConfig('userSync').filterSettings
       if (raConfig.iframe != null && typeof raConfig.iframe != 'undefined') {
-        raConfig.iframe.bidders == 'richaudience' || raConfig.iframe.bidders == '*' ? raiSync.raiIframe = raConfig.iframe.filter : raiSync.raiIframe = 'exclude';
+        raiSync.raiIframe = raConfig.iframe.bidders == 'richaudience' || raConfig.iframe.bidders == '*' ? raConfig.iframe.filter : 'exclude';
       }
       if (raConfig.image != null && typeof raConfig.image != 'undefined') {
-        raConfig.image.bidders == 'richaudience' || raConfig.image.bidders == '*' ? raiSync.raiImage = raConfig.image.filter : raiSync.raiImage = 'exclude';
+        raiSync.raiImage = raConfig.image.bidders == 'richaudience' || raConfig.image.bidders == '*' ? raConfig.image.filter : 'exclude';
       }
     }
     return raiSync;
