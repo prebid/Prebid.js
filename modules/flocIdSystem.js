@@ -78,7 +78,7 @@ export const flocIdSubmodule = {
     // Block usage of storage of cohort ID
     const checkStorage = (config && config.storage);
     if (checkStorage) {
-      utils.logError('User ID - flocId submodule requires storage not defined');
+      utils.logError('User ID - flocId submodule storage should not defined');
       return;
     }
     const isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
