@@ -505,7 +505,6 @@ describe('ID5 ID System', function() {
           let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
           expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
           sinon.assert.notCalled(logErrorSpy);
-          sinon.assert.notCalled(logInfoSpy);
         });
       });
 
@@ -523,7 +522,6 @@ describe('ID5 ID System', function() {
           testConfig.params.abTesting = testAbTestingConfig;
           id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
           sinon.assert.notCalled(logErrorSpy);
-          sinon.assert.calledOnce(logInfoSpy);
         });
       });
     });
