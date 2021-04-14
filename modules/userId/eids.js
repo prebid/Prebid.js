@@ -212,18 +212,6 @@ const USER_IDS_CONFIG = {
   'admixerId': {
     source: 'admixer.net',
     atype: 3
-  },
-  'flocId': {
-    source: 'chrome.com',
-    atype: 1,
-    getValue: function(data) {
-      return (data && data.id) ? data.id : undefined;
-    },
-    getUidExt: function(data) {
-      return (data && data.version) ? {
-        ver: data.version
-      } : undefined;
-    }
   }
 };
 

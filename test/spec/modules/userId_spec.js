@@ -1723,9 +1723,8 @@ describe('User ID', function () {
       coreStorage.setCookie('mwol', JSON.stringify({eid: 'XX-YY-ZZ-123'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('uid2id', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('admixerId', 'testadmixerId', (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('flocId', JSON.stringify({id: 'Sample_Cohort', version: 'chrome1.1'}), (new Date(Date.now() + 5000).toUTCString()));
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
         ['unifiedId', 'unifiedid', 'cookie'],
@@ -1741,8 +1740,7 @@ describe('User ID', function () {
         ['mwOpenLinkId', 'mwol', 'cookie'],
         ['tapadId', 'tapad_id', 'cookie'],
         ['uid2', 'uid2id', 'cookie'],
-        ['admixerId', 'admixerId', 'cookie'],
-        ['flocId', 'flocId', 'cookie']));
+        ['admixerId', 'admixerId', 'cookie']));
 
       requestBidsHook(function () {
         adUnits.forEach(unit => {
@@ -1791,8 +1789,7 @@ describe('User ID', function () {
             // also check that criteo id was copied to bid
             expect(bid).to.have.deep.nested.property('userId.admixerId');
             expect(bid.userId.admixerId).to.equal('testadmixerId');
-            expect(bid.userId.flocId).to.deep.equal({id: 'Sample_Cohort', version: 'chrome1.1'});
-            expect(bid.userIdAsEids.length).to.equal(15);
+            expect(bid.userIdAsEids.length).to.equal(14);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1809,7 +1806,6 @@ describe('User ID', function () {
         coreStorage.setCookie('mwol', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('uid2id', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('admixerId', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('flocId', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -1832,7 +1828,6 @@ describe('User ID', function () {
       coreStorage.setCookie('mwol', JSON.stringify({eid: 'XX-YY-ZZ-123'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('uid2id', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('admixerId', 'testadmixerId', (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('flocId', JSON.stringify({id: 'Sample_Cohort', version: 'chrome1.1'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([]);
 
@@ -1856,7 +1851,6 @@ describe('User ID', function () {
       attachIdSystem(tapadIdSubmodule);
       attachIdSystem(uid2IdSubmodule);
       attachIdSystem(admixerIdSubmodule);
-      attachIdSystem(flocIdSubmodule);
 
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
         ['unifiedId', 'unifiedid', 'cookie'],
@@ -1872,8 +1866,7 @@ describe('User ID', function () {
         ['mwOpenLinkId', 'mwol', 'cookie'],
         ['tapadId', 'tapad_id', 'cookie'],
         ['uid2', 'uid2id', 'cookie'],
-        ['admixerId', 'admixerId', 'cookie'],
-        ['flocId', 'flocId', 'cookie']));
+        ['admixerId', 'admixerId', 'cookie']));
 
       requestBidsHook(function () {
         adUnits.forEach(unit => {
@@ -1926,8 +1919,7 @@ describe('User ID', function () {
             // also check that admixerId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.admixerId');
             expect(bid.userId.admixerId).to.equal('testadmixerId');
-            expect(bid.userId.flocId).to.deep.equal({id: 'Sample_Cohort', version: 'chrome1.1'});
-            expect(bid.userIdAsEids.length).to.equal(15);
+            expect(bid.userIdAsEids.length).to.equal(14);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1944,7 +1936,6 @@ describe('User ID', function () {
         coreStorage.setCookie('mwol', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('uid2id', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('admixerId', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('flocId', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
