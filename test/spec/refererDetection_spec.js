@@ -1,4 +1,5 @@
 import { detectReferer } from 'src/refererDetection.js';
+import { config } from 'src/config.js';
 import { expect } from 'chai';
 
 /**
@@ -91,6 +92,10 @@ function buildWindowTree(urls, topReferrer = '', canonicalUrl = null, ancestorOr
 describe('Referer detection', () => {
   describe('Non cross-origin scenarios', () => {
     describe('No iframes', () => {
+      afterEach(function () {
+        config.resetConfig();
+      });
+
       it('Should return the current window location and no canonical URL', () => {
         const testWindow = buildWindowTree(['https://example.com/some/page'], 'https://othersite.com/'),
           result = detectReferer(testWindow)();
@@ -154,6 +159,26 @@ describe('Referer detection', () => {
             'https://example.com/third/page'
           ],
           canonicalUrl: 'https://example.com/canonical/page'
+        });
+      });
+
+      it('Should override canonical URL with config pageUrl', () => {
+        config.setConfig({'pageUrl': 'testUrl.com'});
+
+        const testWindow = buildWindowTree(['https://example.com/some/page', 'https://example.com/other/page', 'https://example.com/third/page'], 'https://othersite.com/', 'https://example.com/canonical/page'),
+          result = detectReferer(testWindow)();
+
+        expect(result).to.deep.equal({
+          referer: 'https://example.com/some/page',
+          reachedTop: true,
+          isAmp: false,
+          numIframes: 2,
+          stack: [
+            'https://example.com/some/page',
+            'https://example.com/other/page',
+            'https://example.com/third/page'
+          ],
+          canonicalUrl: 'testUrl.com'
         });
       });
     });

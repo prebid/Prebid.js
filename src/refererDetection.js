@@ -43,7 +43,7 @@ export function detectReferer(win) {
    */
   function getCanonicalUrl(doc) {
     let pageURL = config.getConfig('pageUrl');
-    
+
     if (pageURL) return pageURL;
 
     try {
