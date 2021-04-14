@@ -9,7 +9,7 @@ import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 
-const BIDDER_CODE = 'zemanta';
+const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
 const CURRENCY = 'USD';
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
@@ -28,7 +28,7 @@ export const spec = {
   supportedMediaTypes: [ NATIVE, BANNER ],
   isBidRequestValid: (bid) => {
     return (
-      (!!config.getConfig('zemanta.bidderUrl') || !!config.getConfig('outbrain.bidderUrl')) &&
+      !!config.getConfig('outbrain.bidderUrl') &&
       !!utils.deepAccess(bid, 'params.publisher.id') &&
       !!(bid.nativeParams || bid.sizes)
     );
@@ -41,7 +41,7 @@ export const spec = {
     const bcat = setOnAny(validBidRequests, 'params.bcat');
     const badv = setOnAny(validBidRequests, 'params.badv');
     const cur = CURRENCY;
-    const endpointUrl = config.getConfig('zemanta.bidderUrl') || config.getConfig('outbrain.bidderUrl');
+    const endpointUrl = config.getConfig('outbrain.bidderUrl');
     const timeout = bidderRequest.timeout;
 
     const imps = validBidRequests.map((bid, id) => {
@@ -146,7 +146,7 @@ export const spec = {
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     const syncs = [];
-    let syncUrl = config.getConfig('zemanta.usersyncUrl') || config.getConfig('outbrain.usersyncUrl');
+    let syncUrl = config.getConfig('outbrain.usersyncUrl');
     if (syncOptions.pixelEnabled && syncUrl) {
       if (gdprConsent) {
         syncUrl += '&gdpr=' + (gdprConsent.gdprApplies & 1);
@@ -164,7 +164,11 @@ export const spec = {
     return syncs;
   },
   onBidWon: (bid) => {
-    ajax(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm))
+    // for native requests we put the nurl as an imp tracker, otherwise if the auction takes place on prebid server
+    // the server JS adapter puts the nurl in the adm as a tracking pixel and removes the attribute
+    if (bid.nurl) {
+      ajax(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm))
+    }
   }
 };
 
