@@ -214,7 +214,7 @@ const USER_IDS_CONFIG = {
     atype: 3
   },
   'flocId': {
-    source: 'floc.com',
+    source: 'chrome.com',
     atype: 1,
     getValue: function(data) {
       return (data && data.id) ? data.id : undefined;

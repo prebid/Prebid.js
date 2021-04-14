@@ -1452,7 +1452,7 @@ describe('User ID', function () {
             expect(bid).to.have.deep.nested.property('userId.flocId');
             expect(bid.userId.flocId).to.deep.equal({id: 'Sample_Cohort', version: 'chrome1.1'});
             expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'floc.com',
+              source: 'chrome.com',
               uids: [{id: 'Sample_Cohort', atype: 1, ext: { ver: 'chrome1.1' }}]
             });
           });

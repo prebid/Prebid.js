@@ -23,6 +23,20 @@ function enableOriginTrial(token) {
 }
 
 /**
+ * Get the interest cohort.
+ * @param successCallback
+ * @param errorCallback
+ */
+function getFlocData(successCallback, errorCallback) {
+  document.interestCohort()
+    .then((data) => {
+      successCallback(data);
+    }).catch((error) => {
+      errorCallback(error);
+    });
+}
+
+/**
  * Encode the id
  * @param value
  * @returns {string|*}
@@ -70,13 +84,23 @@ export const flocIdSubmodule = {
       const configParams = (config && config.params) || {};
       if (!configParams || (typeof configParams.token !== 'string')) {
         utils.logInfo('User ID - flocId submodule token is not defined');
+      } else {
+        // Insert meta-tag with token from configuration
+        enableOriginTrial(configParams.token);
       }
-
-      // Insert meta-tag with token from configuration
-      enableOriginTrial(configParams.token);
-
       // Example expected output { "id": "14159", "version": "chrome.1.0" }
-      return document.interestCohort() || {};
+      let returnCallback = (cb) => {
+        getFlocData((data) => {
+          returnCallback = () => { return data; }
+          utils.logInfo('Cohort id: ' + JSON.stringify(data));
+          cb(data);
+        }, (err) => {
+          utils.logInfo(err);
+          cb(undefined);
+        });
+      };
+
+      return {callback: returnCallback};
     }
   }
 };
