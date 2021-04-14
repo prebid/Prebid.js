@@ -448,7 +448,7 @@ describe('sharethrough adapter spec', function() {
         config.setConfig({coppa: true});
         const bidRequest = Object.assign({}, bidRequests[0]);
         const builtBidRequest = spec.buildRequests([bidRequest])[0];
-        expect(builtBidRequest.data.coppa).to.eq(1);
+        expect(builtBidRequest.data.coppa).to.eq(true);
       });
 
       it('should not add coppa to request if disabled', function() {

@@ -50,7 +50,7 @@ export const sharethroughAdapterSpec = {
       }
 
       if (config.getConfig('coppa') === true) {
-        query.coppa = 1
+        query.coppa = true
       }
 
       if (bidRequest.schain) {
