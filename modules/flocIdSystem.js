@@ -8,7 +8,7 @@
 import * as utils from '../src/utils.js'
 import {submodule} from '../src/hook.js'
 
-const MODULE_NAME = 'originFloc';
+const MODULE_NAME = 'flocId';
 
 /**
  * Add meta tag to support enabling of floc origin trial
@@ -75,8 +75,13 @@ export const flocIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
+    // Block usage of storage of cohort ID
+    const checkStorage = (config && config.storage);
+    if (checkStorage) {
+      utils.logError('User ID - flocId submodule requires storage not defined');
+      return;
+    }
     const isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
-
     // Validate feature is enabled
     const isFlocEnabled = !!document.featurePolicy && !!document.featurePolicy.features() && document.featurePolicy.features().includes('interest-cohort');
 

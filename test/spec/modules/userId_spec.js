@@ -567,8 +567,7 @@ describe('User ID', function () {
             name: 'admixerId',
             storage: {name: 'admixerId', type: 'cookie'}
           }, {
-            name: 'originFloc',
-            storage: {name: 'flocId', type: 'cookie'}
+            name: 'flocId'
           }]
         }
       });
@@ -1438,30 +1437,6 @@ describe('User ID', function () {
       }, {adUnits});
     });
 
-    it('test hook from floc cookies', function (done) {
-      // simulate existing browser local storage values
-      coreStorage.setCookie('flocId', JSON.stringify({id: 'Sample_Cohort', version: 'chrome1.1'}), (new Date(Date.now() + 5000).toUTCString()));
-
-      setSubmoduleRegistry([flocIdSubmodule]);
-      init(config);
-      config.setConfig(getConfigMock(['originFloc', 'flocId', 'cookie']));
-
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.flocId');
-            expect(bid.userId.flocId).to.deep.equal({id: 'Sample_Cohort', version: 'chrome1.1'});
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'chrome.com',
-              uids: [{id: 'Sample_Cohort', atype: 1, ext: { ver: 'chrome1.1' }}]
-            });
-          });
-        });
-        coreStorage.setCookie('flocId', '', EXPIRED_COOKIE_DATE);
-        done();
-      }, {adUnits});
-    });
-
     it('test hook from liveIntentId html5', function (done) {
       // simulate existing browser local storage values
       localStorage.setItem('_li_pbid', JSON.stringify({'unifiedId': 'random-ls-identifier', 'segments': ['123']}));
@@ -1767,7 +1742,7 @@ describe('User ID', function () {
         ['tapadId', 'tapad_id', 'cookie'],
         ['uid2', 'uid2id', 'cookie'],
         ['admixerId', 'admixerId', 'cookie'],
-        ['originFloc', 'flocId', 'cookie']));
+        ['flocId', 'flocId', 'cookie']));
 
       requestBidsHook(function () {
         adUnits.forEach(unit => {
@@ -1898,7 +1873,7 @@ describe('User ID', function () {
         ['tapadId', 'tapad_id', 'cookie'],
         ['uid2', 'uid2id', 'cookie'],
         ['admixerId', 'admixerId', 'cookie'],
-        ['originFloc', 'flocId', 'cookie']));
+        ['flocId', 'flocId', 'cookie']));
 
       requestBidsHook(function () {
         adUnits.forEach(unit => {

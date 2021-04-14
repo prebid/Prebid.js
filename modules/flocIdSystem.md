@@ -13,9 +13,9 @@ Individual params may be set for the FloC ID User ID Submodule.
 pbjs.setConfig({
     userSync: {
         userIds: [{
-            name: 'originFloc',
+            name: 'flocId',
             params: {
-                      token: "sharedid's token by default"
+                      token: "Registered token or default sharedid.org token"
              }
         }]
     }
@@ -29,5 +29,6 @@ The below parameters apply only to the FloC ID User ID Module integration.
 | --- | --- | --- | --- | --- |
 | name | Required | String | ID value for the Floc ID module - `"flocId"` | `"flocId"` |
 | params | Optional | Object | Details for flocId syncing. | |
-| params.token | Optional | Object | SharedId's token by default | 60 |
+| params.token | Optional | Object | Publisher registered token.To get new token, register https://developer.chrome.com/origintrials/#/trials/active for Federated Learning of Cohorts. Default sharedid.org token:  token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"|  token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
+ |
 | storage | Not Allowed | Object | Will ask browser for cohort everytime. Setting storage will fail id lookup ||
