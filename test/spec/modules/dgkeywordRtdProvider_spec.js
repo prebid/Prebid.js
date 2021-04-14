@@ -255,7 +255,7 @@ describe('Digital Garage Keyword Module', function () {
       let pdjs = getGlobal();
       pbjs.adUnits = cloneDeep(AD_UNITS);
       let config = cloneDeep(DEF_CONFIG);
-      config.params.timeout = 1;
+      config.params.timeout = 10;
       dgRtd.getDgKeywordsAndSet(
         pdjs,
         () => {
@@ -277,7 +277,9 @@ describe('Digital Garage Keyword Module', function () {
       );
       setTimeout(() => {
         const request = server.requests[0];
-        request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
+        if (request) {
+          request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
+        }
       }, 1000)
     });
     it('should get profiles ok(200).', function (done) {
