@@ -19,7 +19,7 @@ import * as utils from 'src/utils.js';
 
 let expect = require('chai').expect;
 
-describe.only('ID5 ID System', function() {
+describe('ID5 ID System', function() {
   const ID5_MODULE_NAME = 'id5Id';
   const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';
