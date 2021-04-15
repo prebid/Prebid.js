@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const SMARTICO_CONFIG = {
   bidRequestUrl: 'https://trmads.eu/preBidRequest',
@@ -13,7 +14,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    return !!(bid.params.token && bid.params.placementId);
+    return !!(bid && bid.params && bid.params.token && bid.params.placementId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     var i
@@ -48,16 +49,14 @@ export const spec = {
         if (bid.params.language) {
           bidParam.language = bid.params.language
         }
-        if (bid.params.regions) {
-          bidParam.regions = bid.params.regions
-        }
         if (bid.params.region) {
           bidParam.region = bid.params.region
         }
-        if (bidParam.regions && bidParam.regions instanceof Array && bidParam.regions.length) {
-          bidParam.regions = bidParam.regions.join(',')
-        } else {
-          delete bidParam.regions
+        if (bid.params.regions && (bid.params.regions instanceof String || (bid.params.regions instanceof Array && bid.params.regions.length))) {
+          bidParam.regions = bid.params.regions
+          if (bidParam.regions instanceof Array) {
+             bidParam.regions = bidParam.regions.join(',')
+          }
         }
         bidParams.push(bidParam)
       }
@@ -73,18 +72,6 @@ export const spec = {
     return ServerRequestObjects;
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    function getBidById(responceBidId) {
-      if (responceBidId) {
-        var i, bid
-        for (i = 0; i < bidRequest.bids.length; i++) {
-          bid = bidRequest.bids[i]
-          if (bid.bidId == responceBidId) {
-            return bid
-          }
-        }
-      }
-      return false
-    }
 
     var i
     var bid
@@ -95,12 +82,13 @@ export const spec = {
     var token
     var language
     var scriptId
-    var bidRespones = []
+    var bidResponses = []
 
     for (i = 0; i < serverResponse.length; i++) {
       ad = serverResponse[i];
-      bid = getBidById(ad.bidId);
-
+      
+      bid = find(bidRequest.bids, bid => bid.bidId === ad.bidId)
+      
       if (bid) {
         token = bid.params.token || '';
 
@@ -122,10 +110,10 @@ export const spec = {
           ttl: ad.ttl,
           ad: html
         }
-        bidRespones.push(bidObject);
+        bidResponses.push(bidObject);
       }
     }
-    return bidRespones;
+    return bidResponses;
   }
 }
 registerBidder(spec)
