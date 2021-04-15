@@ -25,13 +25,7 @@ export const deepintentDpesSubmodule = {
    * @returns {{deepintentId:Object}}
    */
   decode(value, config) {
-    if (value) {
-      return {
-        'deepintentId': value
-      }
-    } else {
-      return undefined
-    }
+    return value ? { 'deepintentId': value } : undefined;
   },
 
   /**
