@@ -232,7 +232,7 @@ function bundle(dev, moduleArr) {
     .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
-      global: prebid.globalVarName,
+      global: prebid.globalVarName
     }
     )))
     .pipe(gulpif(dev, sourcemaps.write('.')));
