@@ -215,10 +215,6 @@ function bundle(dev, moduleArr) {
 
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
-  const moduleList = helpers.getArgModules().map(module => {
-    return '"' + module + '"'
-  });
-
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
@@ -235,10 +231,6 @@ function bundle(dev, moduleArr) {
     .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
     .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
-    // .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.installedModules = <%= list %>', {
-    //   global: prebid.globalVarName,
-    //   list: "[" + moduleList + "];"
-    // })))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
       global: prebid.globalVarName,
     }
