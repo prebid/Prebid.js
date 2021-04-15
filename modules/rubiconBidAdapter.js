@@ -8,6 +8,7 @@ import { Renderer } from '../src/Renderer.js';
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
 const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.0.0.js';
+// renderer code at https://github.com/rubicon-project/apex2
 
 let rubiConf = {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
