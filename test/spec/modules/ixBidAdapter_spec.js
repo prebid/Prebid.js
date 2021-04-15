@@ -395,6 +395,10 @@ describe('IndexexchangeAdapter', function () {
     }
   ];
 
+  const DEFAULT_USERID_BID_DATA = {
+    lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'
+  };
+
   describe('inherited functions', function () {
     it('should exists and is a function', function () {
       const adapter = newBidder(spec);
@@ -989,6 +993,32 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[3]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[4]);
+    });
+  });
+
+  describe('getUserIds', function () {
+    it('request should contain userId information if configured and within bid request', function () {
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [
+            { name: 'lotamePanoramaId' },
+            { name: 'merkleId' },
+            { name: 'parrableId' },
+          ]
+        }
+      });
+
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.userId = DEFAULT_USERID_BID_DATA;
+
+      const request = spec.buildRequests([bid], DEFAULT_OPTION)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.userIds).to.be.an('object');
+      expect(r.ext.ixdiag.userIds.lotamePanoramaId).to.equal(1);
+      expect(r.ext.ixdiag.userIds.merkleId).to.equal(0);
+      expect(r.ext.ixdiag.userIds.parrableId).to.equal(0);
     });
   });
 

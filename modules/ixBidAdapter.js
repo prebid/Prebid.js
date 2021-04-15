@@ -482,6 +482,31 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 }
 
 /**
+ * Return an object of user IDs stored by Prebid User ID module
+ *
+ * @returns {Object} ID providers and whether they are present
+ */
+function _getUserIds(bidRequest) {
+  const userIds = bidRequest.userId || {};
+
+  return {
+    'britepoolid': utils.deepAccess(userIds, 'britepoolid') ? 1 : 0,
+    'id5id': utils.deepAccess(userIds, 'id5id') ? 1 : 0,
+    'lipbid': utils.deepAccess(userIds, 'lipb.lipbid') ? 1 : 0,
+    'haloId': utils.deepAccess(userIds, 'haloId') ? 1 : 0,
+    'criteoId': utils.deepAccess(userIds, 'criteoId') ? 1 : 0,
+    'lotamePanoramaId': utils.deepAccess(userIds, 'lotamePanoramaId') ? 1 : 0,
+    'merkleId': utils.deepAccess(userIds, 'merkleId') ? 1 : 0,
+    'parrableId': utils.deepAccess(userIds, 'parrableId') ? 1 : 0,
+    'connectid': utils.deepAccess(userIds, 'connectid') ? 1 : 0,
+    'sharedid': utils.deepAccess(userIds, 'sharedid') ? 1 : 0,
+    'tapadId': utils.deepAccess(userIds, 'tapadId') ? 1 : 0,
+    'quantcastId': utils.deepAccess(userIds, 'quantcastId') ? 1 : 0,
+    'pubcid': utils.deepAccess(userIds, 'pubcid') ? 1 : 0
+  }
+}
+
+/**
  * Calculates IX diagnostics values and packages them into an object
  *
  * @param {array} validBidRequests  The valid bid requests from prebid
@@ -500,7 +525,8 @@ function buildIXDiag(validBidRequests) {
     ou: 0,
     allU: 0,
     ren: false,
-    version: '$prebid.version$'
+    version: '$prebid.version$',
+    userIds: _getUserIds(validBidRequests[0])
   };
 
   // create ad unit map and collect the required diag properties
