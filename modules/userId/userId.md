@@ -44,7 +44,7 @@ pbjs.setConfig({
             name: 'identityLink',
             params: {
                 pid: '999', // Set your real identityLink placement ID here
-                // use3P: false // true/false - If you want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will not be fired. By default this propertt is undefined and 3p request will not be fired.
+                // notUse3P: true // true/false - If you do not want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will be fired. By default this property is undefined and 3p request will be fired.
             },
             storage: {
                 type: 'cookie',
@@ -151,7 +151,7 @@ pbjs.setConfig({
             name: 'identityLink',
             params: {
                 pid: '999', // Set your real identityLink placement ID here
-                // use3P: false // true/false - If you want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will not be fired. By default this property is undefined and 3p request will not be fired.
+                // notUse3P: true // true/false - If you do not want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will be fired. By default this property is undefined and 3p request will be fired.
             },
             storage: {
                 type: 'html5',
@@ -232,6 +232,20 @@ pbjs.setConfig({
                params: {
                token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
         }
+        },{
+            name: "deepintentId",
+            storage: {
+                type: "html5",
+                name: "_dpes_id",
+                expires: 90
+            }
+        },{
+            name: "deepintentId",
+            storage: {
+                type: "cookie",
+                name: "_dpes_id",
+                expires: 90
+            }
         }],
         syncDelay: 5000
     }
