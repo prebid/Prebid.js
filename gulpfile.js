@@ -31,7 +31,7 @@ const execa = require('execa');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '\nModules: <%= modules %> */\n';
+var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '*/\n';
 var port = 9999;
 const FAKE_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const FAKE_SERVER_PORT = 4444;
@@ -141,10 +141,14 @@ function makeDevpackPkg() {
 
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
+  const moduleList = externalModules.map(module => {
+    return '"' + module + '"'
+  });
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
+    .pipe(replace(/"v\$prebid\.modulesList\$"/g, moduleList))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 }
@@ -157,13 +161,16 @@ function makeWebpackPkg() {
 
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
-  const modulesString = getModulesListToAddInBanner(externalModules);
+  const moduleList = externalModules.map(module => {
+    return '"' + module + '"'
+  });
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(uglify())
-    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid, modules: modulesString })))
+    .pipe(replace(/"v\$prebid\.modulesList\$"/g, moduleList))
+    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid})))
     .pipe(gulp.dest('build/dist'));
 }
 
@@ -208,6 +215,10 @@ function bundle(dev, moduleArr) {
 
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
+  const moduleList = helpers.getArgModules().map(module => {
+    return '"' + module + '"'
+  });
+
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
@@ -224,8 +235,12 @@ function bundle(dev, moduleArr) {
     .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
     .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
+    // .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.installedModules = <%= list %>', {
+    //   global: prebid.globalVarName,
+    //   list: "[" + moduleList + "];"
+    // })))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
-      global: prebid.globalVarName
+      global: prebid.globalVarName,
     }
     )))
     .pipe(gulpif(dev, sourcemaps.write('.')));
@@ -286,7 +301,7 @@ function test(done) {
   } else {
     var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
-    var browserOverride = helpers.parseBrowserArgs(argv);
+    var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
     if (browserOverride.length > 0) {
       karmaConf.browsers = browserOverride;
     }

@@ -43,6 +43,9 @@ $$PREBID_GLOBAL$$.libLoaded = true;
 $$PREBID_GLOBAL$$.version = 'v$prebid.version$';
 utils.logInfo('Prebid.js v$prebid.version$ loaded');
 
+// modules list generated from build
+$$PREBID_GLOBAL$$.installedModules = ['v$prebid.modulesList$'];
+
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
