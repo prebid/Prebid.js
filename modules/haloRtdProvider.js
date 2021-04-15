@@ -12,10 +12,11 @@ import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isFn, isStr, isPlainObject, mergeDeep, logError} from '../src/utils.js';
 
-export const storage = getStorageManager();
-
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'halo';
+const AU_GVLID = 561;
+
+export const storage = getStorageManager(AU_GVLID, SUBMODULE_NAME);
 
 export const HALOID_LOCAL_NAME = 'auHaloId';
 export const RTD_LOCAL_NAME = 'auHaloRtd';
@@ -69,15 +70,12 @@ function paramOrDefault(param, defaultVal) {
  * @param {Object} rtdConfig
  */
 export function addRealTimeData(bidConfig, rtd, rtdConfig) {
-  if (!isPlainObject(config.getConfig().ortb2)) {
-    config.setConfig({ortb2: {}});
-  }
+  let ortb2 = config.getConfig().ortb2 || {};
 
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
   } else if (rtd.ortb2) {
-    let mergedOrtb = mergeLazy(config.getConfig().ortb2, rtd.ortb2);
-    config.setConfig({ortb2: mergedOrtb});
+    config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
   }
 }
 
@@ -89,7 +87,7 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
  * @param {Object} userConsent
  */
 export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
-  if (isPlainObject(rtdConfig.params) && rtdConfig.params.segmentCache) {
+  if (rtdConfig && isPlainObject(rtdConfig.params) && rtdConfig.params.segmentCache) {
     let jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME);
 
     if (jsonData) {

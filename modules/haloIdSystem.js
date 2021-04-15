@@ -11,8 +11,9 @@ import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'haloId';
+const AU_GVLID = 561;
 
-export const storage = getStorageManager();
+export const storage = getStorageManager(AU_GVLID, 'halo');
 
 /** @type {Submodule} */
 export const haloIdSubmodule = {
