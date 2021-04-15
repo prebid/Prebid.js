@@ -40,8 +40,9 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const placementIds = []
     const placmentBidIdMap = {}
-    let placementId
+    let placementId, pageUrl
     validBidRequests.forEach((request) => {
+      pageUrl = pageUrl || request.params.url // Use the first url value found
       placementId = request.params.placementId
       placementIds.push(placementId)
       placmentBidIdMap[placementId] = {
@@ -51,12 +52,14 @@ export const spec = {
     })
     bidRequestMap[bidderRequest.bidderRequestId] = placmentBidIdMap
 
+    if(!pageUrl) pageUrl = bidderRequest.refererInfo.referer
+
     let params = [
       { key: 'ntv_ptd', value: placementIds.toString() },
       { key: 'ntv_pb_rid', value: bidderRequest.bidderRequestId },
       {
         key: 'ntv_url',
-        value: encodeURIComponent(bidderRequest.refererInfo.referer),
+        value: encodeURIComponent(pageUrl),
       },
     ]
 
