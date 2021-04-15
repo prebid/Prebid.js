@@ -54,20 +54,28 @@ export const spec = {
     let isMobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     let payload = {
       id: bidderRequest.auctionId,
-      cur: [DEFAULT_CUR],
       imp: [impData],
       site: {
         mobile: isMobile,
         page: bidderRequest.refererInfo.referer
       },
+      app: params.app,
       device: {
         ua: navigator.userAgent,
         ip: params.ip
       },
-      user: {
-        buyeruid: params.user.buyeruid,
-        uid: params.user.uid
-      },
+      user: params.user,
+      at: params.at,
+      tmax: params.tmax,
+      wseat: params.wseat,
+      bseat: params.bseat,
+      allimps: params.allimps,
+      cur: [DEFAULT_CUR],
+      wlang: params.wlang,
+      bcat: params.bcat,
+      badv: params.badv,
+      bapp: params.bapp,
+      source: params.source,
       ext: {
         definerId: params.definerId
       }
