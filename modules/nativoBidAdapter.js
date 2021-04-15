@@ -52,7 +52,7 @@ export const spec = {
     })
     bidRequestMap[bidderRequest.bidderRequestId] = placmentBidIdMap
 
-    if(!pageUrl) pageUrl = bidderRequest.refererInfo.referer
+    if (!pageUrl) pageUrl = bidderRequest.refererInfo.referer
 
     let params = [
       { key: 'ntv_ptd', value: placementIds.toString() },
