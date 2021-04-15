@@ -16,10 +16,9 @@ const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'halo';
 const AU_GVLID = 561;
 
-export const storage = getStorageManager(AU_GVLID, SUBMODULE_NAME);
-
 export const HALOID_LOCAL_NAME = 'auHaloId';
 export const RTD_LOCAL_NAME = 'auHaloRtd';
+export const storage = getStorageManager(AU_GVLID, SUBMODULE_NAME);
 
 /**
  * Deep set an object unless value present.
