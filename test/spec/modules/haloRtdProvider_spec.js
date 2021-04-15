@@ -5,8 +5,15 @@ import {server} from 'test/mocks/xhr.js';
 const responseHeader = {'Content-Type': 'application/json'};
 
 describe('haloRtdProvider', function() {
+  let getDataFromLocalStorageStub;
+
   beforeEach(function() {
     config.resetConfig();
+    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+  });
+
+  afterEach(function () {
+    getDataFromLocalStorageStub.restore();
   });
 
   describe('haloSubmodule', function() {
@@ -154,10 +161,13 @@ describe('haloRtdProvider', function() {
       expect(config.getConfig().ortb2.user.data).to.deep.include.members([rtdUserObj1]);
 
       const rtdUserObj2 = {
-        name: 'www.dataprovider.com',
-        ext: { taxonomyname: 'iab_audience_taxonomy' },
+        name: 'www.audigent.com',
+        ext: {
+          segtax: '1',
+          taxprovider: '1'
+        },
         segment: [{
-          id: '1778'
+          id: 'pubseg1'
         }]
       };
 
@@ -276,7 +286,7 @@ describe('haloRtdProvider', function() {
         }
       };
 
-      storage.setDataInLocalStorage(RTD_LOCAL_NAME, JSON.stringify(cachedRtd));
+      getDataFromLocalStorageStub.withArgs(RTD_LOCAL_NAME).returns(JSON.stringify(cachedRtd));
 
       expect(config.getConfig().ortb2).to.be.undefined;
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
@@ -285,16 +295,17 @@ describe('haloRtdProvider', function() {
 
     it('gets real-time data via async request', function() {
       const setConfigSiteObj1 = {
-        name: 'www.dataprovider2.com',
+        name: 'www.audigent.com',
         ext: {
-          taxonomyname: 'iab_audience_taxonomy'
+          segtax: '1',
+          taxprovider: '1'
         },
         segment: [
           {
-            id: '1812'
+            id: 'pubseg1'
           },
           {
-            id: '1955'
+            id: 'pubseg2'
           }
         ]
       }
@@ -322,16 +333,17 @@ describe('haloRtdProvider', function() {
       let bidConfig = {};
 
       const rtdUserObj1 = {
-        name: 'www.dataprovider3.com',
+        name: 'www.audigent.com',
         ext: {
-          taxonomyname: 'iab_audience_taxonomy'
+          segtax: '1',
+          taxprovider: '1'
         },
         segment: [
           {
-            id: '1918'
+            id: 'pubseg1'
           },
           {
-            id: '1939'
+            id: 'pubseg2'
           }
         ]
       };
@@ -346,8 +358,7 @@ describe('haloRtdProvider', function() {
         }
       };
 
-      storage.setDataInLocalStorage(HALOID_LOCAL_NAME, 'testHaloId1');
-
+      getDataFromLocalStorageStub.withArgs(HALOID_LOCAL_NAME).returns('testHaloId1');
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
 
       let request = server.requests[0];
