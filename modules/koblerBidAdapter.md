@@ -27,17 +27,21 @@ This adapter currently only supports Banner Ads.
     code: 'div-gpt-ad-1460505748561-1',
     mediaTypes: {
         banner: {
-            sizes: [[300, 250], [300, 600]],
+            sizes: [[320, 250], [300, 250]],
         }
     },
     bids: [{
       bidder: 'kobler',
       params: {
-        placementId: 'xjer0ch8'
+        placementId: 'k5H7et3R0'
       }
     }]
   }];
 ```
+
+In order to see a sample bid from Kobler (without a proper setup), you have to also do the following:
+- Change the [`refererInfo` function](https://github.com/prebid/Prebid.js/blob/master/src/refererDetection.js) to return `'https://www.tv2.no/a/11734615'` as a [`referer`](https://github.com/prebid/Prebid.js/blob/caead3ccccc448e4cd09d074fd9f8833f56fe9b3/src/refererDetection.js#L169). This is necessary because Kobler only bids on recognized articles. 
+- Change the adapter's [`BIDDER_ENDPOINT`](https://github.com/prebid/Prebid.js/blob/master/modules/koblerBidAdapter.js#L8) to `'https://bid-service.dev.essrtb.com/bid/prebid_rtb_call'`. This endpoint belongs to the development server that is set up to always return a bid for the correct `placementId` and page URL combination. 
 
 # Test Optional Parameters
 ```javascript
@@ -45,13 +49,13 @@ This adapter currently only supports Banner Ads.
     code: 'div-gpt-ad-1460505748561-1',
     mediaTypes: {
         banner: {
-            sizes: [[300, 250], [300, 600]],
+            sizes: [[320, 250], [300, 250]],
         }
     },
     bids: [{
       bidder: 'kobler',
       params: {
-        placementId: 'xjer0ch8',
+        placementId: 'k5H7et3R0',
         zip: '102 22',
         test: true,
         floorPrice: 5.0,
