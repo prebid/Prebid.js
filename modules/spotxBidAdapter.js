@@ -352,6 +352,7 @@ export const spec = {
           } else {
             bid.cache_key = spotxBid.ext.cache_key;
             bid.vastUrl = 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key
+            bid.videoCacheKey = spotxBid.ext.cache_key;
           }
 
           bid.meta = bid.meta || {};
