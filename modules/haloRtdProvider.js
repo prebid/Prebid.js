@@ -70,7 +70,7 @@ function paramOrDefault(param, defaultVal) {
  * @param {Object} rtdConfig
  */
 export function addRealTimeData(bidConfig, rtd, rtdConfig) {
-  let ortb2 = config.getConfig().ortb2 || {};
+  let ortb2 = config.getConfig('ortb2') || {};
 
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
@@ -133,7 +133,7 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
   let reqParams = {};
 
   if (isPlainObject(rtdConfig)) {
-    set(rtdConfig, 'params.requestParams.ortb2', config.getConfig().ortb2);
+    set(rtdConfig, 'params.requestParams.ortb2', config.getConfig('ortb2'));
     reqParams = rtdConfig.params.requestParams;
   }
 
