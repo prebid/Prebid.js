@@ -200,6 +200,7 @@ describe('Seedtag Adapter', function() {
       expect(data.url).to.equal('referer')
       expect(data.publisherToken).to.equal('0000-0000-01')
       expect(typeof data.version).to.equal('string')
+      expect(['fixed', 'mobile', 'unknown'].indexOf(data.connectionType)).to.be.above(-1)
     })
 
     describe('adPosition param', function() {
@@ -408,6 +409,14 @@ describe('Seedtag Adapter', function() {
   })
 
   describe('onTimeout', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel')
+    })
+
+    afterEach(function() {
+      utils.triggerPixel.restore()
+    })
+
     it('should return the correct endpoint', function () {
       const params = { publisherId: '0000', adUnitId: '11111' }
       const timeoutData = [{ params: [ params ] }];
@@ -418,6 +427,16 @@ describe('Seedtag Adapter', function() {
         '&adUnitId=' +
         params.adUnitId
       )
+    })
+
+    it('should set the timeout pixel', function() {
+      const params = { publisherId: '0000', adUnitId: '11111' }
+      const timeoutData = [{ params: [ params ] }];
+      spec.onTimeout(timeoutData)
+      expect(utils.triggerPixel.calledWith('https://s.seedtag.com/se/hb/timeout?publisherToken=' +
+      params.publisherId +
+      '&adUnitId=' +
+      params.adUnitId)).to.equal(true);
     })
   })
 
