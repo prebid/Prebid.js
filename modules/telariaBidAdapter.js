@@ -276,7 +276,6 @@ function createBid(status, reqBid, response, width, height, bidderCode) {
       width: width,
       height: height,
       bidderCode: bidderCode,
-      adId: response.id,
       currency: 'USD',
       netRevenue: true,
       ttl: 300,

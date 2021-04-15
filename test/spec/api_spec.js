@@ -82,5 +82,9 @@ describe('Publisher API', function () {
     it('should have function $$PREBID_GLOBAL$$.getAllWinningBids', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getAllWinningBids);
     });
+
+    it('should have function $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode);
+    });
   });
 });

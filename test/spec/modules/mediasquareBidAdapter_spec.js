@@ -165,6 +165,16 @@ describe('MediaSquare bid adapter tests', function () {
     expect(syncs[0]).to.have.property('type').and.to.equal('image');
     expect(syncs[0]).to.have.property('url').and.to.equal('http://www.cookie.sync.org/');
   });
+  it('Verifies user sync with no bid response', function() {
+    var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.property('type').and.to.equal('iframe');
+  });
+  it('Verifies user sync with no bid body response', function() {
+    var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.property('type').and.to.equal('iframe');
+  });
   it('Verifies native in bid response', function () {
     const request = spec.buildRequests(NATIVE_PARAMS, DEFAULT_OPTIONS);
     BID_RESPONSE.body.responses[0].native = {'title': 'native title'};
