@@ -799,8 +799,9 @@ function hideGoogleAdsDiv(adUnit) {
 
 function hideSmartAdServerIframe(adUnit) {
   const el = adUnit.querySelector("script[id^='sas_script']");
-  if (el && el.nextSibling && el.nextSibling.localName === 'iframe') {
-    el.nextSibling.style.setProperty('display', 'none');
+  const nextSibling = el && el.nextSibling;
+  if (nextSibling && nextSibling.localName === 'iframe') {
+    nextSibling.style.setProperty('display', 'none');
   }
 }
 
