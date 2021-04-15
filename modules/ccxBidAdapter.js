@@ -117,8 +117,12 @@ function _buildResponse (bid, currency, ttl) {
     creativeId: bid.crid,
     netRevenue: false,
     ttl: ttl,
-    currency: currency,
-    advertiserDomains: bid.adomain || []
+    currency: currency
+  }
+
+  resp.meta = {};
+  if (bid.adomain && bid.adomain.length > 0) {
+    resp.meta.advertiserDomains = bid.adomain;
   }
 
   if (bid.ext.type === 'video') {
