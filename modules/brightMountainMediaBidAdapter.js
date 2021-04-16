@@ -7,16 +7,16 @@ const AD_URL = 'https://one.elitebidder.com/api/hb';
 const SYNC_URL = 'https://console.brightmountainmedia.com:8443/cookieSync';
 
 const videoExt = [
-    'video/x-ms-wmv',
-    'video/x-flv',
-    'video/mp4',
-    'video/3gpp',
-    'application/x-mpegURL',
-    'video/quicktime',
-    'video/x-msvideo',
-    'application/x-shockwave-flash',
-    'application/javascript'
-  ];
+  'video/x-ms-wmv',
+  'video/x-flv',
+  'video/mp4',
+  'video/3gpp',
+  'application/x-mpegURL',
+  'video/quicktime',
+  'video/x-msvideo',
+  'application/x-shockwave-flash',
+  'application/javascript'
+];
 
 export const spec = {
   code: BIDDER_CODE,
