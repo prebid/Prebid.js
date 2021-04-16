@@ -133,14 +133,14 @@ describe('Tappx bid adapter', function () {
       assert.isFalse(spec.isBidRequestValid(badBidRequest.bids[0]));
     });
 
-    it('should return false not instream requests', function () {
-      let badBidRequest_v = c_BIDREQUEST;
-      delete badBidRequest_v.bids[0].mediaTypes.banner;
-      badBidRequest_v.bids[0].mediaTypes.video = {};
-      badBidRequest_v.bids[0].mediaTypes.video.context = 'outstream';
-      badBidRequest_v.bids[0].mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
-      badBidRequest_v.bids[0].mediaTypes.video.playerSize = [320, 250];
-      assert.isFalse(spec.isBidRequestValid(badBidRequest_v.bids[0]));
+    it('should return false for not instream requests', function () {
+      let badBidRequest_v = c_BIDDERREQUEST_V;
+      delete badBidRequest_v.bids.mediaTypes.banner;
+      badBidRequest_v.bids.mediaTypes.video = {};
+      badBidRequest_v.bids.mediaTypes.video.context = 'outstream';
+      badBidRequest_v.bids.mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
+      badBidRequest_v.bids.mediaTypes.video.playerSize = [320, 250];
+      assert.isFalse(spec.isBidRequestValid(badBidRequest_v.bids));
     });
   });
 
@@ -150,10 +150,12 @@ describe('Tappx bid adapter', function () {
   describe('buildRequest', function () {
     // Web Test
     let validBidRequests = c_VALIDBIDREQUESTS;
+    let validBidRequests_V = c_VALIDBIDREQUESTS;
     // App Test
     let validAppBidRequests = c_VALIDBIDAPPREQUESTS;
 
     let bidderRequest = c_BIDDERREQUEST_B;
+    let bidderRequest_V = c_BIDDERREQUEST_V;
 
     it('should add gdpr/usp consent information to the request', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -166,6 +168,20 @@ describe('Tappx bid adapter', function () {
 
     it('should properly build a banner request', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request[0].url).to.match(/^(http|https):\/\/(.*)\.tappx\.com\/.+/);
+      expect(request[0].method).to.equal('POST');
+
+      const data = JSON.parse(request[0].data);
+      expect(data.site).to.not.equal(null);
+      expect(data.imp).to.have.lengthOf(1);
+      expect(data.imp[0].bidfloor, data).to.not.be.null;
+      expect(data.imp[0].banner).to.not.equal(null);
+      expect(data.imp[0].banner.w).to.be.oneOf([320, 50, 250, 480]);
+      expect(data.imp[0].banner.h).to.be.oneOf([320, 50, 250, 480]);
+    });
+
+    it('should properly build a video request', function () {
+      const request = spec.buildRequests(validBidRequests_V, bidderRequest_V);
       expect(request[0].url).to.match(/^(http|https):\/\/(.*)\.tappx\.com\/.+/);
       expect(request[0].method).to.equal('POST');
 
@@ -225,4 +241,31 @@ describe('Tappx bid adapter', function () {
       expect(bids).to.have.lengthOf(0);
     });
   });
+
+  /**
+   * GET USER SYNC TESTS
+   */
+  describe('getUserSync', function () {
+    it('check pixel enabled', function () {
+      let syncOptions = {
+        iframeEnabled : false,
+        pixelEnabled : true
+      }
+
+      const consent = spec.getUserSyncs(syncOptions, null, c_BIDDERREQUEST_B.gdprConsent, c_BIDDERREQUEST_B.uspConsent);
+      expect(consent[0].type).to.be.equal('image', JSON.stringify(consent[0]));
+      expect(consent[0].url).to.match(/&type=img/);
+    });
+
+    it('check iframe enabled', function () {
+      let syncOptions = {
+        iframeEnabled : true,
+        pixelEnabled : false
+      }
+
+      const consent = spec.getUserSyncs(syncOptions, null, c_BIDDERREQUEST_B.gdprConsent, c_BIDDERREQUEST_B.uspConsent);
+      expect(consent[0].type).to.be.equal('iframe', JSON.stringify(consent[0]));
+      expect(consent[0].url).to.match(/&type=iframe/);
+    });
+  })
 });
