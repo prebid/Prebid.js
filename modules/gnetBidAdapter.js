@@ -30,17 +30,14 @@ export const spec = {
     const referer = bidderRequest.refererInfo.referer;
 
     utils._each(validBidRequests, (request) => {
-      const data = Object();
+      const data = {};
 
       data.referer = referer;
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
       data.transactionId = request.transactionId;
 
-      data.sizes = [];
-      utils._each(request.sizes, (size) => {
-        data.sizes.push(size[0] + 'x' + size[1]);
-      });
+      data.sizes = utils.parseSizesInput(request.sizes);
 
       data.params = request.params;
 
@@ -67,43 +64,36 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, requests) {
-    if (!serverResponse.body) {
+    if (typeof serverResponse !== 'object') {
       return [];
     }
 
-    const res = serverResponse.body;
+    const res = serverResponse && serverResponse.body;
 
     if (utils.isEmpty(res)) {
       return [];
     }
 
-    const bids = [];
-    utils._each(res.bids, (bidData) => {
-      const bid = {
-        requestId: bidData.bidId,
-        cpm: bidData.cpm,
-        currency: bidData.currency,
-        width: bidData.width,
-        height: bidData.height,
-        ad: bidData.ad,
-        ttl: 300,
-        creativeId: bidData.creativeId,
-        netRevenue: true,
-      };
-      bids.push(bid);
-    });
+    if (res.bids) {
+      const bids = [];
+      utils._each(res.bids, (bidData) => {
+        const bid = {
+          requestId: bidData.bidId,
+          cpm: bidData.cpm,
+          currency: bidData.currency,
+          width: bidData.width,
+          height: bidData.height,
+          ad: bidData.ad,
+          ttl: 300,
+          creativeId: bidData.creativeId,
+          netRevenue: true,
+        };
+        bids.push(bid);
+      });
 
-    return bids;
-  },
+      return bids;
+    }
 
-  /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @return {UserSync[]} The user syncs which should be dropped.
-   */
-  getUserSyncs: function(syncOptions, serverResponses) {
     return [];
   },
 };
