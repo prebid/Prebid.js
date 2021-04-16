@@ -2575,6 +2575,58 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
+  describe('getHighestUnusedBidResponseForAdUnitCode', () => {
+    afterEach(() => {
+      resetAuction();
+    })
+
+    it('returns an empty object if there is no bid for the given adUnitCode', () => {
+      const highestBid = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('stallone');
+      expect(highestBid).to.deep.equal({});
+    })
+
+    it('returns undefined if adUnitCode is provided', () => {
+      const highestBid = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode();
+      expect(highestBid).to.be.undefined;
+    })
+
+    it('should ignore bids that have already been used (\'rendered\')', () => {
+      const _bidsReceived = getBidResponses().slice(0, 3);
+      _bidsReceived[0].cpm = 11
+      _bidsReceived[1].cpm = 13
+      _bidsReceived[2].cpm = 12
+
+      _bidsReceived.forEach((bid) => {
+        bid.adUnitCode = '/19968336/header-bid-tag-0';
+      });
+
+      auction.getBidsReceived = function() { return _bidsReceived };
+      const highestBid1 = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('/19968336/header-bid-tag-0');
+      expect(highestBid1).to.deep.equal(_bidsReceived[1])
+      _bidsReceived[1].status = CONSTANTS.BID_STATUS.RENDERED
+      const highestBid2 = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('/19968336/header-bid-tag-0');
+      expect(highestBid2).to.deep.equal(_bidsReceived[2])
+    })
+
+    it('should ignore expired bids', () => {
+      const _bidsReceived = getBidResponses().slice(0, 3);
+      _bidsReceived[0].cpm = 11
+      _bidsReceived[1].cpm = 13
+      _bidsReceived[2].cpm = 12
+
+      _bidsReceived.forEach((bid) => {
+        bid.adUnitCode = '/19968336/header-bid-tag-0';
+      });
+
+      auction.getBidsReceived = function() { return _bidsReceived };
+
+      bidExpiryStub.restore();
+      bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake((bid) => bid.cpm !== 13);
+      const highestBid = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('/19968336/header-bid-tag-0');
+      expect(highestBid).to.deep.equal(_bidsReceived[2])
+    })
+  })
+
   describe('getHighestCpm', () => {
     after(() => {
       resetAuction();
