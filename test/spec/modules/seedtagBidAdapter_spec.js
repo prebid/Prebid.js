@@ -1,5 +1,6 @@
 import { expect } from 'chai'
 import { spec, getTimeoutUrl } from 'modules/seedtagBidAdapter.js'
+import * as utils from 'src/utils.js'
 
 const PUBLISHER_ID = '0000-0000-01'
 const ADUNIT_ID = '000000'
@@ -42,7 +43,7 @@ describe('Seedtag Adapter', function() {
               }
             )
           }
-          const placements = ['banner', 'video', 'inImage', 'inScreen']
+          const placements = ['banner', 'video', 'inImage', 'inScreen', 'inArticle']
           placements.forEach(placement => {
             it('should be ' + placement, function() {
               const isBidRequestValid = spec.isBidRequestValid(
@@ -53,7 +54,7 @@ describe('Seedtag Adapter', function() {
           })
         })
       })
-      describe('when video slot has all mandatory params.', function() {
+      describe('when video slot has all mandatory params', function() {
         it('should return true, when video mediatype object are correct.', function() {
           const slotConfig = getSlotConfigs(
             {
@@ -116,7 +117,7 @@ describe('Seedtag Adapter', function() {
           expect(isBidRequestValid).to.equal(false)
         })
       })
-      describe('when video mediaType object is not correct.', function() {
+      describe('when video mediaType object is not correct', function() {
         function createVideoSlotconfig(mediaType) {
           return getSlotConfigs(mediaType, {
             publisherId: PUBLISHER_ID,
@@ -199,6 +200,7 @@ describe('Seedtag Adapter', function() {
       expect(data.url).to.equal('referer')
       expect(data.publisherToken).to.equal('0000-0000-01')
       expect(typeof data.version).to.equal('string')
+      expect(['fixed', 'mobile', 'unknown'].indexOf(data.connectionType)).to.be.above(-1)
     })
 
     describe('adPosition param', function() {
@@ -301,7 +303,7 @@ describe('Seedtag Adapter', function() {
       expect(typeof bids).to.equal('object')
       expect(bids.length).to.equal(0)
     })
-    it('should return a void array, when the server response have not got bids.', function() {
+    it('should return a void array, when the server response have no bids.', function() {
       const request = { data: JSON.stringify({}) }
       const serverResponse = { body: { bids: [] } }
       const bids = spec.interpretResponse(serverResponse, request)
@@ -323,7 +325,8 @@ describe('Seedtag Adapter', function() {
                   width: 728,
                   height: 90,
                   mediaType: 'display',
-                  ttl: 360
+                  ttl: 360,
+                  nurl: 'testurl.com/nurl'
                 }
               ],
               cookieSync: { url: '' }
@@ -338,6 +341,7 @@ describe('Seedtag Adapter', function() {
           expect(bids[0].currency).to.equal('USD')
           expect(bids[0].netRevenue).to.equal(true)
           expect(bids[0].ad).to.equal('content')
+          expect(bids[0].nurl).to.equal('testurl.com/nurl')
         })
       })
       describe('the bid is a video', function() {
@@ -354,7 +358,8 @@ describe('Seedtag Adapter', function() {
                   width: 728,
                   height: 90,
                   mediaType: 'video',
-                  ttl: 360
+                  ttl: 360,
+                  nurl: undefined
                 }
               ],
               cookieSync: { url: '' }
@@ -404,6 +409,14 @@ describe('Seedtag Adapter', function() {
   })
 
   describe('onTimeout', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel')
+    })
+
+    afterEach(function() {
+      utils.triggerPixel.restore()
+    })
+
     it('should return the correct endpoint', function () {
       const params = { publisherId: '0000', adUnitId: '11111' }
       const timeoutData = [{ params: [ params ] }];
@@ -414,6 +427,45 @@ describe('Seedtag Adapter', function() {
         '&adUnitId=' +
         params.adUnitId
       )
+    })
+
+    it('should set the timeout pixel', function() {
+      const params = { publisherId: '0000', adUnitId: '11111' }
+      const timeoutData = [{ params: [ params ] }];
+      spec.onTimeout(timeoutData)
+      expect(utils.triggerPixel.calledWith('https://s.seedtag.com/se/hb/timeout?publisherToken=' +
+      params.publisherId +
+      '&adUnitId=' +
+      params.adUnitId)).to.equal(true);
+    })
+  })
+
+  describe('onBidWon', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel')
+    })
+
+    afterEach(function() {
+      utils.triggerPixel.restore()
+    })
+
+    describe('without nurl', function() {
+      const bid = {}
+
+      it('does not create pixel ', function() {
+        spec.onBidWon(bid)
+        expect(utils.triggerPixel.called).to.equal(false);
+      })
+    })
+
+    describe('with nurl', function () {
+      const nurl = 'http://seedtag_domain/won'
+      const bid = { nurl }
+
+      it('creates nurl pixel if bid nurl', function() {
+        spec.onBidWon({ nurl })
+        expect(utils.triggerPixel.calledWith(nurl)).to.equal(true);
+      })
     })
   })
 })

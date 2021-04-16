@@ -135,7 +135,7 @@ export const spec = {
     const bidResponses = [];
     let response = serverResponse.body;
     try {
-      if (response) {
+      if (response && !response.isNoAd) {
         const bidRequest = JSON.parse(bidRequestString.data);
 
         let bidResponse = {
@@ -147,7 +147,8 @@ export const spec = {
           dealId: response.dealId,
           currency: response.currency,
           netRevenue: response.isNetCpm,
-          ttl: response.ttl
+          ttl: response.ttl,
+          dspPixels: response.dspPixels
         };
 
         if (bidRequest.mediaType === VIDEO) {
@@ -181,6 +182,13 @@ export const spec = {
       syncs.push({
         type: 'iframe',
         url: serverResponses[0].body.cSyncUrl
+      });
+    } else if (syncOptions.pixelEnabled && serverResponses.length > 0 && serverResponses[0].body.dspPixels !== undefined) {
+      serverResponses[0].body.dspPixels.forEach(function(pixel) {
+        syncs.push({
+          type: 'image',
+          url: pixel
+        });
       });
     }
     return syncs;

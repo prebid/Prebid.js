@@ -822,11 +822,13 @@ describe('AppNexusAdapter', function () {
       expect(request.options).to.deep.equal({withCredentials: false});
     });
 
-    it('should populate eids when ttd id and criteo is available', function () {
+    it('should populate eids when supported userIds are available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
           tdid: 'sample-userid',
-          criteoId: 'sample-criteo-userid'
+          criteoId: 'sample-criteo-userid',
+          netId: 'sample-netId-userid',
+          idl_env: 'sample-idl-userid'
         }
       });
 
@@ -842,6 +844,16 @@ describe('AppNexusAdapter', function () {
         source: 'criteo.com',
         id: 'sample-criteo-userid',
       });
+
+      expect(payload.eids).to.deep.include({
+        source: 'netid.de',
+        id: 'sample-netId-userid',
+      });
+
+      expect(payload.eids).to.deep.include({
+        source: 'liveramp.com',
+        id: 'sample-idl-userid'
+      })
     });
 
     it('should populate iab_support object at the root level if omid support is detected', function () {
