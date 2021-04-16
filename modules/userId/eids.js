@@ -207,7 +207,10 @@ const USER_IDS_CONFIG = {
       return data.id;
     }
   },
-
+  'deepintentId': {
+    source: 'deepintent.com',
+    atype: 3
+  },
   // Admixer Id
   'admixerId': {
     source: 'admixer.net',

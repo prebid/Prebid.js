@@ -184,6 +184,13 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 3
         }]
+    },
+    {
+        source: 'deepintent.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
     }
 ]
 ```
