@@ -248,8 +248,8 @@ describe('Tappx bid adapter', function () {
   describe('getUserSync', function () {
     it('check pixel enabled', function () {
       let syncOptions = {
-        iframeEnabled : false,
-        pixelEnabled : true
+        iframeEnabled: false,
+        pixelEnabled: true
       }
 
       const consent = spec.getUserSyncs(syncOptions, null, c_BIDDERREQUEST_B.gdprConsent, c_BIDDERREQUEST_B.uspConsent);
@@ -259,8 +259,8 @@ describe('Tappx bid adapter', function () {
 
     it('check iframe enabled', function () {
       let syncOptions = {
-        iframeEnabled : true,
-        pixelEnabled : false
+        iframeEnabled: true,
+        pixelEnabled: false
       }
 
       const consent = spec.getUserSyncs(syncOptions, null, c_BIDDERREQUEST_B.gdprConsent, c_BIDDERREQUEST_B.uspConsent);
