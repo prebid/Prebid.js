@@ -625,6 +625,79 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
+    it('should pass us privacy parameter', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+      let testRequest = clone(bidderRequest);
+      testRequest.uspConsent = '1---';
+      let result = spec.buildRequests(testRequest.bids, testRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        usPrivacy: '1---',
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should pass coppa parameter', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+      let origGetConfig = config.getConfig;
+      sandbox.stub(config, 'getConfig').callsFake(function (key) {
+        if (key === 'coppa') {
+          return true;
+        }
+        return origGetConfig.apply(config, arguments);
+      });
+
+      let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        coppa: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
     it('should pass no cookie support', function() {
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => false);
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
@@ -781,61 +854,45 @@ describe('Livewrapped adapter tests', function () {
     });
   });
 
-  it('should make use of Id5-Id if available', function() {
+  it('should make use of user ids if available', function() {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
     sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
     let testbidRequest = clone(bidderRequest);
     delete testbidRequest.bids[0].params.userId;
-    testbidRequest.bids[0].userId = {};
-    testbidRequest.bids[0].userId.id5id = { uid: 'id5-user-id' };
+    testbidRequest.bids[0].userIdAsEids = [
+      {
+        'source': 'id5-sync.com',
+        'uids': [{
+          'id': 'ID5-id',
+          'atype': 1,
+          'ext': {
+            'linkType': 2
+          }
+        }]
+      },
+      {
+        'source': 'pubcid.org',
+        'uids': [{
+          'id': 'publisher-common-id',
+          'atype': 1
+        }]
+      },
+      {
+        'source': 'sharedid.org',
+        'uids': [{
+          'id': 'sharedid',
+          'atype': 1,
+          'ext': {
+            'third': 'sharedid'
+          }
+        }]
+      }
+    ];
+
     let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
     let data = JSON.parse(result.data);
 
-    expect(data.rtbData.user.ext.eids).to.deep.equal([{
-      'source': 'id5-sync.com',
-      'uids': [{
-        'id': 'id5-user-id',
-        'atype': 1
-      }]
-    }]);
-  });
-
-  it('should make use of publisher common Id if available', function() {
-    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
-    let testbidRequest = clone(bidderRequest);
-    delete testbidRequest.bids[0].params.userId;
-    testbidRequest.bids[0].userId = {};
-    testbidRequest.bids[0].userId.pubcid = 'publisher-common-id';
-    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
-    let data = JSON.parse(result.data);
-
-    expect(data.rtbData.user.ext.eids).to.deep.equal([{
-      'source': 'pubcid.org',
-      'uids': [{
-        'id': 'publisher-common-id',
-        'atype': 1
-      }]
-    }]);
-  });
-
-  it('should make use of criteoId if available', function() {
-    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
-    let testbidRequest = clone(bidderRequest);
-    delete testbidRequest.bids[0].params.userId;
-    testbidRequest.bids[0].userId = {};
-    testbidRequest.bids[0].userId.criteoId = 'criteo-id';
-    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
-    let data = JSON.parse(result.data);
-
-    expect(data.rtbData.user.ext.eids).to.deep.equal([{
-      'source': 'criteo.com',
-      'uids': [{
-        'id': 'criteo-id',
-        'atype': 1
-      }]
-    }]);
+    expect(data.rtbData.user.ext.eids).to.deep.equal(testbidRequest.bids[0].userIdAsEids);
   });
 
   it('should send schain object if available', function() {

@@ -25,14 +25,14 @@ pbjs.setConfig({
     }
 });
 ```
-Lastly, include the content's media ID and/or the player's ID in the matching AdUnit's `fpd.context.data`:
+Lastly, include the content's media ID and/or the player's ID in the matching AdUnit's `ortb2Imp.ext.data`:
 
 ```javascript
 const adUnit = {
   code: '/19968336/prebid_native_example_1',
   ...
-  fpd: {
-    context: {
+  ortb2Imp: {
+    ext: {
       data: {
         jwTargeting: {
           // Note: the following Ids are placeholders and should be replaced with your Ids.
@@ -52,7 +52,7 @@ pbjs.que.push(function() {
 });
 ``` 
 
-**Note**: You may also include `jwTargeting` information in the prebid config's `fpd.context.data`. Information provided in the adUnit will always supersede, and information in the config will be used as a fallback.
+**Note**: You may also include `jwTargeting` information in the prebid config's `ortb2.site.ext.data`. Information provided in the adUnit will always supersede, and information in the config will be used as a fallback.
  
 ##Prefetching
 In order to prefetch targeting information for certain media, include the media IDs in the `jwplayerDataProvider` var and set `waitForIt` to `true`:
@@ -117,3 +117,7 @@ To view an example:
 `http://localhost:9999/integrationExamples/gpt/jwplayerRtdProvider_example.html`
 
 **Note:** the mediaIds in the example are placeholder values; replace them with your existing IDs.
+
+#Maintainer info
+
+Maintained by JW Player. For any questions, comments or feedback please contact Karim Mourra, karim@jwplayer.com

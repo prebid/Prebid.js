@@ -4,7 +4,7 @@ Module Name: Geoedge Rtd provider
 Module Type: Rtd Provider
 Maintainer: guy.books@geoedge.com
 
-The Geoedge Realtime module let pusblishers to block bad ads such as automatic redirects, malware, offensive creatives and landing pages.
+The Geoedge Realtime module lets publishers block bad ads such as automatic redirects, malware, offensive creatives and landing pages.
 To use this module, you'll need to work with [Geoedge](https://www.geoedge.com/publishers-real-time-protection/) to get an account and cutomer key.
 
 ## Integration

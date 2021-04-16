@@ -14,20 +14,20 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***
-     * Determines whether or not the given bid request is valid
-     *
-     * @param {bidRequest} bid The bid params to validate.
-     * @returns {boolean} True if this is a valid bid, and false otherwise
-     */
+   * Determines whether or not the given bid request is valid
+   *
+   * @param {bidRequest} bid The bid params to validate.
+   * @returns {boolean} True if this is a valid bid, and false otherwise
+   */
   isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.pid && bid.params.supplyType);
   },
   /***
-     * Build a server request from the list of valid BidRequests
-     * @param {validBidRequests} is an array of the valid bids
-     * @param {bidderRequest} bidder request object
-     * @returns {ServerRequest} Info describing the request to the server
-     */
+   * Build a server request from the list of valid BidRequests
+   * @param {validBidRequests} is an array of the valid bids
+   * @param {bidderRequest} bidder request object
+   * @returns {ServerRequest} Info describing the request to the server
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
       var payload = {
@@ -77,11 +77,11 @@ export const spec = {
     });
   },
   /***
-     * Read the response from the server and build a list of bids
-     * @param {serverResponse} Response from the server.
-     * @param {bidRequest} Bid request object
-     * @returns {bidResponses} Array of bids which were nested inside the server
-     */
+   * Read the response from the server and build a list of bids
+   * @param {serverResponse} Response from the server.
+   * @param {bidRequest} Bid request object
+   * @returns {bidResponses} Array of bids which were nested inside the server
+   */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     // try catch
@@ -103,10 +103,16 @@ export const spec = {
       if (response.media_type === 'video') {
         bidResponse.vastXml = response.vastXML;
         try {
-          if (JSON.parse(bidRequest.data).videoData.format == 'outstream') {
-            bidResponse.renderer = Renderer.install({
-              url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
-            });
+          if (bidResponse.vastXml != null) {
+            if (JSON.parse(bidRequest.data).videoData.format == 'outstream' || JSON.parse(bidRequest.data).videoData.format == 'banner') {
+              bidResponse.renderer = Renderer.install({
+                id: bidRequest.bidId,
+                adunitcode: bidRequest.tagId,
+                loaded: false,
+                config: response.media_type,
+                url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
+              });
+            }
             bidResponse.renderer.setRender(renderer);
           }
         } catch (e) {
@@ -121,13 +127,13 @@ export const spec = {
     return bidResponses
   },
   /***
-     * User Syncs
-     *
-     * @param {syncOptions} Publisher prebid configuration
-     * @param {serverResponses} Response from the server
-     * @param {gdprConsent} GPDR consent object
-     * @returns {Array}
-     */
+   * User Syncs
+   *
+   * @param {syncOptions} Publisher prebid configuration
+   * @param {serverResponses} Response from the server
+   * @param {gdprConsent} GPDR consent object
+   * @returns {Array}
+   */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
 
@@ -197,6 +203,10 @@ function raiGetVideoInfo(bid) {
       playerSize: bid.mediaTypes.video.playerSize,
       mimes: bid.mediaTypes.video.mimes
     };
+  } else {
+    videoData = {
+      format: 'banner'
+    }
   }
   return videoData;
 }
