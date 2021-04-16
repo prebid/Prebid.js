@@ -571,6 +571,8 @@ const OPEN_RTB_PROTOCOL = {
         });
 
         mediaTypes['banner'] = {format};
+
+        if (bannerParams.pos) mediaTypes['banner'].pos = bannerParams.pos;
       }
 
       if (!utils.isEmpty(videoParams)) {
