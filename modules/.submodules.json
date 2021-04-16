@@ -16,6 +16,7 @@
     "zeotapIdPlusIdSystem",
     "haloIdSystem",
     "quantcastIdSystem",
+    "deepintentDpesIdSystem",
     "nextrollIdSystem",
     "idxIdSystem",
     "fabrickIdSystem",
@@ -36,6 +37,7 @@
     "haloRtdProvider",
     "jwplayerRtdProvider",
     "reconciliationRtdProvider",
-    "geoedgeRtdProvider"
+    "geoedgeRtdProvider",
+    "sirdataRtdProvider"
   ]
 }

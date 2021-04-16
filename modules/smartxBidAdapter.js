@@ -149,6 +149,7 @@ export const spec = {
       }
 
       const language = navigator.language ? 'language' : 'userLanguage';
+
       const device = {
         h: screen.height,
         w: screen.width,
@@ -157,8 +158,11 @@ export const spec = {
         make: navigator.vendor ? navigator.vendor : '',
         ua: navigator.userAgent
       };
+
       const at = utils.getBidIdParameter('at', bid.params) || 2;
+
       const cur = utils.getBidIdParameter('cur', bid.params) || ['EUR'];
+
       const requestPayload = {
         id: utils.generateUUID(),
         imp: smartxReq,
@@ -176,6 +180,7 @@ export const spec = {
         at: at,
         cur: cur
       };
+
       const userExt = {};
 
       // Add GDPR flag and consent string
@@ -271,6 +276,7 @@ export const spec = {
               serverResponseBody.cur = pmb.currency;
             }
           });
+
           const bid = {
             requestId: currentBidRequest.bidId,
             currency: serverResponseBody.cur || 'USD',
@@ -284,7 +290,14 @@ export const spec = {
             width: smartxBid.w,
             height: smartxBid.h
           };
+
+          bid.meta = bid.meta || {};
+          if (smartxBid && smartxBid.adomain && smartxBid.adomain.length > 0) {
+            bid.meta.advertiserDomains = smartxBid.adomain;
+          }
+
           const context = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
+
           if (context === 'outstream') {
             const playersize = utils.deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
@@ -366,7 +379,7 @@ function createOutstreamScript(bid) {
 
   smartPlayObj.adResponse = bid.vastContent;
 
-  const divID = '#' + elementId;
+  const divID = '[id="' + elementId + '"]';
   var script = document.createElement('script');
   script.src = 'https://dco.smartclip.net/?plc=7777778';
   script.type = 'text/javascript';
