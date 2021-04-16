@@ -101,9 +101,6 @@ export const spec = {
         if (response[i].cpm > 0) {
           if (response[i].mediaType && response[i].mediaType === 'video') {
             response[i].vastXml = response[i].ad;
-            response[i].mediaType = response[i].mediaType;
-          } else {
-            response[i].ad = response[i].ad;
           }
           bidResponse.push(response[i]);
         }
