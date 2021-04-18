@@ -211,9 +211,9 @@ describe('config API', function () {
   });
 
   it('sets maxNestedIframes', function () {
-    expect(getConfig('maxNestedIframes')).to.be.equal(2);
-    setConfig({ maxNestedIframes: 10 });
     expect(getConfig('maxNestedIframes')).to.be.equal(10);
+    setConfig({ maxNestedIframes: 2 });
+    expect(getConfig('maxNestedIframes')).to.be.equal(2);
   });
 
   it('should log error for invalid priceGranularity', function () {

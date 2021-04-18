@@ -3,7 +3,7 @@
  * The information that it tries to collect includes:
  * The detected top url in the nav bar,
  * Whether it was able to reach the top most window (if for example it was embedded in several iframes),
- * The number of iframes it was embedded in if applicable (by default max two iframes),
+ * The number of iframes it was embedded in if applicable (by default max ten iframes),
  * A list of the domains of each embedded window if applicable.
  * Canonical URL which refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
  */
