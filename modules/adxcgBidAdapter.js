@@ -58,7 +58,7 @@ export const spec = {
       const videoAdUnit = utils.deepAccess(bid, 'mediaTypes.video');
 
       if (!Array.isArray(videoAdUnit.playerSize)) {
-        utils.logWarn(BIDDER_CODE + ': video playerSize must be an array of strings');
+        utils.logWarn(BIDDER_CODE + ': video playerSize must be an array of integers');
         return false;
       }
 
@@ -223,7 +223,7 @@ export const spec = {
       utils.logMessage(`interpretResponse adxcg`);
       let bidsAll = [];
 
-      if (serverResponse == null || serverResponse.body == null || serverResponse.body === '' || !utils.isArray(serverResponse.body.seatbid) || !serverResponse.body.seatbid.length) {
+      if (!serverResponse || !serverResponse.body || !utils.isArray(serverResponse.body.seatbid) || !serverResponse.body.seatbid.length) {
         return bidsAll;
       }
 
@@ -322,9 +322,9 @@ export const spec = {
     if (gdprConsent && 'gdprApplies' in gdprConsent) {
       if (gdprConsent.consentString) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+          params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
         } else {
-          params += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+          params += `?gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
         }
       }
     }
@@ -384,19 +384,19 @@ function parseNative(nativeResponse) {
     }
 
     if (asset.img && asset.img.url) {
-      let nativeImage = {};
-      nativeImage.url = asset.img.url;
-      nativeImage.height = asset.img.h;
-      nativeImage.width = asset.img.w;
-      bidNative.image = nativeImage;
+      bidNative.image = {
+        url: asset.img.url,
+        height: asset.img.h,
+        width: asset.img.w
+      };
     }
 
     if (asset.icon && asset.icon.url) {
-      let nativeIcon = {}
-      nativeIcon.url = asset.icon.url;
-      nativeIcon.height = asset.icon.h;
-      nativeIcon.width = asset.icon.w;
-      bidNative.icon = nativeIcon;
+      bidNative.icon = {
+        url: asset.icon.url,
+        height: asset.icon.h,
+        width: asset.icon.w
+      };
     }
 
     if (asset.data && asset.data.label === 'DESC' && asset.data.value) {
