@@ -562,6 +562,33 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 }
 
 /**
+ * Return an object of user IDs stored by Prebid User ID module
+ *
+ * @returns {array} ID providers that are present in userIds
+ */
+function _getUserIds(bidRequest) {
+  const userIds = bidRequest.userId || {};
+
+  const PROVIDERS = [
+    'britepoolid',
+    'id5id',
+    'lipbid',
+    'haloId',
+    'criteoId',
+    'lotamePanoramaId',
+    'merkleId',
+    'parrableId',
+    'connectid',
+    'sharedid',
+    'tapadId',
+    'quantcastId',
+    'pubcid'
+  ]
+
+  return PROVIDERS.filter(provider => utils.deepAccess(userIds, provider))
+}
+
+/**
  * Calculates IX diagnostics values and packages them into an object
  *
  * @param {array} validBidRequests  The valid bid requests from prebid
@@ -580,7 +607,8 @@ function buildIXDiag(validBidRequests) {
     ou: 0,
     allu: 0,
     ren: false,
-    version: '$prebid.version$'
+    version: '$prebid.version$',
+    userIds: _getUserIds(validBidRequests[0])
   };
 
   // create ad unit map and collect the required diag properties
