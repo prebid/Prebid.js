@@ -38,7 +38,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
   const request = {
     method: 'POST',
-    url: new URL(TARGET_URL),
+    url: TARGET_URL,
     data: data
   };
   return request;

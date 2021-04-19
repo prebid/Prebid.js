@@ -107,10 +107,9 @@ describe('shinezBidAdapter', () => {
         },
       ];
       expect(result.method, "request should be POST'ed").equal('POST');
-      expect(
-        result.url.toString(),
-        'request should be send to correct url'
-      ).equal(internal.TARGET_URL);
+      expect(result.url, 'request should be send to correct url').equal(
+        internal.TARGET_URL
+      );
       expect(result.data, 'request should have correct payload').to.deep.equal(
         expectedData
       );
