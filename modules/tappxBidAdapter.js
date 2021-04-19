@@ -260,12 +260,23 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   imp.tagid = tagid;
   imp.secure = 1;
 
-  imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  if (!utils.isFn(validBidRequests.getFloor)) {
+    imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  } else {
+    let sizes = (bannerMediaType !== undefined) ? bannerMediaType.sizes : videoMediaType.sizes;
+    sizes = (sizes !== undefined) ? sizes : '*';
+    imp.bidfloor = validBidRequests.getFloor({
+      currency: CUR,
+      bannerMediaType,
+      size: sizes
+    }).floor;
+  }
 
   let bidder = {};
   bidder.tappxkey = TAPPXKEY;
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
+  bidder.bidfloor = BIDFLOOR;
 
   imp.ext = {};
   imp.ext.bidder = bidder;
@@ -336,7 +347,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.params = params;
   payload.regs = regs;
   // < Payload
-
+  
   return {
     method: 'POST',
     url: `https://${HOST}/${ENDPOINT}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
