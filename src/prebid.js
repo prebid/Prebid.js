@@ -138,7 +138,7 @@ function validateNativeMediaType(adUnit) {
 }
 
 function validateAdUnitPos(adUnit, mediaType) {
-  let pos =  utils.deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
+  let pos = utils.deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
 
   if (!pos || !utils.isNumber(pos) || !isFinite(pos)) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
@@ -516,7 +516,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     s2sBidders.push(...s2sConfig.bidders);
   });
 
-  adUnits = checkAdUnitSetup(adUnits);console.log(adUnits);
+  adUnits = checkAdUnitSetup(adUnits);
 
   if (adUnitCodes && adUnitCodes.length) {
     // if specific adUnitCodes supplied filter adUnits for those codes

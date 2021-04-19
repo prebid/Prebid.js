@@ -499,6 +499,38 @@ describe('the rubicon adapter', function () {
           expect(data['p_pos']).to.equal(undefined);
         });
 
+        it('should not send p_pos to AE if not mediaTypes.banner.pos is invalid', function () {
+          var bidRequest = utils.deepClone(bidderRequest);
+          bidRequest.bids[0].mediaTypes = {
+            banner: {
+              pos: 5
+            }
+          };
+          delete bidRequest.bids[0].params.position;
+
+          let [request] = spec.buildRequests(bidRequest.bids, bidRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['site_id']).to.equal('70608');
+          expect(data['p_pos']).to.equal(undefined);
+        });
+
+        it('should send p_pos to AE if mediaTypes.banner.pos is valid', function () {
+          var bidRequest = utils.deepClone(bidderRequest);
+          bidRequest.bids[0].mediaTypes = {
+            banner: {
+              pos: 1
+            }
+          };
+          delete bidRequest.bids[0].params.position;
+
+          let [request] = spec.buildRequests(bidRequest.bids, bidRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['site_id']).to.equal('70608');
+          expect(data['p_pos']).to.equal('atf');
+        });
+
         it('should not send p_pos to AE if not params.position is invalid', function () {
           var badposRequest = utils.deepClone(bidderRequest);
           badposRequest.bids[0].params.position = 'bad';
