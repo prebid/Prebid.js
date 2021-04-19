@@ -492,7 +492,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       msd = impressions[transactionIds[i]].missingCount;
     }
 
-    trimImpressions(impressions[transactionIds[i]], MAX_REQ_SIZE - BASE_REQ_SIZE);
+    if (BASE_REQ_SIZE < MAX_REQ_SIZE) {
+      trimImpressions(impressions[transactionIds[i]], MAX_REQ_SIZE - BASE_REQ_SIZE);
+    } else {
+      utils.logError('ix bidder: Base request size has exceeded maximum request size.');
+    }
 
     if (impressions[transactionIds[i]].hasOwnProperty('missingImps')) {
       msi = impressions[transactionIds[i]].missingImps.length;
