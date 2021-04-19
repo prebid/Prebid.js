@@ -98,7 +98,7 @@ describe('shinezBidAdapter', () => {
   describe('interpretResponse', () => {
     it('should interpret bid responses correctly', () => {
       sandbox
-        .stub(internal, '_convertServerBidResponse')
+        .stub(internal, '_convertServerBid')
         .callsFake((request) => ({ requestId: request.bidId }));
       const responses = { body: [{ bidId: '1' }, { bidId: '2' }] };
       const expected = [{ requestId: '1' }, { requestId: '2' }];
@@ -126,11 +126,6 @@ describe('shinezBidAdapter', () => {
         adUnitCode: '/19968336/header-bid-tag-1',
       };
       const bidderRequest = {
-        fpd: {
-          ortb2: {
-            site: 'http://site-with-ads.com',
-          },
-        },
         refererInfo: {
           referer: 'http://site-with-ads.com',
         },
@@ -140,7 +135,6 @@ describe('shinezBidAdapter', () => {
         bidId: bidRequest.bidId,
         transactionId: bidRequest.transactionId,
         crumbs: bidRequest.crumbs,
-        fpd: bidRequest.fpd,
         mediaTypes: bidRequest.mediaTypes,
         refererInfo: bidderRequest.refererInfo,
         placementId: bidRequest.params.placementId,
@@ -152,8 +146,8 @@ describe('shinezBidAdapter', () => {
       expect(result).to.deep.equal(expected);
     });
   });
-  describe('_convertServerBidResponse', () => {
-    it('should convert server response bid correctly', () => {
+  describe('_convertServerBid', () => {
+    it('should convert server bid correctly', () => {
       const response = {
         bidId: '2ece6496f4d0c9',
         cpm: 1,
@@ -176,7 +170,7 @@ describe('shinezBidAdapter', () => {
         creativeId: response.creativeId,
         netRevenue: response.netRevenue,
       };
-      const result = internal._convertServerBidResponse(response);
+      const result = internal._convertServerBid(response);
       expect(result).to.deep.equal(expected);
     });
   });
