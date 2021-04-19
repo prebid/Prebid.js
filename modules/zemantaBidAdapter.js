@@ -25,6 +25,9 @@ const NATIVE_PARAMS = {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
+  aliases: [
+    { code: 'outbrain', gvlid: GVLID }
+  ],
   supportedMediaTypes: [ NATIVE, BANNER ],
   isBidRequestValid: (bid) => {
     return (
