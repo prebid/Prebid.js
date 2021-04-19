@@ -1015,10 +1015,10 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests([bid], DEFAULT_OPTION)[0];
       const r = JSON.parse(request.data.r);
 
-      expect(r.ext.ixdiag.userIds).to.be.an('object');
-      expect(r.ext.ixdiag.userIds.lotamePanoramaId).to.equal(1);
-      expect(r.ext.ixdiag.userIds.merkleId).to.equal(0);
-      expect(r.ext.ixdiag.userIds.parrableId).to.equal(0);
+      expect(r.ext.ixdiag.userIds).to.be.an('array');
+      expect(r.ext.ixdiag.userIds.should.include('lotamePanoramaId'));
+      expect(r.ext.ixdiag.userIds.should.not.include('merkleId'));
+      expect(r.ext.ixdiag.userIds.should.not.include('parrableId'));
     });
   });
 
