@@ -301,6 +301,10 @@ describe('openx analytics adapter', function() {
       it('should track the configId', function () {
         expect(auction.configId).to.equal(DEFAULT_V2_ANALYTICS_CONFIG.configId);
       });
+
+      it('should track the auction Id', function () {
+        expect(auction.auctionId).to.equal(auctionInit.auctionId);
+      });
     });
 
     describe('when there is a custom test code', function () {

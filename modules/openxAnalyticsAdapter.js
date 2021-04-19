@@ -620,10 +620,12 @@ function getAuctionByGoogleTagSLot(slot) {
 }
 
 function buildAuctionPayload(auction) {
-  let {startTime, endTime, state, timeout, auctionOrder, userIds, adUnitCodeToAdUnitMap} = auction;
+  let {startTime, endTime, state, timeout, auctionOrder, userIds, adUnitCodeToAdUnitMap, id} = auction;
+  const auctionId = id;
   let {orgId, publisherPlatformId, publisherAccountId, campaign, testCode, configId, optimizerConfig} = analyticsConfig;
 
   return {
+    auctionId,
     adapterVersion: ADAPTER_VERSION,
     schemaVersion: SCHEMA_VERSION,
     orgId,
