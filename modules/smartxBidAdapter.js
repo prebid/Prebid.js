@@ -379,7 +379,7 @@ function createOutstreamScript(bid) {
 
   smartPlayObj.adResponse = bid.vastContent;
 
-  const divID = '#' + elementId;
+  const divID = '[id="' + elementId + '"]';
   var script = document.createElement('script');
   script.src = 'https://dco.smartclip.net/?plc=7777778';
   script.type = 'text/javascript';
