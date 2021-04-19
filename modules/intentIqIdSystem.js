@@ -14,7 +14,6 @@ const PCID_EXPIRY = 365;
 
 const MODULE_NAME = 'intentIqId';
 export const FIRST_PARTY_KEY = '_iiq_fdata';
-// const GVLID = 151;
 
 export const storage = getStorageManager(undefined, MODULE_NAME);
 
@@ -27,10 +26,10 @@ const NOT_AVAILABLE = 'NA';
  * @returns {boolean}
  */
 function isValidResponse(response, respJson) {
-  if (response && response == '' && response == NOT_AVAILABLE) {
+  if (!response || response == '' || response === NOT_AVAILABLE) {
     // Empty or NA response
     return false;
-  } else if (respJson && respJson['RESULT'] == NOT_AVAILABLE) {
+  } else if (respJson && (respJson.RESULT === NOT_AVAILABLE || respJson.data == '' || respJson.data === NOT_AVAILABLE)) {
     // Response type is json with value NA
     return false;
   } else { return true; }
@@ -62,7 +61,7 @@ function generateGUID() {
 }
 
 /**
- * Read intentiq data from cookie or local storage
+ * Read Intent IQ data from cookie or local storage
  * @param key
  * @return {string}
  */
@@ -80,14 +79,14 @@ export function readData(key) {
 }
 
 /**
- * Store intentiq data in either cookie or local storage
+ * Store Intent IQ data in either cookie or local storage
  * expiration date: 365 days
  * @param key
  * @param {string} value IntentIQ ID value to sintentIqIdSystem_spec.jstore
  */
 function storeData(key, value) {
   try {
-    utils.logInfo('intentIqIdSystem storing data: key='+key+' value='+value);
+    utils.logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
 
     if (value) {
       if (storage.hasLocalStorage()) {
@@ -142,11 +141,11 @@ export const intentIqIdSubmodule = {
   getId(config) {
     const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.partner !== 'number') {
-      utils.logError('User ID - intentIqIdSystem submodule requires a valid partner to be defined');
+      utils.logError('User ID - intentIqId submodule requires a valid partner to be defined');
       return;
     }
 
-    // Read IntentIQ 1st party id or generate it if none exists
+    // Read Intent IQ 1st party id or generate it if none exists
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
     if (!firstPartyData || !firstPartyData.pcid) {
       const firstPartyId = generateGUID();
@@ -155,8 +154,7 @@ export const intentIqIdSubmodule = {
     }
 
     // use protocol relative urls for http or https
-    let url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&ip=172.103.153.135&dpi=${configParams.partner}&pt=17&dpn=1`;
-    // let url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
+    let url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
     url += configParams.pcid ? '&pcid=' + encodeURIComponent(configParams.pcid) : '';
     url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
     if (firstPartyData) {
@@ -168,7 +166,6 @@ export const intentIqIdSubmodule = {
     const resp = function (callback) {
       const callbacks = {
         success: response => {
-          // response = JSON.stringify({pid: 'test_pid', isdetpcid: false, data: {'id1':'test_personid','id2':'test_personid'}});
           let respJson = tryParse(response);
           if (isValidResponse(response, respJson) && isValidResponseJson(respJson)) {
             if (firstPartyData && 'pcid' in firstPartyData && 'pid' in respJson && 'isdetpcid' in respJson) {
@@ -178,7 +175,7 @@ export const intentIqIdSubmodule = {
                 'isdetpcid': respJson.isdetpcid }
               storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
             } else {
-              utils.logError('intentIqIdSystem Error parsing Prebid user-id module response.');
+              utils.logError(MODULE_NAME + ': Error parsing Prebid user-id module response firstPartyData=%O respJson=%O.', firstPartyData, respJson)
             }
             callback(respJson.data);
           } else {
@@ -186,7 +183,7 @@ export const intentIqIdSubmodule = {
           }
         },
         error: error => {
-          utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+          utils.logError(MODULE_NAME + ': ID fetch encountered an error', error);
           callback();
         }
       };

@@ -55,7 +55,7 @@ describe('IntentIQ tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should ignore NA and invalid responses', function () {
+  it('should ignore NA and invalid responses in decode', function () {
     // let resp = JSON.stringify({'RESULT': 'NA'});
     // expect(intentIqIdSubmodule.decode(resp)).to.equal(undefined);
     expect(intentIqIdSubmodule.decode('NA')).to.equal(undefined);
@@ -135,7 +135,37 @@ describe('IntentIQ tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should parse first party cookie from local storage', function () {
+  it('should ignore {RESULT: NA} in get id', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({RESULT: 'NA'})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.args[0][0]).to.be.undefined;
+  });
+
+  it('should ignore NA in get id', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      'NA'
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.args[0][0]).to.be.undefined;
+  });
+
+  it('should parse result from json response', function () {
     let callBackSpy = sinon.spy();
     let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
     submoduleCallback(callBackSpy);
@@ -144,17 +174,9 @@ describe('IntentIQ tests', function () {
     request.respond(
       200,
       responseHeader,
-      JSON.stringify({pid: 'test_pid', iiqdetpcid: false, data: 'test_personid'})
+      JSON.stringify({pid: 'test_pid', isdetpcid: false, data: 'test_personid'})
     );
     expect(callBackSpy.calledOnce).to.be.true;
-
-    let resp = readData(FIRST_PARTY_KEY);
-    expect(resp).to.be.eq('test');
-
-    let respJson = JSON.parse(resp);
-
-    expect(respJson).contain.keys('pid', 'pcid', 'iiqdetpcid');
-    expect(respJson.pid).to.be.eq('test_pid');
-    expect(respJson.iiqdetpcid).to.be.eq(false);
+    expect(callBackSpy.args[0][0]).to.be.eq('test_personid');
   });
 });
