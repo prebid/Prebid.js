@@ -9,7 +9,7 @@ describe('shinezBidAdapter', () => {
   });
   afterEach(() => {
     sandbox.restore();
-  })
+  });
   describe('isBidRequestValid', () => {
     const cases = [
       [
@@ -68,110 +68,86 @@ describe('shinezBidAdapter', () => {
   describe('buildRequests', () => {
     it('should build server request correctly', () => {
       const utcOffset = 300;
-      const validBidRequests = [ { bidId: '1' }, { bidId: '2' } ];
-      const bidderRequest = { refererInfo: { referer: 'http://site-with-ads.com' } };
-      sandbox.stub(Date.prototype, 'getTimezoneOffset').returns(utcOffset);
-      sandbox.stub(internal, '_buildServerBidRequest')
-        .callsFake((bidRequest, bidderRequest, utcOffset) => ({
-          bidId: bidRequest.bidId,
-          refererInfo: bidderRequest.refererInfo,
-          utcOffset: utcOffset })
-        );
-      const payload = [
+      const validBidRequests = [
         {
-          bidId: '1',
-          refererInfo: bidderRequest.refererInfo,
-          utcOffset: utcOffset
-        },
-        {
-          bidId: '2',
-          refererInfo: bidderRequest.refererInfo,
-          utcOffset: utcOffset
-        }
-      ]
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(result.method, 'request should be POST\'ed').equal('POST');
-      expect(result.url.toString(), 'request should be send to correct url').equal(internal.TARGET_URL);
-      expect(result.data, 'request should have correct payload').to.deep.equal(payload);
-    });
-  });
-  describe('interpretResponse', () => {
-    it('should interpret bid responses correctly', () => {
-      sandbox
-        .stub(internal, '_convertServerBid')
-        .callsFake((request) => ({ requestId: request.bidId }));
-      const responses = { body: [{ bidId: '1' }, { bidId: '2' }] };
-      const expected = [{ requestId: '1' }, { requestId: '2' }];
-      const result = spec.interpretResponse(responses);
-      expect(result).to.deep.equal(expected);
-    });
-  });
-  describe('_buildServerBidRequest', () => {
-    it('should build server bid request correctly', () => {
-      const bidRequest = {
-        bidId: '22cee66f4fcb0a',
-        transactionId: '44b6190e-9085-49bd-a6b9-b603544e4bfe',
-        crumbs: {
-          pubcid: 'c8584a82-bec3-4347-8d3e-e7612438a161',
-        },
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250]],
+          params: {
+            placementId: '00654321',
+            unit: 'header-bid-tag-1-shinez',
           },
+          crumbs: {
+            pubcid: 'c8584a82-bec3-4347-8d3e-e7612438a161',
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]],
+            },
+          },
+          adUnitCode: 'header-bid-tag-1',
+          transactionId: '665760dc-a249-4be7-ae86-91f417b2c65d',
         },
-        params: {
-          placementId: '00654321',
-          unit: '__header-bid-1',
-        },
-        adUnitCode: '/19968336/header-bid-tag-1',
-      };
+      ];
       const bidderRequest = {
         refererInfo: {
           referer: 'http://site-with-ads.com',
         },
       };
-      const utcOffset = 300;
-      const expected = {
-        bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
-        crumbs: bidRequest.crumbs,
-        mediaTypes: bidRequest.mediaTypes,
-        refererInfo: bidderRequest.refererInfo,
-        placementId: bidRequest.params.placementId,
-        utcOffset: utcOffset,
-        adUnitCode: bidRequest.adUnitCode,
-        unit: bidRequest.params.unit
-      };
-      const result = internal._buildServerBidRequest(bidRequest, bidderRequest, utcOffset);
-      expect(result).to.deep.equal(expected);
+      sandbox.stub(Date.prototype, 'getTimezoneOffset').returns(utcOffset);
+      const result = spec.buildRequests(validBidRequests, bidderRequest);
+      const expectedData = [
+        {
+          bidId: validBidRequests[0].bidId,
+          transactionId: validBidRequests[0].transactionId,
+          crumbs: validBidRequests[0].crumbs,
+          mediaTypes: validBidRequests[0].mediaTypes,
+          refererInfo: bidderRequest.refererInfo,
+          adUnitCode: validBidRequests[0].adUnitCode,
+          utcOffset: utcOffset,
+          placementId: validBidRequests[0].params.placementId,
+          unit: validBidRequests[0].params.unit,
+        },
+      ];
+      expect(result.method, "request should be POST'ed").equal('POST');
+      expect(
+        result.url.toString(),
+        'request should be send to correct url'
+      ).equal(internal.TARGET_URL);
+      expect(result.data, 'request should have correct payload').to.deep.equal(
+        expectedData
+      );
     });
   });
-  describe('_convertServerBid', () => {
-    it('should convert server bid correctly', () => {
+  describe('interpretResponse', () => {
+    it('should interpret bid responses correctly', () => {
       const response = {
-        bidId: '2ece6496f4d0c9',
-        cpm: 1,
-        currency: 'USD',
-        width: 300,
-        height: 250,
-        ad: `<h1>The Ad</h1>`,
-        ttl: 60,
-        creativeId: 'V8qlA6guwm',
-        netRevenue: true,
+        body: [
+          {
+            bidId: '2ece6496f4d0c9',
+            cpm: 0.03,
+            currency: 'USD',
+            width: 300,
+            height: 250,
+            ad: `<h1>The Ad</h1>`,
+            ttl: 60,
+            creativeId: 'V8qlA6guwm',
+            netRevenue: true,
+          },
+        ],
       };
-      const expected = {
-        requestId: response.bidId,
-        cpm: response.cpm,
-        currency: response.currency,
-        width: response.width,
-        height: response.height,
-        ad: response.ad,
-        ttl: response.ttl,
-        creativeId: response.creativeId,
-        netRevenue: response.netRevenue,
-      };
-      const result = internal._convertServerBid(response);
-      expect(result).to.deep.equal(expected);
+      const bids = [
+        {
+          requestId: response.body[0].bidId,
+          cpm: response.body[0].cpm,
+          currency: response.body[0].currency,
+          width: response.body[0].width,
+          height: response.body[0].height,
+          ad: response.body[0].ad,
+          ttl: response.body[0].ttl,
+          creativeId: response.body[0].creativeId,
+          netRevenue: response.body[0].netRevenue,
+        },
+      ];
+      const result = spec.interpretResponse(response);
+      expect(result).to.deep.equal(bids);
     });
   });
 });

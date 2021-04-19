@@ -20,8 +20,6 @@ export const spec = {
 };
 
 export const internal = {
-  _buildServerBidRequest,
-  _convertServerBid,
   TARGET_URL
 }
 
@@ -36,7 +34,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const utcOffset = (new Date()).getTimezoneOffset();
   const data = [];
   validBidRequests.forEach(function(bidRequest) {
-    data.push(internal._buildServerBidRequest(bidRequest, bidderRequest, utcOffset));
+    data.push(_buildServerBidRequest(bidRequest, bidderRequest, utcOffset));
   });
   const request = {
     method: 'POST',
@@ -49,7 +47,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 function interpretResponse(serverResponse, request) {
   const bids = [];
   serverResponse.body.forEach(function(serverBid) {
-    bids.push(internal._convertServerBid(serverBid));
+    bids.push(_convertServerBid(serverBid));
   });
   return bids;
 }
