@@ -9,6 +9,7 @@
  *
  * @property {function(): Array} getBidsRequested - returns consolidated bid requests
  * @property {function(): Array} getBidsReceived - returns consolidated bid received
+ * @property {function(): Array} getAllBidsForAdUnitCode - returns consolidated bid received for a given adUnit
  * @property {function(): Array} getAdUnits - returns consolidated adUnits
  * @property {function(): Array} getAdUnitCodes - returns consolidated adUnitCodes
  * @property {function(): Object} createAuction - creates auction instance and stores it for future reference
@@ -64,6 +65,13 @@ export function newAuctionManager() {
       }
     }).reduce(flatten, [])
       .filter(bid => bid);
+  };
+
+  auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
+    return _auctions.map((auction) => {
+      return auction.getBidsReceived();
+    }).reduce(flatten, [])
+      .filter(bid => bid && bid.adUnitCode === adUnitCode)
   };
 
   auctionManager.getAdUnits = function() {

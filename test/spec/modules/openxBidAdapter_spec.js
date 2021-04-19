@@ -1854,6 +1854,13 @@ describe('OpenxAdapter', function () {
       expect(JSON.stringify(Object.keys(result[0]).sort())).to.eql(JSON.stringify(Object.keys(expectedResponse[0]).sort()));
     });
 
+    it('should return correct bid response with MediaType and deal_id', function () {
+      const bidResponseOverride = { 'deal_id': 'OX-mydeal' };
+      const bidResponseWithDealId = Object.assign({}, bidResponse, bidResponseOverride);
+      const result = spec.interpretResponse({body: bidResponseWithDealId}, bidRequestsWithMediaType);
+      expect(result[0].dealId).to.equal(bidResponseOverride.deal_id);
+    });
+
     it('should handle nobid responses for bidRequests with MediaTypes', function () {
       const bidResponse = {'vastUrl': '', 'pub_rev': '', 'width': '', 'height': '', 'adid': '', 'pixels': ''};
       const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);

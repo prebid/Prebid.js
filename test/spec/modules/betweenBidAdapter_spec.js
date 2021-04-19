@@ -221,4 +221,50 @@ describe('betweenBidAdapterTests', function () {
 
     expect(req_data.sizes).to.deep.equal(['970x250', '240x400', '728x90'])
   });
+
+  it('check sharedId with id and third', function() {
+    const bidRequestData = [{
+      bidId: 'bid123',
+      bidder: 'between',
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      },
+      params: {
+        s: 1112,
+      },
+      userId: {
+        sharedid: {
+          id: '01EXQE7JKNDRDDVATB0S2GX1NT',
+          third: '01EXQE7JKNDRDDVATB0S2GX1NT'
+        }
+      }
+    }];
+    const shid = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid;
+    const shid3 = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid3;
+    expect(shid).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT') && expect(shid3).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT');
+  });
+  it('check sharedId with only id', function() {
+    const bidRequestData = [{
+      bidId: 'bid123',
+      bidder: 'between',
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      },
+      params: {
+        s: 1112,
+      },
+      userId: {
+        sharedid: {
+          id: '01EXQE7JKNDRDDVATB0S2GX1NT',
+        }
+      }
+    }];
+    const shid = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid;
+    const shid3 = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid3;
+    expect(shid).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT') && expect(shid3).to.equal('');
+  });
 });

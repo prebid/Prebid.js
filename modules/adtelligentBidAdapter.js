@@ -19,6 +19,7 @@ const HOST_GETTERS = {
   appaloosa: () => 'ghb.hb.appaloosa.media',
   onefiftytwomedia: () => 'ghb.ads.152media.com',
   mediafuse: () => 'ghb.hbmp.mediafuse.com',
+  bidsxchange: () => 'ghb.hbd.bidsxchange.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -34,7 +35,7 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa',
+  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange',
     { code: 'navelix', gvlid: 380 },
     {
       code: 'mediafuse',
@@ -205,6 +206,9 @@ function prepareBidRequests(bidReq) {
   };
 
   bidReqParams.PlacementId = bidReq.adUnitCode;
+  if (bidReq.params.iframe) {
+    bidReqParams.AdmType = 'iframe';
+  }
   if (bidReq.params.vpb_placement_id) {
     bidReqParams.PlacementId = bidReq.params.vpb_placement_id;
   }
@@ -249,7 +253,8 @@ function createBid(bidResponse, bidRequest) {
 
   if (mediaType === BANNER) {
     return Object.assign(bid, {
-      ad: bidResponse.ad
+      ad: bidResponse.ad,
+      adUrl: bidResponse.adUrl,
     });
   }
   if (context === ADPOD) {
