@@ -73,7 +73,7 @@ export const spec = {
       }
 
       if (!Array.isArray(videoAdUnit.protocols) || videoAdUnit.protocols.length === 0) {
-        utils.logWarn(BIDDER_CODE + ': video protocols must be an array of strings');
+        utils.logWarn(BIDDER_CODE + ': video protocols must be an array of integers');
         return false;
       }
     }
@@ -224,68 +224,65 @@ export const spec = {
       let bidsAll = [];
 
       if (!serverResponse || !serverResponse.body || !utils.isArray(serverResponse.body.seatbid) || !serverResponse.body.seatbid.length) {
+        utils.logWarn(BIDDER_CODE + ': empty bid response');
         return bidsAll;
       }
 
-      if (serverResponse) {
-        serverResponse.body.seatbid.forEach((bids) => {
-          bids.bid.forEach((serverResponseOneItem) => {
-            let bid = {}
-            // parse general fields
-            bid.requestId = serverResponseOneItem.impid;
-            bid.cpm = serverResponseOneItem.price;
-            bid.creativeId = parseInt(serverResponseOneItem.crid);
-            bid.currency = serverResponseOneItem.currency ? serverResponseOneItem.currency : 'USD';
-            bid.netRevenue = serverResponseOneItem.netRevenue ? serverResponseOneItem.netRevenue : true;
-            bid.ttl = serverResponseOneItem.ttl ? serverResponseOneItem.ttl : 300;
-            bid.width = serverResponseOneItem.w;
-            bid.height = serverResponseOneItem.h;
-            bid.burl = serverResponseOneItem.burl || '';
+      serverResponse.body.seatbid.forEach((bids) => {
+        bids.bid.forEach((serverResponseOneItem) => {
+          let bid = {}
+          // parse general fields
+          bid.requestId = serverResponseOneItem.impid;
+          bid.cpm = serverResponseOneItem.price;
+          bid.creativeId = parseInt(serverResponseOneItem.crid);
+          bid.currency = serverResponseOneItem.currency ? serverResponseOneItem.currency : 'USD';
+          bid.netRevenue = serverResponseOneItem.netRevenue ? serverResponseOneItem.netRevenue : true;
+          bid.ttl = serverResponseOneItem.ttl ? serverResponseOneItem.ttl : 300;
+          bid.width = serverResponseOneItem.w;
+          bid.height = serverResponseOneItem.h;
+          bid.burl = serverResponseOneItem.burl || '';
 
-            if (serverResponseOneItem.dealid != null && serverResponseOneItem.dealid.trim().length > 0) {
-              bid.dealId = serverResponseOneItem.dealid;
-            }
+          if (serverResponseOneItem.dealid != null && serverResponseOneItem.dealid.trim().length > 0) {
+            bid.dealId = serverResponseOneItem.dealid;
+          }
 
-            if (serverResponseOneItem.ext.crType === 'banner') {
-              bid.ad = serverResponseOneItem.adm;
-            } else if (serverResponseOneItem.ext.crType === 'video') {
-              bid.vastUrl = serverResponseOneItem.nurl;
-              bid.vastXml = serverResponseOneItem.adm;
-              bid.mediaType = 'video';
-            } else if (serverResponseOneItem.ext.crType === 'native') {
-              bid.mediaType = 'native';
-              bid.native = parseNative(JSON.parse(serverResponseOneItem.adm));
-            } else {
-              utils.logWarn(BIDDER_CODE + ': unknown or undefined crType');
-            }
+          if (serverResponseOneItem.ext.crType === 'banner') {
+            bid.ad = serverResponseOneItem.adm;
+          } else if (serverResponseOneItem.ext.crType === 'video') {
+            bid.vastUrl = serverResponseOneItem.nurl;
+            bid.vastXml = serverResponseOneItem.adm;
+            bid.mediaType = 'video';
+          } else if (serverResponseOneItem.ext.crType === 'native') {
+            bid.mediaType = 'native';
+            bid.native = parseNative(JSON.parse(serverResponseOneItem.adm));
+          } else {
+            utils.logWarn(BIDDER_CODE + ': unknown or undefined crType');
+          }
 
-            // prebid 4.0 meta taxonomy
-            if (utils.isArray(serverResponseOneItem.adomain)) {
-              utils.deepSetValue(bid, 'meta.advertiserDomains', serverResponseOneItem.adomain);
+          // prebid 4.0 meta taxonomy
+          if (utils.isArray(serverResponseOneItem.adomain)) {
+            utils.deepSetValue(bid, 'meta.advertiserDomains', serverResponseOneItem.adomain);
+          }
+          if (utils.isArray(serverResponseOneItem.cat)) {
+            utils.deepSetValue(bid, 'meta.secondaryCatIds', serverResponseOneItem.cat);
+          }
+          if (utils.isPlainObject(serverResponseOneItem.ext)) {
+            if (utils.isStr(serverResponseOneItem.ext.advertiser_id)) {
+              utils.deepSetValue(bid, 'meta.mediaType', serverResponseOneItem.ext.mediaType);
             }
-            if (utils.isArray(serverResponseOneItem.cat)) {
-              utils.deepSetValue(bid, 'meta.secondaryCatIds', serverResponseOneItem.cat);
+            if (utils.isStr(serverResponseOneItem.ext.advertiser_id)) {
+              utils.deepSetValue(bid, 'meta.advertiserId', serverResponseOneItem.ext.advertiser_id);
             }
-            if (utils.isPlainObject(serverResponseOneItem.ext)) {
-              if (utils.isStr(serverResponseOneItem.ext.advertiser_id)) {
-                utils.deepSetValue(bid, 'meta.mediaType', serverResponseOneItem.ext.mediaType);
-              }
-              if (utils.isStr(serverResponseOneItem.ext.advertiser_id)) {
-                utils.deepSetValue(bid, 'meta.advertiserId', serverResponseOneItem.ext.advertiser_id);
-              }
-              if (utils.isStr(serverResponseOneItem.ext.advertiser_name)) {
-                utils.deepSetValue(bid, 'meta.advertiserName', serverResponseOneItem.ext.advertiser_name);
-              }
-              if (utils.isStr(serverResponseOneItem.ext.agency_name)) {
-                utils.deepSetValue(bid, 'meta.agencyName', serverResponseOneItem.ext.agency_name);
-              }
+            if (utils.isStr(serverResponseOneItem.ext.advertiser_name)) {
+              utils.deepSetValue(bid, 'meta.advertiserName', serverResponseOneItem.ext.advertiser_name);
             }
-            bidsAll.push(bid)
-          })
+            if (utils.isStr(serverResponseOneItem.ext.agency_name)) {
+              utils.deepSetValue(bid, 'meta.agencyName', serverResponseOneItem.ext.agency_name);
+            }
+          }
+          bidsAll.push(bid)
         })
-      } else {
-        utils.logWarn(BIDDER_CODE + ': empty bid response');
-      }
+      })
       return bidsAll
     },
 
