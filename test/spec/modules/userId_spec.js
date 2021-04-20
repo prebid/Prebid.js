@@ -514,7 +514,7 @@ describe('User ID', function () {
     });
 
     it('handles config with name in different case', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule]);
+      setSubmoduleRegistry([criteoIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
