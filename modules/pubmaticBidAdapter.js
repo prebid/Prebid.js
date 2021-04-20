@@ -673,14 +673,14 @@ function _addImpressionFPD(imp, bid) {
         if (typeof value === 'string' && value) {
           utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
           // copy GAM ad unit id as imp[].ext.dfp_ad_unit_code
-          if(name === 'adslot'){
+          if (name === 'adslot') {
             utils.deepSetValue(imp, `ext.dfp_ad_unit_code`, value);
           }
         }
       });
     } else {
       utils.deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
-    }    
+    }
   });
 }
 
