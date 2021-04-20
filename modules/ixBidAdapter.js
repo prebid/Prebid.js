@@ -294,7 +294,8 @@ function getEidInfo(allEids) {
     'liveramp.com': 'idl',
     'netid.de': 'NETID',
     'neustar.biz': 'fabrickId',
-    'zeotap.com': 'zeotapIdPlus'
+    'zeotap.com': 'zeotapIdPlus',
+    'uidapi.com': 'UID2'
   };
   var toSend = [];
   var seenSources = {};
