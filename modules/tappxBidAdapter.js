@@ -38,17 +38,10 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    utils.logMessage('-------------------------------------------------');
-    utils.logMessage(validBidRequests);
-    utils.logMessage(bidderRequest);
-    utils.logMessage('-------------------------------------------------');
     let requests = [];
     validBidRequests.forEach(oneValidRequest => {
       requests.push(buildOneRequest(oneValidRequest, bidderRequest));
     });
-    utils.logMessage('-------------------------------------------------');
-    utils.logMessage(requests);
-    utils.logMessage('-------------------------------------------------');
     return requests;
   },
 
