@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
 import includes from 'core-js-pure/features/array/includes';
-import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
@@ -10,10 +10,14 @@ const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
 const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
+const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
 const OPENRTB_VIDEO_BIDPARAMS = ['placement', 'startdelay', 'skipafter',
   'protocols', 'api', 'playbackmethod', 'maxduration', 'minduration', 'pos'];
 const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
-const localWindow = utils.getWindowTop();
+const LOCAL_WINDOW = utils.getWindowTop();
+const DEFAULT_PLAYBACK_METHOD = 2;
+const DEFAULT_START_DELAY = 0;
+const VAST_TIMEOUT = 15000;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -48,12 +52,12 @@ export const spec = {
         page_url: bidderRequest.refererInfo.referer,
         bust: new Date().getTime().toString(),
         pr: bidderRequest.refererInfo.referer,
-        scrd: localWindow.devicePixelRatio || 0,
+        scrd: LOCAL_WINDOW.devicePixelRatio || 0,
         dnt: getDNT(),
         description: getPageDescription(),
-        title: localWindow.document.title || '',
-        w: localWindow.innerWidth,
-        h: localWindow.innerHeight,
+        title: LOCAL_WINDOW.document.title || '',
+        w: LOCAL_WINDOW.innerWidth,
+        h: LOCAL_WINDOW.innerHeight,
         userConsent: JSON.stringify({
           // case of undefined, stringify will remove param
           gdprApplies: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
@@ -167,8 +171,9 @@ function addPlacement(request) {
     if (request.params.placementId) {
       placementInfo.ym_placement_id = request.params.placementId;
     }
-    if (request.params.bidFloor) {
-      placementInfo.bidFloor = request.params.bidFloor;
+    const bidfloor = getBidFloor(request, BANNER);
+    if (bidfloor) {
+      placementInfo.bidFloor = bidfloor;
     }
   }
   return JSON.stringify(placementInfo);
@@ -189,6 +194,10 @@ function createNewBannerBid(response) {
     netRevenue: NET_REVENUE,
     ttl: TIME_TO_LIVE,
     ad: response.ad,
+    meta: {
+      advertiserDomains: response.adomain || [],
+      mediaType: BANNER,
+    },
   };
 }
 
@@ -198,8 +207,9 @@ function createNewBannerBid(response) {
  * @param bidRequest server request
  */
 function createNewVideoBid(response, bidRequest) {
-  const imp = find((utils.deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
-  return {
+  const imp = (utils.deepAccess(bidRequest, 'data.imp') || []).find(imp => imp.id === response.impid);
+
+  let result = {
     requestId: imp.id,
     cpm: response.price,
     width: imp.video.w,
@@ -209,8 +219,41 @@ function createNewVideoBid(response, bidRequest) {
     netRevenue: NET_REVENUE,
     mediaType: VIDEO,
     ttl: TIME_TO_LIVE,
-    vastXml: response.adm
+    vastXml: response.adm,
+    meta: {
+      advertiserDomains: response.adomain || [],
+      mediaType: VIDEO,
+    },
   };
+
+  if (imp.placement && imp.placement !== 1) {
+    const renderer = Renderer.install({
+      url: OUTSTREAM_VIDEO_PLAYER_URL,
+      config: {
+        width: result.width,
+        height: result.height,
+        vastTimeout: VAST_TIMEOUT,
+        maxAllowedVastTagRedirects: 5,
+        allowVpaid: true,
+        autoPlay: true,
+        preload: true,
+        mute: true
+      },
+      id: imp.tagid,
+      loaded: false,
+    });
+
+    renderer.setRender(function (bid) {
+      bid.renderer.push(() => {
+        const { id, config } = bid.renderer;
+        window.YMoutstreamPlayer(bid, id, config);
+      });
+    });
+
+    result.renderer = renderer;
+  }
+
+  return result;
 }
 
 /**
@@ -280,7 +323,7 @@ function openRtbImpression(bidRequest) {
   const imp = {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode,
-    bidfloor: bidRequest.params.bidfloor || 0,
+    bidfloor: getBidFloor(bidRequest, VIDEO),
     ext: {
       placement_id: bidRequest.params.placementId
     },
@@ -297,11 +340,25 @@ function openRtbImpression(bidRequest) {
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
     .forEach(param => imp.video[param] = videoParams[param]);
 
-  if (videoParams.skippable) {
-    imp.video.skip = 1;
+  if (videoParams.skippable) imp.video.skip = 1;
+  if (videoParams.placement !== 1) {
+    imp.video = {
+      ...imp.video,
+      startdelay: DEFAULT_START_DELAY,
+      playbackmethod: [ DEFAULT_PLAYBACK_METHOD ]
+    }
+  }
+  return imp;
+}
+
+function getBidFloor(bidRequest, mediaType) {
+  let floorInfo = {};
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({ currency: CURRENCY, mediaType, size: '*' });
   }
 
-  return imp;
+  return floorInfo.floor || bidRequest.params.bidfloor || bidRequest.params.bidFloor || 0;
 }
 
 /**
