@@ -1,6 +1,4 @@
-
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 const BIDDER_CODE = 'adnuntius';
 const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=';
 
@@ -70,8 +68,6 @@ export const spec = {
         request.concat(bidResponsesById[adunitId])
         , []);
 
-    utils.logMessage('ADN: BIDREQ', bidRequest)
-    utils.logMessage('ADN: BIDRES', bidResponse)
     return bidResponse
   },
 
