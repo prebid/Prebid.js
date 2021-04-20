@@ -22,6 +22,7 @@ const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 const id = factory();
 const GVLID = 887;
+
 /**
  * Constructs cookie value
  * @param value
@@ -54,19 +55,23 @@ function isIdSynced(configParams, storedId) {
     utils.logInfo('SharedId: Sync time is not configured or is not a number');
   }
   let syncTime = (!configParams || typeof configParams.syncTime !== 'number') ? DEFAULT_24_HOURS : configParams.syncTime;
+  if (syncTime < 0) {
+    utils.logMessage('SharedId: Sync disabled');
+    return false;
+  }
   if (syncTime > DEFAULT_24_HOURS) {
     syncTime = DEFAULT_24_HOURS;
   }
   const cookieTimestamp = storedId.ts;
   if (cookieTimestamp) {
-    var secondBetweenTwoDate = timeDifferenceInSeconds(utils.timestamp(), cookieTimestamp);
-    return secondBetweenTwoDate >= syncTime;
+    const secondsBetweenTwoDates = timeDifferenceInSeconds(utils.timestamp(), cookieTimestamp);
+    return secondsBetweenTwoDates >= syncTime;
   }
   return false;
 }
 
 /**
- * Gets time difference in secounds
+ * Gets time difference in seconds
  * @param date1
  * @param date2
  * @returns {number}
@@ -78,7 +83,6 @@ function timeDifferenceInSeconds(date1, date2) {
 
 /**
  * id generation call back
- * @param result
  * @param callback
  * @returns {{success: success, error: error}}
  */
@@ -107,7 +111,7 @@ function idGenerationCallback(callback) {
 
 /**
  * existing id generation call back
- * @param result
+ * @param storedId
  * @param callback
  * @returns {{success: success, error: error}}
  */
@@ -141,7 +145,7 @@ function existingIdCallback(storedId, callback) {
 function encodeId(value) {
   const result = {};
   const sharedId = (value && typeof value['id'] === 'string') ? value['id'] : undefined;
-  if (sharedId == OPT_OUT_VALUE) {
+  if (sharedId === OPT_OUT_VALUE) {
     return undefined;
   }
   if (sharedId) {
@@ -149,7 +153,7 @@ function encodeId(value) {
       id: sharedId,
     }
     const ns = (value && typeof value['ns'] === 'boolean') ? value['ns'] : undefined;
-    if (ns == undefined) {
+    if (ns === undefined) {
       bidIds.third = sharedId;
     }
     result.sharedid = bidIds;
@@ -161,7 +165,7 @@ function encodeId(value) {
 
 /**
  * the factory to generate unique identifier based on time and current pseudorandom number
- * @param {string} the current pseudorandom number generator
+ * @param {string} currPrng current pseudorandom number generator
  * @returns {function(*=): *}
  */
 function factory(currPrng) {
@@ -179,7 +183,7 @@ function factory(currPrng) {
 /**
  * creates and logs the error message
  * @function
- * @param {string} error message
+ * @param {string} message error message
  * @returns {Error}
  */
 function createError(message) {
@@ -191,7 +195,7 @@ function createError(message) {
 
 /**
  * gets a a random charcter from generated pseudorandom number
- * @param {string} the generated pseudorandom number
+ * @param {string} prng the generated pseudorandom number
  * @returns {string}
  */
 function randomChar(prng) {
@@ -208,7 +212,7 @@ function randomChar(prng) {
  * @param len
  * @returns {string} encoded time.
  */
-function encodeTime (now, len) {
+function encodeTime(now, len) {
   if (isNaN(now)) {
     throw new Error(now + ' must be a number');
   }
@@ -247,7 +251,7 @@ function encodeTime (now, len) {
  * @param prng
  * @returns {string}
  */
-function encodeRandom (len, prng) {
+function encodeRandom(len, prng) {
   let str = '';
   for (; len > 0; len--) {
     str = randomChar(prng) + str;
@@ -258,7 +262,7 @@ function encodeRandom (len, prng) {
 /**
  * detects the pseudorandom number generator and generates the random number
  * @function
- * @param {string} error message
+ * @param {string} root error message
  * @returns {string} a random number
  */
 function detectPrng(root) {
@@ -342,7 +346,10 @@ export const sharedIdSubmodule = {
         const sharedIdPayload = {};
         sharedIdPayload.sharedId = storedId.id;
         const payloadString = JSON.stringify(sharedIdPayload);
-        ajax(sharedIdUrl(consentData), existingIdCallback(storedId, callback), payloadString, {method: 'POST', withCredentials: true});
+        ajax(sharedIdUrl(consentData), existingIdCallback(storedId, callback), payloadString, {
+          method: 'POST',
+          withCredentials: true
+        });
       }
     };
     return {callback: resp};
