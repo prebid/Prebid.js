@@ -1,3 +1,18 @@
+# Overview
+
+**Module Name**: Adxcg Bidder Adapter
+**Module Type**: Bidder Adapter
+**Maintainer**: info@adxcg.com
+
+# Description
+
+Module that connects to an Adxcg.com zone to fetch bids.
+
+# Test Parameters
+
+```
+
+
 
         var adUnits = [{
                     code: 'banner-ad-div',
@@ -77,3 +92,5 @@
                 }]
             }
         ];
+
+```
