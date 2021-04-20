@@ -118,7 +118,6 @@ describe('IntentIQ tests', function () {
     );
     expect(callBackSpy.calledOnce).to.be.true;
     expect(request.response).to.equal('');
-    expect(logErrorStub.calledOnce).to.not.be.true;
   });
 
   it('should log an error and continue to callback if ajax request errors', function () {
