@@ -411,6 +411,7 @@ describe('IndexexchangeAdapter', function () {
     netId: 'testnetid123', // NetId
     IDP: 'userIDP000', // IDP
     fabrickId: 'fabrickId9000', // FabrickId
+    uid2: {id: 'testuid2'} // UID 2.0
   };
 
   const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
@@ -446,6 +447,15 @@ describe('IndexexchangeAdapter', function () {
         id: DEFAULT_USERID_DATA.IDP,
         ext: {
           rtiPartner: 'zeotapIdPlus'
+        }
+      }]
+    }, {
+      source: 'uidapi.com',
+      uids: [{
+        // when calling createEidsArray, UID2's getValue func returns .id, which is then set in uids
+        id: DEFAULT_USERID_DATA.uid2.id,
+        ext: {
+          rtiPartner: 'UID2'
         }
       }]
     }
@@ -682,7 +692,7 @@ describe('IndexexchangeAdapter', function () {
         const payload = JSON.parse(request[0].data.r);
         expect(request).to.be.an('array');
         expect(request).to.have.lengthOf(1);
-        expect(payload.user.eids).to.have.lengthOf(4);
+        expect(payload.user.eids).to.have.lengthOf(5);
         expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
       });
     });
@@ -877,16 +887,16 @@ describe('IndexexchangeAdapter', function () {
 
     it('IX adapter reads supported user modules from Prebid and adds it to Video', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      // cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
-      expect(payload.user.eids).to.have.lengthOf(4);
+      expect(payload.user.eids).to.have.lengthOf(5);
       expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
       expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
       expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
       expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
     });
 
     it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {
@@ -977,7 +987,6 @@ describe('IndexexchangeAdapter', function () {
       };
 
       const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      // cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
 
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
@@ -1019,7 +1028,7 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(6);
+      expect(payload.user.eids).to.have.lengthOf(7);
 
       expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
@@ -1027,6 +1036,7 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.user.eids).to.deep.include(validUserIdPayload[3]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[4]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[5]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[6]);
     });
 
     it('IXL and Prebid are mutually exclusive', function () {
@@ -1048,7 +1058,6 @@ describe('IndexexchangeAdapter', function () {
       };
 
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      // cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
 
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
@@ -1067,12 +1076,13 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = JSON.parse(request.data.r);
-      expect(payload.user.eids).to.have.lengthOf(5);
+      expect(payload.user.eids).to.have.lengthOf(6);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[3]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[4]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[5]);
     });
   });
 
