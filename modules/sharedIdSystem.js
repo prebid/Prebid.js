@@ -278,13 +278,23 @@ function detectPrng(root) {
 
 /**
  * Builds and returns the shared Id URL with attached consent data if applicable
- * @param {Object} consentData
+ * @param {{coppa: boolean, usp: *, gdpr: *}} userConsentData
  * @return {string}
  */
-function sharedIdUrl(consentData) {
-  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return ID_SVC;
-
-  return `${ID_SVC}?gdpr=1&gdpr_consent=${consentData.consentString}`
+function sharedIdUrl(userConsentData) {
+  const usPrivacyString = userConsentData && typeof userConsentData.usp === 'string' ? userConsentData.usp : undefined;
+  const consentData = userConsentData && userConsentData.gdpr ? userConsentData.gdpr : undefined;
+  let sharedIdUrl = ID_SVC;
+  if (usPrivacyString) {
+    sharedIdUrl = `${ID_SVC}?us_privacy=${usPrivacyString}`;
+  }
+  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return sharedIdUrl;
+  if (usPrivacyString) {
+    sharedIdUrl = `${sharedIdUrl}&gdpr=1&gdpr_consent=${consentData.consentString}`
+    return sharedIdUrl;
+  }
+  sharedIdUrl = `${ID_SVC}?gdpr=1&gdpr_consent=${consentData.consentString}`;
+  return sharedIdUrl
 }
 
 /** @type {Submodule} */
@@ -315,12 +325,18 @@ export const sharedIdSubmodule = {
    * @function
    * @param {SubmoduleConfig} [config]
    * @param {ConsentData|undefined} consentData
+   * @param storedId Exisgting sharedId
+   * @param {{coppa: boolean, usp: *, gdpr: *}} userConsentData
    * @returns {sharedId}
    */
-  getId(config, consentData) {
+  getId(config, consentData, storedId, userConsentData) {
+    if (userConsentData && typeof userConsentData.coppa === 'boolean' && userConsentData.coppa) {
+      utils.logInfo('SharedId: coppa not provided, exiting SharedId');
+      return;
+    }
     const resp = function (callback) {
       utils.logInfo('SharedId: Sharedid doesnt exists, new cookie creation');
-      ajax(sharedIdUrl(consentData), idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
+      ajax(sharedIdUrl(userConsentData), idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};
   },
@@ -329,10 +345,16 @@ export const sharedIdSubmodule = {
    * performs actions even if the id exists and returns a value
    * @param config
    * @param consentData
-   * @param storedId
+   * @param storedId Existing sharedId
+   * @param {{coppa: boolean, usp: *, gdpr: *}} userConsentData
    * @returns {{callback: *}}
    */
-  extendId(config, consentData, storedId) {
+  extendId(config, consentData, storedId, userConsentData) {
+    if (userConsentData && typeof userConsentData.coppa === 'boolean' && userConsentData.coppa) {
+      utils.logInfo('SharedId: coppa not provided, exiting SharedId');
+      return;
+    }
+
     const configParams = (config && config.params) || {};
     utils.logInfo('SharedId: Existing shared id ' + storedId.id);
     const resp = function (callback) {
@@ -342,7 +364,7 @@ export const sharedIdSubmodule = {
         const sharedIdPayload = {};
         sharedIdPayload.sharedId = storedId.id;
         const payloadString = JSON.stringify(sharedIdPayload);
-        ajax(sharedIdUrl(consentData), existingIdCallback(storedId, callback), payloadString, {method: 'POST', withCredentials: true});
+        ajax(sharedIdUrl(userConsentData), existingIdCallback(storedId, callback), payloadString, {method: 'POST', withCredentials: true});
       }
     };
     return {callback: resp};

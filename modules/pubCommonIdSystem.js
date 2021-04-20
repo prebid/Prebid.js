@@ -138,13 +138,24 @@ function handleResponse(pubcid, callback, config) {
 
 /**
  * Builds and returns the shared Id URL with attached consent data if applicable
- * @param {Object} consentData
+ * @param {{coppa: boolean, usp: *, gdpr: *}} userConsentData
  * @return {string}
  */
-function sharedIdUrl(consentData) {
-  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return SHAREDID_URL;
+function sharedIdUrl(userConsentData) {
+  const usPrivacyString = userConsentData && typeof userConsentData.usp === 'string' ? userConsentData.usp : undefined;
+  const gdprConsent = userConsentData && userConsentData.gdpr ? userConsentData.gdpr : undefined;
 
-  return `${SHAREDID_URL}?gdpr=1&gdpr_consent=${consentData.consentString}`
+  let sharedIdUrl = SHAREDID_URL;
+  if (usPrivacyString && typeof usPrivacyString === 'string') {
+    sharedIdUrl = `${SHAREDID_URL}?us_privacy=${usPrivacyString}`;
+  }
+  if (!gdprConsent || typeof gdprConsent.gdprApplies !== 'boolean' || !gdprConsent.gdprApplies) return sharedIdUrl;
+  if (usPrivacyString) {
+    sharedIdUrl = `${sharedIdUrl}&gdpr=1&gdpr_consent=${gdprConsent.consentString}`
+    return sharedIdUrl;
+  }
+  sharedIdUrl = `${SHAREDID_URL}?gdpr=1&gdpr_consent=${gdprConsent.consentString}`;
+  return sharedIdUrl
 }
 
 /**
@@ -220,9 +231,15 @@ export const pubCommonIdSubmodule = {
    * @param {SubmoduleConfig} [config] Config object with params and storage properties
    * @param {Object} consentData
    * @param {string} storedId Existing pubcommon id
+   * @param {{coppa: boolean, usp: *, gdpr: *}} userConsentData
    * @returns {IdResponse}
    */
-  getId: function (config = {}, consentData, storedId) {
+  getId: function (config = {}, consentData, storedId, userConsentData) {
+    const coppa = userConsentData.coppa;
+    if (coppa) {
+      utils.logInfo('PubCommonId: coppa not provided, exiting PubCommonId');
+      return;
+    }
     const {params: {create = true, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
     let newId = storedId;
     if (!newId) {
@@ -238,7 +255,7 @@ export const pubCommonIdSubmodule = {
     }
 
     const pixelCallback = this.makeCallback(pixelUrl, newId);
-    const combinedCallback = enableSharedId ? getIdCallback(newId, pixelCallback, config, consentData) : pixelCallback;
+    const combinedCallback = enableSharedId ? getIdCallback(newId, pixelCallback, config, userConsentData) : pixelCallback;
 
     return {id: newId, callback: combinedCallback};
   },
@@ -260,9 +277,15 @@ export const pubCommonIdSubmodule = {
    * @param {SubmoduleParams} [config]
    * @param {ConsentData|undefined} consentData
    * @param {Object} storedId existing id
+   * @param {{coppa: boolean, usp: *, gdpr: *}} userConsentData
    * @returns {IdResponse|undefined}
    */
-  extendId: function(config = {}, consentData, storedId) {
+  extendId: function(config = {}, consentData, storedId, userConsentData) {
+    const coppa = userConsentData.coppa;
+    if (coppa) {
+      utils.logInfo('PubCommonId: coppa not provided, exiting SharedId');
+      return;
+    }
     const {params: {extend = false, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
 
     if (extend) {

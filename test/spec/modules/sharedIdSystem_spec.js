@@ -20,7 +20,7 @@ describe('SharedId System', function() {
     });
 
     it('should call shared id endpoint without consent data and handle a valid response', function () {
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, undefined).callback;
+      let submoduleCallback = sharedIdSubmodule.getId(undefined, undefined, undefined, undefined).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -38,12 +38,36 @@ describe('SharedId System', function() {
         gdprApplies: true,
         consentString: 'abc12345234',
       };
-
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, consentData).callback;
+      let userConsentData = {
+        gdpr: consentData
+      }
+      let submoduleCallback = sharedIdSubmodule.getId(undefined, undefined, undefined, userConsentData).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
       expect(request.url).to.equal('https://id.sharedid.org/id?gdpr=1&gdpr_consent=abc12345234');
+      expect(request.withCredentials).to.be.true;
+
+      request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
+
+      expect(callbackSpy.calledOnce).to.be.true;
+      expect(callbackSpy.lastCall.lastArg.id).to.equal(SHAREDID_RESPONSE.sharedId);
+    });
+    it('should call shared id endpoint with consent data and handle a valid response', function () {
+      let consentData = {
+        gdprApplies: true,
+        consentString: 'abc12345234',
+      };
+      let userConsentData = {
+        gdpr: consentData,
+        usp: '1YY'
+      }
+
+      let submoduleCallback = sharedIdSubmodule.getId(undefined, undefined, undefined, userConsentData).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+      expect(request.url).to.equal('https://id.sharedid.org/id?us_privacy=1YY&gdpr=1&gdpr_consent=abc12345234');
       expect(request.withCredentials).to.be.true;
 
       request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
