@@ -7,7 +7,7 @@ import {getRefererInfo} from '../src/refererDetection.js';
 const BIDDER_CODE = 'kobler';
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
 const TIMEOUT_NOTIFICATION_ENDPOINT = 'https://bid.essrtb.com/notify/prebid_timeout';
-const DEFAULT_CURRENCY = 'USD';
+const SUPPORTED_CURRENCY = 'USD';
 const DEFAULT_TIMEOUT = 1000;
 const TIME_TO_LIVE_IN_SECONDS = 10 * 60;
 
@@ -96,7 +96,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     id: bidderRequest.auctionId,
     at: 1,
     tmax: timeout,
-    cur: [getCurrency()],
+    cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
       devicetype: getDevice(),
@@ -109,10 +109,6 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   };
 
   return JSON.stringify(request);
-}
-
-function getCurrency() {
-  return config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
 }
 
 function buildOpenRtbImpObject(validBidRequest) {
@@ -193,13 +189,13 @@ function getFloorInfo(validBidRequest, mainSize) {
   if (typeof validBidRequest.getFloor === 'function') {
     const sizeParam = mainSize[0] === 0 && mainSize[1] === 0 ? '*' : mainSize;
     return validBidRequest.getFloor({
-      currency: getCurrency(),
+      currency: SUPPORTED_CURRENCY,
       mediaType: BANNER,
       size: sizeParam
     });
   } else {
     return {
-      currency: getCurrency(),
+      currency: SUPPORTED_CURRENCY,
       floor: getFloorPrice(validBidRequest)
     };
   }

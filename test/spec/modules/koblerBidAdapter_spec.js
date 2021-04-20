@@ -314,25 +314,6 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.tmax).to.be.equal(timeout);
     });
 
-    it('should read currency from config', function () {
-      const currency = 'NOK';
-      config.setConfig({
-        currency: {
-          adServerCurrency: currency
-        }
-      });
-      const validBidRequests = [createValidBidRequest()];
-      const bidderRequest = createBidderRequest();
-
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      const openRtbRequest = JSON.parse(result.data);
-
-      expect(openRtbRequest.cur.length).to.be.equal(1);
-      expect(openRtbRequest.cur[0]).to.be.equal(currency);
-      expect(openRtbRequest.imp.length).to.be.equal(1);
-      expect(openRtbRequest.imp[0].bidfloorcur).to.be.equal(currency);
-    });
-
     it('should read floor price using floors module', function () {
       const floorPriceFor580x400 = 6.5148;
       const floorPriceForAnySize = 4.2343;
@@ -369,11 +350,6 @@ describe('KoblerAdapter', function () {
     });
 
     it('should create whole OpenRTB request', function () {
-      config.setConfig({
-        currency: {
-          adServerCurrency: 'SEK'
-        }
-      });
       const validBidRequests = [
         createValidBidRequest(
           {
@@ -418,7 +394,7 @@ describe('KoblerAdapter', function () {
         id: '9ff580cf-e10e-4b66-add7-40ac0c804e21',
         at: 1,
         tmax: 4500,
-        cur: ['SEK'],
+        cur: ['USD'],
         imp: [
           {
             id: '953ee65d-d18a-484f-a840-d3056185a060',
@@ -439,7 +415,7 @@ describe('KoblerAdapter', function () {
             },
             tagid: 'pcha322364',
             bidfloor: 5.6234,
-            bidfloorcur: 'SEK',
+            bidfloorcur: 'USD',
             pmp: {
               deals: [
                 {
@@ -475,7 +451,7 @@ describe('KoblerAdapter', function () {
             },
             tagid: 'sdfgoi32y4',
             bidfloor: 3.2543,
-            bidfloorcur: 'SEK',
+            bidfloorcur: 'USD',
             pmp: {
               deals: [
                 {
@@ -506,7 +482,7 @@ describe('KoblerAdapter', function () {
             },
             tagid: 'gwms2738647',
             bidfloor: 0,
-            bidfloorcur: 'SEK',
+            bidfloorcur: 'USD',
             pmp: {}
           }
         ],
