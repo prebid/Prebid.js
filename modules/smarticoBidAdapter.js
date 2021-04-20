@@ -55,7 +55,7 @@ export const spec = {
         if (bid.params.regions && (bid.params.regions instanceof String || (bid.params.regions instanceof Array && bid.params.regions.length))) {
           bidParam.regions = bid.params.regions
           if (bidParam.regions instanceof Array) {
-             bidParam.regions = bidParam.regions.join(',')
+            bidParam.regions = bidParam.regions.join(',')
           }
         }
         bidParams.push(bidParam)
@@ -72,7 +72,6 @@ export const spec = {
     return ServerRequestObjects;
   },
   interpretResponse: function (serverResponse, bidRequest) {
-
     var i
     var bid
     var bidObject
@@ -86,11 +85,9 @@ export const spec = {
 
     for (i = 0; i < serverResponse.length; i++) {
       ad = serverResponse[i];
-      
       bid = find(bidRequest.bids, bid => bid.bidId === ad.bidId)
-      
       if (bid) {
-        token = bid.params.token || '';
+        token = bid.params.token || ''
 
         language = bid.params.language || SMARTICO_CONFIG.language || ''
 
