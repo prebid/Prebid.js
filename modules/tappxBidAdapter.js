@@ -38,10 +38,17 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
+    utils.logMessage('-------------------------------------------------');
+    utils.logMessage(validBidRequests);
+    utils.logMessage(bidderRequest);
+    utils.logMessage('-------------------------------------------------');
     let requests = [];
     validBidRequests.forEach(oneValidRequest => {
       requests.push(buildOneRequest(oneValidRequest, bidderRequest));
     });
+    utils.logMessage('-------------------------------------------------');
+    utils.logMessage(requests);
+    utils.logMessage('-------------------------------------------------');
     return requests;
   },
 
@@ -260,9 +267,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   imp.tagid = tagid;
   imp.secure = 1;
 
-  if (!utils.isFn(validBidRequests.getFloor)) {
-    imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
-  } else {
+  imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  if (utils.isFn(validBidRequests.getFloor)) {
     let sizes = (bannerMediaType !== undefined) ? bannerMediaType.sizes : videoMediaType.sizes;
     sizes = (sizes !== undefined) ? sizes : '*';
     imp.bidfloor = validBidRequests.getFloor({
@@ -347,7 +353,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.params = params;
   payload.regs = regs;
   // < Payload
-  
+
   return {
     method: 'POST',
     url: `https://${HOST}/${ENDPOINT}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
