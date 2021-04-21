@@ -40,7 +40,7 @@ This adapter requires setup and approval from the smartclip team.
                     skipOffset: 0,
                     startOpen: true,
                     endingScreen: true,
-                    desiredBitrate: 1600,
+                    desiredBitrate: 800,
                 },
             }
         }],
@@ -75,7 +75,7 @@ This adapter requires setup and approval from the smartclip team.
                     skipOffset: 0,
                     startOpen: true,
                     endingScreen: true,
-                    desiredBitrate: 1600,
+                    desiredBitrate: 800,
                 },
                 user: {
                     data: [{
