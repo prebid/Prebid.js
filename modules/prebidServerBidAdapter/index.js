@@ -740,6 +740,21 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'ext.prebid.data.eidpermissions', eidPermissions);
     }
 
+    const multibid = config.getConfig('multibid');
+    if (multibid) {
+      utils.deepSetValue(request, 'ext.prebid.multibid', multibid.reduce((result, i) => {
+        let obj = {};
+
+        Object.keys(i).forEach(key => {
+          obj[key.toLowerCase()] = i[key];
+        });
+
+        result.push(obj);
+
+        return result;
+      }, []));
+    }
+
     if (bidRequests) {
       if (firstBidRequest.gdprConsent) {
         // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
