@@ -428,7 +428,7 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.tmax).to.equal(3000);
       getConfigStub.restore();
     });
-    it('should contain imp[].ext.data.adserver if availabel', function() {
+    it('should contain imp[].ext.data.adserver if available', function() {
       const ortb2Imp = [{
         ext: {
           data: {
