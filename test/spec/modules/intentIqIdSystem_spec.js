@@ -173,7 +173,7 @@ describe('IntentIQ tests', function () {
     request.respond(
       200,
       responseHeader,
-      JSON.stringify({pid: 'test_pid', isdetpcid: false, data: 'test_personid'})
+      JSON.stringify({pid: 'test_pid', data: 'test_personid'})
     );
     expect(callBackSpy.calledOnce).to.be.true;
     expect(callBackSpy.args[0][0]).to.be.eq('test_personid');
