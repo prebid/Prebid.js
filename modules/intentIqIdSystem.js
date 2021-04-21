@@ -160,7 +160,6 @@ export const intentIqIdSubmodule = {
     if (firstPartyData) {
       url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
       url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
-      url += 'isdetpcid' in firstPartyData ? '&isdetpcid=' + encodeURIComponent(firstPartyData.isdetpcid) : '';
     }
 
     const resp = function (callback) {
@@ -168,14 +167,12 @@ export const intentIqIdSubmodule = {
         success: response => {
           let respJson = tryParse(response);
           if (isValidResponse(response, respJson) && isValidResponseJson(respJson)) {
-            if (firstPartyData && 'pcid' in firstPartyData && 'pid' in respJson && 'isdetpcid' in respJson) {
+            // Store pid field if found in response json
+            if (firstPartyData && 'pcid' in firstPartyData && 'pid' in respJson) {
               firstPartyData = {
                 'pcid': firstPartyData.pcid,
-                'pid': respJson.pid,
-                'isdetpcid': respJson.isdetpcid }
+                'pid': respJson.pid }
               storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
-            } else {
-              utils.logError(MODULE_NAME + ': Error parsing Prebid user-id module response firstPartyData=%O respJson=%O.', firstPartyData, respJson)
             }
             callback(respJson.data);
           } else {
