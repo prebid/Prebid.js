@@ -312,7 +312,7 @@ function getRequestData(bid, consentData, bidRequest) {
     }
   }
   if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
-    bidData.imp[0].content = {};
+    bidData.site.content = {};
     const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
     const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
     const contentArrayKeys = ['cat'];
@@ -324,7 +324,7 @@ function getRequestData(bid, consentData, bidRequest) {
         (contentObjectKeys.indexOf(contentKey) > -1 && utils.isPlainObject(bid.params.video.content[contentKey])) ||
         (contentArrayKeys.indexOf(contentKey) > -1 && utils.isArray(bid.params.video.content[contentKey]) &&
         bid.params.video.content[contentKey].every(catStr => utils.isStr(catStr)))) {
-        bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
+        bidData.site.content[contentKey] = bid.params.video.content[contentKey];
       } else {
         utils.logMessage('oneVideo bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
       }
