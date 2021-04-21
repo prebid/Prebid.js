@@ -66,7 +66,7 @@ export const spec = {
       method: SMARTICO_CONFIG.method,
       url: SMARTICO_CONFIG.bidRequestUrl,
       bids: validBidRequests,
-      data: {bidParams: bidParams, auctionId: bidderRequest.auctionId}
+      data: {bidParams: bidParams, auctionId: bidderRequest.auctionId, origin: window.location.origin}
     }
 
     return ServerRequestObjects;
