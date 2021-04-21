@@ -6,6 +6,8 @@ import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
+const ALIAS_BIDDER_CODE = 'roundel';
+const GLOBAL_VENDOR_ID = 10;
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BANNER_ENDPOINT_VERSION = 7.2;
@@ -292,7 +294,8 @@ function getEidInfo(allEids) {
     'liveramp.com': 'idl',
     'netid.de': 'NETID',
     'neustar.biz': 'fabrickId',
-    'zeotap.com': 'zeotapIdPlus'
+    'zeotap.com': 'zeotapIdPlus',
+    'uidapi.com': 'UID2'
   };
   var toSend = [];
   var seenSources = {};
@@ -345,6 +348,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       }
     }
   }
+
+  // If `roundel` alias bidder, only send requests if liveramp ids exist.
+  if (bidderRequest && bidderRequest.bidderCode === ALIAS_BIDDER_CODE && !eidInfo.seenSources['liveramp.com']) {
+    return [];
+  }
+
   const r = {};
 
   // Since bidderRequestId are the same for different bid request, just use the first one.
@@ -484,7 +493,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       msd = impressions[transactionIds[i]].missingCount;
     }
 
-    trimImpressions(impressions[transactionIds[i]], MAX_REQ_SIZE - BASE_REQ_SIZE);
+    if (BASE_REQ_SIZE < MAX_REQ_SIZE) {
+      trimImpressions(impressions[transactionIds[i]], MAX_REQ_SIZE - BASE_REQ_SIZE);
+    } else {
+      utils.logError('ix bidder: Base request size has exceeded maximum request size.');
+    }
 
     if (impressions[transactionIds[i]].hasOwnProperty('missingImps')) {
       msi = impressions[transactionIds[i]].missingImps.length;
@@ -550,6 +563,33 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 }
 
 /**
+ * Return an object of user IDs stored by Prebid User ID module
+ *
+ * @returns {array} ID providers that are present in userIds
+ */
+function _getUserIds(bidRequest) {
+  const userIds = bidRequest.userId || {};
+
+  const PROVIDERS = [
+    'britepoolid',
+    'id5id',
+    'lipbid',
+    'haloId',
+    'criteoId',
+    'lotamePanoramaId',
+    'merkleId',
+    'parrableId',
+    'connectid',
+    'sharedid',
+    'tapadId',
+    'quantcastId',
+    'pubcid'
+  ]
+
+  return PROVIDERS.filter(provider => utils.deepAccess(userIds, provider))
+}
+
+/**
  * Calculates IX diagnostics values and packages them into an object
  *
  * @param {array} validBidRequests  The valid bid requests from prebid
@@ -568,7 +608,8 @@ function buildIXDiag(validBidRequests) {
     ou: 0,
     allu: 0,
     ren: false,
-    version: '$prebid.version$'
+    version: '$prebid.version$',
+    userIds: _getUserIds(validBidRequests[0])
   };
 
   // create ad unit map and collect the required diag properties
@@ -697,7 +738,12 @@ function createMissingBannerImp(bid, imp, newSize) {
 export const spec = {
 
   code: BIDDER_CODE,
-  gvlid: 10,
+  gvlid: GLOBAL_VENDOR_ID,
+  aliases: [{
+    code: ALIAS_BIDDER_CODE,
+    gvlid: GLOBAL_VENDOR_ID,
+    skipPbsAliasing: false
+  }],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**

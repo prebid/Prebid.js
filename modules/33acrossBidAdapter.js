@@ -194,18 +194,36 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
   // therefore in ad targetting process
   ttxRequest.id = bidRequest.bidId;
 
-  // Set GDPR related fields
-  ttxRequest.user = {
-    ext: {
-      consent: gdprConsent.consentString
-    }
-  };
-  ttxRequest.regs = {
-    ext: {
-      gdpr: (gdprConsent.gdprApplies === true) ? 1 : 0,
-      us_privacy: uspConsent || null
-    }
-  };
+  if (gdprConsent.consentString) {
+    ttxRequest.user = setExtension(
+      ttxRequest.user,
+      'consent',
+      gdprConsent.consentString
+    )
+  }
+
+  if (Array.isArray(bidRequest.userIdAsEids) && bidRequest.userIdAsEids.length > 0) {
+    ttxRequest.user = setExtension(
+      ttxRequest.user,
+      'eids',
+      bidRequest.userIdAsEids
+    )
+  }
+
+  ttxRequest.regs = setExtension(
+    ttxRequest.regs,
+    'gdpr',
+    Number(gdprConsent.gdprApplies)
+  );
+
+  if (uspConsent) {
+    ttxRequest.regs = setExtension(
+      ttxRequest.regs,
+      'us_privacy',
+      uspConsent
+    )
+  }
+
   ttxRequest.ext = {
     ttx: {
       prebidStartedAt: Date.now(),
@@ -217,11 +235,11 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
   };
 
   if (bidRequest.schain) {
-    ttxRequest.source = {
-      ext: {
-        schain: bidRequest.schain
-      }
-    }
+    ttxRequest.source = setExtension(
+      ttxRequest.source,
+      'schain',
+      bidRequest.schain
+    )
   }
 
   // Finally, set the openRTB 'test' param if this is to be a test bid
@@ -248,6 +266,15 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
     'data': JSON.stringify(ttxRequest),
     'options': options
   }
+}
+
+// BUILD REQUESTS: SET EXTENSIONS
+function setExtension(obj = {}, key, value) {
+  return Object.assign({}, obj, {
+    ext: Object.assign({}, obj.ext, {
+      [key]: value
+    })
+  });
 }
 
 // BUILD REQUESTS: SIZE INFERENCE

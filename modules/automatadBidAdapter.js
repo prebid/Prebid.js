@@ -78,7 +78,9 @@ export const spec = {
             requestId: bid.impid,
             cpm: bid.price,
             ad: bid.adm,
-            adDomain: bid.adomain[0],
+            meta: {
+              advertiserDomains: bid.adomain
+            },
             currency: DEFAULT_CURRENCY,
             ttl: DEFAULT_BID_TTL,
             creativeId: bid.crid,

@@ -291,9 +291,10 @@ export const spec = {
       if (!utils.isEmpty(userExt)) {
         requestPayload.user = { ext: userExt };
       }
+      const urlQueryParams = 'src_sys=prebid'
       return {
         method: 'POST',
-        url: URL + channelId,
+        url: URL + channelId + '?' + urlQueryParams,
         data: requestPayload,
         bidRequest: bidderRequest
       };
@@ -352,6 +353,7 @@ export const spec = {
           } else {
             bid.cache_key = spotxBid.ext.cache_key;
             bid.vastUrl = 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key
+            bid.videoCacheKey = spotxBid.ext.cache_key;
           }
 
           bid.meta = bid.meta || {};
@@ -365,7 +367,7 @@ export const spec = {
             const playersize = utils.deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
               id: 0,
-              url: '//',
+              url: '/',
               config: {
                 adText: 'SpotX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],
