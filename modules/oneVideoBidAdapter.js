@@ -4,7 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  VERSION: '3.0.6',
+  VERSION: '3.0.7',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   E2ETESTENDPOINT: 'https://ads-wc.v.ssp.yahoo.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true',
@@ -312,7 +312,7 @@ function getRequestData(bid, consentData, bidRequest) {
     }
   }
   if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
-    bidData.imp[0].content = {};
+    bidData.site.content = {};
     const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
     const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
     const contentArrayKeys = ['cat'];
@@ -324,7 +324,7 @@ function getRequestData(bid, consentData, bidRequest) {
         (contentObjectKeys.indexOf(contentKey) > -1 && utils.isPlainObject(bid.params.video.content[contentKey])) ||
         (contentArrayKeys.indexOf(contentKey) > -1 && utils.isArray(bid.params.video.content[contentKey]) &&
         bid.params.video.content[contentKey].every(catStr => utils.isStr(catStr)))) {
-        bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
+        bidData.site.content[contentKey] = bid.params.video.content[contentKey];
       } else {
         utils.logMessage('oneVideo bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
       }
