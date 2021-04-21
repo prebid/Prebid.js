@@ -351,7 +351,10 @@ describe('ccxAdapter', function () {
           netRevenue: false,
           ttl: 5,
           currency: 'PLN',
-          vastXml: '<xml>'
+          vastXml: '<xml>',
+          meta: {
+            advertiserDomains: ['clickonometrics.com']
+          }
         }
       ];
       expect(spec.interpretResponse({body: response})).to.deep.have.same.members(bidResponses);
