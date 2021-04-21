@@ -339,7 +339,7 @@ describe('ccxAdapter', function () {
           currency: 'PLN',
           ad: '<script>TEST</script>',
           meta: {
-            advertiserDomains: 'clickonometrics.com'
+            advertiserDomains: ['clickonometrics.com']
           }
         },
         {
@@ -371,7 +371,7 @@ describe('ccxAdapter', function () {
           currency: 'PLN',
           ad: '<script>TEST</script>',
           meta: {
-            advertiserDomains: 'clickonometrics.com'
+            advertiserDomains: ['clickonometrics.com']
           }
         }
       ];
