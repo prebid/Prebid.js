@@ -200,7 +200,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     let apiName = (cmpVersion === 2) ? '__tcfapi' : '__cmp';
 
     let callName = `${apiName}Call`;
-    
+
     /* Setup up a __cmp function to do the postMessage and stash the callback.
     This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
     if (cmpVersion === 2) {
