@@ -233,12 +233,28 @@ describe('config API', function () {
     expect(logWarnSpy.called).to.equal(false);
   });
 
-  it('sets auctionOptions', function () {
-    const auctionOptionsConfig = {
+  it('sets auctionOptions with secondaryBidders', function () {
+    const testConfig = {
       'secondaryBidders': ['rubicon', 'appnexus']
-    }
-    setConfig({ auctionOptions: auctionOptionsConfig });
-    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+    };
+    setConfig({ auctionOptions: testConfig });
+    const configResult = getConfig('auctionOptions');
+    expect(configResult.secondaryBidders).to.be.equal(testConfig.secondaryBidders);
+  });
+
+  it('auctionOptions should use default suppressStaleRender val', function () {
+    setConfig({ auctionOptions: { 'secondaryBidders': ['test'] } });
+    const configResult = getConfig('auctionOptions');
+
+    expect(configResult.suppressStaleRender).to.be.equal(false);
+  });
+
+  it('auctionOptions should set suppressStaleRender val', function () {
+    setConfig({ auctionOptions: {
+      'suppressStaleRender': true
+    }});
+    const configResult = getConfig('auctionOptions');
+    expect(configResult.suppressStaleRender).to.equal(true);
   });
 
   it('should log warning for the wrong value passed to auctionOptions', function () {

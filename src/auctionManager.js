@@ -20,6 +20,7 @@
 import { uniques, flatten, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
 import find from 'core-js-pure/features/array/find.js';
+import events from './events.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -36,7 +37,13 @@ export function newAuctionManager() {
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
-      bid.status = CONSTANTS.BID_STATUS.RENDERED;
+      if (bid.status !== CONSTANTS.BID_STATUS.RENDERED) {
+        bid.status = CONSTANTS.BID_STATUS.RENDERED;
+      } else {
+        logWarn(`Auction detected a stale bid has been called to render`);
+        events.emit(CONSTANTS.EVENTS.STALE_RENDER, bid);
+      }
+
       auction.addWinningBid(bid);
     } else {
       logWarn(`Auction not found when adding winning bid`);

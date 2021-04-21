@@ -33,6 +33,8 @@ const DEFAULT_MAX_NESTED_IFRAMES = 10;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
+const DEFAULT_AUCTION_OPTIONS = { suppressStaleRender: false };
+
 export const RANDOM = 'random';
 const FIXED = 'fixed';
 
@@ -210,13 +212,16 @@ export function newConfig() {
         this._maxNestedIframes = val;
       },
 
-      _auctionOptions: {},
+      _auctionOptions: DEFAULT_AUCTION_OPTIONS,
       get auctionOptions() {
         return this._auctionOptions;
       },
       set auctionOptions(val) {
-        if (validateauctionOptions(val)) {
-          this._auctionOptions = val;
+        if (validateAuctionOptions(val)) {
+          this._auctionOptions = Object.keys(val).reduce((acc, item) => {
+            acc[item] = val[item];
+            return acc;
+          }, DEFAULT_AUCTION_OPTIONS);
         }
       },
     };
@@ -258,24 +263,29 @@ export function newConfig() {
       return true;
     }
 
-    function validateauctionOptions(val) {
+    function validateAuctionOptions(val) {
       if (!utils.isPlainObject(val)) {
-        utils.logWarn('Auction Options must be an object')
-        return false
+        utils.logWarn('Auction Options must be an object');
+        return false;
       }
 
       for (let k of Object.keys(val)) {
-        if (k !== 'secondaryBidders') {
-          utils.logWarn(`Auction Options given an incorrect param: ${k}`)
-          return false
+        if (k !== 'secondaryBidders' && k !== 'suppressStaleRender') {
+          utils.logWarn(`Auction Options given an incorrect param: ${k}`);
+          return false;
         }
         if (k === 'secondaryBidders') {
           if (!utils.isArray(val[k])) {
             utils.logWarn(`Auction Options ${k} must be of type Array`);
-            return false
+            return false;
           } else if (!val[k].every(utils.isStr)) {
-            utils.logWarn(`Auction Options ${k} must be only string`);
-            return false
+            utils.logWarn(`Auction Options ${k} must be only type String`);
+            return false;
+          }
+        } else if (k === 'suppressStaleRender') {
+          if (!utils.isBoolean(val[k])) {
+            utils.logWarn(`Auction Options ${k} must be only type Boolean`);
+            return false;
           }
         }
       }
