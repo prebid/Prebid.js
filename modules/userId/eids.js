@@ -111,7 +111,15 @@ const USER_IDS_CONFIG = {
   // merkleId
   'merkleId': {
     source: 'merkleinc.com',
-    atype: 3
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      return (data && data.keyID) ? {
+        keyID: data.keyID
+      } : undefined;
+    }
   },
 
   // NetId
@@ -149,6 +157,12 @@ const USER_IDS_CONFIG = {
   // quantcastId
   'quantcastId': {
     source: 'quantcast.com',
+    atype: 1
+  },
+
+  // nextroll
+  'nextrollId': {
+    source: 'nextroll.com',
     atype: 1
   },
 
@@ -192,6 +206,15 @@ const USER_IDS_CONFIG = {
     getValue: function(data) {
       return data.id;
     }
+  },
+  'deepintentId': {
+    source: 'deepintent.com',
+    atype: 3
+  },
+  // Admixer Id
+  'admixerId': {
+    source: 'admixer.net',
+    atype: 3
   }
 };
 

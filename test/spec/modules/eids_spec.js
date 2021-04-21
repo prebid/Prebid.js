@@ -84,13 +84,18 @@ describe('eids array generation for known sub-modules', function() {
 
   it('merkleId', function() {
     const userId = {
-      merkleId: 'some-random-id-value'
+      merkleId: {
+        id: 'some-random-id-value', keyID: 1
+      }
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'merkleinc.com',
-      uids: [{id: 'some-random-id-value', atype: 3}]
+      uids: [{id: 'some-random-id-value',
+        atype: 3,
+        ext: { keyID: 1
+        }}]
     });
   });
 
@@ -184,6 +189,18 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('deepintentId', function() {
+    const userId = {
+      deepintentId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'deepintent.com',
+      uids: [{id: 'some-random-id-value', atype: 3}]
+    });
+  });
+
   it('NetId', function() {
     const userId = {
       netId: 'some-random-id-value'
@@ -192,6 +209,18 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'netid.de',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('NextRollId', function() {
+    const userId = {
+      nextrollId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'nextroll.com',
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });

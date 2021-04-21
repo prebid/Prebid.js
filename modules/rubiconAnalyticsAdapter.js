@@ -119,6 +119,7 @@ function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return utils.pick(bid, [
       'bidder',
+      'bidderDetail',
       'bidId', bidId => utils.deepAccess(bid, 'bidResponse.pbsBidId') || utils.deepAccess(bid, 'bidResponse.seatBidId') || bidId,
       'status',
       'error',
@@ -362,8 +363,9 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
       const height = bid.height || bid.playerHeight;
       return (width && height) ? {width, height} : undefined;
     },
-    'pbsBidId',
-    'seatBidId',
+    // Handling use case where pbs sends back 0 or '0' bidIds
+    'pbsBidId', pbsBidId => pbsBidId == 0 ? utils.generateUUID() : pbsBidId,
+    'seatBidId', seatBidId => seatBidId == 0 ? utils.generateUUID() : seatBidId,
     'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
     'floorRuleValue', () => utils.deepAccess(bid, 'floorData.floorRuleValue'),
     'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined,
@@ -660,12 +662,12 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                 return ['banner'];
               },
               'gam', () => {
-                if (utils.deepAccess(bid, 'fpd.context.adServer.name') === 'gam') {
-                  return {adSlot: bid.fpd.context.adServer.adSlot}
+                if (utils.deepAccess(bid, 'ortb2Imp.ext.data.adserver.name') === 'gam') {
+                  return {adSlot: bid.ortb2Imp.ext.data.adserver.adSlot}
                 }
               },
-              'pbAdSlot', () => utils.deepAccess(bid, 'fpd.context.pbAdSlot'),
-              'pattern', () => utils.deepAccess(bid, 'fpd.context.aupName')
+              'pbAdSlot', () => utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot'),
+              'pattern', () => utils.deepAccess(bid, 'ortb2Imp.ext.data.aupname')
             ])
           ]);
           return memo;
@@ -673,6 +675,13 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         break;
       case BID_RESPONSE:
         let auctionEntry = cache.auctions[args.auctionId];
+
+        if (!auctionEntry.bids[args.requestId] && args.originalRequestId) {
+          auctionEntry.bids[args.requestId] = {...auctionEntry.bids[args.originalRequestId]};
+          auctionEntry.bids[args.requestId].bidId = args.requestId;
+          auctionEntry.bids[args.requestId].bidderDetail = args.targetingBidder;
+        }
+
         let bid = auctionEntry.bids[args.requestId];
         // If floor resolved gptSlot but we have not yet, then update the adUnit to have the adSlot name
         if (!utils.deepAccess(bid, 'adUnit.gam.adSlot') && utils.deepAccess(args, 'floorData.matchedFields.gptSlot')) {

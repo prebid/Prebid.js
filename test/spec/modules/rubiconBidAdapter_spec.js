@@ -488,6 +488,17 @@ describe('the rubicon adapter', function () {
           data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.equal('1.23');
         });
+
+        it('should send rp_maxbids to AE if rubicon multibid config exists', function () {
+          var multibidRequest = utils.deepClone(bidderRequest);
+          multibidRequest.bidLimit = 5;
+
+          let [request] = spec.buildRequests(multibidRequest.bids, multibidRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['rp_maxbids']).to.equal('5');
+        });
+
         it('should not send p_pos to AE if not params.position specified', function () {
           var noposRequest = utils.deepClone(bidderRequest);
           delete noposRequest.bids[0].params.position;
@@ -554,7 +565,7 @@ describe('the rubicon adapter', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
@@ -1626,6 +1637,33 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
         });
 
+        it('should add multibid configuration to PBS Request', function () {
+          createVideoBidderRequest();
+
+          const multibid = [{
+            bidder: 'bidderA',
+            maxBids: 2
+          }, {
+            bidder: 'bidderB',
+            maxBids: 2
+          }];
+          const expected = [{
+            bidder: 'bidderA',
+            maxbids: 2
+          }, {
+            bidder: 'bidderB',
+            maxbids: 2
+          }];
+
+          config.setConfig({multibid: multibid});
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // should have the aliases object sent to PBS
+          expect(request.data.ext.prebid).to.haveOwnProperty('multibid');
+          expect(request.data.ext.prebid.multibid).to.deep.equal(expected);
+        });
+
         it('should send video exp param correctly when set', function () {
           createVideoBidderRequest();
           config.setConfig({s2sConfig: {defaultTtl: 600}});
@@ -1781,16 +1819,6 @@ describe('the rubicon adapter', function () {
           // delete protocols, no good
           createVideoBidderRequest();
           delete bidderRequest.bids[0].mediaTypes.video.protocols;
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // change maxduration to an string, no good
-          createVideoBidderRequest();
-          bidderRequest.bids[0].mediaTypes.video.maxduration = 'string';
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // delete maxduration, no good
-          createVideoBidderRequest();
-          delete bidderRequest.bids[0].mediaTypes.video.maxduration;
           expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
 
           // change linearity to an string, no good
@@ -2554,6 +2582,146 @@ describe('the rubicon adapter', function () {
 
           expect(bids).to.be.lengthOf(1);
           expect(bids[0].cpm).to.be.equal(0);
+        });
+
+        it('should create bids with matching requestIds if imp id matches', function () {
+          let bidRequests = [{
+            'bidder': 'rubicon',
+            'params': {
+              'accountId': 1001,
+              'siteId': 12345,
+              'zoneId': 67890,
+              'floor': null
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [[300, 250]]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1460505748561-0',
+            'transactionId': '404a7b28-f276-41cc-a5cf-c1d3dc5671f9',
+            'sizes': [[300, 250]],
+            'bidId': '557ba307cef098',
+            'bidderRequestId': '46a00704ffeb7',
+            'auctionId': '3fdc6494-da94-44a0-a292-b55a90b08b2c',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0,
+            'startTime': 1615412098213
+          }, {
+            'bidder': 'rubicon',
+            'params': {
+              'accountId': 1001,
+              'siteId': 12345,
+              'zoneId': 67890,
+              'floor': null
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [[300, 250]]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1460505748561-1',
+            'transactionId': '404a7b28-f276-41cc-a5cf-c1d3dc5671f9',
+            'sizes': [[300, 250]],
+            'bidId': '456gt123jkl098',
+            'bidderRequestId': '46a00704ffeb7',
+            'auctionId': '3fdc6494-da94-44a0-a292-b55a90b08b2c',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0,
+            'startTime': 1615412098213
+          }];
+
+          let response = {
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43
+            ],
+            'tracking': '',
+            'inventory': {},
+            'ads': [
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+                'size_id': '15',
+                'ad_id': '6',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.811,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '15_tier_all_test'
+                    ]
+                  }
+                ]
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+                'size_id': '15',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.911,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ]
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+                'size_id': '43',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 1.911,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ]
+              }
+            ]
+          };
+
+          config.setConfig({ multibid: [{bidder: 'rubicon', maxbids: 2, targetbiddercodeprefix: 'rubi'}] });
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidRequests
+          });
+
+          expect(bids).to.be.lengthOf(3);
+          expect(bids[0].requestId).to.not.equal(bids[1].requestId);
+          expect(bids[1].requestId).to.equal(bids[2].requestId);
         });
 
         it('should handle an error with no ads returned', function () {

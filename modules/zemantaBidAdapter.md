@@ -65,7 +65,9 @@ pbjs.setConfig({
                   name: 'Publishers Name',
                   domain: 'publisher.com'
                 },
-                tagid: 'tag-id'
+                tagid: 'tag-id',
+                bcat: ['IAB1-1'],
+                badv: ['example.com']
             }
         }]
     ];
@@ -94,7 +96,9 @@ pbjs.setConfig({
                   name: 'Publishers Name',
                   domain: 'publisher.com'
                 },
-                tagid: 'tag-id'
+                tagid: 'tag-id',
+                bcat: ['IAB1-1'],
+                badv: ['example.com']
             },
         }]
     ];
