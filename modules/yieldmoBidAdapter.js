@@ -18,6 +18,8 @@ const LOCAL_WINDOW = utils.getWindowTop();
 const DEFAULT_PLAYBACK_METHOD = 2;
 const DEFAULT_START_DELAY = 0;
 const VAST_TIMEOUT = 15000;
+const MAX_BANNER_REQUEST_URL_LENGTH = 8000;
+const BANNER_REQUEST_PROPERTIES_TO_REDUCE = ['description', 'title', 'pr', 'page_url'];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -51,7 +53,7 @@ export const spec = {
         p: [],
         page_url: bidderRequest.refererInfo.referer,
         bust: new Date().getTime().toString(),
-        pr: bidderRequest.refererInfo.referer,
+        pr: (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '',
         scrd: LOCAL_WINDOW.devicePixelRatio || 0,
         dnt: getDNT(),
         description: getPageDescription(),
@@ -92,6 +94,20 @@ export const spec = {
         }
       });
       serverRequest.p = '[' + serverRequest.p.toString() + ']';
+
+      // check if url exceeded max length
+      const url = `${BANNER_SERVER_ENDPOINT}?${utils.parseQueryStringParameters(serverRequest)}`;
+      let extraCharacters = url.length - MAX_BANNER_REQUEST_URL_LENGTH;
+      if (extraCharacters > 0) {
+        for (let i = 0; i < BANNER_REQUEST_PROPERTIES_TO_REDUCE.length; i++) {
+          extraCharacters = shortcutProperty(extraCharacters, serverRequest, BANNER_REQUEST_PROPERTIES_TO_REDUCE[i]);
+
+          if (extraCharacters <= 0) {
+            break;
+          }
+        }
+      }
+
       serverRequests.push({
         method: 'GET',
         url: BANNER_SERVER_ENDPOINT,
@@ -273,7 +289,7 @@ function getPageDescription() {
   if (document.querySelector('meta[name="description"]')) {
     return document
       .querySelector('meta[name="description"]')
-      .getAttribute('content'); // Value of the description metadata from the publisher's page.
+      .getAttribute('content') || ''; // Value of the description metadata from the publisher's page.
   } else {
     return '';
   }
@@ -513,4 +529,26 @@ function validateVideoParams(bid) {
     utils.logError(e.message);
     return false;
   }
+}
+
+/**
+ * Shortcut object property and check if required characters count was deleted
+ *
+ * @param {number} extraCharacters, count of characters to remove
+ * @param {object} target, object on which string property length should be reduced
+ * @param {string} propertyName, name of property to reduce
+ * @return {number} 0 if required characters count was removed otherwise count of how many left
+ */
+function shortcutProperty(extraCharacters, target, propertyName) {
+  if (target[propertyName].length > extraCharacters) {
+    target[propertyName] = target[propertyName].substring(0, target[propertyName].length - extraCharacters);
+
+    return 0
+  }
+
+  const charactersLeft = extraCharacters - target[propertyName].length;
+
+  target[propertyName] = '';
+
+  return charactersLeft;
 }
