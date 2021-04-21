@@ -337,7 +337,10 @@ describe('ccxAdapter', function () {
           netRevenue: false,
           ttl: 5,
           currency: 'PLN',
-          ad: '<script>TEST</script>'
+          ad: '<script>TEST</script>',
+          meta: {
+            advertiserDomains: 'clickonometrics.com'
+          }
         },
         {
           requestId: '2e56e1af51a5d8',
@@ -366,7 +369,10 @@ describe('ccxAdapter', function () {
           netRevenue: false,
           ttl: 5,
           currency: 'PLN',
-          ad: '<script>TEST</script>'
+          ad: '<script>TEST</script>',
+          meta: {
+            advertiserDomains: 'clickonometrics.com'
+          }
         }
       ];
       expect(spec.interpretResponse({body: response})).to.deep.have.same.members(bidResponses);
