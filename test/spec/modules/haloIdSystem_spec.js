@@ -4,6 +4,16 @@ import * as utils from 'src/utils.js';
 
 describe('HaloIdSystem', function () {
   describe('getId', function() {
+    let getDataFromLocalStorageStub;
+
+    beforeEach(function() {
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    });
+
+    afterEach(function () {
+      getDataFromLocalStorageStub.restore();
+    });
+
     it('gets a haloId', function() {
       const config = {
         params: {}
@@ -21,7 +31,8 @@ describe('HaloIdSystem', function () {
       const config = {
         params: {}
       };
-      storage.setDataInLocalStorage('auHaloId', 'tstCachedHaloId1');
+      getDataFromLocalStorageStub.withArgs('auHaloId').returns('tstCachedHaloId1');
+
       const callbackSpy = sinon.spy();
       const callback = haloIdSubmodule.getId(config).callback;
       callback(callbackSpy);

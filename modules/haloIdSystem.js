@@ -29,6 +29,10 @@ export const haloIdSubmodule = {
    * @returns {{haloId:Object}}
    */
   decode(value) {
+    let haloId = storage.getDataFromLocalStorage('auHaloId');
+    if (utils.isStr(haloId)) {
+      return {haloId: haloId};
+    }
     return (value && typeof value['haloId'] === 'string') ? { 'haloId': value['haloId'] } : undefined;
   },
   /**
