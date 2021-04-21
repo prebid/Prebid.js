@@ -921,19 +921,19 @@ function applyFPD(bidRequest, mediaType, data) {
       }).toString() : prop.toString();
     }
   };
-  const addBannerData = function(obj, name, key) {
+  const addBannerData = function(obj, name, key, isParent = true) {
     let val = validate(obj, key);
-    let loc = (MAP[key]) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
+    let loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
   }
 
   Object.keys(impData).forEach((key) => {
     if (key === 'adserver') {
       ['name', 'adslot'].forEach(prop => {
-        if (impData[key][prop]) impData[key][prop] = impData[key][prop].replace(/^\/+/, '');
+        if (impData[key][prop]) impData[key][prop] = impData[key][prop].toString().replace(/^\/+/, '');
       });
     } else if (key === 'pbadslot') {
-      impData[key] = impData[key].replace(/^\/+/, '');
+      impData[key] = impData[key].toString().replace(/^\/+/, '');
     }
   });
 
@@ -944,7 +944,7 @@ function applyFPD(bidRequest, mediaType, data) {
           addBannerData(fpd[name][key], name, key);
         } else if (fpd[name][key].data) {
           Object.keys(fpd[name].ext.data).forEach((key) => {
-            addBannerData(fpd[name].ext.data[key], name, key);
+            addBannerData(fpd[name].ext.data[key], name, key, false);
           });
         }
       });
