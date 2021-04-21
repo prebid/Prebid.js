@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
 import includes from 'core-js-pure/features/array/includes';
-import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
@@ -10,10 +10,16 @@ const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
 const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
+const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
 const OPENRTB_VIDEO_BIDPARAMS = ['placement', 'startdelay', 'skipafter',
   'protocols', 'api', 'playbackmethod', 'maxduration', 'minduration', 'pos'];
 const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
-const localWindow = utils.getWindowTop();
+const LOCAL_WINDOW = utils.getWindowTop();
+const DEFAULT_PLAYBACK_METHOD = 2;
+const DEFAULT_START_DELAY = 0;
+const VAST_TIMEOUT = 15000;
+const MAX_BANNER_REQUEST_URL_LENGTH = 8000;
+const BANNER_REQUEST_PROPERTIES_TO_REDUCE = ['description', 'title', 'pr', 'page_url'];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -47,13 +53,13 @@ export const spec = {
         p: [],
         page_url: bidderRequest.refererInfo.referer,
         bust: new Date().getTime().toString(),
-        pr: bidderRequest.refererInfo.referer,
-        scrd: localWindow.devicePixelRatio || 0,
+        pr: (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '',
+        scrd: LOCAL_WINDOW.devicePixelRatio || 0,
         dnt: getDNT(),
         description: getPageDescription(),
-        title: localWindow.document.title || '',
-        w: localWindow.innerWidth,
-        h: localWindow.innerHeight,
+        title: LOCAL_WINDOW.document.title || '',
+        w: LOCAL_WINDOW.innerWidth,
+        h: LOCAL_WINDOW.innerHeight,
         userConsent: JSON.stringify({
           // case of undefined, stringify will remove param
           gdprApplies: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
@@ -88,6 +94,20 @@ export const spec = {
         }
       });
       serverRequest.p = '[' + serverRequest.p.toString() + ']';
+
+      // check if url exceeded max length
+      const url = `${BANNER_SERVER_ENDPOINT}?${utils.parseQueryStringParameters(serverRequest)}`;
+      let extraCharacters = url.length - MAX_BANNER_REQUEST_URL_LENGTH;
+      if (extraCharacters > 0) {
+        for (let i = 0; i < BANNER_REQUEST_PROPERTIES_TO_REDUCE.length; i++) {
+          extraCharacters = shortcutProperty(extraCharacters, serverRequest, BANNER_REQUEST_PROPERTIES_TO_REDUCE[i]);
+
+          if (extraCharacters <= 0) {
+            break;
+          }
+        }
+      }
+
       serverRequests.push({
         method: 'GET',
         url: BANNER_SERVER_ENDPOINT,
@@ -203,8 +223,9 @@ function createNewBannerBid(response) {
  * @param bidRequest server request
  */
 function createNewVideoBid(response, bidRequest) {
-  const imp = find((utils.deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
-  return {
+  const imp = (utils.deepAccess(bidRequest, 'data.imp') || []).find(imp => imp.id === response.impid);
+
+  let result = {
     requestId: imp.id,
     cpm: response.price,
     width: imp.video.w,
@@ -220,6 +241,35 @@ function createNewVideoBid(response, bidRequest) {
       mediaType: VIDEO,
     },
   };
+
+  if (imp.placement && imp.placement !== 1) {
+    const renderer = Renderer.install({
+      url: OUTSTREAM_VIDEO_PLAYER_URL,
+      config: {
+        width: result.width,
+        height: result.height,
+        vastTimeout: VAST_TIMEOUT,
+        maxAllowedVastTagRedirects: 5,
+        allowVpaid: true,
+        autoPlay: true,
+        preload: true,
+        mute: true
+      },
+      id: imp.tagid,
+      loaded: false,
+    });
+
+    renderer.setRender(function (bid) {
+      bid.renderer.push(() => {
+        const { id, config } = bid.renderer;
+        window.YMoutstreamPlayer(bid, id, config);
+      });
+    });
+
+    result.renderer = renderer;
+  }
+
+  return result;
 }
 
 /**
@@ -239,7 +289,7 @@ function getPageDescription() {
   if (document.querySelector('meta[name="description"]')) {
     return document
       .querySelector('meta[name="description"]')
-      .getAttribute('content'); // Value of the description metadata from the publisher's page.
+      .getAttribute('content') || ''; // Value of the description metadata from the publisher's page.
   } else {
     return '';
   }
@@ -306,10 +356,14 @@ function openRtbImpression(bidRequest) {
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
     .forEach(param => imp.video[param] = videoParams[param]);
 
-  if (videoParams.skippable) {
-    imp.video.skip = 1;
+  if (videoParams.skippable) imp.video.skip = 1;
+  if (videoParams.placement !== 1) {
+    imp.video = {
+      ...imp.video,
+      startdelay: DEFAULT_START_DELAY,
+      playbackmethod: [ DEFAULT_PLAYBACK_METHOD ]
+    }
   }
-
   return imp;
 }
 
@@ -475,4 +529,26 @@ function validateVideoParams(bid) {
     utils.logError(e.message);
     return false;
   }
+}
+
+/**
+ * Shortcut object property and check if required characters count was deleted
+ *
+ * @param {number} extraCharacters, count of characters to remove
+ * @param {object} target, object on which string property length should be reduced
+ * @param {string} propertyName, name of property to reduce
+ * @return {number} 0 if required characters count was removed otherwise count of how many left
+ */
+function shortcutProperty(extraCharacters, target, propertyName) {
+  if (target[propertyName].length > extraCharacters) {
+    target[propertyName] = target[propertyName].substring(0, target[propertyName].length - extraCharacters);
+
+    return 0
+  }
+
+  const charactersLeft = extraCharacters - target[propertyName].length;
+
+  target[propertyName] = '';
+
+  return charactersLeft;
 }
