@@ -242,7 +242,7 @@ function createNewVideoBid(response, bidRequest) {
     },
   };
 
-  if (imp.placement && imp.placement !== 1) {
+  if (imp.video.placement && imp.video.placement !== 1) {
     const renderer = Renderer.install({
       url: OUTSTREAM_VIDEO_PLAYER_URL,
       config: {
