@@ -22,6 +22,7 @@ const SYNC_TYPES = Object.freeze({
   1: 'iframe',
   2: 'image'
 });
+const GVLID = 14;
 
 const NATIVE_MODEL = [
   {name: 'title', assetType: 'title'},
@@ -50,9 +51,9 @@ const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
  * Adapter for requesting bids from AdKernel white-label display platform
  */
 export const spec = {
-
   code: 'adkernel',
-  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon', 'andbeyond', 'adbite', 'houseofpubs', 'torchad', 'stringads', 'bcm'],
+  gvlid: GVLID,
+  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon', 'andbeyond', 'adbite', 'houseofpubs', 'torchad', 'stringads', 'bcm', 'engageadx'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -320,7 +321,7 @@ function getAllowedSyncMethod(bidderCode) {
  */
 function buildRtbRequest(imps, bidderRequest, schain) {
   let {bidderCode, gdprConsent, auctionId, refererInfo, timeout, uspConsent} = bidderRequest;
-
+  let coppa = config.getConfig('coppa');
   let req = {
     'id': auctionId,
     'imp': imps,
@@ -348,6 +349,9 @@ function buildRtbRequest(imps, bidderRequest, schain) {
   }
   if (uspConsent) {
     utils.deepSetValue(req, 'regs.ext.us_privacy', uspConsent);
+  }
+  if (coppa) {
+    utils.deepSetValue(req, 'regs.coppa', 1);
   }
   let syncMethod = getAllowedSyncMethod(bidderCode);
   if (syncMethod) {

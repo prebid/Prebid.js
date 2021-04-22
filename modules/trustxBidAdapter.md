@@ -52,6 +52,18 @@ TrustX Bid Adapter supports Banner and Video (instream and outstream).
                        }
                    }
                ]
+           },{
+               code: 'test-div',
+               sizes: [[300, 250]],
+               bids: [
+                   {
+                       bidder: "trustx",
+                       params: {
+                           uid: '58851',
+                           useNewFormat: true
+                       }
+                   }
+               ]
            }
        ];
 ```

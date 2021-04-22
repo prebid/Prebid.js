@@ -4,6 +4,7 @@ import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 import { Renderer } from '../src/Renderer.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -199,6 +200,11 @@ export const spec = {
         }
       }
 
+      let modules = (getGlobal()).installedModules;
+      if (modules && (!modules.length || modules.indexOf('rubiconAnalyticsAdapter') !== -1)) {
+        utils.deepSetValue(data, 'ext.prebid.analytics', [{ 'adapter': 'rubicon', 'client-analytics': true }]);
+      }
+
       let bidFloor;
       if (typeof bidRequest.getFloor === 'function' && !rubiConf.disableFloors) {
         let floorInfo;
@@ -257,6 +263,21 @@ export const spec = {
 
       if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+      }
+
+      const multibid = config.getConfig('multibid');
+      if (multibid) {
+        utils.deepSetValue(data, 'ext.prebid.multibid', multibid.reduce((result, i) => {
+          let obj = {};
+
+          Object.keys(i).forEach(key => {
+            obj[key.toLowerCase()] = i[key];
+          });
+
+          result.push(obj);
+
+          return result;
+        }, []));
       }
 
       applyFPD(bidRequest, VIDEO, data);
@@ -513,6 +534,8 @@ export const spec = {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
+    data['rp_maxbids'] = bidderRequest.bidLimit || 1;
+
     applyFPD(bidRequest, BANNER, data);
 
     if (config.getConfig('coppa') === true) {
@@ -648,6 +671,8 @@ export const spec = {
     }
 
     let ads = responseObj.ads;
+    let lastImpId;
+    let multibid = 0;
 
     // video ads array is wrapped in an object
     if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest) === 'video' && typeof ads === 'object') {
@@ -660,12 +685,14 @@ export const spec = {
     }
 
     return ads.reduce((bids, ad, i) => {
+      (ad.impression_id && lastImpId === ad.impression_id) ? multibid++ : lastImpId = ad.impression_id;
+
       if (ad.status !== 'ok') {
         return bids;
       }
 
       // associate bidRequests; assuming ads matches bidRequest
-      const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i] : bidRequest;
+      const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i - multibid] : bidRequest;
 
       if (associatedBidRequest && typeof associatedBidRequest === 'object') {
         let bid = {
@@ -949,7 +976,8 @@ function applyFPD(bidRequest, mediaType, data) {
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key) {
     if (key === 'data' && Array.isArray(prop)) {
-      return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.taxonomyname').match(/iab/i)).map(value => {
+      return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.taxonomyname') &&
+        utils.deepAccess(name, 'ext.taxonomyname').match(/iab/i)).map(value => {
         let segments = value.segment.filter(obj => obj.id).reduce((result, obj) => {
           result.push(obj.id);
           return result;
@@ -966,19 +994,19 @@ function applyFPD(bidRequest, mediaType, data) {
       }).toString() : prop.toString();
     }
   };
-  const addBannerData = function(obj, name, key) {
+  const addBannerData = function(obj, name, key, isParent = true) {
     let val = validate(obj, key);
-    let loc = (MAP[key]) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
+    let loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
   }
 
   Object.keys(impData).forEach((key) => {
     if (key === 'adserver') {
       ['name', 'adslot'].forEach(prop => {
-        if (impData[key][prop]) impData[key][prop] = impData[key][prop].replace(/^\/+/, '');
+        if (impData[key][prop]) impData[key][prop] = impData[key][prop].toString().replace(/^\/+/, '');
       });
     } else if (key === 'pbadslot') {
-      impData[key] = impData[key].replace(/^\/+/, '');
+      impData[key] = impData[key].toString().replace(/^\/+/, '');
     }
   });
 
@@ -989,7 +1017,7 @@ function applyFPD(bidRequest, mediaType, data) {
           addBannerData(fpd[name][key], name, key);
         } else if (fpd[name][key].data) {
           Object.keys(fpd[name].ext.data).forEach((key) => {
-            addBannerData(fpd[name].ext.data[key], name, key);
+            addBannerData(fpd[name].ext.data[key], name, key, false);
           });
         }
       });
@@ -1153,7 +1181,6 @@ export function hasValidVideoParams(bid) {
   var requiredParams = {
     mimes: arrayType,
     protocols: arrayType,
-    maxduration: numberType,
     linearity: numberType,
     api: arrayType
   }
