@@ -24,7 +24,6 @@ Module that connects to 7xbid's demand sources
           params: {
             placementId: 1425292,
             currency: 'USD'
-
           }
         }
       ]

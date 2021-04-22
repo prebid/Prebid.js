@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter';
-import * as utils from 'src/utils';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
 const AD_CODE = 'ssp-!demo!-lufip';
@@ -236,7 +236,7 @@ describe('TelariaAdapter', () => {
     it('should get correct bid response', () => {
       let expectedResponseKeys = ['bidderCode', 'width', 'height', 'statusMessage', 'adId', 'mediaType', 'source',
         'getStatusCode', 'getSize', 'requestId', 'cpm', 'creativeId', 'vastXml',
-        'vastUrl', 'currency', 'netRevenue', 'ttl', 'ad'];
+        'vastUrl', 'currency', 'netRevenue', 'ttl', 'ad', 'meta'];
 
       let bidRequest = spec.buildRequests(stub, BIDDER_REQUEST)[0];
       bidRequest.bidId = '1234';

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/innityBidAdapter';
+import { spec } from 'modules/innityBidAdapter.js';
 
 describe('innityAdapterTest', () => {
   describe('bidRequestValidity', () => {

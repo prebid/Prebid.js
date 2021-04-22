@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, resetUserSync } from 'modules/underdogmediaBidAdapter';
+import { spec, resetUserSync } from 'modules/underdogmediaBidAdapter.js';
 
 describe('UnderdogMedia adapter', function () {
   let bidRequests;

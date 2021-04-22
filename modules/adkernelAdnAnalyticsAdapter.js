@@ -1,13 +1,16 @@
-import adapter from '../src/AnalyticsAdapter';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import {parse} from '../src/url';
-import * as utils from '../src/utils';
-import {ajax} from '../src/ajax';
+import adapterManager from '../src/adapterManager.js';
+import * as utils from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {config} from '../src/config.js';
 
-const ANALYTICS_VERSION = '1.0.1';
+const GVLID = 14;
+const ANALYTICS_VERSION = '1.0.2';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 const DEFAULT_HOST = 'tag.adkernel.com';
+const storageObj = getStorageManager(GVLID);
 
 const ADK_HB_EVENTS = {
   AUCTION_INIT: 'auctionInit',
@@ -33,6 +36,7 @@ function buildRequestTemplate(pubId) {
       },
       lang: navigator.language
     },
+    user: {},
     src: getUmtSource(loc.href, ref)
   }
 }
@@ -49,6 +53,7 @@ let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
           if (analyticsAdapter.context.queue) {
             analyticsAdapter.context.queue.init();
           }
+          initPrivacy(analyticsAdapter.context.requestTemplate, args.bidderRequests);
           handler = trackAuctionInit;
           break;
         case CONSTANTS.EVENTS.BID_REQUESTED:
@@ -99,7 +104,8 @@ analyticsAdapter.enableAnalytics = (config) => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
-  code: 'adkernelAdn'
+  code: 'adkernelAdn',
+  gvlid: GVLID
 });
 
 export default analyticsAdapter;
@@ -175,10 +181,10 @@ const ORGANIC = '(organic)';
 
 export let storage = {
   getItem: (name) => {
-    return localStorage.getItem(name);
+    return storageObj.getDataFromLocalStorage(name);
   },
   setItem: (name, value) => {
-    localStorage.setItem(name, value);
+    storageObj.setDataInLocalStorage(name, value);
   }
 };
 
@@ -209,7 +215,7 @@ export function getUmtSource(pageUrl, referrer) {
       if (se) {
         return asUtm(se, ORGANIC, ORGANIC);
       }
-      let parsedUrl = parse(pageUrl);
+      let parsedUrl = utils.parseUrl(pageUrl);
       let [refHost, refPath] = getReferrer(referrer);
       if (refHost && refHost !== parsedUrl.hostname) {
         return asUtm(refHost, REFERRAL, REFERRAL, '', refPath);
@@ -236,12 +242,12 @@ export function getUmtSource(pageUrl, referrer) {
   }
 
   function getReferrer(referrer) {
-    let ref = parse(referrer);
+    let ref = utils.parseUrl(referrer);
     return [ref.hostname, ref.pathname];
   }
 
   function getUTM(pageUrl) {
-    let urlParameters = parse(pageUrl).search;
+    let urlParameters = utils.parseUrl(pageUrl).search;
     if (!urlParameters['utm_campaign'] || !urlParameters['utm_source']) {
       return;
     }
@@ -388,4 +394,20 @@ function getLocationAndReferrer(win) {
     ref: win.document.referrer,
     loc: win.location
   };
+}
+
+function initPrivacy(template, requests) {
+  let consent = requests[0].gdprConsent;
+  if (consent && consent.gdprApplies) {
+    template.user.gdpr = ~~consent.gdprApplies;
+  }
+  if (consent && consent.consentString) {
+    template.user.gdpr_consent = consent.consentString;
+  }
+  if (requests[0].uspConsent) {
+    template.user.us_privacy = requests[0].uspConsent;
+  }
+  if (config.getConfig('coppa')) {
+    template.user.coppa = 1;
+  }
 }

@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import {Renderer} from '../src/Renderer';
-import {OUTSTREAM} from '../src/video';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'buzzoola';
 const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';

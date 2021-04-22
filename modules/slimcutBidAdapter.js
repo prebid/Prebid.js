@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { ajax } from '../src/ajax';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'slimcut';
 const ENDPOINT_URL = 'https://sb.freeskreen.com/pbr';

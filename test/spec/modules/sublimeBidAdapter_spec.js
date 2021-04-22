@@ -1,9 +1,44 @@
 import { expect } from 'chai';
-import { spec } from 'modules/sublimeBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/sublimeBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+
+let utils = require('src/utils');
 
 describe('Sublime Adapter', function() {
   const adapter = newBidder(spec);
+
+  describe('sendEvent', function() {
+    let sandbox;
+    const triggeredPixelProperties = [
+      't',
+      'tse',
+      'z',
+      'e',
+      'src',
+      'puid',
+      'trId',
+      'pbav',
+      'pubpbv',
+      'device',
+      'pubtimeout',
+    ];
+
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+    });
+
+    it('should trigger pixel', function () {
+      sandbox.spy(utils, 'triggerPixel');
+      spec.sendEvent('test');
+      expect(utils.triggerPixel.called).to.equal(true);
+      const params = utils.parseUrl(utils.triggerPixel.args[0][0]).search;
+      expect(Object.keys(params)).to.have.members(triggeredPixelProperties);
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+  })
 
   describe('inherited functions', function() {
     it('exists and is a function', function() {
@@ -74,8 +109,9 @@ describe('Sublime Adapter', function() {
     });
 
     it('should contains a request id equals to the bid id', function() {
-      expect(request[0].data.requestId).to.equal(bidRequests[0].bidId);
-      expect(request[1].data.requestId).to.equal(bidRequests[1].bidId);
+      for (let i = 0; i < request.length; i = i + 1) {
+        expect(JSON.parse(request[i].data).requestId).to.equal(bidRequests[i].bidId);
+      }
     });
 
     it('should have an url that contains bid keyword', function() {
@@ -106,6 +142,7 @@ describe('Sublime Adapter', function() {
   describe('interpretResponse', function() {
     let serverResponse = {
       'request_id': '3db3773286ee59',
+      'sspname': 'foo',
       'cpm': 0.5,
       'ad': '<!-- Creative -->',
     };
@@ -127,8 +164,10 @@ describe('Sublime Adapter', function() {
           creativeId: 1,
           dealId: 1,
           currency: 'USD',
+          sspname: 'foo',
           netRevenue: true,
           ttl: 600,
+          pbav: '0.7.1',
           ad: '',
         },
       ];
@@ -139,6 +178,7 @@ describe('Sublime Adapter', function() {
     it('should get correct default size for 1x1', function() {
       let serverResponse = {
         'requestId': 'xyz654_2',
+        'sspname': 'sublime',
         'cpm': 0.5,
         'ad': '<!-- Creative -->',
       };
@@ -170,6 +210,8 @@ describe('Sublime Adapter', function() {
         netRevenue: true,
         ttl: 600,
         ad: '<!-- Creative -->',
+        pbav: '0.7.1',
+        sspname: 'sublime'
       };
 
       expect(result[0]).to.deep.equal(expectedResponse);
@@ -189,6 +231,7 @@ describe('Sublime Adapter', function() {
     it('should return bid with default value in response', function () {
       let serverResponse = {
         'requestId': 'xyz654_2',
+        'sspname': 'sublime',
         'ad': '<!-- ad -->',
       };
 
@@ -216,9 +259,11 @@ describe('Sublime Adapter', function() {
         creativeId: 1,
         dealId: 1,
         currency: 'EUR',
+        sspname: 'sublime',
         netRevenue: true,
         ttl: 600,
         ad: '<!-- ad -->',
+        pbav: '0.7.1',
       };
 
       expect(result[0]).to.deep.equal(expectedResponse);
@@ -250,6 +295,30 @@ describe('Sublime Adapter', function() {
       let expectedResponse = [];
 
       expect(result).to.deep.equal(expectedResponse);
+
+      describe('On bid Time out', function () {
+        spec.onTimeout(result);
+      });
     });
   });
+
+  describe('onBidWon', function() {
+    let sandbox;
+    let bid = { foo: 'bar' };
+
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+    });
+
+    it('should trigger "bidwon" pixel', function () {
+      sandbox.spy(utils, 'triggerPixel');
+      spec.onBidWon(bid);
+      const params = utils.parseUrl(utils.triggerPixel.args[0][0]).search;
+      expect(params.e).to.equal('bidwon');
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+  })
 });

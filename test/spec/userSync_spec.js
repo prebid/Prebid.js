@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { config } from 'src/config';
+import { config } from 'src/config.js';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
-let { newUserSync } = require('../../src/userSync');
+let { newUserSync, USERSYNC_DEFAULT_CONFIG } = require('../../src/userSync');
 
 describe('user sync', function () {
   let triggerPixelStub;
@@ -34,6 +34,7 @@ describe('user sync', function () {
   });
 
   beforeEach(function () {
+    config.setConfig({ userSync: USERSYNC_DEFAULT_CONFIG });
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     logWarnStub = sinon.stub(utils, 'logWarn');
     shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
@@ -47,6 +48,7 @@ describe('user sync', function () {
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
     insertUserSyncIframeStub.restore();
+    config.resetConfig();
   });
 
   it('should register and fire a pixel URL', function () {
@@ -374,6 +376,85 @@ describe('user sync', function () {
     expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
   });
 
+  it('should still allow default image syncs if setConfig only defined iframe', function () {
+    const userSync = newUserSync({
+      config: config.getConfig('userSync'),
+      browserSupportsCookies: true
+    });
+
+    config.setConfig({
+      userSync: {
+        filterSettings: {
+          iframe: {
+            bidders: ['bidderXYZ'],
+            filter: 'include'
+          }
+        }
+      }
+    });
+
+    userSync.registerSync('image', 'testBidder', 'http://example.com');
+    userSync.registerSync('iframe', 'bidderXYZ', 'http://example.com/iframe');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
+    expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+  });
+
+  it('should override default image syncs if setConfig used image filter', function () {
+    const userSync = newUserSync({
+      config: config.getConfig('userSync'),
+      browserSupportsCookies: true
+    });
+
+    config.setConfig({
+      userSync: {
+        filterSettings: {
+          image: {
+            bidders: ['bidderXYZ'],
+            filter: 'exclude'
+          }
+        }
+      }
+    });
+
+    userSync.registerSync('image', 'testBidder', 'http://example.com');
+    userSync.registerSync('image', 'bidderXYZ', 'http://example.com/image-blocked');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
+    expect(triggerPixelStub.getCall(1)).to.be.null;
+  });
+
+  it('should override default image syncs if setConfig used all filter', function() {
+    const userSync = newUserSync({
+      config: config.getConfig('userSync'),
+      browserSupportsCookies: true
+    });
+
+    config.setConfig({
+      userSync: {
+        filterSettings: {
+          all: {
+            bidders: ['bidderXYZ'],
+            filter: 'exclude'
+          }
+        }
+      }
+    });
+
+    userSync.registerSync('image', 'testBidder', 'http://example.com');
+    userSync.registerSync('image', 'bidderXYZ', 'http://example.com/image-blocked');
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.registerSync('iframe', 'bidderXYZ', 'http://example.com/iframe-blocked');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
+    expect(triggerPixelStub.getCall(1)).to.be.null;
+    expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+    expect(insertUserSyncIframeStub.getCall(1)).to.be.null;
+  });
+
   describe('publicAPI', function () {
     describe('canBidderRegisterSync', function () {
       describe('with filterSettings', function () {
@@ -392,6 +473,24 @@ describe('user sync', function () {
               }
             }
           });
+          expect(userSync.canBidderRegisterSync('iframe', 'otherTestBidder')).to.equal(false);
+        });
+        it('should return false for iframe if there is no iframe filterSettings', function () {
+          const userSync = newUserSync({
+            config: {
+              syncEnabled: true,
+              filterSettings: {
+                image: {
+                  bidders: '*',
+                  filter: 'include'
+                }
+              },
+              syncsPerBidder: 5,
+              syncDelay: 3000,
+              auctionDelay: 0
+            }
+          });
+
           expect(userSync.canBidderRegisterSync('iframe', 'otherTestBidder')).to.equal(false);
         });
         it('should return true if filter settings does allow it', function () {

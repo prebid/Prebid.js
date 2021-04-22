@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/imonomyBidAdapter';
+import { spec } from 'modules/imonomyBidAdapter.js';
 
 describe('Imonomy Adapter Tests', function () {
   const bidsRequest = [

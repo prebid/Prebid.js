@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { adunitCounter } from 'src/adUnits';
+import { adunitCounter } from 'src/adUnits.js';
 
 describe('Adunit Counter', function () {
   const ADUNIT_ID_1 = 'test1';

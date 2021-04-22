@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/somoBidAdapter';
-import * as utils from 'src/utils';
+import {spec} from 'modules/somoBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('Somo Audience Adapter Tests', function () {
   describe('isBidRequestValid', function () {

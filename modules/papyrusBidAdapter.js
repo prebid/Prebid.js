@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const PAPYRUS_ENDPOINT = 'https://prebid.papyrus.global';
 const PAPYRUS_CODE = 'papyrus';

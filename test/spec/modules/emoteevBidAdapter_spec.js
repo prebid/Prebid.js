@@ -47,10 +47,10 @@ import {
   validateExternalId,
   VENDOR_ID,
   WALLPAPER,
-} from 'modules/emoteevBidAdapter';
-import * as url from '../../../src/url';
-import * as utils from '../../../src/utils';
-import {config} from '../../../src/config';
+  storage
+} from 'modules/emoteevBidAdapter.js';
+import * as utils from '../../../src/utils.js';
+import {config} from '../../../src/config.js';
 
 const cannedValidBidRequests = [{
   adUnitCode: '/19968336/header-bid-tag-1',
@@ -329,108 +329,108 @@ describe('emoteevBidAdapter', function () {
   });
 
   describe('eventsUrl', function () {
-    expect(eventsUrl(null)).to.deep.equal(url.format({
+    expect(eventsUrl(null)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: EVENTS_PATH
     }));
-    expect(eventsUrl('anything')).to.deep.equal(url.format({
+    expect(eventsUrl('anything')).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: EVENTS_PATH
     }));
-    expect(eventsUrl(PRODUCTION)).to.deep.equal(url.format({
+    expect(eventsUrl(PRODUCTION)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(PRODUCTION),
       pathname: EVENTS_PATH
     }));
-    expect(eventsUrl(STAGING)).to.deep.equal(url.format({
+    expect(eventsUrl(STAGING)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(STAGING),
       pathname: EVENTS_PATH
     }));
-    expect(eventsUrl(DEVELOPMENT)).to.deep.equal(url.format({
+    expect(eventsUrl(DEVELOPMENT)).to.deep.equal(utils.buildUrl({
       hostname: domain(DEVELOPMENT),
       pathname: EVENTS_PATH
     }));
   });
 
   describe('bidderUrl', function () {
-    expect(bidderUrl(null)).to.deep.equal(url.format({
+    expect(bidderUrl(null)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: BIDDER_PATH
     }));
-    expect(bidderUrl('anything')).to.deep.equal(url.format({
+    expect(bidderUrl('anything')).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: BIDDER_PATH
     }));
-    expect(bidderUrl(PRODUCTION)).to.deep.equal(url.format({
+    expect(bidderUrl(PRODUCTION)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(PRODUCTION),
       pathname: BIDDER_PATH
     }));
-    expect(bidderUrl(STAGING)).to.deep.equal(url.format({
+    expect(bidderUrl(STAGING)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(STAGING),
       pathname: BIDDER_PATH
     }));
-    expect(bidderUrl(DEVELOPMENT)).to.deep.equal(url.format({
+    expect(bidderUrl(DEVELOPMENT)).to.deep.equal(utils.buildUrl({
       hostname: domain(DEVELOPMENT),
       pathname: BIDDER_PATH
     }));
   });
 
   describe('userSyncIframeUrl', function () {
-    expect(userSyncIframeUrl(null)).to.deep.equal(url.format({
+    expect(userSyncIframeUrl(null)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: USER_SYNC_IFRAME_PATH
     }));
-    expect(userSyncIframeUrl('anything')).to.deep.equal(url.format({
+    expect(userSyncIframeUrl('anything')).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: USER_SYNC_IFRAME_PATH
     }));
-    expect(userSyncIframeUrl(PRODUCTION)).to.deep.equal(url.format({
+    expect(userSyncIframeUrl(PRODUCTION)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(PRODUCTION),
       pathname: USER_SYNC_IFRAME_PATH
     }));
-    expect(userSyncIframeUrl(STAGING)).to.deep.equal(url.format({
+    expect(userSyncIframeUrl(STAGING)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(STAGING),
       pathname: USER_SYNC_IFRAME_PATH
     }));
-    expect(userSyncIframeUrl(DEVELOPMENT)).to.deep.equal(url.format({
+    expect(userSyncIframeUrl(DEVELOPMENT)).to.deep.equal(utils.buildUrl({
       hostname: domain(DEVELOPMENT),
       pathname: USER_SYNC_IFRAME_PATH
     }));
   });
 
   describe('userSyncImageUrl', function () {
-    expect(userSyncImageUrl(null)).to.deep.equal(url.format({
+    expect(userSyncImageUrl(null)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: USER_SYNC_IMAGE_PATH
     }));
-    expect(userSyncImageUrl('anything')).to.deep.equal(url.format({
+    expect(userSyncImageUrl('anything')).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: USER_SYNC_IMAGE_PATH
     }));
-    expect(userSyncImageUrl(PRODUCTION)).to.deep.equal(url.format({
+    expect(userSyncImageUrl(PRODUCTION)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(PRODUCTION),
       pathname: USER_SYNC_IMAGE_PATH
     }));
-    expect(userSyncImageUrl(STAGING)).to.deep.equal(url.format({
+    expect(userSyncImageUrl(STAGING)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(STAGING),
       pathname: USER_SYNC_IMAGE_PATH
     }));
-    expect(userSyncImageUrl(DEVELOPMENT)).to.deep.equal(url.format({
+    expect(userSyncImageUrl(DEVELOPMENT)).to.deep.equal(utils.buildUrl({
       hostname: domain(DEVELOPMENT),
       pathname: USER_SYNC_IMAGE_PATH
     }));
@@ -749,7 +749,7 @@ describe('emoteevBidAdapter', function () {
     });
     beforeEach(function () {
       triggerPixelStub = sinon.stub(utils, 'triggerPixel');
-      getCookieSpy = sinon.spy(utils, 'getCookie');
+      getCookieSpy = sinon.spy(storage, 'getCookie');
       getConfigSpy = sinon.spy(config, 'getConfig');
       getParameterByNameSpy = sinon.spy(utils, 'getParameterByName');
     });
@@ -776,7 +776,7 @@ describe('emoteevBidAdapter', function () {
         };
         spec.isBidRequestValid(validBidRequest);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
       });
@@ -786,7 +786,7 @@ describe('emoteevBidAdapter', function () {
         const invalidBidRequest = {};
         spec.isBidRequestValid(invalidBidRequest);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // disabling these getConfig tests as they have been flaky in browserstack testing
         // sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
@@ -796,7 +796,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.buildRequests(cannedValidBidRequests, cannedBidderRequest);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // sinon.assert.callCount(config.getConfig, 3);
         sinon.assert.callCount(utils.getParameterByName, 2);
       });
@@ -805,7 +805,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.interpretResponse(serverResponse);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
       });
@@ -815,7 +815,7 @@ describe('emoteevBidAdapter', function () {
         const bidObject = serverResponse.body[0];
         spec.onBidWon(bidObject);
         sinon.assert.calledOnce(utils.triggerPixel);
-        sinon.assert.calledOnce(utils.getCookie);
+        sinon.assert.calledOnce(storage.getCookie);
         // sinon.assert.calledOnce(config.getConfig);
         sinon.assert.calledOnce(utils.getParameterByName);
       });
@@ -824,7 +824,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.onTimeout(cannedValidBidRequests[0]);
         sinon.assert.calledOnce(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // sinon.assert.calledOnce(config.getConfig);
         sinon.assert.calledOnce(utils.getParameterByName);
       });
@@ -833,7 +833,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.getUserSyncs({});
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // sinon.assert.calledOnce(config.getConfig);
         sinon.assert.calledOnce(utils.getParameterByName);
       });

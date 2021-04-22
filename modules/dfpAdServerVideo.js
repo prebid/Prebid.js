@@ -2,13 +2,15 @@
  * This module adds [DFP support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import { registerVideoSupport } from '../src/adServerManager';
-import { targeting } from '../src/targeting';
-import { formatQS, format as buildUrl, parse } from '../src/url';
-import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils';
-import { config } from '../src/config';
-import { getHook, submodule } from '../src/hook';
-import { auctionManager } from '../src/auctionManager';
+import { registerVideoSupport } from '../src/adServerManager.js';
+import { targeting } from '../src/targeting.js';
+import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, buildUrl } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { getHook, submodule } from '../src/hook.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
 
 /**
  * @typedef {Object} DfpVideoParams
@@ -43,7 +45,7 @@ import { auctionManager } from '../src/auctionManager';
 const defaultParamConstants = {
   env: 'vp',
   gdfp_req: 1,
-  output: 'xml_vast3',
+  output: 'vast',
   unviewed_position_start: 1,
 };
 
@@ -74,7 +76,7 @@ export function buildDfpVideoUrl(options) {
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parse(options.url, {noDecodeWholeURL: true});
+    urlComponents = parseUrl(options.url, {noDecodeWholeURL: true});
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
@@ -83,7 +85,7 @@ export function buildDfpVideoUrl(options) {
 
   const derivedParams = {
     correlator: Date.now(),
-    sz: parseSizesInput(adUnit.sizes).join('|'),
+    sz: parseSizesInput(deepAccess(adUnit, 'mediaTypes.video.playerSize')).join('|'),
     url: encodeURIComponent(location.href),
   };
   const encodedCustomParams = getCustParams(bid, options);
@@ -98,6 +100,16 @@ export function buildDfpVideoUrl(options) {
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
+
+  const gdprConsent = gdprDataHandler.getConsentData();
+  if (gdprConsent) {
+    if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
+    if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
+    if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
+  }
+
+  const uspConsent = uspDataHandler.getConsentData();
+  if (uspConsent) { queryParams.us_privacy = uspConsent; }
 
   return buildUrl({
     protocol: 'https',
@@ -182,6 +194,16 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
       { cust_params: encodedCustomParams }
     );
 
+    const gdprConsent = gdprDataHandler.getConsentData();
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
+      if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
+      if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
+    }
+
+    const uspConsent = uspDataHandler.getConsentData();
+    if (uspConsent) { queryParams.us_privacy = uspConsent; }
+
     const masterTag = buildUrl({
       protocol: 'https',
       host: 'securepubads.g.doubleclick.net',
@@ -246,17 +268,20 @@ function getCustParams(bid, options) {
     allTargetingData = (allTargeting) ? allTargeting[adUnit.code] : {};
   }
 
-  const optCustParams = deepAccess(options, 'params.cust_params');
-  let customParams = Object.assign({},
+  const prebidTargetingSet = Object.assign({},
     // Why are we adding standard keys here ? Refer https://github.com/prebid/Prebid.js/issues/3664
     { hb_uuid: bid && bid.videoCacheKey },
     // hb_uuid will be deprecated and replaced by hb_cache_id
     { hb_cache_id: bid && bid.videoCacheKey },
     allTargetingData,
     adserverTargeting,
-    optCustParams,
   );
-  return encodeURIComponent(formatQS(customParams));
+  events.emit(CONSTANTS.EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
+
+  // merge the prebid + publisher targeting sets
+  const publisherTargetingSet = deepAccess(options, 'params.cust_params');
+  const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
+  return encodeURIComponent(formatQS(targetingSet));
 }
 
 registerVideoSupport('dfp', {

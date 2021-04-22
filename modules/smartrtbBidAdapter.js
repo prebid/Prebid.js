@@ -1,7 +1,7 @@
 
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'smartrtb';
 
 function getDomain () {
@@ -17,11 +17,9 @@ function getDomain () {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ 'banner', 'video' ],
-  aliases: ['smrtb'],
+  aliases: ['rdigital'],
   isBidRequestValid: function(bid) {
-    return (bid.params.pubId !== null &&
-      bid.params.medId !== null &&
-      bid.params.zoneId !== null);
+    return (bid.params.pubId !== null || bid.params.zoneId !== null);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     let stack = (bidderRequest.refererInfo &&

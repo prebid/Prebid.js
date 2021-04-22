@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://exchange.bidphysics.com/auction';
 

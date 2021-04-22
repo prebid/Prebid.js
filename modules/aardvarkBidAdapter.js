@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'aardvark';
 const DEFAULT_ENDPOINT = 'bidder.rtk.io';
@@ -15,6 +15,7 @@ export function resetUserSync() {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 52,
   aliases: ['adsparc', 'safereach'],
 
   isBidRequestValid: function(bid) {

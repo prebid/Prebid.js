@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/hpmdnetworkBidAdapter';
+import { spec } from 'modules/hpmdnetworkBidAdapter.js';
 
 describe('HPMDNetwork Adapter', function() {
   describe('isBidRequestValid', function () {

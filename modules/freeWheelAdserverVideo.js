@@ -2,8 +2,8 @@
  * This module adds Freewheel support for Video to Prebid.
  */
 
-import { registerVideoSupport } from '../src/adServerManager';
-import { getHook, submodule } from '../src/hook';
+import { registerVideoSupport } from '../src/adServerManager.js';
+import { getHook, submodule } from '../src/hook.js';
 
 export const adpodUtils = {};
 export function notifyTranslationModule(fn) {

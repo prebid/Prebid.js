@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/lockerdomeBidAdapter';
-import * as utils from 'src/utils';
+import { spec } from '../../../modules/lockerdomeBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('LockerDomeAdapter', function () {
   const bidRequests = [{

@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/buzzoolaBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {executeRenderer, Renderer} from '../../../src/Renderer';
-import {deepClone} from '../../../src/utils';
+import {spec} from 'modules/buzzoolaBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {executeRenderer, Renderer} from '../../../src/Renderer.js';
+import {deepClone} from '../../../src/utils.js';
 
 const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
 const RENDERER_SRC = 'https://tube.buzzoola.com/new/build/buzzlibrary.js';

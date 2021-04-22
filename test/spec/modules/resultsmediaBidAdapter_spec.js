@@ -1,5 +1,5 @@
-import {spec} from '../../../modules/resultsmediaBidAdapter';
-import * as utils from '../../../src/utils';
+import {spec} from '../../../modules/resultsmediaBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 import * as sinon from 'sinon';
 
 var r1adapter = spec;

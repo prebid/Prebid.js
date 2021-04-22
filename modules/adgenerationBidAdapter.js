@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, NATIVE} from '../src/mediaTypes';
-import {config} from '../src/config';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
