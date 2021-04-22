@@ -3,7 +3,7 @@ import * as utils from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'gnet';
-const ENDPOINT = 'https://grumft.cbykmedia.com/prebid/prebid.php';
+const ENDPOINT = 'https://adserver.gnetproject.com/prebid.php';
 
 export const spec = {
   code: BIDDER_CODE,
