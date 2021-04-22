@@ -23,8 +23,8 @@ export const dmdIdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value) {
-    return value && typeof value['dmd-dgid'] === 'string'
-      ? { 'dmdId': value['dmd-dgid'] }
+    return value && typeof value === 'string'
+      ? { 'dmdId': value }
       : undefined;
   },
 
@@ -32,9 +32,11 @@ export const dmdIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function getId
    * @param {SubmoduleConfig} [config]
+   * @param {ConsentData}
+   * @param {Object} cacheIdObj - existing id, if any consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId(config, consentData, cacheIdObj) {
     try {
       const configParams = (config && config.params) || {};
       if (
@@ -44,6 +46,8 @@ export const dmdIdSubmodule = {
       ) {
         utils.logError('dmd submodule requires an api_key.');
         return;
+      } else {
+        return cacheIdObj;
       }
     } catch (e) {
       utils.logError(`dmdIdSystem encountered an error`, e);
