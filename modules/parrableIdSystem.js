@@ -34,8 +34,8 @@ function deserializeParrableId(parrableIdStr) {
 
   values.forEach(function(value) {
     const pair = value.split(':');
-    // unpack a value of 1 as true
-    parrableId[pair[0]] = +pair[1] === 1 ? true : pair[1];
+    // unpack a value of 0 or 1 as boolean
+    parrableId[pair[0]] = typeof pair[1] === 'number' ? Boolean(pair[1]) : pair[1];
   });
 
   return parrableId;
