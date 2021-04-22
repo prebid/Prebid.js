@@ -89,7 +89,7 @@ config.setDefaults({
  * @return {boolean}
  */
 function updateConfigDefaultVendor(option) {
-  if (option.defaultVendor) {
+  if (option.defaultVendor && option.enabled !== false) {
     let vendor = option.defaultVendor;
     let optionKeys = Object.keys(option);
     if (S2S_VENDORS[vendor]) {
