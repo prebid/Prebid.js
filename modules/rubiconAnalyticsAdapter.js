@@ -662,12 +662,12 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                 return ['banner'];
               },
               'gam', () => {
-                if (utils.deepAccess(bid, 'fpd.context.adServer.name') === 'gam') {
-                  return {adSlot: bid.fpd.context.adServer.adSlot}
+                if (utils.deepAccess(bid, 'ortb2Imp.ext.data.adserver.name') === 'gam') {
+                  return {adSlot: bid.ortb2Imp.ext.data.adserver.adSlot}
                 }
               },
-              'pbAdSlot', () => utils.deepAccess(bid, 'fpd.context.pbAdSlot'),
-              'pattern', () => utils.deepAccess(bid, 'fpd.context.aupName')
+              'pbAdSlot', () => utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot'),
+              'pattern', () => utils.deepAccess(bid, 'ortb2Imp.ext.data.aupname')
             ])
           ]);
           return memo;
