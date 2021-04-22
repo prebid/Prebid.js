@@ -904,7 +904,8 @@ function applyFPD(bidRequest, mediaType, data) {
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key) {
     if (key === 'data' && Array.isArray(prop)) {
-      return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.taxonomyname').match(/iab/i)).map(value => {
+      return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.taxonomyname') &&
+        utils.deepAccess(name, 'ext.taxonomyname').match(/iab/i)).map(value => {
         let segments = value.segment.filter(obj => obj.id).reduce((result, obj) => {
           result.push(obj.id);
           return result;
