@@ -87,9 +87,7 @@ export const flocIdSubmodule = {
 
     if (isChrome && isFlocEnabled) {
       const configParams = (config && config.params) || {};
-      if (!configParams || (typeof configParams.token !== 'string')) {
-        utils.logInfo('User ID - flocId submodule token is not defined');
-      } else {
+      if (configParams || (typeof configParams.token === 'string')) {
         // Insert meta-tag with token from configuration
         enableOriginTrial(configParams.token);
       }
