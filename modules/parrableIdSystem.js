@@ -53,6 +53,10 @@ function serializeParrableId(parrableId) {
   if (parrableId.ccpaOptout) {
     components.push('ccpaOptout:1');
   }
+  if (parrableId.tpcSupport !== null) {
+    const tpcSupportComponent = parrableId.tpcSupport === true ? 'tpcSupport:1' : 'tpcSupport:0'
+    components.push(tpcSupportComponent);
+  }
 
   return components.join(',');
 }
@@ -190,10 +194,12 @@ function fetchId(configParams, gdprConsentData) {
 
   const eid = (parrableId) ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
+  const tpcSupport = (parrableId) ? parrableId.tpcSupport : null
+  const tpcUntil = (parrableId) ? parrableId.tpcUntil : null
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = (gdprConsentData && typeof gdprConsentData.gdprApplies === 'boolean' && gdprConsentData.gdprApplies);
   const gdprConsentString = (gdprConsentData && gdprApplies && gdprConsentData.consentString) || '';
-  const partners = configParams.partners || configParams.partner
+  const partners = configParams.partners || configParams.partner;
   const trackers = typeof partners === 'string'
     ? partners.split(',')
     : partners;
@@ -203,8 +209,12 @@ function fetchId(configParams, gdprConsentData) {
     trackers,
     url: refererInfo.referer,
     prebidVersion: '$prebid.version$',
-    isIframe: utils.inIframe()
+    isIframe: utils.inIframe(),
   };
+
+  if (Date.now() < tpcUntil) {
+    data.tpcSupport = tpcSupport;
+  }
 
   const searchParams = {
     data: encodeBase64UrlSafe(btoa(JSON.stringify(data))),
@@ -241,6 +251,10 @@ function fetchId(configParams, gdprConsentData) {
               }
               if (responseObj.ibaOptout === true) {
                 newParrableId.ibaOptout = true;
+              }
+              if (responseObj.tpcSupport !== null) {
+                newParrableId.tpcSupport = responseObj.tpcSupport;
+                newParrableId.tpcUntil = new Date(Date.now() + responseObj.tpcSupportTtl);
               }
             }
           } catch (error) {
