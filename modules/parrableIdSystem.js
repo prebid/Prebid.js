@@ -35,7 +35,7 @@ function deserializeParrableId(parrableIdStr) {
   values.forEach(function(value) {
     const pair = value.split(':');
     // unpack a value of 0 or 1 as boolean
-    parrableId[pair[0]] = typeof pair[1] === 'number' ? Boolean(pair[1]) : pair[1];
+    parrableId[pair[0]] = (pair[1] !== null && !isNaN(pair[1])) ? Boolean(+pair[1]) : pair[1];
   });
 
   return parrableId;
@@ -53,8 +53,8 @@ function serializeParrableId(parrableId) {
   if (parrableId.ccpaOptout) {
     components.push('ccpaOptout:1');
   }
-  if (parrableId.tpcSupport !== null) {
-    const tpcSupportComponent = parrableId.tpcSupport === true ? 'tpcSupport:1' : 'tpcSupport:0'
+  if (parrableId.tpcSupport !== undefined) {
+    const tpcSupportComponent = parrableId.tpcSupport === true ? 'tpcSupport:1' : 'tpcSupport:0';
     components.push(tpcSupportComponent);
   }
 
@@ -252,7 +252,7 @@ function fetchId(configParams, gdprConsentData) {
               if (responseObj.ibaOptout === true) {
                 newParrableId.ibaOptout = true;
               }
-              if (responseObj.tpcSupport !== null) {
+              if (responseObj.tpcSupport !== undefined) {
                 newParrableId.tpcSupport = responseObj.tpcSupport;
                 newParrableId.tpcUntil = new Date(Date.now() + responseObj.tpcSupportTtl);
               }
