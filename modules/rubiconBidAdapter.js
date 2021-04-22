@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -194,6 +195,11 @@ export const spec = {
         data.ext.prebid.aliases = {
           [bidRequest.bidder]: 'rubicon'
         }
+      }
+
+      let modules = (getGlobal()).installedModules;
+      if (modules && (!modules.length || modules.indexOf('rubiconAnalyticsAdapter') !== -1)) {
+        utils.deepSetValue(data, 'ext.prebid.analytics', [{ 'adapter': 'rubicon', 'client-analytics': true }]);
       }
 
       let bidFloor;
