@@ -38,11 +38,11 @@ describe('Dmd ID System', function() {
   });
 
   it('should return undefined if invalid dmd-dgid passed into decode', function () {
-    expect(dmdIdSubmodule.decode({'dmd-dgid': 123})).to.be.undefined;
+    expect(dmdIdSubmodule.decode(123)).to.be.undefined;
   });
 
   it('should return dmdId if valid dmd-dgid passed into decode', function () {
     let data = { 'dmdId': 'U12345' };
-    expect(dmdIdSubmodule.decode({'dmd-dgid': 'U12345'})).to.deep.equal(data);
+    expect(dmdIdSubmodule.decode('U12345')).to.deep.equal(data);
   });
 });

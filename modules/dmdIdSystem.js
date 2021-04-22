@@ -23,8 +23,8 @@ export const dmdIdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value) {
-    return value && typeof value['dmd-dgid'] === 'string'
-      ? { 'dmdId': value['dmd-dgid'] }
+    return value && typeof value === 'string'
+      ? { 'dmdId': value }
       : undefined;
   },
 
@@ -45,11 +45,13 @@ export const dmdIdSubmodule = {
         typeof configParams.api_key !== 'string'
       ) {
         utils.logError('dmd submodule requires an api_key.');
+        return;
+      } else {
+        return cacheIdObj;
       }
     } catch (e) {
       utils.logError(`dmdIdSystem encountered an error`, e);
     }
-    return cacheIdObj;
   },
 };
 
