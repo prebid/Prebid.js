@@ -371,6 +371,7 @@ describe('the rubicon adapter', function () {
     utils.logError.restore();
     config.resetConfig();
     resetRubiConf();
+    delete $$PREBID_GLOBAL$$.installedModules;
   });
 
   describe('MAS mapping / ordering', function () {
@@ -1662,6 +1663,35 @@ describe('the rubicon adapter', function () {
           // should have the aliases object sent to PBS
           expect(request.data.ext.prebid).to.haveOwnProperty('multibid');
           expect(request.data.ext.prebid.multibid).to.deep.equal(expected);
+        });
+
+        it('should pass client analytics to PBS endpoint if all modules included', function () {
+          createVideoBidderRequest();
+          $$PREBID_GLOBAL$$.installedModules = [];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let payload = request.data;
+
+          expect(payload.ext.prebid.analytics).to.not.be.undefined;
+          expect(payload.ext.prebid.analytics).to.deep.equal([{'adapter': 'rubicon', 'client-analytics': true}]);
+        });
+
+        it('should pass client analytics to PBS endpoint if rubicon analytics adapter is included', function () {
+          createVideoBidderRequest();
+          $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter', 'rubiconAnalyticsAdapter'];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let payload = request.data;
+
+          expect(payload.ext.prebid.analytics).to.not.be.undefined;
+          expect(payload.ext.prebid.analytics).to.deep.equal([{'adapter': 'rubicon', 'client-analytics': true}]);
+        });
+
+        it('should not pass client analytics to PBS endpoint if rubicon analytics adapter is not included', function () {
+          createVideoBidderRequest();
+          $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter'];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let payload = request.data;
+
+          expect(payload.ext.prebid.analytics).to.be.undefined;
         });
 
         it('should send video exp param correctly when set', function () {
