@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/visxBidAdapter.js';
 import { config } from 'src/config.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -654,6 +655,33 @@ describe('VisxAdapter', function () {
 
       const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
       expect(result).to.deep.equal(expectedResponse);
+    });
+  });
+  describe('check trackers', function () {
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('onSetTargeting', function () {
+      const requestId = '111';
+      spec.onSetTargeting({ requestId });
+      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/pending?requestId=' + requestId)).to.equal(true);
+    });
+
+    it('onBidWon', function () {
+      const requestId = '111';
+      spec.onBidWon({ requestId });
+      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/win?requestId=' + requestId)).to.equal(true);
+    });
+
+    it('onTimeout', function () {
+      const data = { timeout: 3000, bidId: '23423', params: { uid: 1 } };
+      spec.onTimeout(data);
+      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout?data=' + JSON.stringify(data))).to.equal(true);
     });
   });
 });

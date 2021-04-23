@@ -157,6 +157,9 @@ export const spec = {
         pos
       };
       if (bid.mediaTypes.video) {
+        if (!bid.params.video) {
+          bid.params.video = {};
+        }
         this.setValidVideoParams(bid.mediaTypes.video, bid.params.video);
       }
       if (bid.params.video) {
@@ -182,7 +185,6 @@ export const spec = {
       logWarn('Synacormedia: server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
       return;
     }
-
     const {id, seatbid: seatbids} = serverResponse.body;
     let bids = [];
     if (id && seatbids) {
@@ -219,7 +221,6 @@ export const spec = {
           }
           const bidObj = {
             requestId: impid,
-            adId: bid.id.replace(/~/g, '-'),
             cpm: parseFloat(bid.price),
             width: parseInt(width, 10),
             height: parseInt(height, 10),
@@ -230,6 +231,11 @@ export const spec = {
             ad: creative,
             ttl: 60
           };
+
+          if (bid.adomain != undefined || bid.adomain != null) {
+            bidObj.meta = { advertiserDomains: bid.adomain };
+          }
+
           if (isVideo) {
             const [, uuid] = nurl.match(/ID=([^&]*)&?/);
             if (!config.getConfig('cache.url')) {

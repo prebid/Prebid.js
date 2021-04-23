@@ -168,8 +168,8 @@ describe('adWMGBidAdapter', function () {
 
     it('should have an url that match the default endpoint', function() {
       let requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].url).to.equal('https://rtb.adwmg.com/prebid');
-      expect(requests[1].url).to.equal('https://rtb.adwmg.com/prebid');
+      expect(requests[0].url).to.equal('https://hb.adwmg.com/hb');
+      expect(requests[1].url).to.equal('https://hb.adwmg.com/hb');
     });
 
     it('should contain GDPR consent data if GDPR set', function() {
@@ -258,7 +258,7 @@ describe('adWMGBidAdapter', function () {
 
       let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).includes('https://rtb.adwmg.com/cphb.html?');
+      expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?');
     });
 
     it('should register iframe sync when iframe and image are enabled', function () {
@@ -269,7 +269,7 @@ describe('adWMGBidAdapter', function () {
 
       let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).includes('https://rtb.adwmg.com/cphb.html?');
+      expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?');
     });
 
     it('should send GDPR consent if enabled', function() {

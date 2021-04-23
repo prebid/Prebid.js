@@ -111,6 +111,7 @@ describe('automatadBidAdapter', function () {
     it('should get the correct bid response', function () {
       let result = spec.interpretResponse(expectedResponse[0])
       expect(result).to.be.an('array').that.is.not.empty
+      expect(result[0].meta.advertiserDomains[0]).to.equal('someAdDomain');
     })
 
     it('should interpret multiple bids in seatbid', function () {
