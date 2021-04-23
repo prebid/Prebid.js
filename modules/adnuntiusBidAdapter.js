@@ -1,5 +1,5 @@
-
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+
 const BIDDER_CODE = 'adnuntius';
 const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=';
 
@@ -7,7 +7,7 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function (bid) {
-    return !!(bid.params.auId || (bid.params.member && bid.params.invCode));
+    return !!(bid.bidId || (bid.params.member && bid.params.invCode));
   },
 
   buildRequests: function (validBidRequests) {
@@ -42,28 +42,34 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
-    const serverBody = serverResponse.body;
-
-    for (var k = 0; k < serverBody.adUnits.length; k++) {
-      const adUnit = serverBody.adUnits[k]
-      if (adUnit.matchedAdCount > 0) {
+    const adUnits = serverResponse.body.adUnits;
+    const bidResponsesById = adUnits.reduce((response, adUnit) => {
+      if (adUnit.matchedAdCount >= 1) {
         const bid = adUnit.ads[0];
         const effectiveCpm = (bid.cpc && bid.cpm) ? bid.bid.amount + bid.cpm.amount : (bid.cpc) ? bid.bid.amount : (bid.cpm) ? bid.cpm.amount : 0;
-        bidResponses.push({
-          requestId: bidRequest.bid[k].bidId,
-          cpm: effectiveCpm,
-          width: Number(bid.creativeWidth),
-          height: Number(bid.creativeHeight),
-          creativeId: bid.creativeId,
-          currency: (bid.bid) ? bid.bid.currency : 'EUR',
-          netRevenue: false,
-          ttl: 360,
-          ad: adUnit.html
-        });
-      }
-    }
-    return bidResponses;
+        return {
+          ...response,
+          [adUnit.targetId]: {
+            requestId: adUnit.targetId,
+            cpm: effectiveCpm,
+            width: Number(bid.creativeWidth),
+            height: Number(bid.creativeHeight),
+            creativeId: bid.creativeId,
+            currency: (bid.bid) ? bid.bid.currency : 'EUR',
+            netRevenue: false,
+            ttl: 360,
+            ad: adUnit.html
+          }
+        }
+      } else return response
+    }, {});
+
+    const bidResponse = bidRequest.bid.map(bid => bid.bidId)
+      .reduce((request, adunitId) =>
+        request.concat(bidResponsesById[adunitId])
+        , []);
+
+    return bidResponse
   },
 
 }
