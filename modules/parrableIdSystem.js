@@ -35,7 +35,7 @@ function deserializeParrableId(parrableIdStr) {
   values.forEach(function(value) {
     const pair = value.split(':');
     // unpack a value of 0 or 1 as boolean
-    parrableId[pair[0]] = (pair[1] !== null && !isNaN(pair[1])) ? Boolean(+pair[1]) : pair[1];
+    parrableId[pair[0]] = (+pair[1] === 1 || (pair[1] !== null && +pair[1] === 0)) ? Boolean(+pair[1]) : pair[1];
   });
 
   return parrableId;
@@ -254,7 +254,7 @@ function fetchId(configParams, gdprConsentData) {
               }
               if (responseObj.tpcSupport !== undefined) {
                 newParrableId.tpcSupport = responseObj.tpcSupport;
-                newParrableId.tpcUntil = new Date(Date.now() + responseObj.tpcSupportTtl);
+                newParrableId.tpcUntil = Date.now() + responseObj.tpcSupportTtl;
               }
             }
           } catch (error) {
