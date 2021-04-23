@@ -59,8 +59,9 @@ function serializeParrableId(parrableId) {
     str += ',ccpaOptout:1';
   }
   if (parrableId.tpcSupport !== undefined) {
-    const tpcSupportComponent = parrableId.tpcSupport === true ? 'tpcSupport:1' : 'tpcSupport:0'
+    const tpcSupportComponent = parrableId.tpcSupport === true ? 'tpcSupport:1' : 'tpcSupport:0';
     str += `,${tpcSupportComponent}`;
+    str += `,tpcUntil:${parrableId.tpcUntil}`;
   }
   return str;
 }
@@ -73,7 +74,6 @@ function writeParrableCookie(parrableId) {
     (new Date(Date.now() + 5000).toUTCString()),
     'lax'
   );
-  console.log(storage.getCookie(P_COOKIE_NAME));
 }
 
 function removeParrableCookie() {
@@ -258,13 +258,14 @@ describe.only('Parrable ID System', function() {
 
       afterEach(function () {
         callbackSpy.resetHistory();
+        removeParrableCookie();
       });
 
       afterEach(function() {
         logErrorStub.restore();
       });
 
-      describe.only('when getting tpcSupport from XHR response', function () {
+      describe('when getting tpcSupport from XHR response', function () {
         let request;
         let dateNowStub;
         const dateNowMock = 1;
@@ -274,12 +275,7 @@ describe.only('Parrable ID System', function() {
           dateNowStub = sinon.stub(Date, 'now').returns(dateNowMock);
         });
 
-        afterEach(() => {
-          server.resetHistory();
-        });
-
         after(() => {
-          server.respond();
           dateNowStub.restore();
         });
 
@@ -337,15 +333,15 @@ describe.only('Parrable ID System', function() {
 
       describe('when getting tpcSupport from compound cookie', function () {
         let dateNowStub;
-        const dateNowMock = 1;
+        const dateNowMock = Date.now();
         const tpcSupportTtl = 1;
 
         before(() => {
           dateNowStub = sinon.stub(Date, 'now').returns(dateNowMock);
         });
 
-        afterEach(() => {
-          removeParrableCookie();
+        after(() => {
+          dateNowStub.restore();
         });
 
         it('should send tpcSupport: true', function () {

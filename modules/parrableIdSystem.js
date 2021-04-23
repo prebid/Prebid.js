@@ -34,8 +34,13 @@ function deserializeParrableId(parrableIdStr) {
 
   values.forEach(function(value) {
     const pair = value.split(':');
-    // unpack a value of 0 or 1 as boolean
-    parrableId[pair[0]] = (+pair[1] === 1 || (pair[1] !== null && +pair[1] === 0)) ? Boolean(+pair[1]) : pair[1];
+    if (+pair[1] === 1 || (pair[1] !== null && +pair[1] === 0)) { // unpack a value of 0 or 1 as boolean
+      parrableId[pair[0]] = Boolean(+pair[1]);
+    } else if (!isNaN(pair[1])) { // convert to number if is a number
+      parrableId[pair[0]] = +pair[1]
+    } else {
+      parrableId[pair[0]] = pair[1]
+    }
   });
 
   return parrableId;
@@ -55,7 +60,9 @@ function serializeParrableId(parrableId) {
   }
   if (parrableId.tpcSupport !== undefined) {
     const tpcSupportComponent = parrableId.tpcSupport === true ? 'tpcSupport:1' : 'tpcSupport:0';
+    const tpcUntil = `tpcUntil:${parrableId.tpcUntil}`;
     components.push(tpcSupportComponent);
+    components.push(tpcUntil);
   }
 
   return components.join(',');
@@ -195,7 +202,7 @@ function fetchId(configParams, gdprConsentData) {
   const eid = (parrableId) ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
   const tpcSupport = (parrableId) ? parrableId.tpcSupport : null
-  const tpcUntil = (parrableId) ? parrableId.tpcUntil : null
+  const tpcUntil = (parrableId) ? +parrableId.tpcUntil : null
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = (gdprConsentData && typeof gdprConsentData.gdprApplies === 'boolean' && gdprConsentData.gdprApplies);
   const gdprConsentString = (gdprConsentData && gdprApplies && gdprConsentData.consentString) || '';
