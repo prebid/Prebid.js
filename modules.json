@@ -14,14 +14,13 @@
     "ironsourceBidAdapter",
     "synacormediaBidAdapter",
     "undertoneBidAdapter",
+    "amxBidAdapter",
+    "smaatoBidAdapter",
     "adpod",
     "consentManagement",
     "gdprEnforcement",
     "currency",
     "priceFloors",
     "schain",
-    "consentManagementUsp",
-    "userId",
-    "criteoIdSystem",
-    "pubCommonIdSystem"
+    "consentManagementUsp"
 ]
