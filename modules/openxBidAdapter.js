@@ -14,13 +14,24 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   britepoolid: 'britepoolid', // BritePool ID
   criteoId: 'criteoid', // CriteoID
   digitrustid: 'digitrustid', // DigiTrust
+  fabrickId: 'nuestarid', // Fabrick ID by Nuestar
+  haloId: 'audigentid', // Halo ID from Audigent
   id5id: 'id5id', // ID5 ID
   idl_env: 'lre', // LiveRamp IdentityLink
+  IDP: 'zeotapid', // zeotapIdPlus ID+
+  idxId: 'idxid', // idIDx,
+  intentIqId: 'intentiqid', // IntentIQ ID
   lipb: 'lipbid', // LiveIntent ID
+  lotamePanoramaId: 'lotameid', // Lotame Panorama ID
+  merkleId: 'merkleid', // Merkle ID
   netId: 'netid', // netID
   parrableId: 'parrableid', // Parrable ID
   pubcid: 'pubcid', // PubCommon ID
+  quantcastId: 'quantcastid', // Quantcast ID
+  sharedId: 'sharedid', // Shared ID User ID
+  tapadId: 'tapadid', // Tapad Id
   tdid: 'ttduuid', // The Trade Desk Unified ID
+  verizonMediaId: 'verizonmediaid', // Verizon Media ConnectID
 };
 
 export const spec = {
@@ -429,6 +440,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
+    if (response.deal_id) {
+      bidResponse.dealId = response.deal_id;
+    }
     // default 5 mins
     bidResponse.ttl = 300;
     // true is net, false is gross

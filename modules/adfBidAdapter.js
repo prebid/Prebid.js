@@ -10,8 +10,9 @@ import {
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 
-const BIDDER_CODE = 'adformOpenRTB';
+const BIDDER_CODE = 'adf';
 const GVLID = 50;
+const BIDDER_ALIAS = [ { code: 'adformOpenRTB', gvlid: GVLID } ];
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
 const NATIVE_PARAMS = {
   title: {
@@ -47,6 +48,7 @@ const NATIVE_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: BIDDER_ALIAS,
   gvlid: GVLID,
   supportedMediaTypes: [ NATIVE ],
   isBidRequestValid: bid => !!bid.params.mid,
@@ -170,7 +172,6 @@ export const spec = {
           netRevenue: bid.netRevenue === 'net',
           currency: cur,
           mediaType: NATIVE,
-          bidderCode: BIDDER_CODE,
           native: parseNative(bidResponse)
         };
       }

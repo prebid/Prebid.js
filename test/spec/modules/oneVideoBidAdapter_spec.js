@@ -221,7 +221,7 @@ describe('OneVideoBidAdapter', function () {
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
-      const VERSION = '3.0.6';
+      const VERSION = '3.0.7';
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
@@ -387,37 +387,37 @@ describe('OneVideoBidAdapter', function () {
         bidRequest.params.video.content = null;
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.undefined;
+        expect(data.site.content).to.be.undefined;
       });
       it('should not accept content object if value is is Array ', function () {
         bidRequest.params.video.content = [];
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.undefined;
+        expect(data.site.content).to.be.undefined;
       });
       it('should not accept content object if value is Number ', function () {
         bidRequest.params.video.content = 123456;
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.undefined;
+        expect(data.site.content).to.be.undefined;
       });
       it('should not accept content object if value is String ', function () {
         bidRequest.params.video.content = 'keyValuePairs';
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.undefined;
+        expect(data.site.content).to.be.undefined;
       });
       it('should not accept content object if value is Boolean ', function () {
         bidRequest.params.video.content = true;
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.undefined;
+        expect(data.site.content).to.be.undefined;
       });
       it('should accept content object if value is Object ', function () {
         bidRequest.params.video.content = {};
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.a('object');
+        expect(data.site.content).to.be.a('object');
       });
 
       it('should not append unsupported content object keys', function () {
@@ -428,7 +428,7 @@ describe('OneVideoBidAdapter', function () {
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.empty;
+        expect(data.site.content).to.be.empty;
       });
 
       it('should not append content string parameters if value is not string ', function () {
@@ -443,8 +443,8 @@ describe('OneVideoBidAdapter', function () {
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.a('object');
-        expect(data.imp[0].content).to.be.empty
+        expect(data.site.content).to.be.a('object');
+        expect(data.site.content).to.be.empty
       });
       it('should not append content Number parameters if value is not Number ', function () {
         bidRequest.params.video.content = {
@@ -456,8 +456,8 @@ describe('OneVideoBidAdapter', function () {
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.a('object');
-        expect(data.imp[0].content).to.be.empty
+        expect(data.site.content).to.be.a('object');
+        expect(data.site.content).to.be.empty
       });
       it('should not append content Array parameters if value is not Array ', function () {
         bidRequest.params.video.content = {
@@ -465,8 +465,8 @@ describe('OneVideoBidAdapter', function () {
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.a('object');
-        expect(data.imp[0].content).to.be.empty
+        expect(data.site.content).to.be.a('object');
+        expect(data.site.content).to.be.empty
       });
       it('should not append content ext if value is not Object ', function () {
         bidRequest.params.video.content = {
@@ -474,8 +474,8 @@ describe('OneVideoBidAdapter', function () {
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.be.a('object');
-        expect(data.imp[0].content).to.be.empty
+        expect(data.site.content).to.be.a('object');
+        expect(data.site.content).to.be.empty
       });
       it('should append supported parameters if value match validations ', function () {
         bidRequest.params.video.content = {
@@ -498,7 +498,7 @@ describe('OneVideoBidAdapter', function () {
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content).to.deep.equal(bidRequest.params.video.content);
+        expect(data.site.content).to.deep.equal(bidRequest.params.video.content);
       });
     });
   });

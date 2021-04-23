@@ -89,7 +89,7 @@ config.setDefaults({
  * @return {boolean}
  */
 function updateConfigDefaultVendor(option) {
-  if (option.defaultVendor) {
+  if (option.defaultVendor && option.enabled !== false) {
     let vendor = option.defaultVendor;
     let optionKeys = Object.keys(option);
     if (S2S_VENDORS[vendor]) {
@@ -738,6 +738,21 @@ const OPEN_RTB_PROTOCOL = {
         });
       }
       utils.deepSetValue(request, 'ext.prebid.data.eidpermissions', eidPermissions);
+    }
+
+    const multibid = config.getConfig('multibid');
+    if (multibid) {
+      utils.deepSetValue(request, 'ext.prebid.multibid', multibid.reduce((result, i) => {
+        let obj = {};
+
+        Object.keys(i).forEach(key => {
+          obj[key.toLowerCase()] = i[key];
+        });
+
+        result.push(obj);
+
+        return result;
+      }, []));
     }
 
     if (bidRequests) {

@@ -101,6 +101,7 @@
  * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
  * @property {(string|undefined)} pd - publisher provided data for reconciling ID5 IDs
  * @property {(string|undefined)} emailHash - if provided, the hashed email address of a user
+ * @property {(string|undefined)} notUse3P - use to retrieve envelope from 3p endpoint
  */
 
 /**
@@ -754,7 +755,8 @@ function updateSubmodules() {
 
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   submodules = addedSubmodules.map(i => {
-    const submoduleConfig = find(configs, j => j.name === i.name);
+    const submoduleConfig = find(configs, j => j.name && j.name.toLowerCase() === i.name.toLowerCase());
+    if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
     i.findRootDomain = findRootDomain;
     return submoduleConfig ? {
       submodule: i,

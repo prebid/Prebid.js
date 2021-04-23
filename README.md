@@ -93,12 +93,12 @@ Or for Babel 6:
 Then you can use Prebid.js as any other npm depedendency
 
 ```javascript
-import prebid from 'prebid.js';
+import pbjs from 'prebid.js';
 import 'prebid.js/modules/rubiconBidAdapter'; // imported modules will register themselves automatically with prebid
 import 'prebid.js/modules/appnexusBidAdapter';
-prebid.processQueue();  // required to process existing pbjs.queue blocks and setup any further pbjs.queue execution
+pbjs.processQueue();  // required to process existing pbjs.queue blocks and setup any further pbjs.queue execution
 
-prebid.requestBids({
+pbjs.requestBids({
   ...
 })
 
@@ -265,7 +265,7 @@ directory you will have sourcemaps available in your browser's developer tools.
 
 To run the example file, go to:
 
-+ `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html`
++ `http://localhost:9999/integrationExamples/gpt/hello_world.html`
 
 As you make code changes, the bundles will be rebuilt and the page reloaded automatically.
 

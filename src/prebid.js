@@ -1,12 +1,12 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal.js';
-import { adUnitsFilter, flatten, isArrayOfNums, isGptPubadsDefined, uniques } from './utils.js';
+import { adUnitsFilter, flatten, getHighestCpm, isArrayOfNums, isGptPubadsDefined, uniques } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
-import { targeting } from './targeting.js';
+import { filters, targeting } from './targeting.js';
 import { hook } from './hook.js';
 import { sessionLoader } from './debugging.js';
 import includes from 'core-js-pure/features/array/includes.js';
@@ -42,6 +42,9 @@ $$PREBID_GLOBAL$$.libLoaded = true;
 // version auto generated from build
 $$PREBID_GLOBAL$$.version = 'v$prebid.version$';
 utils.logInfo('Prebid.js v$prebid.version$ loaded');
+
+// modules list generated from build
+$$PREBID_GLOBAL$$.installedModules = ['v$prebid.modulesList$'];
 
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
@@ -203,6 +206,24 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
     return utils.transformAdServerTargetingObj(res);
   } else {
     utils.logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
+  }
+};
+
+/**
+ * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
+ * @param adUnitCode {string} adUnitCode to get the bid responses for
+ * @alias module:pbjs.getHighestUnusedBidResponseForAdUnitCode
+ * @returns {Object}  returnObj return bid
+ */
+$$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode = function (adunitCode) {
+  if (adunitCode) {
+    const bid = auctionManager.getAllBidsForAdUnitCode(adunitCode)
+      .filter(filters.isUnusedBid)
+      .filter(filters.isBidNotExpired)
+
+    return bid.length ? bid.reduce(getHighestCpm) : {}
+  } else {
+    utils.logMessage('Need to call getHighestUnusedBidResponseForAdUnitCode with adunitCode');
   }
 };
 
@@ -484,7 +505,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId } = {}) {
   events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
-  adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
+  adUnits = (adUnits && config.convertAdUnitFpd(utils.isArray(adUnits) ? adUnits : [adUnits])) || $$PREBID_GLOBAL$$.adUnits;
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 

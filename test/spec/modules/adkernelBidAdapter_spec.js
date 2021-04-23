@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adkernelBidAdapter.js';
-import * as utils from 'src/utils.js';
+import {spec} from 'modules/adkernelBidAdapter';
+import * as utils from 'src/utils';
 import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
-import {config} from 'src/config.js';
+import {config} from 'src/config';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
@@ -241,6 +241,7 @@ describe('Adkernel adapter', function () {
 
   afterEach(function () {
     sandbox.restore();
+    config.resetConfig();
   });
 
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
@@ -341,6 +342,14 @@ describe('Adkernel adapter', function () {
       expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1, 'us_privacy': '1YNN'});
       expect(bidRequest).to.have.property('user');
       expect(bidRequest.user.ext).to.be.eql({'consent': 'test-consent-string'});
+    });
+
+    it('should contain coppa if configured', function () {
+      config.setConfig({coppa: true});
+      let [_, bidRequests] = buildRequest([bid1_zone1]);
+      let bidRequest = bidRequests[0];
+      expect(bidRequest).to.have.property('regs');
+      expect(bidRequest.regs).to.have.property('coppa', 1);
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
@@ -556,7 +565,7 @@ describe('Adkernel adapter', function () {
 
   describe('adapter configuration', () => {
     it('should have aliases', () => {
-      expect(spec.aliases).to.have.lengthOf(12);
+      expect(spec.aliases).to.be.an('array').that.is.not.empty;
     });
   });
 

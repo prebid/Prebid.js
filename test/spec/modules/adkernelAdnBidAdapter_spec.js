@@ -1,5 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adkernelAdnBidAdapter.js';
+import {spec} from 'modules/adkernelAdnBidAdapter';
+import {config} from 'src/config';
 
 describe('AdkernelAdn adapter', function () {
   const bid1_pub1 = {
@@ -262,6 +263,14 @@ describe('AdkernelAdn adapter', function () {
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('gdpr', 0);
       expect(bidRequests[0].user).to.not.have.property('consent');
+    });
+
+    it('should\'t contain consent string if gdpr isn\'t applied', function () {
+      config.setConfig({coppa: true});
+      let [_, bidRequests] = buildRequest([bid1_pub1]);
+      config.resetConfig();
+      expect(bidRequests[0]).to.have.property('user');
+      expect(bidRequests[0].user).to.have.property('coppa', 1);
     });
   });
 
