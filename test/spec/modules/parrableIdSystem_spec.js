@@ -21,6 +21,7 @@ const P_CONFIG_MOCK = {
     partners: 'parrable_test_partner_123,parrable_test_partner_456'
   }
 };
+const RESPONSE_HEADERS = { 'Content-Type': 'application/json' };
 
 function getConfigMock() {
   return {
@@ -57,6 +58,10 @@ function serializeParrableId(parrableId) {
   if (parrableId.ccpaOptout) {
     str += ',ccpaOptout:1';
   }
+  if (parrableId.tpcSupport !== undefined) {
+    const tpcSupportComponent = parrableId.tpcSupport === true ? 'tpcSupport:1' : 'tpcSupport:0'
+    str += `,${tpcSupportComponent}`;
+  }
   return str;
 }
 
@@ -68,6 +73,7 @@ function writeParrableCookie(parrableId) {
     (new Date(Date.now() + 5000).toUTCString()),
     'lax'
   );
+  console.log(storage.getCookie(P_COOKIE_NAME));
 }
 
 function removeParrableCookie() {
@@ -83,7 +89,7 @@ function decodeBase64UrlSafe(encBase64) {
   return encBase64.replace(/[-_.]/g, (m) => DEC[m]);
 }
 
-describe('Parrable ID System', function() {
+describe.only('Parrable ID System', function() {
   describe('parrableIdSystem.getId()', function() {
     describe('response callback function', function() {
       let logErrorStub;
@@ -125,7 +131,6 @@ describe('Parrable ID System', function() {
           { 'Content-Type': 'text/plain' },
           JSON.stringify({ eid: P_XHR_EID })
         );
-
         expect(callbackSpy.lastCall.lastArg).to.deep.equal({
           eid: P_XHR_EID
         });
@@ -240,6 +245,137 @@ describe('Parrable ID System', function() {
             expect(server.requests[0].url).to.not.contain('gdpr_consent');
           }
         })
+      });
+    });
+
+    describe('third party cookie support', function () {
+      let logErrorStub;
+      let callbackSpy = sinon.spy();
+
+      beforeEach(function() {
+        logErrorStub = sinon.stub(utils, 'logError');
+      });
+
+      afterEach(function () {
+        callbackSpy.resetHistory();
+      });
+
+      afterEach(function() {
+        logErrorStub.restore();
+      });
+
+      describe.only('when getting tpcSupport from XHR response', function () {
+        let request;
+        let dateNowStub;
+        const dateNowMock = 1;
+        const tpcSupportTtl = 1;
+
+        before(() => {
+          dateNowStub = sinon.stub(Date, 'now').returns(dateNowMock);
+        });
+
+        afterEach(() => {
+          server.resetHistory();
+        });
+
+        after(() => {
+          server.respond();
+          dateNowStub.restore();
+        });
+
+        it('should pass tpcSupport: true to the callback', function () {
+          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+          callback(callbackSpy);
+          request = server.requests[0];
+
+          request.respond(
+            200,
+            RESPONSE_HEADERS,
+            JSON.stringify({ eid: P_XHR_EID, tpcSupport: true, tpcSupportTtl })
+          );
+
+          expect(callbackSpy.lastCall.args[0]).to.deep.equal({
+            eid: P_XHR_EID,
+            tpcSupport: true,
+            tpcUntil: dateNowMock + tpcSupportTtl
+          });
+        });
+
+        it('should pass tpcSupport: false to the callback', function () {
+          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+          callback(callbackSpy);
+          request = server.requests[0];
+          request.respond(
+            200,
+            RESPONSE_HEADERS,
+            JSON.stringify({ eid: P_XHR_EID, tpcSupport: false, tpcSupportTtl })
+          );
+
+          expect(callbackSpy.lastCall.args[0]).to.deep.equal({
+            eid: P_XHR_EID,
+            tpcSupport: false,
+            tpcUntil: dateNowMock + tpcSupportTtl
+          });
+        });
+
+        it('should not pass tpcSupport to the callback', function () {
+          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+          callback(callbackSpy);
+          request = server.requests[0];
+
+          request.respond(
+            200,
+            RESPONSE_HEADERS,
+            JSON.stringify({ eid: P_XHR_EID })
+          );
+
+          expect(callbackSpy.lastCall.args[0]).to.deep.equal({
+            eid: P_XHR_EID
+          });
+        });
+      });
+
+      describe('when getting tpcSupport from compound cookie', function () {
+        let dateNowStub;
+        const dateNowMock = 1;
+        const tpcSupportTtl = 1;
+
+        before(() => {
+          dateNowStub = sinon.stub(Date, 'now').returns(dateNowMock);
+        });
+
+        afterEach(() => {
+          removeParrableCookie();
+        });
+
+        it('should send tpcSupport: true', function () {
+          writeParrableCookie({ eid: P_COOKIE_EID, tpcSupport: true, tpcUntil: dateNowMock + tpcSupportTtl });
+          const getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+
+          expect(getIdResult.id).to.deep.equal({
+            eid: P_COOKIE_EID,
+            tpcSupport: true,
+            tpcUntil: dateNowMock + tpcSupportTtl
+          });
+        });
+
+        it('should send tpcSupport: false in the xhr', function () {
+          writeParrableCookie({ eid: P_COOKIE_EID, tpcSupport: false, tpcUntil: dateNowMock + tpcSupportTtl });
+          const getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+
+          expect(getIdResult.id).to.deep.equal({
+            eid: P_COOKIE_EID,
+            tpcSupport: false,
+            tpcUntil: dateNowMock + tpcSupportTtl
+          });
+        });
+
+        it('should not send tpcSupport in the xhr when not found', function () {
+          writeParrableCookie({ eid: P_COOKIE_EID });
+          const getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+
+          expect(getIdResult.id).to.not.have.property('tpcSupport');
+        });
       });
     });
   });
@@ -529,7 +665,7 @@ describe('Parrable ID System', function() {
     });
   });
 
-  describe('partners parsing', () => {
+  describe('partners parsing', function () {
     let callbackSpy = sinon.spy();
 
     const partnersTestCase = [
