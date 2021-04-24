@@ -19,7 +19,8 @@ describe('Zeta Ssp Bid Adapter', function() {
         buyeruid: 12345
       },
       tags: {
-        someTag: 123
+        someTag: 123,
+        sid: 'publisherId'
       },
       test: 1
     }
