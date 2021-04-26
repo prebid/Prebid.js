@@ -8,7 +8,7 @@ import {
   newBidder
 } from 'src/adapters/bidderFactory.js';
 
-const ENDPOINT = 'https://grumft.cbykmedia.com/prebid/prebid.php';
+const ENDPOINT = 'https://adserver.gnetproject.com/prebid.php';
 
 describe('gnetAdapter', function () {
   const adapter = newBidder(spec);
