@@ -56,6 +56,10 @@ export const spec = {
             height: Number(bid.creativeHeight),
             creativeId: bid.creativeId,
             currency: (bid.bid) ? bid.bid.currency : 'EUR',
+            meta: {
+              advertiserDomains: (bid.destinationUrls.destination) ? [bid.destinationUrls.destination.split('/')[2]] : []
+
+            },
             netRevenue: false,
             ttl: 360,
             ad: adUnit.html

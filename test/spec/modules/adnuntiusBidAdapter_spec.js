@@ -123,6 +123,9 @@ describe('adnuntiusBidAdapter', function () {
       expect(interpretedResponse[0].creativeId).to.equal(ad.creativeId);
       expect(interpretedResponse[0].currency).to.equal(ad.bid.currency);
       expect(interpretedResponse[0].netRevenue).to.equal(false);
+      expect(interpretedResponse[0].meta).to.have.property('advertiserDomains');
+      expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(1);
+      expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('google.com');
       expect(interpretedResponse[0].ad).to.equal(serverResponse.body.adUnits[0].html);
       expect(interpretedResponse[0].ttl).to.equal(360);
     });
