@@ -282,6 +282,36 @@ describe('AppNexusAdapter', function () {
       });
     });
 
+    it('should attach reserve param when either bid param or getFloor function exists', function () {
+      let getFloorResponse = { currency: 'USD', floor: 3 };
+      let request, payload = null;
+      let bidRequest = deepClone(bidRequests[0]);
+
+      // 1 -> reserve not defined, getFloor not defined > empty
+      request = spec.buildRequests([bidRequest]);
+      payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].reserve).to.not.exist;
+
+      // 2 -> reserve is defined, getFloor not defined > reserve is used
+      bidRequest.params = {
+        'placementId': '10433394',
+        'reserve': 0.5
+      };
+      request = spec.buildRequests([bidRequest]);
+      payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].reserve).to.exist.and.to.equal(0.5);
+
+      // 3 -> reserve is defined, getFloor is defined > getFloor is used
+      bidRequest.getFloor = () => getFloorResponse;
+
+      request = spec.buildRequests([bidRequest]);
+      payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].reserve).to.exist.and.to.equal(3);
+    });
+
     it('should duplicate adpod placements into batches and set correct maxduration', function() {
       let bidRequest = Object.assign({},
         bidRequests[0],
