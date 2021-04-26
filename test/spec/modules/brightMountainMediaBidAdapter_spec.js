@@ -31,7 +31,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     params: {
       placement_id: PLACEMENT_ID,
       video: {
-        skipppable: true,
+        skippable: true,
         playback_method: ['auto_play_sound_off'],
       }
     },

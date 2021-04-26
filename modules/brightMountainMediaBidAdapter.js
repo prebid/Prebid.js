@@ -71,10 +71,10 @@ export const spec = {
         placement['sizes'] = bid.mediaTypes.video.playerSize;
         placement['mimes'] = bid.mediaTypes.video.mimes ? bid.mediaTypes.video.mimes : videoExt;
         if (bid.params.video) {
-          if (bid.params.video.skipppable) {
-            placement['skipppable'] = Boolean(bid.params.video.skipppable);
+          if (bid.params.video.skippable) {
+            placement['skippable'] = Boolean(bid.params.video.skippable);
           } else {
-            placement['skipppable'] = false;
+            placement['skippable'] = false;
           }
           if (bid.params.video.playback_method) {
             placement['playback_method'] = bid.params.video.playback_method ? bid.params.video.playback_method : ['auto_play_sound_off'];
