@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'oneVideo';
@@ -165,14 +166,17 @@ function getRequestData(bid, consentData, bidRequest) {
   let loc = bidRequest.refererInfo.referer;
   let page = (bid.params.site && bid.params.site.page) ? (bid.params.site.page) : (loc.href);
   let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : bidRequest.refererInfo.referer;
+  let getFloorRequestObject = {
+    currency: 'USD',
+    mediaType: 'video',
+    size: '\*'
+  };
   let bidData = {
     id: utils.generateUUID(),
     at: 2,
-    cur: bid.cur || 'USD',
     imp: [{
       id: '1',
       secure: isSecure(),
-      bidfloor: bid.params.bidfloor,
       ext: {
         hb: 1,
         prebidver: '$prebid.version$',
@@ -226,6 +230,7 @@ function getRequestData(bid, consentData, bidRequest) {
     bidData.imp[0].video.linearity = 1;
     bidData.imp[0].video.protocols = bid.params.video.protocols || [2, 5];
   } else if (bid.params.video.display == 1) {
+    getFloorRequestObject.mediaType = 'banner';
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
       w: bid.params.video.playerWidth,
@@ -244,6 +249,19 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.imp[0].banner.ext.minduration = bid.params.video.minduration
     }
   }
+
+  if (typeof bid.getFloor === 'function') {
+    if (config.getConfig('floors').data) {
+      getFloorRequestObject.currency = config.getConfig('floors').data.currency ? config.getConfig('floors').data.currency : bid.params.cur || 'USD';
+    };
+    let floorData = bid.getFloor(getFloorRequestObject);
+    bidData.imp[0].bidfloor = floorData.floor;
+    bidData.cur = floorData.currency;
+  } else {
+    bidData.imp[0].bidfloor = bid.params.bidfloor;
+    bidData.cur = bid.params.cur || 'USD';
+  };
+
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
   }

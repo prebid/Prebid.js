@@ -1,9 +1,5 @@
-import {
-  expect
-} from 'chai';
-import {
-  spec
-} from 'modules/oneVideoBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/oneVideoBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 describe('OneVideoBidAdapter', function () {
