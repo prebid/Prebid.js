@@ -47,29 +47,14 @@ var adUnits = [
           video: {
             playerSize: [[640, 480]],
             context: 'outstream'
-            ... // Aditional ORTB video params for perbid server
-          },
+            ... // Additional ORTB video params for prebid server
+          }
         },
         bids: [
           {
             bidder: "bmtm",
             params: {
               placement_id: 1
-            },
-            video : {
-                mimes: [
-                  'video/x-ms-wmv',
-                  'video/x-flv',
-                  'video/mp4',
-                  'video/3gpp',
-                  'application/x-mpegURL',
-                  'video/quicktime',
-                  'video/x-msvideo',
-                  'application/x-shockwave-flash',
-                  'application/javascript'
-                ],
-                playback_method: ["auto_play_sound_off"],
-                skipppable: true
             }
           }
         ],
@@ -109,7 +94,7 @@ var adUnits = [
           video: {
             playerSize: [[640, 480]],
             context: 'instream'
-            ... // Aditional ORTB video params for perbid server
+            ... // Additional ORTB video params for prebid server
           },
         },
         bids: [
@@ -117,21 +102,6 @@ var adUnits = [
             bidder: "bmtm",
             params: {
               placement_id: 1
-            },
-            video : {
-                mimes: [
-                  'video/x-ms-wmv',
-                  'video/x-flv',
-                  'video/mp4',
-                  'video/3gpp',
-                  'application/x-mpegURL',
-                  'video/quicktime',
-                  'video/x-msvideo',
-                  'application/x-shockwave-flash',
-                  'application/javascript'
-                ],
-                playback_method: ["auto_play_sound_off"],
-                skipppable: true
             }
           }
         ]
