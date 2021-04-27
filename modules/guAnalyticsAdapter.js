@@ -210,7 +210,7 @@ function setSafely(obj, key, value) {
   Object.assign(obj, {[key]: value});
 }
 
-function AnalyticsQueue() {
+export function AnalyticsQueue() {
   let queue = [];
 
   this.push = (event) => {
