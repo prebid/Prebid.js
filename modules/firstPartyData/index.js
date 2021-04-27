@@ -258,7 +258,7 @@ export function validateFpd(fpd, path = '', parent = '') {
 }
 
 /**
- * Resets global ortb2 data
+ * Resets modules global ortb2 data
  */
 export const resetOrtb2 = () => { ortb2 = {} };
 

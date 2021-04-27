@@ -90,8 +90,14 @@ export const ORTB_MAP = {
   user: {
     type: TYPES.object,
     children: {
-      yob: { type: TYPES.number },
-      gender: { type: TYPES.string },
+      yob: {
+        type: TYPES.number,
+        optoutApplies: true
+      },
+      gender: {
+        type: TYPES.string,
+        optoutApplies: true
+      },
       keywords: { type: TYPES.string },
       data: {
         type: TYPES.object,
