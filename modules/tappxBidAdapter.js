@@ -268,9 +268,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
         mediaType: '*',
         size: '*'
       }).floor;
-    } catch(e){
+    } catch (e) {
       utils.logWarn(e);
-      imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor'); //Be sure that we have an imp.bidfloor
+      imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor'); // Be sure that we have an imp.bidfloor
     }
   }
 
