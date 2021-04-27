@@ -231,6 +231,7 @@ export const spec = {
     const params = bid.params;
     const serverParam = params.server;
     let regionParam = params.region || 'us';
+    let bidFloor = getBidFloor(bid);
     let server;
 
     if (!MP_SERVER_MAP.hasOwnProperty(regionParam)) {
@@ -255,7 +256,7 @@ export const spec = {
       sizeid: params.sizeId || 0,
       alias: params.alias || utils.getUniqueIdentifierStr(),
       misc: new Date().getTime(), // cache busting
-      dynamicParams: this.formatMarketplaceDynamicParams(params, consentData, bid)
+      dynamicParams: this.formatMarketplaceDynamicParams(params, consentData, bidFloor)
     }));
   },
   buildOneMobileGetUrl(bid, consentData) {
@@ -285,9 +286,9 @@ export const spec = {
     }
     return (url.indexOf('//') === 0) ? `${DEFAULT_PROTO}:${url}` : `${DEFAULT_PROTO}://${url}`;
   },
-  formatMarketplaceDynamicParams(params = {}, consentData = {}, bid = {}) {
+  formatMarketplaceDynamicParams(params = {}, consentData = {}, bidFloor = {}) {
     let queryParams = {};
-    let bidFloor = getBidFloor(bid);
+
     if (bidFloor) {
       queryParams.bidfloor = bidFloor;
     }
