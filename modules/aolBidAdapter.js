@@ -255,7 +255,7 @@ export const spec = {
       sizeid: params.sizeId || 0,
       alias: params.alias || utils.getUniqueIdentifierStr(),
       misc: new Date().getTime(), // cache busting
-      dynamicParams: this.formatMarketplaceDynamicParams(params, consentData)
+      dynamicParams: this.formatMarketplaceDynamicParams(params, consentData, bid)
     }));
   },
   buildOneMobileGetUrl(bid, consentData) {
@@ -285,7 +285,7 @@ export const spec = {
     }
     return (url.indexOf('//') === 0) ? `${DEFAULT_PROTO}:${url}` : `${DEFAULT_PROTO}://${url}`;
   },
-  formatMarketplaceDynamicParams(params = {}, consentData = {}) {
+  formatMarketplaceDynamicParams(params = {}, consentData = {}, bid = {}) {
     let queryParams = {};
     let bidFloor = getBidFloor(bid);
     if (bidFloor) {
