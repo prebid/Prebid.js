@@ -88,7 +88,7 @@ function formatResponse(bid) {
     width: bid && bid.w ? bid.w : 0,
     height: bid && bid.h ? bid.h : 0,
     ad: bid && bid.adm ? bid.adm : '',
-    meta: { 
+    meta: {
       advertiserDomains: bid && bid.adomain ? bid.adomain : []
     },
     creativeId: bid && bid.crid ? bid.crid : undefined,
