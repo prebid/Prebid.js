@@ -262,13 +262,16 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
   if (utils.isFn(validBidRequests.getFloor)) {
-    let sizes = (bannerMediaType !== undefined) ? bannerMediaType.sizes : videoMediaType.sizes;
-    sizes = (sizes !== undefined) ? sizes : '*';
-    imp.bidfloor = validBidRequests.getFloor({
-      currency: CUR,
-      bannerMediaType,
-      size: sizes
-    }).floor;
+    try {
+      imp.bidfloor = validBidRequests.getFloor({
+        currency: CUR,
+        mediaType: '*',
+        size: '*'
+      }).floor;
+    } catch(e){
+      utils.logWarn(e);
+      imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor'); //Be sure that we have an imp.bidfloor
+    }
   }
 
   let bidder = {};
@@ -346,7 +349,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.params = params;
   payload.regs = regs;
   // < Payload
-
+  utils.logMessage('------------------------');
+  utils.logMessage(JSON.stringify(payload));
+  utils.logMessage(JSON.stringify(validBidRequests));
+  utils.logMessage('------------------------');
   return {
     method: 'POST',
     url: `https://${HOST}/${ENDPOINT}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
