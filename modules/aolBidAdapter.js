@@ -418,7 +418,7 @@ export const spec = {
       dealId: bidData.dealid,
       netRevenue: true,
       meta: {
-        advertiserDomains: bidData && bidData.adomain : bidData.adomain ? []
+        advertiserDomains: bidData && bidData.adomain ? bidData.adomain : []
       },
       ttl: bidRequest.ttl
     };
