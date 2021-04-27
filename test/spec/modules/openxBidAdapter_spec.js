@@ -1573,8 +1573,12 @@ describe('OpenxAdapter', function () {
       it('should return a brand ID', function () {
         expect(bid.meta.brandId).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.brand_id);
       });
+  
+      it('should return an adomain', function () {
+        expect(bid.meta.advertiserDomains).to.deep.equal([]);
+      });
 
-      it('should return a brand ID', function () {
+      it('should return a dsp ID', function () {
         expect(bid.meta.dspid).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.adv_id);
       });
     });
