@@ -120,6 +120,23 @@ function getSupportedEids(bid) {
   });
 }
 
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return (bid.params.bidFloor) ? bid.params.bidFloor : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
+
 export const spec = {
   code: AOL_BIDDERS_CODES.AOL,
   gvlid: 25,
@@ -270,9 +287,9 @@ export const spec = {
   },
   formatMarketplaceDynamicParams(params = {}, consentData = {}) {
     let queryParams = {};
-
-    if (params.bidFloor) {
-      queryParams.bidfloor = params.bidFloor;
+    let bidFloor = getBidFloor(bid);
+    if (bidFloor) {
+      queryParams.bidfloor = bidFloor;
     }
 
     Object.assign(queryParams, this.formatKeyValues(params.keyValues));
