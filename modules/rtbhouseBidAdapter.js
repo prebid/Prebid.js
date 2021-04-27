@@ -323,7 +323,9 @@ function interpretNativeBid(serverBid) {
     width: 1,
     height: 1,
     ttl: TTL,
-    meta.advertiserDomains: serverBid.adomain,
+    meta: {
+      advertiserDomains: serverBid.adomain
+    },
     netRevenue: true,
     currency: 'USD',
     native: interpretNativeAd(serverBid.adm),
