@@ -89,7 +89,7 @@ function decodeBase64UrlSafe(encBase64) {
   return encBase64.replace(/[-_.]/g, (m) => DEC[m]);
 }
 
-describe.only('Parrable ID System', function() {
+describe('Parrable ID System', function() {
   describe('parrableIdSystem.getId()', function() {
     describe('response callback function', function() {
       let logErrorStub;
@@ -268,71 +268,6 @@ describe.only('Parrable ID System', function() {
       describe('when getting tpcSupport from XHR response', function () {
         let request;
         let dateNowStub;
-        const dateNowMock = 1;
-        const tpcSupportTtl = 1;
-
-        before(() => {
-          dateNowStub = sinon.stub(Date, 'now').returns(dateNowMock);
-        });
-
-        after(() => {
-          dateNowStub.restore();
-        });
-
-        it('should pass tpcSupport: true to the callback', function () {
-          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
-          callback(callbackSpy);
-          request = server.requests[0];
-
-          request.respond(
-            200,
-            RESPONSE_HEADERS,
-            JSON.stringify({ eid: P_XHR_EID, tpcSupport: true, tpcSupportTtl })
-          );
-
-          expect(callbackSpy.lastCall.args[0]).to.deep.equal({
-            eid: P_XHR_EID,
-            tpcSupport: true,
-            tpcUntil: dateNowMock + tpcSupportTtl
-          });
-        });
-
-        it('should pass tpcSupport: false to the callback', function () {
-          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
-          callback(callbackSpy);
-          request = server.requests[0];
-          request.respond(
-            200,
-            RESPONSE_HEADERS,
-            JSON.stringify({ eid: P_XHR_EID, tpcSupport: false, tpcSupportTtl })
-          );
-
-          expect(callbackSpy.lastCall.args[0]).to.deep.equal({
-            eid: P_XHR_EID,
-            tpcSupport: false,
-            tpcUntil: dateNowMock + tpcSupportTtl
-          });
-        });
-
-        it('should not pass tpcSupport to the callback', function () {
-          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
-          callback(callbackSpy);
-          request = server.requests[0];
-
-          request.respond(
-            200,
-            RESPONSE_HEADERS,
-            JSON.stringify({ eid: P_XHR_EID })
-          );
-
-          expect(callbackSpy.lastCall.args[0]).to.deep.equal({
-            eid: P_XHR_EID
-          });
-        });
-      });
-
-      describe('when getting tpcSupport from compound cookie', function () {
-        let dateNowStub;
         const dateNowMock = Date.now();
         const tpcSupportTtl = 1;
 
@@ -344,33 +279,51 @@ describe.only('Parrable ID System', function() {
           dateNowStub.restore();
         });
 
-        it('should send tpcSupport: true', function () {
-          writeParrableCookie({ eid: P_COOKIE_EID, tpcSupport: true, tpcUntil: dateNowMock + tpcSupportTtl });
-          const getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+        it('should set tpcSupport: true and tpcUntil in the cookie', function () {
+          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+          callback(callbackSpy);
+          request = server.requests[0];
 
-          expect(getIdResult.id).to.deep.equal({
-            eid: P_COOKIE_EID,
-            tpcSupport: true,
-            tpcUntil: dateNowMock + tpcSupportTtl
-          });
+          request.respond(
+            200,
+            RESPONSE_HEADERS,
+            JSON.stringify({ eid: P_XHR_EID, tpcSupport: true, tpcSupportTtl })
+          );
+
+          expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
+            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:1,tpcUntil:' + Math.floor((dateNowMock + tpcSupportTtl) / 1000))
+          );
         });
 
-        it('should send tpcSupport: false in the xhr', function () {
-          writeParrableCookie({ eid: P_COOKIE_EID, tpcSupport: false, tpcUntil: dateNowMock + tpcSupportTtl });
-          const getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+        it('should set tpcSupport: false and tpcUntil in the cookie', function () {
+          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+          callback(callbackSpy);
+          request = server.requests[0];
+          request.respond(
+            200,
+            RESPONSE_HEADERS,
+            JSON.stringify({ eid: P_XHR_EID, tpcSupport: false, tpcSupportTtl })
+          );
 
-          expect(getIdResult.id).to.deep.equal({
-            eid: P_COOKIE_EID,
-            tpcSupport: false,
-            tpcUntil: dateNowMock + tpcSupportTtl
-          });
+          expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
+            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:0,tpcUntil:' + Math.floor((dateNowMock + tpcSupportTtl) / 1000))
+          );
         });
 
-        it('should not send tpcSupport in the xhr when not found', function () {
-          writeParrableCookie({ eid: P_COOKIE_EID });
-          const getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+        it('should not set tpcSupport in the cookie', function () {
+          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+          callback(callbackSpy);
+          request = server.requests[0];
 
-          expect(getIdResult.id).to.not.have.property('tpcSupport');
+          request.respond(
+            200,
+            RESPONSE_HEADERS,
+            JSON.stringify({ eid: P_XHR_EID })
+          );
+
+          expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
+            encodeURIComponent('eid:' + P_XHR_EID)
+          );
         });
       });
     });
