@@ -218,9 +218,9 @@ describe('Tappx bid adapter', function () {
 
     it('should properly build a ext optional object', function() {
       let extBidRequest = c_VALIDBIDREQUESTS;
-      extBidRequest[0].params.ext = {'optionalData':'1234'};
+      extBidRequest[0].params.ext = {'optionalData': '1234'};
       let extBidderRequest = c_BIDDERREQUEST_B;
-      extBidderRequest.bids[0].ext = {'optionalData':'1234'};
+      extBidderRequest.bids[0].ext = {'optionalData': '1234'};
 
       const request = spec.buildRequests(extBidRequest, extBidderRequest);
       const data = JSON.parse(request[0].data);
