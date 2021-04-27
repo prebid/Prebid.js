@@ -13,7 +13,6 @@ const DEFAULT_CURRENCY = 'USD';
 export const USER_ID_CODE_TO_QUERY_ARG = {
   britepoolid: 'britepoolid', // BritePool ID
   criteoId: 'criteoid', // CriteoID
-  digitrustid: 'digitrustid', // DigiTrust
   fabrickId: 'nuestarid', // Fabrick ID by Nuestar
   haloId: 'audigentid', // Halo ID from Audigent
   id5id: 'id5id', // ID5 ID
@@ -289,9 +288,6 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
 
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
       switch (userIdProviderKey) {
-        case 'digitrustid':
-          queryParams[key] = utils.deepAccess(userIdObjectOrValue, 'data.id');
-          break;
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
           break;
