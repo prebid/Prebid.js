@@ -576,6 +576,50 @@ describe('synacormediaBidAdapter ', function () {
         }
       ]);
     });
+    it('should create params.video object if not present on bid request and move any video params in the mediaTypes object to it', function () {
+      let validBidRequestVideo = {
+        bidder: 'synacormedia',
+        params: {
+          seatId: 'prebid',
+          tagId: '1234'
+        },
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [[ 640, 480 ]],
+            startdelay: 1,
+            linearity: 1,
+            placement: 1,
+            mimes: ['video/mp4']
+          }
+        },
+        adUnitCode: 'video1',
+        transactionId: '93e5def8-29aa-4fe8-bd3a-0298c39f189a',
+        sizes: [[ 640, 480 ]],
+        bidId: '2624fabbb078e8',
+        bidderRequestId: '117954d20d7c9c',
+        auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
+        src: 'client',
+        bidRequestsCount: 1
+      };
+
+      let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
+      expect(req.data.imp).to.eql([
+        {
+          video: {
+            h: 480,
+            pos: 0,
+            w: 640,
+            startdelay: 1,
+            linearity: 1,
+            placement: 1,
+            mimes: ['video/mp4']
+          },
+          id: 'v2624fabbb078e8-640x480',
+          tagid: '1234',
+        }
+      ]);
+    });
     it('should contain the CCPA privacy string when UspConsent is in bidder request', function () {
       // banner test
       let req = spec.buildRequests([validBidRequest], bidderRequestWithCCPA);
