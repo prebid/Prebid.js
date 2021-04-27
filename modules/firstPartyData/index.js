@@ -308,20 +308,28 @@ export function init() {
   if (!skipValidations) runValidations();
 }
 
+/**
+ * BidderRequests hook to intiate module
+ */
 function addBidderRequestHook(fn, bidderRequests) {
   init();
   resetOrtb2();
   fn.call(this, bidderRequests);
+  // Removes hook after run
   addBidderRequests.getHooks({ hook: addBidderRequestHook }).remove();
 }
 
-function initModule() {
+/**
+ * Sets bidderRequests hook
+ */
+function setupHook() {
   getHook('addBidderRequests').before(addBidderRequestHook);
 }
 
-initModule();
+// Runs setupHook on initial load
+setupHook();
 
 /**
  * Global function to reinitiate module
  */
-(getGlobal()).refreshFPD = initModule;
+(getGlobal()).refreshFPD = setupHook;

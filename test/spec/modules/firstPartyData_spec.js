@@ -622,6 +622,35 @@ describe('the first party data module', function () {
       expect(validated).to.deep.equal({});
     });
 
+    it('should add enrichments but not alter any arbitrary ortb2 data', function () {
+      let validated;
+      let conf = {
+        site: {
+          ext: {
+            data: {
+              inventory: ['value1']
+            }
+          }
+        },
+        user: {
+          ext: {
+            data: {
+              visitor: ['value2']
+            }
+          }
+        }
+      };
+
+      config.setConfig({ortb2: conf});
+
+      init();
+
+      validated = config.getConfig('ortb2');
+      expect(validated.site.ref).to.equal(getRefererInfo().referer);
+      expect(validated.site.ext.data).to.deep.equal({inventory: ['value1']});
+      expect(validated.user.ext.data).to.deep.equal({visitor: ['value2']});
+    });
+
     it('should filter bidderConfig data', function () {
       let validated;
       let conf = {
