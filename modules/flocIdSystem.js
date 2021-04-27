@@ -16,7 +16,7 @@ const MODULE_NAME = 'flocId';
  * @param {string} token - configured token for origin-trial
  */
 function enableOriginTrial(token) {
-  const tokenElement = document.createElement('meta')
+  const tokenElement = document.createElement('meta');
   tokenElement.httpEquiv = 'origin-trial'
   tokenElement.content = token
   document.head.appendChild(tokenElement)
@@ -87,7 +87,7 @@ export const flocIdSubmodule = {
 
     if (isChrome && isFlocEnabled) {
       const configParams = (config && config.params) || {};
-      if (configParams || (typeof configParams.token === 'string')) {
+      if (configParams && (typeof configParams.token === 'string')) {
         // Insert meta-tag with token from configuration
         enableOriginTrial(configParams.token);
       }
