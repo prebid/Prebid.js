@@ -78,8 +78,15 @@ describe('adnuntiusBidAdapter', function () {
               'lineItemId': 'scyjdyv3mzgdsnpf',
               'layoutId': 'sw6gtws2rdj1kwby',
               'layoutName': 'Responsive image'
-            }
+            },
+
           ]
+        },
+        {
+          'auId': '000000000008b6bc',
+          'targetId': '456',
+          'matchedAdCount': 0,
+          'responseId': 'adn-rsp-1460129238',
         }
       ]
     }
@@ -115,7 +122,6 @@ describe('adnuntiusBidAdapter', function () {
     it('should return valid response when passed valid server response', function () {
       const interpretedResponse = spec.interpretResponse(serverResponse, singleBidRequest);
       const ad = serverResponse.body.adUnits[0].ads[0]
-
       expect(interpretedResponse).to.have.lengthOf(1);
       expect(interpretedResponse[0].cpm).to.equal(ad.cpm.amount);
       expect(interpretedResponse[0].width).to.equal(Number(ad.creativeWidth));
