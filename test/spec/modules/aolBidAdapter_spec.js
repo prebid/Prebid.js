@@ -378,6 +378,20 @@ describe('AolAdapter', function () {
         expect(request.url).to.contain('bidfloor=0.8');
       });
 
+      it('should return url with bidFloor option from floor module if it is present', function () {
+        let getFloorResponse = { currency: 'USD', floor: 3 };
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            bidFloor: 0.80
+          }
+        });
+        bidRequest.getFloor = () => getFloorResponse;
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('bidfloor=3');
+      });
+
       it('should return url with key values if keyValues param is present', function () {
         let bidRequest = createCustomBidRequest({
           params: {
