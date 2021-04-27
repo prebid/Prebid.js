@@ -302,7 +302,9 @@ function interpretBannerBid(serverBid) {
     width: serverBid.w,
     height: serverBid.h,
     ttl: TTL,
-    meta.advertiserDomains: serverBid.adomain,
+    meta: {
+      advertiserDomains: serverBid.adomain
+    },
     netRevenue: true,
     currency: 'USD'
   }
