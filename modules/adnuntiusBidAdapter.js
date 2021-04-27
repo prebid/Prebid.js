@@ -69,7 +69,7 @@ export const spec = {
     }, {});
 
     const bidResponse = bidRequest.bid.map(bid => bid.bidId).reduce((request, adunitId) => {
-      if (bidResponsesById[adunitId]) request.push(bidResponsesById[adunitId])
+      if (bidResponsesById[adunitId]) { request.push(bidResponsesById[adunitId]) }
       return request
     }, []);
 
