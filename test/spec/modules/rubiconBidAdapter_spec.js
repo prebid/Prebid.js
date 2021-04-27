@@ -3050,6 +3050,153 @@ describe('the rubicon adapter', function () {
         });
       });
 
+      describe('for outstream video', function () {
+        const sandbox = sinon.createSandbox();
+        beforeEach(function () {
+          createVideoBidderRequestOutstream();
+          config.setConfig({rubicon: {
+            rendererConfig: {
+              align: 'left',
+              closeButton: true
+            },
+            rendererUrl: 'https://example.test/renderer.js'
+          }});
+          window.MagniteApex = {
+            renderAd: function() {
+              return null;
+            }
+          }
+        });
+
+        afterEach(function () {
+          sandbox.restore();
+          delete window.MagniteApex;
+        });
+
+        it('should register a successful bid', function () {
+          let response = {
+            cur: 'USD',
+            seatbid: [{
+              bid: [{
+                id: '0',
+                impid: 'outstream_video1',
+                adomain: ['test.com'],
+                price: 2,
+                crid: '4259970',
+                ext: {
+                  bidder: {
+                    rp: {
+                      mime: 'application/javascript',
+                      size_id: 201,
+                      advid: 12345
+                    }
+                  },
+                  prebid: {
+                    targeting: {
+                      hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                    },
+                    type: 'video'
+                  }
+                }
+              }],
+              group: 0,
+              seat: 'rubicon'
+            }],
+          };
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+
+          expect(bids).to.be.lengthOf(1);
+
+          expect(bids[0].seatBidId).to.equal('0');
+          expect(bids[0].creativeId).to.equal('4259970');
+          expect(bids[0].cpm).to.equal(2);
+          expect(bids[0].ttl).to.equal(300);
+          expect(bids[0].netRevenue).to.equal(true);
+          expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
+          expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].meta.mediaType).to.equal('video');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
+          expect(bids[0].meta.advertiserId).to.equal(12345);
+          expect(bids[0].bidderCode).to.equal('rubicon');
+          expect(bids[0].currency).to.equal('USD');
+          expect(bids[0].width).to.equal(640);
+          expect(bids[0].height).to.equal(320);
+          // check custom renderer
+          expect(typeof bids[0].renderer).to.equal('object');
+          expect(bids[0].renderer.getConfig()).to.deep.equal({
+            align: 'left',
+            closeButton: true
+          });
+          expect(bids[0].renderer.url).to.equal('https://example.test/renderer.js');
+        });
+
+        it('should render ad with Magnite renderer', function () {
+          let response = {
+            cur: 'USD',
+            seatbid: [{
+              bid: [{
+                id: '0',
+                impid: 'outstream_video1',
+                adomain: ['test.com'],
+                price: 2,
+                crid: '4259970',
+                ext: {
+                  bidder: {
+                    rp: {
+                      mime: 'application/javascript',
+                      size_id: 201,
+                      advid: 12345
+                    }
+                  },
+                  prebid: {
+                    targeting: {
+                      hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                    },
+                    type: 'video'
+                  }
+                },
+                nurl: 'https://test.com/vast.xml'
+              }],
+              group: 0,
+              seat: 'rubicon'
+            }],
+          };
+
+          sinon.spy(window.MagniteApex, 'renderAd');
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          const bid = bids[0];
+          bid.adUnitCode = 'outstream_video1_placement';
+          const adUnit = document.createElement('div');
+          adUnit.id = bid.adUnitCode;
+          document.body.appendChild(adUnit);
+
+          bid.renderer.render(bid);
+
+          const renderCall = window.MagniteApex.renderAd.getCall(0);
+          expect(renderCall.args[0]).to.deep.equal({
+            closeButton: true,
+            collapse: true,
+            height: 320,
+            label: undefined,
+            placement: {
+              align: 'left',
+              attachTo: '#outstream_video1_placement',
+              position: 'append',
+            },
+            vastUrl: 'https://test.com/vast.xml',
+            width: 640
+          });
+          // cleanup
+          adUnit.remove();
+        });
+      });
+
       describe('config with integration type', () => {
         it('should use the integration type provided in the config instead of the default', () => {
           config.setConfig({rubicon: {int_type: 'testType'}});
