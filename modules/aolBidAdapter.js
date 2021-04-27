@@ -419,6 +419,7 @@ export const spec = {
       netRevenue: true,
       meta: {
         advertiserDomains: bidData && bidData.adomain : bidData.adomain ? []
+      },
       ttl: bidRequest.ttl
     };
   },
