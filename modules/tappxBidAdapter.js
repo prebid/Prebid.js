@@ -267,7 +267,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   bidder.tappxkey = TAPPXKEY;
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
-  bidder.ext = (typeof BIDEXTRA=='object') ? BIDEXTRA : undefined;
+  bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : undefined;
 
   imp.ext = {};
   imp.ext.bidder = bidder;
