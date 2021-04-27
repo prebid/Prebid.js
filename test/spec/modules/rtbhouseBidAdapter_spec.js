@@ -424,7 +424,7 @@ describe('RTBHouseAdapter', () => {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
-          'meta.advertiserDomains': ['rtbhouse.com'],
+          'meta': { advertiserDomains: ['rtbhouse.com'] },
           'netRevenue': true
         }
       ];
