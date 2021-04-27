@@ -74,6 +74,7 @@ function sendAll() {
   let events = analyticsAdapter.context.queue.popAll();
   if (events.length !== 0) {
     let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
+    // eslint-disable-next-line no-console
     console.log(req);
   }
 }

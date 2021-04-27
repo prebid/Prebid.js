@@ -65,16 +65,34 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
   });
 
 function getBidderCode(args) {
-  if (args.bidderCode === 'ozone') {
-    if (args.adserverTargeting &&
-      args.adserverTargeting.oz_winner &&
-      typeof args.adserverTargeting.oz_winner === 'string') {
-      return `${args.bidderCode}-${args.adserverTargeting.oz_winner}`;
-    } else {
-      return `${args.bidderCode}-unknown`;
+  if (args.bidderCode !== 'ozone') return args.bidderCode;
+
+  // Ozone represents several different advertisers
+  if (args.adserverTargeting) {
+    /**
+     * Each Ozone bid contains information about all the other bids.
+     * To pinpoint which advertiser is reponsible for the bid,
+     * we can match `adId` against the adserverTargeting key-values for each.
+     *
+     * For example, given `oz_appnexus_adId: "123abc456def789-0-0"`,
+     * we want to capture `appnexus` if `adId` matches `123abc456def789-0-0`
+     */
+    for (let key in args.adserverTargeting) {
+      const [, advertiser, info] = key.split('_');
+      const value = args.adserverTargeting[key];
+      if (info === 'adId' && value === args.adId) {
+        return `ozone-${advertiser}`;
+      }
+    }
+
+    // If none matched, use ozone’s winner as fallback
+    if (args.adserverTargeting.oz_winner &&
+    typeof args.adserverTargeting.oz_winner === 'string') {
+      return `ozone-${args.adserverTargeting.oz_winner}`;
     }
   }
-  return args.bidderCode;
+
+  return `ozone-unknown`;
 }
 
 function buildRequestTemplate(options) {
@@ -192,7 +210,7 @@ function setSafely(obj, key, value) {
   Object.assign(obj, {[key]: value});
 }
 
-export function AnalyticsQueue() {
+function AnalyticsQueue() {
   let queue = [];
 
   this.push = (event) => {
@@ -253,4 +271,4 @@ export default analyticsAdapter;
 
 export const _ = {
   getBidderCode
-};
+}
