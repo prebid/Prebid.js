@@ -158,6 +158,12 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
       bidResponse.meta.brandId = adUnit.brand_id;
     }
 
+    if (adUnit.adomain && length(adUnit.adomain) > 0 ) {
+      bidResponse.meta.advertiserDomains = adUnit.adomain;
+    } else {
+      bidResponse.meta.advertiserDomains = [];
+    }
+
     if (adUnit.adv_id) {
       bidResponse.meta.dspid = adUnit.adv_id;
     }
