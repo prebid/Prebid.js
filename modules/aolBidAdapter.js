@@ -417,6 +417,8 @@ export const spec = {
       currency: response.cur || 'USD',
       dealId: bidData.dealid,
       netRevenue: true,
+      meta: {
+        advertiserDomains: bidData && bidData.adomain : bidData.adomain ? []
       ttl: bidRequest.ttl
     };
   },
