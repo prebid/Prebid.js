@@ -46,21 +46,21 @@ function deserializeParrableId(parrableIdStr) {
   return parrableId;
 }
 
-function serializeParrableId(parrableId) {
+function serializeParrableId(parrableIdAndParams) {
   let components = [];
 
-  if (parrableId.eid) {
-    components.push('eid:' + parrableId.eid);
+  if (parrableIdAndParams.eid) {
+    components.push('eid:' + parrableIdAndParams.eid);
   }
-  if (parrableId.ibaOptout) {
+  if (parrableIdAndParams.ibaOptout) {
     components.push('ibaOptout:1');
   }
-  if (parrableId.ccpaOptout) {
+  if (parrableIdAndParams.ccpaOptout) {
     components.push('ccpaOptout:1');
   }
-  if (parrableId.tpcSupport !== undefined) {
-    const tpcSupportComponent = parrableId.tpcSupport === true ? 'tpcSupport:1' : 'tpcSupport:0';
-    const tpcUntil = `tpcUntil:${parrableId.tpcUntil}`;
+  if (parrableIdAndParams.tpcSupport !== undefined) {
+    const tpcSupportComponent = parrableIdAndParams.tpcSupport === true ? 'tpc:1' : 'tpc:0';
+    const tpcUntil = `tpcUntil:${parrableIdAndParams.tpcUntil}`;
     components.push(tpcSupportComponent);
     components.push(tpcUntil);
   }
@@ -95,14 +95,21 @@ function encodeBase64UrlSafe(base64) {
 function readCookie() {
   const parrableIdStr = storage.getCookie(PARRABLE_COOKIE_NAME);
   if (parrableIdStr) {
-    return deserializeParrableId(decodeURIComponent(parrableIdStr));
+    const parsedCookie = deserializeParrableId(decodeURIComponent(parrableIdStr));
+    const { tpc, tpcUntil, ...parrableId } = parsedCookie;
+    let { eid, ibaOptout, ccpaOptout, ...params } = parsedCookie;
+
+    if (Date.now() >= tpcUntil) {
+      params.tpc = undefined;
+    }
+    return { parrableId, params };
   }
   return null;
 }
 
-function writeCookie(parrableId) {
-  if (parrableId) {
-    const parrableIdStr = encodeURIComponent(serializeParrableId(parrableId));
+function writeCookie(parrableIdAndParams) {
+  if (parrableIdAndParams) {
+    const parrableIdStr = encodeURIComponent(serializeParrableId(parrableIdAndParams));
     storage.setCookie(PARRABLE_COOKIE_NAME, parrableIdStr, getExpirationDate(), 'lax');
   }
 }
@@ -189,7 +196,7 @@ function shouldFilterImpression(configParams, parrableId) {
 function fetchId(configParams, gdprConsentData) {
   if (!isValidConfig(configParams)) return;
 
-  let parrableId = readCookie();
+  let { parrableId, params } = readCookie() || {};
   if (!parrableId) {
     parrableId = readLegacyCookies();
     migrateLegacyCookies(parrableId);
@@ -199,10 +206,9 @@ function fetchId(configParams, gdprConsentData) {
     return null;
   }
 
-  const eid = (parrableId) ? parrableId.eid : null;
+  const eid = parrableId ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
-  const tpcSupport = (parrableId) ? parrableId.tpcSupport : null
-  const tpcUntil = (parrableId) ? +parrableId.tpcUntil : null
+  const tpcSupport = params ? params.tpc : null
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = (gdprConsentData && typeof gdprConsentData.gdprApplies === 'boolean' && gdprConsentData.gdprApplies);
   const gdprConsentString = (gdprConsentData && gdprApplies && gdprConsentData.consentString) || '';
@@ -217,11 +223,8 @@ function fetchId(configParams, gdprConsentData) {
     url: refererInfo.referer,
     prebidVersion: '$prebid.version$',
     isIframe: utils.inIframe(),
+    tpcSupport
   };
-
-  if (Date.now() < tpcUntil) {
-    data.tpcSupport = tpcSupport;
-  }
 
   const searchParams = {
     data: encodeBase64UrlSafe(btoa(JSON.stringify(data))),
@@ -246,6 +249,7 @@ function fetchId(configParams, gdprConsentData) {
     const callbacks = {
       success: response => {
         let newParrableId = parrableId ? utils.deepClone(parrableId) : {};
+        let newParams = {};
         if (response) {
           try {
             let responseObj = JSON.parse(response);
@@ -260,15 +264,15 @@ function fetchId(configParams, gdprConsentData) {
                 newParrableId.ibaOptout = true;
               }
               if (responseObj.tpcSupport !== undefined) {
-                newParrableId.tpcSupport = responseObj.tpcSupport;
-                newParrableId.tpcUntil = Date.now() + responseObj.tpcSupportTtl;
+                newParams.tpcSupport = responseObj.tpcSupport;
+                newParams.tpcUntil = Math.floor((Date.now() + responseObj.tpcSupportTtl) / 1000);
               }
             }
           } catch (error) {
             utils.logError(error);
             cb();
           }
-          writeCookie(newParrableId);
+          writeCookie({ ...newParrableId, ...newParams });
           cb(newParrableId);
         } else {
           utils.logError('parrableId: ID fetch returned an empty result');
