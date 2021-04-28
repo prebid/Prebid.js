@@ -1,13 +1,14 @@
 import {expect} from 'chai';
-import {LogError, spec} from 'modules/sovrnBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {spec} from 'modules/sovrnBidAdapter.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js'
 
 const ENDPOINT = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
 
 const adUnitBidRequest = {
   'bidder': 'sovrn',
   'params': {
-    'tagid': '403370'
+    'tagid': 403370
   },
   'adUnitCode': 'adunit-code',
   'sizes': [
@@ -18,82 +19,61 @@ const adUnitBidRequest = {
   'bidderRequestId': '22edbae2733bf6',
   'auctionId': '1d1a030790a475',
 }
+const bidderRequest = {
+  refererInfo: {
+    referer: 'http://example.com/page.html',
+  }
+};
 
 describe('sovrnBidAdapter', function() {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
-    const bid = {
-      'bidder': 'sovrn',
-      'params': {
-        'tagid': '403370'
-      },
-      'adUnitCode': 'adunit-code',
-      'sizes': [
-        [300, 250],
-        [300, 600]
-      ],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
-    };
-
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(adUnitBidRequest)).to.equal(true);
     });
 
     it('should return false when tagid not passed correctly', function () {
-      bid.params.tagid = 'ABCD';
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      const bid = {...adUnitBidRequest}
+      const params = adUnitBidRequest.params
+      bid.params = {...params}
+      bid.params.tagid = 'ABCD'
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
     });
 
     it('should return false when require params are not passed', function () {
-      let bid = Object.assign({}, bid);
+      const bid = {...adUnitBidRequest}
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    const bidRequests = [{
-      'bidder': 'sovrn',
-      'params': {
-        'tagid': '403370'
-      },
-      'adUnitCode': 'adunit-code',
-      'sizes': [
-        [300, 250],
-        [300, 600]
-      ],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475'
-    }];
-    const bidderRequest = {
-      refererInfo: {
-        referer: 'http://example.com/page.html',
-      }
-    };
-    const request = spec.buildRequests(bidRequests, bidderRequest);
+    describe('basic bid parameters', function() {
+      const bidRequests = [adUnitBidRequest];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
 
-    it('sends bid request to our endpoint via POST', function () {
-      expect(request.method).to.equal('POST');
-    });
+      it('sends bid request to our endpoint via POST', function () {
+        expect(request.method).to.equal('POST');
+      });
 
-    it('attaches source and version to endpoint URL as query params', function () {
-      expect(request.url).to.equal(ENDPOINT)
-    });
+      it('attaches source and version to endpoint URL as query params', function () {
+        expect(request.url).to.equal(ENDPOINT)
+      });
 
-    it('sets the proper banner object', function() {
-      const payload = JSON.parse(request.data)
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
-      expect(payload.imp[0].banner.w).to.equal(1)
-      expect(payload.imp[0].banner.h).to.equal(1)
-    })
+      it('sets the proper banner object', function() {
+        const payload = JSON.parse(request.data)
+        expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
+        expect(payload.imp[0].banner.w).to.equal(1)
+        expect(payload.imp[0].banner.h).to.equal(1)
+      })
 
-    it('includes the ad unit code int the request', function() {
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].adunitcode).to.equal('adunit-code')
+      it('includes the ad unit code int the request', function() {
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].adunitcode).to.equal('adunit-code')
+      })
+
+      it('converts tagid to string', function () {
+        expect(request.data).to.contain('"tagid":"403370"')
+      });
     })
 
     it('accepts a single array as a size', function() {
@@ -109,11 +89,6 @@ describe('sovrnBidAdapter', function() {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475'
       }]
-      const bidderRequest = {
-        refererInfo: {
-          referer: 'http://example.com/page.html',
-        }
-      }
       const request = spec.buildRequests(singleSize, bidderRequest)
       const payload = JSON.parse(request.data)
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}])
@@ -149,7 +124,7 @@ describe('sovrnBidAdapter', function() {
 
     it('sends gdpr info if exists', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let bidderRequest = {
+      const bidderRequest = {
         'bidderCode': 'sovrn',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -162,9 +137,9 @@ describe('sovrnBidAdapter', function() {
           referer: 'http://example.com/page.html',
         }
       };
-      bidderRequest.bids = bidRequests;
+      bidderRequest.bids = [adUnitBidRequest];
 
-      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+      const data = JSON.parse(spec.buildRequests([adUnitBidRequest], bidderRequest).data);
 
       expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number');
       expect(data.regs.ext.gdpr).to.equal(1);
@@ -173,8 +148,8 @@ describe('sovrnBidAdapter', function() {
     });
 
     it('should send us_privacy if bidderRequest has a value for uspConsent', function () {
-      let uspString = '1NYN';
-      let bidderRequest = {
+      const uspString = '1NYN';
+      const bidderRequest = {
         'bidderCode': 'sovrn',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -184,37 +159,11 @@ describe('sovrnBidAdapter', function() {
           referer: 'http://example.com/page.html',
         }
       };
-      bidderRequest.bids = bidRequests;
+      bidderRequest.bids = [adUnitBidRequest];
 
-      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+      const data = JSON.parse(spec.buildRequests([adUnitBidRequest], bidderRequest).data);
 
       expect(data.regs.ext['us_privacy']).to.equal(uspString);
-    });
-
-    it('converts tagid to string', function () {
-      const ivBidRequests = [{
-        'bidder': 'sovrn',
-        'params': {
-          'tagid': 403370,
-          'iv': 'vet'
-        },
-        'adUnitCode': 'adunit-code',
-        'sizes': [
-          [300, 250],
-          [300, 600]
-        ],
-        'bidId': '30b31c1838de1e',
-        'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475'
-      }];
-      const bidderRequest = {
-        refererInfo: {
-          referer: 'http://example.com/page.html',
-        }
-      };
-      const request = spec.buildRequests(ivBidRequests, bidderRequest);
-
-      expect(request.data).to.contain('"tagid":"403370"')
     });
 
     it('should add schain if present', function() {
@@ -243,7 +192,7 @@ describe('sovrnBidAdapter', function() {
             }
           ]
         }
-      }].concat(bidRequests);
+      }].concat(adUnitBidRequest);
       const bidderRequest = {
         refererInfo: {
           referer: 'http://example.com/page.html',
@@ -272,7 +221,7 @@ describe('sovrnBidAdapter', function() {
           'criteoId': 'A_CRITEO_ID',
           'tdid': 'SOMESORTOFID',
         }
-      }].concat(bidRequests);
+      }].concat(adUnitBidRequest);
       const bidderRequest = {
         refererInfo: {
           referer: 'http://example.com/page.html',
@@ -293,6 +242,7 @@ describe('sovrnBidAdapter', function() {
     });
 
     it('should ignore empty segments', function() {
+      const request = spec.buildRequests([adUnitBidRequest], bidderRequest)
       const payload = JSON.parse(request.data)
       expect(payload.imp[0].ext).to.be.undefined
     })
@@ -336,6 +286,70 @@ describe('sovrnBidAdapter', function() {
       const request = spec.buildRequests([floorBid], bidderRequest)
       const payload = JSON.parse(request.data)
       expect(payload.imp[0].bidfloor).to.equal(2.00)
+    })
+    describe('First Party Data', function () {
+      let sandbox
+
+      beforeEach(function() {
+        sandbox = sinon.sandbox.create()
+      })
+      afterEach(function() {
+        sandbox.restore()
+      })
+      it('should provide first party data if provided', function() {
+        sandbox.stub(config, 'getConfig').callsFake(key => {
+          const cfg = {
+            ortb2: {
+              site: {
+                keywords: 'test keyword'
+              },
+              user: {
+                data: 'some user data'
+              }
+            }
+          };
+          return utils.deepAccess(cfg, key);
+        });
+        const request = spec.buildRequests([adUnitBidRequest], bidderRequest)
+        const payload = JSON.parse(request.data)
+        expect(payload.user.data).to.equal('some user data')
+        expect(payload.site.keywords).to.equal('test keyword')
+        expect(payload.site.page).to.equal('http://example.com/page.html')
+        expect(payload.site.domain).to.equal('example.com')
+      })
+      it('should append impression first party data', function () {
+        const fpdBid = {...adUnitBidRequest}
+        fpdBid.ortb2Imp = {
+          ext: {
+            data: {
+              pbadslot: 'homepage-top-rect',
+              adUnitSpecificAttribute: '123'
+            }
+          }
+        }
+        const request = spec.buildRequests([fpdBid], bidderRequest)
+        const payload = JSON.parse(request.data)
+        expect(payload.imp[0].ext.data.pbadslot).to.equal('homepage-top-rect')
+        expect(payload.imp[0].ext.data.adUnitSpecificAttribute).to.equal('123')
+      })
+      it('should not overwrite deals when impression fpd is present', function() {
+        const fpdBid = {...adUnitBidRequest}
+        fpdBid.params = {...adUnitBidRequest.params}
+        fpdBid.params.segments = 'seg1, seg2'
+        fpdBid.ortb2Imp = {
+          ext: {
+            data: {
+              pbadslot: 'homepage-top-rect',
+              adUnitSpecificAttribute: '123'
+            }
+          }
+        }
+        const request = spec.buildRequests([fpdBid], bidderRequest)
+        const payload = JSON.parse(request.data)
+        expect(payload.imp[0].ext.data.pbadslot).to.equal('homepage-top-rect')
+        expect(payload.imp[0].ext.data.adUnitSpecificAttribute).to.equal('123')
+        expect(payload.imp[0].ext.deals).to.deep.equal(['seg1', 'seg2'])
+      })
     })
   });
 
