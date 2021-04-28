@@ -181,6 +181,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const ENDPOINT = utils.deepAccess(validBidRequests, 'params.endpoint');
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
   const BIDFLOOR = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.banner');
   const videoMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.video');
   const { refererInfo } = bidderRequest;
@@ -266,6 +267,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   bidder.tappxkey = TAPPXKEY;
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
+  bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : undefined;
 
   imp.ext = {};
   imp.ext.bidder = bidder;
@@ -336,7 +338,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.params = params;
   payload.regs = regs;
   // < Payload
-
+  utils.logMessage('---------------------');
+  utils.logMessage(JSON.stringify(payload));
+  utils.logMessage('---------------------');
   return {
     method: 'POST',
     url: `https://${HOST}/${ENDPOINT}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
