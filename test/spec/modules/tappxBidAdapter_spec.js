@@ -1,5 +1,6 @@
 import { assert } from 'chai';
 import { spec } from 'modules/tappxBidAdapter';
+import { getFloor } from 'modules/priceFloors';
 
 const c_BIDREQUEST = {
   data: {
@@ -118,6 +119,7 @@ const c_BIDDERREQUEST_B = {'bidderCode': 'tappx', 'auctionId': '13a8a3a9-ed3a-41
 const c_BIDDERREQUEST_V = {'method': 'POST', 'url': 'https://testing.ssp.tappx.com/rtb/v2//VZ12TESTCTV?type_cnn=prebidjs&v=0.1.10329', 'data': '{"site":{"name":"localhost","bundle":"localhost","domain":"localhost"},"user":{"ext":{}},"id":"e807363f-3095-43a8-a4a6-f44196cb7318","test":1,"at":1,"tmax":1000,"bidder":"tappx","imp":[{"video":{"w":320,"h":250,"mimes":["video/mp4","application/javascript"]},"id":"28f49c71b13f2f","tagid":"localhost_typeAdBanVid_windows","secure":1,"bidfloor":0.005,"ext":{"bidder":{"tappxkey":"pub-1234-desktop-1234","endpoint":"VZ12TESTCTV","host":"testing.ssp.tappx.com/rtb/v2/"}}}],"device":{"os":"windows","ip":"peer","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36","h":864,"w":1536,"dnt":0,"language":"en","make":"Google Inc."},"params":{"host":"tappx.com","bidfloor":0.005},"regs":{"gdpr":0,"ext":{}}}', 'bids': {'bidder': 'tappx', 'params': {'host': 'testing.ssp.tappx.com/rtb/v2/', 'tappxkey': 'pub-1234-desktop-1234', 'endpoint': 'VZ12TESTCTV', 'bidfloor': 0.005, 'test': true}, 'crumbs': {'pubcid': 'dccfe922-3823-4676-b7b2-e5ed8743154e'}, 'ortb2Imp': {'ext': {'data': {'pbadslot': 'video-ad-div'}}}, 'renderer': {'options': {'text': 'Tappx Outstream Video'}}, 'mediaTypes': {'video': {'context': 'instream', 'mimes': ['video/mp4', 'application/javascript'], 'playerSize': [[320, 250]]}}, 'adUnitCode': 'video-ad-div', 'transactionId': 'ed41c805-d14c-49c3-954d-26b98b2aa2c2', 'sizes': [[320, 250]], 'bidId': '28f49c71b13f2f', 'bidderRequestId': '1401710496dc7', 'auctionId': 'e807363f-3095-43a8-a4a6-f44196cb7318', 'src': 'client', 'bidRequestsCount': 1, 'bidderRequestsCount': 1, 'bidderWinsCount': 0}}
 
 describe('Tappx bid adapter', function () {
+  let getFloorResponse = {};
   /**
    * IS REQUEST VALID
    */
@@ -266,6 +268,34 @@ describe('Tappx bid adapter', function () {
       const consent = spec.getUserSyncs(syncOptions, null, c_BIDDERREQUEST_B.gdprConsent, c_BIDDERREQUEST_B.uspConsent);
       expect(consent[0].type).to.be.equal('iframe', JSON.stringify(consent[0]));
       expect(consent[0].url).to.match(/&type=iframe/);
+    });
+  })
+
+  describe('module Floor implementation', function() {
+    let bidderRequest_f = c_BIDREQUEST;
+    it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
+      // default getFloor response is empty object so should not break and not send hard_floor
+      bidderRequest_f.bids[0].getFloor = () => getFloorResponse;
+      let request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      let payload;
+
+      getFloorResponse = undefined;
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.05);
+
+      // make it respond with USD floor and string floor
+      getFloorResponse = {currency: 'USD', floor: 1.23};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(1.23);
+
+      // make it respond with USD floor and num floor
+      getFloorResponse = {currency: 'USD', floor: 1.23};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(1.23);
     });
   })
 });
