@@ -1045,8 +1045,7 @@ function getBidFloor(bid) {
   let floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
-    size: '*',
-    bidRequest: bid
+    size: '*'
   });
   if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
     return floor.floor;
