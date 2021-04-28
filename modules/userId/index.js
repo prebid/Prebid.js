@@ -17,7 +17,6 @@
  * @param {SubmoduleConfig} config
  * @param {ConsentData|undefined} consentData
  * @param {(Object|undefined)} cacheIdObj
- * @param {{coppa: boolean, usp: *, gdpr: *}} userConsentData
  * @return {(IdResponse|undefined)} A response object that contains id and/or callback.
  */
 
@@ -31,7 +30,6 @@
  * @param {SubmoduleConfig} config
  * @param {ConsentData|undefined} consentData
  * @param {Object} storedId - existing id, if any
- * @param {{coppa: boolean, usp: *, gdpr: *}} userConsentData
  * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
  */
 
@@ -128,16 +126,16 @@
  */
 
 /**
-  * @typedef {Object} RefreshUserIdsOptions
-  * @property {(string[]|undefined)} submoduleNames - submodules to refresh
-  */
+ * @typedef {Object} RefreshUserIdsOptions
+ * @property {(string[]|undefined)} submoduleNames - submodules to refresh
+ */
 
 import find from 'core-js-pure/features/array/find.js';
 import { config } from '../../src/config.js';
 import events from '../../src/events.js';
 import * as utils from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
-import { gdprDataHandler, uspDataHandler } from '../../src/adapterManager.js';
+import { gdprDataHandler } from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import { module, hook } from '../../src/hook.js';
 import { createEidsArray, buildEidPermissions } from './eids.js';
@@ -227,7 +225,7 @@ function setPrebidServerEidPermissions(initializedSubmodules) {
 }
 
 /**
-/**
+ /**
  * @param {SubmoduleStorage} storage
  * @param {String|undefined} key optional key of the value
  * @returns {string}
@@ -343,22 +341,10 @@ function hasGDPRConsent(consentData) {
 }
 
 /**
- * Get the user consent data.
- * @returns {{coppa: boolean, usp: *, gdpr: *}}
+ * Find the root domain
+ * @param {string|undefined} fullDomain
+ * @return {string}
  */
-function getUserConsentData() {
-  return {
-    gdpr: gdprDataHandler.getConsentData(),
-    usp: uspDataHandler.getConsentData(),
-    coppa: !!(config.getConfig('coppa'))
-  }
-}
-
-/**
-   * Find the root domain
-   * @param {string|undefined} fullDomain
-   * @return {string}
-   */
 export function findRootDomain(fullDomain = window.location.hostname) {
   if (!coreStorage.cookiesAreEnabled()) {
     return fullDomain;
@@ -593,9 +579,9 @@ function getUserIdsAsEids() {
 }
 
 /**
-* This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
-* @param {RefreshUserIdsOptions} options
-*/
+ * This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
+ * @param {RefreshUserIdsOptions} options
+ */
 function refreshUserIds(options, callback) {
   let submoduleNames = options ? options.submoduleNames : null;
   if (!submoduleNames) {
@@ -607,7 +593,7 @@ function refreshUserIds(options, callback) {
 
     const storedConsentData = getStoredConsentData();
     setStoredConsentData(consentData);
-    const userConsentData = getUserConsentData();
+
     // gdpr consent with purpose one is required, otherwise exit immediately
     let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
     if (!hasValidated && !hasGDPRConsent(consentData)) {
@@ -623,7 +609,7 @@ function refreshUserIds(options, callback) {
       }
 
       utils.logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
-      populateSubmoduleId(submodule, consentData, storedConsentData, true, userConsentData);
+      populateSubmoduleId(submodule, consentData, storedConsentData, true);
 
       if (utils.isFn(submodule.callback)) {
         callbackSubmodules.push(submodule);
@@ -647,7 +633,7 @@ export const validateGdprEnforcement = hook('sync', function (submodules, consen
   return { userIdModules: submodules, hasValidated: consentData && consentData.hasValidated };
 }, 'validateGdprEnforcement');
 
-function populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh, userConsentData) {
+function populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh) {
   // There are two submodule configuration types to handle: storage or value
   // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
   // 2. value: pass directly to bids
@@ -663,10 +649,10 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
 
     if (!storedId || refreshNeeded || forceRefresh || !storedConsentDataMatchesConsentData(storedConsentData, consentData)) {
       // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-      response = submodule.submodule.getId(submodule.config, consentData, storedId, userConsentData);
+      response = submodule.submodule.getId(submodule.config, consentData, storedId);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-      response = submodule.submodule.extendId(submodule.config, consentData, storedId, userConsentData);
+      response = submodule.submodule.extendId(submodule.config, consentData, storedId);
     }
 
     if (utils.isPlainObject(response)) {
@@ -690,7 +676,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
     // cache decoded value (this is copied to every adUnit bid)
     submodule.idObj = submodule.config.value;
   } else {
-    const response = submodule.submodule.getId(submodule.config, consentData, undefined, userConsentData);
+    const response = submodule.submodule.getId(submodule.config, consentData, undefined);
     if (utils.isPlainObject(response)) {
       if (typeof response.callback === 'function') { submodule.callback = response.callback; }
       if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
@@ -707,7 +693,7 @@ function initSubmodules(submodules, consentData) {
   // we always want the latest consentData stored, even if we don't execute any submodules
   const storedConsentData = getStoredConsentData();
   setStoredConsentData(consentData);
-  const userConsentData = getUserConsentData();
+
   // gdpr consent with purpose one is required, otherwise exit immediately
   let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
   if (!hasValidated && !hasGDPRConsent(consentData)) {
@@ -716,7 +702,7 @@ function initSubmodules(submodules, consentData) {
   }
 
   return userIdModules.reduce((carry, submodule) => {
-    populateSubmoduleId(submodule, consentData, storedConsentData, false, userConsentData);
+    populateSubmoduleId(submodule, consentData, storedConsentData, false);
     carry.push(submodule);
     return carry;
   }, []);
