@@ -22,6 +22,7 @@ const SYNC_TYPES = Object.freeze({
   1: 'iframe',
   2: 'image'
 });
+const GVLID = 14;
 
 const NATIVE_MODEL = [
   {name: 'title', assetType: 'title'},
@@ -50,9 +51,9 @@ const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
  * Adapter for requesting bids from AdKernel white-label display platform
  */
 export const spec = {
-
   code: 'adkernel',
-  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon'],
+  gvlid: GVLID,
+  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon', 'andbeyond', 'adbite', 'houseofpubs', 'torchad', 'stringads', 'bcm', 'engageadx'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -116,13 +117,10 @@ export const spec = {
         requestId: rtbBid.impid,
         cpm: rtbBid.price,
         creativeId: rtbBid.crid,
-        currency: 'USD',
+        currency: response.cur || 'USD',
         ttl: 360,
         netRevenue: true
       };
-      if (rtbBid.dealid !== undefined) {
-        prBid.dealId = rtbBid.dealid;
-      }
       if ('banner' in imp) {
         prBid.mediaType = BANNER;
         prBid.width = rtbBid.w;
@@ -137,6 +135,27 @@ export const spec = {
         prBid.mediaType = NATIVE;
         prBid.native = buildNativeAd(JSON.parse(rtbBid.adm));
       }
+      if (utils.isStr(rtbBid.dealid)) {
+        prBid.dealId = rtbBid.dealid;
+      }
+      if (utils.isArray(rtbBid.adomain)) {
+        utils.deepSetValue(prBid, 'meta.advertiserDomains', rtbBid.adomain);
+      }
+      if (utils.isArray(rtbBid.cat)) {
+        utils.deepSetValue(prBid, 'meta.secondaryCatIds', rtbBid.cat);
+      }
+      if (utils.isPlainObject(rtbBid.ext)) {
+        if (utils.isNumber(rtbBid.ext.advertiser_id)) {
+          utils.deepSetValue(prBid, 'meta.advertiserId', rtbBid.ext.advertiser_id);
+        }
+        if (utils.isStr(rtbBid.ext.advertiser_name)) {
+          utils.deepSetValue(prBid, 'meta.advertiserName', rtbBid.ext.advertiser_name);
+        }
+        if (utils.isStr(rtbBid.ext.agency_name)) {
+          utils.deepSetValue(prBid, 'meta.agencyName', rtbBid.ext.agency_name);
+        }
+      }
+
       return prBid;
     });
   },
@@ -302,7 +321,7 @@ function getAllowedSyncMethod(bidderCode) {
  */
 function buildRtbRequest(imps, bidderRequest, schain) {
   let {bidderCode, gdprConsent, auctionId, refererInfo, timeout, uspConsent} = bidderRequest;
-
+  let coppa = config.getConfig('coppa');
   let req = {
     'id': auctionId,
     'imp': imps,
@@ -330,6 +349,9 @@ function buildRtbRequest(imps, bidderRequest, schain) {
   }
   if (uspConsent) {
     utils.deepSetValue(req, 'regs.ext.us_privacy', uspConsent);
+  }
+  if (coppa) {
+    utils.deepSetValue(req, 'regs.coppa', 1);
   }
   let syncMethod = getAllowedSyncMethod(bidderCode);
   if (syncMethod) {

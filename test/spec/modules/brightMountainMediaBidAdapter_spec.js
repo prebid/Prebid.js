@@ -4,7 +4,7 @@ import { spec } from '../../../modules/brightMountainMediaBidAdapter.js';
 describe('brightMountainMediaBidAdapter_spec', function () {
   let bid = {
     bidId: '2dd581a2b6281d',
-    bidder: 'brightmountainmedia',
+    bidder: 'bmtm',
     bidderRequestId: '145e1d6a7837c9',
     params: {
       placement_id: '123qwerty'
@@ -19,7 +19,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
   };
   let bidderRequest = {
-    bidderCode: 'brightmountainmedia',
+    bidderCode: 'bmtm',
     auctionId: 'fffffff-ffff-ffff-ffff-ffffffffffff',
     bidderRequestId: 'ffffffffffffff',
     start: 1472239426002,
@@ -55,7 +55,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://console.brightmountainmedia.com/hb/bid');
+      expect(serverRequest.url).to.equal('https://one.elitebidder.com/api/hb');
     });
 
     it('Returns valid data if array of bids is valid', function () {
@@ -133,7 +133,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.exist;
       expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.exist;
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe')
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://console.brightmountainmedia.com:4444/cookieSync')
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://console.brightmountainmedia.com:8443/cookieSync')
     });
   });
 });

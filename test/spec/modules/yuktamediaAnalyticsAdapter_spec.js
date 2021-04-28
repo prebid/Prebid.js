@@ -30,7 +30,7 @@ let prebidAuction = {
           }
         },
         'userId': {
-          'id5id': 'ID5-ZHMOxXeRXPe3inZKGD-Lj0g7y8UWdDbsYXQ_n6aWMQ',
+          'id5id': { uid: 'ID5-ZHMOxXeRXPe3inZKGD-Lj0g7y8UWdDbsYXQ_n6aWMQ' },
           'parrableid': '01.1595590997.46d951017bdc272ca50b88dbcfb0545cfc636bec3e3d8c02091fb1b413328fb2fd3baf65cb4114b3f782895fd09f82f02c9042b85b42c4654d08ba06dc77f0ded936c8ea3fc4085b4a99',
           'pubcid': '100a8bc9-f588-4c22-873e-a721cb68bc34'
         },
@@ -391,7 +391,7 @@ describe('yuktamedia analytics adapter', function () {
       yuktamediaAnalyticsAdapter.track.restore();
     });
 
-    it('should catch all events', function () {
+    it('should catch all events 1', function () {
       yuktamediaAnalyticsAdapter.enableAnalytics({
         provider: 'yuktamedia',
         options: {
@@ -403,12 +403,82 @@ describe('yuktamedia analytics adapter', function () {
         }
       });
       events.emit(constants.EVENTS.AUCTION_INIT, prebidAuction[constants.EVENTS.AUCTION_INIT]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch all events 2', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.BID_REQUESTED, prebidAuction[constants.EVENTS.BID_REQUESTED]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch all events 3', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.NO_BID, prebidAuction[constants.EVENTS.NO_BID]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch all events 4', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.BID_TIMEOUT, prebidAuction[constants.EVENTS.BID_TIMEOUT]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch all events 5', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.BID_RESPONSE, prebidAuction[constants.EVENTS.BID_RESPONSE]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch all events 6', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.AUCTION_END, prebidAuction[constants.EVENTS.AUCTION_END]);
-      sinon.assert.callCount(yuktamediaAnalyticsAdapter.track, 6);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
     });
 
     it('should catch no events if no pubKey and pubId', function () {
@@ -427,7 +497,7 @@ describe('yuktamedia analytics adapter', function () {
       sinon.assert.callCount(yuktamediaAnalyticsAdapter.track, 0);
     });
 
-    it('should catch nobid, timeout and biwon event events', function () {
+    it('should catch nobid, timeout and bidwon event events one of eight', function () {
       yuktamediaAnalyticsAdapter.enableAnalytics({
         provider: 'yuktamedia',
         options: {
@@ -439,14 +509,112 @@ describe('yuktamedia analytics adapter', function () {
         }
       });
       events.emit(constants.EVENTS.AUCTION_INIT, prebidNativeAuction[constants.EVENTS.AUCTION_INIT]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch nobid, timeout and bidwon event events two of eight', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.BID_REQUESTED, prebidNativeAuction[constants.EVENTS.BID_REQUESTED]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch nobid, timeout and bidwon event events three of eight', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.BID_REQUESTED, prebidNativeAuction[constants.EVENTS.BID_REQUESTED + '1']);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch nobid, timeout and bidwon event events four of eight', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.NO_BID, prebidNativeAuction[constants.EVENTS.NO_BID]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch nobid, timeout and bidwon event events five of eight', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.BID_TIMEOUT, prebidNativeAuction[constants.EVENTS.BID_TIMEOUT]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch nobid, timeout and bidwon event events six of eight', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.BID_RESPONSE, prebidNativeAuction[constants.EVENTS.BID_RESPONSE]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch nobid, timeout and bidwon event events seven of eight', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.AUCTION_END, prebidNativeAuction[constants.EVENTS.AUCTION_END]);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
+    });
+
+    it('should catch nobid, timeout and bidwon event events eight of eight', function () {
+      yuktamediaAnalyticsAdapter.enableAnalytics({
+        provider: 'yuktamedia',
+        options: {
+          pubId: '1',
+          pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
+          enableUTMCollection: true,
+          enableSession: true,
+          enableUserIdCollection: true
+        }
+      });
       events.emit(constants.EVENTS.AUCTION_END, prebidNativeAuction[constants.EVENTS.BID_WON]);
-      sinon.assert.callCount(yuktamediaAnalyticsAdapter.track, 8);
+      sinon.assert.called(yuktamediaAnalyticsAdapter.track);
     });
   });
 

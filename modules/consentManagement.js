@@ -100,11 +100,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function v2CmpResponseCallback(tcfData, success) {
     utils.logInfo('Received a response from CMP', tcfData);
     if (success) {
-      if (tcfData.gdprApplies === false) {
-        cmpSuccess(tcfData, hookConfig);
-      } else if (tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
-        cmpSuccess(tcfData, hookConfig);
-      } else if (tcfData.eventStatus === 'cmpuishown' && tcfData.tcString && tcfData.purposeOneTreatment === true) {
+      if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         cmpSuccess(tcfData, hookConfig);
       }
     } else {
@@ -203,29 +199,51 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
     let apiName = (cmpVersion === 2) ? '__tcfapi' : '__cmp';
 
+    let callId = Math.random() + '';
+    let callName = `${apiName}Call`;
+
     /* Setup up a __cmp function to do the postMessage and stash the callback.
       This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
-    window[apiName] = function (cmd, arg, callback) {
-      let callId = Math.random() + '';
-      let callName = `${apiName}Call`;
-      let msg = {
-        [callName]: {
-          command: cmd,
-          parameter: arg,
-          callId: callId
-        }
-      };
-      if (cmpVersion !== 1) msg[callName].version = cmpVersion;
+    if (cmpVersion === 2) {
+      window[apiName] = function (cmd, cmpVersion, callback, arg) {
+        let msg = {
+          [callName]: {
+            command: cmd,
+            version: cmpVersion,
+            parameter: arg,
+            callId: callId
+          }
+        };
 
-      cmpCallbacks[callId] = callback;
-      cmpFrame.postMessage(msg, '*');
+        cmpCallbacks[callId] = callback;
+        cmpFrame.postMessage(msg, '*');
+      }
+
+      /** when we get the return message, call the stashed callback */
+      window.addEventListener('message', readPostMessageResponse, false);
+
+      // call CMP
+      window[apiName](commandName, cmpVersion, moduleCallback);
+    } else {
+      window[apiName] = function (cmd, arg, callback) {
+        let msg = {
+          [callName]: {
+            command: cmd,
+            parameter: arg,
+            callId: callId
+          }
+        };
+
+        cmpCallbacks[callId] = callback;
+        cmpFrame.postMessage(msg, '*');
+      }
+
+      /** when we get the return message, call the stashed callback */
+      window.addEventListener('message', readPostMessageResponse, false);
+
+      // call CMP
+      window[apiName](commandName, undefined, moduleCallback);
     }
-
-    /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', readPostMessageResponse, false);
-
-    // call CMP
-    window[apiName](commandName, null, moduleCallback);
 
     function readPostMessageResponse(event) {
       let cmpDataPkgName = `${apiName}Return`;
@@ -387,7 +405,7 @@ function storeConsentData(cmpConsentObject) {
       vendorData: (cmpConsentObject) || undefined,
       gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
     };
-    if (cmpConsentObject.addtlConsent && utils.isStr(cmpConsentObject.addtlConsent)) {
+    if (cmpConsentObject && cmpConsentObject.addtlConsent && utils.isStr(cmpConsentObject.addtlConsent)) {
       consentData.addtlConsent = cmpConsentObject.addtlConsent;
     };
   }
@@ -455,7 +473,7 @@ export function resetConsentData() {
 export function setConsentConfig(config) {
   // if `config.gdpr` or `config.usp` exist, assume new config format.
   // else for backward compatability, just use `config`
-  config = config.gdpr || config.usp ? config.gdpr : config;
+  config = config && (config.gdpr || config.usp ? config.gdpr : config);
   if (!config || typeof config !== 'object') {
     utils.logWarn('consentManagement config not defined, exiting consent manager');
     return;

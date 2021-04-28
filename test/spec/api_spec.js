@@ -43,8 +43,12 @@ describe('Publisher API', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getBidResponses);
     });
 
-    it('should have function $$PREBID_GLOBAL$$.getBidResponses', function () {
+    it('should have function $$PREBID_GLOBAL$$.getNoBids', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getNoBids);
+    });
+
+    it('should have function $$PREBID_GLOBAL$$.getNoBidsForAdUnitCode', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getNoBidsForAdUnitCode);
     });
 
     it('should have function $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode', function () {
@@ -77,6 +81,10 @@ describe('Publisher API', function () {
 
     it('should have function $$PREBID_GLOBAL$$.getAllWinningBids', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getAllWinningBids);
+    });
+
+    it('should have function $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode);
     });
   });
 });
