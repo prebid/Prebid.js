@@ -366,8 +366,20 @@ describe('Adkernel adapter', function () {
     });
 
     it('should forward default bidder timeout', function() {
-      let [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST);
+      let [_, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests[0]).to.have.property('tmax', 3000);
+    });
+
+    it('should set bidfloor if configured', function() {
+      let bid = Object.assign({}, bid1_zone1);
+      bid.getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 0.145
+        }
+      };
+      let [_, bidRequests] = buildRequest([bid]);
+      expect(bidRequests[0].imp[0]).to.have.property('bidfloor', 0.145);
     });
   });
 
