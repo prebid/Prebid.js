@@ -99,7 +99,7 @@ function readCookie() {
     const { tpc, tpcUntil, ...parrableId } = parsedCookie;
     let { eid, ibaOptout, ccpaOptout, ...params } = parsedCookie;
 
-    if (Date.now() >= tpcUntil) {
+    if ((Date.now() / 1000) >= tpcUntil) {
       params.tpc = undefined;
     }
     return { parrableId, params };
