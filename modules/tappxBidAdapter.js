@@ -377,7 +377,7 @@ function getHostInfo(hostParam) {
   domainInfo.domain = hostParam.split('/', 1)[0];
   domainInfo.url = hostParam;
 
-  let regexNewEndpoints = new RegExp(`^(zz.*|testing)\.ssp\.tappx\.com$`, 'i');
+  let regexNewEndpoints = new RegExp(`^(vz.*|zz.*|testing)\.ssp\.tappx\.com$`, 'i');
   let regexClassicEndpoints = new RegExp(`^[a-z]{3}\.[a-z]{3}\.tappx\.com$`, 'i');
 
   if (regexNewEndpoints.test(domainInfo.domain)) {
