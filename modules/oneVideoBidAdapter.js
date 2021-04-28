@@ -316,6 +316,7 @@ function getRequestData(bid, consentData, bidRequest) {
     }
   }
   if (bid.params.video.e2etest) {
+    utils.logMessage('+++ oneVideoBidAdapter: E2E test mode enabled. \n The following parameters are being overridden by e2etest mode:\n* bidfloor:null\n* width:300\n* height:250\n* mimes: video/mp4, application/javascript\n* api:2\n* site.page/ref: verizonmedia.com\n* tmax:1000');
     bidData.imp[0].bidfloor = null;
     bidData.imp[0].video.w = 300;
     bidData.imp[0].video.h = 250;
