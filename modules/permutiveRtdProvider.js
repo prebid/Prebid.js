@@ -8,10 +8,11 @@
 import { getGlobal } from '../src/prebidGlobal.js'
 import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js'
-import { deepSetValue, deepAccess, isFn, mergeDeep } from '../src/utils.js'
+import { deepSetValue, deepAccess, isFn, mergeDeep, logError } from '../src/utils.js'
 import includes from 'core-js-pure/features/array/includes.js'
+const MODULE_NAME = 'permutive'
 
-export const storage = getStorageManager()
+export const storage = getStorageManager(null, MODULE_NAME)
 
 function init (config, userConsent) {
   return true
@@ -60,11 +61,17 @@ function setSegments (reqBidsConfigObj, config) {
         customFn(bid, data, acEnabled, utils, defaultFn)
       } else if (defaultFn) {
         defaultFn(bid, data, acEnabled)
-      } else {
-
       }
     })
   })
+}
+
+function makeSafe (fn) {
+  try {
+    fn()
+  } catch (e) {
+    logError(e)
+  }
 }
 
 function getCustomBidderFn (config, bidder) {
@@ -170,8 +177,12 @@ function readSegments (key) {
 
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
-  name: 'permutive',
-  getBidRequestData: initSegments,
+  name: MODULE_NAME,
+  getBidRequestData: function (reqBidsConfigObj, callback, customConfig) {
+    makeSafe(function () {
+      initSegments(reqBidsConfigObj, callback, customConfig)
+    })
+  },
   init: init
 }
 

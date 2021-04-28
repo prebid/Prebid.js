@@ -202,6 +202,7 @@ describe('Deepintent adapter', function () {
       expect(bResponse[0].height).to.equal(bannerResponse.body.seatbid[0].bid[0].h);
       expect(bResponse[0].currency).to.equal('USD');
       expect(bResponse[0].netRevenue).to.equal(false);
+      expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['deepintent.com']);
       expect(bResponse[0].ttl).to.equal(300);
       expect(bResponse[0].creativeId).to.equal(bannerResponse.body.seatbid[0].bid[0].crid);
       expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId);

@@ -56,6 +56,10 @@ export const spec = {
             height: Number(bid.creativeHeight),
             creativeId: bid.creativeId,
             currency: (bid.bid) ? bid.bid.currency : 'EUR',
+            meta: {
+              advertiserDomains: (bid.destinationUrls.destination) ? [bid.destinationUrls.destination.split('/')[2]] : []
+
+            },
             netRevenue: false,
             ttl: 360,
             ad: adUnit.html
@@ -64,10 +68,10 @@ export const spec = {
       } else return response
     }, {});
 
-    const bidResponse = bidRequest.bid.map(bid => bid.bidId)
-      .reduce((request, adunitId) =>
-        request.concat(bidResponsesById[adunitId])
-        , []);
+    const bidResponse = bidRequest.bid.map(bid => bid.bidId).reduce((request, adunitId) => {
+      if (bidResponsesById[adunitId]) { request.push(bidResponsesById[adunitId]) }
+      return request
+    }, []);
 
     return bidResponse
   },
