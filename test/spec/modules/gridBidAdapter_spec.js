@@ -428,6 +428,16 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.tmax).to.equal(3000);
       getConfigStub.restore();
     });
+    it('should contain regs.coppa if coppa is true in config', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'coppa' ? true : null);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('regs');
+      expect(payload.regs).to.have.property('coppa', 1);
+      getConfigStub.restore();
+    });
     it('should contain imp[].ext.data.adserver if available', function() {
       const ortb2Imp = [{
         ext: {
