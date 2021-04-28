@@ -5,81 +5,11 @@
 import { config } from '../../src/config.js';
 import * as utils from '../../src/utils.js';
 import { ORTB_MAP } from './config.js';
-import { getHook } from '../../src/hook.js';
-import { getGlobal } from '../../src/prebidGlobal.js';
-import { addBidderRequests } from '../../src/auction.js';
-import { getRefererInfo } from '../../src/refererDetection.js'
+import { submodule } from '../../src/hook.js';
 import { getStorageManager } from '../../src/storageManager.js';
 
 const STORAGE = getStorageManager();
-
-let ortb2 = {};
-let win = (window === window.top) ? window : window.top;
 let optout;
-
-/**
- * Checks for referer and if exists merges into ortb2 global data
- */
-function setReferer() {
-  if (getRefererInfo().referer) utils.mergeDeep(ortb2, { site: { ref: getRefererInfo().referer } });
-}
-
-/**
- * Checks for canonical url and if exists merges into ortb2 global data
- */
-function setPage() {
-  if (getRefererInfo().canonicalUrl) utils.mergeDeep(ortb2, { site: { page: getRefererInfo().canonicalUrl } });
-}
-
-/**
- * Checks for canonical url and if exists retrieves domain and merges into ortb2 global data
- */
-function setDomain() {
-  let parseDomain = function(url) {
-    if (!url || typeof url !== 'string' || url.length === 0) return;
-
-    var match = url.match(/^(?:https?:\/\/)?(?:www\.)?(.*?(?=(\?|\#|\/|$)))/i);
-
-    return match && match[1];
-  };
-
-  let domain = parseDomain(getRefererInfo().canonicalUrl)
-
-  if (domain) utils.mergeDeep(ortb2, { site: { domain: domain } });
-}
-
-/**
- * Checks for screen/device width and height and sets dimensions
- */
-function setDimensions() {
-  let width;
-  let height;
-
-  try {
-    width = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
-    height = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
-  } catch (e) {
-    width = window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth;
-    height = window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight;
-  }
-
-  utils.mergeDeep(ortb2, { device: { w: width, h: height } });
-}
-
-/**
- * Scans page for meta keywords, and if exists, merges into site.keywords
- */
-function setKeywords() {
-  let keywords;
-
-  try {
-    keywords = win.document.querySelector("meta[name='keywords']");
-  } catch (e) {
-    keywords = window.document.querySelector("meta[name='keywords']");
-  }
-
-  if (keywords && keywords.content) utils.mergeDeep(ortb2, { site: { keywords: keywords.content.replace(/\s/g, '') } });
-}
 
 /**
  * Check if data passed is empty
@@ -258,24 +188,10 @@ export function validateFpd(fpd, path = '', parent = '') {
 }
 
 /**
- * Resets modules global ortb2 data
+ * Run validation on global and bidder config data for ortb2
  */
-export const resetOrtb2 = () => { ortb2 = {} };
-
-function runEnrichments(shouldSkipValidate) {
-  setReferer();
-  setPage();
-  setDomain();
-  setDimensions();
-  setKeywords();
-
-  if (shouldSkipValidate) config.setConfig({ ortb2: utils.mergeDeep({}, ortb2, config.getConfig('ortb2') || {}) });
-}
-
-function runValidations() {
-  let conf = utils.mergeDeep({}, ortb2, validateFpd(config.getConfig('ortb2')));
-
-  config.setConfig({ ortb2: conf });
+function runValidations(data) {
+  let conf = validateFpd(data);
 
   let bidderDuplicate = { ...config.getBidderConfig() };
 
@@ -290,46 +206,27 @@ function runValidations() {
 
     if (Object.keys(modConf).length) config.setBidderConfig({ bidders: [bidder], config: modConf });
   });
+
+  return conf;
 }
 
 /**
  * Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
  */
-export function init() {
+export function initSubmodule(fpdConf, data) {
   // Checks for existsnece of pubcid optout cookie/storage
   // if exists, filters user data out
   optout = (STORAGE.cookiesAreEnabled() && STORAGE.getCookie('_pubcid_optout')) ||
     (STORAGE.hasLocalStorage() && STORAGE.getDataFromLocalStorage('_pubcid_optout'));
-  let conf = config.getConfig('firstPartyData');
-  let skipValidations = (conf && conf.skipValidations) || false;
-  let skipEnrichments = (conf && conf.skipEnrichments) || false;
 
-  if (!skipEnrichments) runEnrichments(skipValidations);
-  if (!skipValidations) runValidations();
+  return (!fpdConf.skipValidations) ? runValidations(data) : data;
 }
 
-/**
- * BidderRequests hook to intiate module
- */
-function addBidderRequestHook(fn, bidderRequests) {
-  init();
-  resetOrtb2();
-  fn.call(this, bidderRequests);
-  // Removes hook after run
-  addBidderRequests.getHooks({ hook: addBidderRequestHook }).remove();
+/** @type {firstPartyDataSubmodule} */
+export const validationSubmodule = {
+  name: 'validation',
+  queue: 1,
+  init: initSubmodule
 }
 
-/**
- * Sets bidderRequests hook
- */
-function setupHook() {
-  getHook('addBidderRequests').before(addBidderRequestHook);
-}
-
-// Runs setupHook on initial load
-setupHook();
-
-/**
- * Global function to reinitiate module
- */
-(getGlobal()).refreshFPD = setupHook;
+submodule('firstPartyData', validationSubmodule)
