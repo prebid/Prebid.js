@@ -428,6 +428,58 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.tmax).to.equal(3000);
       getConfigStub.restore();
     });
+    it('should contain regs.coppa if coppa is true in config', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'coppa' ? true : null);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('regs');
+      expect(payload.regs).to.have.property('coppa', 1);
+      getConfigStub.restore();
+    });
+    it('should contain imp[].ext.data.adserver if available', function() {
+      const ortb2Imp = [{
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/111111/slot'
+            },
+            pbadslot: '/111111/slot'
+          }
+        }
+      }, {
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/222222/slot'
+            },
+            pbadslot: '/222222/slot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
+        return Object.assign(ortb2Imp[ind] ? { ortb2Imp: ortb2Imp[ind] } : {}, bid);
+      });
+      const request = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].ext).to.deep.equal({
+        divid: bidRequests[0].adUnitCode,
+        data: ortb2Imp[0].ext.data,
+        gpid: ortb2Imp[0].ext.data.adserver.adslot
+      });
+      expect(payload.imp[1].ext).to.deep.equal({
+        divid: bidRequests[1].adUnitCode,
+        data: ortb2Imp[1].ext.data,
+        gpid: ortb2Imp[1].ext.data.adserver.adslot
+      });
+      expect(payload.imp[2].ext).to.deep.equal({
+        divid: bidRequests[2].adUnitCode
+      });
+    });
     describe('floorModule', function () {
       const floorTestData = {
         'currency': 'USD',
