@@ -71,12 +71,22 @@ export const spec = {
     };
     let payload = {
       id: bidderRequest.auctionId,
-      cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
+      app: params.app ? params.app : {},
       device: params.device ? params.device : {},
       user: params.user ? params.user : {},
-      app: params.app ? params.app : {},
+      at: params.at,
+      tmax: params.tmax,
+      wseat: params.wseat,
+      bseat: params.bseat,
+      allimps: params.allimps,
+      cur: [DEFAULT_CUR],
+      wlang: params.wlang,
+      bcat: params.bcat,
+      badv: params.badv,
+      bapp: params.bapp,
+      source: params.source ? params.source : {},
       ext: {
         definerId: params.definerId
       }
