@@ -120,6 +120,11 @@ function _buildResponse (bid, currency, ttl) {
     currency: currency
   }
 
+  resp.meta = {};
+  if (bid.adomain && bid.adomain.length > 0) {
+    resp.meta.advertiserDomains = bid.adomain;
+  }
+
   if (bid.ext.type === 'video') {
     resp.vastXml = bid.adm
   } else {

@@ -89,7 +89,7 @@ config.setDefaults({
  * @return {boolean}
  */
 function updateConfigDefaultVendor(option) {
-  if (option.defaultVendor) {
+  if (option.defaultVendor && option.enabled !== false) {
     let vendor = option.defaultVendor;
     let optionKeys = Object.keys(option);
     if (S2S_VENDORS[vendor]) {
@@ -124,6 +124,17 @@ function validateConfigRequiredProps(option) {
   }
 }
 
+// temporary change to modify the s2sConfig for new format used for endpoint URLs;
+// could be removed later as part of a major release, if we decide to not support the old format
+function formatUrlParams(option) {
+  ['endpoint', 'syncEndpoint'].forEach((prop) => {
+    if (utils.isStr(option[prop])) {
+      let temp = option[prop];
+      option[prop] = { p1Consent: temp, noP1Consent: temp };
+    }
+  });
+}
+
 /**
  * @param {(S2SConfig[]|S2SConfig)} options
  */
@@ -135,6 +146,7 @@ function setS2sConfig(options) {
 
   const activeBidders = [];
   const optionsValid = normalizedOptions.every((option, i, array) => {
+    formatUrlParams(options);
     const updateSuccess = updateConfigDefaultVendor(option);
     if (updateSuccess !== false) {
       const valid = validateConfigRequiredProps(option);
@@ -188,17 +200,14 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
   }
 
   if (gdprConsent) {
-    // only populate gdpr field if we know CMP returned consent information (ie didn't timeout or have an error)
-    if (typeof gdprConsent.consentString !== 'undefined') {
-      payload.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
-    }
+    payload.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
     // attempt to populate gdpr_consent if we know gdprApplies or it may apply
     if (gdprConsent.gdprApplies !== false) {
       payload.gdpr_consent = gdprConsent.consentString;
     }
   }
 
-  // US Privace (CCPA) support
+  // US Privacy (CCPA) support
   if (uspConsent) {
     payload.us_privacy = uspConsent;
   }
@@ -208,7 +217,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
   }
 
   const jsonPayload = JSON.stringify(payload);
-  ajax(s2sConfig.syncEndpoint,
+  ajax(getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent),
     (response) => {
       try {
         response = JSON.parse(response);
@@ -288,11 +297,20 @@ function doBidderSync(type, url, bidder, done) {
  *
  * @param {Array} bidders a list of bidder names
  */
-function doClientSideSyncs(bidders) {
+function doClientSideSyncs(bidders, gdprConsent, uspConsent) {
   bidders.forEach(bidder => {
     let clientAdapter = adapterManager.getBidAdapter(bidder);
     if (clientAdapter && clientAdapter.registerSyncs) {
-      clientAdapter.registerSyncs([]);
+      config.runWithBidder(
+        bidder,
+        utils.bind.call(
+          clientAdapter.registerSyncs,
+          clientAdapter,
+          [],
+          gdprConsent,
+          uspConsent
+        )
+      );
     }
   });
 }
@@ -743,6 +761,21 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'ext.prebid.data.eidpermissions', eidPermissions);
     }
 
+    const multibid = config.getConfig('multibid');
+    if (multibid) {
+      utils.deepSetValue(request, 'ext.prebid.multibid', multibid.reduce((result, i) => {
+        let obj = {};
+
+        Object.keys(i).forEach(key => {
+          obj[key.toLowerCase()] = i[key];
+        });
+
+        result.push(obj);
+
+        return result;
+      }, []));
+    }
+
     if (bidRequests) {
       if (firstBidRequest.gdprConsent) {
         // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
@@ -966,6 +999,29 @@ function bidWonHandler(bid) {
   }
 }
 
+function hasPurpose1Consent(gdprConsent) {
+  let result = true;
+  if (gdprConsent) {
+    if (gdprConsent.gdprApplies && gdprConsent.apiVersion === 2) {
+      result = !!(utils.deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true);
+    }
+  }
+  return result;
+}
+
+function getMatchingConsentUrl(urlProp, gdprConsent) {
+  return hasPurpose1Consent(gdprConsent) ? urlProp.p1Consent : urlProp.noP1Consent;
+}
+
+function getConsentData(bidRequests) {
+  let gdprConsent, uspConsent;
+  if (Array.isArray(bidRequests) && bidRequests.length > 0) {
+    gdprConsent = bidRequests[0].gdprConsent;
+    uspConsent = bidRequests[0].uspConsent;
+  }
+  return { gdprConsent, uspConsent };
+}
+
 /**
  * Bidder adapter for Prebid Server
  */
@@ -975,6 +1031,7 @@ export function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const adUnits = utils.deepClone(s2sBidRequest.ad_units);
+    let { gdprConsent, uspConsent } = getConsentData(bidRequests);
 
     // at this point ad units should have a size array either directly or mapped so filter for that
     const validAdUnits = adUnits.filter(unit =>
@@ -988,13 +1045,7 @@ export function PrebidServer() {
       .filter(utils.uniques);
 
     if (Array.isArray(_s2sConfigs)) {
-      if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint) {
-        let gdprConsent, uspConsent;
-        if (Array.isArray(bidRequests) && bidRequests.length > 0) {
-          gdprConsent = bidRequests[0].gdprConsent;
-          uspConsent = bidRequests[0].uspConsent;
-        }
-
+      if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
         let syncBidders = s2sBidRequest.s2sConfig.bidders
           .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
@@ -1007,7 +1058,7 @@ export function PrebidServer() {
       utils.logInfo('BidRequest: ' + requestJson);
       if (request && requestJson) {
         ajax(
-          s2sBidRequest.s2sConfig.endpoint,
+          getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
           {
             success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done, s2sBidRequest.s2sConfig),
             error: done
@@ -1023,6 +1074,7 @@ export function PrebidServer() {
   function handleResponse(response, requestedBidders, bidderRequests, addBidResponse, done, s2sConfig) {
     let result;
     let bids = [];
+    let { gdprConsent, uspConsent } = getConsentData(bidderRequests);
 
     try {
       result = JSON.parse(response);
@@ -1049,7 +1101,7 @@ export function PrebidServer() {
     }
 
     done();
-    doClientSideSyncs(requestedBidders);
+    doClientSideSyncs(requestedBidders, gdprConsent, uspConsent);
   }
 
   // Listen for bid won to call wurl

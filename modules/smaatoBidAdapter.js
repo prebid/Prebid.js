@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const CLIENT = 'prebid_js_$prebid.version$_1.0'
+const CLIENT = 'prebid_js_$prebid.version$_1.1'
 
 /**
 * Transform BidRequest to OpenRTB-formatted BidRequest Object
@@ -98,10 +98,10 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     }
   };
 
-  let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+  let ortb2 = config.getConfig('ortb2') || {};
 
-  Object.assign(request.user, fpd.user);
-  Object.assign(request.site, fpd.context);
+  Object.assign(request.user, ortb2.user);
+  Object.assign(request.site, ortb2.site);
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);

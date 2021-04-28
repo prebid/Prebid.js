@@ -332,7 +332,8 @@ describe('Adagio bid adapter', () => {
       'schain',
       'prebidVersion',
       'adapterVersion',
-      'featuresVersion'
+      'featuresVersion',
+      'data'
     ];
 
     it('groups requests by organizationId', function() {
