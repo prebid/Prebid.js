@@ -11,6 +11,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
+const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
@@ -53,9 +54,9 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-const mappingFileUrl = 'https://acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
+const mappingFileUrl = 'https://acdn.adnxs-simple.com/prebid/appnexus-mapping/mappings.json';
 const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v/;
+const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
 const storage = getStorageManager(GVLID, BIDDER_CODE);
@@ -326,8 +327,8 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function (syncOptions) {
-    if (syncOptions.iframeEnabled) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
+    if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
       return [{
         type: 'iframe',
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
@@ -483,10 +484,10 @@ function hasPurpose1Consent(bidderRequest) {
 function formatRequest(payload, bidderRequest) {
   let request = [];
   let options = {};
+  let endpointUrl = URL;
+
   if (!hasPurpose1Consent(bidderRequest)) {
-    options = {
-      withCredentials: false
-    }
+    endpointUrl = URL_SIMPLE;
   }
 
   if (utils.getParameterByName('apn_test').toUpperCase() === 'TRUE' || config.getConfig('apn_test') === true) {
@@ -503,7 +504,7 @@ function formatRequest(payload, bidderRequest) {
       const payloadString = JSON.stringify(clonedPayload);
       request.push({
         method: 'POST',
-        url: URL,
+        url: endpointUrl,
         data: payloadString,
         bidderRequest,
         options
@@ -513,7 +514,7 @@ function formatRequest(payload, bidderRequest) {
     const payloadString = JSON.stringify(payload);
     request = {
       method: 'POST',
-      url: URL,
+      url: endpointUrl,
       data: payloadString,
       bidderRequest,
       options
