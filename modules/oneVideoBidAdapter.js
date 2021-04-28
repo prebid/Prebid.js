@@ -1,5 +1,4 @@
 import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'oneVideo';
@@ -167,7 +166,7 @@ function getRequestData(bid, consentData, bidRequest) {
   let page = (bid.params.site && bid.params.site.page) ? (bid.params.site.page) : (loc.href);
   let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : bidRequest.refererInfo.referer;
   let getFloorRequestObject = {
-    currency: 'USD',
+    currency: bid.params.cur || 'USD',
     mediaType: 'video',
     size: '\*'
   };
@@ -251,19 +250,11 @@ function getRequestData(bid, consentData, bidRequest) {
   }
 
   if (typeof bid.getFloor === 'function') {
-    if (config.getConfig('floors').data) {
-      if (config.getConfig('floors').data.currency) {
-        getFloorRequestObject.currency = config.getConfig('floors').data.currency;
-      }
-    } else {
-      getFloorRequestObject.currency = bid.params.cur || 'USD';
-    };
     let floorData = bid.getFloor(getFloorRequestObject);
     bidData.imp[0].bidfloor = floorData.floor;
     bidData.cur = floorData.currency;
   } else {
     bidData.imp[0].bidfloor = bid.params.bidfloor;
-    bidData.cur = bid.params.cur || 'USD';
   };
 
   if (bid.params.video.inventoryid) {

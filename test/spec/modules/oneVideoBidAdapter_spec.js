@@ -1,7 +1,5 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oneVideoBidAdapter.js';
-import * as utils from '../../../src/utils.js';
-import { config } from '../../../src/config.js';
 
 describe('OneVideoBidAdapter', function () {
   let bidRequest;
@@ -511,8 +509,7 @@ describe('OneVideoBidAdapter', function () {
       }
     });
 
-    it('should get currency & floor from adUnit floors settings', function () {
-      config.setConfig({floors: {enabled: true}});
+    it('should get bidfloor from getFloor method', function () {
       bidRequest.params.cur = 'EUR';
       bidRequest.floors = {
         currency: 'EUR',
@@ -528,30 +525,8 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].bidfloor).to.equal(5.55);
     });
 
-    it('should get currency & floor from module config floors settings', function () {
-      config.setConfig({
-        floors: {
-          enabled: true,
-          data: {
-            currency: 'EUR',
-          }
-        }
-      });
-      bidRequest.floors = {
-        currency: 'EUR',
-        values: {
-          'video|640x480': 4.44
-        }
-      };
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = requests[0].data;
-      expect(data.cur).is.a('string');
-      expect(data.cur).to.equal('EUR');
-      expect(data.imp[0].bidfloor).is.a('number');
-      expect(data.imp[0].bidfloor).to.equal(4.44);
-    });
-
-    it('should use adUnit/module currency & floor to override bid.params.bidfloor setting if exists', function () {
+    it('should use adUnit/module currency & floor instead of bid.params.bidfloor', function () {
+      bidRequest.params.cur = 'EUR';
       bidRequest.params.bidfloor = 3.33;
       bidRequest.floors = {
         currency: 'EUR',
@@ -569,6 +544,7 @@ describe('OneVideoBidAdapter', function () {
 
     it('should load banner instead of video floor when DAP is active bid.params.video.display = 1', function () {
       bidRequest.params.video.display = 1;
+      bidRequest.params.cur = 'EUR';
       bidRequest.mediaTypes = {
         banner: {
           sizes: [
@@ -591,7 +567,8 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].bidfloor).to.equal(2.22);
     })
 
-    it('should load video when multi-format adUnit is present', function () {
+    it('should load video floor when multi-format adUnit is present', function () {
+      bidRequest.params.cur = 'EUR';
       bidRequest.mediaTypes.banner = {
         sizes: [
           [640, 480]
