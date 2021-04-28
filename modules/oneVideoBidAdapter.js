@@ -249,7 +249,7 @@ function getRequestData(bid, consentData, bidRequest) {
     }
   }
 
-  if (typeof bid.getFloor === 'function') {
+  if (utils.isFn(bid.getFloor)) {
     let floorData = bid.getFloor(getFloorRequestObject);
     bidData.imp[0].bidfloor = floorData.floor;
     bidData.cur = floorData.currency;
