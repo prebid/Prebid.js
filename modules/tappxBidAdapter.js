@@ -282,7 +282,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   bidder.bidfloor = BIDFLOOR;
   bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : undefined;
 
-
   imp.ext = {};
   imp.ext.bidder = bidder;
   // < Imp object
