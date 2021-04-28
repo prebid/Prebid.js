@@ -160,6 +160,9 @@ describe('AolAdapter', function () {
         currency: 'USD',
         dealId: 'deal-id',
         netRevenue: true,
+        meta: {
+          advertiserDomains: []
+        },
         ttl: bidRequest.ttl
       });
     });
