@@ -173,15 +173,13 @@ export const spec = {
     }
   },
 
-  onBidWon: function(bids) {
-    for (const bid of bids) {
-      const { nurl } = bid || {};
+  onBidWon: function(bid) {
+    const { nurl } = bid || {};
 
-      if (bid.nurl) {
-        utils.replaceAuctionPrice(nurl, bid.cpm)
-        utils.triggerPixel(nurl);
-      };
-    }
+    if (bid.nurl) {
+      utils.replaceAuctionPrice(nurl, bid.cpm)
+      utils.triggerPixel(nurl);
+    };
   }
 }
 
