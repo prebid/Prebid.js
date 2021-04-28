@@ -140,15 +140,17 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse) {
-    if (!utils.isArray(serverResponse)) {
+    const response = serverResponse ? serverResponse.body : [];
+
+    if (!utils.isArray(response)) {
       return [];
     }
 
     const responses = [];
 
-    for (const response of serverResponse) {
-      if (response.requestId) {
-        responses.push(Object.assign(response, {
+    for (const resp of response) {
+      if (resp.requestId) {
+        responses.push(Object.assign(resp, {
           ttl: config.getConfig('_bidderTimeout')
         }));
       }
