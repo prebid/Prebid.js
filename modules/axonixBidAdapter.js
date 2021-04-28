@@ -177,8 +177,7 @@ export const spec = {
     const { nurl } = bid || {};
 
     if (bid.nurl) {
-      utils.replaceAuctionPrice(nurl, bid.cpm)
-      utils.triggerPixel(nurl);
+      utils.triggerPixel(utils.replaceAuctionPrice(nurl, bid.cpm));
     };
   }
 }
