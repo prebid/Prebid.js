@@ -252,7 +252,11 @@ function getRequestData(bid, consentData, bidRequest) {
 
   if (typeof bid.getFloor === 'function') {
     if (config.getConfig('floors').data) {
-      getFloorRequestObject.currency = config.getConfig('floors').data.currency ? config.getConfig('floors').data.currency : bid.params.cur || 'USD';
+      if (config.getConfig('floors').data.currency) {
+        getFloorRequestObject.currency = config.getConfig('floors').data.currency;
+      }
+    } else {
+      getFloorRequestObject.currency = bid.params.cur || 'USD';
     };
     let floorData = bid.getFloor(getFloorRequestObject);
     bidData.imp[0].bidfloor = floorData.floor;

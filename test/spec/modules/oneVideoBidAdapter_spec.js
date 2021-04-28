@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oneVideoBidAdapter.js';
-import * as utils from 'src/utils.js';
+import * as utils from '../../../src/utils.js';
+import { config } from '../../../src/config.js';
 
 describe('OneVideoBidAdapter', function () {
   let bidRequest;
@@ -498,6 +499,119 @@ describe('OneVideoBidAdapter', function () {
       });
     });
   });
+
+  describe('price floor module validations', function () {
+    beforeEach(function () {
+      bidRequest.getFloor = (floorObj) => {
+        return {
+          floor: bidRequest.floors.values[floorObj.mediaType + '|640x480'],
+          currency: floorObj.currency,
+          mediaType: floorObj.mediaType
+        }
+      }
+    });
+
+    it('should get currency & floor from adUnit floors settings', function () {
+      config.setConfig({floors: {enabled: true}});
+      bidRequest.params.cur = 'EUR';
+      bidRequest.floors = {
+        currency: 'EUR',
+        values: {
+          'video|640x480': 5.55
+        }
+      };
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = requests[0].data;
+      expect(data.cur).is.a('string');
+      expect(data.cur).to.equal('EUR');
+      expect(data.imp[0].bidfloor).is.a('number');
+      expect(data.imp[0].bidfloor).to.equal(5.55);
+    });
+
+    it('should get currency & floor from module config floors settings', function () {
+      config.setConfig({
+        floors: {
+          enabled: true,
+          data: {
+            currency: 'EUR',
+          }
+        }
+      });
+      bidRequest.floors = {
+        currency: 'EUR',
+        values: {
+          'video|640x480': 4.44
+        }
+      };
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = requests[0].data;
+      expect(data.cur).is.a('string');
+      expect(data.cur).to.equal('EUR');
+      expect(data.imp[0].bidfloor).is.a('number');
+      expect(data.imp[0].bidfloor).to.equal(4.44);
+    });
+
+    it('should use adUnit/module currency & floor to override bid.params.bidfloor setting if exists', function () {
+      bidRequest.params.bidfloor = 3.33;
+      bidRequest.floors = {
+        currency: 'EUR',
+        values: {
+          'video|640x480': 5.55
+        }
+      };
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = requests[0].data;
+      expect(data.cur).is.a('string');
+      expect(data.cur).to.equal('EUR');
+      expect(data.imp[0].bidfloor).is.a('number');
+      expect(data.imp[0].bidfloor).to.equal(5.55);
+    });
+
+    it('should load banner instead of video floor when DAP is active bid.params.video.display = 1', function () {
+      bidRequest.params.video.display = 1;
+      bidRequest.mediaTypes = {
+        banner: {
+          sizes: [
+            [640, 480]
+          ]
+        }
+      };
+      bidRequest.floors = {
+        currency: 'EUR',
+        values: {
+          'banner|640x480': 2.22,
+          'video|640x480': 9.99
+        }
+      };
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = requests[0].data;
+      expect(data.cur).is.a('string');
+      expect(data.cur).to.equal('EUR');
+      expect(data.imp[0].bidfloor).is.a('number');
+      expect(data.imp[0].bidfloor).to.equal(2.22);
+    })
+
+    it('should load video when multi-format adUnit is present', function () {
+      bidRequest.mediaTypes.banner = {
+        sizes: [
+          [640, 480]
+        ]
+      };
+      bidRequest.floors = {
+        currency: 'EUR',
+        values: {
+          'banner|640x480': 2.22,
+          'video|640x480': 9.99
+        }
+      };
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = requests[0].data;
+      expect(data.cur).is.a('string');
+      expect(data.cur).to.equal('EUR');
+      expect(data.imp[0].bidfloor).is.a('number');
+      expect(data.imp[0].bidfloor).to.equal(9.99);
+    })
+  })
 
   describe('spec.interpretResponse', function () {
     it('should return no bids if the response is not valid', function () {
