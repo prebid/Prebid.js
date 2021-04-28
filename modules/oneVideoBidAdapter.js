@@ -168,7 +168,7 @@ function getRequestData(bid, consentData, bidRequest) {
   let getFloorRequestObject = {
     currency: bid.params.cur || 'USD',
     mediaType: 'video',
-    size: '\*'
+    size: '*'
   };
   let bidData = {
     id: utils.generateUUID(),
