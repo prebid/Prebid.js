@@ -43,6 +43,14 @@ export const internal = {
   deepEqual
 };
 
+let prebidInternal = {}
+/**
+ * Returns object that is used as internal prebid namespace
+ */
+export function getPrebidInternal() {
+  return prebidInternal;
+}
+
 var uniqueRef = {};
 export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === uniqueRef
   ? Function.prototype.bind
@@ -256,6 +264,7 @@ export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
+  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
 }
 
 export function logError() {
@@ -718,8 +727,21 @@ export function replaceAuctionPrice(str, cpm) {
   return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
 }
 
+export function replaceClickThrough(str, clicktag) {
+  if (!str || !clicktag || typeof clicktag !== 'string') return;
+  return str.replace(/\${CLICKTHROUGH}/g, clicktag);
+}
+
 export function timestamp() {
   return new Date().getTime();
+}
+
+/**
+ * The returned value represents the time elapsed since the time origin. @see https://developer.mozilla.org/en-US/docs/Web/API/Performance/now
+ * @returns {number}
+ */
+export function getPerformanceNow() {
+  return (window.performance && window.performance.now && window.performance.now()) || 0;
 }
 
 /**

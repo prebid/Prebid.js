@@ -5,6 +5,7 @@ import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const storage = getStorageManager();
 const yuktamediaAnalyticsVersion = 'v3.1.0';
@@ -152,7 +153,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
               bidResponse.responseTimestamp = args.responseTimestamp;
               bidResponse.bidForSize = args.size;
               for (const [adserverTargetingKey, adserverTargetingValue] of Object.entries(args.adserverTargeting)) {
-                if (['body', 'icon', 'image', 'linkurl', 'host', 'path'].every((ele) => !adserverTargetingKey.includes(ele))) {
+                if (['body', 'icon', 'image', 'linkurl', 'host', 'path'].every((ele) => !strIncludes(adserverTargetingKey, ele))) {
                   bidResponse['adserverTargeting-' + adserverTargetingKey] = adserverTargetingValue;
                 }
               }
