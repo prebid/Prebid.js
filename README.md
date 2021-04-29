@@ -1,3 +1,9 @@
+
+## Guardian optimised build
+Modifications are listed [here](https://github.com/guardian/Prebid.js/blob/master/modifications.md).
+
+---
+
 [![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
@@ -315,6 +321,3 @@ Prebid.js is supported on IE11 and modern browsers.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
-
-## Guardian optimised build
-Modifications are listed [here](https://github.com/guardian/Prebid.js/blob/master/modifications.md).
