@@ -55,7 +55,7 @@ export let _floorDataForAuction = {};
  * @summary Simple function to round up to a certain decimal degree
  */
 function roundUp(number, precision) {
-  return Math.ceil(parseFloat(number) * Math.pow(10, precision)) / Math.pow(10, precision);
+  return Math.ceil((parseFloat(number) * Math.pow(10, precision)).toFixed(1)) / Math.pow(10, precision);
 }
 
 let referrerHostname;
@@ -98,21 +98,23 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
   let fieldValues = enumeratePossibleFieldValues(utils.deepAccess(floorData, 'schema.fields') || [], bidObject, responseObject);
   if (!fieldValues.length) return { matchingFloor: floorData.default };
 
-  // look to see iof a request for this context was made already
+  // look to see if a request for this context was made already
   let matchingInput = fieldValues.map(field => field[0]).join('-');
   // if we already have gotten the matching rule from this matching input then use it! No need to look again
   let previousMatch = utils.deepAccess(floorData, `matchingInputs.${matchingInput}`);
   if (previousMatch) {
-    return previousMatch;
+    return {...previousMatch};
   }
   let allPossibleMatches = generatePossibleEnumerations(fieldValues, utils.deepAccess(floorData, 'schema.delimiter') || '|');
   let matchingRule = find(allPossibleMatches, hashValue => floorData.values.hasOwnProperty(hashValue));
 
   let matchingData = {
-    matchingFloor: floorData.values[matchingRule] || floorData.default,
+    floorMin: floorData.floorMin || 0,
+    floorRuleValue: floorData.values[matchingRule] || floorData.default,
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
     matchingRule
   };
+  matchingData.matchingFloor = Math.max(matchingData.floorMin, matchingData.floorRuleValue);
   // save for later lookup if needed
   utils.deepSetValue(floorData, `matchingInputs.${matchingInput}`, {...matchingData});
   return matchingData;
@@ -138,10 +140,10 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
 /**
  * @summary If a the input bidder has a registered cpmadjustment it returns the input CPM after being adjusted
  */
-export function getBiddersCpmAdjustment(bidderName, inputCpm) {
-  const adjustmentFunction = utils.deepAccess(getGlobal(), `bidderSettings.${bidderName}.bidCpmAdjustment`);
+export function getBiddersCpmAdjustment(bidderName, inputCpm, bid = {}) {
+  const adjustmentFunction = utils.deepAccess(getGlobal(), `bidderSettings.${bidderName}.bidCpmAdjustment`) || utils.deepAccess(getGlobal(), 'bidderSettings.standard.bidCpmAdjustment');
   if (adjustmentFunction) {
-    return parseFloat(adjustmentFunction(inputCpm));
+    return parseFloat(adjustmentFunction(inputCpm, {...bid, cpm: inputCpm}));
   }
   return parseFloat(inputCpm);
 }
@@ -286,11 +288,15 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
       bid.auctionId = auctionId;
       bid.floorData = {
         skipped: floorData.skipped,
-        modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
-        location: utils.deepAccess(floorData, 'data.location'),
         skipRate: floorData.skipRate,
+        floorMin: floorData.floorMin,
+        modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
+        modelWeight: utils.deepAccess(floorData, 'data.modelWeight'),
+        modelTimestamp: utils.deepAccess(floorData, 'data.modelTimestamp'),
+        location: utils.deepAccess(floorData, 'data.location', 'noData'),
+        floorProvider: floorData.floorProvider,
         fetchStatus: _floorsConfig.fetchStatus
-      }
+      };
     });
   });
 }
@@ -335,6 +341,8 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
     const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
     resolvedFloorsData.skipped = isSkipped;
   }
+  // copy FloorMin to floorData.data
+  if (resolvedFloorsData.hasOwnProperty('floorMin')) resolvedFloorsData.data.floorMin = resolvedFloorsData.floorMin;
   // add floorData to bids
   updateAdUnitsForAuction(adUnits, resolvedFloorsData, auctionId);
   return resolvedFloorsData;
@@ -513,6 +521,7 @@ export function handleFetchResponse(fetchResponse) {
     _floorsConfig.data = fetchData;
     // set skipRate override if necessary
     _floorsConfig.skipRate = utils.isNumber(fetchData.skipRate) ? fetchData.skipRate : _floorsConfig.skipRate;
+    _floorsConfig.floorProvider = fetchData.floorProvider || _floorsConfig.floorProvider;
   }
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
@@ -566,8 +575,10 @@ function addFieldOverrides(overrides) {
  */
 export function handleSetFloorsConfig(config) {
   _floorsConfig = utils.pick(config, [
+    'floorMin',
     'enabled', enabled => enabled !== false, // defaults to true
     'auctionDelay', auctionDelay => auctionDelay || 0,
+    'floorProvider', floorProvider => utils.deepAccess(config, 'data.floorProvider', floorProvider),
     'endpoint', endpoint => endpoint || {},
     'skipRate', () => !isNaN(utils.deepAccess(config, 'data.skipRate')) ? config.data.skipRate : config.skipRate || 0,
     'enforcement', enforcement => utils.pick(enforcement || {}, [
@@ -620,6 +631,7 @@ function addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm) {
   bid.floorData = {
     floorValue: floorInfo.matchingFloor,
     floorRule: floorInfo.matchingRule,
+    floorRuleValue: floorInfo.floorRuleValue,
     floorCurrency: floorData.data.currency,
     cpmAfterAdjustments: adjustedCpm,
     enforcements: {...floorData.enforcement},
@@ -679,7 +691,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   }
 
   // ok we got the bid response cpm in our desired currency. Now we need to run the bidders CPMAdjustment function if it exists
-  adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm);
+  adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm, bid);
 
   // add necessary data information for analytics adapters / floor providers would possibly need
   addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm);

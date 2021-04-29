@@ -1,8 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/orbidderBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import openxAdapter from '../../../modules/openxAnalyticsAdapter.js';
-import {detectReferer} from 'src/refererDetection.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -93,7 +91,7 @@ describe('orbidderBidAdapter', () => {
     it('sends bid request to endpoint via https using post', () => {
       expect(request.method).to.equal('POST');
       expect(request.url.indexOf('https://')).to.equal(0);
-      expect(request.url).to.equal(`${spec.orbidderHost}/bid`);
+      expect(request.url).to.equal(`${spec.hostname}/bid`);
     });
 
     it('contains prebid version parameter', () => {

@@ -424,6 +424,7 @@ describe('RTBHouseAdapter', () => {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
+          'meta': { advertiserDomains: ['rtbhouse.com'] },
           'netRevenue': true
         }
       ];
@@ -486,6 +487,7 @@ describe('RTBHouseAdapter', () => {
 
       it('should contain native assets in valid format', () => {
         const bids = spec.interpretResponse({body: response}, {});
+        expect(bids[0].meta.advertiserDomains).to.deep.equal(['rtbhouse.com']);
         expect(bids[0].native).to.deep.equal({
           title: 'Title text',
           clickUrl: encodeURIComponent('https://example.com'),

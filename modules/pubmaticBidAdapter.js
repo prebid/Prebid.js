@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -14,6 +15,8 @@ const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
+const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
+const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -98,11 +101,65 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
   }
 ]
 
-const NET_REVENUE = false;
+const NET_REVENUE = true;
 const dealChannelValues = {
   1: 'PMP',
   5: 'PREF',
   6: 'PMPG'
+};
+// BB stands for Blue BillyWig
+const BB_RENDERER = {
+  bootstrapPlayer: function(bid) {
+    const config = {
+      code: bid.adUnitCode,
+    };
+
+    if (bid.vastXml) config.vastXml = bid.vastXml;
+    else if (bid.vastUrl) config.vastUrl = bid.vastUrl;
+
+    if (!bid.vastXml && !bid.vastUrl) {
+      utils.logWarn(`${LOG_WARN_PREFIX}: No vastXml or vastUrl on bid, bailing...`);
+      return;
+    }
+
+    const rendererId = BB_RENDERER.getRendererId(PUBLICATION, bid.rendererCode);
+
+    const ele = document.getElementById(bid.adUnitCode); // NB convention
+
+    let renderer;
+
+    for (let rendererIndex = 0; rendererIndex < window.bluebillywig.renderers.length; rendererIndex++) {
+      if (window.bluebillywig.renderers[rendererIndex]._id === rendererId) {
+        renderer = window.bluebillywig.renderers[rendererIndex];
+        break;
+      }
+    }
+
+    if (renderer) renderer.bootstrap(config, ele);
+    else utils.logWarn(`${LOG_WARN_PREFIX}: Couldn't find a renderer with ${rendererId}`);
+  },
+  newRenderer: function(rendererCode, adUnitCode) {
+    var rendererUrl = RENDERER_URL.replace('$RENDERER', rendererCode);
+    const renderer = Renderer.install({
+      url: rendererUrl,
+      loaded: false,
+      adUnitCode
+    });
+
+    try {
+      renderer.setRender(BB_RENDERER.outstreamRender);
+    } catch (err) {
+      utils.logWarn(`${LOG_WARN_PREFIX}: Error tying to setRender on renderer`, err);
+    }
+
+    return renderer;
+  },
+  outstreamRender: function(bid) {
+    bid.renderer.push(function() { BB_RENDERER.bootstrapPlayer(bid) });
+  },
+  getRendererId: function(pub, renderer) {
+    return `${pub}-${renderer}`; // NB convention!
+  }
 };
 
 let publisherId = 0;
@@ -146,6 +203,9 @@ function _parseSlotParam(paramName, paramValue) {
 function _cleanSlot(slotName) {
   if (utils.isStr(slotName)) {
     return slotName.replace(/^\s+/g, '').replace(/\s+$/g, '');
+  }
+  if (slotName) {
+    utils.logWarn(BIDDER_CODE + ': adSlot must be a string. Ignoring adSlot');
   }
   return '';
 }
@@ -585,11 +645,43 @@ function _createImpressionObject(bid, conf) {
     impObj.banner = bannerObj;
   }
 
+  _addImpressionFPD(impObj, bid);
+
   _addFloorFromFloorModule(impObj, bid);
 
   return impObj.hasOwnProperty(BANNER) ||
           impObj.hasOwnProperty(NATIVE) ||
             impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
+}
+
+function _addImpressionFPD(imp, bid) {
+  const ortb2 = {...utils.deepAccess(bid, 'ortb2Imp.ext.data')};
+  Object.keys(ortb2).forEach(prop => {
+    /**
+      * Prebid AdSlot
+      * @type {(string|undefined)}
+    */
+    if (prop === 'pbadslot') {
+      if (typeof ortb2[prop] === 'string' && ortb2[prop]) utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+    } else if (prop === 'adserver') {
+      /**
+       * Copy GAM AdUnit and Name to imp
+       */
+      ['name', 'adslot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(ortb2, `adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
+          // copy GAM ad unit id as imp[].ext.dfp_ad_unit_code
+          if (name === 'adslot') {
+            utils.deepSetValue(imp, `ext.dfp_ad_unit_code`, value);
+          }
+        }
+      });
+    } else {
+      utils.deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
+    }
+  });
 }
 
 function _addFloorFromFloorModule(impObj, bid) {
@@ -760,6 +852,23 @@ function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
   }
 }
 
+function _assignRenderer(newBid, request) {
+  let bidParams, context, adUnitCode;
+  if (request.bidderRequest && request.bidderRequest.bids) {
+    for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
+      if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === newBid.requestId) {
+        bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
+        context = request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO].context;
+        adUnitCode = request.bidderRequest.bids[bidderRequestBidsIndex].adUnitCode;
+      }
+    }
+    if (context && context === 'outstream' && bidParams && bidParams.outstreamAU && adUnitCode) {
+      newBid.rendererCode = bidParams.outstreamAU;
+      newBid.renderer = BB_RENDERER.newRenderer(newBid.rendererCode, adUnitCode);
+    }
+  }
+};
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
@@ -773,13 +882,26 @@ export const spec = {
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric (wrap it in quotes in your config). Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
       // video ad validation
       if (bid.params.hasOwnProperty('video')) {
         if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
           utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
+          return false;
+        }
+        if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
+          if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
+            utils.logError(`${LOG_WARN_PREFIX}: no context specified in bid. Rejecting bid: `, bid);
+            return false;
+          }
+          if (bid.mediaTypes[VIDEO].context === 'outstream' && !utils.isStr(bid.params.outstreamAU) && !bid.hasOwnProperty('renderer') && !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
+            utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
+            return false;
+          }
+        } else {
+          utils.logError(`${LOG_WARN_PREFIX}: mediaTypes or mediaTypes.video is not specified. Rejecting bid: `, bid);
           return false;
         }
       }
@@ -851,7 +973,7 @@ export const spec = {
     payload.ext.wrapper = {};
     payload.ext.wrapper.profile = parseInt(conf.profId) || UNDEFINED;
     payload.ext.wrapper.version = parseInt(conf.verId) || UNDEFINED;
-    payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
+    payload.ext.wrapper.wiid = conf.wiid || bidderRequest.auctionId;
     // eslint-disable-next-line no-undef
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
@@ -864,6 +986,11 @@ export const spec = {
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
+
+    // add the content object from config in request
+    if (typeof config.getConfig('content') === 'object') {
+      payload.site.content = config.getConfig('content');
+    }
 
     // merge the device from config.getConfig('device')
     if (typeof config.getConfig('device') === 'object') {
@@ -903,6 +1030,15 @@ export const spec = {
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
 
+    // First Party Data
+    const commonFpd = config.getConfig('ortb2') || {};
+    if (commonFpd.site) {
+      utils.mergeDeep(payload, {site: commonFpd.site});
+    }
+    if (commonFpd.user) {
+      utils.mergeDeep(payload, {user: commonFpd.user});
+    }
+
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
     if (typeof config.getConfig('app') === 'object') {
@@ -910,13 +1046,19 @@ export const spec = {
       // not copying domain from site as it is a derived value from page
       payload.app.publisher = payload.site.publisher;
       payload.app.ext = payload.site.ext || UNDEFINED;
+      // We will also need to pass content object in app.content if app object is also set into the config;
+      // BUT do not use content object from config if content object is present in app as app.content
+      if (typeof payload.app.content !== 'object') {
+        payload.app.content = payload.site.content || UNDEFINED;
+      }
       delete payload.site;
     }
 
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: JSON.stringify(payload)
+      data: JSON.stringify(payload),
+      bidderRequest: bidderRequest
     };
   },
 
@@ -966,6 +1108,7 @@ export const spec = {
                         newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
                         newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
                         newBid.vastXml = bid.adm;
+                        _assignRenderer(newBid, request);
                         break;
                       case NATIVE:
                         _parseNativeResponse(bid, newBid);
@@ -986,6 +1129,7 @@ export const spec = {
                 newBid.meta.buyerId = bid.ext.advid;
               }
               if (bid.adomain && bid.adomain.length > 0) {
+                newBid.meta.advertiserDomains = bid.adomain;
                 newBid.meta.clickUrl = bid.adomain[0];
               }
 

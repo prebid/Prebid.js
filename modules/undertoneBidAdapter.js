@@ -2,8 +2,9 @@
  * Adapter to send bids to Undertone
  */
 
-import { parseUrl } from '../src/utils.js';
+import { deepAccess, parseUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';
@@ -73,6 +74,7 @@ function getBannerCoords(id) {
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     if (bid && bid.params && bid.params.publisherId) {
       bid.params.publisherId = parseInt(bid.params.publisherId);
@@ -120,8 +122,20 @@ export const spec = {
         sizes: bidReq.sizes,
         params: bidReq.params
       };
+      const videoMediaType = deepAccess(bidReq, 'mediaTypes.video');
+      if (videoMediaType) {
+        bid.video = {
+          playerSize: deepAccess(bidReq, 'mediaTypes.video.playerSize') || null,
+          streamType: deepAccess(bidReq, 'mediaTypes.video.context') || null,
+          playbackMethod: deepAccess(bidReq, 'params.video.playbackMethod') || null,
+          maxDuration: deepAccess(bidReq, 'params.video.maxDuration') || null,
+          skippable: deepAccess(bidReq, 'params.video.skippable') || null
+        };
+        bid.mediaType = 'video';
+      }
       payload['x-ut-hb-params'].push(bid);
     });
+
     return {
       method: 'POST',
       url: reqUrl,
@@ -144,9 +158,14 @@ export const spec = {
             creativeId: bidRes.adId,
             currency: bidRes.currency,
             netRevenue: bidRes.netRevenue,
-            ttl: bidRes.ttl || 360,
-            ad: bidRes.ad
+            ttl: bidRes.ttl || 360
           };
+          if (bidRes.mediaType && bidRes.mediaType === 'video') {
+            bid.vastXml = bidRes.ad;
+            bid.mediaType = bidRes.mediaType;
+          } else {
+            bid.ad = bidRes.ad
+          }
           bids.push(bid);
         }
       });
