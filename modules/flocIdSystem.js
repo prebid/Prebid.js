@@ -17,9 +17,9 @@ const MODULE_NAME = 'flocId';
  */
 function enableOriginTrial(token) {
   const tokenElement = document.createElement('meta');
-  tokenElement.httpEquiv = 'origin-trial'
-  tokenElement.content = token
-  document.head.appendChild(tokenElement)
+  tokenElement.httpEquiv = 'origin-trial';
+  tokenElement.content = token;
+  document.head.appendChild(tokenElement);
 }
 
 /**
@@ -81,11 +81,10 @@ export const flocIdSubmodule = {
       utils.logError('User ID - flocId submodule storage should not defined');
       return;
     }
-    const isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
     // Validate feature is enabled
-    const isFlocEnabled = !!document.featurePolicy && !!document.featurePolicy.features() && document.featurePolicy.features().includes('interest-cohort');
+    const isFlocEnabled = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime) && !!document.featurePolicy && !!document.featurePolicy.features() && document.featurePolicy.features().includes('interest-cohort');
 
-    if (isChrome && isFlocEnabled) {
+    if (isFlocEnabled) {
       const configParams = (config && config.params) || {};
       if (configParams && (typeof configParams.token === 'string')) {
         // Insert meta-tag with token from configuration
