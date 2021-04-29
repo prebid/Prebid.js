@@ -541,7 +541,6 @@ describe('User ID', function () {
           }, {
             name: 'dmdId',
             storage: {name: 'dmdId', type: 'cookie'},
-            value: ''
           }, {
             name: 'netId',
             storage: {name: 'netId', type: 'cookie'}
@@ -1520,7 +1519,7 @@ describe('User ID', function () {
 
     it('test hook from dmdId cookies', function (done) {
       // simulate existing browser local storage values
-      coreStorage.setCookie('dmdId', 'U12345', (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('dmdId', 'testdmdId', (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([dmdIdSubmodule]);
       init(config);
@@ -1530,10 +1529,10 @@ describe('User ID', function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.dmdId');
-            expect(bid.userId.dmdId).to.equal('U12345');
+            expect(bid.userId.dmdId).to.equal('testdmdId');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'hcn.health',
-              uids: [{id: 'U12345', atype: 3}]
+              uids: [{id: 'testdmdId', atype: 3}]
             });
           });
         });
@@ -1737,7 +1736,7 @@ describe('User ID', function () {
       coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('dmdId', 'U12345', (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('dmdId', 'testdmdId', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('intentIqId', 'testintentIqId', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('IDP', btoa(JSON.stringify('zeotapId')), (new Date(Date.now() + 5000).toUTCString()));
@@ -1790,7 +1789,7 @@ describe('User ID', function () {
             expect(bid.userId.britepoolid).to.equal('testbritepoolid');
             // also check that dmdID id was copied to bid
             expect(bid).to.have.deep.nested.property('userId.dmdId');
-            expect(bid.userId.dmdId).to.equal('U12345');
+            expect(bid.userId.dmdId).to.equal('testdmdId');
             // also check that netId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.netId');
             expect(bid.userId.netId).to.equal('testnetId');
@@ -1843,7 +1842,7 @@ describe('User ID', function () {
       }, {adUnits});
     });
 
-    it('test hook when pubCommonId, unifiedId, id5Id, britepoolId, dmdId, intentIqId, zeotapIdPlus, sharedId, criteo, netId, dmdIdSubmodule, haloId, UID 2.0, admixerId and mwOpenLinkId have their modules added before and after init', function (done) {
+    it('test hook when pubCommonId, unifiedId, id5Id, britepoolId, dmdId, intentIqId, zeotapIdPlus, sharedId, criteo, netId, haloId, UID 2.0, admixerId and mwOpenLinkId have their modules added before and after init', function (done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1857,7 +1856,7 @@ describe('User ID', function () {
       coreStorage.setCookie('intentIqId', 'testintentIqId', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('IDP', btoa(JSON.stringify('zeotapId')), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('haloId', JSON.stringify({'haloId': 'testHaloId'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('dmdId', 'U12345', (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('dmdId', 'testdmdId', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('storage_criteo', JSON.stringify({'criteoId': 'test_bidid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('mwol', JSON.stringify({eid: 'XX-YY-ZZ-123'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('uid2id', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
@@ -1942,7 +1941,7 @@ describe('User ID', function () {
             expect(bid.userId.haloId).to.equal('testHaloId');
             // also check that dmdId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.dmdId');
-            expect(bid.userId.dmdId).to.equal('U12345');
+            expect(bid.userId.dmdId).to.equal('testdmdId');
 
             // also check that criteo id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.criteoId');
@@ -2225,7 +2224,7 @@ describe('User ID', function () {
       coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('dmdId', 'U12345', (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('dmdId', 'testdmdId', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('sharedid', JSON.stringify({
         'id': 'test_sharedId',
@@ -2310,7 +2309,7 @@ describe('User ID', function () {
             expect(bid.userId.britepoolid).to.equal('testbritepoolid');
             // also check that dmdId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.dmdId');
-            expect(bid.userId.dmdId).to.equal('U12345');
+            expect(bid.userId.dmdId).to.equal('testdmdId');
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.netId');
             expect(bid.userId.netId).to.equal('testnetId');
