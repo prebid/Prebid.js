@@ -193,6 +193,10 @@ function shouldFilterImpression(configParams, parrableId) {
   return isBlocked() || !isAllowed();
 }
 
+function epochFromTtl(ttl) {
+  return Math.trunc((Date.now() / 1000) + ttl);
+}
+
 function fetchId(configParams, gdprConsentData) {
   if (!isValidConfig(configParams)) return;
 
@@ -265,7 +269,7 @@ function fetchId(configParams, gdprConsentData) {
               }
               if (responseObj.tpcSupport !== undefined) {
                 newParams.tpcSupport = responseObj.tpcSupport;
-                newParams.tpcUntil = Math.floor((Date.now() + responseObj.tpcSupportTtl) / 1000);
+                newParams.tpcUntil = epochFromTtl(responseObj.tpcSupportTtl);
               }
             }
           } catch (error) {

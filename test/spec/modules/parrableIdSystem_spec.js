@@ -58,8 +58,8 @@ function serializeParrableId(parrableId) {
   if (parrableId.ccpaOptout) {
     str += ',ccpaOptout:1';
   }
-  if (parrableId.tpcSupport !== undefined) {
-    const tpcSupportComponent = parrableId.tpcSupport === true ? 'tpcSupport:1' : 'tpcSupport:0';
+  if (parrableId.tpc !== undefined) {
+    const tpcSupportComponent = parrableId.tpc === true ? 'tpc:1' : 'tpc:0';
     str += `,${tpcSupportComponent}`;
     str += `,tpcUntil:${parrableId.tpcUntil}`;
   }
@@ -248,7 +248,7 @@ describe('Parrable ID System', function() {
       });
     });
 
-    describe('third party cookie support', function () {
+    describe('third party cookie support status', function () {
       let logErrorStub;
       let callbackSpy = sinon.spy();
 
@@ -291,7 +291,7 @@ describe('Parrable ID System', function() {
           );
 
           expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
-            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:1,tpcUntil:' + Math.floor((dateNowMock + tpcSupportTtl) / 1000))
+            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:1,tpcUntil:' + Math.floor((dateNowMock / 1000) + tpcSupportTtl))
           );
         });
 
@@ -306,7 +306,7 @@ describe('Parrable ID System', function() {
           );
 
           expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
-            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:0,tpcUntil:' + Math.floor((dateNowMock + tpcSupportTtl) / 1000))
+            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:0,tpcUntil:' + Math.floor((dateNowMock / 1000) + tpcSupportTtl))
           );
         });
 
@@ -323,6 +323,63 @@ describe('Parrable ID System', function() {
 
           expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
             encodeURIComponent('eid:' + P_XHR_EID)
+          );
+        });
+      });
+
+      describe('when getting tpcSupport from cookie', function () {
+        let request;
+        let dateNowStub;
+        const dateNowMock = Date.now();
+        const tpcSupportTtl = dateNowMock;
+        const tpcUntilExpired = 1;
+
+        before(() => {
+          dateNowStub = sinon.stub(Date, 'now').returns(dateNowMock);
+        });
+
+        after(() => {
+          dateNowStub.restore();
+        });
+
+        it('should send tpcSupport in the XHR', function () {
+          writeParrableCookie({
+            eid: P_COOKIE_EID,
+            tpc: true,
+            tpcUntil: (dateNowMock / 1000) + 1
+          });
+          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+          callback(callbackSpy);
+          request = server.requests[0];
+
+          let queryParams = utils.parseQS(request.url.split('?')[1]);
+          let data = JSON.parse(atob(decodeBase64UrlSafe(queryParams.data)));
+
+          expect(data.tpcSupport).to.equal(true);
+        });
+
+        it('should unset tpcSupport from cookie when tpcUntil reached', function () {
+          writeParrableCookie({
+            eid: P_COOKIE_EID,
+            tpcSupport: true,
+            tpcUntil: tpcUntilExpired
+          });
+          let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+          callback(callbackSpy);
+          request = server.requests[0];
+
+          request.respond(
+            200,
+            RESPONSE_HEADERS,
+            JSON.stringify({ eid: P_XHR_EID, tpcSupport: false, tpcSupportTtl })
+          );
+
+          let queryParams = utils.parseQS(request.url.split('?')[1]);
+          let data = JSON.parse(atob(decodeBase64UrlSafe(queryParams.data)));
+
+          expect(data.tpcSupport).to.equal(undefined);
+          expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
+            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:0,tpcUntil:' + Math.floor((dateNowMock / 1000) + tpcSupportTtl))
           );
         });
       });
