@@ -235,7 +235,7 @@ export const pubCommonIdSubmodule = {
   getId: function (config = {}, consentData, storedId) {
     const coppa = coppaDataHandler.getCoppa();
     if (coppa) {
-      utils.logInfo('PubCommonId: coppa not provided, exiting PubCommonId');
+      utils.logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
     const {params: {create = true, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
@@ -280,7 +280,7 @@ export const pubCommonIdSubmodule = {
   extendId: function(config = {}, consentData, storedId) {
     const coppa = coppaDataHandler.getCoppa();
     if (coppa) {
-      utils.logInfo('PubCommonId: coppa not provided, exiting PubCommonId');
+      utils.logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
     const {params: {extend = false, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;

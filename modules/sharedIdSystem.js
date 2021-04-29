@@ -330,7 +330,7 @@ export const sharedIdSubmodule = {
   getId(config, consentData) {
     const coppa = coppaDataHandler.getCoppa();
     if (coppa) {
-      utils.logInfo('SharedId: coppa not provided, exiting SharedId');
+      utils.logInfo('SharedId: IDs not provided for coppa requests, exiting SharedId');
       return;
     }
     const resp = function (callback) {
@@ -350,7 +350,7 @@ export const sharedIdSubmodule = {
   extendId(config, consentData, storedId) {
     const coppa = coppaDataHandler.getCoppa();
     if (coppa) {
-      utils.logInfo('SharedId: coppa not provided, exiting SharedId');
+      utils.logInfo('SharedId: IDs not provided for coppa requests, exiting SharedId');
       return;
     }
     const configParams = (config && config.params) || {};
