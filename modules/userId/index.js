@@ -126,9 +126,9 @@
  */
 
 /**
- * @typedef {Object} RefreshUserIdsOptions
- * @property {(string[]|undefined)} submoduleNames - submodules to refresh
- */
+  * @typedef {Object} RefreshUserIdsOptions
+  * @property {(string[]|undefined)} submoduleNames - submodules to refresh
+  */
 
 import find from 'core-js-pure/features/array/find.js';
 import { config } from '../../src/config.js';
@@ -225,7 +225,7 @@ function setPrebidServerEidPermissions(initializedSubmodules) {
 }
 
 /**
- /**
+/**
  * @param {SubmoduleStorage} storage
  * @param {String|undefined} key optional key of the value
  * @returns {string}
@@ -341,10 +341,10 @@ function hasGDPRConsent(consentData) {
 }
 
 /**
- * Find the root domain
- * @param {string|undefined} fullDomain
- * @return {string}
- */
+   * Find the root domain
+   * @param {string|undefined} fullDomain
+   * @return {string}
+   */
 export function findRootDomain(fullDomain = window.location.hostname) {
   if (!coreStorage.cookiesAreEnabled()) {
     return fullDomain;
@@ -579,9 +579,9 @@ function getUserIdsAsEids() {
 }
 
 /**
- * This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
- * @param {RefreshUserIdsOptions} options
- */
+* This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
+* @param {RefreshUserIdsOptions} options
+*/
 function refreshUserIds(options, callback) {
   let submoduleNames = options ? options.submoduleNames : null;
   if (!submoduleNames) {
