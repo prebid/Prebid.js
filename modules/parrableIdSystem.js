@@ -205,6 +205,10 @@ function shouldFilterImpression(configParams, parrableId) {
   return isBlocked() || !isAllowed();
 }
 
+function epochFromTtl(ttl) {
+  return Math.trunc((Date.now() / 1000) + ttl);
+}
+
 function incrementFilterHits(parrableId, params) {
   params.filterHits += 1;
   writeCookie({ ...parrableId, ...params })
@@ -287,10 +291,10 @@ function fetchId(configParams, gdprConsentData) {
               }
               if (responseObj.tpcSupport !== undefined) {
                 newParams.tpcSupport = responseObj.tpcSupport;
-                newParams.tpcUntil = Math.floor((Date.now() + responseObj.tpcSupportTtl) / 1000);
+                newParams.tpcUntil = epochFromTtl(responseObj.tpcSupportTtl);
               }
               if (responseObj.filterTtl) {
-                newParams.filteredUntil = Math.floor((Date.now() + responseObj.filterTtl) / 1000);
+                newParams.filteredUntil = epochFromTtl(responseObj.filterTtl);
                 newParams.filterHits = 0;
               }
             }

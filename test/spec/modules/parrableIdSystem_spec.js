@@ -58,8 +58,8 @@ function serializeParrableId(parrableId) {
   if (parrableId.ccpaOptout) {
     str += ',ccpaOptout:1';
   }
-  if (parrableId.tpcSupport !== undefined) {
-    const tpcSupportComponent = parrableId.tpcSupport === true ? 'tpcSupport:1' : 'tpcSupport:0';
+  if (parrableId.tpc !== undefined) {
+    const tpcSupportComponent = parrableId.tpc === true ? 'tpcSupport:1' : 'tpcSupport:0';
     str += `,${tpcSupportComponent}`;
     str += `,tpcUntil:${parrableId.tpcUntil}`;
   }
@@ -296,7 +296,7 @@ describe('Parrable ID System', function() {
           );
 
           expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
-            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:1,tpcUntil:' + Math.floor((dateNowMock + tpcSupportTtl) / 1000))
+            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:1,tpcUntil:' + Math.floor((dateNowMock / 1000) + tpcSupportTtl))
           );
         });
 
@@ -311,7 +311,7 @@ describe('Parrable ID System', function() {
           );
 
           expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
-            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:0,tpcUntil:' + Math.floor((dateNowMock + tpcSupportTtl) / 1000))
+            encodeURIComponent('eid:' + P_XHR_EID + ',tpc:0,tpcUntil:' + Math.floor((dateNowMock / 1000) + tpcSupportTtl))
           );
         });
 
@@ -378,7 +378,7 @@ describe('Parrable ID System', function() {
           expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
             encodeURIComponent(
               'eid:' + P_XHR_EID +
-              ',filteredUntil:' + Math.floor((dateNowMock + filterTtl) / 1000) +
+              ',filteredUntil:' + Math.floor((dateNowMock / 1000) + filterTtl) +
               ',filterHits:0')
           );
         });
@@ -386,7 +386,7 @@ describe('Parrable ID System', function() {
         it('should increment filterHits in the cookie', function () {
           writeParrableCookie({
             eid: P_XHR_EID,
-            filteredUntil: Math.floor((dateNowMock + filterTtl) / 1000),
+            filteredUntil: Math.floor((dateNowMock / 1000) + filterTtl),
             filterHits: 0
           });
           let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
@@ -395,16 +395,16 @@ describe('Parrable ID System', function() {
           expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
             encodeURIComponent(
               'eid:' + P_XHR_EID +
-              ',filteredUntil:' + Math.floor((dateNowMock + filterTtl) / 1000) +
+              ',filteredUntil:' + Math.floor((dateNowMock / 1000) + filterTtl) +
               ',filterHits:1')
           );
         });
 
-        it('should set filteredUntil in the cookie', function () {
+        it('should send filterHits in the XHR', function () {
           const filterHits = 1;
           writeParrableCookie({
             eid: P_XHR_EID,
-            filteredUntil: Math.floor((dateNowMock - filterTtl) / 1000),
+            filteredUntil: Math.floor(dateNowMock / 1000),
             filterHits
           });
           let { callback } = parrableIdSubmodule.getId(P_CONFIG_MOCK);
