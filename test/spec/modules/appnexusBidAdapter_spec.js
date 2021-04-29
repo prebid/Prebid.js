@@ -644,7 +644,7 @@ describe('AppNexusAdapter', function () {
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.options).to.be.empty;
+      expect(request.options).to.deep.equal({withCredentials: true});
       const payload = JSON.parse(request.data);
 
       expect(payload.gdpr_consent).to.exist;
@@ -794,6 +794,12 @@ describe('AppNexusAdapter', function () {
       expect(request.options.customHeaders).to.deep.equal({'X-Is-Test': 1});
 
       config.getConfig.restore();
+    });
+
+    it('should always set withCredentials: true on the request.options', function () {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      const request = spec.buildRequests([bidRequest]);
+      expect(request.options.withCredentials).to.equal(true);
     });
 
     it('should set simple domain variant if purpose 1 consent is not given', function () {

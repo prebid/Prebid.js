@@ -483,7 +483,10 @@ function hasPurpose1Consent(bidderRequest) {
 
 function formatRequest(payload, bidderRequest) {
   let request = [];
-  let options = {};
+  let options = {
+    withCredentials: true
+  };
+
   let endpointUrl = URL;
 
   if (!hasPurpose1Consent(bidderRequest)) {
