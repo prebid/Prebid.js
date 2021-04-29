@@ -1825,6 +1825,32 @@ describe('S2S Adapter', function () {
     });
   });
 
+  describe('ext.prebid config', function () {
+    it('should send \"imp.ext.prebid.storedrequest.id\" if \"ortb2Imp.ext.prebid.storedrequest.id\" is set', function () {
+      const consentConfig = { s2sConfig: CONFIG };
+      config.setConfig(consentConfig);
+      const bidRequest = utils.deepClone(REQUEST);
+      const storedRequestId = 'my-id';
+      bidRequest.ad_units[0].ortb2Imp = {
+        ext: {
+          prebid: {
+            storedrequest: {
+              id: storedRequestId
+            }
+          }
+        }
+      };
+
+      adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+
+      expect(parsedRequestBody.imp).to.be.a('array');
+      expect(parsedRequestBody.imp[0]).to.be.a('object');
+      expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.prebid.storedrequest.id');
+      expect(parsedRequestBody.imp[0].ext.prebid.storedrequest.id).to.equal(storedRequestId);
+    });
+  });
+
   describe('response handler', function () {
     beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
