@@ -222,6 +222,20 @@ pbjs.setConfig({
                   name: 'admixerId',
                   expires: 30
               }
+        },{
+            name: "deepintentId",
+            storage: {
+                type: "html5",
+                name: "_dpes_id",
+                expires: 90
+            }
+        },{
+            name: "deepintentId",
+            storage: {
+                type: "cookie",
+                name: "_dpes_id",
+                expires: 90
+            }
         }],
         syncDelay: 5000
     }
