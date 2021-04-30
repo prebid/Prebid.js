@@ -443,7 +443,7 @@ describe('Gu analytics adapter', () => {
   it('should have a version number', () => {
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
     const payload = JSON.parse(ajaxStub.firstCall.args);
-    expect(payload.v).to.be.equal(8);
+    expect(payload.v).to.be.equal(9);
   });
 
   it('should ignore responses sent with bid won event', () => {
