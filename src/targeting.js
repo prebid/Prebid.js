@@ -266,6 +266,7 @@ export function newTargeting(auctionManager) {
     const someBidTimedOut = auctionManager.getBidsRequested().some((bidRequest) => bidRequest.doneCbCallCount === 0);
     if (!winningBid && someBidTimedOut) {
       addTimedOutIncompleteAuction(adUnitCodes[0], targeting);
+    }
     /* gu-mod-end */
 
     const defaultKeys = Object.keys(Object.assign({}, CONSTANTS.DEFAULT_TARGETING_KEYS, CONSTANTS.NATIVE_KEYS));
