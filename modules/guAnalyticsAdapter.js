@@ -4,6 +4,7 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
+import { log } from '@guardian/libs/dist/cjs/logger.js';
 
 /*
  * Update whenever you want to make sure you're sending the right version of analytics.
@@ -116,13 +117,14 @@ function isValid(events) {
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   const url = `${analyticsAdapter.context.ajaxUrl}/commercial/api/hb`;
-  const callback = () => {
+  const callback = (data) => {
+    log('commercial', 'PREBID data', JSON.parse(data).hb_ev)
   };
   const options = {
     method: 'POST',
     contentType: 'text/plain; charset=utf-8'
   };
-  ajax(url, callback, data, options);
+  ajax(url, callback(data), data, options);
 };
 
 function trackBidWon(args) {
