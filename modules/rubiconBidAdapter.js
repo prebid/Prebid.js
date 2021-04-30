@@ -203,7 +203,7 @@ export const spec = {
 
       let modules = (getGlobal()).installedModules;
       if (modules && (!modules.length || modules.indexOf('rubiconAnalyticsAdapter') !== -1)) {
-        utils.deepSetValue(data, 'ext.prebid.analytics', [{ 'adapter': 'rubicon', 'client-analytics': true }]);
+        utils.deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
       }
 
       let bidFloor;
