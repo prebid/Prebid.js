@@ -30,7 +30,8 @@ Module that connects to Zeta's SSP
                                 buyeruid: 12345
                             },
                             tags: {
-                                someTag: 123
+                                someTag: 123,
+                                sid: 'publisherId'
                             },
                             test: 1
                         }
