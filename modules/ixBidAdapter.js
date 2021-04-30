@@ -294,7 +294,8 @@ function getEidInfo(allEids) {
     'liveramp.com': 'idl',
     'netid.de': 'NETID',
     'neustar.biz': 'fabrickId',
-    'zeotap.com': 'zeotapIdPlus'
+    'zeotap.com': 'zeotapIdPlus',
+    'uidapi.com': 'UID2'
   };
   var toSend = [];
   var seenSources = {};
@@ -492,7 +493,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       msd = impressions[transactionIds[i]].missingCount;
     }
 
-    trimImpressions(impressions[transactionIds[i]], MAX_REQ_SIZE - BASE_REQ_SIZE);
+    if (BASE_REQ_SIZE < MAX_REQ_SIZE) {
+      trimImpressions(impressions[transactionIds[i]], MAX_REQ_SIZE - BASE_REQ_SIZE);
+    } else {
+      utils.logError('ix bidder: Base request size has exceeded maximum request size.');
+    }
 
     if (impressions[transactionIds[i]].hasOwnProperty('missingImps')) {
       msi = impressions[transactionIds[i]].missingImps.length;
@@ -558,6 +563,33 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 }
 
 /**
+ * Return an object of user IDs stored by Prebid User ID module
+ *
+ * @returns {array} ID providers that are present in userIds
+ */
+function _getUserIds(bidRequest) {
+  const userIds = bidRequest.userId || {};
+
+  const PROVIDERS = [
+    'britepoolid',
+    'id5id',
+    'lipbid',
+    'haloId',
+    'criteoId',
+    'lotamePanoramaId',
+    'merkleId',
+    'parrableId',
+    'connectid',
+    'sharedid',
+    'tapadId',
+    'quantcastId',
+    'pubcid'
+  ]
+
+  return PROVIDERS.filter(provider => utils.deepAccess(userIds, provider))
+}
+
+/**
  * Calculates IX diagnostics values and packages them into an object
  *
  * @param {array} validBidRequests  The valid bid requests from prebid
@@ -576,7 +608,8 @@ function buildIXDiag(validBidRequests) {
     ou: 0,
     allu: 0,
     ren: false,
-    version: '$prebid.version$'
+    version: '$prebid.version$',
+    userIds: _getUserIds(validBidRequests[0])
   };
 
   // create ad unit map and collect the required diag properties

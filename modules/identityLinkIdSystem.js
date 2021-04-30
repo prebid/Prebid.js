@@ -98,7 +98,7 @@ function getEnvelope(url, callback, configParams) {
     }
   };
 
-  if (configParams.use3P && !storage.getCookie('_lr_retry_request')) {
+  if (!configParams.notUse3P && !storage.getCookie('_lr_retry_request')) {
     setRetryCookie();
     utils.logInfo('identityLink: A 3P retrieval is attempted!');
     setEnvelopeSource(false);

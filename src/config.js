@@ -29,6 +29,7 @@ const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
+const DEFAULT_MAX_NESTED_IFRAMES = 10;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -198,6 +199,15 @@ export function newConfig() {
       },
       set disableAjaxTimeout(val) {
         this._disableAjaxTimeout = val;
+      },
+
+      // default max nested iframes for referer detection
+      _maxNestedIframes: DEFAULT_MAX_NESTED_IFRAMES,
+      get maxNestedIframes() {
+        return this._maxNestedIframes;
+      },
+      set maxNestedIframes(val) {
+        this._maxNestedIframes = val;
       },
 
       _auctionOptions: {},
