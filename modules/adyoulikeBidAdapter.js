@@ -78,6 +78,10 @@ export const spec = {
           if (nativeReq.type === 'image') {
             nativeReq = Object.assign({}, NATIVE_IMAGE, nativeReq);
           }
+          // click url is always mandatory even if not specified by publisher
+          nativeReq.clickUrl = {
+            required: true
+          };
           accumulator[bidReq.bidId].Native = nativeReq;
         }
         if (mediatype === VIDEO) {
