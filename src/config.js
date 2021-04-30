@@ -438,7 +438,7 @@ export function newConfig() {
     arr.forEach((adunit) => {
       if (adunit.fpd) {
         (adunit['ortb2Imp']) ? utils.mergeDeep(adunit['ortb2Imp'], convertImpFpd(adunit.fpd)) : adunit['ortb2Imp'] = convertImpFpd(adunit.fpd);
-        convert.push((({ fpd,...duplicate }) => duplicate)(adunit));
+        convert.push((({ fpd, ...duplicate }) => duplicate)(adunit));
       } else {
         convert.push(adunit);
       }
