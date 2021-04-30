@@ -231,7 +231,8 @@ function sendMessage(auctionId, bidWonId) {
       clientTimeoutMillis: auctionCache.timeout,
       samplingFactor,
       accountId,
-      adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i])
+      adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i]),
+      requestId: auctionId
     };
 
     // pick our of top level floor data we want to send!
@@ -363,8 +364,9 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
       const height = bid.height || bid.playerHeight;
       return (width && height) ? {width, height} : undefined;
     },
-    'pbsBidId',
-    'seatBidId',
+    // Handling use case where pbs sends back 0 or '0' bidIds
+    'pbsBidId', pbsBidId => pbsBidId == 0 ? utils.generateUUID() : pbsBidId,
+    'seatBidId', seatBidId => seatBidId == 0 ? utils.generateUUID() : seatBidId,
     'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
     'floorRuleValue', () => utils.deepAccess(bid, 'floorData.floorRuleValue'),
     'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined,
@@ -661,12 +663,12 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                 return ['banner'];
               },
               'gam', () => {
-                if (utils.deepAccess(bid, 'fpd.context.adServer.name') === 'gam') {
-                  return {adSlot: bid.fpd.context.adServer.adSlot}
+                if (utils.deepAccess(bid, 'ortb2Imp.ext.data.adserver.name') === 'gam') {
+                  return {adSlot: bid.ortb2Imp.ext.data.adserver.adSlot}
                 }
               },
-              'pbAdSlot', () => utils.deepAccess(bid, 'fpd.context.pbAdSlot'),
-              'pattern', () => utils.deepAccess(bid, 'fpd.context.aupName')
+              'pbAdSlot', () => utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot'),
+              'pattern', () => utils.deepAccess(bid, 'ortb2Imp.ext.data.aupname')
             ])
           ]);
           return memo;

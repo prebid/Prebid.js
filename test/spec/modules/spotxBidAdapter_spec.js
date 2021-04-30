@@ -102,7 +102,7 @@ describe('the spotx adapter', function () {
     it('should build a very basic request', function() {
       var request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345');
+      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345?src_sys=prebid');
       expect(request.bidRequest).to.equal(bidRequestObj);
       expect(request.data.id).to.equal(12345);
       expect(request.data.ext.wrap_response).to.equal(1);
@@ -495,6 +495,7 @@ describe('the spotx adapter', function () {
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].ttl).to.equal(360);
       expect(responses[0].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(responses[0].videoCacheKey).to.equal('cache123');
       expect(responses[0].width).to.equal(400);
       expect(responses[1].cache_key).to.equal('cache124');
       expect(responses[1].channel_id).to.equal(12345);
@@ -508,6 +509,7 @@ describe('the spotx adapter', function () {
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].ttl).to.equal(360);
       expect(responses[1].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache124');
+      expect(responses[1].videoCacheKey).to.equal('cache124');
       expect(responses[1].width).to.equal(200);
     });
   });
