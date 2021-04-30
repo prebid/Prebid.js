@@ -528,7 +528,7 @@ describe('User ID', function () {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 18 configurations should result in 19 submodules add', function () {
+    it('config with 19 configurations should result in 20 submodules add', function () {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, nextrollIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
       init(config);
       config.setConfig({
@@ -553,9 +553,6 @@ describe('User ID', function () {
           }, {
             name: 'britepoolId',
             value: {'primaryBPID': '279c0161-5152-487f-809e-05d7f7e653fd'}
-          }, {
-            name: 'dmdId',
-            storage: {name: 'dmdId', type: 'cookie'},
           }, {
             name: 'netId',
             storage: {name: 'netId', type: 'cookie'}
@@ -587,10 +584,13 @@ describe('User ID', function () {
           }, {
             name: 'deepintentId',
             storage: {name: 'deepintentId', type: 'cookie'}
+          }, {
+            name: 'dmdId',
+            storage: {name: 'dmdId', type: 'cookie'},
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 19 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 20 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
@@ -1891,7 +1891,7 @@ describe('User ID', function () {
             expect(bid).to.have.deep.nested.property('userId.deepintentId');
             expect(bid.userId.deepintentId).to.equal('testdeepintentId');
 
-            expect(bid.userIdAsEids.length).to.equal(15);
+            expect(bid.userIdAsEids.length).to.equal(16);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2036,7 +2036,7 @@ describe('User ID', function () {
             expect(bid).to.have.deep.nested.property('userId.deepintentId');
             expect(bid.userId.deepintentId).to.equal('testdeepintentId');
 
-            expect(bid.userIdAsEids.length).to.equal(15);
+            expect(bid.userIdAsEids.length).to.equal(16);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2425,7 +2425,7 @@ describe('User ID', function () {
             expect(bid).to.have.deep.nested.property('userId.deepintentId');
             expect(bid.userId.deepintentId).to.equal('testdeepintentId');
 
-            expect(bid.userIdAsEids.length).to.equal(13);
+            expect(bid.userIdAsEids.length).to.equal(14);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
