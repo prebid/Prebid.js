@@ -9,7 +9,7 @@ import {ajax} from '../src/ajax.js';
  * Update whenever you want to make sure you're sending the right version of analytics.
  * This is useful when some browsers are using old code and some new, for example.
  */
-const VERSION = 8;
+const VERSION = 9;
 
 const analyticsType = 'endpoint';
 const SENDALL_ON = {};
