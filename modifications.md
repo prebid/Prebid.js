@@ -1,6 +1,10 @@
 # Guardian-specific modifications
 These are the ways in which the Guardian optimised build differs from the [generic Prebid](https://github.com/prebid/Prebid.js) build:
 ## General
+
+Changes in files are wrapped between `/* gu-mod-start */` and `/* gu-mod-end */` tags,
+to make it easier when upgrading versions.
+
 * Ad server targeting includes a `hb_ttr` parameter, whose value will be one of:
     * the time to respond for the winning bid in ms (ie. time between bid request sent and bid response received)
     * -1 if the auction timed out without a winning bid and still waiting for at least one bid response
