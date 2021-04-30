@@ -12,7 +12,7 @@ import { submodule } from '../src/hook.js';
 /** @type {Submodule} */
 export const novatiqIdSubmodule = {
 
-/**
+  /**
 * used to link submodule with config
 * @type {string}
 */
