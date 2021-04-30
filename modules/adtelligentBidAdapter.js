@@ -15,16 +15,11 @@ const HOST_GETTERS = {
       return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com';
     }
   }()),
-  appaloosa: function () {
-    return 'ghb.hb.appaloosa.media';
-  },
-  onefiftytwomedia: function () {
-    return 'ghb.ads.152media.com';
-  },
-  mediafuse: function () {
-    return 'ghb.hbmp.mediafuse.com';
-  }
-
+  navelix: () => 'ghb.hb.navelix.com',
+  appaloosa: () => 'ghb.hb.appaloosa.media',
+  onefiftytwomedia: () => 'ghb.ads.152media.com',
+  mediafuse: () => 'ghb.hbmp.mediafuse.com',
+  bidsxchange: () => 'ghb.hbd.bidsxchange.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -40,7 +35,8 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa',
+  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange',
+    { code: 'navelix', gvlid: 380 },
     {
       code: 'mediafuse',
       skipPbsAliasing: true
@@ -210,6 +206,9 @@ function prepareBidRequests(bidReq) {
   };
 
   bidReqParams.PlacementId = bidReq.adUnitCode;
+  if (bidReq.params.iframe) {
+    bidReqParams.AdmType = 'iframe';
+  }
   if (bidReq.params.vpb_placement_id) {
     bidReqParams.PlacementId = bidReq.params.vpb_placement_id;
   }
@@ -254,7 +253,8 @@ function createBid(bidResponse, bidRequest) {
 
   if (mediaType === BANNER) {
     return Object.assign(bid, {
-      ad: bidResponse.ad
+      ad: bidResponse.ad,
+      adUrl: bidResponse.adUrl,
     });
   }
   if (context === ADPOD) {

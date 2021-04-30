@@ -146,47 +146,47 @@ describe('Trion adapter tests', function () {
       expect(bidUrlParams).to.include(getPublisherUrl());
     });
 
-    describe('webdriver', function () {
-      let originalWD;
+    // describe('webdriver', function () {
+    //   let originalWD;
 
-      beforeEach(function () {
-        originalWD = window.navigator.webdriver;
-      });
+    //   beforeEach(function () {
+    //     originalWD = window.navigator.webdriver;
+    //   });
 
-      afterEach(function () {
-        window.navigator['__defineGetter__']('webdriver', function () {
-          return originalWD;
-        });
-      });
+    //   afterEach(function () {
+    //     window.navigator['__defineGetter__']('webdriver', function () {
+    //       return originalWD;
+    //     });
+    //   });
 
-      describe('is present', function () {
-        beforeEach(function () {
-          window.navigator['__defineGetter__']('webdriver', function () {
-            return 1;
-          });
-        });
+    //   describe('is present', function () {
+    //     beforeEach(function () {
+    //       window.navigator['__defineGetter__']('webdriver', function () {
+    //         return 1;
+    //       });
+    //     });
 
-        it('when there is non human traffic', function () {
-          let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
-          let bidUrlParams = bidRequests[0].data;
-          expect(bidUrlParams).to.include('tr_wd=1');
-        });
-      });
+    //     it('when there is non human traffic', function () {
+    //       let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+    //       let bidUrlParams = bidRequests[0].data;
+    //       expect(bidUrlParams).to.include('tr_wd=1');
+    //     });
+    //   });
 
-      describe('is not present', function () {
-        beforeEach(function () {
-          window.navigator['__defineGetter__']('webdriver', function () {
-            return 0;
-          });
-        });
+    //   describe('is not present', function () {
+    //     beforeEach(function () {
+    //       window.navigator['__defineGetter__']('webdriver', function () {
+    //         return 0;
+    //       });
+    //     });
 
-        it('when there is not non human traffic', function () {
-          let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
-          let bidUrlParams = bidRequests[0].data;
-          expect(bidUrlParams).to.include('tr_wd=0');
-        });
-      });
-    });
+    //     it('when there is not non human traffic', function () {
+    //       let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+    //       let bidUrlParams = bidRequests[0].data;
+    //       expect(bidUrlParams).to.include('tr_wd=0');
+    //     });
+    //   });
+    // });
 
     describe('document', function () {
       let originalHD;

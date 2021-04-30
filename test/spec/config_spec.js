@@ -6,6 +6,8 @@ const utils = require('src/utils');
 
 let getConfig;
 let setConfig;
+let getBidderConfig;
+let setBidderConfig;
 let setDefaults;
 
 describe('config API', function () {
@@ -15,6 +17,8 @@ describe('config API', function () {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
+    getBidderConfig = config.getBidderConfig;
+    setBidderConfig = config.setBidderConfig;
     setDefaults = config.setDefaults;
     logErrorSpy = sinon.spy(utils, 'logError');
     logWarnSpy = sinon.spy(utils, 'logWarn');
@@ -55,6 +59,17 @@ describe('config API', function () {
     setConfig({ foo: {biz: 'buz'} });
     setConfig({ foo: {baz: 'qux'} });
     expect(getConfig('foo')).to.eql({baz: 'qux'});
+  });
+
+  it('moves fpd config into ortb2 properties', function () {
+    setConfig({fpd: {context: {keywords: 'foo,bar', data: {inventory: [1]}}}});
+    expect(getConfig('ortb2')).to.eql({site: {keywords: 'foo,bar', ext: {data: {inventory: [1]}}}});
+    expect(getConfig('fpd')).to.eql(undefined);
+  });
+
+  it('moves fpd bidderconfig into ortb2 properties', function () {
+    setBidderConfig({bidders: ['bidderA'], config: {fpd: {context: {keywords: 'foo,bar', data: {inventory: [1]}}}}});
+    expect(getBidderConfig()).to.eql({'bidderA': {ortb2: {site: {keywords: 'foo,bar', ext: {data: {inventory: [1]}}}}}});
   });
 
   it('sets debugging', function () {
@@ -193,6 +208,12 @@ describe('config API', function () {
       'deviceAccess': true
     });
     expect(getConfig('deviceAccess')).to.be.equal(true);
+  });
+
+  it('sets maxNestedIframes', function () {
+    expect(getConfig('maxNestedIframes')).to.be.equal(10);
+    setConfig({ maxNestedIframes: 2 });
+    expect(getConfig('maxNestedIframes')).to.be.equal(2);
   });
 
   it('should log error for invalid priceGranularity', function () {

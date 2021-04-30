@@ -64,7 +64,7 @@ export const spec = {
         return false;
       }
       if (!utils.getBidIdParameter('outstream_function', bid.params)) {
-        utils.logMessage(BIDDER_CODE + ': outstream_function parameter is not defined. The default outstream renderer will be injected in the header. You can override the default SmartX outstream rendering by defining your own Outstream function using field outstream_function.');
+        utils.logMessage(BIDDER_CODE + ': outstream_function parameter is not defined. The default outstream renderer will be injected in the header.');
         return true;
       }
     }
@@ -149,6 +149,7 @@ export const spec = {
       }
 
       const language = navigator.language ? 'language' : 'userLanguage';
+
       const device = {
         h: screen.height,
         w: screen.width,
@@ -157,8 +158,11 @@ export const spec = {
         make: navigator.vendor ? navigator.vendor : '',
         ua: navigator.userAgent
       };
+
       const at = utils.getBidIdParameter('at', bid.params) || 2;
+
       const cur = utils.getBidIdParameter('cur', bid.params) || ['EUR'];
+
       const requestPayload = {
         id: utils.generateUUID(),
         imp: smartxReq,
@@ -176,6 +180,7 @@ export const spec = {
         at: at,
         cur: cur
       };
+
       const userExt = {};
 
       // Add GDPR flag and consent string
@@ -271,6 +276,7 @@ export const spec = {
               serverResponseBody.cur = pmb.currency;
             }
           });
+
           const bid = {
             requestId: currentBidRequest.bidId,
             currency: serverResponseBody.cur || 'USD',
@@ -284,7 +290,14 @@ export const spec = {
             width: smartxBid.w,
             height: smartxBid.h
           };
+
+          bid.meta = bid.meta || {};
+          if (smartxBid && smartxBid.adomain && smartxBid.adomain.length > 0) {
+            bid.meta.advertiserDomains = smartxBid.adomain;
+          }
+
           const context = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
+
           if (context === 'outstream') {
             const playersize = utils.deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
@@ -311,7 +324,7 @@ export const spec = {
                   return utils.logMessage('SmartX outstream video loaded event');
                 },
                 ended: function ended() {
-                  utils.logMessage('SmartX outstream renderer video event');
+                  return utils.logMessage('SmartX outstream renderer video event');
                 }
               });
             } catch (err) {
@@ -328,17 +341,25 @@ export const spec = {
 }
 
 function createOutstreamScript(bid) {
-  // const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
+  const confMinAdWidth = utils.getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
+  const confMaxAdWidth = utils.getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
+  const confStartOpen = utils.getBidIdParameter('startOpen', bid.renderer.config.outstream_options);
+  const confEndingScreen = utils.getBidIdParameter('endingScreen', bid.renderer.config.outstream_options);
+  const confTitle = utils.getBidIdParameter('title', bid.renderer.config.outstream_options);
+  const confSkipOffset = utils.getBidIdParameter('skipOffset', bid.renderer.config.outstream_options);
+  const confDesiredBitrate = utils.getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options);
+  const elementId = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options) || bid.adUnitCode;
+
   utils.logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
-  const elementId = bid.adUnitCode;
-  let smartPlayObj = {
-    minAdWidth: 290,
-    maxAdWidth: 900,
-    elementLocator: {
-      allowInViewport: false,
-      minimumElementWidth: 290,
-      scanPixelsBelowViewport: 800
-    },
+
+  var smartPlayObj = {
+    minAdWidth: confMinAdWidth,
+    maxAdWidth: confMaxAdWidth,
+    title: confTitle,
+    skipOffset: confSkipOffset,
+    startOpen: confStartOpen,
+    endingScreen: confEndingScreen,
+    desiredBitrate: confDesiredBitrate,
     onStartCallback: function (m, n) {
       try {
         window.sc_smartIntxtStart(n);
@@ -355,18 +376,20 @@ function createOutstreamScript(bid) {
       } catch (f) {}
     },
   };
+
   smartPlayObj.adResponse = bid.vastContent;
-  const script = window.document.createElement('script');
+
+  const divID = '[id="' + elementId + '"]';
+  var script = document.createElement('script');
+  script.src = 'https://dco.smartclip.net/?plc=7777778';
   script.type = 'text/javascript';
   script.async = 'true';
-  script.src = 'https://dco.smartclip.net/?plc=7777777';
   script.onload = script.onreadystatechange = function () {
-    var rs = this.readyState;
-    if (rs && rs != 'complete' && rs != 'loaded') return;
     try {
-      window.SmartPlay(elementId, smartPlayObj);
+      // eslint-disable-next-line
+      let _outstreamPlayer = new OutstreamPlayer(divID, smartPlayObj);
     } catch (e) {
-      utils.logError('error caught : ' + e);
+      utils.logError('[SmartPlay][renderer] Error caught: ' + e);
     }
   };
   return script;

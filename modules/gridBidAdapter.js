@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
@@ -76,7 +76,7 @@ export const spec = {
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
       }
-      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd} = bid;
+      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
       bidsMap[bidId] = bid;
       if (!pageKeywords && !utils.isEmpty(keywords)) {
         pageKeywords = utils.transformBidderParamKeywords(keywords);
@@ -98,6 +98,12 @@ export const spec = {
           divid: adUnitCode
         }
       };
+      if (ortb2Imp && ortb2Imp.ext && ortb2Imp.ext.data) {
+        impObj.ext.data = ortb2Imp.ext.data;
+        if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
+          impObj.ext.gpid = impObj.ext.data.adserver.adslot;
+        }
+      }
 
       if (bidFloor) {
         impObj.bidfloor = bidFloor;
@@ -180,8 +186,8 @@ export const spec = {
     }
 
     const configKeywords = utils.transformBidderParamKeywords({
-      'user': utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || null,
-      'context': utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || null
+      'user': utils.deepAccess(config.getConfig('ortb2.user'), 'keywords') || null,
+      'context': utils.deepAccess(config.getConfig('ortb2.site'), 'keywords') || null
     });
 
     if (configKeywords.length) {
@@ -211,6 +217,13 @@ export const spec = {
         request.regs = {ext: {}};
       }
       request.regs.ext.us_privacy = uspConsent;
+    }
+
+    if (config.getConfig('coppa') === true) {
+      if (!request.regs) {
+        request.regs = {};
+      }
+      request.regs.coppa = 1;
     }
 
     return {
@@ -329,7 +342,6 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
     if (bid) {
       const bidResponse = {
         requestId: bid.bidId, // bid.bidderRequestId,
-        bidderCode: spec.code,
         cpm: serverBid.price,
         width: serverBid.w,
         height: serverBid.h,
@@ -365,7 +377,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
 }
 
 function createVideoRequest(bid, mediaType) {
-  const {playerSize, mimes, durationRangeSec} = mediaType;
+  const {playerSize, mimes, durationRangeSec, protocols} = mediaType;
   const size = (playerSize || bid.sizes || [])[0];
   if (!size) return;
 
@@ -378,6 +390,10 @@ function createVideoRequest(bid, mediaType) {
   if (durationRangeSec && durationRangeSec.length === 2) {
     result.minduration = durationRangeSec[0];
     result.maxduration = durationRangeSec[1];
+  }
+
+  if (protocols && protocols.length) {
+    result.protocols = protocols;
   }
 
   return result;

@@ -644,7 +644,7 @@ describe('AppNexusAdapter', function () {
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.options).to.be.empty;
+      expect(request.options).to.deep.equal({withCredentials: true});
       const payload = JSON.parse(request.data);
 
       expect(payload.gdpr_consent).to.exist;
@@ -796,7 +796,13 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
-    it('should set withCredentials to false if purpose 1 consent is not given', function () {
+    it('should always set withCredentials: true on the request.options', function () {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      const request = spec.buildRequests([bidRequest]);
+      expect(request.options.withCredentials).to.equal(true);
+    });
+
+    it('should set simple domain variant if purpose 1 consent is not given', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
         'bidderCode': 'appnexus',
@@ -819,7 +825,7 @@ describe('AppNexusAdapter', function () {
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.options).to.deep.equal({withCredentials: false});
+      expect(request.url).to.equal('https://ib.adnxs-simple.com/ut/v3/prebid');
     });
 
     it('should populate eids when supported userIds are available', function () {
@@ -827,7 +833,8 @@ describe('AppNexusAdapter', function () {
         userId: {
           tdid: 'sample-userid',
           criteoId: 'sample-criteo-userid',
-          netId: 'sample-netId-userid'
+          netId: 'sample-netId-userid',
+          idl_env: 'sample-idl-userid'
         }
       });
 
@@ -848,6 +855,11 @@ describe('AppNexusAdapter', function () {
         source: 'netid.de',
         id: 'sample-netId-userid',
       });
+
+      expect(payload.eids).to.deep.include({
+        source: 'liveramp.com',
+        id: 'sample-idl-userid'
+      })
     });
 
     it('should populate iab_support object at the root level if omid support is detected', function () {

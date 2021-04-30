@@ -43,6 +43,14 @@ export const internal = {
   deepEqual
 };
 
+let prebidInternal = {}
+/**
+ * Returns object that is used as internal prebid namespace
+ */
+export function getPrebidInternal() {
+  return prebidInternal;
+}
+
 var uniqueRef = {};
 export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === uniqueRef
   ? Function.prototype.bind
@@ -256,6 +264,7 @@ export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
+  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
 }
 
 export function logError() {

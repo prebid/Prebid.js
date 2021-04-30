@@ -31,7 +31,7 @@ const execa = require('execa');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
+var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '*/\n';
 var port = 9999;
 const FAKE_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const FAKE_SERVER_PORT = 4444;
@@ -134,6 +134,12 @@ function watch(done) {
   done();
 };
 
+function makeModuleList(modules) {
+  return modules.map(module => {
+    return '"' + module + '"'
+  });
+}
+
 function makeDevpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
   cloned.devtool = 'source-map';
@@ -145,6 +151,7 @@ function makeDevpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
+    .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 }
@@ -162,8 +169,13 @@ function makeWebpackPkg() {
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(uglify())
-    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
+    .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
+    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid})))
     .pipe(gulp.dest('build/dist'));
+}
+
+function getModulesListToAddInBanner(modules){
+  return (modules.length > 0) ? modules.join(', ') :  'All available modules in current version.';
 }
 
 function gulpBundle(dev) {
@@ -215,6 +227,8 @@ function bundle(dev, moduleArr) {
   return gulp.src(
     entries
   )
+    // Need to uodate the "Modules: ..." section in comment with the current modules list
+    .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
     .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
@@ -279,7 +293,7 @@ function test(done) {
   } else {
     var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
-    var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+    var browserOverride = helpers.parseBrowserArgs(argv);
     if (browserOverride.length > 0) {
       karmaConf.browsers = browserOverride;
     }

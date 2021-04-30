@@ -3,7 +3,7 @@ import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js'
 import * as utils from '../src/utils.js';
 
-export const graphUrl = 'https://realtime-graph-access-zxvhwknfeq-uc.a.run.app/v1/graph';
+export const graphUrl = 'https://rtga.tapad.com/v1/graph';
 
 export const tapadIdSubmodule = {
   name: 'tapadId',
