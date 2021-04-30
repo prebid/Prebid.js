@@ -1704,7 +1704,7 @@ describe('the rubicon adapter', function () {
           let payload = request.data;
 
           expect(payload.ext.prebid.analytics).to.not.be.undefined;
-          expect(payload.ext.prebid.analytics).to.deep.equal([{'adapter': 'rubicon', 'client-analytics': true}]);
+          expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
         });
 
         it('should pass client analytics to PBS endpoint if rubicon analytics adapter is included', function () {
@@ -1714,7 +1714,7 @@ describe('the rubicon adapter', function () {
           let payload = request.data;
 
           expect(payload.ext.prebid.analytics).to.not.be.undefined;
-          expect(payload.ext.prebid.analytics).to.deep.equal([{'adapter': 'rubicon', 'client-analytics': true}]);
+          expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
         });
 
         it('should not pass client analytics to PBS endpoint if rubicon analytics adapter is not included', function () {
