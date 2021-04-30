@@ -157,9 +157,9 @@ export const spec = {
   * @param {Bid}
   *            The bid that won the auction
   */
-//  onBidWon: function(bid) {
-//    ajax(this.nurls[bid.requestId], null);
-//  }
+  //  onBidWon: function(bid) {
+  //    ajax(this.nurls[bid.requestId], null);
+  //  }
 
 }
 registerBidder(spec);
