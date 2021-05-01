@@ -91,7 +91,7 @@
     "morgan": "^1.10.0",
     "opn": "^6.0.0",
     "resolve-from": "^5.0.0",
-    "sinon": "^10.0.1",
+    "sinon": "^9.0.0",
     "through2": "^2.0.3",
     "url-parse": "^1.0.5",
     "webdriverio": "^6.1.5",
