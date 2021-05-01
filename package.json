@@ -65,7 +65,7 @@
     "gulp-sourcemaps": "^3.0.0",
     "gulp-uglify": "^3.0.0",
     "gulp-util": "^3.0.0",
-    "is-docker": "^1.1.0",
+    "is-docker": "^2.2.1",
     "istanbul": "^0.4.5",
     "karma": "^6.3.2",
     "karma-babel-preprocessor": "^8.0.1",
