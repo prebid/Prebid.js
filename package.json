@@ -6,7 +6,7 @@
   "scripts": {
     "test": "gulp test",
     "lint": "gulp lint",
-    "build": "webpack"
+    "build": "webpack --config webpack.conf.js"
   },
   "repository": {
     "type": "git",
