@@ -743,6 +743,11 @@ function bidToTag(bid) {
     tag.keywords = keywords;
   }
 
+  let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  if (gpid) {
+    tag.gpid = gpid;
+  }
+
   if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
     tag.ad_types.push(NATIVE);
     if (tag.sizes.length === 0) {
