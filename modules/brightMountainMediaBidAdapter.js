@@ -68,9 +68,11 @@ export const spec = {
       if (bid.mediaTypes.hasOwnProperty(VIDEO)) {
         placement['traffic'] = VIDEO;
         placement['context'] = bid.mediaTypes.video.context;
-        placement['sizes'] = bid.mediaTypes.video.playerSize;
-        placement['mimes'] = bid.mediaTypes.video.mimes ? bid.mediaTypes.video.mimes : videoExt;
+        if (bid.mediaTypes.video.playerSize) {
+          placement['sizes'] = bid.mediaTypes.video.playerSize;
+        }
         if (bid.params.video) {
+          placement['mimes'] = bid.params.video.mimes ? bid.params.video.mimes : videoExt;
           if (bid.params.video.skippable) {
             placement['skippable'] = Boolean(bid.params.video.skippable);
           } else {

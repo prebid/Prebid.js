@@ -33,6 +33,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       video: {
         skippable: true,
         playback_method: ['auto_play_sound_off'],
+        mimes: ['video/mp4']
       }
     },
     placementCode: 'placementid_0',
@@ -40,8 +41,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     mediaTypes: {
       video: {
         playerSizes: [[300, 250]],
-        context: 'outstream',
-        mimes: ['video/mp4']
+        context: 'outstream'
       }
     },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
