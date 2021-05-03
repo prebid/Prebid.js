@@ -89,7 +89,16 @@ var adUnits = [
      mediaTypes: {
        video: {
          playerSize: [[300, 250]],
-         context: 'outstream'
+         context: 'outstream',
+         // certain ORTB 2.5 video values can be read from the mediatypes object; below are examples of supported params
+         // to note - appnexus supports additional values for our system that are not part of the ORTB spec.  If you want
+         // to use these values, they will have to be declared in the bids[].params.video object instead using the appnexus syntax.
+         minduration: 1,
+         maxduration: 60,
+         skip: 1,   // 1 - true, 0 - false
+         skipafter: 5,
+         playbackmethod: [2], // note - we only support options 1-4 at this time
+         api: [1,2,3]   // note - option 6 is not supported at this time
        }
      },
      bids: [
