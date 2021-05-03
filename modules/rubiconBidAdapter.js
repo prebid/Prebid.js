@@ -109,7 +109,8 @@ var sizeMap = {
   288: '640x380',
   548: '500x1000',
   550: '980x480',
-  552: '300x200'
+  552: '300x200',
+  558: '640x640'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -202,7 +203,7 @@ export const spec = {
 
       let modules = (getGlobal()).installedModules;
       if (modules && (!modules.length || modules.indexOf('rubiconAnalyticsAdapter') !== -1)) {
-        utils.deepSetValue(data, 'ext.prebid.analytics', [{ 'adapter': 'rubicon', 'client-analytics': true }]);
+        utils.deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
       }
 
       let bidFloor;
