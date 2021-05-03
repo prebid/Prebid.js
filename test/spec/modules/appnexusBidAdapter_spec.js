@@ -629,6 +629,17 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
     });
 
+    it('should add gpid to the request', function () {
+      let testGpid = '/12345/my-gpt-tag-0';
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
+    });
+
     it('should add gdpr consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
