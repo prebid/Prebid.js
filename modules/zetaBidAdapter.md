@@ -35,7 +35,7 @@ Module that connects to Zeta's demand sources
                                     country: "USA"
                                 }
                             },
-                            definerId: 42770,
+                            definerId: 0,
                             test: 1
                         }
                     }
