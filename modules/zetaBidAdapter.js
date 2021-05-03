@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
-const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
+const ENDPOINT_URL = 'http://ewr-337.rfiserve.net:2082/prebid';
 const USER_SYNC_URL = 'https://p.rfihub.com/cm?pub=42770&in=1';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
@@ -87,9 +87,7 @@ export const spec = {
       badv: params.badv,
       bapp: params.bapp,
       source: params.source ? params.source : {},
-      ext: {
-        definerId: params.definerId
-      }
+      ext: params.ext ? params.ext : {}
     };
 
     payload.device.ua = navigator.userAgent;
@@ -113,9 +111,10 @@ export const spec = {
         }
       };
     }
+    const postUrl = ENDPOINT_URL.concat(params.definerId !== '0' ? params.definerId : '');
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: postUrl,
       data: JSON.stringify(payload),
     };
   },
