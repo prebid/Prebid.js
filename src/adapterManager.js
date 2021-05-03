@@ -179,6 +179,12 @@ export let uspDataHandler = {
   }
 };
 
+export let coppaDataHandler = {
+  getCoppa: function() {
+    return !!(config.getConfig('coppa'))
+  }
+};
+
 // export for testing
 export let clientTestAdapters = [];
 export const allS2SBidders = [];
