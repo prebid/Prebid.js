@@ -188,7 +188,7 @@ describe('nanointeractive adapter tests', function () {
       }
 
       function setUpMocks() {
-        sinon.sandbox.restore();
+        sinon.restore();
         sandbox = sinon.sandbox.create();
         sandbox.stub(utils, 'getOrigin').callsFake(() => getMocks()['originAddress']);
         sandbox.stub(utils, 'deepAccess').callsFake(() => getMocks()['windowLocationAddress']);
@@ -221,7 +221,7 @@ describe('nanointeractive adapter tests', function () {
       }
 
       function tearDownMocks() {
-        sandbox.restore();
+        sinon.restore();
       }
 
       it('Test buildRequest() - pid', function () {
