@@ -6,6 +6,7 @@
  */
 
 import * as utils from '../src/utils.js'
+import find from 'core-js-pure/features/array/find.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -14,12 +15,13 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
 const PARRABLE_COOKIE_NAME = '_parrable_id';
+const PARRABLE_GVLID = 928;
 const LEGACY_ID_COOKIE_NAME = '_parrable_eid';
 const LEGACY_OPTOUT_COOKIE_NAME = '_parrable_optout';
 const ONE_YEAR_MS = 364 * 24 * 60 * 60 * 1000;
 const EXPIRE_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
 
-const storage = getStorageManager();
+const storage = getStorageManager(PARRABLE_GVLID);
 
 function getExpirationDate() {
   const oneYearFromNow = new Date(utils.timestamp() + ONE_YEAR_MS);
@@ -60,7 +62,7 @@ function isValidConfig(configParams) {
     utils.logError('User ID - parrableId submodule requires configParams');
     return false;
   }
-  if (!configParams.partner) {
+  if (!configParams.partners && !configParams.partner) {
     utils.logError('User ID - parrableId submodule requires partner list');
     return false;
   }
@@ -68,6 +70,15 @@ function isValidConfig(configParams) {
     utils.logWarn('User ID - parrableId submodule does not require a storage config');
   }
   return true;
+}
+
+function encodeBase64UrlSafe(base64) {
+  const ENC = {
+    '+': '-',
+    '/': '_',
+    '=': '.'
+  };
+  return base64.replace(/[+/=]/g, (m) => ENC[m]);
 }
 
 function readCookie() {
@@ -113,7 +124,58 @@ function migrateLegacyCookies(parrableId) {
   }
 }
 
-function fetchId(configParams) {
+function shouldFilterImpression(configParams, parrableId) {
+  const config = configParams.timezoneFilter;
+
+  if (!config) {
+    return false;
+  }
+
+  if (parrableId) {
+    return false;
+  }
+
+  const offset = (new Date()).getTimezoneOffset() / 60;
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  function isZoneListed(list, zone) {
+    // IE does not provide a timeZone in IANA format so zone will be empty
+    const zoneLowercase = zone && zone.toLowerCase();
+    return !!(list && zone && find(list, zn => zn.toLowerCase() === zoneLowercase));
+  }
+
+  function isAllowed() {
+    if (utils.isEmpty(config.allowedZones) &&
+      utils.isEmpty(config.allowedOffsets)) {
+      return true;
+    }
+    if (isZoneListed(config.allowedZones, zone)) {
+      return true;
+    }
+    if (utils.contains(config.allowedOffsets, offset)) {
+      return true;
+    }
+    return false;
+  }
+
+  function isBlocked() {
+    if (utils.isEmpty(config.blockedZones) &&
+      utils.isEmpty(config.blockedOffsets)) {
+      return false;
+    }
+    if (isZoneListed(config.blockedZones, zone)) {
+      return true;
+    }
+    if (utils.contains(config.blockedOffsets, offset)) {
+      return true;
+    }
+    return false;
+  }
+
+  return isBlocked() || !isAllowed();
+}
+
+function fetchId(configParams, gdprConsentData) {
   if (!isValidConfig(configParams)) return;
 
   let parrableId = readCookie();
@@ -122,23 +184,40 @@ function fetchId(configParams) {
     migrateLegacyCookies(parrableId);
   }
 
+  if (shouldFilterImpression(configParams, parrableId)) {
+    return null;
+  }
+
   const eid = (parrableId) ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
   const uspString = uspDataHandler.getConsentData();
+  const gdprApplies = (gdprConsentData && typeof gdprConsentData.gdprApplies === 'boolean' && gdprConsentData.gdprApplies);
+  const gdprConsentString = (gdprConsentData && gdprApplies && gdprConsentData.consentString) || '';
+  const partners = configParams.partners || configParams.partner
+  const trackers = typeof partners === 'string'
+    ? partners.split(',')
+    : partners;
 
   const data = {
     eid,
-    trackers: configParams.partner.split(','),
-    url: refererInfo.referer
+    trackers,
+    url: refererInfo.referer,
+    prebidVersion: '$prebid.version$',
+    isIframe: utils.inIframe()
   };
 
   const searchParams = {
-    data: btoa(JSON.stringify(data)),
+    data: encodeBase64UrlSafe(btoa(JSON.stringify(data))),
+    gdpr: gdprApplies ? 1 : 0,
     _rand: Math.random()
   };
 
   if (uspString) {
     searchParams.us_privacy = uspString;
+  }
+
+  if (gdprApplies) {
+    searchParams.gdpr_consent = gdprConsentString;
   }
 
   const options = {
@@ -187,7 +266,7 @@ function fetchId(configParams) {
     callback,
     id: parrableId
   };
-};
+}
 
 /** @type {Submodule} */
 export const parrableIdSubmodule = {
@@ -197,6 +276,12 @@ export const parrableIdSubmodule = {
    */
   name: 'parrableId',
   /**
+   * Global Vendor List ID
+   * @type {number}
+   */
+  gvlid: PARRABLE_GVLID,
+
+  /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param {ParrableId} parrableId
@@ -204,7 +289,7 @@ export const parrableIdSubmodule = {
    */
   decode(parrableId) {
     if (parrableId && utils.isPlainObject(parrableId)) {
-      return { 'parrableid': parrableId.eid };
+      return { parrableId };
     }
     return undefined;
   },
@@ -212,12 +297,13 @@ export const parrableIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
    * @returns {function(callback:function), id:ParrableId}
    */
-  getId(configParams, gdprConsentData, currentStoredId) {
-    return fetchId(configParams);
+  getId(config, gdprConsentData, currentStoredId) {
+    const configParams = (config && config.params) || {};
+    return fetchId(configParams, gdprConsentData);
   }
 };
 

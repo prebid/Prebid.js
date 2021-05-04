@@ -28,7 +28,9 @@
                 params: {
                     placementId: 13144370
                 }
-            },{
+            /* gu-mod-start */
+            },
+            {
                 bidder: "trustx",
                 params: {
                     uid: '44',
@@ -54,7 +56,8 @@
                         unit: '540096529',
                         delDomain: 'sademo-d.openx.net'
                     }
-                },]
+                /* gu-mod-end */
+                }]
 
         }];
 
@@ -71,6 +74,7 @@
         });
 
         pbjs.que.push(function() {
+            /* gu-mod-start */
             pbjs.setConfig({
                 bidderTimeout: 1500
             });
@@ -83,6 +87,7 @@
                     }
                 }
             ]);
+            /* gu-mod-end */
             pbjs.addAdUnits(adUnits);
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,

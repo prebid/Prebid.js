@@ -4,14 +4,16 @@ const utils = require('src/utils.js');
 
 function convertTargetingsFromOldToNew(targetings) {
   var mapOfOldToNew = {
+    /* gu-mod-start */
+    'hb_ttr': CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND,
+    /* gu-mod-end */
     'hb_bidder': CONSTANTS.TARGETING_KEYS.BIDDER,
     'hb_adid': CONSTANTS.TARGETING_KEYS.AD_ID,
     'hb_pb': CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
     'hb_size': CONSTANTS.TARGETING_KEYS.SIZE,
     'hb_deal': CONSTANTS.TARGETING_KEYS.DEAL,
     'hb_source': CONSTANTS.TARGETING_KEYS.SOURCE,
-    'hb_format': CONSTANTS.TARGETING_KEYS.FORMAT,
-    'hb_ttr': CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND
+    'hb_format': CONSTANTS.TARGETING_KEYS.FORMAT
   };
   var newTargetings = {};
   utils._each(targetings, function(value, currentKey) {
@@ -677,7 +679,13 @@ export function getAdUnits() {
           'bidder': 'appnexus',
           'params': {
             'placementId': '543221',
-            'test': 'me'
+          }
+        },
+        {
+          'bidder': 'pubmatic',
+          'params': {
+            'publisherId': 1234567,
+            'adSlot': '1234567@728x90'
           }
         }
       ]

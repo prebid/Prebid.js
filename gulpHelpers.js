@@ -72,6 +72,8 @@ module.exports = {
     return modules;
   },
 
+  /* gu-mod-start */
+  // Ensure only the ones in modules.json are built
   getModulesToInclude() {
     let modules;
     const moduleFile = 'modules.json';
@@ -85,6 +87,7 @@ module.exports = {
     }
     return modules;
   },
+  /* gu-mod-end */
 
   getModules: _.memoize(function(externalModules) {
     externalModules = externalModules || [];

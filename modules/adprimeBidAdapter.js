@@ -4,6 +4,7 @@ import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'adprime';
 const AD_URL = 'https://delta.adprime.com/?c=o&m=multi';
+const SYNC_URL = 'https://delta.adprime.com/?c=rtb&m=sync';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -63,12 +64,16 @@ export const spec = {
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
       let sizes
+      let identeties = {}
       if (bid.mediaTypes) {
         if (bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
           sizes = bid.mediaTypes[BANNER].sizes
         } else if (bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
           sizes = bid.mediaTypes[VIDEO].playerSize
         }
+      }
+      if (bid.userId && bid.userId.idl_env) {
+        identeties.identityLink = bid.userId.idl_env
       }
 
       placements.push({
@@ -79,7 +84,8 @@ export const spec = {
         hPlayer: sizes ? sizes[1] : 0,
         traffic: bid.params.traffic || BANNER,
         schain: bid.schain || {},
-        keywords: bid.params.keywords || []
+        keywords: bid.params.keywords || [],
+        identeties
       });
     }
     return {
@@ -99,6 +105,25 @@ export const spec = {
     }
     return response;
   },
+
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    let syncUrl = SYNC_URL
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+    return [{
+      type: 'image',
+      url: syncUrl
+    }];
+  }
+
 };
 
 registerBidder(spec);

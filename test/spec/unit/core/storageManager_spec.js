@@ -42,5 +42,57 @@ describe('storage manager', function() {
     storage.setCookie('foo1', 'baz1');
     expect(deviceAccessSpy.calledOnce).to.equal(true);
     deviceAccessSpy.restore();
+  });
+
+  describe('localstorage forbidden access in 3rd-party context', function() {
+    let errorLogSpy;
+    let originalLocalStorage;
+    const localStorageMock = { get: () => { throw Error } };
+
+    beforeEach(function() {
+      originalLocalStorage = window.localStorage;
+      Object.defineProperty(window, 'localStorage', localStorageMock);
+      errorLogSpy = sinon.spy(utils, 'logError');
+    });
+
+    afterEach(function() {
+      Object.defineProperty(window, 'localStorage', { get: () => originalLocalStorage });
+      errorLogSpy.restore();
+    })
+
+    it('should not throw if the localstorage is not accessible when setting/getting/removing from localstorage', function() {
+      const coreStorage = getStorageManager();
+
+      coreStorage.setDataInLocalStorage('key', 'value');
+      const val = coreStorage.getDataFromLocalStorage('key');
+      coreStorage.removeDataFromLocalStorage('key');
+
+      expect(val).to.be.null;
+      sinon.assert.calledThrice(errorLogSpy);
+    })
   })
+
+  describe('localstorage is enabled', function() {
+    let localStorage;
+
+    beforeEach(function() {
+      localStorage = window.localStorage;
+      localStorage.clear();
+    });
+
+    afterEach(function() {
+      localStorage.clear();
+    })
+
+    it('should remove side-effect after checking', function () {
+      const storage = getStorageManager();
+
+      localStorage.setItem('unrelated', 'dummy');
+      const val = storage.localStorageIsEnabled();
+
+      expect(val).to.be.true;
+      expect(localStorage.length).to.be.eq(1);
+      expect(localStorage.getItem('unrelated')).to.be.eq('dummy');
+    });
+  });
 });

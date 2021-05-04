@@ -6,24 +6,38 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '3.0.2';
+const BIDDER_VERSION = '3.0.3';
+
+const DEFAULT_CURRENCY = 'USD';
 
 export const USER_ID_CODE_TO_QUERY_ARG = {
   britepoolid: 'britepoolid', // BritePool ID
   criteoId: 'criteoid', // CriteoID
-  digitrustid: 'digitrustid', // DigiTrust
+  fabrickId: 'nuestarid', // Fabrick ID by Nuestar
+  haloId: 'audigentid', // Halo ID from Audigent
   id5id: 'id5id', // ID5 ID
   idl_env: 'lre', // LiveRamp IdentityLink
+  IDP: 'zeotapid', // zeotapIdPlus ID+
+  idxId: 'idxid', // idIDx,
+  intentIqId: 'intentiqid', // IntentIQ ID
   lipb: 'lipbid', // LiveIntent ID
+  lotamePanoramaId: 'lotameid', // Lotame Panorama ID
+  merkleId: 'merkleid', // Merkle ID
   netId: 'netid', // netID
-  parrableid: 'parrableid', // Parrable ID
+  parrableId: 'parrableid', // Parrable ID
   pubcid: 'pubcid', // PubCommon ID
+  quantcastId: 'quantcastid', // Quantcast ID
+  sharedId: 'sharedid', // Shared ID User ID
+  tapadId: 'tapadid', // Tapad Id
   tdid: 'ttduuid', // The Trade Desk Unified ID
+  verizonMediaId: 'verizonmediaid', // Verizon Media ConnectID
 };
 
 export const spec = {
   code: BIDDER_CODE,
+  /* gu-mod-start */
   aliases: ['oxd'],
+  /* gu-mod-end */
   gvlid: 69,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
@@ -144,6 +158,12 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
     bidResponse.meta = {};
     if (adUnit.brand_id) {
       bidResponse.meta.brandId = adUnit.brand_id;
+    }
+
+    if (adUnit.adomain && length(adUnit.adomain) > 0) {
+      bidResponse.meta.advertiserDomains = adUnit.adomain;
+    } else {
+      bidResponse.meta.advertiserDomains = [];
     }
 
     if (adUnit.adv_id) {
@@ -271,11 +291,14 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
 
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
       switch (userIdProviderKey) {
-        case 'digitrustid':
-          queryParams[key] = utils.deepAccess(userIdObjectOrValue, 'data.id');
-          break;
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
+          break;
+        case 'parrableId':
+          queryParams[key] = userIdObjectOrValue.eid;
+          break;
+        case 'id5id':
+          queryParams[key] = userIdObjectOrValue.uid;
           break;
         default:
           queryParams[key] = userIdObjectOrValue;
@@ -334,19 +357,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
     queryParams.tps = customParamsForAllBids.join(',');
   }
 
-  let customFloorsForAllBids = [];
-  let hasCustomFloor = false;
-  bids.forEach(function (bid) {
-    if (bid.params.customFloor) {
-      customFloorsForAllBids.push((Math.round(bid.params.customFloor * 100) / 100) * 1000);
-      hasCustomFloor = true;
-    } else {
-      customFloorsForAllBids.push(0);
-    }
-  });
-  if (hasCustomFloor) {
-    queryParams.aumfs = customFloorsForAllBids.join(',');
-  }
+  enrichQueryWithFloors(queryParams, BANNER, bids);
 
   let url = queryParams.ph
     ? `https://u.openx.net/w/1.0/arj`
@@ -417,6 +428,13 @@ function generateVideoParameters(bid, bidderRequest) {
     queryParams.vmimes = oxVideoConfig.mimes;
   }
 
+  if (bid.params.test) {
+    queryParams.vtest = 1;
+  }
+
+  // each video bid makes a separate request
+  enrichQueryWithFloors(queryParams, VIDEO, [bid]);
+
   return queryParams;
 }
 
@@ -427,6 +445,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
+    if (response.deal_id) {
+      bidResponse.dealId = response.deal_id;
+    }
     // default 5 mins
     bidResponse.ttl = 300;
     // true is net, false is gross
@@ -448,6 +469,40 @@ function createVideoBidResponses(response, {bid, startTime}) {
   }
 
   return bidResponses;
+}
+
+function enrichQueryWithFloors(queryParams, mediaType, bids) {
+  let customFloorsForAllBids = [];
+  let hasCustomFloor = false;
+  bids.forEach(function (bid) {
+    let floor = getBidFloor(bid, mediaType);
+
+    if (floor) {
+      customFloorsForAllBids.push(floor);
+      hasCustomFloor = true;
+    } else {
+      customFloorsForAllBids.push(0);
+    }
+  });
+  if (hasCustomFloor) {
+    queryParams.aumfs = customFloorsForAllBids.join(',');
+  }
+}
+
+function getBidFloor(bidRequest, mediaType) {
+  let floorInfo = {};
+  const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: currency,
+      mediaType: mediaType,
+      size: '*'
+    });
+  }
+  let floor = floorInfo.floor || bidRequest.params.customFloor || 0;
+
+  return Math.round(floor * 1000); // normalize to micro currency
 }
 
 registerBidder(spec);

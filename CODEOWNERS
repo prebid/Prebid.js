@@ -1,2 +1,21 @@
 # See https://blog.github.com/2017-07-06-introducing-code-owners/
-*   @guardian/commercial-dev
+
+# Files we own outright
+build/dist/prebid.js                @guardian/commercial-dev
+modifications.md                    @guardian/commercial-dev
+modules.json                        @guardian/commercial-dev
+modules/guAnalyticsAdapter.js       @guardian/commercial-dev
+modules/consoleLoggingAnalyticsAdapter.js   @guardian/commercial-dev
+
+# Files we touch in part, see gu-mod- comments
+.gitignore                          @guardian/commercial-dev
+package.json                        @guardian/commercial-dev
+src/auction.js                      @guardian/commercial-dev
+src/targeting.js                    @guardian/commercial-dev
+src/constants.json                  @guardian/commercial-dev
+test/fixtures/fixtures.js           @guardian/commercial-dev
+modules/appnexusBidAdapter.js       @guardian/commercial-dev
+modules/openxBidAdapter.js          @guardian/commercial-dev
+modules/sonobiBidAdapter.js         @guardian/commercial-dev
+test/spec/auctionmanager_spec.js    @guardian/commercial-dev
+test/spec/unit/pbjs_api_spec.js     @guardian/commercial-dev
