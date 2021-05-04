@@ -4,6 +4,7 @@ import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
 import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { module } from '../webpack.conf.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -103,6 +104,15 @@ function bidToImp(bid) {
 
   return imp;
 }
+/**
+ * 
+ * @param {*} number 
+ * @param {*} precision 
+ * @returns 
+ */
+function roundUp(number, precision) {
+  return Math.ceil((parseFloat(number) * Math.pow(10, precision)).toFixed(1)) / Math.pow(10, precision);
+}
 
 /**
  * Gets priceFloors floors and IX adapter floors,
@@ -116,7 +126,7 @@ function _applyFloor(bid, imp, mediaType) {
   let moduleFloor = null;
 
   if (bid.params.bidFloor && bid.params.bidFloorCur) {
-    adapterFloor = { floor: bid.params.bidFloor, currency: bid.params.bidFloorCur };
+    adapterFloor = { floor: roundUp(bid.params.bidFloor, 2), currency: bid.params.bidFloorCur };
   }
 
   if (utils.isFn(bid.getFloor)) {
@@ -137,6 +147,11 @@ function _applyFloor(bid, imp, mediaType) {
       // continue with no module floors
       utils.logWarn('priceFloors module call getFloor failed, error : ', err);
     }
+  }
+  
+  // fixing floor precision to 2
+  if (moduleFloor && moduleFloor.floor) {
+    moduleFloor.floor = roundUp(moduleFloor.floor, 2);
   }
 
   if (adapterFloor && moduleFloor) {
