@@ -125,7 +125,7 @@ function _applyFloor(bid, imp, mediaType) {
   let moduleFloor = null;
 
   if (bid.params.bidFloor && bid.params.bidFloorCur) {
-    adapterFloor = { floor: roundUp(bid.params.bidFloor, 2), currency: bid.params.bidFloorCur };
+    adapterFloor = { floor: bid.params.bidFloor, currency: bid.params.bidFloorCur };
   }
 
   if (utils.isFn(bid.getFloor)) {
@@ -148,11 +148,6 @@ function _applyFloor(bid, imp, mediaType) {
     }
   }
 
-  // fixing floor precision to 2
-  if (moduleFloor && moduleFloor.floor) {
-    moduleFloor.floor = roundUp(moduleFloor.floor, 2);
-  }
-
   if (adapterFloor && moduleFloor) {
     if (adapterFloor.currency !== moduleFloor.currency) {
       utils.logWarn('The bid floor currency mismatch between IX params and priceFloors module config');
@@ -160,11 +155,11 @@ function _applyFloor(bid, imp, mediaType) {
     }
 
     if (adapterFloor.floor > moduleFloor.floor) {
-      imp.bidfloor = adapterFloor.floor;
+      imp.bidfloor = roundUp(adapterFloor.floor, 2);
       imp.bidfloorcur = adapterFloor.currency;
       imp.ext.fl = FLOOR_SOURCE.IX;
     } else {
-      imp.bidfloor = moduleFloor.floor;
+      imp.bidfloor = roundUp(moduleFloor.floor, 2);
       imp.bidfloorcur = moduleFloor.currency;
       imp.ext.fl = FLOOR_SOURCE.PBJS;
     }
@@ -172,11 +167,11 @@ function _applyFloor(bid, imp, mediaType) {
   }
 
   if (moduleFloor) {
-    imp.bidfloor = moduleFloor.floor;
+    imp.bidfloor = roundUp(moduleFloor.floor, 2);
     imp.bidfloorcur = moduleFloor.currency;
     imp.ext.fl = FLOOR_SOURCE.PBJS;
   } else if (adapterFloor) {
-    imp.bidfloor = adapterFloor.floor;
+    imp.bidfloor = roundUp(adapterFloor.floor, 2);
     imp.bidfloorcur = adapterFloor.currency;
     imp.ext.fl = FLOOR_SOURCE.IX;
   } else {
