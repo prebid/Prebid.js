@@ -162,30 +162,6 @@ describe('Gu analytics adapter', () => {
   const OZONE_RESPONSE = Object.assign({}, RESPONSE, {
     bidderCode: 'ozone',
     adserverTargeting: {
-      hb_adid: '123abc456def789-3-0',
-      oz_appnexus: 'appnexus',
-      oz_appnexus_adId: '123abc456def789-0-0',
-      oz_appnexus_adv: 'Hotel',
-      oz_appnexus_crid: 'test-crid-id-1',
-      oz_appnexus_pb_r: '4.00',
-      oz_auc_id: 'abc-def-ghi',
-      oz_imp_id: '123abc456def789',
-      oz_openx: 'openx',
-      oz_openx_adId: '123abc456def789-1-0',
-      oz_openx_adv: 'openx.com',
-      oz_openx_crid: 'test-crid-id-2',
-      oz_openx_pb_r: '1.00',
-      oz_ozappnexus: 'ozappnexus',
-      oz_ozappnexus_adId: '123abc456def789-3-0',
-      oz_ozappnexus_adv: 'Hotel',
-      oz_ozappnexus_crid: '282907610',
-      oz_ozappnexus_pb_r: '2.00',
-      oz_ozappnexus_sid: '1212',
-      oz_ozopenx: 'ozopenx',
-      oz_ozopenx_adId: '123abc456def789-2-0',
-      oz_ozopenx_adv: 'openx.com',
-      oz_ozopenx_crid: 'test-crid-id-2',
-      oz_ozopenx_pb_r: '0.50',
       oz_winner: 'openx',
     }
   });
@@ -460,6 +436,37 @@ describe('Gu analytics adapter', () => {
 });
 
 describe('getBidderCode', () => {
+  const OZONE_RESPONSE = {
+    bidderCode: 'ozone',
+    adserverTargeting: {
+      hb_adid: '123abc456def789-3-0',
+      oz_appnexus: 'appnexus',
+      oz_appnexus_adId: '123abc456def789-0-0',
+      oz_appnexus_adv: 'Hotel',
+      oz_appnexus_crid: 'test-crid-id-1',
+      oz_appnexus_pb_r: '4.00',
+      oz_auc_id: 'abc-def-ghi',
+      oz_imp_id: '123abc456def789',
+      oz_openx: 'openx',
+      oz_openx_adId: '123abc456def789-1-0',
+      oz_openx_adv: 'openx.com',
+      oz_openx_crid: 'test-crid-id-2',
+      oz_openx_pb_r: '1.00',
+      oz_ozappnexus: 'ozappnexus',
+      oz_ozappnexus_adId: '123abc456def789-3-0',
+      oz_ozappnexus_adv: 'Hotel',
+      oz_ozappnexus_crid: '282907610',
+      oz_ozappnexus_pb_r: '2.00',
+      oz_ozappnexus_sid: '1212',
+      oz_ozopenx: 'ozopenx',
+      oz_ozopenx_adId: '123abc456def789-2-0',
+      oz_ozopenx_adv: 'openx.com',
+      oz_ozopenx_crid: 'test-crid-id-2',
+      oz_ozopenx_pb_r: '0.50',
+      oz_winner: 'openx',
+    }
+  }
+
   it('Should return back same bidderCode when not ozone', () => {
     const appnexusArgs = {
       bidderCode: 'appnexus',
@@ -483,20 +490,19 @@ describe('getBidderCode', () => {
     expect(getBidderCode(ozoneArgs)).to.be.equal(`${ozoneArgs.bidderCode}-unknown`);
   });
 
-  it('Should return ozone-appnexus for ozone with matching adId: 0', () => {
-    const ozoneArgs = {
-      adId: `123abc456def789-0-0`,
-      ...OZONE_RESPONSE,
-    };
-    expect(getBidderCode(ozoneArgs)).to.be.equal(`${ozoneArgs.bidderCode}-appnexus`);
-  });
-
-  it('Should return ozone-openx for ozone with matching adId: 1', () => {
-    const ozoneArgs = {
-      adId: `123abc456def789-1-0`,
-      ...OZONE_RESPONSE,
-    };
-    expect(getBidderCode(ozoneArgs)).to.be.equal(`${ozoneArgs.bidderCode}-appnexus`);
+  [
+    'appnexus',
+    'openx',
+    'ozopenx',
+    'ozappnexus',
+  ].map((advertiser, index) => {
+    it(`Should return ozone-${advertiser} for ozone with matching adId: ${index}`, () => {
+      const ozoneArgs = {
+        adId: `123abc456def789-${index}-0`,
+        ...OZONE_RESPONSE,
+      };
+      expect(getBidderCode(ozoneArgs)).to.be.equal(`${ozoneArgs.bidderCode}-${advertiser}`);
+    });
   });
 
   it('Should return ozone-unknown for ozone with bad oz_bidder', () => {
@@ -509,7 +515,7 @@ describe('getBidderCode', () => {
     expect(getBidderCode(ozoneArgs)).to.be.equal(`${ozoneArgs.bidderCode}-unknown`);
   });
 
-  it('Should return ozone-openx for ozone with oz_winner openx', () => {
+  it('Should return ozone-openx for ozone with oz_winner openx and no adId', () => {
     const ozoneArgs = {
       bidderCode: 'ozone',
       adserverTargeting: {
