@@ -307,14 +307,21 @@ describe('Tappx bid adapter', function () {
       getFloorResponse = undefined;
       request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
 
+      // without Module floor
       payload = JSON.parse(request[0].data);
       expect(payload.imp[0].bidfloor).to.equal(0.05);
 
       // make it respond with USD floor and string floor
-      getFloorResponse = {currency: 'USD', floor: 1.23};
+      getFloorResponse = {currency: 'USD', floor: '1.23'};
       request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
       payload = JSON.parse(request[0].data);
-      expect(payload.imp[0].bidfloor).to.equal(1.23);
+      expect(payload.imp[0].bidfloor).to.equal('1.23');
+
+       // make it respond with EUR floor (not valid)
+       getFloorResponse = {currency: 'EUR', floor: '1.23'};
+       request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+       payload = JSON.parse(request[0].data);
+       expect(payload.imp[0].bidfloor).to.equal(0.05); // Default value from tappx/bidder bidfloor
 
       // make it respond with USD floor and num floor
       getFloorResponse = {currency: 'USD', floor: 1.23};

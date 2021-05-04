@@ -264,13 +264,18 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
   if (utils.isFn(validBidRequests.getFloor)) {
     try {
-      imp.bidfloor = validBidRequests.getFloor({
+      let floor = validBidRequests.getFloor({
         currency: CUR,
         mediaType: '*',
         size: '*'
-      }).floor;
+      });
+      if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+        imp.bidfloor = floor.floor;
+      } else {
+        utils.logWarn('Tappx bid adapter: ', 'Currency not valid. Use only USD with Tappx.');
+      }
     } catch (e) {
-      utils.logWarn(e);
+      utils.logWarn('Tappx bid adapter: ', e);
       imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor'); // Be sure that we have an imp.bidfloor
     }
   }
