@@ -581,10 +581,13 @@ function _createBidResponse(response) {
     creativeId: response.seatbid[0].bid[0].crid,
     mediaType: utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.mediaType', BANNER),
     currency: response.cur,
-    netRevenue: true,
-    ...(isADomainPresent
-      ? { meta: { advertiserDomains: response.seatbid[0].bid[0].adomain } }
-      : {})
+    netRevenue: true
+  }
+
+  if (isADomainPresent) {
+    bid.meta = {
+      advertiserDomains: response.seatbid[0].bid[0].adomain
+    };
   }
 
   if (bid.mediaType === VIDEO) {
