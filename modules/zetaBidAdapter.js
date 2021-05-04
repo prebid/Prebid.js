@@ -93,6 +93,7 @@ export const spec = {
     payload.device.ua = navigator.userAgent;
     payload.site.page = bidderRequest.refererInfo.referer;
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
+    payload.ext.definerId = params.definerId;
 
     if (params.test) {
       payload.test = params.test;
@@ -111,7 +112,7 @@ export const spec = {
         }
       };
     }
-    const postUrl = ENDPOINT_URL.concat(params.definerId !== '0' ? params.definerId : '');
+    const postUrl = ENDPOINT_URL.concat(params.definerId !== '0' ? concat("/", params.definerId) : '');
     return {
       method: 'POST',
       url: postUrl,
