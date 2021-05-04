@@ -55,9 +55,6 @@ export const spec = {
     let payloadSchain;
     let payloadUserId;
     const videoTypes = _initVideoTypes(bids);
-    const videoMinDuration = [];
-    const videoMaxDuration = [];
-    const videoSkip = [];
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -100,10 +97,6 @@ export const spec = {
         }
         slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
       });
-
-      videoMinDuration.push(deepAccess(bid, 'params.video.minduration', null));
-      videoMaxDuration.push(deepAccess(bid, 'params.video.maxduration', null));
-      videoSkip.push(deepAccess(bid, 'params.video.skip', null));
     });
 
     const payload = {
@@ -114,8 +107,7 @@ export const spec = {
       cur: currency,
       wrapperType: 'Prebid_js',
       wrapperVersion: '$prebid.version$',
-      ...videoTypes,
-      ..._videoProcessOptionalParams(videoMinDuration, videoMaxDuration, videoSkip)
+      ...videoTypes
     };
 
     if (payloadSchain) {
@@ -319,6 +311,9 @@ function _initVideoTypes(bids) {
   let _protocols = [];
   let _api = [];
   let _mimes = [];
+  let _minduration = [];
+  let _maxduration = [];
+  let _skip = [];
   if (bids && bids.length) {
     bids.forEach(function (bid) {
       const mediaTypes = deepAccess(bid, 'mediaTypes.video', {});
@@ -326,12 +321,18 @@ function _initVideoTypes(bids) {
       _protocols.push(deepAccess(mediaTypes, 'protocols', []).join('|'));
       _api.push(deepAccess(mediaTypes, 'api', []).join('|'));
       _mimes.push(deepAccess(mediaTypes, 'mimes', []).join('|'));
+      _minduration.push(deepAccess(mediaTypes, 'minduration', null));
+      _maxduration.push(deepAccess(mediaTypes, 'maxduration', null));
+      _skip.push(deepAccess(mediaTypes, 'skip', null));
     });
   }
   _playerSize = _playerSize.join(',');
   _protocols = _protocols.join(',');
   _api = _api.join(',');
   _mimes = _mimes.join(',');
+  _minduration = _minduration.join(',');
+  _maxduration = _maxduration.join(',');
+  _skip = _skip.join(',');
 
   if (!RE_EMPTY_OR_ONLY_COMMAS.test(_playerSize)) {
     result.playerSize = _playerSize;
@@ -345,24 +346,16 @@ function _initVideoTypes(bids) {
   if (!RE_EMPTY_OR_ONLY_COMMAS.test(_mimes)) {
     result.mimes = _mimes;
   }
+  if (!RE_EMPTY_OR_ONLY_COMMAS.test(_minduration)) {
+    result.minduration = _minduration;
+  }
+  if (!RE_EMPTY_OR_ONLY_COMMAS.test(_maxduration)) {
+    result.maxduration = _maxduration;
+  }
+  if (!RE_EMPTY_OR_ONLY_COMMAS.test(_skip)) {
+    result.skip = _skip;
+  }
 
-  return result;
-}
-
-function _videoProcessOptionalParams(videoMinDuration, videoMaxDuration, videoSkip) {
-  const result = {};
-  const minduration = videoMinDuration.join(',');
-  if (!RE_EMPTY_OR_ONLY_COMMAS.test(minduration)) {
-    result.minduration = minduration;
-  }
-  const maxduration = videoMaxDuration.join(',');
-  if (!RE_EMPTY_OR_ONLY_COMMAS.test(maxduration)) {
-    result.maxduration = maxduration;
-  }
-  const skip = videoSkip.join(',');
-  if (!RE_EMPTY_OR_ONLY_COMMAS.test(skip)) {
-    result.skip = skip;
-  }
   return result;
 }
 

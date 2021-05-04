@@ -123,8 +123,10 @@ describe('VisxAdapter', function () {
           'video': {
             'context': 'instream',
             'playerSize': [400, 300],
-            'mimes': ['video/mp4'],
-            'protocols': [3, 6]
+            'mimes': ['video/mp4', 'video/mpeg'],
+            'protocols': [3, 6],
+            'minduration': 5,
+            'maxduration': 30
           }
         },
         'bidId': '39a4e3a7168a6a',
@@ -292,8 +294,11 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.have.property('protocols', ',,,3|6');
-      expect(payload).to.have.property('mimes', ',,,video/mp4');
+      expect(payload).to.have.property('mimes', ',,,video/mp4|video/mpeg');
       expect(payload).to.have.property('playerSize', ',,,400x300');
+      expect(payload).to.have.property('minduration', ',,,5');
+      expect(payload).to.have.property('maxduration', ',,,30');
+      expect(payload).to.not.have.property('skip');
     });
   });
 
