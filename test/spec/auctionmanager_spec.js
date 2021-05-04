@@ -126,6 +126,10 @@ function mockAjaxBuilder() {
 describe('auctionmanager.js', function () {
   describe('getKeyValueTargetingPairs', function () {
     const DEFAULT_BID = {
+      /* gu-mod-start */
+      timeToRespond: 123,
+      /* gu-mod-end */
+
       cpm: 5.578,
       pbLg: 5.50,
       pbMg: 5.50,
@@ -143,9 +147,6 @@ describe('auctionmanager.js', function () {
       adId: '1adId',
       source: 'client',
       mediaType: 'banner',
-      /* gu-mod-start */
-      timeToRespond: 123,
-      /* gu-mod-end */
       meta: {
         advertiserDomains: ['adomain']
       }
@@ -219,6 +220,24 @@ describe('auctionmanager.js', function () {
       {
         standard: {
           adserverTargeting: [
+            /* gu-mod-start */
+            {
+              key: CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND,
+              val: function (bidResponse) {
+                return bidResponse.timeToRespond;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.AUCTION_ID,
+              val: function (bidResponse) {
+                return bidResponse.auctionId;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.CPM,
+              val: function (bidResponse) {
+                return bidResponse.cpm;
+              }
+            },
+            /* gu-mod-end */
             {
               key: CONSTANTS.TARGETING_KEYS.BIDDER,
               val: function (bidResponse) {
@@ -228,11 +247,6 @@ describe('auctionmanager.js', function () {
               key: CONSTANTS.TARGETING_KEYS.AD_ID,
               val: function (bidResponse) {
                 return bidResponse.adId;
-              }
-            }, {
-              key: CONSTANTS.TARGETING_KEYS.CPM,
-              val: function (bidResponse) {
-                return bidResponse.cpm;
               }
             }, {
               key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
@@ -258,20 +272,6 @@ describe('auctionmanager.js', function () {
                 return bidResponse.mediaType;
               }
             },
-            /* gu-mod-start */
-            {
-              key: CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND,
-              val: function (bidResponse) {
-                return bidResponse.timeToRespond;
-              }
-            },
-            {
-              key: CONSTANTS.TARGETING_KEYS.AUCTION_ID,
-              val: function (bidResponse) {
-                return bidResponse.auctionId;
-              }
-            },
-            /* gu-mod-end */
             {
               key: CONSTANTS.TARGETING_KEYS.ADOMAIN,
               val: function (bidResponse) {
@@ -304,6 +304,24 @@ describe('auctionmanager.js', function () {
       {
         standard: {
           adserverTargeting: [
+            /* gu-mod-start */
+            {
+              key: CONSTANTS.TARGETING_KEYS.CPM,
+              val: function (bidResponse) {
+                return bidResponse.cpm;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND,
+              val: function (bidResponse) {
+                return bidResponse.timeToRespond;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.AUCTION_ID,
+              val: function (bidResponse) {
+                return bidResponse.auctionId;
+              }
+            },
+            /* gu-mod-end */
             {
               key: CONSTANTS.TARGETING_KEYS.BIDDER,
               val: function (bidResponse) {
@@ -313,11 +331,6 @@ describe('auctionmanager.js', function () {
               key: CONSTANTS.TARGETING_KEYS.AD_ID,
               val: function (bidResponse) {
                 return bidResponse.adId;
-              }
-            }, {
-              key: CONSTANTS.TARGETING_KEYS.CPM,
-              val: function (bidResponse) {
-                return bidResponse.cpm;
               }
             }, {
               key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
@@ -353,22 +366,7 @@ describe('auctionmanager.js', function () {
               val: function (bidResponse) {
                 return bidResponse.videoCacheKey;
               }
-            },
-            /* gu-mod-start */
-            {
-              key: CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND,
-              val: function (bidResponse) {
-                return bidResponse.timeToRespond;
-              }
-            },
-            {
-              key: CONSTANTS.TARGETING_KEYS.AUCTION_ID,
-              val: function (bidResponse) {
-                return bidResponse.auctionId;
-              }
-            },
-            /* gu-mod-end */
-            {
+            }, {
               key: CONSTANTS.TARGETING_KEYS.ADOMAIN,
               val: function (bidResponse) {
                 return bidResponse.meta.advertiserDomains[0];

@@ -137,9 +137,11 @@ export function newTargeting(auctionManager) {
     }
   };
 
+  /* gu-mod-start */
   function addTimedOutIncompleteAuction(adUnitCode, targeting) {
     return targeting.push({[adUnitCode]: [{hb_ttr: [-1]}]});
   }
+  /* gu-mod-end */
 
   targeting.resetPresetTargetingAST = function(adUnitCode) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
@@ -152,7 +154,7 @@ export function newTargeting(auctionManager) {
           if (!includes(pbTargetingKeys, key.toLowerCase())) {
             newKeywords[key] = astTag.keywords[key];
           }
-        });
+        })
         window.apntag.modifyTag(unit, { keywords: newKeywords })
       }
     });
@@ -244,8 +246,10 @@ export function newTargeting(auctionManager) {
 
     // Get targeting for the winning bid. Add targeting for any bids that have
     // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
+    /* gu-mod-start */
     const winningBidTargeting = getWinningBidTargeting(adUnitCodes, bidsReceived);
     let targeting = winningBidTargeting
+    /* gu-mod-end */
       .concat(getCustomBidTargeting(adUnitCodes, bidsReceived))
       .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : getDealBids(adUnitCodes, bidsReceived))
       .concat(getAdUnitTargeting(adUnitCodes));

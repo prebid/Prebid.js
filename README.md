@@ -1,8 +1,10 @@
-
+<!-- gu-mod-start -->
 ## Guardian optimised build
 Modifications are listed [here](https://github.com/guardian/Prebid.js/blob/master/modifications.md).
 
 ---
+
+<!-- gu-mod-end -->
 
 [![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
@@ -29,7 +31,6 @@ Prebid.js is open source software that is offered for free as a convenience. Whi
 - [Build](#Build)
 - [Run](#Run)
 - [Contribute](#Contribute)
-- [Guardian optimised build](#guardian-optimised-build)
 
 <a name="Usage"></a>
 

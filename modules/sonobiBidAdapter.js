@@ -104,6 +104,7 @@ export const spec = {
       payload.ref = validBidRequests[0].params.referrer;
     }
 
+    /* gu-mod-start */
     if (validBidRequests[0].params.pageViewId) {
       payload.pv = validBidRequests[0].params.pageViewId;
     }
@@ -115,6 +116,7 @@ export const spec = {
     if (validBidRequests[0].params.render) {
       payload.render = validBidRequests[0].params.render;
     }
+    /* gu-mod-end */
 
     // Apply GDPR parameters to request.
     if (bidderRequest && bidderRequest.gdprConsent) {

@@ -2,14 +2,14 @@
 These are the ways in which the Guardian optimised build differs from the [generic Prebid](https://github.com/prebid/Prebid.js) build:
 ## General
 
-Changes in files are wrapped between `/* gu-mod-start */` and `/* gu-mod-end */` tags,
+Changes in files are wrapped between `/* gu-mod-start */` and `/* gu-mod-end */` comments,
 to make it easier when upgrading versions. `CODEOWNERS` also highlights which files
 are actually created or modified by the @guardian/commercial-dev team.
 
 Building `build/dist/prebid.js` is achieved by running the following `gulp` command:
 
 ```sh
-gulp build --modules=modules.json
+gulp build
 ```
 
 * Ad server targeting includes a `hb_ttr` parameter, whose value will be one of:

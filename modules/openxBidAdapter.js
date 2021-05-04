@@ -35,7 +35,9 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
 
 export const spec = {
   code: BIDDER_CODE,
+  /* gu-mod-start */
   aliases: ['oxd'],
+  /* gu-mod-end */
   gvlid: 69,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {

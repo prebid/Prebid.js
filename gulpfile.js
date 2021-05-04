@@ -160,7 +160,9 @@ function makeWebpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
   delete cloned.devtool;
 
+  /* gu-mod-start */
   var externalModules = helpers.getModulesToInclude();
+  /* gu-mod-end */
 
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
