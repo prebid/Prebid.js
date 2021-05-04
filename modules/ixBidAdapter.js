@@ -4,7 +4,6 @@ import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
 import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { module } from '../webpack.conf.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -148,7 +147,7 @@ function _applyFloor(bid, imp, mediaType) {
       utils.logWarn('priceFloors module call getFloor failed, error : ', err);
     }
   }
-  
+
   // fixing floor precision to 2
   if (moduleFloor && moduleFloor.floor) {
     moduleFloor.floor = roundUp(moduleFloor.floor, 2);
