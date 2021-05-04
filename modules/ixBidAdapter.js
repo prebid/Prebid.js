@@ -104,10 +104,10 @@ function bidToImp(bid) {
   return imp;
 }
 /**
- * 
- * @param {*} number 
- * @param {*} precision 
- * @returns 
+ *
+ * @param {*} number
+ * @param {*} precision
+ * @returns
  */
 function roundUp(number, precision) {
   return Math.ceil((parseFloat(number) * Math.pow(10, precision)).toFixed(1)) / Math.pow(10, precision);

@@ -1237,6 +1237,65 @@ describe('IndexexchangeAdapter', function () {
       expect(imp1.ext.fl).to.equal('x');
     });
 
+    it('IX Floors precision less than 3 ', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const floorix = 4.5783546
+      const floorpbjs = 3.565476484
+
+      bid.params.bidFloor = floorix
+      bid.params.bidFloorCur = 'USD'
+
+      const floorInfo = { floor: floorpbjs, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      const prec = (imp1.bidfloor).toString().split('.')[1];
+      expect(prec).to.have.lengthOf.at.most(3);
+    });
+
+    it('PBJS Floors precision less than 3 ', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const floorpbjs = 5.654356
+      const floorix = 3.574634
+
+      bid.params.bidFloor = floorix
+      bid.params.bidFloorCur = 'USD'
+
+      const floorInfo = { floor: floorpbjs, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      const prec = (imp1.bidfloor).toString().split('.')[1];
+      expect(prec).to.have.lengthOf.at.most(3);
+    });
+
+    it('PBJS Floors precision less than 3, ', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const floorpbjs = 5.3
+
+      const floorInfo = { floor: floorpbjs, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      const prec = (imp1.bidfloor).toString().split('.')[1];
+      expect(prec).to.have.lengthOf.at.most(3);
+    });
+
     it(' #priceFloors floors chosen over ix adapter floors', function () {
       const bid = utils.deepClone(ONE_BANNER[0]);
 
