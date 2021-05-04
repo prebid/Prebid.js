@@ -112,7 +112,7 @@ export const spec = {
         }
       };
     }
-    const postUrl = ENDPOINT_URL.concat(params.definerId !== '0' ? concat("/", params.definerId) : '');
+    const postUrl = params.definerId !== '0' ? ENDPOINT_URL.concat('/', params.definerId) : ENDPOINT_URL;
     return {
       method: 'POST',
       url: postUrl,
