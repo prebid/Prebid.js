@@ -9,7 +9,7 @@ var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 /* gu-mod-start */
-// Terser should be used now. Uglify is deprecated
+// We need uglify-es for bundling guardian/libs
 var uglify = require('gulp-uglify-es').default;
 /* gu-mod-end */
 var gulpClean = require('gulp-clean');
