@@ -16,13 +16,13 @@ const CENT_TO_DOLLAR_FACTOR = 100;
 const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600; // 1hr
 const NET_REVENUE = true;
-
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
+const FLOOR_PRECISION = 3;
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
@@ -155,11 +155,11 @@ function _applyFloor(bid, imp, mediaType) {
     }
 
     if (adapterFloor.floor > moduleFloor.floor) {
-      imp.bidfloor = roundUp(adapterFloor.floor, 2);
+      imp.bidfloor = roundUp(adapterFloor.floor, FLOOR_PRECISION);
       imp.bidfloorcur = adapterFloor.currency;
       imp.ext.fl = FLOOR_SOURCE.IX;
     } else {
-      imp.bidfloor = roundUp(moduleFloor.floor, 2);
+      imp.bidfloor = roundUp(moduleFloor.floor, FLOOR_PRECISION);
       imp.bidfloorcur = moduleFloor.currency;
       imp.ext.fl = FLOOR_SOURCE.PBJS;
     }
@@ -167,11 +167,11 @@ function _applyFloor(bid, imp, mediaType) {
   }
 
   if (moduleFloor) {
-    imp.bidfloor = roundUp(moduleFloor.floor, 2);
+    imp.bidfloor = roundUp(moduleFloor.floor, FLOOR_PRECISION);
     imp.bidfloorcur = moduleFloor.currency;
     imp.ext.fl = FLOOR_SOURCE.PBJS;
   } else if (adapterFloor) {
-    imp.bidfloor = roundUp(adapterFloor.floor, 2);
+    imp.bidfloor = roundUp(adapterFloor.floor, FLOOR_PRECISION);
     imp.bidfloorcur = adapterFloor.currency;
     imp.ext.fl = FLOOR_SOURCE.IX;
   } else {
