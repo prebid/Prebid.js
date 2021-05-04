@@ -118,7 +118,7 @@ function isValid(events) {
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   const url = `${analyticsAdapter.context.ajaxUrl}/commercial/api/hb`;
   const callback = (data) => {
-    log('commercial', 'PREBID data', JSON.parse(data).hb_ev)
+    log('commercial', 'Prebid.js events', JSON.parse(data).hb_ev)
   };
   const options = {
     method: 'POST',
