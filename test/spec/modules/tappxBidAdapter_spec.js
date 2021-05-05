@@ -1,6 +1,5 @@
 import { assert } from 'chai';
 import { spec } from 'modules/tappxBidAdapter';
-import { getFloor } from 'modules/priceFloors';
 
 const c_BIDREQUEST = {
   data: {
