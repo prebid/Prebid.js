@@ -1,7 +1,8 @@
 import { expect } from 'chai'
-import { spec } from 'modules/apacdexBidAdapter.js'
+import { spec, validateGeoObject, getDomain } from '../../../modules/apacdexBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { userSync } from '../../../src/userSync.js';
+import { config } from 'src/config.js';
 
 describe('ApacdexBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -199,11 +200,34 @@ describe('ApacdexBidAdapter', function () {
       'bidder': 'apacdex',
       'params': {
         'siteId': '1a2b3c4d5e6f1a2b3c4d',
+        'geo': {'lat': 123.13123456, 'lon': 54.23467311, 'accuracy': 60}
       },
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
       'targetKey': 0,
       'bidId': '30b31c1838de1f',
+      'userIdAsEids': [{
+        'source': 'criteo.com',
+        'uids': [{
+          'id': 'p0cCLF9JazY1ZUFjazJRb3NKbEprVTcwZ0IwRUlGalBjOG9laUZNbFJ0ZGpOSnVFbE9VMjBNMzNBTzladGt4cUVGQzBybDY2Y1FqT1dkUkFsMmJIWDRHNjlvNXJjbiUyQlZDd1dOTmt6VlV2TDhRd0F0RTlBcmpyZU5WRHBPU25GQXpyMnlT',
+          'atype': 1
+        }]
+      }, {
+        'source': 'pubcid.org',
+        'uids': [{
+          'id': '2ae366c2-2576-45e5-bd21-72ed10598f17',
+          'atype': 1
+        }]
+      }, {
+        'source': 'sharedid.org',
+        'uids': [{
+          'id': '01EZXQDVAPER4KE1VBS29XKV4Z',
+          'atype': 1,
+          'ext': {
+            'third': '01EZXQDVAPER4KE1VBS29XKV4Z'
+          }
+        }]
+      }],
     },
     {
       'bidder': 'apacdex',
@@ -300,9 +324,29 @@ describe('ApacdexBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.schain).to.deep.equal(bidRequest[0].schain)
     });
+    it('should return a properly formatted request with eids defined', function () {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.eids).to.deep.equal(bidRequest[0].userIdAsEids)
+    });
+    it('should return a properly formatted request with geo defined', function () {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.geo).to.deep.equal(bidRequest[0].params.geo)
+    });
     it('should return a properly formatted request with us_privacy included', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
+    });
+    describe('debug test', function() {
+      beforeEach(function() {
+        config.setConfig({debug: true});
+      });
+      afterEach(function() {
+        config.setConfig({debug: false});
+      });
+      it('should return a properly formatted request with pbjs_debug is true', function () {
+        const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+        expect(bidRequests.data.test).to.equal(1);
+      });
     });
   });
 
@@ -599,6 +643,68 @@ describe('ApacdexBidAdapter', function () {
     it('should return an empty array', function () {
       expect(spec.getUserSyncs({ pixelEnabled: false }, bidResponse)).to.have.length(0);
       expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
+    });
+  });
+
+  describe('validateGeoObject', function () {
+    it('should return true if the geo object is valid', () => {
+      let geoObject = {
+        lat: 123.5624234,
+        lon: 23.6712341,
+        accuracy: 20
+      };
+      expect(validateGeoObject(geoObject)).to.equal(true);
+    });
+
+    it('should return false if the geo object is not plain object', () => {
+      let geoObject = [{
+        lat: 123.5624234,
+        lon: 23.6712341,
+        accuracy: 20
+      }];
+      expect(validateGeoObject(geoObject)).to.equal(false);
+    });
+
+    it('should return false if the geo object is missing lat attribute', () => {
+      let geoObject = {
+        lon: 23.6712341,
+        accuracy: 20
+      };
+      expect(validateGeoObject(geoObject)).to.equal(false);
+    });
+
+    it('should return false if the geo object is missing lon attribute', () => {
+      let geoObject = {
+        lat: 123.5624234,
+        accuracy: 20
+      };
+      expect(validateGeoObject(geoObject)).to.equal(false);
+    });
+
+    it('should return false if the geo object is missing accuracy attribute', () => {
+      let geoObject = {
+        lat: 123.5624234,
+        lon: 23.6712341
+      };
+      expect(validateGeoObject(geoObject)).to.equal(false);
+    });
+  });
+
+  describe('getDomain', function () {
+    it('should return valid domain from publisherDomain config', () => {
+      let pageUrl = 'https://www.example.com/page/prebid/exam.html';
+      config.setConfig({publisherDomain: pageUrl});
+      expect(getDomain(pageUrl)).to.equal('example.com');
+    });
+    it('should return valid domain from pageUrl argument', () => {
+      let pageUrl = 'https://www.example.com/page/prebid/exam.html';
+      config.setConfig({publisherDomain: ''});
+      expect(getDomain(pageUrl)).to.equal('example.com');
+    });
+    it('should return undefined if pageUrl and publisherDomain not config', () => {
+      let pageUrl;
+      config.setConfig({publisherDomain: ''});
+      expect(getDomain(pageUrl)).to.equal(pageUrl);
     });
   });
 });

@@ -331,6 +331,11 @@ function addUserId(bidData, userId) {
           bidData[userIdProviderKey + '_linkType'] = userIdObjectOrValue.ext.linkType;
         }
         break;
+      case 'uid2':
+        if (userIdObjectOrValue.id) {
+          bidData['eids'] = userIdProviderKey + ',' + userIdObjectOrValue.id
+        }
+        break;
       default:
         bidData[userIdProviderKey] = userIdObjectOrValue;
         break;

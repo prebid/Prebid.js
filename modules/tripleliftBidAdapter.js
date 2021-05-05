@@ -122,8 +122,8 @@ function _buildPostBody(bidRequests) {
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
     };
-    if (!utils.isEmpty(bidRequest.fpd)) {
-      imp.fpd = _getAdUnitFpd(bidRequest.fpd);
+    if (!utils.isEmpty(bidRequest.ortb2Imp)) {
+      imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
     }
     return imp;
   });
@@ -190,9 +190,10 @@ function _getGlobalFpd() {
   const fpd = {};
   const context = {}
   const user = {};
+  const ortbData = config.getLegacyFpd(config.getConfig('ortb2')) || {};
 
-  const fpdContext = Object.assign({}, config.getConfig('fpd.context'));
-  const fpdUser = Object.assign({}, config.getConfig('fpd.user'));
+  const fpdContext = Object.assign({}, ortbData.context);
+  const fpdUser = Object.assign({}, ortbData.user);
 
   _addEntries(context, fpdContext);
   _addEntries(user, fpdUser);
@@ -210,7 +211,7 @@ function _getAdUnitFpd(adUnitFpd) {
   const fpd = {};
   const context = {};
 
-  _addEntries(context, adUnitFpd.context);
+  _addEntries(context, adUnitFpd.ext);
 
   if (!utils.isEmpty(context)) {
     fpd.context = context;

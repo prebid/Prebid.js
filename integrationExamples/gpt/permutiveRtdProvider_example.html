@@ -50,7 +50,7 @@
                     params: {
                       placementId: 13144370,
                       keywords: {
-                        inline_kvs: ['1']
+                        test_kv: ['true']
                       }
                     }
                   },
@@ -64,7 +64,7 @@
                         area: ['home']
                       },
                       visitor: {
-                        inline_kvs: ['1']
+                        test_kv: ['true']
                       }
                     }
                   },
@@ -78,11 +78,20 @@
                         {
                           settings: {},
                           targeting: {
-                            inline_kvs: ['1', '2', '3', '4']
+                            test_kv: ['true']
                           }
                         }
                       ],
                       ozoneData: {}
+                    }
+                  },
+                  {
+                    bidder: 'trustx',
+                    params: {
+                      uid: 45,
+                      keywords: {
+                        test_kv: ['true']
+                      }
                     }
                   }
                 ]
@@ -127,13 +136,13 @@
               pbjs.setConfig({
                 debug: true,
                 realTimeData: {
-                  auctionDelay: 50, // maximum time for RTD modules to respond
+                  auctionDelay: 80, // maximum time for RTD modules to respond
                   dataProviders: [
                     {
                       name: 'permutive',
                       waitForIt: true,
                       params: {
-                        acBidders: ['appnexus', 'rubicon', 'ozone'],
+                        acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx'],
                         maxSegs: 500,
                         overwrites: {
                           rubicon: function (bid, data, acEnabled, utils, defaultFn) {
