@@ -27,8 +27,8 @@ Module that connects to OpenX's demand sources
 | Name | Scope | Type | Description | Example
 | ---- | ----- | ---- | ----------- | -------
 | `unit` | required | String | OpenX ad unit ID provided by your OpenX representative. | "1611023122"
-| `delDomain` | required | String |  OpenX delivery domain provided by your OpenX representative.  | "PUBLISHER-d.openx.net"
-| `openrtb` | optional | OpenRTB Impression | An OpenRtb Impression with Video subtype properties | `{ imp: [{ video: {mimes: ['video/x-ms-wmv, video/mp4']} }] }`
+| `delDomain` or `platform` | required | String | OpenX delivery domain or platform id provided by your OpenX representative.  | "PUBLISHER-d.openx.net" or "555not5a-real-plat-form-id0123456789"
+| `video` | Object | OpenRTB Video Object | An OpenRtb video object with Video subtype properties | `{mimes: ['video/x-ms-wmv, video/mp4']}`
 
 
 # Example
@@ -98,7 +98,7 @@ pbjs.setConfig({
 ```
 
 # Additional Details
-[Banner Ads](https://docs.openx.com/Content/developers/containers/prebid-adapter.html)
+[Banner Ads](https://docs.openx.com/publishers/prebid-adapter-web/)
 
-[Video Ads](https://docs.openx.com/Content/developers/containers/prebid-video-adapter.html)
+[Video Ads](https://docs.openx.com/publishers/prebid-adapter-video/)
 
