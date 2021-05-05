@@ -141,6 +141,7 @@ import { module, hook } from '../../src/hook.js';
 import { createEidsArray, buildEidPermissions } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
 import {getPrebidInternal} from '../../src/utils.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -454,7 +455,7 @@ function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
     return {};
   }
   return submodules
-    .filter(i => !i.config.bidders || !utils.isArray(i.config.bidders) || i.config.bidders.includes(bidder))
+    .filter(i => !i.config.bidders || !utils.isArray(i.config.bidders) || includes(i.config.bidders, bidder))
     .filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .reduce((carry, i) => {
       Object.keys(i.idObj).forEach(key => {
