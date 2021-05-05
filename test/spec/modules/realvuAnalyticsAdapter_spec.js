@@ -28,7 +28,7 @@ describe('RealVu', function() {
     sandbox = sinon.sandbox.create();
     addDiv('ad1');
     addDiv('ad2');
-    //sandbox.stub(lib, 'scr');
+    // sandbox.stub(lib, 'scr');
   });
 
   afterEach(function () {
