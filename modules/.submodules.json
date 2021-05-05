@@ -27,7 +27,8 @@
     "novatiqIdSystem",
     "uid2IdSystem",
     "admixerIdSystem",
-    "dmdIdSystem"
+    "dmdIdSystem",
+    "flocIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
