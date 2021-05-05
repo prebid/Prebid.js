@@ -215,6 +215,31 @@ describe('Tappx bid adapter', function () {
       expect(data.imp[0].banner.w).to.be.oneOf([320, 50, 250, 480]);
       expect(data.imp[0].banner.h).to.be.oneOf([320, 50, 250, 480]);
     });
+
+    it('should properly build a ext optional object', function() {
+      let extBidRequest = c_VALIDBIDREQUESTS;
+      extBidRequest[0].params.ext = {'optionalData': '1234'};
+      let extBidderRequest = c_BIDDERREQUEST_B;
+      extBidderRequest.bids[0].ext = {'optionalData': '1234'};
+
+      const request = spec.buildRequests(extBidRequest, extBidderRequest);
+      const data = JSON.parse(request[0].data);
+      expect(data.imp[0].ext.bidder.ext).to.be.an('object');
+      expect(data.imp[0].ext.bidder.ext.optionalData).to.be.equal('1234');
+    });
+
+    it('should ignore ext optional if is not a object', function() {
+      let badExtBidRequest = c_VALIDBIDREQUESTS;
+      badExtBidRequest[0].params.ext = 'stringValue';
+      let badExtBidderRequest = c_BIDDERREQUEST_B;
+      badExtBidderRequest.bids[0].ext = 'stringValue';
+
+      const request = spec.buildRequests(badExtBidRequest, badExtBidderRequest);
+      const data = JSON.parse(request[0].data);
+      expect(data.imp[0].ext.bidder.ext).not.to.be.an('string');
+      expect(data.imp[0].ext.bidder.ext).to.be.an('undefined');
+      expect(data.imp[0].ext.bidder).to.not.have.property('ext')
+    });
   });
 
   /**
