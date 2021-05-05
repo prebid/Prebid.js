@@ -3,7 +3,7 @@
 ```
 Module Name: interactiveOffers Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: faria@interactiveoffers.com
+Maintainer: dev@interactiveoffers.com
 ```
 
 # Description
