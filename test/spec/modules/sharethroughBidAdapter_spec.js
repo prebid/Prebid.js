@@ -185,11 +185,11 @@ describe('sharethrough internal spec', function() {
 
   describe('we cannot access top level document', function() {
     beforeEach(function() {
-      window.lockedInFrame = true;
+      // window.lockedInFrame = true;
     });
 
     afterEach(function() {
-      window.lockedInFrame = false;
+      // window.lockedInFrame = false;
     });
 
     it('appends sfp.js to the safeframe', function() {
