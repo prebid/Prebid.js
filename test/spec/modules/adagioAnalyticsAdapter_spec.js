@@ -7,13 +7,11 @@ let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('adagio analytics adapter', () => {
-  let sandbox;
   let adagioQueuePushSpy;
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
 
-    sandbox.stub(events, 'getEvents').returns([]);
+    sinon.stub(events, 'getEvents').returns([]);
 
     const w = utils.getWindowTop();
 
@@ -25,11 +23,11 @@ describe('adagio analytics adapter', () => {
     w.ADAGIO = w.ADAGIO || {};
     w.ADAGIO.queue = w.ADAGIO.queue || [];
 
-    adagioQueuePushSpy = sandbox.spy(w.ADAGIO.queue, 'push');
+    adagioQueuePushSpy = sinon.spy(w.ADAGIO.queue, 'push');
   });
 
   afterEach(() => {
-    sandbox.restore();
+    sinon.restore();
   });
 
   describe('track', () => {
@@ -116,7 +114,7 @@ describe('adagio analytics adapter', () => {
 
   describe('no track', () => {
     beforeEach(() => {
-      sandbox.stub(utils, 'getWindowTop').throws();
+      sinon.stub(utils, 'getWindowTop').throws();
 
       adapterManager.enableAnalytics({
         provider: 'adagio'
@@ -125,7 +123,7 @@ describe('adagio analytics adapter', () => {
 
     afterEach(() => {
       adagioAnalyticsAdapter.disableAnalytics();
-      sandbox.restore();
+      sinon.restore();
     });
 
     it('builds and sends auction data', () => {
@@ -177,7 +175,7 @@ describe('adagio analytics adapter', () => {
 
       utils.getWindowTop.restore();
 
-      sandbox.assert.callCount(adagioQueuePushSpy, 0);
+      sinon.assert.callCount(adagioQueuePushSpy, 0);
     });
   });
 });
