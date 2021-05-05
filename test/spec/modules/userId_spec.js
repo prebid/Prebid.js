@@ -593,7 +593,7 @@ describe('User ID', function () {
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 20 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 21 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
