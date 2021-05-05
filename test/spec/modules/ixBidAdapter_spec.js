@@ -1181,7 +1181,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.sid).to.equal(sidValue);
     });
 
-    it('video impression has #priceFloors floors', function () {
+    it('video impression has priceFloors floors', function () {
       const bid = utils.deepClone(ONE_VIDEO[0]);
       const flr = 5.5
       const floorInfo = {floor: flr, currency: 'USD'};
@@ -1197,7 +1197,7 @@ describe('IndexexchangeAdapter', function () {
       expect(imp1.ext.fl).to.equal('p');
     });
 
-    it('banner imp has floors from #priceFloors module', function () {
+    it('banner imp has floors from priceFloors module', function () {
       const floor300x250 = 3.25
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0])
 
@@ -1215,7 +1215,7 @@ describe('IndexexchangeAdapter', function () {
       expect(imp1.ext.fl).to.equal('p');
     });
 
-    it('ix adapter floors chosen over #priceFloors ', function () {
+    it('ix adapter floors chosen over PBJS priceFloors ', function () {
       const bid = utils.deepClone(ONE_BANNER[0]);
 
       const floorhi = 4.5
@@ -1235,6 +1235,26 @@ describe('IndexexchangeAdapter', function () {
       expect(imp1.bidfloor).to.equal(floorhi);
       expect(imp1.bidfloorcur).to.equal(bid.params.bidFloorCur);
       expect(imp1.ext.fl).to.equal('x');
+    });
+
+    it('Floors not sent in case of currency mismatch ', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const ixcur = 'CAD';
+      const pbjscur = 'JPY';
+
+      bid.params.bidFloor = 4.4347;
+      bid.params.bidFloorCur = ixcur;
+
+      const floorInfo = { floor: 5.34567, currency: pbjscur };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.be.undefined;
+      expect(imp1.bidfloorcur).to.be.undefined;
     });
 
     it('IX Floors precision less than 3 ', function () {
@@ -1279,24 +1299,7 @@ describe('IndexexchangeAdapter', function () {
       expect(prec).to.have.lengthOf.at.most(3);
     });
 
-    it('PBJS Floors precision less than 3, ', function () {
-      const bid = utils.deepClone(ONE_BANNER[0]);
-
-      const floorpbjs = 5.3
-
-      const floorInfo = { floor: floorpbjs, currency: 'USD' };
-      bid.getFloor = function () {
-        return floorInfo;
-      };
-
-      // check if floors are in imp
-      const requestBidFloor = spec.buildRequests([bid])[0];
-      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
-      const prec = (imp1.bidfloor).toString().split('.')[1];
-      expect(prec).to.have.lengthOf.at.most(3);
-    });
-
-    it(' #priceFloors floors chosen over ix adapter floors', function () {
+    it(' PBJS priceFloors floors chosen over ix adapter floors', function () {
       const bid = utils.deepClone(ONE_BANNER[0]);
 
       const floorhi = 4.5
@@ -1330,7 +1333,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.fl).to.equal('x');
     });
 
-    it('missing sizes #priceFloors ', function () {
+    it('missing sizes priceFloors ', function () {
       const bid = utils.deepClone(ONE_BANNER[0]);
       bid.mediaTypes.banner.sizes.push([500, 400])
 
@@ -1362,7 +1365,7 @@ describe('IndexexchangeAdapter', function () {
       expect(imp2.bidfloorcur).to.equal('USD');
     });
 
-    it('#pricefloors inAdUnit, banner impressions should have floors', function () {
+    it('pricefloors inAdUnit, banner impressions should have floors', function () {
       const bid = utils.deepClone(ONE_BANNER[0]);
 
       const flr = 4.3
