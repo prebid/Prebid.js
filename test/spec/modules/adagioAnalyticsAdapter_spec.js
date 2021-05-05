@@ -10,7 +10,6 @@ describe('adagio analytics adapter', () => {
   let adagioQueuePushSpy;
 
   beforeEach(() => {
-
     sinon.stub(events, 'getEvents').returns([]);
 
     const w = utils.getWindowTop();
