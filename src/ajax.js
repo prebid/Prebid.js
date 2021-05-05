@@ -75,12 +75,11 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       if (options.withCredentials) {
         x.withCredentials = true;
       }
-      x.setRequestHeader('x-prebid', 'pbjs/$prebid.version$');
       utils._each(options.customHeaders, (value, header) => {
         x.setRequestHeader(header, value);
       });
       if (options.preflight) {
-        x.setRequestHeader('x-requested-with', 'XMLHttpRequest');
+        x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
       }
       x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
 
