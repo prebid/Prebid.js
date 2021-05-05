@@ -294,8 +294,14 @@ describe('Tappx bid adapter', function () {
     });
   })
 
+  
+
   describe('module Floor implementation', function() {
-    let bidderRequest_f = c_BIDREQUEST, getFloorResponse = {};
+    let getFloorResponse, bidderRequest_f;
+    beforeEach(function(){
+      getFloorResponse = {};
+      bidderRequest_f = c_BIDREQUEST;
+    })
     it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
       // default getFloor response is empty object so should not break and not send hard_floor
       bidderRequest_f.bids[0].getFloor = () => getFloorResponse;
