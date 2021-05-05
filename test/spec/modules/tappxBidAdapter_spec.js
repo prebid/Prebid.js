@@ -294,11 +294,9 @@ describe('Tappx bid adapter', function () {
     });
   })
 
-  
-
   describe('module Floor implementation', function() {
     let getFloorResponse, bidderRequest_f;
-    beforeEach(function(){
+    beforeEach(function() {
       getFloorResponse = {};
       bidderRequest_f = c_BIDREQUEST;
     })
