@@ -79,7 +79,7 @@ var videoAdUnit = {
       playerSize: [[410, 231]],
       context: "outstream"
       api: [2],
-      placement: 6,
+      placement: 5,
       linearity: 1,
       minduration: 1,
       maxduration: 120,
