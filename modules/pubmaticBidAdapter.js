@@ -107,6 +107,11 @@ const dealChannelValues = {
   5: 'PREF',
   6: 'PMPG'
 };
+
+const FLOC_TYPE = {
+  'EID' : 1 ,
+  'SEGMENT': 2
+}
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -708,48 +713,62 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
-function _getFlocId(validBidRequests) {
+function _getFlocId(validBidRequests, flocType) {
   var flocIdObject = {};
   var flocId = utils.deepAccess(validBidRequests, '0.userId.flocId');
   if (flocId && flocId.id) {
-    flocIdObject['eid'] = {
-      source: flocId.version,
-      uids: [
-        {
-          atype: 1,
-          id: flocId.id,
-        },
-      ]
-    }
-    flocIdObject['data'] = {
-      id: 'FLOC',
-      name: 'FLOC',
-      segment: [{
-        id: flocId.id,
-        name: 'FLOCID',
-        value: flocId.id.toString()
-      }]
-    }
+    switch(flocType){
+      case FLOC_TYPE.SEGMENT:
+        flocIdObject = {
+          id: 'FLOC',
+          name: 'FLOC',
+          ext: {
+            ver: flocId.version
+          },
+          segment: [{
+            id: flocId.id,
+            name: 'FLOCID',
+            value: flocId.id.toString()
+          }]
+        }
+      break;
+      case FLOC_TYPE.EID:
+      default:
+        flocIdObject = {
+          source: 'chrome.com',
+          uids: [
+            {
+              atype: 1,
+              id: flocId.id,
+              ext: {
+                ver: flocId.version
+              }
+            },
+          ]
+        }
+        break;
+      
+    }  
   }
   return flocIdObject;
 }
 
 function _handleFlocId(payload, validBidRequests) {
-  var flocObject = _getFlocId(validBidRequests);
-  if (flocObject && flocObject.data) {
+  var flocObject = _getFlocId(validBidRequests, FLOC_TYPE.SEGMENT);
+  if (flocObject) {
     if (!payload.user) {
       payload.user = {};
     }
     if (!payload.user.data) {
       payload.user.data = [];
     }
-    payload.user.data.push(flocObject.data);
+    payload.user.data.push(flocObject);
   }
 }
 
 function _handleEids(payload, validBidRequests) {
   const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
-  var flocObject = _getFlocId(validBidRequests);
+  var flocObject = _getFlocId(validBidRequests, FLOC_TYPE.EID);
   if (flocObject && flocObject.eid) {
     if(!bidUserIdAsEids){
       bidUserIdAsEids = [];
