@@ -56,7 +56,7 @@ module.exports = {
     rules: [
       /* gu-mod-start */
       {
-        // Transform @guardian packages
+        // Transform @guardian packages as per the recommendations https://git.io/J3Pk4
         test: /\.m?(j|t)sx?$/,
         exclude: {
           test: /node_modules/,
