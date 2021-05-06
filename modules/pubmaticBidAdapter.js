@@ -714,7 +714,7 @@ function _addFloorFromFloorModule(impObj, bid) {
 }
 
 function _getFlocId(validBidRequests, flocType) {
-  var flocIdObject = {};
+  var flocIdObject = null;
   var flocId = utils.deepAccess(validBidRequests, '0.userId.flocId');
   if (flocId && flocId.id) {
     switch(flocType){
@@ -769,11 +769,11 @@ function _handleFlocId(payload, validBidRequests) {
 function _handleEids(payload, validBidRequests) {
   const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
   var flocObject = _getFlocId(validBidRequests, FLOC_TYPE.EID);
-  if (flocObject && flocObject.eid) {
+  if (flocObject) {
     if(!bidUserIdAsEids){
       bidUserIdAsEids = [];
     }
-    bidUserIdAsEids.push(flocObject.eid);
+    bidUserIdAsEids.push(flocObject);
   }
   if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     utils.deepSetValue(payload, 'user.eids', bidUserIdAsEids);
