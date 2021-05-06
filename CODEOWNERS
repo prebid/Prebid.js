@@ -10,6 +10,7 @@ modules/consoleLoggingAnalyticsAdapter.js   @guardian/commercial-dev
 # Files we touch in part, see gu-mod- comments
 .gitignore                          @guardian/commercial-dev
 package.json                        @guardian/commercial-dev
+webpack.conf.js                     @guardian/commercial-dev
 src/auction.js                      @guardian/commercial-dev
 src/targeting.js                    @guardian/commercial-dev
 src/constants.json                  @guardian/commercial-dev

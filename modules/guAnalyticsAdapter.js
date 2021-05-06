@@ -4,7 +4,9 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import { log } from '@guardian/libs/dist/umd/index.min.js';
+
+// eslint-disable-next-line prebid/validate-imports
+import { log } from '@guardian/libs';
 
 /*
  * Update whenever you want to make sure you're sending the right version of analytics.
