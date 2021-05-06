@@ -76,7 +76,7 @@ export const spec = {
           vastUrl: bidResponse.vastUrl,
           dealId: bidResponse.dealId,
           /**
-          * currently includes meta.advertiserDomains
+          * currently includes meta.advertiserDomains ; networkId ; advertiserId
           */
           meta: bidResponse.meta,
         };
