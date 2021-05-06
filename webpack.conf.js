@@ -54,6 +54,27 @@ module.exports = {
   },
   module: {
     rules: [
+      /* gu-mod-start */
+      {
+        // Transform @guardian packages as per the recommendations https://git.io/J3Pk4
+        test: /\.m?(j|t)sx?$/,
+        exclude: {
+          test: /node_modules/,
+          exclude: /@guardian\//,
+        },
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: [
+                ['@babel/preset-env', { targets: 'defaults' }]
+              ],
+              plugins: ['@babel/plugin-proposal-optional-chaining']
+            }
+          },
+        ],
+      },
+      /* gu-mod-end */
       {
         test: /\.js$/,
         exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules

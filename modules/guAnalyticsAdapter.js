@@ -5,6 +5,9 @@ import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 
+// eslint-disable-next-line prebid/validate-imports
+import { log } from '@guardian/libs';
+
 /*
  * Update whenever you want to make sure you're sending the right version of analytics.
  * This is useful when some browsers are using old code and some new, for example.
@@ -116,13 +119,14 @@ function isValid(events) {
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   const url = `${analyticsAdapter.context.ajaxUrl}/commercial/api/hb`;
-  const callback = () => {
+  const callback = (data) => {
+    log('commercial', 'Prebid.js events', JSON.parse(data).hb_ev)
   };
   const options = {
     method: 'POST',
     contentType: 'text/plain; charset=utf-8'
   };
-  ajax(url, callback, data, options);
+  ajax(url, callback(data), data, options);
 };
 
 function trackBidWon(args) {
