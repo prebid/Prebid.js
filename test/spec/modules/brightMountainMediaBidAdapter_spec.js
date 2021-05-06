@@ -37,7 +37,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       video: {
         playerSizes: [[300, 250]],
         context: 'outstream',
-        skippable: 0,
+        skip: 0,
         playbackmethod: [1, 2],
         mimes: ['video/mp4']
       }
