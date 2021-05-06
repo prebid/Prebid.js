@@ -169,22 +169,29 @@ export const spec = {
 
     const bidResponses = [];
     serverBids.forEach(bid => {
+      const dealId = bid.dealId || '';
       const bidResponse = {
         requestId: bid.requestId,
         cpm: bid.cpm,
         width: bid.width,
         height: bid.height,
         creativeId: bid.creativeId,
-        dealId: bid.dealId,
         currency: bid.currency,
         netRevenue: bid.netRevenue,
         ttl: bid.ttl,
         mediaType: bid.mediaType
       };
+      if (dealId.length > 0) {
+        bidResponse.dealId = dealId;
+      }
       if (bid.vastXml) {
         bidResponse.vastXml = utils.replaceAuctionPrice(bid.vastXml, bid.cpm);
       } else {
         bidResponse.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
+      }
+      bidResponse.meta = {};
+      if (bid.meta && bid.meta.advertiserDomains && utils.isArray(bid.meta.advertiserDomains)) {
+        bidResponse.meta.advertiserDomains = bid.meta.advertiserDomains;
       }
       bidResponses.push(bidResponse);
     });

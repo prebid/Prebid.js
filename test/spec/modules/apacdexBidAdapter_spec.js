@@ -200,7 +200,7 @@ describe('ApacdexBidAdapter', function () {
       'bidder': 'apacdex',
       'params': {
         'siteId': '1a2b3c4d5e6f1a2b3c4d',
-        'geo': {'lat': 123.13123456, 'lon': 54.23467311, 'accuracy': 60}
+        'geo': { 'lat': 123.13123456, 'lon': 54.23467311, 'accuracy': 60 }
       },
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
@@ -336,12 +336,12 @@ describe('ApacdexBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
     });
-    describe('debug test', function() {
-      beforeEach(function() {
-        config.setConfig({debug: true});
+    describe('debug test', function () {
+      beforeEach(function () {
+        config.setConfig({ debug: true });
       });
-      afterEach(function() {
-        config.setConfig({debug: false});
+      afterEach(function () {
+        config.setConfig({ debug: false });
       });
       it('should return a properly formatted request with pbjs_debug is true', function () {
         const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
@@ -514,7 +514,10 @@ describe('ApacdexBidAdapter', function () {
             'netRevenue': true,
             'currency': 'USD',
             'dealId': 'apacdex',
-            'mediaType': 'banner'
+            'mediaType': 'banner',
+            'meta': {
+              'advertiserDomains': ['https://example.com']
+            }
           },
           {
             'requestId': '30024615be22ef66a',
@@ -527,7 +530,10 @@ describe('ApacdexBidAdapter', function () {
             'netRevenue': true,
             'currency': 'USD',
             'dealId': 'apacdex',
-            'mediaType': 'banner'
+            'mediaType': 'banner',
+            'meta': {
+              'advertiserDomains': ['https://example.com']
+            }
           },
           {
             'requestId': '1854b40107d6745c',
@@ -540,7 +546,10 @@ describe('ApacdexBidAdapter', function () {
             'netRevenue': true,
             'currency': 'USD',
             'dealId': 'apacdex',
-            'mediaType': 'video'
+            'mediaType': 'video',
+            'meta': {
+              'advertiserDomains': ['https://example.com']
+            }
           }
         ],
         'pixel': [{
@@ -610,6 +619,7 @@ describe('ApacdexBidAdapter', function () {
         if (resp.mediaType === 'banner') {
           expect(resp.ad.indexOf('Apacdex AD')).to.be.greaterThan(0);
         }
+        expect(resp.meta.advertiserDomains).to.deep.equal(['https://example.com']);
       });
     });
   });
@@ -693,17 +703,17 @@ describe('ApacdexBidAdapter', function () {
   describe('getDomain', function () {
     it('should return valid domain from publisherDomain config', () => {
       let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({publisherDomain: pageUrl});
+      config.setConfig({ publisherDomain: pageUrl });
       expect(getDomain(pageUrl)).to.equal('example.com');
     });
     it('should return valid domain from pageUrl argument', () => {
       let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({publisherDomain: ''});
+      config.setConfig({ publisherDomain: '' });
       expect(getDomain(pageUrl)).to.equal('example.com');
     });
     it('should return undefined if pageUrl and publisherDomain not config', () => {
       let pageUrl;
-      config.setConfig({publisherDomain: ''});
+      config.setConfig({ publisherDomain: '' });
       expect(getDomain(pageUrl)).to.equal(pageUrl);
     });
   });
