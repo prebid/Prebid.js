@@ -108,7 +108,7 @@ const dealChannelValues = {
   6: 'PMPG'
 };
 
-const FLOC_TYPE = {
+const FLOC_FORMAT = {
   'EID' : 1 ,
   'SEGMENT': 2
 }
@@ -713,12 +713,12 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
-function _getFlocId(validBidRequests, flocType) {
+function _getFlocId(validBidRequests, flocFormat) {
   var flocIdObject = null;
   var flocId = utils.deepAccess(validBidRequests, '0.userId.flocId');
   if (flocId && flocId.id) {
-    switch(flocType){
-      case FLOC_TYPE.SEGMENT:
+    switch(flocFormat){
+      case FLOC_FORMAT.SEGMENT:
         flocIdObject = {
           id: 'FLOC',
           name: 'FLOC',
@@ -727,12 +727,12 @@ function _getFlocId(validBidRequests, flocType) {
           },
           segment: [{
             id: flocId.id,
-            name: 'FLOCID',
+            name: 'chrome.com',
             value: flocId.id.toString()
           }]
         }
       break;
-      case FLOC_TYPE.EID:
+      case FLOC_FORMAT.EID:
       default:
         flocIdObject = {
           source: 'chrome.com',
@@ -754,7 +754,7 @@ function _getFlocId(validBidRequests, flocType) {
 }
 
 function _handleFlocId(payload, validBidRequests) {
-  var flocObject = _getFlocId(validBidRequests, FLOC_TYPE.SEGMENT);
+  var flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.SEGMENT);
   if (flocObject) {
     if (!payload.user) {
       payload.user = {};
@@ -768,7 +768,7 @@ function _handleFlocId(payload, validBidRequests) {
 
 function _handleEids(payload, validBidRequests) {
   const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
-  var flocObject = _getFlocId(validBidRequests, FLOC_TYPE.EID);
+  var flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.EID);
   if (flocObject) {
     if(!bidUserIdAsEids){
       bidUserIdAsEids = [];
