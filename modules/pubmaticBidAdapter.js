@@ -708,8 +708,54 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
+function _getFlocId(validBidRequests) {
+  var flocIdObject = {};
+  var flocId = utils.deepAccess(validBidRequests, '0.userId.flocId');
+  if (flocId && flocId.id) {
+    flocIdObject['eid'] = {
+      source: flocId.version,
+      uids: [
+        {
+          atype: 1,
+          id: flocId.id,
+        },
+      ]
+    }
+    flocIdObject['data'] = {
+      id: 'FLOC',
+      name: 'FLOC',
+      segment: [{
+        id: flocId.id,
+        name: 'FLOCID',
+        value: flocId.id.toString()
+      }]
+    }
+  }
+  return flocIdObject;
+}
+
+function _handleFlocId(payload, validBidRequests) {
+  var flocObject = _getFlocId(validBidRequests);
+  if (flocObject && flocObject.data) {
+    if (!payload.user) {
+      payload.user = {};
+    }
+    if (!payload.user.data) {
+      payload.user.data = [];
+    }
+    payload.user.data.push(flocObject.data);
+  }
+}
+
 function _handleEids(payload, validBidRequests) {
   const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
+  var flocObject = _getFlocId(validBidRequests);
+  if (flocObject && flocObject.eid) {
+    if(!bidUserIdAsEids){
+      bidUserIdAsEids = [];
+    }
+    bidUserIdAsEids.push(flocObject.eid);
+  }
   if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     utils.deepSetValue(payload, 'user.eids', bidUserIdAsEids);
   }
@@ -1029,7 +1075,7 @@ export const spec = {
     _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
-
+    _handleFlocId(payload, validBidRequests);
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
     if (commonFpd.site) {
