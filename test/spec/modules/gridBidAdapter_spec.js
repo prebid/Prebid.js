@@ -614,6 +614,9 @@ describe('TheMediaGrid Adapter', function () {
           'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
+          'meta': {
+             advertiserDomains: []
+          },
         },
         {
           'requestId': '4dff80cc4ee346',
@@ -627,6 +630,9 @@ describe('TheMediaGrid Adapter', function () {
           'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
+          'meta': {
+             advertiserDomains: []
+          },
         },
         {
           'requestId': '5703af74d0472a',
@@ -640,6 +646,9 @@ describe('TheMediaGrid Adapter', function () {
           'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
+          'meta': {
+             advertiserDomains: []
+          },
         }
       ];
 
@@ -699,6 +708,9 @@ describe('TheMediaGrid Adapter', function () {
           'mediaType': 'video',
           'netRevenue': false,
           'ttl': 360,
+          'meta': {
+             advertiserDomains: []
+          },
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
@@ -715,6 +727,9 @@ describe('TheMediaGrid Adapter', function () {
           'mediaType': 'video',
           'netRevenue': false,
           'ttl': 360,
+          'meta': {
+             advertiserDomains: []
+          },
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>',
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>'
