@@ -111,6 +111,7 @@ function bidToVideoImp(bid) {
     }
   } else {
     utils.logWarn('IX Bid Adapter: Video Param [mediaTypes.video.playerSize] is missing');
+    return {};
   }
 
   _applyFloor(bid, imp, VIDEO);
