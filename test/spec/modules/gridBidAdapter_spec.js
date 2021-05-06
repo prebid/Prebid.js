@@ -557,6 +557,9 @@ describe('TheMediaGrid Adapter', function () {
           'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         }
       ];
 
@@ -861,6 +864,9 @@ describe('TheMediaGrid Adapter', function () {
           'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '4e111f1b66e4',
@@ -874,6 +880,9 @@ describe('TheMediaGrid Adapter', function () {
           'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '26d6f897b516',
@@ -887,6 +896,9 @@ describe('TheMediaGrid Adapter', function () {
           'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '326bde7fbf69',
@@ -900,6 +912,9 @@ describe('TheMediaGrid Adapter', function () {
           'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         }
       ];
 
