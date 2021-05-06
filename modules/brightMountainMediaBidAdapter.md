@@ -47,7 +47,7 @@ var adUnits = [
           video: {
             playerSize: [[640, 480]],
             context: 'outstream'
-            ... // Additional ORTB video params for prebid server
+            ... // Additional ORTB video params 
           }
         },
         bids: [
@@ -94,7 +94,7 @@ var adUnits = [
           video: {
             playerSize: [[640, 480]],
             context: 'instream'
-            ... // Additional ORTB video params for prebid server
+            ... // Additional ORTB video params 
           },
         },
         bids: [

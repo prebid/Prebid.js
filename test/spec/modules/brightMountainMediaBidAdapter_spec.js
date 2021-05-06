@@ -29,19 +29,17 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     bidder: BIDDER_CODE,
     bidderRequestId: '145e1d6a7837c9',
     params: {
-      placement_id: PLACEMENT_ID,
-      video: {
-        skippable: true,
-        playback_method: ['auto_play_sound_off'],
-        mimes: ['video/mp4']
-      }
+      placement_id: PLACEMENT_ID
     },
     placementCode: 'placementid_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
     mediaTypes: {
       video: {
         playerSizes: [[300, 250]],
-        context: 'outstream'
+        context: 'outstream',
+        skippable: true,
+        playback_method: ['auto_play_sound_off'],
+        mimes: ['video/mp4']
       }
     },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',

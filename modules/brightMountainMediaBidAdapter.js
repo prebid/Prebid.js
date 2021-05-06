@@ -62,25 +62,29 @@ export const spec = {
 
       if (bid.mediaTypes.hasOwnProperty(BANNER)) {
         placement['traffic'] = BANNER;
-        placement['sizes'] = bid.mediaTypes.banner.sizes;
+        if (bid.mediaTypes.banner.sizes) {
+          placement['sizes'] = bid.mediaTypes.banner.sizes;
+        }
       }
 
       if (bid.mediaTypes.hasOwnProperty(VIDEO)) {
         placement['traffic'] = VIDEO;
-        placement['context'] = bid.mediaTypes.video.context;
+        if (bid.mediaTypes.video.context) {
+          placement['context'] = bid.mediaTypes.video.context;
+        }
         if (bid.mediaTypes.video.playerSize) {
           placement['sizes'] = bid.mediaTypes.video.playerSize;
         }
-        if (bid.params.video) {
-          placement['mimes'] = bid.params.video.mimes ? bid.params.video.mimes : videoExt;
-          if (bid.params.video.skippable) {
-            placement['skippable'] = Boolean(bid.params.video.skippable);
-          } else {
-            placement['skippable'] = false;
-          }
-          if (bid.params.video.playback_method) {
-            placement['playback_method'] = bid.params.video.playback_method ? bid.params.video.playback_method : ['auto_play_sound_off'];
-          }
+        if (bid.mediaTypes.video.mimes) {
+          placement['mimes'] = bid.mediaTypes.video.mimes;
+        } else {
+          placement['mimes'] = videoExt;
+        }
+        if (bid.mediaTypes.video.skippable) {
+          placement['skippable'] = Boolean(bid.mediaTypes.video.skippable);
+        }
+        if (bid.mediaTypes.video.playback_method) {
+          placement['playback_method'] = bid.mediaTypes.video.playback_method;
         }
       }
       if (bid.schain) {
