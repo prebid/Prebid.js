@@ -75,16 +75,16 @@ export const spec = {
         if (bid.mediaTypes.video.playerSize) {
           placement['sizes'] = bid.mediaTypes.video.playerSize;
         }
-        if (bid.mediaTypes.video.mimes) {
+        if (bid.mediaTypes.video.mimes && Array.isArray(bid.mediaTypes.video.mimes)) {
           placement['mimes'] = bid.mediaTypes.video.mimes;
         } else {
           placement['mimes'] = videoExt;
         }
-        if (bid.mediaTypes.video.skippable) {
-          placement['skippable'] = Boolean(bid.mediaTypes.video.skippable);
+        if (bid.mediaTypes.video.skip != undefined) {
+          placement['skip'] = bid.mediaTypes.video.skip;
         }
-        if (bid.mediaTypes.video.playback_method) {
-          placement['playback_method'] = bid.mediaTypes.video.playback_method;
+        if (bid.mediaTypes.video.playbackmethod && Array.isArray(bid.mediaTypes.video.playbackmethod)) {
+          placement['playbackmethod'] = bid.mediaTypes.video.playbackmethod;
         }
       }
       if (bid.schain) {
