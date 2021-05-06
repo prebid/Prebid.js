@@ -8,10 +8,7 @@ var gutil = require('gulp-util');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
-/* gu-mod-start */
-// We need uglify-es for bundling guardian/libs
-var uglify = require('gulp-uglify-es').default;
-/* gu-mod-end */
+var uglify = require('gulp-uglify');
 var gulpClean = require('gulp-clean');
 var KarmaServer = require('karma').Server;
 var karmaConfMaker = require('./karma.conf.maker');
