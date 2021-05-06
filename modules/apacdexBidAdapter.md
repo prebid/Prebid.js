@@ -73,10 +73,10 @@ var videoAdUnit = {
 ```
 var videoAdUnit = {
   code: 'test-div',
-  sizes: [[640, 480]],
+  sizes: [[410, 231]],
   mediaTypes: {
     video: {
-      playerSize: [[640, 480]],
+      playerSize: [[410, 231]],
       context: "outstream"
       api: [2],
       placement: 6,
