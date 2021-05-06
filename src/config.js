@@ -595,7 +595,7 @@ export function newConfig() {
     try {
       return fn();
     } finally {
-      currBidder = null;
+      resetBidder();
     }
   }
   function callbackWithBidder(bidder) {
@@ -614,10 +614,15 @@ export function newConfig() {
     return currBidder;
   }
 
+  function resetBidder() {
+    currBidder = null;
+  }
+
   resetConfig();
 
   return {
     getCurrentBidder,
+    resetBidder,
     getConfig,
     setConfig,
     setDefaults,

@@ -625,6 +625,7 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       // get bidder params in form { <bidder code>: {...params} }
+      // initialize reduce function with the user defined `ext` properties on the ad unit
       const ext = adUnit.bids.reduce((acc, bid) => {
         const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
@@ -632,7 +633,7 @@ const OPEN_RTB_PROTOCOL = {
         }
         acc[bid.bidder] = (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params;
         return acc;
-      }, {});
+      }, {...utils.deepAccess(adUnit, 'ortb2Imp.ext')});
 
       const imp = { id: adUnit.code, ext, secure: s2sConfig.secure };
 
@@ -643,7 +644,12 @@ const OPEN_RTB_PROTOCOL = {
           * @type {(string|undefined)}
         */
         if (prop === 'pbadslot') {
-          if (typeof ortb2[prop] === 'string' && ortb2[prop]) utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+          if (typeof ortb2[prop] === 'string' && ortb2[prop]) {
+            utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+          } else {
+            // remove pbadslot property if it doesn't meet the spec
+            delete imp.ext.data.pbadslot;
+          }
         } else if (prop === 'adserver') {
           /**
            * Copy GAM AdUnit and Name to imp
