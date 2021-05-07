@@ -55,13 +55,13 @@ export const spec = {
     let eids;
     let geo;
     let test;
+    let bids = [];
 
-    var bids = JSON.parse(JSON.stringify(validBidRequests))
-    bidderConfig = CONFIG[bids[0].bidder];
+    bidderConfig = CONFIG[validBidRequests[0].bidder];
 
     test = config.getConfig('debug');
 
-    bids.forEach(bidReq => {
+    validBidRequests.forEach(bidReq => {
       siteId = siteId || bidReq.params.siteId;
 
       if (bidReq.schain) {
@@ -95,6 +95,13 @@ export const spec = {
       }
       bySlotTargetKey[bidReq.adUnitCode] = targetKey;
       bidReq.targetKey = targetKey;
+
+      let bidFloor = getBidFloor(bidReq);
+      if (bidFloor) {
+        bidReq.bidFloor = bidFloor;
+      }
+
+      bids.push(JSON.parse(JSON.stringify(bidReq)));
     });
 
     const payload = {};
@@ -341,6 +348,28 @@ export function validateGeoObject(geo) {
     return false;
   }
   return true;
+}
+
+/**
+ * Get bid floor from Price Floors Module
+ *
+ * @param {Object} bid
+ * @returns {float||null}
+ */
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return (bid.params.floorPrice) ? bid.params.floorPrice : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
 }
 
 registerBidder(spec);

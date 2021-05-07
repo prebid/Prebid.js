@@ -3,6 +3,7 @@ import { spec, validateGeoObject, getDomain } from '../../../modules/apacdexBidA
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
+import { deepClone } from 'src/utils.js';
 
 describe('ApacdexBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -335,6 +336,44 @@ describe('ApacdexBidAdapter', function () {
     it('should return a properly formatted request with us_privacy included', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
+    });
+    it('should attach bidFloor param when either bid param floorPrice or getFloor function exists', function () {
+      let getFloorResponse = { currency: 'USD', floor: 3 };
+      let singleBidRequest, request, payload = null;
+
+      // 1 -> floorPrice not defined, getFloor not defined > empty
+      singleBidRequest = deepClone(bidRequest[0]);
+      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      payload = request.data;
+      expect(payload.bids[0].bidFloor).to.not.exist;
+
+      // 2 -> floorPrice is defined, getFloor not defined > floorPrice is used
+      singleBidRequest = deepClone(bidRequest[0]);
+      singleBidRequest.params = {
+        'siteId': '1890909',
+        'floorPrice': 0.5
+      };
+      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      payload = request.data
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(0.5);
+
+      // 3 -> floorPrice is defined, getFloor is defined > getFloor is used
+      singleBidRequest = deepClone(bidRequest[0]);
+      singleBidRequest.params = {
+        'siteId': '1890909',
+        'floorPrice': 0.5
+      };
+      singleBidRequest.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      payload = request.data
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(3);
+
+      // 4 -> floorPrice not defined, getFloor is defined > getFloor is used
+      singleBidRequest = deepClone(bidRequest[0]);
+      singleBidRequest.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      payload = request.data
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(3);
     });
     describe('debug test', function () {
       beforeEach(function () {

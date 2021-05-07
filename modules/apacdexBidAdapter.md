@@ -53,8 +53,6 @@ var videoAdUnit = {
       playbackmethod: [6],
       startdelay: 0,
       protocols: [1, 2, 3, 4, 5, 6]
-      ... // Aditional ORTB video params
-      // you must review all video parameters to ensure validity for your player and DSPs
     },
   },
   bids: [
@@ -68,6 +66,8 @@ var videoAdUnit = {
   ]
 };
 ```
+mediaTypes.video object reference to section 3.2.7 Object: Video in the OpenRTB 2.5 document
+You must review all video parameters to ensure validity for your player and DSPs
 
 # Sample Video Ad Unit: Outstream
 ```
@@ -87,8 +87,6 @@ var videoAdUnit = {
       playbackmethod: [6],
       startdelay: 0,
       protocols: [1, 2, 3, 4, 5, 6]
-      ... // Aditional ORTB video params
-      // you must review all video parameters to ensure validity for your player and DSPs
     },
   },
   bids: [
@@ -102,3 +100,5 @@ var videoAdUnit = {
   ]
 };
 ```
+mediaTypes.video object reference to section 3.2.7 Object: Video in the OpenRTB 2.5 document
+You must review all video parameters to ensure validity for your player and DSPs
