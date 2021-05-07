@@ -267,7 +267,7 @@ describe('Adform adapter', function () {
     it('should set correct netRevenue', function () {
       serverResponse.body = [serverResponse.body[0]];
       bidRequest.bids = [bidRequest.bids[1]];
-      bidRequest.netRevenue = 'gross';https://github.com/prebid/Prebid.js/issues/6466 
+      bidRequest.netRevenue = 'gross';
       let result = spec.interpretResponse(serverResponse, bidRequest)[0];
 
       assert.equal(result.netRevenue, false);
