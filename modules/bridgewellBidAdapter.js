@@ -160,6 +160,10 @@ export const spec = {
         bidResponse.currency = matchedResponse.currency;
         bidResponse.mediaType = matchedResponse.mediaType;
 
+        if (matchedResponse.adomain) {
+          utils.deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(matchedResponse.adomain) ? matchedResponse.adomain : [matchedResponse.adomain]);
+        }
+
         // check required parameters by matchedResponse.mediaType
         switch (matchedResponse.mediaType) {
           case BANNER:
