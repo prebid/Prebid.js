@@ -158,7 +158,8 @@ export const spec = {
             creativeId: bidRes.adId,
             currency: bidRes.currency,
             netRevenue: bidRes.netRevenue,
-            ttl: bidRes.ttl || 360
+            ttl: bidRes.ttl || 360,
+            meta: { advertiserDomains: bidRes.adomain ? bid.adomain : [] }
           };
           if (bidRes.mediaType && bidRes.mediaType === 'video') {
             bid.vastXml = bidRes.ad;
