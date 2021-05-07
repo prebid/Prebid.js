@@ -159,7 +159,7 @@ export const spec = {
             currency: bidRes.currency,
             netRevenue: bidRes.netRevenue,
             ttl: bidRes.ttl || 360,
-            meta: { advertiserDomains: bidRes.adomain ? bid.adomain : [] }
+            meta: { advertiserDomains: bidRes.adomain ? bidRes.adomain : [] }
           };
           if (bidRes.mediaType && bidRes.mediaType === 'video') {
             bid.vastXml = bidRes.ad;
