@@ -278,6 +278,27 @@ describe('BeachfrontAdapter', function () {
         expect(data.user.ext.consent).to.equal(consentString);
       });
 
+      it('must add schain data to the request', () => {
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'directseller.com',
+              sid: '00001',
+              rid: 'BidRequest1',
+              hp: 1
+            }
+          ]
+        };
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.schain = schain;
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.source.ext.schain).to.deep.equal(schain);
+      });
+
       it('must add the Trade Desk User ID to the request', () => {
         const tdid = '4321';
         const bidRequest = bidRequests[0];
@@ -444,6 +465,27 @@ describe('BeachfrontAdapter', function () {
         const data = requests[0].data;
         expect(data.gdpr).to.equal(1);
         expect(data.gdprConsent).to.equal(consentString);
+      });
+
+      it('must add schain data to the request', () => {
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'directseller.com',
+              sid: '00001',
+              rid: 'BidRequest1',
+              hp: 1
+            }
+          ]
+        };
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.schain = schain;
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.schain).to.deep.equal(schain);
       });
 
       it('must add the Trade Desk User ID to the request', () => {
