@@ -2,10 +2,14 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 const BIDDER_CODE = 'visx';
-const ENDPOINT_URL = 'https://t.visx.net/hb';
+const BASE_URL = 'https://t.visx.net';
+const ENDPOINT_URL = BASE_URL + '/hb';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CUR = 'EUR';
-const ADAPTER_SYNC_URL = 'https://t.visx.net/push_sync';
+const ADAPTER_SYNC_URL = BASE_URL + '/push_sync';
+const TRACK_WIN_URL = BASE_URL + '/track/win';
+const TRACK_PENDING_URL = BASE_URL + '/track/pending';
+const TRACK_TIMEOUT_URL = BASE_URL + '/track/bid_timeout';
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -170,6 +174,18 @@ export const spec = {
         url: ADAPTER_SYNC_URL + (query.length ? '?' + query.join('&') : '')
       }];
     }
+  },
+  onSetTargeting: function(bid) {
+    // Call '/track/pending' with the corresponding bid.requestId
+    utils.triggerPixel(TRACK_PENDING_URL + '?requestId=' + bid.requestId);
+  },
+  onBidWon: function(bid) {
+    // Call '/track/win' with the corresponding bid.requestId
+    utils.triggerPixel(TRACK_WIN_URL + '?requestId=' + bid.requestId);
+  },
+  onTimeout: function(timeoutData) {
+    // Call '/track/bid_timeout' with timeout data
+    utils.triggerPixel(TRACK_TIMEOUT_URL + '?data=' + JSON.stringify(timeoutData));
   }
 };
 

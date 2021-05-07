@@ -1,25 +1,31 @@
 /**
- * This module adds audigent provider to the real time data module
+ * This module adds the Audigent Halo provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
- * The module will fetch segments from audigent server
- * @module modules/audigentRtdProvider
+ * The module will fetch real-time data from Audigent
+ * @module modules/haloRtdProvider
  * @requires module:modules/realTimeData
  */
-import {getGlobal} from '../src/prebidGlobal.js';
-import * as utils from '../src/utils.js';
-import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {config} from '../src/config.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {submodule} from '../src/hook.js';
+import {isFn, isStr, isPlainObject, mergeDeep, logError} from '../src/utils.js';
 
-export const storage = getStorageManager();
-
-/** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'halo';
+const AU_GVLID = 561;
 
 export const HALOID_LOCAL_NAME = 'auHaloId';
-export const SEG_LOCAL_NAME = '__adgntseg';
+export const RTD_LOCAL_NAME = 'auHaloRtd';
+export const storage = getStorageManager(AU_GVLID, SUBMODULE_NAME);
 
+/**
+ * Deep set an object unless value present.
+ * @param {Object} obj
+ * @param {String} path
+ * @param {Object} val
+ */
 const set = (obj, path, val) => {
   const keys = path.split('.');
   const lastKey = keys.pop();
@@ -27,83 +33,67 @@ const set = (obj, path, val) => {
   lastObj[lastKey] = lastObj[lastKey] || val;
 };
 
-/** bid adapter format segment augmentation functions */
-const segmentMappers = {
-  appnexus: function(bid, segments) {
-    set(bid, 'params.user.segments', []);
-    let appnexusSegments = [];
-    segments.forEach(segment => {
-      if (typeof segment.id != 'undefined' && segment.id != null) {
-        appnexusSegments.push(parseInt(segment.id));
-      }
-    })
-    bid.params.user.segments = bid.params.user.segments.concat(appnexusSegments);
-  },
-  generic: function(bid, segments) {
-    bid.segments = bid.segments || [];
-    if (Array.isArray(bid.segments)) {
-      bid.segments = bid.segments.concat(segments);
-    }
+/**
+ * Lazy merge objects.
+ * @param {String} target
+ * @param {String} source
+ */
+function mergeLazy(target, source) {
+  if (!isPlainObject(target)) {
+    target = {};
+  }
+  if (!isPlainObject(source)) {
+    source = {};
+  }
+  return mergeDeep(target, source);
+}
+
+/**
+ * Param or default.
+ * @param {String} param
+ * @param {String} defaultVal
+ */
+function paramOrDefault(param, defaultVal) {
+  if (isFn(param)) {
+    return param();
+  } else if (isStr(param)) {
+    return param;
+  }
+  return defaultVal;
+}
+
+/**
+ * Add real-time data & merge segments.
+ * @param {Object} bidConfig
+ * @param {Object} rtd
+ * @param {Object} rtdConfig
+ */
+export function addRealTimeData(bidConfig, rtd, rtdConfig) {
+  let ortb2 = config.getConfig('ortb2') || {};
+
+  if (rtdConfig.params && rtdConfig.params.handleRtd) {
+    rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
+  } else if (rtd.ortb2) {
+    config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
   }
 }
 
 /**
- * decorate adUnits with segment data
- * @param {adUnit[]} adUnits
- * @param {Object} data
- */
-export function addSegmentData(adUnits, segmentData, config) {
-  adUnits.forEach(adUnit => {
-    if (adUnit.hasOwnProperty('bids')) {
-      adUnit.bids.forEach(bid => {
-        try {
-          set(bid, 'fpd.user.data', []);
-          if (Array.isArray(bid.fpd.user.data)) {
-            bid.fpd.user.data.forEach(fpdData => {
-              let segments = segmentData[fpdData.id] || segmentData[fpdData.name] || [];
-              fpdData.segment = (fpdData.segment || []).concat(segments);
-            });
-          }
-        } catch (err) {
-          utils.logError(err.message);
-        }
-
-        try {
-          if (config.params.mapSegments && config.params.mapSegments[bid.bidder] && segmentData[bid.bidder]) {
-            if (typeof config.params.mapSegments[bid.bidder] == 'function') {
-              config.params.mapSegments[bid.bidder](bid, segmentData[bid.bidder]);
-            } else if (segmentMappers[bid.bidder]) {
-              segmentMappers[bid.bidder](bid, segmentData[bid.bidder]);
-            }
-          }
-        } catch (err) {
-          utils.logError(err.message);
-        }
-      });
-    }
-  });
-
-  return adUnits;
-}
-
-/**
- * segment retrieval from audigent's backends
+ * Real-time data retrieval from Audigent
  * @param {Object} reqBidsConfigObj
  * @param {function} onDone
- * @param {Object} config
+ * @param {Object} rtdConfig
  * @param {Object} userConsent
  */
-export function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
-
-  if (config.params.segmentCache) {
-    let jsonData = storage.getDataFromLocalStorage(SEG_LOCAL_NAME);
+export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
+  if (rtdConfig && isPlainObject(rtdConfig.params) && rtdConfig.params.segmentCache) {
+    let jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME);
 
     if (jsonData) {
       let data = JSON.parse(jsonData);
 
-      if (data.audigent_segments) {
-        addSegmentData(adUnits, data.audigent_segments, config);
+      if (data.rtd) {
+        addRealTimeData(bidConfig, data.rtd, rtdConfig);
         onDone();
         return;
       }
@@ -113,53 +103,54 @@ export function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
   const userIds = (getGlobal()).getUserIds();
 
   let haloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
-  if (haloId) {
+  if (isStr(haloId)) {
     userIds.haloId = haloId;
-    getSegmentsAsync(adUnits, onDone, config, userConsent, userIds);
+    getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {
     var script = document.createElement('script')
     script.type = 'text/javascript';
 
-    script.onload = function() {
-      userIds.haloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
-      getSegmentsAsync(adUnits, onDone, config, userConsent, userIds);
+    window.pubHaloCb = (haloId) => {
+      userIds.haloId = haloId;
+      getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
     }
 
-    script.src = 'https://id.halo.ad.gt/api/v1/haloid';
+    const haloIdUrl = rtdConfig.params && rtdConfig.params.haloIdUrl;
+    script.src = paramOrDefault(haloIdUrl, 'https://id.halo.ad.gt/api/v1/haloid');
     document.getElementsByTagName('head')[0].appendChild(script);
   }
 }
 
 /**
- * async segment retrieval from audigent's backends
- * @param {adUnit[]} adUnits
+ * Async rtd retrieval from Audigent
  * @param {function} onDone
- * @param {Object} config
+ * @param {Object} rtdConfig
  * @param {Object} userConsent
  * @param {Object} userIds
  */
-export function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
+export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds) {
   let reqParams = {};
-  if (typeof config == 'object' && config != null) {
-    set(config, 'params.requestParams', {});
-    reqParams = config.params.requestParams;
+
+  if (isPlainObject(rtdConfig)) {
+    set(rtdConfig, 'params.requestParams.ortb2', config.getConfig('ortb2'));
+    reqParams = rtdConfig.params.requestParams;
   }
 
-  const url = `https://seg.halo.ad.gt/api/v1/rtb_segments`;
+  const url = `https://seg.halo.ad.gt/api/v1/rtd`;
   ajax(url, {
     success: function (response, req) {
       if (req.status === 200) {
         try {
           const data = JSON.parse(response);
-          if (data && data.audigent_segments) {
-            addSegmentData(adUnits, data.audigent_segments, config);
+          if (data && data.rtd) {
+            addRealTimeData(bidConfig, data.rtd, rtdConfig);
             onDone();
-            storage.setDataInLocalStorage(SEG_LOCAL_NAME, JSON.stringify(data));
+            storage.setDataInLocalStorage(RTD_LOCAL_NAME, JSON.stringify(data));
           } else {
             onDone();
           }
         } catch (err) {
-          utils.logError('unable to parse audigent segment data');
+          logError('unable to parse audigent segment data');
           onDone();
         }
       } else if (req.status === 204) {
@@ -169,7 +160,7 @@ export function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) 
     },
     error: function () {
       onDone();
-      utils.logError('unable to get audigent segment data');
+      logError('unable to get audigent segment data');
     }
   },
   JSON.stringify({'userIds': userIds, 'config': reqParams}),
@@ -178,7 +169,7 @@ export function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) 
 }
 
 /**
- * module init
+ * Module init
  * @param {Object} provider
  * @param {Objkect} userConsent
  * @return {boolean}
@@ -190,7 +181,7 @@ function init(provider, userConsent) {
 /** @type {RtdSubmodule} */
 export const haloSubmodule = {
   name: SUBMODULE_NAME,
-  getBidRequestData: getSegments,
+  getBidRequestData: getRealTimeData,
   init: init
 };
 

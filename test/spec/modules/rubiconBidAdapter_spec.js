@@ -371,6 +371,7 @@ describe('the rubicon adapter', function () {
     utils.logError.restore();
     config.resetConfig();
     resetRubiConf();
+    delete $$PREBID_GLOBAL$$.installedModules;
   });
 
   describe('MAS mapping / ordering', function () {
@@ -488,6 +489,17 @@ describe('the rubicon adapter', function () {
           data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.equal('1.23');
         });
+
+        it('should send rp_maxbids to AE if rubicon multibid config exists', function () {
+          var multibidRequest = utils.deepClone(bidderRequest);
+          multibidRequest.bidLimit = 5;
+
+          let [request] = spec.buildRequests(multibidRequest.bids, multibidRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['rp_maxbids']).to.equal('5');
+        });
+
         it('should not send p_pos to AE if not params.position specified', function () {
           var noposRequest = utils.deepClone(bidderRequest);
           delete noposRequest.bids[0].params.position;
@@ -554,7 +566,7 @@ describe('the rubicon adapter', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
@@ -1498,7 +1510,7 @@ describe('the rubicon adapter', function () {
           // LiveIntent should exist
           expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
           expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
-          expect(post.user.ext.eids[0].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[0].uids[0].atype).to.equal(3);
           expect(post.user.ext.eids[0]).to.have.property('ext').that.is.an('object');
           expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
           expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
@@ -1506,7 +1518,7 @@ describe('the rubicon adapter', function () {
           // LiveRamp should exist
           expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
-          expect(post.user.ext.eids[1].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[1].uids[0].atype).to.equal(3);
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
@@ -1624,6 +1636,62 @@ describe('the rubicon adapter', function () {
           // should have the imp ext bidder params be under the alias name not rubicon superRubicon
           expect(request.data.imp[0].ext).to.have.property('superRubicon').that.is.an('object');
           expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
+        });
+
+        it('should add multibid configuration to PBS Request', function () {
+          createVideoBidderRequest();
+
+          const multibid = [{
+            bidder: 'bidderA',
+            maxBids: 2
+          }, {
+            bidder: 'bidderB',
+            maxBids: 2
+          }];
+          const expected = [{
+            bidder: 'bidderA',
+            maxbids: 2
+          }, {
+            bidder: 'bidderB',
+            maxbids: 2
+          }];
+
+          config.setConfig({multibid: multibid});
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // should have the aliases object sent to PBS
+          expect(request.data.ext.prebid).to.haveOwnProperty('multibid');
+          expect(request.data.ext.prebid.multibid).to.deep.equal(expected);
+        });
+
+        it('should pass client analytics to PBS endpoint if all modules included', function () {
+          createVideoBidderRequest();
+          $$PREBID_GLOBAL$$.installedModules = [];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let payload = request.data;
+
+          expect(payload.ext.prebid.analytics).to.not.be.undefined;
+          expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
+        });
+
+        it('should pass client analytics to PBS endpoint if rubicon analytics adapter is included', function () {
+          createVideoBidderRequest();
+          $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter', 'rubiconAnalyticsAdapter'];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let payload = request.data;
+
+          expect(payload.ext.prebid.analytics).to.not.be.undefined;
+          expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
+        });
+
+        it('should not pass client analytics to PBS endpoint if rubicon analytics adapter is not included', function () {
+          createVideoBidderRequest();
+          $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter'];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let payload = request.data;
+
+          expect(payload.ext.prebid.analytics).to.be.undefined;
         });
 
         it('should send video exp param correctly when set', function () {
@@ -1781,16 +1849,6 @@ describe('the rubicon adapter', function () {
           // delete protocols, no good
           createVideoBidderRequest();
           delete bidderRequest.bids[0].mediaTypes.video.protocols;
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // change maxduration to an string, no good
-          createVideoBidderRequest();
-          bidderRequest.bids[0].mediaTypes.video.maxduration = 'string';
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // delete maxduration, no good
-          createVideoBidderRequest();
-          delete bidderRequest.bids[0].mediaTypes.video.maxduration;
           expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
 
           // change linearity to an string, no good
@@ -2556,6 +2614,146 @@ describe('the rubicon adapter', function () {
           expect(bids[0].cpm).to.be.equal(0);
         });
 
+        it('should create bids with matching requestIds if imp id matches', function () {
+          let bidRequests = [{
+            'bidder': 'rubicon',
+            'params': {
+              'accountId': 1001,
+              'siteId': 12345,
+              'zoneId': 67890,
+              'floor': null
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [[300, 250]]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1460505748561-0',
+            'transactionId': '404a7b28-f276-41cc-a5cf-c1d3dc5671f9',
+            'sizes': [[300, 250]],
+            'bidId': '557ba307cef098',
+            'bidderRequestId': '46a00704ffeb7',
+            'auctionId': '3fdc6494-da94-44a0-a292-b55a90b08b2c',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0,
+            'startTime': 1615412098213
+          }, {
+            'bidder': 'rubicon',
+            'params': {
+              'accountId': 1001,
+              'siteId': 12345,
+              'zoneId': 67890,
+              'floor': null
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [[300, 250]]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1460505748561-1',
+            'transactionId': '404a7b28-f276-41cc-a5cf-c1d3dc5671f9',
+            'sizes': [[300, 250]],
+            'bidId': '456gt123jkl098',
+            'bidderRequestId': '46a00704ffeb7',
+            'auctionId': '3fdc6494-da94-44a0-a292-b55a90b08b2c',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0,
+            'startTime': 1615412098213
+          }];
+
+          let response = {
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43
+            ],
+            'tracking': '',
+            'inventory': {},
+            'ads': [
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+                'size_id': '15',
+                'ad_id': '6',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.811,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '15_tier_all_test'
+                    ]
+                  }
+                ]
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+                'size_id': '15',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.911,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ]
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+                'size_id': '43',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 1.911,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ]
+              }
+            ]
+          };
+
+          config.setConfig({ multibid: [{bidder: 'rubicon', maxbids: 2, targetbiddercodeprefix: 'rubi'}] });
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidRequests
+          });
+
+          expect(bids).to.be.lengthOf(3);
+          expect(bids[0].requestId).to.not.equal(bids[1].requestId);
+          expect(bids[1].requestId).to.equal(bids[2].requestId);
+        });
+
         it('should handle an error with no ads returned', function () {
           let response = {
             'status': 'ok',
@@ -2849,6 +3047,153 @@ describe('the rubicon adapter', function () {
           expect(bids[0].currency).to.equal('USD');
           expect(bids[0].width).to.equal(640);
           expect(bids[0].height).to.equal(480);
+        });
+      });
+
+      describe('for outstream video', function () {
+        const sandbox = sinon.createSandbox();
+        beforeEach(function () {
+          createVideoBidderRequestOutstream();
+          config.setConfig({rubicon: {
+            rendererConfig: {
+              align: 'left',
+              closeButton: true
+            },
+            rendererUrl: 'https://example.test/renderer.js'
+          }});
+          window.MagniteApex = {
+            renderAd: function() {
+              return null;
+            }
+          }
+        });
+
+        afterEach(function () {
+          sandbox.restore();
+          delete window.MagniteApex;
+        });
+
+        it('should register a successful bid', function () {
+          let response = {
+            cur: 'USD',
+            seatbid: [{
+              bid: [{
+                id: '0',
+                impid: 'outstream_video1',
+                adomain: ['test.com'],
+                price: 2,
+                crid: '4259970',
+                ext: {
+                  bidder: {
+                    rp: {
+                      mime: 'application/javascript',
+                      size_id: 201,
+                      advid: 12345
+                    }
+                  },
+                  prebid: {
+                    targeting: {
+                      hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                    },
+                    type: 'video'
+                  }
+                }
+              }],
+              group: 0,
+              seat: 'rubicon'
+            }],
+          };
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+
+          expect(bids).to.be.lengthOf(1);
+
+          expect(bids[0].seatBidId).to.equal('0');
+          expect(bids[0].creativeId).to.equal('4259970');
+          expect(bids[0].cpm).to.equal(2);
+          expect(bids[0].ttl).to.equal(300);
+          expect(bids[0].netRevenue).to.equal(true);
+          expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
+          expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].meta.mediaType).to.equal('video');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
+          expect(bids[0].meta.advertiserId).to.equal(12345);
+          expect(bids[0].bidderCode).to.equal('rubicon');
+          expect(bids[0].currency).to.equal('USD');
+          expect(bids[0].width).to.equal(640);
+          expect(bids[0].height).to.equal(320);
+          // check custom renderer
+          expect(typeof bids[0].renderer).to.equal('object');
+          expect(bids[0].renderer.getConfig()).to.deep.equal({
+            align: 'left',
+            closeButton: true
+          });
+          expect(bids[0].renderer.url).to.equal('https://example.test/renderer.js');
+        });
+
+        it('should render ad with Magnite renderer', function () {
+          let response = {
+            cur: 'USD',
+            seatbid: [{
+              bid: [{
+                id: '0',
+                impid: 'outstream_video1',
+                adomain: ['test.com'],
+                price: 2,
+                crid: '4259970',
+                ext: {
+                  bidder: {
+                    rp: {
+                      mime: 'application/javascript',
+                      size_id: 201,
+                      advid: 12345
+                    }
+                  },
+                  prebid: {
+                    targeting: {
+                      hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                    },
+                    type: 'video'
+                  }
+                },
+                nurl: 'https://test.com/vast.xml'
+              }],
+              group: 0,
+              seat: 'rubicon'
+            }],
+          };
+
+          sinon.spy(window.MagniteApex, 'renderAd');
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          const bid = bids[0];
+          bid.adUnitCode = 'outstream_video1_placement';
+          const adUnit = document.createElement('div');
+          adUnit.id = bid.adUnitCode;
+          document.body.appendChild(adUnit);
+
+          bid.renderer.render(bid);
+
+          const renderCall = window.MagniteApex.renderAd.getCall(0);
+          expect(renderCall.args[0]).to.deep.equal({
+            closeButton: true,
+            collapse: true,
+            height: 320,
+            label: undefined,
+            placement: {
+              align: 'left',
+              attachTo: '#outstream_video1_placement',
+              position: 'append',
+            },
+            vastUrl: 'https://test.com/vast.xml',
+            width: 640
+          });
+          // cleanup
+          adUnit.remove();
         });
       });
 

@@ -1348,6 +1348,214 @@ describe('PubMatic adapter', function () {
         expect(data2.regs).to.equal(undefined);// USP/CCPAs
       });
 
+      describe('FPD', function() {
+        let newRequest;
+
+        it('ortb2.site should be merged in the request', function() {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'ortb2': {
+                site: {
+                  domain: 'page.example.com',
+                  cat: ['IAB2'],
+                  sectioncat: ['IAB2-2']
+                }
+              }
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.site.domain).to.equal('page.example.com');
+          expect(data.site.cat).to.deep.equal(['IAB2']);
+          expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
+          sandbox.restore();
+        });
+
+        it('ortb2.user should be merged in the request', function() {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'ortb2': {
+                user: {
+                  yob: 1985
+                }
+              }
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.yob).to.equal(1985);
+          sandbox.restore();
+        });
+
+        describe('ortb2Imp', function() {
+          describe('ortb2Imp.ext.data.pbadslot', function() {
+            beforeEach(function () {
+              if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
+                delete bidRequests[0].ortb2Imp;
+              }
+            });
+
+            it('should not send if imp[].ext.data object is invalid', function() {
+              bidRequests[0].ortb2Imp = {
+                ext: {}
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              expect(data.imp[0].ext).to.not.have.property('data');
+            });
+
+            it('should not send if imp[].ext.data.pbadslot is undefined', function() {
+              bidRequests[0].ortb2Imp = {
+                ext: {
+                  data: {
+                  }
+                }
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              if (data.imp[0].ext.data) {
+                expect(data.imp[0].ext.data).to.not.have.property('pbadslot');
+              } else {
+                expect(data.imp[0].ext).to.not.have.property('data');
+              }
+            });
+
+            it('should not send if imp[].ext.data.pbadslot is empty string', function() {
+              bidRequests[0].ortb2Imp = {
+                ext: {
+                  data: {
+                    pbadslot: ''
+                  }
+                }
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              if (data.imp[0].ext.data) {
+                expect(data.imp[0].ext.data).to.not.have.property('pbadslot');
+              } else {
+                expect(data.imp[0].ext).to.not.have.property('data');
+              }
+            });
+
+            it('should send if imp[].ext.data.pbadslot is string', function() {
+              bidRequests[0].ortb2Imp = {
+                ext: {
+                  data: {
+                    pbadslot: 'abcd'
+                  }
+                }
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              expect(data.imp[0].ext.data).to.have.property('pbadslot');
+              expect(data.imp[0].ext.data.pbadslot).to.equal('abcd');
+            });
+          });
+
+          describe('ortb2Imp.ext.data.adserver', function() {
+            beforeEach(function () {
+              if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
+                delete bidRequests[0].ortb2Imp;
+              }
+            });
+
+            it('should not send if imp[].ext.data object is invalid', function() {
+              bidRequests[0].ortb2Imp = {
+                ext: {}
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              expect(data.imp[0].ext).to.not.have.property('data');
+            });
+
+            it('should not send if imp[].ext.data.adserver is undefined', function() {
+              bidRequests[0].ortb2Imp = {
+                ext: {
+                  data: {
+                  }
+                }
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              if (data.imp[0].ext.data) {
+                expect(data.imp[0].ext.data).to.not.have.property('adserver');
+              } else {
+                expect(data.imp[0].ext).to.not.have.property('data');
+              }
+            });
+
+            it('should send', function() {
+              let adSlotValue = 'abc';
+              bidRequests[0].ortb2Imp = {
+                ext: {
+                  data: {
+                    adserver: {
+                      name: 'GAM',
+                      adslot: adSlotValue
+                    }
+                  }
+                }
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              expect(data.imp[0].ext.data.adserver.name).to.equal('GAM');
+              expect(data.imp[0].ext.data.adserver.adslot).to.equal(adSlotValue);
+              expect(data.imp[0].ext.dfp_ad_unit_code).to.equal(adSlotValue);
+            });
+          });
+
+          describe('ortb2Imp.ext.data.other', function() {
+            beforeEach(function () {
+              if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
+                delete bidRequests[0].ortb2Imp;
+              }
+            });
+
+            it('should not send if imp[].ext.data object is invalid', function() {
+              bidRequests[0].ortb2Imp = {
+                ext: {}
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              expect(data.imp[0].ext).to.not.have.property('data');
+            });
+
+            it('should not send if imp[].ext.data.other is undefined', function() {
+              bidRequests[0].ortb2Imp = {
+                ext: {
+                  data: {
+                  }
+                }
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              if (data.imp[0].ext.data) {
+                expect(data.imp[0].ext.data).to.not.have.property('other');
+              } else {
+                expect(data.imp[0].ext).to.not.have.property('data');
+              }
+            });
+
+            it('ortb2Imp.ext.data.other', function() {
+              bidRequests[0].ortb2Imp = {
+                ext: {
+                  data: {
+                    other: 1234
+                  }
+                }
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              expect(data.imp[0].ext.data.other).to.equal(1234);
+            });
+          });
+        });
+      });
+
       describe('setting imp.floor using floorModule', function() {
         /*
           Use the minimum value among floor from floorModule per mediaType
@@ -1695,7 +1903,7 @@ describe('PubMatic adapter', function () {
               'source': 'liveramp.com',
               'uids': [{
                 'id': 'identity-link-user-id',
-                'atype': 1
+                'atype': 3
               }]
             }]);
           });
@@ -1736,7 +1944,7 @@ describe('PubMatic adapter', function () {
               'source': 'liveintent.com',
               'uids': [{
                 'id': 'live-intent-user-id',
-                'atype': 1
+                'atype': 3
               }]
             }]);
           });
@@ -1818,7 +2026,7 @@ describe('PubMatic adapter', function () {
               'source': 'britepool.com',
               'uids': [{
                 'id': 'britepool-user-id',
-                'atype': 1
+                'atype': 3
               }]
             }]);
           });
