@@ -38,10 +38,11 @@
     "ADD_AD_UNITS": "addAdUnits",
     "AD_RENDER_FAILED": "adRenderFailed",
     "TCF2_ENFORCEMENT": "tcf2Enforcement",
-    "AUCTION_DEBUG": "auctionDebug"
+    "AUCTION_DEBUG": "auctionDebug",
+    "BID_VIEWABLE": "bidViewable"
   },
   "AD_RENDER_FAILED_REASON" : {
-    "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocuemnt",
+    "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocument",
     "NO_AD": "noAd",
     "EXCEPTION": "exception",
     "CANNOT_FIND_AD": "cannotFindAd",
@@ -59,6 +60,19 @@
     "CUSTOM": "custom"
   },
   "TARGETING_KEYS": {
+    "BIDDER": "hb_bidder",
+    "AD_ID": "hb_adid",
+    "PRICE_BUCKET": "hb_pb",
+    "SIZE": "hb_size",
+    "DEAL": "hb_deal",
+    "SOURCE": "hb_source",
+    "FORMAT": "hb_format",
+    "UUID": "hb_uuid",
+    "CACHE_ID": "hb_cache_id",
+    "CACHE_HOST": "hb_cache_host",
+    "ADOMAIN" : "hb_adomain"
+  },
+  "DEFAULT_TARGETING_KEYS": {
     "BIDDER": "hb_bidder",
     "AD_ID": "hb_adid",
     "PRICE_BUCKET": "hb_pb",
@@ -88,7 +102,9 @@
     "likes": "hb_native_likes",
     "phone": "hb_native_phone",
     "price": "hb_native_price",
-    "salePrice": "hb_native_saleprice"
+    "salePrice": "hb_native_saleprice",
+    "rendererUrl": "hb_renderer_url",
+    "adTemplate": "hb_adTemplate"
   },
   "S2S" : {
     "SRC" : "s2s",

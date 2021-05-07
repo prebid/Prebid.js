@@ -95,15 +95,15 @@ describe('WelectAdapter', function () {
       width: 640,
       height: 360,
       gdpr_consent: {
-        gdpr_applies: 1,
-        gdpr_consent: 'some_string'
+        gdprApplies: 1,
+        tcString: 'some_string'
       }
     }
 
     // Formatted requets
     let request1 = {
       method: 'POST',
-      url: 'https://www.welect.de/api/v2/preflight/by_alias/exampleAlias',
+      url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       data: data1,
       options: {
         contentType: 'application/json',
@@ -114,7 +114,7 @@ describe('WelectAdapter', function () {
 
     let request2 = {
       method: 'POST',
-      url: 'https://www.welect2.de/api/v2/preflight/by_alias/exampleAlias',
+      url: 'https://www.welect2.de/api/v2/preflight/exampleAlias',
       data: data2,
       options: {
         contentType: 'application/json',
@@ -166,12 +166,12 @@ describe('WelectAdapter', function () {
         width: 640,
         height: 320,
         gdpr_consent: {
-          gdpr_applies: 1,
-          gdpr_consent: 'some_string'
+          gdprApplies: 1,
+          tcString: 'some_string'
         }
       },
       method: 'POST',
-      url: 'https://www.welect.de/api/v2/preflight/by_alias/exampleAlias',
+      url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       options: {
         contentType: 'application/json',
         withCredentials: false,

@@ -66,7 +66,7 @@ export function isUsingNewSizeMapping(adUnits) {
       });
 
       // checks for the presence of sizeConfig property at the adUnit.bids[].bidder object
-      adUnit.bids.forEach(bidder => {
+      adUnit.bids && utils.isArray(adUnit.bids) && adUnit.bids.forEach(bidder => {
         if (bidder.sizeConfig) {
           if (isUsingSizeMappingBool === false) {
             isUsingSizeMappingBool = true;
@@ -168,8 +168,15 @@ export function checkAdUnitSetupHook(adUnits) {
   }
   const validatedAdUnits = [];
   adUnits.forEach(adUnit => {
+    const bids = adUnit.bids;
     const mediaTypes = adUnit.mediaTypes;
     let validatedBanner, validatedVideo, validatedNative;
+
+    if (!bids || !utils.isArray(bids)) {
+      utils.logError(`Detected adUnit.code '${adUnit.code}' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction.`);
+      return;
+    }
+
     if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
       utils.logError(`Detected adUnit.code '${adUnit.code}' did not have a 'mediaTypes' object defined. This is a required field for the auction, so this adUnit has been removed.`);
       return;
