@@ -645,11 +645,43 @@ function _createImpressionObject(bid, conf) {
     impObj.banner = bannerObj;
   }
 
+  _addImpressionFPD(impObj, bid);
+
   _addFloorFromFloorModule(impObj, bid);
 
   return impObj.hasOwnProperty(BANNER) ||
           impObj.hasOwnProperty(NATIVE) ||
             impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
+}
+
+function _addImpressionFPD(imp, bid) {
+  const ortb2 = {...utils.deepAccess(bid, 'ortb2Imp.ext.data')};
+  Object.keys(ortb2).forEach(prop => {
+    /**
+      * Prebid AdSlot
+      * @type {(string|undefined)}
+    */
+    if (prop === 'pbadslot') {
+      if (typeof ortb2[prop] === 'string' && ortb2[prop]) utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+    } else if (prop === 'adserver') {
+      /**
+       * Copy GAM AdUnit and Name to imp
+       */
+      ['name', 'adslot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(ortb2, `adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
+          // copy GAM ad unit id as imp[].ext.dfp_ad_unit_code
+          if (name === 'adslot') {
+            utils.deepSetValue(imp, `ext.dfp_ad_unit_code`, value);
+          }
+        }
+      });
+    } else {
+      utils.deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
+    }
+  });
 }
 
 function _addFloorFromFloorModule(impObj, bid) {
@@ -997,6 +1029,15 @@ export const spec = {
     _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+
+    // First Party Data
+    const commonFpd = config.getConfig('ortb2') || {};
+    if (commonFpd.site) {
+      utils.mergeDeep(payload, {site: commonFpd.site});
+    }
+    if (commonFpd.user) {
+      utils.mergeDeep(payload, {user: commonFpd.user});
+    }
 
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
