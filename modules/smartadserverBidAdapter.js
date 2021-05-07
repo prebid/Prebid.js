@@ -45,7 +45,53 @@ export const spec = {
   },
 
   /**
-   * Make a server request from the list of BidRequests.
+   * Transforms the banner ad unit sizes into an object array.
+   *
+   * @param {*} bannerSizes Array of size array (ex. [[300, 250]]).
+   * @returns
+   */
+  adaptBannerSizes: function(bannerSizes) {
+    return bannerSizes.map(size => ({
+      w: size[0],
+      h: size[1]
+    }));
+  },
+
+  /**
+   * Fills the payload with specific video attributes.
+   *
+   * @param {*} payload Payload that will be sent in the ServerRequest
+   * @param {*} videoMediaType Video media type.
+   */
+  fillPayloadForVideoBidRequest: function(payload, videoMediaType, videoParams) {
+    const playerSize = videoMediaType.playerSize[0];
+    payload.isVideo = videoMediaType.context === 'instream';
+    payload.mediaType = VIDEO;
+    payload.videoData = {
+      videoProtocol: videoParams.protocol,
+      playerWidth: playerSize[0],
+      playerHeight: playerSize[1],
+      adBreak: videoParams.startDelay || 1
+    };
+  },
+
+  /**
+   * Creates the server request.
+   *
+   * @param {*} payload Body of the request.
+   * @param {string} domain Endpoint domain .
+   * @returns {ServerRequest} Info describing the request to the server.
+   */
+  createServerRequest: function(payload, domain) {
+    return {
+      method: 'POST',
+      url: (domain !== undefined ? domain : 'https://prg.smartadserver.com') + '/prebid/v1',
+      data: JSON.stringify(payload),
+    };
+  },
+
+  /**
+   * Makes server requests from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests an array of bids
    * @param {BidderRequest} bidderRequest bidder request object
@@ -57,7 +103,7 @@ export const spec = {
     // to find which one the ad server needs
 
     // pull requested transaction ID from bidderRequest.bids[].transactionId
-    return validBidRequests.map(bid => {
+    return validBidRequests.reduce((bidRequests, bid) => {
       // Common bid request attributes for banner, outstream and instream.
       let payload = {
         siteid: bid.params.siteId,
@@ -78,28 +124,6 @@ export const spec = {
         schain: spec.serializeSupplyChain(bid.schain)
       };
 
-      const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-      if (!videoMediaType) {
-        const bannerMediaType = utils.deepAccess(bid, 'mediaTypes.banner');
-        payload.sizes = bannerMediaType.sizes.map(size => ({
-          w: size[0],
-          h: size[1]
-        }));
-      } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
-        // Specific attributes for instream.
-        let playerSize = videoMediaType.playerSize[0];
-        payload.isVideo = videoMediaType.context === 'instream';
-        payload.mediaType = VIDEO;
-        payload.videoData = {
-          videoProtocol: bid.params.video.protocol,
-          playerWidth: playerSize[0],
-          playerHeight: playerSize[1],
-          adBreak: bid.params.video.startDelay || 1
-        };
-      } else {
-        return {};
-      }
-
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.addtl_consent = bidderRequest.gdprConsent.addtlConsent;
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -114,14 +138,31 @@ export const spec = {
         payload.us_privacy = bidderRequest.uspConsent;
       }
 
-      var payloadString = JSON.stringify(payload);
+      const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+      const bannerMediaType = utils.deepAccess(bid, 'mediaTypes.banner');
+      const isAdUnitContainingVideo = videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream');
+      if (!isAdUnitContainingVideo && bannerMediaType) {
+        payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
+        bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
+      } else if (isAdUnitContainingVideo && !bannerMediaType) {
+        spec.fillPayloadForVideoBidRequest(payload, videoMediaType, bid.params.video);
+        bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
+      } else if (isAdUnitContainingVideo && bannerMediaType) {
+        // If there are video and banner media types in the ad unit, we clone the payload
+        // to create a specific one for video.
+        let videoPayload = utils.deepClone(payload);
 
-      return {
-        method: 'POST',
-        url: (bid.params.domain !== undefined ? bid.params.domain : 'https://prg.smartadserver.com') + '/prebid/v1',
-        data: payloadString,
-      };
-    });
+        spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
+        bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
+
+        payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
+        bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
+      } else {
+        bidRequests.push({});
+      }
+
+      return bidRequests;
+    }, []);
   },
 
   /**
