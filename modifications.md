@@ -6,6 +6,8 @@ Changes in files are wrapped between `/* gu-mod-start */` and `/* gu-mod-end */`
 to make it easier when upgrading versions. `CODEOWNERS` also highlights which files
 are actually created or modified by the @guardian/commercial-dev team.
 
+To compare this repo with upstream, see https://github.com/prebid/Prebid.js/compare/master...guardian:master
+
 Building `build/dist/prebid.js` is achieved by running the following `gulp` command:
 
 ```sh
