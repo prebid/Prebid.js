@@ -16,14 +16,14 @@ import { getGlobal } from '../src/prebidGlobal.js';
  * get keywords from api server. and set keywords.
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
- * @param {Object} config
+ * @param {Object} moduleConfig
  * @param {Object} userConsent
  */
-export function getDgKeywordsAndSet(reqBidsConfigObj, callback, config, userConsent) {
+export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, userConsent) {
   const URL = 'https://mediaconsortium.profiles.tagger.opecloud.com/api/v1?url=';
   const PROFILE_TIMEOUT_MS = 1000;
-  const timeout = (config && config.params && config.params.timeout && Number(config.params.timeout) > 0) ? Number(config.params.timeout) : PROFILE_TIMEOUT_MS;
-  const url = (config && config.params && config.params.url) ? config.params.url : URL + encodeURIComponent(window.location.href);
+  const timeout = (moduleConfig && moduleConfig.params && moduleConfig.params.timeout && Number(moduleConfig.params.timeout) > 0) ? Number(moduleConfig.params.timeout) : PROFILE_TIMEOUT_MS;
+  const url = (moduleConfig && moduleConfig.params && moduleConfig.params.url) ? moduleConfig.params.url : URL + encodeURIComponent(window.location.href);
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   let isFinish = false;
   utils.logMessage('[dgkeyword sub module]', adUnits, timeout);
@@ -48,9 +48,21 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, config, userCons
               keywords['opectx'] = res['t'];
             }
             if (Object.keys(keywords).length > 0) {
+              const targetBidKeys = {}
               for (let bid of setKeywordTargetBidders) {
+                // set keywords to params
                 bid.params.keywords = keywords;
+                if (!targetBidKeys[bid.bidder]) {
+                  targetBidKeys[bid.bidder] = true;
+                }
               }
+
+              // set keywrods to ortb2
+              let addOrtb2 = {};
+              utils.deepSetValue(addOrtb2, 'site.keywords', keywords);
+              utils.deepSetValue(addOrtb2, 'user.keywords', keywords);
+              const ortb2 = {ortb2: addOrtb2};
+              getGlobal().setBidderConfig({ bidders: Object.keys(targetBidKeys), config: ortb2 });
             }
           }
           isFinish = true;
