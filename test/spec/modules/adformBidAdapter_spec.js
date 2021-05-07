@@ -258,7 +258,7 @@ describe('Adform adapter', function () {
       assert.equal(result.currency, 'EUR');
       assert.equal(result.netRevenue, true);
       assert.equal(result.ttl, 360);
-      assert.equal(result.meta.advertiserDomains,[])
+      assert.equal(result.meta.advertiserDomains, [])
       assert.equal(result.ad, '<tag1>');
       assert.equal(result.bidderCode, 'adform');
       assert.equal(result.transactionId, '5f33781f-9552-4ca1');
@@ -267,7 +267,7 @@ describe('Adform adapter', function () {
     it('should set correct netRevenue', function () {
       serverResponse.body = [serverResponse.body[0]];
       bidRequest.bids = [bidRequest.bids[1]];
-      bidRequest.netRevenue = 'gross';
+      bidRequest.netRevenue = 'gross';https://github.com/prebid/Prebid.js/issues/6466 
       let result = spec.interpretResponse(serverResponse, bidRequest)[0];
 
       assert.equal(result.netRevenue, false);
