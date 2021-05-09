@@ -147,18 +147,20 @@ export const spec = {
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     const syncs = [];
     let syncUrl = config.getConfig('outbrain.usersyncUrl');
+
+    let query = [];
     if (syncOptions.pixelEnabled && syncUrl) {
       if (gdprConsent) {
-        syncUrl += '&gdpr=' + (gdprConsent.gdprApplies & 1);
-        syncUrl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+        query.push('gdpr=' + (gdprConsent.gdprApplies & 1));
+        query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
       }
       if (uspConsent) {
-        syncUrl += '&us_privacy=' + encodeURIComponent(uspConsent);
+        query.push('us_privacy=' + encodeURIComponent(uspConsent));
       }
 
       syncs.push({
         type: 'image',
-        url: syncUrl
+        url: syncUrl + (query.length ? '?' + query.join('&') : '')
       });
     }
     return syncs;
