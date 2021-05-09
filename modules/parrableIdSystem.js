@@ -206,7 +206,7 @@ function shouldFilterImpression(configParams, parrableId) {
 }
 
 function epochFromTtl(ttl) {
-  return Math.trunc((Date.now() / 1000) + ttl);
+  return Math.floor((Date.now() / 1000) + ttl);
 }
 
 function incrementFilterHits(parrableId, params) {
