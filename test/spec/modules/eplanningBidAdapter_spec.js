@@ -904,6 +904,7 @@ describe('E-Planning Adapter', function () {
         expect('aaa').to.equal(respuesta.data.vs);
       });
     });
+  });
   describe('Send eids', function() {
     it('should add eids to the request', function() {
       init(config);
@@ -925,6 +926,5 @@ describe('E-Planning Adapter', function () {
       expect('c29cb2ae-769d-42f6-891a-f53cadee823d').to.equal(dataRequest.pubcid);
       expect(expected_id5id).to.equal(dataRequest.id5id);
     });
-  });
   });
 });
