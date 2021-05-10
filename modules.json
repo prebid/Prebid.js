@@ -9,8 +9,6 @@
   "emx_digitalBidAdapter",
   "gdprEnforcement",
   "gumgumBidAdapter",
-  "id5IdSystem",
-  "identityLinkIdSystem",
   "improvedigitalBidAdapter",
   "insticatorBidAdapter",
   "ixBidAdapter",
@@ -25,6 +23,5 @@
   "sovrnBidAdapter",
   "synacormediaBidAdapter",
   "ucfunnelBidAdapter",
-  "unrulyBidAdapter",
-  "userId"
+  "unrulyBidAdapter"
 ]
