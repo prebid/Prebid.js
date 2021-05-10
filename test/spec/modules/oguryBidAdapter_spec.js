@@ -172,7 +172,7 @@ describe("OguryBidAdapter", function () {
         ...expectedRequestObject,
         regs: {
           ext: {
-            gdpr: false
+            gdpr: 1
           },
         },
         user: {
@@ -186,6 +186,7 @@ describe("OguryBidAdapter", function () {
 
       const request = spec.buildRequests(validBidRequests, bidderRequestWithoutGdpr);
       expect(request.data).to.deep.equal(expectedRequestObjectWithoutGdpr);
+      expect(request.data.regs.ext.gdpr).to.be.a('number');
     });
 
     it('should handle bidFloor undefined', () => {

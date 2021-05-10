@@ -25,7 +25,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     at: 2,
     regs: {
       ext: {
-        gdpr: false
+        gdpr: 1
       },
     },
     site: {
