@@ -318,5 +318,4 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 Prebid.js is supported on IE11 and modern browsers.
 
 ### Governance
-
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
