@@ -18,13 +18,15 @@ function buildImp(bidRequest) {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode
   };
+  let mediaType;
   let bannerReq = utils.deepAccess(bidRequest, `mediaTypes.banner`);
   let videoReq = utils.deepAccess(bidRequest, `mediaTypes.video`);
   if (bannerReq) {
     let sizes = canonicalizeSizesArray(bannerReq.sizes);
     imp.banner = {
       format: utils.parseSizesInput(sizes)
-    }
+    };
+    mediaType = BANNER;
   } else if (videoReq) {
     let size = canonicalizeSizesArray(videoReq.playerSize)[0];
     imp.video = {
@@ -34,6 +36,11 @@ function buildImp(bidRequest) {
       protocols: videoReq.protocols || DEFAULT_PROTOCOLS,
       api: videoReq.api || DEFAULT_APIS
     };
+    mediaType = VIDEO;
+  }
+  let bidFloor = getBidFloor(bidRequest, mediaType, '*');
+  if (bidFloor) {
+    imp.bidfloor = bidFloor;
   }
   return imp;
 }
@@ -111,6 +118,18 @@ function buildBid(tag) {
     bid.mediaType = VIDEO;
   }
   return bid;
+}
+
+function getBidFloor(bid, mediaType, sizes) {
+  var floor;
+  var size = sizes.length === 1 ? sizes[0] : '*';
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor;
 }
 
 export const spec = {

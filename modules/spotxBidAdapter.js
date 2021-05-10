@@ -291,9 +291,10 @@ export const spec = {
       if (!utils.isEmpty(userExt)) {
         requestPayload.user = { ext: userExt };
       }
+      const urlQueryParams = 'src_sys=prebid'
       return {
         method: 'POST',
-        url: URL + channelId,
+        url: URL + channelId + '?' + urlQueryParams,
         data: requestPayload,
         bidRequest: bidderRequest
       };
