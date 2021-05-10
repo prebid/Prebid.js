@@ -904,8 +904,8 @@ describe('E-Planning Adapter', function () {
         expect('aaa').to.equal(respuesta.data.vs);
       });
     });
-  describe('Send ids customs', function() {
-    it('should add to request ids customs', function() {
+  describe('Send eids', function() {
+    it('should add eids to the request', function() {
       init(config);
       config.setConfig({
         userSync: {

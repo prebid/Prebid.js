@@ -85,7 +85,7 @@ export const spec = {
       }
       const userIds = (getGlobal()).getUserIds();
       for (var id in userIds) {
-        params[id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : userIds[id];
+        params[id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
       }
     }
 
