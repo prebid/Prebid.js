@@ -111,7 +111,7 @@ function applyFloor(slot) {
   const floors = [];
   if (typeof slot.getFloor === 'function') {
     Object.keys(slot.mediaTypes).forEach(type => {
-      if (includes(SUPPORTED_MEDIA_TYPES, type)) {
+      if (SUPPORTED_MEDIA_TYPES.includes(type)) {
         floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' }).floor);
       }
     });
@@ -331,6 +331,9 @@ function interpretBannerBid(serverBid) {
     width: serverBid.w,
     height: serverBid.h,
     ttl: TTL,
+    meta: {
+      advertiserDomains: serverBid.adomain
+    },
     netRevenue: true,
     currency: 'USD'
   }
@@ -349,6 +352,9 @@ function interpretNativeBid(serverBid) {
     width: 1,
     height: 1,
     ttl: TTL,
+    meta: {
+      advertiserDomains: serverBid.adomain
+    },
     netRevenue: true,
     currency: 'USD',
     native: interpretNativeAd(serverBid.adm),
