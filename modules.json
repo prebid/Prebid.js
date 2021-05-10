@@ -1,17 +1,18 @@
 [
-  "consentManagement",
-  "consentManagementUsp",
-  "pubCommonId",
-  "guAnalyticsAdapter",
   "adyoulikeBidAdapter",
   "appnexusBidAdapter",
+  "consentManagement",
+  "consentManagementUsp",
+  "guAnalyticsAdapter",
   "improvedigitalBidAdapter",
   "ixBidAdapter",
-  "prebidServerBidAdapter",
-  "sonobiBidAdapter",
-  "trustxBidAdapter",
   "openxBidAdapter",
   "ozoneBidAdapter",
+  "permutiveRtdProvider",
+  "prebidServerBidAdapter",
+  "pubCommonId",
   "pubmaticBidAdapter",
-  "tripleliftBidAdapter"
+  "sonobiBidAdapter",
+  "tripleliftBidAdapter",
+  "trustxBidAdapter"
 ]
