@@ -39,14 +39,14 @@ function buildRequests(validBidRequests, bidderRequest) {
     imp: []
   };
 
-  if (bidderRequest.hasOwnProperty('gdprConsent') 
-    && bidderRequest.gdprConsent.hasOwnProperty('gdprApplies')) {
+  if (bidderRequest.hasOwnProperty('gdprConsent') &&
+    bidderRequest.gdprConsent.hasOwnProperty('gdprApplies')) {
     openRtbBidRequestBanner.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
   }
 
-  if (bidderRequest.hasOwnProperty('gdprConsent') 
-    && bidderRequest.gdprConsent.hasOwnProperty('consentString') 
-    && bidderRequest.gdprConsent.consentString.length > 0) {
+  if (bidderRequest.hasOwnProperty('gdprConsent') &&
+    bidderRequest.gdprConsent.hasOwnProperty('consentString') &&
+    bidderRequest.gdprConsent.consentString.length > 0) {
     openRtbBidRequestBanner.user.ext.consent = bidderRequest.gdprConsent.consentString
   }
 
@@ -54,8 +54,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     const sizes = getAdUnitSizes(bidRequest)
       .map(size => ({ w: size[0], h: size[1] }));
 
-    if (bidRequest.hasOwnProperty('mediaTypes') 
-      && bidRequest.mediaTypes.hasOwnProperty('banner')) {
+    if (bidRequest.hasOwnProperty('mediaTypes') &&
+      bidRequest.mediaTypes.hasOwnProperty('banner')) {
       openRtbBidRequestBanner.site.id = bidRequest.params.assetKey;
 
       openRtbBidRequestBanner.imp.push({

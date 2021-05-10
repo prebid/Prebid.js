@@ -1,10 +1,10 @@
-import { expect } from "chai";
-import { spec } from "modules/oguryBidAdapter";
+import { expect } from 'chai';
+import { spec } from 'modules/oguryBidAdapter';
 import { deepClone } from 'src/utils.js';
 
 const BID_HOST = 'http://bidder.local:3010/bids';
 
-describe("OguryBidAdapter", function () {
+describe('OguryBidAdapter', function () {
   let bidRequests;
   let bidderRequest;
 
@@ -59,18 +59,18 @@ describe("OguryBidAdapter", function () {
 
   bidderRequest = {
     auctionId: bidRequests[0].auctionId,
-    gdprConsent: {consentString: "myConsentString", vendorData: {}, gdprApplies: true},
+    gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
   };
 
-  describe("isBidRequestValid", function () {
-    it("should validate correct bid", () => {
+  describe('isBidRequestValid', function () {
+    it('should validate correct bid', () => {
       let validBid = deepClone(bidRequests[0]);
 
       let isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(true);
     });
 
-    it("should not validate incorrect bid", () => {
+    it('should not validate incorrect bid', () => {
       let invalidBid = deepClone(bidRequests[0]);
       delete invalidBid.sizes;
       delete invalidBid.mediaTypes;
@@ -78,8 +78,8 @@ describe("OguryBidAdapter", function () {
       let isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.equal(false);
     });
-    
-    it("should not validate bid if adunit is not present", () => {
+
+    it('should not validate bid if adunit is not present', () => {
       let invalidBid = deepClone(bidRequests[0]);
       delete invalidBid.params.adUnitId;
 
@@ -87,7 +87,7 @@ describe("OguryBidAdapter", function () {
       expect(isValid).to.equal(false);
     });
 
-    it("should not validate bid if assetKet is not present", () => {
+    it('should not validate bid if assetKet is not present', () => {
       let invalidBid = deepClone(bidRequests[0]);
       delete invalidBid.params.assetKey;
 
@@ -95,7 +95,7 @@ describe("OguryBidAdapter", function () {
       expect(isValid).to.equal(false);
     });
 
-    it("should validate bid if getFloor is not present", () => {
+    it('should validate bid if getFloor is not present', () => {
       let invalidBid = deepClone(bidRequests[1]);
       delete invalidBid.getFloor;
 
@@ -104,7 +104,7 @@ describe("OguryBidAdapter", function () {
     });
   });
 
-  describe("buildRequests", function () {
+  describe('buildRequests', function () {
     const defaultTimeout = 1000;
     const expectedRequestObject = {
       id: bidRequests[0].auctionId,
@@ -147,15 +147,15 @@ describe("OguryBidAdapter", function () {
       }
     };
 
-    it("sends bid request to ENDPOINT via POST", function () {
+    it('sends bid request to ENDPOINT via POST', function () {
       const validBidRequests = deepClone(bidRequests)
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.url).to.equal(BID_HOST);
-      expect(request.method).to.equal("POST");
+      expect(request.method).to.equal('POST');
     });
 
-    it("bid request object should be conform", function () {  
+    it('bid request object should be conform', function () {
       const validBidRequests = deepClone(bidRequests)
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -165,7 +165,7 @@ describe("OguryBidAdapter", function () {
 
     it('should not add gdpr infos if not present', () => {
       const bidderRequestWithoutGdpr = {
-        ...bidderRequest, 
+        ...bidderRequest,
         gdprConsent: {},
       }
       const expectedRequestObjectWithoutGdpr = {
@@ -220,7 +220,7 @@ describe("OguryBidAdapter", function () {
     });
   });
 
-  describe("interpretResponse", function () {
+  describe('interpretResponse', function () {
     let openRtbBidResponse = {
       body: {
         id: 'id_of_bid_response',
@@ -246,7 +246,7 @@ describe("OguryBidAdapter", function () {
       }
     };
 
-    it("should correctly interpret bidResponse", () => {
+    it('should correctly interpret bidResponse', () => {
       let expectedInterpretedBidResponse = [{
         requestId: openRtbBidResponse.body.seatbid[0].bid[0].impid,
         cpm: openRtbBidResponse.body.seatbid[0].bid[0].price,
@@ -274,12 +274,12 @@ describe("OguryBidAdapter", function () {
 
       expect(result).to.deep.equal(expectedInterpretedBidResponse)
     });
-  
+
     it('should return empty array if error during parsing', () => {
       const wrongOpenRtbBidReponse = 'wrong data'
       let request = spec.buildRequests(bidRequests, bidderRequest);
       let result = spec.interpretResponse(wrongOpenRtbBidReponse, request);
-      
+
       expect(result).to.be.instanceof(Array);
       expect(result.length).to.equal(0)
     })
