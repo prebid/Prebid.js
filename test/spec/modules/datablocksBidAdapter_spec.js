@@ -473,9 +473,9 @@ describe('DatablocksAdapter', function() {
         let curBid = bidderRequest.bids[index];
         if (imp.banner) {
           expect(imp.banner).to.be.a('object');
-          expect(imp).to.have.all.keys('banner', 'id', 'secure', 'tagid', 'placement_id', 'insights', 'floor');
+          expect(imp).to.have.all.keys('banner', 'id', 'secure', 'tagid', 'placement_id', 'ortb2', 'floor');
         } else if (imp.native) {
-          expect(imp).to.have.all.keys('native', 'id', 'secure', 'tagid', 'placement_id', 'insights', 'floor');
+          expect(imp).to.have.all.keys('native', 'id', 'secure', 'tagid', 'placement_id', 'ortb2', 'floor');
           expect(imp.native).to.have.all.keys('request', 'ver');
           expect(imp.native.request).to.be.a('object');
         } else {
