@@ -526,7 +526,7 @@ function _createBannerRequest(bid) {
 }
 
 function _createVideoRequest(bid) {
-  var videoData = bid.params.video;
+  var videoData =utils.mergeDeep(utils.deepAccess(bid.mediaTypes,'video'), bid.params.video);
   var videoObj;
 
   if (videoData !== UNDEFINED) {
@@ -544,9 +544,9 @@ function _createVideoRequest(bid) {
       videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
       videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
     }
-    if (bid.params.video.hasOwnProperty('skippable')) {
+    if (videoData.hasOwnProperty('skippable')) {
       videoObj.ext = {
-        'video_skippable': bid.params.video.skippable ? 1 : 0
+        'video_skippable': videoData.skippable ? 1 : 0
       };
     }
   } else {
@@ -886,24 +886,22 @@ export const spec = {
         return false;
       }
       // video ad validation
-      if (bid.params.hasOwnProperty('video')) {
-        if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
+      if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
+        if (!bid.mediaTypes.video.mimes || (bid.params.video && (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0))) {
           utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
           return false;
         }
-        if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
-          if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
-            utils.logError(`${LOG_WARN_PREFIX}: no context specified in bid. Rejecting bid: `, bid);
-            return false;
-          }
-          if (bid.mediaTypes[VIDEO].context === 'outstream' && !utils.isStr(bid.params.outstreamAU) && !bid.hasOwnProperty('renderer') && !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
-            utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
-            return false;
-          }
-        } else {
-          utils.logError(`${LOG_WARN_PREFIX}: mediaTypes or mediaTypes.video is not specified. Rejecting bid: `, bid);
+        if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
+          utils.logError(`${LOG_WARN_PREFIX}: no context specified in bid. Rejecting bid: `, bid);
           return false;
         }
+        if (bid.mediaTypes[VIDEO].context === 'outstream' && !utils.isStr(bid.params.outstreamAU) && !bid.hasOwnProperty('renderer') && !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
+          utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
+          return false;
+        }
+      } else {
+        utils.logError(`${LOG_WARN_PREFIX}: mediaTypes or mediaTypes.video is not specified. Rejecting bid: `, bid);
+        return false;
       }
       return true;
     }
