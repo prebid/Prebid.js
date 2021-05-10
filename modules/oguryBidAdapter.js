@@ -80,7 +80,7 @@ function interpretResponse(openRtbBidResponse) {
   if (!openRtbBidResponse ||
     !openRtbBidResponse.body ||
     typeof openRtbBidResponse.body != 'object' ||
-    Object.entries(openRtbBidResponse.body).length === 0) {
+    Object.keys(openRtbBidResponse.body).length === 0) {
     logWarn('no response or body is malformed');
     return [];
   }
