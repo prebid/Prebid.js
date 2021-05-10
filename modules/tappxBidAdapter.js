@@ -2,20 +2,22 @@
 
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.10329';
+const TAPPX_BIDDER_VERSION = '0.1.10420';
 const TYPE_CNN = 'prebidjs';
+const VIDEO_SUPPORT = ['instream'];
+
 var HOST;
 var hostDomain;
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -24,11 +26,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: function(bid) {
-    if ((bid.params == null) || (bid.params.endpoint == null) || (bid.params.tappxkey == null)) {
-      utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters. ${JSON.stringify(bid)}`);
-      return false;
-    }
-    return true;
+    return validBasic(bid) && validMediaType(bid)
   },
 
   /**
@@ -63,7 +61,7 @@ export const spec = {
     const bids = [];
     responseBody.seatbid.forEach(serverSeatBid => {
       serverSeatBid.bid.forEach(serverBid => {
-        bids.push(interpretBannerBid(serverBid, originalRequest));
+        bids.push(interpretBid(serverBid, originalRequest));
       });
     });
 
@@ -106,25 +104,66 @@ export const spec = {
   }
 }
 
+function validBasic(bid) {
+  if (
+    (bid.params == null) ||
+    (bid.params.endpoint == null) ||
+    (bid.params.tappxkey == null)) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters.`);
+    return false;
+  }
+  return true;
+}
+
+function validMediaType(bid) {
+  const video = utils.deepAccess(bid, 'mediaTypes.video');
+
+  // Video validations
+  if (typeof video != 'undefined') {
+    if (VIDEO_SUPPORT.indexOf(video.context) === -1) {
+      utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters for Video. Only "instream" is suported.`);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /**
  * Parse the response and generate one bid object.
  *
  * @param {object} serverBid Bid by OpenRTB 2.5
  * @returns {object} Prebid banner bidObject
  */
-function interpretBannerBid(serverBid, request) {
-  return {
+function interpretBid(serverBid, request) {
+  let bidReturned = {
     requestId: request.bids.bidId,
     cpm: serverBid.price,
     currency: serverBid.cur ? serverBid.cur : CUR,
     width: serverBid.w,
     height: serverBid.h,
-    ad: serverBid.adm,
     ttl: TTL,
     creativeId: serverBid.crid,
     netRevenue: true,
-    mediaType: BANNER,
   }
+
+  if (typeof serverBid.dealId != 'undefined') { bidReturned.dealId = serverBid.dealId }
+
+  if (typeof request.bids.mediaTypes != 'undefined' && typeof request.bids.mediaTypes.video != 'undefined') {
+    bidReturned.vastXml = serverBid.adm;
+    bidReturned.vastUrl = serverBid.lurl;
+    bidReturned.ad = serverBid.adm;
+    bidReturned.mediaType = VIDEO;
+  } else {
+    bidReturned.ad = serverBid.adm;
+    bidReturned.mediaType = BANNER;
+  }
+
+  if (typeof bidReturned.adomain != 'undefined' || bidReturned.adomain != null) {
+    bidReturned.meta = { advertiserDomains: request.bids.adomain };
+  }
+
+  return bidReturned;
 }
 
 /**
@@ -136,14 +175,15 @@ function interpretBannerBid(serverBid, request) {
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
   HOST = utils.deepAccess(validBidRequests, 'params.host');
-  let hostInfo = getHostInfo(HOST)
-  // hostDomain = HOST.split('/', 1)[0];
+  let hostInfo = getHostInfo(HOST);
   hostDomain = hostInfo.domain;
 
   const ENDPOINT = utils.deepAccess(validBidRequests, 'params.endpoint');
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
   const BIDFLOOR = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.banner');
+  const videoMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.video');
   const { refererInfo } = bidderRequest;
 
   // let requests = [];
@@ -205,16 +245,47 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     imp.banner = banner;
   }
 
+  if (videoMediaType) {
+    let video = {};
+    w = videoMediaType.playerSize[0][0];
+    h = videoMediaType.playerSize[0][1];
+    video.w = w;
+    video.h = h;
+
+    video.mimes = videoMediaType.mimes;
+
+    imp.video = video;
+  }
+
   imp.id = validBidRequests.bidId;
   imp.tagid = tagid;
   imp.secure = 1;
 
   imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  if (utils.isFn(validBidRequests.getFloor)) {
+    try {
+      let floor = validBidRequests.getFloor({
+        currency: CUR,
+        mediaType: '*',
+        size: '*'
+      });
+      if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+        imp.bidfloor = floor.floor;
+      } else {
+        utils.logWarn('[TAPPX]: ', 'Currency not valid. Use only USD with Tappx.');
+      }
+    } catch (e) {
+      utils.logWarn('[TAPPX]: ', e);
+      imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor'); // Be sure that we have an imp.bidfloor
+    }
+  }
 
   let bidder = {};
   bidder.tappxkey = TAPPXKEY;
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
+  bidder.bidfloor = BIDFLOOR;
+  bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : undefined;
 
   imp.ext = {};
   imp.ext.bidder = bidder;
@@ -310,7 +381,7 @@ function getHostInfo(hostParam) {
   domainInfo.domain = hostParam.split('/', 1)[0];
   domainInfo.url = hostParam;
 
-  let regexNewEndpoints = new RegExp(`^(zz.*|testing)\.ssp\.tappx\.com$`, 'i');
+  let regexNewEndpoints = new RegExp(`^(vz.*|zz.*|testing)\.ssp\.tappx\.com$`, 'i');
   let regexClassicEndpoints = new RegExp(`^[a-z]{3}\.[a-z]{3}\.tappx\.com$`, 'i');
 
   if (regexNewEndpoints.test(domainInfo.domain)) {
