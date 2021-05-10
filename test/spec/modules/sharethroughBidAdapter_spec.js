@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from '../../../src/utils.js';
+import { config } from 'src/config';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 const bidRequests = [
@@ -15,7 +17,20 @@ const bidRequests = [
     userId: {
       tdid: 'fake-tdid',
       pubcid: 'fake-pubcid',
-      idl_env: 'fake-identity-link'
+      idl_env: 'fake-identity-link',
+      id5id: {
+        uid: 'fake-id5id',
+        ext: {
+          linkType: 2
+        }
+      },
+      sharedid: {
+        id: 'fake-sharedid',
+        third: 'fake-sharedthird'
+      },
+      lipb: {
+        lipbid: 'fake-lipbid'
+      }
     },
     crumbs: {
       pubcid: 'fake-pubcid-in-crumbs-obj'
@@ -154,16 +169,20 @@ const setUserAgent = (uaString) => {
 };
 
 describe('sharethrough internal spec', function() {
-  let windowSpy, windowTopSpy;
-
+  let windowStub, windowTopStub;
+  let stubbedReturn = [{
+    appendChild: () => undefined
+  }]
   beforeEach(function() {
-    windowSpy = sinon.spy(window.document, 'getElementsByTagName');
-    windowTopSpy = sinon.spy(window.top.document, 'getElementsByTagName');
+    windowStub = sinon.stub(window.document, 'getElementsByTagName');
+    windowTopStub = sinon.stub(window.top.document, 'getElementsByTagName');
+    windowStub.withArgs('body').returns(stubbedReturn);
+    windowTopStub.withArgs('body').returns(stubbedReturn);
   });
 
   afterEach(function() {
-    windowSpy.restore();
-    windowTopSpy.restore();
+    windowStub.restore();
+    windowTopStub.restore();
     window.STR = undefined;
     window.top.STR = undefined;
   });
@@ -179,29 +198,29 @@ describe('sharethrough internal spec', function() {
 
     it('appends sfp.js to the safeframe', function() {
       sharethroughInternal.handleIframe();
-      expect(windowSpy.calledOnce).to.be.true;
+      expect(windowStub.calledOnce).to.be.true;
     });
 
     it('does not append anything if sfp.js is already loaded in the safeframe', function() {
       window.STR = { Tag: true };
       sharethroughInternal.handleIframe();
-      expect(windowSpy.notCalled).to.be.true;
-      expect(windowTopSpy.notCalled).to.be.true;
+      expect(windowStub.notCalled).to.be.true;
+      expect(windowTopStub.notCalled).to.be.true;
     });
   });
 
   describe('we are able to bust out of the iframe', function() {
     it('appends sfp.js to window.top', function() {
       sharethroughInternal.handleIframe();
-      expect(windowSpy.calledOnce).to.be.true;
-      expect(windowTopSpy.calledOnce).to.be.true;
+      expect(windowStub.calledOnce).to.be.true;
+      expect(windowTopStub.calledOnce).to.be.true;
     });
 
     it('only appends sfp-set-targeting.js if sfp.js is already loaded on the page', function() {
       window.top.STR = { Tag: true };
       sharethroughInternal.handleIframe();
-      expect(windowSpy.calledOnce).to.be.true;
-      expect(windowTopSpy.notCalled).to.be.true;
+      expect(windowStub.calledOnce).to.be.true;
+      expect(windowTopStub.notCalled).to.be.true;
     });
   });
 });
@@ -331,6 +350,15 @@ describe('sharethrough adapter spec', function() {
 
     it('should add the pubcid parameter if a bid request contains a value for the Publisher Common ID Module in the' +
       ' crumbs object of the bidrequest', function() {
+      const bidData = utils.deepClone(bidRequests);
+      delete bidData[0].userId.pubcid;
+
+      const bidRequest = spec.buildRequests(bidData)[0];
+      expect(bidRequest.data.pubcid).to.eq('fake-pubcid-in-crumbs-obj');
+    });
+
+    it('should add the pubcid parameter if a bid request contains a value for the Publisher Common ID Module in the' +
+      ' crumbs object of the bidrequest', function() {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       delete bidRequest.userId;
       expect(bidRequest.data.pubcid).to.eq('fake-pubcid');
@@ -339,6 +367,23 @@ describe('sharethrough adapter spec', function() {
     it('should add the idluid parameter if a bid request contains a value for Identity Link from Live Ramp', function() {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       expect(bidRequest.data.idluid).to.eq('fake-identity-link');
+    });
+
+    it('should add the id5uid parameter if a bid request contains a value for ID5', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.id5uid.id).to.eq('fake-id5id');
+      expect(bidRequest.data.id5uid.linkType).to.eq(2);
+    });
+
+    it('should add the shduid parameter if a bid request contains a value for Shared ID', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.shduid.id).to.eq('fake-sharedid');
+      expect(bidRequest.data.shduid.third).to.eq('fake-sharedthird');
+    });
+
+    it('should add the liuid parameter if a bid request contains a value for LiveIntent ID', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.liuid).to.eq('fake-lipbid');
     });
 
     it('should add Sharethrough specific parameters', function() {
@@ -400,6 +445,29 @@ describe('sharethrough adapter spec', function() {
       const bidRequest = Object.assign({}, bidRequests[0]);
       const builtBidRequest = spec.buildRequests([bidRequest])[0];
       expect(builtBidRequest.data).to.not.include.any.keys('bidfloor');
+    });
+
+    describe('coppa', function() {
+      it('should add coppa to request if enabled', function() {
+        config.setConfig({coppa: true});
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        const builtBidRequest = spec.buildRequests([bidRequest])[0];
+        expect(builtBidRequest.data.coppa).to.eq(true);
+      });
+
+      it('should not add coppa to request if disabled', function() {
+        config.setConfig({coppa: false});
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        const builtBidRequest = spec.buildRequests([bidRequest])[0];
+        expect(builtBidRequest.data.coppa).to.be.undefined;
+      });
+
+      it('should not add coppa to request if unknown value', function() {
+        config.setConfig({coppa: 'something'});
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        const builtBidRequest = spec.buildRequests([bidRequest])[0];
+        expect(builtBidRequest.data.coppa).to.be.undefined;
+      });
     });
   });
 

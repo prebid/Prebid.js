@@ -168,8 +168,8 @@ describe('adWMGBidAdapter', function () {
 
     it('should have an url that match the default endpoint', function() {
       let requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].url).to.equal('https://rtb.adwmg.com/prebid');
-      expect(requests[1].url).to.equal('https://rtb.adwmg.com/prebid');
+      expect(requests[0].url).to.equal('https://hb.adwmg.com/hb');
+      expect(requests[1].url).to.equal('https://hb.adwmg.com/hb');
     });
 
     it('should contain GDPR consent data if GDPR set', function() {
@@ -258,7 +258,7 @@ describe('adWMGBidAdapter', function () {
 
       let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).includes('https://rtb.adwmg.com/cphb.html?');
+      expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?');
     });
 
     it('should register iframe sync when iframe and image are enabled', function () {
@@ -269,7 +269,7 @@ describe('adWMGBidAdapter', function () {
 
       let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).includes('https://rtb.adwmg.com/cphb.html?');
+      expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?');
     });
 
     it('should send GDPR consent if enabled', function() {
@@ -287,6 +287,46 @@ describe('adWMGBidAdapter', function () {
       let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
       expect(syncs[0].url).includes('gdpr=1');
       expect(syncs[0].url).includes(`gdpr_consent=${gdprConsent.consentString}`);
+    });
+
+    it('should not add GDPR consent params twice', function() {
+      const syncOptions = {
+        'iframeEnabled': true,
+        'pixelEnabled': true
+      };
+      const gdprConsent = {
+        consentString: 'CO9rhBTO9rhBTAcABBENBCCsAP_AAH_AACiQHItf_X_fb3_j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vB36pq4KuR4Eu3LBIQdlHOHcTUmw6IkVqTPsbk2Mr7NKJ7PEinMbe2dYGH9_n9XTuZKY79_s___z__-__v__7_f_r-3_3_vp9V---3YHIgEmGpfARZiWOBJNGlUKIEIVxIdACACihGFomsICVwU7K4CP0EDABAagIwIgQYgoxZBAAAAAElEQEgB4IBEARAIAAQAqQEIACNAEFgBIGAQACgGhYARQBCBIQZHBUcpgQESLRQTyVgCUXexhhCGUUANAg4AA.YAAAAAAAAAAA',
+        vendorData: {},
+        gdprApplies: true,
+        apiVersion: 2
+      };
+      const gdprConsent2 = {
+        consentString: 'CO9rhBTO9rhBTAcABBENBCCsAP_AAH_AACiQHItf_7_fb3_j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vB36pq4KuR4Eu3LBIQdlHOHcTUmw6IkVqTPsbk2Mr7NKJ7PEinMbe2dYGH9_n9XTuZKY79_s___z__-__v__7_f_r-3_3_vp9V---3YHIgEmGpfARZiWOBJNGlUKIEIVxIdACACihGFomsICVwU7K4CP0EDABAagIwIgQYgoxZBAAAAAElEQEgB4IBEARAIAAQAqQEIACNAEFgBIGAQACgGhYARQBCBIQZHBUcpgQESLRQTyVgCUXexhhCGUUANAg4AA.YAAAAAAAAAAA',
+        vendorData: {},
+        gdprApplies: true,
+        apiVersion: 2
+      };
+      const serverResponse = {};
+      let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
+      syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent2);
+      expect(syncs[0].url.match(/gdpr/g).length).to.equal(2); // gdpr + gdpr_consent
+      expect(syncs[0].url.match(/gdpr_consent/g).length).to.equal(1);
+    });
+
+    it('should delete \'&\' symbol at the end of usersync URL', function() {
+      const syncOptions = {
+        'iframeEnabled': true,
+        'pixelEnabled': true
+      };
+      const gdprConsent = {
+        consentString: 'CO9rhBTO9rhBTAcABBENBCCsAP_AAH_AACiQHItf_X_fb3_j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vB36pq4KuR4Eu3LBIQdlHOHcTUmw6IkVqTPsbk2Mr7NKJ7PEinMbe2dYGH9_n9XTuZKY79_s___z__-__v__7_f_r-3_3_vp9V---3YHIgEmGpfARZiWOBJNGlUKIEIVxIdACACihGFomsICVwU7K4CP0EDABAagIwIgQYgoxZBAAAAAElEQEgB4IBEARAIAAQAqQEIACNAEFgBIGAQACgGhYARQBCBIQZHBUcpgQESLRQTyVgCUXexhhCGUUANAg4AA.YAAAAAAAAAAA',
+        vendorData: {},
+        gdprApplies: true,
+        apiVersion: 2
+      };
+      const serverResponse = {};
+      let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
+      expect(syncs[0].url.slice(-1)).to.not.equal('&');
     });
   });
 });

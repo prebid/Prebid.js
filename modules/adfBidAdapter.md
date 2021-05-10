@@ -1,13 +1,13 @@
 # Overview
 
-Module Name: Adform OpenRTB Adapter
+Module Name: Adf Adapter
 Module Type: Bidder Adapter
 Maintainer: Scope.FL.Scripts@adform.com
 
 # Description
 
 Module that connects to Adform demand sources to fetch bids.
-Only native format is supported. Using OpenRTB standard.
+Only native format is supported. Using OpenRTB standard. Previous adapter name - adformOpenRTB.
 
 # Test Parameters
 ```
@@ -42,7 +42,7 @@ Only native format is supported. Using OpenRTB standard.
             }
         },
         bids: [{
-            bidder: 'adformOpenRTB',
+            bidder: 'adf',
             params: {
                 mid: 606169,                  // required
                 adxDomain: 'adx.adform.net',  // optional

@@ -8,22 +8,22 @@ import sha256 from 'crypto-js/sha256.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { createEidsArray } from './userId/eids.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { OUTSTREAM } from '../src/video.js';
 
 export const BIDDER_CODE = 'adagio';
 export const LOG_PREFIX = 'Adagio:';
-export const VERSION = '2.6.0';
+export const VERSION = '2.8.0';
 export const FEATURES_VERSION = '1';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
-export const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
+export const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 export const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 export const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 export const GVLID = 617;
 export const storage = getStorageManager(GVLID, 'adagio');
 export const RENDERER_URL = 'https://script.4dex.io/outstream-player.js';
-
+export const MAX_SESS_DURATION = 30 * 60 * 1000;
 export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9el0+OEn6fvEh1RdVHQu4cnT0
 jFSzIbGJJyg3cKqvtE6A0iaz9PkIdJIvSSSNrmJv+lRGKPEyRA/VnzJIieL39Ngl
@@ -61,6 +61,8 @@ export const ORTB_VIDEO_PARAMS = {
 };
 
 let currentWindow;
+
+const EXT_DATA = {}
 
 export function adagioScriptFromLocalStorageCb(ls) {
   try {
@@ -108,6 +110,9 @@ export function getAdagioScript() {
       // It's an antipattern regarding the TCF2 enforcement logic
       // but it's the only way to respect the user choice update.
       window.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
+      // Extra data from external script.
+      // This key is removed only if localStorage is not accessible.
+      window.localStorage.removeItem('adagio');
     }
   });
 }
@@ -131,6 +136,37 @@ function isSafeFrameWindow() {
   return !!(ws.$sf && ws.$sf.ext);
 }
 
+// Get localStorage "adagio" data to be passed to the request
+export function prepareExchange(storageValue) {
+  const adagioStorage = JSON.parse(storageValue, function(name, value) {
+    if (!name.startsWith('_') || name === '') {
+      return value;
+    }
+  });
+  let random = utils.deepAccess(adagioStorage, 'session.rnd');
+  let newSession = false;
+
+  if (internal.isNewSession(adagioStorage)) {
+    newSession = true;
+    random = Math.random();
+  }
+
+  const data = {
+    session: {
+      new: newSession,
+      rnd: random
+    }
+  }
+
+  utils.mergeDeep(EXT_DATA, adagioStorage, data);
+
+  internal.enqueue({
+    action: 'session',
+    ts: Date.now(),
+    data: EXT_DATA
+  });
+}
+
 function initAdagio() {
   if (canAccessTopWindow()) {
     currentWindow = (canAccessTopWindow()) ? utils.getWindowTop() : utils.getWindowSelf();
@@ -145,6 +181,14 @@ function initAdagio() {
   w.ADAGIO.versions = w.ADAGIO.versions || {};
   w.ADAGIO.versions.adagioBidderAdapter = VERSION;
   w.ADAGIO.isSafeFrameWindow = isSafeFrameWindow();
+
+  storage.getDataFromLocalStorage('adagio', (storageData) => {
+    try {
+      internal.prepareExchange(storageData);
+    } catch (e) {
+      utils.logError(LOG_PREFIX, e);
+    }
+  });
 
   getAdagioScript();
 }
@@ -561,6 +605,21 @@ function isRendererPreferredFromPublisher(bidRequest) {
   );
 }
 
+/**
+ *
+ * @param {object} adagioStorage
+ * @returns {boolean}
+ */
+function isNewSession(adagioStorage) {
+  const now = Date.now();
+  const { lastActivityTime, vwSmplg } = utils.deepAccess(adagioStorage, 'session', {});
+  return (
+    !utils.isNumber(lastActivityTime) ||
+    !utils.isNumber(vwSmplg) ||
+    (now - lastActivityTime) > MAX_SESS_DURATION
+  )
+}
+
 export const internal = {
   enqueue,
   getOrAddAdagioAdUnit,
@@ -577,7 +636,9 @@ export const internal = {
   getCurrentWindow,
   supportIObs,
   canAccessTopWindow,
-  isRendererPreferredFromPublisher
+  isRendererPreferredFromPublisher,
+  isNewSession,
+  prepareExchange
 };
 
 function _getGdprConsent(bidderRequest) {
@@ -685,6 +746,112 @@ function _renderer(bid) {
       utils.logError(`${LOG_PREFIX} Adagio outstream player is not defined`);
     }
   });
+}
+
+function _parseNativeBidResponse(bid) {
+  if (!bid.admNative || !Array.isArray(bid.admNative.assets)) {
+    utils.logError(`${LOG_PREFIX} Invalid native response`);
+    return;
+  }
+
+  const native = {}
+
+  function addAssetDataValue(data) {
+    const map = {
+      1: 'sponsoredBy', // sponsored
+      2: 'body', // desc
+      3: 'rating',
+      4: 'likes',
+      5: 'downloads',
+      6: 'price',
+      7: 'salePrice',
+      8: 'phone',
+      9: 'address',
+      10: 'body2', // desc2
+      11: 'displayUrl',
+      12: 'cta'
+    }
+    if (map.hasOwnProperty(data.type) && typeof data.value === 'string') {
+      native[map[data.type]] = data.value;
+    }
+  }
+
+  // assets
+  bid.admNative.assets.forEach(asset => {
+    if (asset.title) {
+      native.title = asset.title.text
+    } else if (asset.data) {
+      addAssetDataValue(asset.data)
+    } else if (asset.img) {
+      switch (asset.img.type) {
+        case 1:
+          native.icon = {
+            url: asset.img.url,
+            width: asset.img.w,
+            height: asset.img.h
+          };
+          break;
+        default:
+          native.image = {
+            url: asset.img.url,
+            width: asset.img.w,
+            height: asset.img.h
+          };
+          break;
+      }
+    }
+  });
+
+  if (bid.admNative.link) {
+    if (bid.admNative.link.url) {
+      native.clickUrl = bid.admNative.link.url;
+    }
+    if (Array.isArray(bid.admNative.link.clickTrackers)) {
+      native.clickTrackers = bid.admNative.link.clickTrackers
+    }
+  }
+
+  if (Array.isArray(bid.admNative.eventtrackers)) {
+    native.impressionTrackers = [];
+    bid.admNative.eventtrackers.forEach(tracker => {
+      // Only Impression events are supported. Prebid does not support Viewability events yet.
+      if (tracker.event !== 1) {
+        return;
+      }
+
+      // methods:
+      // 1: image
+      // 2: js
+      // note: javascriptTrackers is a string. If there's more than one JS tracker in bid response, the last script will be used.
+      switch (tracker.method) {
+        case 1:
+          native.impressionTrackers.push(tracker.url);
+          break;
+        case 2:
+          native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          break;
+      }
+    });
+  } else {
+    native.impressionTrackers = Array.isArray(bid.admNative.imptrackers) ? bid.admNative.imptrackers : [];
+    if (bid.admNative.jstracker) {
+      native.javascriptTrackers = bid.admNative.jstracker;
+    }
+  }
+
+  if (bid.admNative.privacy) {
+    native.privacyLink = bid.admNative.privacy;
+  }
+
+  if (bid.admNative.ext) {
+    native.ext = {}
+
+    if (bid.admNative.ext.bvw) {
+      native.ext.adagio_bvw = bid.admNative.ext.bvw;
+    }
+  }
+
+  bid.native = native
 }
 
 export const spec = {
@@ -812,6 +979,7 @@ export const spec = {
           site: site,
           pageviewId: pageviewId,
           adUnits: groupedAdUnits[organizationId],
+          data: EXT_DATA,
           regs: {
             gdpr: gdprConsent,
             coppa: coppa,
@@ -871,6 +1039,10 @@ export const spec = {
 
                   bidObj.renderer.setRender(_renderer);
                 }
+              }
+
+              if (bidObj.mediaType === NATIVE) {
+                _parseNativeBidResponse(bidObj);
               }
 
               bidObj.site = bidReq.params.site;

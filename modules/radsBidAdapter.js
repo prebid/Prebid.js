@@ -57,7 +57,7 @@ export const spec = {
           bid_id: bidId,
         };
       }
-      prepareExtraParams(params, payload);
+      prepareExtraParams(params, payload, bidderRequest);
 
       return {
         method: 'GET',
@@ -97,7 +97,44 @@ export const spec = {
       bidResponses.push(bidResponse);
     }
     return bidResponses;
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    if (!serverResponses || serverResponses.length === 0) {
+      return [];
+    }
+
+    const syncs = []
+
+    let gdprParams = '';
+    if (gdprConsent) {
+      if ('gdprApplies' in gdprConsent && typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
+    if (syncOptions.iframeEnabled) {
+      serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
+        type: 'iframe',
+        url: appendToUrl(url, gdprParams)
+      }));
+    }
+    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+      serverResponses[0].body.userSync.imageUrl.forEach((url) => syncs.push({
+        type: 'image',
+        url: appendToUrl(url, gdprParams)
+      }));
+    }
+    return syncs;
   }
+}
+
+function appendToUrl(url, what) {
+  if (!what) {
+    return url;
+  }
+  return url + (url.indexOf('?') !== -1 ? '&' : '?') + what;
 }
 
 function objectToQueryString(obj, prefix) {
@@ -125,10 +162,23 @@ function isVideoRequest(bid) {
   return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
 }
 
-function prepareExtraParams(params, payload) {
+function prepareExtraParams(params, payload, bidderRequest) {
   if (params.pfilter !== undefined) {
     payload.pfilter = params.pfilter;
   }
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if (payload.pfilter !== undefined) {
+      payload.pfilter.gdpr_consent = bidderRequest.gdprConsent.consentString;
+      payload.pfilter.gdpr = bidderRequest.gdprConsent.gdprApplies;
+    } else {
+      payload.pfilter = {
+        'gdpr_consent': bidderRequest.gdprConsent.consentString,
+        'gdpr': bidderRequest.gdprConsent.gdprApplies
+      };
+    }
+  }
+
   if (params.bcat !== undefined) {
     payload.bcat = params.bcat;
   }

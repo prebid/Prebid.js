@@ -103,7 +103,7 @@ describe('WelectAdapter', function () {
     // Formatted requets
     let request1 = {
       method: 'POST',
-      url: 'https://www.welect.de/api/v2/preflight/by_alias/exampleAlias',
+      url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       data: data1,
       options: {
         contentType: 'application/json',
@@ -114,7 +114,7 @@ describe('WelectAdapter', function () {
 
     let request2 = {
       method: 'POST',
-      url: 'https://www.welect2.de/api/v2/preflight/by_alias/exampleAlias',
+      url: 'https://www.welect2.de/api/v2/preflight/exampleAlias',
       data: data2,
       options: {
         contentType: 'application/json',
@@ -171,7 +171,7 @@ describe('WelectAdapter', function () {
         }
       },
       method: 'POST',
-      url: 'https://www.welect.de/api/v2/preflight/by_alias/exampleAlias',
+      url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       options: {
         contentType: 'application/json',
         withCredentials: false,

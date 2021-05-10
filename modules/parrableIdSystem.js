@@ -6,6 +6,7 @@
  */
 
 import * as utils from '../src/utils.js'
+import find from 'core-js-pure/features/array/find.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -14,12 +15,13 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
 const PARRABLE_COOKIE_NAME = '_parrable_id';
+const PARRABLE_GVLID = 928;
 const LEGACY_ID_COOKIE_NAME = '_parrable_eid';
 const LEGACY_OPTOUT_COOKIE_NAME = '_parrable_optout';
 const ONE_YEAR_MS = 364 * 24 * 60 * 60 * 1000;
 const EXPIRE_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
 
-const storage = getStorageManager();
+const storage = getStorageManager(PARRABLE_GVLID);
 
 function getExpirationDate() {
   const oneYearFromNow = new Date(utils.timestamp() + ONE_YEAR_MS);
@@ -60,7 +62,7 @@ function isValidConfig(configParams) {
     utils.logError('User ID - parrableId submodule requires configParams');
     return false;
   }
-  if (!configParams.partner) {
+  if (!configParams.partners && !configParams.partner) {
     utils.logError('User ID - parrableId submodule requires partner list');
     return false;
   }
@@ -68,6 +70,15 @@ function isValidConfig(configParams) {
     utils.logWarn('User ID - parrableId submodule does not require a storage config');
   }
   return true;
+}
+
+function encodeBase64UrlSafe(base64) {
+  const ENC = {
+    '+': '-',
+    '/': '_',
+    '=': '.'
+  };
+  return base64.replace(/[+/=]/g, (m) => ENC[m]);
 }
 
 function readCookie() {
@@ -127,12 +138,18 @@ function shouldFilterImpression(configParams, parrableId) {
   const offset = (new Date()).getTimezoneOffset() / 60;
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+  function isZoneListed(list, zone) {
+    // IE does not provide a timeZone in IANA format so zone will be empty
+    const zoneLowercase = zone && zone.toLowerCase();
+    return !!(list && zone && find(list, zn => zn.toLowerCase() === zoneLowercase));
+  }
+
   function isAllowed() {
     if (utils.isEmpty(config.allowedZones) &&
       utils.isEmpty(config.allowedOffsets)) {
       return true;
     }
-    if (utils.contains(config.allowedZones, zone)) {
+    if (isZoneListed(config.allowedZones, zone)) {
       return true;
     }
     if (utils.contains(config.allowedOffsets, offset)) {
@@ -146,7 +163,7 @@ function shouldFilterImpression(configParams, parrableId) {
       utils.isEmpty(config.blockedOffsets)) {
       return false;
     }
-    if (utils.contains(config.blockedZones, zone)) {
+    if (isZoneListed(config.blockedZones, zone)) {
       return true;
     }
     if (utils.contains(config.blockedOffsets, offset)) {
@@ -155,10 +172,10 @@ function shouldFilterImpression(configParams, parrableId) {
     return false;
   }
 
-  return !isAllowed() || isBlocked();
+  return isBlocked() || !isAllowed();
 }
 
-function fetchId(configParams) {
+function fetchId(configParams, gdprConsentData) {
   if (!isValidConfig(configParams)) return;
 
   let parrableId = readCookie();
@@ -174,20 +191,33 @@ function fetchId(configParams) {
   const eid = (parrableId) ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
   const uspString = uspDataHandler.getConsentData();
+  const gdprApplies = (gdprConsentData && typeof gdprConsentData.gdprApplies === 'boolean' && gdprConsentData.gdprApplies);
+  const gdprConsentString = (gdprConsentData && gdprApplies && gdprConsentData.consentString) || '';
+  const partners = configParams.partners || configParams.partner
+  const trackers = typeof partners === 'string'
+    ? partners.split(',')
+    : partners;
 
   const data = {
     eid,
-    trackers: configParams.partner.split(','),
-    url: refererInfo.referer
+    trackers,
+    url: refererInfo.referer,
+    prebidVersion: '$prebid.version$',
+    isIframe: utils.inIframe()
   };
 
   const searchParams = {
-    data: btoa(JSON.stringify(data)),
+    data: encodeBase64UrlSafe(btoa(JSON.stringify(data))),
+    gdpr: gdprApplies ? 1 : 0,
     _rand: Math.random()
   };
 
   if (uspString) {
     searchParams.us_privacy = uspString;
+  }
+
+  if (gdprApplies) {
+    searchParams.gdpr_consent = gdprConsentString;
   }
 
   const options = {
@@ -236,7 +266,7 @@ function fetchId(configParams) {
     callback,
     id: parrableId
   };
-};
+}
 
 /** @type {Submodule} */
 export const parrableIdSubmodule = {
@@ -245,6 +275,12 @@ export const parrableIdSubmodule = {
    * @type {string}
    */
   name: 'parrableId',
+  /**
+   * Global Vendor List ID
+   * @type {number}
+   */
+  gvlid: PARRABLE_GVLID,
+
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -267,7 +303,7 @@ export const parrableIdSubmodule = {
    */
   getId(config, gdprConsentData, currentStoredId) {
     const configParams = (config && config.params) || {};
-    return fetchId(configParams);
+    return fetchId(configParams, gdprConsentData);
   }
 };
 

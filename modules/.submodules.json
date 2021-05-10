@@ -16,11 +16,19 @@
     "zeotapIdPlusIdSystem",
     "haloIdSystem",
     "quantcastIdSystem",
+    "deepintentDpesIdSystem",
+    "nextrollIdSystem",
     "idxIdSystem",
     "fabrickIdSystem",
     "verizonMediaIdSystem",
     "pubProvidedIdSystem",
-    "tapadIdSystem"
+    "mwOpenLinkIdSystem",
+    "tapadIdSystem",
+    "novatiqIdSystem",
+    "uid2IdSystem",
+    "admixerIdSystem",
+    "dmdIdSystem",
+    "flocIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -31,6 +39,7 @@
     "haloRtdProvider",
     "jwplayerRtdProvider",
     "reconciliationRtdProvider",
-    "geoedgeRtdProvider"
+    "geoedgeRtdProvider",
+    "sirdataRtdProvider"
   ]
 }
