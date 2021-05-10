@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/oguryBidAdapter';
 import { deepClone } from 'src/utils.js';
 
-const BID_HOST = 'http://bidder.local:3010/bids';
+const BID_HOST = 'https://webmobile.presage.io/api/header-bidding-request';
 
 describe('OguryBidAdapter', function () {
   let bidRequests;
