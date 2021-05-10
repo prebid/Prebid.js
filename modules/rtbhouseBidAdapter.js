@@ -111,7 +111,7 @@ function applyFloor(slot) {
   const floors = [];
   if (typeof slot.getFloor === 'function') {
     Object.keys(slot.mediaTypes).forEach(type => {
-      if (SUPPORTED_MEDIA_TYPES.includes(type)) {
+      if (includes(SUPPORTED_MEDIA_TYPES, type)) {
         floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' }).floor);
       }
     });
