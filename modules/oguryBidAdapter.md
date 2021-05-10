@@ -8,7 +8,7 @@ Maintainer: web.inventory@ogury.co
 
 # Description
 
-Module that connects to Ogury's SSP solution
+Module that connects to Ogury's SSP solution 
 Ogury bid adapter supports Banner media type.
 
 # Test Parameters
