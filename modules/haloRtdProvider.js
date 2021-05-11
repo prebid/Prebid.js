@@ -136,6 +136,10 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
     reqParams = rtdConfig.params.requestParams;
   }
 
+  if (isPlainObject(window.pubHaloPm)) {
+    reqParams.pubHaloPm = window.pubHaloPm;
+  }
+
   const url = `https://seg.halo.ad.gt/api/v1/rtd`;
   ajax(url, {
     success: function (response, req) {
