@@ -162,6 +162,12 @@ const BB_RENDERER = {
   }
 };
 
+const MEDIATYPE = {
+  0: BANNER,
+  1: VIDEO,
+  2: NATIVE
+}
+
 let publisherId = 0;
 let isInvalidNativeRequest = false;
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
@@ -735,22 +741,28 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
-function _checkMediaType(adm, newBid) {
+function _checkMediaType(bid, newBid) {
   // Create a regex here to check the strings
-  var admStr = '';
-  var videoRegex = new RegExp(/VAST\s+version/);
-  if (adm.indexOf('span class="PubAPIAd"') >= 0) {
-    newBid.mediaType = BANNER;
-  } else if (videoRegex.test(adm)) {
-    newBid.mediaType = VIDEO;
+  if (bid.ext && bid.ext.BidType && Object.keys(MEDIATYPE).indexOf(bid.ext.BidType.toString()) > -1) {
+    newBid.mediaType = MEDIATYPE[bid.ext.BidType];
   } else {
-    try {
-      admStr = JSON.parse(adm.replace(/\\/g, ''));
-      if (admStr && admStr.native) {
-        newBid.mediaType = NATIVE;
+    utils.logInfo(LOG_WARN_PREFIX + 'bid.ext.BidType does not exist, checking alternatively for mediaType')
+    var adm = bid.adm;
+    var admStr = '';
+    var videoRegex = new RegExp(/VAST\s+version/);
+    if (adm.indexOf('span class="PubAPIAd"') >= 0) {
+      newBid.mediaType = BANNER;
+    } else if (videoRegex.test(adm)) {
+      newBid.mediaType = VIDEO;
+    } else {
+      try {
+        admStr = JSON.parse(adm.replace(/\\/g, ''));
+        if (admStr && admStr.native) {
+          newBid.mediaType = NATIVE;
+        }
+      } catch (e) {
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
       }
-    } catch (e) {
-      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
     }
   }
 }
@@ -1086,7 +1098,7 @@ export const spec = {
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
                 parsedRequest.imp.forEach(req => {
                   if (bid.impid === req.id) {
-                    _checkMediaType(bid.adm, newBid);
+                    _checkMediaType(bid, newBid);
                     switch (newBid.mediaType) {
                       case BANNER:
                         break;
