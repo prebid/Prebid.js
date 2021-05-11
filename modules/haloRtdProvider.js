@@ -107,7 +107,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     userIds.haloId = haloId;
     getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {
-    var script = document.createElement('script')
+    var script = document.createElement('script');
     script.type = 'text/javascript';
 
     window.pubHaloCb = (haloId) => {
