@@ -8,7 +8,8 @@ describe('BidsCubeAdapter', () => {
     bidder: 'bidscube',
     params: {
       placementId: 0,
-      traffic: 'banner'
+      traffic: 'banner',
+      allParams: '{}'
     }
   }
 
@@ -54,10 +55,11 @@ describe('BidsCubeAdapter', () => {
       notEqual(-1, [0, 1].indexOf(data.secure))
 
       const placement = data.placements[0]
-      deepStrictEqual(['placementId', 'bidId', 'traffic'], Object.keys(placement))
+      deepStrictEqual(['placementId', 'bidId', 'traffic', 'allParams'], Object.keys(placement))
       strictEqual(0, placement.placementId)
       strictEqual('9ec5b177515ee2e5', placement.bidId)
       strictEqual('banner', placement.traffic)
+      strictEqual('{"bidId":"9ec5b177515ee2e5","bidder":"bidscube","params":{"placementId":0,"traffic":"banner","allParams":"{}"}}', placement.allParams)
     })
 
     it('Returns empty data if no valid requests are passed', () => {
@@ -125,7 +127,6 @@ describe('BidsCubeAdapter', () => {
         strictEqual(1, response.length)
 
         const copy = { ...obj.body[0] }
-        delete copy.mediaType
         deepStrictEqual(copy, response[0])
       })
     }

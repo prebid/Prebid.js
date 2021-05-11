@@ -58,7 +58,6 @@ export const spec = {
     for (let i = 0; i < body.length; i++) {
       const item = body[i]
       if (isBidResponseValid(item)) {
-        delete item.mediaType
         response.push(item)
       }
     }
