@@ -14,7 +14,11 @@ Module that connects to BidsCube' demand sources
 ```
     var adUnits = [{
                 code: 'placementId_0',
-                sizes: [[300, 250]],
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]]
+                    }
+                },
                 bids: [{
                         bidder: 'bidscube',
                         params: {

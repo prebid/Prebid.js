@@ -11,7 +11,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: function (opts) {
-    return Boolean(opts.bidId && opts.params && !isNaN(opts.params.placementId))
+    return Boolean(opts.bidId && opts.params && !isNaN(parseInt(opts.params.placementId)))
   },
 
   buildRequests: function (validBidRequests) {
