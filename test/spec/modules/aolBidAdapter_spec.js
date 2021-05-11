@@ -769,6 +769,7 @@ describe('AolAdapter', function () {
       });
       expect(spec.formatMarketplaceDynamicParams()).to.be.equal('param1=val1;param2=val2;param3=val3;');
     });
+  });
 
   describe('formatOneMobileDynamicParams()', function () {
     let euConsentRequiredStub;
