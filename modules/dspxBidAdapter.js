@@ -32,10 +32,9 @@ export const spec = {
       let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
       let payload = {};
 
-      if (isVideoRequest(bidRequest)) {
-        let vastFormat = params.vastFormat || DEFAULT_VAST_FORMAT;
+      if (isBannerRequest(bidRequest)) {
         payload = {
-          _f: vastFormat,
+          _f: 'html',
           alternative: 'prebid_js',
           inventory_item_id: placementId,
           srw: width,
@@ -46,8 +45,9 @@ export const spec = {
           bid_id: bidId,
         };
       } else {
+        let vastFormat = params.vastFormat || DEFAULT_VAST_FORMAT;
         payload = {
-          _f: 'html',
+          _f: vastFormat,
           alternative: 'prebid_js',
           inventory_item_id: placementId,
           srw: width,
@@ -76,6 +76,15 @@ export const spec = {
           };
         }
       }
+
+      if (bidRequest.userId.netId) {
+        payload.did_netid = bidRequest.userId.netId;
+      }
+      if (bidRequest.userId.uid2) {
+        payload.did_uid2 = bidRequest.userId.uid2;
+      }
+
+
 
       if (params.bcat !== undefined) {
         payload.bcat = params.bcat;
@@ -186,6 +195,16 @@ function objectToQueryString(obj, prefix) {
  */
 function isVideoRequest(bid) {
   return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
+}
+
+/**
+ * Check if it's a banner bid request
+ *
+ * @param {BidRequest} bid - Bid request generated from ad slots
+ * @returns {boolean} True if it's a banner bid
+ */
+function isBannerRequest(bid) {
+  return bid.mediaType === 'banner' || !!utils.deepAccess(bid, 'mediaTypes.banner');
 }
 
 registerBidder(spec);
