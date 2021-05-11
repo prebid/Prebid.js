@@ -210,6 +210,12 @@ describe('config API', function () {
     expect(getConfig('deviceAccess')).to.be.equal(true);
   });
 
+  it('sets maxNestedIframes', function () {
+    expect(getConfig('maxNestedIframes')).to.be.equal(10);
+    setConfig({ maxNestedIframes: 2 });
+    expect(getConfig('maxNestedIframes')).to.be.equal(2);
+  });
+
   it('should log error for invalid priceGranularity', function () {
     setConfig({ priceGranularity: '' });
     const error = 'Prebid Error: no value passed to `setPriceGranularity()`';

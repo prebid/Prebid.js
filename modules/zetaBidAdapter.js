@@ -71,20 +71,29 @@ export const spec = {
     };
     let payload = {
       id: bidderRequest.auctionId,
-      cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
+      app: params.app ? params.app : {},
       device: params.device ? params.device : {},
       user: params.user ? params.user : {},
-      app: params.app ? params.app : {},
-      ext: {
-        definerId: params.definerId
-      }
+      at: params.at,
+      tmax: params.tmax,
+      wseat: params.wseat,
+      bseat: params.bseat,
+      allimps: params.allimps,
+      cur: [DEFAULT_CUR],
+      wlang: params.wlang,
+      bcat: params.bcat,
+      badv: params.badv,
+      bapp: params.bapp,
+      source: params.source ? params.source : {},
+      ext: params.ext ? params.ext : {}
     };
 
     payload.device.ua = navigator.userAgent;
     payload.site.page = bidderRequest.refererInfo.referer;
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
+    payload.ext.definerId = params.definerId;
 
     if (params.test) {
       payload.test = params.test;
@@ -103,9 +112,10 @@ export const spec = {
         }
       };
     }
+    const postUrl = params.definerId !== '0' ? ENDPOINT_URL.concat('/', params.definerId) : ENDPOINT_URL;
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: postUrl,
       data: JSON.stringify(payload),
     };
   },

@@ -7,23 +7,33 @@ describe('adnuntiusBidAdapter', function () {
   const tzo = new Date().getTimezoneOffset();
   const ENDPOINT_URL = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json`;
   const adapter = newBidder(spec);
+
   const bidRequests = [
     {
+      bidId: '123',
       bidder: 'adnuntius',
       params: {
         auId: '8b6bc',
         network: 'adnuntius',
       },
-      bidId: '123'
+
     }
-  ];
+  ]
+
+  const singleBidRequest = {
+    bid: [
+      {
+        bidId: '123',
+      }
+    ]
+  }
 
   const serverResponse = {
     body: {
       'adUnits': [
         {
           'auId': '000000000008b6bc',
-          'targetId': '',
+          'targetId': '123',
           'html': '<h1>hi!</h1>',
           'matchedAdCount': 1,
           'responseId': 'adn-rsp-1460129238',
@@ -68,8 +78,15 @@ describe('adnuntiusBidAdapter', function () {
               'lineItemId': 'scyjdyv3mzgdsnpf',
               'layoutId': 'sw6gtws2rdj1kwby',
               'layoutName': 'Responsive image'
-            }
+            },
+
           ]
+        },
+        {
+          'auId': '000000000008b6bc',
+          'targetId': '456',
+          'matchedAdCount': 0,
+          'responseId': 'adn-rsp-1460129238',
         }
       ]
     }
@@ -103,11 +120,8 @@ describe('adnuntiusBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should return valid response when passed valid server response', function () {
-      const request = spec.buildRequests(bidRequests);
-      const interpretedResponse = spec.interpretResponse(serverResponse, request[0]);
+      const interpretedResponse = spec.interpretResponse(serverResponse, singleBidRequest);
       const ad = serverResponse.body.adUnits[0].ads[0]
-      const cpm = (ad.cpc && ad.cpm) ? ad.bid.amount + ad.cpm.amount : (ad.cpm) ? ad.cpm.amount : 0;
-
       expect(interpretedResponse).to.have.lengthOf(1);
       expect(interpretedResponse[0].cpm).to.equal(ad.cpm.amount);
       expect(interpretedResponse[0].width).to.equal(Number(ad.creativeWidth));
@@ -115,6 +129,9 @@ describe('adnuntiusBidAdapter', function () {
       expect(interpretedResponse[0].creativeId).to.equal(ad.creativeId);
       expect(interpretedResponse[0].currency).to.equal(ad.bid.currency);
       expect(interpretedResponse[0].netRevenue).to.equal(false);
+      expect(interpretedResponse[0].meta).to.have.property('advertiserDomains');
+      expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(1);
+      expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('google.com');
       expect(interpretedResponse[0].ad).to.equal(serverResponse.body.adUnits[0].html);
       expect(interpretedResponse[0].ttl).to.equal(360);
     });

@@ -374,6 +374,7 @@ const ANALYTICS_MESSAGE = {
   'referrerHostname': 'www.test.com',
   'auctions': [
     {
+      'requestId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
       'clientTimeoutMillis': 3000,
       'serverTimeoutMillis': 1000,
       'accountId': 1001,
@@ -1906,14 +1907,18 @@ describe('rubicon analytics adapter', function () {
 
     it('should pass aupName as pattern', function () {
       let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
-      bidRequest.bids[0].fpd = {
-        context: {
-          aupName: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile'
+      bidRequest.bids[0].ortb2Imp = {
+        ext: {
+          data: {
+            aupname: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile'
+          }
         }
       };
-      bidRequest.bids[1].fpd = {
-        context: {
-          aupName: '1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile'
+      bidRequest.bids[1].ortb2Imp = {
+        ext: {
+          data: {
+            aupname: '1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile'
+          }
         }
       };
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);

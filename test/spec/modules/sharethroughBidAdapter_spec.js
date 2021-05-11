@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from '../../../src/utils.js';
+import { config } from 'src/config';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 const bidRequests = [
@@ -168,16 +169,20 @@ const setUserAgent = (uaString) => {
 };
 
 describe('sharethrough internal spec', function() {
-  let windowSpy, windowTopSpy;
-
+  let windowStub, windowTopStub;
+  let stubbedReturn = [{
+    appendChild: () => undefined
+  }]
   beforeEach(function() {
-    windowSpy = sinon.spy(window.document, 'getElementsByTagName');
-    windowTopSpy = sinon.spy(window.top.document, 'getElementsByTagName');
+    windowStub = sinon.stub(window.document, 'getElementsByTagName');
+    windowTopStub = sinon.stub(window.top.document, 'getElementsByTagName');
+    windowStub.withArgs('body').returns(stubbedReturn);
+    windowTopStub.withArgs('body').returns(stubbedReturn);
   });
 
   afterEach(function() {
-    windowSpy.restore();
-    windowTopSpy.restore();
+    windowStub.restore();
+    windowTopStub.restore();
     window.STR = undefined;
     window.top.STR = undefined;
   });
@@ -193,29 +198,29 @@ describe('sharethrough internal spec', function() {
 
     it('appends sfp.js to the safeframe', function() {
       sharethroughInternal.handleIframe();
-      expect(windowSpy.calledOnce).to.be.true;
+      expect(windowStub.calledOnce).to.be.true;
     });
 
     it('does not append anything if sfp.js is already loaded in the safeframe', function() {
       window.STR = { Tag: true };
       sharethroughInternal.handleIframe();
-      expect(windowSpy.notCalled).to.be.true;
-      expect(windowTopSpy.notCalled).to.be.true;
+      expect(windowStub.notCalled).to.be.true;
+      expect(windowTopStub.notCalled).to.be.true;
     });
   });
 
   describe('we are able to bust out of the iframe', function() {
     it('appends sfp.js to window.top', function() {
       sharethroughInternal.handleIframe();
-      expect(windowSpy.calledOnce).to.be.true;
-      expect(windowTopSpy.calledOnce).to.be.true;
+      expect(windowStub.calledOnce).to.be.true;
+      expect(windowTopStub.calledOnce).to.be.true;
     });
 
     it('only appends sfp-set-targeting.js if sfp.js is already loaded on the page', function() {
       window.top.STR = { Tag: true };
       sharethroughInternal.handleIframe();
-      expect(windowSpy.calledOnce).to.be.true;
-      expect(windowTopSpy.notCalled).to.be.true;
+      expect(windowStub.calledOnce).to.be.true;
+      expect(windowTopStub.notCalled).to.be.true;
     });
   });
 });
@@ -440,6 +445,29 @@ describe('sharethrough adapter spec', function() {
       const bidRequest = Object.assign({}, bidRequests[0]);
       const builtBidRequest = spec.buildRequests([bidRequest])[0];
       expect(builtBidRequest.data).to.not.include.any.keys('bidfloor');
+    });
+
+    describe('coppa', function() {
+      it('should add coppa to request if enabled', function() {
+        config.setConfig({coppa: true});
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        const builtBidRequest = spec.buildRequests([bidRequest])[0];
+        expect(builtBidRequest.data.coppa).to.eq(true);
+      });
+
+      it('should not add coppa to request if disabled', function() {
+        config.setConfig({coppa: false});
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        const builtBidRequest = spec.buildRequests([bidRequest])[0];
+        expect(builtBidRequest.data.coppa).to.be.undefined;
+      });
+
+      it('should not add coppa to request if unknown value', function() {
+        config.setConfig({coppa: 'something'});
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        const builtBidRequest = spec.buildRequests([bidRequest])[0];
+        expect(builtBidRequest.data.coppa).to.be.undefined;
+      });
     });
   });
 

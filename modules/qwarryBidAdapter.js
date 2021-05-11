@@ -33,7 +33,8 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false,
-        consentString: bidderRequest.gdprConsent.consentString
+        consentString: bidderRequest.gdprConsent.consentString,
+        gdpr: bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0
       }
     }
 
