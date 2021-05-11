@@ -31,7 +31,8 @@ export const spec = {
       placements.push({
         placementId: p.params.placementId,
         bidId: p.bidId,
-        traffic: p.params.traffic || BANNER
+        traffic: p.params.traffic || BANNER,
+        allParams: JSON.stringify(p)
       })
     }
 
@@ -57,7 +58,6 @@ export const spec = {
     for (let i = 0; i < body.length; i++) {
       const item = body[i]
       if (isBidResponseValid(item)) {
-        delete item.mediaType
         response.push(item)
       }
     }
