@@ -67,7 +67,8 @@ export const spec = {
     {code: 'stringads'},
     {code: 'bcm'},
     {code: 'engageadx'},
-    {code: 'converge_digital', gvlid: 248}
+    {code: 'converge_digital', gvlid: 248},
+    {code: 'adomega'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
