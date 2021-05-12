@@ -846,12 +846,27 @@ describe('the rubicon adapter', function () {
                 data: {
                   page: 'home'
                 }
+              },
+              content: {
+                data: [{
+                  'name': 'www.dataprovider1.com',
+                  'ext': { 'segtax': 1 },
+                  'segment': [
+                    { 'id': '987' }
+                  ]
+                }, {
+                  'name': 'www.dataprovider1.com',
+                  'ext': { 'segtax': 2 },
+                  'segment': [
+                    { 'id': '432' }
+                  ]
+                }]
               }
             };
             const user = {
               data: [{
                 'name': 'www.dataprovider1.com',
-                'ext': { 'taxonomyname': 'IAB Audience Taxonomy' },
+                'ext': { 'segtax': 3 },
                 'segment': [
                   { 'id': '687' },
                   { 'id': '123' }
@@ -886,6 +901,7 @@ describe('the rubicon adapter', function () {
               'tg_v.gender': 'M',
               'tg_v.age': '40',
               'tg_v.iab': '687,123',
+              'tg_i.iab': '987,432',
               'tg_v.yob': '1984',
               'tg_i.rating': '4-star,5-star',
               'tg_i.page': 'home',
