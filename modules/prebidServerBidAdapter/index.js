@@ -72,7 +72,6 @@ let eidPermissions;
  * @type {S2SDefaultConfig}
  */
 const s2sDefaultConfig = {
-  enabled: false,
   timeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
@@ -89,7 +88,7 @@ config.setDefaults({
  * @return {boolean}
  */
 function updateConfigDefaultVendor(option) {
-  if (option.defaultVendor && option.enabled !== false) {
+  if (option.defaultVendor) {
     let vendor = option.defaultVendor;
     let optionKeys = Object.keys(option);
     if (S2S_VENDORS[vendor]) {
@@ -105,6 +104,8 @@ function updateConfigDefaultVendor(option) {
       return false;
     }
   }
+  // this is how we can know if user / defaultVendor has set it, or if we should default to false
+  return option.enabled = typeof option.enabled === 'boolean' ? option.enabled : false;
 }
 
 /**
@@ -163,6 +164,7 @@ function setS2sConfig(options) {
         return true;
       }
     }
+    utils.logWarn('prebidServer: s2s config is disabled');
     return false;
   });
 
