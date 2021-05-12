@@ -385,7 +385,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   const r = {};
 
   // Since bidderRequestId are the same for different bid request, just use the first one.
-  r.id = validBidRequests[0].bidderRequestId;
+  r.id = validBidRequests[0].bidderRequestId.toString();
 
   r.site = {};
   r.ext = {};
