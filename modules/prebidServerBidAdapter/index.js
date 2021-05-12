@@ -103,9 +103,9 @@ function updateConfigDefaultVendor(option) {
       utils.logError('Incorrect or unavailable prebid server default vendor option: ' + vendor);
       return false;
     }
-    // this is how we can know if user / defaultVendor has set it, or if we should default to false
-    return option.enabled = typeof option.enabled === 'boolean' ? option.enabled : false;
   }
+  // this is how we can know if user / defaultVendor has set it, or if we should default to false
+  return option.enabled = typeof option.enabled === 'boolean' ? option.enabled : false;
 }
 
 /**
