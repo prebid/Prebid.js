@@ -109,7 +109,7 @@ const dealChannelValues = {
 };
 
 const FLOC_FORMAT = {
-  'EID' : 1 ,
+  'EID': 1,
   'SEGMENT': 2
 }
 // BB stands for Blue BillyWig
@@ -717,7 +717,7 @@ function _getFlocId(validBidRequests, flocFormat) {
   var flocIdObject = null;
   var flocId = utils.deepAccess(validBidRequests, '0.userId.flocId');
   if (flocId && flocId.id) {
-    switch(flocFormat){
+    switch (flocFormat) {
       case FLOC_FORMAT.SEGMENT:
         flocIdObject = {
           id: 'FLOC',
@@ -731,7 +731,7 @@ function _getFlocId(validBidRequests, flocFormat) {
             value: flocId.id.toString()
           }]
         }
-      break;
+        break;
       case FLOC_FORMAT.EID:
       default:
         flocIdObject = {
@@ -747,8 +747,7 @@ function _getFlocId(validBidRequests, flocFormat) {
           ]
         }
         break;
-      
-    }  
+    }
   }
   return flocIdObject;
 }
@@ -767,10 +766,10 @@ function _handleFlocId(payload, validBidRequests) {
 }
 
 function _handleEids(payload, validBidRequests) {
-  const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
+  var bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
   var flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.EID);
   if (flocObject) {
-    if(!bidUserIdAsEids){
+    if (!bidUserIdAsEids) {
       bidUserIdAsEids = [];
     }
     bidUserIdAsEids.push(flocObject);
