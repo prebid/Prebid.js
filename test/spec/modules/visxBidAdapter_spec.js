@@ -38,6 +38,30 @@ describe('VisxAdapter', function () {
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('it should fail on invalid video bid', function () {
+      let videoBid = Object.assign({}, bid);
+      videoBid.mediaTypes = {
+        video: {
+          context: 'instream',
+          playerSize: [400, 300]
+        }
+      };
+      expect(spec.isBidRequestValid(videoBid)).to.equal(false);
+    });
+
+    it('it should pass on valid video bid', function () {
+      let videoBid = Object.assign({}, bid);
+      videoBid.mediaTypes = {
+        video: {
+          context: 'instream',
+          playerSize: [400, 300],
+          mimes: ['video/mp4'],
+          protocols: [3, 6]
+        }
+      };
+      expect(spec.isBidRequestValid(videoBid)).to.equal(true);
+    })
   });
 
   describe('buildRequests', function () {
@@ -88,6 +112,26 @@ describe('VisxAdapter', function () {
         'bidId': '42dbe3a7168a6a',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
+      },
+      {
+        'bidder': 'visx',
+        'params': {
+          'uid': '903537'
+        },
+        'adUnitCode': 'adunit-code-video-3',
+        'mediaTypes': {
+          'video': {
+            'context': 'instream',
+            'playerSize': [400, 300],
+            'mimes': ['video/mp4', 'video/mpeg'],
+            'protocols': [3, 6],
+            'minduration': 5,
+            'maxduration': 30
+          }
+        },
+        'bidId': '39a4e3a7168a6a',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
       }
     ];
 
@@ -109,7 +153,7 @@ describe('VisxAdapter', function () {
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '903535,903535,903536');
+      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
       expect(payload).to.have.property('cur', 'EUR');
@@ -122,7 +166,7 @@ describe('VisxAdapter', function () {
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '903535,903535,903536');
+      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
       expect(payload).to.have.property('cur', 'EUR');
@@ -135,7 +179,7 @@ describe('VisxAdapter', function () {
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '903535,903535,903536');
+      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
       expect(payload).to.have.property('cur', 'EUR');
@@ -149,7 +193,7 @@ describe('VisxAdapter', function () {
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '903535,903535,903536');
+      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
       expect(payload).to.have.property('cur', 'EUR');
@@ -164,7 +208,7 @@ describe('VisxAdapter', function () {
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '903535,903535,903536');
+      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
       expect(payload).to.have.property('cur', 'GBP');
@@ -179,7 +223,7 @@ describe('VisxAdapter', function () {
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '903535,903535,903536');
+      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
       expect(payload).to.have.property('cur', 'USD');
@@ -244,6 +288,17 @@ describe('VisxAdapter', function () {
       expect(payload).to.have.property('tdid', '111');
       expect(payload).to.have.property('id5', '222');
       expect(payload).to.have.property('dtid', 'DTID');
+    });
+
+    it('should pass grouped video bid\'s params in payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.have.property('protocols', ',,,3|6');
+      expect(payload).to.have.property('mimes', ',,,video/mp4|video/mpeg');
+      expect(payload).to.have.property('playerSize', ',,,400x300');
+      expect(payload).to.have.property('minduration', ',,,5');
+      expect(payload).to.have.property('maxduration', ',,,30');
+      expect(payload).to.not.have.property('skip');
     });
   });
 
@@ -653,6 +708,51 @@ describe('VisxAdapter', function () {
         }
       ];
 
+      const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
+      expect(result).to.deep.equal(expectedResponse);
+    });
+
+    it('handles video bid', function () {
+      const fullResponse = [
+        {'bid': [{'price': 0.5, 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR'}], 'seat': '1'},
+      ];
+      const bidRequests = [
+        {
+          'bidder': 'visx',
+          'params': {
+            'uid': '903537'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'mediaTypes': {
+            'video': {
+              'context': 'instream',
+              'playerSize': [400, 300],
+              'mimes': ['video/mp4'],
+              'protocols': [3, 6]
+            }
+          },
+          'sizes': [[400, 300]],
+          'bidId': '2164be6358b9',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        }
+      ];
+      const request = spec.buildRequests(bidRequests);
+      const expectedResponse = [
+        {
+          'mediaType': 'video',
+          'requestId': '2164be6358b9',
+          'cpm': 0.5,
+          'creativeId': 903537,
+          'dealId': undefined,
+          'width': 400,
+          'height': 300,
+          'vastXml': '<VAST/>',
+          'currency': 'EUR',
+          'netRevenue': true,
+          'ttl': 360,
+        }
+      ];
       const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });

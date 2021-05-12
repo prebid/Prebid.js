@@ -3,6 +3,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import includes from 'core-js-pure/features/array/includes';
+import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
@@ -223,7 +224,7 @@ function createNewBannerBid(response) {
  * @param bidRequest server request
  */
 function createNewVideoBid(response, bidRequest) {
-  const imp = (utils.deepAccess(bidRequest, 'data.imp') || []).find(imp => imp.id === response.impid);
+  const imp = find((utils.deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
 
   let result = {
     requestId: imp.id,
@@ -242,7 +243,7 @@ function createNewVideoBid(response, bidRequest) {
     },
   };
 
-  if (imp.placement && imp.placement !== 1) {
+  if (imp.video.placement && imp.video.placement !== 1) {
     const renderer = Renderer.install({
       url: OUTSTREAM_VIDEO_PLAYER_URL,
       config: {

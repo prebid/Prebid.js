@@ -12,6 +12,16 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
+            name: 'dmdId',
+            storage: {
+                name: 'dmd-dgid',
+                type: 'cookie',
+                expires: 30
+            },
+            params: {
+                api_key: '3fdbe297-3690-4f5c-9e11-ee9186a6d77c', // provided by DMD
+            }
+        }, {
             name: "unifiedId",
             params: {
                 partner: "prebid",
@@ -113,6 +123,11 @@ pbjs.setConfig({
                   name: '__adm__admixer',
                   expires: 30
               }
+        },{
+              name: 'flocId',
+               params: {
+                    token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"     
+           }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -222,6 +237,11 @@ pbjs.setConfig({
                   name: 'admixerId',
                   expires: 30
               }
+       },{
+              name: 'flocId',
+               params: {
+               token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
+        }
         },{
             name: "deepintentId",
             storage: {
