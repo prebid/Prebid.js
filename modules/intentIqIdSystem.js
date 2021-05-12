@@ -103,7 +103,7 @@ export const intentIqIdSubmodule = {
    * @returns {{intentIqId: {string}}|undefined}
    */
   decode(value) {
-    return INVALID_ID != value ? { 'intentIqId': value } : undefined;
+    return value && value != '' && INVALID_ID != value ? { 'intentIqId': value } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
