@@ -53,9 +53,9 @@ function mergeLazy(target, source) {
  * @param {String} param
  * @param {String} defaultVal
  */
-function paramOrDefault(param, defaultVal) {
+function paramOrDefault(param, defaultVal, arg) {
   if (isFn(param)) {
-    return param();
+    return param(arg);
   } else if (isStr(param)) {
     return param;
   }
@@ -116,7 +116,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     }
 
     const haloIdUrl = rtdConfig.params && rtdConfig.params.haloIdUrl;
-    script.src = paramOrDefault(haloIdUrl, 'https://id.halo.ad.gt/api/v1/haloid');
+    script.src = paramOrDefault(haloIdUrl, 'https://id.halo.ad.gt/api/v1/haloid', userIds);
     document.getElementsByTagName('head')[0].appendChild(script);
   }
 }
