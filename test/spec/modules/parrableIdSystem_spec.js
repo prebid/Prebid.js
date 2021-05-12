@@ -333,7 +333,7 @@ describe('Parrable ID System', function() {
       });
     });
 
-    describe('request-filter status', function () {
+    describe.only('request-filter status', function () {
       let logErrorStub;
       let callbackSpy = sinon.spy();
 
