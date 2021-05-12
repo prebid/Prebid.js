@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 import { createEidsArray } from './userId/eids.js';
+import {config} from '../src/config.js';
 
 export const spec = {
   code: 'sovrn',
@@ -72,30 +73,29 @@ export const spec = {
           bidfloor: floorInfo.floor
         }
 
+        imp.ext = utils.getBidIdParameter('ext', bid.ortb2Imp) || undefined
+
         const segmentsString = utils.getBidIdParameter('segments', bid.params)
-
         if (segmentsString) {
-          imp.ext = {
-            deals: segmentsString.split(',').map(deal => deal.trim())
-          }
+          imp.ext = imp.ext || {}
+          imp.ext.deals = segmentsString.split(',').map(deal => deal.trim())
         }
+        sovrnImps.push(imp)
+      })
 
-        sovrnImps.push(imp);
-      });
+      const fpd = config.getConfig('ortb2') || {}
 
-      const page = bidderRequest.refererInfo.referer
-
+      const site = fpd.site || {}
+      site.page = bidderRequest.refererInfo.referer
       // clever trick to get the domain
-      const domain = utils.parseUrl(page).hostname
+      site.domain = utils.parseUrl(site.page).hostname
 
       const sovrnBidReq = {
         id: utils.getUniqueIdentifierStr(),
         imp: sovrnImps,
-        site: {
-          page,
-          domain
-        }
-      };
+        site: site,
+        user: fpd.user || {}
+      }
 
       if (schain) {
         sovrnBidReq.source = {

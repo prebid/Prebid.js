@@ -215,6 +215,31 @@ describe('Tappx bid adapter', function () {
       expect(data.imp[0].banner.w).to.be.oneOf([320, 50, 250, 480]);
       expect(data.imp[0].banner.h).to.be.oneOf([320, 50, 250, 480]);
     });
+
+    it('should properly build a ext optional object', function() {
+      let extBidRequest = c_VALIDBIDREQUESTS;
+      extBidRequest[0].params.ext = {'optionalData': '1234'};
+      let extBidderRequest = c_BIDDERREQUEST_B;
+      extBidderRequest.bids[0].ext = {'optionalData': '1234'};
+
+      const request = spec.buildRequests(extBidRequest, extBidderRequest);
+      const data = JSON.parse(request[0].data);
+      expect(data.imp[0].ext.bidder.ext).to.be.an('object');
+      expect(data.imp[0].ext.bidder.ext.optionalData).to.be.equal('1234');
+    });
+
+    it('should ignore ext optional if is not a object', function() {
+      let badExtBidRequest = c_VALIDBIDREQUESTS;
+      badExtBidRequest[0].params.ext = 'stringValue';
+      let badExtBidderRequest = c_BIDDERREQUEST_B;
+      badExtBidderRequest.bids[0].ext = 'stringValue';
+
+      const request = spec.buildRequests(badExtBidRequest, badExtBidderRequest);
+      const data = JSON.parse(request[0].data);
+      expect(data.imp[0].ext.bidder.ext).not.to.be.an('string');
+      expect(data.imp[0].ext.bidder.ext).to.be.an('undefined');
+      expect(data.imp[0].ext.bidder).to.not.have.property('ext')
+    });
   });
 
   /**
@@ -266,6 +291,45 @@ describe('Tappx bid adapter', function () {
       const consent = spec.getUserSyncs(syncOptions, null, c_BIDDERREQUEST_B.gdprConsent, c_BIDDERREQUEST_B.uspConsent);
       expect(consent[0].type).to.be.equal('iframe', JSON.stringify(consent[0]));
       expect(consent[0].url).to.match(/&type=iframe/);
+    });
+  })
+
+  describe('module Floor implementation', function() {
+    let getFloorResponse, bidderRequest_f;
+    beforeEach(function() {
+      getFloorResponse = {};
+      bidderRequest_f = c_BIDREQUEST;
+    })
+    it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
+      // default getFloor response is empty object so should not break and not send hard_floor
+      bidderRequest_f.bids[0].getFloor = () => getFloorResponse;
+      let request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      let payload;
+
+      getFloorResponse = undefined;
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+
+      // without Module floor
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.05);
+
+      // make it respond with USD floor and string floor
+      getFloorResponse = {currency: 'USD', floor: '1.23'};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal('1.23');
+
+      // make it respond with EUR floor (not valid)
+      getFloorResponse = {currency: 'EUR', floor: '1.23'};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.05); // Default value from tappx/bidder bidfloor
+
+      // make it respond with USD floor and num floor
+      getFloorResponse = {currency: 'USD', floor: 1.23};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(1.23);
     });
   })
 });
