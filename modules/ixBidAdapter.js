@@ -580,7 +580,6 @@ function _getUserIds(bidRequest) {
     'merkleId',
     'parrableId',
     'connectid',
-    'sharedid',
     'tapadId',
     'quantcastId',
     'pubcid'

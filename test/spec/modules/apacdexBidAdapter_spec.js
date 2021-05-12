@@ -1,8 +1,8 @@
-import { expect } from 'chai'
-import { spec, validateGeoObject, getDomain } from '../../../modules/apacdexBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import { userSync } from '../../../src/userSync.js';
-import { config } from 'src/config.js';
+import {expect} from 'chai'
+import {spec, validateGeoObject, getDomain} from '../../../modules/apacdexBidAdapter.js'
+import {newBidder} from 'src/adapters/bidderFactory.js'
+import {userSync} from '../../../src/userSync.js';
+import {config} from 'src/config.js';
 
 describe('ApacdexBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -62,8 +62,7 @@ describe('ApacdexBidAdapter', function () {
         params: {
           siteId: '1a2b3c4d5e6f1a2b3c4d'
         },
-        'mediaTypes': {
-        },
+        'mediaTypes': {},
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
@@ -99,9 +98,7 @@ describe('ApacdexBidAdapter', function () {
             siteId: '1a2b3c4d5e6f1a2b3c4d'
           },
           'mediaTypes': {
-            banner: {
-
-            }
+            banner: {}
           },
           'bidId': '30b31c1838de1e',
           'bidderRequestId': '22edbae2733bf6',
@@ -218,16 +215,8 @@ describe('ApacdexBidAdapter', function () {
           'id': '2ae366c2-2576-45e5-bd21-72ed10598f17',
           'atype': 1
         }]
-      }, {
-        'source': 'sharedid.org',
-        'uids': [{
-          'id': '01EZXQDVAPER4KE1VBS29XKV4Z',
-          'atype': 1,
-          'ext': {
-            'third': '01EZXQDVAPER4KE1VBS29XKV4Z'
-          }
-        }]
-      }],
+      }
+      ],
     },
     {
       'bidder': 'apacdex',
@@ -336,11 +325,11 @@ describe('ApacdexBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
     });
-    describe('debug test', function() {
-      beforeEach(function() {
+    describe('debug test', function () {
+      beforeEach(function () {
         config.setConfig({debug: true});
       });
-      afterEach(function() {
+      afterEach(function () {
         config.setConfig({debug: false});
       });
       it('should return a properly formatted request with pbjs_debug is true', function () {
@@ -625,24 +614,24 @@ describe('ApacdexBidAdapter', function () {
     }];
 
     it('should return one sync pixel', function () {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, bidResponse)).to.deep.equal([{
+      expect(spec.getUserSyncs({pixelEnabled: true}, bidResponse)).to.deep.equal([{
         type: 'image',
         url: 'https://pixel-test'
       }]);
     });
     it('should return an empty array when sync is enabled but there are no bidResponses', function () {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
+      expect(spec.getUserSyncs({pixelEnabled: true}, [])).to.have.length(0);
     });
 
     it('should return an empty array when sync is enabled but no sync pixel returned', function () {
       const pixel = Object.assign({}, bidResponse);
       delete pixel[0].body.pixel;
-      expect(spec.getUserSyncs({ pixelEnabled: true }, bidResponse)).to.have.length(0);
+      expect(spec.getUserSyncs({pixelEnabled: true}, bidResponse)).to.have.length(0);
     });
 
     it('should return an empty array', function () {
-      expect(spec.getUserSyncs({ pixelEnabled: false }, bidResponse)).to.have.length(0);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
+      expect(spec.getUserSyncs({pixelEnabled: false}, bidResponse)).to.have.length(0);
+      expect(spec.getUserSyncs({pixelEnabled: true}, [])).to.have.length(0);
     });
   });
 

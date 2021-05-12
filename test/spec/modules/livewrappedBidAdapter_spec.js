@@ -876,16 +876,6 @@ describe('Livewrapped adapter tests', function () {
           'id': 'publisher-common-id',
           'atype': 1
         }]
-      },
-      {
-        'source': 'sharedid.org',
-        'uids': [{
-          'id': 'sharedid',
-          'atype': 1,
-          'ext': {
-            'third': 'sharedid'
-          }
-        }]
       }
     ];
 

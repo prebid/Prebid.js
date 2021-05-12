@@ -4,8 +4,8 @@ import {expect} from 'chai';
 //  Note: In unit tets cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
 //      this way the request will stay consistent and unit test cases will not need lots of changes.
 
-describe('eids array generation for known sub-modules', function() {
-  it('pubCommonId', function() {
+describe('eids array generation for known sub-modules', function () {
+  it('pubCommonId', function () {
     const userId = {
       pubcid: 'some-random-id-value'
     };
@@ -17,7 +17,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('unifiedId: ext generation', function() {
+  it('unifiedId: ext generation', function () {
     const userId = {
       tdid: 'some-random-id-value'
     };
@@ -25,12 +25,12 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'adserver.org',
-      uids: [{id: 'some-random-id-value', atype: 1, ext: { rtiPartner: 'TDID' }}]
+      uids: [{id: 'some-random-id-value', atype: 1, ext: {rtiPartner: 'TDID'}}]
     });
   });
 
-  describe('id5Id', function() {
-    it('does not include an ext if not provided', function() {
+  describe('id5Id', function () {
+    it('does not include an ext if not provided', function () {
       const userId = {
         id5id: {
           uid: 'some-random-id-value'
@@ -40,11 +40,11 @@ describe('eids array generation for known sub-modules', function() {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'id5-sync.com',
-        uids: [{ id: 'some-random-id-value', atype: 1 }]
+        uids: [{id: 'some-random-id-value', atype: 1}]
       });
     });
 
-    it('includes ext if provided', function() {
+    it('includes ext if provided', function () {
       const userId = {
         id5id: {
           uid: 'some-random-id-value',
@@ -68,7 +68,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('parrableId', function() {
+  it('parrableId', function () {
     const userId = {
       parrableId: {
         eid: 'some-random-id-value'
@@ -82,7 +82,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('merkleId', function() {
+  it('merkleId', function () {
     const userId = {
       merkleId: {
         id: 'some-random-id-value', keyID: 1
@@ -92,14 +92,17 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'merkleinc.com',
-      uids: [{id: 'some-random-id-value',
+      uids: [{
+        id: 'some-random-id-value',
         atype: 3,
-        ext: { keyID: 1
-        }}]
+        ext: {
+          keyID: 1
+        }
+      }]
     });
   });
 
-  it('identityLink', function() {
+  it('identityLink', function () {
     const userId = {
       idl_env: 'some-random-id-value'
     };
@@ -111,7 +114,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('liveIntentId; getValue call and ext', function() {
+  it('liveIntentId; getValue call and ext', function () {
     const userId = {
       lipb: {
         lipbid: 'some-random-id-value',
@@ -127,7 +130,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('liveIntentId; getValue call and NO ext', function() {
+  it('liveIntentId; getValue call and NO ext', function () {
     const userId = {
       lipb: {
         lipbid: 'some-random-id-value'
@@ -141,7 +144,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('britepoolId', function() {
+  it('britepoolId', function () {
     const userId = {
       britepoolid: 'some-random-id-value'
     };
@@ -161,11 +164,11 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'crwdcntrl.net',
-      uids: [{ id: 'some-random-id-value', atype: 1 }],
+      uids: [{id: 'some-random-id-value', atype: 1}],
     });
   });
 
-  it('criteo', function() {
+  it('criteo', function () {
     const userId = {
       criteoId: 'some-random-id-value'
     };
@@ -177,7 +180,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('tapadId', function() {
+  it('tapadId', function () {
     const userId = {
       tapadId: 'some-random-id-value'
     };
@@ -189,7 +192,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('deepintentId', function() {
+  it('deepintentId', function () {
     const userId = {
       deepintentId: 'some-random-id-value'
     };
@@ -201,7 +204,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('NetId', function() {
+  it('NetId', function () {
     const userId = {
       netId: 'some-random-id-value'
     };
@@ -213,7 +216,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('NextRollId', function() {
+  it('NextRollId', function () {
     const userId = {
       nextrollId: 'some-random-id-value'
     };
@@ -224,44 +227,8 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
-  it('Sharedid', function() {
-    const userId = {
-      sharedid: {
-        id: 'test_sharedId',
-        third: 'test_sharedId'
-      }
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'sharedid.org',
-      uids: [{
-        id: 'test_sharedId',
-        atype: 1,
-        ext: {
-          third: 'test_sharedId'
-        }
-      }]
-    });
-  });
-  it('Sharedid: Not Synched', function() {
-    const userId = {
-      sharedid: {
-        id: 'test_sharedId'
-      }
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'sharedid.org',
-      uids: [{
-        id: 'test_sharedId',
-        atype: 1
-      }]
-    });
-  });
 
-  it('zeotapIdPlus', function() {
+  it('zeotapIdPlus', function () {
     const userId = {
       IDP: 'some-random-id-value'
     };
@@ -276,7 +243,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('haloId', function() {
+  it('haloId', function () {
     const userId = {
       haloId: 'some-random-id-value'
     };
@@ -291,7 +258,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('quantcastId', function() {
+  it('quantcastId', function () {
     const userId = {
       quantcastId: 'some-random-id-value'
     };
@@ -305,7 +272,7 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
-  it('uid2', function() {
+  it('uid2', function () {
     const userId = {
       uid2: {'id': 'Sample_AD_Token'}
     };
@@ -319,7 +286,7 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
-  it('pubProvidedId', function() {
+  it('pubProvidedId', function () {
     const userId = {
       pubProvidedId: [{
         source: 'example.com',
@@ -355,8 +322,8 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 });
-describe('Negative case', function() {
-  it('eids array generation for UN-known sub-module', function() {
+describe('Negative case', function () {
+  it('eids array generation for UN-known sub-module', function () {
     // UnknownCommonId
     const userId = {
       unknowncid: 'some-random-id-value'
@@ -365,7 +332,7 @@ describe('Negative case', function() {
     expect(newEids.length).to.equal(0);
   });
 
-  it('eids array generation for known sub-module with non-string value', function() {
+  it('eids array generation for known sub-module with non-string value', function () {
     // pubCommonId
     let userId = {
       pubcid: undefined

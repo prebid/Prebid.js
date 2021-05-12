@@ -3,8 +3,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
-import { Renderer } from '../src/Renderer.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {Renderer} from '../src/Renderer.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -350,7 +350,7 @@ export const spec = {
     return requests;
   },
 
-  getOrderedParams: function(params) {
+  getOrderedParams: function (params) {
     const containsTgV = /^tg_v/
     const containsTgI = /^tg_i/
     const containsUId = /^eid_|^tpid_/
@@ -395,15 +395,15 @@ export const spec = {
    * @param {Object[]} aSlotUrlParams - example [{p1: 'foo', p2: 'test'}, {p2: 'test'}, {p1: 'bar', p2: 'test'}]
    * @return {Object} - example {p1: 'foo;;bar', p2: 'test'}
    */
-  combineSlotUrlParams: function(aSlotUrlParams) {
+  combineSlotUrlParams: function (aSlotUrlParams) {
     // if only have params for one slot, return those params
     if (aSlotUrlParams.length === 1) {
       return aSlotUrlParams[0];
     }
 
     // reduce param values from all slot objects into an array of values in a single object
-    const oCombinedSlotUrlParams = aSlotUrlParams.reduce(function(oCombinedParams, oSlotUrlParams, iIndex) {
-      Object.keys(oSlotUrlParams).forEach(function(param) {
+    const oCombinedSlotUrlParams = aSlotUrlParams.reduce(function (oCombinedParams, oSlotUrlParams, iIndex) {
+      Object.keys(oSlotUrlParams).forEach(function (param) {
         if (!oCombinedParams.hasOwnProperty(param)) {
           oCombinedParams[param] = new Array(aSlotUrlParams.length); // initialize array;
         }
@@ -417,7 +417,7 @@ export const spec = {
     // convert arrays into semicolon delimited strings
     const re = new RegExp('^([^;]*)(;\\1)+$'); // regex to test for duplication
 
-    Object.keys(oCombinedSlotUrlParams).forEach(function(param) {
+    Object.keys(oCombinedSlotUrlParams).forEach(function (param) {
       const sValues = oCombinedSlotUrlParams[param].join(';');
       // consolidate param values into one value if they are all the same
       const match = sValues.match(re);
@@ -432,7 +432,7 @@ export const spec = {
    * @param {Object} bidderRequest
    * @returns {Object} - object key values named and formatted as slot params
    */
-  createSlotParams: function(bidRequest, bidderRequest) {
+  createSlotParams: function (bidRequest, bidderRequest) {
     bidRequest.startTime = new Date().getTime();
 
     const params = bidRequest.params;
@@ -501,8 +501,6 @@ export const spec = {
             }
           } else if (eid.source === 'liveramp.com') {
             data['x_liverampidl'] = eid.uids[0].id;
-          } else if (eid.source === 'sharedid.org') {
-            data['eid_sharedid.org'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.third) || ''}`;
           } else if (eid.source === 'id5-sync.com') {
             data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.linkType) || ''}`;
           } else {
@@ -559,7 +557,7 @@ export const spec = {
   serializeSupplyChain: function (supplyChain) {
     const supplyChainIsValid = hasValidSupplyChainParams(supplyChain);
     if (!supplyChainIsValid) return '';
-    const { ver, complete, nodes } = supplyChain;
+    const {ver, complete, nodes} = supplyChain;
     return `${ver},${complete}!${spec.serializeSupplyChainNodes(nodes)}`;
   },
 
@@ -652,9 +650,15 @@ export const spec = {
               bidObject.vastUrl = `https://${extPrebidTargeting.hb_cache_host}${extPrebidTargeting.hb_cache_path}?uuid=${extPrebidTargeting.hb_uuid}`;
             }
 
-            if (bid.adm) { bidObject.vastXml = bid.adm; }
-            if (bid.nurl) { bidObject.vastUrl = bid.nurl; }
-            if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
+            if (bid.adm) {
+              bidObject.vastXml = bid.adm;
+            }
+            if (bid.nurl) {
+              bidObject.vastUrl = bid.nurl;
+            }
+            if (!bidObject.vastUrl && bid.nurl) {
+              bidObject.vastUrl = bid.nurl;
+            }
 
             const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
             if (videoContext.toLowerCase() === 'outstream') {
@@ -779,7 +783,7 @@ export const spec = {
    * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
    * @return {Object} params bid params
    */
-  transformBidParams: function(params, isOpenRtb) {
+  transformBidParams: function (params, isOpenRtb) {
     return utils.convertTypes({
       'accountId': 'number',
       'siteId': 'number',
@@ -930,7 +934,7 @@ function appendSiteAppDevice(data, bidRequest, bidderRequest) {
   }
   // Add language to site and device objects if there
   if (bidRequest.params.video.language) {
-    ['site', 'device'].forEach(function(param) {
+    ['site', 'device'].forEach(function (param) {
       if (data[param]) {
         data[param].content = Object.assign({language: bidRequest.params.video.language}, data[param].content)
       }
@@ -974,8 +978,14 @@ function applyFPD(bidRequest, mediaType, data) {
 
   let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
   let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
-  const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
-  const validate = function(prop, key) {
+  const MAP = {
+    user: 'tg_v.',
+    site: 'tg_i.',
+    adserver: 'tg_i.dfp_ad_unit_code',
+    pbadslot: 'tg_i.pbadslot',
+    keywords: 'kw'
+  };
+  const validate = function (prop, key) {
     if (key === 'data' && Array.isArray(prop)) {
       return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.taxonomyname') &&
         utils.deepAccess(name, 'ext.taxonomyname').match(/iab/i)).map(value => {
@@ -995,7 +1005,7 @@ function applyFPD(bidRequest, mediaType, data) {
       }).toString() : prop.toString();
     }
   };
-  const addBannerData = function(obj, name, key, isParent = true) {
+  const addBannerData = function (obj, name, key, isParent = true) {
     let val = validate(obj, key);
     let loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
@@ -1041,7 +1051,7 @@ function applyFPD(bidRequest, mediaType, data) {
  */
 function mapSizes(sizes) {
   return utils.parseSizesInput(sizes)
-  // map sizes while excluding non-matches
+    // map sizes while excluding non-matches
     .reduce((result, size) => {
       let mappedSize = parseInt(sizeMap[size], 10);
       if (mappedSize) {
@@ -1113,6 +1123,7 @@ function bidType(bid, log = false) {
 }
 
 export const resetRubiConf = () => rubiConf = {};
+
 export function masSizeOrdering(sizes) {
   const MAS_SIZE_PRIORITY = [15, 2, 9];
 
@@ -1186,7 +1197,7 @@ export function hasValidVideoParams(bid) {
     api: arrayType
   }
   // loop through each param and verify it has the correct
-  Object.keys(requiredParams).forEach(function(param) {
+  Object.keys(requiredParams).forEach(function (param) {
     if (Object.prototype.toString.call(utils.deepAccess(bid, 'mediaTypes.video.' + param)) !== requiredParams[param]) {
       isValid = false;
       utils.logError('Rubicon: mediaTypes.video.' + param + ' is required and must be of type: ' + requiredParams[param]);

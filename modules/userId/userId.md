@@ -179,16 +179,6 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
-            name: 'sharedId',
-            params: {
-                  syncTime: 60 // in seconds, default is 24 hours
-               },
-             storage: {
-                type: 'html5',
-                name: 'sharedid',
-                expires: 28
-             }
-        }, {
             name: 'id5Id',
             params: {
                 partner: 173,         // Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id

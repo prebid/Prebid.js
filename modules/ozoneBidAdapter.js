@@ -1,9 +1,10 @@
 import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
-import { Renderer } from '../src/Renderer.js';
+import {Renderer} from '../src/Renderer.js';
+
 const BIDDER_CODE = 'ozone';
 
 // *** PROD ***
@@ -15,7 +16,7 @@ const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.
 const OZONEVERSION = '2.5.0';
 export const spec = {
   gvlid: 524,
-  aliases: [{ code: 'lmc' }],
+  aliases: [{code: 'lmc'}],
   version: OZONEVERSION,
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
@@ -34,7 +35,9 @@ export const spec = {
    * @param bid Object : the bid
    */
   loadWhitelabelData(bid) {
-    if (this.propertyBag.whitelabel) { return; }
+    if (this.propertyBag.whitelabel) {
+      return;
+    }
     this.propertyBag.whitelabel = JSON.parse(JSON.stringify(this.whitelabel_defaults));
     let bidder = bid.bidder || 'ozone'; // eg. ozone
     this.propertyBag.whitelabel.logId = bidder.toUpperCase();
@@ -67,19 +70,25 @@ export const spec = {
    * wrappers for this.logInfo logWarn & logError, to add the proper prefix
    */
   logInfo() {
-    if (!this.propertyBag.whitelabel) { return; }
+    if (!this.propertyBag.whitelabel) {
+      return;
+    }
     let args = arguments;
     args[0] = `${this.propertyBag.whitelabel.logId}: ${arguments[0]}`;
     utils.logInfo.apply(this, args);
   },
   logError() {
-    if (!this.propertyBag.whitelabel) { return; }
+    if (!this.propertyBag.whitelabel) {
+      return;
+    }
     let args = arguments;
     args[0] = `${this.propertyBag.whitelabel.logId}: ${arguments[0]}`;
     utils.logError.apply(this, args);
   },
   logWarn() {
-    if (!this.propertyBag.whitelabel) { return; }
+    if (!this.propertyBag.whitelabel) {
+      return;
+    }
     let args = arguments;
     args[0] = `${this.propertyBag.whitelabel.logId}: ${arguments[0]}`;
     utils.logWarn.apply(this, args);
@@ -388,7 +397,9 @@ export const spec = {
    * @returns {*}
    */
   interpretResponse(serverResponse, request) {
-    if (request && request.bidderRequest && request.bidderRequest.bids) { this.loadWhitelabelData(request.bidderRequest.bids[0]); }
+    if (request && request.bidderRequest && request.bidderRequest.bids) {
+      this.loadWhitelabelData(request.bidderRequest.bids[0]);
+    }
     let startTime = new Date().getTime();
     let whitelabelBidder = this.propertyBag.whitelabel.bidder; // by default = ozone
     let whitelabelPrefix = this.propertyBag.whitelabel.keyPrefix;
@@ -488,7 +499,11 @@ export const spec = {
         }
         if (useOzWhitelistAdserverKeys) { // delete any un-whitelisted keys
           this.logInfo('Going to filter out adserver targeting keys not in the whitelist: ', ozWhitelistAdserverKeys);
-          Object.keys(adserverTargeting).forEach(function(key) { if (ozWhitelistAdserverKeys.indexOf(key) === -1) { delete adserverTargeting[key]; } });
+          Object.keys(adserverTargeting).forEach(function (key) {
+            if (ozWhitelistAdserverKeys.indexOf(key) === -1) {
+              delete adserverTargeting[key];
+            }
+          });
         }
         thisBid.adserverTargeting = adserverTargeting;
         arrAllBids.push(thisBid);
@@ -506,7 +521,9 @@ export const spec = {
    * @return {string|object}
    */
   getWhitelabelConfigItem(ozoneVersion) {
-    if (this.propertyBag.whitelabel.bidder == 'ozone') { return config.getConfig(ozoneVersion); }
+    if (this.propertyBag.whitelabel.bidder == 'ozone') {
+      return config.getConfig(ozoneVersion);
+    }
     let whitelabelledSearch = ozoneVersion.replace('ozone', this.propertyBag.whitelabel.bidder);
     whitelabelledSearch = ozoneVersion.replace('oz_', this.propertyBag.whitelabel.keyPrefix + '_');
     return config.getConfig(whitelabelledSearch);
@@ -608,7 +625,7 @@ export const spec = {
     var ret = {};
     // @todo - what is fabrick called & where to look for it? If it's a simple value then it will automatically be ok
     let searchKeysSingle = ['pubcid', 'tdid', 'id5id', 'parrableId', 'idl_env', 'criteoId', 'criteortus',
-      'sharedid', 'lotamePanoramaId', 'fabrickId'];
+      'lotamePanoramaId', 'fabrickId'];
     if (bidRequest.hasOwnProperty('userId')) {
       for (let arrayId in searchKeysSingle) {
         let key = searchKeysSingle[arrayId];
@@ -726,7 +743,7 @@ export const spec = {
    * This returns a random ID for this page. It starts off with the current ms timestamp then appends a random component
    * @return {string}
    */
-  getPageId: function() {
+  getPageId: function () {
     if (this.propertyBag.pageId == null) {
       let randPart = '';
       let allowable = '0123456789abcdefghijklmnopqrstuvwxyz';
@@ -755,7 +772,7 @@ export const spec = {
     let arrVideoKeysAllowed = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'linearity', 'skip', 'skipmin', 'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad', 'api', 'companiontype'];
     for (const key in objConfig) {
       var found = false;
-      arrVideoKeysAllowed.forEach(function(arg) {
+      arrVideoKeysAllowed.forEach(function (arg) {
         if (arg === key) {
           ret[key] = objConfig[key];
           found = true;
@@ -1056,6 +1073,7 @@ function getPlayerSizeFromObject(objVideo) {
   }
   return playerSize;
 }
+
 /*
   Rendering video ads - create a renderer instance, mark it as not loaded, set a renderer function.
   The renderer function will not assume that the renderer script is loaded - it will push() the ultimate render function call
@@ -1076,6 +1094,7 @@ function newRenderer(adUnitCode, rendererOptions = {}) {
   }
   return renderer;
 }
+
 function outstreamRender(bid) {
   spec.logInfo('outstreamRender called. Going to push the call to window.ozoneVideo.outstreamRender(bid) bid =', JSON.parse(JSON.stringify(bid)));
   // push to render queue because ozoneVideo may not be loaded yet

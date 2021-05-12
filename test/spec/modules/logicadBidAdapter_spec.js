@@ -21,19 +21,13 @@ describe('LogicadAdapter', function () {
       }
     },
     userId: {
-      sharedid: {
-        id: 'fakesharedid',
-        third: 'fakesharedid'
-      }
+      pubcid: 'fakepubcidid',
     },
     userIdAsEids: [{
-      source: 'sharedid.org',
+      source: 'pubcid.org',
       uids: [{
-        id: 'fakesharedid',
-        atype: 1,
-        ext: {
-          third: 'fakesharedid'
-        }
+        id: 'fakepubcidid',
+        atype: 1
       }]
     }]
   }];
@@ -63,19 +57,13 @@ describe('LogicadAdapter', function () {
       }
     },
     userId: {
-      sharedid: {
-        id: 'fakesharedid',
-        third: 'fakesharedid'
-      }
+      pubcid: 'fakepubcidid'
     },
     userIdAsEids: [{
-      source: 'sharedid.org',
+      source: 'pubcid.org',
       uids: [{
-        id: 'fakesharedid',
-        atype: 1,
-        ext: {
-          third: 'fakesharedid'
-        }
+        id: 'fakepubcidid',
+        atype: 1
       }]
     }]
   }];
@@ -176,8 +164,8 @@ describe('LogicadAdapter', function () {
 
       const data = JSON.parse(request.data);
       expect(data.auctionId).to.equal('18fd8b8b0bd757');
-      expect(data.eids[0].source).to.equal('sharedid.org');
-      expect(data.eids[0].uids[0].id).to.equal('fakesharedid');
+      expect(data.eids[0].source).to.equal('pubcid.org');
+      expect(data.eids[0].uids[0].id).to.equal('fakepubcidid');
     });
   });
 

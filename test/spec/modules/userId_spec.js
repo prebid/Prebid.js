@@ -25,7 +25,7 @@ import {
 import {server} from 'test/mocks/xhr.js';
 import find from 'core-js-pure/features/array/find.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
-import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem.js';
+import {pubCommonIdSubmodule} from 'modules/sharedIdSystem.js';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
@@ -36,7 +36,6 @@ import {netIdSubmodule} from 'modules/netIdSystem.js';
 import {nextrollIdSubmodule} from 'modules/nextrollIdSystem.js';
 import {intentIqIdSubmodule} from 'modules/intentIqIdSystem.js';
 import {zeotapIdPlusSubmodule} from 'modules/zeotapIdPlusIdSystem.js';
-import {sharedIdSubmodule} from 'modules/sharedIdSystem.js';
 import {haloIdSubmodule} from 'modules/haloIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import {criteoIdSubmodule} from 'modules/criteoIdSystem.js';
@@ -465,7 +464,7 @@ describe('User ID', function () {
     });
 
     it('handles config with no usersync object', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({});
       // usersync is undefined, and no logInfo message for 'User ID - usersync config updated'
@@ -473,14 +472,14 @@ describe('User ID', function () {
     });
 
     it('handles config with empty usersync object', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({userSync: {}});
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
     it('handles config with usersync and userIds that are empty objs', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -491,7 +490,7 @@ describe('User ID', function () {
     });
 
     it('handles config with usersync and userIds with empty names or that dont match a submodule.name', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -508,7 +507,7 @@ describe('User ID', function () {
     });
 
     it('config with 1 configurations should create 1 submodules', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['unifiedId', 'unifiedid', 'cookie']));
 
@@ -529,8 +528,8 @@ describe('User ID', function () {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 21 configurations should result in 21 submodules add', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, nextrollIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+    it('config with 20 configurations should result in 20 submodules add', function () {
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -559,10 +558,8 @@ describe('User ID', function () {
             storage: {name: 'netId', type: 'cookie'}
           }, {
             name: 'nextrollId'
-          }, {
-            name: 'sharedId',
-            storage: {name: 'sharedid', type: 'cookie'}
-          }, {
+          },
+          {
             name: 'intentIqId',
             storage: {name: 'intentIqId', type: 'cookie'}
           }, {
@@ -593,11 +590,11 @@ describe('User ID', function () {
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 21 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 20 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
 
       init(config);
       config.setConfig({
@@ -613,7 +610,7 @@ describe('User ID', function () {
     });
 
     it('config auctionDelay updates module correctly', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -628,7 +625,7 @@ describe('User ID', function () {
     });
 
     it('config auctionDelay defaults to 0 if not a number', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -875,10 +872,6 @@ describe('User ID', function () {
               source: 'pubcid.org',
               uids: [{id: 'testpubcid', atype: 1}]
             });
-
-            // verify no sharedid was added
-            expect(bid.userId).to.not.have.property('sharedid');
-            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.be.undefined;
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -904,10 +897,6 @@ describe('User ID', function () {
               source: 'pubcid.org',
               uids: [{id: 'testpubcid', atype: 1}]
             });
-
-            // verify no sharedid was added
-            expect(bid.userId).to.not.have.property('sharedid');
-            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.be.undefined;
           });
         });
         localStorage.removeItem('pubcid');
@@ -1101,148 +1090,10 @@ describe('User ID', function () {
       }, {adUnits});
     });
 
-    it('test hook from sharedId html5', function (done) {
-      // simulate existing browser local storage values
-      localStorage.setItem('sharedid', JSON.stringify({'id': 'test_sharedId', 'ts': 1590525289611}));
-      localStorage.setItem('sharedid_exp', '');
-
-      setSubmoduleRegistry([sharedIdSubmodule]);
-      init(config);
-      config.setConfig(getConfigMock(['sharedId', 'sharedid', 'html5']));
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.have.deep.nested.property('id');
-            expect(bid.userId.sharedid).to.have.deep.nested.property('third');
-            expect(bid.userId.sharedid).to.deep.equal({
-              id: 'test_sharedId',
-              third: 'test_sharedId'
-            });
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'sharedid.org',
-              uids: [{
-                id: 'test_sharedId',
-                atype: 1,
-                ext: {
-                  third: 'test_sharedId'
-                }
-              }]
-            });
-          });
-        });
-        localStorage.removeItem('sharedid');
-        localStorage.removeItem('sharedid_exp');
-        done();
-      }, {adUnits});
-    });
-
-    it('test hook from sharedId html5 (id not synced)', function (done) {
-      // simulate existing browser local storage values
-      localStorage.setItem('sharedid', JSON.stringify({'id': 'test_sharedId', 'ns': true, 'ts': 1590525289611}));
-      localStorage.setItem('sharedid_exp', '');
-
-      setSubmoduleRegistry([sharedIdSubmodule]);
-      init(config);
-      config.setConfig(getConfigMock(['sharedId', 'sharedid', 'html5']));
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.have.deep.nested.property('id');
-            expect(bid.userId.sharedid).to.deep.equal({
-              id: 'test_sharedId'
-            });
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'sharedid.org',
-              uids: [{
-                id: 'test_sharedId',
-                atype: 1
-              }]
-            });
-          });
-        });
-        localStorage.removeItem('sharedid');
-        localStorage.removeItem('sharedid_exp');
-        done();
-      }, {adUnits});
-    });
-    it('test hook from sharedId cookie', function (done) {
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': 'test_sharedId',
-        'ts': 1590525289611
-      }), (new Date(Date.now() + 100000).toUTCString()));
-
-      setSubmoduleRegistry([sharedIdSubmodule]);
-      init(config);
-      config.setConfig(getConfigMock(['sharedId', 'sharedid', 'cookie']));
-
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.have.deep.nested.property('id');
-            expect(bid.userId.sharedid).to.have.deep.nested.property('third');
-            expect(bid.userId.sharedid).to.deep.equal({
-              id: 'test_sharedId',
-              third: 'test_sharedId'
-            });
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'sharedid.org',
-              uids: [{
-                id: 'test_sharedId',
-                atype: 1,
-                ext: {
-                  third: 'test_sharedId'
-                }
-              }]
-            });
-          });
-        });
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
-        done();
-      }, {adUnits});
-    });
-    it('test hook from sharedId cookie (id not synced) ', function (done) {
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': 'test_sharedId',
-        'ns': true,
-        'ts': 1590525289611
-      }), (new Date(Date.now() + 100000).toUTCString()));
-
-      setSubmoduleRegistry([sharedIdSubmodule]);
-      init(config);
-      config.setConfig(getConfigMock(['sharedId', 'sharedid', 'cookie']));
-
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.have.deep.nested.property('id');
-            expect(bid.userId.sharedid).to.deep.equal({
-              id: 'test_sharedId'
-            });
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'sharedid.org',
-              uids: [{
-                id: 'test_sharedId',
-                atype: 1
-              }]
-            });
-          });
-        });
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
-        done();
-      }, {adUnits});
-    });
-
     it('eidPermissions fun with bidders', function (done) {
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': 'test222',
-        'ts': 1590525289611
-      }), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('pubcid', 'test222', (new Date(Date.now() + 5000).toUTCString()));
 
-      setSubmoduleRegistry([sharedIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
       let eidPermissions;
       getPrebidInternal().setEidPermissions = function (newEidPermissions) {
         eidPermissions = newEidPermissions;
@@ -1253,13 +1104,13 @@ describe('User ID', function () {
           syncDelay: 0,
           userIds: [
             {
-              name: 'sharedId',
+              name: 'pubCommonId',
               bidders: [
                 'sampleBidder'
               ],
               storage: {
                 type: 'cookie',
-                name: 'sharedid',
+                name: 'pubcid',
                 expires: 28
               }
             }
@@ -1274,47 +1125,41 @@ describe('User ID', function () {
               bidders: [
                 'sampleBidder'
               ],
-              source: 'sharedid.org'
+              source: 'pubcid.org'
             }
           ]
         );
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             if (bid.bidder === 'sampleBidder') {
-              expect(bid).to.have.deep.nested.property('userId.sharedid');
-              expect(bid.userId.sharedid.id).to.equal('test222');
+              expect(bid).to.have.deep.nested.property('userId.pubcid');
+              expect(bid.userId.pubcid).to.equal('test222');
               expect(bid.userIdAsEids[0]).to.deep.equal({
-                source: 'sharedid.org',
+                source: 'pubcid.org',
                 uids: [
                   {
                     id: 'test222',
-                    atype: 1,
-                    ext: {
-                      third: 'test222'
-                    }
+                    atype: 1
                   }
                 ]
               });
             }
             if (bid.bidder === 'anotherSampleBidder') {
-              expect(bid).to.not.have.deep.nested.property('userId.sharedid');
+              expect(bid).to.not.have.deep.nested.property('userId.pubcid');
               expect(bid).to.not.have.property('userIdAsEids');
             }
           });
         });
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         getPrebidInternal().setEidPermissions = undefined;
         done();
       }, {adUnits});
     });
 
     it('eidPermissions fun without bidders', function (done) {
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': 'test222',
-        'ts': 1590525289611
-      }), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('pubcid', 'test222', new Date(Date.now() + 5000).toUTCString());
 
-      setSubmoduleRegistry([sharedIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
       let eidPermissions;
       getPrebidInternal().setEidPermissions = function (newEidPermissions) {
         eidPermissions = newEidPermissions;
@@ -1325,10 +1170,10 @@ describe('User ID', function () {
           syncDelay: 0,
           userIds: [
             {
-              name: 'sharedId',
+              name: 'pubCommonId',
               storage: {
                 type: 'cookie',
-                name: 'sharedid',
+                name: 'pubcid',
                 expires: 28
               }
             }
@@ -1342,23 +1187,20 @@ describe('User ID', function () {
         );
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid.id).to.equal('test222');
+            expect(bid).to.have.deep.nested.property('userId.pubcid');
+            expect(bid.userId.pubcid).to.equal('test222');
             expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'sharedid.org',
+              source: 'pubcid.org',
               uids: [
                 {
                   id: 'test222',
-                  atype: 1,
-                  ext: {
-                    third: 'test222'
-                  }
+                  atype: 1
                 }]
             });
           });
         });
         getPrebidInternal().setEidPermissions = undefined;
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -1799,7 +1641,7 @@ describe('User ID', function () {
       }, {adUnits});
     });
 
-    it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, intentIqId, zeotapIdPlus, sharedId, netId, haloId, Criteo, UID 2.0, admixerId, dmdId and mwOpenLinkId have data to pass', function (done) {
+    it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, intentIqId, zeotapIdPlus, netId, haloId, Criteo, UID 2.0, admixerId, dmdId and mwOpenLinkId have data to pass', function (done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1809,10 +1651,6 @@ describe('User ID', function () {
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('intentIqId', 'testintentIqId', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('IDP', btoa(JSON.stringify('zeotapId')), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': 'test_sharedId',
-        'ts': 1590525289611
-      }), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('haloId', JSON.stringify({'haloId': 'testHaloId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('storage_criteo', JSON.stringify({'criteoId': 'test_bidid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('mwol', JSON.stringify({eid: 'XX-YY-ZZ-123'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1820,7 +1658,7 @@ describe('User ID', function () {
       coreStorage.setCookie('admixerId', 'testadmixerId', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('deepintentId', 'testdeepintentId', (new Date(Date.now() + 5000).toUTCString()));
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
         ['unifiedId', 'unifiedid', 'cookie'],
@@ -1829,7 +1667,6 @@ describe('User ID', function () {
         ['britepoolId', 'britepoolid', 'cookie'],
         ['dmdId', 'dmdId', 'cookie'],
         ['netId', 'netId', 'cookie'],
-        ['sharedId', 'sharedid', 'cookie'],
         ['intentIqId', 'intentIqId', 'cookie'],
         ['zeotapIdPlus', 'IDP', 'cookie'],
         ['haloId', 'haloId', 'cookie'],
@@ -1864,11 +1701,6 @@ describe('User ID', function () {
             // also check that netId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.netId');
             expect(bid.userId.netId).to.equal('testnetId');
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.deep.equal({
-              id: 'test_sharedId',
-              third: 'test_sharedId'
-            });
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
@@ -1895,7 +1727,7 @@ describe('User ID', function () {
             expect(bid).to.have.deep.nested.property('userId.deepintentId');
             expect(bid.userId.deepintentId).to.equal('testdeepintentId');
 
-            expect(bid.userIdAsEids.length).to.equal(16);
+            expect(bid.userIdAsEids.length).to.equal(15);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1905,7 +1737,6 @@ describe('User ID', function () {
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('dmdId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('IDP', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('haloId', '', EXPIRED_COOKIE_DATE);
@@ -1918,17 +1749,13 @@ describe('User ID', function () {
       }, {adUnits});
     });
 
-    it('test hook when pubCommonId, unifiedId, id5Id, britepoolId, dmdId, intentIqId, zeotapIdPlus, sharedId, criteo, netId, haloId, UID 2.0, admixerId and mwOpenLinkId have their modules added before and after init', function (done) {
+    it('test hook when pubCommonId, unifiedId, id5Id, britepoolId, dmdId, intentIqId, zeotapIdPlus, criteo, netId, haloId, UID 2.0, admixerId and mwOpenLinkId have their modules added before and after init', function (done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': 'test_sharedId',
-        'ts': 1590525289611
-      }), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('intentIqId', 'testintentIqId', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('IDP', btoa(JSON.stringify('zeotapId')), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('haloId', JSON.stringify({'haloId': 'testHaloId'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1952,7 +1779,6 @@ describe('User ID', function () {
       attachIdSystem(identityLinkSubmodule);
       attachIdSystem(britepoolIdSubmodule);
       attachIdSystem(netIdSubmodule);
-      attachIdSystem(sharedIdSubmodule);
       attachIdSystem(intentIqIdSubmodule);
       attachIdSystem(zeotapIdPlusSubmodule);
       attachIdSystem(haloIdSubmodule);
@@ -1970,7 +1796,6 @@ describe('User ID', function () {
         ['identityLink', 'idl_env', 'cookie'],
         ['britepoolId', 'britepoolid', 'cookie'],
         ['netId', 'netId', 'cookie'],
-        ['sharedId', 'sharedid', 'cookie'],
         ['intentIqId', 'intentIqId', 'cookie'],
         ['zeotapIdPlus', 'IDP', 'cookie'],
         ['haloId', 'haloId', 'cookie'],
@@ -2003,11 +1828,6 @@ describe('User ID', function () {
             // also check that britepoolId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.netId');
             expect(bid.userId.netId).to.equal('testnetId');
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.deep.equal({
-              id: 'test_sharedId',
-              third: 'test_sharedId'
-            });
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
@@ -2040,7 +1860,7 @@ describe('User ID', function () {
             expect(bid).to.have.deep.nested.property('userId.deepintentId');
             expect(bid.userId.deepintentId).to.equal('testdeepintentId');
 
-            expect(bid.userIdAsEids.length).to.equal(16);
+            expect(bid.userIdAsEids.length).to.equal(15);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2049,7 +1869,6 @@ describe('User ID', function () {
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('IDP', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('haloId', '', EXPIRED_COOKIE_DATE);
@@ -2059,216 +1878,6 @@ describe('User ID', function () {
         coreStorage.setCookie('uid2id', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('admixerId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('deepintentId', '', EXPIRED_COOKIE_DATE);
-        done();
-      }, {adUnits});
-    });
-
-    it('test hook when sharedId(opted out) have their modules added before and after init', function (done) {
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': '00000000000000000000000000',
-        'ts': 1590525289611
-      }), (new Date(Date.now() + 5000).toUTCString()));
-
-      setSubmoduleRegistry([]);
-      init(config);
-
-      attachIdSystem(sharedIdSubmodule);
-
-      config.setConfig(getConfigMock(['sharedId', 'sharedid', 'cookie']));
-
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid.userIdAsEids).to.be.undefined;
-          });
-        });
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
-        done();
-      }, {adUnits});
-    });
-
-    it('test sharedid enabled via pubcid cookie', function (done) {
-      coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('pubcid_sharedid', 'testsharedid', (new Date(Date.now() + 5000).toUTCString()));
-
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
-      init(config);
-
-      const customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
-      addConfig(customCfg, 'params', {enableSharedId: true});
-      config.setConfig(customCfg);
-
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            // verify that the PubCommonId id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('testpubcid');
-            expect(findEid(bid.userIdAsEids, 'pubcid.org')).to.deep.equal(
-              {'source': 'pubcid.org', 'uids': [{'id': 'testpubcid', 'atype': 1}]}
-            );
-            // verify that the sharedid was also copied to bid
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.deep.equal({id: 'testsharedid'});
-            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.deep.equal(
-              {'source': 'sharedid.org', 'uids': [{'id': 'testsharedid', 'atype': 1}]}
-            );
-          });
-        });
-        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('pubcid_sharedid', '', EXPIRED_COOKIE_DATE);
-
-        done();
-      }, {adUnits});
-    });
-
-    it('test sharedid disabled via pubcid cookie', function (done) {
-      coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('pubcid_sharedid', 'testsharedid', (new Date(Date.now() + 5000).toUTCString()));
-
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
-      init(config);
-
-      // pubCommonId's support for sharedId is off by default
-      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
-
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            // verify that the PubCommonId id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('testpubcid');
-            expect(findEid(bid.userIdAsEids, 'pubcid.org')).to.deep.equal(
-              {'source': 'pubcid.org', 'uids': [{'id': 'testpubcid', 'atype': 1}]}
-            );
-            // verify that the sharedid was not added to bid
-            expect(bid.userId).to.not.have.property('sharedid');
-            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.be.undefined;
-          });
-        });
-        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('pubcid_sharedid', '', EXPIRED_COOKIE_DATE);
-
-        done();
-      }, {adUnits});
-    });
-
-    it('test sharedid enabled via pubcid html5', function (done) {
-      coreStorage.setDataInLocalStorage('pubcid', 'testpubcid');
-      coreStorage.setDataInLocalStorage('pubcid_exp', new Date(Date.now() + 5000).toUTCString());
-      coreStorage.setDataInLocalStorage('pubcid_sharedid', 'testsharedid');
-      coreStorage.setDataInLocalStorage('pubcid_sharedid_exp', new Date(Date.now() + 5000).toUTCString());
-
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
-      init(config);
-
-      const customCfg = getConfigMock(['pubCommonId', 'pubcid', 'html5']);
-      addConfig(customCfg, 'params', {enableSharedId: true});
-      config.setConfig(customCfg);
-
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            // verify that the PubCommonId id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('testpubcid');
-            expect(findEid(bid.userIdAsEids, 'pubcid.org')).to.deep.equal(
-              {'source': 'pubcid.org', 'uids': [{'id': 'testpubcid', 'atype': 1}]}
-            );
-            // verify that the sharedid was also copied to bid
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.deep.equal({id: 'testsharedid'});
-            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.deep.equal(
-              {'source': 'sharedid.org', 'uids': [{'id': 'testsharedid', 'atype': 1}]}
-            );
-          });
-        });
-        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('pubcid_sharedid', '', EXPIRED_COOKIE_DATE);
-
-        coreStorage.removeDataFromLocalStorage('pubcid');
-        coreStorage.removeDataFromLocalStorage('pubcid_exp');
-        coreStorage.removeDataFromLocalStorage('pubcid_sharedid');
-        coreStorage.removeDataFromLocalStorage('pubcid_sharedid_exp');
-        done();
-      }, {adUnits});
-    });
-
-    it('test expired sharedid via pubcid html5', function (done) {
-      coreStorage.setDataInLocalStorage('pubcid', 'testpubcid');
-      coreStorage.setDataInLocalStorage('pubcid_exp', new Date(Date.now() + 5000).toUTCString());
-
-      // set sharedid to expired already
-      coreStorage.setDataInLocalStorage('pubcid_sharedid', 'testsharedid');
-      coreStorage.setDataInLocalStorage('pubcid_sharedid_exp', new Date(Date.now() - 100).toUTCString());
-
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
-      init(config);
-
-      const customCfg = getConfigMock(['pubCommonId', 'pubcid', 'html5']);
-      addConfig(customCfg, 'params', {enableSharedId: true});
-      config.setConfig(customCfg);
-
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            // verify that the PubCommonId id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('testpubcid');
-            expect(findEid(bid.userIdAsEids, 'pubcid.org')).to.deep.equal(
-              {'source': 'pubcid.org', 'uids': [{'id': 'testpubcid', 'atype': 1}]}
-            );
-            // verify that the sharedid was not added
-            expect(bid.userId).to.not.have.property('sharedid');
-            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.be.undefined;
-          });
-        });
-
-        coreStorage.removeDataFromLocalStorage('pubcid');
-        coreStorage.removeDataFromLocalStorage('pubcid_exp');
-        coreStorage.removeDataFromLocalStorage('pubcid_sharedid');
-        coreStorage.removeDataFromLocalStorage('pubcid_sharedid_exp');
-        done();
-      }, {adUnits});
-    });
-
-    it('test pubcid coexisting with sharedid', function (done) {
-      coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('pubcid_sharedid', 'test111', (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': 'test222',
-        'ts': 1590525289611
-      }), (new Date(Date.now() + 5000).toUTCString()));
-
-      // When both pubcommon and sharedid are configured, pubcommon are invoked first due to
-      // module loading order.  This mean the output from the primary sharedid module will overwrite
-      // the one in pubcommon.
-
-      setSubmoduleRegistry([pubCommonIdSubmodule, sharedIdSubmodule]);
-      init(config);
-      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
-        ['sharedId', 'sharedid', 'cookie'],
-      ));
-
-      requestBidsHook(function () {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            // verify that the PubCommonId id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('testpubcid');
-            expect(findEid(bid.userIdAsEids, 'pubcid.org')).to.deep.equal(
-              {'source': 'pubcid.org', 'uids': [{'id': 'testpubcid', 'atype': 1}]}
-            );
-            // verify that the sharedid was also copied to bid
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid.id).to.equal('test222');
-            expect(findEid(bid.userIdAsEids, 'sharedid.org').uids[0].id).to.equal('test222');
-          });
-        });
-        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('pubcid_sharedid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
-
         done();
       }, {adUnits});
     });
@@ -2309,10 +1918,6 @@ describe('User ID', function () {
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('dmdId', 'testdmdId', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), new Date(Date.now() + 5000).toUTCString());
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': 'test_sharedId',
-        'ts': 1590525289611
-      }), new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('intentIqId', 'testintentIqId', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('IDP', btoa(JSON.stringify('zeotapId')), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('haloId', JSON.stringify({'haloId': 'testHaloId'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -2321,7 +1926,7 @@ describe('User ID', function () {
       coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('__uid2_advertising_token', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
       init(config);
 
       config.setConfig({
@@ -2341,8 +1946,6 @@ describe('User ID', function () {
             name: 'dmdId', storage: {name: 'dmdId', type: 'cookie'}
           }, {
             name: 'netId', storage: {name: 'netId', type: 'cookie'}
-          }, {
-            name: 'sharedId', storage: {name: 'sharedid', type: 'cookie'}
           }, {
             name: 'intentIqId', storage: {name: 'intentIqId', type: 'cookie'}
           }, {
@@ -2399,12 +2002,6 @@ describe('User ID', function () {
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.netId');
             expect(bid.userId.netId).to.equal('testnetId');
-            // also check that sharedId id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.deep.equal({
-              id: 'test_sharedId',
-              third: 'test_sharedId'
-            });
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mid');
             expect(bid.userId.mid).to.equal('123456778');
@@ -2429,7 +2026,7 @@ describe('User ID', function () {
             expect(bid).to.have.deep.nested.property('userId.deepintentId');
             expect(bid.userId.deepintentId).to.equal('testdeepintentId');
 
-            expect(bid.userIdAsEids.length).to.equal(14);
+            expect(bid.userIdAsEids.length).to.equal(13);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2438,7 +2035,6 @@ describe('User ID', function () {
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('IDP', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('haloId', '', EXPIRED_COOKIE_DATE);
@@ -2457,7 +2053,6 @@ describe('User ID', function () {
       sinon.stub(events, 'getEvents').returns([]);
       sinon.stub(utils, 'triggerPixel');
       coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-      coreStorage.setCookie('pubcid_sharedid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
     });
@@ -2466,7 +2061,6 @@ describe('User ID', function () {
       events.getEvents.restore();
       utils.triggerPixel.restore();
       coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-      coreStorage.setCookie('pubcid_sharedid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
       resetConsentData();
@@ -2525,136 +2119,6 @@ describe('User ID', function () {
       expect(server.requests).to.be.empty;
       events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
       expect(server.requests[0].url).to.equal('https://match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
-    });
-
-    it('verify sharedid callback via pubcid when enabled', function () {
-      let adUnits = [getAdUnitMock()];
-      let innerAdUnits;
-      let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
-      customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url', enableSharedId: true});
-
-      server.respondWith('https://id.sharedid.org/id', function(xhr) {
-        xhr.respond(200, {}, '{"sharedId":"testsharedid"}');
-      });
-      server.respondImmediately = true;
-
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
-      init(config);
-      config.setConfig(customCfg);
-      requestBidsHook((config) => {
-        innerAdUnits = config.adUnits
-      }, {adUnits});
-
-      expect(utils.triggerPixel.called).to.be.false;
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
-      expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/pubcid/url');
-
-      expect(server.requests[0].url).to.equal('https://id.sharedid.org/id');
-      expect(coreStorage.getCookie('pubcid_sharedid')).to.equal('testsharedid');
-    });
-
-    it('verify no sharedid callback via pubcid when disabled', function () {
-      let adUnits = [getAdUnitMock()];
-      let innerAdUnits;
-      let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
-      customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url'});
-
-      server.respondWith('https://id.sharedid.org/id', function(xhr) {
-        xhr.respond(200, {}, '{"sharedId":"testsharedid"}');
-      });
-      server.respondImmediately = true;
-
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
-      init(config);
-      config.setConfig(customCfg);
-      requestBidsHook((config) => {
-        innerAdUnits = config.adUnits
-      }, {adUnits});
-
-      expect(utils.triggerPixel.called).to.be.false;
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
-      expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/pubcid/url');
-
-      expect(server.requests).to.have.lengthOf(0);
-      expect(coreStorage.getCookie('pubcid_sharedid')).to.be.null;
-    });
-
-    it('verify sharedid optout via pubcid when enabled', function () {
-      let adUnits = [getAdUnitMock()];
-      let innerAdUnits;
-      let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
-      customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url', enableSharedId: true});
-      coreStorage.setCookie('pubcid_sharedid', 'testsharedid', (new Date(Date.now() + 5000).toUTCString()));
-
-      server.respondWith('https://id.sharedid.org/id', function(xhr) {
-        xhr.respond(200, {}, '{"sharedId":"00000000000000000000000000"}');
-      });
-      server.respondImmediately = true;
-
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
-      init(config);
-      config.setConfig(customCfg);
-      requestBidsHook((config) => {
-        innerAdUnits = config.adUnits
-      }, {adUnits});
-
-      expect(utils.triggerPixel.called).to.be.false;
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
-      expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/pubcid/url');
-
-      expect(server.requests[0].url).to.equal('https://id.sharedid.org/id');
-      expect(coreStorage.getCookie('pubcid_sharedid')).to.be.null;
-    });
-
-    it('verify sharedid called with consent data when gdpr applies', function () {
-      let adUnits = [getAdUnitMock()];
-      let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
-      let consentConfig = {
-        cmpApi: 'iab',
-        timeout: 7500,
-        allowAuctionWithoutConsent: false
-      };
-      customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url', enableSharedId: true});
-
-      server.respondWith('https://id.sharedid.org/id?gdpr=1&gdpr_consent=abc12345234', function(xhr) {
-        xhr.respond(200, {}, '{"sharedId":"testsharedid"}');
-      });
-      server.respondImmediately = true;
-
-      let testConsentData = {
-        tcString: 'abc12345234',
-        gdprApplies: true,
-        purposeOneTreatment: false,
-        eventStatus: 'tcloaded',
-        vendor: {consents: {887: true}},
-        purpose: {
-          consents: {
-            1: true
-          }
-        }
-      };
-
-      window.__tcfapi = function () { };
-      sinon.stub(window, '__tcfapi').callsFake((...args) => {
-        args[2](testConsentData, true);
-      });
-
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
-      init(config);
-      config.setConfig(customCfg);
-      setConsentConfig(consentConfig);
-
-      consentManagementRequestBidsHook(() => {
-      }, {});
-      requestBidsHook((config) => {
-      }, {adUnits});
-
-      expect(utils.triggerPixel.called).to.be.false;
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
-      expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/pubcid/url');
-
-      expect(server.requests[0].url).to.equal('https://id.sharedid.org/id?gdpr=1&gdpr_consent=abc12345234');
-      expect(coreStorage.getCookie('pubcid_sharedid')).to.equal('testsharedid');
     });
   });
 
