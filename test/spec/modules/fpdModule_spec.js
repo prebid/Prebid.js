@@ -324,7 +324,8 @@ describe('the first party data module', function () {
               visitor: ['value2']
             }
           }
-        }
+        },
+        cur: ['USD']
       };
 
       config.setConfig({ortb2: conf});
@@ -335,6 +336,7 @@ describe('the first party data module', function () {
       expect(validated.site.ref).to.equal(getRefererInfo().referer);
       expect(validated.site.ext.data).to.deep.equal({inventory: ['value1']});
       expect(validated.user.ext.data).to.deep.equal({visitor: ['value2']});
+      expect(validated.cur).to.deep.equal(['USD']);
     });
 
     it('should filter bidderConfig data', function () {

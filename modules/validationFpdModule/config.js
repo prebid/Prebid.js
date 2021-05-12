@@ -23,7 +23,9 @@ export const ORTB_MAP = {
     invalid: true
   },
   cur: {
-    type: TYPES.string
+    type: TYPES.object,
+    isArray: true,
+    childType: TYPES.string
   },
   device: {
     type: TYPES.object,

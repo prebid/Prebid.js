@@ -14,7 +14,7 @@ Enrichment Submodule:
 Validation Submodule:
 - verify OpenRTB datatypes, remove/warn any that are likely to choke downstream readers
 - verify that certain OpenRTB attributes are not specified
-- optionally suppress user FPD based on a TBD opt-out signal (_pubcid_optout)
+- optionally suppress user FPD based on the existence of _pubcid_optout
 
 
 1. Module initializes on first load and set bidRequestHook 
@@ -25,7 +25,7 @@ Validation Submodule:
 
 This module will automatically run first party data enrichments and validations dependant on which submodules are included. There is no configuration required. In order to load the module and submodule(s) and opt out of either enrichements or validations, use the below opt out configuration
 
-# Opt Out Configuration
+# Module Control Configuration
 
 ```
 
