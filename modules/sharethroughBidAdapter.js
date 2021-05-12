@@ -21,6 +21,119 @@ export const sharethroughAdapterSpec = {
   isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
 
   buildRequests: (bidRequests, bidderRequest) => {
+    const timeout = config.getConfig('bidderTimeout');
+
+    const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
+    const secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
+
+    const req = {
+      id: utils.generateUUID(),
+      cur: ['USD'],
+      tmax: timeout,
+      user: {
+        ext: {
+          eids: handleUniversalIds(bidRequests[0], [
+            { attr: 'userId.idl_env', source: 'liveramp.com' },
+            { attr: 'userId.id5id.uid', source: 'id5-sync.com' },
+            { attr: 'userId.pubcid', source: 'pubcid.org' },
+            { attr: 'userId.tdid', source: 'adserver.org' },
+            { attr: 'userId.criteoId', source: 'criteo.com' },
+            { attr: 'userId.britepoolid', source: 'britepool.com' },
+            { attr: 'userId.lipb.lipbid', source: 'liveintent.com' },
+            { attr: 'userId.intentiqid', source: 'intentiq.com' },
+            { attr: 'userId.lotamePanoramaId', source: 'lotame.com' },
+            { attr: 'userId.parrableId', source: 'parrable.com' },
+            { attr: 'userId.netId', source: 'netid.de' },
+            { attr: 'userId.sharedid', source: 'sharedid.org' },
+          ])
+        }
+      },
+      regs: {
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        ext: {},
+      },
+      source: {
+        ext: {
+          schain: bidRequest[0].schain
+        }
+      },
+      bcat: bidRequests[0].params.bcat || [],
+      badv: bidRequests[0].params.badv || [],
+    };
+
+    if (bidderRequest.gdprConsent) {
+      const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
+      req.regs.ext.gdpr = gdprApplies ? 1 : 0;
+      if (gdprApplies) {
+        req.user.ext.consent = bidderRequest.gdprConsent.consentString;
+      }
+    }
+
+    if (bidderRequest.uspConsent) {
+      req.regs.ext.us_privacy = bidderRequest.uspConsent;
+    }
+
+    const imps = bidRequests.map(bidReq => {
+      let impression;
+
+      if (bidReq.mediaTypes && bidReq.mediaTypes.video) {
+        impression = {
+          video: {
+            topframe: utils.inIframe() ? 0 : 1,
+            skip: bidReq.mediaTypes.video.skip || 0,
+            linearity: bidReq.mediaTypes.video.linearity || 1,
+            minduration: bidReq.mediaTypes.video.minduration || 5,
+            maxduration: bidReq.mediaTypes.video.maxduration || 60,
+            playbackmethod: bidReq.mediaTypes.video.playbackmethod || [2],
+            api: getVideoApi(bidReq.mediaTypes.video),
+            mimes: bidReq.mediaTypes.video.mimes || ['video/mp4'],
+            protocols: getVideoProtocols(bidReq.mediaTypes.video),
+            h: bidReq.mediaTypes.video.playerSize[0][1],
+            w: bidReq.mediaTypes.video.playerSize[0][0]
+          }
+        };
+      } else {
+        impression = {
+          banner: {
+            topframe: utils.inIframe() ? 0 : 1,
+            format: cleanSizes(bidReq.sizes)
+          }
+        };
+      }
+
+      // obj.tagid = String(bidReq.params.dmxid || bidReq.adUnitCode);
+      return {
+        id: bidReq.bidId,
+        secure: secure ? 1 : 0,
+        bidfloor: getFloor(bidReq),
+        ...impression
+      };
+    });
+
+    return {
+      method: 'POST',
+      url: STR_ENDPOINT,
+      data: {
+        ...req,
+        imp: imps
+      },
+      bidderRequest
+    };
+
+
+
+
+
+
+
+
+
+
+    // ----------------------------------
+    // OLD VERSION
+
+
+
     return bidRequests.map(bidRequest => {
       let query = {
         placement_key: bidRequest.params.pkey,
@@ -87,29 +200,29 @@ export const sharethroughAdapterSpec = {
   },
 
   interpretResponse: ({ body }, req) => {
-    if (!body || !body.creatives || !body.creatives.length) {
+    if (!body || !body.seatbid || body.seatbid.length === 0) {
       return [];
     }
 
-    const creative = body.creatives[0];
     let size = DEFAULT_SIZE;
-    if (req.strData.iframeSize || req.strData.sizes.length) {
-      size = req.strData.iframeSize
-        ? req.strData.iframeSize
-        : getLargestSize(req.strData.sizes);
+    if (req.params.iframeSize || req.params.sizes.length) {
+      size = req.params.iframeSize
+        ? req.params.iframeSize
+        : getLargestSize(req.params.sizes);
     }
 
+    const seatbid = body.seatbid[0];
     return [{
-      requestId: req.data.bidId,
+      requestId: seatbid.impid,
       width: size[0],
       height: size[1],
-      cpm: creative.cpm,
-      creativeId: creative.creative.creative_key,
-      dealId: creative.creative.deal_id,
+      cpm: +seatbid.price,
+      creativeId: seatbid.crid,
+      dealId: seatbid.dealid,
       currency: 'USD',
       netRevenue: true,
       ttl: 360,
-      ad: generateAd(body, req)
+      ad: generateAd(body, req) // body here is not a butler response anymore, need to get a butler formatted response from the iab response
     }];
   },
 
@@ -140,34 +253,150 @@ export const sharethroughAdapterSpec = {
   onSetTargeting: (bid) => {}
 };
 
-function handleUniversalIds(bidRequest) {
-  if (!bidRequest.userId) return {};
+function getVideoApi({ api }) {
+  let defaultValue = [2];
+  if (api && Array.isArray(api) && api.length > 0) {
+    return api
+  } else {
+    return defaultValue;
+  }
+}
 
-  const universalIds = {};
+function getVideoProtocols({ protocols }) {
+  let defaultValue = [2, 3, 5, 6, 7, 8];
+  if (protocols && Array.isArray(protocols) && protocols.length > 0) {
+    return protocols;
+  } else {
+    return defaultValue;
+  }
+}
 
-  const ttd = utils.deepAccess(bidRequest, 'userId.tdid');
-  if (ttd) universalIds.ttduid = ttd;
-
-  const pubc = utils.deepAccess(bidRequest, 'userId.pubcid') || utils.deepAccess(bidRequest, 'crumbs.pubcid');
-  if (pubc) universalIds.pubcid = pubc;
-
-  const idl = utils.deepAccess(bidRequest, 'userId.idl_env');
-  if (idl) universalIds.idluid = idl;
-
-  const id5 = utils.deepAccess(bidRequest, 'userId.id5id.uid');
-  if (id5) {
-    universalIds.id5uid = { id: id5 };
-    const id5link = utils.deepAccess(bidRequest, 'userId.id5id.ext.linkType');
-    if (id5link) universalIds.id5uid.linkType = id5link;
+function cleanSizes(sizes) {
+  const supported = {
+    160: {
+      600: true,
+    },
+    300: {
+      50: true,
+      250: true,
+      340: true,
+      600: true,
+    },
+    320: {
+      50: true,
+      100: true,
+      480: true,
+    },
+    336: {
+      280: true,
+    },
+    400: {
+      225: true,
+      300: true,
+    },
+    480: {
+      320: true,
+    },
+    640: {
+      360: true,
+      390: true,
+    },
+    660: {
+      371: true,
+    },
+    728: {
+      90: true,
+    },
+    854: {
+      480: true,
+    },
+    970: {
+      250: true,
+    }
   }
 
-  const lipb = utils.deepAccess(bidRequest, 'userId.lipb.lipbid');
-  if (lipb) universalIds.liuid = lipb;
+  return sizes
+    .map(size => ({ w: +size[0], h: +size[1] }))
+    .filter(size => supported[size.w] && supported[size.w][size.h]);
+}
 
-  const shd = utils.deepAccess(bidRequest, 'userId.sharedid');
-  if (shd) universalIds.shduid = shd; // object with keys: id & third
+function getFloor(bid) {
+  let floor = null;
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: bid.mediaTypes.video ? 'video' : 'banner',
+      size: bid.sizes.map(size => ({ w: size[0], h: size[1] }))
+    });
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor !== null ? floor : bid.params.floor;
+}
 
-  return universalIds;
+function shuffle(sizes, list) {
+  let removeSizes = sizes.filter(size => {
+    return list.map(l => `${l.size[0]}x${l.size[1]}`).indexOf(`${size[0]}x${size[1]}`) === -1
+  })
+  let reOrder = sizes.reduce((results, current) => {
+    if (results.length === 0) {
+      results.push(current);
+      return results;
+    }
+    results.push(current);
+    results = list.filter(l => results.map(r => `${r[0]}x${r[1]}`).indexOf(`${l.size[0]}x${l.size[1]}`) !== -1);
+    results = results.sort(function (a, b) {
+      return b.s - a.s;
+    })
+    return results.map(r => r.size);
+  }, [])
+  return removeDuplicate([...reOrder, ...removeSizes]);
+}
+
+function removeDuplicate(values) {
+  return values.filter((elem, index) => {
+    return values.map(e => `${e[0]}x${e[1]}`).indexOf(`${elem[0]}x${elem[1]}`) === index
+  })
+}
+
+function handleUniversalIds(bidRequest, uids) {
+  return uids.map((uid) => ({
+    source: uid.source,
+    uids: [{ id: utils.deepAccess(bidRequest, uid.attr), atype: 1 }]
+  }))
+
+
+
+
+
+  // if (!bidRequest.userId) return {};
+  //
+  // const universalIds = {};
+  //
+  // const ttd = utils.deepAccess(bidRequest, 'userId.tdid');
+  // if (ttd) universalIds.ttduid = ttd;
+  //
+  // const pubc = utils.deepAccess(bidRequest, 'userId.pubcid') || utils.deepAccess(bidRequest, 'crumbs.pubcid');
+  // if (pubc) universalIds.pubcid = pubc;
+  //
+  // const idl = utils.deepAccess(bidRequest, 'userId.idl_env');
+  // if (idl) universalIds.idluid = idl;
+  //
+  // const id5 = utils.deepAccess(bidRequest, 'userId.id5id.uid');
+  // if (id5) {
+  //   universalIds.id5uid = { id: id5 };
+  //   const id5link = utils.deepAccess(bidRequest, 'userId.id5id.ext.linkType');
+  //   if (id5link) universalIds.id5uid.linkType = id5link;
+  // }
+  //
+  // const lipb = utils.deepAccess(bidRequest, 'userId.lipb.lipbid');
+  // if (lipb) universalIds.liuid = lipb;
+  //
+  // const shd = utils.deepAccess(bidRequest, 'userId.sharedid');
+  // if (shd) universalIds.shduid = shd; // object with keys: id & third
+  //
+  // return universalIds;
 }
 
 function getLargestSize(sizes) {
