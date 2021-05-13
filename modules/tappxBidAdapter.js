@@ -105,13 +105,26 @@ export const spec = {
 }
 
 function validBasic(bid) {
-  if (
-    (bid.params == null) ||
-    (bid.params.endpoint == null) ||
-    (bid.params.tappxkey == null)) {
+  if (bid.params == null) {
     utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters.`);
     return false;
   }
+
+  if (bid.params.tappxkey == null) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory tappxkey parameters.`);
+    return false;
+  }
+
+  let classicEndpoint = true
+  if ((new RegExp(`^(vz.*|zz.*)\.*$`, 'i')).test(bid.params.host)) {
+    classicEndpoint = false
+  }
+
+  if (classicEndpoint && bid.params.endpoint == null) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory endpoint Tappx parameters.`);
+    return false;
+  }
+
   return true;
 }
 
