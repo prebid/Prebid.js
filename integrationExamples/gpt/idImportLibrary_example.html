@@ -1,152 +1,152 @@
 <html>
 <head>
     <script>
-        var pbjs = pbjs || {};
-        pbjs.que = pbjs.que || [];
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
     </script>
     <script src="../../build/dev/prebid.js" async></script>
 
     <script>
-        var googletag = googletag || {};
-        googletag.cmd = googletag.cmd || [];
-        googletag.cmd.push(function() {
-            googletag.pubads().disableInitialLoad();
-        });
+      var googletag = googletag || {};
+      googletag.cmd = googletag.cmd || [];
+      googletag.cmd.push(function() {
+        googletag.pubads().disableInitialLoad();
+      });
 
-        pbjs.que.push(function() {
-            pbjs.setConfig({
-                debug: true,
-                consentManagement: {
-                    cmpApi: 'iab',
-                    timeout: 1000,
-                    defaultGdprScope: true
+      pbjs.que.push(function() {
+        pbjs.setConfig({
+          debug: true,
+          consentManagement: {
+            cmpApi: 'iab',
+            timeout: 1000,
+            defaultGdprScope: true
+          },
+          userSync: {
+            userIds: [
+              {
+                name: "id5Id",
+                params: {
+                  partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
                 },
-                userSync: {
-                    userIds: [
-                        {
-                            name: "id5Id",
-                            params: {
-                                partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
-                            },
-                            storage: {
-                                type: "html5",
-                                name: "id5id",
-                                expires: 90,
-                                refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
-                            },
+                storage: {
+                  type: "html5",
+                  name: "id5id",
+                  expires: 90,
+                  refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
+                },
 
-                        }, {
-                            name: "pubCommonId",
-                            storage: {
-                                type: "html5",
-                                name: "pubcid",
-                                expires: 365
-                            },
-                        },  {
-                            name: 'identityLink',
-                            params: {
-                                pid: '14', // Set your real identityLink placement ID here
-                                // notUse3P: true // true/false - If you do not want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will be fired. By default this propertt is undefined and 3p request will be fired.},
-                                storage: {
-                                    type: 'html5',
-                                    name: 'idl_env',
-                                    expires: 30
-                                }
-                            },
-                          {
-                            name: "liveIntentId",
-                            params: {
-                                publisherId: "9896876"
-                            },
-                            storage: {
-                                type: "cookie",
-                                name: "_li_pbid",
-                                expires: 28
-                            }
-                        },
-                        {
-                            name: "zeotapIdPlus"
-                        },
-                        {
-                            name: 'haloId',
-                            storage: {
-                                type: "html5",
-                                name: "haloId",
-                                expires: 28
-                            }
-                        }, {
-                            name: "merkleId",
-                            params: {
-                                ptk: '12345678-aaaa-bbbb-cccc-123456789abc', //Set your real merkle partner key here
-                                pubid: 'EXAMPLE' //Set your real merkle publisher id here
-                            },
-                            storage: {
-                                type: "html5",
-                                name: "merkleId",
-                                expires: 30
-                            },
-
-                        },{
-                            name: "unifiedId",
-                            params: {
-                                partner: "prebid",
-                                url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
-                            },
-                            storage: {
-                                type: "html5",
-                                name: "unifiedid",
-                                expires: 30
-                            },
-                        },{
-                            name: "parrableId",
-                            params: {
-                                // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
-                                partner: '30182847-e426-4ff9-b2b5-9ca1324ea09b'
-                            }
-                        },{
-                            name: "criteo"
-                        }
-                    ],
-                    syncDelay: 5000,
-                    auctionDelay: 1000
+              }, {
+                name: "pubCommonId",
+                storage: {
+                  type: "html5",
+                  name: "pubcid",
+                  expires: 365
+                },
+              },  {
+                name: 'identityLink',
+                params: {
+                  pid: '14', // Set your real identityLink placement ID here
+                  // notUse3P: true // true/false - If you do not want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will be fired. By default this propertt is undefined and 3p request will be fired.},
+                storage: {
+                  type: 'html5',
+                  name: 'idl_env',
+                  expires: 30
                 }
-            });
-            pbjs.addAdUnits(adUnits);
-            pbjs.requestBids({
-                bidsBackHandler: sendAdserverRequest
-            });
+              },
+              {
+                name: "liveIntentId",
+                params: {
+                  publisherId: "9896876"
+                },
+                storage: {
+                  type: "cookie",
+                  name: "_li_pbid",
+                  expires: 28
+                }
+              },
+              {
+                name: "zeotapIdPlus"
+              },
+              {
+                name: 'haloId',
+                storage: {
+                  type: "html5",
+                  name: "haloId",
+                  expires: 28
+                }
+              }, {
+                name: "merkleId",
+                params: {
+                  ptk: '12345678-aaaa-bbbb-cccc-123456789abc', //Set your real merkle partner key here
+                  pubid: 'EXAMPLE' //Set your real merkle publisher id here
+                },
+                storage: {
+                  type: "html5",
+                  name: "merkleId",
+                  expires: 30
+                },
+
+              },{
+                name: "unifiedId",
+                params: {
+                  partner: "prebid",
+                  url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
+                },
+                storage: {
+                  type: "html5",
+                  name: "unifiedid",
+                  expires: 30
+                },
+              },{
+                name: "parrableId",
+                params: {
+                  // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
+                  partner: '30182847-e426-4ff9-b2b5-9ca1324ea09b'
+                }
+              },{
+                name: "criteo"
+              }
+            ],
+            syncDelay: 5000,
+            auctionDelay: 1000
+          }
         });
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          bidsBackHandler: sendAdserverRequest
+        });
+      });
 
-        function sendAdserverRequest() {
-            if (pbjs.adserverRequestSent) return;
-            pbjs.adserverRequestSent = true;
-            googletag.cmd.push(function() {
-                pbjs.que.push(function() {
-                    pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh();
-                });
-            });
-        }
-        var FAILSAFE_TIMEOUT = 2000;
+      function sendAdserverRequest() {
+        if (pbjs.adserverRequestSent) return;
+        pbjs.adserverRequestSent = true;
+        googletag.cmd.push(function() {
+          pbjs.que.push(function() {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        });
+      }
+      var FAILSAFE_TIMEOUT = 2000;
 
-        setTimeout(function() {
-            sendAdserverRequest();
-        }, FAILSAFE_TIMEOUT);
+      setTimeout(function() {
+        sendAdserverRequest();
+      }, FAILSAFE_TIMEOUT);
     </script>
 
     <script>
-        googletag.cmd.push(function() {
-            googletag.defineSlot('/112115922/FL_PB_MedRect', [[300, 250],[300,600]], 'test-div').addService(googletag.pubads());
-            googletag.pubads().enableSingleRequest();
-            googletag.enableServices();
+      googletag.cmd.push(function() {
+        googletag.defineSlot('/112115922/FL_PB_MedRect', [[300, 250],[300,600]], 'test-div').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+      pbjs.que.push(function() {
+        pbjs.setConfig({
+          idImportLibrary:{
+            url: 'http://localhost:8090/sync'
+          },
         });
-        pbjs.que.push(function() {
-            pbjs.setConfig({
-                idImportLibrary:{
-                    url: 'http://localhost:8090/sync'
-                },
-            });
-        });
+      });
     </script>
 </head>
 
@@ -326,15 +326,15 @@
 </div>
 
 <script>
-    // Get the modal
-    var modal = document.getElementById('id01');
+  // Get the modal
+  var modal = document.getElementById('id01');
 
-    // When the user clicks anywhere outside of the modal, close it
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
+  // When the user clicks anywhere outside of the modal, close it
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
     }
+  }
 </script>
 
 </body>
