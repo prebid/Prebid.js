@@ -1,9 +1,8 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {config} from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
-
 const storage = getStorageManager();
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
@@ -24,7 +23,7 @@ export const spec = {
    * @param {object} bid the ucfunnel bid to validate
    * @return boolean for whether or not a bid is valid
    */
-  isBidRequestValid: function (bid) {
+  isBidRequestValid: function(bid) {
     const isVideoMediaType = (bid.mediaTypes && bid.mediaTypes.video != null);
     const videoContext = (bid.mediaTypes && bid.mediaTypes.video != null) ? bid.mediaTypes.video.videoContext : '';
 
@@ -44,7 +43,7 @@ export const spec = {
    * @param {*} bidderRequest
    * @return {ServerRequest}
    */
-  buildRequests: function (bids, bidderRequest) {
+  buildRequests: function(bids, bidderRequest) {
     return bids.map(bid => {
       return {
         method: 'GET',
@@ -132,7 +131,7 @@ export const spec = {
     return [bid];
   },
 
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent) {
     let gdprApplies = (gdprConsent && gdprConsent.gdprApplies) ? '1' : '';
     let apiVersion = (gdprConsent) ? gdprConsent.apiVersion : '';
     let consentString = (gdprConsent) ? gdprConsent.consentString : '';
