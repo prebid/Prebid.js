@@ -452,6 +452,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     }
   }
 
+  if (config.getConfig('coppa')) {
+    utils.deepSetValue(r, 'regs.coppa', 1);
+  }
+
   const payload = {};
 
   // Parse additional runtime configs.

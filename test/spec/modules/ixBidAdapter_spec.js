@@ -2261,5 +2261,27 @@ describe('IndexexchangeAdapter', function () {
       expect(utils.deepAccess(requestWithConsent, 'user.ext.consented_providers_settings')).to.not.exist;
       expect(utils.deepAccess(requestWithConsent, 'user.ext.consent')).to.not.exist;
     });
+
+    it('should set coppa to 1 in config when enabled', () => {
+      config.setConfig({ coppa: true })
+      const bid = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const r = JSON.parse(bid[0].data.r);
+
+      expect(r.regs.coppa).to.equal(1);
+    });
+    it('should not set coppa in config when disabled', () => {
+      config.setConfig({ coppa: false })
+      const bid = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const r = JSON.parse(bid[0].data.r);
+
+      expect(r.regs.coppa).to.be.undefined;
+    });
+    it('should not set coppa when not specified in config', () => {
+      config.resetConfig();
+      const bid = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const r = JSON.parse(bid[0].data.r);
+
+      expect(r.regs.coppa).to.be.undefined;
+    });
   });
 });
