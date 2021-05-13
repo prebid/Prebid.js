@@ -29,7 +29,7 @@ let eidPermissions;
 /**
  * @typedef {Object} AdapterOptions
  * @summary s2sConfig parameter that adds arguments to resulting OpenRTB payload that goes to Prebid Server
- * @property {string} adapter
+ * @property {string} adapter 
  * @property {boolean} enabled
  * @property {string} endpoint
  * @property {string} syncEndpoint
