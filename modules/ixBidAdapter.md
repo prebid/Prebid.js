@@ -193,22 +193,20 @@ var adUnits = [{
         video: {
             // Preferred location for openrtb v2.5 compatible video obj
             context: 'instream',
-            playerSize: [300, 250]
+            playerSize: [300, 250],
+            mimes: [
+                    'video/mp4',
+                    'video/webm'
+                ],
+            minduration: 0,
+            maxduration: 60,
+            protocols: [6]
         }
     },
     bids: [{
         bidder: 'ix',
         params: {
-            siteId: '12345',
-            video: {
-                mimes: [
-                    'video/mp4',
-                    'video/webm'
-                ],
-                minduration: 0,
-                maxduration: 60,
-                protocols: [6]
-            }
+            siteId: '12345'
         }
     }, {
         bidder: 'ix',
@@ -216,6 +214,7 @@ var adUnits = [{
             siteId: '12345',
             video: {
                 // openrtb v2.5 compatible video obj
+                // If required, use this to override mediaTypes.video.XX properties
             }
         }
     }]
@@ -233,7 +232,14 @@ var adUnits = [{
     mediaTypes: {
         video: {
             context: 'outstream',
-            playerSize: [300, 250]
+            playerSize: [300, 250],
+            mimes: [
+                    'video/mp4',
+                    'video/webm'
+                ],
+            minduration: 0,
+            maxduration: 60,
+            protocols: [6]
         }
     },
     renderer: {
@@ -247,13 +253,7 @@ var adUnits = [{
         params: {
             siteId: '12345',
             video: {
-                mimes: [
-                    'video/mp4',
-                    'video/webm'
-                ],
-                minduration: 0,
-                maxduration: 60,
-                protocols: [6]
+                // If required, use this to override mediaTypes.video.XX properties   
             }
         }
     }]
