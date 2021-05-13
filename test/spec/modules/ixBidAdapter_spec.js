@@ -1976,7 +1976,6 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 300,
           netRevenue: true,
-          dealId: undefined,
           meta: {
             networkId: 50,
             brandId: 303325,
@@ -2002,7 +2001,6 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 300,
           netRevenue: true,
-          dealId: undefined,
           meta: {
             networkId: 50,
             brandId: 303325,
@@ -2029,7 +2027,6 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 300,
           netRevenue: true,
-          dealId: undefined,
           meta: {
             networkId: 50,
             brandId: 303325,
@@ -2056,7 +2053,6 @@ describe('IndexexchangeAdapter', function () {
           currency: 'JPY',
           ttl: 300,
           netRevenue: true,
-          dealId: undefined,
           meta: {
             networkId: 50,
             brandId: 303325,
@@ -2069,9 +2065,10 @@ describe('IndexexchangeAdapter', function () {
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
-    it('should set dealId correctly', function () {
+    it('should prioritize bid[].dealid over bid[].ext.dealid ', function () {
       const bidResponse = utils.deepClone(DEFAULT_BANNER_BID_RESPONSE);
-      bidResponse.seatbid[0].bid[0].ext.dealid = 'deal';
+      bidResponse.seatbid[0].bid[0].ext.dealid = 'ext-deal';
+      bidResponse.seatbid[0].bid[0].dealid = 'outter-deal';
       const expectedParse = [
         {
           requestId: '1a2b3c4d',
@@ -2084,7 +2081,34 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 300,
           netRevenue: true,
-          dealId: 'deal',
+          dealId: 'outter-deal',
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
+          }
+        }
+      ];
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+
+      expect(result[0].dealId).to.equal(expectedParse[0].dealId);
+    });
+
+    it('should not set bid[].dealid if dealid is not present', function () {
+      const bidResponse = utils.deepClone(DEFAULT_BANNER_BID_RESPONSE);
+      const expectedParse = [
+        {
+          requestId: '1a2b3c4d',
+          cpm: 1,
+          creativeId: '12345',
+          width: 300,
+          height: 250,
+          mediaType: 'banner',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
+          currency: 'USD',
+          ttl: 300,
+          netRevenue: true,
           meta: {
             networkId: 50,
             brandId: 303325,
@@ -2095,6 +2119,34 @@ describe('IndexexchangeAdapter', function () {
       ];
       const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
       expect(result[0]).to.deep.equal(expectedParse[0]);
+    });
+
+    it('should use set bid[].ext.dealid if bid[].dealid is not present', function () {
+      const bidResponse = utils.deepClone(DEFAULT_BANNER_BID_RESPONSE);
+      bidResponse.seatbid[0].bid[0].ext.dealid = 'ext-deal';
+      const expectedParse = [
+        {
+          requestId: '1a2b3c4d',
+          cpm: 1,
+          creativeId: '12345',
+          width: 300,
+          height: 250,
+          mediaType: 'banner',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
+          currency: 'USD',
+          ttl: 300,
+          dealId: 'ext-deal',
+          netRevenue: true,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
+          }
+        }
+      ];
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      expect(result[0].dealId).to.deep.equal(expectedParse[0].dealId);
     });
 
     it('should get correct bid response for video ad', function () {
@@ -2109,7 +2161,6 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 3600,
           netRevenue: true,
-          dealId: undefined,
           vastUrl: 'www.abcd.com/vast',
           meta: {
             networkId: 51,
@@ -2157,8 +2208,8 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should set bid[].ttl to seatbid[].bid[].exp value from response', function () {
-      const BANNER_RESPONSE_WITH_EXP = JSON.parse(JSON.stringify(DEFAULT_BANNER_BID_RESPONSE));
-      const VIDEO_RESPONSE_WITH_EXP = JSON.parse(JSON.stringify(DEFAULT_VIDEO_BID_RESPONSE));
+      const BANNER_RESPONSE_WITH_EXP = utils.deepClone(DEFAULT_BANNER_BID_RESPONSE);
+      const VIDEO_RESPONSE_WITH_EXP = utils.deepClone(DEFAULT_VIDEO_BID_RESPONSE);
       VIDEO_RESPONSE_WITH_EXP.seatbid[0].bid[0].exp = 200;
       BANNER_RESPONSE_WITH_EXP.seatbid[0].bid[0].exp = 100;
       const bannerResult = spec.interpretResponse({ body: BANNER_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA });
