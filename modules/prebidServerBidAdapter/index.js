@@ -1,7 +1,7 @@
 import Adapter from '../../src/adapter.js';
 import { createBid } from '../../src/bidfactory.js';
 import * as utils from '../../src/utils.js';
-import { STATUS, S2S, EVENTS } from '../../src/constants.json';
+import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
 import { config } from '../../src/config.js';
 import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
@@ -16,7 +16,7 @@ import { getPrebidInternal } from '../../src/utils.js';
 
 const getConfig = config.getConfig;
 
-const TYPE = S2S.SRC;
+const TYPE = CONSTANTS.S2S.SRC;
 let _syncCount = 0;
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -840,7 +840,7 @@ const OPEN_RTB_PROTOCOL = {
           }
 
           const cpm = bid.price;
-          const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
+          const status = cpm !== 0 ? CONSTANTS.STATUS.GOOD : CONSTANTS.STATUS.NO_BID;
           let bidObject = createBid(status, bidRequest || {
             bidder: seatbid.seat,
             src: TYPE
@@ -1099,7 +1099,7 @@ export function PrebidServer() {
         }
       });
 
-      bidderRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
+      bidderRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
     } catch (error) {
       utils.logError(error);
     }
@@ -1113,7 +1113,7 @@ export function PrebidServer() {
   }
 
   // Listen for bid won to call wurl
-  events.on(EVENTS.BID_WON, bidWonHandler);
+  events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 
   return Object.assign(this, {
     callBids: baseAdapter.callBids,
