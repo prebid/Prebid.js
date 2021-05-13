@@ -61,7 +61,7 @@ object are detailed here.
 | Key | Scope | Type | Description
 | --- | --- | --- | ---
 | siteId | Required | String | An IX-specific identifier that is associated with this ad unit. It will be associated to the single size, if the size provided. This is similar to a placement ID or an ad unit ID that some other modules have. Examples: `'3723'`, `'6482'`, `'3639'`
-| size | Optional (Deprecated) | Number[] | The single size associated with the site ID. It should be one of the sizes listed in the ad unit under `adUnits[].mediaTypes.banner.sizes`. Examples: `[300, 250]`, `[300, 600]`, `[728, 90]`
+| sizes | Required | Number[Number[]] | The size / sizes associated with the site ID. It should be one of the sizes listed in the ad unit under `adUnits[].mediaTypes.banner.sizes`. Examples: `[300, 250]`, `[300, 600]`, `[728, 90]`
 
 ### Video
 

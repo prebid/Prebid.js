@@ -67,7 +67,7 @@ function bidToVideoImp(bid) {
     'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate',
     'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend',
     'delivery', 'pos', 'companionad', 'api', 'companiontype', 'ext',
-    'playerSize'
+    'playerSize', 'w', 'h'
   ];
 
   if (!checkVideoParams(bid, videoAdUnitRef, videoParamRef)) {
@@ -100,18 +100,19 @@ function bidToVideoImp(bid) {
     }
   }
 
-  // Getting impression Size
-  const impSize = getFirstSize(utils.deepAccess(imp, 'video.playerSize')) || getFirstSize(utils.deepAccess(bid, 'params.size'));
-
-  if (impSize) {
-    imp.video.w = impSize[0];
-    imp.video.h = impSize[1];
-    if (!(utils.deepAccess(imp, 'ext.sid'))) {
-      imp.ext.sid = `${impSize[0]}x${impSize[1]}`;
+  if (!(imp.video.w && imp.video.h)) {
+    // Getting impression Size
+    const impSize = getFirstSize(utils.deepAccess(imp, 'video.playerSize')) || getFirstSize(utils.deepAccess(bid, 'params.size'));
+    if (impSize) {
+      imp.video.w = impSize[0];
+      imp.video.h = impSize[1];
+      if (!(utils.deepAccess(imp, 'ext.sid'))) {
+        imp.ext.sid = `${impSize[0]}x${impSize[1]}`;
+      }
+    } else {
+      utils.logWarn('IX Bid Adapter: Video size is missing in [mediaTypes.video] missing');
+      return {};
     }
-  } else {
-    utils.logWarn('IX Bid Adapter: Video Param [mediaTypes.video.playerSize] is missing');
-    return {};
   }
 
   _applyFloor(bid, imp, VIDEO);
