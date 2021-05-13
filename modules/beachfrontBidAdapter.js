@@ -351,6 +351,9 @@ function createVideoRequestData(bid, bidderRequest) {
     regs: {
       ext: {}
     },
+    source: {
+      ext: {}
+    },
     user: {
       ext: {}
     },
@@ -365,6 +368,10 @@ function createVideoRequestData(bid, bidderRequest) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     payload.regs.ext.gdpr = gdprApplies ? 1 : 0;
     payload.user.ext.consent = consentString;
+  }
+
+  if (bid.schain) {
+    payload.source.ext.schain = bid.schain;
   }
 
   if (eids.length > 0) {
@@ -414,6 +421,10 @@ function createBannerRequestData(bids, bidderRequest) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     payload.gdpr = gdprApplies ? 1 : 0;
     payload.gdprConsent = consentString;
+  }
+
+  if (bids[0] && bids[0].schain) {
+    payload.schain = bids[0].schain;
   }
 
   SUPPORTED_USER_IDS.forEach(({ key, queryParam }) => {
