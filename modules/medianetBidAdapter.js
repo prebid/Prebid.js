@@ -241,7 +241,7 @@ function getBidFloorByType(bidRequest) {
             }
           )
         } else {
-          setFloorInfo(bidRequest, mediaType, '\*', floorInfo)
+          setFloorInfo(bidRequest, mediaType, '*', floorInfo)
         }
       }
     });
