@@ -524,7 +524,10 @@ describe('sharethrough adapter spec', function() {
           dealId: 'aDealId',
           currency: 'USD',
           netRevenue: true,
-          ttl: 360
+          ttl: 360,
+          meta: {
+            advertiserDomains: []
+          },
         });
     });
 
@@ -538,7 +541,10 @@ describe('sharethrough adapter spec', function() {
           dealId: 'aDealId',
           currency: 'USD',
           netRevenue: true,
-          ttl: 360
+          ttl: 360,
+          meta: {
+            advertiserDomains: []
+          },
         });
     });
 
