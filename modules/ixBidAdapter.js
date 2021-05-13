@@ -206,6 +206,7 @@ function _applyFloor(bid, imp, mediaType) {
  */
 function parseBid(rawBid, currency, bidRequest) {
   const bid = {};
+  const isValidExpiry = !!((utils.deepAccess(rawBid, 'exp') && Number.isInteger(rawBid.exp)));
 
   if (PRICE_TO_DOLLAR_FACTOR.hasOwnProperty(currency)) {
     bid.cpm = rawBid.price / PRICE_TO_DOLLAR_FACTOR[currency];
@@ -226,13 +227,13 @@ function parseBid(rawBid, currency, bidRequest) {
     bid.width = bidRequest.video.w;
     bid.height = bidRequest.video.h;
     bid.mediaType = VIDEO;
-    bid.ttl = VIDEO_TIME_TO_LIVE;
+    bid.ttl = isValidExpiry ? rawBid.exp : VIDEO_TIME_TO_LIVE;
   } else {
     bid.ad = rawBid.adm;
     bid.width = rawBid.w;
     bid.height = rawBid.h;
     bid.mediaType = BANNER;
-    bid.ttl = BANNER_TIME_TO_LIVE;
+    bid.ttl = isValidExpiry ? rawBid.exp : BANNER_TIME_TO_LIVE;
   }
 
   bid.meta = {};

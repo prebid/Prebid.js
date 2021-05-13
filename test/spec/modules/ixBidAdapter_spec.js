@@ -2155,6 +2155,26 @@ describe('IndexexchangeAdapter', function () {
       expect(requestWithoutreferInfo.site.page).to.equal(options.refererInfo.referer);
       expect(validBidWithoutreferInfo[0].url).to.equal(IX_SECURE_ENDPOINT);
     });
+
+    it('should set bid[].ttl to seatbid[].bid[].exp value from response', function () {
+      const BANNER_RESPONSE_WITH_EXP = JSON.parse(JSON.stringify(DEFAULT_BANNER_BID_RESPONSE));
+      const VIDEO_RESPONSE_WITH_EXP = JSON.parse(JSON.stringify(DEFAULT_VIDEO_BID_RESPONSE));
+      VIDEO_RESPONSE_WITH_EXP.seatbid[0].bid[0].exp = 200;
+      BANNER_RESPONSE_WITH_EXP.seatbid[0].bid[0].exp = 100;
+      const bannerResult = spec.interpretResponse({ body: BANNER_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const videoResult = spec.interpretResponse({ body: VIDEO_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+
+      expect(bannerResult[0].ttl).to.equal(100);
+      expect(videoResult[0].ttl).to.equal(200);
+    });
+
+    it('should default bid[].ttl if seat[].bid[].exp is not in the resposne', function () {
+      const bannerResult = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const videoResult = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+
+      expect(bannerResult[0].ttl).to.equal(300);
+      expect(videoResult[0].ttl).to.equal(3600);
+    });
   });
 
   describe('bidrequest consent', function () {
