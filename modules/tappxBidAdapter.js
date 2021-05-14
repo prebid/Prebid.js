@@ -111,7 +111,12 @@ function validBasic(bid) {
   }
 
   if (bid.params.tappxkey == null) {
-    utils.logWarn(`[TAPPX]: Please review the mandatory tappxkey parameters.`);
+    utils.logWarn(`[TAPPX]: Please review the mandatory Tappxkey parameter.`);
+    return false;
+  }
+
+  if (bid.params.host == null) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory Host parameter.`);
     return false;
   }
 
