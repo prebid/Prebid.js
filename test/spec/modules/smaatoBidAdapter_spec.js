@@ -1,7 +1,7 @@
-import {spec} from 'modules/smaatoBidAdapter.js';
+import { spec } from 'modules/smaatoBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
-import {createEidsArray} from 'modules/userId/eids.js';
+import { config } from 'src/config.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 const ADTYPE_IMG = 'Img';
 const ADTYPE_RICHMEDIA = 'Richmedia';
@@ -87,6 +87,11 @@ const inAppBidRequest = {
   bidderWinsCount: 0
 };
 
+const extractPayloadOfFirstAndOnlyRequest = (reqs) => {
+  expect(reqs).to.have.length(1);
+  return JSON.parse(reqs[0].data);
+}
+
 describe('smaatoBidAdapterTest', () => {
   describe('isBidRequestValid', () => {
     it('has valid params', () => {
@@ -104,15 +109,17 @@ describe('smaatoBidAdapterTest', () => {
   describe('buildRequests', () => {
     describe('common', () => {
       it('auction type is 1 (first price auction)', () => {
-        const req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
-        expect(req.at).to.be.equal(1)
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.at).to.be.equal(1);
       })
 
       it('currency is US dollar', () => {
-        const req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
-        expect(req.cur).to.be.deep.equal(['USD'])
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.cur).to.be.deep.equal(['USD']);
       })
 
       it('can override endpoint', () => {
@@ -120,14 +127,16 @@ describe('smaatoBidAdapterTest', () => {
         const updatedBidRequest = utils.deepClone(singleBannerBidRequest);
         utils.deepSetValue(updatedBidRequest, 'params.endpoint', overridenEndpoint);
 
-        const actualEndpoint = spec.buildRequests([updatedBidRequest], defaultBidderRequest).url;
+        const reqs = spec.buildRequests([updatedBidRequest], defaultBidderRequest);
 
-        expect(actualEndpoint).to.equal(overridenEndpoint);
+        expect(reqs).to.have.length(1);
+        expect(reqs[0].url).to.equal(overridenEndpoint);
       });
 
-      it('sends correct imps', () => {
-        const req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+      it('sends correct imp', () => {
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.imp).to.deep.equal([
           {
             id: 'bidId',
@@ -143,12 +152,13 @@ describe('smaatoBidAdapterTest', () => {
             },
             tagid: 'adspaceId'
           }
-        ])
+        ]);
       });
 
       it('sends correct site', () => {
-        const req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.site.id).to.exist.and.to.be.a('string');
         expect(req.site.domain).to.exist.and.to.be.a('string');
         expect(req.site.page).to.exist.and.to.be.a('string');
@@ -157,35 +167,40 @@ describe('smaatoBidAdapterTest', () => {
       })
 
       it('sends gdpr applies if exists', () => {
-        const req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.regs.ext.gdpr).to.equal(1);
         expect(req.user.ext.consent).to.equal(CONSENT_STRING);
       });
 
       it('sends no gdpr applies if no gdpr exists', () => {
-        const req_without_gdpr = JSON.parse(spec.buildRequests([singleBannerBidRequest], minimalBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], minimalBidderRequest);
 
-        expect(req_without_gdpr.regs.ext.gdpr).to.not.exist;
-        expect(req_without_gdpr.user.ext.consent).to.not.exist;
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.regs.ext.gdpr).to.not.exist;
+        expect(req.user.ext.consent).to.not.exist;
       });
 
       it('sends us_privacy if exists', () => {
-        const req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.regs.ext.us_privacy).to.equal('uspConsentString');
       });
 
       it('sends tmax', () => {
-        const req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.tmax).to.equal(1200);
       });
 
       it('sends no us_privacy if no us_privacy exists', () => {
-        const req_without_usp = JSON.parse(spec.buildRequests([singleBannerBidRequest], minimalBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], minimalBidderRequest);
 
-        expect(req_without_usp.regs.ext.us_privacy).to.not.exist;
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.regs.ext.us_privacy).to.not.exist;
       });
 
       it('sends first party data', () => {
@@ -205,9 +220,8 @@ describe('smaatoBidAdapterTest', () => {
           };
           return utils.deepAccess(config, key);
         });
-        const bidRequest = utils.deepClone(singleBannerBidRequest);
 
-        const req_fpd = JSON.parse(spec.buildRequests([bidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.user.gender).to.equal('M');
@@ -220,9 +234,27 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('has no user ids', () => {
-        const req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.user.ext.eids).to.not.exist;
+      });
+    });
+
+    describe('multiple requests', () => {
+      it('build individual server request for each bid request', () => {
+        const bidRequest1 = utils.deepClone(singleBannerBidRequest);
+        const bidRequest1BidId = '1111';
+        utils.deepSetValue(bidRequest1, 'bidId', bidRequest1BidId);
+        const bidRequest2 = utils.deepClone(singleBannerBidRequest);
+        const bidRequest2BidId = '2222';
+        utils.deepSetValue(bidRequest2, 'bidId', bidRequest2BidId);
+
+        const reqs = spec.buildRequests([bidRequest1, bidRequest2], defaultBidderRequest);
+
+        expect(reqs).to.have.length(2);
+        expect(JSON.parse(reqs[0].data).imp[0].id).to.be.equal(bidRequest1BidId);
+        expect(JSON.parse(reqs[1].data).imp[0].id).to.be.equal(bidRequest2BidId);
       });
     });
 
@@ -262,8 +294,9 @@ describe('smaatoBidAdapterTest', () => {
           bidderWinsCount: 0
         };
 
-        const req = JSON.parse(spec.buildRequests([singleVideoBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([singleVideoBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.imp).to.deep.equal([
           {
             id: 'bidId',
@@ -285,10 +318,10 @@ describe('smaatoBidAdapterTest', () => {
             },
             tagid: 'adspaceId'
           }
-        ])
+        ]);
       });
 
-      it('allows combines banner and video imp in single bid request', () => {
+      it('allows combined banner and video imp in single bid request', () => {
         const combinedBannerAndVideoBidRequest = {
           bidder: 'smaato',
           params: {
@@ -326,8 +359,9 @@ describe('smaatoBidAdapterTest', () => {
           bidderWinsCount: 0
         };
 
-        const req = JSON.parse(spec.buildRequests([combinedBannerAndVideoBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([combinedBannerAndVideoBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.imp).to.deep.equal([
           {
             id: 'bidId',
@@ -359,20 +393,15 @@ describe('smaatoBidAdapterTest', () => {
             },
             tagid: 'adspaceId'
           }
-        ])
-      });
-
-      it('allows two imps in the same bid request', () => {
-        const req = JSON.parse(spec.buildRequests([singleBannerBidRequest, singleBannerBidRequest], defaultBidderRequest).data);
-
-        expect(req.imp).to.have.length(2);
+        ]);
       });
     });
 
     describe('in-app requests', () => {
       it('add geo and ifa info to device object', () => {
-        const req = JSON.parse(spec.buildRequests([inAppBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([inAppBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.device.geo).to.deep.equal({'lat': 33.3, 'lon': -88.8});
         expect(req.device.ifa).to.equal('aDeviceId');
       });
@@ -380,15 +409,18 @@ describe('smaatoBidAdapterTest', () => {
       it('when geo is missing, then add only ifa to device object', () => {
         const inAppBidRequestWithoutGeo = utils.deepClone(inAppBidRequest);
         delete inAppBidRequestWithoutGeo.params.app.geo
-        const req = JSON.parse(spec.buildRequests([inAppBidRequestWithoutGeo], defaultBidderRequest).data);
 
+        const reqs = spec.buildRequests([inAppBidRequestWithoutGeo], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.device.geo).to.not.exist;
         expect(req.device.ifa).to.equal('aDeviceId');
       });
 
       it('add no specific device info if param does not exist', () => {
-        const req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.device.geo).to.not.exist;
         expect(req.device.ifa).to.not.exist;
       });
@@ -427,8 +459,9 @@ describe('smaatoBidAdapterTest', () => {
           })
         };
 
-        const req = JSON.parse(spec.buildRequests([userIdBidRequest], defaultBidderRequest).data);
+        const reqs = spec.buildRequests([userIdBidRequest], defaultBidderRequest);
 
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.user.ext.eids).to.exist;
         expect(req.user.ext.eids).to.have.length(2);
       });
@@ -526,7 +559,7 @@ describe('smaatoBidAdapterTest', () => {
     };
 
     it('returns empty array on no bid responses', () => {
-      const response_with_empty_body = { body: {} }
+      const response_with_empty_body = {body: {}}
 
       const bids = spec.interpretResponse(response_with_empty_body, request);
 
