@@ -532,7 +532,7 @@ function _createBannerRequest(bid) {
 }
 
 function _createVideoRequest(bid) {
-  var videoData =utils.mergeDeep(utils.deepAccess(bid.mediaTypes,'video'), bid.params.video);
+  var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), bid.params.video);
   var videoObj;
 
   if (videoData !== UNDEFINED) {
@@ -743,7 +743,7 @@ function _handleEids(payload, validBidRequests) {
 
 function _checkMediaType(bid, newBid) {
   // Create a regex here to check the strings
-  if (bid.ext &&  bid.ext['BidType'] != undefined && Object.keys(MEDIATYPE).indexOf(bid.ext.BidType.toString()) > -1) {
+  if (bid.ext && bid.ext['BidType'] != undefined && Object.keys(MEDIATYPE).indexOf(bid.ext.BidType.toString()) > -1) {
     newBid.mediaType = MEDIATYPE[bid.ext.BidType];
   } else {
     utils.logInfo(LOG_WARN_PREFIX + 'bid.ext.BidType does not exist, checking alternatively for mediaType')
@@ -899,9 +899,6 @@ export const spec = {
           utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
           return false;
         }
-      } else {
-        utils.logError(`${LOG_WARN_PREFIX}: mediaTypes or mediaTypes.video is not specified. Rejecting bid: `, bid);
-        return false;
       }
       return true;
     }
