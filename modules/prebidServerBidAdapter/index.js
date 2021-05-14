@@ -601,7 +601,17 @@ const OPEN_RTB_PROTOCOL = {
           if (videoParams.context === 'instream' && !videoParams.hasOwnProperty('placement')) {
             videoParams.placement = 1;
           }
-          mediaTypes['video'] = videoParams;
+
+          mediaTypes['video'] = Object.keys(videoParams).filter(param => param !== 'context')
+            .reduce((result, param) => {
+              if (param === 'playerSize') {
+                result.w = utils.deepAccess(videoParams, `${param}.0.0`);
+                result.h = utils.deepAccess(videoParams, `${param}.0.1`);
+              } else {
+                result[param] = videoParams[param];
+              }
+              return result;
+            }, {});
         }
       }
 
