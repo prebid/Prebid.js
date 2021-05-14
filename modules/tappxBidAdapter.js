@@ -12,7 +12,6 @@ const TAPPX_BIDDER_VERSION = '0.1.10420';
 const TYPE_CNN = 'prebidjs';
 const VIDEO_SUPPORT = ['instream'];
 
-var HOST;
 var hostDomain;
 
 export const spec = {
@@ -192,11 +191,10 @@ function interpretBid(serverBid, request) {
 * @return response ad
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
-  HOST = utils.deepAccess(validBidRequests, 'params.host');
-  let hostInfo = getHostInfo(HOST);
+  let hostInfo = getHostInfo(validBidRequests);
+  const ENDPOINT = hostInfo.endpoint;
   hostDomain = hostInfo.domain;
 
-  const ENDPOINT = utils.deepAccess(validBidRequests, 'params.endpoint');
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
   const BIDFLOOR = utils.deepAccess(validBidRequests, 'params.bidfloor');
   const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
@@ -377,7 +375,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   return {
     method: 'POST',
-    url: `https://${HOST}/${ENDPOINT}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
+    url: `${hostInfo.url}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
     data: JSON.stringify(payload),
     bids: validBidRequests
   };
@@ -393,23 +391,24 @@ function getOs() {
   if (ua == null) { return 'unknown'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'ios'; } else if (ua.match(/Android/)) { return 'android'; } else if (ua.match(/Window/)) { return 'windows'; } else { return 'unknown'; }
 }
 
-function getHostInfo(hostParam) {
+function getHostInfo(validBidRequests) {
   let domainInfo = {};
+  let endpoint = utils.deepAccess(validBidRequests, 'params.endpoint');
+  let hostParam = utils.deepAccess(validBidRequests, 'params.host');
 
   domainInfo.domain = hostParam.split('/', 1)[0];
-  domainInfo.url = hostParam;
 
-  let regexNewEndpoints = new RegExp(`^(vz.*|zz.*|testing)\.ssp\.tappx\.com$`, 'i');
-  let regexClassicEndpoints = new RegExp(`^[a-z]{3}\.[a-z]{3}\.tappx\.com$`, 'i');
+  let regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\.pub\.tappx\.com$`, 'i');
+  let regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\.[a-z]{3}\.tappx\.com$`, 'i');
 
   if (regexNewEndpoints.test(domainInfo.domain)) {
-    let endpoint = domainInfo.domain.split('.', 1)[0]
-    if (endpoint.toUpperCase().indexOf('TESTING') === -1) {
-      domainInfo.endpoint = endpoint
-      domainInfo.new_endpoint = true;
-    }
+    domainInfo.newEndpoint = true;
+    domainInfo.endpoint = domainInfo.domain.split('.', 1)[0]
+    domainInfo.url = `https://${hostParam}`
   } else if (regexClassicEndpoints.test(domainInfo.domain)) {
-    domainInfo.new_endpoint = false;
+    domainInfo.newEndpoint = false;
+    domainInfo.endpoint = endpoint
+    domainInfo.url = `https://${hostParam}${endpoint}`
   }
 
   return domainInfo;
