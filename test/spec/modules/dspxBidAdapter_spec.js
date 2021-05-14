@@ -61,7 +61,11 @@ describe('dspxAdapter', function () {
       ],
       'bidId': '30b31c1838de1e1',
       'bidderRequestId': '22edbae2733bf61',
-      'auctionId': '1d1a030790a475'
+      'auctionId': '1d1a030790a475',
+      'userId': {
+        'netId': '123',
+        'uid2': '456'
+      }
     },
     {
       'bidder': 'dspx',
@@ -102,9 +106,18 @@ describe('dspxAdapter', function () {
         'placement': '101',
         'devMode': true
       },
-      'sizes': [
-        [300, 250]
-      ],
+      'mediaTypes': {
+        'video': {
+          'playerSize': [640, 480],
+          'context': 'instream'
+        },
+        'banner': {
+          'sizes': [
+            [300, 250]
+          ]
+        }
+      },
+
       'bidId': '30b31c1838de1e4',
       'bidderRequestId': '22edbae2733bf67',
       'auctionId': '1d1a030790a478'
@@ -145,7 +158,7 @@ describe('dspxAdapter', function () {
       expect(request1.method).to.equal('GET');
       expect(request1.url).to.equal(ENDPOINT_URL);
       let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop');
+      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&did_netid=123&did_uid2=456');
     });
 
     var request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
