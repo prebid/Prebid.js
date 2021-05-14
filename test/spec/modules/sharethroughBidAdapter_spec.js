@@ -486,6 +486,10 @@ describe('sharethrough adapter spec', function() {
         });
     });
 
+    it('handles adomain when missing', function() {
+      expect(spec.interpretResponse(bidderResponse, prebidRequests[0])[0].meta).to.deep.equal(advertiserDomains: []);
+    });
+
     it('returns a correctly parsed out response with largest size when strData.skipIframeBusting is true', function() {
       expect(spec.interpretResponse(bidderResponse, prebidRequests[1])[0]).to.include(
         {
