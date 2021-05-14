@@ -72,27 +72,7 @@
     "CACHE_ID": "hb_cache_id",
     "CACHE_HOST": "hb_cache_host"
   },
-  "NATIVE_KEYS": {
-    "title": "pwt_native_title",
-    "body": "pwt_native_body",
-    "body2": "pwt_native_body2",
-    "privacyLink": "pwt_native_privacy",
-    "sponsoredBy": "pwt_native_brand",
-    "image": "pwt_native_image",
-    "icon": "pwt_native_icon",
-    "clickUrl": "pwt_native_linkurl",
-    "displayUrl": "pwt_native_displayurl",
-    "cta": "pwt_native_cta",
-    "rating": "pwt_native_rating",
-    "address": "pwt_native_address",
-    "downloads": "pwt_native_downloads",
-    "likes": "pwt_native_likes",
-    "phone": "pwt_native_phone",
-    "price": "pwt_native_price",
-    "salePrice": "pwt_native_saleprice",
-    "rendererUrl": "pwt_renderer_url",
-    "adTemplate": "pwt_adTemplate"
-  },
+  "NATIVE_KEYS": "%%TG_NATIVE_KEYS%%",
   "S2S": {
     "SRC": "s2s",
     "DEFAULT_ENDPOINT": "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",

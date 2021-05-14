@@ -254,6 +254,18 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   }, [])
 }
 
+function getSizesForAdUnit(adUnit, adUnitId){
+  var bid = Object.values(adUnit.bids).filter((bid)=> !!bid.bidResponse && bid.bidResponse.mediaType === "native")[0];
+  if(!!bid || (bid === undefined  && adUnit.dimensions.length === 0)){
+    return ["1x1"];
+  }
+  else{
+    return adUnit.dimensions.map(function (e) {
+      return e[0] + 'x' + e[1];
+    })
+  }
+}
+
 function executeBidsLoggerCall(e, highestCpmBids) {
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
@@ -293,7 +305,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
     let slotObject = {
       'sn': adUnitId,
-      'sz': adUnit.dimensions.map(e => e[0] + 'x' + e[1]),
+      'sz': getSizesForAdUnit(adUnit, adUnitId),
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId))
     };
     slotsArray.push(slotObject);
