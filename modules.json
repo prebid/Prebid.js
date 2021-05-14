@@ -12,6 +12,7 @@
   "prebidServerBidAdapter",
   "pubCommonId",
   "pubmaticBidAdapter",
+  "rtdModule",
   "sonobiBidAdapter",
   "tripleliftBidAdapter",
   "trustxBidAdapter"
