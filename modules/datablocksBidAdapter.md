@@ -8,8 +8,8 @@ Maintainer: support@datablocks.net
 
 # Description
 
-Connects to Datablocks Exchange
-Banner and Native
+Connects to Datablocks Version 5 Platform
+Banner Native and Video
 
 
 # Test Parameters
@@ -27,13 +27,12 @@ Banner and Native
           {
             bidder: 'datablocks',
             params: {
-              source_id: 12345,
+              sourceId: 12345,
               host: 'prebid.datablocks.net'
             }
           }
         ]
-      },
-      {
+      }, {
         code: 'native-div',
         mediaTypes : {
           native: {
@@ -45,8 +44,27 @@ Banner and Native
           {
             bidder: 'datablocks',
             params: {
-              source_id: 12345,
+              sourceId: 12345,
               host: 'prebid.datablocks.net'
+            }
+          }, {
+        code: 'video-div',
+        mediaTypes : {
+          video: {
+            playerSize:[500,400],
+            durationRangeSec:[15,30],
+            context: "linear"
+          }
+        },
+        bids: [
+          {
+            bidder: 'datablocks',
+            params: {
+              sourceId: 12345,
+              host: 'prebid.datablocks.net',
+              video: {
+                mimes:["video/flv"]
+              }
             }
           }
         ]
