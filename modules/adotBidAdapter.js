@@ -7,7 +7,7 @@ import { config } from '../src/config.js';
 
 const ADAPTER_VERSION = 'v1.0.0';
 const BID_METHOD = 'POST';
-const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding/bidrequest';
+const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding{PUBLISHER_PATH}/bidrequest';
 const FIRST_PRICE = 1;
 const NET_REVENUE = true;
 // eslint-disable-next-line no-template-curly-in-string
@@ -141,9 +141,10 @@ function validateServerRequest(serverRequest) {
 }
 
 function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
+  const publisherPath = config.getConfig('adot.publisherPath') === undefined ? '' : '/' + config.getConfig('adot.publisherPath');
   return {
     method: BID_METHOD,
-    url: BIDDER_URL,
+    url: BIDDER_URL.replace('{PUBLISHER_PATH}', publisherPath),
     data: generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext),
     _adot_internal: generateAdotInternal(adUnits)
   }

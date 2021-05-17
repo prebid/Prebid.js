@@ -99,6 +99,9 @@ export const spec = {
           currency: bid.currency,
           netRevenue: true,
           ttl: bid.ttl,
+          meta: {
+            advertiserDomains: bid && bid.adomain ? bid.adomain : []
+          },
           ad: bid.ad,
           requestId: bid.bidId,
           creativeId: bid.creativeId,

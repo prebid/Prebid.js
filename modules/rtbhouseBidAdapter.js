@@ -7,6 +7,7 @@ const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
 const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
 const DEFAULT_CURRENCY_ARR = ['USD']; // NOTE - USD is the only supported currency right now; Hardcoded for bids
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const TTL = 55;
 
 // Codes defined by OpenRTB Native Ads 1.1 specification
@@ -34,7 +35,7 @@ export const OPENRTB = {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function (bid) {
     return !!(includes(REGIONS, bid.params.region) && bid.params.publisherId);
@@ -54,6 +55,23 @@ export const spec = {
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       request.regs = {ext: {gdpr: gdpr}};
       request.user = {ext: {consent: consentStr}};
+    }
+    if (validBidRequests[0].schain) {
+      const schain = mapSchain(validBidRequests[0].schain);
+      if (schain) {
+        request.ext = {
+          schain: schain,
+        }
+      }
+    }
+
+    if (validBidRequests[0].userIdAsEids) {
+      const eids = { eids: validBidRequests[0].userIdAsEids };
+      if (request.user && request.user.ext) {
+        request.user.ext = { ...request.user.ext, ...eids };
+      } else {
+        request.user = {ext: eids};
+      }
     }
 
     return {
@@ -87,6 +105,22 @@ registerBidder(spec);
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
+ * @returns {int} floor by imp type
+ */
+function applyFloor(slot) {
+  const floors = [];
+  if (typeof slot.getFloor === 'function') {
+    Object.keys(slot.mediaTypes).forEach(type => {
+      if (includes(SUPPORTED_MEDIA_TYPES, type)) {
+        floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' }).floor);
+      }
+    });
+  }
+  return floors.length > 0 ? Math.max(...floors) : parseFloat(slot.params.bidfloor);
+}
+
+/**
+ * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Imp by OpenRTB 2.5 §3.2.4
  */
 function mapImpression(slot) {
@@ -97,9 +131,9 @@ function mapImpression(slot) {
     tagid: slot.adUnitCode.toString()
   };
 
-  const bidfloor = parseFloat(slot.params.bidfloor);
+  const bidfloor = applyFloor(slot);
   if (bidfloor) {
-    imp.bidfloor = bidfloor
+    imp.bidfloor = bidfloor;
   }
 
   return imp;
@@ -151,12 +185,7 @@ function mapSource(slot) {
   const source = {
     tid: slot.transactionId,
   };
-  const schain = mapSchain(slot.schain);
-  if (schain) {
-    source.ext = {
-      schain: schain
-    }
-  }
+
   return source;
 }
 
@@ -302,6 +331,9 @@ function interpretBannerBid(serverBid) {
     width: serverBid.w,
     height: serverBid.h,
     ttl: TTL,
+    meta: {
+      advertiserDomains: serverBid.adomain
+    },
     netRevenue: true,
     currency: 'USD'
   }
@@ -320,6 +352,9 @@ function interpretNativeBid(serverBid) {
     width: 1,
     height: 1,
     ttl: TTL,
+    meta: {
+      advertiserDomains: serverBid.adomain
+    },
     netRevenue: true,
     currency: 'USD',
     native: interpretNativeAd(serverBid.adm),

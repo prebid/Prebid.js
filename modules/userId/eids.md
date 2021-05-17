@@ -85,6 +85,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'hcn.health',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+
+    {
         source: 'criteo.com',
         uids: [{
             id: 'some-random-id-value',
@@ -171,12 +179,26 @@ userIdAsEids = [
             atype: 1
         }]
     },
-     {
+    {
         source: 'uidapi.com',
         uids: [{
             id: 'some-random-id-value',
              atype: 3
         }]
-     }
+    },
+    {
+        source: 'admixer.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+        source: 'deepintent.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    }
 ]
 ```
