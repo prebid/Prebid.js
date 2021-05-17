@@ -53,9 +53,9 @@ function mergeLazy(target, source) {
  * @param {String} param
  * @param {String} defaultVal
  */
-function paramOrDefault(param, defaultVal) {
+function paramOrDefault(param, defaultVal, arg) {
   if (isFn(param)) {
-    return param();
+    return param(arg);
   } else if (isStr(param)) {
     return param;
   }
@@ -107,7 +107,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     userIds.haloId = haloId;
     getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {
-    var script = document.createElement('script')
+    var script = document.createElement('script');
     script.type = 'text/javascript';
 
     window.pubHaloCb = (haloId) => {
@@ -116,7 +116,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     }
 
     const haloIdUrl = rtdConfig.params && rtdConfig.params.haloIdUrl;
-    script.src = paramOrDefault(haloIdUrl, 'https://id.halo.ad.gt/api/v1/haloid');
+    script.src = paramOrDefault(haloIdUrl, 'https://id.halo.ad.gt/api/v1/haloid', userIds);
     document.getElementsByTagName('head')[0].appendChild(script);
   }
 }
@@ -134,6 +134,10 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
   if (isPlainObject(rtdConfig)) {
     set(rtdConfig, 'params.requestParams.ortb2', config.getConfig('ortb2'));
     reqParams = rtdConfig.params.requestParams;
+  }
+
+  if (isPlainObject(window.pubHaloPm)) {
+    reqParams.pubHaloPm = window.pubHaloPm;
   }
 
   const url = `https://seg.halo.ad.gt/api/v1/rtd`;
