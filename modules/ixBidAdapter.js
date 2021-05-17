@@ -304,7 +304,7 @@ function getEidInfo(allEids, flocData) {
   if (utils.isArray(allEids)) {
     for (let i = 0; i < allEids.length; i++) {
       if (sourceRTIMapping[allEids[i].source] && utils.deepAccess(allEids[i], 'uids.0')) {
-        seenSources[allEids[i].source] = 1;
+        seenSources[allEids[i].source] = true;
         allEids[i].uids[0].ext = {
           rtiPartner: sourceRTIMapping[allEids[i].source]
         };
@@ -320,9 +320,10 @@ function getEidInfo(allEids, flocData) {
       'uids': [{ 'id': flocData.id, 'ext': { 'rtiPartner': 'flocId', 'ver': flocData.version } }]
     };
     toSend.push(flocEid);
-    seenSources['chrome.com'] = 1;
+    seenSources['chrome.com'] = true;
   }
-  return { toSend: toSend, seenSources: seenSources };
+
+  return { toSend, seenSources };
 }
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
