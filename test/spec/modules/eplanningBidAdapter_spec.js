@@ -922,9 +922,9 @@ describe('E-Planning Adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const dataRequest = request.data;
 
-      expect('D6885E90-2A7A-4E0F-87CB-7734ED1B99A3').to.equal(dataRequest.tdid);
-      expect('c29cb2ae-769d-42f6-891a-f53cadee823d').to.equal(dataRequest.pubcid);
-      expect(expected_id5id).to.equal(dataRequest.id5id);
+      expect('D6885E90-2A7A-4E0F-87CB-7734ED1B99A3').to.equal(dataRequest.e_tdid);
+      expect('c29cb2ae-769d-42f6-891a-f53cadee823d').to.equal(dataRequest.e_pubcid);
+      expect(expected_id5id).to.equal(dataRequest.e_id5id);
     });
   });
 });
