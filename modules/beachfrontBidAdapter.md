@@ -18,8 +18,7 @@ Module that connects to Beachfront's demand sources
             mediaTypes: {
                 video: {
                     context: 'instream',
-                    playerSize: [640, 360],
-                    mimes: ['video/mp4', 'application/javascript']
+                    playerSize: [ 640, 360 ]
                 }
             },
             bids: [
@@ -27,7 +26,10 @@ Module that connects to Beachfront's demand sources
                     bidder: 'beachfront',
                     params: {
                         bidfloor: 0.01,
-                        appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+                        appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
+                        video: {
+                            mimes: [ 'video/mp4', 'application/javascript' ]
+                        }
                     }
                 }
             ]
@@ -35,7 +37,7 @@ Module that connects to Beachfront's demand sources
             code: 'test-banner',
             mediaTypes: {
                 banner: {
-                    sizes: [300, 250]
+                    sizes: [ 300, 250 ]
                 }
             },
             bids: [
@@ -59,11 +61,10 @@ Module that connects to Beachfront's demand sources
             mediaTypes: {
                 video: {
                     context: 'outstream',
-                    playerSize: [640, 360],
-                    mimes: ['video/mp4', 'application/javascript']
+                    playerSize: [ 640, 360 ]
                 },
                 banner: {
-                    sizes: [300, 250]
+                    sizes: [ 300, 250 ]
                 }
             },
             bids: [
@@ -72,7 +73,8 @@ Module that connects to Beachfront's demand sources
                     params: {
                         video: {
                             bidfloor: 0.01,
-                            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+                            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
+                            mimes: [ 'video/mp4', 'application/javascript' ]
                         },
                         banner: {
                             bidfloor: 0.01,
@@ -93,8 +95,7 @@ Module that connects to Beachfront's demand sources
             mediaTypes: {
                 video: {
                     context: 'outstream',
-                    playerSize: [640, 360],
-                    mimes: ['video/mp4', 'application/javascript']
+                    playerSize: [ 640, 360 ]
                 }
             },
             bids: [
@@ -103,7 +104,8 @@ Module that connects to Beachfront's demand sources
                     params: {
                         video: {
                             bidfloor: 0.01,
-                            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+                            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
+                            mimes: [ 'video/mp4', 'application/javascript' ]
                         },
                         player: {
                             progressColor: '#50A8FA',
