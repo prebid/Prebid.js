@@ -285,17 +285,19 @@ function getBidRequest(id, impressions) {
  * From the userIdAsEids array, filter for the ones our adserver can use, and modify them
  * for our purposes, e.g. add rtiPartner
  * @param {array} allEids userIdAsEids passed in by prebid
+ * @param {object} flocId flocId passed in by prebid
  * @return {object} contains toSend (eids to send to the adserver) and seenSources (used to filter
  *                  identity info from IX Library)
  */
-function getEidInfo(allEids) {
+function getEidInfo(allEids, flocData) {
   // determines which eids we send and the rtiPartner field in ext
   var sourceRTIMapping = {
     'liveramp.com': 'idl',
     'netid.de': 'NETID',
     'neustar.biz': 'fabrickId',
     'zeotap.com': 'zeotapIdPlus',
-    'uidapi.com': 'UID2'
+    'uidapi.com': 'UID2',
+    'adserver.org': 'TDID'
   };
   var toSend = [];
   var seenSources = {};
@@ -311,6 +313,19 @@ function getEidInfo(allEids) {
       }
     }
   }
+
+  const isValidFlocId = utils.deepAccess(flocData, 'id') && utils.deepAccess(flocData, 'version');
+
+  if (isValidFlocId) {
+    var flocEid = {
+      'source': 'chrome.com',
+      'uids': [{'id': flocData.id, 'ext': {'rtiPartner': 'flocId', 'ver': flocData.version}}]
+    };
+
+    toSend.push(flocEid);
+    seenSources['chrome.com'] = 1;
+  }
+
   return { toSend: toSend, seenSources: seenSources };
 }
 
@@ -329,7 +344,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   let baseUrl = SECURE_BID_URL;
 
   // Get ids from Prebid User ID Modules
-  var eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'));
+  var eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'), utils.deepAccess(validBidRequests, '0.userId.flocId'));
   var userEids = eidInfo.toSend;
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
@@ -583,7 +598,9 @@ function _getUserIds(bidRequest) {
     'sharedid',
     'tapadId',
     'quantcastId',
-    'pubcid'
+    'pubcid',
+    'TDID',
+    'flocId'
   ]
 
   return PROVIDERS.filter(provider => utils.deepAccess(userIds, provider))
