@@ -22,7 +22,11 @@ describe('invibesBidAdapter:', function () {
         [400, 300],
         [125, 125]
       ],
-      transactionId: 't1'
+      transactionId: 't1',
+      userId: {
+        pubcid: 'pub-cid-code',
+        pubProvidedId: 'pub-provided-id'
+      }
     }, {
       bidId: 'b2',
       bidder: BIDDER_CODE,
@@ -284,6 +288,45 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.purposes.split(',')[9]).to.equal('true');
     });
 
+    it('should send legitimateInterests 2 & 7', function () {
+      let bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            gdprApplies: true,
+            hasGlobalConsent: false,
+            vendor: {consents: {436: true}},
+            purpose: {
+              consents: {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true,
+                8: true,
+                9: true,
+                10: true
+              },
+              legitimateInterests: {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true,
+                8: true,
+                9: true,
+                10: true
+              }
+            }
+          }
+        }
+      };
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.li.split(',')[1] && request.data.li.split(',')[6]).to.equal('true');
+    });
     it('should send oi = 0 when vendorData is null', function () {
       let bidderRequest = {
         gdprConsent: {
@@ -321,7 +364,6 @@ describe('invibesBidAdapter:', function () {
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.oi).to.equal(2);
     });
-
     it('should send oi = 0 when vendor consents for invibes are false on tcf v2', function () {
       let bidderRequest = {
         gdprConsent: {
@@ -343,6 +385,74 @@ describe('invibesBidAdapter:', function () {
                 10: true
               }
             }
+          }
+        }
+      };
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.oi).to.equal(0);
+    });
+    it('should send oi = 2 when vendor consent for invibes are false and vendor legitimate interest for invibes are true on tcf v2', function () {
+      let bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            gdprApplies: true,
+            hasGlobalConsent: false,
+            vendor: {consents: {436: false}, legitimateInterests: {436: true}},
+            purpose: {
+              consents: {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true,
+                8: true,
+                9: true,
+                10: true
+              }
+            }
+          }
+        }
+      };
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.oi).to.equal(2);
+    });
+    it('should send oi = 0 when vendor consents and legitimate interests for invibes are false on tcf v2', function () {
+      let bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            gdprApplies: true,
+            hasGlobalConsent: false,
+            vendor: {consents: {436: false}, legitimateInterests: {436: false}},
+            purpose: {
+              consents: {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true,
+                8: true,
+                9: true,
+                10: true
+              }
+            }
+          }
+        }
+      };
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.oi).to.equal(0);
+    });
+    it('should send oi = 0 when purpose consents is null', function () {
+      let bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            gdprApplies: true,
+            hasGlobalConsent: false,
+            vendor: {consents: {436: false}},
+            purpose: {}
           }
         }
       };

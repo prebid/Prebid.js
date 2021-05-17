@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
 import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter.js';
 import { parseUrl } from 'src/utils.js';
 
@@ -278,6 +277,27 @@ describe('BeachfrontAdapter', function () {
         expect(data.user.ext.consent).to.equal(consentString);
       });
 
+      it('must add schain data to the request', () => {
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'directseller.com',
+              sid: '00001',
+              rid: 'BidRequest1',
+              hp: 1
+            }
+          ]
+        };
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.schain = schain;
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.source.ext.schain).to.deep.equal(schain);
+      });
+
       it('must add the Trade Desk User ID to the request', () => {
         const tdid = '4321';
         const bidRequest = bidRequests[0];
@@ -336,6 +356,7 @@ describe('BeachfrontAdapter', function () {
         const width = 300;
         const height = 250;
         const bidRequest = bidRequests[0];
+        bidRequest.params.tagid = '7cd7a7b4-ef3f-4aeb-9565-3627f255fa10';
         bidRequest.mediaTypes = {
           banner: {
             sizes: [ width, height ]
@@ -354,6 +375,7 @@ describe('BeachfrontAdapter', function () {
             slot: bidRequest.adUnitCode,
             id: bidRequest.params.appId,
             bidfloor: bidRequest.params.bidfloor,
+            tagid: bidRequest.params.tagid,
             sizes: [{ w: width, h: height }]
           }
         ]);
@@ -444,6 +466,27 @@ describe('BeachfrontAdapter', function () {
         expect(data.gdprConsent).to.equal(consentString);
       });
 
+      it('must add schain data to the request', () => {
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'directseller.com',
+              sid: '00001',
+              rid: 'BidRequest1',
+              hp: 1
+            }
+          ]
+        };
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.schain = schain;
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.schain).to.deep.equal(schain);
+      });
+
       it('must add the Trade Desk User ID to the request', () => {
         const tdid = '4321';
         const bidRequest = bidRequests[0];
@@ -530,16 +573,6 @@ describe('BeachfrontAdapter', function () {
         expect(bidResponse.length).to.equal(0);
       });
 
-      it('should return no bids if the response "url" is missing', function () {
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { video: {} };
-        const serverResponse = {
-          bidPrice: 5.00
-        };
-        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-        expect(bidResponse.length).to.equal(0);
-      });
-
       it('should return no bids if the response "bidPrice" is missing', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
@@ -562,6 +595,7 @@ describe('BeachfrontAdapter', function () {
         const serverResponse = {
           bidPrice: 5.00,
           url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          vast: '<VAST version="3.0"></VAST>',
           crid: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
@@ -571,7 +605,7 @@ describe('BeachfrontAdapter', function () {
           cpm: serverResponse.bidPrice,
           creativeId: serverResponse.crid,
           vastUrl: serverResponse.url,
-          vastXml: undefined,
+          vastXml: serverResponse.vast,
           width: width,
           height: height,
           renderer: null,
@@ -602,7 +636,7 @@ describe('BeachfrontAdapter', function () {
         });
       });
 
-      it('should return vast xml if found on the bid response', () => {
+      it('should return only vast url if the response type is "nurl"', () => {
         const width = 640;
         const height = 480;
         const bidRequest = bidRequests[0];
@@ -611,6 +645,7 @@ describe('BeachfrontAdapter', function () {
             playerSize: [ width, height ]
           }
         };
+        bidRequest.params.video = { responseType: 'nurl' };
         const serverResponse = {
           bidPrice: 5.00,
           url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
@@ -618,10 +653,29 @@ describe('BeachfrontAdapter', function () {
           crid: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-        expect(bidResponse).to.deep.contain({
-          vastUrl: serverResponse.url,
-          vastXml: serverResponse.vast
-        });
+        expect(bidResponse.vastUrl).to.equal(serverResponse.url);
+        expect(bidResponse.vastXml).to.equal(undefined);
+      });
+
+      it('should return only vast xml if the response type is "adm"', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ width, height ]
+          }
+        };
+        bidRequest.params.video = { responseType: 'adm' };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          vast: '<VAST version="3.0"></VAST>',
+          crid: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        expect(bidResponse.vastUrl).to.equal(undefined);
+        expect(bidResponse.vastXml).to.equal(serverResponse.vast);
       });
 
       it('should return a renderer for outstream video bids', function () {
@@ -641,63 +695,7 @@ describe('BeachfrontAdapter', function () {
           id: bidRequest.bidId,
           url: OUTSTREAM_SRC
         });
-      });
-
-      it('should initialize a player for outstream bids', () => {
-        const width = 640;
-        const height = 480;
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = {
-          video: {
-            context: 'outstream',
-            playerSize: [ width, height ]
-          }
-        };
-        const serverResponse = {
-          bidPrice: 5.00,
-          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
-          crid: '123abc'
-        };
-        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-        window.Beachfront = { Player: sinon.spy() };
-        bidResponse.adUnitCode = bidRequest.adUnitCode;
-        bidResponse.renderer.render(bidResponse);
-        sinon.assert.calledWith(window.Beachfront.Player, bidResponse.adUnitCode, sinon.match({
-          adTagUrl: bidResponse.vastUrl,
-          width: bidResponse.width,
-          height: bidResponse.height,
-          expandInView: false,
-          collapseOnComplete: true
-        }));
-        delete window.Beachfront;
-      });
-
-      it('should configure outstream player settings from the bidder params', () => {
-        const width = 640;
-        const height = 480;
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = {
-          video: {
-            context: 'outstream',
-            playerSize: [ width, height ]
-          }
-        };
-        bidRequest.params.player = {
-          expandInView: true,
-          collapseOnComplete: false,
-          progressColor: 'green'
-        };
-        const serverResponse = {
-          bidPrice: 5.00,
-          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
-          crid: '123abc'
-        };
-        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-        window.Beachfront = { Player: sinon.spy() };
-        bidResponse.adUnitCode = bidRequest.adUnitCode;
-        bidResponse.renderer.render(bidResponse);
-        sinon.assert.calledWith(window.Beachfront.Player, bidResponse.adUnitCode, sinon.match(bidRequest.params.player));
-        delete window.Beachfront;
+        expect(bidResponse.renderer.render).to.be.a('function');
       });
     });
 

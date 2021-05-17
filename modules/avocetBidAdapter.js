@@ -53,7 +53,7 @@ export const spec = {
     const publisherDomain = config.getConfig('publisherDomain');
 
     // First-party data from config
-    const fpd = config.getConfig('fpd');
+    const fpd = config.getLegacyFpd(config.getConfig('ortb2'));
 
     // GDPR status and TCF consent string
     let tcfConsentString;

@@ -2,7 +2,7 @@
 
 Module Name: Criteo Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: pi-direct@criteo.com
+Maintainer: prebid@criteo.com
 
 # Description
 

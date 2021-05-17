@@ -820,14 +820,18 @@ describe('The Criteo bidding adapter', function () {
     it('should properly build a request with first party data', function () {
       const contextData = {
         keywords: ['power tools'],
-        data: {
-          pageType: 'article'
+        ext: {
+          data: {
+            pageType: 'article'
+          }
         }
       };
       const userData = {
         gender: 'M',
-        data: {
-          registered: true
+        ext: {
+          data: {
+            registered: true
+          }
         }
       };
       const bidRequests = [
@@ -842,8 +846,8 @@ describe('The Criteo bidding adapter', function () {
               bidfloor: 0.75
             }
           },
-          fpd: {
-            context: {
+          ortb2Imp: {
+            ext: {
               data: {
                 someContextAttribute: 'abc'
               }
@@ -854,8 +858,8 @@ describe('The Criteo bidding adapter', function () {
 
       sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
-          fpd: {
-            context: contextData,
+          ortb2: {
+            site: contextData,
             user: userData
           }
         };
@@ -863,8 +867,8 @@ describe('The Criteo bidding adapter', function () {
       });
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.publisher.ext).to.deep.equal(contextData);
-      expect(request.data.user.ext).to.deep.equal(userData);
+      expect(request.data.publisher.ext).to.deep.equal({keywords: ['power tools'], data: {pageType: 'article'}});
+      expect(request.data.user.ext).to.deep.equal({gender: 'M', data: {registered: true}});
       expect(request.data.slots[0].ext).to.deep.equal({
         bidfloor: 0.75,
         data: {
@@ -992,6 +996,7 @@ describe('The Criteo bidding adapter', function () {
             zoneid: 123,
             native: {
               'products': [{
+                'sendTargetingKeys': false,
                 'title': 'Product title',
                 'description': 'Product desc',
                 'price': '100',
@@ -1027,7 +1032,6 @@ describe('The Criteo bidding adapter', function () {
           native: true,
         }]
       };
-      config.setConfig({'enableSendAllBids': false});
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].requestId).to.equal('test-bidId');
@@ -1036,61 +1040,87 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].mediaType).to.equal(NATIVE);
     });
 
-    it('should not parse bid response with native when enableSendAllBids is true', function () {
-      const response = {
-        body: {
-          slots: [{
-            impid: 'test-requestId',
-            bidId: 'abc123',
-            cpm: 1.23,
-            width: 728,
-            height: 90,
-            zoneid: 123,
-            native: {}
-          }],
-        },
-      };
-      const request = {
-        bidRequests: [{
-          adUnitCode: 'test-requestId',
-          bidId: 'test-bidId',
+    it('should warn only once if sendTargetingKeys set to true on required fields for native bidRequest', () => {
+      const bidderRequest = { };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
           params: {
             zoneId: 123,
+            publisherSubId: '123',
+            nativeCallback: function() {}
           },
-          native: true,
-        }]
-      };
-      config.setConfig({'enableSendAllBids': true});
-      const bids = spec.interpretResponse(response, request);
-      expect(bids).to.have.lengthOf(0);
-    });
+        },
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-456',
+          transactionId: 'transaction-456',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 456,
+            publisherSubId: '456',
+            nativeCallback: function() {}
+          },
+        },
+      ];
 
-    it('should not parse bid response with native when enableSendAllBids is not set', function () {
-      const response = {
-        body: {
-          slots: [{
-            impid: 'test-requestId',
-            bidId: 'abc123',
-            cpm: 1.23,
-            width: 728,
-            height: 90,
-            zoneid: 123,
-            native: {}
-          }],
+      const nativeParamsWithSendTargetingKeys = [
+        {
+          nativeParams: {
+            image: {
+              sendTargetingKeys: true
+            },
+          }
         },
-      };
-      const request = {
-        bidRequests: [{
-          adUnitCode: 'test-requestId',
-          bidId: 'test-bidId',
-          params: {
-            zoneId: 123,
-          },
-          native: true,
-        }]
-      };
-      const bids = spec.interpretResponse(response, request);
-      expect(bids).to.have.lengthOf(0);
+        {
+          nativeParams: {
+            icon: {
+              sendTargetingKeys: true
+            },
+          }
+        },
+        {
+          nativeParams: {
+            clickUrl: {
+              sendTargetingKeys: true
+            },
+          }
+        },
+        {
+          nativeParams: {
+            displayUrl: {
+              sendTargetingKeys: true
+            },
+          }
+        },
+        {
+          nativeParams: {
+            privacyLink: {
+              sendTargetingKeys: true
+            },
+          }
+        },
+        {
+          nativeParams: {
+            privacyIcon: {
+              sendTargetingKeys: true
+            },
+          }
+        }
+      ];
+
+      utilsMock.expects('logWarn')
+        .withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)')
+        .exactly(nativeParamsWithSendTargetingKeys.length * bidRequests.length);
+      nativeParamsWithSendTargetingKeys.forEach(nativeParams => {
+        let transformedBidRequests = {...bidRequests};
+        transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
+        spec.buildRequests(transformedBidRequests, bidderRequest);
+      });
+      utilsMock.verify();
     });
 
     it('should properly parse a bid response with a zoneId passed as a string', function () {

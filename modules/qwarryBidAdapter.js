@@ -4,7 +4,7 @@ import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'qwarry';
-export const ENDPOINT = 'https://ui-bidder.kantics.co/bid/adtag?prebid=true'
+export const ENDPOINT = 'https://bidder.qwarry.co/bid/adtag?prebid=true'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,16 +24,31 @@ export const spec = {
       })
     })
 
+    let payload = {
+      requestId: bidderRequest.bidderRequestId,
+      bids,
+      referer: bidderRequest.refererInfo.referer
+    }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdprConsent = {
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false,
+        consentString: bidderRequest.gdprConsent.consentString
+      }
+    }
+
+    const options = {
+      contentType: 'application/json',
+      customHeaders: {
+        'Rtb-Direct': true
+      }
+    }
+
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: { requestId: bidderRequest.bidderRequestId, bids },
-      options: {
-        contentType: 'application/json',
-        customHeaders: {
-          'Rtb-Direct': true
-        }
-      }
+      data: payload,
+      options
     };
   },
 
