@@ -291,7 +291,7 @@ function getBidRequest(id, impressions) {
  */
 function getEidInfo(allEids, flocData) {
   // determines which eids we send and the rtiPartner field in ext
-  var sourceRTIMapping = {
+  const sourceRTIMapping = {
     'liveramp.com': 'idl',
     'netid.de': 'NETID',
     'neustar.biz': 'fabrickId',
@@ -299,10 +299,10 @@ function getEidInfo(allEids, flocData) {
     'uidapi.com': 'UID2',
     'adserver.org': 'TDID'
   };
-  var toSend = [];
-  var seenSources = {};
+  let toSend = [];
+  let seenSources = {};
   if (utils.isArray(allEids)) {
-    for (var i = 0; i < allEids.length; i++) {
+    for (let i = 0; i < allEids.length; i++) {
       if (sourceRTIMapping[allEids[i].source] && utils.deepAccess(allEids[i], 'uids.0')) {
         seenSources[allEids[i].source] = 1;
         allEids[i].uids[0].ext = {
@@ -313,22 +313,17 @@ function getEidInfo(allEids, flocData) {
       }
     }
   }
-
-  const isValidFlocId = utils.deepAccess(flocData, 'id') && utils.deepAccess(flocData, 'version');
-
+  const isValidFlocId = flocData && flocData.id && flocData.version;
   if (isValidFlocId) {
-    var flocEid = {
+    const flocEid = {
       'source': 'chrome.com',
-      'uids': [{'id': flocData.id, 'ext': {'rtiPartner': 'flocId', 'ver': flocData.version}}]
+      'uids': [{ 'id': flocData.id, 'ext': { 'rtiPartner': 'flocId', 'ver': flocData.version } }]
     };
-
     toSend.push(flocEid);
     seenSources['chrome.com'] = 1;
   }
-
   return { toSend: toSend, seenSources: seenSources };
 }
-
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
@@ -342,10 +337,9 @@ function getEidInfo(allEids, flocData) {
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
-
   // Get ids from Prebid User ID Modules
-  var eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'), utils.deepAccess(validBidRequests, '0.userId.flocId'));
-  var userEids = eidInfo.toSend;
+  let eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'), utils.deepAccess(validBidRequests, '0.userId.flocId'));
+  let userEids = eidInfo.toSend;
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
