@@ -18,11 +18,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ 'banner', 'video' ],
   isBidRequestValid: function(bid) {
-    return (bid.params.pubId !== null || bid.params.zoneId !== null);
+    return (!!(bid.params.pubId || bid.params.zoneId));
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     let stack = (bidderRequest.refererInfo &&
-      bidderRequest.refererInfo.stack ? bidderRequest.refererInfo
+      bidderRequest.refererInfo.stack ? bidderRequest.refererInfo.stack
       : [])
 
     let spb = (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder)
