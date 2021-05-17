@@ -324,11 +324,6 @@ describe('E-Planning Adapter', function () {
       expect(method).to.equal('GET');
     });
 
-    it('should return r parameter with value pbjs', function () {
-      const r = spec.buildRequests(bidRequests, bidderRequest).data.r;
-      expect(r).to.equal('pbjs');
-    });
-
     it('should return pbv parameter with value prebid version', function () {
       const pbv = spec.buildRequests(bidRequests, bidderRequest).data.pbv;
       expect(pbv).to.equal('$prebid.version$');

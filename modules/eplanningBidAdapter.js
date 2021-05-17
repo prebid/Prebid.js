@@ -58,7 +58,6 @@ export const spec = {
         rnd: rnd,
         e: spaces.str,
         ur: pageUrl || FILE,
-        r: 'pbjs',
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
