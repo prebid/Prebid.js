@@ -33,10 +33,11 @@ export const spec = {
     }
 
     if (isVideoRequest(bid)) {
-      if (!bid.params.mimes) {
+      const mimes = bid.params.mimes || utils.deepAccess(bid, 'mediaTypes.video.mimes');
+      if (!mimes) {
         // Give a warning but let it pass
         utils.logWarn(BIDDER_CODE + ': mimes should be specified for videos');
-      } else if (!utils.isArray(bid.params.mimes) || !bid.params.mimes.every(s => utils.isStr(s))) {
+      } else if (!utils.isArray(mimes) || !mimes.every(s => utils.isStr(s))) {
         utils.logWarn(BIDDER_CODE + ': mimes must be an array of strings');
         return false;
       }
@@ -90,7 +91,7 @@ export const spec = {
 
         copyOptProperty(bid.params.position, video, 'pos');
         copyOptProperty(bid.params.mimes || videoData.mimes, video, 'mimes');
-        copyOptProperty(bid.params.maxduration, video, 'maxduration');
+        copyOptProperty(bid.params.maxduration || videoData.maxduration, video, 'maxduration');
         copyOptProperty(bid.params.protocols || videoData.protocols, video, 'protocols');
         copyOptProperty(bid.params.api || videoData.api, video, 'api');
 
