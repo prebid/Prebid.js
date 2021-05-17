@@ -58,7 +58,6 @@ export const spec = {
         rnd: rnd,
         e: spaces.str,
         ur: pageUrl || FILE,
-        r: 'pbjs',
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
@@ -85,7 +84,7 @@ export const spec = {
       }
       const userIds = (getGlobal()).getUserIds();
       for (var id in userIds) {
-        params[id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
+        params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
       }
     }
 
