@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.10413';
+const TAPPX_BIDDER_VERSION = '0.1.10420';
 const TYPE_CNN = 'prebidjs';
 const VIDEO_SUPPORT = ['instream'];
 
@@ -181,6 +181,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const ENDPOINT = utils.deepAccess(validBidRequests, 'params.endpoint');
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
   const BIDFLOOR = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.banner');
   const videoMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.video');
   const { refererInfo } = bidderRequest;
@@ -261,11 +262,30 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   imp.secure = 1;
 
   imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  if (utils.isFn(validBidRequests.getFloor)) {
+    try {
+      let floor = validBidRequests.getFloor({
+        currency: CUR,
+        mediaType: '*',
+        size: '*'
+      });
+      if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+        imp.bidfloor = floor.floor;
+      } else {
+        utils.logWarn('[TAPPX]: ', 'Currency not valid. Use only USD with Tappx.');
+      }
+    } catch (e) {
+      utils.logWarn('[TAPPX]: ', e);
+      imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor'); // Be sure that we have an imp.bidfloor
+    }
+  }
 
   let bidder = {};
   bidder.tappxkey = TAPPXKEY;
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
+  bidder.bidfloor = BIDFLOOR;
+  bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : undefined;
 
   imp.ext = {};
   imp.ext.bidder = bidder;
@@ -361,7 +381,7 @@ function getHostInfo(hostParam) {
   domainInfo.domain = hostParam.split('/', 1)[0];
   domainInfo.url = hostParam;
 
-  let regexNewEndpoints = new RegExp(`^(zz.*|testing)\.ssp\.tappx\.com$`, 'i');
+  let regexNewEndpoints = new RegExp(`^(vz.*|zz.*|testing)\.ssp\.tappx\.com$`, 'i');
   let regexClassicEndpoints = new RegExp(`^[a-z]{3}\.[a-z]{3}\.tappx\.com$`, 'i');
 
   if (regexNewEndpoints.test(domainInfo.domain)) {
