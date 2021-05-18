@@ -94,15 +94,32 @@ export const spec = {
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
     if (syncOptions.pixelEnabled) {
-      return [{
+      const syncsPerBidder = config.getConfig('userSync.syncsPerBidder');
+      let params = [];
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params.push(`gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`);
+        } else {
+          params.push(`gdpr_consent=${gdprConsent.consentString}`);
+        }
+      }
+      if (uspConsent) {
+        params.push(`us_privacy=${uspConsent}`);
+      }
+      const stringParams = params.join('&');
+      const syncs = [{
         type: 'image',
-        url: ADAPTER_SYNC_URL
-      }, {
-        type: 'image',
-        url: ADDITIONAL_SYNC_URL
+        url: ADAPTER_SYNC_URL + (stringParams ? `?${stringParams}` : '')
       }];
+      if (syncsPerBidder > 1) {
+        syncs.push({
+          type: 'image',
+          url: ADDITIONAL_SYNC_URL + (stringParams ? `&${stringParams}` : '')
+        });
+      }
+      return syncs;
     }
   }
 }
