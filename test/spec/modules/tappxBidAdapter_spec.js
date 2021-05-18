@@ -293,4 +293,43 @@ describe('Tappx bid adapter', function () {
       expect(consent[0].url).to.match(/&type=iframe/);
     });
   })
+
+  describe('module Floor implementation', function() {
+    let getFloorResponse, bidderRequest_f;
+    beforeEach(function() {
+      getFloorResponse = {};
+      bidderRequest_f = c_BIDREQUEST;
+    })
+    it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
+      // default getFloor response is empty object so should not break and not send hard_floor
+      bidderRequest_f.bids[0].getFloor = () => getFloorResponse;
+      let request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      let payload;
+
+      getFloorResponse = undefined;
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+
+      // without Module floor
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.05);
+
+      // make it respond with USD floor and string floor
+      getFloorResponse = {currency: 'USD', floor: '1.23'};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal('1.23');
+
+      // make it respond with EUR floor (not valid)
+      getFloorResponse = {currency: 'EUR', floor: '1.23'};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.05); // Default value from tappx/bidder bidfloor
+
+      // make it respond with USD floor and num floor
+      getFloorResponse = {currency: 'USD', floor: 1.23};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(1.23);
+    });
+  })
 });
