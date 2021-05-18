@@ -174,6 +174,10 @@ export const spec = {
         }],
         ext: {
           prebid: {
+            channel: {
+              name: 'pbjs',
+              version: $$PREBID_GLOBAL$$.version
+            },
             cache: {
               vastxml: {
                 returnCreative: rubiConf.returnVast === true
