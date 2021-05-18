@@ -53,7 +53,23 @@ const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
 export const spec = {
   code: 'adkernel',
   gvlid: GVLID,
-  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon', 'andbeyond', 'adbite', 'houseofpubs', 'torchad', 'stringads', 'bcm', 'engageadx'],
+  aliases: [
+    {code: 'headbidding'},
+    {code: 'adsolut'},
+    {code: 'oftmediahb'},
+    {code: 'audiencemedia'},
+    {code: 'waardex_ak'},
+    {code: 'roqoon'},
+    {code: 'andbeyond'},
+    {code: 'adbite'},
+    {code: 'houseofpubs'},
+    {code: 'torchad'},
+    {code: 'stringads'},
+    {code: 'bcm'},
+    {code: 'engageadx'},
+    {code: 'converge_digital', gvlid: 248},
+    {code: 'adomega'}
+  ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**

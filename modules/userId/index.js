@@ -592,15 +592,16 @@ function refreshUserIds(options, callback) {
   initializeSubmodulesAndExecuteCallbacks(function() {
     let consentData = gdprDataHandler.getConsentData()
 
-    const storedConsentData = getStoredConsentData();
-    setStoredConsentData(consentData);
-
     // gdpr consent with purpose one is required, otherwise exit immediately
     let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
     if (!hasValidated && !hasGDPRConsent(consentData)) {
       utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
       return;
     }
+
+    // we always want the latest consentData stored, even if we don't execute any submodules
+    const storedConsentData = getStoredConsentData();
+    setStoredConsentData(consentData);
 
     let callbackSubmodules = [];
     for (let submodule of userIdModules) {
@@ -691,16 +692,16 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
  * @returns {SubmoduleContainer[]} initialized submodules
  */
 function initSubmodules(submodules, consentData) {
-  // we always want the latest consentData stored, even if we don't execute any submodules
-  const storedConsentData = getStoredConsentData();
-  setStoredConsentData(consentData);
-
   // gdpr consent with purpose one is required, otherwise exit immediately
   let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
   if (!hasValidated && !hasGDPRConsent(consentData)) {
     utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
     return [];
   }
+
+  // we always want the latest consentData stored, even if we don't execute any submodules
+  const storedConsentData = getStoredConsentData();
+  setStoredConsentData(consentData);
 
   return userIdModules.reduce((carry, submodule) => {
     populateSubmoduleId(submodule, consentData, storedConsentData, false);

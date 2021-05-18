@@ -4,8 +4,11 @@ This submodule reads segments from Permutive and attaches them as targeting keys
 ## Usage
 Compile the Permutive RTD module into your Prebid build:
 ```
-gulp build --modules=permutiveRtdProvider
+gulp build --modules=rtdModule,permutiveRtdProvider
 ```
+
+> Note that the global RTD module, `rtdModule`, is a prerequisite of the Permutive RTD module.
+
 You then need to enable the Permutive RTD in your Prebid configuration, using the below format:
 
 ```javascript
