@@ -13,6 +13,7 @@ const DISPLAY = 'display';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['viewdeos'],
+  gvlid: 924,
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
     return !!utils.deepAccess(bid, 'params.aid');

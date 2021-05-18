@@ -231,7 +231,8 @@ function sendMessage(auctionId, bidWonId) {
       clientTimeoutMillis: auctionCache.timeout,
       samplingFactor,
       accountId,
-      adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i])
+      adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i]),
+      requestId: auctionId
     };
 
     // pick our of top level floor data we want to send!
