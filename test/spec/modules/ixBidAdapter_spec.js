@@ -1232,14 +1232,12 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
-  describe('First party data', function () {
-    afterEach(function () {
+  describe.only('First party data', function () {
+    it('should not set ixdiag.fpd value if not defined', function () {
       config.setConfig({
         ortb2: {}
       });
-    });
 
-    it('should not set ixdiag.fpd value if not defined', function () {
       const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
       const r = JSON.parse(request.data.r);
 
