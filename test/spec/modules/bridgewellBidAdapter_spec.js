@@ -244,6 +244,7 @@ describe('bridgewellBidAdapter', function () {
         },
       ]
     };
+
     const nativeServerResponses = [
       {
         'id': '0e4048d3-5c74-4380-a21a-00ba35629f7d',
@@ -251,6 +252,7 @@ describe('bridgewellBidAdapter', function () {
         'cpm': 7.0,
         'width': 1,
         'height': 1,
+        'adomain': ['response.com'],
         'mediaType': 'native',
         'native': {
           'image': {
@@ -275,6 +277,7 @@ describe('bridgewellBidAdapter', function () {
         'currency': 'NTD'
       },
     ];
+
     const bannerBidRequests = {
       validBidRequests: [
         {
@@ -287,6 +290,7 @@ describe('bridgewellBidAdapter', function () {
         },
       ]
     };
+
     const bannerServerResponses = [
       {
         'id': 'e5b10774-32bf-4931-85ee-05095e8cff21',
@@ -294,6 +298,7 @@ describe('bridgewellBidAdapter', function () {
         'cpm': 5.0,
         'width': 300,
         'height': 250,
+        'adomain': ['response.com'],
         'mediaType': 'banner',
         'ad': '<div>test 300x250</div>',
         'ttl': 360,
@@ -315,6 +320,7 @@ describe('bridgewellBidAdapter', function () {
       expect(result[0].currency).to.equal('NTD');
       expect(result[0].mediaType).to.equal('native');
       expect(result[0].native.image.url).to.equal('https://img.scupio.com/test/test-image.jpg');
+      expect(String(result[0].meta.advertiserDomains)).to.equal('response.com');
     });
 
     it('should return all required parameters banner', function () {
@@ -330,6 +336,7 @@ describe('bridgewellBidAdapter', function () {
       expect(result[0].currency).to.equal('NTD');
       expect(result[0].mediaType).to.equal('banner');
       expect(result[0].ad).to.equal('<div>test 300x250</div>');
+      expect(String(result[0].meta.advertiserDomains)).to.equal('response.com');
     });
 
     it('should give up bid if server response is undefiend', function () {

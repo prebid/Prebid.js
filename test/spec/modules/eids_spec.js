@@ -57,10 +57,13 @@ describe('eids array generation for known sub-modules', function() {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'id5-sync.com',
-        uids: [{ id: 'some-random-id-value', atype: 1 }],
-        ext: {
-          linkType: 0
-        }
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1,
+          ext: {
+            linkType: 0
+          }
+        }]
       });
     });
   });
@@ -81,13 +84,18 @@ describe('eids array generation for known sub-modules', function() {
 
   it('merkleId', function() {
     const userId = {
-      merkleId: 'some-random-id-value'
+      merkleId: {
+        id: 'some-random-id-value', keyID: 1
+      }
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'merkleinc.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value',
+        atype: 3,
+        ext: { keyID: 1
+        }}]
     });
   });
 
@@ -99,7 +107,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveramp.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -114,7 +122,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
-      uids: [{id: 'some-random-id-value', atype: 1}],
+      uids: [{id: 'some-random-id-value', atype: 3}],
       ext: {segments: ['s1', 's2']}
     });
   });
@@ -129,7 +137,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -141,7 +149,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'britepool.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -169,6 +177,30 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('tapadId', function() {
+    const userId = {
+      tapadId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'tapad.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('deepintentId', function() {
+    const userId = {
+      deepintentId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'deepintent.com',
+      uids: [{id: 'some-random-id-value', atype: 3}]
+    });
+  });
+
   it('NetId', function() {
     const userId = {
       netId: 'some-random-id-value'
@@ -177,6 +209,18 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'netid.de',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('NextRollId', function() {
+    const userId = {
+      nextrollId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'nextroll.com',
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
@@ -258,6 +302,20 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{
         id: 'some-random-id-value',
         atype: 1
+      }]
+    });
+  });
+  it('uid2', function() {
+    const userId = {
+      uid2: {'id': 'Sample_AD_Token'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'uidapi.com',
+      uids: [{
+        id: 'Sample_AD_Token',
+        atype: 3
       }]
     });
   });

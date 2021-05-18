@@ -1,10 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
-
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -117,7 +116,18 @@ export const spec = {
       payload.schain = JSON.stringify(validBidRequests[0].schain)
     }
     if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
-      payload.userid = JSON.stringify(validBidRequests[0].userId);
+      const userIds = deepClone(validBidRequests[0].userId);
+
+      if (userIds.id5id) {
+        userIds.id5id = deepAccess(userIds, 'id5id.uid');
+      }
+
+      payload.userid = JSON.stringify(userIds);
+    }
+
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (Array.isArray(eids) && eids.length > 0) {
+      payload.eids = JSON.stringify(eids);
     }
 
     let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
@@ -128,6 +138,12 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
+    }
+
+    if (config.getConfig('coppa') === true) {
+      payload.coppa = 1;
+    } else {
+      payload.coppa = 0;
     }
 
     // If there is no key_maker data, then don't make the request.

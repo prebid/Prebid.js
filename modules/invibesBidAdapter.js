@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -8,9 +8,10 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 4,
+  PREBID_VERSION: 5,
   METHOD: 'GET',
-  INVIBES_VENDOR_ID: 436
+  INVIBES_VENDOR_ID: 436,
+  USERID_PROVIDERS: ['pubcid', 'pubProvidedId']
 };
 
 const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
@@ -54,6 +55,7 @@ registerBidder(spec);
 const topWin = getTopMostWindow();
 let invibes = topWin.invibes = topWin.invibes || {};
 invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false];
+invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false];
 let _customUserSync;
 
 function isBidRequestValid(bid) {
@@ -77,7 +79,7 @@ function isBidRequestValid(bid) {
 function buildRequest(bidRequests, bidderRequest) {
   bidderRequest = bidderRequest || {};
   const _placementIds = [];
-  let _loginId, _customEndpoint;
+  let _loginId, _customEndpoint, _userId;
   let _ivAuctionStart = bidderRequest.auctionStart || Date.now();
 
   bidRequests.forEach(function (bidRequest) {
@@ -86,6 +88,7 @@ function buildRequest(bidRequests, bidderRequest) {
     _loginId = _loginId || bidRequest.params.loginId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
     _customUserSync = _customUserSync || bidRequest.params.customUserSync;
+    _userId = _userId || bidRequest.userId;
   });
 
   invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent);
@@ -95,19 +98,23 @@ function buildRequest(bidRequests, bidderRequest) {
   let lid = initDomainId(invibes.domainOptions);
 
   const currentQueryStringParams = parseQueryStringParams();
-
+  let userIdModel = getUserIds(_userId);
+  let bidParamsJson = {
+    placementIds: _placementIds,
+    loginId: _loginId,
+    auctionStartTime: _ivAuctionStart,
+    bidVersion: CONSTANTS.PREBID_VERSION
+  };
+  if (userIdModel) {
+    bidParamsJson.userId = userIdModel;
+  }
   let data = {
     location: getDocumentLocation(topWin),
     videoAdHtmlId: generateRandomId(),
     showFallback: currentQueryStringParams['advs'] === '0',
     ivbsCampIdsLocal: invibes.getCookie('IvbsCampIdsLocal'),
 
-    bidParamsJson: JSON.stringify({
-      placementIds: _placementIds,
-      loginId: _loginId,
-      auctionStartTime: _ivAuctionStart,
-      bidVersion: CONSTANTS.PREBID_VERSION
-    }),
+    bidParamsJson: JSON.stringify(bidParamsJson),
     capCounts: getCappedCampaignsAsString(),
 
     vId: invibes.visitId,
@@ -118,6 +125,7 @@ function buildRequest(bidRequests, bidderRequest) {
 
     kw: keywords,
     purposes: invibes.purposes.toString(),
+    li: invibes.legitimateInterests.toString(),
 
     tc: invibes.gdpr_consent
   };
@@ -140,7 +148,7 @@ function buildRequest(bidRequests, bidderRequest) {
     method: CONSTANTS.METHOD,
     url: _customEndpoint || CONSTANTS.BID_ENDPOINT,
     data: data,
-    options: { withCredentials: true },
+    options: {withCredentials: true},
     // for POST: { contentType: 'application/json', withCredentials: true }
     bidRequests: bidRequests
   };
@@ -228,9 +236,26 @@ function getDocumentLocation(topWin) {
   return topWin.location.href.substring(0, 300).split(/[?#]/)[0];
 }
 
+function getUserIds(bidUserId) {
+  let userId;
+  if (bidUserId) {
+    CONSTANTS.USERID_PROVIDERS.forEach(provider => {
+      if (bidUserId[provider]) {
+        userId = userId || {};
+        userId[provider] = bidUserId[provider];
+      }
+    });
+  }
+
+  return userId;
+}
+
 function parseQueryStringParams() {
   let params = {};
-  try { params = JSON.parse(localStorage.ivbs); } catch (e) { }
+  try {
+    params = JSON.parse(localStorage.ivbs);
+  } catch (e) {
+  }
   let re = /[\\?&]([^=]+)=([^\\?&#]+)/g;
   let m;
   while ((m = re.exec(window.location.href)) != null) {
@@ -257,9 +282,12 @@ function getTopMostWindow() {
 
   try {
     while (top !== res) {
-      if (res.parent.location.href.length) { res = res.parent; }
+      if (res.parent.location.href.length) {
+        res = res.parent;
+      }
     }
-  } catch (e) { }
+  } catch (e) {
+  }
 
   return res;
 }
@@ -277,7 +305,9 @@ function renderCreative(bidModel) {
 function getCappedCampaignsAsString() {
   const key = 'ivvcap';
 
-  if (!invibes.optIn || !invibes.purposes[0]) { return ''; }
+  if (!invibes.optIn || !invibes.purposes[0]) {
+    return '';
+  }
 
   let loadData = function () {
     try {
@@ -311,24 +341,31 @@ function getCappedCampaignsAsString() {
     clearExpired();
     let data = loadData();
     return Object.keys(data)
-      .filter(function (k) { return data.hasOwnProperty(k); })
+      .filter(function (k) {
+        return data.hasOwnProperty(k);
+      })
       .sort()
-      .map(function (k) { return [k, data[k][0]]; });
+      .map(function (k) {
+        return [k, data[k][0]];
+      });
   };
 
   return getCappedCampaigns()
-    .map(function (record) { return record.join('='); })
+    .map(function (record) {
+      return record.join('=');
+    })
     .join(',');
 }
 
-const noop = function () { };
+const noop = function () {
+};
 
 function initLogger() {
   if (storage.hasLocalStorage() && localStorage.InvibesDEBUG) {
     return window.console;
   }
 
-  return { info: noop, error: noop, log: noop, warn: noop, debug: noop };
+  return {info: noop, error: noop, log: noop, warn: noop, debug: noop};
 }
 
 function buildSyncUrl() {
@@ -358,44 +395,67 @@ function readGdprConsent(gdprConsent) {
       for (index = 0; index < invibes.purposes; ++index) {
         invibes.purposes[index] = true;
       }
+
+      for (index = 0; index < invibes.legitimateInterests.length; ++index) {
+        invibes.legitimateInterests[index] = true;
+      }
       return 2;
     }
 
     let purposeConsents = getPurposeConsents(gdprConsent.vendorData);
 
-    if (purposeConsents == null) { return 0; }
+    if (purposeConsents == null) {
+      return 0;
+    }
     let purposesLength = getPurposeConsentsCounter(gdprConsent.vendorData);
 
-    if (purposeConsents instanceof Array) {
-      for (let i = 0; i < purposesLength && i < purposeConsents.length; i++) {
-        invibes.purposes[i] = !((purposeConsents[i] === false || purposeConsents[i] === 'false' || purposeConsents[i] == null));
-      }
-    } else if (typeof purposeConsents === 'object' && purposeConsents !== null) {
-      let i = 0;
-      for (let prop in purposeConsents) {
-        if (i === purposesLength) {
-          break;
-        }
-
-        if (purposeConsents.hasOwnProperty(prop)) {
-          invibes.purposes[i] = !((purposeConsents[prop] === false || purposeConsents[prop] === 'false' || purposeConsents[prop] == null));
-          i++;
-        }
-      }
-    } else {
+    if (!tryCopyValueToArray(purposeConsents, invibes.purposes, purposesLength)) {
       return 0;
     }
 
+    let legitimateInterests = getLegitimateInterests(gdprConsent.vendorData);
+    tryCopyValueToArray(legitimateInterests, invibes.legitimateInterests, 10);
+
     let invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10);
     let vendorConsents = getVendorConsents(gdprConsent.vendorData);
-    if (vendorConsents == null || vendorConsents[invibesVendorId] == null) { return 4; }
+    let vendorHasLegitimateInterest = getVendorLegitimateInterest(gdprConsent.vendorData)[invibesVendorId] === true;
+    if (vendorConsents == null || vendorConsents[invibesVendorId] == null) {
+      return 4;
+    }
 
-    if (vendorConsents[invibesVendorId] === false) { return 0; }
+    if (vendorConsents[invibesVendorId] === false && vendorHasLegitimateInterest === false) {
+      return 0;
+    }
 
     return 2;
   }
 
   return 0;
+}
+
+function tryCopyValueToArray(value, target, length) {
+  if (value instanceof Array) {
+    for (let i = 0; i < length && i < value.length; i++) {
+      target[i] = !((value[i] === false || value[i] === 'false' || value[i] == null));
+    }
+    return true;
+  }
+  if (typeof value === 'object' && value !== null) {
+    let i = 0;
+    for (let prop in value) {
+      if (i === length) {
+        break;
+      }
+
+      if (value.hasOwnProperty(prop)) {
+        target[i] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null));
+        i++;
+      }
+    }
+    return true;
+  }
+
+  return false;
 }
 
 function getPurposeConsentsCounter(vendorData) {
@@ -418,9 +478,19 @@ function getPurposeConsents(vendorData) {
   return null;
 }
 
+function getLegitimateInterests(vendorData) {
+  if (vendorData.purpose && vendorData.purpose.legitimateInterests) {
+    return vendorData.purpose.legitimateInterests;
+  }
+
+  return null;
+}
+
 function getVendorConsentData(vendorData) {
   if (vendorData.purpose && vendorData.purpose.consents) {
-    if (vendorData.tcString != null) { return vendorData.tcString; }
+    if (vendorData.tcString != null) {
+      return vendorData.tcString;
+    }
   }
   return vendorData.consentData;
 };
@@ -437,13 +507,23 @@ function getVendorConsents(vendorData) {
   return null;
 }
 
+function getVendorLegitimateInterest(vendorData) {
+  if (vendorData.vendor && vendorData.vendor.legitimateInterests) {
+    return vendorData.vendor.legitimateInterests;
+  }
+
+  return {};
+}
+
 const ivLogger = initLogger();
 
 /// Local domain cookie management =====================
 invibes.Uid = {
   generate: function () {
     let maxRand = parseInt('zzzzzz', 36)
-    let mkRand = function () { return Math.floor(Math.random() * maxRand).toString(36); };
+    let mkRand = function () {
+      return Math.floor(Math.random() * maxRand).toString(36);
+    };
     let rand1 = mkRand();
     let rand2 = mkRand();
     return rand1 + rand2;
@@ -451,9 +531,13 @@ invibes.Uid = {
 };
 
 invibes.getCookie = function (name) {
-  if (!storage.cookiesAreEnabled()) { return; }
+  if (!storage.cookiesAreEnabled()) {
+    return;
+  }
 
-  if (!invibes.optIn || !invibes.purposes[0]) { return; }
+  if (!invibes.optIn || !invibes.purposes[0]) {
+    return;
+  }
 
   return storage.getCookie(name);
 };
@@ -465,7 +549,8 @@ let initDomainId = function (options) {
       let str = invibes.getCookie(this.cname) || '';
       try {
         return JSON.parse(str);
-      } catch (e) { }
+      } catch (e) {
+      }
     }
   };
 
@@ -546,6 +631,7 @@ let keywords = (function () {
   }
   return kw;
 }());
+
 // =====================
 
 export function resetInvibes() {

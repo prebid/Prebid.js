@@ -5,6 +5,17 @@ If the PR is for a standard bid adapter or a standard analytics adapter, just th
 
 For modules and core platform updates, the initial reviewer should request an additional team member to review as a sanity check. Merge should only happen when the PR has 2 `LGTM` from the core team and a documentation PR if required.
 
+### Running Tests and Verifying Integrations
+
+General gulp commands include separate commands for serving the codebase on a built in webserver, creating code coverage reports and allowing serving integration examples. The `review-start` gulp command combinese those into one command.
+
+- Run `gulp review-start`, adding the host parameter `gulp review-start --host=0.0.0.0` will bind to all IPs on the machine
+    - A page will open which provides a hub for common reviewer tools.
+    - If you need to manually acceess the tools:
+        - Navigate to build/coverage/lcov-report/index.html to view coverage
+        - Navigate to integrationExamples/gpt/hellow_world.html for basic integration testing
+        - The hello_world.html and other exampls can be edited and used as needed to verify functionality
+
 ### General PR review Process
 - All required global and bidder-adapter rules defined in the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html) must be followed. Please review these rules often - we depend on reviewers to enforce them.
 - Checkout the branch (these instructions are available on the github PR page as well).
@@ -18,12 +29,19 @@ For modules and core platform updates, the initial reviewer should request an ad
 - If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
 - If all above is good, add a `LGTM` comment and, if the change is in PBS-core or is an important module like the prebidServerBidAdapter, request 1 additional core member to review.
 - Once there are 2 `LGTM` on the PR, merge to master
-- Add a line into the [draft release](https://github.com/prebid/Prebid.js/releases) notes for this submission. If no draft release is available, create one using [this template]( https://gist.github.com/mkendall07/c3af6f4691bed8a46738b3675cb5a479)
+- The [draft release](https://github.com/prebid/Prebid.js/releases) notes are managed by [release drafter](https://github.com/release-drafter/release-drafter). To get the PR added to the release notes do the steps below. A github action will use that information to build the release notes.
+    - Adjust the PR Title to be appropriate for release notes
+    - Add a label for `feature`, `maintenance`, `fix`, `bugfix` or `bug` to categorize the PR
+    - Add a semver label of `major`, `minor` or `patch` to indicate the scope of change    
 
 ### Reviewing a New or Updated Bid Adapter
 Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
 Follow steps above for general review process. In addition, please verify the following:
+- Verify the biddercode and aliases are valid:
+    - Lower case alphanumeric with the only special character allowed is underscore.
+    - The bidder code should be unique for the first 6 characters
+    - Reserved words that cannot be used as bidder names: all, context, data, general, prebid, and skadn
 - Verify that bidder has submitted valid bid params and that bids are being received.
 - Verify that bidder is not manipulating the prebid.js auction in any way or doing things that go against the principles of the project. If unsure check with the Tech Lead.
 - Verify that code re-use is being done properly and that changes introduced by a bidder don't impact other bidders.

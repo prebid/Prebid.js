@@ -1,5 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'smartyads';
@@ -49,6 +50,7 @@ export const spec = {
       'secure': 1,
       'host': location.host,
       'page': location.pathname,
+      'coppa': config.getConfig('coppa') === true ? 1 : 0,
       'placements': placements
     };
     request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
