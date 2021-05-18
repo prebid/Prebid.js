@@ -19,7 +19,8 @@ export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 export const SUPPORTED_USER_IDS = [
   { key: 'tdid', source: 'adserver.org', rtiPartner: 'TDID', queryParam: 'tdid' },
-  { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' }
+  { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
+  { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' }
 ];
 
 let appId = '';
@@ -279,7 +280,7 @@ function getEids(bid) {
 
 function getUserId(bid) {
   return ({ key, source, rtiPartner }) => {
-    let id = bid.userId && bid.userId[key];
+    let id = utils.deepAccess(bid, `userId.${key}`);
     return id ? formatEid(id, source, rtiPartner) : null;
   };
 }
@@ -428,7 +429,7 @@ function createBannerRequestData(bids, bidderRequest) {
   }
 
   SUPPORTED_USER_IDS.forEach(({ key, queryParam }) => {
-    let id = bids[0] && bids[0].userId && bids[0].userId[key];
+    let id = utils.deepAccess(bids, `0.userId.${key}`)
     if (id) {
       payload[queryParam] = id;
     }
