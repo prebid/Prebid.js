@@ -23,6 +23,33 @@ const PRICE_TO_DOLLAR_FACTOR = {
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
+// determines which eids we send and the rtiPartner field in ext
+const SOURCE_RTI_MAPPING = {
+  'liveramp.com': 'idl',
+  'netid.de': 'NETID',
+  'neustar.biz': 'fabrickId',
+  'zeotap.com': 'zeotapIdPlus',
+  'uidapi.com': 'UID2',
+  'adserver.org': 'TDID'
+};
+
+const PROVIDERS = [
+  'britepoolid',
+  'id5id',
+  'lipbid',
+  'haloId',
+  'criteoId',
+  'lotamePanoramaId',
+  'merkleId',
+  'parrableId',
+  'connectid',
+  'sharedid',
+  'tapadId',
+  'quantcastId',
+  'pubcid',
+  'TDID',
+  'flocId'
+]
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
@@ -290,26 +317,17 @@ function getBidRequest(id, impressions) {
  *                  identity info from IX Library)
  */
 function getEidInfo(allEids, flocData) {
-  // determines which eids we send and the rtiPartner field in ext
-  const sourceRTIMapping = {
-    'liveramp.com': 'idl',
-    'netid.de': 'NETID',
-    'neustar.biz': 'fabrickId',
-    'zeotap.com': 'zeotapIdPlus',
-    'uidapi.com': 'UID2',
-    'adserver.org': 'TDID'
-  };
   let toSend = [];
   let seenSources = {};
   if (utils.isArray(allEids)) {
-    for (let i = 0; i < allEids.length; i++) {
-      if (sourceRTIMapping[allEids[i].source] && utils.deepAccess(allEids[i], 'uids.0')) {
-        seenSources[allEids[i].source] = true;
-        allEids[i].uids[0].ext = {
-          rtiPartner: sourceRTIMapping[allEids[i].source]
+    for (const eid of allEids) {
+      if (SOURCE_RTI_MAPPING[eid.source] && utils.deepAccess(eid, 'uids.0')) {
+        seenSources[eid.source] = true;
+        eid.uids[0].ext = {
+          rtiPartner: SOURCE_RTI_MAPPING[eid.source]
         };
-        delete allEids[i].uids[0].atype;
-        toSend.push(allEids[i]);
+        delete eid.uids[0].atype;
+        toSend.push(eid);
       }
     }
   }
@@ -580,25 +598,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 function _getUserIds(bidRequest) {
   const userIds = bidRequest.userId || {};
 
-  const PROVIDERS = [
-    'britepoolid',
-    'id5id',
-    'lipbid',
-    'haloId',
-    'criteoId',
-    'lotamePanoramaId',
-    'merkleId',
-    'parrableId',
-    'connectid',
-    'sharedid',
-    'tapadId',
-    'quantcastId',
-    'pubcid',
-    'TDID',
-    'flocId'
-  ]
-
-  return PROVIDERS.filter(provider => utils.deepAccess(userIds, provider))
+  return PROVIDERS.filter(provider => userIds[provider]);
 }
 
 /**
