@@ -757,7 +757,8 @@ function trimImpressions(impressions, maxSize) {
 function removeFromSizes(bannerSizeList, bannerSize) {
   if (!bannerSize) return;
 
-  for (const [i, size] of bannerSizeList.entries()) {
+  for (let i = 0; i < bannerSizeList.length; i++) {
+    const size = bannerSizeList[i];
     if (bannerSize[0] === size[0] && bannerSize[1] === size[1]) {
       bannerSizeList.splice(i, 1);
       break;
