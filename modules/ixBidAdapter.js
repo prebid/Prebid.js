@@ -24,6 +24,17 @@ const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
 
+const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration', 'protocols'];
+
+const VIDEO_PARAMS_ALLOW_LIST = [
+  'mimes', 'minduration', 'maxduration', 'protocols', 'protocol',
+  'startdelay', 'placement', 'linearity', 'skip', 'skipmin',
+  'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate',
+  'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend',
+  'delivery', 'pos', 'companionad', 'api', 'companiontype', 'ext',
+  'playerSize', 'w', 'h'
+];
+
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
  *
@@ -61,15 +72,6 @@ function bidToVideoImp(bid) {
   const videoAdUnitRef = utils.deepAccess(bid, 'mediaTypes.video');
   const videoParamRef = utils.deepAccess(bid, 'params.video');
 
-  const videoAdUnitAllowlist = [
-    'mimes', 'minduration', 'maxduration', 'protocols', 'protocol',
-    'startdelay', 'placement', 'linearity', 'skip', 'skipmin',
-    'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate',
-    'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend',
-    'delivery', 'pos', 'companionad', 'api', 'companiontype', 'ext',
-    'playerSize', 'w', 'h'
-  ];
-
   if (!checkVideoParams(bid, videoAdUnitRef, videoParamRef)) {
     return {};
   }
@@ -77,7 +79,7 @@ function bidToVideoImp(bid) {
   imp.video = videoParamRef ? utils.deepClone(bid.params.video) : {};
 
   for (const adUnitProperty in videoAdUnitRef) {
-    if (videoAdUnitAllowlist.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
+    if (VIDEO_PARAMS_ALLOW_LIST.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
       imp.video[adUnitProperty] = videoAdUnitRef[adUnitProperty];
     }
   }
@@ -88,7 +90,7 @@ function bidToVideoImp(bid) {
     return {};
   }
 
-  const context = videoAdUnitRef.context || videoParamRef.context;
+  const context = (videoParamRef && videoParamRef.context) || (videoAdUnitRef && videoAdUnitRef.context);
 
   if (context) {
     if (context === 'instream') {
@@ -283,21 +285,20 @@ function includesSize(sizeArray = [], size) {
 }
 
 /**
- * Checking if all required video params are present
- * @param {*} bid               Bid Object
- * @param {*} mediaTypeVideoRef Ad unit level mediaTypes object
- * @param {*} paramsVideoRef    IX bidder params level video object
- * @returns bool                Are the required video params available
+ * Checks if all required video params are present
+ * @param {object} bid               Bid Object
+ * @param {object} mediaTypeVideoRef Ad unit level mediaTypes object
+ * @param {object} paramsVideoRef    IX bidder params level video object
+ * @returns bool                     Are the required video params available
  */
 function checkVideoParams(bid, mediaTypeVideoRef, paramsVideoRef) {
   let isParamsLevelValid = true;
-  const requiredIXParams = ['mimes', 'minduration', 'maxduration', 'protocols'];
 
   if (!mediaTypeVideoRef) {
     utils.logWarn('IX Bid Adapter: mediaTypes.video is the preferred location for video params in ad unit');
   }
 
-  for (let property of requiredIXParams) {
+  for (let property of REQUIRED_VIDEO_PARAMS) {
     if (!(mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty(property)) && !(paramsVideoRef && paramsVideoRef.hasOwnProperty(property))) {
       const isProtocolsValid = (property === 'protocols' && ((mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty('protocol')) || (paramsVideoRef && paramsVideoRef.hasOwnProperty('protocol'))));
       if (isProtocolsValid) {
@@ -315,7 +316,7 @@ function checkVideoParams(bid, mediaTypeVideoRef, paramsVideoRef) {
  * Get One size from Size Array
  * [[250,350]] -> [250, 350]
  * [250, 350]  -> [250, 350]
- * @param {*} sizes array of sizes
+ * @param {array} sizes array of sizes
  */
 function getFirstSize(sizes = []) {
   if (isValidSize(sizes)) {
@@ -330,9 +331,9 @@ function getFirstSize(sizes = []) {
 /**
  * Determines whether or not the given bidFloor parameters are valid.
  *
- * @param  {*}       bidFloor    The bidFloor parameter inside bid request config.
- * @param  {*}       bidFloorCur The bidFloorCur parameter inside bid request config.
- * @return {boolean}             True if this is a valid bidFloor parameters format, and false
+ * @param  {number}  bidFloor    The bidFloor parameter inside bid request config.
+ * @param  {number}  bidFloorCur The bidFloorCur parameter inside bid request config.
+ * @return {bool}                True if this is a valid bidFloor parameters format, and false
  *                               otherwise.
  */
 function isValidBidFloorParams(bidFloor, bidFloorCur) {
@@ -745,6 +746,7 @@ function trimImpressions(impressions, maxSize) {
     currSize = new Blob([encodeURIComponent(JSON.stringify(impressions))]).size;
   }
 }
+
 /**
  *
  * @param  {array}   bannerSizeList list of banner sizes
@@ -753,12 +755,12 @@ function trimImpressions(impressions, maxSize) {
  */
 
 function removeFromSizes(bannerSizeList, bannerSize) {
-  if (bannerSize && bannerSize.length > 0) {
-    for (let i = 0; i < bannerSizeList.length; i++) {
-      if (bannerSize[0] == bannerSizeList[i][0] && bannerSize[1] == bannerSizeList[i][1]) {
-        bannerSizeList.splice(i, 1);
-        break;
-      }
+  if (!bannerSize) return;
+
+  for (const [i, size] of bannerSizeList.entries()) {
+    if (bannerSize[0] === size[0] && bannerSize[1] === size[1]) {
+      bannerSizeList.splice(i, 1);
+      break;
     }
   }
 }
