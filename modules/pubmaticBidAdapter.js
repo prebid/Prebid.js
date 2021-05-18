@@ -766,8 +766,8 @@ function _handleFlocId(payload, validBidRequests) {
 }
 
 function _handleEids(payload, validBidRequests) {
-  var bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
-  var flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.EID);
+  let bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
+  let flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.EID);
   if (flocObject) {
     if (!bidUserIdAsEids) {
       bidUserIdAsEids = [];
