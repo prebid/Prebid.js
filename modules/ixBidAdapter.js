@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
-import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
@@ -206,7 +205,7 @@ function _applyFloor(bid, imp, mediaType) {
  */
 function parseBid(rawBid, currency, bidRequest) {
   const bid = {};
-  const isValidExpiry = !!((utils.deepAccess(rawBid, 'exp') && Number.isInteger(rawBid.exp)));
+  const isValidExpiry = !!((utils.deepAccess(rawBid, 'exp') && utils.isInteger(rawBid.exp)));
   const dealID = utils.deepAccess(rawBid, 'dealid') || utils.deepAccess(rawBid, 'ext.dealid');
 
   if (PRICE_TO_DOLLAR_FACTOR.hasOwnProperty(currency)) {
@@ -258,7 +257,7 @@ function parseBid(rawBid, currency, bidRequest) {
  * @return {boolean}      True if this is a valid size format, and false otherwise.
  */
 function isValidSize(size) {
-  return Array.isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
+  return Array.isArray(size) && size.length === 2 && utils.isInteger(size[0]) && utils.isInteger(size[1]);
 }
 
 /**
