@@ -47,13 +47,12 @@ export const spec = {
       secure: secure,
       banner: buildBanner(request)
     };
-    const fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
     let payload = {
       id: bidderRequest.auctionId,
       cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
-      device: fpd.device ? fpd.device : {},
+      device: params.device ? params.device : {},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
