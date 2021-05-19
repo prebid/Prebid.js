@@ -11,7 +11,6 @@ import {getStorageManager} from '../src/storageManager.js';
 import {coppaDataHandler} from '../src/adapterManager.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
-const MODULE_NAME = 'pubCommonId';
 
 const GVLID = 887;
 
@@ -23,7 +22,8 @@ export const pubCommonIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: MODULE_NAME,
+  name: 'sharedId',
+  aliasName: 'pubCommonId',
   /**
    * Vendor id of prebid
    * @type {Number}
