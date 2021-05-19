@@ -72,7 +72,7 @@ describe('The Criteo bidding adapter', function () {
       expect(isValid).to.equal(true);
     });
 
-    it('should return true when given a valid video bid request', function () {
+    it('should return true when given a valid video bid request using mix custom bidder video parameters', function () {
       expect(spec.isBidRequestValid({
         bidder: 'criteo',
         mediaTypes: {
@@ -114,6 +114,30 @@ describe('The Criteo bidding adapter', function () {
             placement: 2,
             playbackmethod: 1
           }
+        },
+      })).to.equal(true);
+    });
+
+    it('should return true when given a valid video bid request using only mediaTypes.video parameters', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2],
+            skip: 1,
+            placement: 1,
+            minduration: 0,
+            playbackmethod: 1,
+            startdelay: 0
+          }
+        },
+        params: {
+          networkId: 456
         },
       })).to.equal(true);
     });

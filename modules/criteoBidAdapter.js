@@ -317,14 +317,13 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           mimes: bidRequest.mediaTypes.video.mimes,
           protocols: bidRequest.mediaTypes.video.protocols,
           maxduration: bidRequest.mediaTypes.video.maxduration,
-          api: bidRequest.mediaTypes.video.api
+          api: bidRequest.mediaTypes.video.api,
+          skip: bidRequest.mediaTypes.video.skip || bidRequest.params.video.skip,
+          placement: bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement,
+          minduration: bidRequest.mediaTypes.video.minduration || bidRequest.params.video.minduration,
+          playbackmethod: bidRequest.mediaTypes.video.playbackmethod || bidRequest.params.video.playbackmethod,
+          startdelay: bidRequest.mediaTypes.video.startdelay || bidRequest.params.video.startdelay
         };
-
-        video.skip = bidRequest.params.video.skip;
-        video.placement = bidRequest.params.video.placement;
-        video.minduration = bidRequest.params.video.minduration;
-        video.playbackmethod = bidRequest.params.video.playbackmethod;
-        video.startdelay = bidRequest.params.video.startdelay;
 
         slot.video = video;
       }
@@ -379,38 +378,27 @@ function parseNativeSize(size) {
 }
 
 function hasVideoMediaType(bidRequest) {
-  if (utils.deepAccess(bidRequest, 'params.video') === undefined) {
-    return false;
-  }
   return utils.deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
 }
 
 function hasValidVideoMediaType(bidRequest) {
   let isValid = true;
 
-  var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api'];
+  var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
 
   requiredMediaTypesParams.forEach(function(param) {
-    if (utils.deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined) {
+    if (utils.deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && utils.deepAccess(bidRequest, 'params.video.' + param) === undefined) {
       isValid = false;
       utils.logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
     }
   });
 
-  var requiredParams = ['skip', 'placement', 'playbackmethod'];
-
-  requiredParams.forEach(function(param) {
-    if (utils.deepAccess(bidRequest, 'params.video.' + param) === undefined) {
-      isValid = false;
-      utils.logError('Criteo Bid Adapter: params.video.' + param + ' is required');
-    }
-  });
-
   if (isValid) {
+    const videoPlacement = bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement;
     // We do not support long form for now, also we have to check that context & placement are consistent
-    if (bidRequest.mediaTypes.video.context == 'instream' && bidRequest.params.video.placement === 1) {
+    if (bidRequest.mediaTypes.video.context == 'instream' && videoPlacement === 1) {
       return true;
-    } else if (bidRequest.mediaTypes.video.context == 'outstream' && bidRequest.params.video.placement !== 1) {
+    } else if (bidRequest.mediaTypes.video.context == 'outstream' && videoPlacement !== 1) {
       return true;
     }
   }
