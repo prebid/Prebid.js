@@ -21,6 +21,7 @@ Banner and video formats are supported.
                        params: {
                            country: 1, //require // specific to your country {1:'sk',2:'cz',3:'hu',4:'ro',5:'rs',6:'bg',7:'pl',8:'hr',9:'at',11:'de',255:'en'}
                            refid: '12345' // require // you can create/find this ID in Our portal administration on https://sk.etarget-media.com/partner/
+                           options: {}  // optional // you can insert optional data if needed
                        }
                    }
                ]
