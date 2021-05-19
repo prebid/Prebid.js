@@ -218,6 +218,23 @@ describe('OguryBidAdapter', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.data).to.deep.equal(expectedRequestWithNotAFunctionFloor);
     });
+
+    it('should handle bidFloor when currency is not USD', () => {
+      const expectedRequestWithUnsupportedFloorCurrency = deepClone(expectedRequestObject)
+      expectedRequestWithUnsupportedFloorCurrency.imp[0].bidfloor = 0;
+      let validBidRequests = deepClone(bidRequests);
+      validBidRequests[0] = {
+        ...validBidRequests[0],
+        getFloor: ({ size, currency, mediaType }) => {
+          return {
+            currency: 'EUR',
+            floor: 4
+          }
+        }
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.data).to.deep.equal(expectedRequestWithUnsupportedFloorCurrency);
+    });
   });
 
   describe('interpretResponse', function () {

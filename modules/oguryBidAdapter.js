@@ -105,35 +105,19 @@ function interpretResponse(openRtbBidResponse) {
       bidResponses.push(bidResponse);
     });
   });
-
-  if (bidResponses.length === 0) logWarn('bid responses is empty');
-
   return bidResponses;
 }
 
-function onTimeout(timeoutData) {
-  logWarn(timeoutData);
-}
-
-function onBidWon(bid) {
-}
-
-function onSetTargeting(bid) {
-  logWarn(bid);
-}
-
 function getFloor(bid) {
-  if (isFn(bid.getFloor)) {
-    let floorResult = bid.getFloor({
-      currency: 'USD',
-      mediaType: 'banner',
-      size: '*'
-    });
-
-    return floorResult.floor;
+  if (!isFn(bid.getFloor)) {
+    return 0;
   }
-
-  return 0;
+  let floorResult = bid.getFloor({
+    currency: 'USD',
+    mediaType: 'banner',
+    size: '*'
+  });
+  return floorResult.currency === 'USD' ? floorResult.floor : 0;
 }
 
 export const spec = {
@@ -142,9 +126,6 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  onTimeout,
-  onBidWon,
-  onSetTargeting,
   getFloor
 }
 
