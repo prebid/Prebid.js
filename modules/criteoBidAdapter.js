@@ -4,7 +4,7 @@ import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
-import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
+import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 91;
@@ -16,7 +16,13 @@ export const PROFILE_ID_PUBLISHERTAG = 185;
 const storage = getStorageManager(GVLID);
 const LOG_PREFIX = 'Criteo: ';
 
-// Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
+/*
+  If you don't want to use the FastBid adapter feature, you can lighten criteoBidAdapter size by :
+  1. commenting the tryGetCriteoFastBid function inner content (see ref#1)
+  2. removing the line 'verify' function import line (see ref#2)
+
+  Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
+*/
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
 export const FAST_BID_VERSION_CURRENT = 105;
 const FAST_BID_VERSION_LATEST = 'latest';
@@ -482,6 +488,7 @@ export function getFastBidUrl(fastBidVersion) {
 }
 
 export function tryGetCriteoFastBid() {
+  // begin ref#1
   try {
     const fastBidStorageKey = 'criteo_fast_bid';
     const hashPrefix = '// Hash: ';
@@ -512,6 +519,7 @@ export function tryGetCriteoFastBid() {
   } catch (e) {
     // Unable to get fast bid
   }
+  // end ref#1
 }
 
 registerBidder(spec);
