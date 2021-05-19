@@ -755,7 +755,14 @@ describe('Adagio bid adapter', () => {
           netRevenue: true,
           requestId: 'c180kg4267tyqz',
           ttl: 360,
-          width: 300
+          width: 300,
+          aDomain: ['advertiser.com'],
+          mediaType: 'banner',
+          meta: {
+            advertiserId: '80',
+            advertiserName: 'An Advertiser',
+            networkId: '110'
+          }
         }]
       }
     };
@@ -821,11 +828,51 @@ describe('Adagio bid adapter', () => {
         pagetype: 'ARTICLE',
         category: 'NEWS',
         subcategory: 'SPORT',
-        environment: 'desktop'
+        environment: 'desktop',
+        aDomain: ['advertiser.com'],
+        mediaType: 'banner',
+        meta: {
+          advertiserId: '80',
+          advertiserName: 'An Advertiser',
+          advertiserDomains: ['advertiser.com'],
+          networkId: '110',
+          mediaType: 'banner'
+        }
       }];
 
       expect(spec.interpretResponse(serverResponse, bidRequest)).to.be.an('array');
       expect(spec.interpretResponse(serverResponse, bidRequest)).to.deep.equal(expectedResponse);
+    });
+
+    it('Meta props should be limited if no bid.meta is provided', function() {
+      const altServerResponse = utils.deepClone(serverResponse);
+      delete altServerResponse.body.bids[0].meta;
+
+      let expectedResponse = [{
+        ad: '<div style="background-color:red; height:250px; width:300px"></div>',
+        cpm: 1,
+        creativeId: 'creativeId',
+        currency: 'EUR',
+        height: 250,
+        netRevenue: true,
+        requestId: 'c180kg4267tyqz',
+        ttl: 360,
+        width: 300,
+        placement: 'PAVE_ATF',
+        site: 'SITE-NAME',
+        pagetype: 'ARTICLE',
+        category: 'NEWS',
+        subcategory: 'SPORT',
+        environment: 'desktop',
+        aDomain: ['advertiser.com'],
+        mediaType: 'banner',
+        meta: {
+          advertiserDomains: ['advertiser.com'],
+          mediaType: 'banner'
+        }
+      }];
+
+      expect(spec.interpretResponse(altServerResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
 
     it('should populate ADAGIO queue with ssp-data', function() {

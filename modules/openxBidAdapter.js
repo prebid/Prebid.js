@@ -13,7 +13,6 @@ const DEFAULT_CURRENCY = 'USD';
 export const USER_ID_CODE_TO_QUERY_ARG = {
   britepoolid: 'britepoolid', // BritePool ID
   criteoId: 'criteoid', // CriteoID
-  digitrustid: 'digitrustid', // DigiTrust
   fabrickId: 'nuestarid', // Fabrick ID by Nuestar
   haloId: 'audigentid', // Halo ID from Audigent
   id5id: 'id5id', // ID5 ID
@@ -158,6 +157,12 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
       bidResponse.meta.brandId = adUnit.brand_id;
     }
 
+    if (adUnit.adomain && length(adUnit.adomain) > 0) {
+      bidResponse.meta.advertiserDomains = adUnit.adomain;
+    } else {
+      bidResponse.meta.advertiserDomains = [];
+    }
+
     if (adUnit.adv_id) {
       bidResponse.meta.dspid = adUnit.adv_id;
     }
@@ -283,9 +288,6 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
 
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
       switch (userIdProviderKey) {
-        case 'digitrustid':
-          queryParams[key] = utils.deepAccess(userIdObjectOrValue, 'data.id');
-          break;
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
           break;
@@ -440,6 +442,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
+    if (response.deal_id) {
+      bidResponse.dealId = response.deal_id;
+    }
     // default 5 mins
     bidResponse.ttl = 300;
     // true is net, false is gross

@@ -1043,7 +1043,6 @@ describe('OpenxAdapter', function () {
       const EXAMPLE_DATA_BY_ATTR = {
         britepoolid: '1111-britepoolid',
         criteoId: '1111-criteoId',
-        digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
         fabrickId: '1111-fabrickid',
         haloId: '1111-haloid',
         id5id: {uid: '1111-id5id'},
@@ -1099,9 +1098,6 @@ describe('OpenxAdapter', function () {
             let userIdValue;
             // handle cases where userId key refers to an object
             switch (userIdProviderKey) {
-              case 'digitrustid':
-                userIdValue = EXAMPLE_DATA_BY_ATTR.digitrustid.data.id;
-                break;
               case 'lipb':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.lipb.lipbid;
                 break;
@@ -1574,7 +1570,11 @@ describe('OpenxAdapter', function () {
         expect(bid.meta.brandId).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.brand_id);
       });
 
-      it('should return a brand ID', function () {
+      it('should return an adomain', function () {
+        expect(bid.meta.advertiserDomains).to.deep.equal([]);
+      });
+
+      it('should return a dsp ID', function () {
         expect(bid.meta.dspid).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.adv_id);
       });
     });
@@ -1852,6 +1852,13 @@ describe('OpenxAdapter', function () {
 
       const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaType);
       expect(JSON.stringify(Object.keys(result[0]).sort())).to.eql(JSON.stringify(Object.keys(expectedResponse[0]).sort()));
+    });
+
+    it('should return correct bid response with MediaType and deal_id', function () {
+      const bidResponseOverride = { 'deal_id': 'OX-mydeal' };
+      const bidResponseWithDealId = Object.assign({}, bidResponse, bidResponseOverride);
+      const result = spec.interpretResponse({body: bidResponseWithDealId}, bidRequestsWithMediaType);
+      expect(result[0].dealId).to.equal(bidResponseOverride.deal_id);
     });
 
     it('should handle nobid responses for bidRequests with MediaTypes', function () {

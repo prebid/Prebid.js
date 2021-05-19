@@ -81,6 +81,8 @@ export const spec = {
       version: VERSION,
       gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
       gdprConsent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined,
+      coppa: getCoppa(),
+      usPrivacy: bidderRequest.uspConsent,
       cookieSupport: !utils.isSafariBrowser() && storage.cookiesAreEnabled(),
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
@@ -309,4 +311,9 @@ function getDeviceHeight() {
   return window.innerHeight;
 }
 
+function getCoppa() {
+  if (typeof config.getConfig('coppa') === 'boolean') {
+    return config.getConfig('coppa');
+  }
+}
 registerBidder(spec);
