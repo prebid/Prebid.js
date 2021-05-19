@@ -14,7 +14,7 @@ import { OUTSTREAM } from '../src/video.js';
 
 export const BIDDER_CODE = 'adagio';
 export const LOG_PREFIX = 'Adagio:';
-export const VERSION = '2.8.0';
+export const VERSION = '2.10.0';
 export const FEATURES_VERSION = '1';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
 export const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
@@ -1019,6 +1019,10 @@ export const spec = {
             const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
 
             if (bidReq) {
+              bidObj.meta = utils.deepAccess(bidObj, 'meta', {});
+              bidObj.meta.mediaType = bidObj.mediaType;
+              bidObj.meta.advertiserDomains = (Array.isArray(bidObj.aDomain) && bidObj.aDomain.length) ? bidObj.aDomain : [];
+
               if (bidObj.mediaType === VIDEO) {
                 const mediaTypeContext = utils.deepAccess(bidReq, 'mediaTypes.video.context');
                 // Adagio SSP returns a `vastXml` only. No `vastUrl` nor `videoCacheKey`.
