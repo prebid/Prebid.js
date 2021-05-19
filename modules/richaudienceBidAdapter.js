@@ -14,24 +14,24 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***
-     * Determines whether or not the given bid request is valid
-     *
-     * @param {bidRequest} bid The bid params to validate.
-     * @returns {boolean} True if this is a valid bid, and false otherwise
-     */
+   * Determines whether or not the given bid request is valid
+   *
+   * @param {bidRequest} bid The bid params to validate.
+   * @returns {boolean} True if this is a valid bid, and false otherwise
+   */
   isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.pid && bid.params.supplyType);
   },
   /***
-     * Build a server request from the list of valid BidRequests
-     * @param {validBidRequests} is an array of the valid bids
-     * @param {bidderRequest} bidder request object
-     * @returns {ServerRequest} Info describing the request to the server
-     */
+   * Build a server request from the list of valid BidRequests
+   * @param {validBidRequests} is an array of the valid bids
+   * @param {bidderRequest} bidder request object
+   * @returns {ServerRequest} Info describing the request to the server
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
       var payload = {
-        bidfloor: bid.params.bidfloor,
+        bidfloor: raiGetFloor(bid, config),
         ifa: bid.params.ifa,
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
@@ -77,11 +77,11 @@ export const spec = {
     });
   },
   /***
-     * Read the response from the server and build a list of bids
-     * @param {serverResponse} Response from the server.
-     * @param {bidRequest} Bid request object
-     * @returns {bidResponses} Array of bids which were nested inside the server
-     */
+   * Read the response from the server and build a list of bids
+   * @param {serverResponse} Response from the server.
+   * @param {bidRequest} Bid request object
+   * @returns {bidResponses} Array of bids which were nested inside the server
+   */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     // try catch
@@ -103,10 +103,16 @@ export const spec = {
       if (response.media_type === 'video') {
         bidResponse.vastXml = response.vastXML;
         try {
-          if (JSON.parse(bidRequest.data).videoData.format == 'outstream') {
-            bidResponse.renderer = Renderer.install({
-              url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
-            });
+          if (bidResponse.vastXml != null) {
+            if (JSON.parse(bidRequest.data).videoData.format == 'outstream' || JSON.parse(bidRequest.data).videoData.format == 'banner') {
+              bidResponse.renderer = Renderer.install({
+                id: bidRequest.bidId,
+                adunitcode: bidRequest.tagId,
+                loaded: false,
+                config: response.media_type,
+                url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
+              });
+            }
             bidResponse.renderer.setRender(renderer);
           }
         } catch (e) {
@@ -121,13 +127,13 @@ export const spec = {
     return bidResponses
   },
   /***
-     * User Syncs
-     *
-     * @param {syncOptions} Publisher prebid configuration
-     * @param {serverResponses} Response from the server
-     * @param {gdprConsent} GPDR consent object
-     * @returns {Array}
-     */
+   * User Syncs
+   *
+   * @param {syncOptions} Publisher prebid configuration
+   * @param {serverResponses} Response from the server
+   * @param {gdprConsent} GPDR consent object
+   * @returns {Array}
+   */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
 
@@ -135,11 +141,15 @@ export const spec = {
     var syncUrl = '';
     var consent = '';
 
+    var raiSync = {};
+
+    raiSync = raiGetSyncInclude(config);
+
     if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString != 'undefined') {
       consent = `consentString=${gdprConsent.consentString}`
     }
 
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled && raiSync.raiIframe != 'exclude') {
       syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand
       if (consent != '') {
         syncUrl += `&${consent}`
@@ -150,7 +160,7 @@ export const spec = {
       });
     }
 
-    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0) {
+    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0 && raiSync.raiImage != 'exclude') {
       syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
       if (consent != '') {
         syncUrl += `&${consent}`
@@ -197,6 +207,10 @@ function raiGetVideoInfo(bid) {
       playerSize: bid.mediaTypes.video.playerSize,
       mimes: bid.mediaTypes.video.mimes
     };
+  } else {
+    videoData = {
+      format: 'banner'
+    }
   }
   return videoData;
 }
@@ -252,4 +266,43 @@ function raiGetResolution() {
     resolution = window.screen.width + 'x' + window.screen.height;
   }
   return resolution;
+}
+
+function raiGetSyncInclude(config) {
+  try {
+    let raConfig = null;
+    let raiSync = {};
+    if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
+      raConfig = config.getConfig('userSync').filterSettings
+      if (raConfig.iframe != null && typeof raConfig.iframe != 'undefined') {
+        raiSync.raiIframe = raConfig.iframe.bidders == 'richaudience' || raConfig.iframe.bidders == '*' ? raConfig.iframe.filter : 'exclude';
+      }
+      if (raConfig.image != null && typeof raConfig.image != 'undefined') {
+        raiSync.raiImage = raConfig.image.bidders == 'richaudience' || raConfig.image.bidders == '*' ? raConfig.image.filter : 'exclude';
+      }
+    }
+    return raiSync;
+  } catch (e) {
+    return null;
+  }
+}
+
+function raiGetFloor(bid, config) {
+  try {
+    let raiFloor;
+    if (bid.params.bidfloor != null) {
+      raiFloor = bid.params.bidfloor;
+    } else if (typeof bid.getFloor == 'function') {
+      let floorSpec = bid.getFloor({
+        currency: config.getConfig('currency.adServerCurrency'),
+        mediaType: bid.mediaType.banner ? 'banner' : 'video',
+        size: '*'
+      })
+
+      raiFloor = floorSpec.floor;
+    }
+    return raiFloor
+  } catch (e) {
+    return 0
+  }
 }

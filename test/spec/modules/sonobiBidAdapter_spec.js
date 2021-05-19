@@ -2,10 +2,10 @@ import { expect } from 'chai'
 import { spec, _getPlatform } from 'modules/sonobiBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import {userSync} from '../../../src/userSync.js';
+import { config } from 'src/config.js';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
-
   describe('.code', function () {
     it('should return a bidder code of sonobi', function () {
       expect(spec.code).to.equal('sonobi')
@@ -303,6 +303,20 @@ describe('SonobiBidAdapter', function () {
       },
       uspConsent: 'someCCPAString'
     };
+
+    it('should populate coppa as 1 if set in config', function () {
+      config.setConfig({coppa: true});
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+
+      expect(bidRequests.data.coppa).to.equal(1);
+    });
+
+    it('should populate coppa as 0 if set in config', function () {
+      config.setConfig({coppa: false});
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+
+      expect(bidRequests.data.coppa).to.equal(0);
+    });
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)

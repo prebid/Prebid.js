@@ -71,7 +71,7 @@ const USER_IDS_CONFIG = {
   // identityLink
   'idl_env': {
     source: 'liveramp.com',
-    atype: 1
+    atype: 3
   },
 
   // liveIntentId
@@ -80,7 +80,7 @@ const USER_IDS_CONFIG = {
       return data.lipbid;
     },
     source: 'liveintent.com',
-    atype: 1,
+    atype: 3,
     getEidExt: function(data) {
       if (Array.isArray(data.segments) && data.segments.length) {
         return {
@@ -93,7 +93,13 @@ const USER_IDS_CONFIG = {
   // britepoolId
   'britepoolid': {
     source: 'britepool.com',
-    atype: 1
+    atype: 3
+  },
+
+  // dmdId
+  'dmdId': {
+    source: 'hcn.health',
+    atype: 3
   },
 
   // lotamePanoramaId
@@ -111,7 +117,15 @@ const USER_IDS_CONFIG = {
   // merkleId
   'merkleId': {
     source: 'merkleinc.com',
-    atype: 1
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      return (data && data.keyID) ? {
+        keyID: data.keyID
+      } : undefined;
+    }
   },
 
   // NetId
@@ -152,6 +166,12 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // nextroll
+  'nextrollId': {
+    source: 'nextroll.com',
+    atype: 1
+  },
+
   // IDx
   'idx': {
     source: 'idx.lat',
@@ -161,7 +181,7 @@ const USER_IDS_CONFIG = {
   // Verizon Media ConnectID
   'connectid': {
     source: 'verizonmedia.com',
-    atype: 1
+    atype: 3
   },
 
   // Neustar Fabrick
@@ -169,11 +189,15 @@ const USER_IDS_CONFIG = {
     source: 'neustar.biz',
     atype: 1
   },
+  // MediaWallah OpenLink
+  'mwOpenLinkId': {
+    source: 'mediawallahscript.com',
+    atype: 1
+  },
   'tapadId': {
     source: 'tapad.com',
     atype: 1
   },
-
   // Novatiq Snowflake
   'novatiq': {
     getValue: function(data) {
@@ -181,6 +205,22 @@ const USER_IDS_CONFIG = {
     },
     source: 'novatiq.com',
     atype: 1
+  },
+  'uid2': {
+    source: 'uidapi.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
+  },
+  'deepintentId': {
+    source: 'deepintent.com',
+    atype: 3
+  },
+  // Admixer Id
+  'admixerId': {
+    source: 'admixer.net',
+    atype: 3
   }
 };
 

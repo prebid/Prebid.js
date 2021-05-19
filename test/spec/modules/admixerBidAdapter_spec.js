@@ -103,6 +103,7 @@ describe('AdmixerAdapter', function () {
           'netRevenue': false,
           'bidId': '5e4e763b6bc60b',
           'dealId': 'asd123',
+          'meta': {'advertiserId': 123, 'networkId': 123, 'advertiserDomains': ['test.com']}
         }]
       }
     };
@@ -122,6 +123,7 @@ describe('AdmixerAdapter', function () {
           'netRevenue': ads[0].netRevenue,
           'ttl': ads[0].ttl,
           'dealId': ads[0].dealId,
+          'meta': {'advertiserId': 123, 'networkId': 123, 'advertiserDomains': ['test.com']}
         }
       ];
 
