@@ -171,6 +171,24 @@ describe('BeachfrontAdapter', function () {
         expect(data.cur).to.deep.equal(['USD']);
       });
 
+      it('must read from the floors module if available', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.getFloor = () => ({ currency: 'USD', floor: 1.16 });
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].bidfloor).to.equal(1.16);
+      });
+
+      it('must use the bid floor param if no value is returned from the floors module', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.getFloor = () => ({});
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
+      });
+
       it('must parse bid size from a nested array', function () {
         const width = 640;
         const height = 480;
@@ -401,6 +419,24 @@ describe('BeachfrontAdapter', function () {
         expect(data.domain).to.equal(topLocation.hostname);
         expect(data.search).to.equal(topLocation.search);
         expect(data.ua).to.equal(navigator.userAgent);
+      });
+
+      it('must read from the floors module if available', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.getFloor = () => ({ currency: 'USD', floor: 1.16 });
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.slots[0].bidfloor).to.equal(1.16);
+      });
+
+      it('must use the bid floor param if no value is returned from the floors module', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.getFloor = () => ({});
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.slots[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       });
 
       it('must parse bid size from a nested array', function () {
