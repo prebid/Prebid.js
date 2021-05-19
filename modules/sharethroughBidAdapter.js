@@ -138,9 +138,11 @@ export const sharethroughAdapterSpec = {
       currency: 'USD',
       netRevenue: true,
       ttl: 360,
-      meta: { advertiserDomains: creative.creative && creative.creative.adomain ? creative.creative.adomain : [] },
       ad: seatbid.adm,
-    }];
+      meta: {
+        advertiserDomains: seatbid.adomain || []
+      },
+    }));
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
