@@ -51,6 +51,8 @@ pbjs.que.push(function() {
     });
 });
 ``` 
+**Note**: The player ID is the ID of the HTML div element used when instantiating the player. 
+You can retrieve this ID by calling `player.id`, where player is the JW Player instance variable.
 
 **Note**: You may also include `jwTargeting` information in the prebid config's `ortb2.site.ext.data`. Information provided in the adUnit will always supersede, and information in the config will be used as a fallback.
  
