@@ -1,7 +1,7 @@
 import Adapter from '../../src/adapter.js';
 import { createBid } from '../../src/bidfactory.js';
 import * as utils from '../../src/utils.js';
-import { STATUS, S2S, EVENTS } from '../../src/constants.json';
+import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
 import { config } from '../../src/config.js';
 import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
@@ -16,7 +16,7 @@ import { getPrebidInternal } from '../../src/utils.js';
 
 const getConfig = config.getConfig;
 
-const TYPE = S2S.SRC;
+const TYPE = CONSTANTS.S2S.SRC;
 let _syncCount = 0;
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -72,7 +72,6 @@ let eidPermissions;
  * @type {S2SDefaultConfig}
  */
 const s2sDefaultConfig = {
-  enabled: false,
   timeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
@@ -89,7 +88,7 @@ config.setDefaults({
  * @return {boolean}
  */
 function updateConfigDefaultVendor(option) {
-  if (option.defaultVendor && option.enabled !== false) {
+  if (option.defaultVendor) {
     let vendor = option.defaultVendor;
     let optionKeys = Object.keys(option);
     if (S2S_VENDORS[vendor]) {
@@ -105,6 +104,8 @@ function updateConfigDefaultVendor(option) {
       return false;
     }
   }
+  // this is how we can know if user / defaultVendor has set it, or if we should default to false
+  return option.enabled = typeof option.enabled === 'boolean' ? option.enabled : false;
 }
 
 /**
@@ -163,6 +164,7 @@ function setS2sConfig(options) {
         return true;
       }
     }
+    utils.logWarn('prebidServer: s2s config is disabled');
     return false;
   });
 
@@ -599,7 +601,17 @@ const OPEN_RTB_PROTOCOL = {
           if (videoParams.context === 'instream' && !videoParams.hasOwnProperty('placement')) {
             videoParams.placement = 1;
           }
-          mediaTypes['video'] = videoParams;
+
+          mediaTypes['video'] = Object.keys(videoParams).filter(param => param !== 'context')
+            .reduce((result, param) => {
+              if (param === 'playerSize') {
+                result.w = utils.deepAccess(videoParams, `${param}.0.0`);
+                result.h = utils.deepAccess(videoParams, `${param}.0.1`);
+              } else {
+                result[param] = videoParams[param];
+              }
+              return result;
+            }, {});
         }
       }
 
@@ -720,6 +732,9 @@ const OPEN_RTB_PROTOCOL = {
       }
     };
 
+    // Sets pbjs version, can be overwritten below if channel exists in s2sConfig.extPrebid
+    request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
+
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
     if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
       request.ext.prebid = Object.assign(request.ext.prebid, s2sConfig.extPrebid);
@@ -838,7 +853,7 @@ const OPEN_RTB_PROTOCOL = {
           }
 
           const cpm = bid.price;
-          const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
+          const status = cpm !== 0 ? CONSTANTS.STATUS.GOOD : CONSTANTS.STATUS.NO_BID;
           let bidObject = createBid(status, bidRequest || {
             bidder: seatbid.seat,
             src: TYPE
@@ -1097,7 +1112,7 @@ export function PrebidServer() {
         }
       });
 
-      bidderRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
+      bidderRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
     } catch (error) {
       utils.logError(error);
     }
@@ -1111,7 +1126,7 @@ export function PrebidServer() {
   }
 
   // Listen for bid won to call wurl
-  events.on(EVENTS.BID_WON, bidWonHandler);
+  events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 
   return Object.assign(this, {
     callBids: baseAdapter.callBids,

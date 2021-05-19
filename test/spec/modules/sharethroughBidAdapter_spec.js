@@ -463,7 +463,7 @@ describe('sharethrough adapter spec', function() {
 
   describe('.interpretResponse', function() {
     it('returns a correctly parsed out response', function() {
-      expect(spec.interpretResponse(bidderResponse, prebidRequests[0])[0]).to.include(
+      expect(spec.interpretResponse(bidderResponse, prebidRequests[0])[0]).to.deep.include(
         {
           width: 1,
           height: 1,
@@ -472,7 +472,8 @@ describe('sharethrough adapter spec', function() {
           dealId: 'aDealId',
           currency: 'USD',
           netRevenue: true,
-          ttl: 360
+          ttl: 360,
+          meta: { advertiserDomains: [] }
         });
     });
 
