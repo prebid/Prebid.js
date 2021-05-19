@@ -271,10 +271,6 @@ export const spec = {
   formatMarketplaceDynamicParams(params = {}, consentData = {}) {
     let queryParams = {};
 
-    if (params.bidFloor) {
-      queryParams.bidfloor = params.bidFloor;
-    }
-
     Object.assign(queryParams, this.formatKeyValues(params.keyValues));
     Object.assign(queryParams, this.formatConsentData(consentData));
 

@@ -77,18 +77,6 @@ export function nativeBidIsValid(bid, bidRequests) {
     return false;
   }
 
-  if (deepAccess(bid, 'native.image')) {
-    if (!deepAccess(bid, 'native.image.height') || !deepAccess(bid, 'native.image.width')) {
-      return false;
-    }
-  }
-
-  if (deepAccess(bid, 'native.icon')) {
-    if (!deepAccess(bid, 'native.icon.height') || !deepAccess(bid, 'native.icon.width')) {
-      return false;
-    }
-  }
-
   const requestedAssets = bidRequest.nativeParams;
   if (!requestedAssets) {
     return true;

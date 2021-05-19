@@ -530,6 +530,26 @@ describe('S2S Adapter', function () {
       expect(requestBid.imp[0].video.placement).to.equal(1);
     });
 
+    it('converts video mediaType properties into openRTB format', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint.p1Consent = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+
+      config.setConfig({ s2sConfig: ortb2Config });
+
+      let videoBid = utils.deepClone(VIDEO_REQUEST);
+      videoBid.ad_units[0].mediaTypes.video.context = 'instream';
+      adapter.callBids(videoBid, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.imp[0].banner).to.not.exist;
+      expect(requestBid.imp[0].video).to.exist;
+      expect(requestBid.imp[0].video.placement).to.equal(1);
+      expect(requestBid.imp[0].video.w).to.equal(640);
+      expect(requestBid.imp[0].video.h).to.equal(480);
+      expect(requestBid.imp[0].video.playerSize).to.be.undefined;
+      expect(requestBid.imp[0].video.context).to.be.undefined;
+    });
+
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
@@ -1123,6 +1143,10 @@ describe('S2S Adapter', function () {
           targeting: {
             includebidderkeys: false,
             includewinners: true
+          },
+          channel: {
+            name: 'pbjs',
+            version: 'v$prebid.version$'
           }
         }
       });
@@ -1157,6 +1181,10 @@ describe('S2S Adapter', function () {
           targeting: {
             includebidderkeys: false,
             includewinners: true
+          },
+          channel: {
+            name: 'pbjs',
+            version: 'v$prebid.version$'
           }
         }
       });
@@ -1608,6 +1636,28 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.multibid).to.deep.equal(expected);
+    });
+
+    it('sets and passes pbjs version in request if channel does not exist in s2sConfig', () => {
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: 'v$prebid.version$'});
+    });
+
+    it('does not set pbjs version in request if channel does exist in s2sConfig', () => {
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+
+      utils.deepSetValue(s2sBidRequest, 's2sConfig.extPrebid.channel', {test: 1});
+
+      adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({test: 1});
     });
 
     it('passes first party data in request', () => {
