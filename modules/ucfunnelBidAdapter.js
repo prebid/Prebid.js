@@ -300,6 +300,7 @@ function getRequestData(bid, bidderRequest) {
 }
 
 function addUserId(bidData, userId) {
+  bidData['eids'] = '';
   utils._each(userId, (userIdObjectOrValue, userIdProviderKey) => {
     switch (userIdProviderKey) {
       case 'sharedid':
@@ -333,7 +334,21 @@ function addUserId(bidData, userId) {
         break;
       case 'uid2':
         if (userIdObjectOrValue.id) {
-          bidData['eids'] = userIdProviderKey + ',' + userIdObjectOrValue.id
+          bidData['eids'] = (bidData['eids'].length > 0)
+            ? (bidData['eids'] + '!' + userIdProviderKey + ',' + userIdObjectOrValue.id)
+            : (userIdProviderKey + ',' + userIdObjectOrValue.id);
+        }
+        break;
+      case 'connectid':
+        if (userIdObjectOrValue) {
+          bidData['eids'] = (bidData['eids'].length > 0)
+            ? (bidData['eids'] + '!verizonMediaId,' + userIdObjectOrValue)
+            : ('verizonMediaId,' + userIdObjectOrValue);
+        }
+        break;
+      case 'flocId':
+        if (userIdObjectOrValue.id) {
+          bidData['cid'] = userIdObjectOrValue.id;
         }
         break;
       default:
