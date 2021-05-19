@@ -1,30 +1,42 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'adnuntius';
 const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=';
+const GVLID = 855;
 
 export const spec = {
   code: BIDDER_CODE,
-
+  gvlid: GVLID,
+  supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
     return !!(bid.bidId || (bid.params.member && bid.params.invCode));
   },
 
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const networks = {};
     const bidRequests = {};
     const requests = [];
+    const segments = config.getConfig('segments');
+    utils.logMessage('CONF', segments)
     const tzo = new Date().getTimezoneOffset();
-
+    const gdprApplies = utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
+    const consentString = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
+    const reqConsent = (gdprApplies !== undefined) ? '&consentString=' + consentString : '';
+    const reqSegments = (segments !== undefined && utils.isArray(segments)) ? '&segments=' + segments.join(',') : '';
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
       const network = bid.params.network || 'network';
+      const targeting = bid.params.targeting || {};
+
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
-      networks[network].adUnits.push({ ...bid.params.targeting, auId: bid.params.auId, targetId: bid.bidId });
+      networks[network].adUnits.push({ ...targeting, auId: bid.params.auId, targetId: bid.bidId });
     }
 
     const networkKeys = Object.keys(networks)
@@ -32,7 +44,7 @@ export const spec = {
       const network = networkKeys[j];
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL + tzo + '&format=json',
+        url: ENDPOINT_URL + tzo + '&format=json' + reqSegments + reqConsent,
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });
