@@ -126,11 +126,35 @@ describe('Tappx bid adapter', function () {
       assert.isTrue(spec.isBidRequestValid(c_BIDREQUEST.bids[0]), JSON.stringify(c_BIDREQUEST));
     });
 
-    it('should return false when required params are missing', function () {
-      let badBidRequest = c_BIDREQUEST;
-      delete badBidRequest.bids[0].params.tappxkey;
-      delete badBidRequest.bids[0].params.endpoint;
-      assert.isFalse(spec.isBidRequestValid(badBidRequest.bids[0]));
+    it('should return false when params are missing', function () {
+      let badBidRequestParam = JSON.parse(JSON.stringify(c_BIDREQUEST));
+      delete badBidRequestParam.bids[0].params;
+      assert.isFalse(spec.isBidRequestValid(badBidRequestParam.bids[0]));
+    });
+
+    it('should return false when tappxkey is missing', function () {
+      let badBidRequestTpxkey = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      delete badBidRequestTpxkey.bids[0].params.tappxkey;
+      assert.isFalse(spec.isBidRequestValid(badBidRequestTpxkey.bids[0]));
+    });
+
+    it('should return false when host is missing', function () {
+      let badBidRequestHost = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      delete badBidRequestHost.bids[0].params.host;
+      assert.isFalse(spec.isBidRequestValid(badBidRequestHost.bids[0]));
+    });
+
+    it('should return false when classic endpoint is missing', function () {
+      let badBidRequestClEp = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      delete badBidRequestClEp.bids[0].params.endpoint;
+      assert.isFalse(spec.isBidRequestValid(badBidRequestClEp.bids[0]));
+    });
+
+    it('should return true when endpoint is not set for new endpoints', function () {
+      let badBidRequestNwEp = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      delete badBidRequestNwEp.bids[0].params.endpoint;
+      badBidRequestNwEp.bids[0].params.host = 'zztesting.ssp.tappx.com/rtb/v2/';
+      assert.isTrue(spec.isBidRequestValid(badBidRequestNwEp.bids[0]));
     });
 
     it('should return false for not instream requests', function () {
