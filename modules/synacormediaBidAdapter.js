@@ -98,7 +98,7 @@ export const spec = {
     }
 
     // User ID
-    if (validBidReqs && validBidReqs[0] && validBidReqs[0].userIdAsEids && Array.isArray(validBidReqs[0].userIdAsEids)) {
+    if (validBidReqs[0] && validBidReqs[0].userIdAsEids && Array.isArray(validBidReqs[0].userIdAsEids)) {
       const eids = this.processEids(validBidReqs[0].userIdAsEids);
       if (eids.length) {
         deepSetValue(openRtbBidRequest, 'user.ext.eids', eids);
@@ -121,7 +121,7 @@ export const spec = {
   processEids: function(userIdAsEids) {
     const eids = [];
     userIdAsEids.forEach(function(eid) {
-      if (SUPPORTED_USER_ID_SOURCES.includes(eid.source)) {
+      if (SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) > -1) {
         eids.push(eid);
       }
     });
