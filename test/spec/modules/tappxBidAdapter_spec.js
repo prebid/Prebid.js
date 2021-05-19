@@ -153,7 +153,7 @@ describe('Tappx bid adapter', function () {
     it('should return true when endpoint is not set for new endpoints', function () {
       let badBidRequestNwEp = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
       delete badBidRequestNwEp.bids[0].params.endpoint;
-      badBidRequestNwEp.bids[0].params.host = "zztesting.ssp.tappx.com/rtb/v2/";
+      badBidRequestNwEp.bids[0].params.host = 'zztesting.ssp.tappx.com/rtb/v2/';
       assert.isTrue(spec.isBidRequestValid(badBidRequestNwEp.bids[0]));
     });
 
