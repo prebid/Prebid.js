@@ -4,7 +4,7 @@ import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'qwarry';
-export const ENDPOINT = 'http://localhost:8000/bid/adtag?prebid=true'
+export const ENDPOINT = 'https://bidder.qwarry.co/bid/adtag?prebid=true'
 
 export const spec = {
   code: BIDDER_CODE,
