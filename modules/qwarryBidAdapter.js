@@ -4,7 +4,7 @@ import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'qwarry';
-export const ENDPOINT = 'https://bidder.qwarry.co/bid/adtag?prebid=true'
+export const ENDPOINT = 'http://localhost:8000/bid/adtag?prebid=true'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -20,7 +20,8 @@ export const spec = {
       bids.push({
         bidId: bidRequest.bidId,
         zoneToken: bidRequest.params.zoneToken,
-        pos: bidRequest.params.pos
+        pos: bidRequest.params.pos,
+        sizes: prepareSizes(bidRequest.sizes)
       })
     })
 
@@ -88,6 +89,10 @@ export const spec = {
     }
     return false;
   }
+}
+
+function prepareSizes(sizes) {
+  return sizes && sizes.map(size => ({ width: size[0], height: size[1] }));
 }
 
 registerBidder(spec);
