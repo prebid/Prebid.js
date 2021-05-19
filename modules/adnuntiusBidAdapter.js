@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'adnuntius';
 const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=';
@@ -18,12 +19,13 @@ export const spec = {
     const networks = {};
     const bidRequests = {};
     const requests = [];
+    const segments = config.getConfig('segments');
+    utils.logMessage('CONF', segments)
     const tzo = new Date().getTimezoneOffset();
     const gdprApplies = utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
-    const consent = (gdprApplies !== undefined) ? '&consentString=' + consentString : ''
-    utils.logMessage('BIDREQ', bidderRequest)
-
+    const reqConsent = (gdprApplies !== undefined) ? '&consentString=' + consentString : '';
+    const reqSegments = (segments !== undefined && utils.isArray(segments)) ? '&segments=' + segments.join(',') : '';
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
       const network = bid.params.network || 'network';
@@ -42,7 +44,7 @@ export const spec = {
       const network = networkKeys[j];
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL + tzo + '&format=json' + consent,
+        url: ENDPOINT_URL + tzo + '&format=json' + reqSegments + reqConsent,
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });
