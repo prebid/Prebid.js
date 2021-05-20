@@ -376,7 +376,7 @@ function _createImpressionObject(bid, conf) {
   impObj = {
     id: bid.bidId,
     tagid: String(bid.params.zoneId || undefined),
-    bidfloor: _parseSlotParam('reserve', bid.params.reserve),
+    bidfloor: 0,
     secure: 1,
     ext: {},
     bidfloorcur: ADTRUE_CURRENCY
