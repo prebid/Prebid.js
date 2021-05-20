@@ -22,9 +22,7 @@ export const spec = {
     if (sizes.length > 0 && sizes[0] === undefined) {
       return false;
     }
-    if (typeof bid.params.floor == 'undefined' || parseFloat(bid.params.floor) < 0.01) {
-      bid.params.floor = 0.01;
-    }
+    bid.params.floor = 0.01;
 
     return typeof bid.params.s != 'undefined';
   },
