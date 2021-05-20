@@ -248,6 +248,7 @@ describe('OguryBidAdapter', function () {
             price: 100,
             nurl: 'url',
             adm: `<html><head><title>test creative</title></head><body style="margin: 0;"><div><img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div></body></html>`,
+            adomain: ['renault.fr'],
             w: 300,
             h: 250
           }, {
@@ -256,6 +257,7 @@ describe('OguryBidAdapter', function () {
             price: 150,
             nurl: 'url2',
             adm: `<html><head><title>test creative</title></head><body style="margin: 0;"><div><img style="width: 600px; height: 500px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div></body></html>`,
+            adomain: ['peugeot.fr'],
             w: 600,
             h: 500
           }],
@@ -273,7 +275,10 @@ describe('OguryBidAdapter', function () {
         ad: openRtbBidResponse.body.seatbid[0].bid[0].adm,
         ttl: 60,
         creativeId: openRtbBidResponse.body.seatbid[0].bid[0].id,
-        netRevenue: true
+        netRevenue: true,
+        meta: {
+          advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
+        }
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
         cpm: openRtbBidResponse.body.seatbid[0].bid[1].price,
@@ -283,7 +288,10 @@ describe('OguryBidAdapter', function () {
         ad: openRtbBidResponse.body.seatbid[0].bid[1].adm,
         ttl: 60,
         creativeId: openRtbBidResponse.body.seatbid[0].bid[1].id,
-        netRevenue: true
+        netRevenue: true,
+        meta: {
+          advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
+        }
       }]
 
       let request = spec.buildRequests(bidRequests, bidderRequest);

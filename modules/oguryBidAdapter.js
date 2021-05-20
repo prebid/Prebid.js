@@ -98,6 +98,9 @@ function interpretResponse(openRtbBidResponse) {
         creativeId: bid.id,
         netRevenue: true,
         ttl: 60,
+        meta: {
+          advertiserDomains: bid.adomain
+        }
       };
 
       bidResponse.ad = bid.adm;
