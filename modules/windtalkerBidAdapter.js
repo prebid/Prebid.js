@@ -105,7 +105,7 @@ function impression(slot) {
     'banner': banner(slot),
     'native': nativeImpression(slot),
     'video': videoImpression(slot),
-    bidfloor: slot.params.bidFloor || '0.000001',
+    bidfloor: '0.000001',
     tagid: slot.params.placementId.toString(),
   };
 }
