@@ -31,22 +31,6 @@ describe('CleanmedianetAdapter', function () {
       ).to.equal(true);
     });
 
-    it('should validate bid floor', function() {
-      expect(
-        spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })
-      ).to.equal(true); // bidfloor has a default
-      expect(
-        spec.isBidRequestValid({
-          params: { supplyPartnerId: '123', bidfloor: '123' }
-        })
-      ).to.equal(false);
-      expect(
-        spec.isBidRequestValid({
-          params: { supplyPartnerId: '123', bidfloor: 0.1 }
-        })
-      ).to.equal(true);
-    });
-
     it('should validate adpos', function() {
       expect(
         spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })
@@ -158,15 +142,6 @@ describe('CleanmedianetAdapter', function () {
       )[0];
       expect(response.data.imp[0].instl).to.equal(
         bidRequestWithInstlEquals0.params.instl
-      );
-      const bidRequestWithBidfloorEquals1 = utils.deepClone(bidRequest);
-      bidRequestWithBidfloorEquals1.params.bidfloor = 1;
-      response = spec.buildRequests(
-        [bidRequestWithBidfloorEquals1],
-        bidRequest2
-      )[0];
-      expect(response.data.imp[0].bidfloor).to.equal(
-        bidRequestWithBidfloorEquals1.params.bidfloor
       );
     });
 
