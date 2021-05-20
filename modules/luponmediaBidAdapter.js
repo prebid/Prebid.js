@@ -7,13 +7,6 @@ import { ajax } from '../src/ajax.js';
 const BIDDER_CODE = 'luponmedia';
 const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
 
-const DIGITRUST_PROP_NAMES = {
-  PREBID_SERVER: {
-    id: 'id',
-    keyv: 'keyv'
-  }
-};
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -180,10 +173,6 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     }
   }
 
-  const bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
-  if (!isNaN(bidFloor)) {
-    data.imp[0].bidfloor = bidFloor;
-  }
   appendSiteAppDevice(data, bidRequest, bidderRequest);
 
   const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
