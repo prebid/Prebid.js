@@ -84,7 +84,7 @@ export const spec = {
         mts['title'] = [(document.getElementsByTagName('title')[0] || []).innerHTML];
         mts['base'] = [(document.getElementsByTagName('base')[0] || {}).href];
         mts['referer'] = [document.location.href];
-      } catch(e) {
+      } catch (e) {
         mts.error = e;
       }
       return mts;
