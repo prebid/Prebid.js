@@ -19,13 +19,6 @@ describe('etarget adapter', function () {
     });
   });
 
-  describe('getMetaData', function () {
-    it('should return object with page info or empty object', function () {
-      let metaData = spec.getMetaData();
-      assert.ok(metaData);
-    });
-  });
-
   describe('buildRequests', function () {
     it('should pass multiple bids via single request', function () {
       let request = spec.buildRequests(bids);
