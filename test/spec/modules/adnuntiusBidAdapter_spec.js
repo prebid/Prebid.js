@@ -199,6 +199,32 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL);
     });
+
+    it('should pass segments if available in config', function () {
+      config.setConfig({
+        segments: ['segment1', 'segment2']
+      });
+      const request = spec.buildRequests(bidRequests);
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
+    });
+  });
+
+  describe('user privacy', function () {
+    it('should send GDPR Consent data if gdprApplies', function () {
+      let request = spec.buildRequests(bidRequests, { gdprConsent: { gdprApplies: true, consentString: 'consentString' } });
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL_CONSENT);
+    });
+
+    it('should not send GDPR Consent data if gdprApplies equals undefined', function () {
+      let request = spec.buildRequests(bidRequests, { gdprConsent: { gdprApplies: undefined, consentString: 'consentString' } });
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL);
+    });
   });
 
   describe('interpretResponse', function () {
