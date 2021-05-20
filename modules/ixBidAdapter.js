@@ -24,7 +24,7 @@ const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
 
-const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration', 'protocols'];
+const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
 
 const VIDEO_PARAMS_ALLOW_LIST = [
   'mimes', 'minduration', 'maxduration', 'protocols', 'protocol',
@@ -292,24 +292,34 @@ function includesSize(sizeArray = [], size) {
  * @returns bool                     Are the required video params available
  */
 function checkVideoParams(bid, mediaTypeVideoRef, paramsVideoRef) {
-  let isParamsLevelValid = true;
+  let reqParamsPresent = true;
 
   if (!mediaTypeVideoRef) {
     utils.logWarn('IX Bid Adapter: mediaTypes.video is the preferred location for video params in ad unit');
   }
 
   for (let property of REQUIRED_VIDEO_PARAMS) {
-    if (!(mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty(property)) && !(paramsVideoRef && paramsVideoRef.hasOwnProperty(property))) {
-      const isProtocolsValid = (property === 'protocols' && ((mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty('protocol')) || (paramsVideoRef && paramsVideoRef.hasOwnProperty('protocol'))));
-      if (isProtocolsValid) {
-        continue;
-      }
+    const propInMediaType = mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty(property);
+    const propInVideoRef = paramsVideoRef && paramsVideoRef.hasOwnProperty(property);
+
+    if (!propInMediaType && !propInVideoRef) {
       utils.logError('IX Bid Adapter: ' + property + ' is not included in either the adunit or params level');
-      isParamsLevelValid = false;
+      reqParamsPresent = false;
     }
   }
 
-  return isParamsLevelValid;
+  // early return
+  if (!reqParamsPresent) {
+    return false;
+  }
+
+  // check protocols/protocol
+  const protocolMediaType = mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty('protocol');
+  const protocolsMediaType = mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty('protocols');
+  const protocolVideoRef = paramsVideoRef && paramsVideoRef.hasOwnProperty('protocol');
+  const protocolsVideoRef = paramsVideoRef && paramsVideoRef.hasOwnProperty('protocols');
+
+  return protocolMediaType || protocolsMediaType || protocolVideoRef || protocolsVideoRef;
 }
 
 /**
