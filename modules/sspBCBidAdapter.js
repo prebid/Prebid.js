@@ -158,7 +158,7 @@ function mapImpression(slot) {
     tagid: slot.adUnitCode,
   };
 
-  const bidfloor = (slot.params && slot.params.bidFloor) ? parseFloat(slot.params.bidFloor) : undefined;
+  const bidfloor = undefined;
 
   if (bidfloor) {
     imp.bidfloor = bidfloor;
@@ -319,7 +319,7 @@ const spec = {
             // store site data for future notification
             oneCodeDetection[bidRequest.bidId] = [site.id, site.slot];
 
-            const bidFloor = (bidRequest.params && bidRequest.params.bidFloor) ? bidRequest.params.bidFloor : 0;
+            const bidFloor = 0;
 
             const bid = {
               requestId: bidRequest.bidId,
