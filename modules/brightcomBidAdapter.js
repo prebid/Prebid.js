@@ -46,10 +46,6 @@ function buildRequests(bidReqs, bidderRequest) {
         },
         tagid: String(bid.adUnitCode)
       };
-      const bidFloor = utils.getBidIdParameter('bidFloor', bid.params);
-      if (bidFloor) {
-        imp.bidfloor = bidFloor;
-      }
       brightcomImps.push(imp);
     });
     const brightcomBidReq = {
