@@ -84,6 +84,7 @@ var adUnits = [
         context: 'outstream',
         mimes: ['video/mp4', 'video/x-flv'],
         playerSize: [400, 300],
+        protocols: [2, 3],
       },
     },
     bids: [
@@ -92,7 +93,6 @@ var adUnits = [
         params: {
           placementId: 'example-placement-id',
           video: {
-            protocols: [2, 3],
             placement: 2,
           },
         },
