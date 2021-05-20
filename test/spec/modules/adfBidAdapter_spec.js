@@ -1,13 +1,20 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
-import {spec} from 'modules/adformOpenRTBBidAdapter.js';
+import {spec} from 'modules/adfBidAdapter.js';
 import { NATIVE } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
-describe('AdformOpenRTB adapter', function () {
+describe('Adf adapter', function () {
   let serverResponse, bidRequest, bidResponses;
   let bids = [];
+
+  describe('backwards-compatibility', function () {
+    it('should have adformOpenRTB alias defined', function () {
+      assert.equal(spec.aliases[0].code, 'adformOpenRTB');
+      assert.equal(spec.aliases[0].gvlid, 50);
+    });
+  });
 
   describe('isBidRequestValid', function () {
     let bid = {
@@ -567,7 +574,6 @@ describe('AdformOpenRTB adapter', function () {
       assert.deepEqual(bids[0].netRevenue, false);
       assert.deepEqual(bids[0].currency, serverResponse.body.cur);
       assert.deepEqual(bids[0].mediaType, 'native');
-      assert.deepEqual(bids[0].bidderCode, 'adformOpenRTB');
     });
     it('should set correct native params', function () {
       const bid = [

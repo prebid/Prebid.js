@@ -1446,4 +1446,45 @@ describe('Media.net bid adapter', function () {
     let bids = spec.interpretResponse(SERVER_VIDEO_OUTSTREAM_RESPONSE_VALID_BID, []);
     expect(bids[0].context).to.equal('outstream');
   });
+  describe('buildRequests floor tests', function () {
+    let floor;
+    let getFloor = function(req) {
+      return floor[req.mediaType];
+    };
+    beforeEach(function () {
+      floor = {
+        'banner': {
+          'currency': 'USD',
+          'floor': 1
+        }
+      };
+      $$PREBID_GLOBAL$$.medianetGlobals = {};
+
+      let documentStub = sandbox.stub(document, 'getElementById');
+      let boundingRect = {
+        top: 50,
+        left: 50,
+        bottom: 100,
+        right: 100
+      };
+      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      let windowSizeStub = sandbox.stub(spec, 'getWindowSize');
+      windowSizeStub.returns({
+        w: 1000,
+        h: 1000
+      });
+      VALID_BID_REQUEST[0].getFloor = getFloor;
+    });
+
+    it('should build valid payload with floor', function () {
+      let requestObj = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
+      requestObj = JSON.parse(requestObj.data);
+      expect(requestObj.imp[0].hasOwnProperty('bidfloors')).to.equal(true);
+    });
+  });
 });

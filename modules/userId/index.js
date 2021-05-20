@@ -141,6 +141,7 @@ import { module, hook } from '../../src/hook.js';
 import { createEidsArray, buildEidPermissions } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
 import {getPrebidInternal} from '../../src/utils.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -454,7 +455,7 @@ function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
     return {};
   }
   return submodules
-    .filter(i => !i.config.bidders || !utils.isArray(i.config.bidders) || i.config.bidders.includes(bidder))
+    .filter(i => !i.config.bidders || !utils.isArray(i.config.bidders) || includes(i.config.bidders, bidder))
     .filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .reduce((carry, i) => {
       Object.keys(i.idObj).forEach(key => {
@@ -591,15 +592,16 @@ function refreshUserIds(options, callback) {
   initializeSubmodulesAndExecuteCallbacks(function() {
     let consentData = gdprDataHandler.getConsentData()
 
-    const storedConsentData = getStoredConsentData();
-    setStoredConsentData(consentData);
-
     // gdpr consent with purpose one is required, otherwise exit immediately
     let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
     if (!hasValidated && !hasGDPRConsent(consentData)) {
       utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
       return;
     }
+
+    // we always want the latest consentData stored, even if we don't execute any submodules
+    const storedConsentData = getStoredConsentData();
+    setStoredConsentData(consentData);
 
     let callbackSubmodules = [];
     for (let submodule of userIdModules) {
@@ -690,16 +692,16 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
  * @returns {SubmoduleContainer[]} initialized submodules
  */
 function initSubmodules(submodules, consentData) {
-  // we always want the latest consentData stored, even if we don't execute any submodules
-  const storedConsentData = getStoredConsentData();
-  setStoredConsentData(consentData);
-
   // gdpr consent with purpose one is required, otherwise exit immediately
   let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
   if (!hasValidated && !hasGDPRConsent(consentData)) {
     utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
     return [];
   }
+
+  // we always want the latest consentData stored, even if we don't execute any submodules
+  const storedConsentData = getStoredConsentData();
+  setStoredConsentData(consentData);
 
   return userIdModules.reduce((carry, submodule) => {
     populateSubmoduleId(submodule, consentData, storedConsentData, false);

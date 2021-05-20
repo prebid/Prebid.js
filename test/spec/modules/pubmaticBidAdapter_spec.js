@@ -2096,6 +2096,68 @@ describe('PubMatic adapter', function () {
             expect(data.user.eids).to.equal(undefined);
           });
         });
+
+        describe('FlocId', function() {
+          it('send the FlocId if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.flocId = {
+              id: '1234',
+              version: 'chrome1.1'
+            }
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'chrome.com',
+              'uids': [{
+                'id': '1234',
+                'atype': 1,
+                'ext': {
+                  'ver': 'chrome1.1'
+                }
+              }]
+            }]);
+            expect(data.user.data).to.deep.equal([{
+              id: 'FLOC',
+              name: 'FLOC',
+              ext: {
+                ver: 'chrome1.1'
+              },
+              segment: [{
+                id: '1234',
+                name: 'chrome.com',
+                value: '1234'
+              }]
+            }]);
+          });
+
+          it('appnend the flocId if userIds are present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.netId = 'netid-user-id';
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
+            bidRequests[0].userId.flocId = {
+              id: '1234',
+              version: 'chrome1.1'
+            }
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'netid.de',
+              'uids': [{
+                'id': 'netid-user-id',
+                'atype': 1
+              }]
+            }, {
+              'source': 'chrome.com',
+              'uids': [{
+                'id': '1234',
+                'atype': 1,
+                'ext': {
+                  'ver': 'chrome1.1'
+                }
+              }]
+            }]);
+          });
+        });
       });
 
       it('Request params check for video ad', function () {
