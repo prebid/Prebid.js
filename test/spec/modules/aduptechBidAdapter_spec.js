@@ -1,180 +1,280 @@
 import { expect } from 'chai';
 import {
   BIDDER_CODE,
-  PUBLISHER_PLACEHOLDER,
-  ENDPOINT_URL,
   ENDPOINT_METHOD,
-  spec,
-  extractGdprFromBidderRequest,
-  extractParamsFromBidRequest,
-  extractSizesFromBidRequest,
-  extractTopWindowReferrerFromBidRequest,
-  extractTopWindowUrlFromBidRequest
+  internal,
+  spec
 } from '../../../modules/aduptechBidAdapter.js';
+import { config } from '../../../src/config.js';
+import * as utils from '../../../src/utils.js';
+import { BANNER, NATIVE } from '../../../src/mediaTypes.js'
 import { newBidder } from '../../../src/adapters/bidderFactory.js';
 
 describe('AduptechBidAdapter', () => {
-  describe('extractGdprFromBidderRequest', () => {
-    it('should handle empty bidder request', () => {
-      const bidderRequest = null;
-      expect(extractGdprFromBidderRequest(bidderRequest)).to.be.null;
-    });
+  describe('internal', () => {
+    describe('extractGdpr', () => {
+      it('should handle empty bidderRequest', () => {
+        expect(internal.extractGdpr(null)).to.be.null;
+        expect(internal.extractGdpr({})).to.be.null;
+      });
 
-    it('should handle missing gdprConsent in bidder request', () => {
-      const bidderRequest = {};
-      expect(extractGdprFromBidderRequest(bidderRequest)).to.be.null;
-    });
+      it('should extract bidderRequest.gdprConsent', () => {
+        const bidderRequest = {
+          gdprConsent: {
+            consentString: 'consentString',
+            gdprApplies: false
+          }
+        };
 
-    it('should handle gdprConsent in bidder request', () => {
-      const bidderRequest = {
-        gdprConsent: {
-          consentString: 'consentString',
-          gdprApplies: true
-        }
-      };
+        expect(internal.extractGdpr(bidderRequest)).to.deep.equal({
+          consentString: bidderRequest.gdprConsent.consentString,
+          consentRequired: bidderRequest.gdprConsent.gdprApplies
+        });
+      });
 
-      expect(extractGdprFromBidderRequest(bidderRequest)).to.deep.equal({
-        consentString: bidderRequest.gdprConsent.consentString,
-        consentRequired: true
+      it('should handle missing bidderRequest.gdprConsent.gdprApplies', () => {
+        const bidderRequest = {
+          gdprConsent: {
+            consentString: 'consentString'
+          }
+        };
+
+        expect(internal.extractGdpr(bidderRequest)).to.deep.equal({
+          consentString: bidderRequest.gdprConsent.consentString,
+          consentRequired: true
+        });
+      });
+
+      it('should handle invalid bidderRequest.gdprConsent.gdprApplies', () => {
+        const bidderRequest = {
+          gdprConsent: {
+            consentString: 'consentString',
+            gdprApplies: 'foobar'
+          }
+        };
+
+        expect(internal.extractGdpr(bidderRequest)).to.deep.equal({
+          consentString: bidderRequest.gdprConsent.consentString,
+          consentRequired: true
+        });
       });
     });
-  });
 
-  describe('extractParamsFromBidRequest', () => {
-    it('should handle empty bid request', () => {
-      const bidRequest = null;
-      expect(extractParamsFromBidRequest(bidRequest)).to.be.null;
-    });
+    describe('extractPageUrl', () => {
+      let origPageUrl;
 
-    it('should handle missing params in bid request', () => {
-      const bidRequest = {};
-      expect(extractParamsFromBidRequest(bidRequest)).to.be.null;
-    });
+      beforeEach(() => {
+        // remember original pageUrl in config
+        origPageUrl = config.getConfig('pageUrl');
 
-    it('should handle params in bid request', () => {
-      const bidRequest = {
-        params: {
-          foo: '123',
-          bar: 456
-        }
-      };
-      expect(extractParamsFromBidRequest(bidRequest)).to.deep.equal(bidRequest.params);
-    });
-  });
+        // unset pageUrl in config
+        config.setConfig({ pageUrl: null });
+      });
 
-  describe('extractSizesFromBidRequest', () => {
-    it('should handle empty bid request', () => {
-      const bidRequest = null;
-      expect(extractSizesFromBidRequest(bidRequest)).to.deep.equal([]);
-    });
+      afterEach(() => {
+        // set original pageUrl to config
+        config.setConfig({ pageUrl: origPageUrl });
+      });
 
-    it('should handle missing sizes in bid request', () => {
-      const bidRequest = {};
-      expect(extractSizesFromBidRequest(bidRequest)).to.deep.equal([]);
-    });
+      it('should handle empty or missing data', () => {
+        expect(internal.extractPageUrl(null)).to.equal(utils.getWindowTop().location.href);
+        expect(internal.extractPageUrl({})).to.equal(utils.getWindowTop().location.href);
+        expect(internal.extractPageUrl({ refererInfo: {} })).to.equal(utils.getWindowTop().location.href);
+        expect(internal.extractPageUrl({ refererInfo: { canonicalUrl: null } })).to.equal(utils.getWindowTop().location.href);
+        expect(internal.extractPageUrl({ refererInfo: { canonicalUrl: '' } })).to.equal(utils.getWindowTop().location.href);
+      });
 
-    it('should handle sizes in bid request', () => {
-      const bidRequest = {
-        mediaTypes: {
-          banner: {
-            sizes: [[12, 34], [56, 78]]
+      it('should use "pageUrl" from config', () => {
+        config.setConfig({ pageUrl: 'http://page.url' });
+
+        expect(internal.extractPageUrl({})).to.equal(config.getConfig('pageUrl'));
+      });
+
+      it('should use bidderRequest.refererInfo.canonicalUrl', () => {
+        const bidderRequest = {
+          refererInfo: {
+            canonicalUrl: 'http://canonical.url'
           }
-        }
-      };
-      expect(extractSizesFromBidRequest(bidRequest)).to.deep.equal(bidRequest.mediaTypes.banner.sizes);
-    });
+        };
 
-    it('should handle sizes in bid request (backward compatibility)', () => {
-      const bidRequest = {
-        sizes: [[12, 34], [56, 78]]
-      };
-      expect(extractSizesFromBidRequest(bidRequest)).to.deep.equal(bidRequest.sizes);
-    });
+        expect(internal.extractPageUrl(bidderRequest)).to.equal(bidderRequest.refererInfo.canonicalUrl);
+      });
 
-    it('should prefer sizes in mediaTypes.banner', () => {
-      const bidRequest = {
-        sizes: [[12, 34]],
-        mediaTypes: {
-          banner: {
-            sizes: [[56, 78]]
+      it('should prefer bidderRequest.refererInfo.canonicalUrl over "pageUrl" from config', () => {
+        const bidderRequest = {
+          refererInfo: {
+            canonicalUrl: 'http://canonical.url'
           }
-        }
-      };
-      expect(extractSizesFromBidRequest(bidRequest)).to.deep.equal(bidRequest.mediaTypes.banner.sizes);
-    });
-  });
+        };
 
-  describe('extractTopWindowReferrerFromBidRequest', () => {
-    it('should use fallback if bid request is empty', () => {
-      const bidRequest = null;
-      expect(extractTopWindowReferrerFromBidRequest(bidRequest)).to.equal(window.top.document.referrer);
+        config.setConfig({ pageUrl: 'http://page.url' });
+
+        expect(internal.extractPageUrl(bidderRequest)).to.equal(bidderRequest.refererInfo.canonicalUrl);
+      });
     });
 
-    it('should use fallback if refererInfo in bid request is missing', () => {
-      const bidRequest = {};
-      expect(extractTopWindowReferrerFromBidRequest(bidRequest)).to.equal(window.top.document.referrer);
+    describe('extractReferrer', () => {
+      it('should handle empty or missing data', () => {
+        expect(internal.extractReferrer(null)).to.equal(utils.getWindowTop().document.referrer);
+        expect(internal.extractReferrer({})).to.equal(utils.getWindowTop().document.referrer);
+        expect(internal.extractReferrer({ refererInfo: {} })).to.equal(utils.getWindowTop().document.referrer);
+        expect(internal.extractReferrer({ refererInfo: { referer: null } })).to.equal(utils.getWindowTop().document.referrer);
+        expect(internal.extractReferrer({ refererInfo: { referer: '' } })).to.equal(utils.getWindowTop().document.referrer);
+      });
+
+      it('hould use bidderRequest.refererInfo.referer', () => {
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'foobar'
+          }
+        };
+
+        expect(internal.extractReferrer(bidderRequest)).to.equal(bidderRequest.refererInfo.referer);
+      });
     });
 
-    it('should use fallback if refererInfo.referer in bid request is missing', () => {
-      const bidRequest = {
-        refererInfo: {}
-      };
-      expect(extractTopWindowReferrerFromBidRequest(bidRequest)).to.equal(window.top.document.referrer);
+    describe('extractParams', () => {
+      it('should handle empty bidRequest', () => {
+        expect(internal.extractParams(null)).to.be.null;
+        expect(internal.extractParams({})).to.be.null;
+      });
+
+      it('should extract bidRequest.params', () => {
+        const bidRequest = {
+          params: {
+            foo: '123',
+            bar: 456
+          }
+        };
+        expect(internal.extractParams(bidRequest)).to.deep.equal(bidRequest.params);
+      });
     });
 
-    it('should use fallback if refererInfo.referer in bid request is empty', () => {
-      const bidRequest = {
-        refererInfo: {
-          referer: ''
-        }
-      };
-      expect(extractTopWindowReferrerFromBidRequest(bidRequest)).to.equal(window.top.document.referrer);
+    describe('extractBannerConfig', () => {
+      it('should handle empty bidRequest', () => {
+        expect(internal.extractBannerConfig(null)).to.be.null;
+        expect(internal.extractBannerConfig({})).to.be.null;
+      });
+
+      it('should extract bidRequest.mediaTypes.banner', () => {
+        const bidRequest = {
+          mediaTypes: {
+            banner: {
+              sizes: [[12, 34], [56, 78]]
+            }
+          }
+        };
+        expect(internal.extractBannerConfig(bidRequest)).to.deep.equal(bidRequest.mediaTypes.banner);
+      });
+
+      it('should extract bidRequest.sizes (backward compatibility)', () => {
+        const bidRequest = {
+          sizes: [[12, 34], [56, 78]]
+        };
+
+        expect(internal.extractBannerConfig(bidRequest)).to.deep.equal({sizes: bidRequest.sizes});
+      });
     });
 
-    it('should use refererInfo.referer from bid request ', () => {
-      const bidRequest = {
-        refererInfo: {
-          referer: 'foobar'
-        }
-      };
-      expect(extractTopWindowReferrerFromBidRequest(bidRequest)).to.equal(bidRequest.refererInfo.referer);
-    });
-  });
+    describe('extractNativeConfig', () => {
+      it('should handle empty bidRequest', () => {
+        expect(internal.extractNativeConfig(null)).to.be.null;
+        expect(internal.extractNativeConfig({})).to.be.null;
+      });
 
-  describe('extractTopWindowUrlFromBidRequest', () => {
-    it('should use fallback if bid request is empty', () => {
-      const bidRequest = null;
-      expect(extractTopWindowUrlFromBidRequest(bidRequest)).to.equal(window.top.location.href);
-    });
+      it('should extract bidRequest.mediaTypes.native', () => {
+        const bidRequest = {
+          mediaTypes: {
+            native: {
+              image: {
+                required: true
+              },
+              title: {
+                required: true
+              }
+            }
+          }
+        };
 
-    it('should use fallback if refererInfo in bid request is missing', () => {
-      const bidRequest = {};
-      expect(extractTopWindowUrlFromBidRequest(bidRequest)).to.equal(window.top.location.href);
-    });
-
-    it('should use fallback if refererInfo.canonicalUrl in bid request is missing', () => {
-      const bidRequest = {
-        refererInfo: {}
-      };
-      expect(extractTopWindowUrlFromBidRequest(bidRequest)).to.equal(window.top.location.href);
+        expect(internal.extractNativeConfig(bidRequest)).to.deep.equal(bidRequest.mediaTypes.native);
+      });
     });
 
-    it('should use fallback if refererInfo.canonicalUrl in bid request is empty', () => {
-      const bidRequest = {
-        refererInfo: {
-          canonicalUrl: ''
-        }
-      };
-      expect(extractTopWindowUrlFromBidRequest(bidRequest)).to.equal(window.top.location.href);
+    describe('groupBidRequestsByPublisher', () => {
+      it('should handle empty bidRequests', () => {
+        expect(internal.groupBidRequestsByPublisher(null)).to.deep.equal({});
+        expect(internal.groupBidRequestsByPublisher([])).to.deep.equal({})
+      });
+
+      it('should group given bidRequests by params.publisher', () => {
+        const bidRequests = [
+          {
+            mediaTypes: {
+              banner: {
+                sizes: [[100, 100]]
+              }
+            },
+            params: {
+              publisher: 'publisher1',
+              placement: '1111'
+            }
+          },
+          {
+            mediaTypes: {
+              banner: {
+                sizes: [[200, 200]]
+              }
+            },
+            params: {
+              publisher: 'publisher2',
+              placement: '2222'
+            }
+          },
+          {
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 300]]
+              }
+            },
+            params: {
+              publisher: 'publisher3',
+              placement: '3333'
+            }
+          },
+          {
+            mediaTypes: {
+              banner: {
+                sizes: [[400, 400]]
+              }
+            },
+            params: {
+              publisher: 'publisher1',
+              placement: '4444'
+            }
+          }
+        ];
+
+        expect(internal.groupBidRequestsByPublisher(bidRequests)).to.deep.equal({
+          publisher1: [
+            bidRequests[0],
+            bidRequests[3]
+          ],
+          publisher2: [
+            bidRequests[1],
+          ],
+          publisher3: [
+            bidRequests[2],
+          ],
+        });
+      });
     });
 
-    it('should use refererInfo.canonicalUrl from bid request ', () => {
-      const bidRequest = {
-        refererInfo: {
-          canonicalUrl: 'foobar'
-        }
-      };
-      expect(extractTopWindowUrlFromBidRequest(bidRequest)).to.equal(bidRequest.refererInfo.canonicalUrl);
+    describe('buildEndpointUrl', () => {
+      it('should build endpoint url based on given publisher code', () => {
+        expect(internal.buildEndpointUrl(1234)).to.be.equal('https://rtb.d.adup-tech.com/prebid/1234_bid');
+        expect(internal.buildEndpointUrl('foobar')).to.be.equal('https://rtb.d.adup-tech.com/prebid/foobar_bid');
+        expect(internal.buildEndpointUrl('foo bar')).to.be.equal('https://rtb.d.adup-tech.com/prebid/foo%20bar_bid');
+      });
     });
   });
 
@@ -185,42 +285,31 @@ describe('AduptechBidAdapter', () => {
       adapter = newBidder(spec);
     });
 
+    describe('code', () => {
+      it('should be correct', () => {
+        expect(adapter.getSpec().code).to.equal(BIDDER_CODE);
+      });
+    });
+
+    describe('supportedMediaTypes', () => {
+      it('should be correct', () => {
+        expect(adapter.getSpec().supportedMediaTypes).to.deep.equal([BANNER, NATIVE]);
+      });
+    });
+
     describe('inherited functions', () => {
-      it('exists and is a function', () => {
+      it('should exist and be a function', () => {
         expect(adapter.callBids).to.exist.and.to.be.a('function');
       });
     });
 
     describe('isBidRequestValid', () => {
-      it('should return true when necessary information is given', () => {
-        expect(spec.isBidRequestValid({
-          mediaTypes: {
-            banner: {
-              sizes: [[100, 200]]
-            }
-          },
-          params: {
-            publisher: 'test',
-            placement: '1234'
-          }
-        })).to.be.true;
-      });
-
-      it('should return true when necessary information is given (backward compatibility)', () => {
-        expect(spec.isBidRequestValid({
-          sizes: [[100, 200]],
-          params: {
-            publisher: 'test',
-            placement: '1234'
-          }
-        })).to.be.true;
-      });
-
-      it('should return false on empty bid', () => {
+      it('should be false on empty bid', () => {
+        expect(spec.isBidRequestValid(null)).to.be.false;
         expect(spec.isBidRequestValid({})).to.be.false;
       });
 
-      it('should return false on missing sizes', () => {
+      it('should be false if mediaTypes.banner and mediaTypes.native is missing', () => {
         expect(spec.isBidRequestValid({
           params: {
             publisher: 'test',
@@ -229,31 +318,7 @@ describe('AduptechBidAdapter', () => {
         })).to.be.false;
       });
 
-      it('should return false on empty sizes', () => {
-        expect(spec.isBidRequestValid({
-          mediaTypes: {
-            banner: {
-              sizes: []
-            }
-          },
-          params: {
-            publisher: 'test',
-            placement: '1234'
-          }
-        })).to.be.false;
-      });
-
-      it('should return false on empty sizes (backward compatibility)', () => {
-        expect(spec.isBidRequestValid({
-          sizes: [],
-          params: {
-            publisher: 'test',
-            placement: '1234'
-          }
-        })).to.be.false;
-      });
-
-      it('should return false on missing params', () => {
+      it('should be false if params missing', () => {
         expect(spec.isBidRequestValid({
           mediaTypes: {
             banner: {
@@ -263,7 +328,7 @@ describe('AduptechBidAdapter', () => {
         })).to.be.false;
       });
 
-      it('should return false on invalid params', () => {
+      it('should be false if params is invalid', () => {
         expect(spec.isBidRequestValid({
           mediaTypes: {
             banner: {
@@ -274,7 +339,7 @@ describe('AduptechBidAdapter', () => {
         })).to.be.false;
       });
 
-      it('should return false on empty params', () => {
+      it('should be false if params is empty', () => {
         expect(spec.isBidRequestValid({
           mediaTypes: {
             banner: {
@@ -285,7 +350,7 @@ describe('AduptechBidAdapter', () => {
         })).to.be.false;
       });
 
-      it('should return false on missing publisher', () => {
+      it('should be false if params.publisher is missing', () => {
         expect(spec.isBidRequestValid({
           mediaTypes: {
             banner: {
@@ -298,7 +363,7 @@ describe('AduptechBidAdapter', () => {
         })).to.be.false;
       });
 
-      it('should return false on missing placement', () => {
+      it('should be false if params.placement is missing', () => {
         expect(spec.isBidRequestValid({
           mediaTypes: {
             banner: {
@@ -310,17 +375,71 @@ describe('AduptechBidAdapter', () => {
           }
         })).to.be.false;
       });
+
+      it('should be true if mediaTypes.banner is given', () => {
+        expect(spec.isBidRequestValid({
+          mediaTypes: {
+            banner: {
+              sizes: [[100, 200]]
+            }
+          },
+          params: {
+            publisher: 'test',
+            placement: '1234'
+          }
+        })).to.be.true;
+      });
+
+      it('should be true if mediaTypes.native is given', () => {
+        expect(spec.isBidRequestValid({
+          mediaTypes: {
+            native: {
+              image: {
+                required: true
+              },
+              title: {
+                required: true
+              },
+              clickUrl: {
+                required: true
+              },
+              body: {
+                required: true
+              }
+            }
+          },
+          params: {
+            publisher: 'test',
+            placement: '1234'
+          }
+        })).to.be.true;
+      });
     });
 
     describe('buildRequests', () => {
-      it('should send one bid request per ad unit to the endpoint via POST', () => {
-        const bidRequests = [
+      it('should handle empty validBidRequests', () => {
+        expect(spec.buildRequests(null)).to.deep.equal([]);
+        expect(spec.buildRequests([])).to.deep.equal([]);
+      });
+
+      it('should build one request per publisher', () => {
+        const bidderRequest = {
+          auctionId: 'auctionId123',
+          refererInfo: {
+            canonicalUrl: 'http://crazy.canonical.url',
+            referer: 'http://crazy.referer.url'
+          },
+          gdprConsent: {
+            consentString: 'consentString123',
+            gdprApplies: true
+          }
+        };
+
+        const validBidRequests = [
           {
-            bidder: BIDDER_CODE,
             bidId: 'bidId1',
             adUnitCode: 'adUnitCode1',
             transactionId: 'transactionId1',
-            auctionId: 'auctionId1',
             mediaTypes: {
               banner: {
                 sizes: [[100, 200], [300, 400]]
@@ -332,170 +451,197 @@ describe('AduptechBidAdapter', () => {
             }
           },
           {
-            bidder: BIDDER_CODE,
             bidId: 'bidId2',
             adUnitCode: 'adUnitCode2',
             transactionId: 'transactionId2',
-            auctionId: 'auctionId2',
-            mediaTypes: {
-              banner: {
-                sizes: [[500, 600]]
-              }
-            },
-            params: {
-              publisher: 'publisher2',
-              placement: 'placement2'
-            }
-          }
-        ];
-
-        const result = spec.buildRequests(bidRequests);
-        expect(result.length).to.equal(2);
-
-        expect(result[0].url).to.equal(ENDPOINT_URL.replace(PUBLISHER_PLACEHOLDER, bidRequests[0].params.publisher));
-        expect(result[0].method).to.equal(ENDPOINT_METHOD);
-        expect(result[0].data).to.deep.equal({
-          bidId: bidRequests[0].bidId,
-          auctionId: bidRequests[0].auctionId,
-          transactionId: bidRequests[0].transactionId,
-          adUnitCode: bidRequests[0].adUnitCode,
-          pageUrl: extractTopWindowUrlFromBidRequest(bidRequests[0]),
-          referrer: extractTopWindowReferrerFromBidRequest(bidRequests[0]),
-          sizes: extractSizesFromBidRequest(bidRequests[0]),
-          params: extractParamsFromBidRequest(bidRequests[0]),
-          gdpr: null
-        });
-
-        expect(result[1].url).to.equal(ENDPOINT_URL.replace(PUBLISHER_PLACEHOLDER, bidRequests[1].params.publisher));
-        expect(result[1].method).to.equal(ENDPOINT_METHOD);
-        expect(result[1].data).to.deep.equal({
-          bidId: bidRequests[1].bidId,
-          auctionId: bidRequests[1].auctionId,
-          transactionId: bidRequests[1].transactionId,
-          adUnitCode: bidRequests[1].adUnitCode,
-          pageUrl: extractTopWindowUrlFromBidRequest(bidRequests[1]),
-          referrer: extractTopWindowReferrerFromBidRequest(bidRequests[1]),
-          sizes: extractSizesFromBidRequest(bidRequests[1]),
-          params: extractParamsFromBidRequest(bidRequests[1]),
-          gdpr: null
-        });
-      });
-
-      it('should pass gdpr informations', () => {
-        const bidderRequest = {
-          gdprConsent: {
-            consentString: 'consentString',
-            gdprApplies: true
-          }
-        };
-
-        const bidRequests = [
-          {
-            bidder: BIDDER_CODE,
-            bidId: 'bidId3',
-            adUnitCode: 'adUnitCode3',
-            transactionId: 'transactionId3',
-            auctionId: 'auctionId3',
-            mediaTypes: {
-              banner: {
-                sizes: [[100, 200], [300, 400]]
-              }
-            },
-            params: {
-              publisher: 'publisher3',
-              placement: 'placement3'
-            }
-          }
-        ];
-
-        const result = spec.buildRequests(bidRequests, bidderRequest);
-        expect(result.length).to.equal(1);
-        expect(result[0].data.gdpr).to.deep.equal(extractGdprFromBidderRequest(bidderRequest));
-      });
-
-      it('should encode publisher param in endpoint url', () => {
-        const bidRequests = [
-          {
-            bidder: BIDDER_CODE,
-            bidId: 'bidId1',
-            adUnitCode: 'adUnitCode1',
-            transactionId: 'transactionId1',
-            auctionId: 'auctionId1',
             mediaTypes: {
               banner: {
                 sizes: [[100, 200]]
               }
             },
             params: {
-              publisher: 'crazy publisher key äÖÜ',
-              placement: 'placement1'
+              publisher: 'publisher1',
+              placement: 'placement2'
             }
           },
+          {
+            bidId: 'bidId3',
+            adUnitCode: 'adUnitCode3',
+            transactionId: 'transactionId3',
+            mediaTypes: {
+              native: {
+                image: {
+                  required: true
+                },
+                title: {
+                  required: true
+                },
+                clickUrl: {
+                  required: true
+                },
+                body: {
+                  required: true
+                }
+              }
+            },
+            params: {
+              publisher: 'publisher2',
+              placement: 'placement3'
+            }
+          }
         ];
 
-        const result = spec.buildRequests(bidRequests);
-        expect(result[0].url).to.equal(ENDPOINT_URL.replace(PUBLISHER_PLACEHOLDER, encodeURIComponent(bidRequests[0].params.publisher)));
-      });
-
-      it('should handle empty bidRequests', () => {
-        expect(spec.buildRequests([])).to.deep.equal([]);
+        expect(spec.buildRequests(validBidRequests, bidderRequest)).to.deep.equal([
+          {
+            url: internal.buildEndpointUrl(validBidRequests[0].params.publisher),
+            method: ENDPOINT_METHOD,
+            data: {
+              auctionId: bidderRequest.auctionId,
+              pageUrl: bidderRequest.refererInfo.canonicalUrl,
+              referrer: bidderRequest.refererInfo.referer,
+              gdpr: {
+                consentString: bidderRequest.gdprConsent.consentString,
+                consentRequired: bidderRequest.gdprConsent.gdprApplies
+              },
+              imp: [
+                {
+                  bidId: validBidRequests[0].bidId,
+                  transactionId: validBidRequests[0].transactionId,
+                  adUnitCode: validBidRequests[0].adUnitCode,
+                  params: validBidRequests[0].params,
+                  banner: validBidRequests[0].mediaTypes.banner
+                },
+                {
+                  bidId: validBidRequests[1].bidId,
+                  transactionId: validBidRequests[1].transactionId,
+                  adUnitCode: validBidRequests[1].adUnitCode,
+                  params: validBidRequests[1].params,
+                  banner: validBidRequests[1].mediaTypes.banner
+                }
+              ]
+            }
+          },
+          {
+            url: internal.buildEndpointUrl(validBidRequests[2].params.publisher),
+            method: ENDPOINT_METHOD,
+            data: {
+              auctionId: bidderRequest.auctionId,
+              pageUrl: bidderRequest.refererInfo.canonicalUrl,
+              referrer: bidderRequest.refererInfo.referer,
+              gdpr: {
+                consentString: bidderRequest.gdprConsent.consentString,
+                consentRequired: bidderRequest.gdprConsent.gdprApplies
+              },
+              imp: [
+                {
+                  bidId: validBidRequests[2].bidId,
+                  transactionId: validBidRequests[2].transactionId,
+                  adUnitCode: validBidRequests[2].adUnitCode,
+                  params: validBidRequests[2].params,
+                  native: validBidRequests[2].mediaTypes.native
+                }
+              ]
+            }
+          }
+        ]);
       });
     });
 
     describe('interpretResponse', () => {
+      it('should handle empty serverResponse', () => {
+        expect(spec.interpretResponse(null)).to.deep.equal([]);
+        expect(spec.interpretResponse({})).to.deep.equal([]);
+        expect(spec.interpretResponse({ body: {} })).to.deep.equal([]);
+        expect(spec.interpretResponse({ body: { bids: [] } })).to.deep.equal([]);
+      });
+
       it('should correctly interpret the server response', () => {
         const serverResponse = {
           body: {
-            bid: {
-              bidId: 'bidId1',
-              price: 0.12,
-              net: true,
-              currency: 'EUR',
-              ttl: 123
-            },
-            creative: {
-              id: 'creativeId1',
-              width: 100,
-              height: 200,
-              html: '<div>Hello World</div>'
-            }
+            bids: [
+              {
+                bid: {
+                  bidId: 'bidId1',
+                  price: 0.12,
+                  net: true,
+                  currency: 'EUR',
+                  ttl: 123
+                },
+                creative: {
+                  id: 'creativeId1',
+                  advertiserDomains: ['advertiser1.com', 'advertiser2.org'],
+                  width: 100,
+                  height: 200,
+                  html: '<div>Hello World</div>'
+                }
+              },
+              {
+                bid: {
+                  bidId: 'bidId2',
+                  price: 0.99,
+                  net: false,
+                  currency: 'USD',
+                  ttl: 465
+                },
+                creative: {
+                  id: 'creativeId2',
+                  advertiserDomains: ['advertiser3.com'],
+                  native: {
+                    title: 'Ad title',
+                    body: 'Ad description',
+                    displayUrl: 'Ad display url',
+                    clickUrl: 'http://click.url/ad.html',
+                    image: {
+                      url: 'https://image.url/ad.png',
+                      width: 123,
+                      height: 456
+                    },
+                    sponsoredBy: 'Ad sponsored by',
+                    impressionTrackers: [
+                      'https://impression.tracking.url/1',
+                      'https://impression.tracking.url/2',
+                    ],
+                    privacyLink: 'https://example.com/privacy',
+                    privacyIcon: 'https://example.com/icon.png'
+                  }
+                }
+              },
+              null, // should be skipped
+              {} // should be skipped
+            ]
           }
         };
 
-        const result = spec.interpretResponse(serverResponse);
-        expect(result).to.deep.equal([
+        expect(spec.interpretResponse(serverResponse)).to.deep.equal([
           {
-            requestId: serverResponse.body.bid.bidId,
-            cpm: serverResponse.body.bid.price,
-            netRevenue: serverResponse.body.bid.net,
-            currency: serverResponse.body.bid.currency,
-            ttl: serverResponse.body.bid.ttl,
-            creativeId: serverResponse.body.creative.id,
-            width: serverResponse.body.creative.width,
-            height: serverResponse.body.creative.height,
-            ad: serverResponse.body.creative.html
+            requestId: serverResponse.body.bids[0].bid.bidId,
+            cpm: serverResponse.body.bids[0].bid.price,
+            netRevenue: serverResponse.body.bids[0].bid.net,
+            currency: serverResponse.body.bids[0].bid.currency,
+            ttl: serverResponse.body.bids[0].bid.ttl,
+            creativeId: serverResponse.body.bids[0].creative.id,
+            meta: {
+              advertiserDomains: serverResponse.body.bids[0].creative.advertiserDomains
+            },
+            mediaType: BANNER,
+            width: serverResponse.body.bids[0].creative.width,
+            height: serverResponse.body.bids[0].creative.height,
+            ad: serverResponse.body.bids[0].creative.html
+          },
+          {
+            requestId: serverResponse.body.bids[1].bid.bidId,
+            cpm: serverResponse.body.bids[1].bid.price,
+            netRevenue: serverResponse.body.bids[1].bid.net,
+            currency: serverResponse.body.bids[1].bid.currency,
+            ttl: serverResponse.body.bids[1].bid.ttl,
+            creativeId: serverResponse.body.bids[1].creative.id,
+            meta: {
+              advertiserDomains: serverResponse.body.bids[1].creative.advertiserDomains
+            },
+            mediaType: NATIVE,
+            native: serverResponse.body.bids[1].creative.native
           }
         ]);
-      });
-
-      it('should handle empty serverResponse', () => {
-        expect(spec.interpretResponse({})).to.deep.equal([]);
-      });
-
-      it('should handle missing bid', () => {
-        expect(spec.interpretResponse({
-          body: {
-            creative: {}
-          }
-        })).to.deep.equal([]);
-      });
-
-      it('should handle missing creative', () => {
-        expect(spec.interpretResponse({
-          body: {
-            bid: {}
-          }
-        })).to.deep.equal([]);
       });
     });
   });
