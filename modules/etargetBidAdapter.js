@@ -24,33 +24,6 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return !!(bid.params.refid && bid.params.country);
   },
-  getMetaData: function(){
-    var mts = {};
-    var hmetas = document.getElementsByTagName('meta');
-    var wnames = ['title','og:title','description','og:description','og:url','base','keywords'];
-    try{
-      for(var k in hmetas){
-          if(typeof(hmetas[k])=='object'){
-              var mname = hmetas[k].name || hmetas[k].getAttribute('property');
-              var mcont = hmetas[k].content;
-              if(!!mname && mname!="null" && !!mcont){
-                  if(wnames.indexOf(mname)>=0){
-                      if(!mts[mname]){
-                          mts[mname] = [];
-                      }    
-                      mts[mname].push(mcont);
-                  }
-              }
-          }
-      }
-      mts['title'] = [(document.getElementsByTagName('title')[0] || []).innerHTML];
-      mts['base'] = [(document.getElementsByTagName('base')[0] || {}).href];
-      mts['referer'] = [document.location.href];
-    }catch(e){
-      // error
-    }
-    return mts;
-  },
   buildRequests: function (validBidRequests, bidderRequest) {
     var i, l, bid, reqParams, netRevenue, gdprObject;
     var request = [];
@@ -88,15 +61,41 @@ export const spec = {
       bidder: 'etarget',
       gdpr: gdprObject
     };
+    
+    function getMetaData() {
+      var mts = {};
+      var hmetas = document.getElementsByTagName('meta');
+      var wnames = ['title', 'og:title', 'description', 'og:description', 'og:url', 'base', 'keywords'];
+      try {
+        for (var k in hmetas) {
+          if (typeof hmetas[k] == 'object') {
+            var mname = hmetas[k].name || hmetas[k].getAttribute('property');
+            var mcont = hmetas[k].content;
+            if (!!mname && mname != "null" && !!mcont) {
+              if (wnames.indexOf(mname) >= 0) {
+                if (!mts[mname]) {
+                    mts[mname] = [];
+                }
+                mts[mname].push(mcont);
+              }
+            }
+          }
+        }
+        mts['title'] = [(document.getElementsByTagName('title')[0] || []).innerHTML];
+        mts['base'] = [(document.getElementsByTagName('base')[0] || {}).href];
+        mts['referer'] = [document.location.href];
+      } catch(e) {
+        // error
+      }
+      return mts;
+    }
 
     function formRequestUrl(reqData) {
       var key;
       var url = [];
-
       for (key in reqData) {
         if (reqData.hasOwnProperty(key) && reqData[key]) { url.push(key, '=', reqData[key], '&'); }
       }
-
       return encodeURIComponent(btoa(url.join('').slice(0, -1)));
     }
   },
