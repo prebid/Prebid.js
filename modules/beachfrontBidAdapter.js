@@ -6,9 +6,10 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const ADAPTER_VERSION = '1.15';
+const ADAPTER_VERSION = '1.16';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
+const CURRENCY = 'USD';
 
 export const VIDEO_ENDPOINT = 'https://reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = 'https://display.bfmio.com/prebid_display';
@@ -19,7 +20,8 @@ export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 export const SUPPORTED_USER_IDS = [
   { key: 'tdid', source: 'adserver.org', rtiPartner: 'TDID', queryParam: 'tdid' },
-  { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' }
+  { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
+  { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' }
 ];
 
 let appId = '';
@@ -78,7 +80,7 @@ export const spec = {
         creativeId: response.crid || response.cmpId,
         renderer: context === OUTSTREAM ? createRenderer(bidRequest) : null,
         mediaType: VIDEO,
-        currency: 'USD',
+        currency: CURRENCY,
         netRevenue: true,
         ttl: 300
       };
@@ -110,7 +112,7 @@ export const spec = {
             width: bid.w,
             height: bid.h,
             mediaType: BANNER,
-            currency: 'USD',
+            currency: CURRENCY,
             netRevenue: true,
             ttl: 300
           };
@@ -250,6 +252,16 @@ function getPlayerBidParam(bid, key, defaultValue) {
   return param === undefined ? defaultValue : param;
 }
 
+function getBannerBidFloor(bid) {
+  let floorInfo = utils.isFn(bid.getFloor) ? bid.getFloor({ currency: CURRENCY, mediaType: 'banner', size: '*' }) : {};
+  return floorInfo.floor || getBannerBidParam(bid, 'bidfloor');
+}
+
+function getVideoBidFloor(bid) {
+  let floorInfo = utils.isFn(bid.getFloor) ? bid.getFloor({ currency: CURRENCY, mediaType: 'video', size: '*' }) : {};
+  return floorInfo.floor || getVideoBidParam(bid, 'bidfloor');
+}
+
 function isVideoBidValid(bid) {
   return isVideoBid(bid) && getVideoBidParam(bid, 'appId') && getVideoBidParam(bid, 'bidfloor');
 }
@@ -279,7 +291,7 @@ function getEids(bid) {
 
 function getUserId(bid) {
   return ({ key, source, rtiPartner }) => {
-    let id = bid.userId && bid.userId[key];
+    let id = utils.deepAccess(bid, `userId.${key}`);
     return id ? formatEid(id, source, rtiPartner) : null;
   };
 }
@@ -315,7 +327,7 @@ function createVideoRequestData(bid, bidderRequest) {
   let firstSize = getFirstSize(sizes);
   let video = getVideoTargetingParams(bid);
   let appId = getVideoBidParam(bid, 'appId');
-  let bidfloor = getVideoBidParam(bid, 'bidfloor');
+  let bidfloor = getVideoBidFloor(bid);
   let tagid = getVideoBidParam(bid, 'tagid');
   let topLocation = getTopWindowLocation(bidderRequest);
   let eids = getEids(bid);
@@ -351,10 +363,13 @@ function createVideoRequestData(bid, bidderRequest) {
     regs: {
       ext: {}
     },
+    source: {
+      ext: {}
+    },
     user: {
       ext: {}
     },
-    cur: ['USD']
+    cur: [CURRENCY]
   };
 
   if (bidderRequest && bidderRequest.uspConsent) {
@@ -365,6 +380,10 @@ function createVideoRequestData(bid, bidderRequest) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     payload.regs.ext.gdpr = gdprApplies ? 1 : 0;
     payload.user.ext.consent = consentString;
+  }
+
+  if (bid.schain) {
+    payload.source.ext.schain = bid.schain;
   }
 
   if (eids.length > 0) {
@@ -386,7 +405,7 @@ function createBannerRequestData(bids, bidderRequest) {
     return {
       slot: bid.adUnitCode,
       id: getBannerBidParam(bid, 'appId'),
-      bidfloor: getBannerBidParam(bid, 'bidfloor'),
+      bidfloor: getBannerBidFloor(bid),
       tagid: getBannerBidParam(bid, 'tagid'),
       sizes: getBannerSizes(bid)
     };
@@ -416,8 +435,12 @@ function createBannerRequestData(bids, bidderRequest) {
     payload.gdprConsent = consentString;
   }
 
+  if (bids[0] && bids[0].schain) {
+    payload.schain = bids[0].schain;
+  }
+
   SUPPORTED_USER_IDS.forEach(({ key, queryParam }) => {
-    let id = bids[0] && bids[0].userId && bids[0].userId[key];
+    let id = utils.deepAccess(bids, `0.userId.${key}`)
     if (id) {
       payload[queryParam] = id;
     }

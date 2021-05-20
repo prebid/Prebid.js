@@ -107,6 +107,11 @@ const dealChannelValues = {
   5: 'PREF',
   6: 'PMPG'
 };
+
+const FLOC_FORMAT = {
+  'EID': 1,
+  'SEGMENT': 2
+}
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -708,8 +713,67 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
+function _getFlocId(validBidRequests, flocFormat) {
+  var flocIdObject = null;
+  var flocId = utils.deepAccess(validBidRequests, '0.userId.flocId');
+  if (flocId && flocId.id) {
+    switch (flocFormat) {
+      case FLOC_FORMAT.SEGMENT:
+        flocIdObject = {
+          id: 'FLOC',
+          name: 'FLOC',
+          ext: {
+            ver: flocId.version
+          },
+          segment: [{
+            id: flocId.id,
+            name: 'chrome.com',
+            value: flocId.id.toString()
+          }]
+        }
+        break;
+      case FLOC_FORMAT.EID:
+      default:
+        flocIdObject = {
+          source: 'chrome.com',
+          uids: [
+            {
+              atype: 1,
+              id: flocId.id,
+              ext: {
+                ver: flocId.version
+              }
+            },
+          ]
+        }
+        break;
+    }
+  }
+  return flocIdObject;
+}
+
+function _handleFlocId(payload, validBidRequests) {
+  var flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.SEGMENT);
+  if (flocObject) {
+    if (!payload.user) {
+      payload.user = {};
+    }
+    if (!payload.user.data) {
+      payload.user.data = [];
+    }
+    payload.user.data.push(flocObject);
+  }
+}
+
 function _handleEids(payload, validBidRequests) {
-  const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
+  let bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
+  let flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.EID);
+  if (flocObject) {
+    if (!bidUserIdAsEids) {
+      bidUserIdAsEids = [];
+    }
+    bidUserIdAsEids.push(flocObject);
+  }
   if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     utils.deepSetValue(payload, 'user.eids', bidUserIdAsEids);
   }
@@ -1029,7 +1093,7 @@ export const spec = {
     _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
-
+    _handleFlocId(payload, validBidRequests);
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
     if (commonFpd.site) {
