@@ -48,7 +48,8 @@ const VIDEO_CUSTOM_PARAMS = {
   'linearity': DATA_TYPES.NUMBER,
   'placement': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
-  'maxbitrate': DATA_TYPES.NUMBER
+  'maxbitrate': DATA_TYPES.NUMBER,
+  'skip': DATA_TYPES.BOOLEAN
 }
 
 const NATIVE_ASSETS = {
@@ -162,11 +163,11 @@ const BB_RENDERER = {
   }
 };
 
-const MEDIATYPE = {
-  0: BANNER,
-  1: VIDEO,
-  2: NATIVE
-}
+const MEDIATYPE = [
+  BANNER,
+  VIDEO,
+  NATIVE
+]
 
 let publisherId = 0;
 let isInvalidNativeRequest = false;
@@ -550,11 +551,6 @@ function _createVideoRequest(bid) {
       videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
       videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
     }
-    if (videoData.hasOwnProperty('skippable')) {
-      videoObj.ext = {
-        'video_skippable': videoData.skippable ? 1 : 0
-      };
-    }
   } else {
     videoObj = UNDEFINED;
     utils.logWarn(LOG_WARN_PREFIX + 'Error: Video config params missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
@@ -743,7 +739,7 @@ function _handleEids(payload, validBidRequests) {
 
 function _checkMediaType(bid, newBid) {
   // Create a regex here to check the strings
-  if (bid.ext && bid.ext['BidType'] != undefined && Object.keys(MEDIATYPE).indexOf(bid.ext.BidType.toString()) > -1) {
+  if (bid.ext && bid.ext['BidType'] != undefined) {
     newBid.mediaType = MEDIATYPE[bid.ext.BidType];
   } else {
     utils.logInfo(LOG_WARN_PREFIX + 'bid.ext.BidType does not exist, checking alternatively for mediaType')
