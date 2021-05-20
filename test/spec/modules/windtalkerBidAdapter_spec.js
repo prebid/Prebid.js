@@ -111,7 +111,7 @@ describe('Windtalker Adapter Tests', function () {
     expect(ortbRequest.imp[0].banner).to.not.equal(null);
     expect(ortbRequest.imp[0].banner.w).to.equal(300);
     expect(ortbRequest.imp[0].banner.h).to.equal(250);
-    expect(ortbRequest.imp[0].bidfloor).to.equal('0.001');
+    expect(ortbRequest.imp[0].bidfloor).to.equal('0.000001');
     // slot 2
     expect(ortbRequest.imp[1].tagid).to.equal('1234');
     expect(ortbRequest.imp[1].banner).to.not.equal(null);
