@@ -113,7 +113,7 @@ export const spec = {
         id: transactionId,
         instl: params.instl === 1 ? 1 : 0,
         tagid: adUnitCode,
-        bidfloor: params.bidfloor || 0,
+        bidfloor: 0,
         bidfloorcur: 'USD',
         secure: 1
       };
