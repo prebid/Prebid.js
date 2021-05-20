@@ -8,7 +8,9 @@ import {
   enforcementRules,
   purpose1Rule,
   purpose2Rule,
-  enableAnalyticsHook
+  enableAnalyticsHook,
+  getGvlid,
+  internal
 } from 'modules/gdprEnforcement.js';
 import { config } from 'src/config.js';
 import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
@@ -1066,5 +1068,58 @@ describe('gdpr enforcement', function () {
       // Assertions
       sinon.assert.calledWith(events.emit.getCall(1), 'tcf2Enforcement', sinon.match.object);
     })
+  });
+
+  describe('getGvlid', function() {
+    let sandbox;
+    let getGvlidForBidAdapterStub;
+    let getGvlidForUserIdModuleStub;
+    let getGvlidForAnalyticsAdapterStub;
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      getGvlidForBidAdapterStub = sandbox.stub(internal, 'getGvlidForBidAdapter');
+      getGvlidForUserIdModuleStub = sandbox.stub(internal, 'getGvlidForUserIdModule');
+      getGvlidForAnalyticsAdapterStub = sandbox.stub(internal, 'getGvlidForAnalyticsAdapter');
+    });
+    afterEach(function() {
+      sandbox.restore();
+      config.resetConfig();
+    });
+
+    it('should return "null" if called without passing any argument', function() {
+      const gvlid = getGvlid();
+      expect(gvlid).to.equal(null);
+    });
+
+    it('should return "null" if GVL ID is not defined for any of these modules: Bid adapter, UserId submodule and Analytics adapter', function() {
+      getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
+      getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
+      getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(null);
+
+      const gvlid = getGvlid('moduleA');
+      expect(gvlid).to.equal(null);
+    });
+
+    it('should return the GVL ID from gvlMapping if it is defined in setConfig', function() {
+      config.setConfig({
+        gvlMapping: {
+          moduleA: 1
+        }
+      });
+
+      // Actual GVL ID for moduleA is 2, as defined on its the bidAdapter.js file.
+      getGvlidForBidAdapterStub.withArgs('moduleA').returns(2);
+
+      const gvlid = getGvlid('moduleA');
+      expect(gvlid).to.equal(1);
+    });
+
+    it('should return the GVL ID by calling getGvlidForBidAdapter -> getGvlidForUserIdModule -> getGvlidForAnalyticsAdapter in sequence', function() {
+      getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
+      getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
+      getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(7);
+
+      expect(getGvlid('moduleA')).to.equal(7);
+    });
   });
 });

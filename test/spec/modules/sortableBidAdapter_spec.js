@@ -329,7 +329,40 @@ describe('sortableBidAdapter', function() {
       const gdprRequest = spec.buildRequests(gdprBidRequests, {refererInfo: { referer: 'http://localhost:9876/' }});
       const gdprRequestBody = JSON.parse(gdprRequest.data);
       expect(gdprRequestBody.regs).to.deep.equal({ext: {}});
-      expect(gdprRequestBody.user).to.equal(undefined);
+      expect(gdprRequestBody.user.ext.consent).to.equal(undefined);
+    })
+
+    const eidsBidRequests = [{
+      'bidder': 'sortable',
+      'params': {
+        'tagId': '403370',
+        'siteId': 'example.com',
+        'floor': 0.21,
+        'keywords': {},
+        'floorSizeMap': {}
+      },
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475'
+    }];
+
+    it('should not set user ids when none present', function() {
+      const eidsRequest = spec.buildRequests(eidsBidRequests, {refererInfo: {
+        referer: 'http://localhost:9876/'
+      }});
+      const eidsRequestBody = JSON.parse(eidsRequest.data);
+
+      expect(eidsRequestBody.user.ext.eids).to.equal(undefined);
+    })
+
+    it('should set user ids when present', function() {
+      eidsBidRequests[0].userId = { criteoId: 'sample-userid' };
+      const eidsRequest = spec.buildRequests(eidsBidRequests, {refererInfo: {
+        referer: 'http://localhost:9876/'
+      }});
+      const eidsRequestBody = JSON.parse(eidsRequest.data);
+
+      expect(eidsRequestBody.user.ext.eids.length).to.equal(1);
     })
   });
 

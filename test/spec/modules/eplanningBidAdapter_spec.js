@@ -1,6 +1,9 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
+import { init } from 'modules/userId/index.js';
+import * as utils from 'src/utils.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -32,6 +35,15 @@ describe('E-Planning Adapter', function () {
     'adUnitCode': ADUNIT_CODE,
     'sizes': [[300, 250], [300, 600]],
   };
+  const validBid2 = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID2,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE2,
+    'sizes': [[300, 250], [300, 600]],
+  };
   const ML = '1';
   const validBidMappingLinear = {
     'bidder': 'eplanning',
@@ -43,13 +55,14 @@ describe('E-Planning Adapter', function () {
     'adUnitCode': ADUNIT_CODE,
     'sizes': [[300, 250], [300, 600]],
   };
-  const validBid2 = {
+  const SN = 'spaceName';
+  const validBidSpaceName = {
     'bidder': 'eplanning',
-    'bidId': BID_ID2,
+    'bidId': BID_ID,
     'params': {
       'ci': CI,
+      'sn': SN,
     },
-    'adUnitCode': ADUNIT_CODE2,
     'sizes': [[300, 250], [300, 600]],
   };
   const validBidView = {
@@ -94,6 +107,39 @@ describe('E-Planning Adapter', function () {
     },
     'adUnitCode': 'adunit-code',
     'sizes': [[300, 250], [300, 600]],
+  };
+  const validBidExistingSizesInPriorityListForMobile = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [320, 50], [300, 50]],
+  };
+  const validBidSizesNotExistingInPriorityListForMobile = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [300, 70], [160, 600]],
+  };
+  const validBidExistingSizesInPriorityListForDesktop = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [300, 600], [300, 250]],
+    'ext': {
+      'screen': {
+        'w': 1025,
+        'h': 1025
+      }
+    }
   };
   const response = {
     body: {
@@ -247,19 +293,35 @@ describe('E-Planning Adapter', function () {
 
   describe('buildRequests', function () {
     let bidRequests = [validBid];
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    const createWindow = () => {
+      const win = {};
+      win.self = win;
+      win.innerWidth = 1025;
+      return win;
+    };
+
+    function setupSingleWindow(sandBox) {
+      const win = createWindow();
+      sandBox.stub(utils, 'getWindowSelf').returns(win);
+    }
+
     it('should create the url correctly', function () {
       const url = spec.buildRequests(bidRequests, bidderRequest).url;
-      expect(url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
     });
 
     it('should return GET method', function () {
       const method = spec.buildRequests(bidRequests, bidderRequest).method;
       expect(method).to.equal('GET');
-    });
-
-    it('should return r parameter with value pbjs', function () {
-      const r = spec.buildRequests(bidRequests, bidderRequest).data.r;
-      expect(r).to.equal('pbjs');
     });
 
     it('should return pbv parameter with value prebid version', function () {
@@ -276,6 +338,12 @@ describe('E-Planning Adapter', function () {
       let bidRequestsML = [validBidMappingLinear];
       const e = spec.buildRequests(bidRequestsML, bidderRequest).data.e;
       expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':300x250,300x600');
+    });
+
+    it('should return e parameter with space name attribute with value according to the adunit sizes', function () {
+      let bidRequestsSN = [validBidSpaceName];
+      const e = spec.buildRequests(bidRequestsSN, bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600');
     });
 
     it('should return correct e parameter with more than one adunit', function () {
@@ -312,6 +380,23 @@ describe('E-Planning Adapter', function () {
 
       const e = spec.buildRequests(bidRequestsML, bidderRequest).data.e;
       expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':300x250,300x600+' + CLEAN_NEW_CODE + ':100x100');
+    });
+
+    it('should return correct e parameter with space name attribute with more than one adunit', function () {
+      let bidRequestsSN = [validBidSpaceName];
+      const NEW_SN = 'anotherNameSpace';
+      const anotherBid = {
+        'bidder': 'eplanning',
+        'params': {
+          'ci': CI,
+          'sn': NEW_SN,
+        },
+        'sizes': [[100, 100]],
+      };
+      bidRequestsSN.push(anotherBid);
+
+      const e = spec.buildRequests(bidRequestsSN, bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600+' + NEW_SN + ':100x100');
     });
 
     it('should return correct e parameter when the adunit has no size', function () {
@@ -387,6 +472,25 @@ describe('E-Planning Adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const dataRequest = request.data;
       expect(dataRequest.ccpa).to.equal('consentCcpa');
+    });
+
+    it('should return the e parameter with a value according to the sizes in order corresponding to the mobile priority list of the ad units', function () {
+      let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForMobile];
+      const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
+      expect(e).to.equal('320x50_0:320x50,300x50,970x250');
+    });
+
+    it('should return the e parameter with a value according to the sizes in order corresponding to the desktop priority list of the ad units', function () {
+      let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
+      setupSingleWindow(sandbox);
+      const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
+      expect(e).to.equal('300x250_0:300x250,300x600,970x250');
+    });
+
+    it('should return the e parameter with a value according to the sizes in order as they are sent from the ad units', function () {
+      let bidRequestsPrioritySizes2 = [validBidSizesNotExistingInPriorityListForMobile];
+      const e = spec.buildRequests(bidRequestsPrioritySizes2, bidderRequest).data.e;
+      expect(e).to.equal('970x250_0:970x250,300x70,160x600');
     });
   });
 
@@ -583,7 +687,7 @@ describe('E-Planning Adapter', function () {
       hasLocalStorageStub.returns(false);
       const response = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(response.url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
       expect(response.data.vs).to.equal('F');
 
       sinon.assert.notCalled(getLocalStorageSpy);
@@ -593,7 +697,7 @@ describe('E-Planning Adapter', function () {
     it('should create the url correctly with LocalStorage', function() {
       createElementVisible();
       const response = spec.buildRequests(bidRequests, bidderRequest);
-      expect(response.url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
 
       expect(response.data.vs).to.equal('F');
 
@@ -794,6 +898,28 @@ describe('E-Planning Adapter', function () {
         });
         expect('aaa').to.equal(respuesta.data.vs);
       });
+    });
+  });
+  describe('Send eids', function() {
+    it('should add eids to the request', function() {
+      init(config);
+      config.setConfig({
+        userSync: {
+          userIds: [
+            { name: 'id5Id', value: { 'id5id': { uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } } } },
+            { name: 'pubCommonId', value: {'pubcid': 'c29cb2ae-769d-42f6-891a-f53cadee823d'} },
+            { name: 'unifiedId', value: {'tdid': 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3'} }
+          ]
+        }
+      });
+      let bidRequests = [validBidView];
+      const expected_id5id = encodeURIComponent(JSON.stringify({ uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }));
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const dataRequest = request.data;
+
+      expect('D6885E90-2A7A-4E0F-87CB-7734ED1B99A3').to.equal(dataRequest.e_tdid);
+      expect('c29cb2ae-769d-42f6-891a-f53cadee823d').to.equal(dataRequest.e_pubcid);
+      expect(expected_id5id).to.equal(dataRequest.e_id5id);
     });
   });
 });

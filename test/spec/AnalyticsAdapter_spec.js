@@ -9,6 +9,7 @@ const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AD_RENDER_FAILED = CONSTANTS.EVENTS.AD_RENDER_FAILED;
+const AUCTION_DEBUG = CONSTANTS.EVENTS.AUCTION_DEBUG;
 const ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
 const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
@@ -48,8 +49,10 @@ FEATURE: Analytics Adapters API
     events.emit(eventType, args);
     adapter.enableAnalytics();
 
-    let result = JSON.parse(server.requests[0].requestBody);
-    expect(result).to.deep.equal({args: {wat: 'wot'}, eventType: 'bidResponse'});
+    // As now AUCTION_DEBUG is triggered for WARNINGS too, the BID_RESPONSE goes last in the array
+    const index = server.requests.length - 1;
+    let result = JSON.parse(server.requests[index].requestBody);
+    expect(result).to.deep.equal({eventType: 'bidResponse', args: {wat: 'wot'}});
   });
 
   describe(`WHEN an event occurs after enable analytics\n`, function () {
@@ -81,6 +84,17 @@ FEATURE: Analytics Adapters API
 
       let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({args: {call: 'adRenderFailed'}, eventType: 'adRenderFailed'});
+    });
+
+    it('SHOULD call global when an auction debug event occurs', function () {
+      const eventType = AUCTION_DEBUG;
+      const args = { call: 'auctionDebug' };
+
+      adapter.enableAnalytics();
+      events.emit(eventType, args);
+
+      let result = JSON.parse(server.requests[0].requestBody);
+      expect(result).to.deep.equal({args: {call: 'auctionDebug'}, eventType: 'auctionDebug'});
     });
 
     it('SHOULD call global when an addAdUnits event occurs', function () {
