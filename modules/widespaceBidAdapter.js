@@ -61,7 +61,7 @@ export const spec = {
         'gdprCmp': bidderRequest && bidderRequest.gdprConsent ? 1 : 0,
         'hb': '1',
         'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
-        'hb.floor': bid.bidfloor || '',
+        'hb.floor': '',
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
         'hb.name': 'prebidjs-$prebid.version$',
