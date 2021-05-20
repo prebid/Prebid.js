@@ -33,7 +33,6 @@ var adUnits = [
             {
                 bidder: 'waardex',
                 params: {
-                    bidfloor: 1.5,
                     position: 1,
                     instl: 1,
                     zoneId: 1
@@ -67,7 +66,6 @@ const adUnits = [
             {
                 bidder: 'waardex',
                 params: {
-                    bidfloor: 1.5,
                     position: 1,
                     instl: 1,
                     zoneId: 1,
