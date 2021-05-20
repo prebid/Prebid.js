@@ -73,15 +73,6 @@ function _getDomainFromURL(url) {
   return anchor.hostname;
 }
 
-function _parseSlotParam(paramName, paramValue) {
-  switch (paramName) {
-    case 'reserve':
-      return parseFloat(paramValue) || UNDEFINED;
-    default:
-      return paramValue;
-  }
-}
-
 let platform = (function getPlatform() {
   var ua = navigator.userAgent;
   if (ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1) {
