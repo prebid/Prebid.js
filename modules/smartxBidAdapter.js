@@ -85,7 +85,6 @@ export const spec = {
     const smartxRequests = bidRequests.map(function (bid) {
       const tagId = utils.getBidIdParameter('tagId', bid.params);
       const publisherId = utils.getBidIdParameter('publisherId', bid.params);
-      const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
       const bidfloorcur = utils.getBidIdParameter('bidfloorcur', bid.params);
       const siteId = utils.getBidIdParameter('siteId', bid.params);
       const domain = utils.getBidIdParameter('domain', bid.params);
