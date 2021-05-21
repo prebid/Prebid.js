@@ -20,7 +20,7 @@ pbjs.setConfig({
       name: 'permutive',
       waitForIt: true, // should be true if there's an `auctionDelay`
       params: {
-        acBidders: ['appnexus', 'rubicon', 'ozone']
+        acBidders: ['appnexus']
       }
     }]
   },
@@ -31,16 +31,16 @@ pbjs.setConfig({
 ## Supported Bidders
 The below bidders are currently support by the Permutive RTD module. Please reach out to your Permutive Account Manager to request support for any additional bidders.
 
-| Bidder      | ID         | First-party segments | Audience Connector |
+| Bidder      | ID         | Custom First-Party Segments | Audience Connector ("acBidders") |
 | ----------- | ---------- | -------------------- | ------------------ |
 | Xandr       | `appnexus` | Yes                  | Yes                |
-| Magnite     | `rubicon`  | Yes                  | Yes                |
+| Magnite     | `rubicon`  | Yes                  | No                |
 | Ozone       | `ozone`    | No                   | Yes                |
 | TrustX      | `trustx`   | No                   | Yes                |
 
 * **First-party segments:** When enabling the respective Activation for a segment in Permutive, this module will automatically attach that segment to the bid request. There is no need to enable individual bidders in the module configuration, it will automatically reflect which SSP integrations you have enabled in Permutive. Permutive segments will be sent in the `permutive` key-value.
 
-* **Audience Connector:** You'll need to define which bidder should receive Audience Connector segments. You need to include the `ID` of any bidder in the `acBidders` array. Audience Connector segments will be sent in the `p_standard` key-value.
+* **Audience Connector:** You'll need to define which bidder should receive Audience Connector segments. You need to include the `ID` of any bidder in the `acBidders` array. Audience Connector segments will be sent in the `p_standard` key-value. The segments produced by Audience Connector are not supported for PMPs at this time.
 
 
 ## Parameters
@@ -66,7 +66,7 @@ pbjs.setConfig({
       name: 'permutive',
       waitForIt: true,
       params: {
-        acBidders: ['appnexus', 'rubicon'],
+        acBidders: ['appnexus'],
         maxSegs: 450,
         overwrites: {
           rubicon: function (bid, data, acEnabled, utils, defaultFn) {
