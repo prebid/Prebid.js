@@ -157,6 +157,7 @@ describe('rhythmone adapter tests', function () {
       expect(bid.width).to.equal(800);
       expect(bid.height).to.equal(600);
       expect(bid.vastUrl).to.equal('https://testdomain/rmp/placementid/0/path?reqId=1636037');
+      expect(bid.meta.advertiserDomains).to.deep.equal(['test.com']);
       expect(bid.mediaType).to.equal('video');
       expect(bid.creativeId).to.equal('cr-vid');
       expect(bid.currency).to.equal('USD');

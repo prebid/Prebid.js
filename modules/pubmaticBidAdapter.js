@@ -107,6 +107,11 @@ const dealChannelValues = {
   5: 'PREF',
   6: 'PMPG'
 };
+
+const FLOC_FORMAT = {
+  'EID': 1,
+  'SEGMENT': 2
+}
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -645,11 +650,43 @@ function _createImpressionObject(bid, conf) {
     impObj.banner = bannerObj;
   }
 
+  _addImpressionFPD(impObj, bid);
+
   _addFloorFromFloorModule(impObj, bid);
 
   return impObj.hasOwnProperty(BANNER) ||
           impObj.hasOwnProperty(NATIVE) ||
             impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
+}
+
+function _addImpressionFPD(imp, bid) {
+  const ortb2 = {...utils.deepAccess(bid, 'ortb2Imp.ext.data')};
+  Object.keys(ortb2).forEach(prop => {
+    /**
+      * Prebid AdSlot
+      * @type {(string|undefined)}
+    */
+    if (prop === 'pbadslot') {
+      if (typeof ortb2[prop] === 'string' && ortb2[prop]) utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+    } else if (prop === 'adserver') {
+      /**
+       * Copy GAM AdUnit and Name to imp
+       */
+      ['name', 'adslot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(ortb2, `adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
+          // copy GAM ad unit id as imp[].ext.dfp_ad_unit_code
+          if (name === 'adslot') {
+            utils.deepSetValue(imp, `ext.dfp_ad_unit_code`, value);
+          }
+        }
+      });
+    } else {
+      utils.deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
+    }
+  });
 }
 
 function _addFloorFromFloorModule(impObj, bid) {
@@ -676,8 +713,67 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
+function _getFlocId(validBidRequests, flocFormat) {
+  var flocIdObject = null;
+  var flocId = utils.deepAccess(validBidRequests, '0.userId.flocId');
+  if (flocId && flocId.id) {
+    switch (flocFormat) {
+      case FLOC_FORMAT.SEGMENT:
+        flocIdObject = {
+          id: 'FLOC',
+          name: 'FLOC',
+          ext: {
+            ver: flocId.version
+          },
+          segment: [{
+            id: flocId.id,
+            name: 'chrome.com',
+            value: flocId.id.toString()
+          }]
+        }
+        break;
+      case FLOC_FORMAT.EID:
+      default:
+        flocIdObject = {
+          source: 'chrome.com',
+          uids: [
+            {
+              atype: 1,
+              id: flocId.id,
+              ext: {
+                ver: flocId.version
+              }
+            },
+          ]
+        }
+        break;
+    }
+  }
+  return flocIdObject;
+}
+
+function _handleFlocId(payload, validBidRequests) {
+  var flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.SEGMENT);
+  if (flocObject) {
+    if (!payload.user) {
+      payload.user = {};
+    }
+    if (!payload.user.data) {
+      payload.user.data = [];
+    }
+    payload.user.data.push(flocObject);
+  }
+}
+
 function _handleEids(payload, validBidRequests) {
-  const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
+  let bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
+  let flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.EID);
+  if (flocObject) {
+    if (!bidUserIdAsEids) {
+      bidUserIdAsEids = [];
+    }
+    bidUserIdAsEids.push(flocObject);
+  }
   if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     utils.deepSetValue(payload, 'user.eids', bidUserIdAsEids);
   }
@@ -997,6 +1093,15 @@ export const spec = {
     _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+    _handleFlocId(payload, validBidRequests);
+    // First Party Data
+    const commonFpd = config.getConfig('ortb2') || {};
+    if (commonFpd.site) {
+      utils.mergeDeep(payload, {site: commonFpd.site});
+    }
+    if (commonFpd.user) {
+      utils.mergeDeep(payload, {user: commonFpd.user});
+    }
 
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object

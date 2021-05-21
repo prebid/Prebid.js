@@ -140,6 +140,12 @@ export const spec = {
       payload.us_privacy = bidderRequest.uspConsent;
     }
 
+    if (config.getConfig('coppa') === true) {
+      payload.coppa = 1;
+    } else {
+      payload.coppa = 0;
+    }
+
     // If there is no key_maker data, then don't make the request.
     if (isEmpty(data)) {
       return null;

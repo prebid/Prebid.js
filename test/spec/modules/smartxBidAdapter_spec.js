@@ -423,6 +423,7 @@ describe('The smartx adapter', function () {
       expect(responses).to.be.an('array').with.length(2);
       expect(bidderRequestObj).to.be.an('Object');
       expect(bidderRequestObj.bidRequest.bids).to.be.an('array').with.length(2);
+      expect(responses[0].meta.advertiserDomains[0]).to.equal('abc.com');
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].currency).to.equal('USD');
       expect(responses[0].cpm).to.equal(12);
@@ -432,6 +433,7 @@ describe('The smartx adapter', function () {
       expect(responses[0].mediaType).to.equal('video');
       expect(responses[0].width).to.equal(400);
       expect(responses[0].height).to.equal(300);
+      expect(responses[1].meta.advertiserDomains[0]).to.equal('def.com');
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].currency).to.equal('USD');
       expect(responses[1].cpm).to.equal(13);

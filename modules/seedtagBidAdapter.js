@@ -18,6 +18,27 @@ const mediaTypesMap = {
   [VIDEO]: 'video'
 };
 
+const deviceConnection = {
+  FIXED: 'fixed',
+  MOBILE: 'mobile',
+  UNKNOWN: 'unknown'
+};
+
+const getConnectionType = () => {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {}
+  switch (connection.type || connection.effectiveType) {
+    case 'wifi':
+    case 'ethernet':
+      return deviceConnection.FIXED
+    case 'cellular':
+    case 'wimax':
+      return deviceConnection.MOBILE
+    default:
+      const isMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || /android/i.test(navigator.userAgent)
+      return isMobile ? deviceConnection.UNKNOWN : deviceConnection.FIXED
+  }
+};
+
 function mapMediaType(seedtagMediaType) {
   if (seedtagMediaType === 'display') return BANNER;
   if (seedtagMediaType === 'video') return VIDEO;
@@ -55,13 +76,14 @@ function buildBidRequests(validBidRequests) {
         return mediaTypesMap[pbjsType];
       }
     );
+
     const bidRequest = {
       id: validBidRequest.bidId,
       transactionId: validBidRequest.transactionId,
       sizes: validBidRequest.sizes,
       supplyTypes: mediaTypes,
       adUnitId: params.adUnitId,
-      placement: params.placement
+      placement: params.placement,
     };
 
     if (params.adPosition) {
@@ -147,6 +169,7 @@ export const spec = {
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
+      connectionType: getConnectionType(),
       bidRequests: buildBidRequests(validBidRequests)
     };
 
@@ -203,8 +226,8 @@ export const spec = {
    * @param {data} Containing timeout specific data
    */
   onTimeout(data) {
-    getTimeoutUrl(data);
-    utils.triggerPixel(SEEDTAG_SSP_ONTIMEOUT_ENDPOINT);
+    const url = getTimeoutUrl(data);
+    utils.triggerPixel(url);
   },
 
   /**
