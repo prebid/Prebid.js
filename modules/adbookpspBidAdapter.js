@@ -19,8 +19,7 @@ const USER_ID_COOKIE_EXP = 2592000000; // lasts 30 days
 const BID_TTL = 300;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const DEFAULT_CURRENCY = 'USD';
-const VIDEO_PARAMS = ['api', 'mimes', 'playbackmethod', 'protocols'];
-const BIDDER_VIDEO_PARAMS = [
+const VIDEO_PARAMS = [
   'mimes',
   'minduration',
   'maxduration',
@@ -262,32 +261,15 @@ function buildVideoObject(bidRequest) {
   };
 
   for (const param of VIDEO_PARAMS) {
-    const value = utils.deepAccess(bidRequest, `mediaTypes.video.${param}`);
-    if (validateParamValue(param, value)) {
-      videoObj[param] = value;
-    }
-  }
+    const paramsValue = utils.deepAccess(bidRequest, `params.video.${param}`);
+    const mediaTypeValue = utils.deepAccess(bidRequest, `mediaTypes.video.${param}`);
 
-  for (const param of BIDDER_VIDEO_PARAMS) {
-    const value = utils.deepAccess(bidRequest, `params.video.${param}`);
-    if (value) {
-      videoObj[param] = value;
+    if (paramsValue || mediaTypeValue) {
+      videoObj[param] = paramsValue || mediaTypeValue;
     }
   }
 
   return videoObj;
-}
-
-function validateParamValue(param, value) {
-  const result = utils.isArray(value);
-
-  if (!result) {
-    utils.logWarn(
-      `${BIDDER_CODE}: Ignoring param: ${param} expects an array, got ${typeof value}`
-    );
-  }
-
-  return result;
 }
 
 function buildImpExt(validBidRequest) {

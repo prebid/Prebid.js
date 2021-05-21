@@ -102,7 +102,7 @@ var adUnits = [
 ];
 ```
 
-*NOTE*: Supporting outstream video requires the publisher to set up a renderer as described here: https://docs.prebid.org/dev-docs/show-outstream-video-ads.html
+*NOTE*: Supporting outstream video requires the publisher to set up a renderer as described [in the Prebid docs](https://docs.prebid.org/dev-docs/show-outstream-video-ads.html).
 
 #### Testing params
 
