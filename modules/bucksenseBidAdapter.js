@@ -90,6 +90,7 @@ export const spec = {
       var sCurrency = oResponse.currency || 'USD';
       var bNetRevenue = oResponse.netRevenue || true;
       var sAd = oResponse.ad || '';
+      var sAdomains = oResponse.adomains || [];
 
       if (request && sRequestID.length == 0) {
         utils.logInfo(WHO + ' interpretResponse() - use RequestID from Placments');
@@ -110,7 +111,10 @@ export const spec = {
         creativeId: sCreativeID,
         currency: sCurrency,
         netRevenue: bNetRevenue,
-        ad: sAd
+        ad: sAd,
+        meta: {
+          advertiserDomains: sAdomains
+        }
       };
       bidResponses.push(bidResponse);
     } else {
