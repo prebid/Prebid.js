@@ -10,7 +10,6 @@
 
 import { config } from './config.js';
 import { logWarn } from './utils.js';
-import { config } from './config.js';
 
 /**
  * @param {Window} win Window
