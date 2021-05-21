@@ -342,8 +342,6 @@ const spec = {
 
           if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
             // found a matching request; add this bid
-
-            const bidFloor = 0;
             // store site data for future notification
             oneCodeDetection[bidId] = [site.id, site.slot];
 
