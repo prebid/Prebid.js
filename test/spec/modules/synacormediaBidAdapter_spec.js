@@ -1,6 +1,6 @@
 import { assert, expect } from 'chai';
 import { BANNER } from 'src/mediaTypes.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import { spec } from 'modules/synacormediaBidAdapter.js';
 
 describe('synacormediaBidAdapter ', function () {
@@ -55,7 +55,7 @@ describe('synacormediaBidAdapter ', function () {
     });
   });
 
-  describe('impression type', function() {
+  describe('impression type', function () {
     let nonVideoReq = {
       bidId: '9876abcd',
       sizes: [[300, 250], [300, 600]],
@@ -107,7 +107,7 @@ describe('synacormediaBidAdapter ', function () {
         }
       },
     };
-    it('should return correct impression type video/banner', function() {
+    it('should return correct impression type video/banner', function () {
       assert.isFalse(spec.isVideoBid(nonVideoReq));
       assert.isFalse(spec.isVideoBid(bannerReq));
       assert.isTrue(spec.isVideoBid(videoReq));
@@ -126,12 +126,12 @@ describe('synacormediaBidAdapter ', function () {
       mediaTypes: {
         video: {
           context: 'instream',
-          playerSize: [[ 640, 480 ]]
+          playerSize: [[640, 480]]
         }
       },
       adUnitCode: 'video1',
       transactionId: '93e5def8-29aa-4fe8-bd3a-0298c39f189a',
-      sizes: [[ 640, 480 ]],
+      sizes: [[640, 480]],
       bidId: '2624fabbb078e8',
       bidderRequestId: '117954d20d7c9c',
       auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
@@ -149,7 +149,7 @@ describe('synacormediaBidAdapter ', function () {
         referer: 'https://localhost:9999/test/pages/video.html?pbjs_debug=true',
         reachedTop: true,
         numIframes: 0,
-        stack: [ 'https://localhost:9999/test/pages/video.html?pbjs_debug=true' ]
+        stack: ['https://localhost:9999/test/pages/video.html?pbjs_debug=true']
       },
       start: 1553624929700
     };
@@ -427,7 +427,7 @@ describe('synacormediaBidAdapter ', function () {
       expect(spec.buildRequests([validBidRequest], null)).to.be.undefined;
     });
 
-    it('should return empty impression when there is no valid sizes in bidrequest', function() {
+    it('should return empty impression when there is no valid sizes in bidrequest', function () {
       let validBidReqWithoutSize = {
         bidId: '9876abcd',
         sizes: [],
@@ -480,12 +480,12 @@ describe('synacormediaBidAdapter ', function () {
         mediaTypes: {
           video: {
             context: 'instream',
-            playerSize: [[ 640, 480 ]]
+            playerSize: [[640, 480]]
           }
         },
         adUnitCode: 'video1',
         transactionId: '93e5def8-29aa-4fe8-bd3a-0298c39f189a',
-        sizes: [[ 640, 480 ]],
+        sizes: [[640, 480]],
         bidId: '2624fabbb078e8',
         bidderRequestId: '117954d20d7c9c',
         auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
@@ -534,7 +534,7 @@ describe('synacormediaBidAdapter ', function () {
         mediaTypes: {
           video: {
             context: 'instream',
-            playerSize: [[ 640, 480 ]],
+            playerSize: [[640, 480]],
             startdelay: 1,
             linearity: 1,
             placement: 1,
@@ -543,7 +543,7 @@ describe('synacormediaBidAdapter ', function () {
         },
         adUnitCode: 'video1',
         transactionId: '93e5def8-29aa-4fe8-bd3a-0298c39f189a',
-        sizes: [[ 640, 480 ]],
+        sizes: [[640, 480]],
         bidId: '2624fabbb078e8',
         bidderRequestId: '117954d20d7c9c',
         auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
@@ -576,7 +576,51 @@ describe('synacormediaBidAdapter ', function () {
         }
       ]);
     });
-    it('should contain the CCPA privacy string when UspConsent is in bidder request', function() {
+    it('should create params.video object if not present on bid request and move any video params in the mediaTypes object to it', function () {
+      let validBidRequestVideo = {
+        bidder: 'synacormedia',
+        params: {
+          seatId: 'prebid',
+          tagId: '1234'
+        },
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [[ 640, 480 ]],
+            startdelay: 1,
+            linearity: 1,
+            placement: 1,
+            mimes: ['video/mp4']
+          }
+        },
+        adUnitCode: 'video1',
+        transactionId: '93e5def8-29aa-4fe8-bd3a-0298c39f189a',
+        sizes: [[ 640, 480 ]],
+        bidId: '2624fabbb078e8',
+        bidderRequestId: '117954d20d7c9c',
+        auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
+        src: 'client',
+        bidRequestsCount: 1
+      };
+
+      let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
+      expect(req.data.imp).to.eql([
+        {
+          video: {
+            h: 480,
+            pos: 0,
+            w: 640,
+            startdelay: 1,
+            linearity: 1,
+            placement: 1,
+            mimes: ['video/mp4']
+          },
+          id: 'v2624fabbb078e8-640x480',
+          tagid: '1234',
+        }
+      ]);
+    });
+    it('should contain the CCPA privacy string when UspConsent is in bidder request', function () {
       // banner test
       let req = spec.buildRequests([validBidRequest], bidderRequestWithCCPA);
       expect(req).be.an('object');
@@ -652,7 +696,7 @@ describe('synacormediaBidAdapter ', function () {
     });
   });
 
-  describe('Bid Requests with schain object ', function() {
+  describe('Bid Requests with schain object ', function () {
     let validBidReq = {
       bidder: 'synacormedia',
       params: {
@@ -803,7 +847,7 @@ describe('synacormediaBidAdapter ', function () {
       url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
     };
     let serverResponse;
-    beforeEach(function() {
+    beforeEach(function () {
       serverResponse = {
         body: {
           id: 'abc123',
@@ -848,7 +892,7 @@ describe('synacormediaBidAdapter ', function () {
                   price: 0.45,
                   nurl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=${AUCTION_PRICE}',
                   adm: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=${AUCTION_PRICE}</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
-                  adomain: [ 'psacentral.org' ],
+                  adomain: ['psacentral.org'],
                   cid: 'bidder-crid',
                   crid: 'bidder-cid',
                   cat: [],
@@ -867,7 +911,6 @@ describe('synacormediaBidAdapter ', function () {
       expect(resp).to.be.an('array').to.have.lengthOf(1);
       expect(resp[0]).to.eql({
         requestId: '2da7322b2df61f',
-        adId: '11339128001692337-9999-0',
         cpm: 0.45,
         width: 640,
         height: 480,
@@ -877,6 +920,7 @@ describe('synacormediaBidAdapter ', function () {
         mediaType: 'video',
         ad: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
         ttl: 60,
+        meta: { advertiserDomains: ['psacentral.org'] },
         videoCacheKey: 'QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk',
         vastUrl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45'
       });
@@ -888,7 +932,6 @@ describe('synacormediaBidAdapter ', function () {
       expect(resp).to.be.an('array').to.have.lengthOf(1);
       expect(resp[0]).to.eql({
         requestId: '9876abcd',
-        adId: '10865933907263896-9998-0',
         cpm: 0.13,
         width: 300,
         height: 250,
@@ -911,7 +954,6 @@ describe('synacormediaBidAdapter ', function () {
       expect(resp).to.be.an('array').to.have.lengthOf(2);
       expect(resp[0]).to.eql({
         requestId: '9876abcd',
-        adId: '10865933907263896-9998-0',
         cpm: 0.13,
         width: 300,
         height: 250,
@@ -925,7 +967,6 @@ describe('synacormediaBidAdapter ', function () {
 
       expect(resp[1]).to.eql({
         requestId: '9876abcd',
-        adId: '10865933907263800-9999-0',
         cpm: 1.99,
         width: 300,
         height: 600,
@@ -962,7 +1003,7 @@ describe('synacormediaBidAdapter ', function () {
                   price: 0.45,
                   nurl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=${AUCTION_PRICE}',
                   adm: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=${AUCTION_PRICE}</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
-                  adomain: [ 'psacentral.org' ],
+                  adomain: ['psacentral.org'],
                   cid: 'bidder-crid',
                   crid: 'bidder-cid',
                   cat: [],
@@ -984,8 +1025,8 @@ describe('synacormediaBidAdapter ', function () {
       });
 
       let resp = spec.interpretResponse(serverRespVideo, bidRequest);
-	    sandbox.restore();
-	    expect(resp[0].videoCacheKey).to.not.exist;
+      sandbox.restore();
+      expect(resp[0].videoCacheKey).to.not.exist;
     });
 
     it('should use video bid request height and width if not present in response', function () {
@@ -1022,7 +1063,7 @@ describe('synacormediaBidAdapter ', function () {
                   price: 0.45,
                   nurl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=${AUCTION_PRICE}',
                   adm: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=${AUCTION_PRICE}</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
-                  adomain: [ 'psacentral.org' ],
+                  adomain: ['psacentral.org'],
                   cid: 'bidder-crid',
                   crid: 'bidder-cid',
                   cat: []
@@ -1037,7 +1078,6 @@ describe('synacormediaBidAdapter ', function () {
       expect(resp).to.be.an('array').to.have.lengthOf(1);
       expect(resp[0]).to.eql({
         requestId: '2da7322b2df61f',
-        adId: '11339128001692337-9999-0',
         cpm: 0.45,
         width: 300,
         height: 250,
@@ -1047,6 +1087,7 @@ describe('synacormediaBidAdapter ', function () {
         mediaType: 'video',
         ad: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
         ttl: 60,
+        meta: { advertiserDomains: ['psacentral.org'] },
         videoCacheKey: 'QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk',
         vastUrl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45'
       });
@@ -1090,7 +1131,6 @@ describe('synacormediaBidAdapter ', function () {
       expect(resp).to.be.an('array').to.have.lengthOf(1);
       expect(resp[0]).to.eql({
         requestId: 'abc123',
-        adId: '10865933907263896-9998-0',
         cpm: 0.13,
         width: 400,
         height: 350,
