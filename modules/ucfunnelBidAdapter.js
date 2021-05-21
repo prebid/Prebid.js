@@ -226,7 +226,7 @@ function getRequestData(bid, bidderRequest) {
     adid: bid.params.adid,
     tdid: userIdTdid,
     schain: supplyChain,
-    fp: 0
+    fp: bid.params.bidfloor
   };
   addUserId(bidData, bid.userId);
   try {
