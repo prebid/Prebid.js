@@ -608,7 +608,7 @@ export const spec = {
     var ret = {};
     // @todo - what is fabrick called & where to look for it? If it's a simple value then it will automatically be ok
     let searchKeysSingle = ['pubcid', 'tdid', 'id5id', 'parrableId', 'idl_env', 'criteoId', 'criteortus',
-      'sharedid', 'lotamePanoramaId', 'fabrickId'];
+      'lotamePanoramaId', 'fabrickId'];
     if (bidRequest.hasOwnProperty('userId')) {
       for (let arrayId in searchKeysSingle) {
         let key = searchKeysSingle[arrayId];

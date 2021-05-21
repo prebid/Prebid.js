@@ -302,14 +302,6 @@ function getRequestData(bid, bidderRequest) {
 function addUserId(bidData, userId) {
   utils._each(userId, (userIdObjectOrValue, userIdProviderKey) => {
     switch (userIdProviderKey) {
-      case 'sharedid':
-        if (userIdObjectOrValue.id) {
-          bidData[userIdProviderKey + '_id'] = userIdObjectOrValue.id;
-        }
-        if (userIdObjectOrValue.third) {
-          bidData[userIdProviderKey + '_third'] = userIdObjectOrValue.third;
-        }
-        break;
       case 'haloId':
         if (userIdObjectOrValue.haloId) {
           bidData[userIdProviderKey + 'haloId'] = userIdObjectOrValue.haloId;
