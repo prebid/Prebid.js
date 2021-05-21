@@ -25,8 +25,7 @@ const userId = {
 const validBannerBidReq = {
   bidder: BIDDER_CODE,
   params: {
-    adid: 'ad-34BBD2AA24B678BBFD4E7B9EE3B872D',
-    bidfloor: 1.0
+    adid: 'ad-34BBD2AA24B678BBFD4E7B9EE3B872D'
   },
   sizes: [[300, 250]],
   bidId: '263be71e91dd9d',
@@ -174,6 +173,41 @@ describe('ucfunnel Adapter', function () {
       const data = requests[0].data;
       expect(data.w).to.equal(width);
       expect(data.h).to.equal(height);
+    });
+
+    it('should set bidfloor if configured', function() {
+      let bid = Object.assign({}, validBannerBidReq);
+      bid.getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 2.02
+        }
+      };
+      const requests = spec.buildRequests([ bid ]);
+      const data = requests[0].data;
+      expect(data.fp).to.equal(2.02);
+    });
+
+    it('should set bidfloor if configured', function() {
+      let bid = Object.assign({}, validBannerBidReq);
+      bid.params.bidfloor = 2.01;
+      const requests = spec.buildRequests([ bid ]);
+      const data = requests[0].data;
+      expect(data.fp).to.equal(2.01);
+    });
+
+    it('should set bidfloor if configured', function() {
+      let bid = Object.assign({}, validBannerBidReq);
+      bid.getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 2.02
+        }
+      };
+      bid.params.bidfloor = 2.01;
+      const requests = spec.buildRequests([ bid ]);
+      const data = requests[0].data;
+      expect(data.fp).to.equal(2.01);
     });
   });
 
