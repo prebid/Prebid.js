@@ -41,7 +41,8 @@
     "jwplayerRtdProvider",
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
-    "sirdataRtdProvider"
+    "sirdataRtdProvider",
+    "iasRtdProvider"
   ],
   "fpdModule": [
     "enrichmentFpdModule",
