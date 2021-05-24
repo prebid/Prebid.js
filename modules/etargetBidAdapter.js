@@ -18,6 +18,7 @@ const countryMap = {
   11: 'de',
   255: 'en'
 }
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ BANNER, VIDEO ],
