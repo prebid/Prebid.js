@@ -462,8 +462,22 @@ describe('IndexexchangeAdapter', function () {
   ];
 
   const DEFAULT_USERID_BID_DATA = {
-    lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'
+    lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4',
+    flocId: {id: '1234', version: 'chrome.1.2'}
   };
+
+  const DEFAULT_FLOC_USERID_PAYLOAD = [
+    {
+      source: 'chrome.com',
+      uids: [{
+        id: DEFAULT_USERID_BID_DATA.flocId.id,
+        ext: {
+          rtiPartner: 'flocId',
+          ver: DEFAULT_USERID_BID_DATA.flocId.version
+        }
+      }]
+    }
+  ];
 
   describe('inherited functions', function () {
     it('should exists and is a function', function () {
@@ -901,6 +915,96 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
       expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
       expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+    });
+
+    it('IX adapter reads floc id from prebid userId and adds it to eids when there is not other eids', function() {
+      const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_BID_DATA);
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      expect(payload.user.eids).to.have.lengthOf(1);
+      expect(payload.user.eids).to.deep.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
+    });
+
+    it('IX adapter reads floc id from prebid userId and appends it to eids', function() {
+      const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_BID_DATA);
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      expect(payload.user.eids).to.have.lengthOf(6);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
+    });
+
+    it('IX adapter reads empty floc obj from prebid userId it, floc is not added to eids', function() {
+      const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
+      cloneValidBid[0].userId = {'flocId': {}}
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      expect(payload.user.eids).to.have.lengthOf(5);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).should.not.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
+    });
+
+    it('IX adapter reads floc obj from prebid userId it version is missing, floc is not added to eids', function() {
+      const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
+      cloneValidBid[0].userId = {'flocId': {'id': 'abcd'}}
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      expect(payload.user.eids).to.have.lengthOf(5);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).should.not.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
+    });
+
+    it('IX adapter reads floc obj from prebid userId it ID is missing, floc is not added to eids', function() {
+      const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
+      cloneValidBid[0].userId = {'flocId': {'version': 'chrome.a.b.c'}}
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      expect(payload.user.eids).to.have.lengthOf(5);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).should.not.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
+    });
+
+    it('IX adapter reads floc id with empty id from prebid userId and it does not added to eids', function() {
+      const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
+      cloneValidBid[0].userId = {flocID: {id: '', ver: 'chrome.1.2.3'}};
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      expect(payload.user.eids).to.have.lengthOf(5);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).should.not.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
     });
 
     it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {

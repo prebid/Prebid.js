@@ -23,6 +23,33 @@ const PRICE_TO_DOLLAR_FACTOR = {
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
+// determines which eids we send and the rtiPartner field in ext
+const SOURCE_RTI_MAPPING = {
+  'liveramp.com': 'idl',
+  'netid.de': 'NETID',
+  'neustar.biz': 'fabrickId',
+  'zeotap.com': 'zeotapIdPlus',
+  'uidapi.com': 'UID2',
+  'adserver.org': 'TDID'
+};
+
+const PROVIDERS = [
+  'britepoolid',
+  'id5id',
+  'lipbid',
+  'haloId',
+  'criteoId',
+  'lotamePanoramaId',
+  'merkleId',
+  'parrableId',
+  'connectid',
+  'sharedid',
+  'tapadId',
+  'quantcastId',
+  'pubcid',
+  'TDID',
+  'flocId'
+]
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
@@ -285,35 +312,37 @@ function getBidRequest(id, impressions) {
  * From the userIdAsEids array, filter for the ones our adserver can use, and modify them
  * for our purposes, e.g. add rtiPartner
  * @param {array} allEids userIdAsEids passed in by prebid
+ * @param {object} flocId flocId passed in by prebid
  * @return {object} contains toSend (eids to send to the adserver) and seenSources (used to filter
  *                  identity info from IX Library)
  */
-function getEidInfo(allEids) {
-  // determines which eids we send and the rtiPartner field in ext
-  var sourceRTIMapping = {
-    'liveramp.com': 'idl',
-    'netid.de': 'NETID',
-    'neustar.biz': 'fabrickId',
-    'zeotap.com': 'zeotapIdPlus',
-    'uidapi.com': 'UID2'
-  };
-  var toSend = [];
-  var seenSources = {};
+function getEidInfo(allEids, flocData) {
+  let toSend = [];
+  let seenSources = {};
   if (utils.isArray(allEids)) {
-    for (var i = 0; i < allEids.length; i++) {
-      if (sourceRTIMapping[allEids[i].source] && utils.deepAccess(allEids[i], 'uids.0')) {
-        seenSources[allEids[i].source] = 1;
-        allEids[i].uids[0].ext = {
-          rtiPartner: sourceRTIMapping[allEids[i].source]
+    for (const eid of allEids) {
+      if (SOURCE_RTI_MAPPING[eid.source] && utils.deepAccess(eid, 'uids.0')) {
+        seenSources[eid.source] = true;
+        eid.uids[0].ext = {
+          rtiPartner: SOURCE_RTI_MAPPING[eid.source]
         };
-        delete allEids[i].uids[0].atype;
-        toSend.push(allEids[i]);
+        delete eid.uids[0].atype;
+        toSend.push(eid);
       }
     }
   }
-  return { toSend: toSend, seenSources: seenSources };
-}
+  const isValidFlocId = flocData && flocData.id && flocData.version;
+  if (isValidFlocId) {
+    const flocEid = {
+      'source': 'chrome.com',
+      'uids': [{ 'id': flocData.id, 'ext': { 'rtiPartner': 'flocId', 'ver': flocData.version } }]
+    };
+    toSend.push(flocEid);
+    seenSources['chrome.com'] = true;
+  }
 
+  return { toSend, seenSources };
+}
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
@@ -327,10 +356,9 @@ function getEidInfo(allEids) {
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
-
   // Get ids from Prebid User ID Modules
-  var eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'));
-  var userEids = eidInfo.toSend;
+  let eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'), utils.deepAccess(validBidRequests, '0.userId.flocId'));
+  let userEids = eidInfo.toSend;
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
@@ -570,23 +598,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 function _getUserIds(bidRequest) {
   const userIds = bidRequest.userId || {};
 
-  const PROVIDERS = [
-    'britepoolid',
-    'id5id',
-    'lipbid',
-    'haloId',
-    'criteoId',
-    'lotamePanoramaId',
-    'merkleId',
-    'parrableId',
-    'connectid',
-    'sharedid',
-    'tapadId',
-    'quantcastId',
-    'pubcid'
-  ]
-
-  return PROVIDERS.filter(provider => utils.deepAccess(userIds, provider))
+  return PROVIDERS.filter(provider => userIds[provider]);
 }
 
 /**
