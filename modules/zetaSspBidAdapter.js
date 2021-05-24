@@ -53,7 +53,7 @@ export const spec = {
       cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
-      device: fpd.device ? fpd.device : {},
+      device: {...fpd.device, ...params.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {

@@ -873,9 +873,14 @@ describe('AppNexusAdapter', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
           tdid: 'sample-userid',
+          uid2: { id: 'sample-uid2-value' },
           criteoId: 'sample-criteo-userid',
           netId: 'sample-netId-userid',
-          idl_env: 'sample-idl-userid'
+          idl_env: 'sample-idl-userid',
+          flocId: {
+            id: 'sample-flocid-value',
+            version: 'chrome.1.0'
+          }
         }
       });
 
@@ -893,6 +898,11 @@ describe('AppNexusAdapter', function () {
       });
 
       expect(payload.eids).to.deep.include({
+        source: 'chrome.com',
+        id: 'sample-flocid-value'
+      });
+
+      expect(payload.eids).to.deep.include({
         source: 'netid.de',
         id: 'sample-netId-userid',
       });
@@ -900,7 +910,13 @@ describe('AppNexusAdapter', function () {
       expect(payload.eids).to.deep.include({
         source: 'liveramp.com',
         id: 'sample-idl-userid'
-      })
+      });
+
+      expect(payload.eids).to.deep.include({
+        source: 'uidapi.com',
+        id: 'sample-uid2-value',
+        rti_partner: 'UID2'
+      });
     });
 
     it('should populate iab_support object at the root level if omid support is detected', function () {
