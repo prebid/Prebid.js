@@ -168,6 +168,9 @@ export const spec = {
             dealId: serverBid.dealid,
             vastXml: serverBid.adm,
             mediaType: VIDEO,
+            meta: {
+              advertiserDomains: serverBid && serverBid.adomain ? serverBid.adomain : []
+            },
             adResponse: {
               content: serverBid.adm
             }

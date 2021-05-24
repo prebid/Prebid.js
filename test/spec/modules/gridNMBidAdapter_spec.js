@@ -305,7 +305,7 @@ describe('TheMediaGridNM Adapter', function () {
   describe('interpretResponse', function () {
     const responses = [
       {'bid': [{'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 250, 'w': 300, 'dealid': 11}], 'seat': '2'},
-      {'bid': [{'price': 0.5, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 600, 'w': 300}], 'seat': '2'},
+      {'bid': [{'price': 0.5, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 600, 'w': 300, adomain: ['my_domain.ru']}], 'seat': '2'},
       {'bid': [{'price': 0, 'h': 250, 'w': 300}], 'seat': '2'},
       {'bid': [{'price': 0, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341237\"><\/Ad>\n<\/VAST>', 'h': 250, 'w': 300}], 'seat': '2'},
       undefined,
@@ -375,6 +375,9 @@ describe('TheMediaGridNM Adapter', function () {
           'netRevenue': false,
           'ttl': 360,
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
+          'meta': {
+            'advertiserDomains': []
+          },
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
           }
@@ -391,6 +394,9 @@ describe('TheMediaGridNM Adapter', function () {
           'netRevenue': false,
           'ttl': 360,
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>',
+          'meta': {
+            'advertiserDomains': ['my_domain.ru']
+          },
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>'
           }
@@ -422,6 +428,9 @@ describe('TheMediaGridNM Adapter', function () {
           'bidId': '2bc598e42b6a',
           'bidderRequestId': '39d74f5b71464',
           'auctionId': '1cbd2feafe5e8b',
+          'meta': {
+            'advertiserDomains': []
+          },
           'mediaTypes': {
             'video': {
               'context': 'instream'

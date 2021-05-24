@@ -17,7 +17,9 @@ Grid bid adapter supports Banner and Video (instream and outstream).
                mediaTypes: { 
                    video: {
                        playerSize: [728, 90],
-                       context: 'outstream'
+                       context: 'outstream',
+                       mimes: ['video/mp4', 'video/x-ms-wmv'],
+                       protocols: [1,2,3,4,5,6]
                    }
                },
                bids: [
@@ -26,11 +28,7 @@ Grid bid adapter supports Banner and Video (instream and outstream).
                        params: {
                            source: 'jwp',
                            secid: '11',
-                           pubid: '22',
-                           video: {
-                               mimes: ['video/mp4', 'video/x-ms-wmv'],
-                               protocols: [1,2,3,4,5,6]
-                           }
+                           pubid: '22'
                        }
                    }
                ]
