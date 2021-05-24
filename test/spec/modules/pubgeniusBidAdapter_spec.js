@@ -370,6 +370,8 @@ describe('pubGENIUS adapter', () => {
           protocols: [2, 3],
           api: [1, 2],
           playbackmethod: [3, 4],
+          maxduration: 10,
+          linearity: 1,
         },
       };
       bidRequest.params.video = {
@@ -394,6 +396,7 @@ describe('pubGENIUS adapter', () => {
         skipafter: 1,
         playbackmethod: [3, 4],
         api: [1, 2],
+        linearity: 1,
       };
 
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
