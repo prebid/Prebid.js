@@ -7,13 +7,10 @@
 
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
 
 const GVLID = 887;
-
-const storage = getStorageManager(GVLID, 'pubCommonId');
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {
@@ -105,55 +102,6 @@ export const pubCommonIdSubmodule = {
    * @param {Object} storedId existing id
    * @returns {IdResponse|undefined}
    */
-  extendId: function(config = {}, consentData, storedId) {
-    const {params: {extend = false, pixelUrl} = {}} = config;
-
-    if (extend) {
-      try {
-        if (typeof window[PUB_COMMON_ID] === 'object') {
-          return;
-        }
-      } catch (e) {
-      }
-
-      if (pixelUrl) {
-        const callback = this.makeCallback(pixelUrl, storedId);
-        return {callback: callback};
-      } else {
-        return {id: storedId};
-      }
-    }
-  },
-
-  /**
-   * @param {string} domain
-   * @param {HTMLDocument} document
-   * @return {(string|undefined)}
-   */
-  domainOverride: function () {
-    const domainElements = document.domain.split('.');
-    const cookieName = `_gd${Date.now()}`;
-    for (let i = 0, topDomain, testCookie; i < domainElements.length; i++) {
-      const nextDomain = domainElements.slice(i).join('.');
-
-      // write test cookie
-      storage.setCookie(cookieName, '1', undefined, undefined, nextDomain);
-
-      // read test cookie to verify domain was valid
-      testCookie = storage.getCookie(cookieName);
-
-      // delete test cookie
-      storage.setCookie(cookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, nextDomain);
-
-      if (testCookie === '1') {
-        // cookie was written successfully using test domain so the topDomain is updated
-        topDomain = nextDomain;
-      } else {
-        // cookie failed to write using test domain so exit by returning the topDomain
-        return topDomain;
-      }
-    }
-  }
 };
 
 submodule('userId', pubCommonIdSubmodule);
