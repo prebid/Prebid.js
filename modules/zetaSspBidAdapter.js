@@ -42,7 +42,7 @@ export const spec = {
     const secure = 1; // treat all requests as secure
     const request = validBidRequests[0];
     const params = request.params;
-    let impData = {
+    const impData = {
       id: request.bidId,
       secure: secure,
       banner: buildBanner(request)
@@ -83,6 +83,7 @@ export const spec = {
         }
       };
     }
+    provideSharedId(request, payload);
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -154,6 +155,12 @@ function buildBanner(request) {
     w: sizes[0][0],
     h: sizes[0][1]
   };
+}
+
+function provideSharedId(request, payload) {
+  if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
+    utils.deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
+  }
 }
 
 registerBidder(spec);
