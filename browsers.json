@@ -55,11 +55,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_safari_11_mac_catalina": {
+  "bs_safari_14_mac_catalina": {
     "base": "BrowserStack",
     "os_version": "Catalina",
     "browser": "safari",
-    "browser_version": "13.0",
+    "browser_version": "14.0",
     "device": null,
     "os": "OS X"
   },
