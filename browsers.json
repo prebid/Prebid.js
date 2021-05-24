@@ -7,11 +7,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_edge_18_windows_10": {
+  "bs_edge_90_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "edge",
-    "browser_version": "18.0",
+    "browser_version": "90.0",
     "device": null,
     "os": "Windows"
   },
