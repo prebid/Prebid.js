@@ -68,7 +68,6 @@ function serializeParrableId(parrableId) {
     str += `,filteredUntil:${parrableId.filteredUntil}`;
     str += `,filterHits:${parrableId.filterHits}`;
   }
-
   return str;
 }
 
