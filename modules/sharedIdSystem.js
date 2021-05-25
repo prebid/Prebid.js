@@ -82,26 +82,6 @@ export const pubCommonIdSubmodule = {
 
     return {id: newId, callback: pixelCallback};
   },
-  /**
-   * performs action to extend an id.  There are generally two ways to extend the expiration time
-   * of stored id: using pixelUrl or return the id and let main user id module write it again with
-   * the new expiration time.
-   *
-   * PixelUrl, if defined, should point back to a first party domain endpoint.  On the server
-   * side, there is either a plugin, or customized logic to read and write back the pubcid cookie.
-   * The extendId function itself should return only the callback, and not the id itself to avoid
-   * having the script-side overwriting server-side.  This applies to  pubcid.
-   *
-   * On the other hand, if there is no pixelUrl, then the extendId should return storedId so that
-   * its expiration time is updated.  Sharedid, however, will have to be updated by this submodule
-   * separately.
-   *
-   * @function
-   * @param {SubmoduleParams} [config]
-   * @param {ConsentData|undefined} consentData
-   * @param {Object} storedId existing id
-   * @returns {IdResponse|undefined}
-   */
 };
 
 submodule('userId', pubCommonIdSubmodule);
