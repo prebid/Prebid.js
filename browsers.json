@@ -59,7 +59,7 @@
     "base": "BrowserStack",
     "os_version": "Big Sur",
     "browser": "safari",
-    "browser_version": "11.4",
+    "browser_version": "14.0",
     "device": null,
     "os": "OS X"
   },
