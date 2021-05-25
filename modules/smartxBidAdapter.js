@@ -302,7 +302,7 @@ export const spec = {
             const playersize = utils.deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
               id: 0,
-              url: '//',
+              url: '/',
               config: {
                 adText: 'SmartX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],
@@ -379,7 +379,7 @@ function createOutstreamScript(bid) {
 
   smartPlayObj.adResponse = bid.vastContent;
 
-  const divID = '#' + elementId;
+  const divID = '[id="' + elementId + '"]';
   var script = document.createElement('script');
   script.src = 'https://dco.smartclip.net/?plc=7777778';
   script.type = 'text/javascript';

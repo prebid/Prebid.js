@@ -15,7 +15,7 @@ import {config} from '../src/config.js';
 const VIDEO_TARGETING = Object.freeze(['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
   'pos', 'api', 'ext']);
-const VERSION = '1.5';
+const VERSION = '1.6';
 const SYNC_IFRAME = 1;
 const SYNC_IMAGE = 2;
 const SYNC_TYPES = Object.freeze({
@@ -53,7 +53,23 @@ const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
 export const spec = {
   code: 'adkernel',
   gvlid: GVLID,
-  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon', 'andbeyond', 'adbite', 'houseofpubs', 'torchad', 'stringads', 'bcm'],
+  aliases: [
+    {code: 'headbidding'},
+    {code: 'adsolut'},
+    {code: 'oftmediahb'},
+    {code: 'audiencemedia'},
+    {code: 'waardex_ak'},
+    {code: 'roqoon'},
+    {code: 'andbeyond'},
+    {code: 'adbite'},
+    {code: 'houseofpubs'},
+    {code: 'torchad'},
+    {code: 'stringads'},
+    {code: 'bcm'},
+    {code: 'engageadx'},
+    {code: 'converge_digital', gvlid: 248},
+    {code: 'adomega'}
+  ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -197,6 +213,18 @@ function dispatchImps(bidRequests, refererInfo) {
     }, {});
 }
 
+function getBidFloor(bid, mediaType, sizes) {
+  var floor;
+  var size = sizes.length === 1 ? sizes[0] : '*';
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor;
+}
+
 /**
  *  Builds rtb imp object for single adunit
  *  @param bidRequest {BidRequest}
@@ -207,27 +235,42 @@ function buildImp(bidRequest, secure) {
     'id': bidRequest.bidId,
     'tagid': bidRequest.adUnitCode
   };
+  var mediaType;
+  var sizes = [];
 
-  if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
-    let sizes = utils.getAdUnitSizes(bidRequest);
+  if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
+    sizes = utils.getAdUnitSizes(bidRequest);
     imp.banner = {
       format: sizes.map(wh => utils.parseGPTSingleSizeArrayToRtbSize(wh)),
       topframe: 0
     };
+    mediaType = BANNER;
   } else if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
-    let sizes = bidRequest.mediaTypes.video.playerSize || [];
-    imp.video = utils.parseGPTSingleSizeArrayToRtbSize(sizes[0]) || {};
+    let video = utils.deepAccess(bidRequest, 'mediaTypes.video');
+    imp.video = {};
+    if (video.playerSize) {
+      sizes = video.playerSize[0];
+      imp.video = Object.assign(imp.video, utils.parseGPTSingleSizeArrayToRtbSize(sizes) || {});
+    }
     if (bidRequest.params.video) {
       Object.keys(bidRequest.params.video)
         .filter(key => includes(VIDEO_TARGETING, key))
         .forEach(key => imp.video[key] = bidRequest.params.video[key]);
     }
+    mediaType = VIDEO;
   } else if (utils.deepAccess(bidRequest, 'mediaTypes.native')) {
     let nativeRequest = buildNativeRequest(bidRequest.mediaTypes.native);
     imp.native = {
       ver: '1.1',
       request: JSON.stringify(nativeRequest)
-    }
+    };
+    mediaType = NATIVE;
+  } else {
+    throw new Error('Unsupported bid received');
+  }
+  let floor = getBidFloor(bidRequest, mediaType, sizes);
+  if (floor) {
+    imp.bidfloor = floor;
   }
   if (secure) {
     imp.secure = 1;

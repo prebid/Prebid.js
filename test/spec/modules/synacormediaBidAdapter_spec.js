@@ -191,6 +191,62 @@ describe('synacormediaBidAdapter ', function () {
       uspConsent: '1YYY'
     };
 
+    let validBidRequestWithUserIds = {
+      bidId: '9876abcd',
+      sizes: [[300, 250], [300, 600]],
+      params: {
+        seatId: 'prebid',
+        tagId: '1234',
+        bidfloor: '0.50'
+      },
+      userIdAsEids: [
+        {
+          source: 'pubcid.org',
+          uids: [{
+            id: 'cid0032l2344jskdsl3',
+            atype: 1
+          }]
+        },
+        {
+          source: 'liveramp.com',
+          uids: [{
+            id: 'lrv39010k42dl',
+            atype: 1,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        },
+        {
+          source: 'neustar.biz',
+          uids: [{
+            id: 'neustar809-044-23njhwer3',
+            atype: 1
+          }]
+        }
+      ]
+    };
+
+    let expectedEids = [
+      {
+        source: 'pubcid.org',
+        uids: [{
+          id: 'cid0032l2344jskdsl3',
+          atype: 1
+        }]
+      },
+      {
+        source: 'liveramp.com',
+        uids: [{
+          id: 'lrv39010k42dl',
+          atype: 1,
+          ext: {
+            rtiPartner: 'TDID'
+          }
+        }]
+      }
+    ];
+
     let expectedDataImp1 = {
       banner: {
         format: [
@@ -576,6 +632,50 @@ describe('synacormediaBidAdapter ', function () {
         }
       ]);
     });
+    it('should create params.video object if not present on bid request and move any video params in the mediaTypes object to it', function () {
+      let validBidRequestVideo = {
+        bidder: 'synacormedia',
+        params: {
+          seatId: 'prebid',
+          tagId: '1234'
+        },
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [[ 640, 480 ]],
+            startdelay: 1,
+            linearity: 1,
+            placement: 1,
+            mimes: ['video/mp4']
+          }
+        },
+        adUnitCode: 'video1',
+        transactionId: '93e5def8-29aa-4fe8-bd3a-0298c39f189a',
+        sizes: [[ 640, 480 ]],
+        bidId: '2624fabbb078e8',
+        bidderRequestId: '117954d20d7c9c',
+        auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
+        src: 'client',
+        bidRequestsCount: 1
+      };
+
+      let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
+      expect(req.data.imp).to.eql([
+        {
+          video: {
+            h: 480,
+            pos: 0,
+            w: 640,
+            startdelay: 1,
+            linearity: 1,
+            placement: 1,
+            mimes: ['video/mp4']
+          },
+          id: 'v2624fabbb078e8-640x480',
+          tagid: '1234',
+        }
+      ]);
+    });
     it('should contain the CCPA privacy string when UspConsent is in bidder request', function () {
       // banner test
       let req = spec.buildRequests([validBidRequest], bidderRequestWithCCPA);
@@ -587,7 +687,21 @@ describe('synacormediaBidAdapter ', function () {
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.regs.ext.us_privacy).to.equal('1YYY');
       expect(req.data.imp).to.eql([expectedDataImp1]);
-    })
+    });
+    it('should contain user object when user ids are present in the bidder request', function () {
+      let req = spec.buildRequests([validBidRequestWithUserIds], bidderRequest);
+      expect(req).be.an('object');
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
+      expect(req.data).to.exist.and.to.be.an('object');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.user).be.an('object');
+      expect(req.data.user).to.have.property('ext');
+      expect(req.data.user.ext).to.have.property('eids');
+      expect(req.data.user.ext.eids).to.eql(expectedEids);
+      expect(req.data.imp).to.eql([expectedDataImp1]);
+    });
   });
 
   describe('Bid Requests with placementId should be backward compatible ', function () {

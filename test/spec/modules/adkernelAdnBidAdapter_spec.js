@@ -206,7 +206,6 @@ describe('AdkernelAdn adapter', function () {
     fullBidderRequest.bids = bidRequests;
     let pbRequests = spec.buildRequests(bidRequests, fullBidderRequest);
     let tagRequests = pbRequests.map(r => JSON.parse(r.data));
-
     return [pbRequests, tagRequests];
   }
 
@@ -271,6 +270,18 @@ describe('AdkernelAdn adapter', function () {
       config.resetConfig();
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('coppa', 1);
+    });
+
+    it('should set bidfloor if configured', function() {
+      let bid = Object.assign({}, bid1_pub1);
+      bid.getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 0.145
+        }
+      };
+      let [, tagRequests] = buildRequest([bid]);
+      expect(tagRequests[0].imp[0]).to.have.property('bidfloor', 0.145);
     });
   });
 
