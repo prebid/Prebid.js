@@ -29,7 +29,7 @@
     "@jsdevtools/coverage-istanbul-loader": "^3.0.3",
     "@wdio/browserstack-service": "^6.1.4",
     "@wdio/cli": "^7.5.2",
-    "@wdio/concise-reporter": "^6.1.5",
+    "@wdio/concise-reporter": "^7.5.2",
     "@wdio/local-runner": "^6.1.7",
     "@wdio/mocha-framework": "^6.1.6",
     "@wdio/spec-reporter": "^6.1.5",
