@@ -7,7 +7,7 @@
 
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
-import { uspDataHandler, coppaDataHandler } from '../src/adapterManager.js';
+import { coppaDataHandler } from '../src/adapterManager.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
 
