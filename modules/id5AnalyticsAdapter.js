@@ -5,29 +5,41 @@ import { ajax } from '../src/ajax.js';
 import { logWarn, logInfo, logError } from '../src/utils.js';
 import events from '../src/events.js';
 
+const {
+  EVENTS: {
+    AUCTION_END,
+    AUCTION_INIT,
+    TCF2_ENFORCEMENT
+  }
+} = CONSTANTS
+
 const GVLID = 131;
-const EVENTS_TO_TRACK = [
-  CONSTANTS.EVENTS.AUCTION_END,
-  CONSTANTS.EVENTS.AUCTION_INIT,
-  CONSTANTS.EVENTS.TCF2_ENFORCEMENT,
+const STANDARD_EVENTS_TO_TRACK = [
+  AUCTION_END,
+  AUCTION_INIT,
+  TCF2_ENFORCEMENT,
 ];
 const FLUSH_EVENTS = [
-  CONSTANTS.EVENTS.TCF2_ENFORCEMENT,
-  CONSTANTS.EVENTS.AUCTION_END,
+  TCF2_ENFORCEMENT,
+  AUCTION_END,
 ];
 // const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics'
 const CONFIG_URL_PREFIX = 'https://127.0.0.1:8443/analytics'
 const TZ = new Date().getTimezoneOffset();
 const PBJS_VERSION = $$PREBID_GLOBAL$$.version;
+const ID5_REDACTED = '__ID5_REDACTED__';
+const isArray = Array.isArray;
 
 let id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
   // Keeps an array of events for each auction
   eventBuffer: {},
 
+  eventsToTrack: STANDARD_EVENTS_TO_TRACK,
+
   track: (event) => {
     const _this = id5Analytics;
 
-    if (!event) {
+    if (!event || !event.args) {
       return;
     }
 
@@ -37,7 +49,7 @@ let id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
 
       // Collect events and send them in a batch when the auction ends
       const que = _this.eventBuffer[auctionId];
-      que.push(_this.makeEvent('pbjs_' + event.eventType, event.args));
+      que.push(_this.makeEvent(event.eventType, event.args));
 
       if (FLUSH_EVENTS.indexOf(event.eventType) >= 0) {
         // Auction ended. Send the batch of collected events
@@ -61,9 +73,12 @@ let id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
 
   makeEvent: (event, payload) => {
     const _this = id5Analytics;
+    const filteredPayload = deepTransformingClone(payload, 
+        transformFnFromCleanupRules(event));
     return {
+      source: 'pbjs',
       event,
-      payload,
+      payload: filteredPayload,
       partnerId: _this.options.partnerId,
       meta: {
         sampling: _this.options.id5Sampling,
@@ -76,7 +91,7 @@ let id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
   sendErrorEvent: (error) => {
     const _this = id5Analytics;
     _this.sendEvents([
-      _this.makeEvent('pbjs_analyticsError', {
+      _this.makeEvent('analyticsError', {
         message: error.message,
         stack: error.stack,
       })
@@ -87,65 +102,94 @@ let id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
   random: () => Math.random(),
 });
 
-// save the base class function
-id5Analytics.originEnableAnalytics = id5Analytics.enableAnalytics;
-
-// Replace enableAnalytics
 const ENABLE_FUNCTION = (config) => {
-  id5Analytics.options = typeof config === 'object' ? (config.options || {}) : {};
+  const _this = id5Analytics;
+  _this.options = (config && config.options) || {};
 
-  // We do our own sampling strategy (see AnalyticsAdapter.js)
-  id5Analytics.options.sampling = undefined;
-
-  const partnerId = id5Analytics.options.partnerId;
+  const partnerId = _this.options.partnerId;
   if (typeof partnerId !== 'number') {
     logWarn('id5Analytics: cannot find partnerId in config.options');
     return;
   }
 
   ajax(`${CONFIG_URL_PREFIX}/${partnerId}/pbjs`, (result) => {
-    const id5Config = JSON.parse(result);
+    const configFromServer = JSON.parse(result);
+    const sampling = _this.options.id5Sampling =
+      typeof configFromServer.sampling === 'number' ? configFromServer.sampling : 0;
 
-    // Store our sampling in id5Sampling as opposed to standard property sampling
-    const sampling = id5Analytics.options.id5Sampling =
-      typeof id5Config.sampling === 'number' ? id5Config.sampling : 0;
-
-    if (typeof id5Config.ingestUrl !== 'string') {
+    if (typeof configFromServer.ingestUrl !== 'string') {
       logWarn('id5Analytics: cannot find ingestUrl in config endpoint response');
       return;
     }
-    id5Analytics.options.ingestUrl = id5Config.ingestUrl;
+    _this.options.ingestUrl = configFromServer.ingestUrl;
 
-    logInfo('id5Analytics: Configuration is ' + JSON.stringify(id5Analytics.options));
-    if (sampling > 0 && id5Analytics.random() < (1 / sampling)) {
+    // 3-way fallback for which events to track: server >= config >= standard
+    _this.eventsToTrack = configFromServer.eventsToTrack || _this.options.eventsToTrack || STANDARD_EVENTS_TO_TRACK;
+    _this.eventsToTrack = isArray(_this.eventsToTrack) ? _this.eventsToTrack : STANDARD_EVENTS_TO_TRACK;
+
+    logInfo('id5Analytics: Configuration is ' + JSON.stringify(_this.options));
+    if (sampling > 0 && _this.random() < (1 / sampling)) {
       // Init the module only if we got lucky
       logInfo('id5Analytics: Selected by sampling. Starting up!')
 
       // Clean start
-      id5Analytics.eventBuffer = {};
+      _this.eventBuffer = {};
 
       // Replay all events until now
-      events.getEvents().forEach(event => {
-        if (!!event && EVENTS_TO_TRACK.indexOf(event.eventType) >= 0) {
-          id5Analytics.enqueue(event);
-        }
-      });
+      if (!config.disablePastEventsProcessing) {
+        events.getEvents().forEach(event => {
+          if (!!event && _this.eventsToTrack.indexOf(event.eventType) >= 0) {
+            _this.track(event);
+          }
+        });
+      }
+
+      // Merge in additional cleanup rules
+      if (configFromServer.additionalCleanupRules) {
+        const newRules = configFromServer.additionalCleanupRules;
+        _this.eventsToTrack.forEach((key) => {
+          // Some protective checks in case we mess up server side
+          if (
+            isArray(newRules[key]) &&
+            newRules[key].every((eventRules) =>
+              isArray(eventRules.match) &&
+              (eventRules.apply in TRANSFORM_FUNCTIONS))
+          ) {
+            logInfo('id5Analytics: merging additional cleanup rules for event' + key);
+            CLEANUP_RULES[key].push(...newRules[key]);
+          }
+        });
+      }
 
       // Register to the events of interest
-      EVENTS_TO_TRACK.forEach((eventType) => {
-        events.on(eventType, (event) => id5Analytics.enqueue(event));
+      _this.handlers = {};
+      _this.eventsToTrack.forEach((eventType) => {
+        const handler = _this.handlers[eventType] = (args) =>
+          _this.track({ eventType, args });
+        events.on(eventType, handler);
       });
     }
   });
 
   // Make only one init possible within a lifecycle
-  id5Analytics.enableAnalytics = () => {};
+  _this.enableAnalytics = () => {};
 };
 
 id5Analytics.enableAnalytics = ENABLE_FUNCTION;
 id5Analytics.disableAnalytics = () => {
-  // Make re-init possible
-  id5Analytics.enableAnalytics = ENABLE_FUNCTION;
+  const _this = id5Analytics;
+  // Un-register to the events of interest
+  _this.eventsToTrack.forEach((eventType) => {
+    if (_this.handlers && _this.handlers[eventType]) {
+      events.off(eventType, _this.handlers[eventType]);
+    }
+  });
+
+  // Make re-init possible. Work around the fact that past events cannot be forgotten
+  _this.enableAnalytics = (config) => {
+    config.disablePastEventsProcessing = true;
+    ENABLE_FUNCTION(config);
+  };
 };
 
 adapterManager.registerAnalyticsAdapter({
@@ -155,3 +199,75 @@ adapterManager.registerAnalyticsAdapter({
 });
 
 export default id5Analytics;
+
+function redact(obj, key) {
+  obj[key] = ID5_REDACTED;
+}
+
+function erase(obj, key) {
+  delete obj[key];
+}
+
+// The transform function matches against a path and applies
+// required transformation if match is found.
+function deepTransformingClone(obj, transform, currentPath = []) {
+  const result = isArray(obj) ? [] : {};
+  const keys = Object.keys(obj);
+  const recursable = typeof obj === 'object';
+  if (keys.length > 0 && recursable) {
+    keys.forEach((key) => {
+      const newPath = currentPath.concat(key);
+      result[key] = deepTransformingClone(obj[key], transform, newPath);
+      transform(newPath, result, key);
+    });
+    return result;
+  }
+  return obj;
+}
+
+// Every set of rules is an array where every entry is a pair (array) of
+// path to match and action to apply. The path to match is an array of
+// path parts, the function to apply takes (obj, prop)
+// Special character can be '*' (match any subproperty)
+const CLEANUP_RULES = {};
+CLEANUP_RULES[AUCTION_END] = [{
+  match: ['adUnits', '*', 'bids', '*', 'userId', '*'],
+  apply: 'redact'
+}, {
+  match: ['adUnits', '*', 'bids', '*', 'userIdAsEids', '*', 'uids', '*', 'id'],
+  apply: 'redact'
+}, {
+  match: ['adUnits', '*', 'bidsReceived', '*', 'ad'],
+  apply: 'erase'
+}];
+
+const TRANSFORM_FUNCTIONS = {
+  'redact': redact,
+  'erase': erase,
+};
+
+// Builds a rule function depending on the event type
+function transformFnFromCleanupRules(eventType) {
+  const rules = CLEANUP_RULES[eventType] || [];
+  return (path, obj, key) => {
+    for (let i = 0; i < rules.length; i++) {
+      let match = true;
+      const ruleMatcher = rules[i].match;
+      const transformation = rules[i].apply;
+      if (ruleMatcher.length !== path.length) {
+        continue;
+      }
+      for (let fragment = 0; fragment < ruleMatcher.length && match; fragment++) {
+        if (path[fragment] !== ruleMatcher[fragment] && ruleMatcher[fragment] !== '*') {
+          match = false;
+        }
+      }
+      if (match) {
+        logInfo('id5Analytics: transforming', path, transformation);
+        const transformfn = TRANSFORM_FUNCTIONS[transformation];
+        transformfn(obj, key);
+        break;
+      }
+    }
+  };
+}
