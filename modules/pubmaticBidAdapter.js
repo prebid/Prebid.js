@@ -49,7 +49,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'placement': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
-  'skip': DATA_TYPES.BOOLEAN
+  'skip': DATA_TYPES.NUMBER
 }
 
 const NATIVE_ASSETS = {
@@ -594,6 +594,8 @@ function _addDealCustomTargetings(imp, bid) {
         dctr = dctr.substring(0, dctrLen - 1);
       }
       imp.ext['key_val'] = dctr.trim()
+    } else {
+      utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
     }
   }
 }
