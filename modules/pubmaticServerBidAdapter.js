@@ -215,6 +215,7 @@ function _createImpressionObject(bid, conf) {
     }
     impObj.banner = bannerObj;
   }
+  _addImpressionFPD(impObj, bid);
   return impObj;
 }
 
@@ -383,6 +384,32 @@ function _addExternalUserId(eids, value, source, atype) {
       }]
     });
   }
+}
+
+function _addImpressionFPD(imp, bid) {
+  const ortb2 = {...utils.deepAccess(bid, 'ortb2Imp.ext.data')};
+  Object.keys(ortb2).forEach(prop => {
+    /**
+      * Prebid AdSlot
+      * @type {(string|undefined)}
+    */
+    if (prop === 'pbadslot') {
+      if (typeof ortb2[prop] === 'string' && ortb2[prop]) utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+    } else if (prop === 'adserver') {
+      /**
+       * Copy GAM AdUnit and Name to imp
+       */
+       ['name', 'adslot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(ortb2, `adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
+        }
+      });
+    } else {
+      utils.deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
+    }    
+  });
 }
 
 function _handleEids(payload, validBidRequests) {
