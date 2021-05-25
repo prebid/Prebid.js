@@ -88,7 +88,7 @@ export const spec = {
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
     const tid = validBidRequests[0].transactionId;
     const test = setOnAny(validBidRequests, 'params.test');
-    const currency = config.getConfig('currency.adServerCurrency');
+    const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
 
