@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.5';
+window.nobidVersion = '1.2.9';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -23,6 +23,15 @@ function nobidSetCookie(cname, cvalue, hours) {
 }
 function nobidGetCookie(cname) {
   return storage.getCookie(cname);
+}
+function nobidHasPurpose1Consent(bidderRequest) {
+  let result = true;
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
+      result = !!(utils.deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
+    }
+  }
+  return result;
 }
 function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
@@ -105,6 +114,23 @@ function nobidBuildRequests(bids, bidderRequest) {
         utils.logWarn('Could not parse screen dimensions, error details:', e);
       }
     }
+    var getEIDs = function(eids) {
+      if (utils.isArray(eids) && eids.length > 0) {
+        let src = [];
+        eids.forEach((eid) => {
+          let ids = [];
+          if (eid.uids) {
+            eid.uids.forEach(value => {
+              ids.push({'id': value.id + ''});
+            });
+          }
+          if (eid.source && ids.length > 0) {
+            src.push({source: eid.source, uids: ids});
+          }
+        });
+        return src;
+      }
+    }
     var state = {};
     state['sid'] = siteId;
     state['l'] = topLocation(bidderRequest);
@@ -122,6 +148,8 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (sch) state['schain'] = sch;
     const cop = coppa();
     if (cop) state['coppa'] = cop;
+    const eids = getEIDs(utils.deepAccess(bids, '0.userIdAsEids'));
+    if (eids && eids.length > 0) state['eids'] = eids;
     return state;
   }
   function newAdunit(adunitObject, adunits) {
@@ -200,7 +228,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     var adType = 'banner';
     const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
     const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-    if (bid.mediaType === VIDEO || (videoMediaType && context === 'instream')) {
+    if (bid.mediaType === VIDEO || (videoMediaType && (context === 'instream' || context === 'outstream'))) {
       adType = 'video';
     }
 
@@ -287,6 +315,23 @@ window.nobid.renderTag = function(doc, id, win) {
   }
   log('nobid.renderTag() tag NOT FOUND *ERROR*', id);
 }
+window.addEventListener('message', function (event) {
+  let key = event.message ? 'message' : 'data';
+  var msg = '' + event[key];
+  if (msg.substring(0, 'nbTagRenderer.requestAdMarkup|'.length) === 'nbTagRenderer.requestAdMarkup|') {
+    log('Prebid received nbTagRenderer.requestAdMarkup event');
+    var adId = msg.substring(msg.indexOf('|') + 1);
+    if (window.nobid && window.nobid.bidResponses) {
+      var bid = window.nobid.bidResponses['' + adId];
+      if (bid && bid.adm2) {
+        var markup = bid.adm2;
+        if (markup) {
+          event.source.postMessage('nbTagRenderer.renderAdInSafeFrame|' + markup, '*');
+        }
+      }
+    }
+  }
+}, false);
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -329,11 +374,18 @@ export const spec = {
     window.nobid.refreshCount++;
     const payloadString = JSON.stringify(payload).replace(/'|&|#/g, '')
     const endpoint = buildEndpoint();
+
+    let options = {};
+    if (!nobidHasPurpose1Consent(bidderRequest)) {
+      options = { withCredentials: false };
+    }
+
     return {
       method: 'POST',
       url: endpoint,
       data: payloadString,
-      bidderRequest
+      bidderRequest,
+      options
     };
   },
   /**

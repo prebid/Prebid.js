@@ -58,5 +58,25 @@ var adUnits = [{
            floor: 0
         }
     }]
+}, {
+    code: 'instream-div-1',
+    mediaTypes: {
+        video: {
+            playerSize: [640, 480],
+            context: 'instream',
+        }
+    },
+    bids: [
+    {
+        bidder: 'triplelift',
+        params: {
+            inventoryCode: 'instream_test',
+            video: {
+                mimes: ['video/mp4'],
+                w: 640,
+                h: 480,
+          },
+        }
+    }]
 }];
 ```

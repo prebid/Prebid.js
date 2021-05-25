@@ -107,7 +107,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
     });
 
@@ -126,7 +127,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_us_privacy).to.exist.and.to.be.a('string');
       expect(payload._fw_us_privacy).to.equal(uspConsentString);
@@ -145,10 +147,24 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
+
+      let gdprConsent = {
+        'gdprApplies': true,
+        'consentString': gdprConsentString
+      }
+      let syncOptions = {
+        'pixelEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null);
+      expect(userSyncs).to.deep.equal([{
+        type: 'image',
+        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=1FW-SSP-gdprConsent-'
+      }]);
     });
   })
 
@@ -178,7 +194,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
     });
 
@@ -197,7 +214,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_us_privacy).to.exist.and.to.be.a('string');
       expect(payload._fw_us_privacy).to.equal(uspConsentString);
@@ -216,10 +234,24 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
+
+      let gdprConsent = {
+        'gdprApplies': true,
+        'consentString': gdprConsentString
+      }
+      let syncOptions = {
+        'pixelEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null);
+      expect(userSyncs).to.deep.equal([{
+        type: 'image',
+        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=1FW-SSP-gdprConsent-'
+      }]);
     });
   })
 
@@ -291,7 +323,10 @@ describe('freewheelSSP BidAdapter Test', () => {
     '  <InLine>' +
     '   <AdSystem>Adswizz</AdSystem>' +
     '   <Impression id="dmp-1617899169-2513"></Impression>' +
-    '   <Impression id="user-sync-1617899169-1">https://ads.stickyadstv.com/auto-user-sync?dealId=NRJ-PRO-00008</Impression>' +
+    '   <Impression id="user-sync-1617899169-1">https://ads.stickyadstv.com/auto-user-sync?dealId=NRJ-PRO-12008</Impression>' +
+    '   <Impression id="727435745">' +
+    '   <![CDATA[ https://ads.stickyadstv.com/www/delivery/swfIndex.php?reqType=AdsDisplayStarted&dealId=NRJ-PRO-00008&campaignId=SMF-WOW-55555&adId=12345&viewKey=1607626986121029-54&sessionId=e3230a6bef6e0d2327422ff5282435&zoneId=2003&impId=1&cb=1932360&trackingIds=19651873%2C28161297%2C28161329%2C29847601%2C29967745%2C61392385&listenerId=eddf2aebad29655bb2b6abac276c50ef& ]]>' +
+    '   </Impression>' +
     '   <Creatives>' +
     '    <Creative id=\'28517153\' sequence=\'1\'>' +
     '     <Linear>' +
@@ -326,6 +361,8 @@ describe('freewheelSSP BidAdapter Test', () => {
           netRevenue: true,
           ttl: 360,
           dealId: 'NRJ-PRO-00008',
+          campaignId: 'SMF-WOW-55555',
+          bannerId: '12345',
           ad: ad
         }
       ];
@@ -333,6 +370,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].dealId).to.equal('NRJ-PRO-00008');
+      expect(result[0].campaignId).to.equal('SMF-WOW-55555');
+      expect(result[0].bannerId).to.equal('12345');
     });
 
     it('should get correct bid response with formated ad', () => {
@@ -349,6 +388,8 @@ describe('freewheelSSP BidAdapter Test', () => {
           netRevenue: true,
           ttl: 360,
           dealId: 'NRJ-PRO-00008',
+          campaignId: 'SMF-WOW-55555',
+          bannerId: '12345',
           ad: formattedAd
         }
       ];
@@ -356,6 +397,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].dealId).to.equal('NRJ-PRO-00008');
+      expect(result[0].campaignId).to.equal('SMF-WOW-55555');
+      expect(result[0].bannerId).to.equal('12345');
     });
 
     it('handles nobid responses', () => {
@@ -366,6 +409,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(result.length).to.equal(0);
     });
   });
+
   describe('interpretResponseForVideo', () => {
     let bidRequests = [
       {
@@ -429,6 +473,12 @@ describe('freewheelSSP BidAdapter Test', () => {
     '   <AdSystem>Adswizz</AdSystem>' +
     '   <Impression id="dmp-1617899169-2513"></Impression>' +
     '   <Impression id="user-sync-1617899169-1">https://ads.stickyadstv.com/auto-user-sync?dealId=NRJ-PRO-00008</Impression>' +
+    '   <Impression id="727435745">' +
+    '   <![CDATA[ https://ads.stickyadstv.com/www/delivery/swfIndex.php?reqType=AdsDisplayStarted&dealId=NRJ-PRO-00008&campaignId=SMF-WOW-55555&adId=12345&rootViewKey=1607626986121029-54&sessionId=e3230a6bef6e0d2327422ff5282435&zoneId=2003&impId=1&cb=1932360&trackingIds=19651873%2C28161297%2C28161329%2C29847601%2C29967745%2C61392385&listenerId=eddf2aebad29655bb2b6abac276c50ef& ]]>' +
+    '   </Impression>' +
+    '   <Impression id="727435745">' +
+    '   <![CDATA[ https://ads.stickyadstv.com/www/delivery/swfIndex.php?reqType=AdsDisplayStarted&dealId=NRJ-PRO-00128&campaignId=SMF-WOW-22222&adId=77777&sessionId=e3230a6bef6e0d2327422ff5282435&zoneId=2003&impId=1&cb=1932360&trackingIds=19651873%2C28161297%2C28161329%2C29847601%2C29967745%2C61392385&listenerId=eddf2aebad29655bb2b6abac276c50ef& ]]>' +
+    '   </Impression>' +
     '   <Creatives>' +
     '    <Creative id=\'28517153\' sequence=\'1\'>' +
     '     <Linear>' +
@@ -463,6 +513,8 @@ describe('freewheelSSP BidAdapter Test', () => {
           netRevenue: true,
           ttl: 360,
           dealId: 'NRJ-PRO-00008',
+          campaignId: 'SMF-WOW-55555',
+          bannerId: '12345',
           vastXml: response,
           mediaType: 'video',
           ad: ad
@@ -472,6 +524,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].dealId).to.equal('NRJ-PRO-00008');
+      expect(result[0].campaignId).to.equal('SMF-WOW-55555');
+      expect(result[0].bannerId).to.equal('12345');
     });
 
     it('should get correct bid response with formated ad', () => {
@@ -488,6 +542,8 @@ describe('freewheelSSP BidAdapter Test', () => {
           netRevenue: true,
           ttl: 360,
           dealId: 'NRJ-PRO-00008',
+          campaignId: 'SMF-WOW-55555',
+          bannerId: '12345',
           vastXml: response,
           mediaType: 'video',
           ad: formattedAd
@@ -497,6 +553,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].dealId).to.equal('NRJ-PRO-00008');
+      expect(result[0].campaignId).to.equal('SMF-WOW-55555');
+      expect(result[0].bannerId).to.equal('12345');
     });
 
     it('handles nobid responses', () => {

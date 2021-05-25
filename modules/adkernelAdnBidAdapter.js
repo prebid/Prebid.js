@@ -1,11 +1,13 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
 const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
 const DEFAULT_APIS = [1, 2];
+const GVLID = 14;
 
 function isRtbDebugEnabled(refInfo) {
   return refInfo.referer.indexOf('adk_debug=true') !== -1;
@@ -16,13 +18,15 @@ function buildImp(bidRequest) {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode
   };
+  let mediaType;
   let bannerReq = utils.deepAccess(bidRequest, `mediaTypes.banner`);
   let videoReq = utils.deepAccess(bidRequest, `mediaTypes.video`);
   if (bannerReq) {
     let sizes = canonicalizeSizesArray(bannerReq.sizes);
     imp.banner = {
       format: utils.parseSizesInput(sizes)
-    }
+    };
+    mediaType = BANNER;
   } else if (videoReq) {
     let size = canonicalizeSizesArray(videoReq.playerSize)[0];
     imp.video = {
@@ -32,6 +36,11 @@ function buildImp(bidRequest) {
       protocols: videoReq.protocols || DEFAULT_PROTOCOLS,
       api: videoReq.api || DEFAULT_APIS
     };
+    mediaType = VIDEO;
+  }
+  let bidFloor = getBidFloor(bidRequest, mediaType, '*');
+  if (bidFloor) {
+    imp.bidfloor = bidFloor;
   }
   return imp;
 }
@@ -48,11 +57,12 @@ function canonicalizeSizesArray(sizes) {
   return sizes;
 }
 
-function buildRequestParams(tags, auctionId, transactionId, gdprConsent, uspConsent, refInfo) {
+function buildRequestParams(tags, bidderRequest) {
+  let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
   let req = {
     id: auctionId,
     tid: transactionId,
-    site: buildSite(refInfo),
+    site: buildSite(refererInfo),
     imp: tags
   };
   if (gdprConsent) {
@@ -65,6 +75,9 @@ function buildRequestParams(tags, auctionId, transactionId, gdprConsent, uspCons
   }
   if (uspConsent) {
     utils.deepSetValue(req, 'user.us_privacy', uspConsent);
+  }
+  if (config.getConfig('coppa')) {
+    utils.deepSetValue(req, 'user.coppa', 1);
   }
   return req;
 }
@@ -107,8 +120,21 @@ function buildBid(tag) {
   return bid;
 }
 
+function getBidFloor(bid, mediaType, sizes) {
+  var floor;
+  var size = sizes.length === 1 ? sizes[0] : '*';
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor;
+}
+
 export const spec = {
   code: 'adkernelAdn',
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['engagesimply'],
 
@@ -132,14 +158,13 @@ export const spec = {
         return acc;
       }, {});
 
-    let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
     let requests = [];
     Object.keys(dispatch).forEach(host => {
       Object.keys(dispatch[host]).forEach(pubId => {
-        let request = buildRequestParams(dispatch[host][pubId], auctionId, transactionId, gdprConsent, uspConsent, refererInfo);
+        let request = buildRequestParams(dispatch[host][pubId], bidderRequest);
         requests.push({
           method: 'POST',
-          url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(refererInfo) ? '&debug=1' : ''}`,
+          url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(bidderRequest.refererInfo) ? '&debug=1' : ''}`,
           data: JSON.stringify(request)
         })
       });
@@ -159,14 +184,24 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses) {
-    if (!syncOptions.iframeEnabled || !serverResponses || serverResponses.length === 0) {
+    if (!serverResponses || serverResponses.length === 0) {
       return [];
     }
-    return serverResponses.filter(rps => rps.body && rps.body.syncpages)
-      .map(rsp => rsp.body.syncpages)
-      .reduce((a, b) => a.concat(b), [])
-      .map(syncUrl => ({type: 'iframe', url: syncUrl}));
+    if (syncOptions.iframeEnabled) {
+      return buildSyncs(serverResponses, 'syncpages', 'iframe');
+    } else if (syncOptions.pixelEnabled) {
+      return buildSyncs(serverResponses, 'syncpixels', 'image');
+    } else {
+      return [];
+    }
   }
 };
+
+function buildSyncs(serverResponses, propName, type) {
+  return serverResponses.filter(rps => rps.body && rps.body[propName])
+    .map(rsp => rsp.body[propName])
+    .reduce((a, b) => a.concat(b), [])
+    .map(syncUrl => ({type: type, url: syncUrl}));
+}
 
 registerBidder(spec);

@@ -1,6 +1,7 @@
 import { VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'videofy';
 const TTL = 600;
@@ -250,13 +251,50 @@ function getUserSyncs(syncOptions, serverResponses) {
   }
 }
 
+function onBidWon(bid) {
+  sendbeacon(bid, 17);
+}
+
+function onTimeout(bid) {
+  sendbeacon(bid, 19);
+}
+
+function onSetTargeting(bid) {
+  sendbeacon(bid, 20);
+}
+
+function sendbeacon(bid, type) {
+  const bidCopy = {
+    bidder: bid.bidder,
+    cpm: bid.cpm,
+    originalCpm: bid.originalCpm,
+    currency: bid.currency,
+    originalCurrency: bid.originalCurrency,
+    timeToRespond: bid.timeToRespond,
+    statusMessage: bid.statusMessage,
+    width: bid.width,
+    height: bid.height,
+    size: bid.size,
+    params: bid.params,
+    status: bid.status,
+    adserverTargeting: bid.adserverTargeting,
+    ttl: bid.ttl
+  };
+  const bidString = JSON.stringify(bidCopy);
+  const encodedBuf = window.btoa(bidString);
+  utils.triggerPixel('https://beacon.videofy.io/notification/rtb/beacon/?bt=' + type + '&bid=hcwqso&hb_j=' + encodedBuf, null);
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon,
+  onTimeout,
+  onSetTargeting
 };
 
 registerBidder(spec);

@@ -28,7 +28,8 @@ describe('ReadPeakAdapter', function() {
       params: {
         bidfloor: 5.0,
         publisherId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
-        siteId: '11bc5dd5-7421-4dd8-c926-40fa653bec77'
+        siteId: '11bc5dd5-7421-4dd8-c926-40fa653bec77',
+        tagId: 'test-tag-1'
       },
       bidId: '2ffb201a808da7',
       bidderRequestId: '178e34bad3658f',
@@ -104,7 +105,8 @@ describe('ReadPeakAdapter', function() {
               ver: '1.1'
             },
             bidfloor: 5,
-            bidfloorcur: 'USD'
+            bidfloorcur: 'USD',
+            tagId: 'test-tag-1'
           }
         ],
         site: {
@@ -177,20 +179,83 @@ describe('ReadPeakAdapter', function() {
       expect(data.id).to.equal(bidRequest.bidderRequestId);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
-      expect(data.site).to.deep.equal({
-        publisher: {
-          id: bidRequest.params.publisherId,
-          domain: 'http://localhost:9876'
-        },
-        id: bidRequest.params.siteId,
-        page: bidderRequest.refererInfo.referer,
-        domain: parseUrl(bidderRequest.refererInfo.referer).hostname
-      });
+      expect(data.imp[0].tagId).to.equal('test-tag-1');
+      expect(data.site.publisher.id).to.equal(bidRequest.params.publisherId);
+      expect(data.site.id).to.equal(bidRequest.params.siteId);
+      expect(data.site.page).to.equal(bidderRequest.refererInfo.referer);
+      expect(data.site.domain).to.equal(parseUrl(bidderRequest.refererInfo.referer).hostname);
       expect(data.device).to.deep.contain({
         ua: navigator.userAgent,
         language: navigator.language
       });
       expect(data.cur).to.deep.equal(['EUR']);
+      expect(data.user).to.be.undefined;
+      expect(data.regs).to.be.undefined;
+    });
+
+    it('should get bid floor from module', function() {
+      const floorModuleData = {
+        currency: 'USD',
+        floor: 3.2,
+      }
+      bidRequest.getFloor = function () {
+        return floorModuleData
+      }
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      const data = JSON.parse(request.data);
+
+      expect(data.source.ext.prebid).to.equal('$prebid.version$');
+      expect(data.id).to.equal(bidRequest.bidderRequestId);
+      expect(data.imp[0].bidfloor).to.equal(floorModuleData.floor);
+      expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency);
+    });
+
+    it('should send gdpr data when gdpr does not apply', function() {
+      const gdprData = {
+        gdprConsent: {
+          gdprApplies: false,
+          consentString: undefined,
+        }
+      }
+      const request = spec.buildRequests([bidRequest], {...bidderRequest, ...gdprData});
+
+      const data = JSON.parse(request.data);
+
+      expect(data.user).to.deep.equal({
+        ext: {
+          consent: ''
+        }
+      });
+      expect(data.regs).to.deep.equal({
+        ext: {
+          gdpr: false
+        }
+      });
+    });
+
+    it('should send gdpr data when gdpr applies', function() {
+      const tcString = 'sometcstring';
+      const gdprData = {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: tcString
+        }
+      }
+      const request = spec.buildRequests([bidRequest], {...bidderRequest, ...gdprData});
+
+      const data = JSON.parse(request.data);
+
+      expect(data.user).to.deep.equal({
+        ext: {
+          consent: tcString
+        }
+      });
+      expect(data.regs).to.deep.equal({
+        ext: {
+          gdpr: true
+        }
+      });
     });
   });
 
@@ -215,6 +280,9 @@ describe('ReadPeakAdapter', function() {
         currency: serverResponse.cur
       });
 
+      expect(bidResponse.meta).to.deep.equal({
+        advertiserDomains: ['readpeak.com'],
+      })
       expect(bidResponse.native.title).to.equal('Title');
       expect(bidResponse.native.body).to.equal('Description');
       expect(bidResponse.native.image).to.deep.equal({
