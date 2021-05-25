@@ -3,6 +3,7 @@ import { spec, _getPlatform } from 'modules/sonobiBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import {userSync} from '../../../src/userSync.js';
 import { config } from 'src/config.js';
+import * as utils from '../../../src/utils.js';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -239,9 +240,12 @@ describe('SonobiBidAdapter', function () {
   describe('.buildRequests', function () {
     beforeEach(function() {
       sinon.stub(userSync, 'canBidderRegisterSync');
+      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
+        .onFirstCall().returns({gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id'})
     });
     afterEach(function() {
       userSync.canBidderRegisterSync.restore();
+      utils.getGptSlotInfoForAdUnitCode.restore();
     });
     let bidRequest = [{
       'schain': {
@@ -271,6 +275,24 @@ describe('SonobiBidAdapter', function () {
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
       'bidId': '30b31c1838de1f',
+      ortb2Imp: {
+        ext: {
+          data: {
+            pbadslot: '/123123/gpt_publisher/adunit-code-1'
+          }
+        }
+      }
+    },
+    {
+      'bidder': 'sonobi',
+      'params': {
+        'placement_id': '1a2b3c4d5e6f1a2b3c4e',
+        'sizes': [[300, 250], [300, 600]],
+        'referrer': 'overrides_top_window_location'
+      },
+      'adUnitCode': 'adunit-code-3',
+      'sizes': [[120, 600], [300, 600], [160, 600]],
+      'bidId': '30b31c1838de1d',
     },
     {
       'bidder': 'sonobi',
@@ -285,8 +307,9 @@ describe('SonobiBidAdapter', function () {
     }];
 
     let keyMakerData = {
-      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25',
-      '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600',
+      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25|gpid=/123123/gpt_publisher/adunit-code-1',
+      '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|gpid=/123123/gpt_publisher/adunit-code-3',
+      '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB',
     };
 
     let bidderRequests = {
