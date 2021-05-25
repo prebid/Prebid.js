@@ -4,8 +4,8 @@ import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
-const ENDPOINT_URL = 'https:/ssp.disqus.com/bid';
-const USER_SYNC_URL = 'https:/ssp.disqus.com/match';
+const ENDPOINT_URL = 'https://ssp.disqus.com/bid';
+const USER_SYNC_URL = 'https://ssp.disqus.com/match';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
@@ -53,7 +53,7 @@ export const spec = {
       cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
-      device: fpd.device ? fpd.device : {},
+      device: {...fpd.device, ...params.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {

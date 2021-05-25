@@ -27,7 +27,8 @@
     "novatiqIdSystem",
     "uid2IdSystem",
     "admixerIdSystem",
-    "dmdIdSystem"
+    "dmdIdSystem",
+    "flocIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -35,10 +36,15 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
+    "geoedgeRtdProvider",
     "haloRtdProvider",
     "jwplayerRtdProvider",
+    "permutiveRtdProvider",
     "reconciliationRtdProvider",
-    "geoedgeRtdProvider",
     "sirdataRtdProvider"
+  ],
+  "fpdModule": [
+    "enrichmentFpdModule",
+    "validationFpdModule"
   ]
 }

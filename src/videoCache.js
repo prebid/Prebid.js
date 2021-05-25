@@ -71,6 +71,7 @@ function toStorageRequest(bid) {
   if (config.getConfig('cache.vasttrack')) {
     payload.bidder = bid.bidder;
     payload.bidid = bid.requestId;
+    payload.aid = bid.auctionId;
     // function has a thisArg set to bidderRequest for accessing the auctionStart
     if (utils.isPlainObject(this) && this.hasOwnProperty('auctionStart')) {
       payload.timestamp = this.auctionStart;
