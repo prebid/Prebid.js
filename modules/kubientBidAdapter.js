@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'kubient';
@@ -9,7 +9,7 @@ const VENDOR_ID = 794;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: VENDOR_ID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
     return !!(bid && bid.params);
   },
