@@ -58,6 +58,7 @@ export const spec = {
       let placement = {
         placementId: bid.params.placement_id,
         bidId: bid.bidId,
+        floor: {},
       };
 
       if (bid.mediaTypes.hasOwnProperty(BANNER)) {
@@ -87,6 +88,23 @@ export const spec = {
           placement['playbackmethod'] = bid.mediaTypes.video.playbackmethod;
         }
       }
+
+      if (typeof bid.getFloor === 'function') {
+        let floorInfo = {};
+
+        for (let size of placement['sizes']) {
+          floorInfo = bid.getFloor({
+            currency: 'USD',
+            mediaType: placement['traffic'],
+            size: size,
+          });
+
+          if (typeof floorInfo === 'object' && floorInfo.currency === 'USD') {
+            placement.floor[`${size[0]}x${size[1]}`] = parseFloat(floorInfo.floor);
+          }
+        }
+      }
+
       if (bid.schain) {
         placement.schain = bid.schain;
       }
