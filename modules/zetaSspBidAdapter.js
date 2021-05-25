@@ -83,7 +83,7 @@ export const spec = {
         }
       };
     }
-    provideSharedId(request, payload);
+    provideEids(request, payload);
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -157,7 +157,7 @@ function buildBanner(request) {
   };
 }
 
-function provideSharedId(request, payload) {
+function provideEids(request, payload) {
   if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
     utils.deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
   }
