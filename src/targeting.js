@@ -609,7 +609,7 @@ export function newTargeting(auctionManager) {
         return {
           [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
             key => typeof bid.adserverTargeting[key] !== 'undefined' &&
-            allowedSendAllBidTargeting.includes(key))
+            allowedSendAllBidTargeting.indexOf(key) !== -1)
           )
         };
       }
