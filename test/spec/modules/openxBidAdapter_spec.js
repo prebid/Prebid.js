@@ -341,7 +341,8 @@ describe('OpenxAdapter', function () {
       },
       'bidId': 'test-bid-id-1',
       'bidderRequestId': 'test-bid-request-1',
-      'auctionId': 'test-auction-1'
+      'auctionId': 'test-auction-1',
+      'ortb2Imp': { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } }
     }, {
       'bidder': 'openx',
       'params': {
@@ -356,7 +357,8 @@ describe('OpenxAdapter', function () {
       },
       'bidId': 'test-bid-id-2',
       'bidderRequestId': 'test-bid-request-2',
-      'auctionId': 'test-auction-2'
+      'auctionId': 'test-auction-2',
+      'ortb2Imp': { ext: { data: { pbadslot: '/12345/my-gpt-tag-1' } } }
     }];
 
     const bidRequestsWithPlatform = [{
@@ -450,7 +452,12 @@ describe('OpenxAdapter', function () {
 
     it('should send the adunit codes', function () {
       const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-      expect(request[0].data.divIds).to.equal(`${encodeURIComponent(bidRequestsWithMediaTypes[0].adUnitCode)},${encodeURIComponent(bidRequestsWithMediaTypes[1].adUnitCode)}`);
+      expect(request[0].data.divids).to.equal(`${encodeURIComponent(bidRequestsWithMediaTypes[0].adUnitCode)},${encodeURIComponent(bidRequestsWithMediaTypes[1].adUnitCode)}`);
+    });
+
+    it('should send the gpids', function () {
+      const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+      expect(request[0].data.aucs).to.equal(`${encodeURIComponent('/12345/my-gpt-tag-0')},${encodeURIComponent('/12345/my-gpt-tag-1')}`);
     });
 
     it('should send ad unit ids when any are defined', function () {
@@ -1238,7 +1245,8 @@ describe('OpenxAdapter', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
-      'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
+      'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e',
+      'ortb2Imp': { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } }
     }];
     const mockBidderRequest = {refererInfo: {}};
 
@@ -1254,6 +1262,7 @@ describe('OpenxAdapter', function () {
       expect(dataParams.auid).to.equal('12345678');
       expect(dataParams.vht).to.equal(480);
       expect(dataParams.vwd).to.equal(640);
+      expect(dataParams.aucs).to.equal(encodeURIComponent('/12345/my-gpt-tag-0'));
     });
 
     it('shouldn\'t have the test parameter', function () {
@@ -1313,18 +1322,86 @@ describe('OpenxAdapter', function () {
         expect(request[0].data.ju).to.not.equal(myUrl);
       });
 
-      describe('when using the openRtb param', function () {
-        it('should covert the param to a JSON string', function () {
-          let myOpenRTBObject = {};
+      describe('when using the openrtb video params', function () {
+        it('should parse legacy params.video.openrtb', function () {
+          let myOpenRTBObject = {mimes: ['application/javascript']};
           videoBidRequest.params.video = {
             openrtb: myOpenRTBObject
           };
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
           const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
 
-          expect(request[0].data.openrtb).to.equal(JSON.stringify(myOpenRTBObject));
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
         });
 
-        it("should use the bidRequest's playerSize when it is available", function () {
+        it('should parse legacy params.openrtb', function () {
+          let myOpenRTBObject = {mimes: ['application/javascript']};
+          videoBidRequest.params.openrtb = myOpenRTBObject;
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
+        });
+
+        it('should parse legacy params.video', function () {
+          let myOpenRTBObject = {mimes: ['application/javascript']};
+          videoBidRequest.params.video = myOpenRTBObject;
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
+        });
+
+        it('should parse legacy params.video as full openrtb', function () {
+          let myOpenRTBObject = {imp: [{video: {mimes: ['application/javascript']}}]};
+          videoBidRequest.params.video = myOpenRTBObject;
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
+        });
+
+        it('should parse legacy video.openrtb', function () {
+          let myOpenRTBObject = {mimes: ['application/javascript']};
+          videoBidRequest.params.video = {
+            openrtb: myOpenRTBObject
+          };
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
+        });
+
+        it('should omit filtered values for legacy', function () {
+          let myOpenRTBObject = {mimes: ['application/javascript'], dont: 'use'};
+          videoBidRequest.params.video = {
+            openrtb: myOpenRTBObject
+          };
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
+        });
+
+        it('should parse mediatypes.video', function () {
+          videoBidRequest.mediaTypes.video.mimes = ['application/javascript']
+          videoBidRequest.mediaTypes.video.minduration = 15
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+          const openRtbRequestParams = JSON.parse(request[0].data.openrtb);
+          expect(openRtbRequestParams.imp[0].video.mimes).to.eql(['application/javascript']);
+          expect(openRtbRequestParams.imp[0].video.minduration).to.equal(15);
+        });
+
+        it('should filter mediatypes.video', function () {
+          videoBidRequest.mediaTypes.video.mimes = ['application/javascript']
+          videoBidRequest.mediaTypes.video.minnothing = 15
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+          const openRtbRequestParams = JSON.parse(request[0].data.openrtb);
+          expect(openRtbRequestParams.imp[0].video.mimes).to.eql(['application/javascript']);
+          expect(openRtbRequestParams.imp[0].video.minnothing).to.equal(undefined);
+        });
+
+        it("should use the bidRequest's playerSize", function () {
           const width = 200;
           const height = 100;
           const myOpenRTBObject = {v: height, w: width};
@@ -1334,24 +1411,8 @@ describe('OpenxAdapter', function () {
           const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
           const openRtbRequestParams = JSON.parse(request[0].data.openrtb);
 
-          expect(openRtbRequestParams.w).to.not.equal(width);
-          expect(openRtbRequestParams.v).to.not.equal(height);
-        });
-
-        it('should use the the openRTB\'s sizing when the bidRequest\'s playerSize is not available', function () {
-          const width = 200;
-          const height = 100;
-          const myOpenRTBObject = {v: height, w: width};
-          videoBidRequest.params.video = {
-            openrtb: myOpenRTBObject
-          };
-          videoBidRequest.mediaTypes.video.playerSize = undefined;
-
-          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
-          const openRtbRequestParams = JSON.parse(request[0].data.openrtb);
-
-          expect(openRtbRequestParams.w).to.equal(width);
-          expect(openRtbRequestParams.v).to.equal(height);
+          expect(openRtbRequestParams.imp[0].video.w).to.equal(640);
+          expect(openRtbRequestParams.imp[0].video.h).to.equal(480);
         });
       });
     });
@@ -1465,7 +1526,7 @@ describe('OpenxAdapter', function () {
       const request = spec.buildRequests([multiformatBid], mockBidderRequest);
       const dataParams = request[0].data;
 
-      expect(dataParams.divIds).to.have.string(multiformatBid.adUnitCode);
+      expect(dataParams.divids).to.have.string(multiformatBid.adUnitCode);
     });
   });
 

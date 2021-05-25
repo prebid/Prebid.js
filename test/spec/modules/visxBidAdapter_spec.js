@@ -460,7 +460,7 @@ describe('VisxAdapter', function () {
       ];
 
       const response = Object.assign({}, responses[0]);
-      Object.assign(response.bid[0], {'cur': 'PLN'});
+      response.bid = [Object.assign({}, response.bid[0], {'cur': 'PLN'})];
       const result = spec.interpretResponse({'body': {'seatbid': [response]}}, request);
       expect(result).to.deep.equal(expectedResponse);
       getConfigStub.restore();
@@ -756,6 +756,56 @@ describe('VisxAdapter', function () {
       const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });
+
+    it('should get right ext data in bid response', function () {
+      const bidRequests = [
+        {
+          'bidder': 'visx',
+          'params': {
+            'uid': '903535'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '659423fff799cb',
+          'bidderRequestId': '5f2009617a7c0a',
+          'auctionId': '1cbd2feafe5e8b',
+        }
+      ];
+      const request = spec.buildRequests(bidRequests);
+      const pendingUrl = 'https://t.visx.net/track/pending/123123123';
+      const winUrl = 'https://t.visx.net/track/win/53245341';
+      const expectedResponse = [
+        {
+          'requestId': '659423fff799cb',
+          'cpm': 1.15,
+          'creativeId': 903535,
+          'dealId': undefined,
+          'width': 300,
+          'height': 250,
+          'ad': '<div>test content 1</div>',
+          'currency': 'EUR',
+          'netRevenue': true,
+          'ttl': 360,
+          'ext': {
+            'events': {
+              'pending': pendingUrl,
+              'win': winUrl
+            }
+          }
+        }
+      ];
+      const serverResponse = Object.assign({}, responses[0]);
+      serverResponse.bid = [Object.assign({}, {ext: {
+        prebid: {
+          events: {
+            'pending': pendingUrl,
+            'win': winUrl
+          }
+        }
+      }}, serverResponse.bid[0])];
+      const result = spec.interpretResponse({'body': {'seatbid': [serverResponse]}}, request);
+      expect(result).to.deep.equal(expectedResponse);
+    });
   });
   describe('check trackers', function () {
     beforeEach(function () {
@@ -767,15 +817,17 @@ describe('VisxAdapter', function () {
     });
 
     it('onSetTargeting', function () {
-      const requestId = '111';
-      spec.onSetTargeting({ requestId });
-      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/pending?requestId=' + requestId)).to.equal(true);
+      const trackUrl = 'https://t.visx.net/track/pending/123123123';
+      const bid = { ext: { events: { pending: trackUrl } } };
+      spec.onSetTargeting(bid);
+      expect(utils.triggerPixel.calledOnceWith(trackUrl)).to.equal(true);
     });
 
     it('onBidWon', function () {
-      const requestId = '111';
-      spec.onBidWon({ requestId });
-      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/win?requestId=' + requestId)).to.equal(true);
+      const trackUrl = 'https://t.visx.net/track/win/123123123';
+      const bid = { ext: { events: { win: trackUrl } } };
+      spec.onBidWon(bid);
+      expect(utils.triggerPixel.calledOnceWith(trackUrl)).to.equal(true);
     });
 
     it('onTimeout', function () {
