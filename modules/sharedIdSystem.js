@@ -7,6 +7,7 @@
 
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
+import { uspDataHandler, coppaDataHandler } from '../src/adapterManager.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
 
@@ -64,6 +65,11 @@ export const pubCommonIdSubmodule = {
    * @returns {IdResponse}
    */
   getId: function (config = {}, consentData, storedId) {
+    const coppa = coppaDataHandler.getCoppa();
+    if (coppa) {
+      utils.logInfo('SharedId: IDs not provided for coppa requests, exiting SharedId');
+      return;
+    }
     const {params: {create = true, pixelUrl} = {}} = config;
     let newId = storedId;
     if (!newId) {
