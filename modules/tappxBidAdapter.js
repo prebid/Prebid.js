@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.10514';
+const TAPPX_BIDDER_VERSION = '0.1.10526';
 const TYPE_CNN = 'prebidjs';
 const VIDEO_SUPPORT = ['instream'];
 
