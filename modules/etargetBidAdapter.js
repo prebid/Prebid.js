@@ -58,7 +58,7 @@ export const spec = {
       data: bidderRequest,
       bids: validBidRequests,
       netRevenue: netRevenue,
-      metaData: getMetaData(),
+      //metaData: getMetaData(),
       bidder: 'etarget',
       gdpr: gdprObject
     };
