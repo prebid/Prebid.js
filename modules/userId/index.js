@@ -101,6 +101,7 @@
  * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
  * @property {(string|undefined)} pd - publisher provided data for reconciling ID5 IDs
  * @property {(string|undefined)} emailHash - if provided, the hashed email address of a user
+ * @property {(string|undefined)} notUse3P - use to retrieve envelope from 3p endpoint
  */
 
 /**
@@ -137,8 +138,10 @@ import { getGlobal } from '../../src/prebidGlobal.js';
 import { gdprDataHandler } from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import { module, hook } from '../../src/hook.js';
-import { createEidsArray } from './eids.js';
+import { createEidsArray, buildEidPermissions } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
+import {getPrebidInternal} from '../../src/utils.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -215,6 +218,14 @@ export function setStoredValue(submodule, value) {
   }
 }
 
+function setPrebidServerEidPermissions(initializedSubmodules) {
+  let setEidPermissions = getPrebidInternal().setEidPermissions;
+  if (typeof setEidPermissions === 'function' && utils.isArray(initializedSubmodules)) {
+    setEidPermissions(buildEidPermissions(initializedSubmodules));
+  }
+}
+
+/**
 /**
  * @param {SubmoduleStorage} storage
  * @param {String|undefined} key optional key of the value
@@ -238,7 +249,7 @@ function getStoredValue(storage, key = undefined) {
       }
     }
     // support storing a string or a stringified object
-    if (typeof storedValue === 'string' && storedValue.charAt(0) === '{') {
+    if (typeof storedValue === 'string' && storedValue.trim().charAt(0) === '{') {
       storedValue = JSON.parse(storedValue);
     }
   } catch (e) {
@@ -435,6 +446,26 @@ function getCombinedSubmoduleIds(submodules) {
 }
 
 /**
+ * This function will create a combined object for bidder with allowed subModule Ids
+ * @param {SubmoduleContainer[]} submodules
+ * @param {string} bidder
+ */
+function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
+  if (!Array.isArray(submodules) || !submodules.length || !bidder) {
+    return {};
+  }
+  return submodules
+    .filter(i => !i.config.bidders || !utils.isArray(i.config.bidders) || includes(i.config.bidders, bidder))
+    .filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
+    .reduce((carry, i) => {
+      Object.keys(i.idObj).forEach(key => {
+        carry[key] = i.idObj[key];
+      });
+      return carry;
+    }, {});
+}
+
+/**
  * @param {AdUnit[]} adUnits
  * @param {SubmoduleContainer[]} submodules
  */
@@ -442,19 +473,18 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
   if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
     return;
   }
-  const combinedSubmoduleIds = getCombinedSubmoduleIds(submodules);
-  const combinedSubmoduleIdsAsEids = createEidsArray(combinedSubmoduleIds);
-  if (Object.keys(combinedSubmoduleIds).length) {
-    adUnits.forEach(adUnit => {
-      if (adUnit.bids && utils.isArray(adUnit.bids)) {
-        adUnit.bids.forEach(bid => {
+  adUnits.forEach(adUnit => {
+    if (adUnit.bids && utils.isArray(adUnit.bids)) {
+      adUnit.bids.forEach(bid => {
+        const combinedSubmoduleIds = getCombinedSubmoduleIdsForBidder(submodules, bid.bidder);
+        if (Object.keys(combinedSubmoduleIds).length) {
           // create a User ID object on the bid,
           bid.userId = combinedSubmoduleIds;
-          bid.userIdAsEids = combinedSubmoduleIdsAsEids;
-        });
-      }
-    });
-  }
+          bid.userIdAsEids = createEidsArray(combinedSubmoduleIds);
+        }
+      });
+    }
+  });
 }
 
 /**
@@ -467,6 +497,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
   if (typeof initializedSubmodules === 'undefined') {
     initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
     if (initializedSubmodules.length) {
+      setPrebidServerEidPermissions(initializedSubmodules);
       // list of submodules that have callbacks that need to be executed
       const submodulesWithCallbacks = initializedSubmodules.filter(item => utils.isFn(item.callback));
 
@@ -561,15 +592,16 @@ function refreshUserIds(options, callback) {
   initializeSubmodulesAndExecuteCallbacks(function() {
     let consentData = gdprDataHandler.getConsentData()
 
-    const storedConsentData = getStoredConsentData();
-    setStoredConsentData(consentData);
-
     // gdpr consent with purpose one is required, otherwise exit immediately
     let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
     if (!hasValidated && !hasGDPRConsent(consentData)) {
       utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
       return;
     }
+
+    // we always want the latest consentData stored, even if we don't execute any submodules
+    const storedConsentData = getStoredConsentData();
+    setStoredConsentData(consentData);
 
     let callbackSubmodules = [];
     for (let submodule of userIdModules) {
@@ -660,16 +692,16 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
  * @returns {SubmoduleContainer[]} initialized submodules
  */
 function initSubmodules(submodules, consentData) {
-  // we always want the latest consentData stored, even if we don't execute any submodules
-  const storedConsentData = getStoredConsentData();
-  setStoredConsentData(consentData);
-
   // gdpr consent with purpose one is required, otherwise exit immediately
   let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
   if (!hasValidated && !hasGDPRConsent(consentData)) {
     utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
     return [];
   }
+
+  // we always want the latest consentData stored, even if we don't execute any submodules
+  const storedConsentData = getStoredConsentData();
+  setStoredConsentData(consentData);
 
   return userIdModules.reduce((carry, submodule) => {
     populateSubmoduleId(submodule, consentData, storedConsentData, false);
@@ -725,7 +757,8 @@ function updateSubmodules() {
 
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   submodules = addedSubmodules.map(i => {
-    const submoduleConfig = find(configs, j => j.name === i.name);
+    const submoduleConfig = find(configs, j => j.name && j.name.toLowerCase() === i.name.toLowerCase());
+    if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
     i.findRootDomain = findRootDomain;
     return submoduleConfig ? {
       submodule: i,

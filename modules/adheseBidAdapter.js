@@ -24,8 +24,7 @@ export const spec = {
 
     const gdprParams = (gdprConsent && gdprConsent.consentString) ? { xt: [gdprConsent.consentString] } : {};
     const refererParams = (refererInfo && refererInfo.referer) ? { xf: [base64urlEncode(refererInfo.referer)] } : {};
-    const id5Params = (getId5Id(validBidRequests)) ? { x5: [getId5Id(validBidRequests)] } : {};
-    const commonParams = { ...gdprParams, ...refererParams, ...id5Params };
+    const commonParams = { ...gdprParams, ...refererParams };
 
     const slots = validBidRequests.map(bid => ({
       slotname: bidToSlotName(bid),
@@ -34,8 +33,14 @@ export const spec = {
 
     const payload = {
       slots: slots,
-      parameters: commonParams
-    }
+      parameters: commonParams,
+      vastContentAsUrl: true,
+      user: {
+        ext: {
+          eids: getEids(validBidRequests),
+        }
+      }
+    };
 
     const account = getAccount(validBidRequests);
     const uri = 'https://ads-' + account + '.adhese.com/json';
@@ -91,7 +96,7 @@ function adResponse(bid, ad) {
 
   const bidResponse = getbaseAdResponse({
     requestId: bid.bidId,
-    mediaType: getMediaType(markup),
+    mediaType: ad.extension.mediaType,
     cpm: Number(price.amount),
     currency: price.currency,
     width: Number(ad.width),
@@ -106,7 +111,11 @@ function adResponse(bid, ad) {
   });
 
   if (bidResponse.mediaType === VIDEO) {
-    bidResponse.vastXml = markup;
+    if (ad.cachedBodyUrl) {
+      bidResponse.vastUrl = ad.cachedBodyUrl
+    } else {
+      bidResponse.vastXml = markup;
+    }
   } else {
     const counter = ad.impressionCounter ? "<img src='" + ad.impressionCounter + "' style='height:1px; width:1px; margin: -1px -1px; display:none;'/>" : '';
     bidResponse.ad = markup + counter;
@@ -154,9 +163,9 @@ function getAccount(validBidRequests) {
   return validBidRequests[0].params.account;
 }
 
-function getId5Id(validBidRequests) {
-  if (validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.id5id && validBidRequests[0].userId.id5id.uid) {
-    return validBidRequests[0].userId.id5id.uid;
+function getEids(validBidRequests) {
+  if (validBidRequests[0] && validBidRequests[0].userIdAsEids) {
+    return validBidRequests[0].userIdAsEids;
   }
 }
 
@@ -166,11 +175,6 @@ function getbaseAdResponse(response) {
 
 function isAdheseAd(ad) {
   return !ad.origin || ad.origin === 'JERLICIA';
-}
-
-function getMediaType(markup) {
-  const isVideo = markup.trim().toLowerCase().match(/<\?xml|<vast/);
-  return isVideo ? VIDEO : BANNER;
 }
 
 function getAdMarkup(ad) {

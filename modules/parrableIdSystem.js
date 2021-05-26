@@ -6,6 +6,7 @@
  */
 
 import * as utils from '../src/utils.js'
+import find from 'core-js-pure/features/array/find.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -33,24 +34,35 @@ function deserializeParrableId(parrableIdStr) {
 
   values.forEach(function(value) {
     const pair = value.split(':');
-    // unpack a value of 1 as true
-    parrableId[pair[0]] = +pair[1] === 1 ? true : pair[1];
+    if (+pair[1] === 1 || (pair[1] !== null && +pair[1] === 0)) { // unpack a value of 0 or 1 as boolean
+      parrableId[pair[0]] = Boolean(+pair[1]);
+    } else if (!isNaN(pair[1])) { // convert to number if is a number
+      parrableId[pair[0]] = +pair[1]
+    } else {
+      parrableId[pair[0]] = pair[1]
+    }
   });
 
   return parrableId;
 }
 
-function serializeParrableId(parrableId) {
+function serializeParrableId(parrableIdAndParams) {
   let components = [];
 
-  if (parrableId.eid) {
-    components.push('eid:' + parrableId.eid);
+  if (parrableIdAndParams.eid) {
+    components.push('eid:' + parrableIdAndParams.eid);
   }
-  if (parrableId.ibaOptout) {
+  if (parrableIdAndParams.ibaOptout) {
     components.push('ibaOptout:1');
   }
-  if (parrableId.ccpaOptout) {
+  if (parrableIdAndParams.ccpaOptout) {
     components.push('ccpaOptout:1');
+  }
+  if (parrableIdAndParams.tpcSupport !== undefined) {
+    const tpcSupportComponent = parrableIdAndParams.tpcSupport === true ? 'tpc:1' : 'tpc:0';
+    const tpcUntil = `tpcUntil:${parrableIdAndParams.tpcUntil}`;
+    components.push(tpcSupportComponent);
+    components.push(tpcUntil);
   }
 
   return components.join(',');
@@ -83,14 +95,21 @@ function encodeBase64UrlSafe(base64) {
 function readCookie() {
   const parrableIdStr = storage.getCookie(PARRABLE_COOKIE_NAME);
   if (parrableIdStr) {
-    return deserializeParrableId(decodeURIComponent(parrableIdStr));
+    const parsedCookie = deserializeParrableId(decodeURIComponent(parrableIdStr));
+    const { tpc, tpcUntil, ...parrableId } = parsedCookie;
+    let { eid, ibaOptout, ccpaOptout, ...params } = parsedCookie;
+
+    if ((Date.now() / 1000) >= tpcUntil) {
+      params.tpc = undefined;
+    }
+    return { parrableId, params };
   }
   return null;
 }
 
-function writeCookie(parrableId) {
-  if (parrableId) {
-    const parrableIdStr = encodeURIComponent(serializeParrableId(parrableId));
+function writeCookie(parrableIdAndParams) {
+  if (parrableIdAndParams) {
+    const parrableIdStr = encodeURIComponent(serializeParrableId(parrableIdAndParams));
     storage.setCookie(PARRABLE_COOKIE_NAME, parrableIdStr, getExpirationDate(), 'lax');
   }
 }
@@ -137,12 +156,18 @@ function shouldFilterImpression(configParams, parrableId) {
   const offset = (new Date()).getTimezoneOffset() / 60;
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+  function isZoneListed(list, zone) {
+    // IE does not provide a timeZone in IANA format so zone will be empty
+    const zoneLowercase = zone && zone.toLowerCase();
+    return !!(list && zone && find(list, zn => zn.toLowerCase() === zoneLowercase));
+  }
+
   function isAllowed() {
     if (utils.isEmpty(config.allowedZones) &&
       utils.isEmpty(config.allowedOffsets)) {
       return true;
     }
-    if (utils.contains(config.allowedZones, zone)) {
+    if (isZoneListed(config.allowedZones, zone)) {
       return true;
     }
     if (utils.contains(config.allowedOffsets, offset)) {
@@ -156,7 +181,7 @@ function shouldFilterImpression(configParams, parrableId) {
       utils.isEmpty(config.blockedOffsets)) {
       return false;
     }
-    if (utils.contains(config.blockedZones, zone)) {
+    if (isZoneListed(config.blockedZones, zone)) {
       return true;
     }
     if (utils.contains(config.blockedOffsets, offset)) {
@@ -165,13 +190,17 @@ function shouldFilterImpression(configParams, parrableId) {
     return false;
   }
 
-  return !isAllowed() || isBlocked();
+  return isBlocked() || !isAllowed();
+}
+
+function epochFromTtl(ttl) {
+  return Math.floor((Date.now() / 1000) + ttl);
 }
 
 function fetchId(configParams, gdprConsentData) {
   if (!isValidConfig(configParams)) return;
 
-  let parrableId = readCookie();
+  let { parrableId, params } = readCookie() || {};
   if (!parrableId) {
     parrableId = readLegacyCookies();
     migrateLegacyCookies(parrableId);
@@ -181,12 +210,13 @@ function fetchId(configParams, gdprConsentData) {
     return null;
   }
 
-  const eid = (parrableId) ? parrableId.eid : null;
+  const eid = parrableId ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
+  const tpcSupport = params ? params.tpc : null
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = (gdprConsentData && typeof gdprConsentData.gdprApplies === 'boolean' && gdprConsentData.gdprApplies);
   const gdprConsentString = (gdprConsentData && gdprApplies && gdprConsentData.consentString) || '';
-  const partners = configParams.partners || configParams.partner
+  const partners = configParams.partners || configParams.partner;
   const trackers = typeof partners === 'string'
     ? partners.split(',')
     : partners;
@@ -196,7 +226,8 @@ function fetchId(configParams, gdprConsentData) {
     trackers,
     url: refererInfo.referer,
     prebidVersion: '$prebid.version$',
-    isIframe: utils.inIframe()
+    isIframe: utils.inIframe(),
+    tpcSupport
   };
 
   const searchParams = {
@@ -222,6 +253,7 @@ function fetchId(configParams, gdprConsentData) {
     const callbacks = {
       success: response => {
         let newParrableId = parrableId ? utils.deepClone(parrableId) : {};
+        let newParams = {};
         if (response) {
           try {
             let responseObj = JSON.parse(response);
@@ -235,12 +267,16 @@ function fetchId(configParams, gdprConsentData) {
               if (responseObj.ibaOptout === true) {
                 newParrableId.ibaOptout = true;
               }
+              if (responseObj.tpcSupport !== undefined) {
+                newParams.tpcSupport = responseObj.tpcSupport;
+                newParams.tpcUntil = epochFromTtl(responseObj.tpcSupportTtl);
+              }
             }
           } catch (error) {
             utils.logError(error);
             cb();
           }
-          writeCookie(newParrableId);
+          writeCookie({ ...newParrableId, ...newParams });
           cb(newParrableId);
         } else {
           utils.logError('parrableId: ID fetch returned an empty result');
