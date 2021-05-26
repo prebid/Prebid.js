@@ -18,24 +18,40 @@ export const spec = {
       return;
     }
     const result = validBidRequests.map(function (bid) {
-      let data = {
+      var adSlot = {
+        bidId: bid.bidId,
+        zoneId: bid.params.zoneid || '',
+        floor: bid.params.floor || 0.0
+      }
+
+      if (bid.mediaTypes.banner) {
+        adSlot.banner = bid.mediaTypes.banner
+      } else if (bid.mediaTypes.video) {
+        adSlot.video = bid.mediaTypes.video
+      }
+
+      if (bid.schain) {
+        adSlot.schain = bid.schain;
+      }
+
+      var data = {
         v: VERSION,
         requestId: bid.bidderRequestId,
-        adSlots: [{
-          bidId: bid.bidId,
-          zoneId: bid.params.zoneid || '',
-          floor: bid.params.floor || 0.0,
-          sizes: bid.sizes || [],
-          schain: bid.schain || {},
-          mediaTypes: bid.mediaTypes
-        }],
-        referer: (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) ? bidderRequest.refererInfo.referer : null,
+        adSlots: [adSlot],
         tmax: bidderRequest.timeout,
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,
-        consent: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) ? bidderRequest.gdprConsent.consentString : null,
         consentGiven: kubientGetConsentGiven(bidderRequest.gdprConsent),
         uspConsent: bidderRequest.uspConsent
-      };
+      }
+
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        data.referer = bidderRequest.refererInfo.referer
+      }
+
+      if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
+        data.consent = bidderRequest.gdprConsent.consentString
+      }
+
       return {
         method: 'POST',
         url: END_POINT,
