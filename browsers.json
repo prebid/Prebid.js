@@ -57,7 +57,7 @@
   },
   "bs_safari_14_mac_bigsur": {
     "base": "BrowserStack",
-    "os_version": "Catalina",
+    "os_version": "Big Sur",
     "browser": "safari",
     "browser_version": "14.0",
     "device": null,
