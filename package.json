@@ -57,7 +57,7 @@
     "gulp-connect": "^5.7.0",
     "gulp-eslint": "^4.0.0",
     "gulp-footer": "^2.0.2",
-    "gulp-header": "^1.7.1",
+    "gulp-header": "^2.0.9",
     "gulp-if": "^2.0.2",
     "gulp-js-escape": "^1.0.1",
     "gulp-replace": "^1.0.0",
