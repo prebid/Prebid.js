@@ -511,7 +511,7 @@ describe('S2S Adapter', function () {
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.id).to.equal('173afb6d132ba3');
-      expect(requestBid.source).to.be.an('object').
+      expect(requestBid.source).to.be.an('object');
       expect(requestBid.source.tid).to.equal('173afb6d132ba3');
     });
 
