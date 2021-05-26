@@ -35,7 +35,7 @@ import {netIdSubmodule} from 'modules/netIdSystem.js';
 import {nextrollIdSubmodule} from 'modules/nextrollIdSystem.js';
 import {intentIqIdSubmodule} from 'modules/intentIqIdSystem.js';
 import {zeotapIdPlusSubmodule} from 'modules/zeotapIdPlusIdSystem.js';
-import {pubCommonIdSubmodule} from 'modules/sharedIdSystem.js';
+import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {haloIdSubmodule} from 'modules/haloIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import {criteoIdSubmodule} from 'modules/criteoIdSystem.js';
@@ -136,7 +136,7 @@ describe('User ID', function () {
       let pubcid = coreStorage.getCookie('pubcid');
       expect(pubcid).to.be.null; // there should be no cookie initially
 
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
 
@@ -170,7 +170,7 @@ describe('User ID', function () {
       let pubcid1;
       let pubcid2;
 
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
       requestBidsHook((config) => {
@@ -190,7 +190,7 @@ describe('User ID', function () {
         });
       });
 
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
       requestBidsHook((config) => {
@@ -217,7 +217,7 @@ describe('User ID', function () {
       let adUnits = [getAdUnitMock()];
       let innerAdUnits;
 
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid_alt', 'cookie']));
       requestBidsHook((config) => {
@@ -244,7 +244,7 @@ describe('User ID', function () {
       let customConfig = getConfigMock(['pubCommonId', 'pubcid_alt', 'cookie']);
       customConfig = addConfig(customConfig, 'params', {extend: true});
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
       init(config);
       config.setConfig(customConfig);
       requestBidsHook((config) => {
@@ -271,7 +271,7 @@ describe('User ID', function () {
       let customConfig = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
       customConfig = addConfig(customConfig, 'params', {create: false});
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
       init(config);
       config.setConfig(customConfig);
       requestBidsHook((config) => {
@@ -288,7 +288,7 @@ describe('User ID', function () {
     });
 
     it('pbjs.getUserIds', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -303,7 +303,7 @@ describe('User ID', function () {
     });
 
     it('pbjs.getUserIdsAsEids', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -438,14 +438,14 @@ describe('User ID', function () {
     });
 
     it('fails initialization if opt out cookie exists', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - opt-out cookie found, exit module');
     });
 
     it('initializes if no opt out cookie exists', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
       expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
@@ -464,7 +464,7 @@ describe('User ID', function () {
     });
 
     it('handles config with no usersync object', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({});
       // usersync is undefined, and no logInfo message for 'User ID - usersync config updated'
@@ -472,14 +472,14 @@ describe('User ID', function () {
     });
 
     it('handles config with empty usersync object', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({userSync: {}});
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
     it('handles config with usersync and userIds that are empty objs', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -490,7 +490,7 @@ describe('User ID', function () {
     });
 
     it('handles config with usersync and userIds with empty names or that dont match a submodule.name', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -507,7 +507,7 @@ describe('User ID', function () {
     });
 
     it('config with 1 configurations should create 1 submodules', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['unifiedId', 'unifiedid', 'cookie']));
 
@@ -529,9 +529,9 @@ describe('User ID', function () {
     });
 
     it('config with 21 configurations should result in 21 submodules add', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
       it('config with 14 configurations should result in 14 submodules add', function () {
-        setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule]);
         init(config);
         config.setConfig({
           userSync: {
@@ -595,7 +595,7 @@ describe('User ID', function () {
       });
 
       it('config syncDelay updates module correctly', function () {
-        setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
 
         init(config);
         config.setConfig({
@@ -611,7 +611,7 @@ describe('User ID', function () {
       });
 
       it('config auctionDelay updates module correctly', function () {
-        setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
         init(config);
         config.setConfig({
           userSync: {
@@ -626,7 +626,7 @@ describe('User ID', function () {
       });
 
       it('config auctionDelay defaults to 0 if not a number', function () {
-        setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
         init(config);
         config.setConfig({
           userSync: {
@@ -860,7 +860,7 @@ describe('User ID', function () {
       it('test hook from pubcommonid cookie', function (done) {
         coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 100000).toUTCString()));
 
-        setSubmoduleRegistry([pubCommonIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
         init(config);
         config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
 
@@ -885,7 +885,7 @@ describe('User ID', function () {
         localStorage.setItem('pubcid', 'testpubcid');
         localStorage.setItem('pubcid_exp', new Date(Date.now() + 100000).toUTCString());
 
-        setSubmoduleRegistry([pubCommonIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
         init(config);
         config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'html5']));
 
@@ -907,7 +907,7 @@ describe('User ID', function () {
       });
 
       it('test hook from pubcommonid config value object', function (done) {
-        setSubmoduleRegistry([pubCommonIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
         init(config);
         config.setConfig(getConfigValueMock('pubCommonId', {'pubcidvalue': 'testpubcidvalue'}));
 
@@ -1094,7 +1094,7 @@ describe('User ID', function () {
       it('eidPermissions fun with bidders', function (done) {
         coreStorage.setCookie('pubcid', 'test222', (new Date(Date.now() + 5000).toUTCString()));
 
-        setSubmoduleRegistry([pubCommonIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
         let eidPermissions;
         getPrebidInternal().setEidPermissions = function (newEidPermissions) {
           eidPermissions = newEidPermissions;
@@ -1160,7 +1160,7 @@ describe('User ID', function () {
       it('eidPermissions fun without bidders', function (done) {
         coreStorage.setCookie('pubcid', 'test222', new Date(Date.now() + 5000).toUTCString());
 
-        setSubmoduleRegistry([pubCommonIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
         let eidPermissions;
         getPrebidInternal().setEidPermissions = function (newEidPermissions) {
           eidPermissions = newEidPermissions;
@@ -1659,7 +1659,7 @@ describe('User ID', function () {
         coreStorage.setCookie('admixerId', 'testadmixerId', (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('deepintentId', 'testdeepintentId', (new Date(Date.now() + 5000).toUTCString()));
 
-        setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
         init(config);
         config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
           ['unifiedId', 'unifiedid', 'cookie'],
@@ -1770,7 +1770,7 @@ describe('User ID', function () {
         setSubmoduleRegistry([]);
 
         // attaching before init
-        attachIdSystem(pubCommonIdSubmodule);
+        attachIdSystem(sharedIdSystemSubmodule);
 
         init(config);
 
@@ -1927,7 +1927,7 @@ describe('User ID', function () {
         coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('__uid2_advertising_token', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
 
-        setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
         init(config);
 
         config.setConfig({
@@ -2074,7 +2074,7 @@ describe('User ID', function () {
         let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
         customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url'});
 
-        setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
         init(config);
         config.setConfig(customCfg);
         requestBidsHook((config) => {
@@ -2092,7 +2092,7 @@ describe('User ID', function () {
         let customCfg = getConfigMock(['unifiedId', 'unifiedid', 'cookie']);
         addConfig(customCfg, 'params', {url: '/any/unifiedid/url'});
 
-        setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
         init(config);
         config.setConfig(customCfg);
         requestBidsHook((config) => {
@@ -2110,7 +2110,7 @@ describe('User ID', function () {
         let customCfg = getConfigMock(['unifiedId', 'unifiedid', 'cookie']);
         addConfig(customCfg, 'params', {partner: 'rubicon'});
 
-        setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
         init(config);
         config.setConfig(customCfg);
         requestBidsHook((config) => {
@@ -2127,7 +2127,7 @@ describe('User ID', function () {
       let coreStorageSpy;
       beforeEach(function () {
         coreStorageSpy = sinon.spy(coreStorage, 'setCookie');
-        setSubmoduleRegistry([pubCommonIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
         init(config);
       });
       afterEach(function () {
@@ -2349,7 +2349,7 @@ describe('User ID', function () {
         let sandbox;
 
         beforeEach(function () {
-          setSubmoduleRegistry([pubCommonIdSubmodule]);
+          setSubmoduleRegistry([sharedIdSystemSubmodule]);
           init(config);
           config.setConfig({
             userSync: {

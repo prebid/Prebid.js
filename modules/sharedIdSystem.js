@@ -1,7 +1,7 @@
 /**
- * This module adds PubCommonId to the User ID module
+ * This module adds SharedId to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/pubCommonIdSystem
+ * @module modules/sharedIdSystem
  * @requires module:modules/userId
  */
 
@@ -14,7 +14,7 @@ const PUB_COMMON_ID = 'PublisherCommonId';
 const GVLID = 887;
 
 /** @type {Submodule} */
-export const pubCommonIdSubmodule = {
+export const sharedIdSystemSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -90,4 +90,4 @@ export const pubCommonIdSubmodule = {
   },
 };
 
-submodule('userId', pubCommonIdSubmodule);
+submodule('userId', sharedIdSystemSubmodule);
