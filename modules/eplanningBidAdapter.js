@@ -82,10 +82,14 @@ export const spec = {
       if (bidderRequest && bidderRequest.uspConsent) {
         params.ccpa = bidderRequest.uspConsent;
       }
-      const userIds = (getGlobal()).getUserIds();
-      for (var id in userIds) {
-        params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
+
+      if ((getGlobal()).getUserIds && typeof (getGlobal()).getUserIds === "function") {
+        const userIds = (getGlobal()).getUserIds();
+        for (var id in userIds) {
+          params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
+        }
       }
+
     }
 
     return {
