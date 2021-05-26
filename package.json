@@ -62,7 +62,7 @@
     "gulp-js-escape": "^1.0.1",
     "gulp-replace": "^1.0.0",
     "gulp-shell": "^0.8.0",
-    "gulp-sourcemaps": "^2.6.0",
+    "gulp-sourcemaps": "^3.0.0",
     "gulp-uglify": "^3.0.0",
     "gulp-util": "^3.0.0",
     "is-docker": "^1.1.0",
