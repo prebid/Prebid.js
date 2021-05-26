@@ -278,7 +278,7 @@ export function newConfig() {
             return false
           }
         } else if (k === 'suppressStaleRender') {
-          if (typeof val[k] !== 'boolean') {
+          if (!utils.isBoolean(val[k])) {
             utils.logWarn(`Auction Options ${k} must be of type boolean`);
             return false;
           }

@@ -1241,7 +1241,7 @@ describe('Unit: Prebid Module', function () {
       sinon.assert.calledWith(spyAddWinningBid, adResponse);
     });
 
-    it.only('should warn stale rendering', function () {
+    it('should warn stale rendering', function () {
       var message = 'Calling renderAd with adId :' + bidId;
       var warning = `Ad id ${bidId} has been rendered before`;
       var onWonEvent = sinon.stub();
