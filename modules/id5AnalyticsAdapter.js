@@ -32,8 +32,7 @@ const FLUSH_EVENTS = [
   AD_RENDER_FAILED
 ];
 
-// const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics'
-const CONFIG_URL_PREFIX = 'https://127.0.0.1:8443/analytics'
+const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics'
 const TZ = new Date().getTimezoneOffset();
 const PBJS_VERSION = $$PREBID_GLOBAL$$.version;
 const ID5_REDACTED = '__ID5_REDACTED__';
