@@ -61,8 +61,7 @@ export const spec = {
       //  metaData: getMetaData(),
       bidder: 'etarget',
       gdpr: gdprObject
-    };
-    
+    }; 
     /**
     function getMetaData() {
       var mts = {};
@@ -92,7 +91,6 @@ export const spec = {
       return mts;
     }
     **/
-    
     function formRequestUrl(reqData) {
       var key;
       var url = [];
