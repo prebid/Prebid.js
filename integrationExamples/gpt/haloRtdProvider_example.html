@@ -40,27 +40,6 @@
             googletag.pubads().disableInitialLoad();
         });
 
-        var appnexusSegmentHandler = function(bid, segments) {
-            if (!bid.params) {
-                bid.params = {};
-            }
-            if (!bid.params.user) {
-                bid.params.user = {};
-            }
-
-            if (!Array.isArray(bid.params.user.segments)) {
-                 bid.params.user.segments = [];
-            }
-
-            var appnexusSegments = [];
-            for (var i = 0; i < segments.length; i++) {
-                var segment = segments[i];
-                let appnexusSegment = {'id': segment.id, 'value': segment.value};
-                appnexusSegments.push(appnexusSegment);
-            }
-            bid.params.user.segments = bid.params.user.segments.concat(appnexusSegments);
-        };
-
         pbjs.que.push(function() {
             pbjs.setConfig({
                 debug: true,
@@ -71,9 +50,6 @@
                             name: "halo",
                             waitForIt: true,
                             params: {
-                                mapSegments: {
-                                    appnexus: appnexusSegmentHandler // pass true to use the builtin handler.  here, we will demo overriding the handler with a function
-                                },
                                 segmentCache: false,
                                 requestParams: {
                                     publisherId: 0
@@ -89,7 +65,7 @@
         });
 
         function sendAdserverRequest() {
-            document.getElementById('audigent_segments').innerHTML = JSON.stringify(adUnits[0].bids[0].params.user.segments);
+            document.getElementById('audigent_segments').innerHTML = window.localStorage.getItem('auHaloRtd');
             document.getElementById('halo_id').innerHTML = testHaloId;
 
             if (pbjs.adserverRequestSent) return;
@@ -130,7 +106,7 @@
 </head>
 
 <body>
-<h2>Audigent Segments Prebid</h2>
+<h2>Halo RTD Prebid</h2>
 
 <div id='test-div'>
     <script>
@@ -142,7 +118,7 @@ Halo Id:
 <div id='halo_id'>
 </div>
 
-Audigent Segments (Appnexus):
+Halo Real-Time Data:
 <div id='audigent_segments'>
 </div>
 </body>

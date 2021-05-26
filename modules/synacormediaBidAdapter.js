@@ -14,6 +14,12 @@ const BLOCKED_AD_SIZES = [
   '1x1',
   '1x2'
 ];
+const SUPPORTED_USER_ID_SOURCES = [
+  'liveramp.com', // Liveramp IdentityLink
+  'nextroll.com', // NextRoll XID
+  'verizonmedia.com', // Verizon Media ConnectID
+  'pubcid.org' // PubCommon ID
+];
 export const spec = {
   code: 'synacormedia',
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -91,6 +97,14 @@ export const spec = {
       deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
+    // User ID
+    if (validBidReqs[0] && validBidReqs[0].userIdAsEids && Array.isArray(validBidReqs[0].userIdAsEids)) {
+      const eids = this.processEids(validBidReqs[0].userIdAsEids);
+      if (eids.length) {
+        deepSetValue(openRtbBidRequest, 'user.ext.eids', eids);
+      }
+    }
+
     if (openRtbBidRequest.imp.length && seatId) {
       return {
         method: 'POST',
@@ -102,6 +116,16 @@ export const spec = {
         }
       };
     }
+  },
+
+  processEids: function(userIdAsEids) {
+    const eids = [];
+    userIdAsEids.forEach(function(eid) {
+      if (SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) > -1) {
+        eids.push(eid);
+      }
+    });
+    return eids;
   },
 
   buildBannerImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, bidFloor, videoOrBannerKey) {
@@ -157,6 +181,9 @@ export const spec = {
         pos
       };
       if (bid.mediaTypes.video) {
+        if (!bid.params.video) {
+          bid.params.video = {};
+        }
         this.setValidVideoParams(bid.mediaTypes.video, bid.params.video);
       }
       if (bid.params.video) {
@@ -182,7 +209,6 @@ export const spec = {
       logWarn('Synacormedia: server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
       return;
     }
-
     const {id, seatbid: seatbids} = serverResponse.body;
     let bids = [];
     if (id && seatbids) {
@@ -219,7 +245,6 @@ export const spec = {
           }
           const bidObj = {
             requestId: impid,
-            adId: bid.id.replace(/~/g, '-'),
             cpm: parseFloat(bid.price),
             width: parseInt(width, 10),
             height: parseInt(height, 10),
@@ -230,6 +255,11 @@ export const spec = {
             ad: creative,
             ttl: 60
           };
+
+          if (bid.adomain != undefined || bid.adomain != null) {
+            bidObj.meta = { advertiserDomains: bid.adomain };
+          }
+
           if (isVideo) {
             const [, uuid] = nurl.match(/ID=([^&]*)&?/);
             if (!config.getConfig('cache.url')) {
