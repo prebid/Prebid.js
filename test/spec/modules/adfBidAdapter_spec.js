@@ -1,18 +1,21 @@
 // jshint esversion: 6, es3: false, node: true
-import {assert, expect} from 'chai';
-import {spec} from 'modules/adfBidAdapter.js';
-import { NATIVE } from 'src/mediaTypes.js';
+import { assert } from 'chai';
+import { spec } from 'modules/adfBidAdapter.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Adf adapter', function () {
-  let serverResponse, bidRequest, bidResponses;
   let bids = [];
 
   describe('backwards-compatibility', function () {
     it('should have adformOpenRTB alias defined', function () {
       assert.equal(spec.aliases[0].code, 'adformOpenRTB');
       assert.equal(spec.aliases[0].gvlid, 50);
+    });
+
+    it('should have adform alias defined', function () {
+      assert.equal(spec.aliases[1].code, 'adform');
+      assert.equal(spec.aliases[1].gvlid, 50);
     });
   });
 
