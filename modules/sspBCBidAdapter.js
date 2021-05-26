@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -339,7 +340,7 @@ const spec = {
             site.slot = slotid || site.slot;
           }
 
-          if (bidRequest && site.id && !site.id.includes('bidid')) {
+          if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
             // found a matching request; add this bid
 
             // store site data for future notification

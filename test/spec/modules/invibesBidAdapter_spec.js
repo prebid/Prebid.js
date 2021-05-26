@@ -736,6 +736,30 @@ describe('invibesBidAdapter:', function () {
         </html>`
     }];
 
+    let multiResponse = {
+      AdPlacements: [{
+        Ads: [{
+          BidPrice: 0.5,
+          VideoExposedId: 123
+        }],
+        BidModel: {
+          BidVersion: 1,
+          PlacementId: '12345',
+          AuctionStartTime: Date.now(),
+          CreativeHtml: '<!-- Creative -->'
+        }
+      }]
+    };
+
+    let invalidResponse = {
+      AdPlacements: [{
+        Ads: [{
+          BidPrice: 0.5,
+          VideoExposedId: 123
+        }]
+      }]
+    };
+
     context('when the response is not valid', function () {
       it('handles response with no bids requested', function () {
         let emptyResult = spec.interpretResponse({body: response});
@@ -781,24 +805,25 @@ describe('invibesBidAdapter:', function () {
         let emptyResult = spec.interpretResponse({BidModel: {}, Ads: [{BidPrice: 1}]}, {bidRequests});
         expect(emptyResult).to.be.empty;
       });
+
+      it('handles response when bid model is missing', function () {
+        let emptyResult = spec.interpretResponse(invalidResponse);
+        expect(emptyResult).to.be.empty;
+      });
     });
 
-    context('when the response is valid', function () {
-      it('responds with a valid bid', function () {
-        // top.window.invibes.setCookie('a', 'b', 370);
-        // top.window.invibes.setCookie('c', 'd', 0);
-        let result = spec.interpretResponse({body: response}, {bidRequests});
+    context('when the multiresponse is valid', function () {
+      it('responds with a valid multiresponse bid', function () {
+        let result = spec.interpretResponse({body: multiResponse}, {bidRequests});
         expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
 
-      it('responds with a valid bid and uses logger', function () {
-        localStorage.InvibesDEBUG = true;
+      it('responds with a valid singleresponse bid', function () {
         let result = spec.interpretResponse({body: response}, {bidRequests});
         expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
 
       it('does not make multiple bids', function () {
-        localStorage.InvibesDEBUG = false;
         let result = spec.interpretResponse({body: response}, {bidRequests});
         let secondResult = spec.interpretResponse({body: response}, {bidRequests});
         expect(secondResult).to.be.empty;

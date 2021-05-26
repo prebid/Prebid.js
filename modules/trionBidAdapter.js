@@ -53,6 +53,9 @@ export const spec = {
         bid.creativeId = result.creativeId;
         bid.currency = result.currency;
         bid.netRevenue = result.netRevenue;
+        if (result.adomain) {
+          bid.meta = {advertiserDomains: result.adomain}
+        }
         bidResponses.push(bid);
       }
     }

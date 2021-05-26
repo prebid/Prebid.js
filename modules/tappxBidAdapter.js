@@ -8,11 +8,10 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.10413';
+const TAPPX_BIDDER_VERSION = '0.1.10514';
 const TYPE_CNN = 'prebidjs';
 const VIDEO_SUPPORT = ['instream'];
 
-var HOST;
 var hostDomain;
 
 export const spec = {
@@ -105,13 +104,31 @@ export const spec = {
 }
 
 function validBasic(bid) {
-  if (
-    (bid.params == null) ||
-    (bid.params.endpoint == null) ||
-    (bid.params.tappxkey == null)) {
+  if (bid.params == null) {
     utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters.`);
     return false;
   }
+
+  if (bid.params.tappxkey == null) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory Tappxkey parameter.`);
+    return false;
+  }
+
+  if (bid.params.host == null) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory Host parameter.`);
+    return false;
+  }
+
+  let classicEndpoint = true
+  if ((new RegExp(`^(vz.*|zz.*)\.*$`, 'i')).test(bid.params.host)) {
+    classicEndpoint = false
+  }
+
+  if (classicEndpoint && bid.params.endpoint == null) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory endpoint Tappx parameters.`);
+    return false;
+  }
+
   return true;
 }
 
@@ -174,11 +191,10 @@ function interpretBid(serverBid, request) {
 * @return response ad
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
-  HOST = utils.deepAccess(validBidRequests, 'params.host');
-  let hostInfo = getHostInfo(HOST);
+  let hostInfo = getHostInfo(validBidRequests);
+  const ENDPOINT = hostInfo.endpoint;
   hostDomain = hostInfo.domain;
 
-  const ENDPOINT = utils.deepAccess(validBidRequests, 'params.endpoint');
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
   const BIDFLOOR = utils.deepAccess(validBidRequests, 'params.bidfloor');
   const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
@@ -262,11 +278,29 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   imp.secure = 1;
 
   imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  if (utils.isFn(validBidRequests.getFloor)) {
+    try {
+      let floor = validBidRequests.getFloor({
+        currency: CUR,
+        mediaType: '*',
+        size: '*'
+      });
+      if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+        imp.bidfloor = floor.floor;
+      } else {
+        utils.logWarn('[TAPPX]: ', 'Currency not valid. Use only USD with Tappx.');
+      }
+    } catch (e) {
+      utils.logWarn('[TAPPX]: ', e);
+      imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor'); // Be sure that we have an imp.bidfloor
+    }
+  }
 
   let bidder = {};
   bidder.tappxkey = TAPPXKEY;
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
+  bidder.bidfloor = BIDFLOOR;
   bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : undefined;
 
   imp.ext = {};
@@ -338,12 +372,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.params = params;
   payload.regs = regs;
   // < Payload
-  utils.logMessage('---------------------');
-  utils.logMessage(JSON.stringify(payload));
-  utils.logMessage('---------------------');
+
   return {
     method: 'POST',
-    url: `https://${HOST}/${ENDPOINT}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
+    url: `${hostInfo.url}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
     data: JSON.stringify(payload),
     bids: validBidRequests
   };
@@ -359,23 +391,24 @@ function getOs() {
   if (ua == null) { return 'unknown'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'ios'; } else if (ua.match(/Android/)) { return 'android'; } else if (ua.match(/Window/)) { return 'windows'; } else { return 'unknown'; }
 }
 
-function getHostInfo(hostParam) {
+function getHostInfo(validBidRequests) {
   let domainInfo = {};
+  let endpoint = utils.deepAccess(validBidRequests, 'params.endpoint');
+  let hostParam = utils.deepAccess(validBidRequests, 'params.host');
 
   domainInfo.domain = hostParam.split('/', 1)[0];
-  domainInfo.url = hostParam;
 
-  let regexNewEndpoints = new RegExp(`^(zz.*|testing)\.ssp\.tappx\.com$`, 'i');
-  let regexClassicEndpoints = new RegExp(`^[a-z]{3}\.[a-z]{3}\.tappx\.com$`, 'i');
+  let regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\.pub\.tappx\.com$`, 'i');
+  let regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\.[a-z]{3}\.tappx\.com$`, 'i');
 
   if (regexNewEndpoints.test(domainInfo.domain)) {
-    let endpoint = domainInfo.domain.split('.', 1)[0]
-    if (endpoint.toUpperCase().indexOf('TESTING') === -1) {
-      domainInfo.endpoint = endpoint
-      domainInfo.new_endpoint = true;
-    }
+    domainInfo.newEndpoint = true;
+    domainInfo.endpoint = domainInfo.domain.split('.', 1)[0]
+    domainInfo.url = `https://${hostParam}`
   } else if (regexClassicEndpoints.test(domainInfo.domain)) {
-    domainInfo.new_endpoint = false;
+    domainInfo.newEndpoint = false;
+    domainInfo.endpoint = endpoint
+    domainInfo.url = `https://${hostParam}${endpoint}`
   }
 
   return domainInfo;

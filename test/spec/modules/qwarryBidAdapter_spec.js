@@ -5,6 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js'
 const REQUEST = {
   'bidId': '456',
   'bidder': 'qwarry',
+  'sizes': [[100, 200], [300, 400]],
   'params': {
     zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f',
     pos: 7
@@ -85,8 +86,8 @@ describe('qwarryBidAdapter', function () {
       expect(bidderRequest.method).to.equal('POST')
       expect(bidderRequest.data.requestId).to.equal('123')
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
-      expect(bidderRequest.data.bids).to.deep.contains({ bidId: '456', zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7 })
-      expect(bidderRequest.data.gdprConsent).to.deep.contains({ consentRequired: true, consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==', gdpr: 1 })
+      expect(bidderRequest.data.bids).to.deep.contains({ bidId: '456', zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, sizes: [{ width: 100, height: 200 }, { width: 300, height: 400 }] })
+      expect(bidderRequest.data.gdprConsent).to.deep.contains({ consentRequired: true, consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==' })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
       expect(bidderRequest.options.contentType).to.equal('application/json')
       expect(bidderRequest.url).to.equal(ENDPOINT)

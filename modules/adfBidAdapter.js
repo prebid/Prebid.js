@@ -5,10 +5,13 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import {
-  NATIVE
+  NATIVE, BANNER, VIDEO
 } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+
+const { getConfig } = config;
 
 const BIDDER_CODE = 'adf';
 const GVLID = 50;
@@ -45,28 +48,58 @@ const NATIVE_PARAMS = {
     name: 'data'
   }
 };
+const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js';
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: BIDDER_ALIAS,
   gvlid: GVLID,
-  supportedMediaTypes: [ NATIVE ],
+  supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
   isBidRequestValid: bid => !!bid.params.mid,
   buildRequests: (validBidRequests, bidderRequest) => {
-    const page = bidderRequest.refererInfo.referer;
+    let app, site;
+
+    const commonFpd = getConfig('ortb2') || {};
+    let { user } = commonFpd;
+
+    if (typeof getConfig('app') === 'object') {
+      app = getConfig('app') || {};
+      if (commonFpd.app) {
+        utils.mergeDeep(app, commonFpd.app);
+      }
+    } else {
+      site = getConfig('site') || {};
+      if (commonFpd.site) {
+        utils.mergeDeep(site, commonFpd.site);
+      }
+
+      if (!site.page) {
+        site.page = bidderRequest.refererInfo.referer;
+      }
+    }
+
+    const device = getConfig('device') || {};
+    device.w = device.w || window.innerWidth;
+    device.h = device.h || window.innerHeight;
+    device.ua = device.ua || navigator.userAgent;
+
     const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
-    const ua = navigator.userAgent;
+
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = validBidRequests[0].transactionId; // ??? check with ssp
+    const tid = validBidRequests[0].transactionId;
     const test = setOnAny(validBidRequests, 'params.test');
-    const publisher = setOnAny(validBidRequests, 'params.publisher');
-    const siteId = setOnAny(validBidRequests, 'params.siteId');
-    const currency = config.getConfig('currency.adServerCurrency');
+    const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
+
+      const imp = {
+        id: id + 1,
+        tagid: bid.params.mid
+      };
+
       const assets = utils._map(bid.nativeParams, (bidParams, key) => {
         const props = NATIVE_PARAMS[key];
         const asset = {
@@ -102,21 +135,51 @@ export const spec = {
         }
       }).filter(Boolean);
 
-      return {
-        id: id + 1,
-        tagid: bid.params.mid,
-        native: {
+      if (assets.length) {
+        imp.native = {
           request: {
             assets
           }
-        }
-      };
+        };
+
+        bid.mediaType = NATIVE;
+        return imp;
+      }
+
+      const bannerParams = utils.deepAccess(bid, 'mediaTypes.banner');
+
+      if (bannerParams && bannerParams.sizes) {
+        const sizes = utils.parseSizesInput(bannerParams.sizes);
+        const format = sizes.map(size => {
+          const [ width, height ] = size.split('x');
+          const w = parseInt(width, 10);
+          const h = parseInt(height, 10);
+          return { w, h };
+        });
+
+        imp.banner = {
+          format
+        };
+        bid.mediaType = BANNER;
+
+        return imp;
+      }
+
+      const videoParams = utils.deepAccess(bid, 'mediaTypes.video');
+      if (videoParams) {
+        imp.video = videoParams;
+        bid.mediaType = VIDEO;
+
+        return imp;
+      }
     });
 
     const request = {
       id: bidderRequest.auctionId,
-      site: { id: siteId, page, publisher },
-      device: { ua },
+      site,
+      app,
+      user,
+      device,
       source: { tid, fd: 1 },
       ext: { pt },
       cur,
@@ -128,8 +191,8 @@ export const spec = {
       request.test = 1;
     }
     if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
-      request.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
-      request.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies & 1 } };
+      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
     }
 
     if (bidderRequest.uspConsent) {
@@ -164,16 +227,35 @@ export const spec = {
     return bids.map((bid, id) => {
       const bidResponse = bidResponses[id];
       if (bidResponse) {
-        return {
+        const result = {
           requestId: bid.bidId,
           cpm: bidResponse.price,
           creativeId: bidResponse.crid,
           ttl: 360,
           netRevenue: bid.netRevenue === 'net',
           currency: cur,
-          mediaType: NATIVE,
-          native: parseNative(bidResponse)
+          mediaType: bid.mediaType,
+          width: bidResponse.w,
+          height: bidResponse.h,
+          dealId: bidResponse.dealid,
+          meta: {
+            mediaType: bid.mediaType,
+            advertiserDomains: bidResponse.adomain
+          }
         };
+
+        if (bidResponse.native) {
+          result.native = parseNative(bidResponse);
+        } else {
+          result[ bid.mediaType === VIDEO ? 'vastXml' : 'ad' ] = bidResponse.adm;
+        }
+
+        if (!bid.renderer && bid.mediaType === VIDEO && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
+          result.renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
+          result.renderer.setRender(renderer);
+        }
+
+        return result;
       }
     }).filter(Boolean);
   }
@@ -211,4 +293,10 @@ function setOnAny(collection, key) {
 
 function flatten(arr) {
   return [].concat(...arr);
+}
+
+function renderer(bid) {
+  bid.renderer.push(() => {
+    window.Adform.renderOutstream(bid);
+  });
 }

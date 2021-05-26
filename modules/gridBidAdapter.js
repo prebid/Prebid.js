@@ -349,6 +349,9 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
         currency: 'USD',
         netRevenue: false,
         ttl: TIME_TO_LIVE,
+        meta: {
+          advertiserDomains: serverBid && serverBid.adomain ? serverBid.adomain : []
+        },
         dealId: serverBid.dealid
       };
 

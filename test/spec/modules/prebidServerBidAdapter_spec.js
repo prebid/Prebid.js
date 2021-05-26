@@ -530,6 +530,26 @@ describe('S2S Adapter', function () {
       expect(requestBid.imp[0].video.placement).to.equal(1);
     });
 
+    it('converts video mediaType properties into openRTB format', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint.p1Consent = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+
+      config.setConfig({ s2sConfig: ortb2Config });
+
+      let videoBid = utils.deepClone(VIDEO_REQUEST);
+      videoBid.ad_units[0].mediaTypes.video.context = 'instream';
+      adapter.callBids(videoBid, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.imp[0].banner).to.not.exist;
+      expect(requestBid.imp[0].video).to.exist;
+      expect(requestBid.imp[0].video.placement).to.equal(1);
+      expect(requestBid.imp[0].video.w).to.equal(640);
+      expect(requestBid.imp[0].video.h).to.equal(480);
+      expect(requestBid.imp[0].video.playerSize).to.be.undefined;
+      expect(requestBid.imp[0].video.context).to.be.undefined;
+    });
+
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
@@ -1123,6 +1143,10 @@ describe('S2S Adapter', function () {
           targeting: {
             includebidderkeys: false,
             includewinners: true
+          },
+          channel: {
+            name: 'pbjs',
+            version: 'v$prebid.version$'
           }
         }
       });
@@ -1157,6 +1181,10 @@ describe('S2S Adapter', function () {
           targeting: {
             includebidderkeys: false,
             includewinners: true
+          },
+          channel: {
+            name: 'pbjs',
+            version: 'v$prebid.version$'
           }
         }
       });
@@ -1610,6 +1638,28 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.ext.prebid.multibid).to.deep.equal(expected);
     });
 
+    it('sets and passes pbjs version in request if channel does not exist in s2sConfig', () => {
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: 'v$prebid.version$'});
+    });
+
+    it('does not set pbjs version in request if channel does exist in s2sConfig', () => {
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+
+      utils.deepSetValue(s2sBidRequest, 's2sConfig.extPrebid.channel', {test: 1});
+
+      adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({test: 1});
+    });
+
     it('passes first party data in request', () => {
       const s2sBidRequest = utils.deepClone(REQUEST);
       const bidRequests = utils.deepClone(BID_REQUESTS);
@@ -1822,6 +1872,32 @@ describe('S2S Adapter', function () {
         expect(parsedRequestBody.imp[0].ext.data.adserver.adslot).to.equal('/a/b/c');
         expect(parsedRequestBody.imp[0].ext.data.adserver.name).to.equal('adserverName1');
       });
+    });
+  });
+
+  describe('ext.prebid config', function () {
+    it('should send \"imp.ext.prebid.storedrequest.id\" if \"ortb2Imp.ext.prebid.storedrequest.id\" is set', function () {
+      const consentConfig = { s2sConfig: CONFIG };
+      config.setConfig(consentConfig);
+      const bidRequest = utils.deepClone(REQUEST);
+      const storedRequestId = 'my-id';
+      bidRequest.ad_units[0].ortb2Imp = {
+        ext: {
+          prebid: {
+            storedrequest: {
+              id: storedRequestId
+            }
+          }
+        }
+      };
+
+      adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+
+      expect(parsedRequestBody.imp).to.be.a('array');
+      expect(parsedRequestBody.imp[0]).to.be.a('object');
+      expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.prebid.storedrequest.id');
+      expect(parsedRequestBody.imp[0].ext.prebid.storedrequest.id).to.equal(storedRequestId);
     });
   });
 
