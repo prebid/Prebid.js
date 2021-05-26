@@ -117,6 +117,11 @@ export const spec = {
               netRevenue: NET_REVENUE,
               currency: DOLLARS,
             };
+            if (ad.adom) {
+              bidResponse.meta = {
+                advertiserDomains: ad.adom
+              };
+            }
             bidResponses.push(bidResponse);
           });
         }
