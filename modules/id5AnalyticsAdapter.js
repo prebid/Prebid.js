@@ -243,7 +243,7 @@ function deepTransformingClone(obj, transform, currentPath = []) {
 // Special path part '*' matches any subproperty
 const CLEANUP_RULES = {};
 CLEANUP_RULES[AUCTION_END] = [{
-  match: [['adUnits', 'bidderRequests'], '*', 'bids', '*', 'userId', '*'],
+  match: [['adUnits', 'bidderRequests'], '*', 'bids', '*', ['userId', 'crumbs'], '*'],
   apply: 'redact'
 }, {
   match: [['adUnits', 'bidderRequests'], '*', 'bids', '*', 'userIdAsEids', '*', 'uids', '*', ['id', 'ext']],
@@ -255,11 +255,16 @@ CLEANUP_RULES[AUCTION_END] = [{
   match: ['bidsReceived', '*', ['ad', 'native']],
   apply: 'erase'
 }, {
-  match: ['noBids', '*', 'userId', '*'],
+  match: ['noBids', '*', ['userId', 'crumbs'], '*'],
   apply: 'redact'
 }, {
   match: ['noBids', '*', 'userIdAsEids', '*', 'uids', '*', ['id', 'ext']],
   apply: 'redact'
+}];
+
+CLEANUP_RULES[BID_WON] = [{
+  match: [['ad', 'native']],
+  apply: 'erase'
 }];
 
 const TRANSFORM_FUNCTIONS = {
