@@ -26,7 +26,9 @@ export const spec = {
 
       if (bid.mediaTypes.banner) {
         adSlot.banner = bid.mediaTypes.banner
-      } else if (bid.mediaTypes.video) {
+      }
+
+      if (bid.mediaTypes.video) {
         adSlot.video = bid.mediaTypes.video
       }
 
