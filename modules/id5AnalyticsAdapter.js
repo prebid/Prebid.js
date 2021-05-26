@@ -8,21 +8,29 @@ import events from '../src/events.js';
 const {
   EVENTS: {
     AUCTION_END,
-    AUCTION_INIT,
-    TCF2_ENFORCEMENT
+    TCF2_ENFORCEMENT,
+    BID_WON,
+    BID_VIEWABLE,
+    AD_RENDER_FAILED
   }
 } = CONSTANTS
 
 const GVLID = 131;
+
 const STANDARD_EVENTS_TO_TRACK = [
   AUCTION_END,
-  AUCTION_INIT,
   TCF2_ENFORCEMENT,
 ];
+
+// These events cause the buffer ed events to be sent over
 const FLUSH_EVENTS = [
   TCF2_ENFORCEMENT,
   AUCTION_END,
+  BID_WON,
+  BID_VIEWABLE,
+  AD_RENDER_FAILED
 ];
+
 // const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics'
 const CONFIG_URL_PREFIX = 'https://127.0.0.1:8443/analytics'
 const TZ = new Date().getTimezoneOffset();
@@ -73,8 +81,8 @@ let id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
 
   makeEvent: (event, payload) => {
     const _this = id5Analytics;
-    const filteredPayload = deepTransformingClone(payload, 
-        transformFnFromCleanupRules(event));
+    const filteredPayload = deepTransformingClone(payload,
+      transformFnFromCleanupRules(event));
     return {
       source: 'pbjs',
       event,
@@ -98,7 +106,6 @@ let id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
     ]);
   },
 
-  // Encapsulating for deterministic testing
   random: () => Math.random(),
 });
 
@@ -212,33 +219,46 @@ function erase(obj, key) {
 // required transformation if match is found.
 function deepTransformingClone(obj, transform, currentPath = []) {
   const result = isArray(obj) ? [] : {};
-  const keys = Object.keys(obj);
-  const recursable = typeof obj === 'object';
-  if (keys.length > 0 && recursable) {
-    keys.forEach((key) => {
-      const newPath = currentPath.concat(key);
-      result[key] = deepTransformingClone(obj[key], transform, newPath);
-      transform(newPath, result, key);
-    });
-    return result;
+  const recursable = typeof obj === 'object' && obj !== null;
+  if (recursable) {
+    const keys = Object.keys(obj);
+    if (keys.length > 0) {
+      keys.forEach((key) => {
+        const newPath = currentPath.concat(key);
+        result[key] = deepTransformingClone(obj[key], transform, newPath);
+        transform(newPath, result, key);
+      });
+      return result;
+    }
   }
   return obj;
 }
 
-// Every set of rules is an array where every entry is a pair (array) of
-// path to match and action to apply. The path to match is an array of
-// path parts, the function to apply takes (obj, prop)
-// Special character can be '*' (match any subproperty)
+// Every set of rules is an object where "match" is an array and
+// "apply" is the function to apply in case of match. The function to apply
+// takes (obj, prop) and transforms property "prop" in object "obj".
+// The "match" is an array of path parts. Each part is either a string or an array.
+// In case of array, it represents alternatives which all would match.
+// Special path part '*' matches any subproperty
 const CLEANUP_RULES = {};
 CLEANUP_RULES[AUCTION_END] = [{
-  match: ['adUnits', '*', 'bids', '*', 'userId', '*'],
+  match: [['adUnits', 'bidderRequests'], '*', 'bids', '*', 'userId', '*'],
   apply: 'redact'
 }, {
-  match: ['adUnits', '*', 'bids', '*', 'userIdAsEids', '*', 'uids', '*', 'id'],
+  match: [['adUnits', 'bidderRequests'], '*', 'bids', '*', 'userIdAsEids', '*', 'uids', '*', ['id', 'ext']],
   apply: 'redact'
 }, {
-  match: ['adUnits', '*', 'bidsReceived', '*', 'ad'],
+  match: ['bidderRequests', '*', 'gdprConsent', 'vendorData'],
   apply: 'erase'
+}, {
+  match: ['bidsReceived', '*', 'ad'],
+  apply: 'erase'
+}, {
+  match: ['noBids', '*', 'userId', '*'],
+  apply: 'redact'
+}, {
+  match: ['noBids', '*', 'userIdAsEids', '*', 'uids', '*', ['id', 'ext']],
+  apply: 'redact'
 }];
 
 const TRANSFORM_FUNCTIONS = {
@@ -258,9 +278,8 @@ function transformFnFromCleanupRules(eventType) {
         continue;
       }
       for (let fragment = 0; fragment < ruleMatcher.length && match; fragment++) {
-        if (path[fragment] !== ruleMatcher[fragment] && ruleMatcher[fragment] !== '*') {
-          match = false;
-        }
+        const choices = makeSureArray(ruleMatcher[fragment]);
+        match = !choices.every(choice => choice !== '*' && path[fragment] !== choice);
       }
       if (match) {
         logInfo('id5Analytics: transforming', path, transformation);
@@ -270,4 +289,8 @@ function transformFnFromCleanupRules(eventType) {
       }
     }
   };
+}
+
+function makeSureArray(object) {
+  return isArray(object) ? object : [object];
 }
