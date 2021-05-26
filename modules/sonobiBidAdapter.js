@@ -199,6 +199,10 @@ export const spec = {
           width = 1,
           height = 1
         ] = bid.sbi_size.split('x');
+        let aDomains = [];
+        if (bid.sbi_adomain) {
+          aDomains = [bid.sbi_adomain]
+        }
         const bids = {
           requestId: bidId,
           cpm: Number(bid.sbi_mouse),
@@ -209,7 +213,10 @@ export const spec = {
           creativeId: bid.sbi_crid || bid.sbi_aid,
           aid: bid.sbi_aid,
           netRevenue: true,
-          currency: 'USD'
+          currency: 'USD',
+          meta: {
+            advertiserDomains: aDomains
+          }
         };
 
         if (bid.sbi_dozer) {

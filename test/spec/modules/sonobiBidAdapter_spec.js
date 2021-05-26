@@ -652,6 +652,7 @@ describe('SonobiBidAdapter', function () {
             'sbi_crid': '1234abcd',
             'sbi_aid': '30292e432662bd5f86d90774b944b039',
             'sbi_mouse': 1.07,
+            'sbi_adomain': 'sonobi.com'
           },
           '30b31c1838de1e': {
             'sbi_size': '300x250',
@@ -659,7 +660,9 @@ describe('SonobiBidAdapter', function () {
             'sbi_aid': '30292e432662bd5f86d90774b944b038',
             'sbi_mouse': 1.25,
             'sbi_dozer': 'dozerkey',
-            'sbi_ct': 'video'
+            'sbi_ct': 'video',
+            'sbi_adomain': 'sonobi.com'
+
           },
           '/7780971/sparks_prebid_LB_OUTSTREAM|30b31c1838de1g': {
             'sbi_size': '300x600',
@@ -667,6 +670,8 @@ describe('SonobiBidAdapter', function () {
             'sbi_crid': '1234abcd',
             'sbi_aid': '30292e432662bd5f86d90774b944b038',
             'sbi_mouse': 1.07,
+            'sbi_adomain': 'sonobi.com'
+
           },
           '/7780971/sparks_prebid_LB|30b31c1838de1g': {},
           '30b31c1838de1zzzz': {
@@ -677,6 +682,7 @@ describe('SonobiBidAdapter', function () {
             sbi_mouse: 1.25,
             sbi_size: 'preroll',
             'sbi_crid': 'somecrid',
+            'sbi_adomain': 'sonobi.com'
 
           }
 
@@ -703,7 +709,10 @@ describe('SonobiBidAdapter', function () {
         'creativeId': '1234abcd',
         'netRevenue': true,
         'currency': 'USD',
-        'aid': '30292e432662bd5f86d90774b944b039'
+        'aid': '30292e432662bd5f86d90774b944b039',
+        meta: {
+          advertiserDomains: ['sonobi.com']
+        }
       },
       {
         'requestId': '30b31c1838de1e',
@@ -717,7 +726,10 @@ describe('SonobiBidAdapter', function () {
         'currency': 'USD',
         'dealId': 'dozerkey',
         'aid': '30292e432662bd5f86d90774b944b038',
-        'mediaType': 'video'
+        'mediaType': 'video',
+        meta: {
+          advertiserDomains: ['sonobi.com']
+        }
       },
       {
         'requestId': '30b31c1838de1g',
@@ -729,7 +741,10 @@ describe('SonobiBidAdapter', function () {
         'creativeId': '1234abcd',
         'netRevenue': true,
         'currency': 'USD',
-        'aid': '30292e432662bd5f86d90774b944b038'
+        'aid': '30292e432662bd5f86d90774b944b038',
+        meta: {
+          advertiserDomains: ['sonobi.com']
+        }
       },
       {
         'requestId': '30b31c1838de1zzzz',
@@ -744,7 +759,10 @@ describe('SonobiBidAdapter', function () {
         'dealId': 'dozerkey',
         'aid': 'force_1550072228_da1c5d030cb49150c5db8a2136175755',
         'mediaType': 'video',
-        renderer: () => {}
+        renderer: () => {},
+        meta: {
+          advertiserDomains: ['sonobi.com']
+        }
       },
     ];
 
