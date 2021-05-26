@@ -504,6 +504,17 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
+    it('should set id and source.tid to the auctionId', function () {
+      config.setConfig({ s2sConfig: CONFIG });
+
+      adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.id).to.equal('173afb6d132ba3');
+      expect(requestBid.source).to.be.an('object').
+      expect(requestBid.source.tid).to.equal('173afb6d132ba3');
+    });
+
     it('should not add outstrean without renderer', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
