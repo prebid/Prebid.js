@@ -713,8 +713,8 @@ const OPEN_RTB_PROTOCOL = {
       return;
     }
     const request = {
-      id: s2sBidRequest.tid,
-      source: {tid: s2sBidRequest.tid},
+      id: firstBidRequest.auctionId,
+      source: {tid: firstBidRequest.auctionId},
       tmax: s2sConfig.timeout,
       imp: imps,
       test: getConfig('debug') ? 1 : 0,
