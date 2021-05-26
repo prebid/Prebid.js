@@ -31,7 +31,7 @@
     "@wdio/cli": "^7.5.2",
     "@wdio/concise-reporter": "^7.5.2",
     "@wdio/local-runner": "^7.5.2",
-    "@wdio/mocha-framework": "^6.1.6",
+    "@wdio/mocha-framework": "^7.5.2",
     "@wdio/spec-reporter": "^6.1.5",
     "@wdio/sync": "^6.1.5",
     "ajv": "5.5.2",
