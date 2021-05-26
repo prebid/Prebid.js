@@ -20,6 +20,7 @@ const GVLID = 131;
 const STANDARD_EVENTS_TO_TRACK = [
   AUCTION_END,
   TCF2_ENFORCEMENT,
+  BID_WON,
 ];
 
 // These events cause the buffer ed events to be sent over
@@ -251,7 +252,7 @@ CLEANUP_RULES[AUCTION_END] = [{
   match: ['bidderRequests', '*', 'gdprConsent', 'vendorData'],
   apply: 'erase'
 }, {
-  match: ['bidsReceived', '*', 'ad'],
+  match: ['bidsReceived', '*', ['ad', 'native']],
   apply: 'erase'
 }, {
   match: ['noBids', '*', 'userId', '*'],
@@ -282,7 +283,6 @@ function transformFnFromCleanupRules(eventType) {
         match = !choices.every(choice => choice !== '*' && path[fragment] !== choice);
       }
       if (match) {
-        logInfo('id5Analytics: transforming', path, transformation);
         const transformfn = TRANSFORM_FUNCTIONS[transformation];
         transformfn(obj, key);
         break;
