@@ -477,3 +477,4 @@ function registerAuction(storageID) {
   return true;
 }
 registerBidder(spec);
+
