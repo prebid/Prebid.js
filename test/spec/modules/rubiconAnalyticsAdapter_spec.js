@@ -255,7 +255,8 @@ const MOCK = {
         'sizes': [[640, 480]],
         'bidId': '2ecff0db240757',
         'bidderRequestId': '1be65d7958826a',
-        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'src': 'client'
       },
       {
         'bidder': 'rubicon',
@@ -279,7 +280,8 @@ const MOCK = {
         'sizes': [[1000, 300], [970, 250], [728, 90]],
         'bidId': '3bd4ebb1c900e2',
         'bidderRequestId': '1be65d7958826a',
-        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'src': 's2s'
       }
     ],
     'auctionStart': 1519149536560,
@@ -310,6 +312,7 @@ const MOCK = {
   ],
   BIDDER_DONE: {
     'bidderCode': 'rubicon',
+    'serverResponseTimeMs': 42,
     'bids': [
       BID,
       Object.assign({}, BID2, {
@@ -529,7 +532,9 @@ const ANALYTICS_MESSAGE = {
       'bidwonStatus': 'success'
     }
   ],
-  'wrapperName': '10000_fakewrapper_test'
+  'wrapper': {
+    'name': '10000_fakewrapper_test'
+  }
 };
 
 function performStandardAuction(gptEvents) {
@@ -849,6 +854,8 @@ describe('rubicon analytics adapter', function () {
       auctionInit.bidderRequests[0].bids[0].floorData = {
         skipped: false,
         modelVersion: 'someModelName',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 15,
         fetchStatus: 'error',
@@ -950,6 +957,8 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].floors).to.deep.equal({
         location: 'setConfig',
         modelName: 'someModelName',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         skipped: false,
         enforcement: true,
         dealsEnforced: false,
@@ -995,6 +1004,8 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].floors).to.deep.equal({
         location: 'setConfig',
         modelName: 'someModelName',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         skipped: false,
         enforcement: true,
         dealsEnforced: false,
@@ -1080,6 +1091,62 @@ describe('rubicon analytics adapter', function () {
         expect(message).to.deep.equal(expectedMessage);
       });
 
+      it('should convert kvs to strings before sending', function () {
+        config.setConfig({rubicon: {
+          fpkvs: {
+            number: 24,
+            boolean: false,
+            string: 'hello',
+            array: ['one', 2, 'three'],
+            object: {one: 'two'}
+          }
+        }});
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
+        expectedMessage.fpkvs = [
+          {key: 'number', value: '24'},
+          {key: 'boolean', value: 'false'},
+          {key: 'string', value: 'hello'},
+          {key: 'array', value: 'one,2,three'},
+          {key: 'object', value: '[object Object]'}
+        ]
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should use the query utm param rubicon kv value and pass updated kv and pvid when defined', function () {
+        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=other', 'pbjs_debug': 'true'});
+
+        config.setConfig({rubicon: {
+          fpkvs: {
+            source: 'fb',
+            link: 'email'
+          }
+        }});
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
+        expectedMessage.fpkvs = [
+          {key: 'source', value: 'other'},
+          {key: 'link', value: 'email'}
+        ]
+
+        message.fpkvs.sort((left, right) => left.key < right.key);
+        expectedMessage.fpkvs.sort((left, right) => left.key < right.key);
+
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
       it('should pick up existing localStorage and use its values', function () {
         // set some localStorage
         let inputlocalStorage = {
@@ -1128,6 +1195,65 @@ describe('rubicon analytics adapter', function () {
           expires: 1519787713781, // should have stayed same
           lastSeen: 1519767013781, // lastSeen updated to our "now"
           fpkvs: { source: 'tw', link: 'email' }, // link merged in
+          pvid: expectedPvid // new pvid stored
+        });
+      });
+
+      it('should overwrite matching localstorge value and use its remaining values', function () {
+        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=fb&utm_click=dog'});
+
+        // set some localStorage
+        let inputlocalStorage = {
+          id: '987654',
+          start: 1519766113781, // 15 mins before "now"
+          expires: 1519787713781, // six hours later
+          lastSeen: 1519766113781,
+          fpkvs: { source: 'tw', link: 'email' }
+        };
+        getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
+
+        config.setConfig({rubicon: {
+          fpkvs: {
+            link: 'email' // should merge this with what is in the localStorage!
+          }
+        }});
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session = {
+          id: '987654',
+          start: 1519766113781,
+          expires: 1519787713781,
+          pvid: expectedPvid
+        }
+        expectedMessage.fpkvs = [
+          {key: 'source', value: 'fb'},
+          {key: 'link', value: 'email'},
+          {key: 'click', value: 'dog'}
+        ]
+
+        message.fpkvs.sort((left, right) => left.key < right.key);
+        expectedMessage.fpkvs.sort((left, right) => left.key < right.key);
+
+        expect(message).to.deep.equal(expectedMessage);
+
+        let calledWith;
+        try {
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
+        } catch (e) {
+          calledWith = {};
+        }
+
+        expect(calledWith).to.deep.equal({
+          id: '987654', // should have stayed same
+          start: 1519766113781, // should have stayed same
+          expires: 1519787713781, // should have stayed same
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          fpkvs: { source: 'fb', link: 'email', click: 'dog' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
       });
@@ -1233,12 +1359,12 @@ describe('rubicon analytics adapter', function () {
       });
     });
     describe('with googletag enabled', function () {
-      let gptSlot0, gptSlot1, gptEvent0, gptEvent1;
+      let gptSlot0, gptSlot1;
+      let gptSlotRenderEnded0, gptSlotRenderEnded1;
       beforeEach(function () {
         mockGpt.enable();
         gptSlot0 = mockGpt.makeSlot({code: '/19968336/header-bid-tag-0'});
-        gptSlot1 = mockGpt.makeSlot({code: '/19968336/header-bid-tag1'});
-        gptEvent0 = {
+        gptSlotRenderEnded0 = {
           eventName: 'slotRenderEnded',
           params: {
             slot: gptSlot0,
@@ -1248,7 +1374,9 @@ describe('rubicon analytics adapter', function () {
             lineItemId: 3333
           }
         };
-        gptEvent1 = {
+
+        gptSlot1 = mockGpt.makeSlot({code: '/19968336/header-bid-tag1'});
+        gptSlotRenderEnded1 = {
           eventName: 'slotRenderEnded',
           params: {
             slot: gptSlot1,
@@ -1265,7 +1393,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should add necessary gam information if gpt is enabled and slotRender event emmited', function () {
-        performStandardAuction([gptEvent0, gptEvent1]);
+        performStandardAuction([gptSlotRenderEnded0, gptSlotRenderEnded1]);
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
         let message = JSON.parse(request.requestBody);
@@ -1288,7 +1416,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should handle empty gam renders', function () {
-        performStandardAuction([gptEvent0, {
+        performStandardAuction([gptSlotRenderEnded0, {
           eventName: 'slotRenderEnded',
           params: {
             slot: gptSlot1,
@@ -1315,7 +1443,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should still add gam ids if falsy', function () {
-        performStandardAuction([gptEvent0, {
+        performStandardAuction([gptSlotRenderEnded0, {
           eventName: 'slotRenderEnded',
           params: {
             slot: gptSlot1,
@@ -1346,14 +1474,54 @@ describe('rubicon analytics adapter', function () {
         expect(message).to.deep.equal(expectedMessage);
       });
 
-      it('should handle empty gam renders', function () {
-        performStandardAuction([gptEvent0, gptEvent1]);
+      it('should correctly set adUnit for associated slots', function () {
+        performStandardAuction([gptSlotRenderEnded0, gptSlotRenderEnded1]);
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
         let message = JSON.parse(request.requestBody);
         validate(message);
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.auctions[0].adUnits[0].gam = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        expectedMessage.auctions[0].adUnits[1].gam = {
+          advertiserId: 4444,
+          creativeId: 5555,
+          lineItemId: 6666,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should send request when waitForGamSlots is present but no bidWons are sent', function () {
+        config.setConfig({
+          rubicon: {
+            waitForGamSlots: true
+          }
+        });
+        events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+        events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+        // should not send if just slotRenderEnded is emmitted for both
+        mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+        mockGpt.emitEvent(gptSlotRenderEnded1.eventName, gptSlotRenderEnded1.params);
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        delete expectedMessage.bidsWon; // should not be any of these
         expectedMessage.auctions[0].adUnits[0].gam = {
           advertiserId: 1111,
           creativeId: 2222,
@@ -1501,6 +1669,35 @@ describe('rubicon analytics adapter', function () {
       expect(timedOutBid).to.not.have.property('bidResponse');
     });
 
+    it('should pass aupName as pattern', function () {
+      let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequest.bids[0].fpd = {
+        context: {
+          aupName: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile'
+        }
+      };
+      bidRequest.bids[1].fpd = {
+        context: {
+          aupName: '1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile'
+        }
+      };
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, bidRequest);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].pattern).to.equal('1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile');
+      expect(message.auctions[0].adUnits[1].pattern).to.equal('1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile');
+    });
+
     it('should successfully convert bid price to USD in parseBidResponse', function () {
       // Set the rates
       setConfig({
@@ -1549,6 +1746,36 @@ describe('rubicon analytics adapter', function () {
       const request = server.requests[0];
       const message = JSON.parse(request.requestBody);
       expect(message.integration).to.equal('testType');
+
+      rubiconAnalyticsAdapter.disableAnalytics();
+    });
+  });
+
+  describe('wrapper details passed in', () => {
+    it('should correctly pass in the wrapper details if provided', () => {
+      config.setConfig({rubicon: {
+        wrapperName: '1001_wrapperName_exp.4',
+        wrapperFamily: '1001_wrapperName',
+        rule_name: 'na-mobile'
+      }});
+
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+
+      performStandardAuction();
+
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.wrapper).to.deep.equal({
+        name: '1001_wrapperName_exp.4',
+        family: '1001_wrapperName',
+        rule: 'na-mobile'
+      });
 
       rubiconAnalyticsAdapter.disableAnalytics();
     });
