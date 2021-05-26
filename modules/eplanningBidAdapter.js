@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -46,7 +47,7 @@ export const spec = {
       url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
       params = {};
     } else {
-      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
+      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
       const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? window.top.document.referrer : bidderRequest.refererInfo.referer;
 
       if (storage.hasLocalStorage()) {
@@ -57,7 +58,6 @@ export const spec = {
         rnd: rnd,
         e: spaces.str,
         ur: pageUrl || FILE,
-        r: 'pbjs',
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
@@ -81,6 +81,10 @@ export const spec = {
 
       if (bidderRequest && bidderRequest.uspConsent) {
         params.ccpa = bidderRequest.uspConsent;
+      }
+      const userIds = (getGlobal()).getUserIds();
+      for (var id in userIds) {
+        params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
       }
     }
 

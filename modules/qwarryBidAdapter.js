@@ -20,20 +20,36 @@ export const spec = {
       bids.push({
         bidId: bidRequest.bidId,
         zoneToken: bidRequest.params.zoneToken,
-        pos: bidRequest.params.pos
+        pos: bidRequest.params.pos,
+        sizes: prepareSizes(bidRequest.sizes)
       })
     })
+
+    let payload = {
+      requestId: bidderRequest.bidderRequestId,
+      bids,
+      referer: bidderRequest.refererInfo.referer
+    }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdprConsent = {
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false,
+        consentString: bidderRequest.gdprConsent.consentString
+      }
+    }
+
+    const options = {
+      contentType: 'application/json',
+      customHeaders: {
+        'Rtb-Direct': true
+      }
+    }
 
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: { requestId: bidderRequest.bidderRequestId, bids },
-      options: {
-        contentType: 'application/json',
-        customHeaders: {
-          'Rtb-Direct': true
-        }
-      }
+      data: payload,
+      options
     };
   },
 
@@ -73,6 +89,10 @@ export const spec = {
     }
     return false;
   }
+}
+
+function prepareSizes(sizes) {
+  return sizes && sizes.map(size => ({ width: size[0], height: size[1] }));
 }
 
 registerBidder(spec);

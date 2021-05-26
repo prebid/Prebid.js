@@ -157,6 +157,37 @@ describe('Adform adapter', function () {
       assert.equal(eids, 'some_id_value');
     });
 
+    it('should add parameter to global parameters if it exists in all bids', function () {
+      const _bids = [];
+      _bids.push(bids[0]);
+      _bids.push(bids[1]);
+      _bids.push(bids[2]);
+      _bids[0].params.mkv = 'key:value,key1:value1';
+      _bids[1].params.mkv = 'key:value,key1:value1,keyR:removed';
+      _bids[2].params.mkv = 'key:value,key1:value1,keyR:removed,key8:value1';
+      _bids[0].params.mkw = 'targeting';
+      _bids[1].params.mkw = 'targeting';
+      _bids[2].params.mkw = 'targeting,targeting2';
+      _bids[0].params.msw = 'search:word,search:word2';
+      _bids[1].params.msw = 'search:word';
+      _bids[2].params.msw = 'search:word,search:word5';
+      let bidList = _bids;
+      let request = spec.buildRequests(bidList);
+      let parsedUrl = parseUrl(request.url);
+      assert.equal(parsedUrl.query.mkv, encodeURIComponent('key:value,key1:value1'));
+      assert.equal(parsedUrl.query.mkw, 'targeting');
+      assert.equal(parsedUrl.query.msw, encodeURIComponent('search:word'));
+      assert.ok(!parsedUrl.items[0].mkv);
+      assert.ok(!parsedUrl.items[0].mkw);
+      assert.equal(parsedUrl.items[0].msw, 'search:word2');
+      assert.equal(parsedUrl.items[1].mkv, 'keyR:removed');
+      assert.ok(!parsedUrl.items[1].mkw);
+      assert.ok(!parsedUrl.items[1].msw);
+      assert.equal(parsedUrl.items[2].mkv, 'keyR:removed,key8:value1');
+      assert.equal(parsedUrl.items[2].mkw, 'targeting2');
+      assert.equal(parsedUrl.items[2].msw, 'search:word5');
+    });
+
     describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
@@ -227,6 +258,7 @@ describe('Adform adapter', function () {
       assert.equal(result.currency, 'EUR');
       assert.equal(result.netRevenue, true);
       assert.equal(result.ttl, 360);
+      assert.deepEqual(result.meta.advertiserDomains, [])
       assert.equal(result.ad, '<tag1>');
       assert.equal(result.bidderCode, 'adform');
       assert.equal(result.transactionId, '5f33781f-9552-4ca1');

@@ -14,7 +14,9 @@ const aliasEP = {
   appaloosa: 'https://ghb.hb.appaloosa.media/v2/auction/',
   appaloosa_publisherSuffix: 'https://ghb.hb.appaloosa.media/v2/auction/',
   onefiftytwomedia: 'https://ghb.ads.152media.com/v2/auction/',
-  mediafuse: 'https://ghb.hbmp.mediafuse.com/v2/auction/'
+  mediafuse: 'https://ghb.hbmp.mediafuse.com/v2/auction/',
+  navelix: 'https://ghb.hb.navelix.com/v2/auction/',
+  bidsxchange: 'https://ghb.hbd.bidsxchange.com/v2/auction/',
 };
 
 const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };
@@ -87,6 +89,7 @@ const SERVER_DISPLAY_RESPONSE = {
   'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
     'ad': '<!-- Creative -->',
+    'adUrl': 'adUrl',
     'requestId': '2e41f65424c87c',
     'creative_id': 342516,
     'cmpId': 342516,
@@ -170,6 +173,7 @@ const displayEqResponse = [{
   netRevenue: true,
   currency: 'USD',
   ad: '<!-- Creative -->',
+  adUrl: 'adUrl',
   height: 250,
   width: 300,
   ttl: 300,
