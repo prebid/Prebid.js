@@ -33,7 +33,7 @@
     "@wdio/local-runner": "^7.5.2",
     "@wdio/mocha-framework": "^7.5.2",
     "@wdio/spec-reporter": "^7.5.2",
-    "@wdio/sync": "^6.1.5",
+    "@wdio/sync": "^7.5.2",
     "ajv": "5.5.2",
     "babel-loader": "^8.0.5",
     "body-parser": "^1.19.0",
