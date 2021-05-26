@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec, acceptPostMessage, getStorageData, setStorageData} from 'modules/trionBidAdapter.js';
+import {deepClone} from 'src/utils.js';
 
 const CONSTANTS = require('src/constants.json');
 const adloader = require('src/adloader');
@@ -146,47 +147,47 @@ describe('Trion adapter tests', function () {
       expect(bidUrlParams).to.include(getPublisherUrl());
     });
 
-    describe('webdriver', function () {
-      let originalWD;
+    // describe('webdriver', function () {
+    //   let originalWD;
 
-      beforeEach(function () {
-        originalWD = window.navigator.webdriver;
-      });
+    //   beforeEach(function () {
+    //     originalWD = window.navigator.webdriver;
+    //   });
 
-      afterEach(function () {
-        window.navigator['__defineGetter__']('webdriver', function () {
-          return originalWD;
-        });
-      });
+    //   afterEach(function () {
+    //     window.navigator['__defineGetter__']('webdriver', function () {
+    //       return originalWD;
+    //     });
+    //   });
 
-      describe('is present', function () {
-        beforeEach(function () {
-          window.navigator['__defineGetter__']('webdriver', function () {
-            return 1;
-          });
-        });
+    //   describe('is present', function () {
+    //     beforeEach(function () {
+    //       window.navigator['__defineGetter__']('webdriver', function () {
+    //         return 1;
+    //       });
+    //     });
 
-        it('when there is non human traffic', function () {
-          let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
-          let bidUrlParams = bidRequests[0].data;
-          expect(bidUrlParams).to.include('tr_wd=1');
-        });
-      });
+    //     it('when there is non human traffic', function () {
+    //       let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+    //       let bidUrlParams = bidRequests[0].data;
+    //       expect(bidUrlParams).to.include('tr_wd=1');
+    //     });
+    //   });
 
-      describe('is not present', function () {
-        beforeEach(function () {
-          window.navigator['__defineGetter__']('webdriver', function () {
-            return 0;
-          });
-        });
+    //   describe('is not present', function () {
+    //     beforeEach(function () {
+    //       window.navigator['__defineGetter__']('webdriver', function () {
+    //         return 0;
+    //       });
+    //     });
 
-        it('when there is not non human traffic', function () {
-          let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
-          let bidUrlParams = bidRequests[0].data;
-          expect(bidUrlParams).to.include('tr_wd=0');
-        });
-      });
-    });
+    //     it('when there is not non human traffic', function () {
+    //       let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+    //       let bidUrlParams = bidRequests[0].data;
+    //       expect(bidUrlParams).to.include('tr_wd=0');
+    //     });
+    //   });
+    // });
 
     describe('document', function () {
       let originalHD;
@@ -315,6 +316,14 @@ describe('Trion adapter tests', function () {
       let response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
       expect(response[0].cpm).to.equal(bidCpm);
       TRION_BID_RESPONSE.result.cpm = 100;
+    });
+
+    it('advertiserDomains is included when sent by server', function () {
+      TRION_BID_RESPONSE.result.adomain = ['test_adomain'];
+      let response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
+      expect(Object.keys(response[0].meta)).to.include.members(['advertiserDomains']);
+      expect(response[0].meta.advertiserDomains).to.deep.equal(['test_adomain']);
+      delete TRION_BID_RESPONSE.result.adomain;
     });
   });
 

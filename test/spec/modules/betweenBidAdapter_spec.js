@@ -20,7 +20,7 @@ describe('betweenBidAdapterTests', function () {
       sizes: [[240, 400]]
     }]
     let request = spec.buildRequests(bidRequestData);
-    let req_data = request[0].data;
+    let req_data = JSON.parse(request.data)[0].data;
     expect(req_data.bidid).to.equal('bid1234');
   });
   it('validate itu param', function() {
@@ -37,7 +37,7 @@ describe('betweenBidAdapterTests', function () {
     }];
 
     let request = spec.buildRequests(bidRequestData);
-    let req_data = request[0].data;
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.itu).to.equal('https://something.url');
   });
@@ -55,7 +55,7 @@ describe('betweenBidAdapterTests', function () {
     }];
 
     let request = spec.buildRequests(bidRequestData);
-    let req_data = request[0].data;
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.cur).to.equal('THX');
   });
@@ -73,7 +73,7 @@ describe('betweenBidAdapterTests', function () {
     }];
 
     let request = spec.buildRequests(bidRequestData);
-    let req_data = request[0].data;
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.subid).to.equal(1138);
   });
@@ -91,7 +91,7 @@ describe('betweenBidAdapterTests', function () {
     }];
 
     let request = spec.buildRequests(bidRequestData);
-    let req_data = request[0].data;
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.click3rd).to.equal('https://something.url');
   });
@@ -111,7 +111,7 @@ describe('betweenBidAdapterTests', function () {
     }];
 
     let request = spec.buildRequests(bidRequestData);
-    let req_data = request[0].data;
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data['pubside_macro[param]']).to.equal('%26test%3Dtset');
   });
@@ -134,7 +134,7 @@ describe('betweenBidAdapterTests', function () {
     }
 
     let request = spec.buildRequests(bidRequestData, bidderRequest);
-    let req_data = request[0].data;
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.gdprApplies).to.equal(bidderRequest.gdprConsent.gdprApplies);
     expect(req_data.consentString).to.equal(bidderRequest.gdprConsent.consentString);
@@ -217,8 +217,87 @@ describe('betweenBidAdapterTests', function () {
     }];
 
     let request = spec.buildRequests(bidRequestData);
-    let req_data = request[0].data;
+    let req_data = JSON.parse(request.data)[0].data;
 
-    expect(req_data.sizes).to.deep.equal('970x250%2C240x400%2C728x90');
+    expect(req_data.sizes).to.deep.equal(['970x250', '240x400', '728x90'])
+  });
+
+  it('check sharedId with id and third', function() {
+    const bidRequestData = [{
+      bidId: 'bid123',
+      bidder: 'between',
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      },
+      params: {
+        s: 1112,
+      },
+      userId: {
+        sharedid: {
+          id: '01EXQE7JKNDRDDVATB0S2GX1NT',
+          third: '01EXQE7JKNDRDDVATB0S2GX1NT'
+        }
+      }
+    }];
+    const shid = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid;
+    const shid3 = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid3;
+    expect(shid).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT') && expect(shid3).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT');
+  });
+  it('check sharedId with only id', function() {
+    const bidRequestData = [{
+      bidId: 'bid123',
+      bidder: 'between',
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      },
+      params: {
+        s: 1112,
+      },
+      userId: {
+        sharedid: {
+          id: '01EXQE7JKNDRDDVATB0S2GX1NT',
+        }
+      }
+    }];
+    const shid = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid;
+    const shid3 = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid3;
+    expect(shid).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT') && expect(shid3).to.equal('');
+  });
+  it('check adomain', function() {
+    const serverResponse = {
+      body: [{
+        bidid: 'bid1234',
+        cpm: 1.12,
+        w: 240,
+        h: 400,
+        currency: 'USD',
+        ad: 'Ad html',
+        adomain: ['domain1.com', 'domain2.com']
+      }]
+    };
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.meta.advertiserDomains).to.deep.equal(['domain1.com', 'domain2.com']);
+  });
+  it('check server response without adomain', function() {
+    const serverResponse = {
+      body: [{
+        bidid: 'bid1234',
+        cpm: 1.12,
+        w: 240,
+        h: 400,
+        currency: 'USD',
+        ad: 'Ad html',
+      }]
+    };
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.meta.advertiserDomains).to.deep.equal([]);
   });
 });

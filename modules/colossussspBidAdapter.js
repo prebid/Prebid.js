@@ -56,15 +56,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    let winTop = window;
-    let location;
-    try {
-      location = new URL(bidderRequest.refererInfo.referer)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      utils.logMessage(e);
-    };
+    const winTop = utils.getWindowTop();
+    const location = winTop.location;
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
@@ -94,8 +87,22 @@ export const spec = {
         bidId: bid.bidId,
         sizes: bid.mediaTypes[traff].sizes,
         traffic: traff,
-        eids: []
+        eids: [],
+        floor: {}
       };
+      if (typeof bid.getFloor === 'function') {
+        let tmpFloor = {};
+        for (let size of placement.sizes) {
+          tmpFloor = bid.getFloor({
+            currency: 'USD',
+            mediaType: traff,
+            size: size
+          });
+          if (tmpFloor) {
+            placement.floor[`${size[0]}x${size[1]}`] = tmpFloor.floor;
+          }
+        }
+      }
       if (bid.schain) {
         placement.schain = bid.schain;
       }

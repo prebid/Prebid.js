@@ -82,7 +82,7 @@
       <script>
         var PREBID_TIMEOUT = 700;
         var FAILSAFE_TIMEOUT = 2500;
-  
+
         var adUnits = [{
           code: 'div-gpt-ad-1460505748561-0',
           mediaTypes: {
@@ -90,7 +90,7 @@
               sizes: [[300, 250], [300,600]]
             }
           },
-  
+
           // Replace this object to test a new Adapter!
           bids: [{
             bidder: 'appnexus',
@@ -98,21 +98,21 @@
               placementId: 13144370
             }
           }]
-  
+
         }];
-  
+
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
-  
+
       </script>
-  
+
       <script>
         var googletag = googletag || {};
         googletag.cmd = googletag.cmd || [];
         googletag.cmd.push(function() {
           googletag.pubads().disableInitialLoad();
         });
-  
+
         pbjs.que.push(function() {
           pbjs.addAdUnits(adUnits);
           pbjs.setConfig({
@@ -130,7 +130,7 @@
             timeout: PREBID_TIMEOUT
           });
         });
-  
+
         function sendAdserverRequest() {
           if (pbjs.adserverRequestSent) return;
           pbjs.adserverRequestSent = true;
@@ -141,23 +141,23 @@
             });
           });
         }
-  
+
         setTimeout(function() {
            sendAdserverRequest();
            console.log('timeout in main pbjs fired');
         }, FAILSAFE_TIMEOUT);
-  
-      </script>  
+
+      </script>
       <script>
         googletag.cmd.push(function () {
           googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-  
+
           googletag.pubads().enableSingleRequest();
           googletag.enableServices();
         });
       </script>
   </head>
-  
+
   <body>
   <h2>Prebid.js Test</h2>
   <h5>Div-1</h5>
