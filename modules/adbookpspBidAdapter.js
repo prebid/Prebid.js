@@ -232,7 +232,7 @@ function buildMediaTypeObject(mediaType, bidRequest) {
     case VIDEO:
       return buildVideoObject(bidRequest);
     default:
-      utils.logWarn(`Unsupported media type ${mediaType}!`);
+      utils.logWarn(`${BIDDER_CODE}: Unsupported media type ${mediaType}!`);
   }
 }
 
@@ -254,7 +254,7 @@ function buildBannerObject(bidRequest) {
 }
 
 function buildVideoObject(bidRequest) {
-  const [w, h] = bidRequest.mediaTypes.video.playerSize[0];
+  const { w, h } = getVideoSize(bidRequest);
   let videoObj = {
     w,
     h,
@@ -262,7 +262,10 @@ function buildVideoObject(bidRequest) {
 
   for (const param of VIDEO_PARAMS) {
     const paramsValue = utils.deepAccess(bidRequest, `params.video.${param}`);
-    const mediaTypeValue = utils.deepAccess(bidRequest, `mediaTypes.video.${param}`);
+    const mediaTypeValue = utils.deepAccess(
+      bidRequest,
+      `mediaTypes.video.${param}`
+    );
 
     if (paramsValue || mediaTypeValue) {
       videoObj[param] = paramsValue || mediaTypeValue;
@@ -270,6 +273,20 @@ function buildVideoObject(bidRequest) {
   }
 
   return videoObj;
+}
+
+function getVideoSize(bidRequest) {
+  const playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize', [[]]);
+  const { w, h } = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
+
+  if (utils.isNumber(w) && utils.isNumber(h)) {
+    return { w, h };
+  }
+
+  return {
+    w: playerSize[0][0],
+    h: playerSize[0][1],
+  }
 }
 
 function buildImpExt(validBidRequest) {
@@ -370,7 +387,7 @@ const impToPrebidBid =
         mediaType,
         meta: {
           advertiserDomains: bid.adomain,
-          mediaType: mediaType,
+          mediaType,
           primaryCatId: categories[0],
           secondaryCatIds: categories.slice(1),
         },
@@ -391,7 +408,7 @@ const impToPrebidBid =
 
       return prebidBid;
     } catch (error) {
-      utils.logError(error);
+      utils.logError(`${BIDDER_CODE}: Error while building bid`, error);
 
       return null;
     }
@@ -464,7 +481,7 @@ function isValidBannerRequest(bidRequest) {
 function isValidVideoRequest(bidRequest) {
   const value =
     utils.isArray(utils.deepAccess(bidRequest, 'mediaTypes.video.mimes')) &&
-    validateSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+    validateVideoSizes(bidRequest);
 
   return value;
 }
@@ -475,6 +492,17 @@ function validateSize(size) {
 
 function validateSizes(sizes) {
   return utils.isArray(sizes) && sizes.length > 0 && sizes.every(validateSize);
+}
+
+function validateVideoSizes(bidRequest) {
+  const { w, h } = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
+
+  return (
+    validateSizes(
+      utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize')
+    ) ||
+    (utils.isNumber(w) && utils.isNumber(h))
+  );
 }
 
 function validateBid(bidderRequestBody) {

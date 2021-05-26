@@ -78,6 +78,27 @@ describe('adbookpsp bid adapter', () => {
 
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('should return true if player size is set via playerSize', () => {
+      expect(spec.isBidRequestValid(videoBid)).to.equal(true);
+    });
+
+    it('should return true if player size is set via w and h', () => {
+      const bid = utils.deepClone(videoBid);
+      delete bid.mediaTypes.video.playerSize;
+
+      bid.mediaTypes.video.w = 400;
+      bid.mediaTypes.video.h = 300;
+
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should reutrn false if player size is not set', () => {
+      const bid = utils.deepClone(videoBid);
+      delete bid.mediaTypes.video.playerSize;
+
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
   });
 
   describe('buildRequests()', () => {
@@ -136,6 +157,34 @@ describe('adbookpsp bid adapter', () => {
           },
         },
       });
+    });
+
+    it('should build correct request for video bid with w and h', () => {
+      const bid = utils.deepClone(videoBid);
+
+      delete bid.mediaTypes.video.playerSize;
+
+      bid.mediaTypes.video.w = 400;
+      bid.mediaTypes.video.h = 300;
+
+      const [request] = spec.buildRequests([bid], bidderRequest);
+      const requestData = JSON.parse(request.data);
+
+      expect(requestData.imp[0].video.w).to.equal(400);
+      expect(requestData.imp[0].video.h).to.equal(300);
+    });
+
+    it('should build correct request for video bid with both w, h and playerSize', () => {
+      const bid = utils.deepClone(videoBid);
+
+      bid.mediaTypes.video.w = 640;
+      bid.mediaTypes.video.h = 480;
+
+      const [request] = spec.buildRequests([bid], bidderRequest);
+      const requestData = JSON.parse(request.data);
+
+      expect(requestData.imp[0].video.w).to.equal(640);
+      expect(requestData.imp[0].video.h).to.equal(480);
     });
 
     it('should build correct request for mixed bid', () => {
