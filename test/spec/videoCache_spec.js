@@ -201,13 +201,15 @@ describe('The video cache', function () {
         ttl: 25,
         customCacheKey: customKey1,
         requestId: '12345abc',
-        bidder: 'appnexus'
+        bidder: 'appnexus',
+        auctionId: '1234-56789-abcde'
       }, {
         vastXml: vastXml2,
         ttl: 25,
         customCacheKey: customKey2,
         requestId: 'cba54321',
-        bidder: 'rubicon'
+        bidder: 'rubicon',
+        auctionId: '1234-56789-abcde'
       }];
 
       store(bids, function () { });
@@ -222,6 +224,7 @@ describe('The video cache', function () {
           ttlseconds: 25,
           key: customKey1,
           bidid: '12345abc',
+          aid: '1234-56789-abcde',
           bidder: 'appnexus'
         }, {
           type: 'xml',
@@ -229,6 +232,7 @@ describe('The video cache', function () {
           ttlseconds: 25,
           key: customKey2,
           bidid: 'cba54321',
+          aid: '1234-56789-abcde',
           bidder: 'rubicon'
         }]
       };
@@ -254,13 +258,15 @@ describe('The video cache', function () {
         ttl: 25,
         customCacheKey: customKey1,
         requestId: '12345abc',
-        bidder: 'appnexus'
+        bidder: 'appnexus',
+        auctionId: '1234-56789-abcde'
       }, {
         vastXml: vastXml2,
         ttl: 25,
         customCacheKey: customKey2,
         requestId: 'cba54321',
-        bidder: 'rubicon'
+        bidder: 'rubicon',
+        auctionId: '1234-56789-abcde'
       }];
 
       store(bids, function () { }, getMockBidRequest());
@@ -276,6 +282,7 @@ describe('The video cache', function () {
           key: customKey1,
           bidid: '12345abc',
           bidder: 'appnexus',
+          aid: '1234-56789-abcde',
           timestamp: 1510852447530
         }, {
           type: 'xml',
@@ -284,6 +291,7 @@ describe('The video cache', function () {
           key: customKey2,
           bidid: 'cba54321',
           bidder: 'rubicon',
+          aid: '1234-56789-abcde',
           timestamp: 1510852447530
         }]
       };

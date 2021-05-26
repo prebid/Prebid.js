@@ -149,7 +149,22 @@ export const spec = {
 
 function buildVideoParams(videoMediaType, videoParams) {
   videoMediaType = videoMediaType || {};
-  const params = pick(videoMediaType, ['api', 'mimes', 'protocols', 'playbackmethod']);
+  const params = pick(videoMediaType, [
+    'mimes',
+    'minduration',
+    'maxduration',
+    'protocols',
+    'startdelay',
+    'placement',
+    'skip',
+    'skipafter',
+    'minbitrate',
+    'maxbitrate',
+    'delivery',
+    'playbackmethod',
+    'api',
+    'linearity',
+  ]);
 
   switch (videoMediaType.context) {
     case 'instream':
