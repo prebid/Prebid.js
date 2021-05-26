@@ -61,7 +61,7 @@ export const spec = {
       //  metaData: getMetaData(),
       bidder: 'etarget',
       gdpr: gdprObject
-    }; 
+    };
     /**
     function getMetaData() {
       var mts = {};
