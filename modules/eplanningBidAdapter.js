@@ -83,13 +83,12 @@ export const spec = {
         params.ccpa = bidderRequest.uspConsent;
       }
 
-      if ((getGlobal()).getUserIds && typeof (getGlobal()).getUserIds === "function") {
+      if ((getGlobal()).getUserIds && typeof (getGlobal()).getUserIds === 'function') {
         const userIds = (getGlobal()).getUserIds();
         for (var id in userIds) {
           params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
         }
       }
-
     }
 
     return {
