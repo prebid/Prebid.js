@@ -79,7 +79,7 @@ export const spec = {
 
     // GDPR & CCPA
     if (gdprConsent) {
-      url += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      url += '&gdpr_optin=' + (gdprConsent.gdprApplies ? 1 : 0);
       url += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
     }
     if (uspConsent) {
