@@ -255,6 +255,7 @@ function buildRequests (validBidRequests, bidderRequest) {
     let data = {};
     let gpid = '';
 
+    // ADJS-1024
     if (utils.deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
       gpid = ortb2Imp.ext.data.adserver.adslot
     }
