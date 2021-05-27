@@ -5,7 +5,7 @@ import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=';
-const BIDDER_VERSION = '0.0.4';
+const BIDDER_VERSION = '1.1.0';
 
 export const spec = {
   code: BIDDER_CODE,
