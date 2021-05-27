@@ -136,8 +136,9 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.mediasquare).to.exist;
     expect(bid.mediasquare.bidder).to.equal('msqClassic');
     expect(bid.mediasquare.code).to.equal([DEFAULT_PARAMS[0].params.owner, DEFAULT_PARAMS[0].params.code].join('/'));
-    expect(bid.adomain).to.exist;
-    expect(bid.adomain).to.have.lengthOf(1);
+    expect(bid.meta).to.exist;
+    expect(bid.meta.advertiserDomains).to.exist;
+    expect(bid.meta.advertiserDomains).to.have.lengthOf(1);
   });
 
   it('Verifies bidder code', function () {
