@@ -65,8 +65,10 @@ describe('nativoBidAdapterTests', function () {
       expect(request.url).to.be.a('string')
 
       expect(request.url).to.include('?')
-      expect(request.url).to.include('ntv_url')
       expect(request.url).to.include('ntv_ptd')
+      expect(request.url).to.include('ntv_pb_rid')
+      expect(request.url).to.include('ntv_ppc')
+      expect(request.url).to.include('ntv_url')
     })
   })
 })

@@ -55,8 +55,12 @@ export const spec = {
       currency: res.currency || 'USD',
       netRevenue: true,
       ttl: TIME_TO_LIVE,
-      ad: res.ad
+      ad: res.ad,
+      meta: {
+        advertiserDomains: Array.isArray(res.adomain) ? res.adomain : []
+      }
     };
+
     return [bidResponse];
   },
 }

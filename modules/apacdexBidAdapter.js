@@ -55,13 +55,13 @@ export const spec = {
     let eids;
     let geo;
     let test;
+    let bids = [];
 
-    var bids = JSON.parse(JSON.stringify(validBidRequests))
-    bidderConfig = CONFIG[bids[0].bidder];
+    bidderConfig = CONFIG[validBidRequests[0].bidder];
 
     test = config.getConfig('debug');
 
-    bids.forEach(bidReq => {
+    validBidRequests.forEach(bidReq => {
       siteId = siteId || bidReq.params.siteId;
 
       if (bidReq.schain) {
@@ -95,6 +95,13 @@ export const spec = {
       }
       bySlotTargetKey[bidReq.adUnitCode] = targetKey;
       bidReq.targetKey = targetKey;
+
+      let bidFloor = getBidFloor(bidReq);
+      if (bidFloor) {
+        bidReq.bidFloor = bidFloor;
+      }
+
+      bids.push(JSON.parse(JSON.stringify(bidReq)));
     });
 
     const payload = {};
@@ -169,22 +176,29 @@ export const spec = {
 
     const bidResponses = [];
     serverBids.forEach(bid => {
+      const dealId = bid.dealId || '';
       const bidResponse = {
         requestId: bid.requestId,
         cpm: bid.cpm,
         width: bid.width,
         height: bid.height,
         creativeId: bid.creativeId,
-        dealId: bid.dealId,
         currency: bid.currency,
         netRevenue: bid.netRevenue,
         ttl: bid.ttl,
         mediaType: bid.mediaType
       };
+      if (dealId.length > 0) {
+        bidResponse.dealId = dealId;
+      }
       if (bid.vastXml) {
         bidResponse.vastXml = utils.replaceAuctionPrice(bid.vastXml, bid.cpm);
       } else {
         bidResponse.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
+      }
+      bidResponse.meta = {};
+      if (bid.meta && bid.meta.advertiserDomains && utils.isArray(bid.meta.advertiserDomains)) {
+        bidResponse.meta.advertiserDomains = bid.meta.advertiserDomains;
       }
       bidResponses.push(bidResponse);
     });
@@ -334,6 +348,28 @@ export function validateGeoObject(geo) {
     return false;
   }
   return true;
+}
+
+/**
+ * Get bid floor from Price Floors Module
+ *
+ * @param {Object} bid
+ * @returns {float||null}
+ */
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return (bid.params.floorPrice) ? bid.params.floorPrice : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
 }
 
 registerBidder(spec);
