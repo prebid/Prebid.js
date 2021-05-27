@@ -201,6 +201,10 @@ function interpretResponse(serverResponse, bidRequest) {
               bidResponse.vastUrl = window.URL.createObjectURL(blob);
               bidResponse.vastXml = xmlStr;
               bidResponse.mediaType = VIDEO;
+              bidResponse.meta = {
+                advertiserDomains: []
+              };
+
               if (bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === 'outstream') { bidResponse.renderer = newRenderer(bidRequest); }
 
               bidResponses.push(bidResponse);
@@ -230,7 +234,10 @@ function getSyncData(xml, options) {
                 if (data && data.trackers && data.trackers.length) {
                   data = data.trackers;
                   for (var j = 0; j < data.length; j++) {
-                    if (typeof data[j] === 'object' && typeof data[j].url === 'string' && data[j].e === 'inventory') {
+                    if (typeof data[j] === 'object' &&
+                      typeof data[j].url === 'string' &&
+                      (data[j].e === 'inventory' || data[j].e === 'sync')
+                    ) {
                       if (data[j].t == 1 && options.pixelEnabled) {
                         ret.push({url: data[j].url, type: 'image'});
                       } else {

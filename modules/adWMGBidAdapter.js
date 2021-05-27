@@ -116,6 +116,10 @@ export const spec = {
         netRevenue: response.netRevenue,
         ttl: response.ttl,
         ad: response.ad,
+        meta: {
+          advertiserDomains: response.adomain && response.adomain.length ? response.adomain : [],
+          mediaType: 'banner'
+        }
       };
       bidResponses.push(bidResponse);
     }

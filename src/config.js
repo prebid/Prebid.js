@@ -265,7 +265,7 @@ export function newConfig() {
       }
 
       for (let k of Object.keys(val)) {
-        if (k !== 'secondaryBidders') {
+        if (k !== 'secondaryBidders' && k !== 'suppressStaleRender') {
           utils.logWarn(`Auction Options given an incorrect param: ${k}`)
           return false
         }
@@ -276,6 +276,11 @@ export function newConfig() {
           } else if (!val[k].every(utils.isStr)) {
             utils.logWarn(`Auction Options ${k} must be only string`);
             return false
+          }
+        } else if (k === 'suppressStaleRender') {
+          if (!utils.isBoolean(val[k])) {
+            utils.logWarn(`Auction Options ${k} must be of type boolean`);
+            return false;
           }
         }
       }
@@ -595,7 +600,7 @@ export function newConfig() {
     try {
       return fn();
     } finally {
-      currBidder = null;
+      resetBidder();
     }
   }
   function callbackWithBidder(bidder) {
@@ -614,10 +619,15 @@ export function newConfig() {
     return currBidder;
   }
 
+  function resetBidder() {
+    currBidder = null;
+  }
+
   resetConfig();
 
   return {
     getCurrentBidder,
+    resetBidder,
     getConfig,
     setConfig,
     setDefaults,
