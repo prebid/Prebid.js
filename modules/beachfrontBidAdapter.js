@@ -71,13 +71,15 @@ export const spec = {
       let firstSize = getFirstSize(sizes);
       let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
       let responseType = getVideoBidParam(bidRequest, 'responseType') || 'both';
+      let responseMeta = Object.assign({ mediaType: VIDEO, advertiserDomains: [] }, response.meta);
       let bidResponse = {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
         cpm: response.bidPrice,
         width: firstSize.w,
         height: firstSize.h,
-        creativeId: response.crid || response.cmpId,
+        creativeId: response.crid,
+        meta: responseMeta,
         renderer: context === OUTSTREAM ? createRenderer(bidRequest) : null,
         mediaType: VIDEO,
         currency: CURRENCY,
@@ -103,6 +105,7 @@ export const spec = {
         .filter(bid => bid.adm)
         .map((bid) => {
           let request = find(bidRequest, req => req.adUnitCode === bid.slot);
+          let responseMeta = Object.assign({ mediaType: BANNER, advertiserDomains: [] }, bid.meta);
           return {
             requestId: request.bidId,
             bidderCode: spec.code,
@@ -111,6 +114,7 @@ export const spec = {
             cpm: bid.price,
             width: bid.w,
             height: bid.h,
+            meta: responseMeta,
             mediaType: BANNER,
             currency: CURRENCY,
             netRevenue: true,

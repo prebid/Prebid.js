@@ -234,9 +234,10 @@ describe('User ID', function () {
           });
         });
       });
-      // Because the cookie exists already, there should be no setCookie call by default; the only setCookie call is
-      // to store consent data
-      expect(coreStorage.setCookie.callCount).to.equal(1);
+      // Because the consent cookie doesn't exist yet, we'll have two setCookie calls:
+      // 1) for the consent cookie
+      // 2) from the getId() call that results in a new call to store the results
+      expect(coreStorage.setCookie.callCount).to.equal(2);
     });
 
     it('Extend cookie', function () {
@@ -2407,7 +2408,7 @@ describe('User ID', function () {
             });
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mid');
-            expect(bid.userId.mid).to.equal('123456778');
+            expect(bid.userId.mid).to.equal('1234');
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
@@ -2785,7 +2786,7 @@ describe('User ID', function () {
         sharedAfterFunction();
       });
 
-      it('does not call getId if no stored consent data and refresh is not needed', function () {
+      it('calls getId if no stored consent data and refresh is not needed', function () {
         coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
 
@@ -2796,9 +2797,9 @@ describe('User ID', function () {
           innerAdUnits = config.adUnits
         }, {adUnits});
 
-        sinon.assert.notCalled(mockGetId);
+        sinon.assert.calledOnce(mockGetId);
         sinon.assert.calledOnce(mockDecode);
-        sinon.assert.calledOnce(mockExtendId);
+        sinon.assert.notCalled(mockExtendId);
       });
 
       it('calls getId if no stored consent data but refresh is needed', function () {

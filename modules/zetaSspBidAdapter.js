@@ -5,7 +5,8 @@ import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid';
-const USER_SYNC_URL = 'https://ssp.disqus.com/match';
+const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
+const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
@@ -58,7 +59,7 @@ export const spec = {
       app: params.app ? params.app : {},
       ext: {
         tags: params.tags ? params.tags : {},
-        sid: params.sid ? params.sid : {}
+        sid: params.sid ? params.sid : undefined
       }
     };
 
@@ -123,23 +124,38 @@ export const spec = {
   },
 
   /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @param gdprConsent The GDPR consent parameters
-   * @param uspConsent The USP consent parameters
-   * @return {UserSync[]} The user syncs which should be dropped.
+   * Register User Sync.
    */
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = [];
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: USER_SYNC_URL
-      });
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+    let syncurl = '';
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
     }
-    return syncs;
+
+    // CCPA
+    if (uspConsent) {
+      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      syncurl += '&coppa=1';
+    }
+
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: USER_SYNC_URL_IFRAME + syncurl
+      }];
+    } else {
+      return [{
+        type: 'image',
+        url: USER_SYNC_URL_IMAGE + syncurl
+      }];
+    }
   }
 }
 
