@@ -733,7 +733,8 @@ describe('invibesBidAdapter:', function () {
           <body style='margin : 0; padding: 0;'>
           <!-- Creative -->
           </body>
-        </html>`
+        </html>`,
+      meta: {}
     }];
 
     let multiResponse = {
@@ -758,6 +759,23 @@ describe('invibesBidAdapter:', function () {
           VideoExposedId: 123
         }]
       }]
+    };
+
+    let responseWithMeta = {
+      Ads: [{
+        BidPrice: 0.5,
+        VideoExposedId: 123
+      }],
+      BidModel: {
+        BidVersion: 1,
+        PlacementId: '12345',
+        AuctionStartTime: Date.now(),
+        CreativeHtml: '<!-- Creative -->',
+        Meta: {
+          advertiserDomains: ['theadvertiser.com', 'theadvertiser_2.com'],
+          advertiserName: 'theadvertiser'
+        }
+      }
     };
 
     context('when the response is not valid', function () {
@@ -827,6 +845,15 @@ describe('invibesBidAdapter:', function () {
         let result = spec.interpretResponse({body: response}, {bidRequests});
         let secondResult = spec.interpretResponse({body: response}, {bidRequests});
         expect(secondResult).to.be.empty;
+      });
+    });
+
+    context('when the response has meta', function () {
+      it('responds with a valid bid, with the meta info', function () {
+        let result = spec.interpretResponse({body: responseWithMeta}, {bidRequests});
+        expect(result[0].meta.advertiserName).to.equal('theadvertiser');
+        expect(result[0].meta.advertiserDomains).to.contain('theadvertiser.com');
+        expect(result[0].meta.advertiserDomains).to.contain('theadvertiser_2.com');
       });
     });
   });
