@@ -4,7 +4,7 @@ const allowedModules = require("./allowedModules");
 module.exports = {
   "env": {
     "browser": true,
-    "commonjs": true,
+    "commonjs": true
   },
   "settings": {
     "import/resolver": {
