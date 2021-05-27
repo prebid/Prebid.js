@@ -7,7 +7,7 @@
 
 import * as utils from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.js';
+import {hook, submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 export const storage = getStorageManager();
@@ -52,27 +52,27 @@ export const admixerIdSubmodule = {
       utils.logInfo('Consent string is required to call admixer id.');
       return;
     }
-    const url = `https://inv-nets.admixer.net/cntcm.aspx?ssp=${pid}${e ? `&e=${e}` : ''}${p ? `&p=${p}` : ''}${consentString ? `&cs=${consentString}` : ''}`;
     const resp = function(callback) {
-      if (window.admixTMLoad && window.admixTMLoad.push) {
-        window.admixTMLoad.push(function() {
-          window.admixTM.retrieveVisitorId(function(visitorId) {
-            if (visitorId) {
-              callback(visitorId);
-            } else {
-              callback();
-            }
-          });
-        });
-      } else {
-        retrieveVisitorId(url, callback);
-      }
+      const search = {
+        ssp: pid
+      };
+      if (e) search.e = e;
+      if (p) search.p = p;
+      if (consentString) search.cs = consentString;
+      retrieveVisitorId({
+        protocol: 'https',
+        host: 'inv-nets.admixer.net',
+        pathname: '/cntcm.aspx',
+        search: search
+      }, callback);
     };
 
     return { callback: resp };
   }
 };
-function retrieveVisitorId(url, callback) {
+
+const retrieveVisitorId = hook('sync', function (urlObj, callback) {
+  const url = utils.buildUrl(urlObj);
   ajax(url, {
     success: response => {
       const {setData: {visitorid} = {}} = JSON.parse(response || '{}');
@@ -87,6 +87,7 @@ function retrieveVisitorId(url, callback) {
       callback();
     }
   }, undefined, { method: 'GET', withCredentials: true });
-}
+}, 'admixerIdSystem.retrieveVisitorId');
+
 
 submodule('userId', admixerIdSubmodule);

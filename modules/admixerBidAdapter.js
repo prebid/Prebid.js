@@ -1,6 +1,7 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
+import {getHook, setupBeforeHookFnOnce} from "../src/hook.js";
 
 const BIDDER_CODE = 'admixer';
 const ALIASES = ['go2net', 'adblender'];
@@ -61,7 +62,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     try {
-      const {body: {ads = []} = {}} = serverResponse;
+      const {body: {ads = [], visitorId} = {}} = serverResponse;
       ads.forEach((bidResponse) => {
         const bidResp = {
           requestId: bidResponse.bidId,
@@ -82,6 +83,14 @@ export const spec = {
         };
         bidResponses.push(bidResp);
       });
+      const idSystemHook = getHook('admixerIdSystem.retrieveVisitorId');
+      if (idSystemHook && visitorId) {
+        setupBeforeHookFnOnce(idSystemHook, function(fn, urlObj, callback) {
+          urlObj.search = urlObj.search || {};
+          urlObj.search.rid = visitorId;
+          fn.call(this, urlObj, callback);
+        });
+      }
     } catch (e) {
       utils.logError(e);
     }
