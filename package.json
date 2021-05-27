@@ -42,7 +42,6 @@
     "deep-equal": "^2.0.3",
     "documentation": "^13.2.5",
     "es5-shim": "^4.5.14",
-    "eslint": "^7.27.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-plugin-import": "^2.23.3",
     "eslint-plugin-node": "^11.1.0",
