@@ -171,6 +171,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         expect(dataItem.netRevenue).to.be.a('boolean');
         expect(dataItem.currency).to.be.a('string');
         expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta.advertiserDomains[0]).to.be.a('string');
       }
     });
   }
@@ -187,7 +188,8 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         ttl: 1000,
         creativeId: '123asd',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        adomain: ['adomain.com'],
       }]
     };
 
@@ -202,7 +204,8 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         ttl: 1000,
         creativeId: '123asd',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        adomain: ['adomain.com'],
       }]
     };
     let serverResponses = spec.interpretResponse(resObjectBanner);

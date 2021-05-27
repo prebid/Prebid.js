@@ -123,10 +123,26 @@ export const spec = {
     if (response && Array.isArray(response) && response.length > 0) {
       for (let i = 0; i < response.length; i++) {
         if (response[i].cpm > 0) {
+          const tempResponse = {
+            requestId: response[i].requestId,
+            width: response[i].width,
+            height: response[i].height,
+            cpm: response[i].cpm,
+            mediaType: response[i].mediaType,
+            creativeId: response[i].creativeId,
+            currency: response[i].currency,
+            netRevenue: response[i].netRevenue,
+            ttl: response[i].ttl,
+            ad: response[i].ad,
+            meta: {
+              advertiserDomains: response[i].adomain && response[i].adomain.length ? response[i].adomain : [],
+            }
+          };
+
           if (response[i].mediaType && response[i].mediaType === 'video') {
             response[i].vastXml = response[i].ad;
           }
-          bidResponse.push(response[i]);
+          bidResponse.push(tempResponse);
         }
       }
     }
