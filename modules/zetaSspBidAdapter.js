@@ -59,7 +59,7 @@ export const spec = {
       app: params.app ? params.app : {},
       ext: {
         tags: params.tags ? params.tags : {},
-        sid: params.sid ? params.sid : {}
+        sid: params.sid ? params.sid : undefined
       }
     };
 
