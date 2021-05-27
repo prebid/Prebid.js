@@ -54,7 +54,7 @@ describe('ID5 analytics adapter', () => {
     id5AnalyticsAdapter.disableAnalytics();
   });
 
-  it('dos not calls configuration endpoint when partner id is missing', () => {
+  it('does not call configuration endpoint when partner id is missing', () => {
     id5AnalyticsAdapter.enableAnalytics({});
     server.respond();
 
