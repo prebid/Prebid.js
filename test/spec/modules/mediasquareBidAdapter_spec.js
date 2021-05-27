@@ -76,7 +76,7 @@ describe('MediaSquare bid adapter tests', function () {
       'bidder': 'msqClassic',
       'code': 'test/publishername_atf_desktop_rg_pave',
       'bid_id': 'aaaa1234',
-      'adomain': ["test.com"],
+      'adomain': ['test.com'],
     }],
   }};
 
