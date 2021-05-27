@@ -1,0 +1,28 @@
+
+name-template: 'Prebid $RESOLVED_VERSION Release'
+tag-template: '$RESOLVED_VERSION'
+categories:
+  - title: '🚀 New Features'
+    label: 'feature'
+  - title: '🛠 Maintenance'
+    label: 'maintenance'    
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'      
+change-template: '- $TITLE (#$NUMBER)'
+version-resolver:
+  major:
+    labels:
+      - 'major'
+  minor:
+    labels:
+      - 'minor'
+  patch:
+    labels:
+      - 'patch'
+  default: minor
+template: |
+  ## In This Release
+  $CHANGES

@@ -155,12 +155,14 @@ export function registerBidder(spec) {
     spec.aliases.forEach(alias => {
       let aliasCode = alias;
       let gvlid;
+      let skipPbsAliasing;
       if (isPlainObject(alias)) {
         aliasCode = alias.code;
         gvlid = alias.gvlid;
+        skipPbsAliasing = alias.skipPbsAliasing
       }
       adapterManager.aliasRegistry[aliasCode] = spec.code;
-      putBidder(Object.assign({}, spec, { code: aliasCode, gvlid }));
+      putBidder(Object.assign({}, spec, { code: aliasCode, gvlid, skipPbsAliasing }));
     });
   }
 }
@@ -195,8 +197,10 @@ export function newBidder(spec) {
       const responses = [];
       function afterAllResponses() {
         done();
-        events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-        registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
+        config.runWithBidder(spec.code, () => {
+          events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
+          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
+        });
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);

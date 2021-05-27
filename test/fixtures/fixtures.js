@@ -676,7 +676,13 @@ export function getAdUnits() {
           'bidder': 'appnexus',
           'params': {
             'placementId': '543221',
-            'test': 'me'
+          }
+        },
+        {
+          'bidder': 'pubmatic',
+          'params': {
+            'publisherId': 1234567,
+            'adSlot': '1234567@728x90'
           }
         }
       ]

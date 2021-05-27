@@ -21,6 +21,7 @@ let consoleLogExists = Boolean(consoleExists && window.console.log);
 let consoleInfoExists = Boolean(consoleExists && window.console.info);
 let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
+var events = require('./events.js');
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
@@ -41,6 +42,14 @@ export const internal = {
   formatQS,
   deepEqual
 };
+
+let prebidInternal = {}
+/**
+ * Returns object that is used as internal prebid namespace
+ */
+export function getPrebidInternal() {
+  return prebidInternal;
+}
 
 var uniqueRef = {};
 export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === uniqueRef
@@ -255,20 +264,31 @@ export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
+  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
 }
 
 export function logError() {
   if (debugTurnedOn() && consoleErrorExists) {
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
+  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
 }
 
 function decorateLog(args, prefix) {
   args = [].slice.call(args);
+  let bidder = config.getCurrentBidder();
+
   prefix && args.unshift(prefix);
-  args.unshift('display: inline-block; color: #fff; background: #3b88c3; padding: 1px 4px; border-radius: 3px;');
-  args.unshift('%cPrebid');
+  if (bidder) {
+    args.unshift(label('#aaa'));
+  }
+  args.unshift(label('#3b88c3'));
+  args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
   return args;
+
+  function label(color) {
+    return `display: inline-block; color: #fff; background: ${color}; padding: 1px 4px; border-radius: 3px;`
+  }
 }
 
 export function hasConsoleLogger() {
@@ -716,8 +736,21 @@ export function replaceAuctionPrice(str, cpm) {
   return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
 }
 
+export function replaceClickThrough(str, clicktag) {
+  if (!str || !clicktag || typeof clicktag !== 'string') return;
+  return str.replace(/\${CLICKTHROUGH}/g, clicktag);
+}
+
 export function timestamp() {
   return new Date().getTime();
+}
+
+/**
+ * The returned value represents the time elapsed since the time origin. @see https://developer.mozilla.org/en-US/docs/Web/API/Performance/now
+ * @returns {number}
+ */
+export function getPerformanceNow() {
+  return (window.performance && window.performance.now && window.performance.now()) || 0;
 }
 
 /**

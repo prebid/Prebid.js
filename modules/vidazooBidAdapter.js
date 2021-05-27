@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const GLVID = 744;
+const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
 const BIDDER_CODE = 'vidazoo';
 const BIDDER_VERSION = '1.0.0';
@@ -12,14 +12,6 @@ const TTL_SECONDS = 60 * 5;
 const DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const SESSION_ID_KEY = 'vidSid';
-const INTERNAL_SYNC_TYPE = {
-  IFRAME: 'iframe',
-  IMAGE: 'img'
-};
-const EXTERNAL_SYNC_TYPE = {
-  IFRAME: 'iframe',
-  IMAGE: 'image'
-};
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
@@ -32,7 +24,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'pubcid': 1,
   'tdid': 1,
 };
-const storage = getStorageManager(GLVID);
+const storage = getStorageManager(GVLID);
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
@@ -125,6 +117,9 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
         case 'parrableId':
           payloadRef[key] = userId.eid;
           break;
+        case 'id5id':
+          payloadRef[key] = userId.uid;
+          break;
         default:
           payloadRef[key] = userId;
       }
@@ -176,39 +171,24 @@ function interpretResponse(serverResponse, request) {
   }
 }
 
-function getUserSyncs(syncOptions, responses) {
+function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
+  let syncs = [];
   const { iframeEnabled, pixelEnabled } = syncOptions;
-
+  const { gdprApplies, consentString = '' } = gdprConsent;
+  const params = `?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
   if (iframeEnabled) {
-    return [{
+    syncs.push({
       type: 'iframe',
-      url: 'https://static.cootlogix.com/basev/sync/user_sync.html'
-    }];
-  }
-
-  if (pixelEnabled) {
-    const lookup = {};
-    const syncs = [];
-    responses.forEach(response => {
-      const { body } = response;
-      const results = body ? body.results || [] : [];
-      results.forEach(result => {
-        (result.cookies || []).forEach(cookie => {
-          if (cookie.type === INTERNAL_SYNC_TYPE.IMAGE) {
-            if (pixelEnabled && !lookup[cookie.src]) {
-              syncs.push({
-                type: EXTERNAL_SYNC_TYPE.IMAGE,
-                url: cookie.src
-              });
-            }
-          }
-        });
-      });
+      url: `https://prebid.cootlogix.com/api/sync/iframe/${params}`
     });
-    return syncs;
   }
-
-  return [];
+  if (pixelEnabled) {
+    syncs.push({
+      type: 'image',
+      url: `https://prebid.cootlogix.com/api/sync/image/${params}`
+    });
+  }
+  return syncs;
 }
 
 export function hashCode(s, prefix = '_') {
@@ -286,6 +266,7 @@ export function tryParseJSON(value) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   version: BIDDER_VERSION,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
