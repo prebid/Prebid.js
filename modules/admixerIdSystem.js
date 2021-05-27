@@ -38,9 +38,10 @@ export const admixerIdSubmodule = {
    * @function
    * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
+   * @param {string} [storedId]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData) {
+  getId(config, consentData, storedId) {
     const {e, p, pid} = (config && config.params) || {};
     if (!pid || typeof pid !== 'string') {
       utils.logError('admixerId submodule requires partner id to be defined');
@@ -59,6 +60,7 @@ export const admixerIdSubmodule = {
       if (e) search.e = e;
       if (p) search.p = p;
       if (consentString) search.cs = consentString;
+      if (storedId) search.sid = storedId;
       retrieveVisitorId({
         protocol: 'https',
         host: 'inv-nets.admixer.net',
