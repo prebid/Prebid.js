@@ -10,7 +10,8 @@ describe('adnuntiusBidAdapter', function () {
   });
   const tzo = new Date().getTimezoneOffset();
   const ENDPOINT_URL = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json`;
-  const ENDPOINT_URL_SEGMENTS = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json&segments=segment1,segment2`;
+  // const ENDPOINT_URL_SEGMENTS = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json&segments=segment1,segment2`;
+  const ENDPOINT_URL_SEGMENTS = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json`;
   const ENDPOINT_URL_CONSENT = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json&consentString=consentString`;
   const adapter = newBidder(spec);
 

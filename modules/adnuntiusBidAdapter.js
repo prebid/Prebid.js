@@ -7,6 +7,17 @@ const BIDDER_CODE = 'adnuntius';
 const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=';
 const GVLID = 855;
 
+const getSegmentsFromOrtb = function (ortb2) {
+  const userData = utils.deepAccess(ortb2, 'user.data');
+  let segments;
+  if (userData) {
+    userData.forEach(userdat => {
+      segments = (userdat.segment) ? userdat.segment.map(segment => segment.id) : undefined
+    });
+  }
+  return segments
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -19,13 +30,14 @@ export const spec = {
     const networks = {};
     const bidRequests = {};
     const requests = [];
-    const segments = config.getConfig('segments');
-    utils.logMessage('CONF', segments)
+    const ortb2 = config.getConfig('ortb2');
+    const segments = getSegmentsFromOrtb(ortb2);
     const tzo = new Date().getTimezoneOffset();
     const gdprApplies = utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
     const reqConsent = (gdprApplies !== undefined) ? '&consentString=' + consentString : '';
     const reqSegments = (segments !== undefined && utils.isArray(segments) && segments.length > 0) ? '&segments=' + segments.join(',') : '';
+
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
       const network = bid.params.network || 'network';
