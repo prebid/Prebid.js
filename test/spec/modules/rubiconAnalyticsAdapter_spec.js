@@ -374,6 +374,7 @@ const ANALYTICS_MESSAGE = {
   'referrerHostname': 'www.test.com',
   'auctions': [
     {
+      'requestId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
       'clientTimeoutMillis': 3000,
       'serverTimeoutMillis': 1000,
       'accountId': 1001,
@@ -1773,6 +1774,40 @@ describe('rubicon analytics adapter', function () {
       expect(message.bidsWon[0].bidId).to.equal('zzzz-yyyy-xxxx-wwww');
     });
 
+    it('should correctly generate new bidId if it is 0', function () {
+      // Only want one bid request in our mock auction
+      let bidRequested = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequested.bids.shift();
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.adUnits.shift();
+
+      // clone the mock bidResponse and duplicate
+      let seatBidResponse = utils.deepClone(BID4);
+      seatBidResponse.pbsBidId = '0';
+
+      const setTargeting = {
+        [seatBidResponse.adUnitCode]: seatBidResponse.adserverTargeting
+      };
+
+      const bidWon = Object.assign({}, seatBidResponse, {
+        'status': 'rendered'
+      });
+
+      // spoof the auction with just our duplicates
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, bidRequested);
+      events.emit(BID_RESPONSE, seatBidResponse);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, setTargeting);
+      events.emit(BID_WON, bidWon);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal(STUBBED_UUID);
+      expect(message.bidsWon[0].bidId).to.equal(STUBBED_UUID);
+    });
+
     it('should pick the highest cpm bid if more than one bid per bidRequestId', function () {
       // Only want one bid request in our mock auction
       let bidRequested = utils.deepClone(MOCK.BID_REQUESTED);
@@ -1872,14 +1907,18 @@ describe('rubicon analytics adapter', function () {
 
     it('should pass aupName as pattern', function () {
       let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
-      bidRequest.bids[0].fpd = {
-        context: {
-          aupName: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile'
+      bidRequest.bids[0].ortb2Imp = {
+        ext: {
+          data: {
+            aupname: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile'
+          }
         }
       };
-      bidRequest.bids[1].fpd = {
-        context: {
-          aupName: '1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile'
+      bidRequest.bids[1].ortb2Imp = {
+        ext: {
+          data: {
+            aupname: '1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile'
+          }
         }
       };
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);

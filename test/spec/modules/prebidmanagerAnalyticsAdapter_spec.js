@@ -1,4 +1,6 @@
-import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter.js';
+import prebidmanagerAnalytics, {
+  storage
+} from 'modules/prebidmanagerAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
@@ -105,19 +107,18 @@ describe('Prebid Manager Analytics Adapter', function () {
   });
 
   describe('build utm tag data', function () {
+    let getDataFromLocalStorageStub;
     beforeEach(function () {
-      localStorage.setItem('pm_utm_source', 'utm_source');
-      localStorage.setItem('pm_utm_medium', 'utm_medium');
-      localStorage.setItem('pm_utm_campaign', 'utm_camp');
-      localStorage.setItem('pm_utm_term', '');
-      localStorage.setItem('pm_utm_content', '');
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
+      getDataFromLocalStorageStub.withArgs('pm_utm_medium').returns('utm_medium');
+      getDataFromLocalStorageStub.withArgs('pm_utm_campaign').returns('utm_camp');
+      getDataFromLocalStorageStub.withArgs('pm_utm_term').returns('');
+      getDataFromLocalStorageStub.withArgs('pm_utm_content').returns('');
+      getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
     });
     afterEach(function () {
-      localStorage.removeItem('pm_utm_source');
-      localStorage.removeItem('pm_utm_medium');
-      localStorage.removeItem('pm_utm_campaign');
-      localStorage.removeItem('pm_utm_term');
-      localStorage.removeItem('pm_utm_content');
+      getDataFromLocalStorageStub.restore();
       prebidmanagerAnalytics.disableAnalytics()
     });
     it('should build utm data from local storage', function () {

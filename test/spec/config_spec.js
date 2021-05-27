@@ -210,6 +210,12 @@ describe('config API', function () {
     expect(getConfig('deviceAccess')).to.be.equal(true);
   });
 
+  it('sets maxNestedIframes', function () {
+    expect(getConfig('maxNestedIframes')).to.be.equal(10);
+    setConfig({ maxNestedIframes: 2 });
+    expect(getConfig('maxNestedIframes')).to.be.equal(2);
+  });
+
   it('should log error for invalid priceGranularity', function () {
     setConfig({ priceGranularity: '' });
     const error = 'Prebid Error: no value passed to `setPriceGranularity()`';
@@ -227,9 +233,17 @@ describe('config API', function () {
     expect(logWarnSpy.called).to.equal(false);
   });
 
-  it('sets auctionOptions', function () {
+  it('sets auctionOptions secondaryBidders', function () {
     const auctionOptionsConfig = {
       'secondaryBidders': ['rubicon', 'appnexus']
+    }
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+  });
+
+  it('sets auctionOptions suppressStaleRender', function () {
+    const auctionOptionsConfig = {
+      'suppressStaleRender': true
     }
     setConfig({ auctionOptions: auctionOptionsConfig });
     expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
@@ -248,6 +262,15 @@ describe('config API', function () {
     }});
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options secondaryBidders must be of type Array';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid auctionOptions suppress stale render', function () {
+    setConfig({ auctionOptions: {
+      'suppressStaleRender': 'test',
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options suppressStaleRender must be of type boolean';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 

@@ -9,7 +9,7 @@ const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TMAX = 450;
-const BIDDER_VERSION = '4.7';
+const BIDDER_VERSION = '4.8';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
@@ -151,11 +151,13 @@ function mapBanner(slot) {
 }
 
 function mapImpression(slot) {
+  const { adUnitCode, bidId, params } = slot;
+  const { id, siteId } = params || {};
   const imp = {
-    id: (slot.params && slot.params.id) ? slot.params.id : 'bidid-' + slot.bidId,
+    id: id && siteId ? id : 'bidid-' + bidId,
     banner: mapBanner(slot),
     /* native: mapNative(slot), */
-    tagid: slot.adUnitCode,
+    tagid: adUnitCode,
   };
 
   const bidfloor = (slot.params && slot.params.bidFloor) ? parseFloat(slot.params.bidFloor) : undefined;
@@ -255,6 +257,7 @@ const spec = {
     }
 
     const siteId = setOnAny(validBidRequests, 'params.siteId');
+    const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.referer;
     const domain = setOnAny(validBidRequests, 'params.domain') || utils.parseUrl(page).hostname;
     const tmax = setOnAny(validBidRequests, 'params.tmax') ? parseInt(setOnAny(validBidRequests, 'params.tmax'), 10) : TMAX;
@@ -270,7 +273,13 @@ const spec = {
 
     const payload = {
       id: bidderRequest.auctionId,
-      site: { id: siteId, page, domain, ref },
+      site: {
+        id: siteId,
+        publisher: publisherId ? { id: publisherId } : undefined,
+        page,
+        domain,
+        ref
+      },
       imp: validBidRequests.map(slot => mapImpression(slot)),
       tmax,
       user: {},
@@ -290,6 +299,7 @@ const spec = {
   },
 
   interpretResponse(serverResponse, request) {
+    const { bidderRequest } = request;
     const response = serverResponse.body;
     const bids = [];
     const site = JSON.parse(request.data).site; // get page and referer data from request
@@ -297,50 +307,68 @@ const spec = {
     let seat;
 
     if (response.seatbid !== undefined) {
+      /*
+        Match response to request, by comparing bid id's
+        'bidid-' prefix indicates oneCode (parameterless) request and response
+      */
       response.seatbid.forEach(seatbid => {
         seat = seatbid.seat;
         seatbid.bid.forEach(serverBid => {
-          const bidRequest = request.bidderRequest.bids.filter(b => {
-            const bidId = b.params ? b.params.id : 'bidid-' + b.bidId;
-            return bidId === serverBid.impid;
-          })[0];
-          site.slot = bidRequest && bidRequest.params ? bidRequest.params.slotid : undefined;
+          // get data from bid response
+          const { adomain, crid, impid, exp, ext, price, w, h } = serverBid;
 
-          if (serverBid.ext) {
+          const bidRequest = bidderRequest.bids.filter(b => {
+            const { bidId, params } = b;
+            const { id, siteId } = params || {};
+            const currentBidId = id && siteId ? id : 'bidid-' + bidId;
+            return currentBidId === impid;
+          })[0];
+
+          // get data from linked bidRequest
+          const { bidId, params } = bidRequest || {};
+
+          // get slot id for current bid
+          site.slot = params && params.id;
+
+          if (ext) {
             /*
               bid response might include ext object containing siteId / slotId, as detected by OneCode
               update site / slot data in this case
             */
-            site.id = serverBid.ext.siteid || site.id;
-            site.slot = serverBid.ext.slotid || site.slot;
+            const { siteid, slotid } = ext;
+            site.id = siteid || site.id;
+            site.slot = slotid || site.slot;
           }
 
           if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
-            // store site data for future notification
-            oneCodeDetection[bidRequest.bidId] = [site.id, site.slot];
+            // found a matching request; add this bid
 
-            const bidFloor = (bidRequest.params && bidRequest.params.bidFloor) ? bidRequest.params.bidFloor : 0;
+            // store site data for future notification
+            oneCodeDetection[bidId] = [site.id, site.slot];
 
             const bid = {
-              requestId: bidRequest.bidId,
-              creativeId: serverBid.crid || 'mcad_' + request.bidderRequest.auctionId + '_' + request.bidderRequest.params.id,
-              cpm: serverBid.price,
+              requestId: bidId,
+              creativeId: crid || 'mcad_' + bidderRequest.auctionId + '_' + site.slot,
+              cpm: price,
               currency: response.cur,
-              ttl: serverBid.exp || 300,
-              width: serverBid.w,
-              height: serverBid.h,
+              ttl: exp || 300,
+              width: w,
+              height: h,
               bidderCode: BIDDER_CODE,
               mediaType: 'banner',
               meta: {
-                advertiserDomains: serverBid.adomain,
+                advertiserDomains: adomain,
                 networkName: seat,
               },
               netRevenue: true,
-              ad: renderCreative(site, response.id, serverBid, seat, request.bidderRequest),
+              ad: renderCreative(site, response.id, serverBid, seat, bidderRequest),
             };
 
             if (bid.cpm > 0) {
-              if (bid.cpm >= bidFloor) {
+              // check bidFloor (if present in params)
+              const { bidFloor } = params || {};
+
+              if (!bidFloor || bid.cpm >= bidFloor) {
                 bids.push(bid);
               } else {
                 utils.logWarn('Discarding bid due to bidFloor setting', bid.cpm, bidFloor);

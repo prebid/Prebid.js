@@ -271,10 +271,6 @@ export const spec = {
   formatMarketplaceDynamicParams(params = {}, consentData = {}) {
     let queryParams = {};
 
-    if (params.bidFloor) {
-      queryParams.bidfloor = params.bidFloor;
-    }
-
     Object.assign(queryParams, this.formatKeyValues(params.keyValues));
     Object.assign(queryParams, this.formatConsentData(consentData));
 
@@ -417,6 +413,9 @@ export const spec = {
       currency: response.cur || 'USD',
       dealId: bidData.dealid,
       netRevenue: true,
+      meta: {
+        advertiserDomains: bidData && bidData.adomain ? bidData.adomain : []
+      },
       ttl: bidRequest.ttl
     };
   },

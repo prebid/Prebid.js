@@ -225,8 +225,8 @@ describe('pubGENIUS adapter', () => {
       expect(buildRequests([bidRequest, bidRequest1], bidderRequest)).to.deep.equal(expectedRequest);
     });
 
-    it('should take bid floor in bidder params', () => {
-      bidRequest.params.bidFloor = 0.5;
+    it('should take bid floor from getFloor interface', () => {
+      bidRequest.getFloor = () => ({ floor: 0.5, currency: 'USD' });
       expectedRequest.data.imp[0].bidfloor = 0.5;
 
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
@@ -370,6 +370,8 @@ describe('pubGENIUS adapter', () => {
           protocols: [2, 3],
           api: [1, 2],
           playbackmethod: [3, 4],
+          maxduration: 10,
+          linearity: 1,
         },
       };
       bidRequest.params.video = {
@@ -394,6 +396,7 @@ describe('pubGENIUS adapter', () => {
         skipafter: 1,
         playbackmethod: [3, 4],
         api: [1, 2],
+        linearity: 1,
       };
 
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);

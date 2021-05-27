@@ -197,8 +197,10 @@ export function newBidder(spec) {
       const responses = [];
       function afterAllResponses() {
         done();
-        events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-        registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
+        config.runWithBidder(spec.code, () => {
+          events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
+          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
+        });
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
