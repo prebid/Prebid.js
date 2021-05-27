@@ -102,6 +102,9 @@ export const spec = {
             'bidder': value['bidder'],
             'code': value['code']
           }
+          meta: {
+            'advertiserDomains': value['adomain']
+          }
         };
         if ('native' in value) {
           bidResponse['native'] = value['native'];
