@@ -38,11 +38,11 @@
     "browsiRtdProvider",
     "geoedgeRtdProvider",
     "haloRtdProvider",
+    "iasRtdProvider",
     "jwplayerRtdProvider",
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
-    "sirdataRtdProvider",
-    "iasRtdProvider"
+    "sirdataRtdProvider"
   ],
   "fpdModule": [
     "enrichmentFpdModule",
