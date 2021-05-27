@@ -91,5 +91,4 @@ const retrieveVisitorId = hook('sync', function (urlObj, callback) {
   }, undefined, { method: 'GET', withCredentials: true });
 }, 'admixerIdSystem.retrieveVisitorId');
 
-
 submodule('userId', admixerIdSubmodule);

@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {getHook, setupBeforeHookFnOnce} from "../src/hook.js";
+import {getHook, setupBeforeHookFnOnce} from '../src/hook.js';
 
 const BIDDER_CODE = 'admixer';
 const ALIASES = ['go2net', 'adblender'];
