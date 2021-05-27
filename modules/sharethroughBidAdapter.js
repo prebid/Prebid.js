@@ -29,6 +29,11 @@ export const sharethroughAdapterSpec = {
       id: utils.generateUUID(),
       cur: ['USD'],
       tmax: timeout,
+      site: {
+        domain: window.location.hostname,
+        page: window.location.href,
+        ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null,
+      },
       user: {
         ext: {
           eids: handleUniversalIds(bidRequests[0], [
@@ -124,23 +129,23 @@ export const sharethroughAdapterSpec = {
   },
 
   interpretResponse: ({ body }, req) => {
-    if (!body || !body.seatbid || body.seatbid.length === 0) {
+    if (!body || !body.seatbid || body.seatbid.length === 0 || !body.seatbid[0].bid || body.seatbid[0].bid.length === 0) {
       return [];
     }
 
-    return body.seatbid.map(seatbid => ({
-      requestId: seatbid.impid,
-      width: +seatbid.w,
-      height: +seatbid.h,
-      cpm: +seatbid.price,
-      creativeId: seatbid.crid,
-      dealId: seatbid.dealid || null,
+    return body.seatbid[0].bid.map(bid => ({
+      requestId: bid.impid,
+      width: +bid.w,
+      height: +bid.h,
+      cpm: +bid.price,
+      creativeId: bid.crid,
+      dealId: bid.dealid || null,
       currency: 'USD',
       netRevenue: true,
       ttl: 360,
-      ad: seatbid.adm,
+      ad: bid.adm,
       meta: {
-        advertiserDomains: seatbid.adomain || []
+        advertiserDomains: bid.adomain || []
       },
     }));
   },
