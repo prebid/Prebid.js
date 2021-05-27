@@ -254,7 +254,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(bid.ttl).to.equal(20);
   });
 
-  it('Verify ttl/currency applied to bid', function () {
+  it('Verify ttl/currency/adomain applied to bid', function () {
     const request = spec.buildRequests(slotConfigs, bidderRequest);
     const ortbRequest = request.data;
     const ortbResponse = {
@@ -264,7 +264,8 @@ describe('PulsePoint Adapter Tests', function () {
           price: 1.25,
           adm: 'This is an Ad#1',
           crid: 'Creative#123',
-          exp: 50
+          exp: 50,
+          adomain: ['advertiser.com']
         }, {
           impid: ortbRequest.imp[1].id,
           price: 1.25,
@@ -282,11 +283,15 @@ describe('PulsePoint Adapter Tests', function () {
     expect(bid.ad).to.equal('This is an Ad#1');
     expect(bid.ttl).to.equal(50);
     expect(bid.currency).to.equal('GBP');
+    expect(bid.meta).to.not.be.null;
+    expect(bid.meta.advertiserDomains).to.eql(['advertiser.com']);
     const secondBid = bids[1];
     expect(secondBid.cpm).to.equal(1.25);
     expect(secondBid.ad).to.equal('This is an Ad#2');
     expect(secondBid.ttl).to.equal(20);
     expect(secondBid.currency).to.equal('GBP');
+    expect(secondBid.meta).to.not.be.null;
+    expect(secondBid.meta.advertiserDomains).to.eql([]);
   });
 
   it('Verify full passback', function () {
@@ -777,5 +782,60 @@ describe('PulsePoint Adapter Tests', function () {
     expect(bid.height).to.equal(90);
     const secondBid = bids[1];
     expect(secondBid.vastXml).to.equal('<vast url="http://ad.com/video"></vast>');
+  });
+  it('Verify bid floor', function () {
+    const bidRequests = deepClone(slotConfigs);
+    bidRequests[0].params.bidfloor = 1.05;
+    let request = spec.buildRequests(bidRequests, bidderRequest);
+    let ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.imp[0].bidfloor).to.equal(1.05);
+    expect(ortbRequest.imp[1].bidfloor).to.be.undefined;
+    let floorArg = null;
+    // publisher uses the floor module
+    bidRequests[0].getFloor = (arg) => {
+      floorArg = arg;
+      return { floor: 1.25 };
+    };
+    bidRequests[1].getFloor = () => {
+      return { floor: 2.05 };
+    };
+    request = spec.buildRequests(bidRequests, bidderRequest);
+    ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.imp[0].bidfloor).to.equal(1.25);
+    expect(ortbRequest.imp[1].bidfloor).to.equal(2.05);
+    expect(floorArg).to.not.be.null;
+    expect(floorArg.mediaType).to.equal('banner');
+    expect(floorArg.currency).to.equal('USD');
+    expect(floorArg.size).to.equal('*');
+  });
+  it('Verify Video params on mediaTypes.video', function () {
+    const bidRequests = deepClone(videoSlotConfig);
+    bidRequests[0].mediaTypes = {
+      video: {
+        w: 600,
+        h: 400,
+        minduration: 15,
+        maxduration: 20,
+        startdelay: 10,
+        skip: 0,
+      }
+    };
+    const request = spec.buildRequests(bidRequests, bidderRequest);
+    const ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.imp).to.have.lengthOf(1);
+    expect(ortbRequest.imp[0].video).to.not.be.null;
+    expect(ortbRequest.imp[0].native).to.be.null;
+    expect(ortbRequest.imp[0].banner).to.be.null;
+    expect(ortbRequest.imp[0].video.w).to.equal(600);
+    expect(ortbRequest.imp[0].video.h).to.equal(400);
+    expect(ortbRequest.imp[0].video.minduration).to.equal(15);
+    expect(ortbRequest.imp[0].video.maxduration).to.equal(20);
+    expect(ortbRequest.imp[0].video.startdelay).to.equal(10);
+    expect(ortbRequest.imp[0].video.skip).to.equal(0);
+    expect(ortbRequest.imp[0].video.minbitrate).to.equal(200);
+    expect(ortbRequest.imp[0].video.protocols).to.eql([1, 2, 4]);
   });
 });
