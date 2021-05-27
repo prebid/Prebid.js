@@ -2,7 +2,7 @@ import buildAdapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
-import { logWarn, logInfo, logError } from '../src/utils.js';
+import { logInfo, logError } from '../src/utils.js';
 import events from '../src/events.js';
 
 const {
@@ -23,7 +23,7 @@ const STANDARD_EVENTS_TO_TRACK = [
   BID_WON,
 ];
 
-// These events cause the buffer ed events to be sent over
+// These events cause the buffered events to be sent over
 const FLUSH_EVENTS = [
   TCF2_ENFORCEMENT,
   AUCTION_END,
@@ -67,7 +67,7 @@ let id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
         que.push = (pushedEvent) => _this.sendEvents([pushedEvent]);
       }
     } catch (error) {
-      logError('id5Analytics', error);
+      logError('id5Analytics: ERROR', error);
       _this.sendErrorEvent(error);
     }
   },
@@ -115,26 +115,30 @@ const ENABLE_FUNCTION = (config) => {
 
   const partnerId = _this.options.partnerId;
   if (typeof partnerId !== 'number') {
-    logWarn('id5Analytics: cannot find partnerId in config.options');
+    logError('id5Analytics: partnerId in config.options must be a number representing the id5 partner ID');
     return;
   }
 
   ajax(`${CONFIG_URL_PREFIX}/${partnerId}/pbjs`, (result) => {
+    logInfo('id5Analytics: Received from configuration endpoint', result);
+
     const configFromServer = JSON.parse(result);
+
     const sampling = _this.options.id5Sampling =
       typeof configFromServer.sampling === 'number' ? configFromServer.sampling : 0;
 
     if (typeof configFromServer.ingestUrl !== 'string') {
-      logWarn('id5Analytics: cannot find ingestUrl in config endpoint response');
+      logError('id5Analytics: cannot find ingestUrl in config endpoint response; no analytics will be available');
       return;
     }
     _this.options.ingestUrl = configFromServer.ingestUrl;
 
-    // 3-way fallback for which events to track: server >= config >= standard
+    // 3-way fallback for which events to track: server > config > standard
     _this.eventsToTrack = configFromServer.eventsToTrack || _this.options.eventsToTrack || STANDARD_EVENTS_TO_TRACK;
     _this.eventsToTrack = isArray(_this.eventsToTrack) ? _this.eventsToTrack : STANDARD_EVENTS_TO_TRACK;
 
-    logInfo('id5Analytics: Configuration is ' + JSON.stringify(_this.options));
+    logInfo('id5Analytics: Configuration is', _this.options);
+    logInfo('id5Analytics: Tracking events', _this.eventsToTrack);
     if (sampling > 0 && _this.random() < (1 / sampling)) {
       // Init the module only if we got lucky
       logInfo('id5Analytics: Selected by sampling. Starting up!')
@@ -144,8 +148,8 @@ const ENABLE_FUNCTION = (config) => {
 
       // Replay all events until now
       if (!config.disablePastEventsProcessing) {
-        events.getEvents().forEach(event => {
-          if (!!event && _this.eventsToTrack.indexOf(event.eventType) >= 0) {
+        events.getEvents().forEach((event) => {
+          if (event && _this.eventsToTrack.indexOf(event.eventType) >= 0) {
             _this.track(event);
           }
         });
@@ -162,7 +166,7 @@ const ENABLE_FUNCTION = (config) => {
               isArray(eventRules.match) &&
               (eventRules.apply in TRANSFORM_FUNCTIONS))
           ) {
-            logInfo('id5Analytics: merging additional cleanup rules for event' + key);
+            logInfo('id5Analytics: merging additional cleanup rules for event ' + key);
             CLEANUP_RULES[key].push(...newRules[key]);
           }
         });
@@ -284,7 +288,7 @@ function transformFnFromCleanupRules(eventType) {
       }
       for (let fragment = 0; fragment < ruleMatcher.length && match; fragment++) {
         const choices = makeSureArray(ruleMatcher[fragment]);
-        match = !choices.every(choice => choice !== '*' && path[fragment] !== choice);
+        match = !choices.every((choice) => choice !== '*' && path[fragment] !== choice);
       }
       if (match) {
         const transformfn = TRANSFORM_FUNCTIONS[transformation];

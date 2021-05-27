@@ -6,7 +6,7 @@ import events from '../../../src/events.js';
 import constants from '../../../src/constants.json';
 import { generateUUID } from '../../../src/utils.js';
 
-const CONFIG_URL = 'https://127.0.0.1:8443/analytics/12349/pbjs';
+const CONFIG_URL = 'https://api.id5-sync.com/analytics/12349/pbjs';
 const INGEST_URL = 'https://test.me/ingest';
 
 describe('ID5 analytics adapter', () => {
