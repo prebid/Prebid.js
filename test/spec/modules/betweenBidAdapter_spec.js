@@ -267,4 +267,37 @@ describe('betweenBidAdapterTests', function () {
     const shid3 = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid3;
     expect(shid).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT') && expect(shid3).to.equal('');
   });
+  it('check adomain', function() {
+    const serverResponse = {
+      body: [{
+        bidid: 'bid1234',
+        cpm: 1.12,
+        w: 240,
+        h: 400,
+        currency: 'USD',
+        ad: 'Ad html',
+        adomain: ['domain1.com', 'domain2.com']
+      }]
+    };
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.meta.advertiserDomains).to.deep.equal(['domain1.com', 'domain2.com']);
+  });
+  it('check server response without adomain', function() {
+    const serverResponse = {
+      body: [{
+        bidid: 'bid1234',
+        cpm: 1.12,
+        w: 240,
+        h: 400,
+        currency: 'USD',
+        ad: 'Ad html',
+      }]
+    };
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.meta.advertiserDomains).to.deep.equal([]);
+  });
 });
