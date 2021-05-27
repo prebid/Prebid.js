@@ -9,7 +9,7 @@ const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TMAX = 450;
-const BIDDER_VERSION = '4.8';
+const BIDDER_VERSION = '4.9';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
@@ -102,25 +102,29 @@ const applyClientHints = ortbRequest => {
   ortbRequest.user = Object.assign(ortbRequest.user, { data });
 };
 
-function applyGdpr(bidderRequest, ortbRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    consentApiVersion = bidderRequest.gdprConsent.apiVersion;
-    ortbRequest.regs = Object.assign(ortbRequest.regs, { '[ortb_extensions.gdpr]': bidderRequest.gdprConsent.gdprApplies ? 1 : 0 });
-    ortbRequest.user = Object.assign(ortbRequest.user, { '[ortb_extensions.consent]': bidderRequest.gdprConsent.consentString });
+/**
+ * Add GDPR data to oRTB request
+ * Store conset API version (will be required by user sync)
+ */
+const applyGdpr = (bidderRequest, ortbRequest) => {
+  const { gdprConsent } = bidderRequest;
+  if (gdprConsent) {
+    const { apiVersion, gdprApplies, consentString } = gdprConsent;
+    consentApiVersion = apiVersion;
+    ortbRequest.regs = Object.assign(ortbRequest.regs, { '[ortb_extensions.gdpr]': gdprApplies ? 1 : 0 });
+    ortbRequest.user = Object.assign(ortbRequest.user, { '[ortb_extensions.consent]': consentString });
   }
 }
 
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i], key);
+/**
+ * Get value for first occurence of key within the collection
+ */
+const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || utils.deepAccess(next, key), false);
 
-    if (result) {
-      return result;
-    }
-  }
-}
-
-function sendNotification(payload) {
+/**
+ * Send payload to notification endpoint
+ */
+const sendNotification = payload => {
   ajax(NOTIFY_URL, null, JSON.stringify(payload), {
     withCredentials: false,
     method: 'POST',
@@ -132,7 +136,7 @@ function sendNotification(payload) {
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Banner by OpenRTB 2.5 §3.2.6
  */
-function mapBanner(slot) {
+const mapBanner = slot => {
   if (slot.mediaType === 'banner' ||
     utils.deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
@@ -141,8 +145,6 @@ function mapBanner(slot) {
       h: size[1],
     }));
 
-    // override - tylko 1szy wymiar
-    // format = format.slice(0, 1);
     return {
       format,
       id: slot.bidId,
@@ -150,7 +152,7 @@ function mapBanner(slot) {
   }
 }
 
-function mapImpression(slot) {
+const mapImpression = slot => {
   const { adUnitCode, bidId, params } = slot;
   const { id, siteId } = params || {};
   const imp = {
@@ -160,16 +162,18 @@ function mapImpression(slot) {
     tagid: adUnitCode,
   };
 
-  const bidfloor = (slot.params && slot.params.bidFloor) ? parseFloat(slot.params.bidFloor) : undefined;
-
-  if (bidfloor) {
-    imp.bidfloor = bidfloor;
+  // Check floorprices for this imp
+  if (typeof slot.getFloor === 'function') {
+    // sspBC adapter accepts only floor per imp - check for maximum value for requested ad sizes
+    imp.bidfloor = slot.sizes.reduce((prev, next) => {
+      const currentFloor = slot.getFloor({ mediaType: 'banner', size: next }).floor;
+      return prev > currentFloor ? prev : currentFloor;
+    }, 0);
   }
-
   return imp;
 }
 
-function renderCreative(site, auctionId, bid, seat, request) {
+const renderCreative = (site, auctionId, bid, seat, request) => {
   let gam;
 
   const mcad = {
@@ -292,7 +296,7 @@ const spec = {
 
     return {
       method: 'POST',
-      url: BIDDER_URL + '?cs=' + cookieSupport() + '&bdver=' + BIDDER_VERSION + '&pbver=' + pbver + '&inver=0',
+      url: `${BIDDER_URL}?cs=${cookieSupport()}&bdver=${BIDDER_VERSION}&pbver=${pbver}&inver=0`,
       data: JSON.stringify(payload),
       bidderRequest,
     };
@@ -315,11 +319,11 @@ const spec = {
         seat = seatbid.seat;
         seatbid.bid.forEach(serverBid => {
           // get data from bid response
-          const { adomain, crid, impid, exp, ext, price, w, h } = serverBid;
+          const { adomain, crid = `mcad_${bidderRequest.auctionId}_${site.slot}`, impid, exp = 300, ext, price, w, h } = serverBid;
 
           const bidRequest = bidderRequest.bids.filter(b => {
-            const { bidId, params } = b;
-            const { id, siteId } = params || {};
+            const { bidId, params = {} } = b;
+            const { id, siteId } = params;
             const currentBidId = id && siteId ? id : 'bidid-' + bidId;
             return currentBidId === impid;
           })[0];
@@ -348,10 +352,10 @@ const spec = {
 
             const bid = {
               requestId: bidId,
-              creativeId: crid || 'mcad_' + bidderRequest.auctionId + '_' + site.slot,
+              creativeId: crid,
               cpm: price,
               currency: response.cur,
-              ttl: exp || 300,
+              ttl: exp,
               width: w,
               height: h,
               bidderCode: BIDDER_CODE,
@@ -365,14 +369,7 @@ const spec = {
             };
 
             if (bid.cpm > 0) {
-              // check bidFloor (if present in params)
-              const { bidFloor } = params || {};
-
-              if (!bidFloor || bid.cpm >= bidFloor) {
-                bids.push(bid);
-              } else {
-                utils.logWarn('Discarding bid due to bidFloor setting', bid.cpm, bidFloor);
-              }
+              bids.push(bid);
             }
           } else {
             utils.logWarn('Discarding response - no matching request / site id', serverBid.impid);
@@ -384,13 +381,14 @@ const spec = {
     return bids;
   },
   getUserSyncs(syncOptions) {
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled && consentApiVersion != 1) {
       return [{
         type: 'iframe',
-        url: SYNC_URL + '?tcf=' + consentApiVersion,
+        url: `${SYNC_URL}?tcf=${consentApiVersion}`,
       }];
+    } else {
+      utils.logWarn('sspBC adapter requires iframe based user sync.');
     }
-    utils.logWarn('sspBC adapter requires iframe based user sync.');
   },
 
   onTimeout(timeoutData) {

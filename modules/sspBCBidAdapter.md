@@ -20,7 +20,6 @@ Optional parameters:
 - domain
 - page
 - tmax
-- bidFloor
 - test
 
 # Test Parameters
