@@ -352,6 +352,11 @@ function openRtbImpression(bidRequest) {
     }
   };
 
+  const mediaTypesParams = utils.deepAccess(bidRequest, 'mediaTypes.video');
+  Object.keys(mediaTypesParams)
+    .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
+    .forEach(param => imp.video[param] = mediaTypesParams[param]);
+
   const videoParams = utils.deepAccess(bidRequest, 'params.video');
   Object.keys(videoParams)
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
@@ -483,44 +488,63 @@ function validateVideoParams(bid) {
     return value;
   }
 
+  const validateVideoParams = (fieldSubPath, validateCb, errorCb, errorCbParam) => {
+    const valueFieldPath = 'params.' + fieldSubPath;
+    const valueParams = utils.deepAccess(bid, valueFieldPath);
+    const mediaFieldPath = 'mediaTypes.' + fieldSubPath;
+    const mediaTypesParams = utils.deepAccess(bid, mediaFieldPath);
+    if (validateCb(valueParams)) {
+      return valueParams;
+    } else if (validateCb(mediaTypesParams)) {
+      return mediaTypesParams;
+    } else {
+      if (!validateCb(valueParams)) {
+        errorCb(valueFieldPath, valueParams, errorCbParam);
+      } else if (!validateCb(mediaTypesParams)) {
+        errorCb(mediaFieldPath, mediaTypesParams, errorCbParam);
+      }
+    }
+    return valueParams || mediaTypesParams;
+  }
+
   try {
     validate('params.placementId', val => !utils.isEmpty(val), paramRequired);
 
     validate('mediaTypes.video.playerSize', val => utils.isArrayOfNums(val, 2) ||
       (utils.isArray(val) && val.every(v => utils.isArrayOfNums(v, 2))),
-    paramInvalid, 'array of 2 integers, ex: [640,480] or [[640,480]]');
+      paramInvalid, 'array of 2 integers, ex: [640,480] or [[640,480]]');
 
     validate('mediaTypes.video.mimes', val => isDefined(val), paramRequired);
     validate('mediaTypes.video.mimes', val => utils.isArray(val) && val.every(v => utils.isStr(v)), paramInvalid,
       'array of strings, ex: ["video/mp4"]');
 
-    validate('params.video', val => !utils.isEmpty(val), paramRequired);
+    validateVideoParams('video', val => !utils.isEmpty(val), paramRequired);
 
-    const placement = validate('params.video.placement', val => isDefined(val), paramRequired);
-    validate('params.video.placement', val => val >= 1 && val <= 5, paramInvalid);
+    const placement = validateVideoParams('video.placement', val => isDefined(val), paramRequired);
+    validateVideoParams('video.placement', val => val >= 1 && val <= 5, paramInvalid);
     if (placement === 1) {
-      validate('params.video.startdelay', val => isDefined(val),
+      validateVideoParams('video.startdelay', val => isDefined(val),
         (field, v) => paramRequired(field, v, 'placement == 1'));
-      validate('params.video.startdelay', val => utils.isNumber(val), paramInvalid, 'number, ex: 5');
+      validateVideoParams('video.startdelay', val => utils.isNumber(val), paramInvalid, 'number, ex: 5');
     }
 
-    validate('params.video.protocols', val => isDefined(val), paramRequired);
-    validate('params.video.protocols', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+    validateVideoParams('video.protocols', val => isDefined(val), paramRequired);
+    validateVideoParams('video.protocols', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
       paramInvalid, 'array of numbers, ex: [2,3]');
 
-    validate('params.video.api', val => isDefined(val), paramRequired);
-    validate('params.video.api', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+    validateVideoParams('video.api', val => isDefined(val), paramRequired);
+    validateVideoParams('video.api', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
       paramInvalid, 'array of numbers, ex: [2,3]');
 
-    validate('params.video.playbackmethod', val => !isDefined(val) || utils.isArrayOfNums(val), paramInvalid,
+    validateVideoParams('video.playbackmethod', val => !isDefined(val) || utils.isArrayOfNums(val), paramInvalid,
       'array of integers, ex: [2,6]');
 
-    validate('params.video.maxduration', val => isDefined(val), paramRequired);
-    validate('params.video.maxduration', val => utils.isInteger(val), paramInvalid);
-    validate('params.video.minduration', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
-    validate('params.video.skippable', val => !isDefined(val) || utils.isBoolean(val), paramInvalid);
-    validate('params.video.skipafter', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
-    validate('params.video.pos', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validateVideoParams('video.maxduration', val => isDefined(val), paramRequired);
+    validateVideoParams('video.maxduration', val => utils.isInteger(val), paramInvalid);
+    validateVideoParams('video.minduration', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validateVideoParams('video.skippable', val => !isDefined(val) || utils.isBoolean(val), paramInvalid);
+    validateVideoParams('video.skipafter', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validateVideoParams('video.pos', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
     validate('params.badv', val => !isDefined(val) || utils.isArray(val), paramInvalid,
       'array of strings, ex: ["ford.com","pepsi.com"]');
     validate('params.bcat', val => !isDefined(val) || utils.isArray(val), paramInvalid,
