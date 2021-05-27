@@ -210,7 +210,6 @@ describe('adWMGBidAdapter', function () {
           'creativeId': 'creative-id',
           'netRevenue': true,
           'currency': 'USD',
-          'test': 1,
           'adomain': ['testdomain.com']
         }
       };
