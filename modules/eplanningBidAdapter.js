@@ -82,9 +82,12 @@ export const spec = {
       if (bidderRequest && bidderRequest.uspConsent) {
         params.ccpa = bidderRequest.uspConsent;
       }
-      const userIds = (getGlobal()).getUserIds();
-      for (var id in userIds) {
-        params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
+
+      if ((getGlobal()).getUserIds && typeof (getGlobal()).getUserIds === 'function') {
+        const userIds = (getGlobal()).getUserIds();
+        for (var id in userIds) {
+          params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
+        }
       }
     }
 
@@ -114,6 +117,11 @@ export const spec = {
               netRevenue: NET_REVENUE,
               currency: DOLLARS,
             };
+            if (ad.adom) {
+              bidResponse.meta = {
+                advertiserDomains: ad.adom
+              };
+            }
             bidResponses.push(bidResponse);
           });
         }

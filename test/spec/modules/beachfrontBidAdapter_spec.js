@@ -171,6 +171,24 @@ describe('BeachfrontAdapter', function () {
         expect(data.cur).to.deep.equal(['USD']);
       });
 
+      it('must read from the floors module if available', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.getFloor = () => ({ currency: 'USD', floor: 1.16 });
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].bidfloor).to.equal(1.16);
+      });
+
+      it('must use the bid floor param if no value is returned from the floors module', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.getFloor = () => ({});
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
+      });
+
       it('must parse bid size from a nested array', function () {
         const width = 640;
         const height = 480;
@@ -401,6 +419,24 @@ describe('BeachfrontAdapter', function () {
         expect(data.domain).to.equal(topLocation.hostname);
         expect(data.search).to.equal(topLocation.search);
         expect(data.ua).to.equal(navigator.userAgent);
+      });
+
+      it('must read from the floors module if available', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.getFloor = () => ({ currency: 'USD', floor: 1.16 });
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.slots[0].bidfloor).to.equal(1.16);
+      });
+
+      it('must use the bid floor param if no value is returned from the floors module', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.getFloor = () => ({});
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.slots[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       });
 
       it('must parse bid size from a nested array', function () {
@@ -637,30 +673,11 @@ describe('BeachfrontAdapter', function () {
           width: width,
           height: height,
           renderer: null,
+          meta: { mediaType: 'video', advertiserDomains: [] },
           mediaType: 'video',
           currency: 'USD',
           netRevenue: true,
           ttl: 300
-        });
-      });
-
-      it('should default to the legacy "cmpId" value for the creative ID', () => {
-        const width = 640;
-        const height = 480;
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = {
-          video: {
-            playerSize: [ width, height ]
-          }
-        };
-        const serverResponse = {
-          bidPrice: 5.00,
-          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
-          cmpId: '123abc'
-        };
-        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-        expect(bidResponse).to.deep.contain({
-          creativeId: serverResponse.cmpId
         });
       });
 
@@ -725,6 +742,31 @@ describe('BeachfrontAdapter', function () {
         });
         expect(bidResponse.renderer.render).to.be.a('function');
       });
+
+      it('should return meta data for the bid response', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ width, height ]
+          }
+        };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          meta: {
+            advertiserDomains: ['example.com'],
+            advertiserId: '123'
+          }
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        expect(bidResponse.meta).to.deep.equal({
+          mediaType: 'video',
+          advertiserDomains: ['example.com'],
+          advertiserId: '123'
+        });
+      });
     });
 
     describe('for banner bids', function () {
@@ -779,12 +821,39 @@ describe('BeachfrontAdapter', function () {
             cpm: serverResponse[ i ].price,
             width: serverResponse[ i ].w,
             height: serverResponse[ i ].h,
+            meta: { mediaType: 'banner', advertiserDomains: [] },
             mediaType: 'banner',
             currency: 'USD',
             netRevenue: true,
             ttl: 300
           });
         }
+      });
+
+      it('should return meta data for the bid response', () => {
+        bidRequests[0].mediaTypes = {
+          banner: {
+            sizes: [[ 300, 250 ], [ 728, 90 ]]
+          }
+        };
+        const serverResponse = [{
+          slot: bidRequests[0].adUnitCode,
+          adm: '<div id="44851937"></div>',
+          crid: 'crid_1',
+          price: 3.02,
+          w: 728,
+          h: 90,
+          meta: {
+            advertiserDomains: ['example.com'],
+            advertiserId: '123'
+          }
+        }];
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest: bidRequests });
+        expect(bidResponse[0].meta).to.deep.equal({
+          mediaType: 'banner',
+          advertiserDomains: ['example.com'],
+          advertiserId: '123'
+        });
       });
     });
   });
