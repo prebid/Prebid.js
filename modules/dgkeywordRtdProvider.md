@@ -1,10 +1,4 @@
-## Overview
-
-Module Name: Digital Garage Keyword Module  
-Module Type: Rtd Provider  
-Maintainer: mediaconsortium-develop@bi.garage.co.jp  
-Remarks: This module can work only with AppNexusBidAdapter.  
-## Integration
+ ## Integration
 
 1) Compile the Digital Garage Keyword Module and Appnexus Bid Adapter into your Prebid build:  
 
