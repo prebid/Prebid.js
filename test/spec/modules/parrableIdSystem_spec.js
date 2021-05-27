@@ -60,7 +60,7 @@ function serializeParrableId(parrableId) {
     str += ',ccpaOptout:1';
   }
   if (parrableId.tpc !== undefined) {
-    const tpcSupportComponent = parrableId.tpc === true ? 'tpcSupport:1' : 'tpcSupport:0';
+    const tpcSupportComponent = parrableId.tpc === true ? 'tpc:1' : 'tpc:0';
     str += `,${tpcSupportComponent}`;
     str += `,tpcUntil:${parrableId.tpcUntil}`;
   }
@@ -332,7 +332,7 @@ describe('Parrable ID System', function() {
         });
       });
     });
-
+      
     describe('request-filter status', function () {
       let logErrorStub;
       let callbackSpy = sinon.spy();

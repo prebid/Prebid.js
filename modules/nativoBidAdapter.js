@@ -54,9 +54,24 @@ export const spec = {
 
     if (!pageUrl) pageUrl = bidderRequest.refererInfo.referer
 
+    // Build adUnit data
+    const adUnitData = {
+      adUnits: validBidRequests.map((adUnit) => {
+        return {
+          adUnitCode: adUnit.adUnitCode,
+          mediaTypes: adUnit.mediaTypes,
+        }
+      }),
+    }
+
+    // Build QS Params
     let params = [
       { key: 'ntv_ptd', value: placementIds.toString() },
       { key: 'ntv_pb_rid', value: bidderRequest.bidderRequestId },
+      {
+        key: 'ntv_ppc',
+        value: btoa(JSON.stringify(adUnitData)), // Convert to Base 64
+      },
       {
         key: 'ntv_url',
         value: encodeURIComponent(pageUrl),
