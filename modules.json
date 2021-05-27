@@ -16,14 +16,12 @@
     "undertoneBidAdapter",
     "amxBidAdapter",
     "smaatoBidAdapter",
+    "smartadserverBidAdapter",
     "adpod",
     "consentManagement",
     "gdprEnforcement",
     "currency",
     "priceFloors",
     "schain",
-    "consentManagementUsp",
-    "userId",
-    "criteoIdSystem",
-    "pubCommonIdSystem"
+    "consentManagementUsp"
 ]
