@@ -223,7 +223,7 @@ export const spec = {
 
     utils._each(validBidRequests, function (bid) {
       let tagid = utils.getBidIdParameter('tagid', bid.params);
-      let bidfloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
+      let bidfloor = parseFloat(getBidFloor(bid)) || 0;
       let isVideo = !!bid.mediaTypes.video;
       let data = {
         id: bid.bidId,
@@ -287,6 +287,14 @@ export const spec = {
           bidResponse = emxAdapter.formatVideoResponse(bidResponse, Object.assign({}, emxBid), bidRequest);
         }
         bidResponse.mediaType = (isVideo ? VIDEO : BANNER);
+
+        // support for adomain in prebid 5.0
+        if (emxBid.adomain && emxBid.adomain.length) {
+          bidResponse.meta = {
+            advertiserDomains: emxBid.adomain
+          };
+        }
+
         emxBidResponses.push(bidResponse);
       });
     }
@@ -312,4 +320,22 @@ export const spec = {
     return syncs;
   }
 };
+
+// support floors module in prebid 5.0
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return parseFloat(utils.getBidIdParameter('bidfloor', bid.params));
+  }
+
+  let floor = bid.getFloor({
+    currency: DEFAULT_CUR,
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
+
 registerBidder(spec);
