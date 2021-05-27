@@ -95,6 +95,29 @@ describe('Adyoulike Adapter', function () {
     }
   ];
 
+  const bidRequestWithNativeImageType = [
+    {
+      'bidId': 'bid_id_0',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-0',
+      'params': {
+        'placement': 'placement_0'
+      },
+      'sizes': '300x250',
+      'mediaTypes':
+      {
+        'native': {
+          'type': 'image',
+          'additional': {
+            'will': 'be',
+            'sent': ['300x250']
+          }
+        },
+      },
+      'transactionId': 'bid_id_0_transaction_id'
+    }
+  ];
+
   const sentBidNative = {
     'bid_id_0': {
       'PlacementID': 'e622af275681965d3095808561a1e510',
@@ -133,6 +156,37 @@ describe('Adyoulike Adapter', function () {
         }
       }
     }
+  };
+
+  const sentNativeImageType = {
+    'additional': {
+      'sent': [
+        '300x250'
+      ],
+      'will': 'be'
+    },
+    'body': {
+      'required': false
+    },
+    'clickUrl': {
+      'required': true
+    },
+    'cta': {
+      'required': false
+    },
+    'icon': {
+      'required': false
+    },
+    'image': {
+      'required': true
+    },
+    'sponsoredBy': {
+      'required': true
+    },
+    'title': {
+      'required': true
+    },
+    'type': 'image'
   };
 
   const bidRequestWithDCPlacement = [
@@ -246,6 +300,74 @@ describe('Adyoulike Adapter', function () {
       'Height': 600,
     }
   ];
+
+  const responseWithSingleNative = [{
+    'BidID': 'bid_id_0',
+    'Placement': 'placement_0',
+    'Native': {
+      'body': 'Considérant l\'extrémité conjoncturelle, il serait bon d\'anticiper toutes les voies de bon sens.',
+      'cta': 'Click here to learn more',
+      'clickUrl': 'https://tracking.omnitagjs.com/tracking/ar?event_kind=CLICK&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991&url=https%3A%2F%2Fwww.w3.org%2FPeople%2Fmimasa%2Ftest%2Fxhtml%2Fentities%2Fentities-11.xhtml%23lat1',
+      'image': {
+        'height': 600,
+        'url': 'https://blobs.omnitagjs.com/blobs/f1/f1c80d4bb5643c22/fd4362d35bb174d6f1c80d4bb5643c22',
+        'width': 300
+      },
+      'privacyIcon': 'https://fo-static.omnitagjs.com/fo-static/native/images/info-ayl.png',
+      'privacyLink': 'https://blobs.omnitagjs.com/adchoice/',
+      'sponsoredBy': 'QA Team',
+      'title': 'Adserver Traffic Redirect Internal',
+      'impressionTrackers': [
+        'https://testPixelIMP.com/fake',
+        'https://tracking.omnitagjs.com/tracking/pixel?event_kind=IMPRESSION&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991',
+        'https://tracking.omnitagjs.com/tracking/pixel?event_kind=INSERTION&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991',
+      ],
+      'javascriptTrackers': [
+        'https://testJsIMP.com/fake.js'
+      ],
+      'clickTrackers': [
+        'https://testPixelCLICK.com/fake'
+      ]
+    },
+    'Price': 0.5,
+    'Height': 600,
+  }];
+
+  const nativeResult = [{
+    cpm: 0.5,
+    creativeId: undefined,
+    currency: 'USD',
+    netRevenue: true,
+    requestId: 'bid_id_0',
+    ttl: 3600,
+    mediaType: 'native',
+    native: {
+      body: 'Considérant l\'extrémité conjoncturelle, il serait bon d\'anticiper toutes les voies de bon sens.',
+      clickTrackers: [
+        'https://testPixelCLICK.com/fake'
+      ],
+      clickUrl: 'https://tracking.omnitagjs.com/tracking/ar?event_kind=CLICK&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991&url=https%3A%2F%2Fwww.w3.org%2FPeople%2Fmimasa%2Ftest%2Fxhtml%2Fentities%2Fentities-11.xhtml%23lat1',
+      cta: 'Click here to learn more',
+      image: {
+        height: 600,
+        url: 'https://blobs.omnitagjs.com/blobs/f1/f1c80d4bb5643c22/fd4362d35bb174d6f1c80d4bb5643c22',
+        width: 300,
+      },
+      impressionTrackers: [
+        'https://testPixelIMP.com/fake',
+        'https://tracking.omnitagjs.com/tracking/pixel?event_kind=IMPRESSION&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991',
+        'https://tracking.omnitagjs.com/tracking/pixel?event_kind=INSERTION&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991'
+      ],
+      javascriptTrackers: [
+        'https://testJsIMP.com/fake.js'
+      ],
+      privacyIcon: 'https://fo-static.omnitagjs.com/fo-static/native/images/info-ayl.png',
+      privacyLink: 'https://blobs.omnitagjs.com/adchoice/',
+      sponsoredBy: 'QA Team',
+      title: 'Adserver Traffic Redirect Internal',
+    }
+  }];
+
   const responseWithMultiplePlacements = [
     {
       'BidID': 'bid_id_0',
@@ -339,6 +461,23 @@ describe('Adyoulike Adapter', function () {
 
     afterEach(function () {
       canonicalQuery.restore();
+    });
+
+    it('Should expand short native image config type', function() {
+      const request = spec.buildRequests(bidRequestWithNativeImageType, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(request.url).to.contain(getEndpoint());
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
+      expect(request.url).to.contains('RefererUrl=' + encodeURIComponent(referrerUrl));
+      expect(request.url).to.contains('PublisherDomain=http%3A%2F%2Flocalhost%3A9876');
+
+      expect(payload.Version).to.equal('1.0');
+      expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
+      expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
+      expect(payload.Bids['bid_id_0'].Native).deep.equal(sentNativeImageType);
     });
 
     it('should add gdpr/usp consent information to the request', function () {
@@ -498,45 +637,21 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('receive reponse with Native ad', function () {
+      serverResponse.body = responseWithSingleNative;
+      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
+
+      expect(result.length).to.equal(1);
+
+      expect(result).to.deep.equal(nativeResult);
+    });
+
+    it('receive reponse with Native from ad markup', function () {
       serverResponse.body = responseWithSinglePlacement;
       let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
 
       expect(result.length).to.equal(1);
 
-      expect(result).to.deep.equal([{
-        cpm: 0.5,
-        creativeId: undefined,
-        currency: 'USD',
-        netRevenue: true,
-        requestId: 'bid_id_0',
-        ttl: 3600,
-        mediaType: 'native',
-        native: {
-          body: 'Considérant l\'extrémité conjoncturelle, il serait bon d\'anticiper toutes les voies de bon sens.',
-          clickTrackers: [
-            'https://testPixelCLICK.com/fake'
-          ],
-          clickUrl: 'https://tracking.omnitagjs.com/tracking/ar?event_kind=CLICK&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991&url=https%3A%2F%2Fwww.w3.org%2FPeople%2Fmimasa%2Ftest%2Fxhtml%2Fentities%2Fentities-11.xhtml%23lat1',
-          cta: 'Click here to learn more',
-          image: {
-            height: 600,
-            url: 'https://blobs.omnitagjs.com/blobs/f1/f1c80d4bb5643c22/fd4362d35bb174d6f1c80d4bb5643c22',
-            width: 300,
-          },
-          impressionTrackers: [
-            'https://testPixelIMP.com/fake',
-            'https://tracking.omnitagjs.com/tracking/pixel?event_kind=IMPRESSION&attempt=a11a121205932e75e622af275681965d&campaign=f1c80d4bb5643c222ae8de75e9b2f991'
-          ],
-          javascriptTrackers: [
-            'https://testJsIMP.com/fake.js'
-          ],
-          privacyIcon: 'https://fo-static.omnitagjs.com/fo-static/native/images/info-ayl.png',
-          privacyLink: 'https://blobs.omnitagjs.com/adchoice/',
-          sponsoredBy: 'QA Team',
-          title: 'Adserver Traffic Redirect Internal',
-        }
-
-      }]);
+      expect(result).to.deep.equal(nativeResult);
     });
   });
 });

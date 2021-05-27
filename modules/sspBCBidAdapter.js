@@ -9,7 +9,7 @@ const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TMAX = 450;
-const BIDDER_VERSION = '4.7';
+const BIDDER_VERSION = '4.9';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
@@ -102,25 +102,29 @@ const applyClientHints = ortbRequest => {
   ortbRequest.user = Object.assign(ortbRequest.user, { data });
 };
 
-function applyGdpr(bidderRequest, ortbRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    consentApiVersion = bidderRequest.gdprConsent.apiVersion;
-    ortbRequest.regs = Object.assign(ortbRequest.regs, { '[ortb_extensions.gdpr]': bidderRequest.gdprConsent.gdprApplies ? 1 : 0 });
-    ortbRequest.user = Object.assign(ortbRequest.user, { '[ortb_extensions.consent]': bidderRequest.gdprConsent.consentString });
+/**
+ * Add GDPR data to oRTB request
+ * Store conset API version (will be required by user sync)
+ */
+const applyGdpr = (bidderRequest, ortbRequest) => {
+  const { gdprConsent } = bidderRequest;
+  if (gdprConsent) {
+    const { apiVersion, gdprApplies, consentString } = gdprConsent;
+    consentApiVersion = apiVersion;
+    ortbRequest.regs = Object.assign(ortbRequest.regs, { '[ortb_extensions.gdpr]': gdprApplies ? 1 : 0 });
+    ortbRequest.user = Object.assign(ortbRequest.user, { '[ortb_extensions.consent]': consentString });
   }
 }
 
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i], key);
+/**
+ * Get value for first occurence of key within the collection
+ */
+const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || utils.deepAccess(next, key), false);
 
-    if (result) {
-      return result;
-    }
-  }
-}
-
-function sendNotification(payload) {
+/**
+ * Send payload to notification endpoint
+ */
+const sendNotification = payload => {
   ajax(NOTIFY_URL, null, JSON.stringify(payload), {
     withCredentials: false,
     method: 'POST',
@@ -132,7 +136,7 @@ function sendNotification(payload) {
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Banner by OpenRTB 2.5 §3.2.6
  */
-function mapBanner(slot) {
+const mapBanner = slot => {
   if (slot.mediaType === 'banner' ||
     utils.deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
@@ -141,8 +145,6 @@ function mapBanner(slot) {
       h: size[1],
     }));
 
-    // override - tylko 1szy wymiar
-    // format = format.slice(0, 1);
     return {
       format,
       id: slot.bidId,
@@ -150,24 +152,28 @@ function mapBanner(slot) {
   }
 }
 
-function mapImpression(slot) {
+const mapImpression = slot => {
+  const { adUnitCode, bidId, params } = slot;
+  const { id, siteId } = params || {};
   const imp = {
-    id: (slot.params && slot.params.id) ? slot.params.id : 'bidid-' + slot.bidId,
+    id: id && siteId ? id : 'bidid-' + bidId,
     banner: mapBanner(slot),
     /* native: mapNative(slot), */
-    tagid: slot.adUnitCode,
+    tagid: adUnitCode,
   };
 
-  const bidfloor = (slot.params && slot.params.bidFloor) ? parseFloat(slot.params.bidFloor) : undefined;
-
-  if (bidfloor) {
-    imp.bidfloor = bidfloor;
+  // Check floorprices for this imp
+  if (typeof slot.getFloor === 'function') {
+    // sspBC adapter accepts only floor per imp - check for maximum value for requested ad sizes
+    imp.bidfloor = slot.sizes.reduce((prev, next) => {
+      const currentFloor = slot.getFloor({ mediaType: 'banner', size: next }).floor;
+      return prev > currentFloor ? prev : currentFloor;
+    }, 0);
   }
-
   return imp;
 }
 
-function renderCreative(site, auctionId, bid, seat, request) {
+const renderCreative = (site, auctionId, bid, seat, request) => {
   let gam;
 
   const mcad = {
@@ -255,6 +261,7 @@ const spec = {
     }
 
     const siteId = setOnAny(validBidRequests, 'params.siteId');
+    const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.referer;
     const domain = setOnAny(validBidRequests, 'params.domain') || utils.parseUrl(page).hostname;
     const tmax = setOnAny(validBidRequests, 'params.tmax') ? parseInt(setOnAny(validBidRequests, 'params.tmax'), 10) : TMAX;
@@ -270,7 +277,13 @@ const spec = {
 
     const payload = {
       id: bidderRequest.auctionId,
-      site: { id: siteId, page, domain, ref },
+      site: {
+        id: siteId,
+        publisher: publisherId ? { id: publisherId } : undefined,
+        page,
+        domain,
+        ref
+      },
       imp: validBidRequests.map(slot => mapImpression(slot)),
       tmax,
       user: {},
@@ -283,13 +296,14 @@ const spec = {
 
     return {
       method: 'POST',
-      url: BIDDER_URL + '?cs=' + cookieSupport() + '&bdver=' + BIDDER_VERSION + '&pbver=' + pbver + '&inver=0',
+      url: `${BIDDER_URL}?cs=${cookieSupport()}&bdver=${BIDDER_VERSION}&pbver=${pbver}&inver=0`,
       data: JSON.stringify(payload),
       bidderRequest,
     };
   },
 
   interpretResponse(serverResponse, request) {
+    const { bidderRequest } = request;
     const response = serverResponse.body;
     const bids = [];
     const site = JSON.parse(request.data).site; // get page and referer data from request
@@ -297,54 +311,65 @@ const spec = {
     let seat;
 
     if (response.seatbid !== undefined) {
+      /*
+        Match response to request, by comparing bid id's
+        'bidid-' prefix indicates oneCode (parameterless) request and response
+      */
       response.seatbid.forEach(seatbid => {
         seat = seatbid.seat;
         seatbid.bid.forEach(serverBid => {
-          const bidRequest = request.bidderRequest.bids.filter(b => {
-            const bidId = b.params ? b.params.id : 'bidid-' + b.bidId;
-            return bidId === serverBid.impid;
-          })[0];
-          site.slot = bidRequest && bidRequest.params ? bidRequest.params.slotid : undefined;
+          // get data from bid response
+          const { adomain, crid = `mcad_${bidderRequest.auctionId}_${site.slot}`, impid, exp = 300, ext, price, w, h } = serverBid;
 
-          if (serverBid.ext) {
+          const bidRequest = bidderRequest.bids.filter(b => {
+            const { bidId, params = {} } = b;
+            const { id, siteId } = params;
+            const currentBidId = id && siteId ? id : 'bidid-' + bidId;
+            return currentBidId === impid;
+          })[0];
+
+          // get data from linked bidRequest
+          const { bidId, params } = bidRequest || {};
+
+          // get slot id for current bid
+          site.slot = params && params.id;
+
+          if (ext) {
             /*
               bid response might include ext object containing siteId / slotId, as detected by OneCode
               update site / slot data in this case
             */
-            site.id = serverBid.ext.siteid || site.id;
-            site.slot = serverBid.ext.slotid || site.slot;
+            const { siteid, slotid } = ext;
+            site.id = siteid || site.id;
+            site.slot = slotid || site.slot;
           }
 
           if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
-            // store site data for future notification
-            oneCodeDetection[bidRequest.bidId] = [site.id, site.slot];
+            // found a matching request; add this bid
 
-            const bidFloor = (bidRequest.params && bidRequest.params.bidFloor) ? bidRequest.params.bidFloor : 0;
+            // store site data for future notification
+            oneCodeDetection[bidId] = [site.id, site.slot];
 
             const bid = {
-              requestId: bidRequest.bidId,
-              creativeId: serverBid.crid || 'mcad_' + request.bidderRequest.auctionId + '_' + request.bidderRequest.params.id,
-              cpm: serverBid.price,
+              requestId: bidId,
+              creativeId: crid,
+              cpm: price,
               currency: response.cur,
-              ttl: serverBid.exp || 300,
-              width: serverBid.w,
-              height: serverBid.h,
+              ttl: exp,
+              width: w,
+              height: h,
               bidderCode: BIDDER_CODE,
               mediaType: 'banner',
               meta: {
-                advertiserDomains: serverBid.adomain,
+                advertiserDomains: adomain,
                 networkName: seat,
               },
               netRevenue: true,
-              ad: renderCreative(site, response.id, serverBid, seat, request.bidderRequest),
+              ad: renderCreative(site, response.id, serverBid, seat, bidderRequest),
             };
 
             if (bid.cpm > 0) {
-              if (bid.cpm >= bidFloor) {
-                bids.push(bid);
-              } else {
-                utils.logWarn('Discarding bid due to bidFloor setting', bid.cpm, bidFloor);
-              }
+              bids.push(bid);
             }
           } else {
             utils.logWarn('Discarding response - no matching request / site id', serverBid.impid);
@@ -356,13 +381,14 @@ const spec = {
     return bids;
   },
   getUserSyncs(syncOptions) {
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled && consentApiVersion != 1) {
       return [{
         type: 'iframe',
-        url: SYNC_URL + '?tcf=' + consentApiVersion,
+        url: `${SYNC_URL}?tcf=${consentApiVersion}`,
       }];
+    } else {
+      utils.logWarn('sspBC adapter requires iframe based user sync.');
     }
-    utils.logWarn('sspBC adapter requires iframe based user sync.');
   },
 
   onTimeout(timeoutData) {

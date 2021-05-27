@@ -76,6 +76,7 @@ describe('MediaSquare bid adapter tests', function () {
       'bidder': 'msqClassic',
       'code': 'test/publishername_atf_desktop_rg_pave',
       'bid_id': 'aaaa1234',
+      'adomain': ['test.com'],
     }],
   }};
 
@@ -135,6 +136,9 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.mediasquare).to.exist;
     expect(bid.mediasquare.bidder).to.equal('msqClassic');
     expect(bid.mediasquare.code).to.equal([DEFAULT_PARAMS[0].params.owner, DEFAULT_PARAMS[0].params.code].join('/'));
+    expect(bid.meta).to.exist;
+    expect(bid.meta.advertiserDomains).to.exist;
+    expect(bid.meta.advertiserDomains).to.have.lengthOf(1);
   });
 
   it('Verifies bidder code', function () {
@@ -164,6 +168,16 @@ describe('MediaSquare bid adapter tests', function () {
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0]).to.have.property('type').and.to.equal('image');
     expect(syncs[0]).to.have.property('url').and.to.equal('http://www.cookie.sync.org/');
+  });
+  it('Verifies user sync with no bid response', function() {
+    var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.property('type').and.to.equal('iframe');
+  });
+  it('Verifies user sync with no bid body response', function() {
+    var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.property('type').and.to.equal('iframe');
   });
   it('Verifies native in bid response', function () {
     const request = spec.buildRequests(NATIVE_PARAMS, DEFAULT_OPTIONS);

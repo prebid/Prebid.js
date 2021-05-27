@@ -168,8 +168,8 @@ describe('adWMGBidAdapter', function () {
 
     it('should have an url that match the default endpoint', function() {
       let requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].url).to.equal('https://rtb.adwmg.com/prebid');
-      expect(requests[1].url).to.equal('https://rtb.adwmg.com/prebid');
+      expect(requests[0].url).to.equal('https://hb.adwmg.com/hb');
+      expect(requests[1].url).to.equal('https://hb.adwmg.com/hb');
     });
 
     it('should contain GDPR consent data if GDPR set', function() {
@@ -209,7 +209,8 @@ describe('adWMGBidAdapter', function () {
           'ttl': 300,
           'creativeId': 'creative-id',
           'netRevenue': true,
-          'currency': 'USD'
+          'currency': 'USD',
+          'adomain': ['testdomain.com']
         }
       };
     });
@@ -219,7 +220,7 @@ describe('adWMGBidAdapter', function () {
       expect(responses).to.be.an('array').that.is.not.empty;
 
       let response = responses[0];
-      expect(response).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
+      expect(response).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'meta', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency');
       expect(response.requestId).to.equal('request-id');
       expect(response.cpm).to.equal(100);
@@ -230,6 +231,8 @@ describe('adWMGBidAdapter', function () {
       expect(response.creativeId).to.equal('creative-id');
       expect(response.netRevenue).to.be.true;
       expect(response.currency).to.equal('USD');
+      expect(response.meta.advertiserDomains[0]).to.equal('testdomain.com');
+      expect(response.meta.mediaType).to.equal('banner');
     });
 
     it('should return an empty array when serverResponse is empty', () => {
@@ -258,7 +261,7 @@ describe('adWMGBidAdapter', function () {
 
       let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).includes('https://rtb.adwmg.com/cphb.html?');
+      expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?');
     });
 
     it('should register iframe sync when iframe and image are enabled', function () {
@@ -269,7 +272,7 @@ describe('adWMGBidAdapter', function () {
 
       let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).includes('https://rtb.adwmg.com/cphb.html?');
+      expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?');
     });
 
     it('should send GDPR consent if enabled', function() {

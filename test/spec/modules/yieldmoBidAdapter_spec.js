@@ -78,6 +78,8 @@ describe('YieldmoAdapter', function () {
     ...params
   });
 
+  const mockGetFloor = floor => ({getFloor: () => ({ currency: 'USD', floor })});
+
   describe('isBidRequestValid', function () {
     describe('Banner:', function () {
       it('should return true when necessary information is found', function () {
@@ -256,14 +258,109 @@ describe('YieldmoAdapter', function () {
         const data = buildAndGetData([mockBannerBid({schain})]);
         expect(data.schain).equal(JSON.stringify(schain));
       });
+
+      it('should process floors module if available', function () {
+        const placementsData = JSON.parse(buildAndGetPlacementInfo([
+          mockBannerBid({...mockGetFloor(3.99)}),
+          mockBannerBid({...mockGetFloor(1.23)}, { bidFloor: 1.1 }),
+        ]));
+        expect(placementsData[0].bidFloor).to.equal(3.99);
+        expect(placementsData[1].bidFloor).to.equal(1.23);
+      });
+
+      it('should use bidFloor if no floors module is available', function() {
+        const placementsData = JSON.parse(buildAndGetPlacementInfo([
+          mockBannerBid({}, { bidFloor: 1.2 }),
+          mockBannerBid({}, { bidFloor: 0.7 }),
+        ]));
+        expect(placementsData[0].bidFloor).to.equal(1.2);
+        expect(placementsData[1].bidFloor).to.equal(0.7);
+      });
+
+      it('should not write 0 bidfloor value by default', function() {
+        const placementsData = JSON.parse(buildAndGetPlacementInfo([mockBannerBid()]));
+        expect(placementsData[0].bidfloor).to.undefined;
+      });
+
+      it('should not exceed max url length', () => {
+        const longString = new Array(8000).join('a');
+        const localWindow = utils.getWindowTop();
+
+        const originalTitle = localWindow.document.title;
+        localWindow.document.title = longString;
+
+        const request = spec.buildRequests(
+          [mockBannerBid()],
+          mockBidderRequest({
+            refererInfo: {
+              numIframes: 1,
+              reachedTop: true,
+              referer: longString,
+            },
+          })
+        )[0];
+        const url = `${request.url}?${utils.parseQueryStringParameters(request.data)}`;
+
+        expect(url.length).equal(8000);
+
+        localWindow.document.title = originalTitle;
+      });
+
+      it('should only shortcut properties rather then completely remove it', () => {
+        const longString = new Array(7516).join('a');
+        const localWindow = utils.getWindowTop();
+
+        const originalTitle = localWindow.document.title;
+        localWindow.document.title = `testtitle${longString}`;
+
+        const request = spec.buildRequests(
+          [mockBannerBid()],
+          mockBidderRequest({
+            refererInfo: {
+              numIframes: 1,
+              reachedTop: true,
+              referer: longString,
+            },
+          })
+        )[0];
+
+        expect(request.data.title.length).greaterThan(0);
+
+        localWindow.document.title = originalTitle;
+      });
     });
 
     describe('Instream video:', function () {
-      it('should attempt to send banner bid requests to the endpoint via POST', function () {
+      it('should attempt to send video bid requests to the endpoint via POST', function () {
         const requests = build([mockVideoBid()]);
         expect(requests.length).to.equal(1);
         expect(requests[0].method).to.equal('POST');
         expect(requests[0].url).to.be.equal(VIDEO_ENDPOINT);
+      });
+
+      it('should process floors module if available', function () {
+        const requests = build([
+          mockVideoBid({...mockGetFloor(3.99)}),
+          mockVideoBid({...mockGetFloor(1.23)}, { bidfloor: 1.1 }),
+        ]);
+        const imps = requests[0].data.imp;
+        expect(imps[0].bidfloor).to.equal(3.99);
+        expect(imps[1].bidfloor).to.equal(1.23);
+      });
+
+      it('should use bidfloor if no floors module is available', function() {
+        const requests = build([
+          mockVideoBid({}, { bidfloor: 1.2 }),
+          mockVideoBid({}, { bidfloor: 0.7 }),
+        ]);
+        const imps = requests[0].data.imp;
+        expect(imps[0].bidfloor).to.equal(1.2);
+        expect(imps[1].bidfloor).to.equal(0.7);
+      });
+
+      it('should have 0 bidfloor value by default', function() {
+        const requests = build([mockVideoBid()]);
+        expect(requests[0].data.imp[0].bidfloor).to.equal(0);
       });
     });
   });
@@ -278,6 +375,7 @@ describe('YieldmoAdapter', function () {
         ad: '<html><head></head><body><script>//GEX ad object</script>' +
           '<div id="ym_123" class="ym"></div><script>//js code</script></body></html>',
         creative_id: '9874652394875',
+        adomain: ['www.example.com'],
       }],
       header: 'header?',
     });
@@ -296,6 +394,59 @@ describe('YieldmoAdapter', function () {
         ttl: 300,
         ad: '<html><head></head><body><script>//GEX ad object</script>' +
           '<div id="ym_123" class="ym"></div><script>//js code</script></body></html>',
+        meta: {
+          advertiserDomains: ['www.example.com'],
+          mediaType: 'banner',
+        },
+      });
+    });
+
+    it('should correctly reorder video bids', function () {
+      const response = mockServerResponse();
+      const seatbid = [
+        {
+          bid: {
+            adm: '<?xml version="1.0" encoding="UTF-8"?>',
+            adomain: ['www.example.com'],
+            crid: 'dd65c0a7536aff',
+            impid: '91ea8bba1',
+            price: 1.5,
+          },
+        },
+      ];
+      const bidRequest = {
+        data: {
+          imp: [
+            {
+              id: '91ea8bba1',
+              video: {
+                h: 250,
+                w: 300,
+              },
+            },
+          ],
+        },
+      };
+
+      response.body.seatbid = seatbid;
+
+      const newResponse = spec.interpretResponse(response, bidRequest);
+      expect(newResponse.length).to.be.equal(2);
+      expect(newResponse[1]).to.deep.equal({
+        cpm: 1.5,
+        creativeId: 'dd65c0a7536aff',
+        currency: 'USD',
+        height: 250,
+        mediaType: 'video',
+        meta: {
+          advertiserDomains: ['www.example.com'],
+          mediaType: 'video',
+        },
+        netRevenue: true,
+        requestId: '91ea8bba1',
+        ttl: 300,
+        vastXml: '<?xml version="1.0" encoding="UTF-8"?>',
+        width: 300,
       });
     });
 

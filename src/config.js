@@ -29,6 +29,7 @@ const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
+const DEFAULT_MAX_NESTED_IFRAMES = 10;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -200,6 +201,15 @@ export function newConfig() {
         this._disableAjaxTimeout = val;
       },
 
+      // default max nested iframes for referer detection
+      _maxNestedIframes: DEFAULT_MAX_NESTED_IFRAMES,
+      get maxNestedIframes() {
+        return this._maxNestedIframes;
+      },
+      set maxNestedIframes(val) {
+        this._maxNestedIframes = val;
+      },
+
       _auctionOptions: {},
       get auctionOptions() {
         return this._auctionOptions;
@@ -255,7 +265,7 @@ export function newConfig() {
       }
 
       for (let k of Object.keys(val)) {
-        if (k !== 'secondaryBidders') {
+        if (k !== 'secondaryBidders' && k !== 'suppressStaleRender') {
           utils.logWarn(`Auction Options given an incorrect param: ${k}`)
           return false
         }
@@ -266,6 +276,11 @@ export function newConfig() {
           } else if (!val[k].every(utils.isStr)) {
             utils.logWarn(`Auction Options ${k} must be only string`);
             return false
+          }
+        } else if (k === 'suppressStaleRender') {
+          if (!utils.isBoolean(val[k])) {
+            utils.logWarn(`Auction Options ${k} must be of type boolean`);
+            return false;
           }
         }
       }
@@ -324,6 +339,119 @@ export function newConfig() {
     return bidderConfig;
   }
 
+  /**
+   * Returns backwards compatible FPD data for modules
+   */
+  function getLegacyFpd(obj) {
+    if (typeof obj !== 'object') return;
+
+    let duplicate = {};
+
+    Object.keys(obj).forEach((type) => {
+      let prop = (type === 'site') ? 'context' : type;
+      duplicate[prop] = (prop === 'context' || prop === 'user') ? Object.keys(obj[type]).filter(key => key !== 'data').reduce((result, key) => {
+        if (key === 'ext') {
+          utils.mergeDeep(result, obj[type][key]);
+        } else {
+          utils.mergeDeep(result, {[key]: obj[type][key]});
+        }
+
+        return result;
+      }, {}) : obj[type];
+    });
+
+    return duplicate;
+  }
+
+  /**
+   * Returns backwards compatible FPD data for modules
+   */
+  function getLegacyImpFpd(obj) {
+    if (typeof obj !== 'object') return;
+
+    let duplicate = {};
+
+    if (utils.deepAccess(obj, 'ext.data')) {
+      Object.keys(obj.ext.data).forEach((key) => {
+        if (key === 'pbadslot') {
+          utils.mergeDeep(duplicate, {context: {pbAdSlot: obj.ext.data[key]}});
+        } else if (key === 'adserver') {
+          utils.mergeDeep(duplicate, {context: {adServer: obj.ext.data[key]}});
+        } else {
+          utils.mergeDeep(duplicate, {context: {data: {[key]: obj.ext.data[key]}}});
+        }
+      });
+    }
+
+    return duplicate;
+  }
+
+  /**
+   * Copy FPD over to OpenRTB standard format in config
+   */
+  function convertFpd(opt) {
+    let duplicate = {};
+
+    Object.keys(opt).forEach((type) => {
+      let prop = (type === 'context') ? 'site' : type;
+      duplicate[prop] = (prop === 'site' || prop === 'user') ? Object.keys(opt[type]).reduce((result, key) => {
+        if (key === 'data') {
+          utils.mergeDeep(result, {ext: {data: opt[type][key]}});
+        } else {
+          utils.mergeDeep(result, {[key]: opt[type][key]});
+        }
+
+        return result;
+      }, {}) : opt[type];
+    });
+
+    return duplicate;
+  }
+
+  /**
+   * Copy Impression FPD over to OpenRTB standard format in config
+   * Only accepts bid level context.data values with pbAdSlot and adServer exceptions
+   */
+  function convertImpFpd(opt) {
+    let duplicate = {};
+
+    Object.keys(opt).filter(prop => prop === 'context').forEach((type) => {
+      Object.keys(opt[type]).forEach((key) => {
+        if (key === 'data') {
+          utils.mergeDeep(duplicate, {ext: {data: opt[type][key]}});
+        } else {
+          if (typeof opt[type][key] === 'object' && !Array.isArray(opt[type][key])) {
+            Object.keys(opt[type][key]).forEach(data => {
+              utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: {[data.toLowerCase()]: opt[type][key][data]}}}});
+            });
+          } else {
+            utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
+          }
+        }
+      });
+    });
+
+    return duplicate;
+  }
+
+  /**
+   * Copy FPD over to OpenRTB standard format in each adunit
+   */
+  function convertAdUnitFpd(arr) {
+    let convert = [];
+
+    arr.forEach((adunit) => {
+      if (adunit.fpd) {
+        (adunit['ortb2Imp']) ? utils.mergeDeep(adunit['ortb2Imp'], convertImpFpd(adunit.fpd)) : adunit['ortb2Imp'] = convertImpFpd(adunit.fpd);
+        convert.push((({ fpd, ...duplicate }) => duplicate)(adunit));
+      } else {
+        convert.push(adunit);
+      }
+    });
+
+    return convert;
+  }
+
   /*
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
@@ -338,13 +466,14 @@ export function newConfig() {
     let topicalConfig = {};
 
     topics.forEach(topic => {
-      let option = options[topic];
+      let prop = (topic === 'fpd') ? 'ortb2' : topic;
+      let option = (topic === 'fpd') ? convertFpd(options[topic]) : options[topic];
 
-      if (utils.isPlainObject(defaults[topic]) && utils.isPlainObject(option)) {
-        option = Object.assign({}, defaults[topic], option);
+      if (utils.isPlainObject(defaults[prop]) && utils.isPlainObject(option)) {
+        option = Object.assign({}, defaults[prop], option);
       }
 
-      topicalConfig[topic] = config[topic] = option;
+      topicalConfig[prop] = config[prop] = option;
     });
 
     callSubscribers(topicalConfig);
@@ -437,11 +566,13 @@ export function newConfig() {
           bidderConfig[bidder] = {};
         }
         Object.keys(config.config).forEach(topic => {
-          let option = config.config[topic];
+          let prop = (topic === 'fpd') ? 'ortb2' : topic;
+          let option = (topic === 'fpd') ? convertFpd(config.config[topic]) : config.config[topic];
+
           if (utils.isPlainObject(option)) {
-            bidderConfig[bidder][topic] = Object.assign({}, bidderConfig[bidder][topic] || {}, option);
+            bidderConfig[bidder][prop] = Object.assign({}, bidderConfig[bidder][prop] || {}, option);
           } else {
-            bidderConfig[bidder][topic] = option;
+            bidderConfig[bidder][prop] = option;
           }
         });
       });
@@ -469,7 +600,7 @@ export function newConfig() {
     try {
       return fn();
     } finally {
-      currBidder = null;
+      resetBidder();
     }
   }
   function callbackWithBidder(bidder) {
@@ -488,10 +619,15 @@ export function newConfig() {
     return currBidder;
   }
 
+  function resetBidder() {
+    currBidder = null;
+  }
+
   resetConfig();
 
   return {
     getCurrentBidder,
+    resetBidder,
     getConfig,
     setConfig,
     setDefaults,
@@ -499,7 +635,10 @@ export function newConfig() {
     runWithBidder,
     callbackWithBidder,
     setBidderConfig,
-    getBidderConfig
+    getBidderConfig,
+    convertAdUnitFpd,
+    getLegacyFpd,
+    getLegacyImpFpd
   };
 }
 

@@ -2,18 +2,21 @@
 
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-var HOST;
+const TAPPX_BIDDER_VERSION = '0.1.10526';
+const TYPE_CNN = 'prebidjs';
+const VIDEO_SUPPORT = ['instream'];
+
 var hostDomain;
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -22,11 +25,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: function(bid) {
-    if ((bid.params == null) || (bid.params.endpoint == null) || (bid.params.tappxkey == null)) {
-      utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters. ${JSON.stringify(bid)}`);
-      return false;
-    }
-    return true;
+    return validBasic(bid) && validMediaType(bid)
   },
 
   /**
@@ -61,7 +60,7 @@ export const spec = {
     const bids = [];
     responseBody.seatbid.forEach(serverSeatBid => {
       serverSeatBid.bid.forEach(serverBid => {
-        bids.push(interpretBannerBid(serverBid, originalRequest));
+        bids.push(interpretBid(serverBid, originalRequest));
       });
     });
 
@@ -80,7 +79,7 @@ export const spec = {
 
     // GDPR & CCPA
     if (gdprConsent) {
-      url += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      url += '&gdpr_optin=' + (gdprConsent.gdprApplies ? 1 : 0);
       url += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
     }
     if (uspConsent) {
@@ -104,25 +103,84 @@ export const spec = {
   }
 }
 
+function validBasic(bid) {
+  if (bid.params == null) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters.`);
+    return false;
+  }
+
+  if (bid.params.tappxkey == null) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory Tappxkey parameter.`);
+    return false;
+  }
+
+  if (bid.params.host == null) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory Host parameter.`);
+    return false;
+  }
+
+  let classicEndpoint = true
+  if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) {
+    classicEndpoint = false
+  }
+
+  if (classicEndpoint && bid.params.endpoint == null) {
+    utils.logWarn(`[TAPPX]: Please review the mandatory endpoint Tappx parameters.`);
+    return false;
+  }
+
+  return true;
+}
+
+function validMediaType(bid) {
+  const video = utils.deepAccess(bid, 'mediaTypes.video');
+
+  // Video validations
+  if (typeof video != 'undefined') {
+    if (VIDEO_SUPPORT.indexOf(video.context) === -1) {
+      utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters for Video. Only "instream" is suported.`);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /**
  * Parse the response and generate one bid object.
  *
  * @param {object} serverBid Bid by OpenRTB 2.5
  * @returns {object} Prebid banner bidObject
  */
-function interpretBannerBid(serverBid, request) {
-  return {
+function interpretBid(serverBid, request) {
+  let bidReturned = {
     requestId: request.bids.bidId,
     cpm: serverBid.price,
     currency: serverBid.cur ? serverBid.cur : CUR,
     width: serverBid.w,
     height: serverBid.h,
-    ad: serverBid.adm,
     ttl: TTL,
     creativeId: serverBid.crid,
     netRevenue: true,
-    mediaType: BANNER,
   }
+
+  if (typeof serverBid.dealId != 'undefined') { bidReturned.dealId = serverBid.dealId }
+
+  if (typeof request.bids.mediaTypes != 'undefined' && typeof request.bids.mediaTypes.video != 'undefined') {
+    bidReturned.vastXml = serverBid.adm;
+    bidReturned.vastUrl = serverBid.lurl;
+    bidReturned.ad = serverBid.adm;
+    bidReturned.mediaType = VIDEO;
+  } else {
+    bidReturned.ad = serverBid.adm;
+    bidReturned.mediaType = BANNER;
+  }
+
+  if (typeof bidReturned.adomain != 'undefined' || bidReturned.adomain != null) {
+    bidReturned.meta = { advertiserDomains: request.bids.adomain };
+  }
+
+  return bidReturned;
 }
 
 /**
@@ -133,13 +191,15 @@ function interpretBannerBid(serverBid, request) {
 * @return response ad
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
-  HOST = utils.deepAccess(validBidRequests, 'params.host');
-  hostDomain = HOST.split('/', 1)[0];
+  let hostInfo = getHostInfo(validBidRequests);
+  const ENDPOINT = hostInfo.endpoint;
+  hostDomain = hostInfo.domain;
 
-  const ENDPOINT = utils.deepAccess(validBidRequests, 'params.endpoint');
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
   const BIDFLOOR = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.banner');
+  const videoMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.video');
   const { refererInfo } = bidderRequest;
 
   // let requests = [];
@@ -201,11 +261,50 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     imp.banner = banner;
   }
 
+  if (videoMediaType) {
+    let video = {};
+    w = videoMediaType.playerSize[0][0];
+    h = videoMediaType.playerSize[0][1];
+    video.w = w;
+    video.h = h;
+
+    video.mimes = videoMediaType.mimes;
+
+    imp.video = video;
+  }
+
   imp.id = validBidRequests.bidId;
   imp.tagid = tagid;
   imp.secure = 1;
 
   imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
+  if (utils.isFn(validBidRequests.getFloor)) {
+    try {
+      let floor = validBidRequests.getFloor({
+        currency: CUR,
+        mediaType: '*',
+        size: '*'
+      });
+      if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+        imp.bidfloor = floor.floor;
+      } else {
+        utils.logWarn('[TAPPX]: ', 'Currency not valid. Use only USD with Tappx.');
+      }
+    } catch (e) {
+      utils.logWarn('[TAPPX]: ', e);
+      imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor'); // Be sure that we have an imp.bidfloor
+    }
+  }
+
+  let bidder = {};
+  bidder.tappxkey = TAPPXKEY;
+  bidder.endpoint = ENDPOINT;
+  bidder.host = hostInfo.url;
+  bidder.bidfloor = BIDFLOOR;
+  bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : undefined;
+
+  imp.ext = {};
+  imp.ext.bidder = bidder;
   // < Imp object
 
   // > Device object
@@ -230,8 +329,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // > Params
   let params = {};
   params.host = 'tappx.com';
-  params.tappxkey = TAPPXKEY;
-  params.endpoint = ENDPOINT;
   params.bidfloor = BIDFLOOR;
   // < Params
 
@@ -253,6 +350,14 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
   }
+
+  // Universal ID
+  const eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
+  payload.user = {
+    ext: {
+      eids: eidsArr
+    }
+  };
   // < GDPR
 
   // > Payload
@@ -270,7 +375,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   return {
     method: 'POST',
-    url: `https://${HOST}/${ENDPOINT}?type_cnn=prebidjs`,
+    url: `${hostInfo.url}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
     data: JSON.stringify(payload),
     bids: validBidRequests
   };
@@ -284,6 +389,29 @@ function getLanguage() {
 function getOs() {
   let ua = navigator.userAgent;
   if (ua == null) { return 'unknown'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'ios'; } else if (ua.match(/Android/)) { return 'android'; } else if (ua.match(/Window/)) { return 'windows'; } else { return 'unknown'; }
+}
+
+function getHostInfo(validBidRequests) {
+  let domainInfo = {};
+  let endpoint = utils.deepAccess(validBidRequests, 'params.endpoint');
+  let hostParam = utils.deepAccess(validBidRequests, 'params.host');
+
+  domainInfo.domain = hostParam.split('/', 1)[0];
+
+  let regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
+  let regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
+
+  if (regexNewEndpoints.test(domainInfo.domain)) {
+    domainInfo.newEndpoint = true;
+    domainInfo.endpoint = domainInfo.domain.split('.', 1)[0]
+    domainInfo.url = `https://${hostParam}`
+  } else if (regexClassicEndpoints.test(domainInfo.domain)) {
+    domainInfo.newEndpoint = false;
+    domainInfo.endpoint = endpoint
+    domainInfo.url = `https://${hostParam}${endpoint}`
+  }
+
+  return domainInfo;
 }
 
 registerBidder(spec);

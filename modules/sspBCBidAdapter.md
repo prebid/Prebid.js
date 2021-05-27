@@ -16,10 +16,11 @@ Required parameters:
 Optional parameters:
 - site id 
 - adslot id
+- publisher id
 - domain
 - page
 - tmax
-- bidFloor
+- test
 
 # Test Parameters
 ```
@@ -29,18 +30,15 @@ var adUnits = [
       code: 'banner-div',
       mediaTypes: {
         banner: {
-          sizes: [[300, 250], [300,600]]
+          sizes: [[300, 250]]
         }
       },
       bids: [{
          bidder: 'sspBC',
          params: {
-            id: '006',                          // optional
-            siteId: '235911',                   // optional
-            domain: 'somesite.pl',              // optional
-            page: 'somesite.pl/somepage.html',  // optional
-            tmax: 250,                          // optional
-            bidFloor: 0.1                       // optional
+            id: "006",
+            siteId: "235911",
+            test: 1
          }
        }]
    }

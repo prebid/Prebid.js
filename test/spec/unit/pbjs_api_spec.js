@@ -199,6 +199,10 @@ describe('Unit: Prebid Module', function () {
     configObj.setConfig({ useBidCache: false });
   });
 
+  after(function() {
+    auctionManager.clearAllAuctions();
+  });
+
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     beforeEach(function () {
       resetAuction();
@@ -1062,6 +1066,8 @@ describe('Unit: Prebid Module', function () {
     var adResponse = {};
     var spyLogError = null;
     var spyLogMessage = null;
+    var spyLogWarn = null;
+    var spyAddWinningBid;
     var inIframe = true;
     var triggerPixelStub;
 
@@ -1100,6 +1106,8 @@ describe('Unit: Prebid Module', function () {
 
       spyLogError = sinon.spy(utils, 'logError');
       spyLogMessage = sinon.spy(utils, 'logMessage');
+      spyLogWarn = sinon.spy(utils, 'logWarn');
+      spyAddWinningBid = sinon.spy(auctionManager, 'addWinningBid');
 
       inIframe = true;
       sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
@@ -1110,8 +1118,10 @@ describe('Unit: Prebid Module', function () {
       auction.getBidsReceived = getBidResponses;
       utils.logError.restore();
       utils.logMessage.restore();
+      utils.logWarn.restore();
       utils.inIframe.restore();
       triggerPixelStub.restore();
+      spyAddWinningBid.restore();
     });
 
     it('should require doc and id params', function () {
@@ -1217,6 +1227,117 @@ describe('Unit: Prebid Module', function () {
 
       sinon.assert.calledOnce(triggerPixelStub);
       sinon.assert.calledWith(triggerPixelStub, burl);
+    });
+
+    it('should call addWinningBid', function () {
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      var message = 'Calling renderAd with adId :' + bidId;
+      sinon.assert.calledWith(spyLogMessage, message);
+
+      sinon.assert.calledOnce(spyAddWinningBid);
+      sinon.assert.calledWith(spyAddWinningBid, adResponse);
+    });
+
+    it('should warn stale rendering', function () {
+      var message = 'Calling renderAd with adId :' + bidId;
+      var warning = `Ad id ${bidId} has been rendered before`;
+      var onWonEvent = sinon.stub();
+      var onStaleEvent = sinon.stub();
+
+      $$PREBID_GLOBAL$$.onEvent(CONSTANTS.EVENTS.BID_WON, onWonEvent);
+      $$PREBID_GLOBAL$$.onEvent(CONSTANTS.EVENTS.STALE_RENDER, onStaleEvent);
+
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+
+      // First render should pass with no warning and added to winning bids
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      sinon.assert.calledWith(spyLogMessage, message);
+      sinon.assert.neverCalledWith(spyLogWarn, warning);
+
+      sinon.assert.calledOnce(spyAddWinningBid);
+      sinon.assert.calledWith(spyAddWinningBid, adResponse);
+
+      sinon.assert.calledWith(onWonEvent, adResponse);
+      sinon.assert.notCalled(onStaleEvent);
+      expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
+
+      // Reset call history for spies and stubs
+      spyLogMessage.resetHistory();
+      spyLogWarn.resetHistory();
+      spyAddWinningBid.resetHistory();
+      onWonEvent.resetHistory();
+      onStaleEvent.resetHistory();
+
+      // Second render should have a warning but still added to winning bids
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      sinon.assert.calledWith(spyLogMessage, message);
+      sinon.assert.calledWith(spyLogWarn, warning);
+
+      sinon.assert.calledOnce(spyAddWinningBid);
+      sinon.assert.calledWith(spyAddWinningBid, adResponse);
+
+      sinon.assert.calledWith(onWonEvent, adResponse);
+      sinon.assert.calledWith(onStaleEvent, adResponse);
+
+      // Clean up
+      $$PREBID_GLOBAL$$.offEvent(CONSTANTS.EVENTS.BID_WON, onWonEvent);
+      $$PREBID_GLOBAL$$.offEvent(CONSTANTS.EVENTS.STALE_RENDER, onStaleEvent);
+    });
+
+    it('should stop stale rendering', function () {
+      var message = 'Calling renderAd with adId :' + bidId;
+      var warning = `Ad id ${bidId} has been rendered before`;
+      var onWonEvent = sinon.stub();
+      var onStaleEvent = sinon.stub();
+
+      // Setting suppressStaleRender to true explicitly
+      configObj.setConfig({'auctionOptions': {'suppressStaleRender': true}});
+
+      $$PREBID_GLOBAL$$.onEvent(CONSTANTS.EVENTS.BID_WON, onWonEvent);
+      $$PREBID_GLOBAL$$.onEvent(CONSTANTS.EVENTS.STALE_RENDER, onStaleEvent);
+
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+
+      // First render should pass with no warning and added to winning bids
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      sinon.assert.calledWith(spyLogMessage, message);
+      sinon.assert.neverCalledWith(spyLogWarn, warning);
+
+      sinon.assert.calledOnce(spyAddWinningBid);
+      sinon.assert.calledWith(spyAddWinningBid, adResponse);
+      expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
+
+      sinon.assert.calledWith(onWonEvent, adResponse);
+      sinon.assert.notCalled(onStaleEvent);
+
+      // Reset call history for spies and stubs
+      spyLogMessage.resetHistory();
+      spyLogWarn.resetHistory();
+      spyAddWinningBid.resetHistory();
+      onWonEvent.resetHistory();
+      onStaleEvent.resetHistory();
+
+      // Second render should have a warning and do not proceed further
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      sinon.assert.calledWith(spyLogMessage, message);
+      sinon.assert.calledWith(spyLogWarn, warning);
+
+      sinon.assert.notCalled(spyAddWinningBid);
+
+      sinon.assert.notCalled(onWonEvent);
+      sinon.assert.calledWith(onStaleEvent, adResponse);
+
+      // Clean up
+      $$PREBID_GLOBAL$$.offEvent(CONSTANTS.EVENTS.BID_WON, onWonEvent);
+      $$PREBID_GLOBAL$$.offEvent(CONSTANTS.EVENTS.STALE_RENDER, onStaleEvent);
+      configObj.setConfig({'auctionOptions': {}});
     });
   });
 
@@ -2574,6 +2695,58 @@ describe('Unit: Prebid Module', function () {
       });
     });
   });
+
+  describe('getHighestUnusedBidResponseForAdUnitCode', () => {
+    afterEach(() => {
+      resetAuction();
+    })
+
+    it('returns an empty object if there is no bid for the given adUnitCode', () => {
+      const highestBid = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('stallone');
+      expect(highestBid).to.deep.equal({});
+    })
+
+    it('returns undefined if adUnitCode is provided', () => {
+      const highestBid = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode();
+      expect(highestBid).to.be.undefined;
+    })
+
+    it('should ignore bids that have already been used (\'rendered\')', () => {
+      const _bidsReceived = getBidResponses().slice(0, 3);
+      _bidsReceived[0].cpm = 11
+      _bidsReceived[1].cpm = 13
+      _bidsReceived[2].cpm = 12
+
+      _bidsReceived.forEach((bid) => {
+        bid.adUnitCode = '/19968336/header-bid-tag-0';
+      });
+
+      auction.getBidsReceived = function() { return _bidsReceived };
+      const highestBid1 = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('/19968336/header-bid-tag-0');
+      expect(highestBid1).to.deep.equal(_bidsReceived[1])
+      _bidsReceived[1].status = CONSTANTS.BID_STATUS.RENDERED
+      const highestBid2 = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('/19968336/header-bid-tag-0');
+      expect(highestBid2).to.deep.equal(_bidsReceived[2])
+    })
+
+    it('should ignore expired bids', () => {
+      const _bidsReceived = getBidResponses().slice(0, 3);
+      _bidsReceived[0].cpm = 11
+      _bidsReceived[1].cpm = 13
+      _bidsReceived[2].cpm = 12
+
+      _bidsReceived.forEach((bid) => {
+        bid.adUnitCode = '/19968336/header-bid-tag-0';
+      });
+
+      auction.getBidsReceived = function() { return _bidsReceived };
+
+      bidExpiryStub.restore();
+      bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake((bid) => bid.cpm !== 13);
+      const highestBid = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('/19968336/header-bid-tag-0');
+      expect(highestBid).to.deep.equal(_bidsReceived[2])
+    })
+  })
 
   describe('getHighestCpm', () => {
     after(() => {
