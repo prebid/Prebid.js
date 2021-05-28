@@ -82,7 +82,7 @@ function interpretResponse(placementResponse, bidRequest, bids) {
       ttl: parseInt(placementResponse.ttl),
       creativeId: placementResponse.crid,
       meta: {
-        advertiserDomains: placementResponse.adomain,
+        advertiserDomains: placementResponse.adomain || []
       }
     };
 
