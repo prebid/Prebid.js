@@ -71,7 +71,6 @@ describe('CriteoId module', function () {
   });
 
   it('should call user sync url with the right params', function () {
-    getCookieStub.withArgs('cto_test_cookie').returns('1');
     getCookieStub.withArgs('cto_bundle').returns('bundle');
     window.criteo_pubtag = {}
 
@@ -80,7 +79,7 @@ describe('CriteoId module', function () {
     ajaxBuilderStub.callsFake(mockResponse(undefined, ajaxStub))
 
     criteoIdSubmodule.getId();
-    const expectedUrl = `https://gum.criteo.com/sid/json?origin=prebid&topUrl=https%3A%2F%2Ftestdev.com%2F&domain=testdev.com&bundle=bundle&cw=1&pbt=1`;
+    const expectedUrl = `https://gum.criteo.com/sid/json?origin=prebid&topUrl=https%3A%2F%2Ftestdev.com%2F&domain=testdev.com&bundle=bundle&cw=1&pbt=1&lsw=1`;
 
     expect(ajaxStub.calledWith(expectedUrl)).to.be.true;
 

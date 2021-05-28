@@ -23,6 +23,7 @@ The adapter supports Video(instream). For the integration, IronSource returns co
 | `isOrg` | required | String |  IronSource publisher Id provided by your IronSource representative  | "56f91cd4d3e3660002000033"
 | `floorPrice` | optional | Number |  Minimum price in USD. Misuse of this parameter can impact revenue | 2.00
 | `ifa` | optional | String |  The ID for advertisers (also referred to as "IDFA")  | "XXX-XXX"
+| `testMode` | optional | Boolean |  This activates the test mode  | false
 
 # Test Parameters
 ```javascript
@@ -42,6 +43,7 @@ var adUnits = [
             isOrg: '56f91cd4d3e3660002000033', // Required
             floorPrice: 2.00, // Optional
             ifa: 'XXX-XXX', // Optional
+            testMode: false // Optional
           }
         }]
       }

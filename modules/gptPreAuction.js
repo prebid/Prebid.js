@@ -26,46 +26,48 @@ export const appendGptSlots = adUnits => {
 
     if (matchingAdUnitCode) {
       const adUnit = adUnitMap[matchingAdUnitCode];
-      adUnit.fpd = adUnit.fpd || {};
-      adUnit.fpd.context = adUnit.fpd.context || {};
+      adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+      adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
+      adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
 
-      const context = adUnit.fpd.context;
-      context.adServer = context.adServer || {};
-      context.adServer.name = 'gam';
-      context.adServer.adSlot = slot.getAdUnitPath();
+      const context = adUnit.ortb2Imp.ext.data;
+      context.adserver = context.adserver || {};
+      context.adserver.name = 'gam';
+      context.adserver.adslot = slot.getAdUnitPath();
     }
   });
 };
 
 export const appendPbAdSlot = adUnit => {
-  adUnit.fpd = adUnit.fpd || {};
-  adUnit.fpd.context = adUnit.fpd.context || {};
-  const context = adUnit.fpd.context;
+  adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+  adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
+  adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
+  const context = adUnit.ortb2Imp.ext.data;
   const { customPbAdSlot } = _currentConfig;
 
   if (customPbAdSlot) {
-    context.pbAdSlot = customPbAdSlot(adUnit.code, utils.deepAccess(context, 'adServer.adSlot'));
+    context.pbadslot = customPbAdSlot(adUnit.code, utils.deepAccess(context, 'adserver.adslot'));
     return;
   }
 
   // use context.pbAdSlot if set
-  if (context.pbAdSlot) {
+  if (context.pbadslot) {
     return;
   }
   // use data attribute 'data-adslotid' if set
   try {
     const adUnitCodeDiv = document.getElementById(adUnit.code);
     if (adUnitCodeDiv.dataset.adslotid) {
-      context.pbAdSlot = adUnitCodeDiv.dataset.adslotid;
+      context.pbadslot = adUnitCodeDiv.dataset.adslotid;
       return;
     }
   } catch (e) {}
   // banner adUnit, use GPT adunit if defined
-  if (context.adServer) {
-    context.pbAdSlot = context.adServer.adSlot;
+  if (utils.deepAccess(context, 'adserver.adslot')) {
+    context.pbadslot = context.adserver.adslot;
     return;
   }
-  context.pbAdSlot = adUnit.code;
+  context.pbadslot = adUnit.code;
 };
 
 export const makeBidRequestsHook = (fn, adUnits, ...args) => {

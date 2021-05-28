@@ -416,6 +416,46 @@ describe('targeting tests', function () {
       });
     });
 
+    describe('targetingControls.allowTargetingKeys', function () {
+      let bid4;
+
+      beforeEach(function() {
+        bid4 = utils.deepClone(bid1);
+        bid4.adserverTargeting = {
+          hb_deal: '4321',
+          hb_pb: '0.1',
+          hb_adid: '567891011',
+          hb_bidder: 'appnexus',
+        };
+        bid4.bidder = bid4.bidderCode = 'appnexus';
+        bid4.cpm = 0.1; // losing bid so not included if enableSendAllBids === false
+        bid4.dealId = '4321';
+        enableSendAllBids = true;
+        config.setConfig({
+          targetingControls: {
+            allowTargetingKeys: ['BIDDER', 'AD_ID', 'PRICE_BUCKET']
+          }
+        });
+        bidsReceived.push(bid4);
+      });
+
+      it('targeting should include custom keys', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('foobar');
+      });
+
+      it('targeting should include keys prefixed by allowed default targeting keys', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_bidder_rubicon', 'hb_adid_rubicon', 'hb_pb_rubicon');
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus');
+      });
+
+      it('targeting should not include keys prefixed by disallowed default targeting keys', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.not.have.all.keys(['hb_deal_appnexus', 'hb_deal_rubicon']);
+      });
+    });
+
     describe('targetingControls.alwaysIncludeDeals', function () {
       let bid4;
 

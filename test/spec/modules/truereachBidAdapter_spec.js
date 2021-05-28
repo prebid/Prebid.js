@@ -81,4 +81,25 @@ describe('truereachBidAdapterTests', function () {
     expect(bid.netRevenue).to.equal(false);
     expect(bid.meta.advertiserDomains[0]).to.equal('https://www.momagic.com/');
   });
+
+  describe('user_sync', function() {
+    const user_sync_url = 'http://ads.momagic.com/jsp/usersync.jsp';
+    it('register_iframe_pixel_if_iframeEnabled_is_true', function() {
+      let syncs = spec.getUserSyncs(
+        {iframeEnabled: true}
+      );
+      expect(syncs).to.be.an('array');
+      expect(syncs.length).to.equal(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal(user_sync_url);
+    });
+
+    it('if_pixelEnabled_is_true', function() {
+      let syncs = spec.getUserSyncs(
+        {pixelEnabled: true}
+      );
+      expect(syncs).to.be.an('array');
+      expect(syncs.length).to.equal(0);
+    });
+  });
 });

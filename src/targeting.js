@@ -4,7 +4,9 @@ import { NATIVE_TARGETING_KEYS } from './native.js';
 import { auctionManager } from './auctionManager.js';
 import { sizeSupported } from './sizeMapping.js';
 import { ADPOD } from './mediaTypes.js';
+import { hook } from './hook.js';
 import includes from 'core-js-pure/features/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -19,7 +21,7 @@ export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
 );
 
 // return unexpired bids
-const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
+const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 - TTL_BUFFER) > timestamp();
 
 // return bids whose status is not set. Winning bids can only have a status of `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
@@ -32,26 +34,31 @@ export let filters = {
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
 // If adUnitBidLimit is set above 0 return top N number of bids
-export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, adUnitBidLimit = 0) {
-  const bids = [];
-  const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
-  // bucket by adUnitcode
-  let buckets = groupBy(bidsReceived, 'adUnitCode');
-  // filter top bid for each bucket by bidder
-  Object.keys(buckets).forEach(bucketKey => {
-    let bucketBids = [];
-    let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
-    Object.keys(bidsByBidder).forEach(key => bucketBids.push(bidsByBidder[key].reduce(highestCpmCallback)));
-    // if adUnitBidLimit is set, pass top N number bids
-    if (adUnitBidLimit > 0) {
-      bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
-      bids.push(...bucketBids.slice(0, adUnitBidLimit));
-    } else {
-      bids.push(...bucketBids);
-    }
-  });
-  return bids;
-}
+export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
+  if (!hasModified) {
+    const bids = [];
+    const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
+    // bucket by adUnitcode
+    let buckets = groupBy(bidsReceived, 'adUnitCode');
+    // filter top bid for each bucket by bidder
+    Object.keys(buckets).forEach(bucketKey => {
+      let bucketBids = [];
+      let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
+      Object.keys(bidsByBidder).forEach(key => bucketBids.push(bidsByBidder[key].reduce(highestCpmCallback)));
+      // if adUnitBidLimit is set, pass top N number bids
+      if (adUnitBidLimit > 0) {
+        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
+        bids.push(...bucketBids.slice(0, adUnitBidLimit));
+      } else {
+        bids.push(...bucketBids);
+      }
+    });
+
+    return bids;
+  }
+
+  return bidsReceived;
+})
 
 /**
 * A descending sort function that will sort the list of objects based on the following two dimensions:
@@ -182,6 +189,48 @@ export function newTargeting(auctionManager) {
   };
 
   /**
+   * Returns filtered ad server targeting for custom and allowed keys.
+   * @param {targetingArray} targeting
+   * @param {string[]} allowedKeys
+   * @return {targetingArray} filtered targeting
+   */
+  function getAllowedTargetingKeyValues(targeting, allowedKeys) {
+    const defaultKeyring = Object.assign({}, CONSTANTS.TARGETING_KEYS, CONSTANTS.NATIVE_KEYS);
+    const defaultKeys = Object.keys(defaultKeyring);
+    const keyDispositions = {};
+    logInfo(`allowTargetingKeys - allowed keys [ ${allowedKeys.map(k => defaultKeyring[k]).join(', ')} ]`);
+    targeting.map(adUnit => {
+      const adUnitCode = Object.keys(adUnit)[0];
+      const keyring = adUnit[adUnitCode];
+      const keys = keyring.filter(kvPair => {
+        const key = Object.keys(kvPair)[0];
+        // check if key is in default keys, if not, it's custom, we won't remove it.
+        const isCustom = defaultKeys.filter(defaultKey => key.indexOf(defaultKeyring[defaultKey]) === 0).length === 0;
+        // check if key explicitly allowed, if not, we'll remove it.
+        const found = isCustom || find(allowedKeys, allowedKey => {
+          const allowedKeyName = defaultKeyring[allowedKey];
+          // we're looking to see if the key exactly starts with one of our default keys.
+          // (which hopefully means it's not custom)
+          const found = key.indexOf(allowedKeyName) === 0;
+          return found;
+        });
+        keyDispositions[key] = !found;
+        return found;
+      });
+      adUnit[adUnitCode] = keys;
+    });
+    const removedKeys = Object.keys(keyDispositions).filter(d => keyDispositions[d]);
+    logInfo(`allowTargetingKeys - removed keys [ ${removedKeys.join(', ')} ]`);
+    // remove any empty targeting objects, as they're unnecessary.
+    const filteredTargeting = targeting.filter(adUnit => {
+      const adUnitCode = Object.keys(adUnit)[0];
+      const keyring = adUnit[adUnitCode];
+      return keyring.length > 0;
+    });
+    return filteredTargeting
+  }
+
+  /**
    * Returns all ad server targeting for all ad units.
    * @param {string=} adUnitCode
    * @return {Object.<string,targeting>} targeting
@@ -193,7 +242,8 @@ export function newTargeting(auctionManager) {
     // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
     var targeting = getWinningBidTargeting(adUnitCodes, bidsReceived)
       .concat(getCustomBidTargeting(adUnitCodes, bidsReceived))
-      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : getDealBids(adUnitCodes, bidsReceived));
+      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : getDealBids(adUnitCodes, bidsReceived))
+      .concat(getAdUnitTargeting(adUnitCodes));
 
     // store a reference of the targeting keys
     targeting.map(adUnitCode => {
@@ -205,6 +255,12 @@ export function newTargeting(auctionManager) {
         });
       });
     });
+
+    const defaultKeys = Object.keys(Object.assign({}, CONSTANTS.DEFAULT_TARGETING_KEYS, CONSTANTS.NATIVE_KEYS));
+    const allowedKeys = config.getConfig('targetingControls.allowTargetingKeys') || defaultKeys;
+    if (Array.isArray(allowedKeys) && allowedKeys.length > 0) {
+      targeting = getAllowedTargetingKeyValues(targeting, allowedKeys);
+    }
 
     targeting = flattenTargeting(targeting);
 
@@ -560,6 +616,27 @@ export function newTargeting(auctionManager) {
         [`${key}_${bid.bidderCode}`.substring(0, MAX_DFP_KEYLENGTH)]: [bid.adserverTargeting[key]]
       };
     });
+  }
+
+  function getAdUnitTargeting(adUnitCodes) {
+    function getTargetingObj(adUnit) {
+      return deepAccess(adUnit, CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING);
+    }
+
+    function getTargetingValues(adUnit) {
+      const aut = getTargetingObj(adUnit);
+
+      return Object.keys(aut)
+        .map(function(key) {
+          return {[key]: utils.isArray(aut[key]) ? aut[key] : aut[key].split(',')};
+        });
+    }
+
+    return auctionManager.getAdUnits()
+      .filter(adUnit => includes(adUnitCodes, adUnit.code) && getTargetingObj(adUnit))
+      .map(adUnit => {
+        return {[adUnit.code]: getTargetingValues(adUnit)}
+      });
   }
 
   targeting.isApntagDefined = function() {

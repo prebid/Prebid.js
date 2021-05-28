@@ -4,7 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  VERSION: '3.0.4',
+  VERSION: '3.1.0',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   E2ETESTENDPOINT: 'https://ads-wc.v.ssp.yahoo.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true',
@@ -75,7 +75,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(response, { bidRequest }) {
+  interpretResponse: function(response, {bidRequest}) {
     let bid;
     let size;
     let bidResponse;
@@ -94,12 +94,11 @@ export const spec = {
       requestId: bidRequest.bidId,
       bidderCode: spec.code,
       cpm: bid.price,
-      adId: bid.adid,
       creativeId: bid.crid,
       width: size.width,
       height: size.height,
       currency: response.cur,
-      ttl: 100,
+      ttl: (bidRequest.params.video.ttl > 0 && bidRequest.params.video.ttl <= 3600) ? bidRequest.params.video.ttl : 300,
       netRevenue: true,
       adUnitCode: bidRequest.adUnitCode
     };
@@ -113,7 +112,6 @@ export const spec = {
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
-
     if (bidRequest.mediaTypes.video) {
       bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
     }
@@ -128,7 +126,10 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, responses, consentData = {}) {
-    let { gdprApplies, consentString = '' } = consentData;
+    let {
+      gdprApplies,
+      consentString = ''
+    } = consentData;
 
     if (syncOptions.pixelEnabled) {
       return [{
@@ -164,14 +165,17 @@ function getRequestData(bid, consentData, bidRequest) {
   let loc = bidRequest.refererInfo.referer;
   let page = (bid.params.site && bid.params.site.page) ? (bid.params.site.page) : (loc.href);
   let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : bidRequest.refererInfo.referer;
+  let getFloorRequestObject = {
+    currency: bid.params.cur || 'USD',
+    mediaType: 'video',
+    size: '*'
+  };
   let bidData = {
     id: utils.generateUUID(),
     at: 2,
-    cur: bid.cur || 'USD',
     imp: [{
       id: '1',
       secure: isSecure(),
-      bidfloor: bid.params.bidfloor,
       ext: {
         hb: 1,
         prebidver: '$prebid.version$',
@@ -225,6 +229,7 @@ function getRequestData(bid, consentData, bidRequest) {
     bidData.imp[0].video.linearity = 1;
     bidData.imp[0].video.protocols = bid.params.video.protocols || [2, 5];
   } else if (bid.params.video.display == 1) {
+    getFloorRequestObject.mediaType = 'banner';
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
       w: bid.params.video.playerWidth,
@@ -243,6 +248,15 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.imp[0].banner.ext.minduration = bid.params.video.minduration
     }
   }
+
+  if (utils.isFn(bid.getFloor)) {
+    let floorData = bid.getFloor(getFloorRequestObject);
+    bidData.imp[0].bidfloor = floorData.floor;
+    bidData.cur = floorData.currency;
+  } else {
+    bidData.imp[0].bidfloor = bid.params.bidfloor;
+  };
+
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
   }
@@ -293,6 +307,7 @@ function getRequestData(bid, consentData, bidRequest) {
     }
   }
   if (bid.params.video.e2etest) {
+    utils.logMessage('+++ oneVideoBidAdapter: E2E test mode enabled. \n The following parameters are being overridden by e2etest mode:\n* bidfloor:null\n* width:300\n* height:250\n* mimes: video/mp4, application/javascript\n* api:2\n* site.page/ref: verizonmedia.com\n* tmax:1000');
     bidData.imp[0].bidfloor = null;
     bidData.imp[0].video.w = 300;
     bidData.imp[0].video.h = 250;
@@ -301,6 +316,33 @@ function getRequestData(bid, consentData, bidRequest) {
     bidData.site.page = 'https://verizonmedia.com';
     bidData.site.ref = 'https://verizonmedia.com';
     bidData.tmax = 1000;
+  }
+  if (bid.params.video.custom && utils.isPlainObject(bid.params.video.custom)) {
+    bidData.imp[0].ext.custom = {};
+    for (const key in bid.params.video.custom) {
+      if (utils.isStr(bid.params.video.custom[key]) || utils.isNumber(bid.params.video.custom[key])) {
+        bidData.imp[0].ext.custom[key] = bid.params.video.custom[key];
+      }
+    }
+  }
+  if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
+    bidData.site.content = {};
+    const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
+    const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
+    const contentArrayKeys = ['cat'];
+    const contentObjectKeys = ['ext'];
+    for (const contentKey in bid.params.video.content) {
+      if (
+        (contentStringKeys.indexOf(contentKey) > -1 && utils.isStr(bid.params.video.content[contentKey])) ||
+        (contentNumberkeys.indexOf(contentKey) > -1 && utils.isNumber(bid.params.video.content[contentKey])) ||
+        (contentObjectKeys.indexOf(contentKey) > -1 && utils.isPlainObject(bid.params.video.content[contentKey])) ||
+        (contentArrayKeys.indexOf(contentKey) > -1 && utils.isArray(bid.params.video.content[contentKey]) &&
+        bid.params.video.content[contentKey].every(catStr => utils.isStr(catStr)))) {
+        bidData.site.content[contentKey] = bid.params.video.content[contentKey];
+      } else {
+        utils.logMessage('oneVideo bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
+      }
+    }
   }
   return bidData;
 }
@@ -317,7 +359,7 @@ function newRenderer(bidRequest, bid) {
     bidRequest.renderer = {};
     bidRequest.renderer.url = 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js';
     bidRequest.renderer.render = function(bid) {
-      setTimeout(function () {
+      setTimeout(function() {
         // eslint-disable-next-line no-undef
         o2PlayerRender(bid);
       }, 700)

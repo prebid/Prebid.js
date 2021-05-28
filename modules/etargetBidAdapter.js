@@ -96,6 +96,7 @@ export const spec = {
           currency: data.win_cur,
           netRevenue: true,
           ttl: 360,
+          reason: data.reason ? data.reason : 'none',
           ad: data.banner,
           vastXml: data.vast_content,
           vastUrl: data.vast_link,

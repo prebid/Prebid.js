@@ -9,7 +9,7 @@ import { Renderer } from '../src/Renderer.js';
 export const storage = getStorageManager();
 
 const BIDDER_CODE = 'jixie';
-const EVENTS_URL = 'https://jxhbtrackers.azurewebsites.net/sync/evt?';
+const EVENTS_URL = 'https://hbtra.jixie.io/sync/hb?';
 const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.io/jxhboutstream.js';
 const REQUESTS_URL = 'https://hb.jixie.io/v2/hbpost';
 const sidTTLMins_ = 30;

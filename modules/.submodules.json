@@ -15,7 +15,20 @@
     "intentIqIdSystem",
     "zeotapIdPlusIdSystem",
     "haloIdSystem",
-    "quantcastIdSystem"
+    "quantcastIdSystem",
+    "deepintentDpesIdSystem",
+    "nextrollIdSystem",
+    "idxIdSystem",
+    "fabrickIdSystem",
+    "verizonMediaIdSystem",
+    "pubProvidedIdSystem",
+    "mwOpenLinkIdSystem",
+    "tapadIdSystem",
+    "novatiqIdSystem",
+    "uid2IdSystem",
+    "admixerIdSystem",
+    "dmdIdSystem",
+    "flocIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -23,7 +36,15 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
-    "audigentRtdProvider",
-    "jwplayerRtdProvider"
+    "geoedgeRtdProvider",
+    "haloRtdProvider",
+    "jwplayerRtdProvider",
+    "permutiveRtdProvider",
+    "reconciliationRtdProvider",
+    "sirdataRtdProvider"
+  ],
+  "fpdModule": [
+    "enrichmentFpdModule",
+    "validationFpdModule"
   ]
 }

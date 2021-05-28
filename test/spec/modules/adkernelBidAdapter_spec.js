@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adkernelBidAdapter.js';
-import * as utils from 'src/utils.js';
+import {spec} from 'modules/adkernelBidAdapter';
+import * as utils from 'src/utils';
 import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
-import {config} from 'src/config.js';
+import {config} from 'src/config';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
@@ -175,7 +175,6 @@ describe('Adkernel adapter', function () {
           dealid: 'deal'
         }]
       }],
-      cur: 'USD',
       ext: {
         adk_usersync: [{type: 1, url: 'https://adk.sync.com/sync'}]
       }
@@ -192,7 +191,6 @@ describe('Adkernel adapter', function () {
           cid: '16855'
         }]
       }],
-      cur: 'USD'
     }, usersyncOnlyResponse = {
       id: 'nobid1',
       ext: {
@@ -222,12 +220,18 @@ describe('Adkernel adapter', function () {
             }
           }),
           adomain: ['displayurl.com'],
+          cat: ['IAB1-4', 'IAB8-16', 'IAB25-5'],
           cid: '1',
-          crid: '4'
+          crid: '4',
+          ext: {
+            'advertiser_id': 777,
+            'advertiser_name': 'advertiser',
+            'agency_name': 'agency'
+          }
         }]
       }],
       bidid: 'pTuOlf5KHUo',
-      cur: 'USD'
+      cur: 'EUR'
     };
 
   var sandbox;
@@ -237,6 +241,7 @@ describe('Adkernel adapter', function () {
 
   afterEach(function () {
     sandbox.restore();
+    config.resetConfig();
   });
 
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
@@ -339,6 +344,14 @@ describe('Adkernel adapter', function () {
       expect(bidRequest.user.ext).to.be.eql({'consent': 'test-consent-string'});
     });
 
+    it('should contain coppa if configured', function () {
+      config.setConfig({coppa: true});
+      let [_, bidRequests] = buildRequest([bid1_zone1]);
+      let bidRequest = bidRequests[0];
+      expect(bidRequest).to.have.property('regs');
+      expect(bidRequest.regs).to.have.property('coppa', 1);
+    });
+
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1], buildBidderRequest('https://example.com/index.html', {gdprConsent: {gdprApplies: false}}));
       let bidRequest = bidRequests[0];
@@ -353,8 +366,20 @@ describe('Adkernel adapter', function () {
     });
 
     it('should forward default bidder timeout', function() {
-      let [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST);
+      let [_, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests[0]).to.have.property('tmax', 3000);
+    });
+
+    it('should set bidfloor if configured', function() {
+      let bid = Object.assign({}, bid1_zone1);
+      bid.getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 0.145
+        }
+      };
+      let [_, bidRequests] = buildRequest([bid]);
+      expect(bidRequests[0].imp[0]).to.have.property('bidfloor', 0.145);
     });
   });
 
@@ -552,8 +577,7 @@ describe('Adkernel adapter', function () {
 
   describe('adapter configuration', () => {
     it('should have aliases', () => {
-      expect(spec.aliases).to.have.lengthOf(6);
-      expect(spec.aliases).to.include.members(['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon']);
+      expect(spec.aliases).to.be.an('array').that.is.not.empty;
     });
   });
 
@@ -587,7 +611,13 @@ describe('Adkernel adapter', function () {
       let resp = spec.interpretResponse({body: nativeResponse}, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_01');
       expect(resp).to.have.property('cpm', 2.25);
-      expect(resp).to.have.property('currency', 'USD');
+      expect(resp).to.have.property('currency', 'EUR');
+      expect(resp).to.have.property('meta');
+      expect(resp.meta.advertiserId).to.be.eql(777);
+      expect(resp.meta.advertiserName).to.be.eql('advertiser');
+      expect(resp.meta.agencyName).to.be.eql('agency');
+      expect(resp.meta.advertiserDomains).to.be.eql(['displayurl.com']);
+      expect(resp.meta.secondaryCatIds).to.be.eql(['IAB1-4', 'IAB8-16', 'IAB25-5']);
       expect(resp).to.have.property('mediaType', NATIVE);
       expect(resp).to.have.property('native');
       expect(resp.native).to.have.property('clickUrl', 'http://rtb.com/click?i=pTuOlf5KHUo_0');

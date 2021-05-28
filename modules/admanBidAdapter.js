@@ -95,10 +95,21 @@ export const spec = {
     return response;
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    let syncUrl = URL_SYNC
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncUrl += `&gdpr==0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
     return [{
       type: 'image',
-      url: URL_SYNC
+      url: syncUrl
     }];
   }
 

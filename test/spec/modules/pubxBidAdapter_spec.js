@@ -60,6 +60,70 @@ describe('pubxAdapter', function () {
     });
   });
 
+  describe('getUserSyncs', function () {
+    const sandbox = sinon.sandbox.create();
+
+    const keywordsText = 'meta1,meta2,meta3,meta4,meta5';
+    const descriptionText = 'description1description2description3description4description5description';
+
+    let documentStubMeta;
+
+    beforeEach(function () {
+      documentStubMeta = sandbox.stub(document, 'getElementsByName');
+      const metaElKeywords = document.createElement('meta');
+      metaElKeywords.setAttribute('name', 'keywords');
+      metaElKeywords.setAttribute('content', keywordsText);
+      documentStubMeta.withArgs('keywords').returns([metaElKeywords]);
+
+      const metaElDescription = document.createElement('meta');
+      metaElDescription.setAttribute('name', 'description');
+      metaElDescription.setAttribute('content', descriptionText);
+      documentStubMeta.withArgs('description').returns([metaElDescription]);
+    });
+
+    afterEach(function () {
+      documentStubMeta.restore();
+    });
+
+    let kwString = '';
+    let kwEnc = '';
+    let descContent = '';
+    let descEnc = '';
+
+    it('returns empty sync array when iframe is not enabled', function () {
+      const syncOptions = {};
+      expect(spec.getUserSyncs(syncOptions)).to.deep.equal([]);
+    });
+
+    it('returns kwEnc when there is kwTag with more than 20 length', function () {
+      const kwArray = keywordsText.substr(0, 20).split(',');
+      kwArray.pop();
+      kwString = kwArray.join();
+      kwEnc = encodeURIComponent(kwString);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true });
+      expect(syncs[0].url).to.include(`pkw=${kwEnc}`);
+    });
+
+    it('returns kwEnc when there is kwTag with more than 60 length', function () {
+      descContent = descContent.substr(0, 60);
+      descEnc = encodeURIComponent(descContent);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true });
+      expect(syncs[0].url).to.include(`pkw=${descEnc}`);
+    });
+
+    it('returns titleEnc when there is titleContent with more than 30 length', function () {
+      let titleText = 'title1title2title3title4title5title';
+      const documentStubTitle = sandbox.stub(document, 'title').value(titleText);
+
+      if (titleText.length > 30) {
+        titleText = titleText.substr(0, 30);
+      }
+
+      const syncs = spec.getUserSyncs({ iframeEnabled: true });
+      expect(syncs[0].url).to.include(`pt=${encodeURIComponent(titleText)}`);
+    });
+  });
+
   describe('interpretResponse', function () {
     const serverResponse = {
       body: {

@@ -305,12 +305,12 @@ describe('smilewantedBidAdapterTests', function () {
   });
 
   it('SmileWanted - Verify user sync', function () {
-    var syncs = spec.getUserSyncs({
-      iframeEnabled: true
-    }, [BID_RESPONSE_DISPLAY]);
+    var syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {
+      consentString: 'foo'
+    }, '1NYN');
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
-    expect(syncs[0].url).to.equal('https://csync.smilewanted.com');
+    expect(syncs[0].url).to.equal('https://csync.smilewanted.com?gdpr_consent=foo&us_privacy=1NYN');
 
     syncs = spec.getUserSyncs({
       iframeEnabled: false
@@ -320,6 +320,6 @@ describe('smilewantedBidAdapterTests', function () {
     syncs = spec.getUserSyncs({
       iframeEnabled: true
     }, []);
-    expect(syncs).to.have.lengthOf(0);
+    expect(syncs).to.have.lengthOf(1);
   });
 });

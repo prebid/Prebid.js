@@ -30,6 +30,17 @@ const SYNC_TYPES = {
   }
 };
 
+const SUPPORTED_USER_ID_SOURCES = [
+  'adserver.org',
+  'criteo.com',
+  'id5-sync.com',
+  'intentiq.com',
+  'liveintent.com',
+  'quantcast.com',
+  'verizonmedia.com',
+  'liveramp.com'
+];
+
 const pubapiTemplate = template`${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;
 const nexageBaseApiTemplate = template`${'host'}/bidRequest?`;
 const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'dynamicParams'}`;
@@ -101,6 +112,12 @@ function resolveEndpointCode(bid) {
   } else if (isMarketplaceBid(bid)) {
     return AOL_ENDPOINTS.DISPLAY.GET;
   }
+}
+
+function getSupportedEids(bid) {
+  return bid.userIdAsEids.filter(eid => {
+    return SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1
+  });
 }
 
 export const spec = {
@@ -226,6 +243,13 @@ export const spec = {
   },
   buildOneMobileGetUrl(bid, consentData) {
     let { dcn, pos, ext } = bid.params;
+    if (typeof bid.userId === 'object') {
+      ext = ext || {};
+      let eids = getSupportedEids(bid);
+      eids.forEach(eid => {
+        ext['eid' + eid.source] = eid.uids[0].id;
+      });
+    }
     let nexageApi = this.buildOneMobileBaseUrl(bid);
     if (dcn && pos) {
       let dynamicParams = this.formatOneMobileDynamicParams(ext, consentData);
@@ -246,10 +270,6 @@ export const spec = {
   },
   formatMarketplaceDynamicParams(params = {}, consentData = {}) {
     let queryParams = {};
-
-    if (params.bidFloor) {
-      queryParams.bidfloor = params.bidFloor;
-    }
 
     Object.assign(queryParams, this.formatKeyValues(params.keyValues));
     Object.assign(queryParams, this.formatConsentData(consentData));
@@ -290,6 +310,16 @@ export const spec = {
 
     if (consentData.uspConsent) {
       utils.deepSetValue(openRtbObject, 'regs.ext.us_privacy', consentData.uspConsent);
+    }
+
+    if (typeof bid.userId === 'object') {
+      openRtbObject.user = openRtbObject.user || {};
+      openRtbObject.user.ext = openRtbObject.user.ext || {};
+
+      let eids = getSupportedEids(bid);
+      if (eids.length > 0) {
+        openRtbObject.user.ext.eids = eids
+      }
     }
 
     return openRtbObject;
@@ -336,7 +366,7 @@ export const spec = {
           let tagName = item.match(tagNameRegExp)[0];
           let url = item.match(srcRegExp)[2];
 
-          if (tagName && tagName) {
+          if (tagName && url) {
             pixelsItems.push({
               type: tagName === SYNC_TYPES.IMAGE.TAG ? SYNC_TYPES.IMAGE.TYPE : SYNC_TYPES.IFRAME.TYPE,
               url: url
@@ -383,6 +413,9 @@ export const spec = {
       currency: response.cur || 'USD',
       dealId: bidData.dealid,
       netRevenue: true,
+      meta: {
+        advertiserDomains: bidData && bidData.adomain ? bidData.adomain : []
+      },
       ttl: bidRequest.ttl
     };
   },

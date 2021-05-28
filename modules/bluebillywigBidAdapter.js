@@ -28,7 +28,7 @@ const BB_CONSTANTS = {
 const getConfig = config.getConfig;
 
 // Helper Functions
-export const BB_HELPERS = {
+const BB_HELPERS = {
   addSiteAppDevice: function(request, pageUrl) {
     if (typeof getConfig('app') === 'object') request.app = getConfig('app');
     else {
@@ -151,7 +151,7 @@ const BB_RENDERER = {
     const ele = document.getElementById(bid.adUnitCode); // NB convention
     const renderer = find(window.bluebillywig.renderers, r => r._id === rendererId);
 
-    if (renderer) renderer.bootstrap(config, ele);
+    if (renderer) renderer.bootstrap(config, ele, bid.rendererSettings || {});
     else utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Couldn't find a renderer with ${rendererId}`);
   },
   newRenderer: function(rendererUrl, adUnitCode) {
@@ -232,6 +232,11 @@ export const spec = {
 
     if (bid.params.hasOwnProperty('video') && (bid.params.video === null || typeof bid.params.video !== 'object')) {
       utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: params.video must be of type object. Rejecting bid: `, bid);
+      return false;
+    }
+
+    if (bid.params.hasOwnProperty('rendererSettings') && (bid.params.rendererSettings === null || typeof bid.params.rendererSettings !== 'object')) {
+      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: params.rendererSettings must be of type object. Rejecting bid: `, bid);
       return false;
     }
 
@@ -330,6 +335,7 @@ export const spec = {
         bid.publicationName = bidParams.publicationName;
         bid.rendererCode = bidParams.rendererCode;
         bid.accountId = bidParams.accountId;
+        bid.rendererSettings = bidParams.rendererSettings;
 
         const rendererUrl = BB_HELPERS.getRendererUrl(bid.publicationName, bid.rendererCode);
         bid.renderer = BB_RENDERER.newRenderer(rendererUrl, bid.adUnitCode);

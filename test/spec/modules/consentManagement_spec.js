@@ -39,6 +39,12 @@ describe('consentManagement', function () {
         expect(userCMP).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       });
+
+      it('should exit consentManagement module if config is "undefined"', function() {
+        setConsentConfig(undefined);
+        expect(userCMP).to.be.undefined;
+        sinon.assert.calledOnce(utils.logWarn);
+      });
     });
 
     describe('valid setConsentConfig value', function () {
@@ -531,6 +537,15 @@ describe('consentManagement', function () {
         // from CMP window postMessage listener.
         testIFramedPage('with/JSON response', false, 'encoded_consent_data_via_post_message', 1);
         testIFramedPage('with/String response', true, 'encoded_consent_data_via_post_message', 1);
+
+        it('should contain correct V1 CMP definition', (done) => {
+          setConsentConfig(goodConfigWithAllowAuction);
+          requestBidsHook(() => {
+            const nbArguments = window.__cmp.toString().split('\n')[0].split(', ').length;
+            expect(nbArguments).to.equal(3);
+            done();
+          }, {});
+        });
       });
 
       describe('v2 CMP workflow for iframe pages:', function () {
@@ -556,6 +571,15 @@ describe('consentManagement', function () {
 
         testIFramedPage('with/JSON response', false, 'abc12345234', 2);
         testIFramedPage('with/String response', true, 'abc12345234', 2);
+
+        it('should contain correct v2 CMP definition', (done) => {
+          setConsentConfig(goodConfigWithAllowAuction);
+          requestBidsHook(() => {
+            const nbArguments = window.__tcfapi.toString().split('\n')[0].split(', ').length;
+            expect(nbArguments).to.equal(4);
+            done();
+          }, {});
+        });
       });
     });
 

@@ -8,6 +8,7 @@ const BIDDER_CODE = 'unicorn';
 const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
 const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
+const UNICORN_PB_VERSION = '1.0';
 
 /**
  * Placement ID and Account ID are required.
@@ -47,12 +48,12 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     bidderRequest
   );
   const imp = validBidRequests.map(br => {
-    const sizes = utils.parseSizesInput(br.sizes)[0];
     return {
       id: br.bidId,
       banner: {
-        w: sizes.split('x')[0],
-        h: sizes.split('x')[1]
+        format: makeFormat(br.sizes),
+        w: br.sizes[0][0],
+        h: br.sizes[0][1],
       },
       tagid: utils.deepAccess(br, 'params.placementId') || br.adUnitCode,
       secure: 1,
@@ -84,7 +85,8 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     source: {
       ext: {
         stype: 'prebid_uncn',
-        bidder: BIDDER_CODE
+        bidder: BIDDER_CODE,
+        prebid_version: UNICORN_PB_VERSION
       }
     },
     ext: {
@@ -137,6 +139,14 @@ const getUid = () => {
     return newCk.uid;
   }
 };
+
+/**
+ * Make imp.banner.format
+ * @param {Array<Number>} arr
+ */
+const makeFormat = arr => arr.map((s) => {
+  return { w: s[0], h: s[1] };
+});
 
 export const spec = {
   code: BIDDER_CODE,

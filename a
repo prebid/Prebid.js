@@ -1,0 +1,41 @@
+[16:58:25] Using gulpfile ~/Documents/work/nobid/Prebid.js/gulpfile.js
+[16:58:25] Starting 'test-coverage'...
+[16:58:25] Starting 'clean'...
+[16:58:25] Finished 'clean' after 10 ms
+[16:58:25] Starting 'testCoverage'...
+
+START:
+ℹ ｢wdm｣: 
+ℹ ｢wdm｣: Compiled successfully.
+ℹ ｢wdm｣: Compiling...
+ℹ ｢wdm｣: Failed to compile.
+[32m26 08 2020 16:58:47.749:INFO [karma-server]: [39mKarma v4.4.1 server started at http://0.0.0.0:9876/
+[32m26 08 2020 16:58:47.750:INFO [launcher]: [39mLaunching browsers ChromeHeadless with concurrency 5
+[32m26 08 2020 16:58:47.755:INFO [launcher]: [39mStarting browser ChromeHeadless
+[32m26 08 2020 16:58:48.077:INFO [HeadlessChrome 84.0.4147 (Mac OS X 10.15.4)]: [39mConnected on socket P5D7-7TxrFvaFTdvAAAA with id 42175759
+[33m26 08 2020 16:58:50.097:WARN [reporter]: [39mSourceMap position not found for trace: Uncaught Error: Cannot find module "src/adloader.js"
+at http://localhost:9876/base/test/test_index.js?dc5396d26193ca2528d42dc43b9d6782966d7e60:11837:1
+
+Error: Cannot find module "src/adloader.js"
+    at Object.<anonymous> (http://localhost:9876/base/test/test_index.js?dc5396d26193ca2528d42dc43b9d6782966d7e60:11837:7)
+    at __webpack_require__ (http://localhost:9876/base/test/test_index.js?dc5396d26193ca2528d42dc43b9d6782966d7e60:20:30)
+    at Object.<anonymous> (http://localhost:9876/base/test/test_index.js?dc5396d26193ca2528d42dc43b9d6782966d7e60:31966:1)
+    at __webpack_require__ (http://localhost:9876/base/test/test_index.js?dc5396d26193ca2528d42dc43b9d6782966d7e60:20:30)
+    at http://localhost:9876/base/test/test_index.js?dc5396d26193ca2528d42dc43b9d6782966d7e60:63:18
+    at http://localhost:9876/base/test/test_index.js?dc5396d26193ca2528d42dc43b9d6782966d7e60:66:10
+HeadlessChrome 84.0.4147 (Mac OS X 10.15.4) ERROR
+  Uncaught Error: Cannot find module "src/adloader.js"
+  at webpack:///test/mocks/adloaderStub.js:2:1 <- test/test_index.js:11837:1
+  
+  Error: Cannot find module "src/adloader.js"
+      at Object.<anonymous> (webpack:///test/mocks/adloaderStub.js:2:1 <- test/test_index.js:11837:7)
+      at __webpack_require__ (webpack:///webpack/bootstrap%20a27aaf5067d3fb4ce44d:19:1 <- test/test_index.js:20:30)
+      at Object.<anonymous> (webpack:///test/test_index.js:2:1 <- test/test_index.js:31966:1)
+      at __webpack_require__ (webpack:///webpack/bootstrap%20a27aaf5067d3fb4ce44d:19:1 <- test/test_index.js:20:30)
+      at webpack:///webpack/bootstrap%20a27aaf5067d3fb4ce44d:62:1 <- test/test_index.js:63:18
+      at test/test_index.js:66:10
+
+Finished in 2.032 secs / 0 secs @ 16:58:50 GMT-0700 (Pacific Daylight Time)
+
+SUMMARY:
+✔ 0 tests completed

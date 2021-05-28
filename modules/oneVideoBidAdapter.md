@@ -40,7 +40,13 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
                   inventoryid: 123,
                   minduration: 10,
                   maxduration: 30,
+                  ttl: 300,
+                  custom: {
+                    key1: "value1",
+                    key2: 123345
+                  }
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
@@ -85,7 +91,9 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
                   inventoryid: 123,
                   minduration: 10,
                   maxduration: 30,
+                  ttl: 250
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
@@ -122,6 +130,7 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
               position: 1,
               display: 1
             },
+            bidfloor: 0.5,
             site: {
               id: 1,
               page: 'https://verizonmedia.com',
@@ -155,6 +164,7 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
               mimes: ['video/mp4', 'application/javascript'],
               display: 1
             },
+            bidfloor: 0.5,
             site: {
               id: 1,
               page: 'https://verizonmedia.com',
@@ -191,7 +201,7 @@ var adUnits = [
               playerHeight: 250,
               mimes: ['video/mp4', 'application/javascript'],
               e2etest: true
-            }
+            },
             pubId: 'YOUR_PUBLISHER_ID'
           }
         }
@@ -231,6 +241,7 @@ var adUnits = [
                   api: [2],
                   sid:
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
@@ -282,11 +293,12 @@ var adUnits = [
                   protocols: [2,5],
                   api: [2],
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
                     referrer: 'https://verizonmedia.com'
-                  },
+                  },            
                 pubId: 'HBExchange'
                 }
             }
@@ -294,3 +306,91 @@ var adUnits = [
       }
   ]
 ```
+# Content Object Support
+The oneVideoBidAdapter supports passing of OpenRTB V2.5 Content Object.
+
+```
+const adUnits = [{
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480]
+                }
+            },
+            bids: [{
+                bidder: 'oneVideo',
+                params: {
+                    video: {
+                        playerWidth: 640,
+                        playerHeight: 480,
+                        mimes: ['video/mp4', 'application/javascript'],
+                        protocols: [2, 5],
+                        api: [1, 2],
+                        ttl: 300,
+                        content: {
+                            id: "1234",
+                            title: "Title",
+                            series: "Series",
+                            season: "Season",
+                            episode: 1
+                            cat: [
+                                "IAB1",
+                                "IAB1-1",
+                                "IAB1-2",
+                                "IAB2",
+                                "IAB2-1"
+                            ],
+                            genre: "Genre",
+                            contentrating: "C-Rating",
+                            language: "EN",
+                            prodq: 1,
+                            context: 1,
+                            livestream: 0,
+                            len: 360,
+                            ext: {
+                                network: "ext-network",
+                                channel: "ext-channel"
+                            }
+                        }
+                      },
+                      bidfloor: 0.5,
+                      pubId: 'HBExchange'
+                    }
+                }
+            }]
+        }]
+```
+
+
+# TTL Support
+The oneVideoBidAdapter supports passing of "Time To Live" (ttl)  that indicates to prebid chache for how long to keep the chaced winning bid alive.
+Value is Number in seconds
+You can enter any number between 1 - 3600 (seconds)
+```
+const adUnits = [{
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480]
+                }
+            },
+            bids: [{
+                bidder: 'oneVideo',
+                params: {
+                    video: {
+                        playerWidth: 640,
+                        playerHeight: 480,
+                        mimes: ['video/mp4', 'application/javascript'],
+                        protocols: [2, 5],
+                        api: [1, 2],
+                        ttl: 300
+                    },
+                    bidfloor: 0.5,
+                    pubId: 'HBExchange'
+                }
+            }]
+        }]
+```
+
