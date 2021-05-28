@@ -101,6 +101,9 @@ export const spec = {
           mediasquare: {
             'bidder': value['bidder'],
             'code': value['code']
+          },
+          meta: {
+            'advertiserDomains': value['adomain']
           }
         };
         if ('native' in value) {
