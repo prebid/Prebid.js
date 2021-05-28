@@ -61,7 +61,7 @@ export const sharethroughAdapterSpec = {
           id: SUPPLY_ID,
           version: '$prebid.version$',
           str: VERSION,
-          schain: bidRequest[0].schain
+          schain: bidRequests[0].schain
         }
       },
       bcat: bidRequests[0].params.bcat || [],
@@ -120,6 +120,11 @@ export const sharethroughAdapterSpec = {
     return {
       method: 'POST',
       url: STR_ENDPOINT,
+      options: {
+        contentType: 'application/json',
+        withCredentials: false,
+        crossOrigin: true,
+      },
       data: {
         ...req,
         imp: imps
