@@ -2,17 +2,8 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getOrigin} from "../src/utils.js";
 const BIDDER_CODE = 'resetdigital';
-
-function getDomain () {
-  if (!utils.inIframe()) {
-    return window.location.hostname
-  }
-  let origins = window.document.location.ancestorOrigins
-  if (origins && origins.length > 0) {
-    return origins[origins.length - 1]
-  }
-}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -32,7 +23,7 @@ export const spec = {
       start_time: utils.timestamp(),
       language: window.navigator.userLanguage || window.navigator.language,
       site: {
-        domain: getDomain(),
+        domain: getOrigin(),
         iframe: !bidderRequest.refererInfo.reachedTop,
         url: stack && stack.length > 0 ? [stack.length - 1] : null,
         https: (window.location.protocol === 'https:'),
