@@ -257,21 +257,12 @@ describe('Nobid Adapter', function () {
             'uids': [
               {
                 'id': 'ID5_ID',
-<<<<<<< HEAD
                 'atype': 1
               }
             ],
             'ext': {
               'linkType': 0
             }
-=======
-                'atype': 1,
-                'ext': {
-                  'linkType': 0
-                }
-              }
-            ]
->>>>>>> f2befaab4211240897413082724fe6958984af53
           },
           {
             'source': 'adserver.org',
@@ -293,11 +284,7 @@ describe('Nobid Adapter', function () {
       refererInfo: {referer: REFERER}
     }
 
-<<<<<<< HEAD
     it('should criteo eid', function () {
-=======
-    it('should get user ids from eids', function () {
->>>>>>> f2befaab4211240897413082724fe6958984af53
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.sid).to.exist.and.to.equal(2);
@@ -608,6 +595,47 @@ describe('Nobid Adapter', function () {
       }
       let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
       expect(nobid.refreshLimit).to.equal(REFRESH_LIMIT);
+    });
+  });
+
+  describe('interpretResponseWithMeta', function () {
+    const CREATIVE_ID_300x250 = 'CREATIVE-100';
+    const ADUNIT_300x250 = 'ADUNIT-1';
+    const ADMARKUP_300x250 = 'ADMARKUP-300x250';
+    const PRICE_300x250 = 0.51;
+    const REQUEST_ID = '3db3773286ee59';
+    const DEAL_ID = 'deal123';
+    const ADOMAINS = ['adomain1', 'adomain2'];
+    let response = {
+      country: 'US',
+      ip: '68.83.15.75',
+      device: 'COMPUTER',
+      site: 2,
+      bids: [
+        {id: 1,
+          bdrid: 101,
+          divid: ADUNIT_300x250,
+          dealid: DEAL_ID,
+          creativeid: CREATIVE_ID_300x250,
+          size: {'w': 300, 'h': 250},
+          adm: ADMARKUP_300x250,
+          price: '' + PRICE_300x250,
+          meta: {
+        	  advertiserDomains: ADOMAINS
+          }
+        }
+      ]
+    };
+
+    it('should meta.advertiserDomains be respected', function () {
+      let bidderRequest = {
+        bids: [{
+          bidId: REQUEST_ID,
+          adUnitCode: ADUNIT_300x250
+        }]
+      }
+      let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      expect(result[0].meta.advertiserDomains).to.equal(ADOMAINS);
     });
   });
 
