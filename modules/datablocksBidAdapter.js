@@ -68,7 +68,7 @@ export const spec = {
         id: bidRequest.bidId,
         tagid: bidRequest.adUnitCode,
         secure: window.location.protocol == 'https:'
-      }
+      };
 
       if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
         let sizes = bidRequest.mediaTypes.banner.sizes;
@@ -76,7 +76,7 @@ export const spec = {
           imp.banner = {
             w: sizes[0][0],
             h: sizes[0][1]
-          }
+          };
         } else if (sizes.length > 1) {
           imp.banner = {
             format: sizes.map(size => ({ w: size[0], h: size[1] }))
@@ -181,7 +181,7 @@ export const spec = {
             if (VIDEO_PARAMS.indexOf(k) > -1) {
               imp.video[k] = bidRequest.params.video[k];
             }
-          })
+          });
         }
       }
       let host = bidRequest.params.host;
