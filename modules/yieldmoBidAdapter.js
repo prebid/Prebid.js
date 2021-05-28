@@ -479,7 +479,7 @@ function validateVideoParams(bid) {
 
   const isDefined = val => typeof val !== 'undefined';
   const validate = (fieldPath, validateCb, errorCb, errorCbParam) => {
-    if (fieldPath.includes('video')) {
+    if (fieldPath.indexOf('video') === 0) {
       const valueFieldPath = 'params.' + fieldPath;
       const mediaFieldPath = 'mediaTypes.' + fieldPath;
       const valueParams = utils.deepAccess(bid, valueFieldPath);
