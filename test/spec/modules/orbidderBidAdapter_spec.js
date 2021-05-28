@@ -104,7 +104,7 @@ describe('orbidderBidAdapter', () => {
       expect(request.data.pageUrl).to.equal('https://localhost:9876/');
       // expect(request.data.referrer).to.equal('');
       Object.keys(defaultBidRequest).forEach((key) => {
-        expect(defaultBidRequest[key]).to.equal(request.data[key]);
+        expect(request.data[key]).to.deep.equal(defaultBidRequest[key]);
       });
     });
 
