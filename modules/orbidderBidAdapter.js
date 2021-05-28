@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import * as utils from '../src/utils.js';
@@ -73,6 +75,13 @@ export const spec = {
           }
           bidResponse[requiredKey] = bid[requiredKey];
         }
+
+        if(Array.isArray(bid.adomain)) {
+          bidResponse.meta = {
+            advertiserDomains: bid.adomain
+          }
+        }
+
         bidResponses.push(bidResponse);
       });
     }

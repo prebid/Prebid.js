@@ -189,6 +189,47 @@ describe('orbidderBidAdapter', () => {
       });
     });
 
+    it('should get correct bid response with advertiserDomains', () => {
+      const serverResponse = [
+        {
+          'width': 300,
+          'height': 250,
+          'creativeId': '29681110',
+          'ad': '<!-- Creative -->',
+          'cpm': 0.5,
+          'requestId': '30b31c1838de1e',
+          'ttl': 60,
+          'netRevenue': true,
+          'currency': 'EUR',
+          'adomain': ['cm.tavira.pt']
+        }
+      ];
+
+      const expectedResponse = [
+        {
+          'requestId': '30b31c1838de1e',
+          'cpm': 0.5,
+          'creativeId': '29681110',
+          'width': 300,
+          'height': 250,
+          'ttl': 60,
+          'currency': 'EUR',
+          'ad': '<!-- Creative -->',
+          'netRevenue': true,
+          'meta': {
+            'advertiserDomains': ['cm.tavira.pt']
+          }
+        }
+      ];
+
+      const result = spec.interpretResponse({body: serverResponse});
+
+      expect(result.length).to.equal(expectedResponse.length);
+      Object.keys(expectedResponse[0]).forEach((key) => {
+        expect(result[0][key]).to.deep.equal(expectedResponse[0][key]);
+      });
+    });
+
     it('handles broken server response', () => {
       const serverResponse = [
         {
