@@ -15,7 +15,7 @@ const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const EXPIRE_COOKIE_TIME = 864000000;
 const P_COOKIE_NAME = '_parrable_id';
 const P_COOKIE_EID = '01.1563917337.test-eid';
-const P_XHR_EID = '01.1588030911.test-new-eid'
+const P_XHR_EID = '01.1588030911.test-new-eid';
 const P_CONFIG_MOCK = {
   name: 'parrableId',
   params: {
