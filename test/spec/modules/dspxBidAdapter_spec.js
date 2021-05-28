@@ -213,7 +213,7 @@ describe('dspxAdapter', function () {
         'ttl': 60,
         'netRevenue': true,
         'zone': '6682',
-        'admomain': 'bdomain'
+        'admomain': ['bdomain']
       }
     };
     let serverVideoResponse = {
@@ -229,7 +229,7 @@ describe('dspxAdapter', function () {
         'ttl': 60,
         'netRevenue': true,
         'zone': '6682',
-        'admomain': 'vdomain'
+        'admomain': ['vdomain']
       }
     };
 
@@ -245,7 +245,7 @@ describe('dspxAdapter', function () {
       ttl: 300,
       type: 'sspHTML',
       ad: '<!-- test creative -->',
-      meta: {advertiserDomains: 'bdomain'}
+      meta: {advertiserDomains: ['bdomain']}
     }, {
       requestId: '23beaa6af6cdde',
       cpm: 0.5,
@@ -259,7 +259,7 @@ describe('dspxAdapter', function () {
       type: 'vast2',
       vastXml: '{"reason":7001,"status":"accepted"}',
       mediaType: 'video',
-      meta: {advertiserDomains: 'vdomain'}
+      meta: {advertiserDomains: ['vdomain']}
     }];
 
     it('should get the correct bid response by display ad', function () {
