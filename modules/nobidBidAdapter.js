@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.9';
+window.nobidVersion = '1.3.0';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -297,6 +297,9 @@ function nobidInterpretResponse(response, bidRequest) {
     }
     if (bid.videoCacheKey) {
       bidResponse.videoCacheKey = bid.videoCacheKey;
+    }
+    if (bid.meta) {
+      bidResponse.meta = bid.meta;
     }
 
     bidResponses.push(bidResponse);
