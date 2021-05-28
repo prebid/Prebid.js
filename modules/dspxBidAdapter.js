@@ -118,7 +118,10 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         type: response.type,
-        ttl: config.getConfig('_bidderTimeout')
+        ttl: config.getConfig('_bidderTimeout'),
+        meta: {
+          advertiserDomains: [response.adomain]
+        }
       };
       if (response.vastXml) {
         bidResponse.vastXml = response.vastXml;
@@ -126,6 +129,7 @@ export const spec = {
       } else {
         bidResponse.ad = response.adTag;
       }
+
       bidResponses.push(bidResponse);
     }
     return bidResponses;
