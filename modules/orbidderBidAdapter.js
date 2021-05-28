@@ -1,5 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import * as utils from '../src/utils.js';
 
 const storageManager = getStorageManager();
 
@@ -31,6 +32,8 @@ export const spec = {
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.referer || '';
       }
+
+      bidRequest.params.bidfloor = getBidFloor(bidRequest);
 
       const ret = {
         url: `${hostname}/bid`,
@@ -76,5 +79,26 @@ export const spec = {
     return bidResponses;
   },
 };
+
+/**
+ * Get bid floor from Price Floors Module
+ * @param {Object} bid
+ * @returns {float||undefined}
+ */
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return bid.params.bidfloor;
+  }
+
+  const floor = bid.getFloor({
+    currency: 'EUR',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+    return floor.floor;
+  }
+  return undefined;
+}
 
 registerBidder(spec);
