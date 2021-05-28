@@ -103,6 +103,9 @@ export const spec = {
           mediaType: data.response,
           transactionId: bid.transactionId
         };
+        if (bid.adomain) {
+          utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
+        }
         if (bidRequest.gdpr) {
           bidObject.gdpr = bidRequest.gdpr.gdpr;
           bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
