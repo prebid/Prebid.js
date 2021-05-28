@@ -57,8 +57,9 @@ export const sharethroughAdapterSpec = {
         query.schain = JSON.stringify(bidRequest.schain);
       }
 
-      if (bidRequest.bidfloor) {
-        query.bidfloor = parseFloat(bidRequest.bidfloor);
+      const floor = getFloor(bidRequest);
+      if (floor) {
+        query.bidfloor = floor;
       }
 
       if (bidRequest.params.badv) {
@@ -290,6 +291,20 @@ function canAutoPlayHTML5Video() {
 
 function getProtocol() {
   return document.location.protocol;
+}
+
+function getFloor(bid) {
+  if (utils.isFn(bid.getFloor)) {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: 'banner',
+      size: bid.sizes.map(size => ({ w: size[0], h: size[1] }))
+    });
+    if (utils.isPlainObject(floorInfo) && !isNaN(floorInfo.floor) && floorInfo.currency === 'USD') {
+      return parseFloat(floorInfo.floor);
+    }
+  }
+  return null;
 }
 
 registerBidder(sharethroughAdapterSpec);
