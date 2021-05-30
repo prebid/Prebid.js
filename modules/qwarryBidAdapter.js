@@ -28,7 +28,8 @@ export const spec = {
     let payload = {
       requestId: bidderRequest.bidderRequestId,
       bids,
-      referer: bidderRequest.refererInfo.referer
+      referer: bidderRequest.refererInfo.referer,
+      schain: validBidRequests[0].schain
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {

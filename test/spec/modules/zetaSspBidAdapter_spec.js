@@ -1,6 +1,29 @@
 import {spec} from '../../../modules/zetaSspBidAdapter.js'
 
-describe('Zeta Ssp Bid Adapter', function () {
+describe('Zeta Ssp Bid Adapter', function() {
+  const eids = [
+    {
+      'source': 'example.com',
+      'uids': [
+        {
+          'id': 'someId1',
+          'atype': 1
+        },
+        {
+          'id': 'someId2',
+          'atype': 1
+        },
+        {
+          'id': 'someId3',
+          'atype': 2
+        }
+      ],
+      'ext': {
+        'foo': 'bar'
+      }
+    }
+  ];
+
   const bannerRequest = [{
     bidId: 12345,
     auctionId: 67890,
@@ -23,7 +46,8 @@ describe('Zeta Ssp Bid Adapter', function () {
         sid: 'publisherId'
       },
       test: 1
-    }
+    },
+    userIdAsEids: eids
   }];
 
   it('Test the bid validation function', function () {
@@ -32,6 +56,12 @@ describe('Zeta Ssp Bid Adapter', function () {
 
     expect(validBid).to.be.true;
     expect(invalidBid).to.be.false;
+  });
+
+  it('Test provide eids', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(payload.user.ext.eids).to.eql(eids);
   });
 
   it('Test the request processing function', function () {
