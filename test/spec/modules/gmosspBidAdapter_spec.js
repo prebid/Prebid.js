@@ -106,6 +106,9 @@ describe('GmosspAdapter', function () {
         price: 20,
         w: 300,
         h: 250,
+        adomains: [
+          'test.com'
+        ],
         ad: '<div class="gmossp"></div>',
         creativeId: '985ec572b32be309.76973017',
         cur: 'JPY',
@@ -126,6 +129,11 @@ describe('GmosspAdapter', function () {
           currency: 'JPY',
           width: 300,
           height: 250,
+          meta: {
+            advertiserDomains: [
+              'test.com'
+            ]
+          },
           ad: '<div class="gmossp"></div>',
           creativeId: '985ec572b32be309.76973017',
           netRevenue: true,

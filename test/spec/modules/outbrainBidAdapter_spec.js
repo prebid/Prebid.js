@@ -204,7 +204,14 @@ describe('Outbrain Adapter', function () {
                 request: JSON.stringify(expectedNativeAssets)
               }
             }
-          ]
+          ],
+          ext: {
+            prebid: {
+              channel: {
+                name: 'pbjs', version: '$prebid.version$'
+              }
+            }
+          }
         }
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         expect(res.url).to.equal('https://bidder-url.com')
@@ -244,7 +251,14 @@ describe('Outbrain Adapter', function () {
                 ]
               }
             }
-          ]
+          ],
+          ext: {
+            prebid: {
+              channel: {
+                name: 'pbjs', version: '$prebid.version$'
+              }
+            }
+          }
         }
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         expect(res.url).to.equal('https://bidder-url.com')

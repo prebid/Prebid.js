@@ -661,7 +661,7 @@ describe('TrustXAdapter', function () {
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 43, 'h': 250, 'w': 300}], 'seat': '1'},
+      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 43, 'h': 250, 'w': 300, 'adomain': ['somedomain.com']}], 'seat': '1'},
       {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 44, 'h': 600, 'w': 300}], 'seat': '1'},
       {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 43, 'h': 90, 'w': 728}], 'seat': '1'},
       {'bid': [{'price': 0, 'auid': 45, 'h': 250, 'w': 300}], 'seat': '1'},
@@ -699,6 +699,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': ['somedomain.com']
+          },
         }
       ];
 
@@ -756,6 +759,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': ['somedomain.com']
+          },
         },
         {
           'requestId': '4dff80cc4ee346',
@@ -769,6 +775,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         },
         {
           'requestId': '5703af74d0472a',
@@ -782,6 +791,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         }
       ];
 
@@ -909,6 +921,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         },
         {
           'requestId': '4e111f1b66e4',
@@ -922,6 +937,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         },
         {
           'requestId': '26d6f897b516',
@@ -935,6 +953,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         },
         {
           'requestId': '326bde7fbf69',
@@ -948,6 +969,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         }
       ];
 
@@ -1009,6 +1033,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         },
         {
           'requestId': '57b2ebe70e16',
@@ -1022,6 +1049,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         }
       ];
 
@@ -1082,6 +1112,9 @@ describe('TrustXAdapter', function () {
         'mediaType': 'video',
         'netRevenue': true,
         'ttl': 360,
+        'meta': {
+          'advertiserDomains': []
+        },
         'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
         'adResponse': {
           'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
@@ -1161,6 +1194,9 @@ describe('TrustXAdapter', function () {
         'mediaType': 'video',
         'netRevenue': true,
         'ttl': 360,
+        'meta': {
+          'advertiserDomains': []
+        },
         'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
         'adResponse': {
           'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
@@ -1178,6 +1214,9 @@ describe('TrustXAdapter', function () {
         'mediaType': 'video',
         'netRevenue': true,
         'ttl': 360,
+        'meta': {
+          'advertiserDomains': []
+        },
         'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>',
         'adResponse': {
           'content': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>'
@@ -1195,6 +1234,9 @@ describe('TrustXAdapter', function () {
         'mediaType': 'video',
         'netRevenue': true,
         'ttl': 360,
+        'meta': {
+          'advertiserDomains': []
+        },
         'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21376532\"><\/Ad>\n<\/VAST>',
         'adResponse': {
           'content': '<VAST version=\"3.0\">\n<Ad id=\"21376532\"><\/Ad>\n<\/VAST>'
