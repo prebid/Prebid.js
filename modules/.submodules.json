@@ -36,7 +36,6 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
-    "dgkeywordRtdProvider",
     "geoedgeRtdProvider",
     "haloRtdProvider",
     "jwplayerRtdProvider",
