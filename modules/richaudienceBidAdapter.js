@@ -97,8 +97,8 @@ export const spec = {
         netRevenue: response.netRevenue,
         currency: response.currency,
         ttl: response.ttl,
-        dealId: response.dealId,
-        meta: response.adomain
+        meta: response.adomain,
+        dealId: response.dealId
       };
 
       if (response.media_type === 'video') {
