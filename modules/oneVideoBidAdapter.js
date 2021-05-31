@@ -30,7 +30,7 @@ export const spec = {
 
     if ((typeof bid.mediaTypes.video.playerSize === 'undefined' ||
       typeof bid.mediaTypes.video.playerSize[0][0] === 'undefined' ||
-      typeof bid.mediaTypes.video.playerSize[0][1] === 'undefined') &&
+      typeof bid.mediaTypes.video.playerSize[0][1] === 'undefined') ||
       (typeof bid.params.video.playerWidth === 'undefined' ||
       typeof bid.params.video.playerHeight === 'undefined')) {
       utils.logError('++++ player size missing in mediaTypes or params');
