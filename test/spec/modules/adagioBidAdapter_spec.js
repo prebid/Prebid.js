@@ -579,6 +579,7 @@ describe('Adagio bid adapter', () => {
 
           const expected = {
             consentString,
+            allowAuctionWithoutConsent: 0,
             consentRequired: 1,
             apiVersion: 2
           };
@@ -615,6 +616,7 @@ describe('Adagio bid adapter', () => {
           const expected = {
             consentString,
             consentRequired: 0,
+            allowAuctionWithoutConsent: 0,
             apiVersion: 2
           };
 

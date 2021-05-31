@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
-import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
@@ -113,6 +112,11 @@ function bidToVideoImp(bid) {
   return imp;
 }
 
+/**
+ * Converts an incoming PBJS bid to an IX Impression
+ * @param {object} bid   PBJS bid object
+ * @returns {object}     IX impression object
+ */
 function bidToImp(bid) {
   const imp = {};
 
@@ -128,6 +132,10 @@ function bidToImp(bid) {
     imp.ext.sid = `${bid.params.size[0]}x${bid.params.size[1]}`;
   }
 
+  const dfpAdUnitCode = utils.deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
+  if (dfpAdUnitCode) {
+    imp.ext.dfp_ad_unit_code = dfpAdUnitCode;
+  }
   return imp;
 }
 
@@ -206,6 +214,8 @@ function _applyFloor(bid, imp, mediaType) {
  */
 function parseBid(rawBid, currency, bidRequest) {
   const bid = {};
+  const isValidExpiry = !!((utils.deepAccess(rawBid, 'exp') && utils.isInteger(rawBid.exp)));
+  const dealID = utils.deepAccess(rawBid, 'dealid') || utils.deepAccess(rawBid, 'ext.dealid');
 
   if (PRICE_TO_DOLLAR_FACTOR.hasOwnProperty(currency)) {
     bid.cpm = rawBid.price / PRICE_TO_DOLLAR_FACTOR[currency];
@@ -215,7 +225,10 @@ function parseBid(rawBid, currency, bidRequest) {
 
   bid.requestId = rawBid.impid;
 
-  bid.dealId = utils.deepAccess(rawBid, 'ext.dealid');
+  if (dealID) {
+    bid.dealId = dealID;
+  }
+
   bid.netRevenue = NET_REVENUE;
   bid.currency = currency;
   bid.creativeId = rawBid.hasOwnProperty('crid') ? rawBid.crid : '-';
@@ -226,13 +239,13 @@ function parseBid(rawBid, currency, bidRequest) {
     bid.width = bidRequest.video.w;
     bid.height = bidRequest.video.h;
     bid.mediaType = VIDEO;
-    bid.ttl = VIDEO_TIME_TO_LIVE;
+    bid.ttl = isValidExpiry ? rawBid.exp : VIDEO_TIME_TO_LIVE;
   } else {
     bid.ad = rawBid.adm;
     bid.width = rawBid.w;
     bid.height = rawBid.h;
     bid.mediaType = BANNER;
-    bid.ttl = BANNER_TIME_TO_LIVE;
+    bid.ttl = isValidExpiry ? rawBid.exp : BANNER_TIME_TO_LIVE;
   }
 
   bid.meta = {};
@@ -253,7 +266,7 @@ function parseBid(rawBid, currency, bidRequest) {
  * @return {boolean}      True if this is a valid size format, and false otherwise.
  */
 function isValidSize(size) {
-  return Array.isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
+  return Array.isArray(size) && size.length === 2 && utils.isInteger(size[0]) && utils.isInteger(size[1]);
 }
 
 /**
@@ -385,7 +398,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   const r = {};
 
   // Since bidderRequestId are the same for different bid request, just use the first one.
-  r.id = validBidRequests[0].bidderRequestId;
+  r.id = validBidRequests[0].bidderRequestId.toString();
 
   r.site = {};
   r.ext = {};
@@ -450,6 +463,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (bidderRequest.refererInfo) {
       r.site.page = bidderRequest.refererInfo.referer;
     }
+  }
+
+  if (config.getConfig('coppa')) {
+    utils.deepSetValue(r, 'regs.coppa', 1);
   }
 
   const payload = {};
