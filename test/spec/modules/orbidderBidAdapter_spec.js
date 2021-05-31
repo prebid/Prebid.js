@@ -201,7 +201,7 @@ describe('orbidderBidAdapter', () => {
           'ttl': 60,
           'netRevenue': true,
           'currency': 'EUR',
-          'adomain': ['cm.tavira.pt']
+          'advertiserDomains': ['cm.tavira.pt']
         }
       ];
 

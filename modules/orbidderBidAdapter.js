@@ -74,9 +74,9 @@ export const spec = {
           bidResponse[requiredKey] = bid[requiredKey];
         }
 
-        if (Array.isArray(bid.adomain)) {
+        if (Array.isArray(bid.advertiserDomains)) {
           bidResponse.meta = {
-            advertiserDomains: bid.adomain
+            advertiserDomains: bid.advertiserDomains
           }
         }
 
