@@ -282,8 +282,6 @@ describe('Digital Garage Keyword Module', function () {
           expect(targets[2].params.keywords).to.be.an('undefined');
 
           expect(config.getBidderConfig()).to.be.deep.equal({});
-
-          done();
         },
         moduleConfig,
         null
@@ -292,6 +290,7 @@ describe('Digital Garage Keyword Module', function () {
         const request = server.requests[0];
         if (request) {
           request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
+          done()
         }
       }, 1000)
     });
@@ -316,11 +315,10 @@ describe('Digital Garage Keyword Module', function () {
         expect(targets[2].params.keywords).to.be.an('undefined');
 
         // expect(config.getBidderConfig()).to.be.deep.equal({ dg2: SUCCESS_ORTB2, dg: SUCCESS_ORTB2 });
-
-        done();
       }, moduleConfig, null);
       const request = server.requests[0];
       request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
+      done();
     });
   });
 });
