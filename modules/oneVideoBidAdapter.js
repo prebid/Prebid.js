@@ -222,35 +222,35 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.imp[0].video.h = bid.params.video.playerHeight;
     }
     if (bid.mediaTypes.video.maxbitrate || bid.params.video.maxbitrate) {
-      bidData.imp[0].video.maxbitrate = bid.mediaTypes.video.maxbitrate || bid.params.video.maxbitrate;
+      bidData.imp[0].video.maxbitrate = bid.params.video.maxbitrate || bid.mediaTypes.video.maxbitrate;
     }
     if (bid.mediaTypes.video.maxduration || bid.params.video.maxduration) {
-      bidData.imp[0].video.maxduration = bid.mediaTypes.video.maxduration || bid.params.video.maxduration;
+      bidData.imp[0].video.maxduration = bid.params.video.maxduration || bid.mediaTypes.video.maxduration;
     }
     if (bid.mediaTypes.video.minduration || bid.params.video.minduration) {
-      bidData.imp[0].video.minduration = bid.mediaTypes.video.minduration || bid.params.video.minduration;
+      bidData.imp[0].video.minduration = bid.params.video.minduration || bid.mediaTypes.video.minduration;
     }
     if (bid.mediaTypes.video.api || bid.params.video.api) {
-      bidData.imp[0].video.api = bid.mediaTypes.video.api || bid.params.video.api;
+      bidData.imp[0].video.api = bid.params.video.api || bid.mediaTypes.video.api;
     }
     if (bid.mediaTypes.video.delivery || bid.params.video.delivery) {
-      bidData.imp[0].video.delivery = bid.mediaTypes.video.delivery || bid.params.video.delivery;
+      bidData.imp[0].video.delivery = bid.params.video.delivery || bid.mediaTypes.video.delivery;
     }
     if (bid.mediaTypes.video.position || bid.params.video.position) {
-      bidData.imp[0].video.pos = bid.mediaTypes.video.position || bid.params.video.position;
+      bidData.imp[0].video.pos = bid.params.video.position || bid.mediaTypes.video.position;
     }
     if (bid.mediaTypes.video.playbackmethod || bid.params.video.playbackmethod) {
-      bidData.imp[0].video.playbackmethod = bid.mediaTypes.video.playbackmethod || bid.params.video.playbackmethod;
+      bidData.imp[0].video.playbackmethod = bid.params.video.playbackmethod || bid.mediaTypes.video.playbackmethod;
     }
     if (bid.mediaTypes.video.placement || bid.params.video.placement) {
-      bidData.imp[0].video.placement = bid.mediaTypes.video.placement || bid.params.video.placement;
+      bidData.imp[0].video.placement = bid.params.video.placement || bid.mediaTypes.video.placement;
     }
     if (bid.params.video.rewarded) {
       bidData.imp[0].ext.rewarded = bid.params.video.rewarded
     }
     bidData.imp[0].video.linearity = 1;
     if (bid.mediaTypes.video.protocols || bid.params.video.protocols) {
-      bidData.imp[0].video.protocols = bid.mediaTypes.video.protocols || bid.params.video.protocols || [2, 5];
+      bidData.imp[0].video.protocols = bid.params.video.protocols || bid.mediaTypes.video.protocols || [2, 5];
     }
   } else if (bid.params.video.display == 1) {
     getFloorRequestObject.mediaType = 'banner';
