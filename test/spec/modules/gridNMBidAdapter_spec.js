@@ -372,7 +372,7 @@ describe('TheMediaGridNM Adapter', function () {
           'height': 250,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
           'meta': {
@@ -391,7 +391,7 @@ describe('TheMediaGridNM Adapter', function () {
           'height': 600,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>',
           'meta': {

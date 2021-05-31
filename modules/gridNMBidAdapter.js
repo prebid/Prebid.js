@@ -163,7 +163,7 @@ export const spec = {
             height: serverBid.h,
             creativeId: serverBid.auid || bid.bidderRequestId,
             currency: 'USD',
-            netRevenue: false,
+            netRevenue: true,
             ttl: TIME_TO_LIVE,
             dealId: serverBid.dealid,
             vastXml: serverBid.adm,
