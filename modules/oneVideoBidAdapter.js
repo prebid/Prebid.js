@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import {newBidder, registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
