@@ -17,33 +17,33 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    utils.logMessage('++++ validate request bid obj: ', bid);
     if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
       return false;
     }
 
     // Video/Banner validations
     if (typeof bid.mediaTypes.video === 'undefined' && bid.mediaTypes.banner === 'undefined') {
-      utils.logError('++++ mediaTypes.video OR mediaTypes.banner missing');
+      utils.logError('Failed validation: adUnit mediaTypes.video AND/OR mediaTypes.banner not declared');
       return false;
     }
 
     // MediaTypes / Params player size validation
     if (typeof bid.mediaTypes.video.playerSize === 'undefined' && (typeof bid.params.video.playerWidth === 'undefined' ||
     typeof bid.params.video.playerHeight === 'undefined')) {
-      utils.logError('++++ playerSize missing in mediaTypes or bid.params');
+      utils.logError('Failed validation: adUnit mediaTypes.playerSize OR params.video.plauerWidth/playerHeight not declared');
       return false;
     };
 
     // MediaTypes / Params mimes validation
     if (typeof bid.mediaTypes.video.mimes === 'undefined' && typeof bid.params.video.mimes === 'undefined') {
-      utils.logError('++++ mimes missing in mediaTypes or bid.params.video');
+      utils.logError('Failed validation: adUnit mediaTypes.mimes OR params.video.mimes not declared');
       return false;
     }
 
     // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
     if (bid.mediaTypes.video) {
       if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
+        utils.logError('Failed validation: Dynamic Ad Placement cannot be used with context Outstream (params.video.display=1)');
         return false;
       }
     } else if (bid.mediaTypes.banner && !bid.params.video.display) {
@@ -52,6 +52,7 @@ export const spec = {
 
     // Pub Id validation
     if (typeof bid.params.pubId === 'undefined') {
+      utils.logError('Failed validation: Missing mandatory setting bid.params.pubId');
       return false;
     }
 
