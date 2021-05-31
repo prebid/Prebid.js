@@ -47,7 +47,7 @@ describe('integr8AdapterTest', () => {
         'placementId': '{placementId}',
         'data': {
           'catalogs': [{
-            'catalogId': "699229",
+            'catalogId': '699229',
             'items': ['1', '2', '3']
           }],
           'inventory': {
