@@ -33,7 +33,8 @@ const BIDDER_BANNER_RESPONSE = {
     'creativeId': 1,
     'netRevenue': true,
     'winUrl': 'http://test.com',
-    'format': 'banner'
+    'format': 'banner',
+    'adomain': ['test.com']
   }]
 }
 
@@ -49,7 +50,8 @@ const BIDDER_VIDEO_RESPONSE = {
     'creativeId': 2,
     'netRevenue': true,
     'winUrl': 'http://test.com',
-    'format': 'video'
+    'format': 'video',
+    'adomain': ['test.com']
   }]
 }
 
@@ -119,6 +121,8 @@ describe('qwarryBidAdapter', function () {
       expect(result[0]).to.have.property('netRevenue').equal(true)
       expect(result[0]).to.have.property('winUrl').equal('http://test.com')
       expect(result[0]).to.have.property('format').equal('banner')
+      expect(result[0]).to.exist.property('adomain')
+      expect(result[0]).to.have.property('adomain').lengthOf(1)
     })
 
     it('handles video request : should get correct bid response', function () {
@@ -136,6 +140,8 @@ describe('qwarryBidAdapter', function () {
       expect(result[0]).to.have.property('winUrl').equal('http://test.com')
       expect(result[0]).to.have.property('format').equal('video')
       expect(result[0]).to.have.property('vastXml').equal('<xml>vast</xml>')
+      expect(result[0]).to.exist.property('adomain')
+      expect(result[0]).to.have.property('adomain').lengthOf(1)
     })
 
     it('handles no bid response : should get empty array', function () {
