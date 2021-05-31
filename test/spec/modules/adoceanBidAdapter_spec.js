@@ -150,7 +150,8 @@ describe('AdoceanAdapter', function () {
           'width': '300',
           'height': '250',
           'crid': '0af345b42983cc4bc0',
-          'ttl': '300'
+          'ttl': '300',
+          'adomain': ['adocean.pl']
         }
       ],
       'headers': {
@@ -186,7 +187,10 @@ describe('AdoceanAdapter', function () {
           'ad': '<!-- Creative -->',
           'creativeId': '0af345b42983cc4bc0',
           'ttl': 300,
-          'netRevenue': false
+          'netRevenue': false,
+          'meta': {
+            'advertiserDomains': ['adocean.pl']
+          }
         }
       ];
 
@@ -197,6 +201,8 @@ describe('AdoceanAdapter', function () {
       resultKeys.forEach(function(k) {
         if (k === 'ad') {
           expect(result[0][k]).to.match(/<!-- Creative -->$/);
+        } else if (k === 'meta') {
+          expect(result[0][k]).to.deep.equal(expectedResponse[0][k]);
         } else {
           expect(result[0][k]).to.equal(expectedResponse[0][k]);
         }

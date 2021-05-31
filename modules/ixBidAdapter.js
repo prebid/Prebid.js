@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
-import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
@@ -23,6 +22,33 @@ const PRICE_TO_DOLLAR_FACTOR = {
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
+// determines which eids we send and the rtiPartner field in ext
+const SOURCE_RTI_MAPPING = {
+  'liveramp.com': 'idl',
+  'netid.de': 'NETID',
+  'neustar.biz': 'fabrickId',
+  'zeotap.com': 'zeotapIdPlus',
+  'uidapi.com': 'UID2',
+  'adserver.org': 'TDID'
+};
+
+const PROVIDERS = [
+  'britepoolid',
+  'id5id',
+  'lipbid',
+  'haloId',
+  'criteoId',
+  'lotamePanoramaId',
+  'merkleId',
+  'parrableId',
+  'connectid',
+  'sharedid',
+  'tapadId',
+  'quantcastId',
+  'pubcid',
+  'TDID',
+  'flocId'
+]
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
@@ -86,6 +112,11 @@ function bidToVideoImp(bid) {
   return imp;
 }
 
+/**
+ * Converts an incoming PBJS bid to an IX Impression
+ * @param {object} bid   PBJS bid object
+ * @returns {object}     IX impression object
+ */
 function bidToImp(bid) {
   const imp = {};
 
@@ -101,6 +132,10 @@ function bidToImp(bid) {
     imp.ext.sid = `${bid.params.size[0]}x${bid.params.size[1]}`;
   }
 
+  const dfpAdUnitCode = utils.deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
+  if (dfpAdUnitCode) {
+    imp.ext.dfp_ad_unit_code = dfpAdUnitCode;
+  }
   return imp;
 }
 
@@ -179,6 +214,8 @@ function _applyFloor(bid, imp, mediaType) {
  */
 function parseBid(rawBid, currency, bidRequest) {
   const bid = {};
+  const isValidExpiry = !!((utils.deepAccess(rawBid, 'exp') && utils.isInteger(rawBid.exp)));
+  const dealID = utils.deepAccess(rawBid, 'dealid') || utils.deepAccess(rawBid, 'ext.dealid');
 
   if (PRICE_TO_DOLLAR_FACTOR.hasOwnProperty(currency)) {
     bid.cpm = rawBid.price / PRICE_TO_DOLLAR_FACTOR[currency];
@@ -188,7 +225,10 @@ function parseBid(rawBid, currency, bidRequest) {
 
   bid.requestId = rawBid.impid;
 
-  bid.dealId = utils.deepAccess(rawBid, 'ext.dealid');
+  if (dealID) {
+    bid.dealId = dealID;
+  }
+
   bid.netRevenue = NET_REVENUE;
   bid.currency = currency;
   bid.creativeId = rawBid.hasOwnProperty('crid') ? rawBid.crid : '-';
@@ -199,13 +239,13 @@ function parseBid(rawBid, currency, bidRequest) {
     bid.width = bidRequest.video.w;
     bid.height = bidRequest.video.h;
     bid.mediaType = VIDEO;
-    bid.ttl = VIDEO_TIME_TO_LIVE;
+    bid.ttl = isValidExpiry ? rawBid.exp : VIDEO_TIME_TO_LIVE;
   } else {
     bid.ad = rawBid.adm;
     bid.width = rawBid.w;
     bid.height = rawBid.h;
     bid.mediaType = BANNER;
-    bid.ttl = BANNER_TIME_TO_LIVE;
+    bid.ttl = isValidExpiry ? rawBid.exp : BANNER_TIME_TO_LIVE;
   }
 
   bid.meta = {};
@@ -226,7 +266,7 @@ function parseBid(rawBid, currency, bidRequest) {
  * @return {boolean}      True if this is a valid size format, and false otherwise.
  */
 function isValidSize(size) {
-  return Array.isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
+  return Array.isArray(size) && size.length === 2 && utils.isInteger(size[0]) && utils.isInteger(size[1]);
 }
 
 /**
@@ -285,35 +325,37 @@ function getBidRequest(id, impressions) {
  * From the userIdAsEids array, filter for the ones our adserver can use, and modify them
  * for our purposes, e.g. add rtiPartner
  * @param {array} allEids userIdAsEids passed in by prebid
+ * @param {object} flocId flocId passed in by prebid
  * @return {object} contains toSend (eids to send to the adserver) and seenSources (used to filter
  *                  identity info from IX Library)
  */
-function getEidInfo(allEids) {
-  // determines which eids we send and the rtiPartner field in ext
-  var sourceRTIMapping = {
-    'liveramp.com': 'idl',
-    'netid.de': 'NETID',
-    'neustar.biz': 'fabrickId',
-    'zeotap.com': 'zeotapIdPlus',
-    'uidapi.com': 'UID2'
-  };
-  var toSend = [];
-  var seenSources = {};
+function getEidInfo(allEids, flocData) {
+  let toSend = [];
+  let seenSources = {};
   if (utils.isArray(allEids)) {
-    for (var i = 0; i < allEids.length; i++) {
-      if (sourceRTIMapping[allEids[i].source] && utils.deepAccess(allEids[i], 'uids.0')) {
-        seenSources[allEids[i].source] = 1;
-        allEids[i].uids[0].ext = {
-          rtiPartner: sourceRTIMapping[allEids[i].source]
+    for (const eid of allEids) {
+      if (SOURCE_RTI_MAPPING[eid.source] && utils.deepAccess(eid, 'uids.0')) {
+        seenSources[eid.source] = true;
+        eid.uids[0].ext = {
+          rtiPartner: SOURCE_RTI_MAPPING[eid.source]
         };
-        delete allEids[i].uids[0].atype;
-        toSend.push(allEids[i]);
+        delete eid.uids[0].atype;
+        toSend.push(eid);
       }
     }
   }
-  return { toSend: toSend, seenSources: seenSources };
-}
+  const isValidFlocId = flocData && flocData.id && flocData.version;
+  if (isValidFlocId) {
+    const flocEid = {
+      'source': 'chrome.com',
+      'uids': [{ 'id': flocData.id, 'ext': { 'rtiPartner': 'flocId', 'ver': flocData.version } }]
+    };
+    toSend.push(flocEid);
+    seenSources['chrome.com'] = true;
+  }
 
+  return { toSend, seenSources };
+}
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
@@ -327,10 +369,9 @@ function getEidInfo(allEids) {
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
-
   // Get ids from Prebid User ID Modules
-  var eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'));
-  var userEids = eidInfo.toSend;
+  let eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'), utils.deepAccess(validBidRequests, '0.userId.flocId'));
+  let userEids = eidInfo.toSend;
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
@@ -357,7 +398,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   const r = {};
 
   // Since bidderRequestId are the same for different bid request, just use the first one.
-  r.id = validBidRequests[0].bidderRequestId;
+  r.id = validBidRequests[0].bidderRequestId.toString();
 
   r.site = {};
   r.ext = {};
@@ -422,6 +463,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (bidderRequest.refererInfo) {
       r.site.page = bidderRequest.refererInfo.referer;
     }
+  }
+
+  if (config.getConfig('coppa')) {
+    utils.deepSetValue(r, 'regs.coppa', 1);
   }
 
   const payload = {};
@@ -570,23 +615,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 function _getUserIds(bidRequest) {
   const userIds = bidRequest.userId || {};
 
-  const PROVIDERS = [
-    'britepoolid',
-    'id5id',
-    'lipbid',
-    'haloId',
-    'criteoId',
-    'lotamePanoramaId',
-    'merkleId',
-    'parrableId',
-    'connectid',
-    'sharedid',
-    'tapadId',
-    'quantcastId',
-    'pubcid'
-  ]
-
-  return PROVIDERS.filter(provider => utils.deepAccess(userIds, provider))
+  return PROVIDERS.filter(provider => userIds[provider]);
 }
 
 /**
