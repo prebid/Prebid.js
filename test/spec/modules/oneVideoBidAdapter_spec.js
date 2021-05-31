@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oneVideoBidAdapter.js';
 
-describe('OneVideoBidAdapter', function () {
+xdescribe('OneVideoBidAdapter', function () {
   let bidRequest;
   let bidderRequest = {
     'bidderCode': 'oneVideo',
