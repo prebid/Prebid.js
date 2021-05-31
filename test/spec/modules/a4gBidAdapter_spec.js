@@ -223,5 +223,13 @@ describe('a4gAdapterTests', function () {
 
       expect(result[0].requestId).to.not.equal(result[0].adId);
     })
+
+    it('advertiserDomains is included when sent by server', function () {
+      bidResponse.body[0].adomain = ['test_adomain'];
+      let response = spec.interpretResponse(bidResponse, bidRequest);
+      expect(Object.keys(response[0].meta)).to.include.members(['advertiserDomains']);
+      expect(response[0].meta.advertiserDomains).to.deep.equal(['test_adomain']);
+      delete bidResponse.body[0].adomain;
+    });
   });
 });
