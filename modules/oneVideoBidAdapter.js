@@ -209,17 +209,20 @@ function getRequestData(bid, consentData, bidRequest) {
 
   if (bid.params.video.display == undefined || bid.params.video.display != 1) {
     bidData.imp[0].video = {
-      mimes: bid.mediaTypes.video.mimes || bid.params.video.mimes,
+      mimes: bid.mediaTypes.video.mimes,
       w: bid.mediaTypes.video.playerSize[0][0],
       h: bid.mediaTypes.video.playerSize[0][1],
       pos: bid.params.video.position,
     };
+    if (bid.params.video.mimes) {
+      bidData.imp[0].video.mimes = bid.params.video.mimes;
+    }
     if (bid.params.video.playerWidth && bid.params.video.playerHeight) {
       bidData.imp[0].video.w = bid.params.video.playerWidth;
       bidData.imp[0].video.h = bid.params.video.playerHeight;
     }
     if (bid.mediaTypes.video.maxbitrate || bid.params.video.maxbitrate) {
-      bidData.imp[0].video.maxbitrate = bid.params.video.maxbitrate || bid.params.video.maxbitrate;
+      bidData.imp[0].video.maxbitrate = bid.mediaTypes.video.maxbitrate || bid.params.video.maxbitrate;
     }
     if (bid.mediaTypes.video.maxduration || bid.params.video.maxduration) {
       bidData.imp[0].video.maxduration = bid.mediaTypes.video.maxduration || bid.params.video.maxduration;
