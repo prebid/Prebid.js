@@ -115,7 +115,7 @@ function formatSource(src) {
   return src.toLowerCase();
 }
 
-function sendMessage(auctionId, bidWonId) {
+function sendMessage(auctionId, bidWonId, trigger) {
   function formatBid(bid) {
     return utils.pick(bid, [
       'bidder',
@@ -163,6 +163,7 @@ function sendMessage(auctionId, bidWonId) {
   let auctionCache = cache.auctions[auctionId];
   let referrer = config.getConfig('pageUrl') || (auctionCache && auctionCache.referrer);
   let message = {
+    trigger,
     eventTimeMillis: Date.now(),
     integration: rubiConf.int_type || DEFAULT_INTEGRATION,
     version: '$prebid.version$',
@@ -301,8 +302,10 @@ function sendMessage(auctionId, bidWonId) {
       message.bidsWon = bidsWon;
     }
 
+    message.eventTiming = Math.round(utils.getPerformanceNow() - auctionCache.endTs);
     auctionCache.sent = true;
   } else if (bidWonId && auctionCache && auctionCache.bids[bidWonId]) {
+    message.eventTiming = Math.round(utils.getPerformanceNow() - auctionCache.endTs);
     message.bidsWon = [
       formatBidWon(auctionCache.bids[bidWonId])
     ];
@@ -496,9 +499,9 @@ function subscribeToGamSlots() {
         clearTimeout(cache.timeouts[auctionId]);
         delete cache.timeouts[auctionId];
         if (rubiConf.analyticsEventDelay > 0) {
-          setTimeout(() => sendMessage.call(rubiconAdapter, auctionId), rubiConf.analyticsEventDelay)
+          setTimeout(() => sendMessage.call(rubiconAdapter, auctionId, undefined, 'delayedGam'), rubiConf.analyticsEventDelay)
         } else {
-          sendMessage.call(rubiconAdapter, auctionId)
+          sendMessage.call(rubiconAdapter, auctionId, undefined, 'gam')
         }
       }
     });
@@ -748,7 +751,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
 
         // check if this BID_WON missed the boat, if so send by itself
         if (auctionCache.sent === true) {
-          sendMessage.call(this, args.auctionId, args.requestId);
+          sendMessage.call(this, args.auctionId, args.requestId, 'soloBidWon');
         } else if (!rubiConf.waitForGamSlots && Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
           // only send if we've received bidWon events for all adUnits in auction
           memo = memo && auctionCache.bidsWon[adUnitCode];
@@ -757,13 +760,15 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           clearTimeout(cache.timeouts[args.auctionId]);
           delete cache.timeouts[args.auctionId];
 
-          sendMessage.call(this, args.auctionId);
+          sendMessage.call(this, args.auctionId, undefined, 'allBidWons');
         }
         break;
       case AUCTION_END:
+        // see how long it takes for the payload to come fire
+        cache.auctions[args.auctionId].endTs = utils.getPerformanceNow();
         // start timer to send batched payload just in case we don't hear any BID_WON events
         cache.timeouts[args.auctionId] = setTimeout(() => {
-          sendMessage.call(this, args.auctionId);
+          sendMessage.call(this, args.auctionId, undefined, 'auctionEnd');
         }, rubiConf.analyticsBatchTimeout || SEND_TIMEOUT);
         break;
       case BID_TIMEOUT:
