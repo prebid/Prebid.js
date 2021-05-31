@@ -1251,6 +1251,32 @@ describe('IndexexchangeAdapter', function () {
       expect(query.nf).not.to.exist;
     });
 
+    it('should send dfp_adunit_code in request if ortb2Imp.ext.data.adserver.adslot exists', function () {
+      const AD_UNIT_CODE = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const { dfp_ad_unit_code } = JSON.parse(requests[0].data.r).imp[0].ext;
+      expect(dfp_ad_unit_code).to.equal(AD_UNIT_CODE);
+    });
+
+    it('should not send dfp_adunit_code in request if ortb2Imp.ext.data.adserver.adslot does not exists', function () {
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const { dfp_ad_unit_code } = JSON.parse(requests[0].data.r).imp[0].ext;
+
+      expect(dfp_ad_unit_code).to.not.exist;
+    });
+
     it('payload should have correct format and value', function () {
       const payload = JSON.parse(query.r);
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
