@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {newBidder, registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
@@ -17,12 +17,26 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
+    utils.logMessage('++++ validate request bid obj: ', bid);
     if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
       return false;
     }
 
-    // Video validations
-    if (typeof bid.params.video === 'undefined' || typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight == 'undefined' || typeof bid.params.video.mimes == 'undefined') {
+    // Video/Banner validations
+    if (typeof bid.mediaTypes.video === 'undefined' && bid.mediaTypes.banner === 'undefined') {
+      utils.logError('++++ mediaTypes.video OR mediaTypes.banner missing');
+      return false;
+    }
+
+    if ((typeof bid.mediaTypes.video.playerSize === 'undefined' ||
+      typeof bid.mediaTypes.video.playerSize[0] === 'undefined' ||
+      typeof bid.mediaTypes.video.playerSize[1] === 'undefined') &&
+      (typeof bid.params.video.playerWidth === 'undefined' ||
+      typeof bid.params.video.playerHeight === 'undefined')) {
+      utils.logError('++++ player size missing in mediaTypes or params');
+      return false;
+    } else if (typeof bid.mediaTypes.video.mimes === 'undefined' || typeof bid.params.video.mimes === 'undefined') {
+      utils.logError('++++ mimes missing in mediaTypes');
       return false;
     }
 
