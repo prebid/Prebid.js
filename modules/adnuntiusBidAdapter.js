@@ -7,12 +7,19 @@ const BIDDER_CODE = 'adnuntius';
 const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=';
 const GVLID = 855;
 
+const checkSegment = function (segment) {
+  if (utils.isStr(segment)) return segment;
+  if (segment.id) return segment.id
+}
+
 const getSegmentsFromOrtb = function (ortb2) {
   const userData = utils.deepAccess(ortb2, 'user.data');
-  let segments;
+  let segments = [];
   if (userData) {
     userData.forEach(userdat => {
-      segments = (userdat.segment) ? userdat.segment.map(segment => segment.id) : undefined
+      if (userdat.segment) {
+        segments.push(...userdat.segment.filter(checkSegment).map(checkSegment));
+      }
     });
   }
   return segments
