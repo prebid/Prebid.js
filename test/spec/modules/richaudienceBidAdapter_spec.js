@@ -614,7 +614,7 @@ describe('Richaudience adapter tests', function () {
         referer: 'https://domain.com',
         numIframes: 0
       }
-    }); 
+    });
 
     const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request[0]);
     expect(bids).to.have.lengthOf(1);
