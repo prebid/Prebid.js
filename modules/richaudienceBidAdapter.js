@@ -98,6 +98,7 @@ export const spec = {
         currency: response.currency,
         ttl: response.ttl,
         dealId: response.dealId,
+        meta: response.adomain
       };
 
       if (response.media_type === 'video') {
