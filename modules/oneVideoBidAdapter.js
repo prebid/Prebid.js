@@ -28,14 +28,15 @@ export const spec = {
       return false;
     }
 
-    if ((typeof bid.mediaTypes.video.playerSize === 'undefined' ||
-      typeof bid.mediaTypes.video.playerSize[0][0] === 'undefined' ||
-      typeof bid.mediaTypes.video.playerSize[0][1] === 'undefined') ||
-      (typeof bid.params.video.playerWidth === 'undefined' ||
-      typeof bid.params.video.playerHeight === 'undefined')) {
-      utils.logError('++++ player size missing in mediaTypes or params');
+    // MediaTypes / Params player size validation
+    if (typeof bid.mediaTypes.video.playerSize === 'undefined' && (typeof bid.params.video.playerWidth === 'undefined' ||
+    typeof bid.params.video.playerHeight === 'undefined')) {
+      utils.logError('++++ playerSize missing in mediaTypes or bid.params');
       return false;
-    } else if (typeof bid.mediaTypes.video.mimes === 'undefined' || typeof bid.params.video.mimes === 'undefined') {
+    };
+
+    // MediaTypes / Params mimes validation
+    if (typeof bid.mediaTypes.video.mimes === 'undefined' && typeof bid.params.video.mimes === 'undefined') {
       utils.logError('++++ mimes missing in mediaTypes or bid.params.video');
       return false;
     }
@@ -209,10 +210,14 @@ function getRequestData(bid, consentData, bidRequest) {
   if (bid.params.video.display == undefined || bid.params.video.display != 1) {
     bidData.imp[0].video = {
       mimes: bid.mediaTypes.video.mimes || bid.params.video.mimes,
-      w: bid.mediaTypes.video.playerSize[0] || bid.params.video.playerWidth,
-      h: bid.mediaTypes.video.playerSize[1] || bid.params.video.playerHeight,
+      w: bid.mediaTypes.video.playerSize[0][0],
+      h: bid.mediaTypes.video.playerSize[0][1],
       pos: bid.params.video.position,
     };
+    if (bid.params.video.playerWidth && bid.params.video.playerHeight) {
+      bidData.imp[0].video.w = bid.params.video.playerWidth;
+      bidData.imp[0].video.h = bid.params.video.playerHeight;
+    }
     if (bid.mediaTypes.video.maxbitrate || bid.params.video.maxbitrate) {
       bidData.imp[0].video.maxbitrate = bid.params.video.maxbitrate || bid.params.video.maxbitrate;
     }
