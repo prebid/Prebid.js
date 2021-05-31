@@ -46,7 +46,7 @@ function mapMediaType(seedtagMediaType) {
 }
 
 function hasVideoMediaType(bid) {
-  return !!bid.mediaTypes && !!bid.mediaTypes.video
+  return (!!bid.mediaTypes && !!bid.mediaTypes.video) || (!!bid.params && !!bid.params.video)
 }
 
 function hasMandatoryParams(params) {
@@ -58,13 +58,18 @@ function hasMandatoryParams(params) {
   );
 }
 
-function hasMandatoryVideoParams(mediaTypes) {
-  const isVideoInStream =
-    !!mediaTypes.video && mediaTypes.video.context === 'instream';
-  const isPlayerSize =
-    !!utils.deepAccess(mediaTypes, 'video.playerSize') &&
-    utils.isArray(utils.deepAccess(mediaTypes, 'video.playerSize'));
-  return isVideoInStream && isPlayerSize;
+function hasMandatoryVideoParams(bid) {
+  if (hasVideoMediaType(bid)) {
+    const videoParams = getVideoParams(bid)
+    const isVideoInStream =
+      (videoParams.context === 'instream');
+    const isPlayerSize =
+      !!videoParams.playerSize &&
+      utils.isArray(videoParams.playerSize);
+    return isVideoInStream && isPlayerSize;
+  } else {
+    return false
+  }
 }
 
 function buildBidRequests(validBidRequests) {
@@ -91,15 +96,30 @@ function buildBidRequests(validBidRequests) {
     }
 
     if (hasVideoMediaType(validBidRequest)) {
-      bidRequest.videoParams = params.video || {};
-      bidRequest.videoParams.w =
-        validBidRequest.mediaTypes.video.playerSize[0][0];
-      bidRequest.videoParams.h =
-        validBidRequest.mediaTypes.video.playerSize[0][1];
+      bidRequest.videoParams = getVideoParams(validBidRequest)
     }
 
     return bidRequest;
   })
+}
+
+/**
+ * return video param (global or overrided per bidder)
+ */
+function getVideoParams(validBidRequest) {
+  const videoParams = validBidRequest.mediaTypes.video || {};
+  if (videoParams.playerSize) {
+    videoParams.w = videoParams.playerSize[0][0];
+    videoParams.h = videoParams.playerSize[0][1];
+  }
+
+  const bidderVideoParams = (validBidRequest.params && validBidRequest.params.video) || {}
+  // override video params from seedtag bidder params
+  Object.keys(bidderVideoParams).forEach(key => {
+    videoParams[key] = validBidRequest.params.video[key]
+  })
+
+  return videoParams
 }
 
 function buildBid(seedtagBid) {
@@ -152,7 +172,7 @@ export const spec = {
    */
   isBidRequestValid(bid) {
     return hasVideoMediaType(bid)
-      ? hasMandatoryParams(bid.params) && hasMandatoryVideoParams(bid.mediaTypes)
+      ? hasMandatoryParams(bid.params) && hasMandatoryVideoParams(bid)
       : hasMandatoryParams(bid.params);
   },
 
