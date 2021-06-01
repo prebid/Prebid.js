@@ -10,8 +10,6 @@ const ENDPOINT_URL = BASE_URL + '/hb';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CUR = 'EUR';
 const ADAPTER_SYNC_URL = BASE_URL + '/push_sync';
-const TRACK_WIN_URL = BASE_URL + '/track/win';
-const TRACK_PENDING_URL = BASE_URL + '/track/pending';
 const TRACK_TIMEOUT_URL = BASE_URL + '/track/bid_timeout';
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -191,11 +189,15 @@ export const spec = {
   },
   onSetTargeting: function(bid) {
     // Call '/track/pending' with the corresponding bid.requestId
-    utils.triggerPixel(TRACK_PENDING_URL + '?requestId=' + bid.requestId);
+    if (bid.ext && bid.ext.events && bid.ext.events.pending) {
+      utils.triggerPixel(bid.ext.events.pending);
+    }
   },
   onBidWon: function(bid) {
     // Call '/track/win' with the corresponding bid.requestId
-    utils.triggerPixel(TRACK_WIN_URL + '?requestId=' + bid.requestId);
+    if (bid.ext && bid.ext.events && bid.ext.events.win) {
+      utils.triggerPixel(bid.ext.events.win);
+    }
   },
   onTimeout: function(timeoutData) {
     // Call '/track/bid_timeout' with timeout data
@@ -240,8 +242,12 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
             currency: reqCurrency,
             netRevenue: true,
             ttl: TIME_TO_LIVE,
-            dealId: serverBid.dealid
+            dealId: serverBid.dealid,
           };
+
+          if (serverBid.ext && serverBid.ext.prebid) {
+            bidResponse.ext = serverBid.ext.prebid;
+          }
 
           if (!_isVideoBid(bid)) {
             bidResponse.ad = serverBid.adm;
