@@ -122,7 +122,7 @@ function getVideoParams(validBidRequest) {
   return videoParams
 }
 
-function buildBid(seedtagBid) {
+function buildBidResponse(seedtagBid) {
   const mediaType = mapMediaType(seedtagBid.mediaType);
   const bid = {
     requestId: seedtagBid.bidId,
@@ -134,7 +134,10 @@ function buildBid(seedtagBid) {
     netRevenue: true,
     mediaType: mediaType,
     ttl: seedtagBid.ttl,
-    nurl: seedtagBid.nurl
+    nurl: seedtagBid.nurl,
+    meta: {
+      advertiserDomains: seedtagBid && seedtagBid.adomain ? seedtagBid.adomain : []
+    }
   };
 
   if (mediaType === VIDEO) {
@@ -217,7 +220,7 @@ export const spec = {
     const serverBody = serverResponse.body;
     if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
       return utils._map(serverBody.bids, function(bid) {
-        return buildBid(bid);
+        return buildBidResponse(bid);
       });
     } else {
       return [];
