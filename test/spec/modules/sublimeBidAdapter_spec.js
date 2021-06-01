@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sublimeBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from '../../../src/utils.js';
 
 let utils = require('src/utils');
 
@@ -299,6 +300,23 @@ describe('Sublime Adapter', function() {
       describe('On bid Time out', function () {
         spec.onTimeout(result);
       });
+    });
+
+    it('should add advertiserDomains', function() {
+      let responseWithAdvertiserDomains = deepClone(serverResponse);
+      responseWithAdvertiserDomains.advertiserDomains = ['a_sublime_adomain'];
+
+      let bidRequest = {
+        bidder: 'sublime',
+        params: {
+          zoneId: 456,
+        }
+      };
+
+      let result = spec.interpretResponse({ body: responseWithAdvertiserDomains }, bidRequest);
+
+      expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
+      expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
     });
   });
 

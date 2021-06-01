@@ -207,6 +207,12 @@ function interpretResponse(serverResponse, bidRequest) {
       sspname: response.sspname || null
     };
 
+    // We don't support advertiserDomains atm
+    if (response.advertiserDomains) {
+      // Creating a stub for Prebid.js 5.0 compliance
+      bidResponse.meta = Object.assign({}, bidResponse.meta, { advertiserDomains: [] });
+    }
+
     bidResponses.push(bidResponse);
   }
 
