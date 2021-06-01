@@ -117,7 +117,10 @@ function interpretResponse(serverResponse) {
           netRevenue: true,
           mediaType: BANNER,
           ad: _getAdMarkup(onomagicBid),
-          ttl: 60
+          ttl: 60,
+          meta: {
+            advertiserDomains: onomagicBid && onomagicBid.adomain ? onomagicBid.adomain : []
+          }
         });
       });
     }
