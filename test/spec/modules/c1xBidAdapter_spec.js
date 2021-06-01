@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { c1xAdapter } from 'modules/c1xBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { c1xAdapter } from 'modules/c1xBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://ht.c1exchange.com/ht';
 const BIDDER_CODE = 'c1x';
@@ -106,13 +106,13 @@ describe('C1XAdapter', function () {
         {
           'params': {
             'siteId': '9999',
-            'pageurl': 'http://c1exchange.com/'
+            'pageurl': 'https://c1exchange.com/'
           }
         });
       const request = c1xAdapter.buildRequests([bidRequest]);
       const originalPayload = parseRequest(request.data);
       const payloadObj = JSON.parse(originalPayload);
-      expect(payloadObj.pageurl).to.equal('http://c1exchange.com/');
+      expect(payloadObj.pageurl).to.equal('https://c1exchange.com/');
     });
 
     it('should convert GDPR Consent to proper form and attach to request', function () {

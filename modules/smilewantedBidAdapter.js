@@ -1,11 +1,13 @@
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 export const spec = {
   code: 'smilewanted',
   aliases: ['smile', 'sw'],
-
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -65,6 +67,7 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
     var response = serverResponse.body;
+
     try {
       if (response) {
         const bidResponse = {
@@ -77,9 +80,18 @@ export const spec = {
           currency: response.currency,
           netRevenue: response.isNetCpm,
           ttl: response.ttl,
-          adUrl: response.adUrl,
-          ad: response.ad
+          ad: response.ad,
         };
+
+        if (response.formatTypeSw == 'video_instream' || response.formatTypeSw == 'video_outstream') {
+          bidResponse['mediaType'] = 'video';
+          bidResponse['vastUrl'] = response.ad;
+          bidResponse['ad'] = null;
+        }
+
+        if (response.formatTypeSw == 'video_outstream') {
+          bidResponse['renderer'] = newRenderer(JSON.parse(bidRequest.data), response);
+        }
 
         bidResponses.push(bidResponse);
       }
@@ -96,18 +108,68 @@ export const spec = {
    * @param {*} serverResponses A successful response from the server.
    * @return {Syncs[]} An array of syncs that should be executed.
    */
-  getUserSyncs: function(syncOptions, serverResponses) {
-    const syncs = []
-    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
-      if (serverResponses[0].body.cSyncUrl === 'https://csync.smilewanted.com') {
-        syncs.push({
-          type: 'iframe',
-          url: serverResponses[0].body.cSyncUrl
-        });
+  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
+    let params = '';
+
+    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      // add 'gdpr' only if 'gdprApplies' is defined
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        params += `?gdpr_consent=${gdprConsent.consentString}`;
       }
     }
+
+    if (uspConsent) {
+      params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
+    }
+
+    const syncs = []
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'https://csync.smilewanted.com' + params
+      });
+    }
+
     return syncs;
   }
+}
+
+/**
+ * Create SmileWanted renderer
+ * @param requestId
+ * @returns {*}
+ */
+function newRenderer(bidRequest, bidResponse) {
+  const renderer = Renderer.install({
+    id: bidRequest.bidId,
+    url: bidResponse.OustreamTemplateUrl,
+    loaded: false
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+  }
+  return renderer;
+}
+
+/**
+ * Initialise SmileWanted outstream
+ * @param bid
+ */
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.SmileWantedOutStreamInit({
+      width: bid.width,
+      height: bid.height,
+      vastUrl: bid.vastUrl,
+      elId: bid.adUnitCode
+    });
+  });
 }
 
 registerBidder(spec);

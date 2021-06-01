@@ -75,12 +75,8 @@ var adUnits = [
       params: {
         unit: '1611023124',
         delDomain: 'PUBLISHER-d.openx.net',
-        openrtb: {
-          imp: [{
-            video: {
-              mimes: ['video/x-ms-wmv, video/mp4']
-            }
-          }]
+        video: {
+          mimes: ['video/x-ms-wmv, video/mp4']
         }
       }
     }]
@@ -102,7 +98,7 @@ pbjs.setConfig({
 ```
 
 # Additional Details
-[Banner Ads](https://docs.openx.com/Content/developers/containers/prebid-adapter.html)
+[Banner Ads](https://docs.openx.com/publishers/prebid-adapter-web/)
 
-[Video Ads](https://docs.openx.com/Content/developers/containers/prebid-video-adapter.html)
+[Video Ads](https://docs.openx.com/publishers/prebid-adapter-video/)
 

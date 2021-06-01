@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'admatic';
-const ENDPOINT_URL = '//ads4.admatic.com.tr/prebid/v3/bidrequest';
+const ENDPOINT_URL = 'https://ads4.admatic.com.tr/prebid/v3/bidrequest';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -108,7 +108,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: '//ads4.admatic.com.tr/prebid/static/usersync/v3/async_usersync.html'
+        url: 'https://ads4.admatic.com.tr/prebid/static/usersync/v3/async_usersync.html'
       });
     }
 

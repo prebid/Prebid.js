@@ -8,8 +8,8 @@ Maintainer: alexk@cedato.com
 
 # Description
 
-Connects to Cedato bidder.
-Cedato adapter supports only Banner at the moment. 
+Connects to Cedato Bidder. 
+Player ID must be replaced. You can approach your Cedato account manager to get one.
 
 # Test Parameters
 ```

@@ -1,12 +1,15 @@
-import * as utils from '../src/utils'
-import { Renderer } from '../src/Renderer'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { VIDEO } from '../src/mediaTypes'
+import * as utils from '../src/utils.js'
+import { Renderer } from '../src/Renderer.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { VIDEO } from '../src/mediaTypes.js'
 
 function configureUniversalTag (exchangeRenderer) {
+  if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.')
+  if (!exchangeRenderer.config.siteId) throw new Error('UnrulyBidAdapter: Missing renderer siteId.')
+
   parent.window.unruly = parent.window.unruly || {};
   parent.window.unruly['native'] = parent.window.unruly['native'] || {};
-  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.siteId;
+  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.config.siteId;
   parent.window.unruly['native'].supplyMode = 'prebid';
 }
 
@@ -28,6 +31,7 @@ const serverResponseToBid = (bid, rendererInstance) => ({
   netRevenue: true,
   creativeId: bid.bidId,
   ttl: 360,
+  meta: { advertiserDomains: bid && bid.adomain ? bid.adomain : [] },
   currency: 'USD',
   renderer: rendererInstance,
   mediaType: VIDEO
@@ -35,9 +39,18 @@ const serverResponseToBid = (bid, rendererInstance) => ({
 
 const buildPrebidResponseAndInstallRenderer = bids =>
   bids
-    .filter(serverBid => !!utils.deepAccess(serverBid, 'ext.renderer'))
+    .filter(serverBid => {
+      const hasConfig = !!utils.deepAccess(serverBid, 'ext.renderer.config');
+      const hasSiteId = !!utils.deepAccess(serverBid, 'ext.renderer.config.siteId');
+
+      if (!hasConfig) utils.logError(new Error('UnrulyBidAdapter: Missing renderer config.'));
+      if (!hasSiteId) utils.logError(new Error('UnrulyBidAdapter: Missing renderer siteId.'));
+
+      return hasSiteId
+    })
     .map(serverBid => {
       const exchangeRenderer = utils.deepAccess(serverBid, 'ext.renderer');
+
       configureUniversalTag(exchangeRenderer);
       configureRendererQueue();
 

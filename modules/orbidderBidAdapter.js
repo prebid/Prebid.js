@@ -1,53 +1,57 @@
-import {detectReferer} from '../src/refererDetection';
-import {ajax} from '../src/ajax';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storageManager = getStorageManager();
 
 export const spec = {
   code: 'orbidder',
-  bidParams: {},
-  orbidderHost: (() => {
-    let ret = 'https://orbidder.otto.de';
+  hostname: 'https://orbidder.otto.de',
+
+  getHostname() {
+    let ret = this.hostname;
     try {
-      ret = localStorage.getItem('ov_orbidder_host') || ret;
+      ret = storageManager.getDataFromLocalStorage('ov_orbidder_host') || ret;
     } catch (e) {
     }
     return ret;
-  })(),
+  },
 
   isBidRequestValid(bid) {
     return !!(bid.sizes && bid.bidId && bid.params &&
       (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
       (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
       ((typeof bid.params.bidfloor === 'undefined') || (typeof bid.params.bidfloor === 'number')) &&
-      ((typeof bid.params.keyValues === 'undefined') || (typeof bid.params.keyValues === 'object')));
+      ((typeof bid.params.profile === 'undefined') || (typeof bid.params.profile === 'object')));
   },
 
   buildRequests(validBidRequests, bidderRequest) {
+    const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.referer || '';
       }
+
       const ret = {
-        url: `${spec.orbidderHost}/bid`,
+        url: `${hostname}/bid`,
         method: 'POST',
+        options: { withCredentials: true },
         data: {
+          v: $$PREBID_GLOBAL$$.version,
           pageUrl: referer,
           bidId: bidRequest.bidId,
           auctionId: bidRequest.auctionId,
           transactionId: bidRequest.transactionId,
           adUnitCode: bidRequest.adUnitCode,
+          bidRequestCount: bidRequest.bidRequestCount,
           sizes: bidRequest.sizes,
           params: bidRequest.params
         }
       };
-      spec.bidParams[bidRequest.bidId] = bidRequest.params;
-      if (bidRequest && bidRequest.gdprConsent) {
+      if (bidderRequest && bidderRequest.gdprConsent) {
         ret.data.gdprConsent = {
-          consentString: bidRequest.gdprConsent.consentString,
-          consentRequired: (typeof bidRequest.gdprConsent.gdprApplies === 'boolean')
-            ? bidRequest.gdprConsent.gdprApplies
-            : true
+          consentString: bidderRequest.gdprConsent.consentString,
+          consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') && bidderRequest.gdprConsent.gdprApplies
         };
       }
       return ret;
@@ -71,21 +75,6 @@ export const spec = {
     }
     return bidResponses;
   },
-
-  onBidWon(winObj) {
-    const getRefererInfo = detectReferer(window);
-
-    winObj.pageUrl = getRefererInfo().referer;
-    if (spec.bidParams[winObj.adId]) {
-      winObj.params = spec.bidParams[winObj.adId];
-    }
-
-    spec.ajaxCall(`${spec.orbidderHost}/win`, JSON.stringify(winObj));
-  },
-
-  ajaxCall(endpoint, data) {
-    ajax(endpoint, null, data);
-  }
 };
 
 registerBidder(spec);

@@ -10,7 +10,7 @@ Maintainer:   support@loopme.com
 
 Connect to LoopMe's exchange for bids.
 
-# Test Parameters
+# Test Parameters (Banner)
 ```
 var adUnits = [{
     code: 'test-div',
@@ -23,6 +23,25 @@ var adUnits = [{
         bidder: 'loopme',
         params: {
             ak: 'cc885e3acc'
+        }
+    }]
+}];
+```
+
+# Test Parameters (Video)
+```
+var adUnits = [{
+    code: 'video1',
+    mediaTypes: {
+        video: {
+            playerSize: [640, 480],
+            context: 'outstream'
+        }
+    },
+    bids: [{
+        bidder: 'loopme',
+        params: {
+            ak: '223051e07f'
         }
     }]
 }];

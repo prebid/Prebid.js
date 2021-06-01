@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'admedia';
-const ENDPOINT_URL = '//prebid.admedia.com/bidder/';
+const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/';
 
 export const spec = {
   code: BIDDER_CODE,

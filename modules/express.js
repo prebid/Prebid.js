@@ -1,5 +1,5 @@
 
-import * as utils from '../src/utils';
+import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'express';
 
@@ -61,6 +61,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
     function defaultSlots(slots) {
       return Array.isArray(slots)
         ? slots.slice()
+        // eslint-disable-next-line no-undef
         : googletag.pubads().getSlots().slice();
     }
 
@@ -116,6 +117,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
       // if not SRA mode, get only the gpt slot corresponding to sEementId
       var aGptSlots;
       if (!bEnabledSRA) {
+        // eslint-disable-next-line no-undef
         aGptSlots = googletag.pubads().getSlots().filter(function (oGptSlot) {
           return oGptSlot.getSlotElementId() === sElementId;
         });

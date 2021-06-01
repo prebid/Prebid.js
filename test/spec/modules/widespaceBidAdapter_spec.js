@@ -1,6 +1,6 @@
-import { expect } from 'chai';
-import { spec } from 'modules/widespaceBidAdapter';
-import includes from 'core-js/library/fn/array/includes';
+import {expect} from 'chai';
+import {spec, storage} from 'modules/widespaceBidAdapter.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 describe('+widespaceAdatperTest', function () {
   // Dummy bid request
@@ -141,8 +141,40 @@ describe('+widespaceAdatperTest', function () {
   });
 
   describe('+bidRequest', function () {
-    const request = spec.buildRequests(bidRequest, bidderRequest);
+    let request;
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
+    before(function() {
+      request = spec.buildRequests(bidRequest, bidderRequest);
+    })
+
+    let fakeLocalStorage = {};
+    let lsSetStub;
+    let lsGetStub;
+    let lsRemoveStub;
+
+    beforeEach(function () {
+      lsSetStub = sinon.stub(storage, 'setDataInLocalStorage').callsFake(function (name, value) {
+        fakeLocalStorage[name] = value;
+      });
+
+      lsGetStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(function (key) {
+        return fakeLocalStorage[key] || null;
+      });
+
+      lsRemoveStub = sinon.stub(storage, 'removeDataFromLocalStorage').callsFake(function (key) {
+        if (key && (fakeLocalStorage[key] !== null || fakeLocalStorage[key] !== undefined)) {
+          delete fakeLocalStorage[key];
+        }
+        return true;
+      });
+    });
+
+    afterEach(function () {
+      lsSetStub.restore();
+      lsGetStub.restore();
+      lsRemoveStub.restore();
+      fakeLocalStorage = {};
+    });
 
     it('-bidRequest method is POST', function () {
       expect(request[0].method).to.equal('POST');

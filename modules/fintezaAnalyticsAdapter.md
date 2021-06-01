@@ -18,11 +18,12 @@ For more information, visit the [official Finteza website](https://www.finteza.c
 {
   provider: 'finteza',
   options: {
-    id:               'xxxxx', // Website ID (required)
-    bidRequestTrack:  'Bid Request %BIDDER%',
-    bidResponseTrack: 'Bid Response %BIDDER%',
-    bidTimeoutTrack:  'Bid Timeout %BIDDER%',
-    bidWonTrack:      'Bid Won %BIDDER%'
+    id:                     'xxxxx', // Website ID (required)
+    bidRequestTrack:        'Bid Request %BIDDER%',
+    bidResponsePriceTrack:  'Bid Response Price %BIDDER%',
+    bidResponseTimeTrack:   'Bid Response Time %BIDDER%',
+    bidTimeoutTrack:        'Bid Timeout %BIDDER%',
+    bidWonTrack:            'Bid Won %BIDDER%'
   }
 }
 ```

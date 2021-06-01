@@ -3,7 +3,7 @@
 ```
 Module Name: Sharethrough Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: jchau@sharethrough.com && cpan@sharethrough.com
+Maintainer: pubgrowth.engineering@sharethrough.com
 ```
 
 # Description
@@ -29,7 +29,13 @@ Module that connects to Sharethrough's demand sources
             // OPTIONAL - If iframeSize is provided, we'll use this size for the iframe
             // otherwise we'll grab the largest size from the sizes array
             // This is ignored if iframe: false
-            iframeSize: [250, 250]
+            iframeSize: [250, 250],
+
+            // OPTIONAL - Blocked Advertiser Domains
+            badv: ['domain1.com', 'domain2.com'],
+
+            // OPTIONAL - Blocked Categories (IAB codes)
+            bcat: ['IAB1-1', 'IAB1-2'],
           }
         }
       ]

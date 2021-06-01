@@ -1,9 +1,9 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'reklamstore';
-const ENDPOINT_URL = '//ads.rekmob.com/m/prebid';
+const ENDPOINT_URL = 'https://ads.rekmob.com/m/prebid';
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 360;
 
@@ -36,7 +36,6 @@ export const spec = {
           regionId: bid.params.regionId,
           dt: getDeviceType(),
           os: getOS(),
-          dbg: 1,
           ref: extractDomain(url),
           _: (new Date().getTime()),
           mobile_web: 1
@@ -65,7 +64,7 @@ export const spec = {
           height: bidResponse.h,
           creativeId: bidResponse.adId || 1,
           currency: CURRENCY,
-          netRevenue: false,
+          netRevenue: true,
           ttl: TIME_TO_LIVE,
           ad: bidResponse.ad
         });
