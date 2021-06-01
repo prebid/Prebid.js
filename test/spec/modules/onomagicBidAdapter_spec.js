@@ -242,7 +242,7 @@ describe('onomagicBidAdapter', function() {
         'mediaType': 'banner',
         'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
         'ttl': 60,
-        'meta' : {
+        'meta': {
           'advertiserDomains': ['example.com']
         }
       }];
@@ -263,7 +263,7 @@ describe('onomagicBidAdapter', function() {
         'mediaType': 'banner',
         'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
         'ttl': 60,
-        'meta' : {
+        'meta': {
           'advertiserDomains': ['example.com']
         }
       }];
