@@ -536,7 +536,7 @@ export const spec = {
     let bids = [];
     let resBids = utils.deepAccess(rtbResponse, 'body.seatbid') || [];
     resBids.forEach(bid => {
-      let resultItem = {requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: {advertiserDomains:bid.adomain}};
+      let resultItem = {requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: {advertiserDomains: bid.adomain}};
 
       let mediaType = utils.deepAccess(bid, 'ext.mtype') || '';
       switch (mediaType) {
