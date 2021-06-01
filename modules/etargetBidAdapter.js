@@ -1,5 +1,4 @@
-'use strict';
-
+import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -136,9 +135,13 @@ export const spec = {
           bidObject.gdpr = bidRequest.gdpr.gdpr;
           bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
         }
+        if (bid.adomain) {
+          utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
+        }
         bidRespones.push(bidObject);
       }
     }
+
     return bidRespones;
 
     function verifySize(adItem, validSizes) {
