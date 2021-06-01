@@ -135,6 +135,7 @@ export const spec = {
           bidObject.gdpr = bidRequest.gdpr.gdpr;
           bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
         }
+
         if (bid.adomain) {
           utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
         }
