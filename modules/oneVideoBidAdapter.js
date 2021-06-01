@@ -28,8 +28,7 @@ export const spec = {
     } else if (bid.mediaTypes.video) {
       // Player size validations
       if (typeof bid.mediaTypes.video.playerSize === 'undefined') {
-        if (typeof bid.params.video.playerWidth === 'undefined' ||
-        typeof bid.params.video.playerHeight === 'undefined') {
+        if (typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight === 'undefined') {
           utils.logError('Failed validation: adUnit mediaTypes.playerSize OR params.video.plauerWidth/playerHeight not declared');
           return false;
         };
