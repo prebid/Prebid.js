@@ -139,6 +139,9 @@ export const spec = {
           height: slot.height,
           dealId: slot.dealCode,
         };
+        if (slot.adomain) {
+          bid.meta = Object.assign({}, bid.meta, { advertiserDomains: slot.adomain });
+        }
         if (slot.native) {
           if (bidRequest.params.nativeCallback) {
             bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
