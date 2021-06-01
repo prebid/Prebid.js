@@ -4,7 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  VERSION: '3.1.0',
+  VERSION: '3.1.1',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   E2ETESTENDPOINT: 'https://ads-wc.v.ssp.yahoo.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true',
@@ -21,38 +21,37 @@ export const spec = {
       return false;
     }
 
-    // Video/Banner validations
-    if (typeof bid.mediaTypes.video === 'undefined' && bid.mediaTypes.banner === 'undefined') {
-      utils.logError('Failed validation: adUnit mediaTypes.video AND/OR mediaTypes.banner not declared');
+    // Video / Banner validations
+    if (typeof bid.mediaTypes.video === 'undefined' && typeof bid.mediaTypes.banner === 'undefined') {
+      utils.logError('Failed validation: adUnit mediaTypes.video OR mediaTypes.banner not declared');
       return false;
-    }
-
-    // MediaTypes / Params player size validation
-    if (typeof bid.mediaTypes.video.playerSize === 'undefined' && (typeof bid.params.video.playerWidth === 'undefined' ||
-    typeof bid.params.video.playerHeight === 'undefined')) {
-      utils.logError('Failed validation: adUnit mediaTypes.playerSize OR params.video.plauerWidth/playerHeight not declared');
-      return false;
-    };
-
-    // MediaTypes / Params mimes validation
-    if (typeof bid.mediaTypes.video.mimes === 'undefined' && typeof bid.params.video.mimes === 'undefined') {
-      utils.logError('Failed validation: adUnit mediaTypes.mimes OR params.video.mimes not declared');
-      return false;
-    }
-
-    // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
-    if (bid.mediaTypes.video) {
+    } else if (bid.mediaTypes.video) {
+      // Player size validations
+      if (typeof bid.mediaTypes.video.playerSize === 'undefined') {
+        if (typeof bid.params.video.playerWidth === 'undefined' ||
+        typeof bid.params.video.playerHeight === 'undefined') {
+          utils.logError('Failed validation: adUnit mediaTypes.playerSize OR params.video.plauerWidth/playerHeight not declared');
+          return false;
+        };
+      };
+      // MediaTypes / Params mimes validation
+      if (typeof bid.mediaTypes.video.mimes === 'undefined' && typeof bid.params.video.mimes === 'undefined') {
+        utils.logError('Failed validation: adUnit mediaTypes.mimes OR params.video.mimes not declared');
+        return false;
+      };
+      // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
       if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
         utils.logError('Failed validation: Dynamic Ad Placement cannot be used with context Outstream (params.video.display=1)');
         return false;
       }
     } else if (bid.mediaTypes.banner && !bid.params.video.display) {
+      utils.logError('Failed validation: Cannot request Dynamic Ad Placement without params.video.display=1');
       return false;
     }
 
     // Pub Id validation
     if (typeof bid.params.pubId === 'undefined') {
-      utils.logError('Failed validation: Missing mandatory setting bid.params.pubId');
+      utils.logError('Failed validation: Adapter cannot send requests without bid.params.pubId');
       return false;
     }
 
@@ -332,7 +331,7 @@ function getRequestData(bid, consentData, bidRequest) {
     }
   }
   if (bid.params.video.e2etest) {
-    utils.logMessage('+++ oneVideoBidAdapter: E2E test mode enabled. \n The following parameters are being overridden by e2etest mode:\n* bidfloor:null\n* width:300\n* height:250\n* mimes: video/mp4, application/javascript\n* api:2\n* site.page/ref: verizonmedia.com\n* tmax:1000');
+    utils.logMessage('E2E test mode enabled: \n The following parameters are being overridden by e2etest mode:\n* bidfloor:null\n* width:300\n* height:250\n* mimes: video/mp4, application/javascript\n* api:2\n* site.page/ref: verizonmedia.com\n* tmax:1000');
     bidData.imp[0].bidfloor = null;
     bidData.imp[0].video.w = 300;
     bidData.imp[0].video.h = 250;

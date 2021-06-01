@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oneVideoBidAdapter.js';
 
-xdescribe('OneVideoBidAdapter', function () {
+describe('OneVideoBidAdapter', function () {
   let bidRequest;
   let bidderRequest = {
     'bidderCode': 'oneVideo',
@@ -59,11 +59,33 @@ xdescribe('OneVideoBidAdapter', function () {
   });
 
   describe('spec.isBidRequestValid', function () {
-    it('should return true when the required params are passed', function () {
+    it('should return true when mediaTypes.video has mandatory params', function () {
+      bidRequest.mediaTypes.video = {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4', 'application/javascript'],
+      }
+      bidRequest.video = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when the "video" param is missing', function () {
+    it('should return true when params.video override params are passed', function () {
+      bidRequest.mediaTypes.video = {
+        context: 'instream',
+        playerSize: [640, 480]
+      }
+      bidRequest.video = {
+        playerWidth: 640,
+        playerHeight: 480,
+        mimes: ['video/mp4', 'application/javascript']
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return false when the both mediaTypes.video and params.video are missing', function () {
+      bidRequest.mediaTypes.video = {
+        context: 'instream'
+      }
       bidRequest.params = {
         pubId: 'brxd'
       };
@@ -76,19 +98,11 @@ xdescribe('OneVideoBidAdapter', function () {
           playerWidth: 480,
           playerHeight: 640,
           mimes: ['video/mp4', 'application/javascript'],
-          protocols: [2, 5],
-          api: [2],
-          position: 1,
-          delivery: [2],
-          playbackmethod: [1, 5],
-          sid: 134,
-          rewarded: 1,
-          placement: 1,
-          inventoryid: 123
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
+
     it('should return true when the "pubId" param exists', function () {
       bidRequest.params = {
         video: {
@@ -111,7 +125,7 @@ xdescribe('OneVideoBidAdapter', function () {
     });
 
     it('should return false when no bid params are passed', function () {
-      bidRequest.params = {};
+      bidRequest.params.video = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
@@ -216,7 +230,7 @@ xdescribe('OneVideoBidAdapter', function () {
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
-      const VERSION = '3.1.0';
+      const VERSION = '3.1.1';
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
