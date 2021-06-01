@@ -326,7 +326,8 @@ describe('Seedtag Adapter', function() {
                   height: 90,
                   mediaType: 'display',
                   ttl: 360,
-                  nurl: 'testurl.com/nurl'
+                  nurl: 'testurl.com/nurl',
+                  adomain: ['advertiserdomain.com']
                 }
               ],
               cookieSync: { url: '' }
@@ -342,6 +343,7 @@ describe('Seedtag Adapter', function() {
           expect(bids[0].netRevenue).to.equal(true)
           expect(bids[0].ad).to.equal('content')
           expect(bids[0].nurl).to.equal('testurl.com/nurl')
+          expect(bids[0].meta.advertiserDomains).to.deep.equal(['advertiserdomain.com'])
         })
       })
       describe('the bid is a video', function() {
@@ -374,6 +376,7 @@ describe('Seedtag Adapter', function() {
           expect(bids[0].currency).to.equal('USD')
           expect(bids[0].netRevenue).to.equal(true)
           expect(bids[0].vastXml).to.equal('content')
+          expect(bids[0].meta.advertiserDomains).to.deep.equal([])
         })
       })
     })

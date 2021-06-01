@@ -136,7 +136,7 @@ function buildBidResponse(seedtagBid) {
     ttl: seedtagBid.ttl,
     nurl: seedtagBid.nurl,
     meta: {
-      advertiserDomains: seedtagBid && seedtagBid.adomain ? seedtagBid.adomain : []
+      advertiserDomains: seedtagBid && seedtagBid.adomain && seedtagBid.adomain.length > 0 ? seedtagBid.adomain : []
     }
   };
 
