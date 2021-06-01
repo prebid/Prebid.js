@@ -240,10 +240,10 @@ export const spec = {
           let rendererScript = (oneBid.osparams.script ? oneBid.osparams.script : JX_OUTSTREAM_RENDERER_URL);
           bnd.renderer = createRenderer_(oneBid, rendererScript, jxOutstreamRender_);
         }
-        //a note on advertiserDomains: our adserver is not responding in
-        //openRTB-type json. so there is no need to copy from 'adomain' over
-        //to meta: advertiserDomains
-        //However, we will just make sure the property is there.
+        // a note on advertiserDomains: our adserver is not responding in
+        // openRTB-type json. so there is no need to copy from 'adomain' over
+        // to meta: advertiserDomains
+        // However, we will just make sure the property is there.
         if (!bnd.meta) {
           bnd.meta = {};
         }
@@ -262,4 +262,3 @@ export const spec = {
 }
 
 registerBidder(spec);
-
