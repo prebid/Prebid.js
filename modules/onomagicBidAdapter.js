@@ -46,7 +46,7 @@ function buildRequests(bidReqs, bidderRequest) {
         },
         tagid: String(bid.adUnitCode)
       };
-      const bidFloor = _getBidFloor(bid.params);
+      const bidFloor = _getBidFloor(bid);
       if (bidFloor) {
         imp.bidfloor = bidFloor;
       }
