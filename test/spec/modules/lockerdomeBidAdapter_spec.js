@@ -181,9 +181,7 @@ describe('LockerDomeAdapter', function () {
             netRevenue: true,
             ad: '<!-- AD 1 CREATIVE -->',
             ttl: 300,
-            meta: {
-              advertiserDomains: ['example.com']
-            }
+            adomain: ['example.com']
           },
           {
             requestId: '4510f2834773ce',
@@ -195,9 +193,7 @@ describe('LockerDomeAdapter', function () {
             netRevenue: true,
             ad: '<!-- AD 2 CREATIVE -->',
             ttl: 300,
-            meta: {
-              advertiserDomains: ['example.com']
-            }
+            adomain: ['example.com']
           }]
         }
       };
