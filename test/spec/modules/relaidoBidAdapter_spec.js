@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/relaidoBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { getStorageManager } from '../../../src/storageManager.js';
 
 const UUID_KEY = 'relaido_uuid';
@@ -59,7 +60,8 @@ describe('RelaidoAdapter', function () {
         uuid: relaido_uuid,
         vast: '<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>',
         playerUrl: 'https://relaido/player.js',
-        syncUrl: 'https://relaido/sync.html'
+        syncUrl: 'https://relaido/sync.html',
+        adomain: ['relaido.co.jp', 'www.cmertv.co.jp']
       }
     };
     serverRequest = {
@@ -276,6 +278,8 @@ describe('RelaidoAdapter', function () {
       expect(response.currency).to.equal(serverResponse.body.currency);
       expect(response.creativeId).to.equal(serverResponse.body.creativeId);
       expect(response.vastXml).to.equal(serverResponse.body.vast);
+      expect(response.meta.advertiserDomains).to.equal(serverResponse.body.adomain);
+      expect(response.meta.mediaType).to.equal(VIDEO);
       expect(response.ad).to.be.undefined;
     });
 
