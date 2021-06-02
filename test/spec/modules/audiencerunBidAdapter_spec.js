@@ -201,4 +201,10 @@ describe('AudienceRun bid adapter tests', function() {
       expect(syncs).to.deep.equal([{type: 'iframe', url: 'https://ac.audiencerun.com/f/sync.html'}])
     });
   });
+
+  describe('onTimeout', function () {
+    it('should exists and be a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+  });
 });
