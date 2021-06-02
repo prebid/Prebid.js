@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, ADPOD } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
@@ -104,7 +104,7 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, ADPOD],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -113,9 +113,44 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    return typeof bid.params === 'object' &&
-      typeof bid.params.publisherId === 'string' &&
-      typeof bid.params.adspaceId === 'string';
+    if (typeof bid.params !== 'object') {
+      utils.logError('[SMAATO] Missing params object');
+      return false;
+    }
+
+    if (typeof bid.params.publisherId !== 'string') {
+      utils.logError('[SMAATO] Missing mandatory publisherId param');
+      return false;
+    }
+
+    if (utils.deepAccess(bid, 'mediaTypes.video.context') === ADPOD) {
+      utils.logInfo('[SMAATO] Verifying adpod bid request');
+
+      if (typeof bid.params.adbreakId !== 'string') {
+        utils.logError('[SMAATO] Missing for adpod request mandatory adbreakId param');
+        return false;
+      }
+
+      if (bid.params.adspaceId) {
+        utils.logError('[SMAATO] The adspaceId param is not allowed in an adpod bid request');
+        return false;
+      }
+    } else {
+      utils.logInfo('[SMAATO] Verifying a non adpod bid request');
+
+      if (typeof bid.params.adspaceId !== 'string') {
+        utils.logError('[SMAATO] Missing mandatory adspaceId param');
+        return false;
+      }
+
+      if (bid.params.adbreakId) {
+        utils.logError('[SMAATO] The adbreakId param is only allowed in an adpod bid request');
+        return false;
+      }
+    }
+
+    utils.logInfo('[SMAATO] Verification done, all good');
+    return true;
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {

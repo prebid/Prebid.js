@@ -60,15 +60,53 @@ const extractPayloadOfFirstAndOnlyRequest = (reqs) => {
 
 describe('smaatoBidAdapterTest', () => {
   describe('isBidRequestValid', () => {
-    it('has valid params', () => {
-      expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456'}})).to.be.true;
-      expect(spec.isBidRequestValid(singleBannerBidRequest)).to.be.true;
-    });
-    it('has invalid params', () => {
+    it('is invalid, when params object is not present', () => {
       expect(spec.isBidRequestValid({})).to.be.false;
+    });
+
+    it('is invalid, when params object is empty', () => {
       expect(spec.isBidRequestValid({params: {}})).to.be.false;
-      expect(spec.isBidRequestValid({params: {publisherId: '123'}})).to.be.false;
-      expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: 456}})).to.be.false;
+    });
+
+    it('is invalid, when publisherId is present but of wrong type', () => {
+      expect(spec.isBidRequestValid({params: {publisherId: 123}})).to.be.false;
+    });
+
+    describe('for ad pod / long form video requests', () => {
+      const ADPOD = {video: { context: "adpod"}}
+      it('is invalid, when adbreakId is missing', () => {
+        expect(spec.isBidRequestValid({mediaTypes: ADPOD, params: {publisherId: '123'}})).to.be.false;
+      });
+
+      it('is invalid, when adbreakId is present but of wrong type', () => {
+        expect(spec.isBidRequestValid({mediaTypes: ADPOD, params: {publisherId: '123', adbreakId: 456}})).to.be.false;
+      });
+
+      it('is valid, when required params are present', () => {
+        expect(spec.isBidRequestValid({mediaTypes: ADPOD, params: {publisherId: '123', adbreakId: '456'}})).to.be.true;
+      });
+
+      it('is invalid, when forbidden adspaceId param is present', () => {
+        expect(spec.isBidRequestValid({mediaTypes: ADPOD, params: {publisherId: '123', adbreakId: '456', adspaceId: "42"}})).to.be.false;
+      });
+    });
+
+    describe('for non adpod requests', () => {
+      it('is invalid, when adspaceId is missing', () => {
+        expect(spec.isBidRequestValid({params: {publisherId: '123'}})).to.be.false;
+      });
+
+      it('is invalid, when adspaceId is present but of wrong type', () => {
+        expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: 456}})).to.be.false;
+      });
+
+      it('is valid, when required params are present for minimal request', () => {
+        expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456'}})).to.be.true;
+      });
+
+      it('is invalid, when forbidden adbreakId param is present', () => {
+        expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456', adbreakId: "42"}})).to.be.false;
+      });
     });
   });
 
@@ -289,6 +327,7 @@ describe('smaatoBidAdapterTest', () => {
         const reqs = spec.buildRequests([singleVideoBidRequest], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        console.log(JSON.stringify(req))
         expect(req.imp[0].video).to.deep.equal(VIDEO_OUTSTREAM_OPENRTB_IMP);
       });
 
@@ -320,6 +359,33 @@ describe('smaatoBidAdapterTest', () => {
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.imp[0].banner).to.deep.equal(BANNER_OPENRTB_IMP);
         expect(req.imp[0].video).to.deep.equal(VIDEO_OUTSTREAM_OPENRTB_IMP);
+      });
+
+      describe('ad pod / long form video', () => {
+        it('sends required fields', () => {
+          const longFormVideoBidRequest = {
+            params: {
+              publisherId: 'publisherId',
+              adbreakId: 'adbreakId'
+            },
+            mediaTypes: {
+              video: {
+                context: 'adpod',
+                playerSize: [640, 480],
+                adPodDurationSec: 300,
+                durationRangeSec: [15, 30],
+              }
+            },
+            bidId: 'bidId',
+          };
+
+          const reqs = spec.buildRequests([longFormVideoBidRequest], defaultBidderRequest);
+
+          const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+          console.log(JSON.stringify(req))
+          // const
+          // expect(req).
+        });
       });
     });
 
