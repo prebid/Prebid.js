@@ -216,18 +216,21 @@ function getRequestData(bid, consentData, bidRequest) {
 
   if (bid.params.video.display == undefined || bid.params.video.display != 1) {
     bidData.imp[0].video = {
-      mimes: bid.mediaTypes.video.mimes,
-      w: bid.mediaTypes.video.playerSize[0][0],
-      h: bid.mediaTypes.video.playerSize[0][1],
       pos: bid.params.video.position,
     };
-    if (bid.params.video.mimes) {
-      bidData.imp[0].video.mimes = bid.params.video.mimes;
-    }
     if (bid.params.video.playerWidth && bid.params.video.playerHeight) {
       bidData.imp[0].video.w = bid.params.video.playerWidth;
       bidData.imp[0].video.h = bid.params.video.playerHeight;
-    }
+    } else if (bid.mediaTypes.video.playerSize) {
+      const playerSize = getSize(bid.mediaTypes.video.playerSize);
+      bidData.imp[0].video.w = playerSize.width;
+      bidData.imp[0].video.h = playerSize.height;
+    };
+    if (bid.mediaTypes.video.mimes) {
+      bidData.imp[0].video.mimes = bid.mediaTypes.video.mimes;
+    } else if (bid.params.video.mimes) {
+      bidData.imp[0].video.mimes = bid.params.video.mimes;
+    };
     if (bid.mediaTypes.video.maxbitrate || bid.params.video.maxbitrate) {
       bidData.imp[0].video.maxbitrate = bid.params.video.maxbitrate || bid.mediaTypes.video.maxbitrate;
     }
