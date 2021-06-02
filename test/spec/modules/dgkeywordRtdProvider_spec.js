@@ -4,6 +4,7 @@ import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
 
 const DG_GET_KEYWORDS_TIMEOUT = 1950;
+const IGNORE_SET_ORTB2 = true;
 const DEF_CONFIG = {
   name: 'dgkeyword',
   waitForIt: true,
@@ -230,9 +231,6 @@ describe('Digital Garage Keyword Module', function () {
         ],
       },
     ];
-    afterEach(function () {
-      config.resetBidderConfig();
-    });
     it('should get profiles error(404).', function (done) {
       let pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
@@ -309,6 +307,9 @@ describe('Digital Garage Keyword Module', function () {
     it('should get profiles ok(200).', function (done) {
       let pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
+      if (IGNORE_SET_ORTB2) {
+        pbjs._ignoreSetOrtb2 = true;
+      }
       let moduleConfig = cloneDeep(DEF_CONFIG);
       dgRtd.getDgKeywordsAndSet(
         pbjs,
@@ -328,10 +329,12 @@ describe('Digital Garage Keyword Module', function () {
           expect(targets[2].params.dgkeyword).to.be.an('undefined');
           expect(targets[2].params.keywords).to.be.an('undefined');
 
-          expect(pbjs.getBidderConfig()).to.be.deep.equal({
-            dg2: SUCCESS_ORTB2,
-            dg: SUCCESS_ORTB2,
-          });
+          if (!IGNORE_SET_ORTB2) {
+            expect(pbjs.getBidderConfig()).to.be.deep.equal({
+              dg2: SUCCESS_ORTB2,
+              dg: SUCCESS_ORTB2,
+            });
+          }
           done();
         },
         moduleConfig,
