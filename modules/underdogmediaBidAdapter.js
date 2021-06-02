@@ -120,6 +120,9 @@ export const spec = {
           currency: 'USD',
           netRevenue: false,
           ttl: mid.ttl || 60,
+          meta: {
+            advertiserDomains: mid.advertiser_domains || []
+          }
         };
 
         if (bidResponse.cpm <= 0) {
