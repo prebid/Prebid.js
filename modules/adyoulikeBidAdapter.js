@@ -449,7 +449,9 @@ function createBid(response, bidRequests) {
     creativeId: response.CreativeID,
     cpm: response.Price,
     netRevenue: true,
-    currency: CURRENCY
+    currency: CURRENCY,
+    meta: response.Meta || { advertiserDomains: [] }
+  };
   };
 
   if (request && request.Native) {
