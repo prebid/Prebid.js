@@ -1,7 +1,6 @@
 import * as dgRtd from 'modules/dgkeywordRtdProvider.js';
 import { cloneDeep } from 'lodash';
 import { server } from 'test/mocks/xhr.js';
-import { getGlobal } from 'src/prebidGlobal.js';
 import { config } from 'src/config.js';
 
 const DG_GET_KEYWORDS_TIMEOUT = 1950;
@@ -232,11 +231,11 @@ describe('Digital Garage Keyword Module', function () {
       },
     ];
     it('should get profiles error(404).', function (done) {
-      let pdjs = getGlobal();
+      let pbjs = cloneDeep(config)
       pbjs.adUnits = cloneDeep(AD_UNITS);
       let moduleConfig = cloneDeep(DEF_CONFIG);
       dgRtd.getDgKeywordsAndSet(
-        pdjs,
+        pbjs,
         () => {
           let targets = pbjs.adUnits[0].bids;
           expect(targets[1].bidder).to.be.equal('dg2');
@@ -253,7 +252,7 @@ describe('Digital Garage Keyword Module', function () {
           expect(targets[2].params.dgkeyword).to.be.an('undefined');
           expect(targets[2].params.keywords).to.be.an('undefined');
 
-          expect(config.getBidderConfig()).to.be.deep.equal({});
+          expect(pbjs.getBidderConfig()).to.be.deep.equal({});
 
           done();
         },
@@ -264,12 +263,12 @@ describe('Digital Garage Keyword Module', function () {
       request.respond(404);
     });
     it('should get profiles timeout.', function (done) {
-      let pdjs = getGlobal();
+      let pbjs = cloneDeep(config)
       pbjs.adUnits = cloneDeep(AD_UNITS);
       let moduleConfig = cloneDeep(DEF_CONFIG);
       moduleConfig.params.timeout = 10;
       dgRtd.getDgKeywordsAndSet(
-        pdjs,
+        pbjs,
         () => {
           let targets = pbjs.adUnits[0].bids;
           expect(targets[1].bidder).to.be.equal('dg2');
@@ -286,7 +285,7 @@ describe('Digital Garage Keyword Module', function () {
           expect(targets[2].params.dgkeyword).to.be.an('undefined');
           expect(targets[2].params.keywords).to.be.an('undefined');
 
-          expect(config.getBidderConfig()).to.be.deep.equal({});
+          expect(pbjs.getBidderConfig()).to.be.deep.equal({});
 
           done();
         },
@@ -305,11 +304,11 @@ describe('Digital Garage Keyword Module', function () {
       }, 1000);
     });
     it('should get profiles ok(200).', function (done) {
-      let pdjs = getGlobal();
+      let pbjs = cloneDeep(config)
       pbjs.adUnits = cloneDeep(AD_UNITS);
       let moduleConfig = cloneDeep(DEF_CONFIG);
       dgRtd.getDgKeywordsAndSet(
-        pdjs,
+        pbjs,
         () => {
           let targets = pbjs.adUnits[0].bids;
           expect(targets[1].bidder).to.be.equal('dg2');
@@ -326,11 +325,10 @@ describe('Digital Garage Keyword Module', function () {
           expect(targets[2].params.dgkeyword).to.be.an('undefined');
           expect(targets[2].params.keywords).to.be.an('undefined');
 
-          expect(config.getBidderConfig()).to.be.deep.equal({
+          expect(pbjs.getBidderConfig()).to.be.deep.equal({
             dg2: SUCCESS_ORTB2,
             dg: SUCCESS_ORTB2,
           });
-          config.setBidderConfig({ bidders: ['dg', 'dg2'], config: { ortb2: {} } });
           done();
         },
         moduleConfig,
