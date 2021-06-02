@@ -236,6 +236,5 @@ describe('LockerDomeAdapter', function () {
       expect(interpretedResponse[1].meta).to.have.property('advertiserDomains');
       expect(interpretedResponse[1].meta.advertiserDomains).to.deep.equal(serverResponse.body.bids[1].adomain);
     });
-
   });
 });
