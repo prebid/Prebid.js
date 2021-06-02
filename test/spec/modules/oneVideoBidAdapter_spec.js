@@ -65,16 +65,15 @@ describe('OneVideoBidAdapter', function () {
         playerSize: [640, 480],
         mimes: ['video/mp4', 'application/javascript'],
       }
-      bidRequest.video = {};
+      bidRequest.params.video = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return true when params.video override params are passed', function () {
+    it('should return true when params.video override params are passed instead of mediaTypes.video', function () {
       bidRequest.mediaTypes.video = {
-        context: 'instream',
-        playerSize: [640, 480]
-      }
-      bidRequest.video = {
+        context: 'instream'
+      };
+      bidRequest.params.video = {
         playerWidth: 640,
         playerHeight: 480,
         mimes: ['video/mp4', 'application/javascript']
@@ -82,9 +81,34 @@ describe('OneVideoBidAdapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when the both mediaTypes.video and params.video are missing', function () {
+    it('should return true when mimes are passed in mediaTypes', function () {
       bidRequest.mediaTypes.video = {
-        context: 'instream'
+        context: 'instream',
+        mimes: ['video/mp4', 'application/javascript']
+      };
+      bidRequest.params.video = {
+        playerWidth: 640,
+        playerHeight: 480,
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return true when player size is passed in mediaTypes', function () {
+      bidRequest.mediaTypes.video = {
+        context: 'instream',
+        playerSizes: [640, 480]
+      };
+      bidRequest.video = {
+        mimes: ['video/mp4', 'application/javascript']
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return false when both mediaTypes.video and params.video are missing mandatory params', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'instream'
+        }
       }
       bidRequest.params = {
         pubId: 'brxd'
@@ -104,20 +128,10 @@ describe('OneVideoBidAdapter', function () {
     });
 
     it('should return true when the "pubId" param exists', function () {
-      bidRequest.params = {
+      bidRequest.mediaTypes = {
         video: {
-          playerWidth: 480,
-          playerHeight: 640,
-          mimes: ['video/mp4', 'application/javascript'],
-          protocols: [2, 5],
-          api: [2],
-          position: 1,
-          delivery: [2],
-          playbackmethod: [1, 5],
-          sid: 134,
-          rewarded: 1,
-          placement: 1,
-          inventoryid: 123
+          playerSizes: [640, 480],
+          mimes: ['video/mp4', 'application/javascript']
         },
         pubId: 'brxd'
       };
@@ -125,7 +139,7 @@ describe('OneVideoBidAdapter', function () {
     });
 
     it('should return false when no bid params are passed', function () {
-      bidRequest.params.video = {};
+      bidRequest.params = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 

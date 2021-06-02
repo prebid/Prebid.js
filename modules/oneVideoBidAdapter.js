@@ -17,38 +17,48 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
+    // Bidder code validation
     if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
       return false;
     }
 
-    // Video / Banner validations
+    // MediaTypes Video / Banner validation
     if (typeof bid.mediaTypes.video === 'undefined' && typeof bid.mediaTypes.banner === 'undefined') {
       utils.logError('Failed validation: adUnit mediaTypes.video OR mediaTypes.banner not declared');
       return false;
-    } else if (bid.mediaTypes.video) {
-      // Player size validations
+    };
+
+    if (bid.mediaTypes.video) {
+      // MediaTypes video validations
       if (typeof bid.mediaTypes.video.playerSize === 'undefined') {
+        // bidder params override validation
+        if (typeof bid.params.video === 'undefined') {
+          utils.logError('Failed validation: adUnit is missing Player size parameters. Use either mediaTypes.playerSize OR params.video.plauerWidth & playerHeight.');
+          return false;
+        }
+        // Player size validation
         if (typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight === 'undefined') {
-          utils.logError('Failed validation: adUnit mediaTypes.playerSize OR params.video.plauerWidth/playerHeight not declared');
+          utils.logError('Failed validation: bid.params.video exists but is missing plauerWidth & playerHeight. Use either mediaTypes.playerSize OR params.video.plauerWidth & playerHeight.');
           return false;
         };
-      };
-      // MediaTypes / Params mimes validation
-      if (typeof bid.mediaTypes.video.mimes === 'undefined' && typeof bid.params.video.mimes === 'undefined') {
-        utils.logError('Failed validation: adUnit mediaTypes.mimes OR params.video.mimes not declared');
-        return false;
+        // Mimes validation
+        if (typeof bid.mediaTypes.video.mimes === 'undefined' && typeof bid.params.video.mimes === 'undefined') {
+          utils.logError('Failed validation: adUnit mediaTypes.mimes OR params.video.mimes not declared');
+          return false;
+        };
       };
       // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
       if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
         utils.logError('Failed validation: Dynamic Ad Placement cannot be used with context Outstream (params.video.display=1)');
         return false;
       }
+      // DAP Validation
     } else if (bid.mediaTypes.banner && !bid.params.video.display) {
-      utils.logError('Failed validation: Cannot request Dynamic Ad Placement without params.video.display=1');
+      utils.logError('Failed validation: If you are trying to use Dynamic Ad Placement you must pass params.video.display=1');
       return false;
     }
 
-    // Pub Id validation
+    // Publisher Id (Exchange) validation
     if (typeof bid.params.pubId === 'undefined') {
       utils.logError('Failed validation: Adapter cannot send requests without bid.params.pubId');
       return false;
