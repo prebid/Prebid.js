@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sublimeBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from '../../../src/utils.js';
 
 let utils = require('src/utils');
 
@@ -303,7 +302,7 @@ describe('Sublime Adapter', function() {
     });
 
     it('should add advertiserDomains', function() {
-      let responseWithAdvertiserDomains = deepClone(serverResponse);
+      let responseWithAdvertiserDomains = utils.deepClone(serverResponse);
       responseWithAdvertiserDomains.advertiserDomains = ['a_sublime_adomain'];
 
       let bidRequest = {
