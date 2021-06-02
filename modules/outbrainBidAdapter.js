@@ -79,6 +79,14 @@ export const spec = {
       imp: imps,
       bcat: bcat,
       badv: badv,
+      ext: {
+        prebid: {
+          channel: {
+            name: 'pbjs',
+            version: '$prebid.version$'
+          }
+        }
+      }
     };
 
     if (test) {

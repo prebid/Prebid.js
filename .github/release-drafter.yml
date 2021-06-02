@@ -22,7 +22,7 @@ version-resolver:
   patch:
     labels:
       - 'patch'
-  default: patch
+  default: minor
 template: |
   ## In This Release
   $CHANGES

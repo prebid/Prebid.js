@@ -126,11 +126,35 @@ describe('Tappx bid adapter', function () {
       assert.isTrue(spec.isBidRequestValid(c_BIDREQUEST.bids[0]), JSON.stringify(c_BIDREQUEST));
     });
 
-    it('should return false when required params are missing', function () {
-      let badBidRequest = c_BIDREQUEST;
-      delete badBidRequest.bids[0].params.tappxkey;
-      delete badBidRequest.bids[0].params.endpoint;
-      assert.isFalse(spec.isBidRequestValid(badBidRequest.bids[0]));
+    it('should return false when params are missing', function () {
+      let badBidRequestParam = JSON.parse(JSON.stringify(c_BIDREQUEST));
+      delete badBidRequestParam.bids[0].params;
+      assert.isFalse(spec.isBidRequestValid(badBidRequestParam.bids[0]));
+    });
+
+    it('should return false when tappxkey is missing', function () {
+      let badBidRequestTpxkey = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      delete badBidRequestTpxkey.bids[0].params.tappxkey;
+      assert.isFalse(spec.isBidRequestValid(badBidRequestTpxkey.bids[0]));
+    });
+
+    it('should return false when host is missing', function () {
+      let badBidRequestHost = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      delete badBidRequestHost.bids[0].params.host;
+      assert.isFalse(spec.isBidRequestValid(badBidRequestHost.bids[0]));
+    });
+
+    it('should return false when classic endpoint is missing', function () {
+      let badBidRequestClEp = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      delete badBidRequestClEp.bids[0].params.endpoint;
+      assert.isFalse(spec.isBidRequestValid(badBidRequestClEp.bids[0]));
+    });
+
+    it('should return true when endpoint is not set for new endpoints', function () {
+      let badBidRequestNwEp = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      delete badBidRequestNwEp.bids[0].params.endpoint;
+      badBidRequestNwEp.bids[0].params.host = 'zztesting.ssp.tappx.com/rtb/v2/';
+      assert.isTrue(spec.isBidRequestValid(badBidRequestNwEp.bids[0]));
     });
 
     it('should return false for not instream requests', function () {
@@ -291,6 +315,45 @@ describe('Tappx bid adapter', function () {
       const consent = spec.getUserSyncs(syncOptions, null, c_BIDDERREQUEST_B.gdprConsent, c_BIDDERREQUEST_B.uspConsent);
       expect(consent[0].type).to.be.equal('iframe', JSON.stringify(consent[0]));
       expect(consent[0].url).to.match(/&type=iframe/);
+    });
+  })
+
+  describe('module Floor implementation', function() {
+    let getFloorResponse, bidderRequest_f;
+    beforeEach(function() {
+      getFloorResponse = {};
+      bidderRequest_f = c_BIDREQUEST;
+    })
+    it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
+      // default getFloor response is empty object so should not break and not send hard_floor
+      bidderRequest_f.bids[0].getFloor = () => getFloorResponse;
+      let request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      let payload;
+
+      getFloorResponse = undefined;
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+
+      // without Module floor
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.05);
+
+      // make it respond with USD floor and string floor
+      getFloorResponse = {currency: 'USD', floor: '1.23'};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal('1.23');
+
+      // make it respond with EUR floor (not valid)
+      getFloorResponse = {currency: 'EUR', floor: '1.23'};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.05); // Default value from tappx/bidder bidfloor
+
+      // make it respond with USD floor and num floor
+      getFloorResponse = {currency: 'USD', floor: 1.23};
+      request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      payload = JSON.parse(request[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(1.23);
     });
   })
 });

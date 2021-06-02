@@ -369,18 +369,6 @@ describe('AolAdapter', function () {
         expect(request.url).not.to.contain('bidfloor=');
       });
 
-      it('should return url with bidFloor option if it is present', function () {
-        let bidRequest = createCustomBidRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            bidFloor: 0.80
-          }
-        });
-        let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request.url).to.contain('bidfloor=0.8');
-      });
-
       it('should return url with key values if keyValues param is present', function () {
         let bidRequest = createCustomBidRequest({
           params: {
@@ -780,13 +768,6 @@ describe('AolAdapter', function () {
         param3: 'val3'
       });
       expect(spec.formatMarketplaceDynamicParams()).to.be.equal('param1=val1;param2=val2;param3=val3;');
-    });
-
-    it('should return formatted bid floor param when it is present', function () {
-      let params = {
-        bidFloor: 0.45
-      };
-      expect(spec.formatMarketplaceDynamicParams(params)).to.be.equal('bidfloor=0.45;');
     });
   });
 
