@@ -36,10 +36,16 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
+    "dgkeywordRtdProvider",
+    "geoedgeRtdProvider",
     "haloRtdProvider",
     "jwplayerRtdProvider",
+    "permutiveRtdProvider",
     "reconciliationRtdProvider",
-    "geoedgeRtdProvider",
     "sirdataRtdProvider"
+  ],
+  "fpdModule": [
+    "enrichmentFpdModule",
+    "validationFpdModule"
   ]
 }

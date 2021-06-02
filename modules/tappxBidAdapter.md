@@ -9,7 +9,7 @@ Maintainer: prebid@tappx.com
 Module that connects to :tappx demand sources.
 Suppots Banner and Instream Video.
 Please use ```tappx``` as the bidder code.
-Ads sizes available: [320,50], [300,250], [320,480], [1024,768], [728,90]
+Ads sizes available: [300,250], [320,50], [320,480], [480,320], [728,90], [768,1024], [1024,768]
 
 # Banner Test Parameters
 ```
