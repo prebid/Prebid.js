@@ -931,9 +931,9 @@ function _assignRenderer(newBid, request) {
   }
 }
 
-function isNonEmptyArray(test){
-  if(utils.isArray(test) === true){
-    if(test.length > 0){
+function isNonEmptyArray(test) {
+  if (utils.isArray(test) === true) {
+    if (test.length > 0) {
       return true;
     }
   }
@@ -958,11 +958,10 @@ export const spec = {
       }
       // video ad validation
       if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
-
         // bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array
         let mediaTypesVideoMimes = utils.deepAccess(bid.mediaTypes, 'video.mimes');
         let paramsVideoMimes = utils.deepAccess(bid, 'params.video.mimes');
-        if( isNonEmptyArray(mediaTypesVideoMimes) === false && isNonEmptyArray(paramsVideoMimes) === false ) {
+        if (isNonEmptyArray(mediaTypesVideoMimes) === false && isNonEmptyArray(paramsVideoMimes) === false) {
           utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
           return false;
         }
