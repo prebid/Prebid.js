@@ -230,6 +230,9 @@ describe('Digital Garage Keyword Module', function () {
         ],
       },
     ];
+    afterEach(function () {
+      config.resetBidderConfig();
+    });
     it('should get profiles error(404).', function (done) {
       let pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
@@ -329,7 +332,6 @@ describe('Digital Garage Keyword Module', function () {
             dg2: SUCCESS_ORTB2,
             dg: SUCCESS_ORTB2,
           });
-          pbjs.resetBidderConfig();
           done();
         },
         moduleConfig,
