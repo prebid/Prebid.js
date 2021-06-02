@@ -149,8 +149,8 @@ describe('Richaudience adapter tests', function () {
       netRevenue: true,
       currency: 'USD',
       ttl: 300,
-      dealId: 'dealId'
-
+      dealId: 'dealId',
+      adomain: 'richaudience.com'
     }
   };
 
@@ -165,7 +165,8 @@ describe('Richaudience adapter tests', function () {
       currency: 'USD',
       ttl: 300,
       vastXML: '<VAST></VAST>',
-      dealId: 'dealId'
+      dealId: 'dealId',
+      adomain: 'richaudience.com'
     }
   };
 
@@ -600,6 +601,7 @@ describe('Richaudience adapter tests', function () {
     expect(bid.currency).to.equal('USD');
     expect(bid.ttl).to.equal(300);
     expect(bid.dealId).to.equal('dealId');
+    expect(bid.meta).to.equal('richaudience.com');
   });
 
   it('no banner media response inestream', function () {
@@ -628,6 +630,7 @@ describe('Richaudience adapter tests', function () {
     expect(bid.currency).to.equal('USD');
     expect(bid.ttl).to.equal(300);
     expect(bid.dealId).to.equal('dealId');
+    expect(bid.meta).to.equal('richaudience.com');
   });
 
   it('no banner media response outstream', function () {

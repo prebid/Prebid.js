@@ -55,11 +55,29 @@ describe('Seedtag Adapter', function() {
         })
       })
       describe('when video slot has all mandatory params', function() {
-        it('should return true, when video mediatype object are correct.', function() {
+        it('should return true, when video context is instream', function () {
           const slotConfig = getSlotConfigs(
             {
               video: {
                 context: 'instream',
+                playerSize: [[600, 200]]
+              }
+            },
+            {
+              publisherId: PUBLISHER_ID,
+              adUnitId: ADUNIT_ID,
+              placement: 'video'
+            }
+          )
+          const isBidRequestValid = spec.isBidRequestValid(slotConfig)
+          expect(isBidRequestValid).to.equal(true)
+        })
+
+        it('should return true, when video context is outstream', function () {
+          const slotConfig = getSlotConfigs(
+            {
+              video: {
+                context: 'outstream',
                 playerSize: [[600, 200]]
               }
             },
@@ -137,7 +155,7 @@ describe('Seedtag Adapter', function() {
           )
           expect(isBidRequestValid).to.equal(false)
         })
-        it('is not instream ', function() {
+        it('is outstream ', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createVideoSlotConfig({
               video: {
@@ -146,7 +164,7 @@ describe('Seedtag Adapter', function() {
               }
             })
           )
-          expect(isBidRequestValid).to.equal(false)
+          expect(isBidRequestValid).to.equal(true)
         })
         describe('order does not matter', function() {
           it('when video is not the first slot', function() {
@@ -326,7 +344,8 @@ describe('Seedtag Adapter', function() {
                   height: 90,
                   mediaType: 'display',
                   ttl: 360,
-                  nurl: 'testurl.com/nurl'
+                  nurl: 'testurl.com/nurl',
+                  adomain: ['advertiserdomain.com']
                 }
               ],
               cookieSync: { url: '' }
@@ -342,6 +361,7 @@ describe('Seedtag Adapter', function() {
           expect(bids[0].netRevenue).to.equal(true)
           expect(bids[0].ad).to.equal('content')
           expect(bids[0].nurl).to.equal('testurl.com/nurl')
+          expect(bids[0].meta.advertiserDomains).to.deep.equal(['advertiserdomain.com'])
         })
       })
       describe('the bid is a video', function() {
@@ -374,6 +394,7 @@ describe('Seedtag Adapter', function() {
           expect(bids[0].currency).to.equal('USD')
           expect(bids[0].netRevenue).to.equal(true)
           expect(bids[0].vastXml).to.equal('content')
+          expect(bids[0].meta.advertiserDomains).to.deep.equal([])
         })
       })
     })
