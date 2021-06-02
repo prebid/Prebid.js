@@ -3,10 +3,14 @@
 **Module Name**: One Video Bidder Adapter
 **Module Type**: Bidder Adapter
 **Maintainer**: deepthi.neeladri.sravana@verizonmedia.com
+                adam.browning@verizonmedia.com
 
 # Description
 Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to fetch bids.
-
+# Prebid.js V5.0 Support
+The oneVideo adapter now reads `mediaTypes.video` for mandatory parameters such as `playerSize` & `mimes`.
+Note: You can use the `bid.params.video` object to specify explicit overrides for whatever is declared in `mediaTypes.video`.
+Important: You must pass `bid.params.video = {}` as bare minimum for the adapter to work.
 # Integration Examples:
 ## Instream Video adUnit example & parameters
 *Note:* The Video SSP ad server will respond with an VAST XML to load into your defined player.
@@ -298,7 +302,7 @@ var adUnits = [
                     id: 1,
                     page: 'https://verizonmedia.com',
                     referrer: 'https://verizonmedia.com'
-                  },            
+                  },
                 pubId: 'HBExchange'
                 }
             }

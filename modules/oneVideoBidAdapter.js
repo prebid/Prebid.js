@@ -28,6 +28,11 @@ export const spec = {
       return false;
     };
 
+    if (typeof bid.params.video === 'undefined') {
+      utils.logError('Failed validation: bid.params.video Object not declared');
+      return false;
+    }
+
     if (bid.mediaTypes.video) {
       // MediaTypes video validations
       if (typeof bid.mediaTypes.video.playerSize === 'undefined') {
