@@ -5,6 +5,8 @@
  * @requires module:modules/userId
  */
 
+// ci trigger: 1
+
 import * as utils from '../src/utils.js'
 import find from 'core-js-pure/features/array/find.js';
 import { ajax } from '../src/ajax.js';
