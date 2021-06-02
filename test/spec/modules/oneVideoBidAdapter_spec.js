@@ -59,6 +59,18 @@ describe('OneVideoBidAdapter', function () {
   });
 
   describe('spec.isBidRequestValid', function () {
+    it('should return false when mediaTypes video OR banner not declared', function () {
+      bidRequest.mediaTypes = {};
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
+
+    it('should return true (skip validations) when e2etest = true', function () {
+      bidRequest.params.video = {
+        e2etest: true
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
     it('should return true when mediaTypes.video has all mandatory params', function () {
       bidRequest.mediaTypes.video = {
         context: 'instream',
