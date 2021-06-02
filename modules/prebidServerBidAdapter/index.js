@@ -2,7 +2,7 @@ import Adapter from '../../src/adapter.js';
 import { createBid } from '../../src/bidfactory.js';
 import * as utils from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
-import adapterManager from '../../src/adapterManager.js';
+import adapterManager from '../..5986-pbs-test-debug-pb5/src/adapterManager.js';
 import { config } from '../../src/config.js';
 import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
 import { processNativeAdUnitParams } from '../../src/native.js';
@@ -719,7 +719,8 @@ const OPEN_RTB_PROTOCOL = {
       source: {tid: s2sBidRequest.tid},
       tmax: s2sConfig.timeout,
       imp: imps,
-      test: getConfig('debug') ? 1 : 0,
+      // to do: add setconfig option to pass test = 1
+      test: 0,
       ext: {
         prebid: {
           // set ext.prebid.auctiontimestamp with the auction timestamp. Data type is long integer.
@@ -736,6 +737,11 @@ const OPEN_RTB_PROTOCOL = {
 
     // Sets pbjs version, can be overwritten below if channel exists in s2sConfig.extPrebid
     request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
+    
+    //set debug flag if in debug mode
+    if (getConfig('debug')) {
+      request.ext.prebid = Object.assign(request.ext.prebid, {debug: 1})
+    }
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
     if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
