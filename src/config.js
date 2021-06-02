@@ -592,6 +592,10 @@ export function newConfig() {
     }
   }
 
+  function resetBidderConfig() {
+    bidderConfig = {}
+  }
+
   /**
    * Internal functions for core to execute some synchronous code while having an active bidder set.
    */
@@ -635,6 +639,7 @@ export function newConfig() {
     runWithBidder,
     callbackWithBidder,
     setBidderConfig,
+    resetBidderConfig,
     getBidderConfig,
     convertAdUnitFpd,
     getLegacyFpd,
