@@ -315,12 +315,18 @@ describe('Digital Garage Keyword Module', function () {
         expect(targets[2].params.dgkeyword).to.be.an('undefined');
         expect(targets[2].params.keywords).to.be.an('undefined');
 
-        // expect(config.getBidderConfig()).to.be.deep.equal({ dg2: SUCCESS_ORTB2, dg: SUCCESS_ORTB2 });
+        expect(config.getBidderConfig()).to.be.deep.equal({ dg2: SUCCESS_ORTB2, dg: SUCCESS_ORTB2 });
 
         done();
       }, moduleConfig, null);
       const request = server.requests[0];
       request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
+    });
+    beforeEach(function() {
+      config.resetConfig();
+    });
+    afterEach(function() {
+      config.resetConfig();
     });
   });
 });
