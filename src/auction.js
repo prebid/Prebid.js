@@ -197,6 +197,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function auctionDone() {
+    config.resetBidder();
     // when all bidders have called done callback atleast once it means auction is complete
     utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
     _auctionStatus = AUCTION_COMPLETED;
@@ -452,7 +453,7 @@ export function addBidToAuction(auctionInstance, bidResponse) {
 function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded) {
   let addBid = true;
 
-  const bidderRequest = getBidRequest(bidResponse.requestId, [bidRequests]);
+  const bidderRequest = getBidRequest(bidResponse.originalRequestId || bidResponse.requestId, [bidRequests]);
   const videoMediaType =
   bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');

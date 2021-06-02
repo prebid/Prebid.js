@@ -75,6 +75,10 @@ export const spec = {
           currency: bidResponse.currency,
           vastUrl: bidResponse.vastUrl,
           dealId: bidResponse.dealId,
+          /**
+          * currently includes meta.advertiserDomains ; networkId ; advertiserId
+          */
+          meta: bidResponse.meta,
         };
         bidResponses.push(bidResp);
       });

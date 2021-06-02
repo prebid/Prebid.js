@@ -475,6 +475,24 @@ describe('user sync', function () {
           });
           expect(userSync.canBidderRegisterSync('iframe', 'otherTestBidder')).to.equal(false);
         });
+        it('should return false for iframe if there is no iframe filterSettings', function () {
+          const userSync = newUserSync({
+            config: {
+              syncEnabled: true,
+              filterSettings: {
+                image: {
+                  bidders: '*',
+                  filter: 'include'
+                }
+              },
+              syncsPerBidder: 5,
+              syncDelay: 3000,
+              auctionDelay: 0
+            }
+          });
+
+          expect(userSync.canBidderRegisterSync('iframe', 'otherTestBidder')).to.equal(false);
+        });
         it('should return true if filter settings does allow it', function () {
           const userSync = newUserSync({
             config: {

@@ -4,6 +4,7 @@ import { NATIVE_TARGETING_KEYS } from './native.js';
 import { auctionManager } from './auctionManager.js';
 import { sizeSupported } from './sizeMapping.js';
 import { ADPOD } from './mediaTypes.js';
+import { hook } from './hook.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -33,26 +34,31 @@ export let filters = {
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
 // If adUnitBidLimit is set above 0 return top N number of bids
-export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, adUnitBidLimit = 0) {
-  const bids = [];
-  const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
-  // bucket by adUnitcode
-  let buckets = groupBy(bidsReceived, 'adUnitCode');
-  // filter top bid for each bucket by bidder
-  Object.keys(buckets).forEach(bucketKey => {
-    let bucketBids = [];
-    let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
-    Object.keys(bidsByBidder).forEach(key => bucketBids.push(bidsByBidder[key].reduce(highestCpmCallback)));
-    // if adUnitBidLimit is set, pass top N number bids
-    if (adUnitBidLimit > 0) {
-      bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
-      bids.push(...bucketBids.slice(0, adUnitBidLimit));
-    } else {
-      bids.push(...bucketBids);
-    }
-  });
-  return bids;
-}
+export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
+  if (!hasModified) {
+    const bids = [];
+    const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
+    // bucket by adUnitcode
+    let buckets = groupBy(bidsReceived, 'adUnitCode');
+    // filter top bid for each bucket by bidder
+    Object.keys(buckets).forEach(bucketKey => {
+      let bucketBids = [];
+      let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
+      Object.keys(bidsByBidder).forEach(key => bucketBids.push(bidsByBidder[key].reduce(highestCpmCallback)));
+      // if adUnitBidLimit is set, pass top N number bids
+      if (adUnitBidLimit > 0) {
+        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
+        bids.push(...bucketBids.slice(0, adUnitBidLimit));
+      } else {
+        bids.push(...bucketBids);
+      }
+    });
+
+    return bids;
+  }
+
+  return bidsReceived;
+})
 
 /**
 * A descending sort function that will sort the list of objects based on the following two dimensions:

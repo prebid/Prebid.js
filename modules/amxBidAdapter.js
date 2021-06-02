@@ -8,7 +8,7 @@ const BIDDER_CODE = 'amx';
 const storage = getStorageManager(737, BIDDER_CODE);
 const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;
 const DEFAULT_ENDPOINT = 'https://prebid.a-mo.net/a/c';
-const VERSION = 'pba1.2.1';
+const VERSION = 'pba1.3.1';
 const VAST_RXP = /^\s*<\??(?:vast|xml)/i;
 const TRACKING_ENDPOINT = 'https://1x1.a-mo.net/hbx/';
 const AMUID_KEY = '__amuidpb';
@@ -334,6 +334,7 @@ export const spec = {
               advertiserDomains: bid.adomain,
               mediaType,
             },
+            mediaType,
             ttl: typeof bid.exp === 'number' ? bid.exp : defaultExpiration,
           });
         })).filter((possibleBid) => possibleBid != null);

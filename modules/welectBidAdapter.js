@@ -38,7 +38,7 @@ export const spec = {
 
       let domain = bidRequest.params.domain || DEFAULT_DOMAIN;
 
-      let url = `https://${domain}/api/v2/preflight/by_alias/${bidRequest.params.placementId}`;
+      let url = `https://${domain}/api/v2/preflight/${bidRequest.params.placementId}`;
 
       let gdprConsent = null;
 

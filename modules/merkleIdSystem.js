@@ -8,8 +8,41 @@
 import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'merkleId';
+const SESSION_COOKIE_NAME = '_svsid';
+const ID_URL = 'https://id2.sv.rkdms.com/identity/';
+
+export const storage = getStorageManager();
+
+function getSession(configParams) {
+  let session = null;
+  if (typeof configParams.sv_session !== 'string') {
+    session = configParams.sv_session;
+  } else {
+    session = readCookie() || readFromLocalStorage();
+  }
+  return session;
+}
+
+function readCookie() {
+  return storage.cookiesAreEnabled() ? storage.getCookie(SESSION_COOKIE_NAME) : null;
+}
+
+function readFromLocalStorage() {
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(SESSION_COOKIE_NAME) : null;
+}
+
+function constructUrl(configParams) {
+  const session = getSession(configParams);
+  let url = ID_URL + `?vendor=${configParams.vendor}&sv_cid=${configParams.sv_cid}&sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}`;
+  if (session) {
+    url.append(`&sv_session=${session}`);
+  }
+  utils.logInfo('Merkle url :' + url);
+  return url;
+}
 
 /** @type {Submodule} */
 export const merkleIdSubmodule = {
@@ -25,7 +58,8 @@ export const merkleIdSubmodule = {
    * @returns {{merkleId:string}}
    */
   decode(value) {
-    const id = (value && value.ppid && typeof value.ppid.id === 'string') ? value.ppid.id : undefined;
+    const id = (value && value.pam_id && typeof value.pam_id.id === 'string') ? value.pam_id : undefined;
+    utils.logInfo('Merkle id ' + JSON.stringify(id));
     return id ? { 'merkleId': id } : undefined;
   },
   /**
@@ -37,13 +71,23 @@ export const merkleIdSubmodule = {
    */
   getId(config, consentData) {
     const configParams = (config && config.params) || {};
-    if (!configParams || typeof configParams.pubid !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid pubid to be defined');
+    if (!configParams || typeof configParams.vendor !== 'string') {
+      utils.logError('User ID - merkleId submodule requires a valid vendor to be defined');
       return;
     }
 
-    if (typeof configParams.ptk !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid ptk string to be defined');
+    if (typeof configParams.sv_cid !== 'string') {
+      utils.logError('User ID - merkleId submodule requires a valid sv_cid string to be defined');
+      return;
+    }
+
+    if (typeof configParams.sv_pubid !== 'string') {
+      utils.logError('User ID - merkleId submodule requires a valid sv_pubid string to be defined');
+      return;
+    }
+
+    if (typeof configParams.sv_domain !== 'string') {
+      utils.logError('User ID - merkleId submodule requires a valid sv_domain string to be defined');
       return;
     }
 
@@ -51,8 +95,7 @@ export const merkleIdSubmodule = {
       utils.logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
     }
-
-    const url = `https://mid.rkdms.com/idsv2?ptk=${configParams.ptk}&pubid=${configParams.pubid}`;
+    const url = constructUrl(configParams);
 
     const resp = function (callback) {
       const callbacks = {
@@ -61,6 +104,7 @@ export const merkleIdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
+              utils.logInfo('Merkle responseObj ' + JSON.stringify(responseObj));
             } catch (error) {
               utils.logError(error);
             }

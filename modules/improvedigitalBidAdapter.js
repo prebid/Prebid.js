@@ -11,7 +11,7 @@ const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js
 const VIDEO_TARGETING = ['skip', 'skipmin', 'skipafter'];
 
 export const spec = {
-  version: '7.2.0',
+  version: '7.3.0',
   code: BIDDER_CODE,
   gvlid: 253,
   aliases: ['id'],
@@ -126,7 +126,6 @@ export const spec = {
       }
 
       // Common properties
-      bid.adId = bidObject.id;
       bid.cpm = parseFloat(bidObject.price);
       bid.creativeId = bidObject.crid;
       bid.currency = bidObject.currency ? bidObject.currency.toUpperCase() : 'USD';

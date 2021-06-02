@@ -131,6 +131,12 @@ describe('AdheseAdapter', function () {
       expect(JSON.parse(req.data)).to.not.have.key('eids');
     });
 
+    it('should request vast content as url', function () {
+      let req = spec.buildRequests([ minimalBid() ], bidderRequest);
+
+      expect(JSON.parse(req.data).vastContentAsUrl).to.equal(true);
+    });
+
     it('should include bids', function () {
       let bid = minimalBid();
       let req = spec.buildRequests([ bid ], bidderRequest);
@@ -180,7 +186,7 @@ describe('AdheseAdapter', function () {
             body: '<div style="background-color:red; height:250px; width:300px"></div>',
             tracker: 'https://hosts-demo.adhese.com/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
             impressionCounter: 'https://hosts-demo.adhese.com/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
-            extension: {'prebid': {'cpm': {'amount': '1.000000', 'currency': 'USD'}}}
+            extension: {'prebid': {'cpm': {'amount': '1.000000', 'currency': 'USD'}}, mediaType: 'banner'}
           }
         ]
       };
@@ -227,7 +233,7 @@ describe('AdheseAdapter', function () {
             width: '640',
             height: '350',
             body: '<?xml version="1.0" encoding="UTF-8"?><VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:noNamespaceSchemaLocation="vast.xsd"></VAST>',
-            extension: {'prebid': {'cpm': {'amount': '2.1', 'currency': 'USD'}}}
+            extension: {'prebid': {'cpm': {'amount': '2.1', 'currency': 'USD'}}, mediaType: 'video'}
           }
         ]
       };
@@ -251,6 +257,43 @@ describe('AdheseAdapter', function () {
         }
       }];
       expect(spec.interpretResponse(sspVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
+    });
+
+    it('should get correct ssp cache video response', () => {
+      let sspCachedVideoResponse = {
+        body: [
+          {
+            origin: 'RUBICON',
+            ext: 'js',
+            slotName: '_main_page_-leaderboard',
+            adType: 'leaderboard',
+            width: '640',
+            height: '350',
+            cachedBodyUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
+            extension: {'prebid': {'cpm': {'amount': '2.1', 'currency': 'USD'}}, mediaType: 'video'}
+          }
+        ]
+      };
+
+      let expectedResponse = [{
+        requestId: BID_ID,
+        vastUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
+        cpm: 2.1,
+        currency: 'USD',
+        creativeId: 'RUBICON',
+        dealId: '',
+        width: 640,
+        height: 350,
+        mediaType: 'video',
+        netRevenue: NET_REVENUE,
+        ttl: TTL,
+        adhese: {
+          origin: 'RUBICON',
+          originInstance: '',
+          originData: {}
+        }
+      }];
+      expect(spec.interpretResponse(sspCachedVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
 
     it('should get correct Adhese banner response', () => {
@@ -290,7 +333,8 @@ describe('AdheseAdapter', function () {
                   amount: '5.96',
                   currency: 'USD'
                 }
-              }
+              },
+              mediaType: 'banner'
             }
           }
         ]
@@ -352,7 +396,10 @@ describe('AdheseAdapter', function () {
             impressionCounter: 'https://hosts-demo.adhese.com/track/742898',
             origin: 'JERLICIA',
             originData: {},
-            auctionable: true
+            auctionable: true,
+            extension: {
+              mediaType: 'video'
+            }
           }
         ]
       };
@@ -360,6 +407,70 @@ describe('AdheseAdapter', function () {
       let expectedResponse = [{
         requestId: BID_ID,
         vastXml: '<?xml version=\'1.0\' encoding=\'UTF-8\' standalone=\'no\'?><VAST version=\'2.0\' xmlns:xsi=\'http://www.w3.org/2001/XMLSchema-instance\' xsi:noNamespaceSchemaLocation=\'vast.xsd\'></VAST>',
+        adhese: {
+          origin: '',
+          originInstance: '',
+          originData: {
+            adFormat: '',
+            adId: '742470',
+            adType: 'preroll',
+            adspaceId: '164196',
+            libId: '89860',
+            orderProperty: undefined,
+            priority: undefined,
+            viewableImpressionCounter: undefined,
+            slotId: '41711',
+            slotName: '_main_page_-leaderboard',
+            advertiserId: '2263',
+          }
+        },
+        cpm: 0,
+        currency: 'USD',
+        creativeId: '742470',
+        dealId: '22248',
+        width: 640,
+        height: 360,
+        mediaType: 'video',
+        netRevenue: NET_REVENUE,
+        ttl: TTL,
+      }];
+      expect(spec.interpretResponse(adheseVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
+    });
+
+    it('should get correct Adhese cached video response', () => {
+      const adheseVideoResponse = {
+        body: [
+          {
+            adType: 'preroll',
+            adFormat: '',
+            orderId: '22248',
+            adspaceId: '164196',
+            body: '<ADHESE_BODY>',
+            height: '360',
+            width: '640',
+            extension: {
+              mediaType: 'video'
+            },
+            cachedBodyUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
+            libId: '89860',
+            id: '742470',
+            advertiserId: '2263',
+            ext: 'advar',
+            orderName: 'Smartphoto EOY-20181112',
+            creativeName: 'PREROLL',
+            slotName: '_main_page_-leaderboard',
+            slotID: '41711',
+            impressionCounter: 'https://hosts-demo.adhese.com/track/742898',
+            origin: 'JERLICIA',
+            originData: {},
+            auctionable: true
+          }
+        ]
+      };
+
+      let expectedResponse = [{
+        requestId: BID_ID,
+        vastUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
         adhese: {
           origin: '',
           originInstance: '',
