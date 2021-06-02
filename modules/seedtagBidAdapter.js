@@ -59,17 +59,11 @@ function hasMandatoryParams(params) {
 }
 
 function hasMandatoryVideoParams(bid) {
-  if (hasVideoMediaType(bid)) {
-    const videoParams = getVideoParams(bid)
-    const isVideoInStream =
-      (videoParams.context === 'instream');
-    const isPlayerSize =
-      !!videoParams.playerSize &&
-      utils.isArray(videoParams.playerSize);
-    return isVideoInStream && isPlayerSize;
-  } else {
-    return false
-  }
+  const videoParams = getVideoParams(bid)
+
+  return hasVideoMediaType(bid) && !!videoParams.playerSize &&
+    utils.isArray(videoParams.playerSize) &&
+    videoParams.playerSize.length > 0;
 }
 
 function buildBidRequests(validBidRequests) {
