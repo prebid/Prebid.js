@@ -66,35 +66,20 @@ function hasMandatoryVideoParams(bid) {
     videoParams.playerSize.length > 0;
 }
 
-function buildBidRequests(validBidRequests) {
-  return utils._map(validBidRequests, function(validBidRequest) {
-    const params = validBidRequest.params;
-    const mediaTypes = utils._map(
-      Object.keys(validBidRequest.mediaTypes),
-      function(pbjsType) {
-        return mediaTypesMap[pbjsType];
-      }
-    );
-
-    const bidRequest = {
-      id: validBidRequest.bidId,
-      transactionId: validBidRequest.transactionId,
-      sizes: validBidRequest.sizes,
-      supplyTypes: mediaTypes,
-      adUnitId: params.adUnitId,
-      placement: params.placement,
-    };
-
-    if (params.adPosition) {
-      bidRequest.adPosition = params.adPosition;
+function buildBidRequest(validBidRequest) {
+  const params = validBidRequest.params;
+  const mediaTypes = utils._map(
+    Object.keys(validBidRequest.mediaTypes),
+    function (pbjsType) {
+      return mediaTypesMap[pbjsType];
     }
+  );
 
     if (hasVideoMediaType(validBidRequest)) {
       bidRequest.videoParams = getVideoParams(validBidRequest)
     }
 
-    return bidRequest;
-  })
+  return bidRequest;
 }
 
 /**
@@ -160,7 +145,7 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: [SEEDTAG_ALIAS],
   supportedMediaTypes: [BANNER, VIDEO],
-
+  requestCount: {},
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -187,7 +172,17 @@ export const spec = {
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
-      bidRequests: buildBidRequests(validBidRequests)
+      bidRequests: utils._map(validBidRequests, (validBidRequest) => {
+        const bidRequest = buildBidRequest(validBidRequest)
+
+        // append the count to the bidRequest
+        const adunitId = bidRequest.adUnitId
+        const count = this.requestCount[adunitId] || 0
+        this.requestCount[adunitId] = count + 1
+        bidRequest.requestCount = this.requestCount[adunitId]
+
+        return bidRequest
+      })
     };
 
     if (payload.cmp) {
