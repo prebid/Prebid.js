@@ -30,16 +30,20 @@ export const spec = {
 
     if (bid.mediaTypes.video) {
       // Player size validation
-      if (typeof bid.mediaTypes.video.playerSize === 'undefined' && (bid.params.video && (typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight === 'undefined'))) {
-        utils.logError('Failed validation: Player size not declared in either mediaTypes.playerSize OR bid.params.video.plauerWidth & bid.params.video.playerHeight.');
-        return false;
+      if (typeof bid.mediaTypes.video.playerSize === 'undefined') {
+        if (bid.params.video && (typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight === 'undefined')) {
+          utils.logError('Failed validation: Player size not declared in either mediaTypes.playerSize OR bid.params.video.plauerWidth & bid.params.video.playerHeight.');
+          return false;
+        };
       };
       // Mimes validation
-      if (typeof bid.mediaTypes.video.mimes === 'undefined' && typeof bid.params.video.mimes === 'undefined') {
-        utils.logError('Failed validation: adUnit mediaTypes.mimes OR params.video.mimes not declared');
-        return false;
+      if (typeof bid.mediaTypes.video.mimes === 'undefined') {
+        if (bid.params.video && typeof bid.params.video.mimes === 'undefined') {
+          utils.logError('Failed validation: adUnit mediaTypes.mimes OR params.video.mimes not declared');
+          return false;
+        };
       };
-    };
+    }
 
     // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
     if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
@@ -67,7 +71,7 @@ export const spec = {
    * @param bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bids, bidRequest) {
+  buildRequests: function (bids, bidRequest) {
     let consentData = bidRequest ? bidRequest.gdprConsent : null;
 
     return bids.map(bid => {

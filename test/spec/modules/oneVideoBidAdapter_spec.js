@@ -59,7 +59,7 @@ describe('OneVideoBidAdapter', function () {
   });
 
   describe('spec.isBidRequestValid', function () {
-    it('should return true when mediaTypes.video has mandatory params', function () {
+    it('should return true when mediaTypes.video has all mandatory params', function () {
       bidRequest.mediaTypes.video = {
         context: 'instream',
         playerSize: [640, 480],
@@ -69,7 +69,7 @@ describe('OneVideoBidAdapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return true when params.video override params are passed instead of mediaTypes.video', function () {
+    it('should return true when params.video has all override params instead of mediaTypes.video', function () {
       bidRequest.mediaTypes.video = {
         context: 'instream'
       };
@@ -81,7 +81,7 @@ describe('OneVideoBidAdapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return true when mimes are passed in mediaTypes', function () {
+    it('should return true when playerWidth & playerHeight are passed in params.video', function () {
       bidRequest.mediaTypes.video = {
         context: 'instream',
         mimes: ['video/mp4', 'application/javascript']
@@ -93,7 +93,7 @@ describe('OneVideoBidAdapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return true when player size is passed in mediaTypes', function () {
+    it('should return true when mimes is passed in params.video', function () {
       bidRequest.mediaTypes.video = {
         context: 'instream',
         playerSizes: [640, 480]
@@ -104,7 +104,7 @@ describe('OneVideoBidAdapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when both mediaTypes.video and params.video are missing mandatory params', function () {
+    it('should return false when both mediaTypes.video and params.video are missing mimes and player size params', function () {
       bidRequest.mediaTypes = {
         video: {
           context: 'instream'
