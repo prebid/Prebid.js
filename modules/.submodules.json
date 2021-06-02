@@ -36,10 +36,11 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
+    "geoedgeRtdProvider",
     "haloRtdProvider",
     "jwplayerRtdProvider",
+    "permutiveRtdProvider",
     "reconciliationRtdProvider",
-    "geoedgeRtdProvider",
     "sirdataRtdProvider"
   ],
   "fpdModule": [

@@ -333,6 +333,24 @@ describe('BeachfrontAdapter', function () {
           }]
         });
       });
+
+      it('must add the Unified ID 2.0 to the request', () => {
+        const uid2 = { id: '4321' };
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.userId = { uid2 };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.user.ext.eids[0]).to.deep.equal({
+          source: 'uidapi.com',
+          uids: [{
+            id: uid2.id,
+            ext: {
+              rtiPartner: 'UID2'
+            }
+          }]
+        });
+      });
     });
 
     describe('for banner bids', function () {
@@ -505,6 +523,16 @@ describe('BeachfrontAdapter', function () {
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
         expect(data.idl).to.equal(idl_env);
+      });
+
+      it('must add the Unified ID 2.0 to the request', () => {
+        const uid2 = { id: '4321' };
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.userId = { uid2 };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.uid2).to.equal(uid2.id);
       });
     });
 
