@@ -14,6 +14,7 @@ describe('stroeerCore bid adapter', function () {
     sandbox = sinon.sandbox.create();
     fakeServer = sandbox.useFakeServer();
     clock = sandbox.useFakeTimers();
+    delete localStorage.sdgYieldtest;
   });
 
   afterEach(() => {
@@ -1222,6 +1223,15 @@ describe('stroeerCore bid adapter', function () {
       assert.propertyVal(result[0], 'cp', 4);
       result[0].should.include.keys('rop');
       assert.propertyVal(result[0], 'ropFactor', 1.2)
+    });
+
+    it('should add data to meta object', () => {
+      const response = buildBidderResponse();
+      response.bids[0] = Object.assign(response.bids[0], {adomain: ['website.org', 'domain.com']});
+      const result = spec.interpretResponse({body: response});
+      assert.deepPropertyVal(result[0], 'meta', {advertiserDomains: ['website.org', 'domain.com']});
+      // nothing provided for the second bid
+      assert.deepPropertyVal(result[1], 'meta', {advertiserDomains: undefined});
     });
 
     describe('should add generateAd method on bid object', () => {

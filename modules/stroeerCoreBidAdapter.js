@@ -380,7 +380,9 @@ export const spec = {
           netRevenue: true,
           creativeId: '',
           mediaType,
-
+          meta: {
+            advertiserDomains: bidResponse.adomain
+          },
           // Custom fields
           cpm2: bidResponse.cpm2 || 0,
           floor: bidResponse.floor || cpm,
