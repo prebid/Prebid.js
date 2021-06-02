@@ -230,8 +230,11 @@ describe('Digital Garage Keyword Module', function () {
         ],
       },
     ];
+    after('clear config', () => {
+      config.resetConfig();
+    });
     it('should get profiles error(404).', function (done) {
-      let pbjs = cloneDeep(config)
+      let pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
       let moduleConfig = cloneDeep(DEF_CONFIG);
       dgRtd.getDgKeywordsAndSet(
@@ -263,7 +266,7 @@ describe('Digital Garage Keyword Module', function () {
       request.respond(404);
     });
     it('should get profiles timeout.', function (done) {
-      let pbjs = cloneDeep(config)
+      let pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
       let moduleConfig = cloneDeep(DEF_CONFIG);
       moduleConfig.params.timeout = 10;
@@ -304,7 +307,7 @@ describe('Digital Garage Keyword Module', function () {
       }, 1000);
     });
     it('should get profiles ok(200).', function (done) {
-      let pbjs = cloneDeep(config)
+      let pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
       let moduleConfig = cloneDeep(DEF_CONFIG);
       dgRtd.getDgKeywordsAndSet(
