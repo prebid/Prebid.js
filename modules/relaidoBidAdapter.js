@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.2';
+const ADAPTER_VERSION = '1.0.3';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -17,21 +17,17 @@ function isBidRequestValid(bid) {
     utils.logWarn('placementId param is reqeuired.');
     return false;
   }
-  if (hasVideoMediaType(bid)) {
-    if (!isVideoValid(bid)) {
-      utils.logWarn('Invalid mediaType video.');
-      return false;
-    }
-  } else if (hasBannerMediaType(bid)) {
-    if (!isBannerValid(bid)) {
-      utils.logWarn('Invalid mediaType banner.');
-      return false;
-    }
+  if (hasVideoMediaType(bid) && isVideoValid(bid)) {
+    return true;
   } else {
-    utils.logWarn('Invalid mediaTypes input banner or video.');
-    return false;
+    utils.logWarn('Invalid mediaType video.');
   }
-  return true;
+  if (hasBannerMediaType(bid) && isBannerValid(bid)) {
+    return true;
+  } else {
+    utils.logWarn('Invalid mediaType banner.');
+  }
+  return false;
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
@@ -43,7 +39,21 @@ function buildRequests(validBidRequests, bidderRequest) {
     const bidDomain = bidRequest.params.domain || BIDDER_DOMAIN;
     const bidUrl = `https://${bidDomain}/bid/v1/prebid/${placementId}`;
     const uuid = getUuid();
-    const mediaType = getMediaType(bidRequest);
+    let mediaType = '';
+    let width = 0;
+    let height = 0;
+
+    if (hasVideoMediaType(bidRequest) && isVideoValid(bidRequest)) {
+      const playerSize = getValidSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+      width = playerSize[0][0];
+      height = playerSize[0][1];
+      mediaType = VIDEO;
+    } else if (hasBannerMediaType(bidRequest) && isBannerValid(bidRequest)) {
+      const sizes = getValidSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes'));
+      width = sizes[0][0];
+      height = sizes[0][1];
+      mediaType = BANNER;
+    }
 
     let payload = {
       version: ADAPTER_VERSION,
@@ -57,17 +67,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       transaction_id: bidRequest.transactionId,
       media_type: mediaType,
       uuid: uuid,
+      width: width,
+      height: height
     };
-
-    if (hasVideoMediaType(bidRequest)) {
-      const playerSize = getValidSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
-      payload.width = playerSize[0][0];
-      payload.height = playerSize[0][1];
-    } else if (hasBannerMediaType(bidRequest)) {
-      const sizes = getValidSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes'));
-      payload.width = sizes[0][0];
-      payload.height = sizes[0][1];
-    }
 
     // It may not be encoded, so add it at the end of the payload
     payload.ref = bidderRequest.refererInfo.referer;
@@ -83,10 +85,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       player: bidRequest.params.player,
       width: payload.width,
       height: payload.height,
-      mediaType: mediaType,
+      mediaType: payload.media_type
     });
   }
-
   return bidRequests;
 }
 
@@ -162,6 +163,7 @@ function onTimeout(data) {
     auction_id: utils.deepAccess(data, '0.auctionId'),
     bid_id: utils.deepAccess(data, '0.bidId'),
     ad_unit_code: utils.deepAccess(data, '0.adUnitCode'),
+    version: ADAPTER_VERSION,
     ref: window.location.href,
   }).replace(/\&$/, '');
   const bidDomain = utils.deepAccess(data, '0.params.0.domain') || BIDDER_DOMAIN;
@@ -248,15 +250,6 @@ export function isMobile() {
   return false;
 }
 
-function getMediaType(bid) {
-  if (hasVideoMediaType(bid)) {
-    return VIDEO;
-  } else if (hasBannerMediaType(bid)) {
-    return BANNER;
-  }
-  return '';
-}
-
 function hasBannerMediaType(bid) {
   return !!utils.deepAccess(bid, 'mediaTypes.banner');
 }
@@ -272,7 +265,10 @@ function getValidSizes(sizes) {
       if (utils.isArray(sizes[i]) && sizes[i].length == 2) {
         const width = sizes[i][0];
         const height = sizes[i][1];
-        if ((width >= 300 && height >= 250) || (width == 1 && height == 1)) {
+        if (width == 1 && height == 1) {
+          return [[1, 1]];
+        }
+        if ((width >= 300 && height >= 250)) {
           result.push([width, height]);
         }
       }

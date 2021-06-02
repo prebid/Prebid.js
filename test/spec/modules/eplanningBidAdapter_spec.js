@@ -26,6 +26,7 @@ describe('E-Planning Adapter', function () {
   const I_ID = '7854abc56248f873';
   const CRID = '1234567890';
   const TEST_ISV = 'leles.e-planning.net';
+  const ADOMAIN = 'adomain.com';
   const validBid = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
@@ -237,6 +238,39 @@ describe('E-Planning Adapter', function () {
       ]
     }
   };
+  const responseWithAdomain = {
+    body: {
+      'sI': {
+        'k': '12345'
+      },
+      'sec': {
+        'k': 'ROS'
+      },
+      'sp': [{
+        'k': CLEAN_ADUNIT_CODE,
+        'a': [{
+          'adm': ADM,
+          'id': '7854abc56248f874',
+          'i': I_ID,
+          'fi': '7854abc56248f872',
+          'ip': '45621afd87462104',
+          'w': W,
+          'h': H,
+          'crid': CRID,
+          'pr': CPM,
+          'adom': ADOMAIN
+        }],
+      }],
+      'cs': [
+        'http://a-sync-url.com/',
+        {
+          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'ifr': true
+        }
+      ]
+    }
+  };
+
   const responseWithNoSpace = {
     body: {
       'sI': {
@@ -517,6 +551,25 @@ describe('E-Planning Adapter', function () {
         creativeId: CRID,
         netRevenue: true,
         currency: 'USD',
+      };
+      expect(bidResponse).to.deep.equal(expectedResponse);
+    });
+
+    it('should pass advertiserDomains when present', function () {
+      const bidResponse = spec.interpretResponse(responseWithAdomain, { adUnitToBidId: { [CLEAN_ADUNIT_CODE]: BID_ID } })[0];
+      const expectedResponse = {
+        requestId: BID_ID,
+        cpm: CPM,
+        width: W,
+        height: H,
+        ad: ADM,
+        ttl: 120,
+        creativeId: CRID,
+        netRevenue: true,
+        currency: 'USD',
+        meta: {
+          advertiserDomains: ADOMAIN
+        }
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });

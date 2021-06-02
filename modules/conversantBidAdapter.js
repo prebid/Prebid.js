@@ -62,7 +62,7 @@ export const spec = {
     let bidurl = URL;
 
     const conversantImps = validBidRequests.map(function(bid) {
-      const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      const bidfloor = getBidFloor(bid);
 
       siteId = utils.getBidIdParameter('site_id', bid.params) || siteId;
       pubcidName = utils.getBidIdParameter('pubcid_name', bid.params) || pubcidName;
@@ -376,6 +376,30 @@ function readStoredValue(key) {
   }
 
   return storedValue;
+}
+
+/**
+ * Get the floor price from bid.params for backward compatibility.
+ * If not found, then check floor module.
+ * @param bid A valid bid object
+ * @returns {*|number} floor price
+ */
+function getBidFloor(bid) {
+  let floor = utils.getBidIdParameter('bidfloor', bid.params);
+
+  if (!floor && utils.isFn(bid.getFloor)) {
+    const floorObj = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (utils.isPlainObject(floorObj) && !isNaN(floorObj.floor) && floorObj.currency === 'USD') {
+      floor = floorObj.floor;
+    }
+  }
+
+  return floor
 }
 
 registerBidder(spec);

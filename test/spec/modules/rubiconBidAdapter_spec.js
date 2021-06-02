@@ -1520,6 +1520,8 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
+          // should contain version
+          expect(post.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: 'v$prebid.version$'});
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           // EIDs should exist
           expect(post.user.ext).to.have.property('eids').that.is.an('array');
