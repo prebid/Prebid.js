@@ -350,7 +350,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
         netRevenue: false,
         ttl: TIME_TO_LIVE,
         meta: {
-          advertiserDomains: serverBid && serverBid.adomain ? serverBid.adomain : []
+          advertiserDomains: serverBid.adomain ? serverBid.adomain : []
         },
         dealId: serverBid.dealid
       };

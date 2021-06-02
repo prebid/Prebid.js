@@ -122,7 +122,10 @@ function interpretResponse(serverResponse) {
           netRevenue: true,
           mediaType: BANNER,
           ad: _getAdMarkup(brightcomBid),
-          ttl: 60
+          ttl: 60,
+          meta: {
+            advertiserDomains: brightcomBid && brightcomBid.adomain ? brightcomBid.adomain : []
+          }
         });
       });
     }
