@@ -175,7 +175,7 @@ function createBid(bidResponse, bidRequest) {
     mediaType,
     ttl: 300,
     meta: {
-      advertiserDomains: bid && bid.adomain ? bid.adomain : []
+      advertiserDomains: bidResponse.adomain || []
     }
   };
 
