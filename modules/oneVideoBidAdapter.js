@@ -38,18 +38,18 @@ export const spec = {
       };
       // Mimes validation
       if (typeof bid.mediaTypes.video.mimes === 'undefined') {
-        if (bid.params.video && typeof bid.params.video.mimes === 'undefined') {
+        if (!bid.params.video || typeof bid.params.video.mimes === 'undefined') {
           utils.logError('Failed validation: adUnit mediaTypes.mimes OR params.video.mimes not declared');
           return false;
         };
       };
-    }
-
-    // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
-    if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
-      utils.logError('Failed validation: Dynamic Ad Placement cannot be used with context Outstream (params.video.display=1)');
-      return false;
+      // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
+      if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
+        utils.logError('Failed validation: Dynamic Ad Placement cannot be used with context Outstream (params.video.display=1)');
+        return false;
+      };
     };
+
     // DAP Validation
     if (bid.mediaTypes.banner && !bid.params.video.display) {
       utils.logError('Failed validation: If you are trying to use Dynamic Ad Placement you must pass params.video.display=1');

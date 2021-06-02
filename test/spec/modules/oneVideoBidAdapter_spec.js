@@ -104,12 +104,20 @@ describe('OneVideoBidAdapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when both mediaTypes.video and params.video are missing mimes and player size params', function () {
+    it('should return false when both mediaTypes.video and params.video Objects are missing', function () {
+      bidRequest.mediaTypes = {};
+      bidRequest.params = {
+        pubId: 'brxd'
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
+
+    it('should return false when both mediaTypes.video and params.video are missing mimes and player size', function () {
       bidRequest.mediaTypes = {
         video: {
           context: 'instream'
         }
-      }
+      };
       bidRequest.params = {
         pubId: 'brxd'
       };
