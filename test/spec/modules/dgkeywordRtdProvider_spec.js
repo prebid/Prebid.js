@@ -329,6 +329,7 @@ describe('Digital Garage Keyword Module', function () {
             dg2: SUCCESS_ORTB2,
             dg: SUCCESS_ORTB2,
           });
+          pbjs.setBidderConfig({ bidders: Object.keys(['dg', 'dg2']), config: { ortb2: {} } });
           done();
         },
         moduleConfig,
