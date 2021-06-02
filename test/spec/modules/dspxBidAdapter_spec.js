@@ -228,7 +228,7 @@ describe('dspxAdapter', function () {
         'currency': 'EUR',
         'ttl': 60,
         'netRevenue': true,
-        'zone': '6682',
+        'zone': '6682'
       }
     };
 
