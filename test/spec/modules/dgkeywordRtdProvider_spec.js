@@ -226,101 +226,101 @@ describe('Digital Garage Keyword Module', function () {
         ],
       },
     ];
-    it('should get profiles error(404).', function (done) {
-      let pdjs = getGlobal();
-      pbjs.adUnits = cloneDeep(AD_UNITS);
-      let moduleConfig = cloneDeep(DEF_CONFIG);
-      dgRtd.getDgKeywordsAndSet(
-        pdjs,
-        () => {
-          let targets = pbjs.adUnits[0].bids;
-          expect(targets[1].bidder).to.be.equal('dg2');
-          expect(targets[1].params.placementId).to.be.equal(99999998);
-          expect(targets[1].params.dgkeyword).to.be.an('undefined');
-          expect(targets[1].params.keywords).to.be.an('undefined');
-          targets = pbjs.adUnits[1].bids;
-          expect(targets[0].bidder).to.be.equal('dg');
-          expect(targets[0].params.placementId).to.be.equal(99999996);
-          expect(targets[0].params.dgkeyword).to.be.an('undefined');
-          expect(targets[0].params.keywords).to.be.an('undefined');
-          expect(targets[2].bidder).to.be.equal('dg3');
-          expect(targets[2].params.placementId).to.be.equal(99999994);
-          expect(targets[2].params.dgkeyword).to.be.an('undefined');
-          expect(targets[2].params.keywords).to.be.an('undefined');
+    // it('should get profiles error(404).', function (done) {
+    //   let pdjs = getGlobal();
+    //   pbjs.adUnits = cloneDeep(AD_UNITS);
+    //   let moduleConfig = cloneDeep(DEF_CONFIG);
+    //   dgRtd.getDgKeywordsAndSet(
+    //     pdjs,
+    //     () => {
+    //       let targets = pbjs.adUnits[0].bids;
+    //       expect(targets[1].bidder).to.be.equal('dg2');
+    //       expect(targets[1].params.placementId).to.be.equal(99999998);
+    //       expect(targets[1].params.dgkeyword).to.be.an('undefined');
+    //       expect(targets[1].params.keywords).to.be.an('undefined');
+    //       targets = pbjs.adUnits[1].bids;
+    //       expect(targets[0].bidder).to.be.equal('dg');
+    //       expect(targets[0].params.placementId).to.be.equal(99999996);
+    //       expect(targets[0].params.dgkeyword).to.be.an('undefined');
+    //       expect(targets[0].params.keywords).to.be.an('undefined');
+    //       expect(targets[2].bidder).to.be.equal('dg3');
+    //       expect(targets[2].params.placementId).to.be.equal(99999994);
+    //       expect(targets[2].params.dgkeyword).to.be.an('undefined');
+    //       expect(targets[2].params.keywords).to.be.an('undefined');
 
-          expect(config.getBidderConfig()).to.be.deep.equal({});
+    //       expect(config.getBidderConfig()).to.be.deep.equal({});
 
-          done();
-        },
-        moduleConfig,
-        null
-      );
-      const request = server.requests[0];
-      request.respond(404);
-    });
-    it('should get profiles timeout.', function (done) {
-      let pdjs = getGlobal();
-      pbjs.adUnits = cloneDeep(AD_UNITS);
-      let moduleConfig = cloneDeep(DEF_CONFIG);
-      moduleConfig.params.timeout = 10;
-      dgRtd.getDgKeywordsAndSet(
-        pdjs,
-        () => {
-          let targets = pbjs.adUnits[0].bids;
-          expect(targets[1].bidder).to.be.equal('dg2');
-          expect(targets[1].params.placementId).to.be.equal(99999998);
-          expect(targets[1].params.dgkeyword).to.be.an('undefined');
-          expect(targets[1].params.keywords).to.be.an('undefined');
-          targets = pbjs.adUnits[1].bids;
-          expect(targets[0].bidder).to.be.equal('dg');
-          expect(targets[0].params.placementId).to.be.equal(99999996);
-          expect(targets[0].params.dgkeyword).to.be.an('undefined');
-          expect(targets[0].params.keywords).to.be.an('undefined');
-          expect(targets[2].bidder).to.be.equal('dg3');
-          expect(targets[2].params.placementId).to.be.equal(99999994);
-          expect(targets[2].params.dgkeyword).to.be.an('undefined');
-          expect(targets[2].params.keywords).to.be.an('undefined');
+    //       done();
+    //     },
+    //     moduleConfig,
+    //     null
+    //   );
+    //   const request = server.requests[0];
+    //   request.respond(404);
+    // });
+    // it('should get profiles timeout.', function (done) {
+    //   let pdjs = getGlobal();
+    //   pbjs.adUnits = cloneDeep(AD_UNITS);
+    //   let moduleConfig = cloneDeep(DEF_CONFIG);
+    //   moduleConfig.params.timeout = 10;
+    //   dgRtd.getDgKeywordsAndSet(
+    //     pdjs,
+    //     () => {
+    //       let targets = pbjs.adUnits[0].bids;
+    //       expect(targets[1].bidder).to.be.equal('dg2');
+    //       expect(targets[1].params.placementId).to.be.equal(99999998);
+    //       expect(targets[1].params.dgkeyword).to.be.an('undefined');
+    //       expect(targets[1].params.keywords).to.be.an('undefined');
+    //       targets = pbjs.adUnits[1].bids;
+    //       expect(targets[0].bidder).to.be.equal('dg');
+    //       expect(targets[0].params.placementId).to.be.equal(99999996);
+    //       expect(targets[0].params.dgkeyword).to.be.an('undefined');
+    //       expect(targets[0].params.keywords).to.be.an('undefined');
+    //       expect(targets[2].bidder).to.be.equal('dg3');
+    //       expect(targets[2].params.placementId).to.be.equal(99999994);
+    //       expect(targets[2].params.dgkeyword).to.be.an('undefined');
+    //       expect(targets[2].params.keywords).to.be.an('undefined');
 
-          expect(config.getBidderConfig()).to.be.deep.equal({});
+    //       expect(config.getBidderConfig()).to.be.deep.equal({});
 
-          done();
-        },
-        moduleConfig,
-        null
-      );
-      setTimeout(() => {
-        const request = server.requests[0];
-        if (request) {
-          request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
-        }
-      }, 1000)
-    });
-    it('should get profiles ok(200).', function (done) {
-      let pdjs = getGlobal();
-      pbjs.adUnits = cloneDeep(AD_UNITS);
-      let moduleConfig = cloneDeep(DEF_CONFIG);
-      dgRtd.getDgKeywordsAndSet(pdjs, () => {
-        let targets = pbjs.adUnits[0].bids;
-        expect(targets[1].bidder).to.be.equal('dg2');
-        expect(targets[1].params.placementId).to.be.equal(99999998);
-        expect(targets[1].params.dgkeyword).to.be.an('undefined');
-        expect(targets[1].params.keywords).to.be.deep.equal(SUCCESS_RESULT);
-        targets = pbjs.adUnits[1].bids;
-        expect(targets[0].bidder).to.be.equal('dg');
-        expect(targets[0].params.placementId).to.be.equal(99999996);
-        expect(targets[0].params.dgkeyword).to.be.an('undefined');
-        expect(targets[0].params.keywords).to.be.deep.equal(SUCCESS_RESULT);
-        expect(targets[2].bidder).to.be.equal('dg3');
-        expect(targets[2].params.placementId).to.be.equal(99999994);
-        expect(targets[2].params.dgkeyword).to.be.an('undefined');
-        expect(targets[2].params.keywords).to.be.an('undefined');
+    //       done();
+    //     },
+    //     moduleConfig,
+    //     null
+    //   );
+    //   setTimeout(() => {
+    //     const request = server.requests[0];
+    //     if (request) {
+    //       request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
+    //     }
+    //   }, 1000)
+    // });
+    // it('should get profiles ok(200).', function (done) {
+    //   let pdjs = getGlobal();
+    //   pbjs.adUnits = cloneDeep(AD_UNITS);
+    //   let moduleConfig = cloneDeep(DEF_CONFIG);
+    //   dgRtd.getDgKeywordsAndSet(pdjs, () => {
+    //     let targets = pbjs.adUnits[0].bids;
+    //     expect(targets[1].bidder).to.be.equal('dg2');
+    //     expect(targets[1].params.placementId).to.be.equal(99999998);
+    //     expect(targets[1].params.dgkeyword).to.be.an('undefined');
+    //     expect(targets[1].params.keywords).to.be.deep.equal(SUCCESS_RESULT);
+    //     targets = pbjs.adUnits[1].bids;
+    //     expect(targets[0].bidder).to.be.equal('dg');
+    //     expect(targets[0].params.placementId).to.be.equal(99999996);
+    //     expect(targets[0].params.dgkeyword).to.be.an('undefined');
+    //     expect(targets[0].params.keywords).to.be.deep.equal(SUCCESS_RESULT);
+    //     expect(targets[2].bidder).to.be.equal('dg3');
+    //     expect(targets[2].params.placementId).to.be.equal(99999994);
+    //     expect(targets[2].params.dgkeyword).to.be.an('undefined');
+    //     expect(targets[2].params.keywords).to.be.an('undefined');
 
-        // expect(config.getBidderConfig()).to.be.deep.equal({ dg2: SUCCESS_ORTB2, dg: SUCCESS_ORTB2 });
+    //     // expect(config.getBidderConfig()).to.be.deep.equal({ dg2: SUCCESS_ORTB2, dg: SUCCESS_ORTB2 });
 
-        done();
-      }, moduleConfig, null);
-      const request = server.requests[0];
-      request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
-    });
+    //     done();
+    //   }, moduleConfig, null);
+    //   const request = server.requests[0];
+    //   request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
+    // });
   });
 });
