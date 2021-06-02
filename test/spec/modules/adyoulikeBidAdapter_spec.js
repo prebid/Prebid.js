@@ -380,7 +380,7 @@ describe('Adyoulike Adapter', function () {
       sponsoredBy: 'QA Team',
       title: 'Adserver Traffic Redirect Internal',
     },
-    'Meta': testMetaObject
+    meta: testMetaObject
   }];
 
   const responseWithMultiplePlacements = [
