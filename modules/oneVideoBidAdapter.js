@@ -22,6 +22,10 @@ export const spec = {
       return false;
     }
 
+    // E2E test skip validations
+    if (bid.params && bid.params.video && bid.params.video.e2etest) {
+      return true;
+    }
     // MediaTypes Video / Banner validation
     if (typeof bid.mediaTypes.video === 'undefined' && typeof bid.mediaTypes.banner === 'undefined') {
       utils.logError('Failed validation: adUnit mediaTypes.video OR mediaTypes.banner not declared');
@@ -44,14 +48,14 @@ export const spec = {
         };
       };
       // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
-      if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
+      if (bid.mediaTypes.video.context === 'outstream' && bid.params.video && bid.params.video.display === 1) {
         utils.logError('Failed validation: Dynamic Ad Placement cannot be used with context Outstream (params.video.display=1)');
         return false;
       };
     };
 
     // DAP Validation
-    if (bid.mediaTypes.banner && !bid.params.video.display) {
+    if (bid.mediaTypes.banner && bid.params.video && !bid.params.video.display) {
       utils.logError('Failed validation: If you are trying to use Dynamic Ad Placement you must pass params.video.display=1');
       return false;
     };
@@ -221,15 +225,15 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.playerWidth && bid.params.video.playerHeight) {
       bidData.imp[0].video.w = bid.params.video.playerWidth;
       bidData.imp[0].video.h = bid.params.video.playerHeight;
-    } else if (bid.mediaTypes.video.playerSize) {
+    } else {
       const playerSize = getSize(bid.mediaTypes.video.playerSize);
       bidData.imp[0].video.w = playerSize.width;
       bidData.imp[0].video.h = playerSize.height;
     };
-    if (bid.mediaTypes.video.mimes) {
-      bidData.imp[0].video.mimes = bid.mediaTypes.video.mimes;
-    } else if (bid.params.video.mimes) {
+    if (bid.params.video.mimes) {
       bidData.imp[0].video.mimes = bid.params.video.mimes;
+    } else {
+      bidData.imp[0].video.mimes = bid.mediaTypes.video.mimes;
     };
     if (bid.mediaTypes.video.maxbitrate || bid.params.video.maxbitrate) {
       bidData.imp[0].video.maxbitrate = bid.params.video.maxbitrate || bid.mediaTypes.video.maxbitrate;

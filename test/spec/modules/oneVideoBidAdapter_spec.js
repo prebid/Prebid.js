@@ -248,7 +248,7 @@ describe('OneVideoBidAdapter', function () {
     it('should attach request data', function () {
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       const data = requests[0].data;
-      const [width, height] = bidRequest.playerSize;
+      const [width, height] = bidRequest.sizes;
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
