@@ -11,7 +11,8 @@ const CONSTANTS = {
   PREBID_VERSION: 6,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
-  USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id']
+  USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
+  META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType']
 };
 
 const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
@@ -236,8 +237,22 @@ function createBid(bidRequest, requestPlacement) {
     currency: bidModel.Currency || CONSTANTS.DEFAULT_CURRENCY,
     netRevenue: true,
     ttl: CONSTANTS.TIME_TO_LIVE,
-    ad: renderCreative(bidModel)
+    ad: renderCreative(bidModel),
+    meta: addMeta(bidModel.Meta)
   };
+}
+
+function addMeta(bidModelMeta) {
+  var meta = {};
+  if (bidModelMeta != null) {
+    for (let i = 0; i < CONSTANTS.META_TAXONOMY.length; i++) {
+      if (bidModelMeta.hasOwnProperty(CONSTANTS.META_TAXONOMY[i])) {
+        meta[CONSTANTS.META_TAXONOMY[i]] = bidModelMeta[CONSTANTS.META_TAXONOMY[i]];
+      }
+    }
+  }
+
+  return meta;
 }
 
 function generateRandomId() {
