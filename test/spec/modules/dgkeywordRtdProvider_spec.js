@@ -12,10 +12,15 @@ const DEF_CONFIG = {
     timeout: DG_GET_KEYWORDS_TIMEOUT,
   },
 };
-const DUMMY_RESPONSE_HEADER = {'Content-Type': 'application/json'};
+const DUMMY_RESPONSE_HEADER = { 'Content-Type': 'application/json' };
 const DUMMY_RESPONSE = { s: ['s1', 's2'], t: ['t1', 't2'] };
 const SUCCESS_RESULT = { opeaud: ['s1', 's2'], opectx: ['t1', 't2'] };
-const SUCCESS_ORTB2 = { ortb2: { site: { keywords: SUCCESS_RESULT }, user: { keywords: SUCCESS_RESULT } } };
+const SUCCESS_ORTB2 = {
+  ortb2: {
+    site: { keywords: SUCCESS_RESULT },
+    user: { keywords: SUCCESS_RESULT },
+  },
+};
 
 describe('Digital Garage Keyword Module', function () {
   it('should init and return always true', function () {
@@ -226,12 +231,6 @@ describe('Digital Garage Keyword Module', function () {
         ],
       },
     ];
-    beforeEach(function() {
-      config.resetConfig();
-    });
-    afterEach(function() {
-      config.resetConfig();
-    });
     it('should get profiles error(404).', function (done) {
       let pdjs = getGlobal();
       pbjs.adUnits = cloneDeep(AD_UNITS);
@@ -297,36 +296,52 @@ describe('Digital Garage Keyword Module', function () {
       setTimeout(() => {
         const request = server.requests[0];
         if (request) {
-          request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
+          request.respond(
+            200,
+            DUMMY_RESPONSE_HEADER,
+            JSON.stringify(DUMMY_RESPONSE)
+          );
         }
-      }, 1000)
+      }, 1000);
     });
     it('should get profiles ok(200).', function (done) {
       let pdjs = getGlobal();
       pbjs.adUnits = cloneDeep(AD_UNITS);
       let moduleConfig = cloneDeep(DEF_CONFIG);
-      dgRtd.getDgKeywordsAndSet(pdjs, () => {
-        let targets = pbjs.adUnits[0].bids;
-        expect(targets[1].bidder).to.be.equal('dg2');
-        expect(targets[1].params.placementId).to.be.equal(99999998);
-        expect(targets[1].params.dgkeyword).to.be.an('undefined');
-        expect(targets[1].params.keywords).to.be.deep.equal(SUCCESS_RESULT);
-        targets = pbjs.adUnits[1].bids;
-        expect(targets[0].bidder).to.be.equal('dg');
-        expect(targets[0].params.placementId).to.be.equal(99999996);
-        expect(targets[0].params.dgkeyword).to.be.an('undefined');
-        expect(targets[0].params.keywords).to.be.deep.equal(SUCCESS_RESULT);
-        expect(targets[2].bidder).to.be.equal('dg3');
-        expect(targets[2].params.placementId).to.be.equal(99999994);
-        expect(targets[2].params.dgkeyword).to.be.an('undefined');
-        expect(targets[2].params.keywords).to.be.an('undefined');
+      dgRtd.getDgKeywordsAndSet(
+        pdjs,
+        () => {
+          let targets = pbjs.adUnits[0].bids;
+          expect(targets[1].bidder).to.be.equal('dg2');
+          expect(targets[1].params.placementId).to.be.equal(99999998);
+          expect(targets[1].params.dgkeyword).to.be.an('undefined');
+          expect(targets[1].params.keywords).to.be.deep.equal(SUCCESS_RESULT);
+          targets = pbjs.adUnits[1].bids;
+          expect(targets[0].bidder).to.be.equal('dg');
+          expect(targets[0].params.placementId).to.be.equal(99999996);
+          expect(targets[0].params.dgkeyword).to.be.an('undefined');
+          expect(targets[0].params.keywords).to.be.deep.equal(SUCCESS_RESULT);
+          expect(targets[2].bidder).to.be.equal('dg3');
+          expect(targets[2].params.placementId).to.be.equal(99999994);
+          expect(targets[2].params.dgkeyword).to.be.an('undefined');
+          expect(targets[2].params.keywords).to.be.an('undefined');
 
-        expect(config.getBidderConfig()).to.be.deep.equal({ dg2: SUCCESS_ORTB2, dg: SUCCESS_ORTB2 });
-
-        done();
-      }, moduleConfig, null);
+          expect(config.getBidderConfig()).to.be.deep.equal({
+            dg2: SUCCESS_ORTB2,
+            dg: SUCCESS_ORTB2,
+          });
+          config.setBidderConfig({ bidders: ['dg', 'dg2'], config: { ortb2: {} } });
+          done();
+        },
+        moduleConfig,
+        null
+      );
       const request = server.requests[0];
-      request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
+      request.respond(
+        200,
+        DUMMY_RESPONSE_HEADER,
+        JSON.stringify(DUMMY_RESPONSE)
+      );
     });
   });
 });
