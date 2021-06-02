@@ -452,7 +452,6 @@ function createBid(response, bidRequests) {
     currency: CURRENCY,
     meta: response.Meta || { advertiserDomains: [] }
   };
-  };
 
   if (request && request.Native) {
     bid.native = getNativeAssets(response, request.Native);
