@@ -46,7 +46,7 @@ function buildRequests(bidReqs, bidderRequest) {
         },
         tagid: String(bid.adUnitCode)
       };
-      const bidFloor = utils.getBidIdParameter('bidFloor', bid.params);
+      const bidFloor = _getBidFloor(bid);
       if (bidFloor) {
         imp.bidfloor = bidFloor;
       }
@@ -244,6 +244,22 @@ function _getPercentInView(element, topWin, { w, h } = {}) {
   // No overlap between element and the viewport; therefore, the element
   // lies completely out of view
   return 0;
+}
+
+function _getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return bid.params.bidFloor ? bid.params.bidFloor : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
 }
 
 registerBidder(spec);
