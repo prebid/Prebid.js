@@ -213,7 +213,7 @@ describe('dspxAdapter', function () {
         'ttl': 60,
         'netRevenue': true,
         'zone': '6682',
-        'admomain': ['bdomain']
+        'adomain': ['bdomain']
       }
     };
     let serverVideoResponse = {
@@ -229,7 +229,6 @@ describe('dspxAdapter', function () {
         'ttl': 60,
         'netRevenue': true,
         'zone': '6682',
-        'admomain': ['vdomain']
       }
     };
 
@@ -259,7 +258,7 @@ describe('dspxAdapter', function () {
       type: 'vast2',
       vastXml: '{"reason":7001,"status":"accepted"}',
       mediaType: 'video',
-      meta: {advertiserDomains: ['vdomain']}
+      meta: {advertiserDomains: []}
     }];
 
     it('should get the correct bid response by display ad', function () {
@@ -272,6 +271,8 @@ describe('dspxAdapter', function () {
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0].meta.advertiserDomains.length).to.equal(1);
+      expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
     it('should get the correct dspx video bid response by display ad', function () {
@@ -290,6 +291,7 @@ describe('dspxAdapter', function () {
       }];
       let result = spec.interpretResponse(serverVideoResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[1]));
+      expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 
     it('handles empty bid response', function () {

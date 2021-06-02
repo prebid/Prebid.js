@@ -120,7 +120,7 @@ export const spec = {
         type: response.type,
         ttl: config.getConfig('_bidderTimeout'),
         meta: {
-          advertiserDomains: response.adomain
+          advertiserDomains: response.adomain || []
         }
       };
       if (response.vastXml) {
