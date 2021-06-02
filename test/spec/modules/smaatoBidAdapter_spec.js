@@ -28,11 +28,9 @@ const defaultBidderRequest = {
   timeout: 1200
 };
 
-const minimalBidderRequest = {
-  refererInfo: {
-    referer: REFERRER,
-  }
-};
+const BANNER_PREBID_MEDIATYPE = {
+  sizes: [[300, 50]]
+}
 
 const singleBannerBidRequest = {
   bidder: 'smaato',
@@ -41,39 +39,7 @@ const singleBannerBidRequest = {
     adspaceId: 'adspaceId'
   },
   mediaTypes: {
-    banner: {
-      sizes: [[300, 50]]
-    }
-  },
-  adUnitCode: '/19968336/header-bid-tag-0',
-  transactionId: 'transactionId',
-  sizes: [[300, 50]],
-  bidId: 'bidId',
-  bidderRequestId: 'bidderRequestId',
-  auctionId: 'auctionId',
-  src: 'client',
-  bidRequestsCount: 1,
-  bidderRequestsCount: 1,
-  bidderWinsCount: 0
-};
-
-const inAppBidRequest = {
-  bidder: 'smaato',
-  params: {
-    publisherId: 'publisherId',
-    adspaceId: 'adspaceId',
-    app: {
-      ifa: 'aDeviceId',
-      geo: {
-        lat: 33.3,
-        lon: -88.8
-      }
-    }
-  },
-  mediaTypes: {
-    banner: {
-      sizes: [[300, 50]]
-    }
+    banner: BANNER_PREBID_MEDIATYPE
   },
   adUnitCode: '/19968336/header-bid-tag-0',
   transactionId: 'transactionId',
@@ -107,7 +73,24 @@ describe('smaatoBidAdapterTest', () => {
   });
 
   describe('buildRequests', () => {
+    const BANNER_OPENRTB_IMP = {
+      w: 300,
+      h: 50,
+      format: [
+        {
+          h: 50,
+          w: 300
+        }
+      ]
+    }
+
     describe('common', () => {
+      const MINIMAL_BIDDER_REQUEST = {
+        refererInfo: {
+          referer: REFERRER,
+        }
+      };
+
       it('auction type is 1 (first price auction)', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
@@ -140,16 +123,7 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.imp).to.deep.equal([
           {
             id: 'bidId',
-            banner: {
-              w: 300,
-              h: 50,
-              format: [
-                {
-                  h: 50,
-                  w: 300
-                }
-              ]
-            },
+            banner: BANNER_OPENRTB_IMP,
             tagid: 'adspaceId'
           }
         ]);
@@ -175,7 +149,7 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('sends no gdpr applies if no gdpr exists', () => {
-        const reqs = spec.buildRequests([singleBannerBidRequest], minimalBidderRequest);
+        const reqs = spec.buildRequests([singleBannerBidRequest], MINIMAL_BIDDER_REQUEST);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.regs.ext.gdpr).to.not.exist;
@@ -197,7 +171,7 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('sends no us_privacy if no us_privacy exists', () => {
-        const reqs = spec.buildRequests([singleBannerBidRequest], minimalBidderRequest);
+        const reqs = spec.buildRequests([singleBannerBidRequest], MINIMAL_BIDDER_REQUEST);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.regs.ext.us_privacy).to.not.exist;
@@ -259,6 +233,37 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     describe('buildRequests for video imps', () => {
+      const VIDEO_OUTSTREAM_PREBID_MEDIATYPE = {
+        context: 'outstream',
+        playerSize: [[768, 1024]],
+        mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
+        minduration: 5,
+        maxduration: 30,
+        startdelay: 0,
+        linearity: 1,
+        protocols: [7],
+        skip: 1,
+        skipmin: 5,
+        api: [7],
+        ext: {rewarded: 0}
+      }
+      const VIDEO_OUTSTREAM_OPENRTB_IMP = {
+        mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
+        minduration: 5,
+        startdelay: 0,
+        linearity: 1,
+        h: 1024,
+        maxduration: 30,
+        skip: 1,
+        protocols: [7],
+        ext: {
+          rewarded: 0
+        },
+        skipmin: 5,
+        api: [7],
+        w: 768
+      }
+
       it('sends correct video imps', () => {
         const singleVideoBidRequest = {
           bidder: 'smaato',
@@ -267,20 +272,7 @@ describe('smaatoBidAdapterTest', () => {
             adspaceId: 'adspaceId'
           },
           mediaTypes: {
-            video: {
-              context: 'outstream',
-              playerSize: [[768, 1024]],
-              mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
-              minduration: 5,
-              maxduration: 30,
-              startdelay: 0,
-              linearity: 1,
-              protocols: [7],
-              skip: 1,
-              skipmin: 5,
-              api: [7],
-              ext: {rewarded: 0}
-            }
+            video: VIDEO_OUTSTREAM_PREBID_MEDIATYPE
           },
           adUnitCode: '/19968336/header-bid-tag-0',
           transactionId: 'transactionId',
@@ -297,28 +289,7 @@ describe('smaatoBidAdapterTest', () => {
         const reqs = spec.buildRequests([singleVideoBidRequest], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.imp).to.deep.equal([
-          {
-            id: 'bidId',
-            video: {
-              mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
-              minduration: 5,
-              startdelay: 0,
-              linearity: 1,
-              h: 1024,
-              maxduration: 30,
-              skip: 1,
-              protocols: [7],
-              ext: {
-                rewarded: 0
-              },
-              skipmin: 5,
-              api: [7],
-              w: 768
-            },
-            tagid: 'adspaceId'
-          }
-        ]);
+        expect(req.imp[0].video).to.deep.equal(VIDEO_OUTSTREAM_OPENRTB_IMP);
       });
 
       it('allows combined banner and video imp in single bid request', () => {
@@ -329,23 +300,8 @@ describe('smaatoBidAdapterTest', () => {
             adspaceId: 'adspaceId'
           },
           mediaTypes: {
-            banner: {
-              sizes: [[300, 50]]
-            },
-            video: {
-              context: 'outstream',
-              playerSize: [[768, 1024]],
-              mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
-              minduration: 5,
-              maxduration: 30,
-              startdelay: 0,
-              linearity: 1,
-              protocols: [7],
-              skip: 1,
-              skipmin: 5,
-              api: [7],
-              ext: {rewarded: 0}
-            }
+            banner: BANNER_PREBID_MEDIATYPE,
+            video: VIDEO_OUTSTREAM_PREBID_MEDIATYPE
           },
           adUnitCode: '/19968336/header-bid-tag-0',
           transactionId: 'transactionId',
@@ -362,63 +318,73 @@ describe('smaatoBidAdapterTest', () => {
         const reqs = spec.buildRequests([combinedBannerAndVideoBidRequest], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.imp).to.deep.equal([
-          {
-            id: 'bidId',
-            banner: {
-              w: 300,
-              h: 50,
-              format: [
-                {
-                  h: 50,
-                  w: 300
-                }
-              ]
-            },
-            video: {
-              mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
-              minduration: 5,
-              startdelay: 0,
-              linearity: 1,
-              h: 1024,
-              maxduration: 30,
-              skip: 1,
-              protocols: [7],
-              ext: {
-                rewarded: 0
-              },
-              skipmin: 5,
-              api: [7],
-              w: 768
-            },
-            tagid: 'adspaceId'
-          }
-        ]);
+        expect(req.imp[0].banner).to.deep.equal(BANNER_OPENRTB_IMP);
+        expect(req.imp[0].video).to.deep.equal(VIDEO_OUTSTREAM_OPENRTB_IMP);
       });
     });
 
     describe('in-app requests', () => {
-      it('add geo and ifa info to device object', () => {
+      const LOCATION = {
+        lat: 33.3,
+        lon: -88.8
+      }
+      const DEVICE_ID = 'aDeviceId'
+      const inAppBidRequestWithoutAppParams = {
+        bidder: 'smaato',
+        params: {
+          publisherId: 'publisherId',
+          adspaceId: 'adspaceId'
+        },
+        mediaTypes: {
+          banner: BANNER_PREBID_MEDIATYPE
+        },
+        adUnitCode: '/19968336/header-bid-tag-0',
+        transactionId: 'transactionId',
+        sizes: [[300, 50]],
+        bidId: 'bidId',
+        bidderRequestId: 'bidderRequestId',
+        auctionId: 'auctionId',
+        src: 'client',
+        bidRequestsCount: 1,
+        bidderRequestsCount: 1,
+        bidderWinsCount: 0
+      };
+
+      it('when geo and ifa info present, then add both to device object', () => {
+        const inAppBidRequest = utils.deepClone(inAppBidRequestWithoutAppParams);
+        inAppBidRequest.params.app = {ifa: DEVICE_ID, geo: LOCATION};
+
         const reqs = spec.buildRequests([inAppBidRequest], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.device.geo).to.deep.equal({'lat': 33.3, 'lon': -88.8});
-        expect(req.device.ifa).to.equal('aDeviceId');
+        expect(req.device.geo).to.deep.equal(LOCATION);
+        expect(req.device.ifa).to.equal(DEVICE_ID);
       });
 
-      it('when geo is missing, then add only ifa to device object', () => {
-        const inAppBidRequestWithoutGeo = utils.deepClone(inAppBidRequest);
-        delete inAppBidRequestWithoutGeo.params.app.geo
+      it('when ifa is present but geo is missing, then add only ifa to device object', () => {
+        const inAppBidRequest = utils.deepClone(inAppBidRequestWithoutAppParams);
+        inAppBidRequest.params.app = {ifa: DEVICE_ID};
 
-        const reqs = spec.buildRequests([inAppBidRequestWithoutGeo], defaultBidderRequest);
+        const reqs = spec.buildRequests([inAppBidRequest], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.device.geo).to.not.exist;
-        expect(req.device.ifa).to.equal('aDeviceId');
+        expect(req.device.ifa).to.equal(DEVICE_ID);
       });
 
-      it('add no specific device info if param does not exist', () => {
-        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
+      it('when geo is present but ifa is missing, then add only geo to device object', () => {
+        const inAppBidRequest = utils.deepClone(inAppBidRequestWithoutAppParams);
+        inAppBidRequest.params.app = {geo: LOCATION};
+
+        const reqs = spec.buildRequests([inAppBidRequest], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.device.geo).to.deep.equal(LOCATION);
+        expect(req.device.ifa).to.not.exist;
+      });
+
+      it('when app param does not exist, then add no specific device info', () => {
+        const reqs = spec.buildRequests([inAppBidRequestWithoutAppParams], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.device.geo).to.not.exist;
@@ -435,9 +401,7 @@ describe('smaatoBidAdapterTest', () => {
             adspaceId: 'adspaceId'
           },
           mediaTypes: {
-            banner: {
-              sizes: [[300, 50]]
-            }
+            banner: BANNER_PREBID_MEDIATYPE
           },
           adUnitCode: '/19968336/header-bid-tag-0',
           transactionId: 'transactionId',
