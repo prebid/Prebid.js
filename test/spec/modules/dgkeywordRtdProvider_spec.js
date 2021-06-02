@@ -226,6 +226,12 @@ describe('Digital Garage Keyword Module', function () {
         ],
       },
     ];
+    beforeEach(function() {
+      config.resetConfig();
+    });
+    afterEach(function() {
+      config.resetConfig();
+    });
     it('should get profiles error(404).', function (done) {
       let pdjs = getGlobal();
       pbjs.adUnits = cloneDeep(AD_UNITS);
@@ -321,12 +327,6 @@ describe('Digital Garage Keyword Module', function () {
       }, moduleConfig, null);
       const request = server.requests[0];
       request.respond(200, DUMMY_RESPONSE_HEADER, JSON.stringify(DUMMY_RESPONSE));
-    });
-    beforeEach(function() {
-      config.resetConfig();
-    });
-    afterEach(function() {
-      config.resetConfig();
     });
   });
 });
