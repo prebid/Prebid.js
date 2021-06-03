@@ -43,7 +43,7 @@ export const spec = {
     const gdprApplies = utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
     const reqConsent = (gdprApplies !== undefined) ? '&consentString=' + consentString : '';
-    const reqSegments = (segments !== undefined && utils.isArray(segments) && segments.length > 0) ? '&segments=' + segments.join(',') : '';
+    const reqSegments = (segments.length > 0) ? '&segments=' + segments.join(',') : '';
 
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
