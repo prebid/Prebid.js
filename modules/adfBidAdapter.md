@@ -1,21 +1,18 @@
 # Overview
 
-Module Name: Adform OpenRTB Adapter
+Module Name: Adf Adapter
 Module Type: Bidder Adapter
 Maintainer: Scope.FL.Scripts@adform.com
 
 # Description
 
 Module that connects to Adform demand sources to fetch bids.
-Only native format is supported. Using OpenRTB standard.
+Banner, video and native formats are supported. Using OpenRTB standard. Previous adapter name - adformOpenRTB.
 
 # Test Parameters
 ```
-    var adUnits = [
+    var adUnits = [{
         code: '/19968336/prebid_native_example_1',
-        sizes: [
-            [360, 360]
-        ],
         mediaTypes: {
             native: {
                 image: {
@@ -42,18 +39,38 @@ Only native format is supported. Using OpenRTB standard.
             }
         },
         bids: [{
-            bidder: 'adformOpenRTB',
+            bidder: 'adf',
             params: {
-                mid: 606169,                  // required
-                adxDomain: 'adx.adform.net',  // optional
-                siteId: '23455',              // optional
-                priceType: 'gross'            // optional, default is 'net'
-                publisher: {                  // optional block
-                  id: "2706",
-                  name: "Publishers Name",
-                  domain: "publisher.com"
-                }
+                mid: 606169,                 // required
+                adxDomain: 'adx.adform.net'  // optional
             }
         }]
-    ];
+    }, {
+        code: '/19968336/prebid_banner_example_1',
+        mediaTypes: {
+            banner: {
+                sizes: [[ 300, 250 ]]
+            }
+        }
+        bids: [{
+            bidder: 'adf',
+            params: {
+                mid: 1038466
+            }
+        }]
+    }, {
+        code: '/19968336/prebid_video_example_1',
+        mediaTypes: {
+            video: {
+                context: 'outstream',
+                mimes: ['video/mp4']
+            }
+        }
+        bids: [{
+            bidder: 'adf',
+            params: {
+                mid: 822732
+            }
+        }]
+    }];
 ```

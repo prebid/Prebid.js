@@ -4,8 +4,9 @@ import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
-const ENDPOINT_URL = 'https:/ssp.disqus.com/bid';
-const USER_SYNC_URL = 'https:/ssp.disqus.com/match';
+const ENDPOINT_URL = 'https://ssp.disqus.com/bid';
+const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
+const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
@@ -42,7 +43,7 @@ export const spec = {
     const secure = 1; // treat all requests as secure
     const request = validBidRequests[0];
     const params = request.params;
-    let impData = {
+    const impData = {
       id: request.bidId,
       secure: secure,
       banner: buildBanner(request)
@@ -53,11 +54,12 @@ export const spec = {
       cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
-      device: fpd.device ? fpd.device : {},
+      device: {...fpd.device, ...params.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
-        tags: params.tags ? params.tags : {}
+        tags: params.tags ? params.tags : {},
+        sid: params.sid ? params.sid : undefined
       }
     };
 
@@ -82,6 +84,7 @@ export const spec = {
         }
       };
     }
+    provideEids(request, payload);
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -122,23 +125,38 @@ export const spec = {
   },
 
   /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @param gdprConsent The GDPR consent parameters
-   * @param uspConsent The USP consent parameters
-   * @return {UserSync[]} The user syncs which should be dropped.
+   * Register User Sync.
    */
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = [];
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: USER_SYNC_URL
-      });
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+    let syncurl = '';
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
     }
-    return syncs;
+
+    // CCPA
+    if (uspConsent) {
+      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      syncurl += '&coppa=1';
+    }
+
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: USER_SYNC_URL_IFRAME + syncurl
+      }];
+    } else {
+      return [{
+        type: 'image',
+        url: USER_SYNC_URL_IMAGE + syncurl
+      }];
+    }
   }
 }
 
@@ -153,6 +171,12 @@ function buildBanner(request) {
     w: sizes[0][0],
     h: sizes[0][1]
   };
+}
+
+function provideEids(request, payload) {
+  if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
+    utils.deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
+  }
 }
 
 registerBidder(spec);

@@ -170,6 +170,7 @@ export const spec = {
           currency: response.win_cur,
           netRevenue: bidRequest.netRevenue !== 'gross',
           ttl: 360,
+          meta: { advertiserDomains: response && response.adomain ? response.adomain : [] },
           ad: response.banner,
           bidderCode: bidRequest.bidder,
           transactionId: bid.transactionId,

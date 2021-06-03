@@ -588,4 +588,77 @@ describe('Conversant adapter tests', function() {
       expect(payload).to.have.deep.nested.property('user.ext.fpc', 'fghijk');
     });
   });
+
+  describe('price floor module', function() {
+    let bidRequest;
+    beforeEach(function() {
+      bidRequest = [utils.deepClone(bidRequests[0])];
+      delete bidRequest[0].params.bidfloor;
+    });
+
+    it('obtain floor from getFloor', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 3.21
+        };
+      };
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 3.21);
+    });
+
+    it('obtain floor from params', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 3.21
+        };
+      };
+      bidRequest[0].params.bidfloor = 0.6;
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 0.6);
+    });
+
+    it('unsupported currency', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'EUR',
+          floor: 1.23
+        };
+      };
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 0);
+    });
+
+    it('bad floor value', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 'test'
+        };
+      };
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 0);
+    });
+
+    it('empty floor object', function() {
+      bidRequest[0].getFloor = () => {
+        return {};
+      };
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 0);
+    });
+
+    it('undefined floor result', function() {
+      bidRequest[0].getFloor = () => {};
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 0);
+    });
+  });
 });

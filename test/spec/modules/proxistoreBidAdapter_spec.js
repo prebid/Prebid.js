@@ -54,7 +54,7 @@ describe('ProxistoreBidAdapter', function () {
     const url = {
       cookieBase: 'https://abs.proxistore.com/fr/v3/rtb/prebid/multi',
       cookieLess:
-        'https://abs.proxistore.com/fr/v3/rtb/prebid/multi/cookieless',
+        'https://abs.cookieless-proxistore.com/fr/v3/rtb/prebid/multi',
     };
     let request = spec.buildRequests([bid], bidderRequest);
     it('should return a valid object', function () {

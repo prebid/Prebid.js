@@ -93,12 +93,12 @@ Or for Babel 6:
 Then you can use Prebid.js as any other npm depedendency
 
 ```javascript
-import prebid from 'prebid.js';
+import pbjs from 'prebid.js';
 import 'prebid.js/modules/rubiconBidAdapter'; // imported modules will register themselves automatically with prebid
 import 'prebid.js/modules/appnexusBidAdapter';
-prebid.processQueue();  // required to process existing pbjs.queue blocks and setup any further pbjs.queue execution
+pbjs.processQueue();  // required to process existing pbjs.queue blocks and setup any further pbjs.queue execution
 
-prebid.requestBids({
+pbjs.requestBids({
   ...
 })
 
@@ -202,7 +202,7 @@ To run the unit tests:
 gulp test
 ```
 
-To run the unit tests for a perticular file (example for pubmaticBidAdapter_spec.js):
+To run the unit tests for a particular file (example for pubmaticBidAdapter_spec.js):
 ```bash
 gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js"
 ```

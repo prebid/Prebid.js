@@ -108,16 +108,31 @@ export const spec = {
    * @param {*} serverResponses A successful response from the server.
    * @return {Syncs[]} An array of syncs that should be executed.
    */
-  getUserSyncs: function(syncOptions, serverResponses) {
-    const syncs = []
-    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
-      if (serverResponses[0].body.cSyncUrl === 'https://csync.smilewanted.com') {
-        syncs.push({
-          type: 'iframe',
-          url: serverResponses[0].body.cSyncUrl
-        });
+  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
+    let params = '';
+
+    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      // add 'gdpr' only if 'gdprApplies' is defined
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        params += `?gdpr_consent=${gdprConsent.consentString}`;
       }
     }
+
+    if (uspConsent) {
+      params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
+    }
+
+    const syncs = []
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'https://csync.smilewanted.com' + params
+      });
+    }
+
     return syncs;
   }
 }

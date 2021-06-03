@@ -204,7 +204,14 @@ describe('Outbrain Adapter', function () {
                 request: JSON.stringify(expectedNativeAssets)
               }
             }
-          ]
+          ],
+          ext: {
+            prebid: {
+              channel: {
+                name: 'pbjs', version: '$prebid.version$'
+              }
+            }
+          }
         }
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         expect(res.url).to.equal('https://bidder-url.com')
@@ -244,7 +251,14 @@ describe('Outbrain Adapter', function () {
                 ]
               }
             }
-          ]
+          ],
+          ext: {
+            prebid: {
+              channel: {
+                name: 'pbjs', version: '$prebid.version$'
+              }
+            }
+          }
         }
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         expect(res.url).to.equal('https://bidder-url.com')
@@ -493,19 +507,9 @@ describe('Outbrain Adapter', function () {
       config.resetConfig()
     })
 
-    it('should return user sync if pixel enabled', function () {
-      const ret = spec.getUserSyncs({pixelEnabled: true})
-      expect(ret).to.deep.equal([{type: 'image', url: 'https://usersync-url.com'}])
-    })
     it('should return user sync if pixel enabled with outbrain config', function () {
-      config.resetConfig()
-      config.setConfig({
-        outbrain: {
-          usersyncUrl: 'https://usersync-url.com',
-        }
-      })
       const ret = spec.getUserSyncs({pixelEnabled: true})
-      expect(ret).to.deep.equal([{type: 'image', url: 'https://usersync-url.com'}])
+      expect(ret).to.deep.equal([{type: 'image', url: usersyncUrl}])
     })
 
     it('should not return user sync if pixel disabled', function () {
@@ -521,25 +525,25 @@ describe('Outbrain Adapter', function () {
 
     it('should pass GDPR consent', function() {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
-        type: 'image', url: `${usersyncUrl}&gdpr=1&gdpr_consent=foo`
+        type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=foo`
       }]);
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
-        type: 'image', url: `${usersyncUrl}&gdpr=0&gdpr_consent=foo`
+        type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=foo`
       }]);
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
-        type: 'image', url: `${usersyncUrl}&gdpr=1&gdpr_consent=`
+        type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=`
       }]);
     });
 
     it('should pass US consent', function() {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
-        type: 'image', url: `${usersyncUrl}&us_privacy=1NYN`
+        type: 'image', url: `${usersyncUrl}?us_privacy=1NYN`
       }]);
     });
 
     it('should pass GDPR and US consent', function() {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
-        type: 'image', url: `${usersyncUrl}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
+        type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
       }]);
     });
   })

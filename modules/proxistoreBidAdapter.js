@@ -57,7 +57,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
 
   const endPointUri = payload.gdpr.consentGiven || !payload.gdpr.applies
     ? `https://abs.proxistore.com/${payload.language}/v3/rtb/prebid/multi`
-    : `https://abs.proxistore.com/${payload.language}/v3/rtb/prebid/multi/cookieless`;
+    : `https://abs.cookieless-proxistore.com/${payload.language}/v3/rtb/prebid/multi`;
 
   return {
     method: 'POST',
