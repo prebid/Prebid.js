@@ -302,6 +302,45 @@ describe('VisxAdapter', function () {
     });
   });
 
+  describe('buildRequests (multiple media types w/ unsupported video+outstream)', function () {
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'https://example.com'
+      }
+    };
+    const referrer = bidderRequest.refererInfo.referer;
+    const bidRequests = [
+      {
+        'bidder': 'visx',
+        'params': {
+          'uid': '903538'
+        },
+        'adUnitCode': 'misconfigured-video',
+        'sizes': [[300, 250], [300, 600]],
+        'mediaTypes': {
+          'video': {
+            'context': 'outstream',
+            'playerSize': [400, 300]
+          }
+        },
+        'bidId': '39aff3a7169a6a',
+        'bidderRequestId': '22edffe2733bf6',
+        'auctionId': '1d1a030790a476',
+      }
+    ];
+
+    it('should send requst for banner bid', function () {
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('u', referrer);
+      expect(payload).to.have.property('pt', 'net');
+      expect(payload).to.have.property('auids', '903538');
+      expect(payload).to.have.property('sizes', '300x250,300x600');
+      expect(payload).to.not.have.property('playerSize');
+    });
+  });
+
   describe('interpretResponse', function () {
     const responses = [
       {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
