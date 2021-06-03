@@ -658,7 +658,10 @@ describe('Quantcast adapter', function () {
             '<!DOCTYPE html><div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"><div style="width: 300px; margin-left: auto; margin-right: auto;"><script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script><img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></div></div>',
           creativeId: 1001,
           width: 300,
-          height: 250
+          height: 250,
+          meta: {
+            advertiserDomains: ['dailymail.com']
+          }
         }
       ]
     };
@@ -718,7 +721,10 @@ describe('Quantcast adapter', function () {
         ttl: QUANTCAST_TTL,
         creativeId: 1001,
         netRevenue: QUANTCAST_NET_REVENUE,
-        currency: 'USD'
+        currency: 'USD',
+        meta: {
+          advertisersDomain: ['dailymail.com']
+        }
       };
       const interpretedResponse = qcSpec.interpretResponse(response);
 
@@ -738,7 +744,10 @@ describe('Quantcast adapter', function () {
         creativeId: 1001,
         netRevenue: QUANTCAST_NET_REVENUE,
         currency: 'USD',
-        dealId: 'test-dealid'
+        dealId: 'test-dealid',
+        meta: {
+          advertisersDomain: ['dailymail.com']
+        }
       };
       const interpretedResponse = qcSpec.interpretResponse(response);
 
@@ -757,7 +766,8 @@ describe('Quantcast adapter', function () {
         creativeId: undefined,
         ad: undefined,
         netRevenue: QUANTCAST_NET_REVENUE,
-        currency: 'USD'
+        currency: 'USD',
+        meta: {}
       };
       const interpretedResponse = qcSpec.interpretResponse(videoResponse);
 
