@@ -715,7 +715,9 @@ describe('OneVideoBidAdapter', function () {
         netRevenue: true,
         adUnitCode: bidRequest.adUnitCode,
         renderer: (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined,
-        adomain: ['verizonmedia.com']
+        meta: {
+          advertiserDomains: ['verizonmedia.com']
+        }
       };
       expect(bidResponse).to.deep.equal(o);
     });
