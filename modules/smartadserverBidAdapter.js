@@ -87,9 +87,18 @@ export const spec = {
         }));
       } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
         // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
-        var protocol = bid.params.video.protocol ? bid.params.video.protocol : Math.max(videoMediaType.protocols)
-        var startDelay = 2;
+        // Assign a default protocol, the higher value means we are retrocompatible. Increase this to latest version when necessary.
+        var protocol = 4.0;
+        if (bid.params.video.protocol){
+          protocol = bid.params.video.protocol;
+        }
+        //Checks if not : null, undefined, Nan, emptyString, 0 or false
+        else if (videoMediaType.protocols)
+        {
+          protocol = Math.max(videoMediaType.protocols);
+        }
 
+        var startDelay = 2;
         if (bid.params.video.startDelay) {
           startDelay = bid.params.video.startDelay
         } else if (videoMediaType.startdelay == 0) {
