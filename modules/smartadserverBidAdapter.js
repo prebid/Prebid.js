@@ -88,27 +88,24 @@ export const spec = {
         }));
       } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
 
-        //We use the mediaType.Video.params when availabe however we override with bidder.param if available.
+        // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
         var protocol = bid.params.video.protocol ? bid.params.video.protocol : Math.max(videoMediaType.protocol)
         var startDelay = -1;
-        if (!bid.params.video.startDelay){
-          switch (videoMediaType.startdelay)
-          {
-            case 0:
-              startDelay = 1;
-            break;
-            case -1:
-              startDelay = 2;
-            break;
-            case -2:
-              startDelay = 3;
-            break;
-            default:
-              startDelay = -1;
-          }
+
+        if (bid.params.video.startDelay){
+          startDelay = bid.params.video.startDelay
         }
-        else{
-          startDelay = bid.params.video.startDelay;
+        else if (videoMediaType.startdelay == 0)
+        {
+          startDelay = 1;
+        }
+        else if (videoMediaType.startdelay == -1)
+        {
+          startDelay = 2;
+        }
+        else if (videoMediaType.startdelay == -2)
+        {
+          startDelay = 3;
         }
 
         // Specific attributes for instream.
@@ -187,9 +184,6 @@ export const spec = {
           bidResponse.adUrl = response.adUrl;
           bidResponse.ad = response.ad;
         }
-
-        // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
-
 
         bidResponses.push(bidResponse);
       }
