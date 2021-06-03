@@ -501,7 +501,7 @@ const OPEN_RTB_PROTOCOL = {
       let i = 1;
       while (impIds.has(impressionId)) {
         i++;
-        impressionId = `${impressionId}-${i}`;
+        impressionId = `${adUnit.code}-${i}`;
       }
       impIds.add(impressionId);
 
