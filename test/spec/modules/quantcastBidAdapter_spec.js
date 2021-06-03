@@ -723,7 +723,7 @@ describe('Quantcast adapter', function () {
         netRevenue: QUANTCAST_NET_REVENUE,
         currency: 'USD',
         meta: {
-          advertisersDomain: ['dailymail.com']
+          advertiserDomains: ['dailymail.com']
         }
       };
       const interpretedResponse = qcSpec.interpretResponse(response);
@@ -746,7 +746,7 @@ describe('Quantcast adapter', function () {
         currency: 'USD',
         dealId: 'test-dealid',
         meta: {
-          advertisersDomain: ['dailymail.com']
+          advertiserDomains: ['dailymail.com']
         }
       };
       const interpretedResponse = qcSpec.interpretResponse(response);
