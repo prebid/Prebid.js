@@ -24,8 +24,7 @@ const LOG_ERROR_MESS = {
   notAllowedCurrency: 'Currency is not supported - ',
   currencyMismatch: 'Currency from the request is not match currency from the response - ',
   onlyVideoInstream: `Only video ${VIDEO_INSTREAM} supported`,
-  videoMissing: 'Bid request videoType property is missing - ',
-  bannerMissing: 'Bid request bannerType property is missing - '
+  videoMissing: 'Bid request videoType property is missing - '
 };
 const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
 const RE_EMPTY_OR_ONLY_COMMAS = /^,*$/;
