@@ -91,19 +91,21 @@ function bidToVideoImp(bid) {
   imp.video.w = bid.params.size[0];
   imp.video.h = bid.params.size[1];
 
-  if (context) {
+  // copy all video properties to imp object
+  for (const adUnitProperty in videoAdUnitRef) {
+    if (videoAdUnitAllowlist.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
+      imp.video[adUnitProperty] = videoAdUnitRef[adUnitProperty];
+    }
+  }
+
+  // if placement not already defined, pick one based on `context`
+  if (context && !imp.video.hasOwnProperty('placement')) {
     if (context === 'instream') {
       imp.video.placement = 1;
     } else if (context === 'outstream') {
       imp.video.placement = 4;
     } else {
       utils.logWarn(`ix bidder params: video context '${context}' is not supported`);
-    }
-  }
-
-  for (const adUnitProperty in videoAdUnitRef) {
-    if (videoAdUnitAllowlist.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
-      imp.video[adUnitProperty] = videoAdUnitRef[adUnitProperty];
     }
   }
 

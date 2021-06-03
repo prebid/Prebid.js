@@ -1879,7 +1879,20 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.sid).to.equal(sidValue);
     });
 
-    it('should set correct placement if context is outstream', function () {
+    it('should not override placement, if placement is defined', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.placement = 2;
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video).to.exist;
+      expect(impression.video.placement).to.exist;
+      expect(impression.video.placement).to.equal(2);
+    });
+
+    it('should set correct placement, if context is defined', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.mediaTypes.video.context = 'outstream';
       const request = spec.buildRequests([bid])[0];
