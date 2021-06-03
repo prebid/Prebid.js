@@ -101,7 +101,8 @@ function interpretResponse(serverResponse, bidderRequest) {
       netRevenue: bid.netRevenue || false,
       mediaType: bid.mediaType,
       meta: {
-        mediaType: bid.mediaType
+        mediaType: bid.mediaType,
+        advertiserDomains: bid.adomain
       },
       ttl: bid.ttl || 300
     };
