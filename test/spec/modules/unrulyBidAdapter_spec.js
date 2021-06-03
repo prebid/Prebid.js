@@ -1,10 +1,9 @@
 /* globals describe, it, beforeEach, afterEach, sinon */
-import { expect } from 'chai'
+import {expect} from 'chai'
 import * as utils from 'src/utils.js'
-import { STATUS } from 'src/constants.json'
-import { VIDEO } from 'src/mediaTypes.js'
-import { Renderer } from 'src/Renderer.js'
-import { adapter } from 'modules/unrulyBidAdapter.js'
+import {VIDEO, BANNER} from 'src/mediaTypes.js'
+import {Renderer} from 'src/Renderer.js'
+import {adapter} from 'modules/unrulyBidAdapter.js'
 
 describe('UnrulyAdapter', function () {
   function createOutStreamExchangeBid({
@@ -36,7 +35,7 @@ describe('UnrulyAdapter', function () {
   }
 
   const createExchangeResponse = (...bids) => ({
-    body: { bids }
+    body: {bids}
   });
 
   let sandbox;
@@ -63,64 +62,376 @@ describe('UnrulyAdapter', function () {
   });
 
   it('should contain the VIDEO mediaType', function () {
-    expect(adapter.supportedMediaTypes).to.deep.equal([ VIDEO ])
+    expect(adapter.supportedMediaTypes).to.deep.equal([VIDEO, BANNER])
   });
 
   describe('isBidRequestValid', function () {
     it('should be a function', function () {
       expect(typeof adapter.isBidRequestValid).to.equal('function')
     });
-
-    it('should return false if bid is falsey', function () {
+    it('should return false if bid is false', function () {
       expect(adapter.isBidRequestValid()).to.be.false;
     });
-
-    it('should return true if bid.mediaType is "video"', function () {
-      const mockBid = { mediaType: 'video' };
-
+    it('should return true if bid.mediaType is "banner"', function () {
+      const mockBid = {
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [600, 500],
+              [300, 250]
+            ]
+          }
+        },
+        params: {
+          siteId: 233261
+        }
+      };
       expect(adapter.isBidRequestValid(mockBid)).to.be.true;
     });
-
     it('should return true if bid.mediaTypes.video.context is "outstream"', function () {
       const mockBid = {
         mediaTypes: {
           video: {
-            context: 'outstream'
+            context: 'outstream',
+            mimes: ['video/mp4'],
+            playerSize: [[640, 480]]
           }
+        },
+        params: {
+          siteId: 233261
         }
       };
-
       expect(adapter.isBidRequestValid(mockBid)).to.be.true;
+    });
+    it('should return true if bid.mediaTypes.video.context is "instream"', function () {
+      const mockBid = {
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            mimes: ['video/mp4'],
+            playerSize: [[640, 480]]
+          }
+        },
+        params: {
+          siteId: 233261
+        }
+      };
+      expect(adapter.isBidRequestValid(mockBid)).to.be.true;
+    });
+    it('should return false if bid.mediaTypes.video.context is not "instream" or "outstream"', function () {
+      const mockBid = {
+        mediaTypes: {
+          video: {
+            context: 'context',
+            mimes: ['video/mp4'],
+            playerSize: [[640, 480]]
+          }
+        },
+        params: {
+          siteId: 233261
+        }
+      };
+      expect(adapter.isBidRequestValid(mockBid)).to.be.false;
+    });
+    it('should return false if bid.mediaTypes.video.context not exist', function () {
+      const mockBid = {
+        mediaTypes: {
+          video: {
+            mimes: ['video/mp4'],
+            playerSize: [[640, 480]]
+          }
+        },
+        params: {
+          siteId: 233261
+        }
+      };
+      expect(adapter.isBidRequestValid(mockBid)).to.be.false;
+    });
+    it('should return false if bid.mediaType is not "video" or "banner"', function () {
+      const mockBid = {
+        mediaTypes: {
+          native: {
+            image: {
+              sizes: [300, 250]
+            }
+          }
+        },
+        params: {
+          siteId: 233261
+        }
+      };
+      expect(adapter.isBidRequestValid(mockBid)).to.be.false;
+    });
+    it('should return false if bid.mediaTypes is empty', function () {
+      const mockBid = {
+        mediaTypes: {},
+        params: {
+          siteId: 233261
+        }
+      };
+      expect(adapter.isBidRequestValid(mockBid)).to.be.false;
+    });
+    it('should return false if bid.params.siteId not exist', function () {
+      const mockBid = {
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            mimes: ['video/mp4'],
+            playerSize: [[640, 480]]
+          }
+        },
+        params: {
+          targetingUUID: 233261
+        }
+      };
+      expect(adapter.isBidRequestValid(mockBid)).to.be.false;
     });
   });
 
   describe('buildRequests', function () {
+    let mockBidRequests;
+    beforeEach(function () {
+      mockBidRequests = {
+        'bidderCode': 'unruly',
+        'bids': [
+          {
+            'bidder': 'unruly',
+            'params': {
+              'siteId': 233261,
+            },
+            'mediaTypes': {
+              'video': {
+                'context': 'outstream',
+                'mimes': [
+                  'video/mp4'
+                ],
+                'playerSize': [
+                  [
+                    640,
+                    480
+                  ]
+                ]
+              }
+            },
+            'adUnitCode': 'video2',
+            'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+            'sizes': [
+              [
+                640,
+                480
+              ]
+            ],
+            'bidId': '27a3ee1626a5c7',
+            'bidderRequestId': '12e00d17dff07b',
+          }
+        ]
+      };
+    });
+
     it('should be a function', function () {
       expect(typeof adapter.buildRequests).to.equal('function');
     });
     it('should return an object', function () {
-      const mockBidRequests = ['mockBid'];
-      expect(typeof adapter.buildRequests(mockBidRequests)).to.equal('object')
+      // const mockBidRequests = ['mockBid'];
+      expect(typeof adapter.buildRequests(mockBidRequests.bids, mockBidRequests)).to.equal('object')
+    });
+    it('should return an array with 2 items when the bids has different siteId\'s', function () {
+      mockBidRequests = {
+        'bidderCode': 'unruly',
+        'bids': [
+          {
+            'bidder': 'unruly',
+            'params': {
+              'siteId': 233261,
+            },
+            'mediaTypes': {
+              'video': {
+                'context': 'outstream',
+                'mimes': [
+                  'video/mp4'
+                ],
+                'playerSize': [
+                  [
+                    640,
+                    480
+                  ]
+                ]
+              }
+            },
+            'adUnitCode': 'video2',
+            'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+            'sizes': [
+              [
+                640,
+                480
+              ]
+            ],
+            'bidId': '27a3ee1626a5c7',
+            'bidderRequestId': '12e00d17dff07b',
+          },
+          {
+            'bidder': 'unruly',
+            'params': {
+              'siteId': 2234554,
+            },
+            'mediaTypes': {
+              'video': {
+                'context': 'outstream',
+                'mimes': [
+                  'video/mp4'
+                ],
+                'playerSize': [
+                  [
+                    640,
+                    480
+                  ]
+                ]
+              }
+            },
+            'adUnitCode': 'video2',
+            'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+            'sizes': [
+              [
+                640,
+                480
+              ]
+            ],
+            'bidId': '27a3ee1626a5c7',
+            'bidderRequestId': '12e00d17dff07b',
+          }
+        ]
+      };
+
+      let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+      expect(typeof result).to.equal('object');
+      expect(result.length).to.equal(2);
+      expect(result[0].data.bidderRequest.bids.length).to.equal(1);
+      expect(result[1].data.bidderRequest.bids.length).to.equal(1);
+    });
+    it('should return an array with 1 items when the bids has same siteId', function () {
+      mockBidRequests = {
+        'bidderCode': 'unruly',
+        'bids': [
+          {
+            'bidder': 'unruly',
+            'params': {
+              'siteId': 233261,
+            },
+            'mediaTypes': {
+              'video': {
+                'context': 'outstream',
+                'mimes': [
+                  'video/mp4'
+                ],
+                'playerSize': [
+                  [
+                    640,
+                    480
+                  ]
+                ]
+              }
+            },
+            'adUnitCode': 'video2',
+            'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+            'sizes': [
+              [
+                640,
+                480
+              ]
+            ],
+            'bidId': '27a3ee1626a5c7',
+            'bidderRequestId': '12e00d17dff07b',
+          },
+          {
+            'bidder': 'unruly',
+            'params': {
+              'siteId': 233261,
+            },
+            'mediaTypes': {
+              'video': {
+                'context': 'outstream',
+                'mimes': [
+                  'video/mp4'
+                ],
+                'playerSize': [
+                  [
+                    640,
+                    480
+                  ]
+                ]
+              }
+            },
+            'adUnitCode': 'video2',
+            'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+            'sizes': [
+              [
+                640,
+                480
+              ]
+            ],
+            'bidId': '27a3ee1626a5c7',
+            'bidderRequestId': '12e00d17dff07b',
+          }
+        ]
+      };
+
+      let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+      expect(typeof result).to.equal('object');
+      expect(result.length).to.equal(1);
+      expect(result[0].data.bidderRequest.bids.length).to.equal(2);
     });
     it('should return a server request with a valid exchange url', function () {
-      const mockBidRequests = ['mockBid'];
-      expect(adapter.buildRequests(mockBidRequests).url).to.equal('https://targeting.unrulymedia.com/prebid')
+      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].url).to.equal('https://targeting.unrulymedia.com/prebid')
     });
     it('should return a server request with method === POST', function () {
-      const mockBidRequests = ['mockBid'];
-      expect(adapter.buildRequests(mockBidRequests).method).to.equal('POST');
+      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].method).to.equal('POST');
     });
     it('should ensure contentType is `text/plain`', function () {
-      const mockBidRequests = ['mockBid'];
-      expect(adapter.buildRequests(mockBidRequests).options).to.deep.equal({
+      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].options).to.deep.equal({
         contentType: 'text/plain'
       });
     });
     it('should return a server request with valid payload', function () {
-      const mockBidRequests = ['mockBid'];
-      const mockBidderRequest = {bidderCode: 'mockBidder'};
-      expect(adapter.buildRequests(mockBidRequests, mockBidderRequest).data)
-        .to.deep.equal({bidRequests: mockBidRequests, bidderRequest: mockBidderRequest})
+      const expectedResult = {
+        bidderRequest: {
+          'bids': [
+            {
+              'bidder': 'unruly',
+              'params': {
+                'siteId': 233261
+              },
+              'mediaTypes': {
+                'video': {
+                  'context': 'outstream',
+                  'mimes': [
+                    'video/mp4'
+                  ],
+                  'playerSize': [
+                    [
+                      640,
+                      480
+                    ]
+                  ],
+                  'floor': 0
+                }
+              },
+              'adUnitCode': 'video2',
+              'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+              'sizes': [
+                [
+                  640,
+                  480
+                ]
+              ],
+              'bidId': '27a3ee1626a5c7',
+              'bidderRequestId': '12e00d17dff07b'
+            }
+          ],
+          'invalidBidsCount': 0
+        }
+      };
+
+      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].data).to.deep.equal(expectedResult)
     })
   });
 
@@ -132,7 +443,7 @@ describe('UnrulyAdapter', function () {
       expect(adapter.interpretResponse()).to.deep.equal([]);
     });
     it('should return [] when  serverResponse has no bids', function () {
-      const mockServerResponse = { body: { bids: [] } };
+      const mockServerResponse = {body: {bids: []}};
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([])
     });
     it('should return array of bids when receive a successful response from server', function () {
@@ -148,7 +459,7 @@ describe('UnrulyAdapter', function () {
           netRevenue: true,
           creativeId: 'mockBidId',
           ttl: 360,
-          meta: { advertiserDomains: [] },
+          meta: {advertiserDomains: []},
           currency: 'USD',
           renderer: fakeRenderer,
           mediaType: 'video'
@@ -176,7 +487,7 @@ describe('UnrulyAdapter', function () {
       expect(Renderer.install.calledOnce).to.be.true;
       sinon.assert.calledWithExactly(
         Renderer.install,
-        Object.assign({}, mockRenderer, {callback: sinon.match.func})
+        Object.assign({}, mockRenderer)
       );
 
       sinon.assert.calledOnce(fakeRenderer.setRender);
@@ -201,7 +512,7 @@ describe('UnrulyAdapter', function () {
       const logErrorCalls = utils.logError.getCalls();
       expect(logErrorCalls.length).to.equal(2);
 
-      const [ configErrorCall, siteIdErrorCall ] = logErrorCalls;
+      const [configErrorCall, siteIdErrorCall] = logErrorCalls;
 
       expect(configErrorCall.args.length).to.equal(1);
       expect(configErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer config.');
@@ -229,14 +540,14 @@ describe('UnrulyAdapter', function () {
       const logErrorCalls = utils.logError.getCalls();
       expect(logErrorCalls.length).to.equal(1);
 
-      const [ siteIdErrorCall ] = logErrorCalls;
+      const [siteIdErrorCall] = logErrorCalls;
 
       expect(siteIdErrorCall.args.length).to.equal(1);
       expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer siteId.');
     });
 
     it('bid is placed on the bid queue when render is called', function () {
-      const exchangeBid = createOutStreamExchangeBid({ adUnitCode: 'video', vastUrl: 'value: vastUrl' });
+      const exchangeBid = createOutStreamExchangeBid({adUnitCode: 'video', vastUrl: 'value: vastUrl'});
       const exchangeResponse = createExchangeResponse(exchangeBid);
 
       adapter.interpretResponse(exchangeResponse);
@@ -268,64 +579,4 @@ describe('UnrulyAdapter', function () {
       expect(supplyMode).to.equal('prebid');
     });
   });
-
-  describe('getUserSyncs', () => {
-    it('should push user sync iframe if enabled', () => {
-      const mockConsent = {}
-      const response = {}
-      const syncOptions = { iframeEnabled: true }
-      const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
-      expect(syncs[0]).to.deep.equal({
-        type: 'iframe',
-        url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
-      });
-    })
-
-    it('should not push user sync iframe if not enabled', () => {
-      const mockConsent = {}
-      const response = {}
-      const syncOptions = { iframeEnabled: false }
-      const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent);
-      expect(syncs).to.be.empty;
-    });
-  });
-
-  it('should not append consent params if gdpr does not apply', () => {
-    const mockConsent = {}
-    const response = {}
-    const syncOptions = { iframeEnabled: true }
-    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
-    expect(syncs[0]).to.deep.equal({
-      type: 'iframe',
-      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
-    })
-  });
-
-  it('should append consent params if gdpr does apply and consent is given', () => {
-    const mockConsent = {
-      gdprApplies: true,
-      consentString: 'hello'
-    };
-    const response = {}
-    const syncOptions = { iframeEnabled: true }
-    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
-    expect(syncs[0]).to.deep.equal({
-      type: 'iframe',
-      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=1&gdpr_consent=hello'
-    })
-  });
-
-  it('should append consent param if gdpr applies and no consent is given', () => {
-    const mockConsent = {
-      gdprApplies: true,
-      consentString: {}
-    };
-    const response = {};
-    const syncOptions = { iframeEnabled: true }
-    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
-    expect(syncs[0]).to.deep.equal({
-      type: 'iframe',
-      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=0'
-    })
-  })
 });
