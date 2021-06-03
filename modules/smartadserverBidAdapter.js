@@ -12,7 +12,6 @@ import {
 import {
   createEidsArray
 } from './userId/eids.js';
-import { defaultConfig } from 'sinon';
 const BIDDER_CODE = 'smartadserver';
 const GVL_ID = 45;
 export const spec = {
@@ -87,24 +86,17 @@ export const spec = {
           h: size[1]
         }));
       } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
-
         // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
         var protocol = bid.params.video.protocol ? bid.params.video.protocol : Math.max(videoMediaType.protocol)
         var startDelay = -1;
 
-        if (bid.params.video.startDelay){
+        if (bid.params.video.startDelay) {
           startDelay = bid.params.video.startDelay
-        }
-        else if (videoMediaType.startdelay == 0)
-        {
+        } else if (videoMediaType.startdelay == 0) {
           startDelay = 1;
-        }
-        else if (videoMediaType.startdelay == -1)
-        {
+        } else if (videoMediaType.startdelay == -1) {
           startDelay = 2;
-        }
-        else if (videoMediaType.startdelay == -2)
-        {
+        } else if (videoMediaType.startdelay == -2) {
           startDelay = 3;
         }
 
