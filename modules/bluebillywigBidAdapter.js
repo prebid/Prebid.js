@@ -122,7 +122,8 @@ const BB_HELPERS = {
     if (!bidObject.vastUrl && bid.nurl && !bid.adm) { // ad markup is on win notice url, and adm is ommited according to OpenRTB 2.5
       bidObject.vastUrl = bid.nurl;
     }
-
+    bidObject.meta = bid.meta || {};
+    if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
     return bidObject;
   },
 };
