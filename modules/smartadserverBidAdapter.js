@@ -86,9 +86,8 @@ export const spec = {
           h: size[1]
         }));
       } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
-        // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
         var protocol = bid.params.video.protocol ? bid.params.video.protocol : Math.max(videoMediaType.protocol)
-        var startDelay = -1;
+        var startDelay = 2;
 
         if (bid.params.video.startDelay) {
           startDelay = bid.params.video.startDelay
