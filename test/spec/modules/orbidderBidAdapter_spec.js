@@ -1,8 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/orbidderBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import openxAdapter from '../../../modules/openxAnalyticsAdapter.js';
-import {detectReferer} from 'src/refererDetection.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -93,7 +91,7 @@ describe('orbidderBidAdapter', () => {
     it('sends bid request to endpoint via https using post', () => {
       expect(request.method).to.equal('POST');
       expect(request.url.indexOf('https://')).to.equal(0);
-      expect(request.url).to.equal(`${spec.orbidderHost}/bid`);
+      expect(request.url).to.equal(`${spec.hostname}/bid`);
     });
 
     it('contains prebid version parameter', () => {
@@ -106,7 +104,7 @@ describe('orbidderBidAdapter', () => {
       expect(request.data.pageUrl).to.equal('https://localhost:9876/');
       // expect(request.data.referrer).to.equal('');
       Object.keys(defaultBidRequest).forEach((key) => {
-        expect(defaultBidRequest[key]).to.equal(request.data[key]);
+        expect(request.data[key]).to.deep.equal(defaultBidRequest[key]);
       });
     });
 
@@ -188,6 +186,47 @@ describe('orbidderBidAdapter', () => {
       expect(result.length).to.equal(expectedResponse.length);
       Object.keys(expectedResponse[0]).forEach((key) => {
         expect(result[0][key]).to.equal(expectedResponse[0][key]);
+      });
+    });
+
+    it('should get correct bid response with advertiserDomains', () => {
+      const serverResponse = [
+        {
+          'width': 300,
+          'height': 250,
+          'creativeId': '29681110',
+          'ad': '<!-- Creative -->',
+          'cpm': 0.5,
+          'requestId': '30b31c1838de1e',
+          'ttl': 60,
+          'netRevenue': true,
+          'currency': 'EUR',
+          'advertiserDomains': ['cm.tavira.pt']
+        }
+      ];
+
+      const expectedResponse = [
+        {
+          'requestId': '30b31c1838de1e',
+          'cpm': 0.5,
+          'creativeId': '29681110',
+          'width': 300,
+          'height': 250,
+          'ttl': 60,
+          'currency': 'EUR',
+          'ad': '<!-- Creative -->',
+          'netRevenue': true,
+          'meta': {
+            'advertiserDomains': ['cm.tavira.pt']
+          }
+        }
+      ];
+
+      const result = spec.interpretResponse({body: serverResponse});
+
+      expect(result.length).to.equal(expectedResponse.length);
+      Object.keys(expectedResponse[0]).forEach((key) => {
+        expect(result[0][key]).to.deep.equal(expectedResponse[0][key]);
       });
     });
 

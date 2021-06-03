@@ -29,7 +29,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const bidRequests = [];
 
-    const url = bidderRequest.refererInfo.referer;
+    const urlInfo = getUrlInfo(bidderRequest.refererInfo);
     const cur = getCurrencyType();
     const dnt = utils.getDNT() ? '1' : '0';
 
@@ -46,7 +46,8 @@ export const spec = {
       queryString = utils.tryAppendQueryString(queryString, 'bid', bid);
       queryString = utils.tryAppendQueryString(queryString, 'ver', ver);
       queryString = utils.tryAppendQueryString(queryString, 'sid', sid);
-      queryString = utils.tryAppendQueryString(queryString, 'url', url);
+      queryString = utils.tryAppendQueryString(queryString, 'url', urlInfo.url);
+      queryString = utils.tryAppendQueryString(queryString, 'ref', urlInfo.ref);
       queryString = utils.tryAppendQueryString(queryString, 'cur', cur);
       queryString = utils.tryAppendQueryString(queryString, 'dnt', dnt);
 
@@ -93,6 +94,10 @@ export const spec = {
       ttl: res.ttl || 300
     };
 
+    if (res.adomains) {
+      utils.deepSetValue(bid, 'meta.advertiserDomains', Array.isArray(res.adomains) ? res.adomains : [res.adomains]);
+    }
+
     return [bid];
   },
 
@@ -129,6 +134,33 @@ function getCurrencyType() {
     return config.getConfig('currency.adServerCurrency');
   }
   return 'JPY';
+}
+
+function getUrlInfo(refererInfo) {
+  return {
+    url: getUrl(refererInfo),
+    ref: getReferrer(),
+  };
+}
+
+function getUrl(refererInfo) {
+  if (refererInfo && refererInfo.referer) {
+    return refererInfo.referer;
+  }
+
+  try {
+    return window.top.location.href;
+  } catch (e) {
+    return window.location.href;
+  }
+}
+
+function getReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return document.referrer;
+  }
 }
 
 registerBidder(spec);

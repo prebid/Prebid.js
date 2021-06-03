@@ -24,6 +24,43 @@ describe('MediaSquare bid adapter tests', function () {
       code: 'publishername_atf_desktop_rg_pave'
     },
   }];
+  var VIDEO_PARAMS = [{
+    adUnitCode: 'banner-div',
+    bidId: 'aaaa1234',
+    auctionId: 'bbbb1234',
+    transactionId: 'cccc1234',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4'],
+      }
+    },
+    bidder: 'mediasquare',
+    params: {
+      owner: 'test',
+      code: 'publishername_atf_desktop_rg_pave'
+    },
+  }];
+  var NATIVE_PARAMS = [{
+    adUnitCode: 'banner-div',
+    bidId: 'aaaa1234',
+    auctionId: 'bbbb1234',
+    transactionId: 'cccc1234',
+    mediaTypes: {
+      native: {
+        title: {
+          required: true,
+          len: 80
+        },
+      }
+    },
+    bidder: 'mediasquare',
+    params: {
+      owner: 'test',
+      code: 'publishername_atf_desktop_rg_pave'
+    },
+  }];
 
   var BID_RESPONSE = {'body': {
     'responses': [{
@@ -39,6 +76,7 @@ describe('MediaSquare bid adapter tests', function () {
       'bidder': 'msqClassic',
       'code': 'test/publishername_atf_desktop_rg_pave',
       'bid_id': 'aaaa1234',
+      'adomain': ['test.com'],
     }],
   }};
 
@@ -53,7 +91,7 @@ describe('MediaSquare bid adapter tests', function () {
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
     },
     uspConsent: '111222333',
-    userId: {'id5id': '1111'},
+    userId: { 'id5id': { uid: '1111' } },
     schain: {
       'ver': '1.0',
       'complete': 1,
@@ -98,6 +136,9 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.mediasquare).to.exist;
     expect(bid.mediasquare.bidder).to.equal('msqClassic');
     expect(bid.mediasquare.code).to.equal([DEFAULT_PARAMS[0].params.owner, DEFAULT_PARAMS[0].params.code].join('/'));
+    expect(bid.meta).to.exist;
+    expect(bid.meta.advertiserDomains).to.exist;
+    expect(bid.meta.advertiserDomains).to.have.lengthOf(1);
   });
 
   it('Verifies bidder code', function () {
@@ -127,5 +168,34 @@ describe('MediaSquare bid adapter tests', function () {
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0]).to.have.property('type').and.to.equal('image');
     expect(syncs[0]).to.have.property('url').and.to.equal('http://www.cookie.sync.org/');
+  });
+  it('Verifies user sync with no bid response', function() {
+    var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.property('type').and.to.equal('iframe');
+  });
+  it('Verifies user sync with no bid body response', function() {
+    var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.property('type').and.to.equal('iframe');
+  });
+  it('Verifies native in bid response', function () {
+    const request = spec.buildRequests(NATIVE_PARAMS, DEFAULT_OPTIONS);
+    BID_RESPONSE.body.responses[0].native = {'title': 'native title'};
+    const response = spec.interpretResponse(BID_RESPONSE, request);
+    expect(response).to.have.lengthOf(1);
+    const bid = response[0];
+    expect(bid).to.have.property('native');
+    delete BID_RESPONSE.body.responses[0].native;
+  });
+  it('Verifies video in bid response', function () {
+    const request = spec.buildRequests(VIDEO_PARAMS, DEFAULT_OPTIONS);
+    BID_RESPONSE.body.responses[0].video = {'xml': 'my vast XML', 'url': 'my vast url'};
+    const response = spec.interpretResponse(BID_RESPONSE, request);
+    expect(response).to.have.lengthOf(1);
+    const bid = response[0];
+    expect(bid).to.have.property('vastXml');
+    expect(bid).to.have.property('vastUrl');
+    delete BID_RESPONSE.body.responses[0].video;
   });
 });

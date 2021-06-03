@@ -1,18 +1,21 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import * as utils from '../src/utils.js';
 
-const storage = getStorageManager();
+const storageManager = getStorageManager();
 
 export const spec = {
   code: 'orbidder',
-  orbidderHost: (() => {
-    let ret = 'https://orbidder.otto.de';
+  hostname: 'https://orbidder.otto.de',
+
+  getHostname() {
+    let ret = this.hostname;
     try {
-      ret = storage.getDataFromLocalStorage('ov_orbidder_host') || ret;
+      ret = storageManager.getDataFromLocalStorage('ov_orbidder_host') || ret;
     } catch (e) {
     }
     return ret;
-  })(),
+  },
 
   isBidRequestValid(bid) {
     return !!(bid.sizes && bid.bidId && bid.params &&
@@ -23,14 +26,17 @@ export const spec = {
   },
 
   buildRequests(validBidRequests, bidderRequest) {
+    const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.referer || '';
       }
 
+      bidRequest.params.bidfloor = getBidFloor(bidRequest);
+
       const ret = {
-        url: `${spec.orbidderHost}/bid`,
+        url: `${hostname}/bid`,
         method: 'POST',
         options: { withCredentials: true },
         data: {
@@ -67,11 +73,39 @@ export const spec = {
           }
           bidResponse[requiredKey] = bid[requiredKey];
         }
+
+        if (Array.isArray(bid.advertiserDomains)) {
+          bidResponse.meta = {
+            advertiserDomains: bid.advertiserDomains
+          }
+        }
+
         bidResponses.push(bidResponse);
       });
     }
     return bidResponses;
   },
 };
+
+/**
+ * Get bid floor from Price Floors Module
+ * @param {Object} bid
+ * @returns {float||undefined}
+ */
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return bid.params.bidfloor;
+  }
+
+  const floor = bid.getFloor({
+    currency: 'EUR',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+    return floor.floor;
+  }
+  return undefined;
+}
 
 registerBidder(spec);

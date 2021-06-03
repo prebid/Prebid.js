@@ -11,15 +11,48 @@ Currently module supports only banner mediaType.
 
 # Test Parameters
 ```
-    var adUnits = [{
-        code: 'test-code',
-        sizes: [[300, 250],[300, 600]],
-        bids: [{
-            bidder: 'logicad',
-            params: {
-                tid: 'test',
-                page: 'url',
-            }
-        }]
-    }];
+var adUnits = [
+  // Banner adUnit
+  {
+    code: 'test-code',
+    sizes: [[300, 250], [300, 600]],
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [300, 600]]
+      }
+    },
+    bids: [{
+      bidder: 'logicad',
+      params: {
+        tid: 'lfp-test-banner',
+        page: 'url'
+      }
+    }]
+  },
+  // Native adUnit
+  {
+    code: 'test-native-code',
+    sizes: [[1, 1]],
+    mediaTypes: {
+      native: {
+        title: {
+          required: true
+        },
+        image: {
+          required: true
+        },
+        sponsoredBy: {
+          required: true
+        }
+      }
+    },
+    bids: [{
+      bidder: 'logicad',
+      params: {
+        tid: 'lfp-test-native',
+        page: 'url'
+      }
+    }]
+  }
+];
 ```

@@ -123,7 +123,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
             auctionManager.getAdUnitCodes(),
             auctionManager.getBidsReceived()
           );
-          if (yieldoneAnalytics.eventsStorage[currentAuctionId]) {
+          if (yieldoneAnalytics.eventsStorage[currentAuctionId] && yieldoneAnalytics.eventsStorage[currentAuctionId].events.length) {
             yieldoneAnalytics.eventsStorage[currentAuctionId].page = {url: referrers[currentAuctionId]};
             yieldoneAnalytics.eventsStorage[currentAuctionId].pubId = pubId;
             yieldoneAnalytics.eventsStorage[currentAuctionId].wrapper_version = '$prebid.version$';
@@ -139,8 +139,8 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
       }
     }
   },
-  sendStat(events, auctionId) {
-    if (!events) return;
+  sendStat(data, auctionId) {
+    if (!data || !data.events || !data.events.length) return;
     delete yieldoneAnalytics.eventsStorage[auctionId];
     ajax(
       url,
@@ -148,7 +148,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
         success: function() {},
         error: function() {}
       },
-      JSON.stringify(events),
+      JSON.stringify(data),
       {
         method: 'POST'
       }

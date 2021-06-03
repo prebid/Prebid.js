@@ -14,6 +14,8 @@ This README is for developers who want to contribute to Prebid.js.
 Additional documentation can be found at [the Prebid homepage](http://prebid.org).
 Working examples can be found in [the developer docs](http://prebid.org/dev-docs/getting-started.html).
 
+Prebid.js is open source software that is offered for free as a convenience. While it is designed to help companies address legal requirements associated with header bidding, we cannot and do not warrant that your use of Prebid.js will satisfy legal requirements. You are solely responsible for ensuring that your use of Prebid.js complies with all applicable laws.  We strongly encourage you to obtain legal advice when using Prebid.js to ensure your implementation complies with all laws where you operate.
+
 **Table of Contents**
 
 - [Usage](#Usage)
@@ -91,12 +93,12 @@ Or for Babel 6:
 Then you can use Prebid.js as any other npm depedendency
 
 ```javascript
-import prebid from 'prebid.js';
+import pbjs from 'prebid.js';
 import 'prebid.js/modules/rubiconBidAdapter'; // imported modules will register themselves automatically with prebid
 import 'prebid.js/modules/appnexusBidAdapter';
-prebid.processQueue();  // required to process existing pbjs.queue blocks and setup any further pbjs.queue execution
+pbjs.processQueue();  // required to process existing pbjs.queue blocks and setup any further pbjs.queue execution
 
-prebid.requestBids({
+pbjs.requestBids({
   ...
 })
 
@@ -110,11 +112,11 @@ prebid.requestBids({
 
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
-    $ npm install
+    $ npm ci
 
 *Note:* You need to have `NodeJS` 12.16.1 or greater installed.
 
-*Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To comply with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in its setup.
+*Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To comply with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm ci`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in its setup.
 
 If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  You can check if this is installed by running `gulp -v` and seeing the version that's listed in the `CLI` field of the output.  If you have the `gulp` package installed globally, it's likely the same version that you'll see in the `Local` field.  If you already have `gulp-cli` installed, it should be a lower major version (it's at version `2.0.1` at the time of the transition).
 
@@ -140,7 +142,7 @@ This runs some code quality checks, starts a web server at `http://localhost:999
 
 ### Build Optimization
 
-The standard build output contains all the available modules from within the `modules` folder.
+The standard build output contains all the available modules from within the `modules` folder.  Note, however that there are bid adapters which support multiple bidders through aliases, so if you don't see a file in modules for a bid adapter, you may need to grep the repository to find the name of the module you need to include.
 
 You might want to exclude some/most of them from the final bundle.  To make sure the build only includes the modules you want, you can specify the modules to be included with the `--modules` CLI argument.
 
@@ -198,6 +200,11 @@ To run the unit tests:
 
 ```bash
 gulp test
+```
+
+To run the unit tests for a particular file (example for pubmaticBidAdapter_spec.js):
+```bash
+gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js"
 ```
 
 To generate and view the code coverage reports:
@@ -258,7 +265,7 @@ directory you will have sourcemaps available in your browser's developer tools.
 
 To run the example file, go to:
 
-+ `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html`
++ `http://localhost:9999/integrationExamples/gpt/hello_world.html`
 
 As you make code changes, the bundles will be rebuilt and the page reloaded automatically.
 
@@ -266,7 +273,7 @@ As you make code changes, the bundles will be rebuilt and the page reloaded auto
 
 ## Contribute
 
-Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+Many SSPs, bidders, and publishers have contributed to this project. [Hundreds of bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
 
 For guidelines, see [Contributing](./CONTRIBUTING.md).
 
@@ -274,9 +281,7 @@ Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tr
 
 ### Add a Bidder Adapter
 
-To add a bidder adapter module, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
-
-Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate.
+To add a bidder adapter module, see the instructions in [How to add a bidder adapter](https://docs.prebid.org/dev-docs/bidder-adaptor.html).
 
 ### Code Quality
 

@@ -11,6 +11,7 @@ pbjs.setConfig({
       enforceJS: true //defaults to true
     },
     auctionDelay: 150, // in milliseconds defaults to 0
+    floorProvider: 'awesomeFloorProviderName', // name of the floor provider (optional)
     endpoint: {
       url: 'http://localhost:1500/floor-domains',
       method: 'GET' // Only get supported for now
@@ -40,6 +41,7 @@ pbjs.setConfig({
 | enabled                | Wether to turn off or on the floors module                                                                          |
 | enforcement            | object of booleans which control certain features of the module                                                     |
 | auctionDelay           | The time to suspend and auction while waiting for a real time price floors fetch to come back                       |
+| floorProvider          | A string identifying the floor provider.|
 | endpoint               | An object describing the endpoint to retrieve floor data from. GET only                                             |
 | data                   | The data to be used to select appropriate floors. See schema for more detail                                        |
 | additionalSchemaFields | An object of additional fields to be used in a floor data object. The schema is KEY: function to retrieve the match |

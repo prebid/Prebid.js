@@ -2,27 +2,38 @@ import atsAnalyticsAdapter from '../../../modules/atsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import {server} from '../../mocks/xhr.js';
-import {browserIsChrome, browserIsEdge, browserIsFirefox, browserIsSafari} from '../../../modules/atsAnalyticsAdapter.js';
+import {parseBrowser} from '../../../modules/atsAnalyticsAdapter.js';
+import {getStorageManager} from '../../../src/storageManager.js';
+import {analyticsUrl} from '../../../modules/atsAnalyticsAdapter.js';
+
 let events = require('src/events');
 let constants = require('src/constants.json');
+
+export const storage = getStorageManager();
 
 describe('ats analytics adapter', function () {
   beforeEach(function () {
     sinon.stub(events, 'getEvents').returns([]);
+    storage.setCookie('_lr_env_src_ats', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
   });
 
   afterEach(function () {
     events.getEvents.restore();
+    atsAnalyticsAdapter.getUserAgent.restore();
     atsAnalyticsAdapter.disableAnalytics();
   });
 
   describe('track', function () {
     it('builds and sends request and response data', function () {
-      sinon.spy(atsAnalyticsAdapter, 'track');
+      sinon.stub(atsAnalyticsAdapter, 'shouldFireRequest').returns(true);
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+      let now = new Date();
+      now.setTime(now.getTime() + 3600000);
+      storage.setCookie('_lr_env_src_ats', 'true', now.toUTCString());
+      storage.setCookie('_lr_sampling_rate', '10', now.toUTCString());
 
       let initOptions = {
-        pid: '10433394',
-        host: 'https://example.com/dev',
+        pid: '10433394'
       };
       let auctionTimestamp = 1496510254326;
 
@@ -74,13 +85,15 @@ describe('ats analytics adapter', function () {
       let expectedAfterBid = {
         'Data': [{
           'has_envelope': true,
+          'adapter_version': 1,
           'bidder': 'appnexus',
           'bid_id': '30c77d079cdf17',
           'auction_id': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
-          'user_browser': (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari()),
+          'user_browser': parseBrowser(),
           'user_platform': navigator.platform,
           'auction_start': '2020-02-03T14:14:25.161Z',
           'domain': window.location.hostname,
+          'envelope_source': true,
           'pid': '10433394',
           'response_time_stamp': '2020-02-03T14:23:11.978Z',
           'currency': 'USD',
@@ -132,19 +145,37 @@ describe('ats analytics adapter', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
 
       let requests = server.requests.filter(req => {
-        return req.url.indexOf(initOptions.host) > -1;
+        return req.url.indexOf(analyticsUrl) > -1;
       });
 
       expect(requests.length).to.equal(1);
 
       let realAfterBid = JSON.parse(requests[0].requestBody);
-
       // Step 6: assert real data after bid and expected data
       expect(realAfterBid['Data']).to.deep.equal(expectedAfterBid['Data']);
 
-      // check that the host and publisher ID is configured via options
-      expect(atsAnalyticsAdapter.context.host).to.equal(initOptions.host);
+      // check that the publisher ID is configured via options
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
+    })
+    it('check browser is safari', function () {
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+      let browser = parseBrowser();
+      expect(browser).to.equal('Safari');
+    })
+    it('check browser is chrome', function () {
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1');
+      let browser = parseBrowser();
+      expect(browser).to.equal('Chrome');
+    })
+    it('check browser is edge', function () {
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43');
+      let browser = parseBrowser();
+      expect(browser).to.equal('Microsoft Edge');
+    })
+    it('check browser is firefox', function () {
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/23.0  Mobile/15E148 Safari/605.1.15');
+      let browser = parseBrowser();
+      expect(browser).to.equal('Firefox');
     })
   })
 })

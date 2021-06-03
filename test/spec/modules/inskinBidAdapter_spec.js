@@ -250,7 +250,7 @@ describe('InSkin BidAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.keywords).to.be.an('array').that.is.empty;
-      expect(payload.placements[0].properties).to.be.undefined;
+      expect(payload.placements[0].properties.restrictions).to.be.undefined;
     });
 
     it('should add keywords if TCF v2 purposes are not granted', function () {

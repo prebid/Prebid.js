@@ -12,7 +12,6 @@ module.exports = {
   'modules': [
     ...sharedWhiteList,
     'criteo-direct-rsa-validate',
-    'jsencrypt',
     'crypto-js',
     'live-connect' // Maintained by LiveIntent : https://github.com/liveintent-berlin/live-connect/
   ],
@@ -21,7 +20,6 @@ module.exports = {
     'fun-hooks/no-eval',
     'just-clone',
     'dlv',
-    'dset',
-    'deep-equal'
+    'dset'
   ]
 };
