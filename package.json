@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "4.41.0-pre",
+  "version": "4.43.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -64,7 +64,7 @@
     "gulp-replace": "^1.0.0",
     "gulp-shell": "^0.8.0",
     "gulp-sourcemaps": "^3.0.0",
-    "gulp-uglify": "^3.0.0",
+    "gulp-terser": "^2.0.1",
     "gulp-util": "^3.0.0",
     "is-docker": "^2.2.1",
     "istanbul": "^0.4.5",
