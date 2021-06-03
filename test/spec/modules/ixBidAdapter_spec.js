@@ -1232,7 +1232,13 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
-  describe.only('First party data', function () {
+  describe('First party data', function () {
+    afterEach(function() {
+      config.setConfig({
+        ortb2: {}
+      })
+    });
+
     it('should not set ixdiag.fpd value if not defined', function () {
       config.setConfig({
         ortb2: {}
