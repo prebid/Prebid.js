@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ajax} from '../src/ajax.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { ajax } from '../src/ajax.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import * as utils from '../src/utils.js'
 
 // Do not import POLYFILLS from core-js. Most likely until next major update (v4).
 // Prebid.js committers updated core-js to version 3 on v3.19.0 release (9/5/2020).
@@ -125,37 +125,33 @@ function hasBanner(bidReq) {
     bidReq.mediaType === BANNER;
 }
 
-function hasInstreamVideoOnly(bidReq) {
+function hasVideo(bidReq) {
   const mediaTypes = bidReq.mediaTypes;
-  return !hasBanner(bidReq) &&
-    mediaTypes &&
-    Object.keys(mediaTypes).length === 1 &&
+  return mediaTypes &&
     mediaTypes.video &&
-    mediaTypes.video.context === 'instream';
+    ['instream', 'outstream'].indexOf(mediaTypes.video.context) > -1;
 }
 
-function splitBidRequests(bidRequests) {
-  const groupBy = {
-    'params.ssat': value => value !== 1,
-    'mediaTypes.video': value => value != null
-  };
-  const keys = Object.keys(groupBy);
-  const bidRequestGroups = [];
+function groupBy(array, keyFns) {
+  const keys = Object.keys(keyFns);
+  const groups = [];
 
-  bidRequests.forEach(bidRequest => {
-    let bidRequestsGroup = find(bidRequestGroups, bidGroup => {
-      return keys.every(name => bidGroup.key[name] === groupBy[name](utils.deepAccess(bidRequest, name)));
-    });
-    if (!bidRequestsGroup) {
+  array.forEach(element => {
+    let group = find(groups, group => keys.every(keyName => group.key[keyName] === keyFns[keyName](utils.deepAccess(element, keyName))));
+    if (!group) {
       const key = {};
-      keys.forEach(name => key[name] = groupBy[name](utils.deepAccess(bidRequest, name)));
-      bidRequestsGroup = {key, bidRequests: []}
-      bidRequestGroups.push(bidRequestsGroup);
+      keys.forEach(name => key[name] = keyFns[name](utils.deepAccess(element, name)));
+      group = {key, values: []};
+      groups.push(group);
     }
-    bidRequestsGroup.bidRequests.push(bidRequest);
+    group.values.push(element);
   });
 
-  return bidRequestGroups.map(group => group.bidRequests);
+  return groups;
+}
+
+function divideBidRequestsBySsat(bidRequests) {
+  return groupBy(bidRequests, {'params.ssat': value => value !== 1}).map(group => group.values);
 }
 
 export const spec = {
@@ -166,29 +162,29 @@ export const spec = {
   isBidRequestValid: (function () {
     const validators = [];
 
-    const createValidator = (checkFn, errorMsgFn) => {
+    const createValidator = (checkFn, msg) => {
       return (bidRequest) => {
         if (checkFn(bidRequest)) {
           return true;
         } else {
-          utils.logError(`invalid bid in ${BIDDER_CODE}: ${errorMsgFn(bidRequest)}`, 'WARN');
+          utils.logWarn(`${BIDDER_CODE}: Bid setup for ${bidRequest.adUnitCode} is invalid: ${msg}`);
           return false;
         }
       }
     };
 
     function hasValidMediaType(bidReq) {
-      return hasBanner(bidReq) || hasInstreamVideoOnly(bidReq);
+      return hasBanner(bidReq) || hasVideo(bidReq);
     }
 
     validators.push(createValidator((bidReq) => hasValidMediaType(bidReq),
-      bidReq => `bid request ${bidReq.bidId} does not have a valid media type`));
+      'the media type is invalid'));
     validators.push(createValidator((bidReq) => typeof bidReq.params === 'object',
-      bidReq => `bid request ${bidReq.bidId} does not have custom params`));
+      'the custom params does not exist'));
     validators.push(createValidator((bidReq) => utils.isStr(bidReq.params.sid),
-      bidReq => `bid request ${bidReq.bidId} does not have a sid string field`));
+      'the sid field must be a string'));
     validators.push(createValidator((bidReq) => bidReq.params.ssat === undefined || [1, 2].indexOf(bidReq.params.ssat) > -1,
-      bidReq => `bid request ${bidReq.bidId} does not have a valid ssat value (must be 1 or 2)`));
+      'the ssat field is invalid (must be 1 or 2)'));
 
     return function (bidRequest) {
       return validators.every(f => f(bidRequest));
@@ -200,8 +196,6 @@ export const spec = {
     const win = utils.getWindowSelf();
 
     setupGlobalNamespace(anyBid);
-
-    const groupedBidRequests = splitBidRequests(validBidRequests);
 
     const commonPayload = {
       id: bidderRequest.auctionId,
@@ -227,7 +221,25 @@ export const spec = {
       };
     }
 
-    function createPayload(bidRequests) {
+    const serverRequestInfos = [];
+    const endpointUrl = buildUrl(anyBid.params);
+
+    addServerRequestInfos(hasBanner, bidRequest => ({ban: createBannerObject(bidRequest)}));
+    addServerRequestInfos(hasVideo, bidRequest => ({vid: createVideoObject(bidRequest)}));
+
+    return serverRequestInfos;
+
+    function addServerRequestInfos(filterFn, customAttrsFn) {
+      // Currently, no support for video when ssat=1. We still send but they will be dropped on the server side.
+      const dividedBidRequests = divideBidRequestsBySsat(validBidRequests.filter(filterFn));
+      dividedBidRequests.forEach(bidRequests => {
+        serverRequestInfos.push({
+          method: 'POST', url: endpointUrl, data: createPayload(bidRequests, customAttrsFn)
+        });
+      });
+    }
+
+    function createPayload(bidRequests, customAttrsFn) {
       const bidRequestWithSsat = find(bidRequests, bidRequest => bidRequest.params.ssat);
       const bidRequestWithYl2 = find(bidRequests, bidRequest => bidRequest.params.yl2);
 
@@ -236,16 +248,17 @@ export const spec = {
         yl2: bidRequestWithYl2 ? bidRequestWithYl2.params.yl2 : (getFromLocalStorage('sdgYieldtest') === '1'),
       }, commonPayload);
 
-      payload.bids = bidRequests.map(bidRequest => ({
-        // siz: [] - Still supported on the backend for backwards compatibility (size of banner bid)
-        bid: bidRequest.bidId,
-        sid: bidRequest.params.sid,
-        viz: elementInView(bidRequest.adUnitCode),
-        vid: createVideoObject(bidRequest),
-        ban: createBannerObject(bidRequest),
-        ctx: getContextFromSDG(bidRequest),
-        kvl: getLocalKeyValues(bidRequest.adUnitCode),
-      }));
+      payload.bids = bidRequests.map(bidRequest => {
+        const bid = {
+          // siz: [] - Still supported on the backend for backwards compatibility (size of banner bid)
+          bid: bidRequest.bidId,
+          sid: bidRequest.params.sid,
+          viz: elementInView(bidRequest.adUnitCode),
+          ctx: getContextFromSDG(bidRequest),
+          kvl: getLocalKeyValues(bidRequest.adUnitCode),
+        };
+        return Object.assign(bid, customAttrsFn(bidRequest));
+      });
 
       return payload;
     }
@@ -275,36 +288,19 @@ export const spec = {
     }
 
     function createVideoObject (bidRequest) {
-      if (hasInstreamVideoOnly(bidRequest)) {
-        const video = bidRequest.mediaTypes.video;
-        return {
-          ctx: video.context,
-          siz: video.playerSize,
-          mim: video.mimes
-        }
-      }
-      return undefined;
+      const video = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
+      return {
+        ctx: video.context,
+        siz: video.playerSize,
+        mim: video.mimes
+      };
     }
 
     function createBannerObject (bidRequest) {
-      return hasBanner(bidRequest) ? {
+      return {
         siz: bannerBidSizes(bidRequest),
-      } : undefined
+      };
     }
-
-    const endpointUrl = buildUrl(anyBid.params);
-
-    const serverRequestInfos = [];
-
-    groupedBidRequests.forEach(bidRequests => {
-      if (bidRequests.length > 0) {
-        serverRequestInfos.push({
-          method: 'POST', url: endpointUrl, data: createPayload(bidRequests)
-        });
-      }
-    });
-
-    return serverRequestInfos;
 
     function getPageType(position) {
       try {
@@ -383,6 +379,7 @@ export const spec = {
           meta: {
             advertiserDomains: bidResponse.adomain
           },
+
           // Custom fields
           cpm2: bidResponse.cpm2 || 0,
           floor: bidResponse.floor || cpm,

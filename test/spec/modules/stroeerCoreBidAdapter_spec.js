@@ -402,14 +402,14 @@ describe('stroeerCore bid adapter', function () {
       assert.isTrue(spec.isBidRequestValid(bidRequest));
     });
 
-    it('should exclude outstream video bids', () => {
+    it('should allow outstream video bids', () => {
       delete bidRequest.mediaTypes.banner;
       bidRequest.mediaTypes.video = {
         playerSize: [640, 480],
         context: 'outstream'
       };
 
-      assert.isFalse(spec.isBidRequestValid(bidRequest));
+      assert.isTrue(spec.isBidRequestValid(bidRequest));
     });
 
     it('should allow multi-format bid that has banner and instream video', () => {
@@ -428,7 +428,7 @@ describe('stroeerCore bid adapter', function () {
       bidRequest.mediaTypes = {
         video: {
           playerSize: [640, 480],
-          context: 'outstream'
+          context: 'adpod'
         },
         native: {
           image: {
@@ -822,50 +822,6 @@ describe('stroeerCore bid adapter', function () {
           const bids = JSON.parse(JSON.stringify(serverRequestInfo.data.bids));
           assert.deepEqual(bids, expectedBids);
         });
-
-        const contextSamples = ['outstream', 'instream'];
-        contextSamples.forEach(context => {
-          it(`should exclude ${context} video from multi-format bid`, () => {
-            const multiFormatBid = {
-              bidId: 'bid1',
-              bidder: 'stroeerCore',
-              adUnitCode: 'div-1',
-              mediaTypes: {
-                video: {
-                  context: 'outstream',
-                  playerSize: [640, 480],
-                  mimes: ['video/mp4', 'video/quicktime']
-                },
-                banner: {
-                  sizes: [[300, 600], [160, 60]]
-                }
-              },
-              params: {
-                sid: 'ODA='
-              },
-              userId: userIds
-            }
-
-            bidderRequest.bids = [multiFormatBid];
-
-            const expectedBids = [{
-              'sid': 'ODA=',
-              'bid': 'bid1',
-              'viz': true,
-              'ban': {
-                'siz': [[300, 600], [160, 60]]
-              }
-            }];
-
-            const serverRequestInfos = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            assert.lengthOf(serverRequestInfos, 1);
-
-            const serverRequestInfo = serverRequestInfos[0];
-
-            const bids = JSON.parse(JSON.stringify(serverRequestInfo.data.bids));
-            assert.deepEqual(bids, expectedBids);
-          })
-        });
       });
 
       describe('when Metatag is not present on webpage', () => {
@@ -1101,11 +1057,11 @@ describe('stroeerCore bid adapter', function () {
               const banner1ServerRequestInfo = serverRequestInfos[0];
               assert.equal(banner1ServerRequestInfo.data.ssat, 1);
 
-              const videoServerRequestInfo = serverRequestInfos[1];
-              assert.equal(videoServerRequestInfo.data.ssat, ssat);
-
-              const banner2ServerRequestInfo = serverRequestInfos[2];
+              const banner2ServerRequestInfo = serverRequestInfos[1];
               assert.equal(banner2ServerRequestInfo.data.ssat, 2);
+
+              const videoServerRequestInfo = serverRequestInfos[2];
+              assert.equal(videoServerRequestInfo.data.ssat, ssat);
 
               assert.deepEqual(JSON.parse(JSON.stringify(banner1ServerRequestInfo.data.bids)), expectedBanner1Bid);
               assert.deepEqual(JSON.parse(JSON.stringify(banner2ServerRequestInfo.data.bids)), expectedbanner2Bid);
