@@ -222,7 +222,9 @@ function getRequestData(bid, consentData, bidRequest) {
   };
 
   if (bid.params.video.display == undefined || bid.params.video.display != 1) {
-    bidData.imp[0].video = {};
+    bidData.imp[0].video = {
+      linearity: 1
+    };
     if (bid.params.video.playerWidth && bid.params.video.playerHeight) {
       bidData.imp[0].video.w = bid.params.video.playerWidth;
       bidData.imp[0].video.h = bid.params.video.playerHeight;
@@ -263,7 +265,9 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.rewarded) {
       bidData.imp[0].ext.rewarded = bid.params.video.rewarded
     }
-    bidData.imp[0].video.linearity = 1;
+    if (bid.mediaTypes.video.linearity || bid.params.video.linearity) {
+      bidData.imp[0].video.linearity = bid.params.video.linearity || bid.mediaTypes.video.linearity || 1;
+    }
     if (bid.mediaTypes.video.protocols || bid.params.video.protocols) {
       bidData.imp[0].video.protocols = bid.params.video.protocols || bid.mediaTypes.video.protocols || [2, 5];
     }
