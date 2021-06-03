@@ -86,7 +86,8 @@ export const spec = {
           h: size[1]
         }));
       } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
-        var protocol = bid.params.video.protocol ? bid.params.video.protocol : Math.max(videoMediaType.protocol)
+        // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
+        var protocol = bid.params.video.protocol ? bid.params.video.protocol : Math.max(videoMediaType.protocols)
         var startDelay = 2;
 
         if (bid.params.video.startDelay) {
@@ -162,7 +163,6 @@ export const spec = {
           netRevenue: response.isNetCpm,
           ttl: response.ttl,
           dspPixels: response.dspPixels,
-          // WE DON'T FULLY SUPPORT THIS ATM - will always return empty array until implemented on our side.
           meta: { advertiserDomains: response.adomain ? response.adomain : [] }
         };
 
