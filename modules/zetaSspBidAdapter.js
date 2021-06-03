@@ -117,8 +117,9 @@ export const spec = {
         netRevenue: NET_REV,
       };
       if (zetaBid.adomain && zetaBid.adomain.length) {
-        bid.meta = {};
-        bid.meta.advertiserDomains = zetaBid.adomain;
+        bid.meta = {
+          advertiserDomains: zetaBid.adomain
+        };
       }
       bidResponse.push(bid);
     }
