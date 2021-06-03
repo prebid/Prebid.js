@@ -8,7 +8,7 @@ import { createEidsArray } from './userId/eids.js';
 
 const DEV_MODE = window.location.search.match(/bbpbs_debug=true/);
 
-// Blue Billywig Constants
+// Blue Billywig  Constants
 const BB_CONSTANTS = {
   BIDDER_CODE: 'bluebillywig',
   AUCTION_URL: '$$URL_STARTpbs.bluebillywig.com/openrtb2/auction?pub=$$PUBLICATION',
