@@ -688,7 +688,10 @@ describe('OneVideoBidAdapter', function () {
             adid: 123,
             crid: 2,
             price: 6.01,
-            adm: '<VAST></VAST>'
+            adm: '<VAST></VAST>',
+            adomain: [
+              'verizonmedia.com'
+            ],
           }]
         }],
         cur: 'USD'
@@ -712,6 +715,7 @@ describe('OneVideoBidAdapter', function () {
         netRevenue: true,
         adUnitCode: bidRequest.adUnitCode,
         renderer: (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined,
+        adomain: ['verizonmedia.com']
       };
       expect(bidResponse).to.deep.equal(o);
     });

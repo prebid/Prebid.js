@@ -126,7 +126,10 @@ export const spec = {
       currency: response.cur,
       ttl: (bidRequest.params.video.ttl > 0 && bidRequest.params.video.ttl <= 3600) ? bidRequest.params.video.ttl : 300,
       netRevenue: true,
-      adUnitCode: bidRequest.adUnitCode
+      adUnitCode: bidRequest.adUnitCode,
+      meta: {
+        advertiserDomains: bid.adomain
+      }
     };
 
     bidResponse.mediaType = (bidRequest.mediaTypes.banner) ? 'banner' : 'video'
