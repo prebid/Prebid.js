@@ -161,6 +161,11 @@ export const spec = {
           bidResponse.ad = response.ad;
         }
 
+        // WE DON'T FULLY SUPPORT THIS ATM - future spot for adomain code; creating a stub for 5.0 compliance
+        if (response.adomain) {
+          bidResponse.meta = Object.assign({}, bidResponse.meta, { advertiserDomains: [] });
+        }
+
         bidResponses.push(bidResponse);
       }
     } catch (error) {
