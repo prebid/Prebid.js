@@ -163,18 +163,22 @@ describe('Quantcast adapter', function () {
 
     it('sends video bid requests containing all the required parameters', function () {
       setupVideoBidRequest({
-        mimes: ['video/mp4'], // required
-        minduration: 3, // optional
-        maxduration: 5, // optional
-        protocols: [3], // optional
-        startdelay: 1, // optional
-        linearity: 1, // optinal
-        battr: [1, 2], // optional
-        maxbitrate: 10, // optional
-        playbackmethod: [1], // optional
-        delivery: [1], // optional
-        placement: 1, // optional
-        api: [2, 3] // optional
+        mediaTypes: {
+          video: {
+            mimes: ['video/mp4'], // required
+            minduration: 3, // optional
+            maxduration: 5, // optional
+            protocols: [3], // optional
+            startdelay: 1, // optional
+            linearity: 1, // optinal
+            battr: [1, 2], // optional
+            maxbitrate: 10, // optional
+            playbackmethod: [1], // optional
+            delivery: [1], // optional
+            placement: 1, // optional
+            api: [2, 3] // optional
+          }
+        }
       });
 
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
@@ -221,7 +225,11 @@ describe('Quantcast adapter', function () {
 
     it('overrides video parameters with parameters from adunit', function() {
       setupVideoBidRequest({
-        mimes: ['video/mp4']
+        mediaTypes: {
+          video: {
+            mimes: ['video/mp4']
+          }
+        }
       });
       bidRequest.mediaTypes.video.mimes = ['video/webm'];
 
