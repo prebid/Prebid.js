@@ -46,6 +46,7 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
                     key2: 123345
                   }
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
@@ -92,6 +93,7 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
                   maxduration: 30,
                   ttl: 250
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
@@ -128,6 +130,7 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
               position: 1,
               display: 1
             },
+            bidfloor: 0.5,
             site: {
               id: 1,
               page: 'https://verizonmedia.com',
@@ -161,6 +164,7 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
               mimes: ['video/mp4', 'application/javascript'],
               display: 1
             },
+            bidfloor: 0.5,
             site: {
               id: 1,
               page: 'https://verizonmedia.com',
@@ -197,7 +201,7 @@ var adUnits = [
               playerHeight: 250,
               mimes: ['video/mp4', 'application/javascript'],
               e2etest: true
-            }
+            },
             pubId: 'YOUR_PUBLISHER_ID'
           }
         }
@@ -237,6 +241,7 @@ var adUnits = [
                   api: [2],
                   sid:
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
@@ -288,11 +293,12 @@ var adUnits = [
                   protocols: [2,5],
                   api: [2],
                 },
+                bidfloor: 0.5,
                 site: {
                     id: 1,
                     page: 'https://verizonmedia.com',
                     referrer: 'https://verizonmedia.com'
-                  },
+                  },            
                 pubId: 'HBExchange'
                 }
             }
@@ -348,6 +354,7 @@ const adUnits = [{
                             }
                         }
                       },
+                      bidfloor: 0.5,
                       pubId: 'HBExchange'
                     }
                 }
@@ -380,6 +387,7 @@ const adUnits = [{
                         api: [1, 2],
                         ttl: 300
                     },
+                    bidfloor: 0.5,
                     pubId: 'HBExchange'
                 }
             }]

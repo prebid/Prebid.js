@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/relaidoBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { getStorageManager } from '../../../src/storageManager.js';
 
 const UUID_KEY = 'relaido_uuid';
@@ -59,7 +60,8 @@ describe('RelaidoAdapter', function () {
         uuid: relaido_uuid,
         vast: '<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>',
         playerUrl: 'https://relaido/player.js',
-        syncUrl: 'https://relaido/sync.html'
+        syncUrl: 'https://relaido/sync.html',
+        adomain: ['relaido.co.jp', 'www.cmertv.co.jp']
       }
     };
     serverRequest = {
@@ -208,10 +210,18 @@ describe('RelaidoAdapter', function () {
     });
 
     it('should build bid requests by banner', function () {
+      setUAMobile();
       bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [
+            [320, 180]
+          ]
+        },
         banner: {
           sizes: [
-            [640, 360]
+            [640, 360],
+            [1, 1]
           ]
         }
       };
@@ -219,6 +229,31 @@ describe('RelaidoAdapter', function () {
       expect(bidRequests).to.have.lengthOf(1);
       const request = bidRequests[0];
       expect(request.mediaType).to.equal('banner');
+    });
+
+    it('should take 1x1 size', function () {
+      setUAMobile();
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [
+            [320, 180]
+          ]
+        },
+        banner: {
+          sizes: [
+            [640, 360],
+            [1, 1]
+          ]
+        }
+      };
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      expect(bidRequests).to.have.lengthOf(1);
+      const request = bidRequests[0];
+
+      // eslint-disable-next-line no-console
+      console.log(bidRequests);
+      expect(request.width).to.equal(1);
     });
 
     it('The referrer should be the last', function () {
@@ -243,6 +278,8 @@ describe('RelaidoAdapter', function () {
       expect(response.currency).to.equal(serverResponse.body.currency);
       expect(response.creativeId).to.equal(serverResponse.body.creativeId);
       expect(response.vastXml).to.equal(serverResponse.body.vast);
+      expect(response.meta.advertiserDomains).to.equal(serverResponse.body.adomain);
+      expect(response.meta.mediaType).to.equal(VIDEO);
       expect(response.ad).to.be.undefined;
     });
 

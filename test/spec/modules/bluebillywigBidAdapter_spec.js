@@ -210,6 +210,25 @@ describe('BlueBillywigAdapter', () => {
       bid.params.video = void (0);
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('should fail if rendererSettings is specified but is not an object', () => {
+      const bid = deepClone(baseValidBid);
+
+      bid.params.rendererSettings = null;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = 'string';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = 123;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = false;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+      bid.params.rendererSettings = void (0);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
   });
 
   describe('buildRequests', () => {

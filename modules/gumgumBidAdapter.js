@@ -384,7 +384,9 @@ function interpretResponse (serverResponse, bidRequest) {
     ad: {
       price: 0,
       id: 0,
-      markup: ''
+      markup: '',
+      width: 0,
+      height: 0
     },
     pag: {
       pvid: 0
@@ -399,7 +401,9 @@ function interpretResponse (serverResponse, bidRequest) {
       price: cpm,
       id: creativeId,
       markup,
-      cur
+      cur,
+      width: responseWidth,
+      height: responseHeight
     },
     cw: wrapper,
     pag: {
@@ -415,7 +419,8 @@ function interpretResponse (serverResponse, bidRequest) {
   let product = data.pi
   let mediaType = (product === 6 || product === 7) ? VIDEO : BANNER
   let isTestUnit = (product === 3 && data.si === 9)
-  let sizes = utils.parseSizesInput(bidRequest.sizes)
+  // use response sizes if available
+  let sizes = responseWidth && responseHeight ? [`${responseWidth}x${responseHeight}`] : utils.parseSizesInput(bidRequest.sizes)
   let [width, height] = sizes[0].split('x')
   let metaData = {
     advertiserDomains: advertiserDomains || [],
