@@ -12,6 +12,7 @@ import {
 import {
   createEidsArray
 } from './userId/eids.js';
+import { defaultConfig } from 'sinon';
 const BIDDER_CODE = 'smartadserver';
 const GVL_ID = 45;
 export const spec = {
@@ -86,15 +87,39 @@ export const spec = {
           h: size[1]
         }));
       } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
+
+        //We use the mediaType.Video.params when availabe however we override with bidder.param if available.
+        var protocol = bid.params.video.protocol ? bid.params.video.protocol : Math.max(videoMediaType.protocol)
+        var startDelay = -1;
+        if (!bid.params.video.startDelay){
+          switch (videoMediaType.startdelay)
+          {
+            case 0:
+              startDelay = 1;
+            break;
+            case -1:
+              startDelay = 2;
+            break;
+            case -2:
+              startDelay = 3;
+            break;
+            default:
+              startDelay = -1;
+          }
+        }
+        else{
+          startDelay = bid.params.video.startDelay;
+        }
+
         // Specific attributes for instream.
         let playerSize = videoMediaType.playerSize[0];
         payload.isVideo = videoMediaType.context === 'instream';
         payload.mediaType = VIDEO;
         payload.videoData = {
-          videoProtocol: bid.params.video.protocol,
+          videoProtocol: protocol,
           playerWidth: playerSize[0],
           playerHeight: playerSize[1],
-          adBreak: bid.params.video.startDelay || 1
+          adBreak: startDelay
         };
       } else {
         return {};
@@ -148,7 +173,9 @@ export const spec = {
           currency: response.currency,
           netRevenue: response.isNetCpm,
           ttl: response.ttl,
-          dspPixels: response.dspPixels
+          dspPixels: response.dspPixels,
+          // WE DON'T FULLY SUPPORT THIS ATM - will always return empty array until implemented on our side.
+          meta: { advertiserDomains: response.adomain ? response.adomain : [] }
         };
 
         if (bidRequest.mediaType === VIDEO) {
@@ -161,10 +188,8 @@ export const spec = {
           bidResponse.ad = response.ad;
         }
 
-        // WE DON'T FULLY SUPPORT THIS ATM - future spot for adomain code; creating a stub for 5.0 compliance
-        if (response.adomain) {
-          bidResponse.meta = Object.assign({}, bidResponse.meta, { advertiserDomains: [] });
-        }
+        // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
+
 
         bidResponses.push(bidResponse);
       }
