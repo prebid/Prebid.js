@@ -492,6 +492,7 @@ const OPEN_RTB_PROTOCOL = {
     const firstBidRequest = bidRequests[0];
 
     // transform ad unit into array of OpenRTB impression objects
+    let impIds = new Set();
     adUnits.forEach(adUnit => {
       const nativeParams = processNativeAdUnitParams(utils.deepAccess(adUnit, 'mediaTypes.native'));
       let nativeAssets;
@@ -563,10 +564,6 @@ const OPEN_RTB_PROTOCOL = {
       const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
 
       adUnit.bids.forEach(bid => {
-        // OpenRTB response contains the adunit code and bidder name. These are
-        // combined to create a unique key for each bid since an id isn't returned
-        bidIdMap[`${adUnit.code}${bid.bidder}`] = bid.bid_id;
-
         // check for and store valid aliases to add to the request
         if (adapterManager.aliasRegistry[bid.bidder]) {
           const bidder = adapterManager.bidderRegistry[bid.bidder];
@@ -647,7 +644,24 @@ const OPEN_RTB_PROTOCOL = {
         return acc;
       }, {...utils.deepAccess(adUnit, 'ortb2Imp.ext')});
 
-      const imp = { id: adUnit.code, ext, secure: s2sConfig.secure };
+      // in case there is a duplicate imp.id, add '-2' suffix to the second imp.id.
+      // e.g. if there are 2 adUnits (case of twin adUnit codes) with code 'test',
+      // first imp will have id 'test' and second imp will have id 'test-2'
+      let id = adUnit.code;
+      let i = 1;
+      while (impIds.has(id)) {
+        i++;
+        id = `${id}-${i}`;
+      }
+      impIds.add(id);
+
+      adUnit.bids.forEach(bid => {
+        // OpenRTB response contains imp.id and bidder name. These are
+        // combined to create a unique key for each bid since an id isn't returned
+        bidIdMap[`${id}${bid.bidder}`] = bid.bid_id;
+      });
+
+      const imp = { id, ext, secure: s2sConfig.secure };
 
       const ortb2 = {...utils.deepAccess(adUnit, 'ortb2Imp.ext.data')};
       Object.keys(ortb2).forEach(prop => {
@@ -996,7 +1010,7 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.ttl = (bid.exp) ? bid.exp : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
-          bids.push({ adUnit: bid.impid, bid: bidObject });
+          bids.push({ adUnit: bidRequest.adUnitCode, bid: bidObject });
         });
       });
     }
