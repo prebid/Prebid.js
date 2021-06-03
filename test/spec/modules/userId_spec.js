@@ -262,7 +262,7 @@ describe('User ID', function () {
       });
       // Because extend is true, the cookie will be updated even if it exists already. The second setCookie call
       // is for storing consentData
-      expect(coreStorage.setCookie.callCount).to.equal(1);
+      expect(coreStorage.setCookie.callCount).to.equal(2);
     });
 
     it('Disable auto create', function () {
