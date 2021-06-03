@@ -55,6 +55,7 @@ describe('Dmd ID System', function () {
   it('should return cacheObj if cacheObj is passed into getId', function () {
     let data = { 'dmdId': 'U12345' };
     expect(dmdIdSubmodule.getId(config, {}, { cookie: 'dmd-dgid' })).to.deep.equal({ cookie: 'dmd-dgid' });
+    expect(server.requests.length).to.eq(0);
   });
 
   it('Should invoke callback with response from API call', function () {

@@ -53,7 +53,9 @@ export const dmdIdSubmodule = {
     if (cacheIdObj) {
       return cacheIdObj;
     } else {
-      const url = `https://aix.hcn.health/api/v1/auths`;
+      const url = configParams && configParams.api_url
+        ? configParams.api_url
+        : `https://aix.hcn.health/api/v1/auths`;
       // Setting headers
       const headers = {};
       headers['x-api-key'] = configParams.api_key;
