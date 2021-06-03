@@ -12,7 +12,9 @@ The oneVideo adapter now reads `mediaTypes.video` for mandatory parameters such 
 Note: You can use the `bid.params.video` object to specify explicit overrides for whatever is declared in `mediaTypes.video`.
 Important: You must pass `bid.params.video = {}` as bare minimum for the adapter to work.
 # Integration Examples:
-## Instream Video adUnit example & parameters
+
+## Instream Video adUnit using mediaTypes.video
+*Note:* By default, the adapter will read the mandatory parameters from mediaTypes.video.
 *Note:* The Video SSP ad server will respond with an VAST XML to load into your defined player.
 ```
   var adUnits = [
@@ -21,7 +23,18 @@ Important: You must pass `bid.params.video = {}` as bare minimum for the adapter
           mediaTypes: {
             video: {
                   context: 'instream',
-                  playerSize: [480, 640]
+                  playerSize: [480, 640],
+                  mimes: ['video/mp4', 'application/javascript'],
+                  protocols: [2,5],
+                  api: [2],
+                  position: 1,
+                  delivery: [2],
+                  minduration: 10,
+                  maxduration: 30,
+                  placement: 1,
+                  playbackmethod: [1,5],
+                  protocols: [2,5],
+                  api: [2],
             }
           },
           bids: [
@@ -29,21 +42,63 @@ Important: You must pass `bid.params.video = {}` as bare minimum for the adapter
               bidder: 'oneVideo',
               params: {
                 video: {
-                  playerWidth: 480,
-                  playerHeight: 640,
+                  sid: YOUR_VSSP_ORG_ID,
+                  hp: 1,
+                  rewarded: 1,
+                  inventoryid: 123,
+                  ttl: 300,
+                  custom: {
+                    key1: "value1",
+                    key2: 123345
+                  }
+                },
+                bidfloor: 0.5,
+                site: {
+                    id: 1,
+                    page: 'https://verizonmedia.com',
+                    referrer: 'https://verizonmedia.com'
+                  },
+                pubId: 'HBExchange'
+                }
+            }
+          ]
+      }
+  ]
+```
+## Instream Video adUnit using params.video overrides
+*Note:* If the mandatory parameters are not specified in mediaTypes.video the adapter will read check to see if overrides are set in params.video. Decalring values using params.video will always override the settings in mediaTypes.video.
+*Note:* The Video SSP ad server will respond with an VAST XML to load into your defined player.
+```
+  var adUnits = [
+    {
+        code: 'video1',
+          mediaTypes: {
+            video: {
+                  context: 'instream',
+            }
+          },
+          bids: [
+            {
+              bidder: 'oneVideo',
+              params: {
+                video: {
+                  playerWidth: 640,
+                  playerHeight: 480,
                   mimes: ['video/mp4', 'application/javascript'],
                   protocols: [2,5],
                   api: [2],
                   position: 1,
                   delivery: [2],
+                  minduration: 10,
+                  maxduration: 30,
+                  placement: 1,
                   playbackmethod: [1,5],
+                  protocols: [2,5],
+                  api: [2],
                   sid: YOUR_VSSP_ORG_ID,
                   hp: 1,
                   rewarded: 1,
-                  placement: 1,
                   inventoryid: 123,
-                  minduration: 10,
-                  maxduration: 30,
                   ttl: 300,
                   custom: {
                     key1: "value1",

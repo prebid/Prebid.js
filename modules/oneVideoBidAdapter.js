@@ -222,9 +222,7 @@ function getRequestData(bid, consentData, bidRequest) {
   };
 
   if (bid.params.video.display == undefined || bid.params.video.display != 1) {
-    bidData.imp[0].video = {
-      pos: bid.params.video.position,
-    };
+    bidData.imp[0].video = {};
     if (bid.params.video.playerWidth && bid.params.video.playerHeight) {
       bidData.imp[0].video.w = bid.params.video.playerWidth;
       bidData.imp[0].video.h = bid.params.video.playerHeight;
