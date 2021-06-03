@@ -62,9 +62,10 @@ export const spec = {
         sid: params.sid ? params.sid : undefined
       }
     };
-
+    const rInfo = bidderRequest.refererInfo;
     payload.device.ua = navigator.userAgent;
-    payload.site.page = bidderRequest.refererInfo.referer;
+    payload.site.page = (rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href;
+    payload.site.domain = getDomainFromURL(payload.site.page);
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
 
     if (params.test) {
@@ -177,6 +178,16 @@ function provideEids(request, payload) {
   if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
     utils.deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
   }
+}
+
+function getDomainFromURL(url) {
+  let anchor = document.createElement('a');
+  anchor.href = url;
+  let hostname = anchor.hostname;
+  if (hostname.startsWith('www.')) {
+    return hostname.substring(4);
+  }
+  return hostname;
 }
 
 registerBidder(spec);
