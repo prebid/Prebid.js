@@ -184,7 +184,7 @@ function getDomainFromURL(url) {
   let anchor = document.createElement('a');
   anchor.href = url;
   let hostname = anchor.hostname;
-  if (hostname.startsWith('www.')) {
+  if (hostname.indexOf('www.') === 0) {
     return hostname.substring(4);
   }
   return hostname;
