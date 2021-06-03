@@ -35,14 +35,18 @@ describe('Zeta Ssp Bid Adapter', function() {
     refererInfo: {
       referer: 'zetaglobal.com'
     },
+    gdprConsent: {
+      gdprApplies: 1,
+      consentString: 'consentString'
+    },
     params: {
-      placement: 12345,
+      placement: 111,
       user: {
-        uid: 12345,
-        buyeruid: 12345
+        uid: 222,
+        buyeruid: 333
       },
       tags: {
-        someTag: 123,
+        someTag: 444,
         sid: 'publisherId'
       },
       test: 1
@@ -135,5 +139,13 @@ describe('Zeta Ssp Bid Adapter', function() {
     expect(sync4.url).to.include(USER_SYNC_URL_IFRAME);
     expect(sync4.url).to.include('&gdpr=');
     expect(sync4.url).to.include('&us_privacy=');
+  });
+
+  it('Test do not override user object', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(payload.user.uid).to.eql(222);
+    expect(payload.user.buyeruid).to.eql(333);
+    expect(payload.user.ext.consent).to.eql('consentString');
   });
 });

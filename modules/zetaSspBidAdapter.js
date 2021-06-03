@@ -76,13 +76,12 @@ export const spec = {
           gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0
         }
       };
-    }
-    if (request.gdprConsent && request.gdprConsent.gdprApplies) {
-      payload.user = {
-        ext: {
+      if (request.gdprConsent.gdprApplies && request.gdprConsent.consentString) {
+        payload.user.ext = {
+          ...payload.user.ext,
           consent: request.gdprConsent.consentString
         }
-      };
+      }
     }
     provideEids(request, payload);
     return {
