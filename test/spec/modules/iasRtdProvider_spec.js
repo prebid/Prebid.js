@@ -1,4 +1,4 @@
-import { iasSubModule, isBidValid } from 'modules/iasRtdProvider.js';
+import { iasSubModule } from 'modules/iasRtdProvider.js';
 import { expect } from 'chai';
 
 describe('iasRtdProvider is a RTD provider that', function () {
@@ -13,54 +13,21 @@ describe('iasRtdProvider is a RTD provider that', function () {
       expect(iasSubModule.init()).to.equal(true);
     });
   });
-  describe('has a method `isBidValid` that', function () {
-    it('exists', function () {
-      expect(isBidValid).to.be.a('function');
-    });
-    it('returns true', function () {
-      const bid = {
-        bidder: 'ias',
-        params: {
-          pubId: '1234',
-          adUnitPath: '/a/b/c/d',
-        }
-      };
-      expect(isBidValid(bid)).to.equal(true);
-    });
-    it('returns false when pubId is missing', function () {
-      const bid = {
-        bidder: 'ias',
-        params: {
-          adUnitPath: '/a/b/c/d',
-        }
-      };
-      expect(isBidValid(bid)).to.equal(false);
-    });
-    it('returns false when adUnitPath is missing', function () {
-      const bid = {
-        bidder: 'ias',
-        params: {
-          pubId: '1234',
-        }
-      };
-      expect(isBidValid(bid)).to.equal(false);
-    });
-    it('returns false when bidder is missing', function () {
-      const bid = {
-        params: {
-          pubId: '1234',
-          adUnitPath: '/a/b/c/d'
-        }
-      };
-      expect(isBidValid(bid)).to.equal(false);
-    });
-  });
   describe('has a method `getBidRequestData` that', function () {
     const config = {
       name: 'ias',
-      waitForIt: true
+      waitForIt: true,
+      params: {
+        pubId: 1234
+      }
     };
     const userConsent = { gdpr: null, usp: null, coppa: false };
+    it('verify config params', function () {
+      expect(config.name).to.not.be.undefined;
+      expect(config.name).to.equal('ias');
+      expect(config.params.pubId).to.not.be.undefined;
+      expect(config.params).to.have.property('pubId');
+    });
     it('exists', function () {
       expect(iasSubModule.getBidRequestData).to.be.a('function');
     });
