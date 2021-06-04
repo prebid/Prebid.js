@@ -25,62 +25,89 @@ export const storage = getStorageManager(QUANTCAST_VENDOR_ID, BIDDER_CODE);
 
 function makeVideoImp(bid) {
   const video = {};
-  if (bid.mediaTypes && bid.mediaTypes.video) {
-    if (bid.mediaTypes.video.minduration) {
-      video['minduration'] = bid.mediaTypes.video.minduration;
-    }
 
-    if (bid.mediaTypes.video.maxduration) {
-      video['maxduration'] = bid.mediaTypes.video.maxduration;
-    }
-
-    if (bid.mediaTypes.video.protocols) {
-      video['protocols'] = bid.mediaTypes.video.protocols;
-    }
-
-    if (bid.mediaTypes.video.startdelay) {
-      video['startdelay'] = bid.mediaTypes.video.startdelay;
-    }
-
-    if (bid.mediaTypes.video.linearity) {
-      video['linearity'] = bid.mediaTypes.video.linearity;
-    }
-
-    if (bid.mediaTypes.video.battr) {
-      video['battr'] = bid.mediaTypes.video.battr;
-    }
-
-    if (bid.mediaTypes.video.maxbitrate) {
-      video['maxbitrate'] = bid.mediaTypes.video.maxbitrate;
-    }
-
-    if (bid.mediaTypes.video.playbackmethod) {
-      video['playbackmethod'] = bid.mediaTypes.video.playbackmethod;
-    }
-
-    if (bid.mediaTypes.video.delivery) {
-      video['delivery'] = bid.mediaTypes.video.delivery;
-    }
-
-    if (bid.mediaTypes.video.placement) {
-      video['placement'] = bid.mediaTypes.video.placement;
-    }
-
-    if (bid.mediaTypes.video.api) {
-      video['api'] = bid.mediaTypes.video.api;
-    }
-
-    if (bid.mediaTypes.video.mimes) {
-      video['mimes'] = bid.mediaTypes.video.mimes;
-    }
-    if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
-      video['w'] = bid.mediaTypes.video.playerSize[0][0];
-      video['h'] = bid.mediaTypes.video.playerSize[0][1];
-    } else {
-      video['w'] = bid.mediaTypes.video.playerSize[0];
-      video['h'] = bid.mediaTypes.video.playerSize[1];
-    }
+  if (bid.params.video) {
+    video['mimes'] = bid.params.video.mimes;
   }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.minduration) {
+    video['minduration'] = bid.mediaTypes.video.minduration;
+  } else if (bid.params.video) {
+    video['minduration'] = bid.params.video.minduration;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.maxduration) {
+    video['maxduration'] = bid.mediaTypes.video.maxduration;
+  } else if (bid.params.video) {
+    video['maxduration'] = bid.params.video.maxduration;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.protocols) {
+    video['protocols'] = bid.mediaTypes.video.protocols;
+  } else if (bid.params.video) {
+    video['protocols'] = bid.params.video.protocols;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.startdelay) {
+    video['startdelay'] = bid.mediaTypes.video.startdelay;
+  } else if (bid.params.video) {
+    video['startdelay'] = bid.params.video.startdelay;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.linearity) {
+    video['linearity'] = bid.mediaTypes.video.linearity;
+  } else if (bid.params.video) {
+    video['linearity'] = bid.params.video.linearity;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.battr) {
+    video['battr'] = bid.mediaTypes.video.battr;
+  } else if (bid.params.video) {
+    video['battr'] = bid.params.video.battr;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.maxbitrate) {
+    video['maxbitrate'] = bid.mediaTypes.video.maxbitrate;
+  } else if (bid.params.video) {
+    video['maxbitrate'] = bid.params.video.maxbitrate;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.playbackmethod) {
+    video['playbackmethod'] = bid.mediaTypes.video.playbackmethod;
+  } else if (bid.params.video) {
+    video['playbackmethod'] = bid.params.video.playbackmethod;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.delivery) {
+    video['delivery'] = bid.mediaTypes.video.delivery;
+  } else if (bid.params.video) {
+    video['delivery'] = bid.params.video.delivery;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.placement) {
+    video['placement'] = bid.mediaTypes.video.placement;
+  } else if (bid.params.video) {
+    video['placement'] = bid.params.video.placement;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.api) {
+    video['api'] = bid.mediaTypes.video.api;
+  } else if (bid.params.video) {
+    video['api'] = bid.params.video.api;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.mimes) {
+    video['mimes'] = bid.mediaTypes.video.mimes;
+  }
+
+  if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+    video['w'] = bid.mediaTypes.video.playerSize[0][0];
+    video['h'] = bid.mediaTypes.video.playerSize[0][1];
+  } else {
+    video['w'] = bid.mediaTypes.video.playerSize[0];
+    video['h'] = bid.mediaTypes.video.playerSize[1];
+  }
+
   return {
     video: video,
     placementCode: bid.placementCode,

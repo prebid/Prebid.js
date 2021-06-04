@@ -47,19 +47,20 @@ describe('Quantcast adapter', function () {
     storage.setCookie('__qca', '', 'Thu, 01 Jan 1970 00:00:00 GMT');
   });
 
-  function setupVideoBidRequest(videoParams) {
+  function setupVideoBidRequest(videoParams, mediaTypesParams) {
     bidRequest.params = {
       publisherId: 'test-publisher', // REQUIRED - Publisher ID provided by Quantcast
       // Video object as specified in OpenRTB 2.5
       video: videoParams
     };
     bidRequest['mediaTypes'] = {
-      video: {
-        context: 'instream',
-        playerSize: [600, 300]
-      }
+      video: mediaTypesParams
     }
   };
+  /*
+  context: 'instream',
+  playerSize: [600, 300]
+  */
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -163,22 +164,21 @@ describe('Quantcast adapter', function () {
 
     it('sends video bid requests containing all the required parameters', function () {
       setupVideoBidRequest({
-        mediaTypes: {
-          video: {
-            mimes: ['video/mp4'], // required
-            minduration: 3, // optional
-            maxduration: 5, // optional
-            protocols: [3], // optional
-            startdelay: 1, // optional
-            linearity: 1, // optinal
-            battr: [1, 2], // optional
-            maxbitrate: 10, // optional
-            playbackmethod: [1], // optional
-            delivery: [1], // optional
-            placement: 1, // optional
-            api: [2, 3] // optional
-          }
-        }
+        mimes: ['video/mp4'], // required
+        minduration: 3, // optional
+        maxduration: 5, // optional
+        protocols: [3], // optional
+        startdelay: 1, // optional
+        linearity: 1, // optinal
+        battr: [1, 2], // optional
+        maxbitrate: 10, // optional
+        playbackmethod: [1], // optional
+        delivery: [1], // optional
+        placement: 1, // optional
+        api: [2, 3] // optional
+      }, {
+        context: 'instream',
+        playerSize: [600, 300]
       });
 
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
@@ -223,6 +223,66 @@ describe('Quantcast adapter', function () {
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
     });
 
+    it('sends video bid requests containing all the required parameters from mediaTypes', function() {
+      setupVideoBidRequest(null, {
+        mimes: ['video/mp4'], // required
+        minduration: 3, // optional
+        maxduration: 5, // optional
+        protocols: [3], // optional
+        startdelay: 1, // optional
+        linearity: 1, // optinal
+        battr: [1, 2], // optional
+        maxbitrate: 10, // optional
+        playbackmethod: [1], // optional
+        delivery: [1], // optional
+        placement: 1, // optional
+        api: [2, 3], // optional
+        context: 'instream',
+        playerSize: [600, 300]
+      });
+
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+      const expectedVideoBidRequest = {
+        publisherId: QUANTCAST_TEST_PUBLISHER,
+        requestId: '2f7b179d443f14',
+        imp: [
+          {
+            video: {
+              minduration: 3,
+              maxduration: 5,
+              protocols: [3],
+              startdelay: 1,
+              linearity: 1,
+              battr: [1, 2],
+              maxbitrate: 10,
+              playbackmethod: [1],
+              delivery: [1],
+              placement: 1,
+              api: [2, 3],
+              mimes: ['video/mp4'],
+              w: 600,
+              h: 300
+            },
+            placementCode: 'div-gpt-ad-1438287399331-0',
+            bidFloor: 1e-10
+          }
+        ],
+        site: {
+          page: 'http://example.com/hello.html',
+          referrer: 'http://example.com/hello.html',
+          domain: 'example.com'
+        },
+        bidId: '2f7b179d443f14',
+        gdprSignal: 0,
+        uspSignal: 0,
+        coppa: 0,
+        prebidJsVersion: '$prebid.version$',
+        fpa: ''
+      };
+
+      expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
+    });
+
     it('overrides video parameters with parameters from adunit', function() {
       setupVideoBidRequest({
         mediaTypes: {
@@ -230,7 +290,7 @@ describe('Quantcast adapter', function () {
             mimes: ['video/mp4']
           }
         }
-      });
+      }, {});
       bidRequest.mediaTypes.video.mimes = ['video/webm'];
 
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
@@ -265,7 +325,7 @@ describe('Quantcast adapter', function () {
     });
 
     it('sends video bid request when no video parameters are given', function () {
-      setupVideoBidRequest(null);
+      setupVideoBidRequest(null, null);
 
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
       const expectedVideoBidRequest = {
