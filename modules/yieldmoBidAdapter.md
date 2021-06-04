@@ -96,3 +96,8 @@ var videoAdUnit = [{
   }]
 }];
 ```
+
+Please also note, that we support the following OpenRTB params: 
+'mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
+'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'.
+They can be specified in `mediaTypes.video` or in `bids[].params.video`.
