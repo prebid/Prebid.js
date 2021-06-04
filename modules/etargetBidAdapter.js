@@ -51,13 +51,14 @@ export const spec = {
       request.push('gdpr_consent=' + gdprObject.gdpr_consent);
     }
 
+    bidderRequest.metaData = getMetaData();
+
     return {
       method: 'POST',
       url: request.join('&'),
       data: bidderRequest,
       bids: validBidRequests,
       netRevenue: netRevenue,
-      metaData: getMetaData(),
       bidder: 'etarget',
       gdpr: gdprObject
     };
