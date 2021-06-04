@@ -247,11 +247,18 @@ function buildRequests (validBidRequests, bidderRequest) {
       params = {},
       schain,
       transactionId,
-      userId = {}
+      userId = {},
+      ortb2Imp
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     let sizes = [1, 1];
     let data = {};
+    let gpid = '';
+
+    // ADJS-1024
+    if (utils.deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
+      gpid = ortb2Imp.ext.data.adserver.adslot
+    }
 
     if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;
@@ -318,6 +325,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
+      gpid: gpid,
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
     })
   });

@@ -179,7 +179,10 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst) {
         currency: 'USD',
         netRevenue: newFormat ? false : priceType !== 'gross',
         ttl: TIME_TO_LIVE,
-        dealId: serverBid.dealid
+        dealId: serverBid.dealid,
+        meta: {
+          advertiserDomains: serverBid.adomain ? serverBid.adomain : []
+        },
       };
       if (serverBid.content_type === 'video') {
         bidResponse.vastXml = serverBid.adm;

@@ -8,7 +8,7 @@ import { createEidsArray } from './userId/eids.js';
 
 const DEV_MODE = window.location.search.match(/bbpbs_debug=true/);
 
-// Blue Billywig Constants
+// Blue Billywig  Constants
 const BB_CONSTANTS = {
   BIDDER_CODE: 'bluebillywig',
   AUCTION_URL: '$$URL_STARTpbs.bluebillywig.com/openrtb2/auction?pub=$$PUBLICATION',
@@ -122,7 +122,8 @@ const BB_HELPERS = {
     if (!bidObject.vastUrl && bid.nurl && !bid.adm) { // ad markup is on win notice url, and adm is ommited according to OpenRTB 2.5
       bidObject.vastUrl = bid.nurl;
     }
-
+    bidObject.meta = bid.meta || {};
+    if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
     return bidObject;
   },
 };
