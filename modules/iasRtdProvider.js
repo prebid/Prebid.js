@@ -63,7 +63,7 @@ function shallowMerge(dest, src) {
   }, dest);
 }
 
-function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+function getBidRequestData(reqBidsConfigObj, callback, config) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
   let isFinish = false;
