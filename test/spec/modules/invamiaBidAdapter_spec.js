@@ -36,12 +36,11 @@ describe('invamia bid adapter tests', function () {
         transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
       }];
       const payload = spec.buildRequests(bidRequests).data;
-      const searchParams = new URLSearchParams(payload);
 
-      expect(searchParams.get('ctype')).to.equal('div');
-      expect(searchParams.get('pzoneid')).to.equal('123');
-      expect(searchParams.get('width')).to.equal('300');
-      expect(searchParams.get('height')).to.equal('250');
+      expect(payload).to.contain('ctype=div');
+      expect(payload).to.contain('pzoneid=123');
+      expect(payload).to.contain('width=300');
+      expect(payload).to.contain('height=250');
     });
   });
 
