@@ -49,21 +49,21 @@ export const spec = {
 
     try {
       utils._each(response.seatbid, (resp) => {
-        const bid = resp.bid;
-
-        bidResponses.push({
-          requestId: bidRequest.bidId,
-          cpm: bid.price,
-          width: bid.w,
-          height: bid.h,
-          creativeId: bid.adid,
-          currency: response.cur,
-          netRevenue: false,
-          ttl: TIME_TO_LIVE,
-          meta: {
-            advertiserDomains: bid.adomain || []
-          },
-          ad: bid.adm
+        utils._each(resp.bid, (bid) => {
+          bidResponses.push({
+            requestId: bidRequest.bidId,
+            cpm: bid.price,
+            width: bid.w,
+            height: bid.h,
+            creativeId: bid.adid,
+            currency: response.cur,
+            netRevenue: false,
+            ttl: TIME_TO_LIVE,
+            meta: {
+              advertiserDomains: bid.adomain || []
+            },
+            ad: bid.adm
+          });
         });
       })
     } catch (err) {
