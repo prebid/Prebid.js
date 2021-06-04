@@ -35,7 +35,7 @@ export const spec = {
       height,
     };
 
-    const payloadString = new URLSearchParams(payload).toString();
+    const payloadString = Object.keys(payload).map(k => k + '=' + encodeURIComponent(payload[k])).join('&');
 
     return {
       method: 'GET',
