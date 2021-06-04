@@ -217,7 +217,7 @@ describe('waardexBidAdapter', () => {
 
       expect(payload.bidRequests[0]).deep.equal({
         bidId: validBidRequests[0].bidId,
-        bidfloor: 0,
+        bidfloor: validBidRequests[0].params.bidfloor,
         position: validBidRequests[0].params.position,
         instl: validBidRequests[0].params.instl,
         banner: {
