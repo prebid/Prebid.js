@@ -2,9 +2,9 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
-const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
-const USER_SYNC_URL = 'https://p.rfihub.com/cm?pub=44253&in=1';
 const PREBID_DEFINER_ID = '44253'
+const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
+const USER_SYNC_URL = 'https://p.rfihub.com/cm?in=1&pub=' + PREBID_DEFINER_ID;
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
