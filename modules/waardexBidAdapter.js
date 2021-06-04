@@ -95,7 +95,7 @@ const getBidRequestsToSend = validBidRequests => {
 const getBidRequestToSend = validBidRequest => {
   const result = {
     bidId: validBidRequest.bidId,
-    bidfloor: 0,
+    bidfloor: parseFloat(validBidRequest.params.bidfloor) || 0,
     position: parseInt(validBidRequest.params.position) || 1,
     instl: parseInt(validBidRequest.params.instl) || 0,
   };
