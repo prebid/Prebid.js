@@ -2,7 +2,7 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getOrigin} from "../src/utils.js";
+import {getOrigin} from '../src/utils.js';
 const BIDDER_CODE = 'resetdigital';
 
 export const spec = {
@@ -90,7 +90,10 @@ export const spec = {
         creativeId: bid.crid,
         dealId: bid.deal_id,
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: {
+          advertiserDomains: bid.adomain
+        }
       })
     }
 
