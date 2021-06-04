@@ -3,6 +3,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -100,12 +101,12 @@ function bidToVideoImp(bid) {
 
   // if placement not already defined, pick one based on `context`
   if (context && !imp.video.hasOwnProperty('placement')) {
-    if (context === 'instream') {
+    if (context === INSTREAM) {
       imp.video.placement = 1;
-    } else if (context === 'outstream') {
+    } else if (context === OUTSTREAM) {
       imp.video.placement = 4;
     } else {
-      utils.logWarn(`ix bidder params: video context '${context}' is not supported`);
+      utils.logWarn(`IX Bid Adapter: Video context '${context}' is not supported`);
     }
   }
 
