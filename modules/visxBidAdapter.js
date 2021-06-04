@@ -246,6 +246,10 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
             netRevenue: true,
             ttl: TIME_TO_LIVE,
             dealId: serverBid.dealid,
+            meta: {
+              advertiserDomains: serverBid.advertiserDomains ? serverBid.advertiserDomains : [],
+              mediaType: serverBid.mediaType
+            },
           };
 
           if (serverBid.ext && serverBid.ext.prebid) {
