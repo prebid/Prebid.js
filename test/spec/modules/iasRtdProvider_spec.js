@@ -14,6 +14,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
     });
   });
   describe('has a method `getBidRequestData` that', function () {
+    const callback = sinon.spy();
     const config = {
       name: 'ias',
       waitForIt: true,
@@ -21,19 +22,19 @@ describe('iasRtdProvider is a RTD provider that', function () {
         pubId: 1234
       }
     };
-    const userConsent = { gdpr: null, usp: null, coppa: false };
+    it('exists', function () {
+      expect(iasSubModule.getBidRequestData).to.be.a('function');
+    });
     it('verify config params', function () {
       expect(config.name).to.not.be.undefined;
       expect(config.name).to.equal('ias');
       expect(config.params.pubId).to.not.be.undefined;
       expect(config.params).to.have.property('pubId');
     });
-    it('exists', function () {
-      expect(iasSubModule.getBidRequestData).to.be.a('function');
-    });
-    it('process requestData validate bids', function () {
-      iasSubModule.getBidRequestData({ adUnits: adUnits }, null, config, userConsent);
+    it('invoke method', function () {
+      iasSubModule.getBidRequestData({ adUnits: adUnits }, callback, config);
       expect(adUnits).to.length(2);
+      expect(callback.calledOnce).to.be.false;
     });
   });
 });
