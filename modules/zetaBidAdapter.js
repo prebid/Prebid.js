@@ -87,6 +87,7 @@ export const spec = {
       badv: params.badv,
       bapp: params.bapp,
       source: params.source ? params.source : {},
+      regs: params.regs ? params.regs : {},
       ext: params.ext ? params.ext : {}
     };
 
@@ -99,17 +100,15 @@ export const spec = {
       payload.test = params.test;
     }
     if (request.gdprConsent) {
-      payload.regs = {
-        ext: {
-          gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0
-        }
+      payload.regs.ext = {
+        ...payload.regs.ext,
+        gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0
       };
     }
     if (request.gdprConsent && request.gdprConsent.gdprApplies) {
-      payload.user = {
-        ext: {
-          consent: request.gdprConsent.consentString
-        }
+      payload.user.ext = {
+        ...payload.user.ext,
+        consent: request.gdprConsent.consentString
       };
     }
     const postUrl = params.definerId !== '0' ? ENDPOINT_URL.concat('/', params.definerId) : ENDPOINT_URL;
