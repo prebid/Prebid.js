@@ -263,6 +263,14 @@ describe('Improve Digital Adapter Tests', function () {
       params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].bidfloor).to.equal(0.05);
       expect(params.bid_request.imp[0].bidfloorcur).to.equal('EUR');
+
+      // getFloor defined -> use it over bidFloor
+      let getFloorResponse = { currency: 'USD', floor: 3 };
+      bidRequest.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].bidfloor).to.equal(3);
+      expect(params.bid_request.imp[0].bidfloorcur).to.equal('USD');
     });
 
     it('should add GDPR consent string', function () {
@@ -951,6 +959,14 @@ describe('Improve Digital Adapter Tests', function () {
       response.body.bid[0].isNet = true;
       const bids = spec.interpretResponse(response, {bidderRequest});
       expect(bids[0].netRevenue).to.equal(true);
+    });
+
+    it('should set advertiserDomains', function () {
+      const adomain = ['domain.com'];
+      const response = JSON.parse(JSON.stringify(serverResponse));
+      response.body.bid[0].adomain = adomain;
+      const bids = spec.interpretResponse(response, {bidderRequest});
+      expect(bids[0].meta.advertiserDomains).to.equal(adomain);
     });
 
     // Native ads
