@@ -70,7 +70,10 @@ function buildBid(bidData) {
     netRevenue: true,
     mediaType: BANNER,
     ttl: TTL,
-    content: bidData.content
+    content: bidData.content,
+    meta: {
+      advertiserDomains: bidData.advertiserDomains || [],
+    }
   };
 
   if (bidData.placement === 'video') {

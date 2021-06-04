@@ -14,9 +14,8 @@ const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 const NET_REVENUE = false;
-const USER_SYNC_URL_IFRAME = 'https://hb.adtrue.com/prebid/usersync?t=iframe&p=';
-const USER_SYNC_URL_IMAGE = 'https://hb.adtrue.com/prebid/usersync?t=img&p=';
 let publisherId = 0;
+let zoneId = 0;
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
 const DATA_TYPES = {
   'NUMBER': 'number',
@@ -25,6 +24,11 @@ const DATA_TYPES = {
   'ARRAY': 'array',
   'OBJECT': 'object'
 };
+const SYNC_TYPES = Object.freeze({
+  1: 'iframe',
+  2: 'image'
+});
+
 const VIDEO_CUSTOM_PARAMS = {
   'mimes': DATA_TYPES.ARRAY,
   'minduration': DATA_TYPES.NUMBER,
@@ -440,6 +444,14 @@ export const spec = {
         utils.logWarn(LOG_WARN_PREFIX + 'Error: missing publisherId');
         return false;
       }
+      if (!utils.isStr(bid.params.publisherId)) {
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric');
+        return false;
+      }
+      if (!utils.isStr(bid.params.zoneId)) {
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: zoneId is mandatory and cannot be numeric');
+        return false;
+      }
       return true;
     }
     return false;
@@ -478,6 +490,7 @@ export const spec = {
       return;
     }
     publisherId = conf.pubId.trim();
+    zoneId = conf.zoneId.trim();
 
     payload.site.publisher.id = conf.pubId.trim();
     payload.ext.wrapper = {};
@@ -498,9 +511,7 @@ export const spec = {
     if (typeof config.getConfig('device') === 'object') {
       payload.device = Object.assign(payload.device, config.getConfig('device'));
     }
-
     utils.deepSetValue(payload, 'source.tid', conf.transactionId);
-
     // test bids
     if (window.location.href.indexOf('adtrueTest=true') !== -1) {
       payload.test = 1;
@@ -509,7 +520,6 @@ export const spec = {
     if (validBidRequests[0].schain) {
       utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
-
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
       utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
@@ -520,7 +530,6 @@ export const spec = {
     if (bidderRequest && bidderRequest.uspConsent) {
       utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
-
     // coppa compliance
     if (config.getConfig('coppa') === true) {
       utils.deepSetValue(payload, 'regs.coppa', 1);
@@ -576,7 +585,6 @@ export const spec = {
                 }
               });
             }
-
             newBid.meta = {};
             if (bid.ext && bid.ext.dspid) {
               newBid.meta.networkId = bid.ext.dspid;
@@ -588,14 +596,12 @@ export const spec = {
               newBid.meta.advertiserDomains = bid.adomain;
               newBid.meta.clickUrl = bid.adomain[0];
             }
-
             // adserverTargeting
             if (seatbidder.ext && seatbidder.ext.buyid) {
               newBid.adserverTargeting = {
                 'hb_buyid_adtrue': seatbidder.ext.buyid
               };
             }
-
             bidResponses.push(newBid);
           });
         });
@@ -606,32 +612,28 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
-    let syncurl = '' + publisherId;
-
-    if (gdprConsent) {
-      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    if (!responses || responses.length === 0 || (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled)) {
+      return [];
     }
-    if (uspConsent) {
-      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
-    }
-
-    // coppa compliance
-    if (config.getConfig('coppa') === true) {
-      syncurl += '&coppa=1';
-    }
-
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: USER_SYNC_URL_IFRAME + syncurl
-      }];
-    } else {
-      return [{
-        type: 'image',
-        url: USER_SYNC_URL_IMAGE + syncurl
-      }];
-    }
+    return responses.reduce((accum, rsp) => {
+      let cookieSyncs = utils.deepAccess(rsp, 'body.ext.cookie_sync');
+      if (cookieSyncs) {
+        let cookieSyncObjects = cookieSyncs.map(cookieSync => {
+          return {
+            type: SYNC_TYPES[cookieSync.type],
+            url: cookieSync.url +
+              '&publisherId=' + publisherId +
+              '&zoneId=' + zoneId +
+              '&gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0) +
+              '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : '')) +
+              '&us_privacy=' + encodeURIComponent((uspConsent || '')) +
+              '&coppa=' + (config.getConfig('coppa') === true ? 1 : 0)
+          };
+        });
+        return accum.concat(cookieSyncObjects);
+      }
+    }, []);
   }
 };
+
 registerBidder(spec);

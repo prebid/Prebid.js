@@ -258,6 +258,7 @@ describe('Adform adapter', function () {
       assert.equal(result.currency, 'EUR');
       assert.equal(result.netRevenue, true);
       assert.equal(result.ttl, 360);
+      assert.deepEqual(result.meta.advertiserDomains, [])
       assert.equal(result.ad, '<tag1>');
       assert.equal(result.bidderCode, 'adform');
       assert.equal(result.transactionId, '5f33781f-9552-4ca1');

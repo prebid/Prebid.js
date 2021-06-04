@@ -46,14 +46,6 @@ export const spec = {
       utils.logError(BIDDER_CODE + ': siteId is not present in bidder params');
       return false;
     }
-    if (!utils.getBidIdParameter('bidfloor', bid.params)) {
-      utils.logError(BIDDER_CODE + ': bidfloor is not present in bidder params');
-      return false;
-    }
-    if (!utils.getBidIdParameter('bidfloorcur', bid.params)) {
-      utils.logError(BIDDER_CODE + ': bidfloorcur is not present in bidder params');
-      return false;
-    }
     if (utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
       if (!utils.getBidIdParameter('outstream_options', bid.params)) {
         utils.logError(BIDDER_CODE + ': outstream_options parameter is not defined');
@@ -85,8 +77,8 @@ export const spec = {
     const smartxRequests = bidRequests.map(function (bid) {
       const tagId = utils.getBidIdParameter('tagId', bid.params);
       const publisherId = utils.getBidIdParameter('publisherId', bid.params);
-      const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
-      const bidfloorcur = utils.getBidIdParameter('bidfloorcur', bid.params);
+      const bidfloor = getBidFloor(bid) || 0;
+      const bidfloorcur = utils.getBidIdParameter('bidfloorcur', bid.params) || 'EUR';
       const siteId = utils.getBidIdParameter('siteId', bid.params);
       const domain = utils.getBidIdParameter('domain', bid.params);
       const cat = utils.getBidIdParameter('cat', bid.params);
@@ -149,6 +141,7 @@ export const spec = {
       }
 
       const language = navigator.language ? 'language' : 'userLanguage';
+
       const device = {
         h: screen.height,
         w: screen.width,
@@ -157,8 +150,11 @@ export const spec = {
         make: navigator.vendor ? navigator.vendor : '',
         ua: navigator.userAgent
       };
+
       const at = utils.getBidIdParameter('at', bid.params) || 2;
-      const cur = utils.getBidIdParameter('cur', bid.params) || ['EUR'];
+
+      const cur = utils.getBidIdParameter('cur', bid.params) || 'EUR';
+
       const requestPayload = {
         id: utils.generateUUID(),
         imp: smartxReq,
@@ -176,6 +172,7 @@ export const spec = {
         at: at,
         cur: cur
       };
+
       const userExt = {};
 
       // Add GDPR flag and consent string
@@ -220,6 +217,8 @@ export const spec = {
             })
           }
         }
+
+        // Todo: USER ID MODULE
 
         requestPayload.user = {
           ext: userExt,
@@ -271,6 +270,7 @@ export const spec = {
               serverResponseBody.cur = pmb.currency;
             }
           });
+
           const bid = {
             requestId: currentBidRequest.bidId,
             currency: serverResponseBody.cur || 'USD',
@@ -284,12 +284,19 @@ export const spec = {
             width: smartxBid.w,
             height: smartxBid.h
           };
+
+          bid.meta = bid.meta || {};
+          if (smartxBid && smartxBid.adomain && smartxBid.adomain.length > 0) {
+            bid.meta.advertiserDomains = smartxBid.adomain;
+          }
+
           const context = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
+
           if (context === 'outstream') {
             const playersize = utils.deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
               id: 0,
-              url: '//',
+              url: '/',
               config: {
                 adText: 'SmartX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],
@@ -366,7 +373,7 @@ function createOutstreamScript(bid) {
 
   smartPlayObj.adResponse = bid.vastContent;
 
-  const divID = '#' + elementId;
+  const divID = '[id="' + elementId + '"]';
   var script = document.createElement('script');
   script.src = 'https://dco.smartclip.net/?plc=7777778';
   script.type = 'text/javascript';
@@ -399,4 +406,30 @@ function outstreamRender(bid) {
     }
   }
 }
+
+/**
+ * Get the floor price from bid.params for backward compatibility.
+ * If not found, then check floor module.
+ * @param bid A valid bid object
+ * @returns {*|number} floor price
+ */
+function getBidFloor(bid) {
+  let floor = utils.getBidIdParameter('bidfloor', bid.params);
+  let floorcur = utils.getBidIdParameter('bidfloorcur', bid.params) || 'EUR';
+
+  if (!floor && utils.isFn(bid.getFloor)) {
+    const floorObj = bid.getFloor({
+      currency: floorcur,
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (utils.isPlainObject(floorObj) && !isNaN(floorObj.floor) && floorObj.currency === floorcur) {
+      floor = floorObj.floor;
+    }
+  }
+
+  return floor;
+}
+
 registerBidder(spec);

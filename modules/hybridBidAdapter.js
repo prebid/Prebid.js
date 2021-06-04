@@ -78,7 +78,10 @@ function buildBid(bidData) {
     creativeId: bidData.bidId,
     currency: bidData.currency,
     netRevenue: true,
-    ttl: TTL
+    ttl: TTL,
+    meta: {
+      advertiserDomains: bidData.advertiserDomains || [],
+    }
   };
 
   if (bidData.placement === PLACEMENT_TYPE_VIDEO) {

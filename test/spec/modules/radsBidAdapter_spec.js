@@ -87,12 +87,25 @@ describe('radsAdapter', function () {
       'auctionId': '1d1a030790a475'
     }];
 
+    // Without gdprConsent
     let bidderRequest = {
       refererInfo: {
         referer: 'some_referrer.net'
       }
     }
+    // With gdprConsent
+    var bidderRequestGdprConsent = {
+      refererInfo: {
+        referer: 'some_referrer.net'
+      },
+      gdprConsent: {
+        consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        vendorData: {someData: 'value'},
+        gdprApplies: true
+      }
+    };
 
+    // without gdprConsent
     const request = spec.buildRequests(bidRequests, bidderRequest);
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
@@ -104,6 +117,20 @@ describe('radsAdapter', function () {
       expect(request[1].method).to.equal('GET');
       let data = request[1].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
       expect(data).to.equal('rt=vast2&_f=prebid_js&_ps=6682&srw=640&srh=480&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgeo%5D%5Bregion%5D=DE-BE&bcat=IAB2%2CIAB4&dvt=desktop');
+    });
+
+    // with gdprConsent
+    const request2 = spec.buildRequests(bidRequests, bidderRequestGdprConsent);
+    it('sends bid request to our endpoint via GET', function () {
+      expect(request2[0].method).to.equal('GET');
+      let data = request2[0].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
+      expect(data).to.equal('rt=bid-response&_f=prebid_js&_ps=6682&srw=300&srh=250&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&i=1.1.1.1');
+    });
+
+    it('sends bid video request to our rads endpoint via GET', function () {
+      expect(request2[1].method).to.equal('GET');
+      let data = request2[1].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
+      expect(data).to.equal('rt=vast2&_f=prebid_js&_ps=6682&srw=640&srh=480&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgeo%5D%5Bregion%5D=DE-BE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop');
     });
   });
 
@@ -201,6 +228,62 @@ describe('radsAdapter', function () {
       };
       let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
+    });
+  });
+
+  describe(`getUserSyncs test usage`, function () {
+    let serverResponses;
+
+    beforeEach(function () {
+      serverResponses = [{
+        body: {
+          requestId: '23beaa6af6cdde',
+          cpm: 0.5,
+          width: 0,
+          height: 0,
+          creativeId: 100500,
+          dealId: '',
+          currency: 'EUR',
+          netRevenue: true,
+          ttl: 300,
+          type: 'sspHTML',
+          ad: '<!-- test creative -->',
+          userSync: {
+            iframeUrl: ['anyIframeUrl?a=1'],
+            imageUrl: ['anyImageUrl', 'anyImageUrl2']
+          }
+        }
+      }];
+    });
+
+    it(`return value should be an array`, function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true })).to.be.an('array');
+    });
+    it(`array should have only one object and it should have a property type = 'iframe'`, function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses).length).to.be.equal(1);
+      let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses);
+      expect(userSync).to.have.property('type');
+      expect(userSync.type).to.be.equal('iframe');
+    });
+    it(`we have valid sync url for iframe`, function () {
+      let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, {consentString: 'anyString'});
+      expect(userSync.url).to.be.equal('anyIframeUrl?a=1&gdpr_consent=anyString')
+      expect(userSync.type).to.be.equal('iframe');
+    });
+    it(`we have valid sync url for image`, function () {
+      let [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+      expect(userSync.url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
+      expect(userSync.type).to.be.equal('image');
+    });
+    it(`we have valid sync url for image and iframe`, function () {
+      let userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+      expect(userSync.length).to.be.equal(3);
+      expect(userSync[0].url).to.be.equal('anyIframeUrl?a=1&gdpr=1&gdpr_consent=anyString')
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[1].url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
+      expect(userSync[1].type).to.be.equal('image');
+      expect(userSync[2].url).to.be.equal('anyImageUrl2?gdpr=1&gdpr_consent=anyString')
+      expect(userSync[2].type).to.be.equal('image');
     });
   });
 });

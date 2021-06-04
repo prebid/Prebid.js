@@ -6,15 +6,19 @@ import * as utils from '../src/utils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const pubxaiAnalyticsVersion = 'v1.0.0';
+const pubxaiAnalyticsVersion = 'v1.1.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
 
 let initOptions;
 let auctionTimestamp;
+let auctionCache = [];
 let events = {
-  bids: []
+  bids: [],
+  floorDetail: {},
+  pageDetail: {},
+  deviceDetail: {}
 };
 
 var pubxaiAnalyticsAdapter = Object.assign(adapter(
@@ -27,14 +31,14 @@ var pubxaiAnalyticsAdapter = Object.assign(adapter(
       if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT) {
         args.forEach(item => { mapBidResponse(item, 'timeout'); });
       } else if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
+        events.auctionInit = args;
         events.floorDetail = {};
-        if (typeof args.bidderRequests[0].bids[0] !== 'undefined' && typeof args.bidderRequests[0].bids[0].floorData !== 'undefined') {
-          Object.assign(events.floorDetail, args.bidderRequests[0].bids[0].floorData);
+        events.bids = [];
+        const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
+        if (typeof floorData !== 'undefined') {
+          Object.assign(events.floorDetail, floorData);
         }
         auctionTimestamp = args.timestamp;
-      } else if (eventType === CONSTANTS.EVENTS.BID_REQUESTED) {
-        events.bids = [];
-        mapBidRequests(args).forEach(item => { events.bids.push(item) });
       } else if (eventType === CONSTANTS.EVENTS.BID_RESPONSE) {
         mapBidResponse(args, 'response');
       } else if (eventType === CONSTANTS.EVENTS.BID_WON) {
@@ -43,81 +47,48 @@ var pubxaiAnalyticsAdapter = Object.assign(adapter(
         }, 'bidwon');
       }
     }
-
     if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
       send(events, 'auctionEnd');
     }
   }
 });
 
-function mapBidRequests(params) {
-  let arr = [];
-  if (typeof params.bids !== 'undefined' && params.bids.length) {
-    params.bids.forEach(function (bid) {
-      arr.push({
-        bidderCode: bid.bidder,
-        bidId: bid.bidId,
-        adUnitCode: bid.adUnitCode,
-        requestId: bid.bidderRequestId,
-        auctionId: bid.auctionId,
-        placementId: bid.params.placementId,
-        floorData: bid.floorData,
-        transactionId: bid.transactionId,
-        sizes: utils.parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
-        renderStatus: 1,
-        requestTimestamp: params.auctionStart
-      });
-    });
-  }
-  return arr;
-}
-
 function mapBidResponse(bidResponse, status) {
-  if (status !== 'bidwon') {
-    let bid = events.bids.filter(o => o.bidId === bidResponse.bidId || o.bidId === bidResponse.requestId)[0];
-    Object.assign(bid, {
-      bidderCode: bidResponse.bidder,
-      bidId: status === 'timeout' ? bidResponse.bidId : bidResponse.requestId,
+  if (typeof bidResponse !== 'undefined') {
+    let bid = {
       adUnitCode: bidResponse.adUnitCode,
       auctionId: bidResponse.auctionId,
-      creativeId: bidResponse.creativeId,
-      transactionId: bidResponse.transactionId,
-      currency: bidResponse.currency,
-      cpm: bidResponse.cpm,
-      netRevenue: bidResponse.netRevenue,
-      mediaType: bidResponse.mediaType,
-      statusMessage: bidResponse.statusMessage,
-      floorData: bidResponse.floorData,
-      status: bidResponse.status,
-      renderStatus: status === 'timeout' ? 3 : 2,
-      timeToRespond: bidResponse.timeToRespond,
-      requestTimestamp: bidResponse.requestTimestamp,
-      responseTimestamp: bidResponse.responseTimestamp,
-      platform: navigator.platform,
-      deviceType: getDeviceType()
-    });
-  } else {
-    return {
       bidderCode: bidResponse.bidder,
-      bidId: bidResponse.requestId,
-      adUnitCode: bidResponse.adUnitCode,
-      auctionId: bidResponse.auctionId,
-      creativeId: bidResponse.creativeId,
-      transactionId: bidResponse.transactionId,
-      currency: bidResponse.currency,
       cpm: bidResponse.cpm,
-      netRevenue: bidResponse.netRevenue,
+      creativeId: bidResponse.creativeId,
+      currency: bidResponse.currency,
       floorData: bidResponse.floorData,
-      renderedSize: bidResponse.size,
       mediaType: bidResponse.mediaType,
-      statusMessage: bidResponse.statusMessage,
-      status: bidResponse.status,
-      renderStatus: 4,
-      timeToRespond: bidResponse.timeToRespond,
+      netRevenue: bidResponse.netRevenue,
       requestTimestamp: bidResponse.requestTimestamp,
       responseTimestamp: bidResponse.responseTimestamp,
-      platform: navigator.platform,
-      deviceType: getDeviceType()
+      status: bidResponse.status,
+      statusMessage: bidResponse.statusMessage,
+      timeToRespond: bidResponse.timeToRespond,
+      transactionId: bidResponse.transactionId
+    };
+    if (status !== 'bidwon') {
+      Object.assign(bid, {
+        bidId: status === 'timeout' ? bidResponse.bidId : bidResponse.requestId,
+        renderStatus: status === 'timeout' ? 3 : 2,
+        sizes: utils.parseSizesInput(bidResponse.size).toString(),
+      });
+      events.bids.push(bid);
+    } else {
+      Object.assign(bid, {
+        bidId: bidResponse.requestId,
+        floorProvider: events.floorDetail ? events.floorDetail.floorProvider : null,
+        isWinningBid: true,
+        placementId: bidResponse.params ? utils.deepAccess(bidResponse, 'params.0.placementId') : null,
+        renderedSize: bidResponse.size,
+        renderStatus: 4
+      });
+      return bid;
     }
   }
 }
@@ -132,6 +103,26 @@ export function getDeviceType() {
   return 'desktop';
 }
 
+export function getBrowser() {
+  if (/Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)) return 'Chrome';
+  else if (navigator.userAgent.match('CriOS')) return 'Chrome';
+  else if (/Firefox/.test(navigator.userAgent)) return 'Firefox';
+  else if (/Edg/.test(navigator.userAgent)) return 'Microsoft Edge';
+  else if (/Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor)) return 'Safari';
+  else if (/Trident/.test(navigator.userAgent) || /MSIE/.test(navigator.userAgent)) return 'Internet Explorer';
+  else return 'Others';
+}
+
+export function getOS() {
+  if (navigator.userAgent.indexOf('Android') != -1) return 'Android';
+  if (navigator.userAgent.indexOf('like Mac') != -1) return 'iOS';
+  if (navigator.userAgent.indexOf('Win') != -1) return 'Windows';
+  if (navigator.userAgent.indexOf('Mac') != -1) return 'Macintosh';
+  if (navigator.userAgent.indexOf('Linux') != -1) return 'Linux';
+  if (navigator.appVersion.indexOf('X11') != -1) return 'Unix';
+  return 'Others';
+}
+
 // add sampling rate
 pubxaiAnalyticsAdapter.shouldFireEventRequest = function (samplingRate = 1) {
   return (Math.floor((Math.random() * samplingRate + 1)) === parseInt(samplingRate));
@@ -140,12 +131,24 @@ pubxaiAnalyticsAdapter.shouldFireEventRequest = function (samplingRate = 1) {
 function send(data, status) {
   if (pubxaiAnalyticsAdapter.shouldFireEventRequest(initOptions.samplingRate)) {
     let location = utils.getWindowLocation();
-    if (typeof data !== 'undefined') {
-      data.pageDetail = {};
-      Object.assign(data.pageDetail, { host: location.host, path: location.pathname, search: location.search });
-    }
     data.initOptions = initOptions;
-
+    if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
+      Object.assign(data.pageDetail, {
+        host: location.host,
+        path: location.pathname,
+        search: location.search,
+        adUnitCount: data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null
+      });
+      data.initOptions.auctionId = data.auctionInit.auctionId;
+      delete data.auctionInit;
+    }
+    data.deviceDetail = {};
+    Object.assign(data.deviceDetail, {
+      platform: navigator.platform,
+      deviceType: getDeviceType(),
+      deviceOS: getOS(),
+      browser: getBrowser()
+    });
     let pubxaiAnalyticsRequestUrl = utils.buildUrl({
       protocol: 'https',
       hostname: (initOptions && initOptions.hostName) || defaultHost,
@@ -156,8 +159,12 @@ function send(data, status) {
         prebidVersion: $$PREBID_GLOBAL$$.version
       }
     });
-
-    ajax(pubxaiAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/plain' });
+    if (status == 'bidwon') {
+      ajax(pubxaiAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/json' });
+    } else if (status == 'auctionEnd' && auctionCache.indexOf(data.initOptions.auctionId) === -1) {
+      ajax(pubxaiAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/json' });
+      auctionCache.push(data.initOptions.auctionId);
+    }
   }
 }
 
