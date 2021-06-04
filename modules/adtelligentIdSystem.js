@@ -74,7 +74,7 @@ export const adtelligentIdModule = {
     });
 
     if (window.adtDmp && window.adtDmp.ready) {
-      return { id: adtDmp.getUID() }
+      return { id: window.adtDmp.getUID() }
     }
 
     return {
