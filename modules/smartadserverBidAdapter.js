@@ -89,10 +89,10 @@ export const spec = {
         // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
         // Assign a default protocol, the highest value possible means we are retrocompatible with all older values.
         var protocol = null;
-        if (bid.params.video.protocol){
+        if (bid.params.video.protocol) {
           protocol = bid.params.video.protocol;
         } else if (videoMediaType.protocols) {
-          Math.max(videoMediaType.protocols);
+          protocol = Math.max(videoMediaType.protocols);
         }
 
         // Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
