@@ -42,16 +42,17 @@ export const spec = {
     request.unshift('https://' + lastCountry + '.search.etargetnet.com/hb/?hbget=1');
     netRevenue = 'net';
 
-    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
-      gdprObject = {
-        gdpr: bidderRequest.gdprConsent.gdprApplies,
-        gdpr_consent: bidderRequest.gdprConsent.consentString
-      };
-      request.push('gdpr=' + gdprObject.gdpr);
-      request.push('gdpr_consent=' + gdprObject.gdpr_consent);
+    if (bidderRequest) {
+      if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+        gdprObject = {
+          gdpr: bidderRequest.gdprConsent.gdprApplies,
+          gdpr_consent: bidderRequest.gdprConsent.consentString
+        };
+        request.push('gdpr=' + gdprObject.gdpr);
+        request.push('gdpr_consent=' + gdprObject.gdpr_consent);
+      }
+      bidderRequest.metaData = getMetaData();
     }
-
-    bidderRequest.metaData = getMetaData();
 
     return {
       method: 'POST',
