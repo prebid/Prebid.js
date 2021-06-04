@@ -88,16 +88,9 @@ export const spec = {
       } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
         // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
         // Assign a default protocol, the highest value possible means we are retrocompatible with all older values.
-        var protocol = 8;
-        if (bid.params.video.protocol){
-          protocol = bid.params.video.protocol;
-        }
-        else if (videoMediaType.protocols)
-        {
-          protocol = Math.max(videoMediaType.protocols);
-        }
+        var protocol = bid.params.video.protocol ? bid.params.video.protocol : videoMediaType.protocols ? Math.max(videoMediaType.protocols) : null;
 
-        //Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
+        // Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
         var startDelay = 2;
         if (bid.params.video.startDelay) {
           startDelay = bid.params.video.startDelay
