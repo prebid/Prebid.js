@@ -987,9 +987,9 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.creativeId = bid.crid;
           if (bid.burl) { bidObject.burl = bid.burl; }
           bidObject.currency = (response.cur) ? response.cur : DEFAULT_S2S_CURRENCY;
-          bidObject.meta = bidObject.meta || {};
+          bidObject.meta = {};
           let extPrebidMeta = utils.deepAccess(bid, 'ext.prebid.meta');
-          if (extPrebidMeta) { bidObject.meta = utils.deepClone(extPrebidMeta); }
+          if (extPrebidMeta && utils.isPlainObject(extPrebidMeta)) { bidObject.meta = utils.deepClone(extPrebidMeta); }
           if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
 
           // the OpenRTB location for "TTL" as understood by Prebid.js is "exp" (expiration).
