@@ -4,7 +4,7 @@ import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
 const PREBID_DEFINER_ID = '44253'
 const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
-const USER_SYNC_URL = 'https://p.rfihub.com/cm?in=1&pub=' + PREBID_DEFINER_ID;
+const USER_SYNC_URL = 'https://p.rfihub.com/cm?in=1&pub=';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
@@ -163,7 +163,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL
+        url: USER_SYNC_URL.concat(PREBID_DEFINER_ID)
       });
     }
     return syncs;
