@@ -84,7 +84,10 @@ describe('BidsCubeAdapter', () => {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
-          dealId: '1'
+          dealId: '1',
+          meta: {
+            advertiserDomains: ['test.com']
+          }
         }]
       },
       {
@@ -97,7 +100,10 @@ describe('BidsCubeAdapter', () => {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
-          dealId: '1'
+          dealId: '1',
+          meta: {
+            advertiserDomains: ['test.com']
+          }
         }]
       },
       {
@@ -113,6 +119,9 @@ describe('BidsCubeAdapter', () => {
           requestId: '9ec5b177515ee2e5',
           netRevenue: true,
           currency: 'USD',
+          meta: {
+            advertiserDomains: ['test.com']
+          }
         }]
       }
     ]
@@ -128,6 +137,15 @@ describe('BidsCubeAdapter', () => {
 
         const copy = { ...obj.body[0] }
         deepStrictEqual(copy, response[0])
+      })
+    }
+
+    for (const obj of validData) {
+      it(`Should interpret response has meta.advertiserDomains`, () => {
+        const response = spec.interpretResponse(obj)
+
+        expect(response[0]['meta']['advertiserDomains']).to.be.an('array')
+        expect(response[0]['meta']['advertiserDomains'][0]).to.be.an('string')
       })
     }
 
