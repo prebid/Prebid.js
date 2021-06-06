@@ -579,6 +579,7 @@ describe('Adagio bid adapter', () => {
 
           const expected = {
             consentString,
+            allowAuctionWithoutConsent: 0,
             consentRequired: 1,
             apiVersion: 2
           };
@@ -615,6 +616,7 @@ describe('Adagio bid adapter', () => {
           const expected = {
             consentString,
             consentRequired: 0,
+            allowAuctionWithoutConsent: 0,
             apiVersion: 2
           };
 
@@ -736,6 +738,77 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.user.eids).to.be.empty;
+      });
+    });
+
+    describe('with priceFloors module', function() {
+      it('should get and set floor by mediatype and sizes', function() {
+        const bid01 = new BidRequestBuilder({
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            },
+            video: {
+              playerSize: [600, 480]
+            }
+          }
+        }).withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        // delete the computed `sizes` prop as we are based on mediaTypes only.
+        delete bid01.sizes
+
+        bid01.getFloor = () => {
+          return { floor: 1, currency: 'USD' }
+        }
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.adUnits[0].floors.length).to.equal(3);
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'banner', s: '300x250'});
+        expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'banner', s: '300x600'});
+        expect(requests[0].data.adUnits[0].floors[2]).to.deep.equal({f: 1, mt: 'video', s: '600x480'});
+      });
+
+      it('should get and set floor by mediatype if no size provided (ex native, video)', function() {
+        const bid01 = new BidRequestBuilder({
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              mimes: ['video/mp4']
+            },
+            native: {
+              body: { required: true }
+            }
+          }
+        }).withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+        bid01.getFloor = () => {
+          return { floor: 1, currency: 'USD' }
+        }
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.adUnits[0].floors.length).to.equal(2);
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'video'});
+        expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'native'});
+      });
+
+      it('should get and set floor with default value if no floors found', function() {
+        const bid01 = new BidRequestBuilder({
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              mimes: ['video/mp4']
+            }
+          }
+        }).withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+        bid01.getFloor = () => {
+          return { floor: NaN, currency: 'USD' }
+        }
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.adUnits[0].floors.length).to.equal(1);
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 0.1, mt: 'video'});
       });
     });
   });

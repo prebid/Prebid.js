@@ -492,12 +492,24 @@ const OPEN_RTB_PROTOCOL = {
     const firstBidRequest = bidRequests[0];
 
     // transform ad unit into array of OpenRTB impression objects
+    let impIds = new Set();
     adUnits.forEach(adUnit => {
+      // in case there is a duplicate imp.id, add '-2' suffix to the second imp.id.
+      // e.g. if there are 2 adUnits (case of twin adUnit codes) with code 'test',
+      // first imp will have id 'test' and second imp will have id 'test-2'
+      let impressionId = adUnit.code;
+      let i = 1;
+      while (impIds.has(impressionId)) {
+        i++;
+        impressionId = `${adUnit.code}-${i}`;
+      }
+      impIds.add(impressionId);
+
       const nativeParams = processNativeAdUnitParams(utils.deepAccess(adUnit, 'mediaTypes.native'));
       let nativeAssets;
       if (nativeParams) {
         try {
-          nativeAssets = nativeAssetCache[adUnit.code] = Object.keys(nativeParams).reduce((assets, type) => {
+          nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
             let params = nativeParams[type];
 
             function newAsset(obj) {
@@ -563,10 +575,9 @@ const OPEN_RTB_PROTOCOL = {
       const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
 
       adUnit.bids.forEach(bid => {
-        // OpenRTB response contains the adunit code and bidder name. These are
+        // OpenRTB response contains imp.id and bidder name. These are
         // combined to create a unique key for each bid since an id isn't returned
-        bidIdMap[`${adUnit.code}${bid.bidder}`] = bid.bid_id;
-
+        bidIdMap[`${impressionId}${bid.bidder}`] = bid.bid_id;
         // check for and store valid aliases to add to the request
         if (adapterManager.aliasRegistry[bid.bidder]) {
           const bidder = adapterManager.bidderRegistry[bid.bidder];
@@ -594,7 +605,7 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       if (!utils.isEmpty(videoParams)) {
-        if (videoParams.context === 'outstream' && !adUnit.renderer) {
+        if (videoParams.context === 'outstream' && (!videoParams.renderer || !adUnit.renderer)) {
           // Don't push oustream w/o renderer to request object.
           utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
         } else {
@@ -647,7 +658,7 @@ const OPEN_RTB_PROTOCOL = {
         return acc;
       }, {...utils.deepAccess(adUnit, 'ortb2Imp.ext')});
 
-      const imp = { id: adUnit.code, ext, secure: s2sConfig.secure };
+      const imp = { id: impressionId, ext, secure: s2sConfig.secure };
 
       const ortb2 = {...utils.deepAccess(adUnit, 'ortb2Imp.ext.data')};
       Object.keys(ortb2).forEach(prop => {
@@ -731,6 +742,9 @@ const OPEN_RTB_PROTOCOL = {
         }
       }
     };
+
+    // Sets pbjs version, can be overwritten below if channel exists in s2sConfig.extPrebid
+    request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
     if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
@@ -938,7 +952,7 @@ const OPEN_RTB_PROTOCOL = {
             }
 
             if (utils.isPlainObject(adm) && Array.isArray(adm.assets)) {
-              let origAssets = nativeAssetCache[bidRequest.adUnitCode];
+              let origAssets = nativeAssetCache[bid.impid];
               bidObject.native = utils.cleanObj(adm.assets.reduce((native, asset) => {
                 let origAsset = origAssets[asset.id];
                 if (utils.isPlainObject(asset.img)) {
@@ -984,8 +998,9 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.creativeId = bid.crid;
           if (bid.burl) { bidObject.burl = bid.burl; }
           bidObject.currency = (response.cur) ? response.cur : DEFAULT_S2S_CURRENCY;
-          bidObject.meta = bidObject.meta || {};
-          if (bid.ext && bid.ext.dchain) { bidObject.meta.dchain = utils.deepClone(bid.ext.dchain); }
+          bidObject.meta = {};
+          let extPrebidMeta = utils.deepAccess(bid, 'ext.prebid.meta');
+          if (extPrebidMeta && utils.isPlainObject(extPrebidMeta)) { bidObject.meta = utils.deepClone(extPrebidMeta); }
           if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
 
           // the OpenRTB location for "TTL" as understood by Prebid.js is "exp" (expiration).
@@ -993,7 +1008,7 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.ttl = (bid.exp) ? bid.exp : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
-          bids.push({ adUnit: bid.impid, bid: bidObject });
+          bids.push({ adUnit: bidRequest.adUnitCode, bid: bidObject });
         });
       });
     }

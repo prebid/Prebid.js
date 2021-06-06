@@ -48,7 +48,8 @@ const VIDEO_CUSTOM_PARAMS = {
   'linearity': DATA_TYPES.NUMBER,
   'placement': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
-  'maxbitrate': DATA_TYPES.NUMBER
+  'maxbitrate': DATA_TYPES.NUMBER,
+  'skip': DATA_TYPES.NUMBER
 }
 
 const NATIVE_ASSETS = {
@@ -166,6 +167,12 @@ const BB_RENDERER = {
     return `${pub}-${renderer}`; // NB convention!
   }
 };
+
+const MEDIATYPE = [
+  BANNER,
+  VIDEO,
+  NATIVE
+]
 
 let publisherId = 0;
 let isInvalidNativeRequest = false;
@@ -531,7 +538,7 @@ function _createBannerRequest(bid) {
 }
 
 function _createVideoRequest(bid) {
-  var videoData = bid.params.video;
+  var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), bid.params.video);
   var videoObj;
 
   if (videoData !== UNDEFINED) {
@@ -548,11 +555,6 @@ function _createVideoRequest(bid) {
     } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
       videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
       videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
-    }
-    if (bid.params.video.hasOwnProperty('skippable')) {
-      videoObj.ext = {
-        'video_skippable': bid.params.video.skippable ? 1 : 0
-      };
     }
   } else {
     videoObj = UNDEFINED;
@@ -581,6 +583,28 @@ function _addPMPDealsInImpression(impObj, bid) {
   }
 }
 
+function _addDealCustomTargetings(imp, bid) {
+  var dctr = '';
+  var dctrLen;
+  if (bid.params.dctr) {
+    dctr = bid.params.dctr;
+    if (utils.isStr(dctr) && dctr.length > 0) {
+      var arr = dctr.split('|');
+      dctr = '';
+      arr.forEach(val => {
+        dctr += (val.length > 0) ? (val.trim() + '|') : '';
+      });
+      dctrLen = dctr.length;
+      if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
+        dctr = dctr.substring(0, dctrLen - 1);
+      }
+      imp.ext['key_val'] = dctr.trim()
+    } else {
+      utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
+    }
+  }
+}
+
 function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj;
@@ -602,7 +626,7 @@ function _createImpressionObject(bid, conf) {
   };
 
   _addPMPDealsInImpression(impObj, bid);
-
+  _addDealCustomTargetings(impObj, bid);
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
       switch (mediaTypes) {
@@ -779,22 +803,28 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
-function _checkMediaType(adm, newBid) {
+function _checkMediaType(bid, newBid) {
   // Create a regex here to check the strings
-  var admStr = '';
-  var videoRegex = new RegExp(/VAST\s+version/);
-  if (adm.indexOf('span class="PubAPIAd"') >= 0) {
-    newBid.mediaType = BANNER;
-  } else if (videoRegex.test(adm)) {
-    newBid.mediaType = VIDEO;
+  if (bid.ext && bid.ext['BidType'] != undefined) {
+    newBid.mediaType = MEDIATYPE[bid.ext.BidType];
   } else {
-    try {
-      admStr = JSON.parse(adm.replace(/\\/g, ''));
-      if (admStr && admStr.native) {
-        newBid.mediaType = NATIVE;
+    utils.logInfo(LOG_WARN_PREFIX + 'bid.ext.BidType does not exist, checking alternatively for mediaType')
+    var adm = bid.adm;
+    var admStr = '';
+    var videoRegex = new RegExp(/VAST\s+version/);
+    if (adm.indexOf('span class="PubAPIAd"') >= 0) {
+      newBid.mediaType = BANNER;
+    } else if (videoRegex.test(adm)) {
+      newBid.mediaType = VIDEO;
+    } else {
+      try {
+        admStr = JSON.parse(adm.replace(/\\/g, ''));
+        if (admStr && admStr.native) {
+          newBid.mediaType = NATIVE;
+        }
+      } catch (e) {
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
       }
-    } catch (e) {
-      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
     }
   }
 }
@@ -884,38 +914,6 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
   }
 }
 
-function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
-  var dctr = '';
-  var dctrLen;
-  // set dctr value in site.ext, if present in validBidRequests[0], else ignore
-  if (dctrArr.length > 0) {
-    if (validBidRequests[0].params.hasOwnProperty('dctr')) {
-      dctr = validBidRequests[0].params.dctr;
-      if (utils.isStr(dctr) && dctr.length > 0) {
-        var arr = dctr.split('|');
-        dctr = '';
-        arr.forEach(val => {
-          dctr += (val.length > 0) ? (val.trim() + '|') : '';
-        });
-        dctrLen = dctr.length;
-        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
-          dctr = dctr.substring(0, dctrLen - 1);
-        }
-        payload.site.ext = {
-          key_val: dctr.trim()
-        }
-      } else {
-        utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
-      }
-      if (dctrArr.length > 1) {
-        utils.logWarn(LOG_WARN_PREFIX + 'dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
-      }
-    } else {
-      utils.logWarn(LOG_WARN_PREFIX + 'dctr value not found in 1st adunit, ignoring values from subsequent adunits');
-    }
-  }
-}
-
 function _assignRenderer(newBid, request) {
   let bidParams, context, adUnitCode;
   if (request.bidderRequest && request.bidderRequest.bids) {
@@ -931,7 +929,16 @@ function _assignRenderer(newBid, request) {
       newBid.renderer = BB_RENDERER.newRenderer(newBid.rendererCode, adUnitCode);
     }
   }
-};
+}
+
+function isNonEmptyArray(test) {
+  if (utils.isArray(test) === true) {
+    if (test.length > 0) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -950,22 +957,25 @@ export const spec = {
         return false;
       }
       // video ad validation
-      if (bid.params.hasOwnProperty('video')) {
-        if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
-          utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
+      if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
+        // bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array
+        let mediaTypesVideoMimes = utils.deepAccess(bid.mediaTypes, 'video.mimes');
+        let paramsVideoMimes = utils.deepAccess(bid, 'params.video.mimes');
+        if (isNonEmptyArray(mediaTypesVideoMimes) === false && isNonEmptyArray(paramsVideoMimes) === false) {
+          utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
           return false;
         }
-        if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
-          if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
-            utils.logError(`${LOG_WARN_PREFIX}: no context specified in bid. Rejecting bid: `, bid);
-            return false;
-          }
-          if (bid.mediaTypes[VIDEO].context === 'outstream' && !utils.isStr(bid.params.outstreamAU) && !bid.hasOwnProperty('renderer') && !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
-            utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
-            return false;
-          }
-        } else {
-          utils.logError(`${LOG_WARN_PREFIX}: mediaTypes or mediaTypes.video is not specified. Rejecting bid: `, bid);
+
+        if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
+          utils.logError(`${LOG_WARN_PREFIX}: no context specified in bid. Rejecting bid: `, bid);
+          return false;
+        }
+
+        if (bid.mediaTypes[VIDEO].context === 'outstream' &&
+          !utils.isStr(bid.params.outstreamAU) &&
+          !bid.hasOwnProperty('renderer') &&
+          !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
+          utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
           return false;
         }
       }
@@ -1090,7 +1100,6 @@ export const spec = {
       utils.deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
     _handleFlocId(payload, validBidRequests);
@@ -1164,7 +1173,7 @@ export const spec = {
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
                 parsedRequest.imp.forEach(req => {
                   if (bid.impid === req.id) {
-                    _checkMediaType(bid.adm, newBid);
+                    _checkMediaType(bid, newBid);
                     switch (newBid.mediaType) {
                       case BANNER:
                         break;

@@ -27,11 +27,14 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
 };
 
 export const interpretResponse = function (serverResponse) {
+  const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   const res = serverResponse.body;
   const bids = []
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
+        const adWithCorrectCurrency = b.adm
+          .replace(/\${AUCTION_PRICE_CURRENCY}/g, adServerPriceCurrency);
         bids.push({
           requestId: b.impid,
           cpm: b.price,
@@ -42,7 +45,7 @@ export const interpretResponse = function (serverResponse) {
           dealId: b.dealid,
           netRevenue: true,
           ttl: TIME_TO_LIVE_IN_SECONDS,
-          ad: b.adm,
+          ad: adWithCorrectCurrency,
           nurl: b.nurl,
           meta: {
             advertiserDomains: b.adomain
@@ -56,10 +59,14 @@ export const interpretResponse = function (serverResponse) {
 
 export const onBidWon = function (bid) {
   const cpm = bid.cpm || 0;
+  const cpmCurrency = bid.currency || SUPPORTED_CURRENCY;
   const adServerPrice = utils.deepAccess(bid, 'adserverTargeting.hb_pb', 0);
+  const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   if (utils.isStr(bid.nurl) && bid.nurl !== '') {
     const winNotificationUrl = utils.replaceAuctionPrice(bid.nurl, cpm)
-      .replace(/\${AD_SERVER_PRICE}/g, adServerPrice);
+      .replace(/\${AUCTION_PRICE_CURRENCY}/g, cpmCurrency)
+      .replace(/\${AD_SERVER_PRICE}/g, adServerPrice)
+      .replace(/\${AD_SERVER_PRICE_CURRENCY}/g, adServerPriceCurrency);
     utils.triggerPixel(winNotificationUrl);
   }
 };

@@ -58,6 +58,7 @@ export const spec = {
       let placement = {
         placementId: bid.params.placement_id,
         bidId: bid.bidId,
+        floor: {},
       };
 
       if (bid.mediaTypes.hasOwnProperty(BANNER)) {
@@ -87,6 +88,23 @@ export const spec = {
           placement['playbackmethod'] = bid.mediaTypes.video.playbackmethod;
         }
       }
+
+      if (typeof bid.getFloor === 'function') {
+        let floorInfo = {};
+
+        for (let size of placement['sizes']) {
+          floorInfo = bid.getFloor({
+            currency: 'USD',
+            mediaType: placement['traffic'],
+            size: size,
+          });
+
+          if (typeof floorInfo === 'object' && floorInfo.currency === 'USD') {
+            placement.floor[`${size[0]}x${size[1]}`] = parseFloat(floorInfo.floor);
+          }
+        }
+      }
+
       if (bid.schain) {
         placement.schain = bid.schain;
       }
@@ -105,10 +123,26 @@ export const spec = {
     if (response && Array.isArray(response) && response.length > 0) {
       for (let i = 0; i < response.length; i++) {
         if (response[i].cpm > 0) {
+          const tempResponse = {
+            requestId: response[i].requestId,
+            width: response[i].width,
+            height: response[i].height,
+            cpm: response[i].cpm,
+            mediaType: response[i].mediaType,
+            creativeId: response[i].creativeId,
+            currency: response[i].currency,
+            netRevenue: response[i].netRevenue,
+            ttl: response[i].ttl,
+            ad: response[i].ad,
+            meta: {
+              advertiserDomains: response[i].adomain && response[i].adomain.length ? response[i].adomain : [],
+            }
+          };
+
           if (response[i].mediaType && response[i].mediaType === 'video') {
             response[i].vastXml = response[i].ad;
           }
-          bidResponse.push(response[i]);
+          bidResponse.push(tempResponse);
         }
       }
     }

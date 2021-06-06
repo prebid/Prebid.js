@@ -46,7 +46,7 @@ function mapMediaType(seedtagMediaType) {
 }
 
 function hasVideoMediaType(bid) {
-  return !!bid.mediaTypes && !!bid.mediaTypes.video
+  return (!!bid.mediaTypes && !!bid.mediaTypes.video) || (!!bid.params && !!bid.params.video)
 }
 
 function hasMandatoryParams(params) {
@@ -58,13 +58,12 @@ function hasMandatoryParams(params) {
   );
 }
 
-function hasMandatoryVideoParams(mediaTypes) {
-  const isVideoInStream =
-    !!mediaTypes.video && mediaTypes.video.context === 'instream';
-  const isPlayerSize =
-    !!utils.deepAccess(mediaTypes, 'video.playerSize') &&
-    utils.isArray(utils.deepAccess(mediaTypes, 'video.playerSize'));
-  return isVideoInStream && isPlayerSize;
+function hasMandatoryVideoParams(bid) {
+  const videoParams = getVideoParams(bid)
+
+  return hasVideoMediaType(bid) && !!videoParams.playerSize &&
+    utils.isArray(videoParams.playerSize) &&
+    videoParams.playerSize.length > 0;
 }
 
 function buildBidRequests(validBidRequests) {
@@ -91,18 +90,33 @@ function buildBidRequests(validBidRequests) {
     }
 
     if (hasVideoMediaType(validBidRequest)) {
-      bidRequest.videoParams = params.video || {};
-      bidRequest.videoParams.w =
-        validBidRequest.mediaTypes.video.playerSize[0][0];
-      bidRequest.videoParams.h =
-        validBidRequest.mediaTypes.video.playerSize[0][1];
+      bidRequest.videoParams = getVideoParams(validBidRequest)
     }
 
     return bidRequest;
   })
 }
 
-function buildBid(seedtagBid) {
+/**
+ * return video param (global or overrided per bidder)
+ */
+function getVideoParams(validBidRequest) {
+  const videoParams = validBidRequest.mediaTypes.video || {};
+  if (videoParams.playerSize) {
+    videoParams.w = videoParams.playerSize[0][0];
+    videoParams.h = videoParams.playerSize[0][1];
+  }
+
+  const bidderVideoParams = (validBidRequest.params && validBidRequest.params.video) || {}
+  // override video params from seedtag bidder params
+  Object.keys(bidderVideoParams).forEach(key => {
+    videoParams[key] = validBidRequest.params.video[key]
+  })
+
+  return videoParams
+}
+
+function buildBidResponse(seedtagBid) {
   const mediaType = mapMediaType(seedtagBid.mediaType);
   const bid = {
     requestId: seedtagBid.bidId,
@@ -114,7 +128,10 @@ function buildBid(seedtagBid) {
     netRevenue: true,
     mediaType: mediaType,
     ttl: seedtagBid.ttl,
-    nurl: seedtagBid.nurl
+    nurl: seedtagBid.nurl,
+    meta: {
+      advertiserDomains: seedtagBid && seedtagBid.adomain && seedtagBid.adomain.length > 0 ? seedtagBid.adomain : []
+    }
   };
 
   if (mediaType === VIDEO) {
@@ -152,7 +169,7 @@ export const spec = {
    */
   isBidRequestValid(bid) {
     return hasVideoMediaType(bid)
-      ? hasMandatoryParams(bid.params) && hasMandatoryVideoParams(bid.mediaTypes)
+      ? hasMandatoryParams(bid.params) && hasMandatoryVideoParams(bid)
       : hasMandatoryParams(bid.params);
   },
 
@@ -197,7 +214,7 @@ export const spec = {
     const serverBody = serverResponse.body;
     if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
       return utils._map(serverBody.bids, function(bid) {
-        return buildBid(bid);
+        return buildBidResponse(bid);
       });
     } else {
       return [];

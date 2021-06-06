@@ -244,10 +244,12 @@ export const spec = {
     if (bidRequests[0].userId) {
       let eids = [];
 
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.flocId.id`), 'chrome.com', null);
       addUserId(eids, utils.deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
       addUserId(eids, utils.deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
       addUserId(eids, utils.deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
       addUserId(eids, utils.deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
 
       if (eids.length) {
         payload.eids = eids;

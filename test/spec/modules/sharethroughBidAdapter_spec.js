@@ -436,7 +436,7 @@ describe('sharethrough adapter spec', function() {
 
     it('should include the bidfloor parameter if it is present in the bid request', function() {
       const bidRequest = Object.assign({}, bidRequests[0]);
-      bidRequest['bidfloor'] = 0.50;
+      bidRequest['getFloor'] = () => ({ currency: 'USD', floor: 0.5 });
       const builtBidRequest = spec.buildRequests([bidRequest])[0];
       expect(builtBidRequest.data.bidfloor).to.eq(0.5);
     });
