@@ -80,9 +80,9 @@ const SERVER_VIDEO_RESPONSE = {
     'height': 480,
     'cur': 'USD',
     'width': 640,
-    'cpm': 0.9
-  }
-  ]
+    'cpm': 0.9,
+    'adomain': ['a.com']
+  }]
 };
 const SERVER_OUSTREAM_VIDEO_RESPONSE = SERVER_VIDEO_RESPONSE;
 const SERVER_DISPLAY_RESPONSE = {
@@ -163,7 +163,10 @@ const videoEqResponse = [{
   height: 480,
   width: 640,
   ttl: 300,
-  cpm: 0.9
+  cpm: 0.9,
+  meta: {
+    advertiserDomains: ['a.com']
+  }
 }];
 
 const displayEqResponse = [{
@@ -177,7 +180,11 @@ const displayEqResponse = [{
   height: 250,
   width: 300,
   ttl: 300,
-  cpm: 0.9
+  cpm: 0.9,
+  meta: {
+    advertiserDomains: []
+  }
+
 }];
 
 describe('adtelligentBidAdapter', () => {

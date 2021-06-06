@@ -24,6 +24,8 @@ export const RENDERER_URL = 'https://script.4dex.io/outstream-player.js';
 const MAX_SESS_DURATION = 30 * 60 * 1000;
 const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0ki9JJI2uYm/6VEYo8TJED9WfMkiJ4vf02CW3RvSWwc35bif2SK1L8Nn/GfFYr/2/GG/Rm0vUsv+vBHky6nuuYls20Og0HDhMgaOlXoQ/cxMuiy5QSktp';
 const ADAGIO_PUBKEY_E = 65537;
+const CURRENCY = 'USD';
+const DEFAULT_FLOOR = 0.1;
 
 // This provide a whitelist and a basic validation
 // of OpenRTB 2.5 options used by the Adagio SSP.
@@ -819,6 +821,48 @@ function _parseNativeBidResponse(bid) {
   bid.native = native
 }
 
+function _getFloors(bidRequest) {
+  if (!utils.isFn(bidRequest.getFloor)) {
+    return false;
+  }
+
+  const floors = [];
+
+  const getAndPush = (mediaType, size) => {
+    const info = bidRequest.getFloor({
+      currency: CURRENCY,
+      mediaType,
+      size: []
+    });
+
+    floors.push(utils.cleanObj({
+      mt: mediaType,
+      s: utils.isArray(size) ? `${size[0]}x${size[1]}` : undefined,
+      f: (!isNaN(info.floor) && info.currency === CURRENCY) ? info.floor : DEFAULT_FLOOR
+    }));
+  }
+
+  Object.keys(bidRequest.mediaTypes).forEach(mediaType => {
+    if (SUPPORTED_MEDIA_TYPES.indexOf(mediaType) !== -1) {
+      const sizeProp = mediaType === VIDEO ? 'playerSize' : 'sizes';
+
+      if (bidRequest.mediaTypes[mediaType][sizeProp] && bidRequest.mediaTypes[mediaType][sizeProp].length) {
+        if (utils.isArray(bidRequest.mediaTypes[mediaType][sizeProp][0])) {
+          bidRequest.mediaTypes[mediaType][sizeProp].forEach(size => {
+            getAndPush(mediaType, [size[0], size[1]]);
+          });
+        } else {
+          getAndPush(mediaType, [bidRequest.mediaTypes[mediaType][sizeProp][0], bidRequest.mediaTypes[mediaType][sizeProp][1]]);
+        }
+      } else {
+        getAndPush(mediaType, '*');
+      }
+    }
+  });
+
+  return floors;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -914,6 +958,9 @@ export const spec = {
     const adUnits = utils._map(validBidRequests, (bidRequest) => {
       bidRequest.features = internal.getFeatures(bidRequest, bidderRequest);
 
+      // Handle priceFloors module
+      bidRequest.floors = _getFloors(bidRequest);
+
       if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
         _buildVideoBidRequest(bidRequest);
       }
@@ -923,10 +970,14 @@ export const spec = {
 
     // Group ad units by organizationId
     const groupedAdUnits = adUnits.reduce((groupedAdUnits, adUnit) => {
-      adUnit.params.organizationId = adUnit.params.organizationId.toString();
+      const adUnitCopy = utils.deepClone(adUnit);
+      adUnitCopy.params.organizationId = adUnitCopy.params.organizationId.toString();
 
-      groupedAdUnits[adUnit.params.organizationId] = groupedAdUnits[adUnit.params.organizationId] || [];
-      groupedAdUnits[adUnit.params.organizationId].push(adUnit);
+      // remove useless props
+      delete adUnitCopy.floorData;
+
+      groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
+      groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);
 
       return groupedAdUnits;
     }, {});
