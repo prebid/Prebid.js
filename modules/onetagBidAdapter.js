@@ -240,6 +240,7 @@ function requestsToBids(bidRequests) {
     videoObj['protocols'] = bidRequest.mediaTypes.video.protocols;
     videoObj['maxDuration'] = bidRequest.mediaTypes.video.maxduration;
     videoObj['api'] = bidRequest.mediaTypes.video.api;
+    videoObj['playbackmethod'] = bidRequest.mediaTypes.video.playbackmethod || [];
     videoObj['type'] = VIDEO;
     return videoObj;
   });
