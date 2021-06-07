@@ -78,7 +78,7 @@ export const spec = {
         cpm: response.bidPrice,
         width: firstSize.w,
         height: firstSize.h,
-        creativeId: response.crid,
+        creativeId: response.crid || response.cmpId,
         meta: responseMeta,
         renderer: context === OUTSTREAM ? createRenderer(bidRequest) : null,
         mediaType: VIDEO,

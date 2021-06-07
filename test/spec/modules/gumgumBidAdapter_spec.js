@@ -189,6 +189,13 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.not.have.property('irisid');
     });
 
+    it('should set the global placement id (gpid)', function () {
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest).to.have.property('gpid');
+      expect(bidRequest.gpid).to.equal(123456);
+    });
+
     describe('product id', function () {
       it('should set the correct pi param if native param is found', function () {
         const request = { ...bidRequests[0], params: { ...zoneParam, native: 2 } };
