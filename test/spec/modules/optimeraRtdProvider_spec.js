@@ -59,9 +59,16 @@ describe('Optimera RTD targeting object is properly formed', () => {
 });
 
 describe('Optimera RTD error logging', () => {
+  let utilsLogErrorStub;
+
+  beforeEach(function () {
+    utilsLogErrorStub = sinon.stub(utils, 'logError');
+  });
+  afterEach(function () {
+    utilsLogErrorStub.restore();
+  });
+
   it('ommitting clientID should log an error', () => {
-    let sandbox = sinon.sandbox.create();
-    sandbox.stub(utils, 'logError');
     const conf = {
       dataProviders: [{
         name: 'optimeraRTD',
