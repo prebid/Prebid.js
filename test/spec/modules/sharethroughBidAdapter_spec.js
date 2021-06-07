@@ -24,10 +24,6 @@ const bidRequests = [
           linkType: 2
         }
       },
-      sharedid: {
-        id: 'fake-sharedid',
-        third: 'fake-sharedthird'
-      },
       lipb: {
         lipbid: 'fake-lipbid'
       }
@@ -373,12 +369,6 @@ describe('sharethrough adapter spec', function() {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       expect(bidRequest.data.id5uid.id).to.eq('fake-id5id');
       expect(bidRequest.data.id5uid.linkType).to.eq(2);
-    });
-
-    it('should add the shduid parameter if a bid request contains a value for Shared ID', function() {
-      const bidRequest = spec.buildRequests(bidRequests)[0];
-      expect(bidRequest.data.shduid.id).to.eq('fake-sharedid');
-      expect(bidRequest.data.shduid.third).to.eq('fake-sharedthird');
     });
 
     it('should add the liuid parameter if a bid request contains a value for LiveIntent ID', function() {
