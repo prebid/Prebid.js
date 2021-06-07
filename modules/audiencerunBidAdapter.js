@@ -131,6 +131,12 @@ export const spec = {
       bid.width = bidObject.w;
       bid.netRevenue = bidObject.isNet ? bidObject.isNet : false;
       bid.ttl = 300;
+      bid.meta = {
+        advertiserDomains:
+          bidObject.adomain && Array.isArray(bidObject.adomain)
+            ? bidObject.adomain
+            : [],
+      };
 
       bids.push(bid);
     });
