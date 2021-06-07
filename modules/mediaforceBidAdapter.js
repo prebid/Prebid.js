@@ -220,7 +220,7 @@ export const spec = {
           netRevenue: true,
           ttl: serverBid.ttl || 300,
           meta: {
-            advertiserDomains: serverBid.adomain
+            advertiserDomains: serverBid.adomain : serverBid.adomain ? []
           },
           burl: serverBid.burl,
         };
