@@ -97,7 +97,7 @@ const VIDEO_BID_REQUEST = {
 };
 
 const VIDEO_RESPONSE = [{
-  'requestId': '21c2c8574a7481',
+  'requestId': '325a54271dc40a',
   'cpm': 5.528554074074074,
   'width': 640,
   'height': 480,
@@ -168,7 +168,7 @@ const NATIVE_BID = {
       }
     }
   },
-  'bidId': '325a54271dc40a'
+  'bidId': '22a42cd3522c6f'
 };
 
 const NATIVE_BID_REQUEST = {
