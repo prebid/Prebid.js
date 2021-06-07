@@ -75,9 +75,19 @@ function buildBidRequest(validBidRequest) {
     }
   );
 
-    if (hasVideoMediaType(validBidRequest)) {
-      bidRequest.videoParams = getVideoParams(validBidRequest)
-    }
+  const bidRequest = {
+    id: validBidRequest.bidId,
+    transactionId: validBidRequest.transactionId,
+    sizes: validBidRequest.sizes,
+    supplyTypes: mediaTypes,
+    adUnitId: params.adUnitId,
+    placement: params.placement,
+    requestCount: validBidRequest.bidderRequestsCount
+  };
+
+  if (hasVideoMediaType(validBidRequest)) {
+    bidRequest.videoParams = getVideoParams(validBidRequest)
+  }
 
   return bidRequest;
 }
@@ -145,7 +155,6 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: [SEEDTAG_ALIAS],
   supportedMediaTypes: [BANNER, VIDEO],
-  requestCount: {},
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -172,17 +181,7 @@ export const spec = {
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
-      bidRequests: utils._map(validBidRequests, (validBidRequest) => {
-        const bidRequest = buildBidRequest(validBidRequest)
-
-        // append the count to the bidRequest
-        const adunitId = bidRequest.adUnitId
-        const count = this.requestCount[adunitId] || 0
-        this.requestCount[adunitId] = count + 1
-        bidRequest.requestCount = this.requestCount[adunitId]
-
-        return bidRequest
-      })
+      bidRequests: utils._map(validBidRequests, buildBidRequest)
     };
 
     if (payload.cmp) {
