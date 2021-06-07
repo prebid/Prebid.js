@@ -69,7 +69,6 @@ export const spec = {
     } catch (err) {
       utils.logError(err);
     }
-    utils.logInfo(bidResponses)
     return bidResponses;
   }
 };

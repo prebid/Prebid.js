@@ -65,7 +65,6 @@ describe('nextMillenniumBidAdapterTests', function() {
 
     let bids = spec.interpretResponse(serverResponse, bidRequestData.bids[0]);
     expect(bids).to.have.lengthOf(1);
-    utils.logInfo(bids)
     let bid = bids[0];
 
     expect(bid.creativeId).to.equal('96846035');
