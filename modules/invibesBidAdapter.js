@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+mport * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -250,9 +250,6 @@ function addMeta(bidModelMeta) {
         meta[CONSTANTS.META_TAXONOMY[i]] = bidModelMeta[CONSTANTS.META_TAXONOMY[i]];
       }
     }
-
-    utils.logInfo('Invibes Adapter - No ads available');
-    return null;
   }
 
   return meta;
