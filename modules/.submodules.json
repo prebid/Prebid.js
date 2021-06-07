@@ -40,8 +40,8 @@
     "geoedgeRtdProvider",
     "haloRtdProvider",
     "jwplayerRtdProvider",
-    "permutiveRtdProvider",
     "optimeraRtdProvider",
+    "permutiveRtdProvider",
     "reconciliationRtdProvider",
     "sirdataRtdProvider"
   ],
