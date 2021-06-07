@@ -111,7 +111,7 @@ export const spec = {
       let smartxReq = {
         id: bid.bidId,
         secure: secure,
-        bidfloor: 0,
+        bidfloor: bidfloor,
         bidfloorcur: bidfloorcur,
         video: {
           w: contentWidth,
