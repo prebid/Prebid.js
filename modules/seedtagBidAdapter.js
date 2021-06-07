@@ -82,8 +82,12 @@ function buildBidRequest(validBidRequest) {
     supplyTypes: mediaTypes,
     adUnitId: params.adUnitId,
     placement: params.placement,
-    requestCount: validBidRequest.bidderRequestsCount
+    requestCount: validBidRequest.bidderRequestsCount || 1 // FIXME : in unit test the parameter bidderRequestsCount is undefined
   };
+
+  if (params.adPosition) {
+    bidRequest.adPosition = params.adPosition;
+  }
 
   if (hasVideoMediaType(validBidRequest)) {
     bidRequest.videoParams = getVideoParams(validBidRequest)
