@@ -4,15 +4,15 @@
  */
 
 import events from './events.js';
-import { fireNativeTrackers, getAssetMessage } from './native.js';
-import { EVENTS } from './constants.json';
+import { fireNativeTrackers, getAssetMessage, getAllAssetsMessage } from './native.js';
+import constants from './constants.json';
 import { logWarn, replaceAuctionPrice } from './utils.js';
 import { auctionManager } from './auctionManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const BID_WON = EVENTS.BID_WON;
+const BID_WON = constants.EVENTS.BID_WON;
 
 export function listenMessagesFromCreative() {
   window.addEventListener('message', receiveMessage, false);
@@ -51,6 +51,13 @@ function receiveMessage(ev) {
         const message = getAssetMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
         return;
+      } else if (data.action === 'allAssetRequest') {
+        const message = getAllAssetsMessage(data, adObject);
+        ev.source.postMessage(JSON.stringify(message), ev.origin);
+      } else if (data.action === 'resizeNativeHeight') {
+        adObject.height = data.height;
+        adObject.width = data.width;
+        resizeRemoteCreative(adObject);
       }
 
       const trackerType = fireNativeTrackers(data, adObject);

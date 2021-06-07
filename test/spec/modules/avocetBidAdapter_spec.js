@@ -69,7 +69,9 @@ describe('Avocet adapter', function () {
               placement: '012345678901234567890123',
             },
             userId: {
-              id5id: 'test'
+              id5id: {
+                uid: 'test'
+              }
             }
           },
           {

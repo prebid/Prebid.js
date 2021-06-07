@@ -1,6 +1,9 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+
 const BIDDER_CODE = 'between';
+const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,10 +27,11 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     let requests = [];
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+    const refInfo = getRefererInfo();
 
     validBidRequests.forEach(i => {
       let params = {
-        sizes: parseSizesInput(getAdUnitSizes(i)).join('%2C'),
+        sizes: parseSizesInput(getAdUnitSizes(i)),
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
@@ -56,6 +60,12 @@ export const spec = {
         }
       }
 
+      if (i.schain) {
+        params.schain = encodeToBase64WebSafe(JSON.stringify(i.schain));
+      }
+
+      if (refInfo && refInfo.referer) params.ref = refInfo.referer;
+
       if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies !== 'undefined') {
           params.gdprApplies = !!gdprConsent.gdprApplies;
@@ -65,9 +75,14 @@ export const spec = {
         }
       }
 
-      requests.push({method: 'GET', url: 'https://ads.betweendigital.com/adjson', data: params})
+      requests.push({data: params})
     })
-    return requests;
+    return {
+      method: 'POST',
+      url: ENDPOINT,
+      data: JSON.stringify(requests)
+    }
+    // return requests;
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -159,6 +174,10 @@ function getFl() {
 
 function getTz() {
   return new Date().getTimezoneOffset();
+}
+
+function encodeToBase64WebSafe(string) {
+  return btoa(string).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 /*

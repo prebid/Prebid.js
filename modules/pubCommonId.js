@@ -212,9 +212,11 @@ export function requestBidHook(next, config) {
   // into bid requests later.
   if (adUnits && pubcid) {
     adUnits.forEach((unit) => {
-      unit.bids.forEach((bid) => {
-        Object.assign(bid, {crumbs: {pubcid}});
-      });
+      if (unit.bids && utils.isArray(unit.bids)) {
+        unit.bids.forEach((bid) => {
+          Object.assign(bid, {crumbs: {pubcid}});
+        });
+      }
     });
   }
 

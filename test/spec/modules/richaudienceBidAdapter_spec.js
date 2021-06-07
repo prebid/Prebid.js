@@ -4,7 +4,6 @@ import {
   spec
 } from 'modules/richaudienceBidAdapter.js';
 import {config} from 'src/config.js';
-import * as utils from 'src/utils.js';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS_NEW_SIZES = [{
@@ -20,7 +19,8 @@ describe('Richaudience adapter tests', function () {
     params: {
       bidfloor: 0.5,
       pid: 'ADb1f40rmi',
-      supplyType: 'site'
+      supplyType: 'site',
+      keywords: 'key1=value1;key2=value2'
     },
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
@@ -60,6 +60,27 @@ describe('Richaudience adapter tests', function () {
         context: 'outstream',
         playerSize: [640, 480],
         mimes: ['video/mp4']
+      }
+    },
+    bidder: 'richaudience',
+    params: {
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site'
+    },
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
+    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    user: {}
+  }];
+
+  var DEFAULT_PARAMS_BANNER_OUTSTREAM = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [600, 300]]
       }
     },
     bidder: 'richaudience',
@@ -240,6 +261,47 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
     expect(requestContent).to.have.property('timeout').and.to.equal(3000);
     expect(requestContent).to.have.property('numIframes').and.to.equal(0);
+    expect(typeof requestContent.scr_rsl === 'string')
+    expect(typeof requestContent.cpuc === 'number')
+    expect(requestContent).to.have.property('kws').and.to.equal('key1=value1;key2=value2');
+  })
+
+  it('Verify build request to prebid video inestream', function() {
+    const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_IN, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    expect(request[0]).to.have.property('method').and.to.equal('POST');
+    const requestContent = JSON.parse(request[0].data);
+
+    expect(requestContent).to.have.property('demand').and.to.equal('video');
+    expect(requestContent.videoData).to.have.property('format').and.to.equal('instream');
+  })
+
+  it('Verify build request to prebid video outstream', function() {
+    const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_OUT, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    expect(request[0]).to.have.property('method').and.to.equal('POST');
+    const requestContent = JSON.parse(request[0].data);
+
+    expect(requestContent).to.have.property('demand').and.to.equal('video');
+    expect(requestContent.videoData).to.have.property('format').and.to.equal('outstream');
   })
 
   it('Verify build request to prebid video inestream', function() {
@@ -348,34 +410,49 @@ describe('Richaudience adapter tests', function () {
   });
 
   describe('UID test', function () {
-    owpbjs.setConfig({
+    config.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
         allowAuctionWithoutConsent: true
+      },
+      userSync: {
+        userIds: [{
+          name: 'id5Id',
+          params: {
+            partner: 173, // change to the Partner Number you received from ID5
+            pd: 'MT1iNTBjY...' // optional, see table below for a link to how to generate this
+          },
+          storage: {
+            type: 'html5', // "html5" is the required storage type
+            name: 'id5id', // "id5id" is the required storage name
+            expires: 90, // storage lasts for 90 days
+            refreshInSeconds: 8 * 3600 // refresh ID every 8 hours to ensure it's fresh
+          }
+        }],
+        auctionDelay: 50 // 50ms maximum auction delay, applies to all userId modules
       }
     });
     it('Verify build id5', function () {
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = 'id5-user-id';
-
-      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
-
-      expect(requestContent.user).to.deep.equal([{
-        'userId': 'id5-user-id',
-        'source': 'id5-sync.com'
-      }]);
-
       var request;
       DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = 1;
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: 1 };
       request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
 
       expect(requestContent.user.eids).to.equal(undefined);
 
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = [];
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: [] };
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: null };
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: {} };
       request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
       requestContent = JSON.parse(request[0].data);
       expect(requestContent.user.eids).to.equal(undefined);
@@ -605,9 +682,67 @@ describe('Richaudience adapter tests', function () {
     });
 
     const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request[0]);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(1.50);
+    expect(bid.mediaType).to.equal('video');
+    expect(bid.vastXml).to.equal('<VAST></VAST>');
+    expect(bid.cpm).to.equal(1.50);
+    expect(bid.width).to.equal(1);
+    expect(bid.height).to.equal(1);
+    expect(bid.creativeId).to.equal('189198063');
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.ttl).to.equal(300);
+    expect(bid.dealId).to.equal('dealId');
+  });
+
+  it('no banner media response outstream', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_OUT, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request[0]);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(1.50);
+    expect(bid.mediaType).to.equal('video');
+    expect(bid.vastXml).to.equal('<VAST></VAST>');
+    expect(bid.renderer.url).to.equal('https://cdn3.richaudience.com/prebidVideo/player.js');
+    expect(bid.cpm).to.equal(1.50);
+    expect(bid.width).to.equal(1);
+    expect(bid.height).to.equal(1);
+    expect(bid.creativeId).to.equal('189198063');
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.ttl).to.equal(300);
+    expect(bid.dealId).to.equal('dealId');
+  });
+
+  it('banner media and response VAST', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_BANNER_OUTSTREAM, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request[0]);
     const bid = bids[0];
     expect(bid.mediaType).to.equal('video');
     expect(bid.vastXml).to.equal('<VAST></VAST>');
+    expect(bid.renderer.url).to.equal('https://cdn3.richaudience.com/prebidVideo/player.js');
   });
 
   it('no banner media response outstream', function () {
@@ -636,6 +771,16 @@ describe('Richaudience adapter tests', function () {
   it('Verifies bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
     expect(spec.aliases[0]).to.equal('ra');
+  });
+
+  it('Verifies bidder gvlid', function () {
+    expect(spec.gvlid).to.equal(108);
+  });
+
+  it('Verifies bidder supportedMediaTypes', function () {
+    expect(spec.supportedMediaTypes).to.have.lengthOf(2);
+    expect(spec.supportedMediaTypes[0]).to.equal('banner');
+    expect(spec.supportedMediaTypes[1]).to.equal('video');
   });
 
   it('Verifies if bid request is valid', function () {
@@ -699,6 +844,34 @@ describe('Richaudience adapter tests', function () {
         bidfloor: 0.50,
       }
     })).to.equal(true);
+    expect(spec.isBidRequestValid({
+      params: {
+        pid: ['1gCB5ZC4XL', '1a40xk8qSV'],
+        bidfloor: 0.50,
+      }
+    })).to.equal(false);
+    expect(spec.isBidRequestValid({
+      params: {
+        pid: ['1gCB5ZC4XL', '1a40xk8qSV'],
+        supplyType: 'site',
+        bidfloor: 0.50,
+      }
+    })).to.equal(true);
+    expect(spec.isBidRequestValid({
+      params: {
+        supplyType: 'site',
+        bidfloor: 0.50,
+        ifa: 'AAAAAAAAA-BBBB-CCCC-1111-222222220000',
+      }
+    })).to.equal(false);
+    expect(spec.isBidRequestValid({
+      params: {
+        pid: ['1gCB5ZC4XL', '1a40xk8qSV'],
+        supplyType: 'site',
+        bidfloor: 0.50,
+        ifa: 'AAAAAAAAA-BBBB-CCCC-1111-222222220000',
+      }
+    })).to.equal(true);
   });
 
   it('Verifies user syncs iframe', function () {
@@ -729,7 +902,7 @@ describe('Richaudience adapter tests', function () {
     }, [], {consentString: '', gdprApplies: true});
     expect(syncs).to.have.lengthOf(0);
 
-    owpbjs.setConfig({
+    config.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,

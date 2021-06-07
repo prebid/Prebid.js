@@ -207,7 +207,6 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses, RendererCo
         const bid = slot.bids.shift();
         const bidResponse = {
           requestId: bid.bidId, // bid.bidderRequestId,
-          bidderCode: spec.code,
           cpm: serverBid.price,
           width: serverBid.w,
           height: serverBid.h,

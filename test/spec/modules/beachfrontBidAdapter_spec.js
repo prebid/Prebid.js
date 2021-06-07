@@ -223,17 +223,33 @@ describe('BeachfrontAdapter', function () {
         expect(data.imp[0].video).to.deep.contain({ w: width, h: height });
       });
 
-      it('must override video targeting params', function () {
+      it('must set video params from the standard object', function () {
         const bidRequest = bidRequests[0];
         const mimes = ['video/webm'];
         const playbackmethod = 2;
         const maxduration = 30;
         const placement = 4;
-        bidRequest.mediaTypes = { video: {} };
-        bidRequest.params.video = { mimes, playbackmethod, maxduration, placement };
+        const skip = 1;
+        bidRequest.mediaTypes = {
+          video: { mimes, playbackmethod, maxduration, placement, skip }
+        };
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement });
+        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement, skip });
+      });
+
+      it('must override video params from the bidder object', function () {
+        const bidRequest = bidRequests[0];
+        const mimes = ['video/webm'];
+        const playbackmethod = 2;
+        const maxduration = 30;
+        const placement = 4;
+        const skip = 1;
+        bidRequest.mediaTypes = { video: { placement: 3, skip: 0 } };
+        bidRequest.params.video = { mimes, playbackmethod, maxduration, placement, skip };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement, skip });
       });
 
       it('must add US privacy data to the request', function () {
@@ -279,6 +295,24 @@ describe('BeachfrontAdapter', function () {
           }]
         });
       });
+
+      it('must add the IdentityLink ID to the request', () => {
+        const idl_env = '4321';
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.userId = { idl_env };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.user.ext.eids[0]).to.deep.equal({
+          source: 'liveramp.com',
+          uids: [{
+            id: idl_env,
+            ext: {
+              rtiPartner: 'idl'
+            }
+          }]
+        });
+      });
     });
 
     describe('for banner bids', function () {
@@ -302,6 +336,7 @@ describe('BeachfrontAdapter', function () {
         const width = 300;
         const height = 250;
         const bidRequest = bidRequests[0];
+        bidRequest.params.tagid = '7cd7a7b4-ef3f-4aeb-9565-3627f255fa10';
         bidRequest.mediaTypes = {
           banner: {
             sizes: [ width, height ]
@@ -320,6 +355,7 @@ describe('BeachfrontAdapter', function () {
             slot: bidRequest.adUnitCode,
             id: bidRequest.params.appId,
             bidfloor: bidRequest.params.bidfloor,
+            tagid: bidRequest.params.tagid,
             sizes: [{ w: width, h: height }]
           }
         ]);
@@ -419,6 +455,16 @@ describe('BeachfrontAdapter', function () {
         const data = requests[0].data;
         expect(data.tdid).to.equal(tdid);
       });
+
+      it('must add the IdentityLink ID to the request', () => {
+        const idl_env = '4321';
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.userId = { idl_env };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.idl).to.equal(idl_env);
+      });
     });
 
     describe('for multi-format bids', function () {
@@ -486,16 +532,6 @@ describe('BeachfrontAdapter', function () {
         expect(bidResponse.length).to.equal(0);
       });
 
-      it('should return no bids if the response "url" is missing', function () {
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { video: {} };
-        const serverResponse = {
-          bidPrice: 5.00
-        };
-        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-        expect(bidResponse.length).to.equal(0);
-      });
-
       it('should return no bids if the response "bidPrice" is missing', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
@@ -518,6 +554,7 @@ describe('BeachfrontAdapter', function () {
         const serverResponse = {
           bidPrice: 5.00,
           url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          vast: '<VAST version="3.0"></VAST>',
           crid: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
@@ -527,7 +564,7 @@ describe('BeachfrontAdapter', function () {
           cpm: serverResponse.bidPrice,
           creativeId: serverResponse.crid,
           vastUrl: serverResponse.url,
-          vastXml: undefined,
+          vastXml: serverResponse.vast,
           width: width,
           height: height,
           renderer: null,
@@ -558,7 +595,7 @@ describe('BeachfrontAdapter', function () {
         });
       });
 
-      it('should return vast xml if found on the bid response', () => {
+      it('should return only vast url if the response type is "nurl"', () => {
         const width = 640;
         const height = 480;
         const bidRequest = bidRequests[0];
@@ -567,6 +604,7 @@ describe('BeachfrontAdapter', function () {
             playerSize: [ width, height ]
           }
         };
+        bidRequest.params.video = { responseType: 'nurl' };
         const serverResponse = {
           bidPrice: 5.00,
           url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
@@ -574,10 +612,29 @@ describe('BeachfrontAdapter', function () {
           crid: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-        expect(bidResponse).to.deep.contain({
-          vastUrl: serverResponse.url,
-          vastXml: serverResponse.vast
-        });
+        expect(bidResponse.vastUrl).to.equal(serverResponse.url);
+        expect(bidResponse.vastXml).to.equal(undefined);
+      });
+
+      it('should return only vast xml if the response type is "adm"', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ width, height ]
+          }
+        };
+        bidRequest.params.video = { responseType: 'adm' };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          vast: '<VAST version="3.0"></VAST>',
+          crid: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        expect(bidResponse.vastUrl).to.equal(undefined);
+        expect(bidResponse.vastXml).to.equal(serverResponse.vast);
       });
 
       it('should return a renderer for outstream video bids', function () {

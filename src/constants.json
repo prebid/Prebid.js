@@ -36,10 +36,13 @@
     "BEFORE_REQUEST_BIDS": "beforeRequestBids",
     "REQUEST_BIDS": "requestBids",
     "ADD_AD_UNITS": "addAdUnits",
-    "AD_RENDER_FAILED" : "adRenderFailed"
+    "AD_RENDER_FAILED": "adRenderFailed",
+    "TCF2_ENFORCEMENT": "tcf2Enforcement",
+    "AUCTION_DEBUG": "auctionDebug",
+    "BID_VIEWABLE": "bidViewable"
   },
   "AD_RENDER_FAILED_REASON" : {
-    "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocuemnt",
+    "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocument",
     "NO_AD": "noAd",
     "EXCEPTION": "exception",
     "CANNOT_FIND_AD": "cannotFindAd",
@@ -56,7 +59,8 @@
     "DENSE": "dense",
     "CUSTOM": "custom"
   },
-  "TARGETING_KEYS": {
+  "TARGETING_KEYS": "%%TG_KEYS%%",
+  "DEFAULT_TARGETING_KEYS": {
     "BIDDER": "hb_bidder",
     "AD_ID": "hb_adid",
     "PRICE_BUCKET": "hb_pb",
@@ -68,31 +72,13 @@
     "CACHE_ID": "hb_cache_id",
     "CACHE_HOST": "hb_cache_host"
   },
-  "NATIVE_KEYS": {
-    "title": "pwt_native_title",
-    "body": "pwt_native_body",
-    "body2": "pwt_native_body2",
-    "privacyLink": "pwt_native_privacy",
-    "sponsoredBy": "pwt_native_brand",
-    "image": "pwt_native_image",
-    "icon": "pwt_native_icon",
-    "clickUrl": "pwt_native_linkurl",
-    "displayUrl": "pwt_native_displayurl",
-    "cta": "pwt_native_cta",
-    "rating": "pwt_native_rating",
-    "address": "pwt_native_address",
-    "downloads": "pwt_native_downloads",
-    "likes": "pwt_native_likes",
-    "phone": "pwt_native_phone",
-    "price": "pwt_native_price",
-    "salePrice": "pwt_native_saleprice"
-  },
-  "S2S" : {
-    "SRC" : "s2s",
-    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",
+  "NATIVE_KEYS": "%%TG_NATIVE_KEYS%%",
+  "S2S": {
+    "SRC": "s2s",
+    "DEFAULT_ENDPOINT": "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",
     "SYNCED_BIDDERS_KEY": "pbjsSyncs"
   },
-  "BID_STATUS" : {
+  "BID_STATUS": {
     "BID_TARGETING_SET": "targetingSet",
     "RENDERED": "rendered",
     "BID_REJECTED": "bidRejected"

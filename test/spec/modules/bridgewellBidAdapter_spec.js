@@ -22,6 +22,16 @@ describe('bridgewellBidAdapter', function () {
       expect(spec.isBidRequestValid(validTag)).to.equal(true);
     });
 
+    it('should return true when required params found', function () {
+      const validTag = {
+        'bidder': 'bridgewell',
+        'params': {
+          'cid': 1234
+        },
+      };
+      expect(spec.isBidRequestValid(validTag)).to.equal(true);
+    });
+
     it('should return false when required params not found', function () {
       const invalidTag = {
         'bidder': 'bridgewell',
@@ -35,6 +45,26 @@ describe('bridgewellBidAdapter', function () {
         'bidder': 'bridgewell',
         'params': {
           'ChannelID': '',
+        },
+      };
+      expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
+    });
+
+    it('should return false when required params are empty', function () {
+      const invalidTag = {
+        'bidder': 'bridgewell',
+        'params': {
+          'cid': '',
+        },
+      };
+      expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
+    });
+
+    it('should return false when required param cid is not a number', function () {
+      const invalidTag = {
+        'bidder': 'bridgewell',
+        'params': {
+          'cid': 'bad_cid',
         },
       };
       expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
@@ -113,12 +143,58 @@ describe('bridgewellBidAdapter', function () {
       expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/');
       for (let i = 0, max_i = payload.adUnits.length; i < max_i; i++) {
         expect(payload.adUnits[i]).to.have.property('ChannelID').that.is.a('string');
+        expect(payload.adUnits[i]).to.not.have.property('cid');
         expect(payload.adUnits[i]).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
+        expect(payload.adUnits[i]).to.have.property('requestId').and.to.equal('3150ccb55da321');
+      }
+    });
+
+    it('should attach valid params to the tag, part2', function() {
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'https://www.bridgewell.com/'
+        }
+      }
+      const bidRequests2 = [
+        {
+          'bidder': 'bridgewell',
+          'params': {
+            'cid': 1234,
+          },
+          'adUnitCode': 'adunit-code-2',
+          'mediaTypes': {
+            'banner': {
+              'sizes': [728, 90]
+            }
+          },
+          'bidId': '3150ccb55da321',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+        },
+      ];
+
+      const request = spec.buildRequests(bidRequests2, bidderRequest);
+      const payload = request.data;
+
+      expect(payload).to.be.an('object');
+      expect(payload.adUnits).to.be.an('array');
+      expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/');
+      for (let i = 0, max_i = payload.adUnits.length; i < max_i; i++) {
+        expect(payload.adUnits[i]).to.have.property('cid').that.is.a('number');
+        expect(payload.adUnits[i]).to.not.have.property('ChannelID');
+        expect(payload.adUnits[i]).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
+        expect(payload.adUnits[i]).to.have.property('requestId').and.to.equal('3150ccb55da321');
       }
     });
 
     it('should attach validBidRequests to the tag', function () {
-      const request = spec.buildRequests(bidRequests);
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'https://www.bridgewell.com/'
+        }
+      }
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const validBidRequests = request.validBidRequests;
       expect(validBidRequests).to.deep.equal(bidRequests);
     });

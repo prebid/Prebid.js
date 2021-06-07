@@ -121,10 +121,7 @@ function bidResponseAvailable(request, response) {
         netRevenue: DEFAULT_NET_REVENUE,
         currency: bidResponse.cur || DEFAULT_CURRENCY
       };
-      if (idToImpMap[id]['native']) {
-        bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
-        bid.mediaType = 'native';
-      } else if (idToImpMap[id].video) {
+      if (idToImpMap[id].video) {
         // for outstream, a renderer is specified
         if (idToSlotConfig[id] && utils.deepAccess(idToSlotConfig[id], 'mediaTypes.video.context') === 'outstream') {
           bid.renderer = outstreamRenderer(utils.deepAccess(idToSlotConfig[id], 'renderer.options'), utils.deepAccess(idToBidMap[id], 'ext.outstream'));
@@ -133,10 +130,13 @@ function bidResponseAvailable(request, response) {
         bid.mediaType = 'video';
         bid.width = idToBidMap[id].w;
         bid.height = idToBidMap[id].h;
-      } else {
+      } else if (idToImpMap[id].banner) {
         bid.ad = idToBidMap[id].adm;
         bid.width = idToBidMap[id].w || idToImpMap[id].banner.w;
         bid.height = idToBidMap[id].h || idToImpMap[id].banner.h;
+      } else if (idToImpMap[id]['native']) {
+        bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
+        bid.mediaType = 'native';
       }
       bids.push(bid);
     }
@@ -165,12 +165,12 @@ function impression(slot) {
 function banner(slot) {
   const sizes = parseSizes(slot);
   const size = adSize(slot, sizes);
-  return (slot.nativeParams || slot.params.video) ? null : {
+  return (slot.mediaTypes && slot.mediaTypes.banner) ? {
     w: size[0],
     h: size[1],
     battr: slot.params.battr,
     format: sizes
-  };
+  } : null;
 }
 
 /**
@@ -420,8 +420,8 @@ function user(bidRequest, bidderRequest) {
       addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
       addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo');
       addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
-      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5-sync.com');
-      addExternalUserId(ext.eids, bidRequest.userId.parrableid, 'parrable.com');
+      addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.id5id.uid'), 'id5-sync.com', utils.deepAccess(bidRequest, 'userId.id5id.ext'));
+      addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.parrableId.eid'), 'parrable.com');
       // liveintent
       if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
         addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');

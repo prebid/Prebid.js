@@ -1,10 +1,12 @@
 import * as utils from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
+import { createEidsArray } from './userId/eids.js';
 
 export const spec = {
   code: 'sovrn',
   supportedMediaTypes: [BANNER],
+  gvlid: 13,
 
   /**
    * Check if the bid is a valid zone ID in either number or string form
@@ -12,7 +14,7 @@ export const spec = {
    * @return boolean for whether or not a bid is valid
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.tagid && !isNaN(parseFloat(bid.params.tagid)) && isFinite(bid.params.tagid));
+    return !!(bid.params.tagid && !isNaN(parseFloat(bid.params.tagid)) && isFinite(bid.params.tagid))
   },
 
   /**
@@ -25,23 +27,40 @@ export const spec = {
       let sovrnImps = [];
       let iv;
       let schain;
-      let unifiedID;
+      let eids;
+      let tpid = []
+      let criteoId;
 
       utils._each(bidReqs, function (bid) {
-        if (!unifiedID) {
-          unifiedID = utils.deepAccess(bid, 'userId.tdid');
+        if (!eids && bid.userId) {
+          eids = createEidsArray(bid.userId)
+          eids.forEach(function (id) {
+            if (id.uids && id.uids[0]) {
+              if (id.source === 'criteo.com') {
+                criteoId = id.uids[0].id
+              }
+              tpid.push({source: id.source, uid: id.uids[0].id})
+            }
+          })
         }
 
         if (bid.schain) {
-          schain = schain || bid.schain;
+          schain = schain || bid.schain
         }
-        iv = iv || utils.getBidIdParameter('iv', bid.params);
+        iv = iv || utils.getBidIdParameter('iv', bid.params)
 
-        let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+        let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes
         bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
         bidSizes = bidSizes.filter(size => utils.isArray(size))
         const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
-        sovrnImps.push({
+        const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
+          currency: 'USD',
+          mediaType: 'banner',
+          size: '*'
+        }) : {}
+        floorInfo.floor = floorInfo.floor || utils.getBidIdParameter('bidfloor', bid.params)
+
+        const imp = {
           adunitcode: bid.adUnitCode,
           id: bid.bidId,
           banner: {
@@ -50,8 +69,18 @@ export const spec = {
             h: 1,
           },
           tagid: String(utils.getBidIdParameter('tagid', bid.params)),
-          bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
-        });
+          bidfloor: floorInfo.floor
+        }
+
+        const segmentsString = utils.getBidIdParameter('segments', bid.params)
+
+        if (segmentsString) {
+          imp.ext = {
+            deals: segmentsString.split(',').map(deal => deal.trim())
+          }
+        }
+
+        sovrnImps.push(imp);
       });
 
       const page = bidderRequest.refererInfo.referer
@@ -84,19 +113,12 @@ export const spec = {
         utils.deepSetValue(sovrnBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      if (unifiedID) {
-        const idArray = [{
-          source: 'adserver.org',
-          uids: [
-            {
-              id: unifiedID,
-              ext: {
-                rtiPartner: 'TDID'
-              }
-            }
-          ]
-        }]
-        utils.deepSetValue(sovrnBidReq, 'user.ext.eids', idArray)
+      if (eids) {
+        utils.deepSetValue(sovrnBidReq, 'user.ext.eids', eids)
+        utils.deepSetValue(sovrnBidReq, 'user.ext.tpid', tpid)
+        if (criteoId) {
+          utils.deepSetValue(sovrnBidReq, 'user.ext.prebid_criteoid', criteoId)
+        }
       }
 
       let url = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
@@ -138,7 +160,7 @@ export const spec = {
             netRevenue: true,
             mediaType: BANNER,
             ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
-            ttl: 60
+            ttl: sovrnBid.ext ? (sovrnBid.ext.ttl || 90) : 90
           });
         });
       }

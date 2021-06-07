@@ -303,47 +303,6 @@ describe('SonobiBidAdapter', function () {
       },
       uspConsent: 'someCCPAString'
     };
-    it('should include the digitrust id and keyv', () => {
-      window.DigiTrust = {
-        getUser: function () {
-        }
-      };
-      let sandbox = sinon.sandbox.create();
-      sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-        ({
-          success: true,
-          identity: {
-            id: 'Vb0YJIxTMJV4W0GHRdJ3MwyiOVYJjYEgc2QYdBSG',
-            keyv: 4,
-            version: 2,
-            privacy: {}
-          }
-        })
-      );
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.data.digid).to.equal('Vb0YJIxTMJV4W0GHRdJ3MwyiOVYJjYEgc2QYdBSG');
-      expect(bidRequests.data.digkeyv).to.equal(4);
-      sandbox.restore();
-      delete window.DigiTrust;
-    });
-
-    it('should not include the digitrust id and keyv', () => {
-      window.DigiTrust = {
-        getUser: function () {
-        }
-      };
-      let sandbox = sinon.sandbox.create();
-      sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-        ({
-          success: false
-        })
-      );
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.data.digid).to.be.undefined;
-      expect(bidRequests.data.digkeyv).to.be.undefined;
-      sandbox.restore();
-      delete window.DigiTrust;
-    });
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
@@ -455,15 +414,92 @@ describe('SonobiBidAdapter', function () {
       expect(JSON.parse(bidRequests.data.schain)).to.deep.equal(bidRequest[0].schain)
     });
 
-    it('should return a properly formatted request with userid as a JSON-encoded set of User ID results', function () {
-      bidRequest[0].userId = {'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101'};
-      bidRequest[1].userId = {'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101'};
+    it('should return a properly formatted request with eids as a JSON-encoded set of eids', function () {
+      bidRequest[0].userIdAsEids = [
+        {
+          'source': 'pubcid.org',
+          'uids': [
+            {
+              'id': '97b1ff9b-6bf1-41fc-95de-acfd33dbb95a',
+              'atype': 1
+            }
+          ]
+        },
+        {
+          'source': 'sharedid.org',
+          'uids': [
+            {
+              'id': '01ERJ6W40EXJZNQJVJZWASEG7J',
+              'atype': 1,
+              'ext': {
+                'third': '01ERJ6W40EXJZNQJVJZWASEG7J'
+              }
+            }
+          ]
+        }
+      ];
+      bidRequest[1].userIdAsEids = [
+        {
+          'source': 'pubcid.org',
+          'uids': [
+            {
+              'id': '97b1ff9b-6bf1-41fc-95de-acfd33dbb95a',
+              'atype': 1
+            }
+          ]
+        },
+        {
+          'source': 'sharedid.org',
+          'uids': [
+            {
+              'id': '01ERJ6W40EXJZNQJVJZWASEG7J',
+              'atype': 1,
+              'ext': {
+                'third': '01ERJ6W40EXJZNQJVJZWASEG7J'
+              }
+            }
+          ]
+        }
+      ];
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
       expect(bidRequests.method).to.equal('GET');
       expect(bidRequests.data.ref).not.to.be.empty;
       expect(bidRequests.data.s).not.to.be.empty;
-      expect(JSON.parse(bidRequests.data.userid)).to.eql({'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101'});
+      expect(JSON.parse(bidRequests.data.eids)).to.eql([
+        {
+          'source': 'pubcid.org',
+          'uids': [
+            {
+              'id': '97b1ff9b-6bf1-41fc-95de-acfd33dbb95a',
+              'atype': 1
+            }
+          ]
+        },
+        {
+          'source': 'sharedid.org',
+          'uids': [
+            {
+              'id': '01ERJ6W40EXJZNQJVJZWASEG7J',
+              'atype': 1,
+              'ext': {
+                'third': '01ERJ6W40EXJZNQJVJZWASEG7J'
+              }
+            }
+          ]
+        }
+      ]);
+    });
+
+    it('should return a properly formatted request with userid as a JSON-encoded set of User ID results', function () {
+      bidRequest[0].userId = {'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': {'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': {'linkType': 2}}};
+      bidRequest[1].userId = {'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': {'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': {'linkType': 2}}};
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
+      expect(JSON.parse(bidRequests.data.userid)).to.eql({'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ'});
     });
 
     it('should return a properly formatted request with userid omitted if there are no userIds', function () {
@@ -510,7 +546,7 @@ describe('SonobiBidAdapter', function () {
       ];
       const bidRequests = spec.buildRequests(bRequest, bidderRequests);
       expect(bidRequests.url).to.equal('https://iad-2-apex.go.sonobi.com/trinity.json');
-    })
+    });
   });
 
   describe('.interpretResponse', function () {

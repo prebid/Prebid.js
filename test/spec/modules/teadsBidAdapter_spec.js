@@ -189,6 +189,40 @@ describe('teadsBidAdapter', () => {
       expect(payload.pageReferrer).to.deep.equal(document.referrer);
     });
 
+    it('should add timeToFirstByte info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const payload = JSON.parse(request.data);
+      const performance = window.performance || window.webkitPerformance || window.msPerformance || window.mozPerformance;
+
+      const ttfbExpectedV2 = performance &&
+        typeof performance.getEntriesByType === 'function' &&
+        Object.prototype.toString.call(performance.getEntriesByType) === '[object Function]' &&
+        performance.getEntriesByType('navigation')[0] &&
+        performance.getEntriesByType('navigation')[0].responseStart &&
+        performance.getEntriesByType('navigation')[0].requestStart &&
+        performance.getEntriesByType('navigation')[0].responseStart > 0 &&
+        performance.getEntriesByType('navigation')[0].requestStart > 0 &&
+        Math.round(
+          performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
+        );
+
+      expect(payload.timeToFirstByte).to.exist;
+
+      if (ttfbExpectedV2) {
+        expect(payload.timeToFirstByte).to.deep.equal(ttfbExpectedV2.toString());
+      } else {
+        const ttfbWithTimingV1 = performance &&
+            performance.timing.responseStart &&
+            performance.timing.requestStart &&
+            performance.timing.responseStart > 0 &&
+            performance.timing.requestStart > 0 &&
+            performance.timing.responseStart - performance.timing.requestStart;
+        const ttfbExpectedV1 = ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
+
+        expect(payload.timeToFirstByte).to.deep.equal(ttfbExpectedV1);
+      }
+    });
+
     it('should send GDPR to endpoint with 11 status', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {

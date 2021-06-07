@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'luponmedia';
 const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
@@ -113,6 +114,19 @@ export const spec = {
     hasSynced = true;
     return allUserSyncs;
   },
+  onBidWon: bid => {
+    const bidString = JSON.stringify(bid);
+    spec.sendWinningsToServer(bidString);
+  },
+  sendWinningsToServer: data => {
+    let mutation = `mutation {createWin(input: {win: {eventData: "${window.btoa(data)}"}}) {win {createTime } } }`;
+    let dataToSend = JSON.stringify({ query: mutation });
+
+    ajax('https://analytics.adxpremium.services/graphql', null, dataToSend, {
+      contentType: 'application/json',
+      method: 'POST'
+    });
+  }
 };
 
 function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
@@ -265,8 +279,9 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
   }
 
-  const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
-  const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
+  const fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+  const siteData = Object.assign({}, bidRequest.params.inventory, fpd.context);
+  const userData = Object.assign({}, bidRequest.params.visitor, fpd.user);
 
   if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
     const bidderData = {
@@ -287,7 +302,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
   }
 
-  const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+  const pbAdSlot = utils.deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   if (typeof pbAdSlot === 'string' && pbAdSlot) {
     utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
   }

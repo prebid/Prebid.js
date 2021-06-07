@@ -1,6 +1,7 @@
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -18,6 +19,9 @@ export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
 export const QUANTCAST_TTL = 4;
 export const QUANTCAST_PROTOCOL = 'https';
 export const QUANTCAST_PORT = '8443';
+export const QUANTCAST_FPA = '__qca';
+
+export const storage = getStorageManager(QUANTCAST_VENDOR_ID, BIDDER_CODE);
 
 function makeVideoImp(bid) {
   const video = {};
@@ -85,11 +89,6 @@ function checkTCFv1(vendorData) {
 }
 
 function checkTCFv2(tcData) {
-  if (tcData.purposeOneTreatment && tcData.publisherCC === 'DE') {
-    // special purpose 1 treatment for Germany
-    return true;
-  }
-
   let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
   let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
@@ -106,15 +105,21 @@ function checkTCFv2(tcData) {
   return !!(vendorConsent && purposeConsent);
 }
 
+function getQuantcastFPA() {
+  let fpa = storage.getCookie(QUANTCAST_FPA)
+  return fpa || ''
+}
+
+let hasUserSynced = false;
+
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
  * http://prebid.org/dev-docs/bidder-adapter-1.html
  */
 export const spec = {
   code: BIDDER_CODE,
-  GVLID: 11,
+  GVLID: QUANTCAST_VENDOR_ID,
   supportedMediaTypes: ['banner', 'video'],
-  hasUserSynced: false,
 
   /**
    * Verify the `AdUnits.bids` response with `true` for valid request and `false`
@@ -193,7 +198,8 @@ export const spec = {
         uspSignal: uspConsent ? 1 : 0,
         uspConsent,
         coppa: config.getConfig('coppa') === true ? 1 : 0,
-        prebidJsVersion: '$prebid.version$'
+        prebidJsVersion: '$prebid.version$',
+        fpa: getQuantcastFPA()
       };
 
       const data = JSON.stringify(requestData);
@@ -276,7 +282,7 @@ export const spec = {
   },
   getUserSyncs(syncOptions, serverResponses) {
     const syncs = []
-    if (!this.hasUserSynced && syncOptions.pixelEnabled) {
+    if (!hasUserSynced && syncOptions.pixelEnabled) {
       const responseWithUrl = find(serverResponses, serverResponse =>
         utils.deepAccess(serverResponse.body, 'userSync.url')
       );
@@ -288,12 +294,12 @@ export const spec = {
           url: url
         });
       }
-      this.hasUserSynced = true;
+      hasUserSynced = true;
     }
     return syncs;
   },
   resetUserSync() {
-    this.hasUserSynced = false;
+    hasUserSynced = false;
   }
 };
 

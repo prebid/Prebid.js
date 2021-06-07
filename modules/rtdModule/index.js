@@ -4,15 +4,48 @@
  */
 
 /**
+ * @interface UserConsentData
+ */
+/**
+ * @property
+ * @summary gdpr consent
+ * @name UserConsentData#gdpr
+ * @type {Object}
+ */
+/**
+ * @property
+ * @summary usp consent
+ * @name UserConsentData#usp
+ * @type {Object}
+ */
+/**
+ * @property
+ * @summary coppa
+ * @name UserConsentData#coppa
+ * @type {boolean}
+ */
+
+/**
  * @interface RtdSubmodule
  */
 
 /**
- * @function
+ * @function?
  * @summary return real time data
- * @name RtdSubmodule#getData
- * @param {AdUnit[]} adUnits
- * @param {function} onDone
+ * @name RtdSubmodule#getTargetingData
+ * @param {string[]} adUnitsCodes
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} userConsent
+ */
+
+/**
+ * @function?
+ * @summary modify bid request data
+ * @name RtdSubmodule#getBidRequestData
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} userConsent
+ * @param {Object} reqBidsConfigObj
+ * @param {function} callback
  */
 
 /**
@@ -23,14 +56,50 @@
  */
 
 /**
- * @interface ModuleConfig
+ * @property
+ * @summary used to link submodule with config
+ * @name RtdSubmodule#config
+ * @type {Object}
  */
 
 /**
- * @property
- * @summary sub module name
- * @name ModuleConfig#name
- * @type {string}
+ * @function
+ * @summary init sub module
+ * @name RtdSubmodule#init
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} user consent
+ * @return {boolean} false to remove sub module
+ */
+
+/**
+ * @function?
+ * @summary on auction init event
+ * @name RtdSubmodule#onAuctionInitEvent
+ * @param {Object} data
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} userConsent
+ */
+
+/**
+ * @function?
+ * @summary on auction end event
+ * @name RtdSubmodule#onAuctionEndEvent
+ * @param {Object} data
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} userConsent
+ */
+
+/**
+ * @function?
+ * @summary on bid response event
+ * @name RtdSubmodule#onBidResponseEvent
+ * @param {Object} data
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} userConsent
+ */
+
+/**
+ * @interface ModuleConfig
  */
 
 /**
@@ -42,39 +111,64 @@
 
 /**
  * @property
+ * @summary list of sub modules
+ * @name ModuleConfig#dataProviders
+ * @type {SubmoduleConfig[]}
+ */
+
+/**
+ * @interface SubModuleConfig
+ */
+
+/**
+ * @property
  * @summary params for provide (sub module)
- * @name ModuleConfig#params
+ * @name SubModuleConfig#params
  * @type {Object}
  */
 
 /**
  * @property
- * @summary timeout (if no auction dealy)
- * @name ModuleConfig#timeout
- * @type {number}
+ * @summary name
+ * @name ModuleConfig#name
+ * @type {string}
  */
 
-import {getGlobal} from '../../src/prebidGlobal.js';
+/**
+ * @property
+ * @summary delay auction for this sub module
+ * @name ModuleConfig#waitForIt
+ * @type {boolean}
+ */
+
 import {config} from '../../src/config.js';
-import {targeting} from '../../src/targeting.js';
-import {getHook, module} from '../../src/hook.js';
+import {module} from '../../src/hook.js';
 import * as utils from '../../src/utils.js';
+import events from '../../src/events.js';
+import CONSTANTS from '../../src/constants.json';
+import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
+import find from 'core-js-pure/features/array/find.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
-/** @type {number} */
-const DEF_TIMEOUT = 1000;
 /** @type {RtdSubmodule[]} */
-let subModules = [];
+let registeredSubModules = [];
+/** @type {RtdSubmodule[]} */
+export let subModules = [];
 /** @type {ModuleConfig} */
 let _moduleConfig;
+/** @type {SubmoduleConfig[]} */
+let _dataProviders = [];
+/** @type {UserConsentData} */
+let _userConsent;
 
 /**
  * enable submodule in User ID
  * @param {RtdSubmodule} submodule
  */
 export function attachRealTimeDataProvider(submodule) {
-  subModules.push(submodule);
+  registeredSubModules.push(submodule);
 }
 
 export function init(config) {
@@ -85,91 +179,154 @@ export function init(config) {
     }
     confListener(); // unsubscribe config listener
     _moduleConfig = realTimeData;
-    if (typeof (_moduleConfig.auctionDelay) === 'undefined') {
-      _moduleConfig.auctionDelay = 0;
+    _dataProviders = realTimeData.dataProviders;
+    setEventsListeners();
+    getGlobal().requestBids.before(setBidRequestsData, 40);
+    initSubModules();
+  });
+}
+
+function getConsentData() {
+  return {
+    gdpr: gdprDataHandler.getConsentData(),
+    usp: uspDataHandler.getConsentData(),
+    coppa: !!(config.getConfig('coppa'))
+  }
+}
+
+/**
+ * call each sub module init function by config order
+ * if no init function / init return failure / module not configured - remove it from submodules list
+ */
+function initSubModules() {
+  _userConsent = getConsentData();
+  let subModulesByOrder = [];
+  _dataProviders.forEach(provider => {
+    const sm = find(registeredSubModules, s => s.name === provider.name);
+    const initResponse = sm && sm.init && sm.init(provider, _userConsent);
+    if (initResponse) {
+      subModulesByOrder.push(Object.assign(sm, {config: provider}));
     }
-    // delay bidding process only if auctionDelay > 0
-    if (!_moduleConfig.auctionDelay > 0) {
-      getHook('bidsBackCallback').before(setTargetsAfterRequestBids);
-    } else {
-      getGlobal().requestBids.before(requestBidsHook);
-    }
+  });
+  subModules = subModulesByOrder;
+}
+
+/**
+ * call each sub module event function by config order
+ */
+function setEventsListeners() {
+  events.on(CONSTANTS.EVENTS.AUCTION_INIT, (args) => {
+    subModules.forEach(sm => { sm.onAuctionInitEvent && sm.onAuctionInitEvent(args, sm.config, _userConsent) })
+  });
+  events.on(CONSTANTS.EVENTS.AUCTION_END, (args) => {
+    getAdUnitTargeting(args);
+    subModules.forEach(sm => { sm.onAuctionEndEvent && sm.onAuctionEndEvent(args, sm.config, _userConsent) })
+  });
+  events.on(CONSTANTS.EVENTS.BID_RESPONSE, (args) => {
+    subModules.forEach(sm => { sm.onBidResponseEvent && sm.onBidResponseEvent(args, sm.config, _userConsent) })
   });
 }
 
 /**
- * get data from sub module
- * @param {AdUnit[]} adUnits received from auction
- * @param {function} callback callback function on data received
+ * loop through configured data providers If the data provider has registered getBidRequestData,
+ * call it, providing reqBidsConfigObj, consent data and module params
+ * this allows submodules to modify bidders
+ * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
+ * @param {function} fn required; The next function in the chain, used by hook.js
  */
-function getProviderData(adUnits, callback) {
-  const callbackExpected = subModules.length;
-  let dataReceived = [];
-  let processDone = false;
-  const dataWaitTimeout = setTimeout(() => {
-    processDone = true;
-    callback(dataReceived);
-  }, _moduleConfig.auctionDelay || _moduleConfig.timeout || DEF_TIMEOUT);
+export function setBidRequestsData(fn, reqBidsConfigObj) {
+  _userConsent = getConsentData();
 
+  const relevantSubModules = [];
+  const prioritySubModules = [];
   subModules.forEach(sm => {
-    sm.getData(adUnits, onDataReceived);
+    if (typeof sm.getBidRequestData !== 'function') {
+      return;
+    }
+    relevantSubModules.push(sm);
+    const config = sm.config;
+    if (config && config.waitForIt) {
+      prioritySubModules.push(sm);
+    }
   });
 
-  function onDataReceived(data) {
-    if (processDone) {
+  const shouldDelayAuction = prioritySubModules.length && _moduleConfig.auctionDelay && _moduleConfig.auctionDelay > 0;
+  let callbacksExpected = prioritySubModules.length;
+  let isDone = false;
+  let waitTimeout;
+
+  if (!relevantSubModules.length) {
+    return exitHook();
+  }
+
+  if (shouldDelayAuction) {
+    waitTimeout = setTimeout(exitHook, _moduleConfig.auctionDelay);
+  }
+
+  relevantSubModules.forEach(sm => {
+    sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent)
+  });
+
+  if (!shouldDelayAuction) {
+    return exitHook();
+  }
+
+  function onGetBidRequestDataCallback() {
+    if (isDone) {
+      return;
+    }
+    if (this.config && this.config.waitForIt) {
+      callbacksExpected--;
+    }
+    if (callbacksExpected <= 0) {
+      return exitHook();
+    }
+  }
+
+  function exitHook() {
+    isDone = true;
+    clearTimeout(waitTimeout);
+    fn.call(this, reqBidsConfigObj);
+  }
+}
+
+/**
+ * loop through configured data providers If the data provider has registered getTargetingData,
+ * call it, providing ad unit codes, consent data and module params
+ * the sub mlodle will return data to set on the ad unit
+ * this function used to place key values on primary ad server per ad unit
+ * @param {Object} auction object received on auction end event
+ */
+export function getAdUnitTargeting(auction) {
+  const relevantSubModules = subModules.filter(sm => typeof sm.getTargetingData === 'function');
+  if (!relevantSubModules.length) {
+    return;
+  }
+
+  // get data
+  const adUnitCodes = auction.adUnitCodes;
+  if (!adUnitCodes) {
+    return;
+  }
+  let targeting = [];
+  for (let i = relevantSubModules.length - 1; i >= 0; i--) {
+    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent);
+    if (smTargeting && typeof smTargeting === 'object') {
+      targeting.push(smTargeting);
+    } else {
+      utils.logWarn('invalid getTargetingData response for sub module', relevantSubModules[i].name);
+    }
+  }
+  // place data on auction adUnits
+  const mergedTargeting = deepMerge(targeting);
+  auction.adUnits.forEach(adUnit => {
+    const kv = adUnit.code && mergedTargeting[adUnit.code];
+    if (!kv) {
       return
     }
-    dataReceived.push(data);
-    if (dataReceived.length === callbackExpected) {
-      processDone = true;
-      clearTimeout(dataWaitTimeout);
-      callback(dataReceived);
-    }
-  }
-}
-
-/**
- * delete invalid data received from provider
- * this is to ensure working flow for GPT
- * @param {Object} data received from provider
- * @return {Object} valid data for GPT targeting
- */
-export function validateProviderDataForGPT(data) {
-  // data must be an object, contains object with string as value
-  if (typeof data !== 'object') {
-    return {};
-  }
-  for (let key in data) {
-    if (data.hasOwnProperty(key)) {
-      for (let innerKey in data[key]) {
-        if (data[key].hasOwnProperty(innerKey)) {
-          if (typeof data[key][innerKey] !== 'string') {
-            utils.logWarn(`removing ${key}: {${innerKey}:${data[key][innerKey]} } from GPT targeting because of invalid type (must be string)`);
-            delete data[key][innerKey];
-          }
-        }
-      }
-    }
-  }
-  return data;
-}
-
-/**
- * run hook after bids request and before callback
- * get data from provider and set key values to primary ad server
- * @param {function} next - next hook function
- * @param {AdUnit[]} adUnits received from auction
- */
-export function setTargetsAfterRequestBids(next, adUnits) {
-  getProviderData(adUnits, (data) => {
-    if (data && Object.keys(data).length) {
-      const _mergedData = deepMerge(data);
-      if (Object.keys(_mergedData).length) {
-        setDataForPrimaryAdServer(_mergedData);
-      }
-    }
-    next(adUnits);
+    adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
   });
+  return auction.adUnits;
 }
 
 /**
@@ -198,54 +355,5 @@ export function deepMerge(arr) {
   }, {});
 }
 
-/**
- * run hook before bids request
- * get data from provider and set key values to primary ad server & bidders
- * @param {function} fn - hook function
- * @param {Object} reqBidsConfigObj - request bids object
- */
-export function requestBidsHook(fn, reqBidsConfigObj) {
-  getProviderData(reqBidsConfigObj.adUnits || getGlobal().adUnits, (data) => {
-    if (data && Object.keys(data).length) {
-      const _mergedData = deepMerge(data);
-      if (Object.keys(_mergedData).length) {
-        setDataForPrimaryAdServer(_mergedData);
-        addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, _mergedData);
-      }
-    }
-    return fn.call(this, reqBidsConfigObj);
-  });
-}
-
-/**
- * set data to primary ad server
- * @param {Object} data - key values to set
- */
-function setDataForPrimaryAdServer(data) {
-  data = validateProviderDataForGPT(data);
-  if (utils.isGptPubadsDefined()) {
-    targeting.setTargetingForGPT(data, null)
-  } else {
-    window.googletag = window.googletag || {};
-    window.googletag.cmd = window.googletag.cmd || [];
-    window.googletag.cmd.push(() => {
-      targeting.setTargetingForGPT(data, null);
-    });
-  }
-}
-
-/**
- * @param {AdUnit[]} adUnits
- *  @param {Object} data - key values to set
- */
-function addIdDataToAdUnitBids(adUnits, data) {
-  adUnits.forEach(adUnit => {
-    adUnit.bids = adUnit.bids.map(bid => {
-      const rd = data[adUnit.code] || {};
-      return Object.assign(bid, {realTimeData: rd});
-    })
-  });
-}
-
-init(config);
 module('realTimeData', attachRealTimeDataProvider);
+init(config);

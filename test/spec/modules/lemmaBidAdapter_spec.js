@@ -331,5 +331,21 @@ describe('lemmaBidAdapter', function() {
         });
       });
     });
+    describe('getUserSyncs', function() {
+      const syncurl_iframe = 'https://sync.lemmatechnologies.com/js/usersync.html?pid=1001';
+      let sandbox;
+      beforeEach(function() {
+        sandbox = sinon.sandbox.create();
+      });
+      afterEach(function() {
+        sandbox.restore();
+      });
+
+      it('execute as per config', function() {
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'iframe', url: syncurl_iframe
+        }]);
+      });
+    });
   });
 });

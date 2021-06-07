@@ -53,7 +53,7 @@ export const spec = {
     const publisherDomain = config.getConfig('publisherDomain');
 
     // First-party data from config
-    const fpd = config.getConfig('fpd');
+    const fpd = config.getLegacyFpd(config.getConfig('ortb2'));
 
     // GDPR status and TCF consent string
     let tcfConsentString;
@@ -77,8 +77,8 @@ export const spec = {
 
     // ID5 identifier
     let id5id;
-    if (bidRequests[0].userId && bidRequests[0].userId.id5id) {
-      id5id = bidRequests[0].userId.id5id;
+    if (bidRequests[0].userId && bidRequests[0].userId.id5id && bidRequests[0].userId.id5id.uid) {
+      id5id = bidRequests[0].userId.id5id.uid;
     }
 
     // Build the avocet ext object

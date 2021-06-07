@@ -9,7 +9,7 @@ import CONSTANTS from '../constants.json';
 import events from '../events.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray } from '../utils.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
@@ -153,8 +153,16 @@ export function registerBidder(spec) {
   putBidder(spec);
   if (Array.isArray(spec.aliases)) {
     spec.aliases.forEach(alias => {
-      adapterManager.aliasRegistry[alias] = spec.code;
-      putBidder(Object.assign({}, spec, { code: alias }));
+      let aliasCode = alias;
+      let gvlid;
+      let skipPbsAliasing;
+      if (isPlainObject(alias)) {
+        aliasCode = alias.code;
+        gvlid = alias.gvlid;
+        skipPbsAliasing = alias.skipPbsAliasing
+      }
+      adapterManager.aliasRegistry[aliasCode] = spec.code;
+      putBidder(Object.assign({}, spec, { code: aliasCode, gvlid, skipPbsAliasing }));
     });
   }
 }
@@ -195,7 +203,7 @@ export function newBidder(spec) {
           window['owpbjs'].getConfig('userSync') &&
           window['owpbjs'].getConfig('userSync').hasOwnProperty('enableOverride') &&
           window['owpbjs'].getConfig('userSync')['enableOverride']) {
-          owpbjs.triggerUserSyncs();
+          window['owpbjs'].triggerUserSyncs();
         }
       }
 
@@ -313,6 +321,7 @@ export function newBidder(spec) {
               // creating a copy of original values as cpm and currency are modified later
               bid.originalCpm = bid.cpm;
               bid.originalCurrency = bid.currency;
+              bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
               const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {

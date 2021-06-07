@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const ENDPOINTS = {
   'gamoshi': 'https://rtb.gamoshi.io'
@@ -42,7 +43,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', 'cleanmedia', '9MediaOnline'],
+  aliases: ['gambid', '9MediaOnline'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -111,7 +112,7 @@ export const spec = {
       };
 
       const hasFavoredMediaType =
-        params.favoredMediaType && this.supportedMediaTypes.includes(params.favoredMediaType);
+        params.favoredMediaType && includes(this.supportedMediaTypes, params.favoredMediaType);
 
       if (!mediaTypes || mediaTypes.banner) {
         if (!hasFavoredMediaType || params.favoredMediaType === BANNER) {
@@ -157,7 +158,7 @@ export const spec = {
 
       let eids = [];
       if (bidRequest && bidRequest.userId) {
-        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 'ID5ID');
+        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
         addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
       }
       if (eids.length > 0) {

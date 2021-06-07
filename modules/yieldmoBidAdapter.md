@@ -11,26 +11,61 @@ Note: Our ads will only render in mobile
 
 Connects to Yieldmo Ad Server for bids.
 
-Yieldmo bid adapter supports Banner.
+Yieldmo bid adapter supports Banner and Video.
 
 # Test Parameters
+
+## Banner
+
+Sample banner ad unit config:
+```javascript
+var adUnits = [{ // Banner adUnit
+  code: 'div-gpt-ad-1460505748561-0',
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 250], [300, 600]],
+    }
+  },
+  bids: [{
+    bidder: 'yieldmo',
+    params: {
+      placementId: '1779781193098233305', // string with at most 19 characters (may include numbers only) 
+      bidFloor: .28 // optional param
+    }
+  }]
+}];
 ```
-var adUnits = [
-   // Banner adUnit
-   {
-       code: 'div-gpt-ad-1460505748561-0', 
-       mediaTypes: {
-         banner: {
-            sizes: [[300, 250], [300,600]],
-         }
-       }
-       bids: [{
-         bidder: 'yieldmo',
-         params: {
-           placementId: '1779781193098233305', // string with at most 19 characters (may include numbers only) 
-           bidFloor: .28 // optional param
-         }
-       }]
-   }
-];
+
+## Video
+
+Sample instream video ad unit config:
+```javascript
+var adUnits = [{ // Video adUnit
+  code: 'div-video-ad-1234567890',
+  mediaTypes: {
+    video: {
+      playerSize: [640, 480], // required
+      context: 'instream',
+      mimes: ['video/mp4']    // required, array of strings
+    }
+  },
+  bids: [{
+    bidder: 'yieldmo',
+    params: {
+      placementId: '1524592390382976659', // required
+      video: {
+        placement: 1,       // required, integer
+        maxduration: 30,    // required, integer
+        minduration: 15,    // optional, integer
+        pos: 1,             // optional, integer
+        startdelay: 10,     // required if placement == 1
+        protocols: [2, 3],  // required, array of integers
+        api: [2, 3],        // required, array of integers
+        playbackmethod: [2,6], // required, array of integers
+        skippable: true,    // optional, boolean
+        skipafter: 10       // optional, integer
+      }
+    }
+  }]
+}];
 ```

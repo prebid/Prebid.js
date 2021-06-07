@@ -6,7 +6,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const ADAPTER_VERSION = '1.11';
+const ADAPTER_VERSION = '1.15';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -14,8 +14,13 @@ export const VIDEO_ENDPOINT = 'https://reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = 'https://display.bfmio.com/prebid_display';
 export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 
-export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement'];
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement', 'skip', 'skipmin', 'skipafter'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
+
+export const SUPPORTED_USER_IDS = [
+  { key: 'tdid', source: 'adserver.org', rtiPartner: 'TDID', queryParam: 'tdid' },
+  { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' }
+];
 
 let appId = '';
 
@@ -56,18 +61,17 @@ export const spec = {
     response = response.body;
 
     if (isVideoBid(bidRequest)) {
-      if (!response || !response.url || !response.bidPrice) {
+      if (!response || !response.bidPrice) {
         utils.logWarn(`No valid video bids from ${spec.code} bidder`);
         return [];
       }
       let sizes = getVideoSizes(bidRequest);
       let firstSize = getFirstSize(sizes);
       let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
-      return {
+      let responseType = getVideoBidParam(bidRequest, 'responseType') || 'both';
+      let bidResponse = {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
-        vastUrl: response.url,
-        vastXml: response.vast,
         cpm: response.bidPrice,
         width: firstSize.w,
         height: firstSize.h,
@@ -78,6 +82,16 @@ export const spec = {
         netRevenue: true,
         ttl: 300
       };
+
+      if (responseType === 'nurl' || responseType === 'both') {
+        bidResponse.vastUrl = response.url;
+      }
+
+      if (responseType === 'adm' || responseType === 'both') {
+        bidResponse.vastXml = response.vast;
+      }
+
+      return bidResponse;
     } else {
       if (!response || !response.length) {
         utils.logWarn(`No valid banner bids from ${spec.code} bidder`);
@@ -257,13 +271,43 @@ function getTopWindowReferrer() {
   }
 }
 
+function getEids(bid) {
+  return SUPPORTED_USER_IDS
+    .map(getUserId(bid))
+    .filter(x => x);
+}
+
+function getUserId(bid) {
+  return ({ key, source, rtiPartner }) => {
+    let id = bid.userId && bid.userId[key];
+    return id ? formatEid(id, source, rtiPartner) : null;
+  };
+}
+
+function formatEid(id, source, rtiPartner) {
+  return {
+    source,
+    uids: [{
+      id,
+      ext: { rtiPartner }
+    }]
+  };
+}
+
 function getVideoTargetingParams(bid) {
-  return Object.keys(Object(bid.params.video))
-    .filter(param => includes(VIDEO_TARGETING, param))
-    .reduce((obj, param) => {
-      obj[ param ] = bid.params.video[ param ];
-      return obj;
-    }, {});
+  const result = {};
+  const excludeProps = ['playerSize', 'context', 'w', 'h'];
+  Object.keys(Object(bid.mediaTypes.video))
+    .filter(key => !includes(excludeProps, key))
+    .forEach(key => {
+      result[ key ] = bid.mediaTypes.video[ key ];
+    });
+  Object.keys(Object(bid.params.video))
+    .filter(key => includes(VIDEO_TARGETING, key))
+    .forEach(key => {
+      result[ key ] = bid.params.video[ key ];
+    });
+  return result;
 }
 
 function createVideoRequestData(bid, bidderRequest) {
@@ -274,6 +318,7 @@ function createVideoRequestData(bid, bidderRequest) {
   let bidfloor = getVideoBidParam(bid, 'bidfloor');
   let tagid = getVideoBidParam(bid, 'tagid');
   let topLocation = getTopWindowLocation(bidderRequest);
+  let eids = getEids(bid);
   let payload = {
     isPrebid: true,
     appId: appId,
@@ -322,16 +367,8 @@ function createVideoRequestData(bid, bidderRequest) {
     payload.user.ext.consent = consentString;
   }
 
-  if (bid.userId && bid.userId.tdid) {
-    payload.user.ext.eids = [{
-      source: 'adserver.org',
-      uids: [{
-        id: bid.userId.tdid,
-        ext: {
-          rtiPartner: 'TDID'
-        }
-      }]
-    }];
+  if (eids.length > 0) {
+    payload.user.ext.eids = eids;
   }
 
   let connection = navigator.connection || navigator.webkitConnection;
@@ -350,6 +387,7 @@ function createBannerRequestData(bids, bidderRequest) {
       slot: bid.adUnitCode,
       id: getBannerBidParam(bid, 'appId'),
       bidfloor: getBannerBidParam(bid, 'bidfloor'),
+      tagid: getBannerBidParam(bid, 'tagid'),
       sizes: getBannerSizes(bid)
     };
   });
@@ -378,9 +416,12 @@ function createBannerRequestData(bids, bidderRequest) {
     payload.gdprConsent = consentString;
   }
 
-  if (bids[0] && bids[0].userId && bids[0].userId.tdid) {
-    payload.tdid = bids[0].userId.tdid;
-  }
+  SUPPORTED_USER_IDS.forEach(({ key, queryParam }) => {
+    let id = bids[0] && bids[0].userId && bids[0].userId[key];
+    if (id) {
+      payload[queryParam] = id;
+    }
+  });
 
   return payload;
 }

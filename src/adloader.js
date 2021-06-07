@@ -7,7 +7,8 @@ const _approvedLoadExternalJSList = [
   'criteo',
   'outstream',
   'adagio',
-  'browsi'
+  'browsi',
+  'pbjs-debug-ui'
 ]
 
 /**

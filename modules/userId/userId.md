@@ -25,13 +25,13 @@ pbjs.setConfig({
         }, {
             name: "id5Id",
             params: {
-                partner: 173, //Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
-                pd: "some-pd-string" // See https://console.id5.io/docs/public/prebid for details
+                partner: 173,         // Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
+                pd: "some-pd-string"  // See https://wiki.id5.io/x/BIAZ for details
             },
             storage: {
-                type: "cookie",
+                type: "html5",        // ID5 requires html5
                 name: "id5id",
-                expires: 90, // Expiration of cookies in days
+                expires: 90,          // Expiration in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
@@ -43,7 +43,7 @@ pbjs.setConfig({
         }, {
             name: 'identityLink',
             params: {
-                pid: '999' // Set your real identityLink placement ID here 
+                pid: '999' // Set your real identityLink placement ID here
             },
             storage: {
                 type: 'cookie',
@@ -53,7 +53,7 @@ pbjs.setConfig({
         }, {
             name: 'liveIntentId',
             params: {
-                publisherId: '7798696' // Set an identifier of a publisher know to your systems 
+                publisherId: '7798696' // Set an identifier of a publisher know to your systems
             },
             storage: {
                 type: 'cookie',
@@ -70,6 +70,23 @@ pbjs.setConfig({
                  name: 'sharedid',
                  expires: 28
               }
+        }, {
+             name: 'criteo',
+             storage: {             // It is best not to specify this parameter since the module needs to be called as many times as possible
+                 type: 'cookie',
+                 name: '_criteoId',
+                 expires: 1
+              }
+        }, {
+            name: 'mwOpenLinkId',
+            params: {
+                accountId: 0000,
+                partnerId: 0000,
+                uid: '12345xyz'
+            }
+        }, {
+            name: 'uid2'
+        }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -80,7 +97,7 @@ pbjs.setConfig({
 Example showing `localStorage` for user id data for some submodules
 ```
 pbjs.setConfig({
-    usersync: {
+    userSync: {
         userIds: [{
             name: "unifiedId",
             params: {
@@ -102,7 +119,7 @@ pbjs.setConfig({
         }, {
             name: 'identityLink',
             params: {
-                pid: '999' // Set your real identityLink placement ID here 
+                pid: '999' // Set your real identityLink placement ID here
             },
             storage: {
                 type: 'html5',
@@ -110,25 +127,49 @@ pbjs.setConfig({
                 expires: 30
             }
         }, {
-             name: 'liveIntentId',
-             params: {
-                 publisherId: '7798696' // Set an identifier of a publisher know to your systems 
-             },
-             storage: {
-                 type: 'html5',
-                 name: '_li_pbid',
-                 expires: 60
-             }
+            name: 'liveIntentId',
+            params: {
+                publisherId: '7798696' // Set an identifier of a publisher know to your systems
+            },
+            storage: {
+                type: 'html5',
+                name: '_li_pbid',
+                expires: 60
+            }
         }, {
-             name: 'sharedId',
+            name: 'sharedId',
             params: {
                   syncTime: 60 // in seconds, default is 24 hours
                },
              storage: {
-                type: 'cookie',
+                type: 'html5',
                 name: 'sharedid',
                 expires: 28
              }
+        }, {
+            name: 'id5Id',
+            params: {
+                partner: 173,         // Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
+                pd: 'some-pd-string'  // See https://wiki.id5.io/x/BIAZ for details
+            },
+            storage: {
+                type: 'html5',
+                name: 'id5id',
+                expires: 90,          // Expiration in days
+                refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
+            },
+    }, {
+            name: 'nextrollId',
+            params: {
+                partnerId: "1009",         // Set your real NextRoll partner ID here for production
+            }
+    }, {
+             name: 'criteo',
+             storage: {              // It is best not to specify this parameter since the module needs to be called as many times as possible
+                 type: 'html5',
+                 name: '_criteoId',
+                 expires: 1
+        }
         }],
         syncDelay: 5000
     }
@@ -138,7 +179,7 @@ pbjs.setConfig({
 Example showing how to configure a `value` object to pass directly to bid adapters
 ```
 pbjs.setConfig({
-    usersync: {
+    userSync: {
         userIds: [{
             name: "pubCommonId",
             value: {
@@ -152,6 +193,14 @@ pbjs.setConfig({
         {
             name: "netId",
             value: { "netId": "fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg" }
+        },
+        {
+            name: "criteo",
+            value: { "criteoId": "wK-fkF8zaEIlMkZMbHl3eFo4NEtoNmZaeXJtYkFjZlVuWjBhcjJMaTRYd3pZNSUyQnlKRHNGRXlpdzdjd3pjVzhjcSUyQmY4eTFzN3VSZjV1ZyUyRlA0U2ZiR0UwN2I4bDZRJTNEJTNE" }
+        },
+        {
+            name: "novatiq",
+            value: { "snowflake": "81b001ec-8914-488c-a96e-8c220d4ee08895ef" }
         }],
         syncDelay: 5000
     }

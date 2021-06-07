@@ -135,7 +135,8 @@ function isBidRequestValid (bid) {
     params,
     adUnitCode
   } = bid;
-  const id = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo;
+  const legacyParamID = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo;
+  const id = legacyParamID || params.slot || params.native || params.zone || params.pubID;
 
   if (invalidRequestIds[id]) {
     utils.logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
@@ -143,6 +144,8 @@ function isBidRequestValid (bid) {
   }
 
   switch (true) {
+    case !!(params.zone): break;
+    case !!(params.pubId): break;
     case !!(params.inScreen): break;
     case !!(params.inScreenPubID): break;
     case !!(params.inSlot): break;
@@ -199,6 +202,33 @@ function _getVidParams (attributes) {
 }
 
 /**
+ * Gets bidfloor
+ * @param {Object} mediaTypes
+ * @param {Number} bidfloor
+ * @param {Object} bid
+ * @returns {Number} floor
+ */
+function _getFloor (mediaTypes, staticBidfloor, bid) {
+  const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
+  const bidFloor = { floor: 0, currency: 'USD' };
+
+  if (typeof bid.getFloor === 'function') {
+    const { currency, floor } = bid.getFloor({
+      mediaType: curMediaType,
+      size: '*'
+    });
+    floor && (bidFloor.floor = floor);
+    currency && (bidFloor.currency = currency);
+
+    if (staticBidfloor && floor && currency === 'USD') {
+      bidFloor.floor = Math.max(staticBidfloor, parseFloat(floor));
+    }
+  }
+
+  return bidFloor;
+}
+
+/**
  * Make a server request from the list of BidRequests.
  *
  * @param {validBidRequests[]} - an array of bids
@@ -219,40 +249,51 @@ function buildRequests (validBidRequests, bidderRequest) {
       transactionId,
       userId = {}
     } = bidRequest;
-    const bannerSizes = mediaTypes.banner && mediaTypes.banner.sizes;
+    const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
+    let sizes = [1, 1];
     let data = {};
+
+    if (mediaTypes.banner) {
+      sizes = mediaTypes.banner.sizes;
+    } else if (mediaTypes.video) {
+      sizes = mediaTypes.video.playerSize;
+      data = _getVidParams(mediaTypes.video);
+    }
 
     if (pageViewId) {
       data.pv = pageViewId;
     }
-    if (params.bidfloor) {
-      data.fp = params.bidfloor;
+
+    if (floor) {
+      data.fp = floor;
+      data.fpc = currency;
     }
-    if (params.inScreenPubID) {
-      data.pubId = params.inScreenPubID;
-      data.pi = 2;
+
+    if (params.iriscat && typeof params.iriscat === 'string') {
+      data.iriscat = params.iriscat;
     }
-    if (params.inScreen) {
-      data.t = params.inScreen;
-      data.pi = 2;
+
+    if (params.irisid && typeof params.irisid === 'string') {
+      data.irisid = params.irisid;
     }
-    if (params.inSlot) {
-      data.si = parseInt(params.inSlot, 10);
-      data.pi = 3;
-    }
-    if (params.ICV) {
-      data.ni = parseInt(params.ICV, 10);
-      data.pi = 5;
-    }
-    if (params.videoPubID) {
-      data = Object.assign(data, _getVidParams(mediaTypes.video));
-      data.pubId = params.videoPubID;
-      data.pi = 7;
-    }
-    if (params.video) {
-      data = Object.assign(data, _getVidParams(mediaTypes.video));
-      data.t = params.video;
-      data.pi = 7;
+
+    if (params.zone || params.pubId) {
+      params.zone ? (data.t = params.zone) : (data.pubId = params.pubId);
+
+      data.pi = 2; // inscreen
+      // override pi if the following is found
+      if (params.slot) {
+        data.si = parseInt(params.slot, 10);
+        data.pi = 3;
+        data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
+      } else if (params.native) {
+        data.ni = parseInt(params.native, 10);
+        data.pi = 5;
+      } else if (mediaTypes.video) {
+        data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
+      }
+    } else { // legacy params
+      data = { ...data, ...handleLegacyParams(params, sizes) }
     }
     if (params.inVideo) {
       data = Object.assign(data, _getVidParams(mediaTypes.video));
@@ -278,13 +319,47 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bannerSizes,
+      sizes,
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
     })
   });
   return bids;
+}
+
+function handleLegacyParams (params, sizes) {
+  const data = {};
+  if (params.inScreenPubID) {
+    data.pubId = params.inScreenPubID;
+    data.pi = 2;
+  }
+  if (params.inScreen) {
+    data.t = params.inScreen;
+    data.pi = 2;
+  }
+  if (params.inSlot) {
+    data.si = parseInt(params.inSlot, 10);
+    data.pi = 3;
+    data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
+  }
+  if (params.ICV) {
+    data.ni = parseInt(params.ICV, 10);
+    data.pi = 5;
+  }
+  if (params.videoPubID) {
+    data.pubId = params.videoPubID;
+    data.pi = 7;
+  }
+  if (params.video) {
+    data.t = params.video;
+    data.pi = 7;
+  }
+  if (params.inVideo) {
+    data.t = params.inVideo;
+    data.pi = 6;
+  }
+  return data;
 }
 
 /**
@@ -299,7 +374,7 @@ function interpretResponse (serverResponse, bidRequest) {
 
   if (!serverResponseBody || serverResponseBody.err) {
     const data = bidRequest.data || {}
-    const id = data.t || data.si || data.ni || data.pubId;
+    const id = data.si || data.ni || data.t || data.pubId;
     const delayTime = serverResponseBody ? serverResponseBody.err.drt : DELAY_REQUEST_TIME;
     invalidRequestIds[id] = { productId: data.pi, timestamp: new Date().getTime() };
 
@@ -317,6 +392,10 @@ function interpretResponse (serverResponse, bidRequest) {
     },
     pag: {
       pvid: 0
+    },
+    meta: {
+      adomain: [],
+      mediaType: ''
     }
   }
   const {
@@ -330,13 +409,22 @@ function interpretResponse (serverResponse, bidRequest) {
     pag: {
       pvid
     },
-    jcsi
+    jcsi,
+    meta: {
+      adomain: advertiserDomains,
+      mediaType: type
+    }
   } = Object.assign(defaultResponse, serverResponseBody)
   let data = bidRequest.data || {}
   let product = data.pi
+  let mediaType = (product === 6 || product === 7) ? VIDEO : BANNER
   let isTestUnit = (product === 3 && data.si === 9)
   let sizes = utils.parseSizesInput(bidRequest.sizes)
   let [width, height] = sizes[0].split('x')
+  let metaData = {
+    advertiserDomains: advertiserDomains || [],
+    mediaType: type || mediaType
+  }
 
   // return 1x1 when breakout expected
   if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
@@ -355,9 +443,9 @@ function interpretResponse (serverResponse, bidRequest) {
     bidResponses.push({
       // dealId: DEAL_ID,
       // referrer: REFERER,
-      ...(product === 7 && { vastXml: markup }),
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
-      ...(product === 6 && {ad: markup}),
+      ...(mediaType === VIDEO && {ad: markup, vastXml: markup}),
+      mediaType,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
       currency: cur || 'USD',
@@ -365,7 +453,8 @@ function interpretResponse (serverResponse, bidRequest) {
       netRevenue: true,
       requestId: bidRequest.id,
       ttl: TIME_TO_LIVE,
-      width
+      width,
+      meta: metaData
     })
   }
   return bidResponses
