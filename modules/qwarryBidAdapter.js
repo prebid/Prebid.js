@@ -28,7 +28,8 @@ export const spec = {
     let payload = {
       requestId: bidderRequest.bidderRequestId,
       bids,
-      referer: bidderRequest.refererInfo.referer
+      referer: bidderRequest.refererInfo.referer,
+      schain: validBidRequests[0].schain
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -73,6 +74,9 @@ export const spec = {
       if (VIDEO === bid.format) {
         bid.vastXml = bid.ad;
       }
+
+      bid.meta = {};
+      bid.meta.advertiserDomains = bid.adomain || [];
 
       bids.push(bid);
     })
