@@ -10,7 +10,6 @@ const BID_SERVER_RESPONSE = {
       {
         'bidId': '51ef8751f9aead',
         'zoneId': '12345abcde',
-        'adId': '1234',
         'crid': '5678',
         'cpm': 8.021951999999999999,
         'currency': 'USD',
@@ -19,7 +18,8 @@ const BID_SERVER_RESPONSE = {
         'isNet': false,
         'buying_type': 'rtb',
         'syncUrl': 'https://ac.audiencerun.com/f/sync.html',
-        'adm': '<!-- test creative -->'
+        'adm': '<!-- test creative -->',
+        'adomain': ['example.com']
       }
     ]
   }
@@ -161,7 +161,6 @@ describe('AudienceRun bid adapter tests', function() {
   describe('interpretResponse', function () {
     const expectedResponse = [{
       'requestId': '51ef8751f9aead',
-      'adId': '12345abcde',
       'cpm': 8.021951999999999999,
       'width': '728',
       'height': '90',
@@ -170,7 +169,10 @@ describe('AudienceRun bid adapter tests', function() {
       'netRevenue': false,
       'ttl': 300,
       'ad': '<!-- test creative -->',
-      'mediaType': 'banner'
+      'mediaType': 'banner',
+      'meta': {
+        'advertiserDomains': ['example.com']
+      }
     }];
 
     it('should get the correct bid response by display ad', function () {
@@ -178,7 +180,7 @@ describe('AudienceRun bid adapter tests', function() {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('handles empty bid response', function () {
+    it('should handle empty bid response', function () {
       const response = {
         body: {}
       };
