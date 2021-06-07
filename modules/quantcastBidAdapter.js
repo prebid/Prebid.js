@@ -248,7 +248,7 @@ export const spec = {
     }
 
     const bidResponsesList = response.bids.map(bid => {
-      const { ad, cpm, width, height, creativeId, currency, videoUrl, dealId } = bid;
+      const { ad, cpm, width, height, creativeId, currency, videoUrl, dealId, meta } = bid;
 
       const result = {
         requestId: response.requestId,
@@ -269,6 +269,11 @@ export const spec = {
 
       if (dealId !== undefined && dealId) {
         result['dealId'] = dealId;
+      }
+      result.meta = {};
+
+      if (meta !== undefined && meta.advertiserDomains && utils.isArray(meta.advertiserDomains)) {
+        result.meta.advertiserDomains = meta.advertiserDomains;
       }
 
       return result;
