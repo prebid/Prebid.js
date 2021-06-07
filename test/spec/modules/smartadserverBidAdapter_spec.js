@@ -432,7 +432,7 @@ describe('Smart bid adapter tests', function () {
         appName: 'Mozilla',
         ckId: 42,
         video: {
-          protocol: 6,
+          protocol: 6
         }
       },
       requestId: 'efgh5678',
