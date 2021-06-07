@@ -250,9 +250,6 @@ function addMeta(bidModelMeta) {
         meta[CONSTANTS.META_TAXONOMY[i]] = bidModelMeta[CONSTANTS.META_TAXONOMY[i]];
       }
     }
-
-    utils.logInfo('Invibes Adapter - No ads available');
-    return null;
   }
 
   return meta;
