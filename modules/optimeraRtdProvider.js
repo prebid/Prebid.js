@@ -34,6 +34,8 @@ export let optimeraKeyName = 'hb_deal_optimera';
 
 /**
  * Optimera Score File Base URL.
+ * This is the base URL for the data endpoint request to fetch
+ * the targeting values.
  * @type {string}
  */
 export const scoresBaseURL = 'https://dyv1bugovvq1g.cloudfront.net/';
@@ -132,6 +134,9 @@ export function init(moduleConfig) {
 
 /**
  * Set the score file url.
+ * This fully-formed URL for the data endpoint request to fetch
+ * the targeting values. This is not a js library, rather JSON
+ * which has the targeting values for the page.
  */
 export function setScoresURL() {
   const optimeraHost = window.location.host;
