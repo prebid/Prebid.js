@@ -8,6 +8,7 @@
 import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
+import { uspDataHandler, coppaDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = 'sharedId';
 const ID_SVC = 'https://id.sharedid.org/id';
@@ -282,9 +283,18 @@ function detectPrng(root) {
  * @return {string}
  */
 function sharedIdUrl(consentData) {
-  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return ID_SVC;
-
-  return `${ID_SVC}?gdpr=1&gdpr_consent=${consentData.consentString}`
+  const usPrivacyString = uspDataHandler.getConsentData();
+  let sharedIdUrl = ID_SVC;
+  if (usPrivacyString) {
+    sharedIdUrl = `${ID_SVC}?us_privacy=${usPrivacyString}`;
+  }
+  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return sharedIdUrl;
+  if (usPrivacyString) {
+    sharedIdUrl = `${sharedIdUrl}&gdpr=1&gdpr_consent=${consentData.consentString}`
+    return sharedIdUrl;
+  }
+  sharedIdUrl = `${ID_SVC}?gdpr=1&gdpr_consent=${consentData.consentString}`;
+  return sharedIdUrl
 }
 
 /** @type {Submodule} */
@@ -318,6 +328,11 @@ export const sharedIdSubmodule = {
    * @returns {sharedId}
    */
   getId(config, consentData) {
+    const coppa = coppaDataHandler.getCoppa();
+    if (coppa) {
+      utils.logInfo('SharedId: IDs not provided for coppa requests, exiting SharedId');
+      return;
+    }
     const resp = function (callback) {
       utils.logInfo('SharedId: Sharedid doesnt exists, new cookie creation');
       ajax(sharedIdUrl(consentData), idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
@@ -333,6 +348,11 @@ export const sharedIdSubmodule = {
    * @returns {{callback: *}}
    */
   extendId(config, consentData, storedId) {
+    const coppa = coppaDataHandler.getCoppa();
+    if (coppa) {
+      utils.logInfo('SharedId: IDs not provided for coppa requests, exiting SharedId');
+      return;
+    }
     const configParams = (config && config.params) || {};
     utils.logInfo('SharedId: Existing shared id ' + storedId.id);
     const resp = function (callback) {

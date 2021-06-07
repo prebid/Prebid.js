@@ -189,6 +189,13 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.not.have.property('irisid');
     });
 
+    it('should set the global placement id (gpid)', function () {
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest).to.have.property('gpid');
+      expect(bidRequest.gpid).to.equal(123456);
+    });
+
     describe('product id', function () {
       it('should set the correct pi param if native param is found', function () {
         const request = { ...bidRequests[0], params: { ...zoneParam, native: 2 } };
@@ -562,6 +569,25 @@ describe('gumgumAdapter', function () {
       let body;
       let result = spec.interpretResponse({ body }, bidRequest);
       expect(result.length).to.equal(0);
+    });
+
+    it('uses response width and height', function () {
+      const result = spec.interpretResponse({ body: serverResponse }, bidRequest)[0];
+      expect(result.width).to.equal(serverResponse.ad.width.toString());
+      expect(result.height).to.equal(serverResponse.ad.height.toString());
+    });
+
+    it('defaults to use bidRequest sizes when width and height are not found', function () {
+      const { ad, jcsi, pag, thms, meta } = serverResponse
+      const noAdSizes = { ...ad }
+      delete noAdSizes.width
+      delete noAdSizes.height
+      const responseWithoutSizes = { jcsi, pag, thms, meta, ad: noAdSizes }
+      const request = { ...bidRequest, sizes: [[100, 200]] }
+      const result = spec.interpretResponse({ body: responseWithoutSizes }, request)[0];
+
+      expect(result.width).to.equal(request.sizes[0][0].toString())
+      expect(result.height).to.equal(request.sizes[0][1].toString())
     });
 
     it('returns 1x1 when eligible product and size available', function () {

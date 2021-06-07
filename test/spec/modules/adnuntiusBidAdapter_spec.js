@@ -2,10 +2,17 @@
 import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
 import { spec } from 'modules/adnuntiusBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 
 describe('adnuntiusBidAdapter', function () {
+  afterEach(function () {
+    config.resetConfig();
+  });
   const tzo = new Date().getTimezoneOffset();
   const ENDPOINT_URL = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json`;
+  // const ENDPOINT_URL_SEGMENTS_ = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json`;
+  const ENDPOINT_URL_SEGMENTS = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json&segments=segment1,segment2,segment3`;
+  const ENDPOINT_URL_CONSENT = `https://delivery.adnuntius.com/i?tzo=${tzo}&format=json&consentString=consentString`;
   const adapter = newBidder(spec);
 
   const bidRequests = [
@@ -78,8 +85,15 @@ describe('adnuntiusBidAdapter', function () {
               'lineItemId': 'scyjdyv3mzgdsnpf',
               'layoutId': 'sw6gtws2rdj1kwby',
               'layoutName': 'Responsive image'
-            }
+            },
+
           ]
+        },
+        {
+          'auId': '000000000008b6bc',
+          'targetId': '456',
+          'matchedAdCount': 0,
+          'responseId': 'adn-rsp-1460129238',
         }
       ]
     }
@@ -109,13 +123,80 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('data');
       expect(request[0].data).to.equal('{\"adUnits\":[{\"auId\":\"8b6bc\",\"targetId\":\"123\"}]}');
     });
+
+    it('should pass segments if available in config', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius', 'other'],
+        config: {
+          ortb2: {
+            user: {
+              data: [{
+                name: 'adnuntius',
+                segment: [{ id: 'segment1' }, { id: 'segment2' }]
+              },
+              {
+                name: 'other',
+                segment: ['segment3']
+              }],
+            }
+          }
+        }
+      });
+
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
+    });
+
+    it('should skip segments in config if not either id or array of strings', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius', 'other'],
+        config: {
+          ortb2: {
+            user: {
+              data: [{
+                name: 'adnuntius',
+                segment: [{ id: 'segment1' }, { id: 'segment2' }, { id: 'segment3' }]
+              },
+              {
+                name: 'other',
+                segment: [{
+                  notright: 'segment4'
+                }]
+              }],
+            }
+          }
+        }
+      });
+
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
+    });
+  });
+
+  describe('user privacy', function () {
+    it('should send GDPR Consent data if gdprApplies', function () {
+      let request = spec.buildRequests(bidRequests, { gdprConsent: { gdprApplies: true, consentString: 'consentString' } });
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL_CONSENT);
+    });
+
+    it('should not send GDPR Consent data if gdprApplies equals undefined', function () {
+      let request = spec.buildRequests(bidRequests, { gdprConsent: { gdprApplies: undefined, consentString: 'consentString' } });
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL);
+    });
   });
 
   describe('interpretResponse', function () {
     it('should return valid response when passed valid server response', function () {
       const interpretedResponse = spec.interpretResponse(serverResponse, singleBidRequest);
       const ad = serverResponse.body.adUnits[0].ads[0]
-
       expect(interpretedResponse).to.have.lengthOf(1);
       expect(interpretedResponse[0].cpm).to.equal(ad.cpm.amount);
       expect(interpretedResponse[0].width).to.equal(Number(ad.creativeWidth));
@@ -123,6 +204,9 @@ describe('adnuntiusBidAdapter', function () {
       expect(interpretedResponse[0].creativeId).to.equal(ad.creativeId);
       expect(interpretedResponse[0].currency).to.equal(ad.bid.currency);
       expect(interpretedResponse[0].netRevenue).to.equal(false);
+      expect(interpretedResponse[0].meta).to.have.property('advertiserDomains');
+      expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(1);
+      expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('google.com');
       expect(interpretedResponse[0].ad).to.equal(serverResponse.body.adUnits[0].html);
       expect(interpretedResponse[0].ttl).to.equal(360);
     });

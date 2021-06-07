@@ -568,6 +568,8 @@ function interpretResponse(serverResponse, bidRequest) {
 
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
+  const isADomainPresent =
+    response.seatbid[0].bid[0].adomain && response.seatbid[0].bid[0].adomain.length;
   const bid = {
     requestId: response.id,
     bidderCode: BIDDER_CODE,
@@ -580,6 +582,12 @@ function _createBidResponse(response) {
     mediaType: utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.mediaType', BANNER),
     currency: response.cur,
     netRevenue: true
+  }
+
+  if (isADomainPresent) {
+    bid.meta = {
+      advertiserDomains: response.seatbid[0].bid[0].adomain
+    };
   }
 
   if (bid.mediaType === VIDEO) {

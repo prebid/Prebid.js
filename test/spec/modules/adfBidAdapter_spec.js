@@ -1,13 +1,20 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
-import {spec} from 'modules/adformOpenRTBBidAdapter.js';
+import {spec} from 'modules/adfBidAdapter.js';
 import { NATIVE } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
-describe('AdformOpenRTB adapter', function () {
+describe('Adf adapter', function () {
   let serverResponse, bidRequest, bidResponses;
   let bids = [];
+
+  describe('backwards-compatibility', function () {
+    it('should have adformOpenRTB alias defined', function () {
+      assert.equal(spec.aliases[0].code, 'adformOpenRTB');
+      assert.equal(spec.aliases[0].gvlid, 50);
+    });
+  });
 
   describe('isBidRequestValid', function () {
     let bid = {
@@ -28,11 +35,13 @@ describe('AdformOpenRTB adapter', function () {
   });
 
   describe('buildRequests', function () {
+    beforeEach(function () {
+      config.resetConfig();
+    });
     it('should send request with correct structure', function () {
       let validBidRequests = [{
         bidId: 'bidId',
         params: {
-          siteId: 'siteId',
           adxDomain: '10.8.57.207'
         }
       }];
@@ -46,7 +55,7 @@ describe('AdformOpenRTB adapter', function () {
 
     describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: { siteId: 'siteId', test: 1 } }];
+        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
         let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
@@ -56,7 +65,7 @@ describe('AdformOpenRTB adapter', function () {
       });
 
       it('should send gdpr as number', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: { siteId: 'siteId', test: 1 } }];
+        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
         let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
@@ -65,7 +74,7 @@ describe('AdformOpenRTB adapter', function () {
       });
 
       it('should send CCPA Consent data to adform', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: { siteId: 'siteId', test: 1 } }];
+        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
         let bidderRequest = { uspConsent: '1YA-', refererInfo: { referer: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
@@ -111,7 +120,7 @@ describe('AdformOpenRTB adapter', function () {
     it('should add test and is_debug to request, if test is set in parameters', function () {
       let validBidRequests = [{
         bidId: 'bidId',
-        params: { siteId: 'siteId', test: 1 }
+        params: { test: 1 }
       }];
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
 
@@ -144,26 +153,66 @@ describe('AdformOpenRTB adapter', function () {
     });
 
     it('should send info about device', function () {
+      config.setConfig({
+        device: { w: 100, h: 100 }
+      });
       let validBidRequests = [{
         bidId: 'bidId',
-        params: { siteId: 'siteId' }
+        params: { mid: '1000' }
       }];
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
 
       assert.equal(request.device.ua, navigator.userAgent);
+      assert.equal(request.device.w, 100);
+      assert.equal(request.device.h, 100);
     });
-    it('should send info about the site', function () {
+
+    it('should send app info', function () {
+      config.setConfig({
+        app: { id: 'appid' },
+        ortb2: { app: { name: 'appname' } }
+      });
       let validBidRequests = [{
         bidId: 'bidId',
-        params: { siteId: 'siteId', publisher: {id: '123123', domain: 'publisher.domain.com', name: 'publisher\'s name'} }
+        params: { mid: '1000' }
+      }];
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+
+      assert.equal(request.app.id, 'appid');
+      assert.equal(request.app.name, 'appname');
+      assert.equal(request.site, undefined);
+    });
+
+    it('should send info about the site', function () {
+      config.setConfig({
+        site: {
+          id: '123123',
+          publisher: {
+            domain: 'publisher.domain.com'
+          }
+        },
+        ortb2: {
+          site: {
+            publisher: {
+              name: 'publisher\'s name'
+            }
+          }
+        }
+      });
+      let validBidRequests = [{
+        bidId: 'bidId',
+        params: { mid: '1000' }
       }];
       let refererInfo = { referer: 'page' };
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
 
       assert.deepEqual(request.site, {
         page: refererInfo.referer,
-        publisher: validBidRequests[0].params.publisher,
-        id: validBidRequests[0].params.siteId
+        publisher: {
+          domain: 'publisher.domain.com',
+          name: 'publisher\'s name'
+        },
+        id: '123123'
       });
     });
 
@@ -206,7 +255,7 @@ describe('AdformOpenRTB adapter', function () {
       it('should send correct priceType value', function () {
         let validBidRequests = [{
           bidId: 'bidId',
-          params: { siteId: 'siteId', priceType: 'net' }
+          params: { priceType: 'net' }
         }];
         let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
 
@@ -230,13 +279,16 @@ describe('AdformOpenRTB adapter', function () {
       it('should add incrementing values of id', function () {
         let validBidRequests = [{
           bidId: 'bidId',
-          params: { siteId: 'siteId' }
+          params: { mid: '1000' },
+          mediaTypes: {video: {}}
         }, {
           bidId: 'bidId2',
-          params: { siteId: 'siteId' }
+          params: { mid: '1000' },
+          mediaTypes: {video: {}}
         }, {
           bidId: 'bidId3',
-          params: { siteId: 'siteId' }
+          params: { mid: '1000' },
+          mediaTypes: {video: {}}
         }];
         let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
 
@@ -246,13 +298,98 @@ describe('AdformOpenRTB adapter', function () {
       });
 
       it('should add mid', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: { siteId: 'siteId', mid: 1000 } },
-          { bidId: 'bidId2', params: { siteId: 'siteId', mid: 1001 } },
-          { bidId: 'bidId3', params: { siteId: 'siteId', mid: 1002 } }];
+        let validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} },
+          { bidId: 'bidId2', params: {mid: 1001}, mediaTypes: {video: {}} },
+          { bidId: 'bidId3', params: {mid: 1002}, mediaTypes: {video: {}} }];
         let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
         for (let i = 0; i < 3; i++) {
           assert.equal(imps[i].tagid, validBidRequests[i].params.mid);
         }
+      });
+
+      describe('multiple media types', function () {
+        it('should use single media type for bidding', function () {
+          let validBidRequests = [{
+            bidId: 'bidId',
+            params: { mid: 1000 },
+            mediaTypes: {
+              banner: {
+                sizes: [[100, 100], [200, 300]]
+              },
+              video: {}
+            }
+          }, {
+            bidId: 'bidId1',
+            params: { mid: 1000 },
+            mediaTypes: {
+              video: {},
+              native: {}
+            }
+          }, {
+            bidId: 'bidId2',
+            params: { mid: 1000 },
+            nativeParams: {
+              title: { required: true, len: 140 }
+            },
+            mediaTypes: {
+              banner: {
+                sizes: [[100, 100], [200, 300]]
+              },
+              native: {}
+            }
+          }];
+          let [ banner, video, native ] = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
+
+          assert.ok(banner.banner);
+          assert.equal(banner.video, undefined);
+          assert.equal(banner.native, undefined);
+          assert.ok(video.video);
+          assert.equal(video.banner, undefined);
+          assert.equal(video.native, undefined);
+          assert.ok(native.native);
+          assert.equal(native.video, undefined);
+          assert.equal(native.banner, undefined);
+        });
+      });
+
+      describe('banner', function () {
+        it('should convert sizes to openrtb format', function () {
+          let validBidRequests = [{
+            bidId: 'bidId',
+            params: { mid: 1000 },
+            mediaTypes: {
+              banner: {
+                sizes: [[100, 100], [200, 300]]
+              }
+            }
+          }];
+          let { banner } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0];
+          assert.deepEqual(banner, {
+            format: [ { w: 100, h: 100 }, { w: 200, h: 300 } ]
+          });
+        });
+      });
+
+      describe('video', function () {
+        it('should pass video mediatype config', function () {
+          let validBidRequests = [{
+            bidId: 'bidId',
+            params: { mid: 1000 },
+            mediaTypes: {
+              video: {
+                playerSize: [640, 480],
+                context: 'outstream',
+                mimes: ['video/mp4']
+              }
+            }
+          }];
+          let { video } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0];
+          assert.deepEqual(video, {
+            playerSize: [640, 480],
+            context: 'outstream',
+            mimes: ['video/mp4']
+          });
+        });
       });
 
       describe('native', function () {
@@ -260,7 +397,7 @@ describe('AdformOpenRTB adapter', function () {
           it('should set correct asset id', function () {
             let validBidRequests = [{
               bidId: 'bidId',
-              params: { siteId: 'siteId', mid: 1000 },
+              params: { mid: 1000 },
               nativeParams: {
                 title: { required: true, len: 140 },
                 image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
@@ -276,7 +413,7 @@ describe('AdformOpenRTB adapter', function () {
           it('should add required key if it is necessary', function () {
             let validBidRequests = [{
               bidId: 'bidId',
-              params: { siteId: 'siteId', mid: 1000 },
+              params: { mid: 1000 },
               nativeParams: {
                 title: { required: true, len: 140 },
                 image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
@@ -296,7 +433,7 @@ describe('AdformOpenRTB adapter', function () {
           it('should map img and data assets', function () {
             let validBidRequests = [{
               bidId: 'bidId',
-              params: { siteId: 'siteId', mid: 1000 },
+              params: { mid: 1000 },
               nativeParams: {
                 title: { required: true, len: 140 },
                 image: { required: true, sizes: [150, 50] },
@@ -323,7 +460,7 @@ describe('AdformOpenRTB adapter', function () {
             it('should flatten sizes and utilise first pair', function () {
               const validBidRequests = [{
                 bidId: 'bidId',
-                params: { siteId: 'siteId', mid: 1000 },
+                params: { mid: 1000 },
                 nativeParams: {
                   image: {
                     sizes: [[200, 300], [100, 200]]
@@ -341,7 +478,7 @@ describe('AdformOpenRTB adapter', function () {
           it('should utilise aspect_ratios', function () {
             const validBidRequests = [{
               bidId: 'bidId',
-              params: { siteId: 'siteId', mid: 1000 },
+              params: { mid: 1000 },
               nativeParams: {
                 image: {
                   aspect_ratios: [{
@@ -373,7 +510,7 @@ describe('AdformOpenRTB adapter', function () {
           it('should not throw error if aspect_ratios config is not defined', function () {
             const validBidRequests = [{
               bidId: 'bidId',
-              params: { siteId: 'siteId', mid: 1000 },
+              params: { mid: 1000 },
               nativeParams: {
                 image: {
                   aspect_ratios: []
@@ -391,7 +528,7 @@ describe('AdformOpenRTB adapter', function () {
         it('should expect any dimensions if min_width not passed', function () {
           const validBidRequests = [{
             bidId: 'bidId',
-            params: { siteId: 'siteId', mid: 1000 },
+            params: { mid: 1000 },
             nativeParams: {
               image: {
                 aspect_ratios: [{
@@ -434,7 +571,7 @@ describe('AdformOpenRTB adapter', function () {
         bids: [
           {
             bidId: 'bidId1',
-            params: { siteId: 'siteId', mid: 1000 },
+            params: { mid: 1000 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
@@ -443,7 +580,7 @@ describe('AdformOpenRTB adapter', function () {
           },
           {
             bidId: 'bidId2',
-            params: { siteId: 'siteId', mid: 1000 },
+            params: { mid: 1000 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
@@ -475,7 +612,7 @@ describe('AdformOpenRTB adapter', function () {
         bids: [
           {
             bidId: 'bidId1',
-            params: { siteId: 'siteId', mid: 1000 },
+            params: { mid: 1000 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
@@ -484,7 +621,7 @@ describe('AdformOpenRTB adapter', function () {
           },
           {
             bidId: 'bidId2',
-            params: { siteId: 'siteId', mid: 1000 },
+            params: { mid: 1000 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
@@ -493,7 +630,7 @@ describe('AdformOpenRTB adapter', function () {
           },
           {
             bidId: 'bidId3',
-            params: { siteId: 'siteId', mid: 1000 },
+            params: { mid: 1000 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
@@ -502,7 +639,7 @@ describe('AdformOpenRTB adapter', function () {
           },
           {
             bidId: 'bidId4',
-            params: { siteId: 'siteId', mid: 1000 },
+            params: { mid: 1000 },
             nativeParams: {
               title: { required: true, len: 140 },
               image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
@@ -536,7 +673,9 @@ describe('AdformOpenRTB adapter', function () {
                   assets: [],
                   link: { url: 'link' },
                   imptrackers: ['imptrackers url1', 'imptrackers url2']
-                }
+                },
+                dealid: 'deal-id',
+                adomain: [ 'demo.com' ]
               }
             ]
           }],
@@ -548,7 +687,8 @@ describe('AdformOpenRTB adapter', function () {
         bids: [
           {
             bidId: 'bidId1',
-            params: { siteId: 'siteId', mid: 1000 },
+            params: { mid: 1000 },
+            mediaType: 'native',
             nativeParams: {
               title: { required: true, len: 140 },
               image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
@@ -567,7 +707,9 @@ describe('AdformOpenRTB adapter', function () {
       assert.deepEqual(bids[0].netRevenue, false);
       assert.deepEqual(bids[0].currency, serverResponse.body.cur);
       assert.deepEqual(bids[0].mediaType, 'native');
-      assert.deepEqual(bids[0].bidderCode, 'adformOpenRTB');
+      assert.deepEqual(bids[0].meta.mediaType, 'native');
+      assert.deepEqual(bids[0].meta.advertiserDomains, [ 'demo.com' ]);
+      assert.deepEqual(bids[0].dealId, 'deal-id');
     });
     it('should set correct native params', function () {
       const bid = [
@@ -671,6 +813,97 @@ describe('AdformOpenRTB adapter', function () {
       };
       const result = spec.interpretResponse(serverResponse, bidRequest)[0];
       assert.ok(!result);
+    });
+
+    describe('banner', function () {
+      it('should set ad content on response', function () {
+        let serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{ impid: '1', adm: '<banner>' }]
+            }]
+          }
+        };
+        let bidRequest = {
+          data: {},
+          bids: [
+            {
+              bidId: 'bidId1',
+              params: { mid: 1000 },
+              mediaType: 'banner'
+            }
+          ]
+        };
+
+        bids = spec.interpretResponse(serverResponse, bidRequest);
+        assert.equal(bids.length, 1);
+        assert.equal(bids[0].ad, '<banner>');
+      });
+    });
+
+    describe('video', function () {
+      it('should set vastXml on response', function () {
+        let serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{ impid: '1', adm: '<vast>' }]
+            }]
+          }
+        };
+        let bidRequest = {
+          data: {},
+          bids: [
+            {
+              bidId: 'bidId1',
+              params: { mid: 1000 },
+              mediaType: 'video'
+            }
+          ]
+        };
+
+        bids = spec.interpretResponse(serverResponse, bidRequest);
+        assert.equal(bids.length, 1);
+        assert.equal(bids[0].vastXml, '<vast>');
+      });
+
+      it('should add renderer for outstream bids', function () {
+        let serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{ impid: '1', adm: '<vast>' }, { impid: '2', adm: '<vast>' }]
+            }]
+          }
+        };
+        let bidRequest = {
+          data: {},
+          bids: [
+            {
+              bidId: 'bidId1',
+              params: { mid: 1000 },
+              mediaType: 'video',
+              mediaTypes: {
+                video: {
+                  context: 'outstream'
+                }
+              }
+            },
+            {
+              bidId: 'bidId2',
+              params: { mid: 1000 },
+              mediaType: 'video',
+              mediaTypes: {
+                video: {
+                  constext: 'instream'
+                }
+              }
+            }
+          ]
+        };
+
+        bids = spec.interpretResponse(serverResponse, bidRequest);
+        assert.ok(bids[0].renderer);
+        assert.equal(bids[1].renderer, undefined);
+      });
     });
   });
 });

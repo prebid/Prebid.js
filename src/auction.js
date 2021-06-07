@@ -197,6 +197,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function auctionDone() {
+    config.resetBidder();
     // when all bidders have called done callback atleast once it means auction is complete
     utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
     _auctionStatus = AUCTION_COMPLETED;

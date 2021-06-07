@@ -37,6 +37,7 @@ describe('Interactive Offers Prebbid.js Adapter', function() {
     it('returns an array of Prebid.js response objects', function() {
       let prebidResponses = spec.interpretResponse(openRTBResponse, prebidRequest);
       expect(prebidResponses).to.not.be.empty;
+      expect(prebidResponses[0].meta.advertiserDomains[0]).to.equal('url.com');
     });
   });
 });

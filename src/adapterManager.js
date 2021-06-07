@@ -179,6 +179,12 @@ export let uspDataHandler = {
   }
 };
 
+export let coppaDataHandler = {
+  getCoppa: function() {
+    return !!(config.getConfig('coppa'))
+  }
+};
+
 // export for testing
 export let clientTestAdapters = [];
 export const allS2SBidders = [];
@@ -411,8 +417,10 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     bidRequest.start = timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidRequest.bidderCode];
-    utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+    config.runWithBidder(bidRequest.bidderCode, () => {
+      utils.logMessage(`CALLING BIDDER`);
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+    });
     let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done

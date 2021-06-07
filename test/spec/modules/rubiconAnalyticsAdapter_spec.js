@@ -374,6 +374,7 @@ const ANALYTICS_MESSAGE = {
   'referrerHostname': 'www.test.com',
   'auctions': [
     {
+      'requestId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
       'clientTimeoutMillis': 3000,
       'serverTimeoutMillis': 1000,
       'accountId': 1001,

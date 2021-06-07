@@ -16,7 +16,7 @@ and the bidstream in real-time during the bid request cycle.
 
 Compile the Halo RTD module into your Prebid build:
 
-`gulp build --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,appnexusBidAdapter`
+`gulp build --modules=userId,unifiedIdSystem,rtdModule,haloRtdProvider,appnexusBidAdapter`
 
 Add the Halo RTD provider to your Prebid config. In this example we will configure
 publisher 1234 to retrieve segments from Audigent. See the
