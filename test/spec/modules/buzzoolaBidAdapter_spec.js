@@ -82,7 +82,7 @@ const VIDEO_BID = {
   'params': {'placementId': 417845},
   'mediaTypes': {
     'video': {
-      'context': 'outstream',
+      'context': 'instream',
       'playerSize': [[640, 380]],
       'mimes': ['video/mp4'],
       'minduration': 1,
