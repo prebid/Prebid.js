@@ -25,9 +25,6 @@ const NATIVE_PARAMS = {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [
-    { code: 'outbrain', gvlid: GVLID }
-  ],
   supportedMediaTypes: [ NATIVE, BANNER ],
   isBidRequestValid: (bid) => {
     return (
@@ -82,6 +79,14 @@ export const spec = {
       imp: imps,
       bcat: bcat,
       badv: badv,
+      ext: {
+        prebid: {
+          channel: {
+            name: 'pbjs',
+            version: '$prebid.version$'
+          }
+        }
+      }
     };
 
     if (test) {
