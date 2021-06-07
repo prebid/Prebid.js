@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/buzzoolaBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import '../../../src/prebid.js';
 import {executeRenderer, Renderer} from '../../../src/Renderer.js';
 import {deepClone} from '../../../src/utils.js';
 
@@ -398,6 +399,7 @@ describe('buzzoolaBidAdapter', () => {
       };
       const spy = sinon.spy(window.Buzzoola.Core, 'install');
       executeRenderer(renderer, result);
+      renderer.callback();
       expect(spy.called).to.be.true;
 
       const spyCall = spy.getCall(0);
