@@ -248,7 +248,7 @@ describe('The smartx adapter', function () {
         placement: 3
       });
 
-      expect(request.data.imp.bidfloor).to.equal(0);
+      expect(request.data.imp.bidfloor).to.equal(55);
 
       expect(request.data.imp.bidfloorcur).to.equal('foo');
 
