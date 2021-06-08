@@ -201,6 +201,10 @@ function getPageInfo() {
       topmostFrame.document.referrer !== ''
         ? topmostFrame.document.referrer
         : null,
+    ancestorOrigin:
+      window.location.ancestorOrigins
+        ? window.location.ancestorOrigins[0]
+        : null,
     masked: currentFrameNesting,
     wWidth: topmostFrame.innerWidth,
     wHeight: topmostFrame.innerHeight,

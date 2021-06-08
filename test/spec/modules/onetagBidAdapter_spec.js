@@ -142,6 +142,9 @@ describe('onetag', function () {
         expect(data.wHeight).to.be.a('number');
         expect(data.oHeight).to.be.a('number');
         expect(data.oWidth).to.be.a('number');
+        expect(data.ancestorOrigin).to.satisfy(function (value) {
+          return value === null || typeof value === 'string';
+        });
         expect(data.aWidth).to.be.a('number');
         expect(data.aHeight).to.be.a('number');
         expect(data.sLeft).to.be.a('number');
