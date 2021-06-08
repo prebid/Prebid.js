@@ -114,7 +114,7 @@ const FLOC_FORMAT = {
   'SEGMENT': 2
 }
 
-const PERMUTIVE_SEGMENT_NAME = 'permutiveDataProvider.com';
+const PERMUTIVE_SEGMENT_NAME = 'fpds.com';
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
