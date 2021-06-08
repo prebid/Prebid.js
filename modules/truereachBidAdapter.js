@@ -115,7 +115,7 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
     adH = adSizes[0][1];
   }
 
-  let bidFloor = Number(utils.deepAccess(validBidRequests[0], 'params.bidfloor'));
+  let bidFloor = Number(0);
 
   let domain = window.location.host;
   let page = window.location.host + window.location.pathname + location.search + location.hash;

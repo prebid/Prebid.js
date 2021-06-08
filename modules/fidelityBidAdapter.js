@@ -20,7 +20,7 @@ export const spec = {
         requestid: bidRequest.bidderRequestId,
         impid: bidRequest.bidId,
         zoneid: bidRequest.params.zoneid,
-        floor: parseFloat(bidRequest.params.floor) > 0 ? bidRequest.params.floor : 0,
+        floor: 0,
         charset: document.charSet || document.characterSet,
         subid: 'hb',
         flashver: getFlashVersion(),

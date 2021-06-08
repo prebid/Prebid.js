@@ -57,7 +57,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
       },
       tagid: utils.deepAccess(br, 'params.placementId') || br.adUnitCode,
       secure: 1,
-      bidfloor: parseFloat(utils.deepAccess(br, 'params.bidfloorCpm') || 0)
+      bidfloor: parseFloat(0)
     };
   });
   const request = {

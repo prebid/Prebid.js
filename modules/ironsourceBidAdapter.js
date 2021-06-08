@@ -206,7 +206,7 @@ function generateParameters(bid, bidderRequest) {
     width: width,
     height: height,
     publisher_id: params.isOrg,
-    floor_price: params.floorPrice,
+    floor_price: 0,
     ua: navigator.userAgent,
     bid_id: utils.getBidIdParameter('bidId', bid),
     bidder_request_id: utils.getBidIdParameter('bidderRequestId', bid),
