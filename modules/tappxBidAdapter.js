@@ -300,13 +300,13 @@ function buildOneRequest(validBidRequests, bidderRequest) {
       }
     }
 
-    if( ( video.w === undefined || video.w == null || video.w <= 0) ||
-        ( video.h === undefined || video.h == null || video.h <= 0)){
-        w = videoMediaType.playerSize[0][0];
-        h = videoMediaType.playerSize[0][1];
-        video.w = w;
-        video.h = h;
-      }
+    if ((video.w === undefined || video.w == null || video.w <= 0) ||
+        (video.h === undefined || video.h == null || video.h <= 0)) {
+      w = videoMediaType.playerSize[0][0];
+      h = videoMediaType.playerSize[0][1];
+      video.w = w;
+      video.h = h;
+    }
 
     video.mimes = videoMediaType.mimes;
 

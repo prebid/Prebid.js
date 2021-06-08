@@ -369,13 +369,13 @@ describe('Tappx bid adapter', function () {
 
   describe('_getHostInfo tests', function() {
     const HOST_VALIDBIDREQ = {};
-    HOST_VALIDBIDREQ.bidder = "tappx";
+    HOST_VALIDBIDREQ.bidder = 'tappx';
     HOST_VALIDBIDREQ.params = {};
-    HOST_VALIDBIDREQ.params.endpoint = "ZZ1234PBJS";
+    HOST_VALIDBIDREQ.params.endpoint = 'ZZ1234PBJS';
 
     it('Test testing endpoints', function() {
       let testHostValidRequest = HOST_VALIDBIDREQ;
-      testHostValidRequest.params.host = "testing.xxx.tappx.com\/rtb\/v2\/";
+      testHostValidRequest.params.host = 'testing.xxx.tappx.com\/rtb\/v2\/';
       let testHostObject = _getHostInfo(testHostValidRequest);
       assert.isObject(testHostObject);
       expect(testHostObject.newEndpoint).to.be.false;
@@ -383,7 +383,7 @@ describe('Tappx bid adapter', function () {
     })
     it('Test classic endpoints', function() {
       let classicHostValidRequest = HOST_VALIDBIDREQ;
-      classicHostValidRequest.params.host = "xxx.xxx.tappx.com\/rtb\/v2\/";
+      classicHostValidRequest.params.host = 'xxx.xxx.tappx.com\/rtb\/v2\/';
       let classicHostObject = _getHostInfo(classicHostValidRequest);
       assert.isObject(classicHostObject);
       expect(classicHostObject.newEndpoint).to.be.false;
@@ -391,7 +391,7 @@ describe('Tappx bid adapter', function () {
     })
     it('Test new endpoints', function() {
       let newHostValidRequest = HOST_VALIDBIDREQ;
-      newHostValidRequest.params.host = "zz1111xxx.xxx.tappx.com\/rtb\/v2\/";
+      newHostValidRequest.params.host = 'zz1111xxx.xxx.tappx.com\/rtb\/v2\/';
       let newHostObject = _getHostInfo(newHostValidRequest);
       assert.isObject(newHostObject);
       expect(newHostObject.newEndpoint).to.be.true;
