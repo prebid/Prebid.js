@@ -91,8 +91,8 @@ export const spec = {
           ad: bid.adm,
           meta: {}
         };
-        if (bid.meta && bid.meta.advertiserDomains && utils.isArray(bid.meta.advertiserDomains)) {
-          bidResponse.meta.advertiserDomains = bid.meta.advertiserDomains;
+        if (bid.meta && bid.meta.adomain && utils.isArray(bid.meta.adomain)) {
+          bidResponse.meta.advertiserDomains = bid.meta.adomain;
         }
         bidResponses.push(bidResponse);
       });

@@ -209,7 +209,7 @@ describe('KubientAdapter', function () {
                     cur: 'USD',
                     netRevenue: false,
                     ttl: 360,
-                    meta: {advertiserDomains: ['google.com', 'yahoo.com']}
+                    meta: {adomain: ['google.com', 'yahoo.com']}
                   }
                 ]
               }
@@ -230,7 +230,7 @@ describe('KubientAdapter', function () {
       expect(dataItem.netRevenue).to.exist.and.to.be.a('boolean').and.to.equal(serverResponse.body.seatbid[0].bid[0].netRevenue);
       expect(dataItem.ttl).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].ttl);
       expect(dataItem.meta).to.exist.and.to.be.a('object');
-      expect(dataItem.meta.advertiserDomains).to.exist.and.to.be.a('array').and.to.equal(serverResponse.body.seatbid[0].bid[0].meta.advertiserDomains);
+      expect(dataItem.meta.advertiserDomains).to.exist.and.to.be.a('array').and.to.equal(serverResponse.body.seatbid[0].bid[0].meta.adomain);
     });
 
     it('Should return no ad when not given a server response', function () {
