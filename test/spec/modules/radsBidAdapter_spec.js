@@ -61,7 +61,11 @@ describe('radsAdapter', function () {
       ],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475'
+      'auctionId': '1d1a030790a475',
+      'userId': {
+        'netId': '123',
+        'uid2': '456'
+      }
     }, {
       'bidder': 'rads',
       'params': {
@@ -110,7 +114,7 @@ describe('radsAdapter', function () {
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
       let data = request[0].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('rt=bid-response&_f=prebid_js&_ps=6682&srw=300&srh=250&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&i=1.1.1.1');
+      expect(data).to.equal('rt=bid-response&_f=prebid_js&_ps=6682&srw=300&srh=250&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&i=1.1.1.1&did_netid=123&did_uid2=456');
     });
 
     it('sends bid video request to our rads endpoint via GET', function () {
@@ -124,7 +128,7 @@ describe('radsAdapter', function () {
     it('sends bid request to our endpoint via GET', function () {
       expect(request2[0].method).to.equal('GET');
       let data = request2[0].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('rt=bid-response&_f=prebid_js&_ps=6682&srw=300&srh=250&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&i=1.1.1.1');
+      expect(data).to.equal('rt=bid-response&_f=prebid_js&_ps=6682&srw=300&srh=250&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&i=1.1.1.1&did_netid=123&did_uid2=456');
     });
 
     it('sends bid video request to our rads endpoint via GET', function () {
@@ -146,7 +150,8 @@ describe('radsAdapter', function () {
         'currency': 'EUR',
         'ttl': 60,
         'netRevenue': true,
-        'zone': '6682'
+        'zone': '6682',
+        'adomain': ['bdomain']
       }
     };
     let serverVideoResponse = {
@@ -174,7 +179,8 @@ describe('radsAdapter', function () {
       currency: 'EUR',
       netRevenue: true,
       ttl: 300,
-      ad: '<!-- test creative -->'
+      ad: '<!-- test creative -->',
+      meta: {advertiserDomains: ['bdomain']}
     }, {
       requestId: '23beaa6af6cdde',
       cpm: 0.5,
@@ -186,7 +192,8 @@ describe('radsAdapter', function () {
       netRevenue: true,
       ttl: 300,
       vastXml: '{"reason":7001,"status":"accepted"}',
-      mediaType: 'video'
+      mediaType: 'video',
+      meta: {advertiserDomains: []}
     }];
 
     it('should get the correct bid response by display ad', function () {
@@ -202,6 +209,8 @@ describe('radsAdapter', function () {
       }];
       let result = spec.interpretResponse(serverBannerResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0].meta.advertiserDomains.length).to.equal(1);
+      expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
     it('should get the correct rads video bid response by display ad', function () {
@@ -220,6 +229,7 @@ describe('radsAdapter', function () {
       }];
       let result = spec.interpretResponse(serverVideoResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[1]));
+      expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 
     it('handles empty bid response', function () {

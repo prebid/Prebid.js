@@ -57,7 +57,7 @@ export const spec = {
           bid_id: bidId,
         };
       }
-      prepareExtraParams(params, payload, bidderRequest);
+      prepareExtraParams(params, payload, bidderRequest, bidRequest);
 
       return {
         method: 'GET',
@@ -84,7 +84,10 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        ttl: config.getConfig('_bidderTimeout')
+        ttl: config.getConfig('_bidderTimeout'),
+        meta: {
+          advertiserDomains: response.adomain || []
+        }
       };
 
       if (response.vastXml) {
@@ -162,7 +165,15 @@ function isVideoRequest(bid) {
   return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
 }
 
-function prepareExtraParams(params, payload, bidderRequest) {
+/**
+ * Add extra params to server request
+ *
+ * @param params
+ * @param payload
+ * @param bidderRequest
+ * @param {BidRequest} bidRequest - Bid request generated from ad slots
+ */
+function prepareExtraParams(params, payload, bidderRequest, bidRequest) {
   if (params.pfilter !== undefined) {
     payload.pfilter = params.pfilter;
   }
@@ -195,6 +206,13 @@ function prepareExtraParams(params, payload, bidderRequest) {
   }
   if (params.ip !== undefined) {
     payload.i = params.ip;
+  }
+
+  if (bidRequest.userId && bidRequest.userId.netId) {
+    payload.did_netid = bidRequest.userId.netId;
+  }
+  if (bidRequest.userId && bidRequest.userId.uid2) {
+    payload.did_uid2 = bidRequest.userId.uid2;
   }
 }
 
