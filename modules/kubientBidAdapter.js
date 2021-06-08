@@ -18,10 +18,20 @@ export const spec = {
       return;
     }
     return validBidRequests.map(function (bid) {
-      var adSlot = {
+      let floor = 0.0;
+      if (typeof bid.getFloor === 'function') {
+        const mediaType = (Object.keys(bid.mediaTypes).length == 1) ? Object.keys(bid.mediaTypes)[0] : '*';
+        const sizes = bid.sizes || '*';
+        const floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: sizes});
+        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+          floor = parseFloat(floorInfo.floor);
+        }
+      }
+
+      let adSlot = {
         bidId: bid.bidId,
         zoneId: bid.params.zoneid || '',
-        floor: bid.params.floor || 0.0
+        floor: floor || 0.0
       };
 
       if (bid.mediaTypes.banner) {

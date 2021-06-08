@@ -90,7 +90,10 @@ export const spec = {
           netRevenue: true,
           currency: bid.currency || 'USD',
           ttl: bid.ttl || spec.time,
-          format: bid.format
+          format: bid.format,
+          meta: {
+            advertiserDomains: bid.adomain && bid.adomain.length > 0 ? bid.adomain : []
+          }
         }
         bidResponses.push(bidResponse)
       }
