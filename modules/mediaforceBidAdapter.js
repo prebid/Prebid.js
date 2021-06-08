@@ -219,6 +219,9 @@ export const spec = {
           currency: cur,
           netRevenue: true,
           ttl: serverBid.ttl || 300,
+          meta: {
+            advertiserDomains: serverBid.adomain ? serverBid.adomain : []
+          },
           burl: serverBid.burl,
         };
         if (serverBid.dealid) {
