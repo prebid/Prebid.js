@@ -122,6 +122,13 @@ describe('brightcomBidAdapter', function() {
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}]);
     });
 
+    it('sends bidfloor param if present', function () {
+      bidRequests[0].params.bidFloor = 0.05;
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].bidfloor).to.equal(0.05);
+    });
+
     it('sends tagid', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
