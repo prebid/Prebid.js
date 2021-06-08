@@ -10,6 +10,7 @@ const TTL = 360;
 const CUR = 'USD';
 const TAPPX_BIDDER_VERSION = '0.1.10526';
 const TYPE_CNN = 'prebidjs';
+const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream'];
 
 var hostDomain;
@@ -53,7 +54,7 @@ export const spec = {
   interpretResponse: function(serverResponse, originalRequest) {
     const responseBody = serverResponse.body;
     if (!serverResponse.body) {
-      utils.logWarn('[TAPPX]: Empty response body HTTP 204, no bids');
+      utils.logWarn(LOG_PREFIX, 'Empty response body HTTP 204, no bids');
       return [];
     }
 
@@ -105,17 +106,17 @@ export const spec = {
 
 function validBasic(bid) {
   if (bid.params == null) {
-    utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters.`);
+    utils.logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters.');
     return false;
   }
 
   if (bid.params.tappxkey == null) {
-    utils.logWarn(`[TAPPX]: Please review the mandatory Tappxkey parameter.`);
+    utils.logWarn(LOG_PREFIX, 'Please review the mandatory Tappxkey parameter.');
     return false;
   }
 
   if (bid.params.host == null) {
-    utils.logWarn(`[TAPPX]: Please review the mandatory Host parameter.`);
+    utils.logWarn(LOG_PREFIX, 'Please review the mandatory Host parameter.');
     return false;
   }
 
@@ -125,7 +126,7 @@ function validBasic(bid) {
   }
 
   if (classicEndpoint && bid.params.endpoint == null) {
-    utils.logWarn(`[TAPPX]: Please review the mandatory endpoint Tappx parameters.`);
+    utils.logWarn(LOG_PREFIX, 'Please review the mandatory endpoint Tappx parameters.');
     return false;
   }
 
@@ -138,7 +139,7 @@ function validMediaType(bid) {
   // Video validations
   if (typeof video != 'undefined') {
     if (VIDEO_SUPPORT.indexOf(video.context) === -1) {
-      utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters for Video. Only "instream" is suported.`);
+      utils.logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Only "instream" is suported.');
       return false;
     }
   }
@@ -288,10 +289,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
       if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
         imp.bidfloor = floor.floor;
       } else {
-        utils.logWarn('[TAPPX]: ', 'Currency not valid. Use only USD with Tappx.');
+        utils.logWarn(LOG_PREFIX, 'Currency not valid. Use only USD with Tappx.');
       }
     } catch (e) {
-      utils.logWarn('[TAPPX]: ', e);
+      utils.logWarn(LOG_PREFIX, e);
       imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor'); // Be sure that we have an imp.bidfloor
     }
   }
