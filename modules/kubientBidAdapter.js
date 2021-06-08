@@ -79,7 +79,7 @@ export const spec = {
     serverResponse.body.seatbid.forEach(seatbid => {
       let bids = seatbid.bid || [];
       bids.forEach(bid => {
-        bidResponses.push({
+        const bidResponse = {
           requestId: bid.bidId,
           cpm: bid.price,
           currency: bid.cur,
@@ -88,8 +88,13 @@ export const spec = {
           creativeId: bid.creativeId,
           netRevenue: bid.netRevenue,
           ttl: bid.ttl,
-          ad: bid.adm
-        });
+          ad: bid.adm,
+          meta: {}
+        };
+        if (bid.meta && bid.meta.advertiserDomains && utils.isArray(bid.meta.advertiserDomains)) {
+          bidResponse.meta.advertiserDomains = bid.meta.advertiserDomains;
+        }
+        bidResponses.push(bidResponse);
       });
     });
     return bidResponses;

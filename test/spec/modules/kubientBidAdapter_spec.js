@@ -208,7 +208,8 @@ describe('KubientAdapter', function () {
                     h: 250,
                     cur: 'USD',
                     netRevenue: false,
-                    ttl: 360
+                    ttl: 360,
+                    meta: {advertiserDomains: ['google.com', 'yahoo.com']}
                   }
                 ]
               }
@@ -218,7 +219,7 @@ describe('KubientAdapter', function () {
       let bannerResponses = spec.interpretResponse(serverResponse);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
-      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'ad', 'creativeId', 'width', 'height', 'currency', 'netRevenue', 'ttl');
+      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'ad', 'creativeId', 'width', 'height', 'currency', 'netRevenue', 'ttl', 'meta');
       expect(dataItem.requestId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].bidId);
       expect(dataItem.cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
       expect(dataItem.ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
@@ -228,6 +229,8 @@ describe('KubientAdapter', function () {
       expect(dataItem.currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].cur);
       expect(dataItem.netRevenue).to.exist.and.to.be.a('boolean').and.to.equal(serverResponse.body.seatbid[0].bid[0].netRevenue);
       expect(dataItem.ttl).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].ttl);
+      expect(dataItem.meta).to.exist.and.to.be.a('object');
+      expect(dataItem.meta.advertiserDomains).to.exist.and.to.be.a('array').and.to.equal(serverResponse.body.seatbid[0].bid[0].meta.advertiserDomains);
     });
 
     it('Should return no ad when not given a server response', function () {
