@@ -7,8 +7,13 @@ describe('KubientAdapter', function () {
     bidder: 'kubient',
     bidderRequestId: '145e1d6a7837c9',
     params: {
-      zoneid: '5678',
-      floor: 0.05,
+      zoneid: '5678'
+    },
+    getFloor: function(params) {
+      return {
+        floor: 0.05,
+        currency: 'USD'
+      };
     },
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
     mediaTypes: {
@@ -36,13 +41,20 @@ describe('KubientAdapter', function () {
     bidder: 'kubient',
     bidderRequestId: '245e1d6a7837c9',
     params: {
-      zoneid: '5676',
-      floor: 1.0,
+      zoneid: '5676'
+    },
+    getFloor: function(params) {
+      return {
+        floor: 1.0,
+        currency: 'USD'
+      };
     },
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d1',
     mediaTypes: {
       video: {
-        playerSize: [1280, 720]
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4']
       }
     },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e61',
