@@ -53,14 +53,12 @@ describe('Quantcast adapter', function () {
       // Video object as specified in OpenRTB 2.5
       video: videoParams
     };
-    bidRequest['mediaTypes'] = {
-      video: mediaTypesParams
+    if (mediaTypesParams) {
+      bidRequest['mediaTypes'] = {
+        video: mediaTypesParams
+      }
     }
   };
-  /*
-  context: 'instream',
-  playerSize: [600, 300]
-  */
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -248,6 +246,7 @@ describe('Quantcast adapter', function () {
         imp: [
           {
             video: {
+              mimes: ['video/mp4'],
               minduration: 3,
               maxduration: 5,
               protocols: [3],
@@ -259,7 +258,6 @@ describe('Quantcast adapter', function () {
               delivery: [1],
               placement: 1,
               api: [2, 3],
-              mimes: ['video/mp4'],
               w: 600,
               h: 300
             },
@@ -285,12 +283,11 @@ describe('Quantcast adapter', function () {
 
     it('overrides video parameters with parameters from adunit', function() {
       setupVideoBidRequest({
-        mediaTypes: {
-          video: {
-            mimes: ['video/mp4']
-          }
-        }
-      }, {});
+        mimes: ['video/mp4']
+      }, {
+        context: 'instream',
+        playerSize: [600, 300]
+      });
       bidRequest.mediaTypes.video.mimes = ['video/webm'];
 
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
@@ -325,7 +322,10 @@ describe('Quantcast adapter', function () {
     });
 
     it('sends video bid request when no video parameters are given', function () {
-      setupVideoBidRequest(null, null);
+      setupVideoBidRequest(null, {
+        context: 'instream',
+        playerSize: [600, 300]
+      });
 
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
       const expectedVideoBidRequest = {
@@ -834,8 +834,7 @@ describe('Quantcast adapter', function () {
         creativeId: undefined,
         ad: undefined,
         netRevenue: QUANTCAST_NET_REVENUE,
-        currency: 'USD',
-        meta: {}
+        currency: 'USD'
       };
       const interpretedResponse = qcSpec.interpretResponse(videoResponse);
 
