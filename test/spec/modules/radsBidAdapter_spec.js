@@ -59,6 +59,17 @@ describe('radsAdapter', function () {
       'sizes': [
         [300, 250]
       ],
+      'mediaTypes': {
+        'video': {
+          'playerSize': [640, 480],
+          'context': 'instream'
+        },
+        'banner': {
+          'sizes': [
+            [300, 250]
+          ]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
