@@ -864,78 +864,72 @@ describe('PubMatic adapter', function () {
         expect(isValid).to.equal(false);
       })
 
-      it('should check for mimes if video is present', function() {
+      it('bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array', function() {
         let bid = {
-            'bidder': 'pubmatic',
-            'params': {
-              'adSlot': 'SLOT_NHB1@728x90',
-              'publisherId': '5890'
-            },
-            'mediaTypes': {
-              'video': {
-                'playerSize': [
-                  [640, 480]
-                ],
-                'protocols': [1, 2, 5],
-                'context': 'instream',
-                'mimes': ['video/flv'],
-                'skippable': false,
-                'skip': 1,
-                'linearity': 2
-              }
-            },
-            'adUnitCode': 'video1',
-            'transactionId': '803e3750-0bbe-4ffe-a548-b6eca15087bf',
-            'sizes': [
-              [640, 480]
-            ],
-            'bidId': '2c95df014cfe97',
-            'bidderRequestId': '1fe59391566442',
-            'auctionId': '3a4118ef-fb96-4416-b0b0-3cfc1cebc142',
-            'src': 'client',
-            'bidRequestsCount': 1,
-            'bidderRequestsCount': 1,
-            'bidderWinsCount': 0
+          'bidder': 'pubmatic',
+          'params': {
+            'adSlot': 'SLOT_NHB1@728x90',
+            'publisherId': '5890',
+            'video': {}
           },
-          isValid = spec.isBidRequestValid(bid);
-        expect(isValid).to.equal(true);
-      })
+          'mediaTypes': {
+            'video': {
+              'playerSize': [
+                [640, 480]
+              ],
+              'protocols': [1, 2, 5],
+              'context': 'instream',
+              'skippable': false,
+              'skip': 1,
+              'linearity': 2
+            }
+          },
+          'adUnitCode': 'video1',
+          'transactionId': '803e3750-0bbe-4ffe-a548-b6eca15087bf',
+          'sizes': [
+            [640, 480]
+          ],
+          'bidId': '2c95df014cfe97',
+          'bidderRequestId': '1fe59391566442',
+          'auctionId': '3a4118ef-fb96-4416-b0b0-3cfc1cebc142',
+          'src': 'client',
+          'bidRequestsCount': 1,
+          'bidderRequestsCount': 1,
+          'bidderWinsCount': 0
+        };
 
-      it('should return false if mimes is not present in video', function() {
-        let bid = {
-            'bidder': 'pubmatic',
-            'params': {
-              'adSlot': 'SLOT_NHB1@728x90',
-              'publisherId': '5890'
-            },
-            'mediaTypes': {
-              'video': {
-                'playerSize': [
-                  [640, 480]
-                ],
-                'protocols': [1, 2, 5],
-                'context': 'instream',
-                'skippable': false,
-                'skip': 1,
-                'linearity': 2
-              }
-            },
-            'adUnitCode': 'video1',
-            'transactionId': '803e3750-0bbe-4ffe-a548-b6eca15087bf',
-            'sizes': [
-              [640, 480]
-            ],
-            'bidId': '2c95df014cfe97',
-            'bidderRequestId': '1fe59391566442',
-            'auctionId': '3a4118ef-fb96-4416-b0b0-3cfc1cebc142',
-            'src': 'client',
-            'bidRequestsCount': 1,
-            'bidderRequestsCount': 1,
-            'bidderWinsCount': 0
-          },
-          isValid = spec.isBidRequestValid(bid);
-        expect(isValid).to.equal(false);
-      })
+        delete bid.params.video.mimes; // Undefined
+        bid.mediaTypes.video.mimes = 'string'; // NOT array
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        delete bid.params.video.mimes; // Undefined
+        delete bid.mediaTypes.video.mimes; // Undefined
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        delete bid.params.video.mimes; // Undefined
+        bid.mediaTypes.video.mimes = ['video/flv']; // Valid
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        delete bid.mediaTypes.video.mimes; // mediaTypes.video.mimes undefined
+        bid.params.video = {mimes: 'string'}; // NOT array
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        delete bid.mediaTypes.video.mimes; // mediaTypes.video.mimes undefined
+        delete bid.params.video.mimes; // Undefined
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        delete bid.mediaTypes.video.mimes; // mediaTypes.video.mimes undefined
+        bid.params.video.mimes = ['video/flv']; // Valid
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        delete bid.mediaTypes.video.mimes; // Undefined
+        bid.params.video.mimes = ['video/flv']; // Valid
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        delete bid.mediaTypes.video.mimes; // Undefined
+        delete bid.params.video.mimes; // Undefined
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
     });
 
   	describe('Request formation', function () {
@@ -3396,7 +3390,7 @@ describe('PubMatic adapter', function () {
     });
 
     describe('getUserSyncs', function() {
-      const syncurl_iframe = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=5670';
+      const syncurl_iframe = 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=5670';
       const syncurl_image = 'https://image8.pubmatic.com/AdServer/ImgSync?p=5670';
       let sandbox;
       beforeEach(function () {
