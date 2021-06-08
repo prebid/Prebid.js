@@ -480,6 +480,7 @@ describe('GamoshiAdapter', () => {
       expect(ad0.ad).to.equal(rtbResponse.seatbid[1].bid[0].adm);
       expect(ad0.vastXml).to.be.an('undefined');
       expect(ad0.vastUrl).to.be.an('undefined');
+      expect(ad0.meta.advertiserDomains).to.be.equal(rtbResponse.seatbid[1].bid[0].adomain);
     });
 
     it('aggregates video bids from all seat bids', () => {

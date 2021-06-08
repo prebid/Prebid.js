@@ -198,8 +198,14 @@ export const spec = {
         creativeId: bid.crid || bid.adid,
         netRevenue: true,
         currency: bid.cur || response.cur,
-        mediaType: helper.getMediaType(bid)
+        mediaType: helper.getMediaType(bid),
       };
+
+      if (bid.adomain && bid.adomain.length) {
+        outBid.meta = {
+          advertiserDomains: bid.adomain
+        }
+      }
 
       if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
         if (outBid.mediaType === BANNER) {
