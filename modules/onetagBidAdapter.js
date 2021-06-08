@@ -202,7 +202,7 @@ function getPageInfo() {
         ? topmostFrame.document.referrer
         : null,
     ancestorOrigin:
-      window.location.ancestorOrigins
+      window.location.ancestorOrigins && window.location.ancestorOrigins[0] != null
         ? window.location.ancestorOrigins[0]
         : null,
     masked: currentFrameNesting,
