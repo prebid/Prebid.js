@@ -112,6 +112,28 @@ describe('permutiveRtdProvider', function () {
         })
       }
     })
+
+    it('sets segment targeting for PubMatic', function () {
+      const data = transformedTargeting()
+      const adUnits = getAdUnits()
+      const config = getConfig()
+      const pubmaticData = [];
+      data.ac.forEach(item => {
+        pubmaticData.push({ id: item });
+      }); ;
+      initSegments({ adUnits }, callback, config)
+
+      function callback () {
+        adUnits.forEach(adUnit => {
+          adUnit.bids.forEach(bid => {
+            const { bidder, params } = bid
+            if (bidder === 'pubmatic') {
+              expect(deepAccess(params, 'params.permutiveData')).to.eql(pubmaticData);
+            }
+          })
+        })
+      }
+    })
   })
 
   describe('Custom segment targeting', function () {
@@ -221,6 +243,24 @@ describe('permutiveRtdProvider', function () {
         })
       }
     })
+    it('doesn\'t overwrite existing key-values for PubMatic', function () {
+      const adUnits = getAdUnits()
+      const config = getConfig()
+
+      initSegments({ adUnits }, callback, config)
+
+      function callback () {
+        adUnits.forEach(adUnit => {
+          adUnit.bids.forEach(bid => {
+            const { bidder, params } = bid
+
+            if (bidder === 'pubmatic') {
+              expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true'])
+            }
+          })
+        })
+      }
+    })
   })
 
   describe('Permutive on page', function () {
@@ -242,6 +282,10 @@ describe('permutiveRtdProvider', function () {
       expect(isAcEnabled({ params: { acBidders: ['ozone'] } }, 'ozone')).to.equal(true)
       expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ozone')).to.equal(false)
     })
+    it('checks if AC is enabled for PubMatic', function () {
+      expect(isAcEnabled({ params: { acBidders: ['pubmatic'] } }, 'pubmatic')).to.equal(true)
+      expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'pubmatic')).to.equal(false)
+    })
   })
 })
 
@@ -262,7 +306,7 @@ function getConfig () {
     name: 'permutive',
     waitForIt: true,
     params: {
-      acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx'],
+      acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx', 'pubmatic'],
       maxSegs: 500
     }
   }
@@ -354,6 +398,16 @@ function getAdUnits () {
             uid: 45,
             keywords: {
               test_kv: ['true']
+            }
+          }
+        },
+        {
+          bidder: 'pubmatic',
+          params: {
+            publisherId: '5890',
+            adSlot: 'Div1',
+            keywords: {
+            	test_kv: ['true']
             }
           }
         }

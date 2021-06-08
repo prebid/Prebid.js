@@ -1130,9 +1130,9 @@ export const spec = {
     if (commonFpd.site) {
       utils.mergeDeep(payload, {site: commonFpd.site});
     }
-    /*if (segmentData && segmentData.data) {
+    /* if (segmentData && segmentData.data) {
       commonFpd.user.data = segmentData.data;
-    }*/
+    } */
 
     if (commonFpd.user) {
       utils.mergeDeep(payload, {user: commonFpd.user});
