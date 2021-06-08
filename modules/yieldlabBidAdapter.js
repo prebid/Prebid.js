@@ -114,7 +114,10 @@ export const spec = {
           netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}"></script>`
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}"></script>`,
+          meta: {
+            advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a'
+          }
         }
 
         if (isVideo(bidRequest, adType)) {
