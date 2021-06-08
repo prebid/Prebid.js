@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/bizzclickBidAdapter.js';
+import {config} from 'src/config.js';
 
 const NATIVE_BID_REQUEST = {
   code: 'native_example',
@@ -53,7 +54,11 @@ const BANNER_BID_REQUEST = {
     accountId: 'accountId'
   },
   timeout: 1000,
-
+  gdprConsent: {
+    consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
+    gdprApplies: 1,
+  },
+  uspConsent: 'uspConsent'
 }
 
 const bidRequest = {
@@ -172,6 +177,22 @@ const NATIVE_BID_RESPONSE = {
 };
 
 describe('BizzclickAdapter', function() {
+  describe('with COPPA', function() {
+    beforeEach(function() {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+    });
+    afterEach(function() {
+      config.getConfig.restore();
+    });
+
+    it('should send the Coppa "required" flag set to "1" in the request', function () {
+      let serverRequest = spec.buildRequests([BANNER_BID_REQUEST]);
+      expect(serverRequest.data[0].regs.coppa).to.equal(1);
+    });
+  });
+
   describe('isBidRequestValid', function() {
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(NATIVE_BID_REQUEST)).to.equal(true);
@@ -224,6 +245,12 @@ describe('BizzclickAdapter', function() {
     it('sends bid request to our endpoint via POST', function () {
       expect(request.method).to.equal('POST');
     });
+
+    it('check consent and ccpa string is set properly', function() {
+      expect(request.data[0].regs.ext.gdpr).to.equal(1);
+      expect(request.data[0].user.ext.consent).to.equal(BANNER_BID_REQUEST.gdprConsent.consentString);
+      expect(request.data[0].regs.ext.us_privacy).to.equal(BANNER_BID_REQUEST.uspConsent);
+    })
 
     it('Returns valid URL', function () {
       expect(request.url).to.equal('https://us-e-node1.bizzclick.com/bid?rtb_seat_id=prebidjs&secret_key=accountId');

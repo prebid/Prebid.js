@@ -21,7 +21,7 @@ export const spec = {
   buildRequests: function (validRequest, bidderRequest) {
     const payload = {
       imps: [],
-      fpd: config.getConfig('fpd')
+      fpd: config.getLegacyFpd(config.getConfig('ortb2'))
     };
     let endpointUrl;
     if (bidderRequest) {
@@ -42,7 +42,11 @@ export const spec = {
       }
     }
     validRequest.forEach((bid) => {
-      payload.imps.push(bid);
+      let imp = {};
+      Object.keys(bid).forEach(key => {
+        (key === 'ortb2Imp') ? imp.fpd = config.getLegacyImpFpd(bid[key]) : imp[key] = bid[key];
+      });
+      payload.imps.push(imp);
     });
     const payloadString = JSON.stringify(payload);
     return {
@@ -71,6 +75,10 @@ export const spec = {
           currency: bidResponse.currency,
           vastUrl: bidResponse.vastUrl,
           dealId: bidResponse.dealId,
+          /**
+          * currently includes meta.advertiserDomains ; networkId ; advertiserId
+          */
+          meta: bidResponse.meta,
         };
         bidResponses.push(bidResp);
       });

@@ -7,8 +7,8 @@ import {
   deepSetValue,
   inIframe,
   isArrayOfNums,
+  isFn,
   isInteger,
-  isNumber,
   isStr,
   logError,
   parseQueryStringParameters,
@@ -149,7 +149,22 @@ export const spec = {
 
 function buildVideoParams(videoMediaType, videoParams) {
   videoMediaType = videoMediaType || {};
-  const params = pick(videoMediaType, ['api', 'mimes', 'protocols', 'playbackmethod']);
+  const params = pick(videoMediaType, [
+    'mimes',
+    'minduration',
+    'maxduration',
+    'protocols',
+    'startdelay',
+    'placement',
+    'skip',
+    'skipafter',
+    'minbitrate',
+    'maxbitrate',
+    'delivery',
+    'playbackmethod',
+    'api',
+    'linearity',
+  ]);
 
   switch (videoMediaType.context) {
     case 'instream':
@@ -185,9 +200,16 @@ function buildImp(bid) {
     imp.video = buildVideoParams(bid.mediaTypes.video, bid.params.video);
   }
 
-  const bidFloor = bid.params.bidFloor;
-  if (isNumber(bidFloor)) {
-    imp.bidfloor = bidFloor;
+  if (isFn(bid.getFloor)) {
+    const { floor } = bid.getFloor({
+      mediaType: bid.mediaTypes.banner ? 'banner' : 'video',
+      size: '*',
+      currency: 'USD',
+    });
+
+    if (floor) {
+      imp.bidfloor = floor;
+    }
   }
 
   const pos = bid.params.position;

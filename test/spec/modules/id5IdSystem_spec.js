@@ -144,26 +144,26 @@ describe('ID5 ID System', function() {
       expect(request.withCredentials).to.be.true;
       expect(requestBody.partner).to.eq(ID5_TEST_PARTNER_ID);
       expect(requestBody.o).to.eq('pbjs');
-      expect(requestBody.pd).to.eq('');
-      expect(requestBody.s).to.eq('');
-      expect(requestBody.provider).to.eq('');
+      expect(requestBody.pd).to.be.undefined;
+      expect(requestBody.s).to.be.undefined;
+      expect(requestBody.provider).to.be.undefined
       expect(requestBody.v).to.eq('$prebid.version$');
       expect(requestBody.gdpr).to.exist;
-      expect(requestBody.gdpr_consent).to.exist
-      expect(requestBody.us_privacy).to.exist;
+      expect(requestBody.gdpr_consent).to.be.undefined;
+      expect(requestBody.us_privacy).to.be.undefined;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
       expect(callbackSpy.calledOnce).to.be.true;
       expect(callbackSpy.lastCall.lastArg).to.deep.equal(ID5_JSON_RESPONSE);
     });
 
-    it('should call the ID5 server with empty signature field when no stored object', function () {
+    it('should call the ID5 server with no signature field when no stored object', function () {
       let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, undefined).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
       let requestBody = JSON.parse(request.requestBody);
-      expect(requestBody.s).to.eq('');
+      expect(requestBody.s).to.be.undefined;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
@@ -195,7 +195,7 @@ describe('ID5 ID System', function() {
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
 
-    it('should call the ID5 server with empty pd field when pd config is not set', function () {
+    it('should call the ID5 server with no pd field when pd config is not set', function () {
       let id5Config = getId5FetchConfig();
       id5Config.params.pd = undefined;
 
@@ -204,7 +204,7 @@ describe('ID5 ID System', function() {
 
       let request = server.requests[0];
       let requestBody = JSON.parse(request.requestBody);
-      expect(requestBody.pd).to.eq('');
+      expect(requestBody.pd).to.be.undefined;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
@@ -449,7 +449,7 @@ describe('ID5 ID System', function() {
   describe('A/B Testing', function() {
     const expectedDecodedObjectWithIdAbOff = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE } } };
     const expectedDecodedObjectWithIdAbOn = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE, abTestingControlGroup: false } } };
-    const expectedDecodedObjectWithoutIdAbOn = { id5id: { uid: 0, ext: { linkType: 0, abTestingControlGroup: true } } };
+    const expectedDecodedObjectWithoutIdAbOn = { id5id: { uid: '', ext: { linkType: 0, abTestingControlGroup: true } } };
     let testConfig;
 
     beforeEach(function() {
@@ -505,7 +505,6 @@ describe('ID5 ID System', function() {
           let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
           expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
           sinon.assert.notCalled(logErrorSpy);
-          sinon.assert.notCalled(logInfoSpy);
         });
       });
 
@@ -523,7 +522,6 @@ describe('ID5 ID System', function() {
           testConfig.params.abTesting = testAbTestingConfig;
           id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
           sinon.assert.notCalled(logErrorSpy);
-          sinon.assert.calledOnce(logInfoSpy);
         });
       });
     });

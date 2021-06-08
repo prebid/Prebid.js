@@ -420,6 +420,7 @@ export const spec = {
         currency: princingData.currency,
         netRevenue: true,
         ttl: 360,
+        meta: { advertiserDomains: princingData.adomain && utils.isArray(princingData.adomain) ? princingData.adomain : [] },
         dealId: dealId,
         campaignId: campaignId,
         bannerId: bannerId

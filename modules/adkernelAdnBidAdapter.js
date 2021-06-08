@@ -1,11 +1,13 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
 const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
 const DEFAULT_APIS = [1, 2];
+const GVLID = 14;
 
 function isRtbDebugEnabled(refInfo) {
   return refInfo.referer.indexOf('adk_debug=true') !== -1;
@@ -16,13 +18,15 @@ function buildImp(bidRequest) {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode
   };
+  let mediaType;
   let bannerReq = utils.deepAccess(bidRequest, `mediaTypes.banner`);
   let videoReq = utils.deepAccess(bidRequest, `mediaTypes.video`);
   if (bannerReq) {
     let sizes = canonicalizeSizesArray(bannerReq.sizes);
     imp.banner = {
       format: utils.parseSizesInput(sizes)
-    }
+    };
+    mediaType = BANNER;
   } else if (videoReq) {
     let size = canonicalizeSizesArray(videoReq.playerSize)[0];
     imp.video = {
@@ -32,6 +36,11 @@ function buildImp(bidRequest) {
       protocols: videoReq.protocols || DEFAULT_PROTOCOLS,
       api: videoReq.api || DEFAULT_APIS
     };
+    mediaType = VIDEO;
+  }
+  let bidFloor = getBidFloor(bidRequest, mediaType, '*');
+  if (bidFloor) {
+    imp.bidfloor = bidFloor;
   }
   return imp;
 }
@@ -67,6 +76,9 @@ function buildRequestParams(tags, bidderRequest) {
   if (uspConsent) {
     utils.deepSetValue(req, 'user.us_privacy', uspConsent);
   }
+  if (config.getConfig('coppa')) {
+    utils.deepSetValue(req, 'user.coppa', 1);
+  }
   return req;
 }
 
@@ -91,13 +103,17 @@ function buildBid(tag) {
     requestId: tag.impid,
     bidderCode: spec.code,
     cpm: tag.bid,
-    width: tag.w,
-    height: tag.h,
     creativeId: tag.crid,
     currency: 'USD',
     ttl: 720,
     netRevenue: true
   };
+  if (tag.w) {
+    bid.width = tag.w;
+  }
+  if (tag.h) {
+    bid.height = tag.h;
+  }
   if (tag.tag) {
     bid.ad = tag.tag;
     bid.mediaType = BANNER;
@@ -105,11 +121,46 @@ function buildBid(tag) {
     bid.vastUrl = tag.vast_url;
     bid.mediaType = VIDEO;
   }
+  fillBidMeta(bid, tag);
   return bid;
+}
+
+function fillBidMeta(bid, tag) {
+  if (utils.isStr(tag.agencyName)) {
+    utils.deepSetValue(bid, 'meta.agencyName', tag.agencyName);
+  }
+  if (utils.isNumber(tag.advertiserId)) {
+    utils.deepSetValue(bid, 'meta.advertiserId', tag.advertiserId);
+  }
+  if (utils.isStr(tag.advertiserName)) {
+    utils.deepSetValue(bid, 'meta.advertiserName', tag.advertiserName);
+  }
+  if (utils.isArray(tag.advertiserDomains)) {
+    utils.deepSetValue(bid, 'meta.advertiserDomains', tag.advertiserDomains);
+  }
+  if (utils.isStr(tag.primaryCatId)) {
+    utils.deepSetValue(bid, 'meta.primaryCatId', tag.primaryCatId);
+  }
+  if (utils.isArray(tag.secondaryCatIds)) {
+    utils.deepSetValue(bid, 'meta.secondaryCatIds', tag.secondaryCatIds);
+  }
+}
+
+function getBidFloor(bid, mediaType, sizes) {
+  var floor;
+  var size = sizes.length === 1 ? sizes[0] : '*';
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor;
 }
 
 export const spec = {
   code: 'adkernelAdn',
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['engagesimply'],
 

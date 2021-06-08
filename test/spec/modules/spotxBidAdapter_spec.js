@@ -102,7 +102,7 @@ describe('the spotx adapter', function () {
     it('should build a very basic request', function() {
       var request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345');
+      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345?src_sys=prebid');
       expect(request.bidRequest).to.equal(bidRequestObj);
       expect(request.data.id).to.equal(12345);
       expect(request.data.ext.wrap_response).to.equal(1);
@@ -378,6 +378,32 @@ describe('the spotx adapter', function () {
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
       expect(request.data.site.page).to.equal('prebid.js');
+    });
+
+    it('should set ext.wrap_response to 0 when cache url is set and ignoreBidderCacheKey is true', function() {
+      var request;
+
+      var origGetConfig = config.getConfig;
+      sinon.stub(config, 'getConfig').callsFake(function (key) {
+        if (key === 'cache') {
+          return {
+            url: 'prebidCacheLocation',
+            ignoreBidderCacheKey: true
+          };
+        }
+        if (key === 'cache.url') {
+          return 'prebidCacheLocation';
+        }
+        if (key === 'cache.ignoreBidderCacheKey') {
+          return true;
+        }
+        return origGetConfig.apply(config, arguments);
+      });
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.ext.wrap_response).to.equal(0);
+      config.getConfig.restore();
     });
   });
 

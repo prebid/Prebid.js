@@ -1,13 +1,27 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 
-const BIDDER_CODE = 'brightmountainmedia';
-const AD_URL = 'https://console.brightmountainmedia.com/hb/bid';
+const BIDDER_CODE = 'bmtm';
+const AD_URL = 'https://one.elitebidder.com/api/hb';
+const SYNC_URL = 'https://console.brightmountainmedia.com:8443/cookieSync';
+
+const videoExt = [
+  'video/x-ms-wmv',
+  'video/x-flv',
+  'video/mp4',
+  'video/3gpp',
+  'application/x-mpegURL',
+  'video/quicktime',
+  'video/x-msvideo',
+  'application/x-shockwave-flash',
+  'application/javascript'
+];
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  aliases: ['brightmountainmedia'],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid) => {
     return Boolean(bid.bidId && bid.params && bid.params.placement_id);
@@ -41,13 +55,56 @@ export const spec = {
     }
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
       let placement = {
         placementId: bid.params.placement_id,
         bidId: bid.bidId,
-        sizes: bid.mediaTypes[traff].sizes,
-        traffic: traff
+        floor: {},
       };
+
+      if (bid.mediaTypes.hasOwnProperty(BANNER)) {
+        placement['traffic'] = BANNER;
+        if (bid.mediaTypes.banner.sizes) {
+          placement['sizes'] = bid.mediaTypes.banner.sizes;
+        }
+      }
+
+      if (bid.mediaTypes.hasOwnProperty(VIDEO)) {
+        placement['traffic'] = VIDEO;
+        if (bid.mediaTypes.video.context) {
+          placement['context'] = bid.mediaTypes.video.context;
+        }
+        if (bid.mediaTypes.video.playerSize) {
+          placement['sizes'] = bid.mediaTypes.video.playerSize;
+        }
+        if (bid.mediaTypes.video.mimes && Array.isArray(bid.mediaTypes.video.mimes)) {
+          placement['mimes'] = bid.mediaTypes.video.mimes;
+        } else {
+          placement['mimes'] = videoExt;
+        }
+        if (bid.mediaTypes.video.skip != undefined) {
+          placement['skip'] = bid.mediaTypes.video.skip;
+        }
+        if (bid.mediaTypes.video.playbackmethod && Array.isArray(bid.mediaTypes.video.playbackmethod)) {
+          placement['playbackmethod'] = bid.mediaTypes.video.playbackmethod;
+        }
+      }
+
+      if (typeof bid.getFloor === 'function') {
+        let floorInfo = {};
+
+        for (let size of placement['sizes']) {
+          floorInfo = bid.getFloor({
+            currency: 'USD',
+            mediaType: placement['traffic'],
+            size: size,
+          });
+
+          if (typeof floorInfo === 'object' && floorInfo.currency === 'USD') {
+            placement.floor[`${size[0]}x${size[1]}`] = parseFloat(floorInfo.floor);
+          }
+        }
+      }
+
       if (bid.schain) {
         placement.schain = bid.schain;
       }
@@ -61,25 +118,42 @@ export const spec = {
   },
 
   interpretResponse: (serverResponse) => {
-    let response = [];
-    try {
-      serverResponse = serverResponse.body;
-      for (let i = 0; i < serverResponse.length; i++) {
-        let resItem = serverResponse[i];
+    let bidResponse = [];
+    const response = serverResponse.body;
+    if (response && Array.isArray(response) && response.length > 0) {
+      for (let i = 0; i < response.length; i++) {
+        if (response[i].cpm > 0) {
+          const tempResponse = {
+            requestId: response[i].requestId,
+            width: response[i].width,
+            height: response[i].height,
+            cpm: response[i].cpm,
+            mediaType: response[i].mediaType,
+            creativeId: response[i].creativeId,
+            currency: response[i].currency,
+            netRevenue: response[i].netRevenue,
+            ttl: response[i].ttl,
+            ad: response[i].ad,
+            meta: {
+              advertiserDomains: response[i].adomain && response[i].adomain.length ? response[i].adomain : [],
+            }
+          };
 
-        response.push(resItem);
+          if (response[i].mediaType && response[i].mediaType === 'video') {
+            response[i].vastXml = response[i].ad;
+          }
+          bidResponse.push(tempResponse);
+        }
       }
-    } catch (e) {
-      utils.logMessage(e);
-    };
-    return response;
+    }
+    return bidResponse;
   },
 
   getUserSyncs: (syncOptions) => {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: 'https://console.brightmountainmedia.com:8443/cookieSync'
+        url: SYNC_URL
       }];
     }
   },

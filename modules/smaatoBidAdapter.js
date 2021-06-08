@@ -5,75 +5,22 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const CLIENT = 'prebid_js_$prebid.version$_1.0'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.2'
 
-/**
-* Transform BidRequest to OpenRTB-formatted BidRequest Object
-* @param {Array<BidRequest>} validBidRequests
-* @param {any} bidderRequest
-* @returns {string}
-*/
-const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
-  /**
-   * Turn incoming prebid sizes into openRtb format mapping.
-   * @param {*} sizes in format [[10, 10], [20, 20]]
-   * @returns array of openRtb format mappings [{w: 10, h: 10}, {w: 20, h: 20}]
-   */
-  const parseSizes = (sizes) => {
-    return sizes.map((size) => {
-      return {w: size[0], h: size[1]};
-    })
-  }
-
-  const imp = validBidRequests.map(br => {
-    const bannerMediaType = utils.deepAccess(br, 'mediaTypes.banner');
-    const videoMediaType = utils.deepAccess(br, 'mediaTypes.video');
-    let result = {
-      id: br.bidId,
-      tagid: utils.deepAccess(br, 'params.adspaceId')
-    }
-
-    if (bannerMediaType) {
-      const sizes = parseSizes(utils.getAdUnitSizes(br));
-      result.banner = {
-        w: sizes[0].w,
-        h: sizes[0].h,
-        format: sizes
-      }
-    }
-
-    if (videoMediaType) {
-      result.video = {
-        mimes: videoMediaType.mimes,
-        minduration: videoMediaType.minduration,
-        startdelay: videoMediaType.startdelay,
-        linearity: videoMediaType.linearity,
-        w: videoMediaType.playerSize[0][0],
-        h: videoMediaType.playerSize[0][1],
-        maxduration: videoMediaType.maxduration,
-        skip: videoMediaType.skip,
-        protocols: videoMediaType.protocols,
-        ext: {
-          rewarded: videoMediaType.ext && videoMediaType.ext.rewarded ? videoMediaType.ext.rewarded : 0
-        },
-        skipmin: videoMediaType.skipmin,
-        api: videoMediaType.api
-      }
-    }
-
-    return result;
-  });
-
+const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const request = {
     id: bidderRequest.auctionId,
     at: 1,
-    imp,
+    imp: [{
+      id: bidRequest.bidId,
+      tagid: utils.deepAccess(bidRequest, 'params.adspaceId')
+    }],
     cur: ['USD'],
     tmax: bidderRequest.timeout,
     site: {
       id: window.location.hostname,
       publisher: {
-        id: utils.deepAccess(validBidRequests[0], 'params.publisherId')
+        id: utils.deepAccess(bidRequest, 'params.publisherId')
       },
       domain: window.location.hostname,
       page: window.location.href,
@@ -94,12 +41,42 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
       ext: {}
     },
     ext: {
-      client: CLIENT
+      client: SMAATO_CLIENT
     }
   };
 
-  Object.assign(request.user, config.getConfig('fpd.user'));
-  Object.assign(request.site, config.getConfig('fpd.context'));
+  if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
+    const sizes = utils.getAdUnitSizes(bidRequest).map((size) => ({w: size[0], h: size[1]}));
+    request.imp[0].banner = {
+      w: sizes[0].w,
+      h: sizes[0].h,
+      format: sizes
+    }
+  }
+
+  const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
+  if (videoMediaType) {
+    request.imp[0].video = {
+      mimes: videoMediaType.mimes,
+      minduration: videoMediaType.minduration,
+      startdelay: videoMediaType.startdelay,
+      linearity: videoMediaType.linearity,
+      w: videoMediaType.playerSize[0][0],
+      h: videoMediaType.playerSize[0][1],
+      maxduration: videoMediaType.maxduration,
+      skip: videoMediaType.skip,
+      protocols: videoMediaType.protocols,
+      ext: {
+        rewarded: videoMediaType.ext && videoMediaType.ext.rewarded ? videoMediaType.ext.rewarded : 0
+      },
+      skipmin: videoMediaType.skipmin,
+      api: videoMediaType.api
+    }
+  }
+
+  let ortb2 = config.getConfig('ortb2') || {};
+  Object.assign(request.user, ortb2.user);
+  Object.assign(request.site, ortb2.site);
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
@@ -110,20 +87,19 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
-  if (utils.deepAccess(validBidRequests[0], 'params.app')) {
-    const geo = utils.deepAccess(validBidRequests[0], 'params.app.geo');
+  if (utils.deepAccess(bidRequest, 'params.app')) {
+    const geo = utils.deepAccess(bidRequest, 'params.app.geo');
     utils.deepSetValue(request, 'device.geo', geo);
-    const ifa = utils.deepAccess(validBidRequests[0], 'params.app.ifa')
+    const ifa = utils.deepAccess(bidRequest, 'params.app.ifa')
     utils.deepSetValue(request, 'device.ifa', ifa);
   }
 
-  const eids = utils.deepAccess(validBidRequests[0], 'userIdAsEids');
+  const eids = utils.deepAccess(bidRequest, 'userIdAsEids');
   if (eids && eids.length) {
     utils.deepSetValue(request, 'user.ext.eids', eids);
   }
 
-  utils.logInfo('[SMAATO] OpenRTB Request:', request);
-  return JSON.stringify(request);
+  return request
 }
 
 export const spec = {
@@ -131,41 +107,41 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
-      * Determines whether or not the given bid request is valid.
-      *
-      * @param {BidRequest} bid The bid params to validate.
-      * @return boolean True if this is a valid bid, and false otherwise.
-      */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: (bid) => {
     return typeof bid.params === 'object' &&
-           typeof bid.params.publisherId === 'string' &&
-           typeof bid.params.adspaceId === 'string';
+      typeof bid.params.publisherId === 'string' &&
+      typeof bid.params.adspaceId === 'string';
   },
 
-  /**
-      * Make a server request from the list of BidRequests.
-      *
-      * @param {validBidRequests[]} - an array of bids
-      * @return ServerRequest Info describing the request to the server.
-      */
   buildRequests: (validBidRequests, bidderRequest) => {
-    utils.logInfo('[SMAATO] Client version:', CLIENT);
-    return {
-      method: 'POST',
-      url: validBidRequests[0].params.endpoint || SMAATO_ENDPOINT,
-      data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest),
-      options: {
-        withCredentials: true,
-        crossOrigin: true,
-      }
-    };
+    utils.logInfo('[SMAATO] Client version:', SMAATO_CLIENT);
+
+    return validBidRequests.map((validBidRequest) => {
+      const openRtbBidRequest = buildOpenRtbBidRequest(validBidRequest, bidderRequest);
+      utils.logInfo('[SMAATO] OpenRTB Request:', openRtbBidRequest);
+
+      return {
+        method: 'POST',
+        url: validBidRequest.params.endpoint || SMAATO_ENDPOINT,
+        data: JSON.stringify(openRtbBidRequest),
+        options: {
+          withCredentials: true,
+          crossOrigin: true,
+        }
+      };
+    });
   },
   /**
-      * Unpack the response from the server into a list of bids.
-      *
-      * @param {ServerResponse} serverResponse A successful response from the server.
-      * @return {Bid[]} An array of bids which were nested inside the server.
-      */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: (serverResponse, bidRequest) => {
     // response is empty (HTTP 204)
     if (utils.isEmpty(serverResponse.body)) {
@@ -233,15 +209,14 @@ export const spec = {
   },
 
   /**
-      * Register the user sync pixels which should be dropped after the auction.
-      *
-      * @param {SyncOptions} syncOptions Which user syncs are allowed?
-      * @param {ServerResponse[]} serverResponses List of server's responses.
-      * @return {UserSync[]} The user syncs which should be dropped.
-      */
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    const syncs = []
-    return syncs;
+    return [];
   }
 }
 registerBidder(spec);

@@ -34,6 +34,7 @@ export const spec = {
     const payload = {
       slots: slots,
       parameters: commonParams,
+      vastContentAsUrl: true,
       user: {
         ext: {
           eids: getEids(validBidRequests),
@@ -95,7 +96,7 @@ function adResponse(bid, ad) {
 
   const bidResponse = getbaseAdResponse({
     requestId: bid.bidId,
-    mediaType: getMediaType(markup),
+    mediaType: ad.extension.mediaType,
     cpm: Number(price.amount),
     currency: price.currency,
     width: Number(ad.width),
@@ -110,7 +111,11 @@ function adResponse(bid, ad) {
   });
 
   if (bidResponse.mediaType === VIDEO) {
-    bidResponse.vastXml = markup;
+    if (ad.cachedBodyUrl) {
+      bidResponse.vastUrl = ad.cachedBodyUrl
+    } else {
+      bidResponse.vastXml = markup;
+    }
   } else {
     const counter = ad.impressionCounter ? "<img src='" + ad.impressionCounter + "' style='height:1px; width:1px; margin: -1px -1px; display:none;'/>" : '';
     bidResponse.ad = markup + counter;
@@ -170,11 +175,6 @@ function getbaseAdResponse(response) {
 
 function isAdheseAd(ad) {
   return !ad.origin || ad.origin === 'JERLICIA';
-}
-
-function getMediaType(markup) {
-  const isVideo = markup.trim().toLowerCase().match(/<\?xml|<vast/);
-  return isVideo ? VIDEO : BANNER;
 }
 
 function getAdMarkup(ad) {
