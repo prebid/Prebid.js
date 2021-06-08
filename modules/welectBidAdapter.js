@@ -84,7 +84,21 @@ export const spec = {
     }
 
     const bidResponses = [];
-    const bidResponse = responseBody.bidResponse;
+    const bidResponse = {
+      requestId: responseBody.bidResponse.requestId,
+      cpm: responseBody.bidResponse.cpm,
+      width: responseBody.bidResponse.width,
+      height: responseBody.bidResponse.height,
+      creativeId: responseBody.bidResponse.creativeId,
+      currency: responseBody.bidResponse.currency,
+      netRevenue: responseBody.bidResponse.netRevenue,
+      ttl: responseBody.bidResponse.ttl,
+      ad: responseBody.bidResponse.ad,
+      vastUrl: responseBody.bidResponse.vastUrl,
+      meta: {
+        advertiserDomains: responseBody.bidResponse.meta.advertiserDomains
+      }
+    };
     bidResponses.push(bidResponse);
     return bidResponses;
   },
