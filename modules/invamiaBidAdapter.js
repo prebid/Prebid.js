@@ -4,8 +4,6 @@ import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'invamia';
 const ENDPOINT_URL = 'https://ad.invamia.com/delivery/impress';
 
-let cachedBidRequestParams;
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -25,49 +23,59 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
-    const bidRequest = validBidRequests[0];
-    const {bidId, mediaTypes: {banner: {sizes: [[width, height]]}}} = bidRequest;
+    let serverRequests = [];
 
-    cachedBidRequestParams = {bidId, width, height};
+    validBidRequests.forEach(bidRequest => {
+      const sizes = bidRequest.mediaTypes.banner.sizes;
 
-    const payload = {
-      ctype: 'div',
-      pzoneid: bidRequest.params.zoneId,
-      width,
-      height,
-    };
+      sizes.forEach(([width, height]) => {
+        bidRequest.params.requestedSizes = [width, height];
 
-    const payloadString = Object.keys(payload).map(k => k + '=' + encodeURIComponent(payload[k])).join('&');
+        const payload = {
+          ctype: 'div',
+          pzoneid: bidRequest.params.zoneId,
+          width,
+          height,
+        };
 
-    return {
-      method: 'GET',
-      url: ENDPOINT_URL,
-      data: payloadString,
-    };
+        const payloadString = Object.keys(payload).map(k => k + '=' + encodeURIComponent(payload[k])).join('&');
+
+        serverRequests.push({
+          method: 'GET',
+          url: ENDPOINT_URL,
+          data: payloadString,
+          bidderRequest: bidRequest,
+        });
+      });
+    });
+
+    return serverRequests;
   },
   /**
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {BidRequest} bidderRequest A matched bid request for this response.
    * @return Array<BidResponse> An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, {bidderRequest}) {
     const response = serverResponse.body;
     const bidResponses = [];
 
     if (response && response.template && response.template.html) {
-      const {bidId, width, height} = cachedBidRequestParams;
+      const {bidId} = bidderRequest;
+      const [width, height] = bidderRequest.params.requestedSizes;
 
       const bidResponse = {
         requestId: bidId,
         cpm: response.hb.cpm,
-        width: width,
-        height: height,
         creativeId: response.banner.hash,
         currency: 'USD',
         netRevenue: response.hb.netRevenue,
         ttl: 600,
         ad: response.template.html,
+        width,
+        height,
       };
 
       bidResponses.push(bidResponse);
