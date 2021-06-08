@@ -95,6 +95,9 @@ export const spec = {
       ttl: responseBody.bidResponse.ttl,
       ad: responseBody.bidResponse.ad,
       vastUrl: responseBody.bidResponse.vastUrl,
+      meta: {
+        advertiserDomains: responseBody.bidResponse.meta.advertiserDomains
+      }
     };
     bidResponses.push(bidResponse);
     return bidResponses;
