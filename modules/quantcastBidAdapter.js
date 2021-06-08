@@ -11,7 +11,6 @@ const DEFAULT_BID_FLOOR = 0.0000000001;
 const QUANTCAST_VENDOR_ID = '11';
 // Check other required purposes on server
 const PURPOSE_DATA_COLLECT = '1';
-const VIDEO_PROPS_TO_REMOVE = ['context', 'playerSize'];
 
 export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
 export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
@@ -33,14 +32,25 @@ function makeVideoImp(bid) {
     video.w = video.playerSize[0];
     video.h = video.playerSize[1];
   }
-  for (const prop of VIDEO_PROPS_TO_REMOVE) {
-    if (video.hasOwnProperty(prop)) {
-      delete video[prop];
-    }
+  const videoCopy = {
+    mimes: video.mimes,
+    minduration: video.minduration,
+    maxduration: video.maxduration,
+    protocols: video.protocols,
+    startdelay: video.startdelay,
+    linearity: video.linearity,
+    battr: video.battr,
+    maxbitrate: video.maxbitrate,
+    playbackmethod: video.playbackmethod,
+    delivery: video.delivery,
+    placement: video.placement,
+    api: video.api,
+    w: video.w,
+    h: video.h
   }
 
   return {
-    video: video,
+    video: videoCopy,
     placementCode: bid.placementCode,
     bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
   };
