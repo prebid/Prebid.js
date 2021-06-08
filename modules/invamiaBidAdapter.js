@@ -4,6 +4,8 @@ import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'invamia';
 const ENDPOINT_URL = 'https://ad.invamia.com/delivery/impress';
 
+let cachedBidRequestParams;
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -26,7 +28,7 @@ export const spec = {
     const bidRequest = validBidRequests[0];
     const {bidId, mediaTypes: {banner: {sizes: [[width, height]]}}} = bidRequest;
 
-    window.invamiaBidRequest = {bidId, width, height};
+    cachedBidRequestParams = {bidId, width, height};
 
     const payload = {
       ctype: 'div',
@@ -54,7 +56,7 @@ export const spec = {
     const bidResponses = [];
 
     if (response && response.template && response.template.html) {
-      const {bidId, width, height} = window.invamiaBidRequest;
+      const {bidId, width, height} = cachedBidRequestParams;
 
       const bidResponse = {
         requestId: bidId,
