@@ -39,6 +39,7 @@
     "dgkeywordRtdProvider",
     "geoedgeRtdProvider",
     "haloRtdProvider",
+    "iasRtdProvider",
     "jwplayerRtdProvider",
     "optimeraRtdProvider",
     "permutiveRtdProvider",
