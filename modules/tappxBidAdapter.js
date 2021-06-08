@@ -13,6 +13,30 @@ const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream'];
 
+const DATA_TYPES = {
+  'NUMBER': 'number',
+  'STRING': 'string',
+  'BOOLEAN': 'boolean',
+  'ARRAY': 'array',
+  'OBJECT': 'object'
+};
+const VIDEO_CUSTOM_PARAMS = {
+  'minduration': DATA_TYPES.NUMBER,
+  'maxduration': DATA_TYPES.NUMBER,
+  'startdelay': DATA_TYPES.NUMBER,
+  'playbackmethod': DATA_TYPES.ARRAY,
+  'api': DATA_TYPES.ARRAY,
+  'protocols': DATA_TYPES.ARRAY,
+  'w': DATA_TYPES.NUMBER,
+  'h': DATA_TYPES.NUMBER,
+  'battr': DATA_TYPES.ARRAY,
+  'linearity': DATA_TYPES.NUMBER,
+  'placement': DATA_TYPES.NUMBER,
+  'minbitrate': DATA_TYPES.NUMBER,
+  'maxbitrate': DATA_TYPES.NUMBER,
+  'skip': DATA_TYPES.NUMBER
+}
+
 var hostDomain;
 
 export const spec = {
@@ -268,10 +292,21 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   if (videoMediaType) {
     let video = {};
-    w = videoMediaType.playerSize[0][0];
-    h = videoMediaType.playerSize[0][1];
-    video.w = w;
-    video.h = h;
+
+    let videoParams = utils.deepAccess(validBidRequests, 'params.video');
+    for (var key in VIDEO_CUSTOM_PARAMS) {
+      if (videoParams.hasOwnProperty(key)) {
+        video[key] = _checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
+      }
+    }
+
+    if( ( video.w === undefined || video.w == null || video.w <= 0) ||
+        ( video.h === undefined || video.h == null || video.h <= 0)){
+        w = videoMediaType.playerSize[0][0];
+        h = videoMediaType.playerSize[0][1];
+        video.w = w;
+        video.h = h;
+      }
 
     video.mimes = videoMediaType.mimes;
 
@@ -420,6 +455,30 @@ export function _getHostInfo(validBidRequests) {
   }
 
   return domainInfo;
+}
+
+export function _checkParamDataType(key, value, datatype) {
+  var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
+  var functionToExecute;
+  switch (datatype) {
+    case DATA_TYPES.BOOLEAN:
+      functionToExecute = utils.isBoolean;
+      break;
+    case DATA_TYPES.NUMBER:
+      functionToExecute = utils.isNumber;
+      break;
+    case DATA_TYPES.STRING:
+      functionToExecute = utils.isStr;
+      break;
+    case DATA_TYPES.ARRAY:
+      functionToExecute = utils.isArray;
+      break;
+  }
+  if (functionToExecute(value)) {
+    return value;
+  }
+  utils.logWarn(LOG_PREFIX, errMsg);
+  return undefined;
 }
 
 registerBidder(spec);
