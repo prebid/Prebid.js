@@ -125,6 +125,13 @@ function getDefaultBidderFn (bidder) {
       }
 
       return bid
+    },
+    pubmatic: function(bid, data, acEnabled) {
+      let segmentData = [];
+      data.ac.forEach(item => {
+        segmentData.push({ id: item });
+      });
+      deepSetValue(bid, 'params.permutiveData', segmentData)
     }
   }
 

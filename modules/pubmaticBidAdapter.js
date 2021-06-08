@@ -113,6 +113,8 @@ const FLOC_FORMAT = {
   'EID': 1,
   'SEGMENT': 2
 }
+
+const PERMUTIVE_SEGMENT_NAME = 'permutiveDataProvider.com';
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -737,6 +739,23 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
+function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
+  // fpdUserData - data set from global and bidder level configs
+  // segmentData - data set from permutive
+  if (!fpdUserData.data && segmentData.length > 0) {
+    fpdUserData.data = [{
+      name: PERMUTIVE_SEGMENT_NAME,
+      segment: []
+    }]
+  }
+  for (var id in fpdUserData.data) {
+    if (fpdUserData.data[id].name === PERMUTIVE_SEGMENT_NAME) {
+      var mergedArr = utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment.concat(segmentData), 'id');
+      fpdUserData.data[id].segment = mergedArr;
+    }
+  }
+}
+
 function _getFlocId(validBidRequests, flocFormat) {
   var flocIdObject = null;
   var flocId = utils.deepAccess(validBidRequests, '0.userId.flocId');
@@ -1105,9 +1124,16 @@ export const spec = {
     _handleFlocId(payload, validBidRequests);
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
+    const segmentData = utils.deepAccess(validBidRequests, '0.params.permutiveData');
+    _populateSegmentDataIfAvailable(commonFpd.user, segmentData);
+
     if (commonFpd.site) {
       utils.mergeDeep(payload, {site: commonFpd.site});
     }
+    /*if (segmentData && segmentData.data) {
+      commonFpd.user.data = segmentData.data;
+    }*/
+
     if (commonFpd.user) {
       utils.mergeDeep(payload, {user: commonFpd.user});
     }

@@ -1288,3 +1288,16 @@ export function cyrb53Hash(str, seed = 0) {
   h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
 }
+
+export function removeDuplicatesFromObjectArray(array, key) {
+  // function to remove duplicates from a singel level object array
+  // object type in array is  { id: value }
+  for (var i = 0; i < array.length; ++i) {
+    for (var j = i + 1; j < array.length; ++j) {
+      if (array[i][key] === array[j][key]) {
+        array.splice(j--, 1);
+      }
+    }
+  }
+  return array;
+}
