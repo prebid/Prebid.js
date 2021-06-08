@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.10526';
+const TAPPX_BIDDER_VERSION = '0.1.10607';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream'];
@@ -374,9 +374,11 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
+  let pbjsv = ($$PREBID_GLOBAL$$.version != null) ? encodeURIComponent($$PREBID_GLOBAL$$.version) : -1;
+
   return {
     method: 'POST',
-    url: `${hostInfo.url}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
+    url: `${hostInfo.url}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}&pbjsv=${pbjsv}`,
     data: JSON.stringify(payload),
     bids: validBidRequests
   };
