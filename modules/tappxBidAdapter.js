@@ -192,7 +192,7 @@ function interpretBid(serverBid, request) {
 * @return response ad
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
-  let hostInfo = getHostInfo(validBidRequests);
+  let hostInfo = _getHostInfo(validBidRequests);
   const ENDPOINT = hostInfo.endpoint;
   hostDomain = hostInfo.domain;
 
@@ -392,7 +392,7 @@ function getOs() {
   if (ua == null) { return 'unknown'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'ios'; } else if (ua.match(/Android/)) { return 'android'; } else if (ua.match(/Window/)) { return 'windows'; } else { return 'unknown'; }
 }
 
-function getHostInfo(validBidRequests) {
+export function _getHostInfo(validBidRequests) {
   let domainInfo = {};
   let endpoint = utils.deepAccess(validBidRequests, 'params.endpoint');
   let hostParam = utils.deepAccess(validBidRequests, 'params.host');

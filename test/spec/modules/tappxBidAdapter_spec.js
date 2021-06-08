@@ -1,5 +1,6 @@
 import { assert } from 'chai';
-import { spec } from 'modules/tappxBidAdapter';
+import { spec } from 'modules/tappxBidAdapter.js';
+import { _getHostInfo } from '../../../modules/tappxBidAdapter.js';
 
 const c_BIDREQUEST = {
   data: {
@@ -355,5 +356,37 @@ describe('Tappx bid adapter', function () {
       payload = JSON.parse(request[0].data);
       expect(payload.imp[0].bidfloor).to.equal(1.23);
     });
+  })
+
+  describe('_getHostInfo tests', function() {
+    const HOST_VALIDBIDREQ = {};
+    HOST_VALIDBIDREQ.bidder = "tappx";
+    HOST_VALIDBIDREQ.params = {};
+    HOST_VALIDBIDREQ.params.endpoint = "ZZ1234PBJS";
+
+    it('Test testing endpoints', function() {
+      let testHostValidRequest = HOST_VALIDBIDREQ;
+      testHostValidRequest.params.host = "testing.xxx.tappx.com\/rtb\/v2\/";
+      let testHostObject = _getHostInfo(testHostValidRequest);
+      assert.isObject(testHostObject);
+      expect(testHostObject.newEndpoint).to.be.false;
+      expect(testHostObject.endpoint).to.be.equal(testHostValidRequest.params.endpoint);
+    })
+    it('Test classic endpoints', function() {
+      let classicHostValidRequest = HOST_VALIDBIDREQ;
+      classicHostValidRequest.params.host = "xxx.xxx.tappx.com\/rtb\/v2\/";
+      let classicHostObject = _getHostInfo(classicHostValidRequest);
+      assert.isObject(classicHostObject);
+      expect(classicHostObject.newEndpoint).to.be.false;
+      expect(classicHostObject.endpoint).to.be.equal(classicHostValidRequest.params.endpoint);
+    })
+    it('Test new endpoints', function() {
+      let newHostValidRequest = HOST_VALIDBIDREQ;
+      newHostValidRequest.params.host = "zz1111xxx.xxx.tappx.com\/rtb\/v2\/";
+      let newHostObject = _getHostInfo(newHostValidRequest);
+      assert.isObject(newHostObject);
+      expect(newHostObject.newEndpoint).to.be.true;
+      expect(newHostObject.endpoint).to.be.equal('zz1111xxx');
+    })
   })
 });
