@@ -105,8 +105,12 @@ export const spec = {
 
       placement.adTypes.push(5, 9, 163, 2163, 3006);
 
+      placement.properties = placement.properties || {};
+
+      placement.properties.screenWidth = screen.width;
+      placement.properties.screenHeight = screen.height;
+
       if (restrictions.length) {
-        placement.properties = placement.properties || {};
         placement.properties.restrictions = restrictions;
       }
 
@@ -165,6 +169,7 @@ export const spec = {
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 360;
+          bid.meta = { advertiserDomains: decision.adomain ? decision.adomain : [] }
           bid.netRevenue = true;
 
           bidResponses.push(bid);

@@ -253,12 +253,38 @@ describe('emx_digital Adapter', function () {
       expect(queryParams[1]).to.match(new RegExp('^ts=\d*', 'g'));
     });
 
-    it('builds with bid floor', function () {
-      const bidRequestWithBidFloor = utils.deepClone(bidderRequest.bids);
-      bidRequestWithBidFloor[0].params.bidfloor = 1;
-      const requestWithFloor = spec.buildRequests(bidRequestWithBidFloor, bidderRequest);
+    it('builds bidfloor value from bid param when getFloor function does not exist', function () {
+      const bidRequestWithFloor = utils.deepClone(bidderRequest.bids);
+      bidRequestWithFloor[0].params.bidfloor = 1;
+      const requestWithFloor = spec.buildRequests(bidRequestWithFloor, bidderRequest);
       const data = JSON.parse(requestWithFloor.data);
-      expect(data.imp[0].bidfloor).to.equal(bidRequestWithBidFloor[0].params.bidfloor);
+      expect(data.imp[0].bidfloor).to.equal(bidRequestWithFloor[0].params.bidfloor);
+    });
+
+    it('builds bidfloor value from getFloor function when it exists', function () {
+      const floorResponse = { currency: 'USD', floor: 3 };
+      const bidRequestWithGetFloor = utils.deepClone(bidderRequest.bids);
+      bidRequestWithGetFloor[0].getFloor = () => floorResponse;
+      const requestWithGetFloor = spec.buildRequests(bidRequestWithGetFloor, bidderRequest);
+      const data = JSON.parse(requestWithGetFloor.data);
+      expect(data.imp[0].bidfloor).to.equal(3);
+    });
+
+    it('builds bidfloor value from getFloor when both floor and getFloor function exists', function () {
+      const floorResponse = { currency: 'USD', floor: 3 };
+      const bidRequestWithBothFloors = utils.deepClone(bidderRequest.bids);
+      bidRequestWithBothFloors[0].params.bidfloor = 1;
+      bidRequestWithBothFloors[0].getFloor = () => floorResponse;
+      const requestWithBothFloors = spec.buildRequests(bidRequestWithBothFloors, bidderRequest);
+      const data = JSON.parse(requestWithBothFloors.data);
+      expect(data.imp[0].bidfloor).to.equal(3);
+    });
+
+    it('empty bidfloor value when floor and getFloor is not defined', function () {
+      const bidRequestWithoutFloor = utils.deepClone(bidderRequest.bids);
+      const requestWithoutFloor = spec.buildRequests(bidRequestWithoutFloor, bidderRequest);
+      const data = JSON.parse(requestWithoutFloor.data);
+      expect(data.imp[0].bidfloor).to.not.exist;
     });
 
     it('builds request properly', function () {
@@ -470,7 +496,8 @@ describe('emx_digital Adapter', function () {
           'id': '987654321cba',
           'price': 0.5,
           'ttl': 300,
-          'w': 300
+          'w': 300,
+          'adomain': ['example.com']
         }],
         'seat': '1356'
       }, {
@@ -498,7 +525,10 @@ describe('emx_digital Adapter', function () {
       'netRevneue': true,
       'mediaType': 'banner',
       'ad': '<!-- Creative -->',
-      'ttl': 300
+      'ttl': 300,
+      'meta': {
+        'advertiserDomains': ['example.com']
+      }
     }, {
       'requestId': '12819a18-56e1-4256-b836-b69a10202668',
       'cpm': 0.7,
@@ -629,6 +659,14 @@ describe('emx_digital Adapter', function () {
       assert.doesNotThrow(() => spec.interpretResponse({
         body: badAdmServerResponse
       }));
+    });
+
+    it('returns valid advertiser domain', function () {
+      const bidResponse = utils.deepClone(serverResponse);
+      let result = spec.interpretResponse({body: bidResponse});
+      expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
+      // case where adomains are not in request
+      expect(result[1].meta).to.not.exist;
     });
   });
 

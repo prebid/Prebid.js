@@ -199,13 +199,13 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
     let apiName = (cmpVersion === 2) ? '__tcfapi' : '__cmp';
 
-    let callId = Math.random() + '';
     let callName = `${apiName}Call`;
 
     /* Setup up a __cmp function to do the postMessage and stash the callback.
-      This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
+    This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
     if (cmpVersion === 2) {
       window[apiName] = function (cmd, cmpVersion, callback, arg) {
+        let callId = Math.random() + '';
         let msg = {
           [callName]: {
             command: cmd,
@@ -226,6 +226,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
       window[apiName](commandName, cmpVersion, moduleCallback);
     } else {
       window[apiName] = function (cmd, arg, callback) {
+        let callId = Math.random() + '';
         let msg = {
           [callName]: {
             command: cmd,

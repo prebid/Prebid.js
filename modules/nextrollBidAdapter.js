@@ -177,7 +177,7 @@ function _getNativeAssets(mediaTypeNative) {
 }
 
 function _getUser(requests) {
-  const id = utils.deepAccess(requests, '0.userId.nextroll');
+  const id = utils.deepAccess(requests, '0.userId.nextrollId');
   if (id === undefined) {
     return;
   }

@@ -80,7 +80,10 @@ function interpretResponse(placementResponse, bidRequest, bids) {
       width: parseInt(placementResponse.width, 10),
       netRevenue: false,
       ttl: parseInt(placementResponse.ttl),
-      creativeId: placementResponse.crid
+      creativeId: placementResponse.crid,
+      meta: {
+        advertiserDomains: placementResponse.adomain || []
+      }
     };
 
     bids.push(bid);

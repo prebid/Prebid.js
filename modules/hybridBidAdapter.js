@@ -78,7 +78,10 @@ function buildBid(bidData) {
     creativeId: bidData.bidId,
     currency: bidData.currency,
     netRevenue: true,
-    ttl: TTL
+    ttl: TTL,
+    meta: {
+      advertiserDomains: bidData.advertiserDomains || [],
+    }
   };
 
   if (bidData.placement === PLACEMENT_TYPE_VIDEO) {
@@ -164,7 +167,7 @@ function wrapAd(bid, bidData) {
                 parentDocument.style.width = "100%";
             }
             var _content = "${encodeURIComponent(JSON.stringify(bid.inImageContent))}";
-            window._ao_ssp.registerInImage(JSON.parse(decodeURIComponent(_content)));
+            window._hyb_prebid_ssp.registerInImage(JSON.parse(decodeURIComponent(_content)));
         </script>
     </body>
   </html>`;
