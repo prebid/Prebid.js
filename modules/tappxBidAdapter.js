@@ -142,6 +142,10 @@ function validMediaType(bid) {
       utils.logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Only "instream" is suported.');
       return false;
     }
+    if (typeof video.mimes == 'undefined') {
+      utils.logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Mimes param is mandatory.');
+      return false;
+    }
   }
 
   return true;
