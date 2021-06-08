@@ -334,11 +334,20 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // < Params
 
   // > GDPR
+
+  // Universal ID
+  const eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
+  payload.user = {
+    ext: {
+      eids: eidsArr
+    }
+  };
+
   let regs = {};
   regs.gdpr = 0;
   if (!(bidderRequest.gdprConsent == null)) {
     if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') { regs.gdpr = bidderRequest.gdprConsent.gdprApplies; }
-    if (regs.gdpr) { regs.consent = bidderRequest.gdprConsent.consentString; }
+    if (regs.gdpr) { payload.user.ext.consent = bidderRequest.gdprConsent.consentString; }
   }
 
   // CCPA
@@ -351,14 +360,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
   }
-
-  // Universal ID
-  const eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
-  payload.user = {
-    ext: {
-      eids: eidsArr
-    }
-  };
   // < GDPR
 
   // > Payload

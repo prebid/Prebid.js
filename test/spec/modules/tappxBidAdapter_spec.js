@@ -187,7 +187,7 @@ describe('Tappx bid adapter', function () {
       const payload = JSON.parse(request[0].data);
 
       expect(payload.regs.gdpr).to.exist.and.to.be.true;
-      expect(payload.regs.consent).to.exist.and.to.equal(c_CONSENTSTRING);
+      expect(payload.user.ext.consent).to.exist.and.to.equal(c_CONSENTSTRING);
       expect(payload.regs.ext.us_privacy).to.exist;
     });
 
