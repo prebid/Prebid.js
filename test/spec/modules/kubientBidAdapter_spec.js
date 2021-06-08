@@ -2,7 +2,7 @@ import { expect, assert } from 'chai';
 import { spec } from 'modules/kubientBidAdapter.js';
 
 describe('KubientAdapter', function () {
-  let bid = {
+  let bidBanner = {
     bidId: '2dd581a2b6281d',
     bidder: 'kubient',
     bidderRequestId: '145e1d6a7837c9',
@@ -17,6 +17,35 @@ describe('KubientAdapter', function () {
       }
     },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
+    schain: {
+      ver: '1.1',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '0',
+          hp: 1,
+          rid: 'bidrequestid',
+          domain: 'example.com'
+        }
+      ]
+    }
+  };
+  let bidVideo = {
+    bidId: '1dd581a2b6281d',
+    bidder: 'kubient',
+    bidderRequestId: '245e1d6a7837c9',
+    params: {
+      zoneid: '5676',
+      floor: 1.0,
+    },
+    auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d1',
+    mediaTypes: {
+      video: {
+        playerSize: [1280, 720]
+      }
+    },
+    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e61',
     schain: {
       ver: '1.1',
       complete: 1,
@@ -48,11 +77,10 @@ describe('KubientAdapter', function () {
       consentString: consentString,
       gdprApplies: true
     },
-    uspConsent: uspConsentData,
-    bids: [bid]
+    uspConsent: uspConsentData
   };
-  describe('buildRequests', function () {
-    let serverRequests = spec.buildRequests([bid], bidderRequest);
+  describe('buildRequestBanner', function () {
+    let serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequests).to.be.an('array');
     });
@@ -82,13 +110,53 @@ describe('KubientAdapter', function () {
         expect(data.uspConsent).to.exist.and.to.equal(uspConsentData);
         for (let j = 0; j < data['adSlots'].length; j++) {
           let adSlot = data['adSlots'][i];
-          expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'floor', 'sizes', 'schain', 'mediaTypes');
+          expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'floor', 'banner', 'schain');
           expect(adSlot.bidId).to.be.a('string');
           expect(adSlot.zoneId).to.be.a('string');
           expect(adSlot.floor).to.be.a('number');
-          expect(adSlot.sizes).to.be.an('array');
           expect(adSlot.schain).to.be.an('object');
-          expect(adSlot.mediaTypes).to.be.an('object');
+          expect(adSlot.banner).to.be.an('object');
+        }
+      });
+    }
+  });
+  describe('buildRequestVideo', function () {
+    let serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
+    it('Creates a ServerRequest object with method, URL and data', function () {
+      expect(serverRequests).to.be.an('array');
+    });
+    for (let i = 0; i < serverRequests.length; i++) {
+      let serverRequest = serverRequests[i];
+      it('Creates a ServerRequest object with method, URL and data', function () {
+        expect(serverRequest.method).to.be.a('string');
+        expect(serverRequest.url).to.be.a('string');
+        expect(serverRequest.data).to.be.a('string');
+      });
+      it('Returns POST method', function () {
+        expect(serverRequest.method).to.equal('POST');
+      });
+      it('Returns valid URL', function () {
+        expect(serverRequest.url).to.equal('https://kssp.kbntx.ch/kubprebidjs');
+      });
+      it('Returns valid data if array of bids is valid', function () {
+        let data = JSON.parse(serverRequest.data);
+        expect(data).to.be.an('object');
+        expect(data).to.have.all.keys('v', 'requestId', 'adSlots', 'gdpr', 'referer', 'tmax', 'consent', 'consentGiven', 'uspConsent');
+        expect(data.v).to.exist.and.to.be.a('string');
+        expect(data.requestId).to.exist.and.to.be.a('string');
+        expect(data.referer).to.be.a('string');
+        expect(data.tmax).to.exist.and.to.be.a('number');
+        expect(data.gdpr).to.exist.and.to.be.within(0, 1);
+        expect(data.consent).to.equal(consentString);
+        expect(data.uspConsent).to.exist.and.to.equal(uspConsentData);
+        for (let j = 0; j < data['adSlots'].length; j++) {
+          let adSlot = data['adSlots'][i];
+          expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'floor', 'video', 'schain');
+          expect(adSlot.bidId).to.be.a('string');
+          expect(adSlot.zoneId).to.be.a('string');
+          expect(adSlot.floor).to.be.a('number');
+          expect(adSlot.schain).to.be.an('object');
+          expect(adSlot.video).to.be.an('object');
         }
       });
     }
@@ -96,14 +164,18 @@ describe('KubientAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('Should return true when required params are found', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
+      expect(spec.isBidRequestValid(bidBanner)).to.be.true;
+      expect(spec.isBidRequestValid(bidVideo)).to.be.true;
     });
     it('Should return false when required params are not found', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
+      expect(spec.isBidRequestValid(bidBanner)).to.be.true;
+      expect(spec.isBidRequestValid(bidVideo)).to.be.true;
     });
     it('Should return false when params are not found', function () {
-      delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+      delete bidBanner.params;
+      expect(spec.isBidRequestValid(bidBanner)).to.be.false;
+      delete bidVideo.params;
+      expect(spec.isBidRequestValid(bidVideo)).to.be.false;
     });
   });
 

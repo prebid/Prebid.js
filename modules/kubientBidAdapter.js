@@ -17,26 +17,26 @@ export const spec = {
     if (!validBidRequests || !bidderRequest) {
       return;
     }
-    const result = validBidRequests.map(function (bid) {
+    return validBidRequests.map(function (bid) {
       var adSlot = {
         bidId: bid.bidId,
         zoneId: bid.params.zoneid || '',
         floor: bid.params.floor || 0.0
-      }
+      };
 
       if (bid.mediaTypes.banner) {
-        adSlot.banner = bid.mediaTypes.banner
+        adSlot.banner = bid.mediaTypes.banner;
       }
 
       if (bid.mediaTypes.video) {
-        adSlot.video = bid.mediaTypes.video
+        adSlot.video = bid.mediaTypes.video;
       }
 
       if (bid.schain) {
         adSlot.schain = bid.schain;
       }
 
-      var data = {
+      let data = {
         v: VERSION,
         requestId: bid.bidderRequestId,
         adSlots: [adSlot],
@@ -44,7 +44,7 @@ export const spec = {
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,
         consentGiven: kubientGetConsentGiven(bidderRequest.gdprConsent),
         uspConsent: bidderRequest.uspConsent
-      }
+      };
 
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         data.referer = bidderRequest.refererInfo.referer
@@ -60,7 +60,6 @@ export const spec = {
         data: JSON.stringify(data)
       };
     });
-    return result;
   },
   interpretResponse: function interpretResponse(serverResponse, request) {
     if (!serverResponse || !serverResponse.body || !serverResponse.body.seatbid) {
