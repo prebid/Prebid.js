@@ -50,7 +50,9 @@ function stringifyScreenSize() {
 
 function getPageLevelKeywords(response) {
   let result = {};
-  shallowMerge(result, response.brandSafety);
+  if (response.brandSafety) {
+    shallowMerge(result, response.brandSafety);
+  }
   result.fr = response.fr;
   result.custom = response.custom;
   return result;
