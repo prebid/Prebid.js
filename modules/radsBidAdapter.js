@@ -7,9 +7,11 @@ const BIDDER_CODE = 'rads';
 const ENDPOINT_URL = 'https://rads.recognified.net/md.request.php';
 const ENDPOINT_URL_DEV = 'https://dcradn1.online-solution.biz/md.request.php';
 const DEFAULT_VAST_FORMAT = 'vast2';
+const GVLID = 602;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['rads'],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
