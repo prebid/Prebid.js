@@ -2,12 +2,14 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'justpremium'
+const GVLID = 62;
 const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr'
 const JP_ADAPTER_VERSION = '1.7'
 const pixels = []
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   time: 60000,
 
   isBidRequestValid: (bid) => {

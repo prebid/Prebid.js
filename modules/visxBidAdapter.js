@@ -5,6 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM as VIDEO_INSTREAM } from '../src/video.js';
 const { parseSizesInput, getKeys, logError, deepAccess } = utils;
 const BIDDER_CODE = 'visx';
+const GVLID = 154
 const BASE_URL = 'https://t.visx.net';
 const ENDPOINT_URL = BASE_URL + '/hb';
 const TIME_TO_LIVE = 360;
@@ -30,6 +31,7 @@ const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
 const RE_EMPTY_OR_ONLY_COMMAS = /^,*$/;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     if (_isVideoBid(bid)) {
