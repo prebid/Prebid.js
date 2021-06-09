@@ -1,8 +1,8 @@
 # Overview
 
 
-**Module Name:** Widespace Bidder Adapter.
-**Module Type:** Bidder Adapter.
+**Module Name:** Widespace Bidder Adapter.\
+**Module Type:** Bidder Adapter.\
 **Maintainer:** support@widespace.com
 
 
