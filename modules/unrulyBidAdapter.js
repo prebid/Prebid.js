@@ -3,13 +3,14 @@ import {Renderer} from '../src/Renderer.js'
 import {registerBidder} from '../src/adapters/bidderFactory.js'
 import {VIDEO, BANNER} from '../src/mediaTypes.js'
 
-function configureUniversalTag(exchangeRenderer) {
+function configureUniversalTag(exchangeRenderer, requestId) {
   if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.');
   if (!exchangeRenderer.config.siteId) throw new Error('UnrulyBidAdapter: Missing renderer siteId.');
 
   parent.window.unruly = parent.window.unruly || {};
   parent.window.unruly['native'] = parent.window.unruly['native'] || {};
   parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.config.siteId;
+  parent.window.unruly['native'].adSlotId = requestId;
   parent.window.unruly['native'].supplyMode = 'prebid';
 }
 
@@ -21,21 +22,6 @@ function configureRendererQueue() {
 function notifyRenderer(bidResponseBid) {
   parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid]);
 }
-
-const serverResponseToBid = (bid, rendererInstance) => ({
-  requestId: bid.bidId,
-  cpm: bid.cpm,
-  width: bid.width,
-  height: bid.height,
-  vastUrl: bid.vastUrl,
-  netRevenue: true,
-  creativeId: bid.bidId,
-  ttl: 360,
-  meta: {advertiserDomains: bid && bid.adomain ? bid.adomain : []},
-  currency: 'USD',
-  renderer: rendererInstance,
-  mediaType: VIDEO
-});
 
 const addBidFloorInfo = (validBid) => {
   Object.keys(validBid.mediaTypes).forEach((key) => {
@@ -82,46 +68,87 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
   return request
 };
 
-const buildPrebidResponseAndInstallRenderer = bids =>
-  bids
-    .filter(serverBid => {
-      const hasConfig = !!utils.deepAccess(serverBid, 'ext.renderer.config');
-      const hasSiteId = !!utils.deepAccess(serverBid, 'ext.renderer.config.siteId');
+const handleBidResponseByMediaType = (bids) => {
+  let bidResponses = [];
 
-      if (!hasConfig) utils.logError(new Error('UnrulyBidAdapter: Missing renderer config.'));
-      if (!hasSiteId) utils.logError(new Error('UnrulyBidAdapter: Missing renderer siteId.'));
-
-      return hasSiteId
-    })
-    .map(serverBid => {
-      const exchangeRenderer = utils.deepAccess(serverBid, 'ext.renderer');
-
-      configureUniversalTag(exchangeRenderer);
-      configureRendererQueue();
-
-      const rendererInstance = Renderer.install(Object.assign({}, exchangeRenderer));
-      return {rendererInstance, serverBid};
-    })
-    .map(
-      ({rendererInstance, serverBid}) => {
-        const prebidBid = serverResponseToBid(serverBid, rendererInstance);
-
-        const rendererConfig = Object.assign(
-          {},
-          prebidBid,
-          {
-            renderer: rendererInstance,
-            adUnitCode: serverBid.ext.adUnitCode
-          }
-        );
-
-        rendererInstance.setRender(() => {
-          notifyRenderer(rendererConfig)
-        });
-
-        return prebidBid;
+  bids.forEach((bid) => {
+    let parsedBidResponse;
+    let bidMediaType = utils.deepAccess(bid, 'meta.mediaType');
+    if (bidMediaType && bidMediaType.toLowerCase() === 'banner') {
+      parsedBidResponse = handleBannerBid(bid)
+    } else if (bidMediaType && bidMediaType.toLowerCase() === 'video') {
+      let context = utils.deepAccess(bid, 'meta.videoContext');
+      bid.mediaType = VIDEO;
+      if (context === 'instream') {
+        parsedBidResponse = handleInStreamBid(bid)
+      } else if (context === 'outstream') {
+        parsedBidResponse = handleOutStreamBid(bid)
       }
-    );
+    }
+
+    if (parsedBidResponse) {
+      bidResponses.push(parsedBidResponse);
+    }
+  });
+
+  return bidResponses
+};
+
+const handleBannerBid = (bid) => {
+  if (!bid.ad) {
+    utils.logError(new Error('UnrulyBidAdapter: Missing ad config.'));
+    return;
+  }
+
+  bid.mediaType = BANNER;
+  return bid;
+};
+
+const handleInStreamBid = (bid) => {
+  if (!bid.vastUrl) {
+    utils.logError(new Error('UnrulyBidAdapter: Missing vastUrl config.'));
+    return;
+  }
+
+  return bid;
+};
+
+const handleOutStreamBid = (bid) => {
+  const hasConfig = !!utils.deepAccess(bid, 'ext.renderer.config');
+  const hasSiteId = !!utils.deepAccess(bid, 'ext.renderer.config.siteId');
+
+  if (!hasConfig) {
+    utils.logError(new Error('UnrulyBidAdapter: Missing renderer config.'));
+    return;
+  }
+  if (!hasSiteId) {
+    utils.logError(new Error('UnrulyBidAdapter: Missing renderer siteId.'));
+    return;
+  }
+
+  const exchangeRenderer = utils.deepAccess(bid, 'ext.renderer');
+
+  configureUniversalTag(exchangeRenderer, bid.requestId);
+  configureRendererQueue();
+
+  const rendererInstance = Renderer.install(Object.assign({}, exchangeRenderer));
+
+  const rendererConfig = Object.assign(
+    {},
+    bid,
+    {
+      renderer: rendererInstance,
+      adUnitCode: utils.deepAccess(bid, 'ext.adUnitCode')
+    }
+  );
+
+  rendererInstance.setRender(() => {
+    notifyRenderer(rendererConfig)
+  });
+
+  bid.renderer = bid.renderer || rendererInstance;
+  return bid;
+};
 
 const isMediaTypesValid = (bid) => {
   const mediaTypeVideoData = utils.deepAccess(bid, 'mediaTypes.video');
@@ -174,18 +201,18 @@ export const adapter = {
     const url = 'https://targeting.unrulymedia.com/prebid';
     const method = 'POST';
     const options = {contentType: 'text/plain'};
-    const request = getRequests({url, method, options}, validBidRequests, bidderRequest);
-    return request;
+    return getRequests({url, method, options}, validBidRequests, bidderRequest);
   },
 
   interpretResponse: function (serverResponse = {}) {
     const serverResponseBody = serverResponse.body;
+
     const noBidsResponse = [];
     const isInvalidResponse = !serverResponseBody || !serverResponseBody.bids;
 
     return isInvalidResponse
       ? noBidsResponse
-      : buildPrebidResponseAndInstallRenderer(serverResponseBody.bids);
+      : handleBidResponseByMediaType(serverResponseBody.bids);
   }
 };
 
