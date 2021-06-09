@@ -621,11 +621,10 @@ export class BotClientTests {
       },
     }
   }
-
   doTests() {
     let response = false;
-    for (const [, t] of Object.entries(this.tests)) {
-      if (t() === true) {
+    for (const i of Object.keys(this.tests)) {
+      if (this.tests[i]() === true) {
         response = true;
       }
     }
