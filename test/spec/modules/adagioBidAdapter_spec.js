@@ -970,7 +970,6 @@ describe('Adagio bid adapter', () => {
         ],
         assets: [
           {
-            required: 1,
             title: {
               text: 'My title'
             }
@@ -1018,34 +1017,32 @@ describe('Adagio bid adapter', () => {
       };
 
       const bidRequestNative = utils.deepClone(bidRequest)
-      bidRequestNative.mediaTypes = {
-        native: {
-          sendTargetingKeys: false,
+      bidRequestNative.nativeParams = {
+        sendTargetingKeys: false,
 
-          clickUrl: {
-            required: true,
-          },
-          title: {
-            required: true,
-          },
-          body: {
-            required: true,
-          },
-          sponsoredBy: {
-            required: false
-          },
-          image: {
-            required: true
-          },
-          icon: {
-            required: true
-          },
-          privacyLink: {
-            required: false
-          },
-          ext: {
-            adagio_bvw: {}
-          }
+        clickUrl: {
+          required: true,
+        },
+        title: {
+          required: true,
+        },
+        body: {
+          required: true,
+        },
+        sponsoredBy: {
+          required: false
+        },
+        image: {
+          required: true
+        },
+        icon: {
+          required: true
+        },
+        privacyLink: {
+          required: false
+        },
+        ext: {
+          adagio_bvw: {}
         }
       };
 
