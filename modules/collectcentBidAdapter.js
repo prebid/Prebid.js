@@ -1,10 +1,10 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'collectcent';
-const URL_MULTI = '//publishers.motionspots.com/?c=o&m=multi';
-const URL_SYNC = '//publishers.motionspots.com/?c=o&m=cookie';
+const URL_MULTI = 'https://publishers.motionspots.com/?c=o&m=multi';
+const URL_SYNC = 'https://publishers.motionspots.com/?c=o&m=cookie';
 
 export const spec = {
   code: BIDDER_CODE,

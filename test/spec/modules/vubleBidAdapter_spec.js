@@ -1,8 +1,8 @@
 // import or require modules necessary for the test, e.g.:
 
 import {expect} from 'chai';
-import {spec as adapter} from 'modules/vubleBidAdapter';
-import * as utils from 'src/utils';
+import {spec as adapter} from 'modules/vubleBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('VubleAdapter', function () {
   describe('Check methods existance', function () {
@@ -36,9 +36,25 @@ describe('VubleAdapter', function () {
         }
       },
     };
+    let bid2 = {
+      bidder: 'vuble',
+      params: {
+        env: 'net',
+        pubId: '3',
+        zoneId: '12345',
+        floorPrice: 5.00 // optional
+      },
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [640, 360]
+        }
+      },
+    };
 
     it('should be true', function () {
       expect(adapter.isBidRequestValid(bid)).to.be.true;
+      expect(adapter.isBidRequestValid(bid2)).to.be.true;
     });
 
     it('should be false because the sizes are missing or in the wrong format', function () {
@@ -85,12 +101,6 @@ describe('VubleAdapter', function () {
   });
 
   describe('Check buildRequests method', function () {
-    let sandbox;
-    before(function () {
-      sandbox = sinon.sandbox.create();
-      sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.vuble.tv/');
-    });
-
     // Bids to be formatted
     let bid1 = {
       bidder: 'vuble',
@@ -115,7 +125,7 @@ describe('VubleAdapter', function () {
         env: 'com',
         pubId: '8',
         zoneId: '2468',
-        referrer: 'http://www.vuble.fr/'
+        referrer: 'https://www.vuble.fr/'
       },
       sizes: '640x360',
       mediaTypes: {
@@ -126,11 +136,27 @@ describe('VubleAdapter', function () {
       bidId: 'efgh',
       adUnitCode: 'code'
     };
+    let bid3 = {
+      bidder: 'vuble',
+      params: {
+        env: 'net',
+        pubId: '3',
+        zoneId: '3579',
+      },
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [640, 360]
+        }
+      },
+      bidId: 'ijkl',
+      adUnitCode: ''
+    };
 
     // Formatted requets
     let request1 = {
       method: 'POST',
-      url: '//player.mediabong.net/prebid/request',
+      url: 'https://player.mediabong.net/prebid/request',
       data: {
         width: '640',
         height: '360',
@@ -138,7 +164,7 @@ describe('VubleAdapter', function () {
         zone_id: '12345',
         context: 'instream',
         floor_price: 5.5,
-        url: 'http://www.vuble.tv/',
+        url: '',
         env: 'net',
         bid_id: 'abdc',
         adUnitCode: ''
@@ -146,7 +172,7 @@ describe('VubleAdapter', function () {
     };
     let request2 = {
       method: 'POST',
-      url: '//player.mediabong.com/prebid/request',
+      url: 'https://player.mediabong.com/prebid/request',
       data: {
         width: '640',
         height: '360',
@@ -154,20 +180,71 @@ describe('VubleAdapter', function () {
         zone_id: '2468',
         context: 'outstream',
         floor_price: 0,
-        url: 'http://www.vuble.fr/',
+        url: 'https://www.vuble.fr/',
         env: 'com',
         bid_id: 'efgh',
         adUnitCode: 'code'
       }
     };
+    let request3 = {
+      method: 'POST',
+      url: 'https://player.mediabong.net/prebid/request',
+      data: {
+        width: '640',
+        height: '360',
+        pub_id: '3',
+        zone_id: '3579',
+        context: 'instream',
+        floor_price: 0,
+        url: 'https://www.vuble.tv/',
+        env: 'net',
+        bid_id: 'ijkl',
+        adUnitCode: ''
+      }
+    };
+    let request4 = {
+      method: 'POST',
+      url: 'https://player.mediabong.net/prebid/request',
+      data: {
+        width: '640',
+        height: '360',
+        pub_id: '3',
+        zone_id: '3579',
+        context: 'instream',
+        floor_price: 0,
+        url: '',
+        env: 'net',
+        bid_id: 'ijkl',
+        adUnitCode: '',
+        gdpr_consent: {
+          consent_string: 'test',
+          gdpr_applies: true
+        }
+      }
+    };
+    let bidderRequest1 = {
+      refererInfo: {
+        referer: 'https://www.vuble.tv/',
+        reachedTop: true,
+        numIframes: 1,
+        stack: [
+          'http://example.com/page.html',
+          'http://example.com/iframe1.html',
+          'http://example.com/iframe2.html'
+        ]
+      }
+    };
+    let bidderRequest2 = {
+      'gdprConsent': {
+        consentString: 'test',
+        gdprApplies: true
+      }
+    };
 
     it('must return the right formatted requests', function () {
-      let rs = adapter.buildRequests([bid1, bid2]);
       expect(adapter.buildRequests([bid1, bid2])).to.deep.equal([request1, request2]);
-    });
-
-    after(function () {
-      sandbox.restore();
+      expect(adapter.buildRequests([bid3], bidderRequest1)).to.deep.equal([request3]);
+      expect(adapter.buildRequests([bid3], bidderRequest2)).to.deep.equal([request4]);
     });
   });
 
@@ -196,7 +273,7 @@ describe('VubleAdapter', function () {
         adUnitCode: 'code'
       },
       method: 'POST',
-      url: '//player.mediabong.net/prebid/request'
+      url: 'https://player.mediabong.net/prebid/request'
     };
     // Formatted reponse
     let result = {
@@ -262,7 +339,7 @@ describe('VubleAdapter', function () {
     // Formatted reponse
     let result = {
       type: 'iframe',
-      url: 'http://player.mediabong.net/csifr?1234'
+      url: 'https://player.mediabong.net/csifr?1234'
     };
 
     it('should return an empty array', function () {
@@ -276,7 +353,7 @@ describe('VubleAdapter', function () {
     });
 
     it('should be equal to the expected result', function () {
-      response.body.iframeSync = 'http://player.mediabong.net/csifr?1234';
+      response.body.iframeSync = 'https://player.mediabong.net/csifr?1234';
       expect(adapter.getUserSyncs(syncOptions, [response])).to.deep.equal([result]);
     })
   });
@@ -296,7 +373,7 @@ describe('VubleAdapter', function () {
         adUnitCode: 'code'
       },
       method: 'POST',
-      url: '//player.mediabong.net/prebid/request'
+      url: 'https://player.mediabong.net/prebid/request'
     };
     // Server's response
     let response = {

@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as mediaTypes from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as mediaTypes from '../src/mediaTypes.js';
 
 export function get(path, obj, notFound) {
   path = typeof path === 'string' ? path.split('.') : path;
@@ -302,6 +302,10 @@ export function mergeArrays(hashFn, ...args) {
   return merged;
 }
 
+export function documentFocus(doc) {
+  return typeof doc.hasFocus === 'function' ? +doc.hasFocus() : undefined;
+}
+
 const spec = {
   code: 'vi',
   supportedMediaTypes: [mediaTypes.VIDEO, mediaTypes.BANNER],
@@ -372,7 +376,8 @@ const spec = {
               ...params
             };
           }
-        )
+        ),
+        focus: documentFocus(document)
       },
       options: {
         contentType: 'application/json',

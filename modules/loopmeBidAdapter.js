@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { Renderer } from '../src/Renderer';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
 
 const LOOPME_ENDPOINT = 'https://loopme.me/api/hb';
 
@@ -123,6 +123,7 @@ export const spec = {
           dealId: responseObj.dealId,
           netRevenue: responseObj.netRevenue,
           vastUrl: responseObj.vastUrl,
+          mediaType: VIDEO,
           renderer
         }
       ];
@@ -139,7 +140,8 @@ export const spec = {
         currency: responseObj.currency,
         creativeId: responseObj.creativeId,
         dealId: responseObj.dealId,
-        netRevenue: responseObj.netRevenue
+        netRevenue: responseObj.netRevenue,
+        mediaType: BANNER
       }
     ];
   }

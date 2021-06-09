@@ -1,7 +1,6 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import { parse as parseUrl } from '../src/url';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 const NATIVE_MAP = {
   'body': 2,
   'body2': 10,
@@ -61,7 +60,7 @@ export const spec = {
     let imps = {};
     let site = {};
     let device = {};
-    let refurl = parseUrl(bidderRequest.referrer);
+    let refurl = utils.parseUrl(bidderRequest.referrer);
     let requests = [];
 
     validBidRequests.forEach(bidRequest => {
@@ -69,7 +68,7 @@ export const spec = {
         id: bidRequest.bidId,
         tagid: bidRequest.adUnitCode,
         secure: window.location.protocol == 'https:'
-      }
+      };
 
       if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
         let sizes = bidRequest.mediaTypes.banner.sizes;
@@ -77,7 +76,7 @@ export const spec = {
           imp.banner = {
             w: sizes[0][0],
             h: sizes[0][1]
-          }
+          };
         } else if (sizes.length > 1) {
           imp.banner = {
             format: sizes.map(size => ({ w: size[0], h: size[1] }))
@@ -182,7 +181,7 @@ export const spec = {
             if (VIDEO_PARAMS.indexOf(k) > -1) {
               imp.video[k] = bidRequest.params.video[k];
             }
-          })
+          });
         }
       }
       let host = bidRequest.params.host;
@@ -232,7 +231,7 @@ export const spec = {
         Object.keys(sourceIds).forEach(sourceId => {
           let impObj = sourceIds[sourceId];
           collection.push({
-            url: `${impObj.protocol}${host}/${impObj.path}/?${impObj.idParam}=${sourceId}`,
+            url: `https://${host}/${impObj.path}/?${impObj.idParam}=${sourceId}`,
             body: {
               id: bidderRequest.auctionId,
               imp: impObj.imps,

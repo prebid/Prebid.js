@@ -1,15 +1,18 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
-const VERSION = '3.1.0';
+const VERSION = '3.4.0';
 const BIDDER_CODE = 'sharethrough';
-const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/WYu2BXv1/v1';
+const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
 
 // this allows stubbing of utility function that is used internally by the sharethrough adapter
 export const sharethroughInternal = {
   b64EncodeUnicode,
   handleIframe,
-  isLockedInFrame
+  isLockedInFrame,
+  getProtocol
 };
 
 export const sharethroughAdapterSpec = {
@@ -29,6 +32,11 @@ export const sharethroughAdapterSpec = {
         strVersion: VERSION
       };
 
+      Object.assign(query, handleUniversalIds(bidRequest));
+
+      const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
+      query.secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
+
       if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
         query.consent_string = bidderRequest.gdprConsent.consentString;
       }
@@ -37,16 +45,29 @@ export const sharethroughAdapterSpec = {
         query.consent_required = !!bidderRequest.gdprConsent.gdprApplies;
       }
 
-      if (bidRequest.userId && bidRequest.userId.tdid) {
-        query.ttduid = bidRequest.userId.tdid;
+      if (bidderRequest && bidderRequest.uspConsent) {
+        query.us_privacy = bidderRequest.uspConsent
+      }
+
+      if (config.getConfig('coppa') === true) {
+        query.coppa = true
       }
 
       if (bidRequest.schain) {
         query.schain = JSON.stringify(bidRequest.schain);
       }
 
-      if (bidRequest.bidfloor) {
-        query.bidfloor = parseFloat(bidRequest.bidfloor);
+      const floor = getFloor(bidRequest);
+      if (floor) {
+        query.bidfloor = floor;
+      }
+
+      if (bidRequest.params.badv) {
+        query.badv = bidRequest.params.badv;
+      }
+
+      if (bidRequest.params.bcat) {
+        query.bcat = bidRequest.params.bcat;
       }
 
       // Data that does not need to go to the server,
@@ -58,7 +79,7 @@ export const sharethroughAdapterSpec = {
       };
 
       return {
-        method: 'GET',
+        method: 'POST',
         url: STR_ENDPOINT,
         data: query,
         strData: strData
@@ -89,11 +110,13 @@ export const sharethroughAdapterSpec = {
       currency: 'USD',
       netRevenue: true,
       ttl: 360,
+      meta: { advertiserDomains: creative.creative && creative.creative.adomain ? creative.creative.adomain : [] },
       ad: generateAd(body, req)
     }];
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const syncParams = uspConsent ? `&us_privacy=${uspConsent}` : '';
     const syncs = [];
     const shouldCookieSync = syncOptions.pixelEnabled &&
       serverResponses.length > 0 &&
@@ -102,7 +125,7 @@ export const sharethroughAdapterSpec = {
 
     if (shouldCookieSync) {
       serverResponses[0].body.cookieSyncUrls.forEach(url => {
-        syncs.push({ type: 'image', url: url });
+        syncs.push({ type: 'image', url: url + syncParams });
       });
     }
 
@@ -118,6 +141,36 @@ export const sharethroughAdapterSpec = {
   // Empty implementation for prebid core to be able to find it
   onSetTargeting: (bid) => {}
 };
+
+function handleUniversalIds(bidRequest) {
+  if (!bidRequest.userId) return {};
+
+  const universalIds = {};
+
+  const ttd = utils.deepAccess(bidRequest, 'userId.tdid');
+  if (ttd) universalIds.ttduid = ttd;
+
+  const pubc = utils.deepAccess(bidRequest, 'userId.pubcid') || utils.deepAccess(bidRequest, 'crumbs.pubcid');
+  if (pubc) universalIds.pubcid = pubc;
+
+  const idl = utils.deepAccess(bidRequest, 'userId.idl_env');
+  if (idl) universalIds.idluid = idl;
+
+  const id5 = utils.deepAccess(bidRequest, 'userId.id5id.uid');
+  if (id5) {
+    universalIds.id5uid = { id: id5 };
+    const id5link = utils.deepAccess(bidRequest, 'userId.id5id.ext.linkType');
+    if (id5link) universalIds.id5uid.linkType = id5link;
+  }
+
+  const lipb = utils.deepAccess(bidRequest, 'userId.lipb.lipbid');
+  if (lipb) universalIds.liuid = lipb;
+
+  const shd = utils.deepAccess(bidRequest, 'userId.sharedid');
+  if (shd) universalIds.shduid = shd; // object with keys: id & third
+
+  return universalIds;
+}
 
 function getLargestSize(sizes) {
   function area(size) {
@@ -144,7 +197,7 @@ function generateAd(body, req) {
 
   if (req.strData.skipIframeBusting) {
     // Don't break out of iframe
-    adMarkup = adMarkup + `<script src="//native.sharethrough.com/assets/sfp.js"></script>`;
+    adMarkup = adMarkup + `<script src="https://native.sharethrough.com/assets/sfp.js"></script>`;
   } else {
     // Add logic to the markup that detects whether or not in top level document is accessible
     // this logic will deploy sfp.js and/or iframe buster script(s) as appropriate
@@ -166,20 +219,20 @@ function handleIframe () {
   var iframeBusterLoaded = false;
   if (!window.lockedInFrame) {
     var sfpIframeBusterJs = document.createElement('script');
-    sfpIframeBusterJs.src = '//native.sharethrough.com/assets/sfp-set-targeting.js';
+    sfpIframeBusterJs.src = 'https://native.sharethrough.com/assets/sfp-set-targeting.js';
     sfpIframeBusterJs.type = 'text/javascript';
     try {
       window.document.getElementsByTagName('body')[0].appendChild(sfpIframeBusterJs);
       iframeBusterLoaded = true;
     } catch (e) {
-      console.error(e);
+      utils.logError('Trouble writing frame buster script, error details:', e);
     }
   }
 
   var clientJsLoaded = (!iframeBusterLoaded) ? !!(window.STR && window.STR.Tag) : !!(window.top.STR && window.top.STR.Tag);
   if (!clientJsLoaded) {
     var sfpJs = document.createElement('script');
-    sfpJs.src = '//native.sharethrough.com/assets/sfp.js';
+    sfpJs.src = 'https://native.sharethrough.com/assets/sfp.js';
     sfpJs.type = 'text/javascript';
 
     // only add sfp js to window.top if iframe busting successfully loaded; otherwise, add to iframe
@@ -190,7 +243,7 @@ function handleIframe () {
         window.document.getElementsByTagName('body')[0].appendChild(sfpJs);
       }
     } catch (e) {
-      console.error(e);
+      utils.logError('Trouble writing sfp script, error details:', e);
     }
   }
 }
@@ -234,6 +287,24 @@ function canAutoPlayHTML5Video() {
   } else {
     return false;
   }
+}
+
+function getProtocol() {
+  return document.location.protocol;
+}
+
+function getFloor(bid) {
+  if (utils.isFn(bid.getFloor)) {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: 'banner',
+      size: bid.sizes.map(size => ({ w: size[0], h: size[1] }))
+    });
+    if (utils.isPlainObject(floorInfo) && !isNaN(floorInfo.floor) && floorInfo.currency === 'USD') {
+      return parseFloat(floorInfo.floor);
+    }
+  }
+  return null;
 }
 
 registerBidder(sharethroughAdapterSpec);

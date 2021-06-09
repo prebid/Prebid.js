@@ -2,10 +2,10 @@
  * Analytics Adapter for Adagio
  */
 
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils';
+import * as utils from '../src/utils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';

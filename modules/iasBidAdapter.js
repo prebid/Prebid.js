@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ias';
 
@@ -47,7 +47,7 @@ function stringifyScreenSize() {
 }
 
 function buildRequests(bidRequests) {
-  const IAS_HOST = '//pixel.adsafeprotected.com/services/pub';
+  const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
   const anId = bidRequests[0].params.pubId;
 
   let queries = [];

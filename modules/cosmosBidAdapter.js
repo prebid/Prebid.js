@@ -1,10 +1,10 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'cosmos';
-const BID_ENDPOINT = '//bid.cosmoshq.com/openrtb2/bids';
-const USER_SYNC_ENDPOINT = '//sync.cosmoshq.com/js/v1/usersync.html';
+const BID_ENDPOINT = 'https://bid.cosmoshq.com/openrtb2/bids';
+const USER_SYNC_ENDPOINT = 'https://sync.cosmoshq.com/js/v1/usersync.html';
 const HTTP_POST = 'POST';
 const LOG_PREFIX = 'COSMOS: ';
 const DEFAULT_CURRENCY = 'USD';

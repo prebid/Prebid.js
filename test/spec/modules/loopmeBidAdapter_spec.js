@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/loopmeBidAdapter';
-import * as utils from 'src/utils';
+import { spec } from '../../../modules/loopmeBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('LoopMeAdapter', function () {
   const bidRequests = [{

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import realvuAnalyticsAdapter, { lib } from 'modules/realvuAnalyticsAdapter';
+import realvuAnalyticsAdapter, { lib } from 'modules/realvuAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 
 function addDiv(id) {
@@ -71,7 +71,7 @@ describe('RealVu', function() {
         ]
       };
       let result = realvuAnalyticsAdapter.checkIn(bid, '1Y');
-      const b = window.top1.realvu_aa;
+      const b = Object.assign({}, window.top1.realvu_aa);
       let a = b.ads[0];
       // console.log('a: ' + a.x + ', ' + a.y + ', ' + a.w + ', ' + a.h);
       // console.log('b: ' + b.x1 + ', ' + b.y1 + ', ' + b.x2 + ', ' + b.y2);
@@ -116,7 +116,7 @@ describe('RealVu', function() {
         eventType: CONSTANTS.EVENTS.BID_RESPONSE,
         args: args
       });
-      const boost = window.top1.realvu_aa;
+      const boost = Object.assign({}, window.top1.realvu_aa);
       expect(boost.ads[boost.len - 1].bids.length).to.equal(1);
 
       realvuAnalyticsAdapter.track({
@@ -128,8 +128,11 @@ describe('RealVu', function() {
   });
 
   describe('Boost.', function () {
-    const boost = window.top1.realvu_aa;
-
+    // const boost = window.top1.realvu_aa;
+    let boost;
+    beforeEach(function() {
+      boost = Object.assign({}, window.top1.realvu_aa);
+    });
     it('brd', function () {
       let a1 = document.getElementById('ad1');
       let p = boost.brd(a1, 'Left');

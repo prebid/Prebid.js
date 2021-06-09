@@ -1,9 +1,9 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'hpmdnetwork';
 const BIDDER_CODE_ALIAS = 'hpmd';
-const HPMDNETWORK_HOST = '//banner.hpmdnetwork.ru/bidder/request';
+const HPMDNETWORK_HOST = 'https://banner.hpmdnetwork.ru/bidder/request';
 const DEFAULT_TTL = 300;
 const DEFAULT_CURRENCY = 'RUB';
 

@@ -1,11 +1,11 @@
-import { Renderer } from '../src/Renderer';
-import {ajax} from '../src/ajax';
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { VIDEO, BANNER } from '../src/mediaTypes';
+import { Renderer } from '../src/Renderer.js';
+import {ajax} from '../src/ajax.js';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'open8';
-const URL = '//as.vt.open8.com/v1/control/prebid';
+const URL = 'https://as.vt.open8.com/v1/control/prebid';
 const AD_TYPE = {
   VIDEO: 1,
   BANNER: 2

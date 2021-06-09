@@ -1,17 +1,53 @@
 {
   "userId": [
-    "digiTrustIdSystem",
+    "unifiedIdSystem",
+    "pubCommonIdSystem",
     "id5IdSystem",
-    "criteortusIdSystem",
     "parrableIdSystem",
+    "britepoolIdSystem",
     "liveIntentIdSystem",
-    "criteoIdSystem"
+    "lotamePanoramaId",
+    "merkleIdSystem",
+    "criteoIdSystem",
+    "netIdSystem",
+    "identityLinkIdSystem",
+    "sharedIdSystem",
+    "intentIqIdSystem",
+    "zeotapIdPlusIdSystem",
+    "haloIdSystem",
+    "quantcastIdSystem",
+    "deepintentDpesIdSystem",
+    "nextrollIdSystem",
+    "idxIdSystem",
+    "fabrickIdSystem",
+    "verizonMediaIdSystem",
+    "pubProvidedIdSystem",
+    "mwOpenLinkIdSystem",
+    "tapadIdSystem",
+    "novatiqIdSystem",
+    "uid2IdSystem",
+    "admixerIdSystem",
+    "dmdIdSystem",
+    "flocIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
     "dfpAdServerVideo"
   ],
   "rtdModule": [
-    "browsiRtdProvider"
+    "browsiRtdProvider",
+    "dgkeywordRtdProvider",
+    "geoedgeRtdProvider",
+    "haloRtdProvider",
+    "iasRtdProvider",
+    "jwplayerRtdProvider",
+    "optimeraRtdProvider",
+    "permutiveRtdProvider",
+    "reconciliationRtdProvider",
+    "sirdataRtdProvider"
+  ],
+  "fpdModule": [
+    "enrichmentFpdModule",
+    "validationFpdModule"
   ]
 }

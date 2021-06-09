@@ -1,12 +1,17 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const GVLID = 24;
+export const storage = getStorageManager(GVLID);
 
 const BIDDER_CODE = 'conversant';
-const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
+const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['cnvr'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -28,10 +33,11 @@ export const spec = {
     }
 
     if (isVideoRequest(bid)) {
-      if (!bid.params.mimes) {
+      const mimes = bid.params.mimes || utils.deepAccess(bid, 'mediaTypes.video.mimes');
+      if (!mimes) {
         // Give a warning but let it pass
         utils.logWarn(BIDDER_CODE + ': mimes should be specified for videos');
-      } else if (!utils.isArray(bid.params.mimes) || !bid.params.mimes.every(s => utils.isStr(s))) {
+      } else if (!utils.isArray(mimes) || !mimes.every(s => utils.isStr(s))) {
         utils.logWarn(BIDDER_CODE + ': mimes must be an array of strings');
         return false;
       }
@@ -52,11 +58,15 @@ export const spec = {
     let siteId = '';
     let requestId = '';
     let pubcid = null;
+    let pubcidName = '_pubcid';
+    let bidurl = URL;
 
     const conversantImps = validBidRequests.map(function(bid) {
-      const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      const bidfloor = getBidFloor(bid);
 
-      siteId = utils.getBidIdParameter('site_id', bid.params);
+      siteId = utils.getBidIdParameter('site_id', bid.params) || siteId;
+      pubcidName = utils.getBidIdParameter('pubcid_name', bid.params) || pubcidName;
+
       requestId = bid.auctionId;
 
       const imp = {
@@ -81,7 +91,7 @@ export const spec = {
 
         copyOptProperty(bid.params.position, video, 'pos');
         copyOptProperty(bid.params.mimes || videoData.mimes, video, 'mimes');
-        copyOptProperty(bid.params.maxduration, video, 'maxduration');
+        copyOptProperty(bid.params.maxduration || videoData.maxduration, video, 'maxduration');
         copyOptProperty(bid.params.protocols || videoData.protocols, video, 'protocols');
         copyOptProperty(bid.params.api || videoData.api, video, 'api');
 
@@ -101,6 +111,9 @@ export const spec = {
       } else if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
       }
+      if (bid.params.white_label_url) {
+        bidurl = bid.params.white_label_url;
+      }
 
       return imp;
     });
@@ -119,22 +132,34 @@ export const spec = {
 
     let userExt = {};
 
-    // Add GDPR flag and consent string
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      userExt.consent = bidderRequest.gdprConsent.consentString;
+    if (bidderRequest) {
+      // Add GDPR flag and consent string
+      if (bidderRequest.gdprConsent) {
+        userExt.consent = bidderRequest.gdprConsent.consentString;
 
-      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-        payload.regs = {
-          ext: {
-            gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-          }
-        };
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          utils.deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+        }
       }
+
+      if (bidderRequest.uspConsent) {
+        utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+    }
+
+    if (!pubcid) {
+      pubcid = readStoredValue(pubcidName);
     }
 
     // Add common id if available
     if (pubcid) {
       userExt.fpc = pubcid;
+    }
+
+    // Add Eids if available
+    const eids = collectEids(validBidRequests);
+    if (eids.length > 0) {
+      userExt.eids = eids;
     }
 
     // Only add the user object if it's not empty
@@ -144,7 +169,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: URL,
+      url: bidurl,
       data: payload,
     };
   },
@@ -181,9 +206,18 @@ export const spec = {
               ttl: 300,
               netRevenue: true
             };
+            bid.meta = {};
+            if (conversantBid.adomain && conversantBid.adomain.length > 0) {
+              bid.meta.advertiserDomains = conversantBid.adomain;
+            }
 
             if (request.video) {
-              bid.vastUrl = responseAd;
+              if (responseAd.charAt(0) === '<') {
+                bid.vastXml = responseAd;
+              } else {
+                bid.vastUrl = responseAd;
+              }
+
               bid.mediaType = 'video';
               bid.width = request.video.w;
               bid.height = request.video.h;
@@ -285,6 +319,87 @@ function copyOptProperty(src, dst, dstName) {
   if (src) {
     dst[dstName] = src;
   }
+}
+
+/**
+ * Collect IDs from validBidRequests and store them as an extended id array
+ * @param bidRequests valid bid requests
+ */
+function collectEids(bidRequests) {
+  const request = bidRequests[0]; // bidRequests have the same userId object
+  const eids = [];
+  if (utils.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
+    // later following white-list can be converted to block-list if needed
+    const requiredSourceValues = {
+      'adserver.org': 1,
+      'liveramp.com': 1,
+      'criteo.com': 1,
+      'id5-sync.com': 1,
+      'parrable.com': 1,
+      'liveintent.com': 1
+    };
+    request.userIdAsEids.forEach(function(eid) {
+      if (requiredSourceValues.hasOwnProperty(eid.source)) {
+        eids.push(eid);
+      }
+    });
+  }
+  return eids;
+}
+
+/**
+ * Look for a stored value from both cookie and local storage and return the first value found.
+ * @param key Key for the search
+ * @return {string} Stored value
+ */
+function readStoredValue(key) {
+  let storedValue;
+  try {
+    // check cookies first
+    storedValue = storage.getCookie(key);
+
+    if (!storedValue) {
+      // check expiration time before reading local storage
+      const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
+      if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
+        storedValue = storage.getDataFromLocalStorage(key);
+        storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
+      }
+    }
+
+    // deserialize JSON if needed
+    if (utils.isStr(storedValue) && storedValue.charAt(0) === '{') {
+      storedValue = JSON.parse(storedValue);
+    }
+  } catch (e) {
+    utils.logError(e);
+  }
+
+  return storedValue;
+}
+
+/**
+ * Get the floor price from bid.params for backward compatibility.
+ * If not found, then check floor module.
+ * @param bid A valid bid object
+ * @returns {*|number} floor price
+ */
+function getBidFloor(bid) {
+  let floor = utils.getBidIdParameter('bidfloor', bid.params);
+
+  if (!floor && utils.isFn(bid.getFloor)) {
+    const floorObj = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (utils.isPlainObject(floorObj) && !isNaN(floorObj.floor) && floorObj.currency === 'USD') {
+      floor = floorObj.floor;
+    }
+  }
+
+  return floor
 }
 
 registerBidder(spec);

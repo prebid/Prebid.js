@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/advangelistsBidAdapter';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import { spec } from 'modules/advangelistsBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 describe('advangelistsBidAdapter', function () {
   let bidRequests;

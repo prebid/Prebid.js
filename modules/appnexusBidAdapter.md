@@ -3,7 +3,7 @@
 ```
 Module Name:  Appnexus Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: info@prebid.org
+Maintainer: prebid-js@xandr.com
 ```
 
 # Description
@@ -99,7 +99,7 @@ var adUnits = [
            placementId: 13232385,
            video: {
              skippable: true,
-             playback_method: ['auto_play_sound_off']
+             playback_method: 'auto_play_sound_off'
            }
          }
        }

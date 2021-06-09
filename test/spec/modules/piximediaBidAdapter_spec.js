@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/piximediaBidAdapter';
+import { spec } from 'modules/piximediaBidAdapter.js';
 
 describe('piximediaAdapterTest', function() {
   describe('bidRequestValidity', function() {

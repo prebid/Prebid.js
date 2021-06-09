@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/smartrtbBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
+import { spec, _getPlatform } from 'modules/smartrtbBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const br = {
   body: {
@@ -13,8 +13,8 @@ const br = {
       crid: 'crid'
     }],
     pixels: [
-      { type: 'image', url: 'http://smrtb.com/image' },
-      { type: 'iframe', url: 'http://smrtb.com/iframe' }
+      { type: 'image', url: 'https://smrtb.com/image' },
+      { type: 'iframe', url: 'https://smrtb.com/iframe' }
     ]
   }
 }
@@ -30,8 +30,8 @@ const vr = {
       crid: 'video_crid'
     }],
     pixels: [
-      { type: 'image', url: 'http://smrtb.com/image' },
-      { type: 'iframe', url: 'http://smrtb.com/iframe' }
+      { type: 'image', url: 'https://smrtb.com/image' },
+      { type: 'iframe', url: 'https://smrtb.com/iframe' }
     ]
   }
 }
@@ -69,9 +69,6 @@ describe('SmartRTBBidAdapter', function () {
     it('should return a bidder code of smartrtb', function () {
       expect(spec.code).to.equal('smartrtb')
     })
-    it('should alias smrtb', function () {
-      expect(spec.aliases.length > 0 && spec.aliases[0] === 'smrtb').to.be.true
-    })
   })
 
   describe('isBidRequestValid', function () {
@@ -79,8 +76,8 @@ describe('SmartRTBBidAdapter', function () {
       expect(spec.isBidRequestValid(bannerRequest)).to.be.true
     })
 
-    it('should return false if any zone id missing', function () {
-      expect(spec.isBidRequestValid(Object.assign(bannerRequest, { params: { zoneId: null } }))).to.be.false
+    it('should return false if any zone id and pub id missing', function () {
+      expect(spec.isBidRequestValid(Object.assign(bannerRequest, { params: { pubId: null, zoneId: null } }))).to.be.false
     })
   })
 
