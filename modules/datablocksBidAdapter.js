@@ -456,7 +456,10 @@ export const spec = {
     function addParams(sync) {
       // PARSE THE URL
       let url = new URL(sync.url);
-      let urlParams = Object.assign({}, Object.fromEntries(url.searchParams));
+      let urlParams = {};
+      for (const [key, value] of url.searchParams.entries()) {
+        urlParams[key] = value;
+      };
 
       // APPLY EXTRA VARS
       urlParams.gdpr = gdprData.gdpr;
