@@ -208,24 +208,7 @@ function _applyFloor(bid, imp, mediaType) {
     }
   }
 
-  if (adapterFloor && moduleFloor) {
-    if (adapterFloor.currency !== moduleFloor.currency) {
-      utils.logWarn('The bid floor currency mismatch between IX params and priceFloors module config');
-      return;
-    }
-
-    if (adapterFloor.floor > moduleFloor.floor) {
-      imp.bidfloor = adapterFloor.floor;
-      imp.bidfloorcur = adapterFloor.currency;
-      imp.ext.fl = FLOOR_SOURCE.IX;
-    } else {
-      imp.bidfloor = moduleFloor.floor;
-      imp.bidfloorcur = moduleFloor.currency;
-      imp.ext.fl = FLOOR_SOURCE.PBJS;
-    }
-    return;
-  }
-
+  // Prioritize module floor over bidder.param floor
   if (moduleFloor) {
     imp.bidfloor = moduleFloor.floor;
     imp.bidfloorcur = moduleFloor.currency;
@@ -234,8 +217,6 @@ function _applyFloor(bid, imp, mediaType) {
     imp.bidfloor = adapterFloor.floor;
     imp.bidfloorcur = adapterFloor.currency;
     imp.ext.fl = FLOOR_SOURCE.IX;
-  } else {
-    utils.logInfo('IX Bid Adapter: No floors available, no floors applied');
   }
 }
 
