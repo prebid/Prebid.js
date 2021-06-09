@@ -1891,7 +1891,6 @@ describe('IndexexchangeAdapter', function () {
       const impression = JSON.parse(request.data.r).imp[0];
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
-      expect(impression.video).to.exist;
       expect(impression.video.placement).to.equal(1);
     });
 
@@ -1902,7 +1901,6 @@ describe('IndexexchangeAdapter', function () {
       const impression = JSON.parse(request.data.r).imp[0];
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
-      expect(impression.video).to.exist;
       expect(impression.video.placement).to.equal(4);
     });
 
