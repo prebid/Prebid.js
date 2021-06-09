@@ -2663,7 +2663,7 @@ describe('ozone Adapter', function () {
       expect(result).to.be.an('array');
       expect(result[0].url).to.include('usp_consent=1YYN');
     });
-    it.only('should use "" if no usp is sent to cookieSync', function() {
+    it('should use "" if no usp is sent to cookieSync', function() {
       // get the cookie bag populated
       spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.getUserSyncs({iframeEnabled: true}, 'good server response', gdpr1);
