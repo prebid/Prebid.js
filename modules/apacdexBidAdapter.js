@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'apacdex';
 const CONFIG = {
@@ -49,11 +50,34 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    var bids = JSON.parse(JSON.stringify(validBidRequests))
-    bidderConfig = CONFIG[bids[0].bidder];
-    const payload = {};
+    let siteId;
+    let schain;
+    let eids;
+    let geo;
+    let test;
+    let bids = [];
 
-    bids.forEach(bidReq => {
+    bidderConfig = CONFIG[validBidRequests[0].bidder];
+
+    test = config.getConfig('debug');
+
+    validBidRequests.forEach(bidReq => {
+      siteId = siteId || bidReq.params.siteId;
+
+      if (bidReq.schain) {
+        schain = schain || bidReq.schain
+      }
+
+      if (bidReq.userIdAsEids) {
+        eids = eids || bidReq.userIdAsEids
+      }
+
+      if (bidReq.params && bidReq.params.geo) {
+        if (validateGeoObject(bidReq.params.geo)) {
+          geo = bidReq.params.geo;
+        }
+      }
+
       var targetKey = 0;
       if (bySlotTargetKey[bidReq.adUnitCode] != undefined) {
         targetKey = bySlotTargetKey[bidReq.adUnitCode];
@@ -71,36 +95,62 @@ export const spec = {
       }
       bySlotTargetKey[bidReq.adUnitCode] = targetKey;
       bidReq.targetKey = targetKey;
+
+      let bidFloor = getBidFloor(bidReq);
+      if (bidFloor) {
+        bidReq.bidFloor = bidFloor;
+      }
+
+      bids.push(JSON.parse(JSON.stringify(bidReq)));
     });
+
+    const payload = {};
+    payload.tmax = bidderRequest.timeout;
+    if (test) {
+      payload.test = 1;
+    }
 
     payload.device = {};
     payload.device.ua = navigator.userAgent;
-    payload.device.height = window.top.innerHeight;
-    payload.device.width = window.top.innerWidth;
+    payload.device.height = window.screen.width;
+    payload.device.width = window.screen.height;
     payload.device.dnt = _getDoNotTrack();
     payload.device.language = navigator.language;
 
+    var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};
-    payload.site.id = bids[0].params.siteId;
-    payload.site.page = _extractTopWindowUrlFromBidderRequest(bidderRequest);
+    payload.site.id = siteId;
+    payload.site.page = pageUrl
     payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
-    payload.site.hostname = window.top.location.hostname;
+    payload.site.hostname = getDomain(pageUrl);
 
     // Apply GDPR parameters to request.
-    payload.gdpr = {};
     if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr = {};
       payload.gdpr.gdprApplies = !!bidderRequest.gdprConsent.gdprApplies;
       if (bidderRequest.gdprConsent.consentString) {
         payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
       }
     }
-    // Apply schain.
-    if (bids[0].schain) {
-      payload.schain = bids[0].schain
-    }
+
     // Apply us_privacy.
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
+    }
+
+    // Apply schain.
+    if (schain) {
+      payload.schain = schain
+    }
+
+    // Apply eids.
+    if (eids) {
+      payload.eids = eids
+    }
+
+    // Apply geo
+    if (geo) {
+      payload.geo = geo;
     }
 
     payload.bids = bids;
@@ -115,33 +165,40 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
-    const serverBids = serverBody.bids;
-    // check overall response
-    if (!serverBody || typeof serverBody !== 'object') {
+    if (!serverBody || !utils.isPlainObject(serverBody)) {
       return [];
     }
-    if (!serverBids || typeof serverBids !== 'object') {
+
+    const serverBids = serverBody.bids;
+    if (!serverBids || !utils.isArray(serverBids)) {
       return [];
     }
 
     const bidResponses = [];
     serverBids.forEach(bid => {
+      const dealId = bid.dealId || '';
       const bidResponse = {
         requestId: bid.requestId,
         cpm: bid.cpm,
         width: bid.width,
         height: bid.height,
         creativeId: bid.creativeId,
-        dealId: bid.dealId,
         currency: bid.currency,
         netRevenue: bid.netRevenue,
         ttl: bid.ttl,
         mediaType: bid.mediaType
       };
+      if (dealId.length > 0) {
+        bidResponse.dealId = dealId;
+      }
       if (bid.vastXml) {
         bidResponse.vastXml = utils.replaceAuctionPrice(bid.vastXml, bid.cpm);
       } else {
         bidResponse.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
+      }
+      bidResponse.meta = {};
+      if (bid.meta && bid.meta.advertiserDomains && utils.isArray(bid.meta.advertiserDomains)) {
+        bidResponse.meta.advertiserDomains = bid.meta.advertiserDomains;
       }
       bidResponses.push(bidResponse);
     });
@@ -192,15 +249,25 @@ function _getBiggestSize(sizes) {
 }
 
 function _getDoNotTrack() {
-  if (window.top.doNotTrack || navigator.doNotTrack || navigator.msDoNotTrack) {
-    if (window.top.doNotTrack == '1' || navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') {
+  try {
+    if (window.top.doNotTrack && window.top.doNotTrack == '1') {
       return 1;
-    } else {
-      return 0;
     }
-  } else {
-    return 0;
-  }
+  } catch (e) { }
+
+  try {
+    if (navigator.doNotTrack && (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1')) {
+      return 1;
+    }
+  } catch (e) { }
+
+  try {
+    if (navigator.msDoNotTrack && navigator.msDoNotTrack == '1') {
+      return 1;
+    }
+  } catch (e) { }
+
+  return 0
 }
 
 /**
@@ -210,8 +277,11 @@ function _getDoNotTrack() {
  * @returns {string}
  */
 function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
-  if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl')) {
-    return bidderRequest.refererInfo.canonicalUrl;
+  if (config.getConfig('pageUrl')) {
+    return config.getConfig('pageUrl');
+  }
+  if (utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
+    return bidderRequest.refererInfo.referer;
   }
 
   try {
@@ -237,6 +307,69 @@ function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
   } catch (e) {
     return window.document.referrer;
   }
+}
+
+/**
+ * Extracts the domain from given page url
+ *
+ * @param {string} url
+ * @returns {string}
+ */
+export function getDomain(pageUrl) {
+  if (config.getConfig('publisherDomain')) {
+    var publisherDomain = config.getConfig('publisherDomain');
+    return publisherDomain.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
+  }
+
+  if (!pageUrl) {
+    return pageUrl;
+  }
+
+  return pageUrl.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
+}
+
+/**
+ * Validate geo object
+ *
+ * @param {Object} geo
+ * @returns {boolean}
+ */
+export function validateGeoObject(geo) {
+  if (!utils.isPlainObject(geo)) {
+    return false;
+  }
+  if (!geo.lat) {
+    return false;
+  }
+  if (!geo.lon) {
+    return false;
+  }
+  if (!geo.accuracy) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Get bid floor from Price Floors Module
+ *
+ * @param {Object} bid
+ * @returns {float||null}
+ */
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return (bid.params.floorPrice) ? bid.params.floorPrice : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
 }
 
 registerBidder(spec);

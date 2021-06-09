@@ -4,6 +4,7 @@ import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'adprime';
 const AD_URL = 'https://delta.adprime.com/?c=o&m=multi';
+const SYNC_URL = 'https://delta.adprime.com/?c=rtb&m=sync';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -104,6 +105,25 @@ export const spec = {
     }
     return response;
   },
+
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    let syncUrl = SYNC_URL
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+    return [{
+      type: 'image',
+      url: syncUrl
+    }];
+  }
+
 };
 
 registerBidder(spec);

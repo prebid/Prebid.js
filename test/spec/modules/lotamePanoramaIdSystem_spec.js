@@ -612,4 +612,117 @@ describe('LotameId', function() {
       expect(request.url).to.be.eq('https://id.crwdcntrl.net/id');
     });
   });
+
+  describe('with an empty cache, ignore profile id for error 111', function () {
+    let request;
+    let callBackSpy = sinon.spy();
+
+    beforeEach(function () {
+      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+      submoduleCallback(callBackSpy);
+
+      request = server.requests[0];
+
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({
+          profile_id: '4ec137245858469eb94a4e248f238694',
+          expiry_ts: 10,
+          errors: [111],
+          core_id:
+            'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a',
+        })
+      );
+    });
+
+    it('should not save the first party id', function () {
+      sinon.assert.neverCalledWith(
+        setLocalStorageStub,
+        '_cc_id',
+        '4ec137245858469eb94a4e248f238694'
+      );
+      sinon.assert.neverCalledWith(
+        setCookieStub,
+        '_cc_id',
+        '4ec137245858469eb94a4e248f238694'
+      );
+    });
+
+    it('should save the expiry', function () {
+      sinon.assert.calledWith(setLocalStorageStub, 'panoramaId_expiry', 10);
+
+      sinon.assert.calledWith(setCookieStub, 'panoramaId_expiry', 10);
+    });
+
+    it('should save the id', function () {
+      sinon.assert.calledWith(
+        setLocalStorageStub,
+        'panoramaId',
+        'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a'
+      );
+
+      sinon.assert.calledWith(
+        setCookieStub,
+        'panoramaId',
+        'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a'
+      );
+    });
+  });
+
+  describe('receives an optout request with an error 111', function () {
+    let request;
+    let callBackSpy = sinon.spy();
+
+    beforeEach(function () {
+      getCookieStub.withArgs('panoramaId_expiry').returns('1000');
+      getCookieStub
+        .withArgs('panoramaId')
+        .returns(
+          'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87d'
+        );
+
+      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+      submoduleCallback(callBackSpy);
+
+      request = server.requests[0];
+
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({
+          errors: [111],
+          expiry_ts: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        })
+      );
+    });
+
+    it('should call the remote server when getId is called', function () {
+      expect(callBackSpy.calledOnce).to.be.true;
+    });
+
+    it('should clear the panorama id', function () {
+      sinon.assert.calledWith(removeFromLocalStorageStub, 'panoramaId');
+
+      sinon.assert.calledWith(
+        setCookieStub,
+        'panoramaId',
+        '',
+        'Thu, 01 Jan 1970 00:00:00 GMT',
+        'Lax'
+      );
+    });
+
+    it('should not clear the profile id', function () {
+      sinon.assert.neverCalledWith(removeFromLocalStorageStub, '_cc_id');
+
+      sinon.assert.neverCalledWith(
+        setCookieStub,
+        '_cc_id',
+        '',
+        'Thu, 01 Jan 1970 00:00:00 GMT',
+        'Lax'
+      );
+    });
+  });
 });

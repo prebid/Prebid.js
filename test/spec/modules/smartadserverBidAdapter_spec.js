@@ -115,7 +115,41 @@ describe('Smart bid adapter tests', function () {
       ttl: 300,
       adUrl: 'http://awesome.fake.url',
       ad: '< --- awesome script --- >',
-      cSyncUrl: 'http://awesome.fake.csync.url'
+      cSyncUrl: 'http://awesome.fake.csync.url',
+      isNoAd: false
+    }
+  };
+
+  var BID_RESPONSE_IS_NO_AD = {
+    body: {
+      cpm: 12,
+      width: 300,
+      height: 250,
+      creativeId: 'zioeufg',
+      currency: 'GBP',
+      isNetCpm: true,
+      ttl: 300,
+      adUrl: 'http://awesome.fake.url',
+      ad: '< --- awesome script --- >',
+      cSyncUrl: 'http://awesome.fake.csync.url',
+      isNoAd: true
+    }
+  };
+
+  var BID_RESPONSE_IMAGE_SYNC = {
+    body: {
+      cpm: 12,
+      width: 300,
+      height: 250,
+      creativeId: 'zioeufg',
+      currency: 'GBP',
+      isNetCpm: true,
+      ttl: 300,
+      adUrl: 'http://awesome.fake.url',
+      ad: '< --- awesome script --- >',
+      cSyncUrl: 'http://awesome.fake.csync.url',
+      isNoAd: false,
+      dspPixels: ['pixelOne', 'pixelTwo', 'pixelThree']
     }
   };
 
@@ -147,6 +181,18 @@ describe('Smart bid adapter tests', function () {
     expect(requestContent).to.have.property('buid').and.to.equal('7569');
     expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
     expect(requestContent).to.have.property('ckid').and.to.equal(42);
+  });
+
+  it('Verify parse response with no ad', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS);
+    const bids = spec.interpretResponse(BID_RESPONSE_IS_NO_AD, request[0]);
+    expect(bids).to.have.lengthOf(0);
+
+    expect(function () {
+      spec.interpretResponse(BID_RESPONSE_IS_NO_AD, {
+        data: 'invalid Json'
+      })
+    }).to.not.throw();
   });
 
   it('Verify parse response', function () {
@@ -254,6 +300,27 @@ describe('Smart bid adapter tests', function () {
 
     syncs = spec.getUserSyncs({
       iframeEnabled: true
+    }, []);
+    expect(syncs).to.have.lengthOf(0);
+  });
+
+  it('Verifies user sync using dspPixels', function () {
+    var syncs = spec.getUserSyncs({
+      iframeEnabled: false,
+      pixelEnabled: true
+    }, [BID_RESPONSE_IMAGE_SYNC]);
+    expect(syncs).to.have.lengthOf(3);
+    expect(syncs[0].type).to.equal('image');
+
+    syncs = spec.getUserSyncs({
+      iframeEnabled: false,
+      pixelEnabled: false
+    }, [BID_RESPONSE_IMAGE_SYNC]);
+    expect(syncs).to.have.lengthOf(0);
+
+    syncs = spec.getUserSyncs({
+      iframeEnabled: false,
+      pixelEnabled: true
     }, []);
     expect(syncs).to.have.lengthOf(0);
   });
@@ -472,6 +539,130 @@ describe('Smart bid adapter tests', function () {
       expect(request[0]).to.be.empty;
       expect(request[1]).to.not.be.empty;
     });
+
+    describe('Instream videoData meta & params tests', function () {
+      it('Verify videoData assigns values from meta', function () {
+        config.setConfig({
+          'currency': {
+            'adServerCurrency': 'EUR'
+          }
+        });
+        const request = spec.buildRequests([{
+          adUnitCode: 'sas_42',
+          bidId: 'abcd1234',
+          bidder: 'smartadserver',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [[640, 480]], // It seems prebid.js transforms the player size array into an array of array...
+              protocols: [8, 2],
+              startdelay: 0
+            }
+          },
+          params: {
+            siteId: '1234',
+            pageId: '5678',
+            formatId: '90',
+            target: 'test=prebid',
+            bidfloor: 0.420,
+            buId: '7569',
+            appName: 'Mozilla',
+            ckId: 42,
+          },
+          requestId: 'efgh5678',
+          transactionId: 'zsfgzzg'
+        }]);
+
+        expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+        expect(request[0]).to.have.property('method').and.to.equal('POST');
+        const requestContent = JSON.parse(request[0].data);
+        expect(requestContent).to.have.property('videoData');
+        expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(8);
+        expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(1);
+      });
+
+      it('Verify videoData default values assigned', function () {
+        config.setConfig({
+          'currency': {
+            'adServerCurrency': 'EUR'
+          }
+        });
+        const request = spec.buildRequests([{
+          adUnitCode: 'sas_42',
+          bidId: 'abcd1234',
+          bidder: 'smartadserver',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [[640, 480]] // It seems prebid.js transforms the player size array into an array of array...
+            }
+          },
+          params: {
+            siteId: '1234',
+            pageId: '5678',
+            formatId: '90',
+            target: 'test=prebid',
+            bidfloor: 0.420,
+            buId: '7569',
+            appName: 'Mozilla',
+            ckId: 42,
+          },
+          requestId: 'efgh5678',
+          transactionId: 'zsfgzzg'
+        }]);
+
+        expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+        expect(request[0]).to.have.property('method').and.to.equal('POST');
+        const requestContent = JSON.parse(request[0].data);
+        expect(requestContent).to.have.property('videoData');
+        expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(null);
+        expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
+      });
+
+      it('Verify videoData params override meta values', function () {
+        config.setConfig({
+          'currency': {
+            'adServerCurrency': 'EUR'
+          }
+        });
+        const request = spec.buildRequests([{
+          adUnitCode: 'sas_42',
+          bidId: 'abcd1234',
+          bidder: 'smartadserver',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [[640, 480]], // It seems prebid.js transforms the player size array into an array of array...
+              protocols: [8, 2],
+              startdelay: 0
+            }
+          },
+          params: {
+            siteId: '1234',
+            pageId: '5678',
+            formatId: '90',
+            target: 'test=prebid',
+            bidfloor: 0.420,
+            buId: '7569',
+            appName: 'Mozilla',
+            ckId: 42,
+            video: {
+              protocol: 6,
+              startDelay: 3
+            }
+          },
+          requestId: 'efgh5678',
+          transactionId: 'zsfgzzg'
+        }]);
+
+        expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+        expect(request[0]).to.have.property('method').and.to.equal('POST');
+        const requestContent = JSON.parse(request[0].data);
+        expect(requestContent).to.have.property('videoData');
+        expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(6);
+        expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(3);
+      });
+    });
   });
 
   describe('Outstream video tests', function () {
@@ -574,6 +765,130 @@ describe('Smart bid adapter tests', function () {
           data: 'invalid Json'
         })
       }).to.not.throw();
+    });
+  });
+
+  describe('Outstream videoData meta & params tests', function () {
+    it('Verify videoData assigns values from meta', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        }
+      });
+      const request = spec.buildRequests([{
+        adUnitCode: 'sas_42',
+        bidId: 'abcd1234',
+        bidder: 'smartadserver',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]], // It seems prebid.js transforms the player size array into an array of array...
+            protocols: [8, 2],
+            startdelay: 0
+          }
+        },
+        params: {
+          siteId: '1234',
+          pageId: '5678',
+          formatId: '90',
+          target: 'test=prebid-outstream',
+          bidfloor: 0.420,
+          buId: '7569',
+          appName: 'Mozilla',
+          ckId: 42,
+        },
+        requestId: 'efgh5678',
+        transactionId: 'zsfgzzg'
+      }]);
+
+      expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+      expect(request[0]).to.have.property('method').and.to.equal('POST');
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('videoData');
+      expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(8);
+      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(1);
+    });
+
+    it('Verify videoData default values assigned', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        }
+      });
+      const request = spec.buildRequests([{
+        adUnitCode: 'sas_42',
+        bidId: 'abcd1234',
+        bidder: 'smartadserver',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]] // It seems prebid.js transforms the player size array into an array of array...
+          }
+        },
+        params: {
+          siteId: '1234',
+          pageId: '5678',
+          formatId: '90',
+          target: 'test=prebid-outstream',
+          bidfloor: 0.420,
+          buId: '7569',
+          appName: 'Mozilla',
+          ckId: 42,
+        },
+        requestId: 'efgh5678',
+        transactionId: 'zsfgzzg'
+      }]);
+
+      expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+      expect(request[0]).to.have.property('method').and.to.equal('POST');
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('videoData');
+      expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(null);
+      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
+    });
+
+    it('Verify videoData params override meta values', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        }
+      });
+      const request = spec.buildRequests([{
+        adUnitCode: 'sas_42',
+        bidId: 'abcd1234',
+        bidder: 'smartadserver',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]], // It seems prebid.js transforms the player size array into an array of array...
+            protocols: [8, 2],
+            startdelay: 0
+          }
+        },
+        params: {
+          siteId: '1234',
+          pageId: '5678',
+          formatId: '90',
+          target: 'test=prebid-outstream',
+          bidfloor: 0.420,
+          buId: '7569',
+          appName: 'Mozilla',
+          ckId: 42,
+          video: {
+            protocol: 6,
+            startDelay: 3
+          }
+        },
+        requestId: 'efgh5678',
+        transactionId: 'zsfgzzg'
+      }]);
+
+      expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+      expect(request[0]).to.have.property('method').and.to.equal('POST');
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('videoData');
+      expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(6);
+      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(3);
     });
   });
 

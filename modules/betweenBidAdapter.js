@@ -1,8 +1,9 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
+import { getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'between';
+const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -30,12 +31,14 @@ export const spec = {
 
     validBidRequests.forEach(i => {
       let params = {
-        sizes: parseSizesInput(getAdUnitSizes(i)).join('%2C'),
+        sizes: parseSizesInput(getAdUnitSizes(i)),
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
         fl: getFl(),
         rr: getRr(),
+        shid: getSharedId(i)('id'),
+        shid3: getSharedId(i)('third'),
         s: i.params.s,
         bidid: i.bidId,
         transactionid: i.transactionId,
@@ -74,9 +77,14 @@ export const spec = {
         }
       }
 
-      requests.push({method: 'GET', url: 'https://ads.betweendigital.com/adjson', data: params})
+      requests.push({data: params})
     })
-    return requests;
+    return {
+      method: 'POST',
+      url: ENDPOINT,
+      data: JSON.stringify(requests)
+    }
+    // return requests;
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -96,7 +104,10 @@ export const spec = {
         creativeId: serverResponse.body[i].creativeid,
         currency: serverResponse.body[i].currency || 'RUB',
         netRevenue: serverResponse.body[i].netRevenue || true,
-        ad: serverResponse.body[i].ad
+        ad: serverResponse.body[i].ad,
+        meta: {
+          advertiserDomains: serverResponse.body[i].adomain ? serverResponse.body[i].adomain : []
+        }
       };
       bidResponses.push(bidResponse);
     }
@@ -135,6 +146,15 @@ export const spec = {
       url: 'https://ads.betweendigital.com/sspmatch-iframe'
     });
     return syncs;
+  }
+}
+
+function getSharedId(bid) {
+  const id = deepAccess(bid, 'userId.sharedid.id');
+  const third = deepAccess(bid, 'userId.sharedid.third');
+  return function(kind) {
+    if (kind === 'id') return id || '';
+    return third || '';
   }
 }
 

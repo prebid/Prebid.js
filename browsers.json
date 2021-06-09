@@ -23,11 +23,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_80_windows_10": {
+  "bs_chrome_89_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
-    "browser_version": "80.0",
+    "browser_version": "89.0",
     "device": null,
     "os": "Windows"
   },

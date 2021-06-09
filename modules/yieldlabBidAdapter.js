@@ -8,7 +8,7 @@ const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
 const BID_RESPONSE_TTL_SEC = 300
 const CURRENCY_CODE = 'EUR'
-const OUTSTREAMPLAYER_URL = 'https://ad2.movad.net/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event'
+const OUTSTREAMPLAYER_URL = 'https://ad.adition.com/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -114,7 +114,10 @@ export const spec = {
           netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}"></script>`
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}"></script>`,
+          meta: {
+            advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a'
+          }
         }
 
         if (isVideo(bidRequest, adType)) {

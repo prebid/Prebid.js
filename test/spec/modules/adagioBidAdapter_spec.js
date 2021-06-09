@@ -1,5 +1,5 @@
 import find from 'core-js-pure/features/array/find.js';
-import { expect } from 'chai';
+import { expect, util } from 'chai';
 import {
   _features,
   internal as adagio,
@@ -13,7 +13,8 @@ import {
 } from '../../../modules/adagioBidAdapter.js';
 import { loadExternalScript } from '../../../src/adloader.js';
 import * as utils from '../../../src/utils.js';
-import { config } from 'src/config.js';
+import { config } from '../../../src/config.js';
+import { NATIVE } from '../../../src/mediaTypes.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -331,7 +332,8 @@ describe('Adagio bid adapter', () => {
       'schain',
       'prebidVersion',
       'adapterVersion',
-      'featuresVersion'
+      'featuresVersion',
+      'data'
     ];
 
     it('groups requests by organizationId', function() {
@@ -577,6 +579,7 @@ describe('Adagio bid adapter', () => {
 
           const expected = {
             consentString,
+            allowAuctionWithoutConsent: 0,
             consentRequired: 1,
             apiVersion: 2
           };
@@ -613,6 +616,7 @@ describe('Adagio bid adapter', () => {
           const expected = {
             consentString,
             consentRequired: 0,
+            allowAuctionWithoutConsent: 0,
             apiVersion: 2
           };
 
@@ -736,6 +740,77 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.user.eids).to.be.empty;
       });
     });
+
+    describe('with priceFloors module', function() {
+      it('should get and set floor by mediatype and sizes', function() {
+        const bid01 = new BidRequestBuilder({
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            },
+            video: {
+              playerSize: [600, 480]
+            }
+          }
+        }).withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        // delete the computed `sizes` prop as we are based on mediaTypes only.
+        delete bid01.sizes
+
+        bid01.getFloor = () => {
+          return { floor: 1, currency: 'USD' }
+        }
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.adUnits[0].floors.length).to.equal(3);
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'banner', s: '300x250'});
+        expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'banner', s: '300x600'});
+        expect(requests[0].data.adUnits[0].floors[2]).to.deep.equal({f: 1, mt: 'video', s: '600x480'});
+      });
+
+      it('should get and set floor by mediatype if no size provided (ex native, video)', function() {
+        const bid01 = new BidRequestBuilder({
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              mimes: ['video/mp4']
+            },
+            native: {
+              body: { required: true }
+            }
+          }
+        }).withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+        bid01.getFloor = () => {
+          return { floor: 1, currency: 'USD' }
+        }
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.adUnits[0].floors.length).to.equal(2);
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'video'});
+        expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'native'});
+      });
+
+      it('should get and set floor with default value if no floors found', function() {
+        const bid01 = new BidRequestBuilder({
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              mimes: ['video/mp4']
+            }
+          }
+        }).withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+        bid01.getFloor = () => {
+          return { floor: NaN, currency: 'USD' }
+        }
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.adUnits[0].floors.length).to.equal(1);
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 0.1, mt: 'video'});
+      });
+    });
   });
 
   describe('interpretResponse()', function() {
@@ -753,7 +828,14 @@ describe('Adagio bid adapter', () => {
           netRevenue: true,
           requestId: 'c180kg4267tyqz',
           ttl: 360,
-          width: 300
+          width: 300,
+          aDomain: ['advertiser.com'],
+          mediaType: 'banner',
+          meta: {
+            advertiserId: '80',
+            advertiserName: 'An Advertiser',
+            networkId: '110'
+          }
         }]
       }
     };
@@ -819,11 +901,51 @@ describe('Adagio bid adapter', () => {
         pagetype: 'ARTICLE',
         category: 'NEWS',
         subcategory: 'SPORT',
-        environment: 'desktop'
+        environment: 'desktop',
+        aDomain: ['advertiser.com'],
+        mediaType: 'banner',
+        meta: {
+          advertiserId: '80',
+          advertiserName: 'An Advertiser',
+          advertiserDomains: ['advertiser.com'],
+          networkId: '110',
+          mediaType: 'banner'
+        }
       }];
 
       expect(spec.interpretResponse(serverResponse, bidRequest)).to.be.an('array');
       expect(spec.interpretResponse(serverResponse, bidRequest)).to.deep.equal(expectedResponse);
+    });
+
+    it('Meta props should be limited if no bid.meta is provided', function() {
+      const altServerResponse = utils.deepClone(serverResponse);
+      delete altServerResponse.body.bids[0].meta;
+
+      let expectedResponse = [{
+        ad: '<div style="background-color:red; height:250px; width:300px"></div>',
+        cpm: 1,
+        creativeId: 'creativeId',
+        currency: 'EUR',
+        height: 250,
+        netRevenue: true,
+        requestId: 'c180kg4267tyqz',
+        ttl: 360,
+        width: 300,
+        placement: 'PAVE_ATF',
+        site: 'SITE-NAME',
+        pagetype: 'ARTICLE',
+        category: 'NEWS',
+        subcategory: 'SPORT',
+        environment: 'desktop',
+        aDomain: ['advertiser.com'],
+        mediaType: 'banner',
+        meta: {
+          advertiserDomains: ['advertiser.com'],
+          mediaType: 'banner'
+        }
+      }];
+
+      expect(spec.interpretResponse(altServerResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
 
     it('should populate ADAGIO queue with ssp-data', function() {
@@ -877,6 +999,174 @@ describe('Adagio bid adapter', () => {
         expect(bidResponse.width).to.equal(300);
         expect(bidResponse.height).to.equal(250);
         expect(bidResponse.vastUrl).to.match(/^data:text\/xml;/)
+      });
+    });
+
+    describe('Response with native add', () => {
+      const serverResponseWithNative = utils.deepClone(serverResponse)
+      serverResponseWithNative.body.bids[0].mediaType = 'native';
+      serverResponseWithNative.body.bids[0].admNative = {
+        ver: '1.2',
+        link: {
+          url: 'https://i.am.a.click.url',
+          clickTrackers: [
+            'https://i.am.a.clicktracker.url'
+          ]
+        },
+        privacy: 'http://www.myprivacyurl.url',
+        ext: {
+          bvw: 'test'
+        },
+        eventtrackers: [
+          {
+            event: 1,
+            method: 1,
+            url: 'https://eventrack.local/impression'
+          },
+          {
+            event: 1,
+            method: 2,
+            url: 'https://eventrack.local/impression'
+          },
+          {
+            event: 2,
+            method: 1,
+            url: 'https://eventrack.local/viewable-mrc50'
+          }
+        ],
+        assets: [
+          {
+            required: 1,
+            title: {
+              text: 'My title'
+            }
+          },
+          {
+            img: {
+              url: 'https://images.local/image.jpg',
+              w: 100,
+              h: 250
+            }
+          },
+          {
+            img: {
+              type: 1,
+              url: 'https://images.local/icon.png',
+              w: 40,
+              h: 40
+            }
+          },
+          {
+            data: {
+              type: 1, // sponsored
+              value: 'Adagio'
+            }
+          },
+          {
+            data: {
+              type: 2, // desc / body
+              value: 'The super ad text'
+            }
+          },
+          {
+            data: {
+              type: 3, // rating
+              value: '10 from 10'
+            }
+          },
+          {
+            data: {
+              type: 11, // displayUrl
+              value: 'https://i.am.a.display.url'
+            }
+          }
+        ]
+      };
+
+      const bidRequestNative = utils.deepClone(bidRequest)
+      bidRequestNative.mediaTypes = {
+        native: {
+          sendTargetingKeys: false,
+
+          clickUrl: {
+            required: true,
+          },
+          title: {
+            required: true,
+          },
+          body: {
+            required: true,
+          },
+          sponsoredBy: {
+            required: false
+          },
+          image: {
+            required: true
+          },
+          icon: {
+            required: true
+          },
+          privacyLink: {
+            required: false
+          },
+          ext: {
+            adagio_bvw: {}
+          }
+        }
+      };
+
+      it('Should ignore native parsing due to missing raw admNative property', () => {
+        const alternateServerResponse = utils.deepClone(serverResponseWithNative);
+        delete alternateServerResponse.body.bids[0].admNative
+        const r = spec.interpretResponse(alternateServerResponse, bidRequestNative);
+        expect(r[0].mediaType).to.equal(NATIVE);
+        expect(r[0].native).not.ok;
+        utilsMock.expects('logError').once();
+      });
+
+      it('Should ignore native parsing due to invalid raw admNative.assets property', () => {
+        const alternateServerResponse = utils.deepClone(serverResponseWithNative);
+        alternateServerResponse.body.bids[0].admNative.assets = { title: { text: 'test' } };
+        const r = spec.interpretResponse(alternateServerResponse, bidRequestNative);
+        expect(r[0].mediaType).to.equal(NATIVE);
+        expect(r[0].native).not.ok;
+        utilsMock.expects('logError').once();
+      });
+
+      it('Should handle and return a formated Native ad', () => {
+        const r = spec.interpretResponse(serverResponseWithNative, bidRequestNative);
+        const expected = {
+          displayUrl: 'https://i.am.a.display.url',
+          sponsoredBy: 'Adagio',
+          body: 'The super ad text',
+          rating: '10 from 10',
+          clickUrl: 'https://i.am.a.click.url',
+          title: 'My title',
+          impressionTrackers: [
+            'https://eventrack.local/impression'
+          ],
+          javascriptTrackers: '<script src=\"https://eventrack.local/impression\"></script>',
+          clickTrackers: [
+            'https://i.am.a.clicktracker.url'
+          ],
+          image: {
+            url: 'https://images.local/image.jpg',
+            width: 100,
+            height: 250
+          },
+          icon: {
+            url: 'https://images.local/icon.png',
+            width: 40,
+            height: 40
+          },
+          ext: {
+            adagio_bvw: 'test'
+          },
+          privacyLink: 'http://www.myprivacyurl.url'
+        }
+        expect(r[0].mediaType).to.equal(NATIVE);
+        expect(r[0].native).ok;
+        expect(r[0].native).to.deep.equal(expected);
       });
     });
   });

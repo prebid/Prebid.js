@@ -1,336 +1,321 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>User ID Library Example</title>
-        <script>
-            (function(window, document) {
-                if (!window.__cmp) {
-                    window.__cmp = (function() {
-                        var listen = window.attachEvent || window.addEventListener;
-                        listen('message', function(event) {
-                            window.__cmp.receiveMessage(event);
-                        }, false);
+<html lang="en">
 
-                        function addLocatorFrame() {
-                            if (!window.frames['__cmpLocator']) {
-                                if (document.body) {
-                                    var frame = document.createElement('iframe');
-                                    frame.style.display = 'none';
-                                    frame.name = '__cmpLocator';
-                                    document.body.appendChild(frame);
-                                } else {
-                                    setTimeout(addLocatorFrame, 5);
-                                }
-                            }
-                        }
-                        addLocatorFrame();
+<head>
+  <title>User ID Modules Example</title>
 
-                        var commandQueue = [];
-                        var cmp = function(command, parameter, callback) {
-                            if (command === 'ping') {
-                                if (callback) {
-                                    callback({
-                                        gdprAppliesGlobally: !!(window.__cmp && window.__cmp.config && window.__cmp.config.storeConsentGlobally),
-                                        cmpLoaded: false
-                                    });
-                                }
-                            } else {
-                                commandQueue.push({
-                                    command: command,
-                                    parameter: parameter,
-                                    callback: callback
-                                });
-                            }
-                        };
-                        cmp.commandQueue = commandQueue;
-                        cmp.receiveMessage = function(event) {
-                            var data = event && event.data && event.data.__cmpCall;
-                            if (data) {
-                                commandQueue.push({
-                                    callId: data.callId,
-                                    command: data.command,
-                                    parameter: data.parameter,
-                                    event: event
-                                });
-                            }
-                        };
-                        cmp.config = {
-                            //
-                            // Modify config values here
-                            //
-                            // globalVendorListLocation: 'https://vendorlist.consensu.org/vendorlist.json',
-                            // customPurposeListLocation: './purposes.json',
-                            // globalConsentLocation: './portal.html',
-                            // storeConsentGlobally: false,
-                            // storePublisherData: false,
-                            logging: 'debug'//,
-                            // localization: {},
-                            // forceLocale: 'en-us'
-                        };
-                        return cmp;
-                    }());
-                    var t = document.createElement('script');
-                    t.async = false;
-                    t.src = 'http://acdn.adnxs.com/cmp/cmp.bundle.js';
-                    var tag = document.getElementsByTagName('head')[0];
-                    tag.appendChild(t);
-                }
-            })(window, document);
-            // window.__cmp('showConsentTool');
-        </script>
+  <script>
+    var FAILSAFE_TIMEOUT = 2000;
 
-        <script>
-            var FAILSAFE_TIMEOUT = 2000;
-
-            var adUnits = [
-                {
-                    code: 'test-div',
-                    mediaTypes: {
-                        banner: {
-                            sizes: [[300,250],[300,600],[728,90]]
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'rubicon',
-                            params: {
-                                accountId: '1001',
-                                siteId: '113932',
-                                zoneId: '535510'
-                            }
-                        }
-                    ]
-                }
-            ];
-
-            var pbjs = pbjs || {};
-            pbjs.que = pbjs.que || [];
-        </script>
-        <script src="../../build/dev/prebid.js" async></script>
-
-        <script>
-            function getHashedEmail() {}
-            var googletag = googletag || {};
-            googletag.cmd = googletag.cmd || [];
-            googletag.cmd.push(function() {
-                googletag.pubads().disableInitialLoad();
-            });
-
-            pbjs.que.push(function() {
-                pbjs.setConfig({
-                    debug: true,
-                    consentManagement: {
-                        cmpApi: 'iab',
-                        timeout: 1000,
-                        defaultGdprScope: true
-                    },
-                    // consentManagement: {
-                    //     cmpApi: 'static',
-                    //     consentData: {
-                    //         consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA'
-                    //         vendorData: {
-                    //             purposeConsents: {
-                    //                 '1': true
-                    //             }
-                    //         }
-                    //     }
-                    // },
-                    userSync: {
-                        userIds: [{
-                            name: "pubProvidedId",
-                            params: {
-                                eids: [{
-                                    source: "domain.com",
-                                    uids:[{
-                                        id: "value read from cookie or local storage",
-                                        atype: 1,
-                                        ext: {
-                                            stype: "ppuid" // allowable options are sha256email, DMP, ppuid for now
-                                        }
-                                    }]
-                                },{
-                                    source: "3rdpartyprovided.com",
-                                    uids:[{
-                                        id: "value read from cookie or local storage",
-                                        atype: 3,
-                                        ext: {
-                                            stype: "sha256email"
-                                        }
-                                    }]
-                                }],
-                                eidsFunction: getHashedEmail // any user defined function that exists in the page
-                            }
-                        },{
-                            name: "unifiedId",
-                            params: {
-                                partner: "prebid",
-                                url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
-                            },
-                            storage: {
-                                type: "html5",
-                                name: "unifiedid",
-                                expires: 30
-                            },
-                        },{
-                            name: "intentIqId",
-                            params: {
-                                partner: 0, //Set your real IntentIQ partner ID here for production.
-                            },
-                            storage: {
-                                type: "cookie",
-                                name: "intentIqId",
-                                expires: 30
-                            },
-                        },
-                        {
-                            name: "id5Id",
-                            params: {
-                                partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
-                            },
-                            storage: {
-                                type: "cookie",
-                                name: "id5id",
-                                expires: 90,
-                                refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
-                            },
-
-                        }, {
-                            name: "merkleId",
-                            params: {
-                                ptk: '12345678-aaaa-bbbb-cccc-123456789abc', //Set your real merkle partner key here
-                                pubid: 'EXAMPLE' //Set your real merkle publisher id here
-                            },
-                            storage: {
-                                type: "html5",
-                                name: "merkleId",
-                                expires: 30
-                            },
-
-                        },{
-                            name: "parrableId",
-                            params: {
-                                // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
-                                partner: '30182847-e426-4ff9-b2b5-9ca1324ea09b'
-                            }
-                        }, {
-                            name: "pubCommonId",
-                            storage: {
-                                type: "cookie",
-                                name: "pubcid",
-                                expires: 365
-                            },
-                            // value: {
-                            //     foo: '9879878907987',
-                            //     bar:'93939'
-                            // }
-                        },  {
-                        name: 'identityLink',
-                        params: {
-                            pid: '14' // Set your real identityLink placement ID here
-                        },
-                        storage: {
-                            type: 'cookie',
-                            name: 'idl_env',
-                            expires: 30
-                        }
-                        },
-                        {
-                        name: "sharedId",
-                        params: {
-                            syncTime: 60 // in seconds, default is 24 hours
-                        },
-                        storage: {
-                            type: "cookie",
-                            name: "sharedid",
-                            expires: 28
-                        }
-                        },
-                        {
-                        name: 'lotamePanoramaId'
-                        },
-                        {
-                        name: "liveIntentId",
-                        params: {
-                            publisherId: "9896876"
-                        },
-                        storage: {
-                            type: "cookie",
-                            name: "_li_pbid",
-                            expires: 28
-                        }
-                        },
-                        {
-                            name: "zeotapIdPlus"
-                        },
-                        {
-                            name: 'haloId',
-                            storage: {
-                                type: "cookie",
-                                name: "haloId",
-                                expires: 28
-                            }
-                        },
-                        {
-                            name: "quantcastId"
-                        },
-                        {
-                            name: "criteo"
-                        },
-                        ],
-                        syncDelay: 5000,
-                        auctionDelay: 1000
-                    }
-                });
-                pbjs.addAdUnits(adUnits);
-                pbjs.requestBids({
-                    bidsBackHandler: sendAdserverRequest
-                });
-            });
-
-            function sendAdserverRequest() {
-                if (pbjs.adserverRequestSent) return;
-                pbjs.adserverRequestSent = true;
-                googletag.cmd.push(function() {
-                    pbjs.que.push(function() {
-                        pbjs.setTargetingForGPTAsync();
-                        googletag.pubads().refresh();
-                    });
-                });
+    var adUnits = [
+      {
+        code: 'test-div',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600], [728, 90]]
+          }
+        },
+        bids: [
+          {
+            bidder: 'rubicon',
+            params: {
+              accountId: '1001',
+              siteId: '113932',
+              zoneId: '535510'
             }
+          }
+        ]
+      }
+    ];
 
-            setTimeout(function() {
-                sendAdserverRequest();
-            }, FAILSAFE_TIMEOUT);
-        </script>
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+  </script>
+  <script src="../../build/dev/prebid.js" async></script>
 
-        <script>
-            (function () {
-                var gads = document.createElement('script');
-                gads.async = true;
-                gads.type = 'text/javascript';
-                var useSSL = 'https:' == document.location.protocol;
-                gads.src = (useSSL ? 'https:' : 'http:') +
-                    '//www.googletagservices.com/tag/js/gpt.js';
-                var node = document.getElementsByTagName('script')[0];
-                node.parentNode.insertBefore(gads, node);
-            })();
-        </script>
+  <script>
+    function getHashedEmail() { }
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function () {
+      googletag.pubads().disableInitialLoad();
+    });
 
-        <script>
-            googletag.cmd.push(function() {
-                googletag.defineSlot('/112115922/FL_PB_MedRect', [[300, 250],[300,600]], 'test-div').addService(googletag.pubads());
-                googletag.pubads().enableSingleRequest();
-                googletag.enableServices();
-            });
-        </script>
-    </head>
+    pbjs.que.push(function () {
+      pbjs.setConfig({
+        "debug": true,
+        // *************************************************************************
+        // ** COMMENT consentManagement BLOCK IF YOU DO NOT WANT TO SIMULATE GDPR **
+        // *************************************************************************
+        "consentManagement": {
+          "cmpApi": "static",
+          "consentData": {
+            "getTCData": {
+              "tcString": "CO-HDlqO-HDlqAKAXCENBDCsAP_AAH_AACiQHKNd_X_fb39j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vF36pq4KuR4Eu3LBIQFlHOHcTUmw6IkVqTPsak2Mr7NKJ7PEinMbe2dYGHtfn9VTuZKYr97s___z__-__v__75f_r-3_3_vp9V---_fA5QAkw1L4CLMSxwJJo0qhRAhCuJDoAQAUUIwtE1hASuCnZXAR-ggYAIDUBGBECDEFGLIIAAAAAkoiAkAPBAIgCIBAACAFSAhAARoAgsAJAwCAAUA0LACKAIQJCDI4KjlMCAiRaKCeSMASi72MMIQyigBoFH4AAAAA.cAAAAAAAAAAA",
+              "cmpId": 10,
+              "cmpVersion": 23,
+              "tcfPolicyVersion": 2,
+              "gdprApplies": true,
+              "cmpStatus": "loaded",
+              "eventStatus": "tcloaded",
+              "purpose": {
+                "consents": {
+                  "1": true,
+                  "2": true
+                }
+              },
+              "vendor": {
+                "consents": {
+                  // add your GVL ID here and set to true to give consent within pbjs
+                  "52": true,     // rubicon for adserving
+                  "21": true,     // unifiedId
+                  "131": true,    // id5Id
+                  "929": true,    // parrableId
+                  "97": true,     // identityLink
+                  "887": true,    // sharedId, uid2
+                  "95": true,     // lotamePanoramaId
+                  "301": true,    // zeotapIdPlus
+                  "91": true,     // criteo
+                }
+              }
+            }
+          }
+        },
+        "userSync": {
+          "userIds": [
+            {
+              "name": "pubProvidedId",
+              "params": {
+                "eids": [
+                  {
+                    "source": "domain.com",
+                    "uids": [
+                      {
+                        "id": "value read from cookie or local storage",
+                        "atype": 1,
+                        "ext": {
+                          "stype": "ppuid" // allowable options are sha256email, DMP, ppuid for now
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "source": "3rdpartyprovided.com",
+                    "uids": [
+                      {
+                        "id": "value read from cookie or local storage",
+                        "atype": 3,
+                        "ext": {
+                          "stype": "sha256email"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "eidsFunction": getHashedEmail // any user defined function that exists in the page
+              }
+            },
+            {
+              "name": "unifiedId",
+              "params": {
+                "partner": "prebid",
+                "url": "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
+              },
+              "storage": {
+                "type": "html5",
+                "name": "unifiedid",
+                "expires": 30
+              }
+            },
+            {
+              "name": "intentIqId",
+              "params": {
+                "partner": 0 // Set your real IntentIQ partner ID here for production.
+              },
+              "storage": {
+                "type": "cookie",
+                "name": "intentIqId",
+                "expires": 30
+              }
+            },
+            {
+              "name": "id5Id",
+              "params": {
+                "partner": 173 // Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
+              },
+              "storage": {
+                "type": "html5",
+                "name": "id5id",
+                "expires": 90,
+                "refreshInSeconds": 10// 8*3600 // Refresh frequency of cookies
+              }
+            },
+            {
+              "name": "merkleId",
+              "params": {
+                "vendor": "sdfg",
+                "sv_cid": "dfg",
+                "sv_pubid": "xcv",
+                "sv_domain": "zxv"
+              },
+              "storage": {
+                "type": "html5",
+                "name": "merkleId",
+                "expires": 30
+              }
+            },
+            {
+              "name": "parrableId",
+              "params": {
+                // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
+                "partner": "30182847-e426-4ff9-b2b5-9ca1324ea09b"
+              }
+            },
+            {
+              "name": "pubCommonId",
+              "storage": {
+                "type": "cookie",
+                "name": "pubcid",
+                "expires": 365
+              }
+              // value: {
+              //     foo: '9879878907987',
+              //     bar:'93939'
+              // }
+            },
+            {
+              "name": "identityLink",
+              "params": {
+                "pid": "14" // Set your real identityLink placement ID here
+                // use3P: false // true/false - If you want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will not be fired. By default this property is undefined and 3p request will not be fired.
+              },
+              "storage": {
+                "type": "cookie",
+                "name": "idl_env",
+                "expires": 30
+              }
+            },
+            {
+              "name": "sharedId",
+              // bidders: ["rubicon", "sampleBidders"], // to allow this ID for specific bidders
+              "params": {
+                "syncTime": 60 // in seconds, default is 24 hours
+              },
+              "storage": {
+                "type": "cookie",
+                "name": "sharedid",
+                "expires": 28
+              }
+            },
+            {
+              "name": "lotamePanoramaId"
+            },
+            {
+              "name": "liveIntentId",
+              "params": {
+                "publisherId": "9896876"
+              },
+              "storage": {
+                "type": "cookie",
+                "name": "_li_pbid",
+                "expires": 28
+              }
+            },
+            {
+              "name": "zeotapIdPlus"
+            },
+            {
+              "name": "haloId",
+              "storage": {
+                "type": "cookie",
+                "name": "haloId",
+                "expires": 28
+              }
+            },
+            {
+              "name": "quantcastId"
+            },
+            {
+              "name": "criteo"
+            },
+            {
+              "name": "uid2"
+            }
+            ,{
+                name: "flocId",
+                params: {
+                  // Default sharedid.org token : "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
+                  // To get new token, register https://developer.chrome.com/origintrials/#/trials/active for Federated Learning of Cohorts
+                  token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
+                }
+              }
+          ],
+          "syncDelay": 5000,
+          "auctionDelay": 1000
+        }
+      });
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest
+      });
+    });
 
-    <body>
-        <h2>Rubicon Project Prebid</h2>
-        <div id="test-div">
-            <script>
-                googletag.cmd.push(function() { googletag.display('test-div'); });
-            </script>
-        </div>
-    </body>
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      });
+    }
+
+    setTimeout(function () {
+      sendAdserverRequest();
+    }, FAILSAFE_TIMEOUT);
+  </script>
+
+  <script>
+    (function () {
+      var gads = document.createElement('script');
+      gads.async = true;
+      gads.type = 'text/javascript';
+      var useSSL = 'https:' == document.location.protocol;
+      gads.src = (useSSL ? 'https:' : 'http:') +
+        '//www.googletagservices.com/tag/js/gpt.js';
+      var node = document.getElementsByTagName('script')[0];
+      node.parentNode.insertBefore(gads, node);
+    })();
+  </script>
+
+  <script>
+    googletag.cmd.push(function () {
+      googletag.defineSlot('/112115922/FL_PB_MedRect', [[300, 250], [300, 600], [728, 90]], 'test-div').addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
+</head>
+
+<body>
+  <h2>User ID Modules Example</h2>
+
+  <h4>Generated EIDs</h4>
+  <script>
+    pbjs.que.push(function () {
+      var idsDiv = document.getElementById('ids-div');
+      idsDiv.innerHTML = JSON.stringify(pbjs.getUserIdsAsEids(), null, ' ');
+    });
+  </script>
+  <pre id="ids-div" style="border:1px solid #333; padding:5px; overflow: scroll"></pre>
+
+  <h4>Ad Slot</h4>
+  <div id="test-div" style="border:1px solid #333; padding:5px;">
+    <script>
+      googletag.cmd.push(function () { googletag.display('test-div'); });
+    </script>
+  </div>
+</body>
+
 </html>
