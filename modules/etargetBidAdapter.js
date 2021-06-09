@@ -1,5 +1,5 @@
-'use strict';
-
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -57,9 +57,39 @@ export const spec = {
       data: bidderRequest,
       bids: validBidRequests,
       netRevenue: netRevenue,
+      metaData: getMetaData(),
       bidder: 'etarget',
       gdpr: gdprObject
     };
+
+    function getMetaData() {
+      var mts = {};
+      var hmetas = document.getElementsByTagName('meta');
+      var wnames = ['title', 'og:title', 'description', 'og:description', 'og:url', 'base', 'keywords'];
+      try {
+        for (var k in hmetas) {
+          if (typeof hmetas[k] == 'object') {
+            var mname = hmetas[k].name || hmetas[k].getAttribute('property');
+            var mcont = hmetas[k].content;
+            if (!!mname && mname != 'null' && !!mcont) {
+              if (wnames.indexOf(mname) >= 0) {
+                if (!mts[mname]) {
+                  mts[mname] = [];
+                }
+                mts[mname].push(mcont);
+              }
+            }
+          }
+        }
+        mts['title'] = [(document.getElementsByTagName('title')[0] || []).innerHTML];
+        mts['base'] = [(document.getElementsByTagName('base')[0] || {}).href];
+        mts['referer'] = [document.location.href];
+        mts['ortb2'] = (config.getConfig('ortb2') || {});
+      } catch (e) {
+        mts.error = e;
+      }
+      return mts;
+    }
 
     function formRequestUrl(reqData) {
       var key;
@@ -107,9 +137,14 @@ export const spec = {
           bidObject.gdpr = bidRequest.gdpr.gdpr;
           bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
         }
+
+        if (bid.adomain) {
+          utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
+        }
         bidRespones.push(bidObject);
       }
     }
+
     return bidRespones;
 
     function verifySize(adItem, validSizes) {
