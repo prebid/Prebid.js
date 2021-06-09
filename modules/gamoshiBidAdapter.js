@@ -150,8 +150,7 @@ export const spec = {
           const playerSize = mediaTypes.video.playerSize || sizes;
           const videoImp = Object.assign({}, imp, {
             video: {
-              // protocols: params.protocols || [1, 2, 3, 4, 5, 6],
-              protocols: bidRequest.mediaTypes.video.protocols || [1, 2, 3, 4, 5, 6],
+              protocols: bidRequest.mediaTypes.video.protocols || params.protocols || [1, 2, 3, 4, 5, 6],
               pos: params.pos || 0,
               ext: {
                 context: mediaTypes.video.context
