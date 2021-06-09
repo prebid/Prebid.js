@@ -33,10 +33,11 @@ export const spec = {
     }
 
     if (isVideoRequest(bid)) {
-      if (!bid.params.mimes) {
+      const mimes = bid.params.mimes || utils.deepAccess(bid, 'mediaTypes.video.mimes');
+      if (!mimes) {
         // Give a warning but let it pass
         utils.logWarn(BIDDER_CODE + ': mimes should be specified for videos');
-      } else if (!utils.isArray(bid.params.mimes) || !bid.params.mimes.every(s => utils.isStr(s))) {
+      } else if (!utils.isArray(mimes) || !mimes.every(s => utils.isStr(s))) {
         utils.logWarn(BIDDER_CODE + ': mimes must be an array of strings');
         return false;
       }
@@ -61,7 +62,7 @@ export const spec = {
     let bidurl = URL;
 
     const conversantImps = validBidRequests.map(function(bid) {
-      const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      const bidfloor = getBidFloor(bid);
 
       siteId = utils.getBidIdParameter('site_id', bid.params) || siteId;
       pubcidName = utils.getBidIdParameter('pubcid_name', bid.params) || pubcidName;
@@ -90,7 +91,7 @@ export const spec = {
 
         copyOptProperty(bid.params.position, video, 'pos');
         copyOptProperty(bid.params.mimes || videoData.mimes, video, 'mimes');
-        copyOptProperty(bid.params.maxduration, video, 'maxduration');
+        copyOptProperty(bid.params.maxduration || videoData.maxduration, video, 'maxduration');
         copyOptProperty(bid.params.protocols || videoData.protocols, video, 'protocols');
         copyOptProperty(bid.params.api || videoData.api, video, 'api');
 
@@ -375,6 +376,30 @@ function readStoredValue(key) {
   }
 
   return storedValue;
+}
+
+/**
+ * Get the floor price from bid.params for backward compatibility.
+ * If not found, then check floor module.
+ * @param bid A valid bid object
+ * @returns {*|number} floor price
+ */
+function getBidFloor(bid) {
+  let floor = utils.getBidIdParameter('bidfloor', bid.params);
+
+  if (!floor && utils.isFn(bid.getFloor)) {
+    const floorObj = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (utils.isPlainObject(floorObj) && !isNaN(floorObj.floor) && floorObj.currency === 'USD') {
+      floor = floorObj.floor;
+    }
+  }
+
+  return floor
 }
 
 registerBidder(spec);

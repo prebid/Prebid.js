@@ -104,7 +104,10 @@ export const spec = {
         creativeId: serverResponse.body[i].creativeid,
         currency: serverResponse.body[i].currency || 'RUB',
         netRevenue: serverResponse.body[i].netRevenue || true,
-        ad: serverResponse.body[i].ad
+        ad: serverResponse.body[i].ad,
+        meta: {
+          advertiserDomains: serverResponse.body[i].adomain ? serverResponse.body[i].adomain : []
+        }
       };
       bidResponses.push(bidResponse);
     }

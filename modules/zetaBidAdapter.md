@@ -32,10 +32,10 @@ Module that connects to Zeta's demand sources
                             device: {
                                 ip: '111.222.33.44',
                                 geo: {
-                                    country: "USA"
+                                    country: 'USA'
                                 }
                             },
-                            definerId: 1,
+                            definerId: '44253',
                             test: 1
                         }
                     }

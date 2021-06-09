@@ -26,7 +26,9 @@
     "tapadIdSystem",
     "novatiqIdSystem",
     "uid2IdSystem",
-    "admixerIdSystem"
+    "admixerIdSystem",
+    "dmdIdSystem",
+    "flocIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -34,10 +36,18 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
-    "haloRtdProvider",
-    "jwplayerRtdProvider",
-    "reconciliationRtdProvider",
+    "dgkeywordRtdProvider",
     "geoedgeRtdProvider",
+    "haloRtdProvider",
+    "iasRtdProvider",
+    "jwplayerRtdProvider",
+    "optimeraRtdProvider",
+    "permutiveRtdProvider",
+    "reconciliationRtdProvider",
     "sirdataRtdProvider"
+  ],
+  "fpdModule": [
+    "enrichmentFpdModule",
+    "validationFpdModule"
   ]
 }

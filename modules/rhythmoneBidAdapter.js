@@ -253,6 +253,9 @@ function RhythmOneBidAdapter() {
         cpm: parseFloat(bid.price),
         width: bid.w,
         height: bid.h,
+        meta: {
+          advertiserDomains: bid.adomain
+        },
         creativeId: bid.crid,
         currency: 'USD',
         netRevenue: true,

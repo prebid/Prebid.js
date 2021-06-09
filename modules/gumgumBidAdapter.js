@@ -208,7 +208,7 @@ function _getVidParams (attributes) {
  * @param {Object} bid
  * @returns {Number} floor
  */
-function _getFloor (mediaTypes, staticBidfloor, bid) {
+function _getFloor (mediaTypes, staticBidFloor, bid) {
   const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
   const bidFloor = { floor: 0, currency: 'USD' };
 
@@ -220,9 +220,11 @@ function _getFloor (mediaTypes, staticBidfloor, bid) {
     floor && (bidFloor.floor = floor);
     currency && (bidFloor.currency = currency);
 
-    if (staticBidfloor && floor && currency === 'USD') {
-      bidFloor.floor = Math.max(staticBidfloor, parseFloat(floor));
+    if (staticBidFloor && floor && currency === 'USD') {
+      bidFloor.floor = Math.max(staticBidFloor, parseFloat(floor));
     }
+  } else if (staticBidFloor) {
+    bidFloor.floor = staticBidFloor
   }
 
   return bidFloor;
@@ -247,11 +249,18 @@ function buildRequests (validBidRequests, bidderRequest) {
       params = {},
       schain,
       transactionId,
-      userId = {}
+      userId = {},
+      ortb2Imp
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     let sizes = [1, 1];
     let data = {};
+    let gpid = '';
+
+    // ADJS-1024
+    if (utils.deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
+      gpid = ortb2Imp.ext.data.adserver.adslot
+    }
 
     if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;
@@ -318,6 +327,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
+      gpid: gpid,
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
     })
   });
@@ -384,7 +394,9 @@ function interpretResponse (serverResponse, bidRequest) {
     ad: {
       price: 0,
       id: 0,
-      markup: ''
+      markup: '',
+      width: 0,
+      height: 0
     },
     pag: {
       pvid: 0
@@ -399,7 +411,9 @@ function interpretResponse (serverResponse, bidRequest) {
       price: cpm,
       id: creativeId,
       markup,
-      cur
+      cur,
+      width: responseWidth,
+      height: responseHeight
     },
     cw: wrapper,
     pag: {
@@ -415,7 +429,8 @@ function interpretResponse (serverResponse, bidRequest) {
   let product = data.pi
   let mediaType = (product === 6 || product === 7) ? VIDEO : BANNER
   let isTestUnit = (product === 3 && data.si === 9)
-  let sizes = utils.parseSizesInput(bidRequest.sizes)
+  // use response sizes if available
+  let sizes = responseWidth && responseHeight ? [`${responseWidth}x${responseHeight}`] : utils.parseSizesInput(bidRequest.sizes)
   let [width, height] = sizes[0].split('x')
   let metaData = {
     advertiserDomains: advertiserDomains || [],
