@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'iprom';
 const ENDPOINT_URL = 'https://core.iprom.net/programmatic';
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.0.1';
 const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_NETREVENUE = true;
 const DEFAULT_TTL = 360;
@@ -52,7 +52,7 @@ export const spec = {
     const bidResponses = [];
 
     bids.forEach(bid => {
-      bidResponses.push({
+      const b = {
         ad: bid.ad,
         requestId: bid.requestId,
         cpm: bid.cpm,
@@ -62,7 +62,14 @@ export const spec = {
         currency: bid.currency || DEFAULT_CURRENCY,
         netRevenue: bid.netRevenue || DEFAULT_NETREVENUE,
         ttl: bid.ttl || DEFAULT_TTL,
-      });
+        meta: {},
+      };
+
+      if (bid.aDomains && bid.aDomains.length) {
+        b.meta.advertiserDomains = bid.aDomains;
+      }
+
+      bidResponses.push(b);
     });
 
     return bidResponses;
