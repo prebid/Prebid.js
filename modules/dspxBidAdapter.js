@@ -7,7 +7,7 @@ const BIDDER_CODE = 'dspx';
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
 const DEFAULT_VAST_FORMAT = 'vast2';
-const GVLID = 937;
+const GVLID = 602;
 
 export const spec = {
   code: BIDDER_CODE,
