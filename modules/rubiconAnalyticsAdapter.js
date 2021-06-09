@@ -152,7 +152,7 @@ function sendMessage(auctionId, bidWonId, trigger) {
       'videoAdFormat', () => bid.videoAdFormat,
       'mediaTypes'
     ]), {
-      adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
+      adserverTargeting: !utils.isEmpty(cache.targeting[bid.adUnit.adUnitCode]) ? stringProperties(cache.targeting[bid.adUnit.adUnitCode]) : undefined,
       bidwonStatus: 'success', // hard-coded for now
       accountId,
       siteId: bid.siteId,
@@ -192,8 +192,8 @@ function sendMessage(auctionId, bidWonId, trigger) {
           'transactionId',
           'mediaTypes',
           'dimensions',
-          'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
-          'gam',
+          'adserverTargeting', () => !utils.isEmpty(cache.targeting[bid.adUnit.adUnitCode]) ? stringProperties(cache.targeting[bid.adUnit.adUnitCode]) : undefined,
+          'gam', gam => !utils.isEmpty(gam) ? gam : undefined,
           'pbAdSlot',
           'pattern'
         ]);
