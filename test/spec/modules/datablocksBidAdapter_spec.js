@@ -424,7 +424,7 @@ describe('DatablocksAdapter', function() {
 
   describe('getUserSyncs', function() {
     it('Should return array of syncs', function() {
-      expect(spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [res_object], {gdprApplies: true, gdpr: 1, gdpr_consent: 'consent_string'}, {})).to.an('array');
+      expect(spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [res_object], {gdprApplies: true, gdpr: 1, gdpr_consent: 'consent_string'}, {})).to.be.an('array');
     });
   });
 
