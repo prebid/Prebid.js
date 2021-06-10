@@ -46,7 +46,7 @@ import {uid2IdSubmodule} from 'modules/uid2IdSystem.js';
 import {admixerIdSubmodule} from 'modules/admixerIdSystem.js';
 import {deepintentDpesSubmodule} from 'modules/deepintentDpesIdSystem.js';
 import {flocIdSubmodule} from 'modules/flocIdSystem.js'
-import { amxIdSubmodule } from '../../../modules/amxIdSystem';
+import { amxIdSubmodule } from '../../../modules/amxIdSystem.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -530,7 +530,7 @@ describe('User ID', function () {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 22 configurations should result in 21 submodules add', function () {
+    it('config with 21 configurations should result in 21 submodules add', function () {
       setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule, amxIdSubmodule]);
       init(config);
       config.setConfig({
