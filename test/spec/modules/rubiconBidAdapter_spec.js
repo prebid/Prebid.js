@@ -3211,7 +3211,7 @@ describe('the rubicon adapter', function () {
             width: 640
           });
           // cleanup
-          adUnit.remove();
+          adUnit.parentNode.removeChild(adUnit);
         });
       });
 

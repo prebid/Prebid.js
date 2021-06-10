@@ -17,34 +17,7 @@ export const FIRST_PARTY_KEY = '_iiq_fdata';
 
 export const storage = getStorageManager(undefined, MODULE_NAME);
 
-const NOT_AVAILABLE = 'NA';
-
-/**
- * Verify the response is valid - Id value or Not Found (ignore not available response)
- * @param response
- * @param respJson - parsed json response
- * @returns {boolean}
- */
-function isValidResponse(response, respJson) {
-  if (!response || response == '' || response === NOT_AVAILABLE) {
-    // Empty or NA response
-    return false;
-  } else if (respJson && (respJson.RESULT === NOT_AVAILABLE || respJson.data == '' || respJson.data === NOT_AVAILABLE)) {
-    // Response type is json with value NA
-    return false;
-  } else { return true; }
-}
-
-/**
- * Verify the response json is valid
- * @param respJson - parsed json response
- * @returns {boolean}
- */
-function isValidResponseJson(respJson) {
-  if (respJson && 'data' in respJson) {
-    return true;
-  } else { return false; }
-}
+const INVALID_ID = 'INVALID_ID';
 
 /**
  * Generate standard UUID string
@@ -130,7 +103,7 @@ export const intentIqIdSubmodule = {
    * @returns {{intentIqId: {string}}|undefined}
    */
   decode(value) {
-    return isValidResponse(value, undefined) ? { 'intentIqId': value } : undefined;
+    return value && value != '' && INVALID_ID != value ? { 'intentIqId': value } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -157,22 +130,24 @@ export const intentIqIdSubmodule = {
     let url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
     url += configParams.pcid ? '&pcid=' + encodeURIComponent(configParams.pcid) : '';
     url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
-    if (firstPartyData) {
-      url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
-      url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
-    }
+    url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
+    url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
 
     const resp = function (callback) {
       const callbacks = {
         success: response => {
           let respJson = tryParse(response);
-          if (isValidResponse(response, respJson) && isValidResponseJson(respJson)) {
+          // If response is a valid json and should save is true
+          if (respJson && respJson.ls) {
             // Store pid field if found in response json
-            if (firstPartyData && 'pcid' in firstPartyData && 'pid' in respJson) {
-              firstPartyData = {
-                'pcid': firstPartyData.pcid,
-                'pid': respJson.pid }
+            if ('pid' in respJson) {
+              firstPartyData.pid = respJson.pid;
               storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
+            }
+
+            // If should save and data is empty, means we should save as INVALID_ID
+            if (respJson.data == '') {
+              respJson.data = INVALID_ID;
             }
             callback(respJson.data);
           } else {
