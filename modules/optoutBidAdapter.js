@@ -27,7 +27,6 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests) {
-    console.log(getCurrency());
     return validBidRequests.map(bidRequest => {
       return {
         method: 'POST',
