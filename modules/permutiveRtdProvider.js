@@ -46,9 +46,13 @@ export function initSegments (reqBidsConfigObj, callback, customConfig) {
 }
 
 function setSegments (reqBidsConfigObj, config) {
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits
+  const adUnits = (reqBidsConfigObj && reqBidsConfigObj.adUnits) || getGlobal().adUnits
   const data = getSegments(config.params.maxSegs)
   const utils = { deepSetValue, deepAccess, isFn, mergeDeep }
+
+  if (!adUnits) {
+    return
+  }
 
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
@@ -121,6 +125,11 @@ function getDefaultBidderFn (bidder) {
     },
     trustx: function (bid, data, acEnabled) {
       if (acEnabled && data.ac && data.ac.length) {
+        const currRtd = bid.rtd || {}
+        const targeting = { segments: data.ac }
+        const pRtd = { p_standard: { targeting } }
+
+        bid.rtd = Object.assign({}, currRtd, pRtd)
         deepSetValue(bid, 'params.keywords.p_standard', data.ac)
       }
 

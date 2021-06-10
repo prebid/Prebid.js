@@ -103,10 +103,10 @@ describe('permutiveRtdProvider', function () {
       function callback () {
         adUnits.forEach(adUnit => {
           adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
+            const { bidder, rtd } = bid
 
             if (bidder === 'trustx') {
-              expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac)
+              expect(deepAccess(rtd, 'p_standard.targeting.segments')).to.eql(data.ac)
             }
           })
         })
