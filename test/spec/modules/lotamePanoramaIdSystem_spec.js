@@ -4,6 +4,7 @@ import {
 } from 'modules/lotamePanoramaIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import sinon from 'sinon';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 

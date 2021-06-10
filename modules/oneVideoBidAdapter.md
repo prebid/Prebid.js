@@ -348,7 +348,7 @@ var adUnits = [
                     id: 1,
                     page: 'https://verizonmedia.com',
                     referrer: 'https://verizonmedia.com'
-                  },
+                  },            
                 pubId: 'HBExchange'
                 }
             }

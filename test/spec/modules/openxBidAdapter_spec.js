@@ -1064,7 +1064,6 @@ describe('OpenxAdapter', function () {
         parrableId: { eid: 'eidVersion.encryptionKeyReference.encryptedValue' },
         pubcid: '1111-pubcid',
         quantcastId: '1111-quantcastid',
-        sharedId: '1111-sharedid',
         tapadId: '111-tapadid',
         tdid: '1111-tdid',
         verizonMediaId: '1111-verizonmediaid',
