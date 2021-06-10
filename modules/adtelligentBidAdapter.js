@@ -248,7 +248,10 @@ function createBid(bidResponse, bidRequest) {
     cpm: bidResponse.cpm,
     netRevenue: true,
     mediaType,
-    ttl: 300
+    ttl: 300,
+    meta: {
+      advertiserDomains: bidResponse.adomain || []
+    }
   };
 
   if (mediaType === BANNER) {
