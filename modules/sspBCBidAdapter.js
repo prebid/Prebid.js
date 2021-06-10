@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const BIDDER_CODE = 'sspBC';
@@ -9,7 +9,7 @@ const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TMAX = 450;
-const BIDDER_VERSION = '5.1';
+const BIDDER_VERSION = '5.0';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
@@ -155,78 +155,6 @@ const mapBanner = slot => {
   }
 }
 
-/**
- * @param {string} paramName Native parameter name
- * @param {object} paramValue Native parameter value
- * @returns {object} native asset object that conforms to ortb native ads spec
- */
-const mapAsset = (paramName, paramValue) => {
-  let asset;
-  switch (paramName) {
-    case 'title':
-      asset = {
-        id: 0,
-        required: paramValue.required,
-        title: { len: paramValue.len }
-      }
-      break;
-    case 'cta':
-      asset = {
-        id: 1,
-        required: paramValue.required,
-        data: { type: 12 }
-      }
-      break;
-    case 'icon':
-      asset = {
-        id: 2,
-        required: paramValue.required,
-        img: { type: 1, w: paramValue.sizes[0], h: paramValue.sizes[1] }
-      }
-      break;
-    case 'image':
-      asset = {
-        id: 3,
-        required: paramValue.required,
-        img: { type: 3, w: paramValue.sizes[0], h: paramValue.sizes[1] }
-      }
-      break;
-    case 'body':
-      asset = {
-        id: 4,
-        required: paramValue.required,
-        data: { type: 2 }
-      }
-      break;
-    case 'sponsoredBy':
-      asset = {
-        id: 5,
-        required: paramValue.required,
-        data: { type: 1 }
-      }
-      break;
-  }
-  return asset;
-}
-
-/**
- * @param {object} slot Ad Unit Params by Prebid
- * @returns {object} native object that conforms to ortb native ads spec
- */
-const mapNative = slot => {
-  const native = utils.deepAccess(slot, 'mediaTypes.native');
-  let assets;
-  if (native) {
-    const nativeParams = Object.keys(native);
-    assets = [];
-    nativeParams.forEach(par => {
-      const newAsset = mapAsset(par, native[par]);
-      if (newAsset) { assets.push(newAsset) };
-    });
-  }
-  return assets;
-}
-
 const mapImpression = slot => {
   const { adUnitCode, bidId, params = {}, ortb2Imp = {} } = slot;
   const { id, siteId } = params;
@@ -243,7 +171,7 @@ const mapImpression = slot => {
   const imp = {
     id: id && siteId ? id : 'bidid-' + bidId,
     banner: mapBanner(slot),
-    native: mapNative(slot),
+    // native: mapNative(slot),
     tagid: adUnitCode,
     ext,
   };
@@ -251,7 +179,6 @@ const mapImpression = slot => {
   // Check floorprices for this imp
   if (typeof slot.getFloor === 'function') {
     let bannerFloor = 0;
-    let nativeFloor = 0;
     // sspBC adapter accepts only floor per imp - check for maximum value for requested ad types and sizes
     if (slot.sizes.length) {
       bannerFloor = slot.sizes.reduce((prev, next) => {
@@ -259,8 +186,7 @@ const mapImpression = slot => {
         return prev > currentFloor ? prev : currentFloor;
       }, 0);
     }
-    nativeFloor = slot.getFloor({ mediaType: 'native' });
-    imp.bidfloor = Math.max(bannerFloor, nativeFloor);
+    imp.bidfloor = bannerFloor;
   }
   return imp;
 }
