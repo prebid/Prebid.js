@@ -140,6 +140,20 @@ function validateNativeMediaType(adUnit) {
   return validatedAdUnit;
 }
 
+function validateAdUnitPos(adUnit, mediaType) {
+  let pos = utils.deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
+
+  if (!pos || !utils.isNumber(pos) || !isFinite(pos)) {
+    let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
+
+    utils.logWarn(warning);
+    events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: warning});
+    delete adUnit.mediaTypes[mediaType].pos;
+  }
+
+  return adUnit
+}
+
 export const adUnitSetupChecks = {
   validateBannerMediaType,
   validateVideoMediaType,
@@ -167,10 +181,12 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
 
     if (mediaTypes.banner) {
       validatedBanner = validateBannerMediaType(adUnit);
+      if (mediaTypes.banner.hasOwnProperty('pos')) validatedBanner = validateAdUnitPos(validatedBanner, 'banner');
     }
 
     if (mediaTypes.video) {
       validatedVideo = validatedBanner ? validateVideoMediaType(validatedBanner) : validateVideoMediaType(adUnit);
+      if (mediaTypes.video.hasOwnProperty('pos')) validatedVideo = validateAdUnitPos(validatedVideo, 'video');
     }
 
     if (mediaTypes.native) {
