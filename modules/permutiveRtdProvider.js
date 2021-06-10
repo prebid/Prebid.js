@@ -130,7 +130,6 @@ function getDefaultBidderFn (bidder) {
         const pRtd = { p_standard: { targeting } }
 
         bid.rtd = Object.assign({}, currRtd, pRtd)
-        deepSetValue(bid, 'params.keywords.p_standard', data.ac)
       }
 
       return bid
