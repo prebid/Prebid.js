@@ -9,11 +9,14 @@ function getDomain(bidderRequest) {
 }
 
 function getCurrency() {
-  try {
-    return config.getConfig('currency').adServerCurrency;
-  } catch (error) {
-    return 'EUR';
+  let cur = config.getConfig('currency');
+  if (cur === undefined) {
+    cur = {
+      adServerCurrency: 'EUR',
+      granularityMultiplier: 1
+    };
   }
+  return cur;
 }
 
 export const spec = {
@@ -24,6 +27,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests) {
+    console.log(getCurrency());
     return validBidRequests.map(bidRequest => {
       return {
         method: 'POST',
@@ -34,8 +38,8 @@ export const spec = {
           adSlot: bidRequest.params.adslot,
           cur: getCurrency(),
           url: getDomain(bidRequest),
-          ortb2: JSON.stringify(config.getConfig('ortb2')),
-          consent: JSON.stringify(bidRequest.gdprConsent)
+          ortb2: config.getConfig('ortb2'),
+          consent: bidRequest.gdprConsent
         },
       };
     });

@@ -95,16 +95,16 @@ describe('optoutAdapterTest', function () {
       })
 
       const requests = spec.buildRequests(bidRequests);
-      expect(requests[0].data.cur).to.equal('USD');
-      expect(requests[1].data.cur).to.equal('USD');
+      expect(requests[0].data.cur.adServerCurrency).to.equal('USD');
+      expect(requests[1].data.cur.adServerCurrency).to.equal('USD');
     });
 
     it('bidRequest without config for currency', function () {
       config.resetConfig();
 
       const requests = spec.buildRequests(bidRequests);
-      expect(requests[0].data.cur).to.equal('EUR');
-      expect(requests[1].data.cur).to.equal('EUR');
+      expect(requests[0].data.cur.adServerCurrency).to.equal('EUR');
+      expect(requests[1].data.cur.adServerCurrency).to.equal('EUR');
     });
   });
 });
