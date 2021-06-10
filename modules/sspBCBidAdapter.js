@@ -268,7 +268,7 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
 const spec = {
   code: BIDDER_CODE,
   aliases: [],
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER],
   isBidRequestValid(bid) {
     // as per OneCode integration, bids without params are valid
     return true;
