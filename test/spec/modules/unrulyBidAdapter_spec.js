@@ -9,7 +9,7 @@ describe('UnrulyAdapter', function () {
   function createOutStreamExchangeBid({
     adUnitCode = 'placement2',
     statusCode = 1,
-    bidId = 'foo',
+    requestId = 'foo',
     vastUrl = 'https://targeting.unrulymedia.com/in_article?uuid=74544e00-d43b-4f3a-a799-69d22ce979ce&supported_mime_type=application/javascript&supported_mime_type=video/mp4&tj=%7B%22site%22%3A%7B%22lang%22%3A%22en-GB%22%2C%22ref%22%3A%22%22%2C%22page%22%3A%22https%3A%2F%2Fdemo.unrulymedia.com%2FinArticle%2Finarticle_nypost_upbeat%2Ftravel_magazines.html%22%2C%22domain%22%3A%22demo.unrulymedia.com%22%7D%2C%22user%22%3A%7B%22profile%22%3A%7B%22quantcast%22%3A%7B%22segments%22%3A%5B%7B%22id%22%3A%22D%22%7D%2C%7B%22id%22%3A%22T%22%7D%5D%7D%7D%7D%7D&video_width=618&video_height=347'
   }) {
     return {
@@ -29,8 +29,16 @@ describe('UnrulyAdapter', function () {
       'bidderCode': 'unruly',
       'width': 323,
       'vastUrl': vastUrl,
-      'bidId': bidId,
-      'height': 323
+      'requestId': requestId,
+      'creativeId': requestId,
+      'height': 323,
+      'netRevenue': true,
+      'ttl': 360,
+      'currency': 'USD',
+      'meta': {
+        'mediaType': 'video',
+        'videoContext': 'outstream'
+      }
     }
   }
 
@@ -447,11 +455,24 @@ describe('UnrulyAdapter', function () {
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([])
     });
     it('should return array of bids when receive a successful response from server', function () {
-      const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', requestId: 'mockBidId'});
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([
         {
+          'ext': {
+            'statusCode': 1,
+            'renderer': {
+              'id': 'unruly_inarticle',
+              'config': {
+                'siteId': 123456,
+                'targetingUUID': 'xxx-yyy-zzz'
+              },
+              'url': 'https://video.unrulymedia.com/native/prebid-loader.js'
+            },
+            'adUnitCode': 'video1'
+          },
           requestId: 'mockBidId',
+          bidderCode: 'unruly',
           cpm: 20,
           width: 323,
           height: 323,
@@ -459,7 +480,10 @@ describe('UnrulyAdapter', function () {
           netRevenue: true,
           creativeId: 'mockBidId',
           ttl: 360,
-          meta: {advertiserDomains: []},
+          'meta': {
+            'mediaType': 'video',
+            'videoContext': 'outstream'
+          },
           currency: 'USD',
           renderer: fakeRenderer,
           mediaType: 'video'
@@ -471,7 +495,7 @@ describe('UnrulyAdapter', function () {
       expect(Renderer.install.called).to.be.false;
       expect(fakeRenderer.setRender.called).to.be.false;
 
-      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', requestId: 'mockBidId'});
       const mockRenderer = {
         url: 'value: mockRendererURL',
         config: {
@@ -495,12 +519,12 @@ describe('UnrulyAdapter', function () {
     });
 
     it('should return [] and log if bidResponse renderer config is not available', function () {
-      sinon.assert.notCalled(utils.logError)
+      sinon.assert.notCalled(utils.logError);
 
       expect(Renderer.install.called).to.be.false;
       expect(fakeRenderer.setRender.called).to.be.false;
 
-      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', requestId: 'mockBidId'});
       const mockRenderer = {
         url: 'value: mockRendererURL'
       };
@@ -510,24 +534,21 @@ describe('UnrulyAdapter', function () {
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([]);
 
       const logErrorCalls = utils.logError.getCalls();
-      expect(logErrorCalls.length).to.equal(2);
+      expect(logErrorCalls.length).to.equal(1);
 
-      const [configErrorCall, siteIdErrorCall] = logErrorCalls;
+      const [configErrorCall] = logErrorCalls;
 
       expect(configErrorCall.args.length).to.equal(1);
       expect(configErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer config.');
-
-      expect(siteIdErrorCall.args.length).to.equal(1);
-      expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer siteId.');
     });
 
     it('should return [] and log if siteId is not available', function () {
-      sinon.assert.notCalled(utils.logError)
+      sinon.assert.notCalled(utils.logError);
 
       expect(Renderer.install.called).to.be.false;
       expect(fakeRenderer.setRender.called).to.be.false;
 
-      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', requestId: 'mockBidId'});
       const mockRenderer = {
         url: 'value: mockRendererURL',
         config: {}
@@ -567,7 +588,7 @@ describe('UnrulyAdapter', function () {
     });
 
     it('should ensure that renderer is placed in Prebid supply mode', function () {
-      const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', requestId: 'mockBidId'});
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
 
       expect('unruly' in window.parent).to.equal(false);
