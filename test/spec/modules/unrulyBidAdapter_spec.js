@@ -46,6 +46,37 @@ describe('UnrulyAdapter', function () {
     body: {bids}
   });
 
+  const inStreamServerResponse = {
+    'requestId': '262594d5d1f8104',
+    'cpm': 0.3825,
+    'currency': 'USD',
+    'width': 640,
+    'height': 480,
+    'creativeId': 'cr-test-video-3',
+    'netRevenue': true,
+    'ttl': 350,
+    'vastUrl': 'https://adserve.rhythmxchange.dvl/rtbtest/nurlvast?event=impnurl&doc_type=testad&doc_version=2&crid=cr-test-video-3&ssp=2057&pubid=545454&placementid=1052819&oppid=b516bc57-0475-4377-bdc6-369c44b31d46&mediatype=site&attempt_ts=1622740567081&extra=1',
+    'meta': {
+      'mediaType': 'video',
+      'videoContext': 'instream'
+    }
+  };
+
+  const bannerServerResponse = {
+    'requestId': '2de3a9047fa9c6',
+    'cpm': 5.34,
+    'currency': 'USD',
+    'width': 300,
+    'height': 250,
+    'creativeId': 'cr-test-banner-1',
+    'netRevenue': true,
+    'ttl': 350,
+    'ad': "<script src='http://a-ap.1rx.io/rtbtest/js?event=impservedoc_type=testad&doc_version=2&crid=cr-test-banner-1&ssp=2129&pubid=100144&placementid=215243&oppid=b82f5c10-213e-49f6-96f7-910d7e331055&mediatype=site&attempt_ts=1623162232956&extra=1'></script>",
+    'meta': {
+      'mediaType': 'banner'
+    }
+  };
+
   let sandbox;
   let fakeRenderer;
 
@@ -389,7 +420,7 @@ describe('UnrulyAdapter', function () {
       expect(result[0].data.bidderRequest.bids.length).to.equal(2);
     });
     it('should return a server request with a valid exchange url', function () {
-      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].url).to.equal('https://targeting.unrulymedia.com/prebid')
+      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].url).to.equal('https://targeting.unrulymedia.com/unruly_prebid')
     });
     it('should return a server request with method === POST', function () {
       expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].method).to.equal('POST');
@@ -600,69 +631,50 @@ describe('UnrulyAdapter', function () {
       expect(supplyMode).to.equal('prebid');
     });
 
-    const inStreamServerResponse = {
-      'requestId': '262594d5d1f8104',
-      'cpm': 0.3825,
-      'currency': 'USD',
-      'width': 640,
-      'height': 480,
-      'creativeId': 'cr-test-video-3',
-      'netRevenue': true,
-      'ttl': 350,
-      'vastUrl': 'https://adserve.rhythmxchange.dvl/rtbtest/nurlvast?event=impnurl&doc_type=testad&doc_version=2&crid=cr-test-video-3&ssp=2057&pubid=545454&placementid=1052819&oppid=b516bc57-0475-4377-bdc6-369c44b31d46&mediatype=site&attempt_ts=1622740567081&extra=1',
-      'meta': {
-        'mediaType': 'video',
-        'videoContext': 'instream'
-      }
-    };
-
     it('should return correct response when ad type is instream', function () {
       const mockServerResponse = createExchangeResponse(inStreamServerResponse);
       const expectedResponse = inStreamServerResponse;
       expectedResponse.mediaType = 'video';
+
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([expectedResponse]);
     });
 
     it('should return [] and log if no vastUrl in instream response', function () {
       const {vastUrl, ...inStreamServerResponseNoVast} = inStreamServerResponse;
       const mockServerResponse = createExchangeResponse(inStreamServerResponseNoVast);
+
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([]);
+
       const logErrorCalls = utils.logError.getCalls();
+
       expect(logErrorCalls.length).to.equal(1);
+
       const [siteIdErrorCall] = logErrorCalls;
+
       expect(siteIdErrorCall.args.length).to.equal(1);
       expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing vastUrl config.');
     });
-
-    const bannerServerResponse = {
-      'requestId': '2de3a9047fa9c6',
-      'cpm': 5.34,
-      'currency': 'USD',
-      'width': 300,
-      'height': 250,
-      'creativeId': 'cr-test-banner-1',
-      'netRevenue': true,
-      'ttl': 350,
-      'ad': "<script src='http://a-ap.1rx.io/rtbtest/js?event=impservedoc_type=testad&doc_version=2&crid=cr-test-banner-1&ssp=2129&pubid=100144&placementid=215243&oppid=b82f5c10-213e-49f6-96f7-910d7e331055&mediatype=site&attempt_ts=1623162232956&extra=1'></script>",
-      'meta': {
-        'mediaType': 'banner'
-      }
-    };
 
     it('should return correct response when ad type is banner', function () {
       const mockServerResponse = createExchangeResponse(bannerServerResponse);
       const expectedResponse = bannerServerResponse;
       expectedResponse.mediaType = 'banner';
+
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([expectedResponse]);
     });
 
     it('should return [] and log if no ad in banner response', function () {
       const {ad, ...bannerServerResponseNoAd} = bannerServerResponse;
       const mockServerResponse = createExchangeResponse(bannerServerResponseNoAd);
+
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([]);
+
       const logErrorCalls = utils.logError.getCalls();
+
       expect(logErrorCalls.length).to.equal(1);
+
       const [siteIdErrorCall] = logErrorCalls;
+
       expect(siteIdErrorCall.args.length).to.equal(1);
       expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing ad config.');
     });
@@ -672,10 +684,13 @@ describe('UnrulyAdapter', function () {
       const mockServerResponse = createExchangeResponse(outStreamServerResponse, inStreamServerResponse, bannerServerResponse);
       const expectedOutStreamResponse = outStreamServerResponse;
       expectedOutStreamResponse.mediaType = 'video';
+
       const expectedInStreamResponse = inStreamServerResponse;
       expectedInStreamResponse.mediaType = 'video';
+
       const expectedBannerResponse = bannerServerResponse;
       expectedBannerResponse.mediaType = 'banner';
+
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([expectedOutStreamResponse, expectedInStreamResponse, expectedBannerResponse]);
     });
 
@@ -684,10 +699,15 @@ describe('UnrulyAdapter', function () {
       const mockServerResponse = createExchangeResponse(bannerServerResponseNoAd, inStreamServerResponse);
       const expectedInStreamResponse = inStreamServerResponse;
       expectedInStreamResponse.mediaType = 'video';
+
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([expectedInStreamResponse]);
+
       const logErrorCalls = utils.logError.getCalls();
+
       expect(logErrorCalls.length).to.equal(1);
+
       const [siteIdErrorCall] = logErrorCalls;
+
       expect(siteIdErrorCall.args.length).to.equal(1);
       expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing ad config.');
     });

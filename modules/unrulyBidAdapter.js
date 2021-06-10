@@ -198,7 +198,7 @@ export const adapter = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const url = 'https://targeting.unrulymedia.com/prebid';
+    const url = 'https://targeting.unrulymedia.com/unruly_prebid';
     const method = 'POST';
     const options = {contentType: 'text/plain'};
     return getRequests({url, method, options}, validBidRequests, bidderRequest);
