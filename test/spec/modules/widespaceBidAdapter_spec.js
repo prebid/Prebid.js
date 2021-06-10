@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import {expect, assert} from 'chai';
 import {spec, storage} from 'modules/widespaceBidAdapter.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
@@ -76,9 +76,7 @@ describe('+widespaceAdatperTest', function () {
       'ttl': 30,
       'width': 300,
       'syncPixels': ['https://url1.com/url', 'https://url2.com/url'],
-      'meta': {
-        advertiserDomains: ['advertiserdomain.com']
-      }
+      'adomain': ['advertiserdomain.com']
     }],
     headers: {}
   };
@@ -114,6 +112,17 @@ describe('+widespaceAdatperTest', function () {
   }
 
   describe('+bidRequestValidity', function () {
+    it('bidRequest with sid, bidfloor and currency params', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'widespace',
+        params: {
+          bidfloor: 1.5,
+          sid: '7b6589bf-95c8-4656-90b9-af9737bb9ad3',
+          currency: 'EUR'
+        }
+      })).to.equal(true);
+    });
+
     it('bidRequest with sid and currency params', function () {
       expect(spec.isBidRequestValid({
         bidder: 'widespace',
@@ -155,7 +164,7 @@ describe('+widespaceAdatperTest', function () {
     let lsGetStub;
     let lsRemoveStub;
 
-    beforeEach(function () {
+    beforeEach((done) => {
       lsSetStub = sinon.stub(storage, 'setDataInLocalStorage').callsFake(function (name, value) {
         fakeLocalStorage[name] = value;
       });
@@ -170,6 +179,7 @@ describe('+widespaceAdatperTest', function () {
         }
         return true;
       });
+      done();
     });
 
     afterEach(function () {
@@ -241,6 +251,12 @@ describe('+widespaceAdatperTest', function () {
     it('-empty response should not breake anything in adapter', function () {
       const noResponse = spec.interpretResponse({}, bidRequest);
       expect(noResponse.length).to.equal(0);
+    });
+
+    it('-check advertiserDomains in response', function () {
+      const adomain = ['advertiserdomain.com'];
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+      assert.deepEqual(result[0].meta.advertiserDomains, adomain);
     });
   });
 

@@ -7,6 +7,7 @@ import {
 import includes from 'core-js-pure/features/array/includes.js';
 import find from 'core-js-pure/features/array/find.js';
 import { getStorageManager } from '../src/storageManager.js';
+import * as utils from '../src/utils.js';
 
 export const storage = getStorageManager();
 
@@ -17,6 +18,7 @@ const LS_KEYS = {
   LC_UID: 'wsLcuid',
   CUST_DATA: 'wsCustomData'
 };
+const ENGINE_URL = 'https://engine.widespace.com/map/engine/dynadreq';
 
 let preReqTime = 0;
 
@@ -26,10 +28,7 @@ export const spec = {
   supportedMediaTypes: ['banner'],
 
   isBidRequestValid: function (bid) {
-    if (bid.params && bid.params.sid) {
-      return true;
-    }
-    return false;
+    return !!(bid.params && bid.params.sid);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -61,7 +60,7 @@ export const spec = {
         'gdprCmp': bidderRequest && bidderRequest.gdprConsent ? 1 : 0,
         'hb': '1',
         'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
-        'hb.floor': bid.bidfloor || '',
+        'hb.floor': getBidFloor(bid),
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
         'hb.name': 'prebidjs-$prebid.version$',
@@ -243,10 +242,7 @@ function encodedParamValue(value) {
   return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value);
 }
 
-function getEngineUrl() {
-  const ENGINE_URL = 'https://engine.widespace.com/map/engine/dynadreq';
-  return window.wisp && window.wisp.ENGINE_URL ? window.wisp.ENGINE_URL : ENGINE_URL;
-}
+const getEngineUrl = () => window.wisp && window.wisp.ENGINE_URL ? window.wisp.ENGINE_URL : ENGINE_URL;
 
 function getTopWindowReferrer() {
   try {
@@ -254,6 +250,23 @@ function getTopWindowReferrer() {
   } catch (e) {
     return '';
   }
+}
+
+const getBidFloor = (bid) => {
+  if (!utils.isFn(bid.getFloor)) {
+    return bid.params.bidfloor ? bid.params.bidfloor : null;
+  }
+
+  let bidFloor = bid.getFloor({
+    mediaType: '*',
+    size: '*',
+    currency: 'EUR'
+  });
+
+  if (utils.isPlainObject(bidFloor) && !isNaN(bidFloor.floor) && bidFloor.currency === 'EUR') {
+    return bidFloor.floor;
+  }
+  return null;
 }
 
 registerBidder(spec);
