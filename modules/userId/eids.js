@@ -211,7 +211,6 @@ const USER_IDS_CONFIG = {
   amxId: {
     source: 'amxrtb.com',
     atype: 1,
-    getValue: value => value.id
   }
 };
 

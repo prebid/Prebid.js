@@ -46,6 +46,7 @@ import {uid2IdSubmodule} from 'modules/uid2IdSystem.js';
 import {admixerIdSubmodule} from 'modules/admixerIdSystem.js';
 import {deepintentDpesSubmodule} from 'modules/deepintentDpesIdSystem.js';
 import {flocIdSubmodule} from 'modules/flocIdSystem.js'
+import { amxIdSubmodule } from '../../../modules/amxIdSystem';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -465,7 +466,7 @@ describe('User ID', function () {
     });
 
     it('handles config with no usersync object', function () {
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule, amxIdSubmodule]);
       init(config);
       config.setConfig({});
       // usersync is undefined, and no logInfo message for 'User ID - usersync config updated'
@@ -473,14 +474,14 @@ describe('User ID', function () {
     });
 
     it('handles config with empty usersync object', function () {
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule, amxIdSubmodule]);
       init(config);
       config.setConfig({userSync: {}});
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
     it('handles config with usersync and userIds that are empty objs', function () {
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule, amxIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -491,7 +492,7 @@ describe('User ID', function () {
     });
 
     it('handles config with usersync and userIds with empty names or that dont match a submodule.name', function () {
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule, amxIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -508,7 +509,7 @@ describe('User ID', function () {
     });
 
     it('config with 1 configurations should create 1 submodules', function () {
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, flocIdSubmodule, amxIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['unifiedId', 'unifiedid', 'cookie']));
 
@@ -529,117 +530,117 @@ describe('User ID', function () {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 21 configurations should result in 21 submodules add', function () {
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
-      it('config with 14 configurations should result in 14 submodules add', function () {
-        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule]);
-        init(config);
-        config.setConfig({
-          userSync: {
-            syncDelay: 0,
-            userIds: [{
-              name: 'pubProvidedId'
-            }, {
-              name: 'pubCommonId', value: {'pubcid': '11111'}
-            }, {
-              name: 'unifiedId',
-              storage: {name: 'unifiedid', type: 'cookie'}
-            }, {
-              name: 'id5Id',
-              storage: {name: 'id5id', type: 'cookie'}
-            }, {
-              name: 'identityLink',
-              storage: {name: 'idl_env', type: 'cookie'}
-            }, {
-              name: 'liveIntentId',
-              storage: {name: '_li_pbid', type: 'cookie'}
-            }, {
-              name: 'britepoolId',
-              value: {'primaryBPID': '279c0161-5152-487f-809e-05d7f7e653fd'}
-            }, {
-              name: 'netId',
-              storage: {name: 'netId', type: 'cookie'}
-            }, {
-              name: 'nextrollId'
-            }, {
-              name: 'intentIqId',
-              storage: {name: 'intentIqId', type: 'cookie'}
-            }, {
-              name: 'haloId',
-              storage: {name: 'haloId', type: 'cookie'}
-            }, {
-              name: 'zeotapIdPlus'
-            }, {
-              name: 'criteo'
-            }, {
-              name: 'mwOpenLinkId'
-            }, {
-              name: 'tapadId',
-              storage: {name: 'tapad_id', type: 'cookie'}
-            }, {
-              name: 'uid2'
-            }, {
-              name: 'admixerId',
-              storage: {name: 'admixerId', type: 'cookie'}
-            }, {
-              name: 'deepintentId',
-              storage: {name: 'deepintentId', type: 'cookie'}
-            }, {
-              name: 'flocId'
-            }, {
-              name: 'dmdId',
-              storage: {name: 'dmdId', type: 'cookie'}
-            }]
-          }
-        });
-        expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 20 submodules');
+    it('config with 22 configurations should result in 21 submodules add', function () {
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule, amxIdSubmodule]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'pubProvidedId'
+          }, {
+            name: 'pubCommonId', value: {'pubcid': '11111'}
+          }, {
+            name: 'unifiedId',
+            storage: {name: 'unifiedid', type: 'cookie'}
+          }, {
+            name: 'id5Id',
+            storage: {name: 'id5id', type: 'cookie'}
+          }, {
+            name: 'identityLink',
+            storage: {name: 'idl_env', type: 'cookie'}
+          }, {
+            name: 'liveIntentId',
+            storage: {name: '_li_pbid', type: 'cookie'}
+          }, {
+            name: 'britepoolId',
+            value: {'primaryBPID': '279c0161-5152-487f-809e-05d7f7e653fd'}
+          }, {
+            name: 'netId',
+            storage: {name: 'netId', type: 'cookie'}
+          }, {
+            name: 'nextrollId'
+          }, {
+            name: 'intentIqId',
+            storage: {name: 'intentIqId', type: 'cookie'}
+          }, {
+            name: 'haloId',
+            storage: {name: 'haloId', type: 'cookie'}
+          }, {
+            name: 'zeotapIdPlus'
+          }, {
+            name: 'criteo'
+          }, {
+            name: 'mwOpenLinkId'
+          }, {
+            name: 'tapadId',
+            storage: {name: 'tapad_id', type: 'cookie'}
+          }, {
+            name: 'uid2'
+          }, {
+            name: 'admixerId',
+            storage: {name: 'admixerId', type: 'cookie'}
+          }, {
+            name: 'deepintentId',
+            storage: {name: 'deepintentId', type: 'cookie'}
+          }, {
+            name: 'flocId'
+          }, {
+            name: 'dmdId',
+            storage: {name: 'dmdId', type: 'cookie'}
+          }, {
+            name: 'amxId',
+            storage: {name: 'amxId', type: 'html5'}
+          }]
+        }
       });
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 21 submodules');
+    });
 
-      it('config syncDelay updates module correctly', function () {
-        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
+    it('config syncDelay updates module correctly', function () {
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule, amxIdSubmodule]);
 
-        init(config);
-        config.setConfig({
-          userSync: {
-            syncDelay: 99,
-            userIds: [{
-              name: 'unifiedId',
-              storage: {name: 'unifiedid', type: 'cookie'}
-            }]
-          }
-        });
-        expect(syncDelay).to.equal(99);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 99,
+          userIds: [{
+            name: 'unifiedId',
+            storage: {name: 'unifiedid', type: 'cookie'}
+          }]
+        }
       });
+      expect(syncDelay).to.equal(99);
+    });
 
-      it('config auctionDelay updates module correctly', function () {
-        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
-        init(config);
-        config.setConfig({
-          userSync: {
-            auctionDelay: 100,
-            userIds: [{
-              name: 'unifiedId',
-              storage: {name: 'unifiedid', type: 'cookie'}
-            }]
-          }
-        });
-        expect(auctionDelay).to.equal(100);
+    it('config auctionDelay updates module correctly', function () {
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule, amxIdSubmodule]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          auctionDelay: 100,
+          userIds: [{
+            name: 'unifiedId',
+            storage: {name: 'unifiedid', type: 'cookie'}
+          }]
+        }
       });
+      expect(auctionDelay).to.equal(100);
+    });
 
-      it('config auctionDelay defaults to 0 if not a number', function () {
-        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule]);
-        init(config);
-        config.setConfig({
-          userSync: {
-            auctionDelay: '',
-            userIds: [{
-              name: 'unifiedId',
-              storage: {name: 'unifiedid', type: 'cookie'}
-            }]
-          }
-        });
-        expect(auctionDelay).to.equal(0);
+    it('config auctionDelay defaults to 0 if not a number', function () {
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, nextrollIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, flocIdSubmodule, amxIdSubmodule]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          auctionDelay: '',
+          userIds: [{
+            name: 'unifiedId',
+            storage: {name: 'unifiedid', type: 'cookie'}
+          }]
+        }
       });
+      expect(auctionDelay).to.equal(0);
     });
 
     describe('auction and user sync delays', function () {
@@ -946,6 +947,37 @@ describe('User ID', function () {
           });
           localStorage.removeItem('unifiedid_alt');
           localStorage.removeItem('unifiedid_alt_exp');
+          done();
+        }, {adUnits});
+      });
+
+      it('test hook from amxId html5', (done) => {
+        // simulate existing localStorage values
+        localStorage.setItem('amxId', 'test_amxid_id');
+        localStorage.setItem('amxId_exp', '');
+
+        setSubmoduleRegistry([amxIdSubmodule]);
+        init(config);
+        config.setConfig(getConfigMock(['amxId', 'amxId', 'html5']));
+
+        requestBidsHook(() => {
+          adUnits.forEach((adUnit) => {
+            adUnit.bids.forEach((bid) => {
+              expect(bid).to.have.deep.nested.property('userId.amxId');
+              expect(bid.userId.amxId).to.equal('test_amxid_id');
+              expect(bid.userIdAsEids[0]).to.deep.equal({
+                source: 'amxrtb.com',
+                uids: [{
+                  id: 'test_amxid_id',
+                  atype: 1,
+                }]
+              });
+            });
+          });
+
+          // clear LS
+          localStorage.removeItem('amxId');
+          localStorage.removeItem('amxId_exp');
           done();
         }, {adUnits});
       });
@@ -1643,7 +1675,7 @@ describe('User ID', function () {
         }, {adUnits});
       });
 
-      it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, intentIqId, zeotapIdPlus, netId, haloId, Criteo, UID 2.0, admixerId, dmdId and mwOpenLinkId have data to pass', function (done) {
+      it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, intentIqId, zeotapIdPlus, netId, haloId, Criteo, UID 2.0, admixerId, amxId, dmdId and mwOpenLinkId have data to pass', function (done) {
         coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1660,7 +1692,11 @@ describe('User ID', function () {
         coreStorage.setCookie('admixerId', 'testadmixerId', (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('deepintentId', 'testdeepintentId', (new Date(Date.now() + 5000).toUTCString()));
 
-        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
+        // amxId only supports localStorage
+        localStorage.setItem('amxId', 'test_amxid_id');
+        localStorage.setItem('amxId_exp', (new Date(Date.now() + 5000)).toUTCString());
+
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, amxIdSubmodule]);
         init(config);
         config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
           ['unifiedId', 'unifiedid', 'cookie'],
@@ -1677,6 +1713,7 @@ describe('User ID', function () {
           ['tapadId', 'tapad_id', 'cookie'],
           ['uid2', 'uid2id', 'cookie'],
           ['admixerId', 'admixerId', 'cookie'],
+          ['amxId', 'amxId', 'html5'],
           ['deepintentId', 'deepintentId', 'cookie']));
 
         requestBidsHook(function () {
@@ -1721,6 +1758,9 @@ describe('User ID', function () {
               expect(bid.userId.uid2).to.deep.equal({
                 id: 'Sample_AD_Token'
               });
+              expect(bid).to.have.deep.nested.property('userId.amxId');
+              expect(bid.userId.amxId).to.equal('test_amxid_id');
+
               // also check that criteo id was copied to bid
               expect(bid).to.have.deep.nested.property('userId.admixerId');
               expect(bid.userId.admixerId).to.equal('testadmixerId');
@@ -1729,7 +1769,7 @@ describe('User ID', function () {
               expect(bid).to.have.deep.nested.property('userId.deepintentId');
               expect(bid.userId.deepintentId).to.equal('testdeepintentId');
 
-              expect(bid.userIdAsEids.length).to.equal(15);
+              expect(bid.userIdAsEids.length).to.equal(16);
             });
           });
           coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1747,6 +1787,8 @@ describe('User ID', function () {
           coreStorage.setCookie('uid2id', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('admixerId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('deepintentId', EXPIRED_COOKIE_DATE);
+          localStorage.removeItem('amxId');
+          localStorage.removeItem('amxId_exp');
           done();
         }, {adUnits});
       });
@@ -1927,8 +1969,10 @@ describe('User ID', function () {
         coreStorage.setCookie('deepintentId', 'testdeepintentId', new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('__uid2_advertising_token', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
+        localStorage.setItem('amxId', 'test_amxid_id');
+        localStorage.setItem('amxId_exp', new Date(Date.now() + 5000).toUTCString())
 
-        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, uid2IdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, amxIdSubmodule]);
         init(config);
 
         config.setConfig({
@@ -1962,6 +2006,8 @@ describe('User ID', function () {
               name: 'uid2'
             }, {
               name: 'deepintentId', storage: {name: 'deepintentId', type: 'cookie'}
+            }, {
+              name: 'amxId', storage: {name: 'amxId', type: 'html5'}
             }]
           }
         });
@@ -2020,6 +2066,9 @@ describe('User ID', function () {
                 id: 'Sample_AD_Token'
               });
 
+              expect(bid).to.have.deep.nested.property('userId.amxId');
+              expect(bid.userId.amxId).to.equal('test_amxid_id');
+
               // also check that admixerId id data was copied to bid
               expect(bid).to.have.deep.nested.property('userId.admixerId');
               expect(bid.userId.admixerId).to.equal('testadmixerId');
@@ -2028,7 +2077,7 @@ describe('User ID', function () {
               expect(bid).to.have.deep.nested.property('userId.deepintentId');
               expect(bid.userId.deepintentId).to.equal('testdeepintentId');
 
-              expect(bid.userIdAsEids.length).to.equal(13);
+              expect(bid.userIdAsEids.length).to.equal(14);
             });
           });
           coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2045,6 +2094,8 @@ describe('User ID', function () {
           coreStorage.setCookie('deepintentId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('mwol', '', EXPIRED_COOKIE_DATE);
+          localStorage.removeItem('amxId');
+          localStorage.removeItem('amxId_exp');
           done();
         }, {adUnits});
       });

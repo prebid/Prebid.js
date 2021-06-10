@@ -322,10 +322,7 @@ describe('eids array generation for known sub-modules', function() {
   it('amxId', () => {
     const id = 'c4bcadb0-124f-4468-a91a-d3d44cf311c5'
     const userId = {
-      amxId: {
-        id,
-        version: '1.0'
-      }
+      amxId: id
     };
 
     const [eid] = createEidsArray(userId);

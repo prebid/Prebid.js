@@ -93,7 +93,7 @@ export const amxIdSubmodule = {
 
   decode: (value) =>
     value != null && value.length > 0
-      ? { [ID_KEY]: value, version }
+      ? { [ID_KEY]: value }
       : undefined,
 
   getId(config, consentData, _extant) {

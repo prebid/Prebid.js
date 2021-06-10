@@ -28,8 +28,7 @@ describe('amxid submodule', () => {
 describe('decode', () => {
   it('should respond with an object with "amxId" key containing the value', () => {
     expect(amxIdSubmodule.decode(TEST_ID)).to.deep.equal({
-      amxId: TEST_ID,
-      version: amxIdSubmodule.version,
+      amxId: TEST_ID
     });
   });
 
