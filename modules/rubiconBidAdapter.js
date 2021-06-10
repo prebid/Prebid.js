@@ -482,7 +482,9 @@ export const spec = {
 
     // add p_pos only if specified and valid
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
-    data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
+    let posMapping = {1: 'atf', 3: 'btf'};
+    let pos = posMapping[utils.deepAccess(bidRequest, 'mediaTypes.banner.pos')] || '';
+    data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : pos;
 
     // pass publisher provided userId if configured
     const configUserId = config.getConfig('user.id');
@@ -505,8 +507,6 @@ export const spec = {
             }
           } else if (eid.source === 'liveramp.com') {
             data['x_liverampidl'] = eid.uids[0].id;
-          } else if (eid.source === 'sharedid.org') {
-            data['eid_sharedid.org'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.third) || ''}`;
           } else if (eid.source === 'id5-sync.com') {
             data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.linkType) || ''}`;
           } else {
