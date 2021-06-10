@@ -78,6 +78,10 @@ export const spec = {
           if (nativeReq.type === 'image') {
             nativeReq = Object.assign({}, NATIVE_IMAGE, nativeReq);
           }
+          // click url is always mandatory even if not specified by publisher
+          nativeReq.clickUrl = {
+            required: true
+          };
           accumulator[bidReq.bidId].Native = nativeReq;
         }
         if (mediatype === VIDEO) {
@@ -329,6 +333,9 @@ function getVideoAd(response) {
 }
 
 function getNativeAssets(response, nativeConfig) {
+  if (typeof response.Native === 'object') {
+    return response.Native;
+  }
   const native = {};
 
   var adJson = {};
@@ -362,59 +369,55 @@ function getNativeAssets(response, nativeConfig) {
   }
 
   Object.keys(nativeConfig).map(function(key, index) {
-    if (typeof response.Native === 'object') {
-      native[key] = response.Native[key];
-    } else {
-      switch (key) {
-        case 'title':
-          native[key] = textsJson.TITLE;
-          break;
-        case 'body':
-          native[key] = textsJson.DESCRIPTION;
-          break;
-        case 'cta':
-          native[key] = textsJson.CALLTOACTION;
-          break;
-        case 'sponsoredBy':
-          native[key] = adJson.Content.Preview.Sponsor.Name;
-          break;
-        case 'image':
-          // main image requested size
-          const imgSize = nativeConfig.image.sizes || [];
-          if (!imgSize.length) {
-            imgSize[0] = response.Width || 300;
-            imgSize[1] = response.Height || 250;
+    switch (key) {
+      case 'title':
+        native[key] = textsJson.TITLE;
+        break;
+      case 'body':
+        native[key] = textsJson.DESCRIPTION;
+        break;
+      case 'cta':
+        native[key] = textsJson.CALLTOACTION;
+        break;
+      case 'sponsoredBy':
+        native[key] = adJson.Content.Preview.Sponsor.Name;
+        break;
+      case 'image':
+        // main image requested size
+        const imgSize = nativeConfig.image.sizes || [];
+        if (!imgSize.length) {
+          imgSize[0] = response.Width || 300;
+          imgSize[1] = response.Height || 250;
+        }
+
+        native[key] = {
+          url: getImageUrl(adJson, adJson.Content.Preview.Thumbnail.Image, imgSize[0], imgSize[1]),
+          width: imgSize[0],
+          height: imgSize[1]
+        };
+        break;
+      case 'icon':
+        if (adJson.HasSponsorImage) {
+          // icon requested size
+          const iconSize = nativeConfig.icon.sizes || [];
+          if (!iconSize.length) {
+            iconSize[0] = 50;
+            iconSize[1] = 50;
           }
 
           native[key] = {
-            url: getImageUrl(adJson, adJson.Content.Preview.Thumbnail.Image, imgSize[0], imgSize[1]),
-            width: imgSize[0],
-            height: imgSize[1]
+            url: getImageUrl(adJson, adJson.Content.Preview.Sponsor.Logo.Resource, iconSize[0], iconSize[1]),
+            width: iconSize[0],
+            height: iconSize[1]
           };
-          break;
-        case 'icon':
-          if (adJson.HasSponsorImage) {
-            // icon requested size
-            const iconSize = nativeConfig.icon.sizes || [];
-            if (!iconSize.length) {
-              iconSize[0] = 50;
-              iconSize[1] = 50;
-            }
-
-            native[key] = {
-              url: getImageUrl(adJson, adJson.Content.Preview.Sponsor.Logo.Resource, iconSize[0], iconSize[1]),
-              width: iconSize[0],
-              height: iconSize[1]
-            };
-          }
-          break;
-        case 'privacyIcon':
-          native[key] = getImageUrl(adJson, adJson.Content.Preview.Credit.Logo.Resource, 25, 25);
-          break;
-        case 'privacyLink':
-          native[key] = adJson.Content.Preview.Credit.Url;
-          break;
-      }
+        }
+        break;
+      case 'privacyIcon':
+        native[key] = getImageUrl(adJson, adJson.Content.Preview.Credit.Logo.Resource, 25, 25);
+        break;
+      case 'privacyLink':
+        native[key] = adJson.Content.Preview.Credit.Url;
+        break;
     }
   });
 
@@ -446,7 +449,8 @@ function createBid(response, bidRequests) {
     creativeId: response.CreativeID,
     cpm: response.Price,
     netRevenue: true,
-    currency: CURRENCY
+    currency: CURRENCY,
+    meta: response.Meta || { advertiserDomains: [] }
   };
 
   if (request && request.Native) {

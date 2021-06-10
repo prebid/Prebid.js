@@ -391,6 +391,7 @@ describe('mediaforce bid adapter', function () {
         mediaType: BANNER,
         requestId: bid.impid,
         ttl: 300,
+        meta: { advertiserDomains: [] },
         width: bid.w,
       }]));
     });
@@ -477,6 +478,7 @@ describe('mediaforce bid adapter', function () {
         mediaType: NATIVE,
         requestId: bid.impid,
         ttl: 300,
+        meta: { advertiserDomains: [] },
       }]));
     });
   });
@@ -560,6 +562,7 @@ describe('mediaforce bid adapter', function () {
         mediaType: NATIVE,
         requestId: bid.impid,
         ttl: 300,
+        meta: { advertiserDomains: [] },
       }]));
     });
   });
