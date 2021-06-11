@@ -123,7 +123,8 @@ export const spec = {
           adUnitCode: bidRequest.adUnitCode,
           bidRequestCount: bidRequest.bidRequestCount,
           sizes: bidRequest.sizes,
-          params: bidRequest.params
+          params: bidRequest.params,
+          pubext: payload
         }
       };
       if (bidderRequest && bidderRequest.gdprConsent) {
