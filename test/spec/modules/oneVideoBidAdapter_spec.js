@@ -59,11 +59,77 @@ describe('OneVideoBidAdapter', function () {
   });
 
   describe('spec.isBidRequestValid', function () {
-    it('should return true when the required params are passed', function () {
+    it('should return false when mediaTypes video OR banner not declared', function () {
+      bidRequest.mediaTypes = {};
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
+
+    it('should return true (skip validations) when e2etest = true', function () {
+      bidRequest.params.video = {
+        e2etest: true
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when the "video" param is missing', function () {
+    it('should return true when mediaTypes.video has all mandatory params', function () {
+      bidRequest.mediaTypes.video = {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4', 'application/javascript'],
+      }
+      bidRequest.params.video = {};
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return true when params.video has all override params instead of mediaTypes.video', function () {
+      bidRequest.mediaTypes.video = {
+        context: 'instream'
+      };
+      bidRequest.params.video = {
+        playerWidth: 640,
+        playerHeight: 480,
+        mimes: ['video/mp4', 'application/javascript']
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return true when playerWidth & playerHeight are passed in params.video', function () {
+      bidRequest.mediaTypes.video = {
+        context: 'instream',
+        mimes: ['video/mp4', 'application/javascript']
+      };
+      bidRequest.params.video = {
+        playerWidth: 640,
+        playerHeight: 480,
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return true when mimes is passed in params.video', function () {
+      bidRequest.mediaTypes.video = {
+        context: 'instream',
+        playerSizes: [640, 480]
+      };
+      bidRequest.video = {
+        mimes: ['video/mp4', 'application/javascript']
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return false when both mediaTypes.video and params.video Objects are missing', function () {
+      bidRequest.mediaTypes = {};
+      bidRequest.params = {
+        pubId: 'brxd'
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
+
+    it('should return false when both mediaTypes.video and params.video are missing mimes and player size', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'instream'
+        }
+      };
       bidRequest.params = {
         pubId: 'brxd'
       };
@@ -76,34 +142,16 @@ describe('OneVideoBidAdapter', function () {
           playerWidth: 480,
           playerHeight: 640,
           mimes: ['video/mp4', 'application/javascript'],
-          protocols: [2, 5],
-          api: [2],
-          position: 1,
-          delivery: [2],
-          playbackmethod: [1, 5],
-          sid: 134,
-          rewarded: 1,
-          placement: 1,
-          inventoryid: 123
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
+
     it('should return true when the "pubId" param exists', function () {
-      bidRequest.params = {
+      bidRequest.mediaTypes = {
         video: {
-          playerWidth: 480,
-          playerHeight: 640,
-          mimes: ['video/mp4', 'application/javascript'],
-          protocols: [2, 5],
-          api: [2],
-          position: 1,
-          delivery: [2],
-          playbackmethod: [1, 5],
-          sid: 134,
-          rewarded: 1,
-          placement: 1,
-          inventoryid: 123
+          playerSizes: [640, 480],
+          mimes: ['video/mp4', 'application/javascript']
         },
         pubId: 'brxd'
       };
@@ -216,7 +264,7 @@ describe('OneVideoBidAdapter', function () {
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
-      const VERSION = '3.1.0';
+      const VERSION = '3.1.1';
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
@@ -640,7 +688,10 @@ describe('OneVideoBidAdapter', function () {
             adid: 123,
             crid: 2,
             price: 6.01,
-            adm: '<VAST></VAST>'
+            adm: '<VAST></VAST>',
+            adomain: [
+              'verizonmedia.com'
+            ],
           }]
         }],
         cur: 'USD'
@@ -664,6 +715,9 @@ describe('OneVideoBidAdapter', function () {
         netRevenue: true,
         adUnitCode: bidRequest.adUnitCode,
         renderer: (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined,
+        meta: {
+          advertiserDomains: ['verizonmedia.com']
+        }
       };
       expect(bidResponse).to.deep.equal(o);
     });

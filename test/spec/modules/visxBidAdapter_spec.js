@@ -302,11 +302,50 @@ describe('VisxAdapter', function () {
     });
   });
 
+  describe('buildRequests (multiple media types w/ unsupported video+outstream)', function () {
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'https://example.com'
+      }
+    };
+    const referrer = bidderRequest.refererInfo.referer;
+    const bidRequests = [
+      {
+        'bidder': 'visx',
+        'params': {
+          'uid': '903538'
+        },
+        'adUnitCode': 'misconfigured-video',
+        'sizes': [[300, 250], [300, 600]],
+        'mediaTypes': {
+          'video': {
+            'context': 'outstream',
+            'playerSize': [400, 300]
+          }
+        },
+        'bidId': '39aff3a7169a6a',
+        'bidderRequestId': '22edffe2733bf6',
+        'auctionId': '1d1a030790a476',
+      }
+    ];
+
+    it('should send requst for banner bid', function () {
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('u', referrer);
+      expect(payload).to.have.property('pt', 'net');
+      expect(payload).to.have.property('auids', '903538');
+      expect(payload).to.have.property('sizes', '300x250,300x600');
+      expect(payload).to.not.have.property('playerSize');
+    });
+  });
+
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
-      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
-      {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR'}], 'seat': '1'},
+      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'},
+      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+      {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       {'bid': [{'price': 0, 'auid': 903537, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
       {'bid': [{'price': 0, 'adm': '<div>test content 5</div>', 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
       undefined,
@@ -341,6 +380,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': ['some_domain.com'],
+            'mediaType': 'banner',
+          },
         }
       ];
 
@@ -397,6 +440,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': ['some_domain.com'],
+            'mediaType': 'banner',
+          },
         },
         {
           'requestId': '4dff80cc4ee346',
@@ -409,6 +456,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': [],
+            'mediaType': 'banner',
+          },
         },
         {
           'requestId': '5703af74d0472a',
@@ -421,6 +472,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': [],
+            'mediaType': 'banner',
+          },
         }
       ];
 
@@ -456,6 +511,10 @@ describe('VisxAdapter', function () {
           'currency': 'PLN',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': ['some_domain.com'],
+            'mediaType': 'banner',
+          },
         }
       ];
 
@@ -509,11 +568,11 @@ describe('VisxAdapter', function () {
 
     it('complicated case', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR'}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 903535, 'h': 600, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 5</div>', 'auid': 903536, 'h': 600, 'w': 350, 'cur': 'EUR'}], 'seat': '1'},
+        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 903535, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 5</div>', 'auid': 903536, 'h': 600, 'w': 350, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -585,6 +644,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': ['some_domain.com'],
+            'mediaType': 'banner',
+          },
         },
         {
           'requestId': '4e111f1b66e4',
@@ -597,6 +660,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': [],
+            'mediaType': 'banner',
+          },
         },
         {
           'requestId': '26d6f897b516',
@@ -609,6 +676,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': [],
+            'mediaType': 'banner',
+          },
         },
         {
           'requestId': '326bde7fbf69',
@@ -621,6 +692,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': [],
+            'mediaType': 'banner',
+          },
         },
         {
           'requestId': '1751cd90161',
@@ -633,6 +708,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': [],
+            'mediaType': 'banner',
+          },
         }
       ];
 
@@ -642,8 +721,8 @@ describe('VisxAdapter', function () {
 
     it('dublicate uids and sizes in one slot', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
+        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -693,6 +772,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': [],
+            'mediaType': 'banner',
+          },
         },
         {
           'requestId': '57b2ebe70e16',
@@ -705,6 +788,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': [],
+            'mediaType': 'banner',
+          },
         }
       ];
 
@@ -714,7 +801,7 @@ describe('VisxAdapter', function () {
 
     it('handles video bid', function () {
       const fullResponse = [
-        {'bid': [{'price': 0.5, 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -751,6 +838,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': [],
+            'mediaType': 'video',
+          },
         }
       ];
       const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
@@ -786,6 +877,10 @@ describe('VisxAdapter', function () {
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': ['some_domain.com'],
+            'mediaType': 'banner',
+          },
           'ext': {
             'events': {
               'pending': pendingUrl,
