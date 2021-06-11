@@ -9,8 +9,6 @@ import { auctionManager } from '../src/auctionManager.js';
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager();
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
-// utils.logInfo('pixAdapter started 777');
-// const BIDDER_CODE = 'pixfuture';
 export const spec = {
   code: 'pixfuture',
   hostname: 'https://prebid-js.pixfuture.com',
@@ -30,7 +28,6 @@ export const spec = {
   },
 
   buildRequests(validBidRequests, bidderRequest) {
-    // console.log(validBidRequests);
     const tags = validBidRequests.map(bidToTag);
     const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
