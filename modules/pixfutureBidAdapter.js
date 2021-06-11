@@ -317,6 +317,4 @@ function isPopulatedArray(arr) {
   return !!(utils.isArray(arr) && arr.length > 0);
 }
 
-// ========================================
-
 registerBidder(spec);
