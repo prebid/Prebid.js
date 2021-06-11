@@ -112,20 +112,19 @@ function buildPlacement(bidRequest) {
   let sizes;
   if (bidRequest.mediaTypes) {
     switch (bidRequest.params.adUnitType) {
-      case 'banner':
+      case BANNER:
         if (bidRequest.mediaTypes.banner && bidRequest.mediaTypes.banner.sizes) {
           sizes = bidRequest.mediaTypes.banner.sizes;
         }
         break;
-      case 'video':
+      case VIDEO:
         if (bidRequest.mediaTypes.video && bidRequest.mediaTypes.video.playerSize) {
           sizes = [bidRequest.mediaTypes.video.playerSize];
         }
         break;
     }
   }
-  sizes = (sizes || []).concat(bidRequest.sizes || []);
-  sizes = sizes.filter(utils.uniques)
+  sizes = (sizes || []).concat(bidRequest.sizes || []).filter(utils.uniques);
   return {
     host: bidRequest.params.host,
     adUnit: {

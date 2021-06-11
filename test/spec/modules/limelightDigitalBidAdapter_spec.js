@@ -1,6 +1,5 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/limelightDigitalBidAdapter.js';
-import * as utils from '../../../modules/../src/utils.js';
 
 describe('limelightDigitalAdapter', function () {
   const bid1 = {
@@ -300,14 +299,17 @@ function validateAdUnit(adUnit, bid) {
   expect(adUnit.bidId).to.equal(bid.bidId)
   expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase())
   expect(adUnit.transactionId).to.equal(bid.transactionId)
-  const videoSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-  let bidSizes;
-  if (videoSize) {
-    bidSizes = [videoSize].concat(utils.deepAccess(bid, 'mediaTypes.banner.sizes') || [])
-      .concat(bid.sizes || [])
-  } else {
-    bidSizes = (utils.deepAccess(bid, 'mediaTypes.banner.sizes') || [])
-      .concat(bid.sizes || [])
+  let bidSizes = [];
+  if (bid.mediaTypes) {
+    if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
+      bidSizes = bidSizes.concat([bid.mediaTypes.video.playerSize]);
+    }
+    if (bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) {
+      bidSizes = bidSizes.concat(bid.mediaTypes.banner.sizes);
+    }
+  }
+  if (bid.sizes) {
+    bidSizes = bidSizes.concat(bid.sizes || []);
   }
   expect(adUnit.sizes).to.deep.equal(bidSizes.map(size => {
     return {
