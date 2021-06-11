@@ -12,7 +12,7 @@ import * as utils from '../src/utils.js';
 export const storage = getStorageManager();
 
 const BIDDER_CODE = 'widespace';
-const WS_ADAPTER_VERSION = '2.0.1';
+const WS_ADAPTER_VERSION = '2.0.2';
 const LS_KEYS = {
   PERF_DATA: 'wsPerfData',
   LC_UID: 'wsLcuid',
