@@ -742,6 +742,7 @@ function _addFloorFromFloorModule(impObj, bid) {
 function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
   // fpdUserData - data set from global and bidder level configs
   // segmentData - data set from permutive
+  var dataMerged = false;
   if (!fpdUserData.data && segmentData.length > 0) {
     fpdUserData.data = [{
       name: PERMUTIVE_SEGMENT_NAME,
@@ -752,7 +753,17 @@ function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
     if (fpdUserData.data[id].name === PERMUTIVE_SEGMENT_NAME) {
       var mergedArr = utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment.concat(segmentData), 'id');
       fpdUserData.data[id].segment = mergedArr;
+      dataMerged = true;
     }
+  }
+  if (!dataMerged && segmentData.length > 0) {
+    if (!fpdUserData.data) {
+      fpdUserData.data = [];
+    }
+    fpdUserData.data.push({
+      name: PERMUTIVE_SEGMENT_NAME,
+      segment: segmentData
+    });
   }
 }
 
