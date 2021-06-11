@@ -1,15 +1,16 @@
-#Overview
-...
+# Overview
+
+```
 Module Name: PixFuture Bid Adapter
 Module Type: Bidder Adapter
 Maintainer: admin@pixfuture.net
-...
+```
 # Description
 
 Module that connects to PixFuture demand sources
 
 # Test Parameters
-...
+```
 var adUnits = [{
    {
   "pageUrl": "some referer URL",
@@ -25,4 +26,4 @@ var adUnits = [{
   "params": {
     "pix_id": "12345678"
   }];
-...
+```
