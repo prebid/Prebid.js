@@ -125,7 +125,7 @@ function buildPlacement(bidRequest) {
     }
   }
   sizes = (sizes || []).concat(bidRequest.sizes || []);
-  sizes = Array.from(new Set(sizes))
+  sizes = sizes.filter(utils.uniques)
   return {
     host: bidRequest.params.host,
     adUnit: {
