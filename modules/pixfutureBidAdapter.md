@@ -24,6 +24,6 @@ var adUnits = [{
   ],
   {
   "params": {
-    "pix_id": "12345678"
+    "pix_id": "777"
   }];
 ```
