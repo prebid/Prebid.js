@@ -8,7 +8,6 @@ const ERROR_CODES = [404, 501, 500, 403];
 const config = {
   params: {
     tagId: Math.floor(Math.random() * 9e9).toString(36),
-    timeout: 300 + Math.floor(Math.random() * 500),
   },
   storage: {
     type: 'html5',
@@ -116,12 +115,7 @@ describe('getId', () => {
     callback(spy);
 
     const [request] = server.requests;
-    const body = request.requestBody;
-
-    expect(body.gdpr).to.equal(0);
-    expect(body.gdpr_consent).to.equal('');
-    expect(body.vg).to.equal('$$PREBID_GLOBAL$$');
-    expect(body.v).to.equal('$prebid.version$');
+    expect(request.method).to.equal('GET');
 
     request.respond(
       200,
@@ -134,14 +128,6 @@ describe('getId', () => {
 
     expect(spy.calledOnce).to.be.true;
     expect(spy.lastCall.lastArg).to.equal(TEST_ID);
-  });
-
-  it('should respect the timeout from the publisher config', () => {
-    const { callback } = amxIdSubmodule.getId(config, null, null);
-    callback(spy);
-
-    const [request] = server.requests;
-    expect(request.timeout).to.equal(config.params.timeout);
   });
 
   it('should return undefined if the server has an error status code', () => {

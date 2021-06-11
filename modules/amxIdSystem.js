@@ -16,6 +16,7 @@ const GVL_ID = 737;
 const ID_KEY = NAME;
 const version = '1.0';
 const SYNC_URL = 'https://translator.a-mo.net/sync';
+const AJAX_TIMEOUT = 150;
 
 function validateConfig(config) {
   if (config == null || config.storage == null) {
@@ -102,8 +103,7 @@ export const amxIdSubmodule = {
     }
 
     const consent = consentData || { gdprApplies: false, consentString: '' };
-    const timeout = deepAccess(config, 'params.timeout', 300);
-    const client = ajaxBuilder(timeout);
+    const client = ajaxBuilder(AJAX_TIMEOUT);
     const usp = uspDataHandler.getConsentData();
     const ref = getRefererInfo();
 
@@ -140,7 +140,10 @@ export const amxIdSubmodule = {
             done(null);
           },
         },
-        params
+        params,
+        {
+          method: 'GET'
+        }
       );
 
     return { callback };

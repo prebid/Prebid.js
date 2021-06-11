@@ -18,7 +18,6 @@ pbjs.setConfig({
           expires: 14,
         },
         params: {
-          timeout: 150,
           tagId: "cHJlYmlkLm9yZw",
         },
       },
@@ -49,5 +48,4 @@ The following options are available in the `params` property in `userSync.userId
 
 | Param under `params` | Scope    | Type   | Description                                                               | Example          |
 | -------------------- | -------- | ------ | ------------------------------------------------------------------------- | ---------------- |
-| timeout              | Optional | Number | Milliseconds to wait for a response from AMX before continuing with an ID | `150`            |
 | tagId                | Optional | String | Your AMX tagId (optional)                                                 | `cHJlYmlkLm9yZw` |
