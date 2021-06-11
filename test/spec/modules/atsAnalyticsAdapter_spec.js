@@ -21,10 +21,12 @@ describe('ats analytics adapter', function () {
     events.getEvents.restore();
     atsAnalyticsAdapter.getUserAgent.restore();
     atsAnalyticsAdapter.disableAnalytics();
+    Math.random.restore();
   });
 
   describe('track', function () {
     it('builds and sends request and response data', function () {
+      sinon.stub(Math, 'random').returns(0.99);
       sinon.stub(atsAnalyticsAdapter, 'shouldFireRequest').returns(true);
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       let now = new Date();
@@ -156,26 +158,52 @@ describe('ats analytics adapter', function () {
 
       // check that the publisher ID is configured via options
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
+
+      atsAnalyticsAdapter.shouldFireRequest.restore();
     })
     it('check browser is safari', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+      sinon.stub(Math, 'random').returns(0.99);
       let browser = parseBrowser();
       expect(browser).to.equal('Safari');
     })
     it('check browser is chrome', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1');
+      sinon.stub(Math, 'random').returns(0.99);
       let browser = parseBrowser();
       expect(browser).to.equal('Chrome');
     })
     it('check browser is edge', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43');
+      sinon.stub(Math, 'random').returns(0.99);
       let browser = parseBrowser();
       expect(browser).to.equal('Microsoft Edge');
     })
     it('check browser is firefox', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/23.0  Mobile/15E148 Safari/605.1.15');
+      sinon.stub(Math, 'random').returns(0.99);
       let browser = parseBrowser();
       expect(browser).to.equal('Firefox');
+    })
+    it('should not fire analytics request if sampling rate is 0', function () {
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+      sinon.stub(Math, 'random').returns(0.99);
+      let result = atsAnalyticsAdapter.shouldFireRequest(0);
+      expect(result).to.equal(false);
+    })
+    it('should fire analytics request', function () {
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+      sinon.stub(Math, 'random').returns(0.99);
+      // publisher can try to pass anything they want but we will set sampling rate to 100, which means we will have 1% of requests
+      let result = atsAnalyticsAdapter.shouldFireRequest(10);
+      expect(result).to.equal(true);
+    })
+    it('should not fire analytics request if math random is something other then 0.99', function () {
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+      sinon.stub(Math, 'random').returns(0.98);
+      // publisher can try to pass anything they want but we will set sampling rate to 100, which means we will have 1% of requests
+      let result = atsAnalyticsAdapter.shouldFireRequest(10);
+      expect(result).to.equal(false);
     })
   })
 })
