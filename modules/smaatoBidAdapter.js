@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER, VIDEO, ADPOD } from '../src/mediaTypes.js';
+import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
@@ -56,21 +56,27 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
 
   const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
   if (videoMediaType) {
-    request.imp[0].video = {
-      mimes: videoMediaType.mimes,
-      minduration: videoMediaType.minduration,
-      startdelay: videoMediaType.startdelay,
-      linearity: videoMediaType.linearity,
-      w: videoMediaType.playerSize[0][0],
-      h: videoMediaType.playerSize[0][1],
-      maxduration: videoMediaType.maxduration,
-      skip: videoMediaType.skip,
-      protocols: videoMediaType.protocols,
-      ext: {
-        rewarded: videoMediaType.ext && videoMediaType.ext.rewarded ? videoMediaType.ext.rewarded : 0
-      },
-      skipmin: videoMediaType.skipmin,
-      api: videoMediaType.api
+    if (videoMediaType.context === ADPOD) {
+      request.imp[0].tagid = utils.deepAccess(bidRequest, 'params.adbreakId')
+      request.imp[0].video = createVideoImpObjectFromRequiredAdpodParameters(videoMediaType);
+      addOptionalAdpodParameters(request, videoMediaType);
+    } else {
+      request.imp[0].video = {
+        mimes: videoMediaType.mimes,
+        minduration: videoMediaType.minduration,
+        startdelay: videoMediaType.startdelay,
+        linearity: videoMediaType.linearity,
+        w: videoMediaType.playerSize[0][0],
+        h: videoMediaType.playerSize[0][1],
+        maxduration: videoMediaType.maxduration,
+        skip: videoMediaType.skip,
+        protocols: videoMediaType.protocols,
+        ext: {
+          rewarded: videoMediaType.ext && videoMediaType.ext.rewarded ? videoMediaType.ext.rewarded : 0
+        },
+        skipmin: videoMediaType.skipmin,
+        api: videoMediaType.api
+      }
     }
   }
 
@@ -288,3 +294,49 @@ const createRichmediaAd = (adm) => {
 
   return markup + '</div>';
 };
+
+const createVideoImpObjectFromRequiredAdpodParameters = (videoMediaType) => {
+  const bce = config.getConfig('adpod.brandCategoryExclusion')
+
+  return {
+    w: videoMediaType.playerSize[0][0],
+    h: videoMediaType.playerSize[0][1],
+    ext: {
+      context: ADPOD,
+      adpodduration: videoMediaType.adPodDurationSec,
+      durationrange: videoMediaType.durationRangeSec,
+      brandcategoryexclusion: bce !== undefined && bce
+    }
+  }
+}
+
+const addOptionalAdpodParameters = (request, video) => {
+  if (typeof video.requireExactDuration === 'boolean') {
+    request.imp[0].video.ext.requireexactduration = video.requireExactDuration;
+  }
+
+  const content = {};
+
+  if (video.tvSeriesName) {
+    content.series = video.tvSeriesName;
+  }
+  if (video.tvEpisodeName) {
+    content.title = video.tvEpisodeName;
+  }
+  if (typeof video.tvSeasonNumber === "number") {
+    content.season = video.tvSeasonNumber.toString(); // conversion to string as in OpenRTB season is a string
+  }
+  if (typeof video.tvEpisodeNumber === "number") {
+    content.episode = video.tvEpisodeNumber;
+  }
+  if (typeof video.contentLengthSec === "number") {
+    content.len = video.contentLengthSec;
+  }
+  if (video.contentMode && ['live', 'on-demand'].includes(video.contentMode)) {
+    content.livestream = video.contentMode === 'live' ? 1 : 0;
+  }
+
+  if (!utils.isEmpty(content)) {
+    request.site.content = content;
+  }
+}
