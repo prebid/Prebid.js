@@ -2,7 +2,7 @@
 
 Module Name: Criteo Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: pi-direct@criteo.com
+Maintainer: prebid@criteo.com
 
 # Description
 
@@ -24,4 +24,15 @@ Module that connects to Criteo's demand sources.
             ]
         }
     ];
+```
+
+# Additional Config (Optional)
+Set the "ceh" property to provides the user's hashed email if available
+```
+  pbjs.setConfig({
+    criteo: {
+      ceh: 'hashed mail',
+      fastBidVersion: "none"|"latest"|<version>
+    }
+  });
 ```

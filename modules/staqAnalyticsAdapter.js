@@ -1,10 +1,12 @@
-import adapter from '../src/AnalyticsAdapter';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import {getRefererInfo} from '../src/refererDetection';
-import {parse} from '../src/url';
-import * as utils from '../src/utils';
-import {ajax} from '../src/ajax';
+import adapterManager from '../src/adapterManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storageObj = getStorageManager();
 
 const ANALYTICS_VERSION = '1.0.0';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
@@ -43,50 +45,49 @@ function buildRequestTemplate(connId) {
   }
 }
 
-let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
-  {
-    track({ eventType, args }) {
-      if (!analyticsAdapter.context) {
-        return;
-      }
-      let handler = null;
-      switch (eventType) {
-        case CONSTANTS.EVENTS.AUCTION_INIT:
-          if (analyticsAdapter.context.queue) {
-            analyticsAdapter.context.queue.init();
-          }
-          handler = trackAuctionInit;
-          break;
-        case CONSTANTS.EVENTS.BID_REQUESTED:
-          handler = trackBidRequest;
-          break;
-        case CONSTANTS.EVENTS.BID_RESPONSE:
-          handler = trackBidResponse;
-          break;
-        case CONSTANTS.EVENTS.BID_WON:
-          handler = trackBidWon;
-          break;
-        case CONSTANTS.EVENTS.BID_TIMEOUT:
-          handler = trackBidTimeout;
-          break;
-        case CONSTANTS.EVENTS.AUCTION_END:
-          handler = trackAuctionEnd;
-          break;
-      }
-      if (handler) {
-        let events = handler(args);
+let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
+  track({ eventType, args }) {
+    if (!analyticsAdapter.context) {
+      return;
+    }
+    let handler = null;
+    switch (eventType) {
+      case CONSTANTS.EVENTS.AUCTION_INIT:
         if (analyticsAdapter.context.queue) {
-          analyticsAdapter.context.queue.push(events);
-          if (eventType === CONSTANTS.EVENTS.BID_WON) {
-            analyticsAdapter.context.queue.updateWithWins(events);
-          }
+          analyticsAdapter.context.queue.init();
         }
-        if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
-          sendAll();
+        handler = trackAuctionInit;
+        break;
+      case CONSTANTS.EVENTS.BID_REQUESTED:
+        handler = trackBidRequest;
+        break;
+      case CONSTANTS.EVENTS.BID_RESPONSE:
+        handler = trackBidResponse;
+        break;
+      case CONSTANTS.EVENTS.BID_WON:
+        handler = trackBidWon;
+        break;
+      case CONSTANTS.EVENTS.BID_TIMEOUT:
+        handler = trackBidTimeout;
+        break;
+      case CONSTANTS.EVENTS.AUCTION_END:
+        handler = trackAuctionEnd;
+        break;
+    }
+    if (handler) {
+      let events = handler(args);
+      if (analyticsAdapter.context.queue) {
+        analyticsAdapter.context.queue.push(events);
+        if (eventType === CONSTANTS.EVENTS.BID_WON) {
+          analyticsAdapter.context.queue.updateWithWins(events);
         }
+      }
+      if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+        sendAll();
       }
     }
-  });
+  }
+});
 
 analyticsAdapter.context = {};
 
@@ -123,17 +124,17 @@ export default analyticsAdapter;
 function sendAll() {
   let events = analyticsAdapter.context.queue.popAll();
   if (events.length !== 0) {
-    let req = events.map(event => {
-      return Object.assign({}, event, analyticsAdapter.context.requestTemplate)
-    });
+    let req = analyticsAdapter.context.requestTemplate;
+    req.auctionId = analyticsAdapter.context.auctionId;
+    req.events = events
+
     analyticsAdapter.ajaxCall(JSON.stringify(req));
   }
 }
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   utils.logInfo('SENDING DATA: ' + data);
-  ajax(`//${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {
-  }, data, {contentType: 'text/plain'});
+  ajax(`https://${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {}, data, { contentType: 'text/plain' });
 };
 
 function trackAuctionInit(args) {
@@ -166,9 +167,7 @@ function trackAuctionEnd(args) {
 }
 
 function trackBidTimeout(args) {
-  return args.map(arg =>
-    createHbEvent(arg.auctionId, arg.bidderCode, STAQ_EVENTS.TIMEOUT)
-  );
+  return args.map(arg => createHbEvent(arg.auctionId, arg.bidderCode, STAQ_EVENTS.TIMEOUT));
 }
 
 function createHbEvent(auctionId, adapter, event, adUnitCode = undefined, value = 0, time = 0, bidWon = undefined, eventArgs) {
@@ -206,7 +205,8 @@ function createHbEvent(auctionId, adapter, event, adUnitCode = undefined, value 
 }
 
 const UTM_TAGS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
-  'utm_c1', 'utm_c2', 'utm_c3', 'utm_c4', 'utm_c5'];
+  'utm_c1', 'utm_c2', 'utm_c3', 'utm_c4', 'utm_c5'
+];
 const STAQ_PREBID_KEY = 'staq_analytics';
 const DIRECT = '(direct)';
 const REFERRAL = '(referral)';
@@ -214,10 +214,10 @@ const ORGANIC = '(organic)';
 
 export let storage = {
   getItem: (name) => {
-    return localStorage.getItem(name);
+    return storageObj.getDataFromLocalStorage(name);
   },
   setItem: (name, value) => {
-    localStorage.setItem(name, value);
+    storageObj.setDataInLocalStorage(name, value);
   }
 };
 
@@ -248,7 +248,7 @@ export function getUmtSource(pageUrl, referrer) {
       if (se) {
         return asUtm(se, ORGANIC, ORGANIC);
       }
-      let parsedUrl = parse(pageUrl);
+      let parsedUrl = utils.parseUrl(pageUrl);
       let [refHost, refPath] = getReferrer(referrer);
       if (refHost && refHost !== parsedUrl.hostname) {
         return asUtm(refHost, REFERRAL, REFERRAL, '', refPath);
@@ -275,12 +275,12 @@ export function getUmtSource(pageUrl, referrer) {
   }
 
   function getReferrer(referrer) {
-    let ref = parse(referrer);
+    let ref = utils.parseUrl(referrer);
     return [ref.hostname, ref.pathname];
   }
 
   function getUTM(pageUrl) {
-    let urlParameters = parse(pageUrl).search;
+    let urlParameters = utils.parseUrl(pageUrl).search;
     if (!urlParameters['utm_campaign'] || !urlParameters['utm_source']) {
       return;
     }
@@ -334,7 +334,8 @@ export function getUmtSource(pageUrl, referrer) {
   function chooseActualUtm(prev, curr) {
     if (ord(prev) < ord(curr)) {
       return [true, curr];
-    } if (ord(prev) > ord(curr)) {
+    }
+    if (ord(prev) > ord(curr)) {
       return [false, prev];
     } else {
       if (prev.campaign === REFERRAL && prev.content !== curr.content) {

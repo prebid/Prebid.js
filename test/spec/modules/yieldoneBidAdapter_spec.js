@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { spec } from 'modules/yieldoneBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/yieldoneBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
-const ENDPOINT = '//y.one.impact-ad.jp/h_bid';
-const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
-const VIDEO_PLAYER_URL = '//img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
+const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
+const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
+const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
 
 describe('yieldoneBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -64,7 +64,16 @@ describe('yieldoneBidAdapter', function() {
       }
     ];
 
-    const request = spec.buildRequests(bidRequests);
+    let bidderRequest = {
+      refererInfo: {
+        numIframes: 0,
+        reachedTop: true,
+        referer: 'http://example.com',
+        stack: ['http://example.com']
+      }
+    };
+
+    const request = spec.buildRequests(bidRequests, bidderRequest);
 
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
@@ -85,7 +94,7 @@ describe('yieldoneBidAdapter', function() {
       const bidRequest = Object.assign({}, bidRequests[0]);
       bidRequest.mediaTypes = {};
       bidRequest.mediaTypes.video = {context: 'outstream'};
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       expect(request[0].data.w).to.equal('300');
       expect(request[0].data.h).to.equal('250');
     });
@@ -100,7 +109,7 @@ describe('yieldoneBidAdapter', function() {
     let bidRequestBanner = [
       {
         'method': 'GET',
-        'url': '//y.one.impact-ad.jp/h_bid',
+        'url': 'https://y.one.impact-ad.jp/h_bid',
         'data': {
           'v': 'hb1',
           'p': '36891',
@@ -164,7 +173,7 @@ describe('yieldoneBidAdapter', function() {
     let bidRequestVideo = [
       {
         'method': 'GET',
-        'url': '//y.one.impact-ad.jp/h_bid',
+        'url': 'https://y.one.impact-ad.jp/h_bid',
         'data': {
           'v': 'hb1',
           'p': '41993',

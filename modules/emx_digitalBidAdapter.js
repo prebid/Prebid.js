@@ -1,13 +1,14 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { Renderer } from '../src/Renderer';
-import includes from 'core-js/library/fn/array/includes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
-const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
-const ADAPTER_VERSION = '1.40.2';
+const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
+const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
@@ -39,13 +40,16 @@ export const emxAdapter = {
       h: sizes[0][1]
     };
   },
-  formatVideoResponse: (bidResponse, emxBid) => {
+  formatVideoResponse: (bidResponse, emxBid, bidRequest) => {
     bidResponse.vastXml = emxBid.adm;
-    if (!emxBid.renderer && (!emxBid.mediaTypes || !emxBid.mediaTypes.video || !emxBid.mediaTypes.video.context || emxBid.mediaTypes.video.context === 'outstream')) {
-      bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
-        id: emxBid.bidId,
-        url: RENDERER_URL
-      });
+    if (bidRequest.bidderRequest && bidRequest.bidderRequest.bids && bidRequest.bidderRequest.bids.length > 0) {
+      const matchingBid = find(bidRequest.bidderRequest.bids, bid => bidResponse.requestId && bid.bidId && bidResponse.requestId === bid.bidId && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream');
+      if (matchingBid) {
+        bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
+          id: emxBid.id,
+          url: RENDERER_URL
+        });
+      }
     }
     return bidResponse;
   },
@@ -103,12 +107,20 @@ export const emxAdapter = {
     return renderer;
   },
   buildVideo: (bid) => {
-    let videoObj = Object.assign(bid.mediaTypes.video, bid.params.video)
+    let videoObj = Object.assign(bid.mediaTypes.video, bid.params.video);
+
+    if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+      videoObj['w'] = bid.mediaTypes.video.playerSize[0][0];
+      videoObj['h'] = bid.mediaTypes.video.playerSize[0][1];
+    } else {
+      videoObj['w'] = bid.mediaTypes.video.playerSize[0];
+      videoObj['h'] = bid.mediaTypes.video.playerSize[1];
+    }
     return emxAdapter.cleanProtocols(videoObj);
   },
   parseResponse: (bidResponseAdm) => {
     try {
-      return decodeURIComponent(bidResponseAdm);
+      return decodeURIComponent(bidResponseAdm.replace(/%(?![0-9][0-9a-fA-F]+)/g, '%25'));
     } catch (err) {
       utils.logError('emx_digitalBidAdapter', 'error', err);
     }
@@ -118,6 +130,14 @@ export const emxAdapter = {
       return window.top.document.referrer;
     } catch (err) {
       return document.referrer;
+    }
+  },
+  getSite: (refInfo) => {
+    let url = utils.parseUrl(refInfo.referer);
+    return {
+      domain: url.hostname,
+      page: refInfo.referer,
+      ref: emxAdapter.getReferrer()
     }
   },
   getGdpr: (bidRequests, emxData) => {
@@ -137,11 +157,23 @@ export const emxAdapter = {
     }
 
     return emxData;
+  },
+  getSupplyChain: (bidderRequest, emxData) => {
+    if (bidderRequest.bids[0] && bidderRequest.bids[0].schain) {
+      emxData.source = {
+        ext: {
+          schain: bidderRequest.bids[0].schain
+        }
+      };
+    }
+
+    return emxData;
   }
 };
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 183,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     if (!bid || !bid.params) {
@@ -184,16 +216,14 @@ export const spec = {
     const emxImps = [];
     const timeout = bidderRequest.timeout || '';
     const timestamp = Date.now();
-    const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
+    const url = 'https://' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
     const secure = location.protocol.indexOf('https') > -1 ? 1 : 0;
-    const domain = utils.getTopWindowLocation().hostname;
-    const page = bidderRequest.refererInfo.referer;
     const device = emxAdapter.getDevice();
-    const ref = emxAdapter.getReferrer();
+    const site = emxAdapter.getSite(bidderRequest.refererInfo);
 
     utils._each(validBidRequests, function (bid) {
       let tagid = utils.getBidIdParameter('tagid', bid.params);
-      let bidfloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
+      let bidfloor = parseFloat(getBidFloor(bid)) || 0;
       let isVideo = !!bid.mediaTypes.video;
       let data = {
         id: bid.bidId,
@@ -212,26 +242,27 @@ export const spec = {
       id: bidderRequest.auctionId,
       imp: emxImps,
       device,
-      site: {
-        domain,
-        page,
-        ref
-      },
+      site,
       cur: DEFAULT_CUR,
       version: ADAPTER_VERSION
     };
 
     emxData = emxAdapter.getGdpr(bidderRequest, Object.assign({}, emxData));
+    emxData = emxAdapter.getSupplyChain(bidderRequest, Object.assign({}, emxData));
+    if (bidderRequest && bidderRequest.uspConsent) {
+      emxData.us_privacy = bidderRequest.uspConsent
+    }
     return {
       method: 'POST',
-      url: url,
+      url,
       data: JSON.stringify(emxData),
       options: {
         withCredentials: true
-      }
+      },
+      bidderRequest
     };
   },
-  interpretResponse: function (serverResponse) {
+  interpretResponse: function (serverResponse, bidRequest) {
     let emxBidResponses = [];
     let response = serverResponse.body || {};
     if (response.seatbid && response.seatbid.length > 0 && response.seatbid[0].bid) {
@@ -253,23 +284,58 @@ export const spec = {
         };
         if (emxBid.adm && emxBid.adm.indexOf('<?xml version=') > -1) {
           isVideo = true;
-          bidResponse = emxAdapter.formatVideoResponse(bidResponse, Object.assign({}, emxBid));
+          bidResponse = emxAdapter.formatVideoResponse(bidResponse, Object.assign({}, emxBid), bidRequest);
         }
         bidResponse.mediaType = (isVideo ? VIDEO : BANNER);
+
+        // support for adomain in prebid 5.0
+        if (emxBid.adomain && emxBid.adomain.length) {
+          bidResponse.meta = {
+            advertiserDomains: emxBid.adomain
+          };
+        }
+
         emxBidResponses.push(bidResponse);
       });
     }
     return emxBidResponses;
   },
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     const syncs = [];
     if (syncOptions.iframeEnabled) {
+      let url = 'https://biddr.brealtime.com/check.html';
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          url += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          url += `?gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
       syncs.push({
         type: 'iframe',
-        url: '//biddr.brealtime.com/check.html'
+        url: url
       });
     }
     return syncs;
   }
 };
+
+// support floors module in prebid 5.0
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return parseFloat(utils.getBidIdParameter('bidfloor', bid.params));
+  }
+
+  let floor = bid.getFloor({
+    currency: DEFAULT_CUR,
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
+
 registerBidder(spec);

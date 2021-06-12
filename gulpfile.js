@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use strict';
 
 var _ = require('lodash');
@@ -30,8 +31,11 @@ const execa = require('execa');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
+var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '*/\n';
 var port = 9999;
+const FAKE_SERVER_HOST = argv.host ? argv.host : 'localhost';
+const FAKE_SERVER_PORT = 4444;
+const { spawn } = require('child_process');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -64,11 +68,11 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const isFixed = function(file) {
+  const isFixed = function (file) {
     return file.eslint != null && file.eslint.fixed;
   }
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], {base: './'})
-    .pipe(gulpif(argv.nolintfix, eslint(), eslint({fix: true})))
+  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], { base: './' })
+    .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
     .pipe(gulpif(isFixed, gulp.dest('./')));
@@ -81,14 +85,28 @@ function viewCoverage(done) {
 
   connect.server({
     port: coveragePort,
-    root: 'build/coverage/karma_html',
-    livereload: false
+    root: 'build/coverage/lcov-report',
+    livereload: false,
+    debug: true
   });
   opens('http://' + mylocalhost + ':' + coveragePort);
   done();
 };
 
 viewCoverage.displayName = 'view-coverage';
+
+// View the reviewer tools page
+function viewReview(done) {
+  var mylocalhost = (argv.host) ? argv.host : 'localhost';
+  var reviewUrl = 'http://' + mylocalhost + ':' + port + '/integrationExamples/reviewerTools/index.html'; // reuse the main port from 9999
+
+  // console.log(`stdout: opening` + reviewUrl);
+
+  opens(reviewUrl);
+  done();
+};
+
+viewReview.displayName = 'view-review';
 
 // Watch Task with Live Reload
 function watch(done) {
@@ -106,6 +124,7 @@ function watch(done) {
   connect.server({
     https: argv.https,
     port: port,
+    host: FAKE_SERVER_HOST,
     root: './',
     livereload: true
   });
@@ -114,6 +133,12 @@ function watch(done) {
   loaderWatcher.on('all', gulp.series(lint));
   done();
 };
+
+function makeModuleList(modules) {
+  return modules.map(module => {
+    return '"' + module + '"'
+  });
+}
 
 function makeDevpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
@@ -126,6 +151,7 @@ function makeDevpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
+    .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 }
@@ -143,8 +169,13 @@ function makeWebpackPkg() {
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(uglify())
+    .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));
+}
+
+function getModulesListToAddInBanner(modules) {
+  return (modules.length > 0) ? modules.join(', ') : 'All available modules in current version.';
 }
 
 function gulpBundle(dev) {
@@ -157,7 +188,7 @@ function nodeBundle(modules) {
       .on('error', (err) => {
         reject(err);
       })
-      .pipe(through.obj(function(file, enc, done) {
+      .pipe(through.obj(function (file, enc, done) {
         resolve(file.contents.toString(enc));
         done();
       }));
@@ -196,25 +227,15 @@ function bundle(dev, moduleArr) {
   return gulp.src(
     entries
   )
-    .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
+    // Need to uodate the "Modules: ..." section in comment with the current modules list
+    .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
+    .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
       global: prebid.globalVarName
     }
     )))
     .pipe(gulpif(dev, sourcemaps.write('.')));
-}
-
-// Workaround for incompatibility between Karma & gulp callbacks.
-// See https://github.com/karma-runner/gulp-karma/issues/18 for some related discussion.
-function newKarmaCallback(done) {
-  return function (exitCode) {
-    if (exitCode) {
-      done(new Error('Karma tests failed with exit code ' + exitCode));
-    } else {
-      done();
-    }
-  }
 }
 
 // Run the unit tests.
@@ -226,25 +247,74 @@ function newKarmaCallback(done) {
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
+
 function test(done) {
   if (argv.notest) {
     done();
   } else if (argv.e2e) {
     let wdioCmd = path.join(__dirname, 'node_modules/.bin/wdio');
     let wdioConf = path.join(__dirname, 'wdio.conf.js');
-    let wdioOpts = [
-      wdioConf
-    ];
-    return execa(wdioCmd, wdioOpts, { stdio: 'inherit' });
+    let wdioOpts;
+
+    if (argv.file) {
+      wdioOpts = [
+        wdioConf,
+        `--spec`,
+        `${argv.file}`
+      ]
+    } else {
+      wdioOpts = [
+        wdioConf
+      ];
+    }
+
+    // run fake-server
+    const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${FAKE_SERVER_PORT}`]);
+    fakeServer.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`);
+    });
+    fakeServer.stderr.on('data', (data) => {
+      console.log(`stderr: ${data}`);
+    });
+
+    execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
+      .then(stdout => {
+        // kill fake server
+        fakeServer.kill('SIGINT');
+        done();
+        process.exit(0);
+      })
+      .catch(err => {
+        // kill fake server
+        fakeServer.kill('SIGINT');
+        done(new Error(`Tests failed with error: ${err}`));
+        process.exit(1);
+      });
   } else {
     var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
-    var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+    var browserOverride = helpers.parseBrowserArgs(argv);
     if (browserOverride.length > 0) {
       karmaConf.browsers = browserOverride;
     }
 
     new KarmaServer(karmaConf, newKarmaCallback(done)).start();
+  }
+}
+
+function newKarmaCallback(done) {
+  return function (exitCode) {
+    if (exitCode) {
+      done(new Error('Karma tests failed with exit code ' + exitCode));
+      if (argv.browserstack) {
+        process.exit(exitCode);
+      }
+    } else {
+      done();
+      if (argv.browserstack) {
+        process.exit(exitCode);
+      }
+    }
   }
 }
 
@@ -256,7 +326,7 @@ function testCoverage(done) {
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // first send results of istanbul's test coverage to coveralls.io.
   return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
-  // have to read it.
+    // have to read it.
     .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
 }
 
@@ -286,6 +356,28 @@ function setupE2e(done) {
   done();
 }
 
+function injectFakeServerEndpoint() {
+  return gulp.src(['build/dist/*.js'])
+    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', `http://${FAKE_SERVER_HOST}:${FAKE_SERVER_PORT}`))
+    .pipe(gulp.dest('build/dist'));
+}
+
+function injectFakeServerEndpointDev() {
+  return gulp.src(['build/dev/*.js'])
+    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', `http://${FAKE_SERVER_HOST}:${FAKE_SERVER_PORT}`))
+    .pipe(gulp.dest('build/dev'));
+}
+
+function startFakeServer() {
+  const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${FAKE_SERVER_PORT}`]);
+  fakeServer.stdout.on('data', (data) => {
+    console.log(`stdout: ${data}`);
+  });
+  fakeServer.stderr.on('data', (data) => {
+    console.log(`stderr: ${data}`);
+  });
+}
+
 // support tasks
 gulp.task(lint);
 gulp.task(watch);
@@ -309,11 +401,18 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
+gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watch)));
+gulp.task('serve-fake', gulp.series(clean, gulp.parallel('build-bundle-dev', watch), injectFakeServerEndpointDev, test, startFakeServer));
+
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
-gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-dev', watch), test))
+gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), injectFakeServerEndpoint, test));
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+
+// build task for reviewers, runs test-coverage, serves, without watching
+gulp.task(viewReview);
+gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
 module.exports = nodeBundle;

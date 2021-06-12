@@ -1,99 +1,162 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'interactiveOffers';
-const BIDDER_ENDPOINT = 'https://connect.interactiveoffers.com/api/endpoint.php';
-const TIMEOUT_DEFAULT = 5000;
+const ENDPOINT = 'https://rtb.ioadx.com/bidRequest/?partnerId=4a3bab187a74ac4862920cca864d6eff195ff5e4';
+
+const DEFAULT = {
+  'OpenRTBBidRequest': {},
+  'OpenRTBBidRequestSite': {},
+  'OpenRTBBidRequestSitePublisher': {},
+  'OpenRTBBidRequestSiteContent': {
+    language: navigator.language,
+  },
+  'OpenRTBBidRequestSource': {},
+  'OpenRTBBidRequestDevice': {
+    ua: navigator.userAgent,
+    language: navigator.language
+  },
+  'OpenRTBBidRequestUser': {},
+  'OpenRTBBidRequestImp': {},
+  'OpenRTBBidRequestImpBanner': {},
+  'PrebidBid': {
+    currency: 'USD',
+    ttl: 60,
+    netRevenue: false
+  }
+};
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['ino'],
+  supportedMediaTypes: [BANNER],
+
   isBidRequestValid: function(bid) {
-    if (!('params' in bid)) {
-      utils.logError(bid.bidder + ': No required params, please check your settings');
-      return false;
+    let ret = true;
+    if (bid && bid.params) {
+      if (!utils.isNumber(bid.params.pubid)) {
+        utils.logWarn('pubid must be a valid numeric ID');
+        ret = false;
+      }
+      if (bid.params.tmax && !utils.isNumber(bid.params.tmax)) {
+        utils.logWarn('tmax must be a valid numeric ID');
+        ret = false;
+      }
+    } else {
+      utils.logWarn('invalid request');
+      ret = false;
     }
-    if (!(bid.params.pubId)) {
-      utils.logError(bid.bidder + ': No required param pubId, please check your settings');
-      return false;
-    }
-    return true;
+    return ret;
   },
-
   buildRequests: function(validBidRequests, bidderRequest) {
-    let serverRequests = [];
-    for (let i = 0; i < validBidRequests.length; i++) {
-      let bidRequest = validBidRequests[i];
-      let bidRequestParams = bidRequest.params;
-      let pubId = utils.getBidIdParameter('pubId', bidRequestParams);
-
-      // Loc param is optional but always is sent to endpoint
-      let location = utils.getBidIdParameter('loc', bidRequestParams);
-      if (!location) {
-        location = utils.getTopWindowUrl();
-      }
-
-      // Tmax param is optional but always is sent to endpoint
-      let tmax = utils.getBidIdParameter('tmax', bidRequestParams);
-      if (!tmax) {
-        tmax = TIMEOUT_DEFAULT;
-      }
-
-      serverRequests.push({
-        method: 'POST',
-        url: BIDDER_ENDPOINT,
-        data: Object.assign({
-          'pubId': pubId,
-          'bidId': utils.getUniqueIdentifierStr(),
-          'loc': location,
-          'tmax': tmax,
-          'sizes': bidRequest.sizes
-        }),
-        options: {withCredentials: false},
-        bidRequest: bidRequest
-      });
-    }
-    return serverRequests;
+    let payload = parseRequestPrebidjsToOpenRTB(bidderRequest);
+    return {
+      method: 'POST',
+      url: ENDPOINT,
+      data: JSON.stringify(payload),
+      bidderRequest: bidderRequest
+    };
   },
 
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function(response, request) {
     let bidResponses = [];
-    if (!serverResponse || serverResponse.error) {
-      utils.logError(BIDDER_CODE + ': server response error', serverResponse);
-      return bidResponses;
+    if (response.body && response.body.length) {
+      bidResponses = parseResponseOpenRTBToPrebidjs(response.body);
     }
-
-    const serverBody = serverResponse.body;
-    if (!serverBody || serverBody.success !== 'true') {
-      utils.logError(BIDDER_CODE + ': empty bid response');
-      return bidResponses;
-    }
-
-    const serverPayloadData = serverBody.payloadData;
-    if (!serverPayloadData || Array.isArray(serverPayloadData)) {
-      utils.logError(BIDDER_CODE + ': server response no data', serverResponse);
-      return bidResponses;
-    }
-
-    const CPM = serverPayloadData.cpm;
-    if (CPM > 0) {
-      let bidResponse = {
-        requestId: request.bidRequest.bidId,
-        cpm: CPM,
-        width: serverPayloadData.width,
-        height: serverPayloadData.height,
-        creativeId: serverPayloadData.bidId,
-        ttl: config.getConfig('_bidderTimeout'),
-        referrer: utils.getTopWindowUrl(),
-        currency: 'USD',
-        netRevenue: true,
-        ad: serverPayloadData.ad
-      };
-      bidResponses.push(bidResponse);
-    }
-
     return bidResponses;
-  },
+  }
 };
+
+function parseRequestPrebidjsToOpenRTB(prebidRequest) {
+  let pageURL = window.location.href;
+  let domain = window.location.hostname;
+  let secure = (window.location.protocol == 'https:' ? 1 : 0);
+  let openRTBRequest = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequest']));
+  openRTBRequest.id = prebidRequest.auctionId;
+  openRTBRequest.ext = {
+    auctionstart: Date.now()
+  };
+
+  openRTBRequest.site = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestSite']));
+  openRTBRequest.site.id = domain;
+  openRTBRequest.site.name = domain;
+  openRTBRequest.site.domain = domain;
+  openRTBRequest.site.page = pageURL;
+  openRTBRequest.site.ref = prebidRequest.refererInfo.referer;
+
+  openRTBRequest.site.publisher = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestSitePublisher']));
+  openRTBRequest.site.publisher.id = 0;
+  openRTBRequest.site.publisher.name = config.getConfig('publisherDomain');
+  openRTBRequest.site.publisher.domain = domain;
+  openRTBRequest.site.publisher.domain = domain;
+
+  openRTBRequest.site.content = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestSiteContent']));
+
+  openRTBRequest.source = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestSource']));
+  openRTBRequest.source.fd = 0;
+  openRTBRequest.source.tid = prebidRequest.auctionId;
+  openRTBRequest.source.pchain = '';
+
+  openRTBRequest.device = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestDevice']));
+
+  openRTBRequest.user = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestUser']));
+
+  openRTBRequest.imp = [];
+  prebidRequest.bids.forEach(function(bid, impId) {
+    impId++;
+    let imp = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestImp']));
+    imp.id = impId;
+    imp.secure = secure;
+    imp.tagid = bid.bidId;
+
+    openRTBRequest.site.publisher.id = openRTBRequest.site.publisher.id || bid.params.pubid;
+    openRTBRequest.tmax = openRTBRequest.tmax || bid.params.tmax || 0;
+
+    Object.keys(bid.mediaTypes).forEach(function(mediaType) {
+      if (mediaType == 'banner') {
+        imp.banner = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestImpBanner']));
+        imp.banner.w = 0;
+        imp.banner.h = 0;
+        imp.banner.format = [];
+        bid.mediaTypes[mediaType].sizes.forEach(function(adSize) {
+          if (!imp.banner.w) {
+            imp.banner.w = adSize[0];
+            imp.banner.h = adSize[1];
+          }
+          imp.banner.format.push({w: adSize[0], h: adSize[1]});
+        });
+      }
+    });
+    openRTBRequest.imp.push(imp);
+  });
+  return openRTBRequest;
+}
+function parseResponseOpenRTBToPrebidjs(openRTBResponse) {
+  let prebidResponse = [];
+  openRTBResponse.forEach(function(response) {
+    response.seatbid.forEach(function(seatbid) {
+      seatbid.bid.forEach(function(bid) {
+        let prebid = JSON.parse(JSON.stringify(DEFAULT['PrebidBid']));
+        prebid.requestId = bid.ext.tagid;
+        prebid.ad = bid.adm;
+        prebid.creativeId = bid.crid;
+        prebid.cpm = bid.price;
+        prebid.width = bid.w;
+        prebid.height = bid.h;
+        prebid.mediaType = 'banner';
+        prebid.meta = {
+          advertiserDomains: bid.adomain,
+          advertiserId: bid.adid,
+          mediaType: 'banner',
+          primaryCatId: bid.cat[0] || '',
+          secondaryCatIds: bid.cat
+        }
+        prebidResponse.push(prebid);
+      });
+    });
+  });
+  return prebidResponse;
+}
+
 registerBidder(spec);

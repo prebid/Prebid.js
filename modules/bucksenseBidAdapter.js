@@ -1,10 +1,10 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const WHO = 'BKSHBID-005';
 const BIDDER_CODE = 'bucksense';
-const URL = 'https://prebid.bksn.se:445/prebidjs/';
+const URL = 'https://prebid.bksn.se/prebidjs/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -90,6 +90,7 @@ export const spec = {
       var sCurrency = oResponse.currency || 'USD';
       var bNetRevenue = oResponse.netRevenue || true;
       var sAd = oResponse.ad || '';
+      var sAdomains = oResponse.adomains || [];
 
       if (request && sRequestID.length == 0) {
         utils.logInfo(WHO + ' interpretResponse() - use RequestID from Placments');
@@ -110,7 +111,10 @@ export const spec = {
         creativeId: sCreativeID,
         currency: sCurrency,
         netRevenue: bNetRevenue,
-        ad: sAd
+        ad: sAd,
+        meta: {
+          advertiserDomains: sAdomains
+        }
       };
       bidResponses.push(bidResponse);
     } else {

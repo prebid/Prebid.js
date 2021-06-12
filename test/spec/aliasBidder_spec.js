@@ -1,4 +1,4 @@
-import { pbjsTestOnly } from 'test/helpers/pbjs-test-only';
+import { pbjsTestOnly } from 'test/helpers/pbjs-test-only.js';
 
 describe('Publisher API _ Alias Bidder', function () {
   var assert = require('chai').assert;
