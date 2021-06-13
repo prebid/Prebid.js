@@ -36,7 +36,7 @@ const addBidFloorInfo = (validBid) => {
       floorInfo = {
         currency: 'USD',
         floor: validBid.params.floor || 0
-      }
+      };
     }
 
     validBid.mediaTypes[key].floor = floorInfo.floor;
@@ -52,7 +52,7 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
     const currSiteId = validBid.params.siteId;
     addBidFloorInfo(validBid);
     requestBySiteId[currSiteId] = requestBySiteId[currSiteId] || [];
-    requestBySiteId[currSiteId].push(validBid)
+    requestBySiteId[currSiteId].push(validBid);
   });
 
   let request = [];
@@ -65,7 +65,7 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
     request.push(Object.assign({}, {data, ...conf}));
   });
 
-  return request
+  return request;
 };
 
 const handleBidResponseByMediaType = (bids) => {
@@ -75,14 +75,14 @@ const handleBidResponseByMediaType = (bids) => {
     let parsedBidResponse;
     let bidMediaType = utils.deepAccess(bid, 'meta.mediaType');
     if (bidMediaType && bidMediaType.toLowerCase() === 'banner') {
-      parsedBidResponse = handleBannerBid(bid)
+      parsedBidResponse = handleBannerBid(bid);
     } else if (bidMediaType && bidMediaType.toLowerCase() === 'video') {
       let context = utils.deepAccess(bid, 'meta.videoContext');
       bid.mediaType = VIDEO;
       if (context === 'instream') {
-        parsedBidResponse = handleInStreamBid(bid)
+        parsedBidResponse = handleInStreamBid(bid);
       } else if (context === 'outstream') {
-        parsedBidResponse = handleOutStreamBid(bid)
+        parsedBidResponse = handleOutStreamBid(bid);
       }
     }
 
@@ -91,7 +91,7 @@ const handleBidResponseByMediaType = (bids) => {
     }
   });
 
-  return bidResponses
+  return bidResponses;
 };
 
 const handleBannerBid = (bid) => {
@@ -158,7 +158,7 @@ const isMediaTypesValid = (bid) => {
     isValid = isVideoMediaTypeValid(mediaTypeVideoData);
   }
   if (isValid && mediaTypeBannerData) {
-    isValid = isBannerMediaTypeValid(mediaTypeBannerData)
+    isValid = isBannerMediaTypeValid(mediaTypeBannerData);
   }
   return isValid;
 };
@@ -169,7 +169,7 @@ const isVideoMediaTypeValid = (mediaTypeVideoData) => {
   }
 
   const supportedContexts = ['outstream', 'instream'];
-  return supportedContexts.indexOf(mediaTypeVideoData.context) !== -1
+  return supportedContexts.indexOf(mediaTypeVideoData.context) !== -1;
 };
 
 const isBannerMediaTypeValid = (mediaTypeBannerData) => {
@@ -182,7 +182,7 @@ const hasDuplicates = (mediaTypeSizes) => {
     if (seenSizes[mediaTypeSizes[i].toString()]) {
       return true;
     } else {
-      seenSizes[mediaTypeSizes[i].toString()] = true
+      seenSizes[mediaTypeSizes[i].toString()] = true;
     }
   }
   return false;
