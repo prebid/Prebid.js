@@ -72,7 +72,7 @@ describe('Zeta Ssp Bid Adapter', function() {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
     expect(payload.site.page).to.eql('http://www.zetaglobal.com/page?param=value');
-    expect(payload.site.domain).to.eql('zetaglobal.com');
+    expect(payload.site.domain).to.eql(window.location.origin); // config.js -> DEFAULT_PUBLISHER_DOMAIN
   });
 
   it('Test the request processing function', function () {
