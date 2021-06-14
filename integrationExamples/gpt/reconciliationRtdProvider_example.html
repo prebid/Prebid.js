@@ -82,8 +82,9 @@
 
     <script>
       googletag.cmd.push(function () {
-        googletag.defineSlot('/21834411153/rsdk-2', [[300, 250], [728, 90]], 'div-gpt-ad-rsdk-1').addService(googletag.pubads());
-
+        googletag.defineSlot('/21834411153/rsdk-2', [[300, 250], [728, 90]], 'div-gpt-ad-rsdk-1')
+          .addService(googletag.pubads())
+          .setTargeting('RSDK_VER', '2.1');
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
       });

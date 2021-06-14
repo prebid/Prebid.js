@@ -29,8 +29,13 @@ Module that connects to Zeta's demand sources
                                 uid: 12345,
                                 buyeruid: 12345
                             },
-                            ip: '111.222.33.44',
-                            definerId: 1,
+                            device: {
+                                ip: '111.222.33.44',
+                                geo: {
+                                    country: 'USA'
+                                }
+                            },
+                            definerId: '44253',
                             test: 1
                         }
                     }

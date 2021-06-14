@@ -142,6 +142,9 @@ describe('onetag', function () {
         expect(data.wHeight).to.be.a('number');
         expect(data.oHeight).to.be.a('number');
         expect(data.oWidth).to.be.a('number');
+        expect(data.ancestorOrigin).to.satisfy(function (value) {
+          return value === null || typeof value === 'string';
+        });
         expect(data.aWidth).to.be.a('number');
         expect(data.aHeight).to.be.a('number');
         expect(data.sLeft).to.be.a('number');
@@ -153,9 +156,33 @@ describe('onetag', function () {
         for (let i = 0; i < bids.length; i++) {
           const bid = bids[i];
           if (hasTypeVideo(bid)) {
-            expect(bid).to.have.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'pubId', 'transactionId', 'context', 'mimes', 'playerSize', 'protocols', 'maxDuration', 'api', 'type');
+            expect(bid).to.have.all.keys(
+              'adUnitCode',
+              'auctionId',
+              'bidId',
+              'bidderRequestId',
+              'pubId',
+              'transactionId',
+              'context',
+              'mimes',
+              'playerSize',
+              'protocols',
+              'maxDuration',
+              'api',
+              'playbackmethod',
+              'type'
+            );
           } else if (isValid(BANNER, bid)) {
-            expect(bid).to.have.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'pubId', 'transactionId', 'sizes', 'type');
+            expect(bid).to.have.all.keys(
+              'adUnitCode',
+              'auctionId',
+              'bidId',
+              'bidderRequestId',
+              'pubId',
+              'transactionId',
+              'sizes',
+              'type'
+            );
           }
           expect(bid.bidId).to.be.a('string');
           expect(bid.pubId).to.be.a('string');
@@ -240,6 +267,7 @@ describe('onetag', function () {
         expect(dataItem.creativeId).to.be.a('string');
         expect(dataItem.netRevenue).to.be.a('boolean');
         expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.meta.advertiserDomains).to.be.an('array');
       }
     });
     it('Returns an empty array if response is not valid', function () {
@@ -323,6 +351,7 @@ function getBannerVideoResponse() {
           currency: 'USD',
           requestId: 'banner',
           mediaType: BANNER,
+          adomain: []
         },
         {
           cpm: 13,
@@ -334,7 +363,8 @@ function getBannerVideoResponse() {
           requestId: 'videoInstream',
           vastUrl: 'https://videoinstream.org',
           videoCacheKey: 'key',
-          mediaType: VIDEO
+          mediaType: VIDEO,
+          adomain: ['test_domain']
         },
         {
           cpm: 13,
@@ -347,7 +377,8 @@ function getBannerVideoResponse() {
           requestId: 'videoOutstream',
           ad: '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0"></VAST>',
           rendererUrl: 'https://testRenderer',
-          mediaType: VIDEO
+          mediaType: VIDEO,
+          adomain: []
         }
       ]
     }

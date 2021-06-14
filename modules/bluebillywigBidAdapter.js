@@ -8,7 +8,7 @@ import { createEidsArray } from './userId/eids.js';
 
 const DEV_MODE = window.location.search.match(/bbpbs_debug=true/);
 
-// Blue Billywig Constants
+// Blue Billywig  Constants
 const BB_CONSTANTS = {
   BIDDER_CODE: 'bluebillywig',
   AUCTION_URL: '$$URL_STARTpbs.bluebillywig.com/openrtb2/auction?pub=$$PUBLICATION',
@@ -28,7 +28,7 @@ const BB_CONSTANTS = {
 const getConfig = config.getConfig;
 
 // Helper Functions
-export const BB_HELPERS = {
+const BB_HELPERS = {
   addSiteAppDevice: function(request, pageUrl) {
     if (typeof getConfig('app') === 'object') request.app = getConfig('app');
     else {
@@ -122,7 +122,8 @@ export const BB_HELPERS = {
     if (!bidObject.vastUrl && bid.nurl && !bid.adm) { // ad markup is on win notice url, and adm is ommited according to OpenRTB 2.5
       bidObject.vastUrl = bid.nurl;
     }
-
+    bidObject.meta = bid.meta || {};
+    if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
     return bidObject;
   },
 };
@@ -151,7 +152,7 @@ const BB_RENDERER = {
     const ele = document.getElementById(bid.adUnitCode); // NB convention
     const renderer = find(window.bluebillywig.renderers, r => r._id === rendererId);
 
-    if (renderer) renderer.bootstrap(config, ele);
+    if (renderer) renderer.bootstrap(config, ele, bid.rendererSettings || {});
     else utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Couldn't find a renderer with ${rendererId}`);
   },
   newRenderer: function(rendererUrl, adUnitCode) {
@@ -232,6 +233,11 @@ export const spec = {
 
     if (bid.params.hasOwnProperty('video') && (bid.params.video === null || typeof bid.params.video !== 'object')) {
       utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: params.video must be of type object. Rejecting bid: `, bid);
+      return false;
+    }
+
+    if (bid.params.hasOwnProperty('rendererSettings') && (bid.params.rendererSettings === null || typeof bid.params.rendererSettings !== 'object')) {
+      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: params.rendererSettings must be of type object. Rejecting bid: `, bid);
       return false;
     }
 
@@ -330,6 +336,7 @@ export const spec = {
         bid.publicationName = bidParams.publicationName;
         bid.rendererCode = bidParams.rendererCode;
         bid.accountId = bidParams.accountId;
+        bid.rendererSettings = bidParams.rendererSettings;
 
         const rendererUrl = BB_HELPERS.getRendererUrl(bid.publicationName, bid.rendererCode);
         bid.renderer = BB_RENDERER.newRenderer(rendererUrl, bid.adUnitCode);

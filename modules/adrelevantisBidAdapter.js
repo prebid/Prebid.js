@@ -120,11 +120,11 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    let fpdcfg = config.getConfig('fpd')
+    let fpdcfg = config.getLegacyFpd(config.getConfig('ortb2'));
     if (fpdcfg && fpdcfg.context) {
       let fdata = {
-        keywords: fpdcfg.context.keywords,
-        category: fpdcfg.context.data.category
+        keywords: fpdcfg.context.keywords || '',
+        category: utils.deepAccess(fpdcfg, 'context.data.category') || ''
       }
       payload.fpd = fdata;
     }
@@ -428,9 +428,6 @@ function bidToTag(bid) {
   tag.use_pmt_rule = bid.params.usePaymentRule || false
   tag.prebid = true;
   tag.disable_psa = true;
-  if (bid.params.reserve) {
-    tag.reserve = bid.params.reserve;
-  }
   if (bid.params.position) {
     tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
   }

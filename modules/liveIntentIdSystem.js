@@ -8,9 +8,10 @@ import * as utils from '../src/utils.js';
 import { triggerPixel } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
+import { LiveConnect } from 'live-connect-js/esm/initializer.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js';
 
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager(null, MODULE_NAME);
@@ -42,26 +43,18 @@ export function reset() {
   if (window && window.liQ) {
     window.liQ = [];
   }
+  liveIntentIdSubmodule.setModuleMode(null)
   eventFired = false;
   liveConnect = null;
 }
 
 function parseLiveIntentCollectorConfig(collectConfig) {
   const config = {};
-  if (collectConfig) {
-    if (collectConfig.appId) {
-      config.appId = collectConfig.appId;
-    }
-    if (collectConfig.fpiStorageStrategy) {
-      config.storageStrategy = collectConfig.fpiStorageStrategy;
-    }
-    if (collectConfig.fpiExpirationDays) {
-      config.expirationDays = collectConfig.fpiExpirationDays;
-    }
-    if (collectConfig.collectorUrl) {
-      config.collectorUrl = collectConfig.collectorUrl;
-    }
-  }
+  collectConfig = collectConfig || {}
+  collectConfig.appId && (config.appId = collectConfig.appId);
+  collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
+  collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
+  collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
   return config;
 }
 
@@ -90,9 +83,6 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
-  if (configParams.emailHash) {
-    liveConnectConfig.eventSource = { hash: configParams.emailHash }
-  }
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
@@ -105,7 +95,10 @@ function initializeLiveConnect(configParams) {
 
   // The second param is the storage object, LS & Cookie manipulation uses PBJS utils.
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS utils.
-  liveConnect = LiveConnect(liveConnectConfig, storage, calls);
+  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
+  if (configParams.emailHash) {
+    liveConnect.push({ hash: configParams.emailHash })
+  }
   return liveConnect;
 }
 
@@ -118,11 +111,19 @@ function tryFireEvent() {
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
+  moduleMode: process.env.LiveConnectMode,
   /**
    * used to link submodule with config
    * @type {string}
    */
   name: MODULE_NAME,
+
+  setModuleMode(mode) {
+    this.moduleMode = mode
+  },
+  getInitializer() {
+    return this.moduleMode === 'minimal' ? MinimalLiveConnect : LiveConnect
+  },
 
   /**
    * decode the stored id value for passing to bid requests. Note that lipb object is a wrapper for everything, and
@@ -136,7 +137,7 @@ export const liveIntentIdSubmodule = {
   decode(value, config) {
     const configParams = (config && config.params) || {};
     function composeIdObject(value) {
-      const base = { 'lipbid': value['unifiedId'] };
+      const base = { 'lipbid': value.unifiedId };
       delete value.unifiedId;
       return { 'lipb': { ...base, ...value } };
     }
@@ -165,15 +166,7 @@ export const liveIntentIdSubmodule = {
     const result = function(callback) {
       liveConnect.resolve(
         response => {
-          let responseObj = {};
-          if (response) {
-            try {
-              responseObj = JSON.parse(response);
-            } catch (error) {
-              utils.logError(error);
-            }
-          }
-          callback(responseObj);
+          callback(response);
         },
         error => {
           utils.logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);

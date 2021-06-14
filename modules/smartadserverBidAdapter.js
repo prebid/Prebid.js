@@ -86,15 +86,36 @@ export const spec = {
           h: size[1]
         }));
       } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
+        // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
+        // Assign a default protocol, the highest value possible means we are retrocompatible with all older values.
+        var protocol = null;
+        if (bid.params.video && bid.params.video.protocol) {
+          protocol = bid.params.video.protocol;
+        } else if (Array.isArray(videoMediaType.protocols)) {
+          protocol = Math.max.apply(Math, videoMediaType.protocols);
+        }
+
+        // Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
+        var startDelay = 2;
+        if (bid.params.video && bid.params.video.startDelay) {
+          startDelay = bid.params.video.startDelay
+        } else if (videoMediaType.startdelay == 0) {
+          startDelay = 1;
+        } else if (videoMediaType.startdelay == -1) {
+          startDelay = 2;
+        } else if (videoMediaType.startdelay == -2) {
+          startDelay = 3;
+        }
+
         // Specific attributes for instream.
         let playerSize = videoMediaType.playerSize[0];
         payload.isVideo = videoMediaType.context === 'instream';
         payload.mediaType = VIDEO;
         payload.videoData = {
-          videoProtocol: bid.params.video.protocol,
+          videoProtocol: protocol,
           playerWidth: playerSize[0],
           playerHeight: playerSize[1],
-          adBreak: bid.params.video.startDelay || 1
+          adBreak: startDelay
         };
       } else {
         return {};
@@ -135,7 +156,7 @@ export const spec = {
     const bidResponses = [];
     let response = serverResponse.body;
     try {
-      if (response) {
+      if (response && !response.isNoAd) {
         const bidRequest = JSON.parse(bidRequestString.data);
 
         let bidResponse = {
@@ -147,7 +168,9 @@ export const spec = {
           dealId: response.dealId,
           currency: response.currency,
           netRevenue: response.isNetCpm,
-          ttl: response.ttl
+          ttl: response.ttl,
+          dspPixels: response.dspPixels,
+          meta: { advertiserDomains: response.adomain ? response.adomain : [] }
         };
 
         if (bidRequest.mediaType === VIDEO) {
@@ -181,6 +204,13 @@ export const spec = {
       syncs.push({
         type: 'iframe',
         url: serverResponses[0].body.cSyncUrl
+      });
+    } else if (syncOptions.pixelEnabled && serverResponses.length > 0 && serverResponses[0].body.dspPixels !== undefined) {
+      serverResponses[0].body.dspPixels.forEach(function(pixel) {
+        syncs.push({
+          type: 'image',
+          url: pixel
+        });
       });
     }
     return syncs;
