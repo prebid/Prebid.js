@@ -294,7 +294,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     let video = {};
 
     let videoParams = utils.deepAccess(validBidRequests, 'params.video');
-    if(typeof videoParams !== 'undefined'){
+    if (typeof videoParams !== 'undefined') {
       for (var key in VIDEO_CUSTOM_PARAMS) {
         if (videoParams.hasOwnProperty(key)) {
           video[key] = _checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
@@ -381,14 +381,15 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   if (typeof eidsArr !== 'undefined') {
     eidsArr = eidsArr.filter(
       uuid =>
-        uuid !== null &&
-          (uuid.source !== undefined && uuid.source !== null && typeof uuid.uids[0].id == 'string') &&
-          (uuid.uids[0].id !== undefined && uuid.uids[0].id !== null && typeof uuid.uids[0].id == 'string')
+        (typeof uuid !== 'undefined' && uuid !== null) &&
+        (typeof uuid.source == 'string' && uuid.source !== null) &&
+        (typeof uuid.uids[0].id == 'string' && uuid.uids[0].id !== null)
     )
-  }
-  payload.user = {
-    ext: {
-      eids: eidsArr
+
+    payload.user = {
+      ext: {
+        eids: eidsArr
+      }
     }
   };
 
