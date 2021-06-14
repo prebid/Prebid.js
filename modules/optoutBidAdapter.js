@@ -19,6 +19,16 @@ function getCurrency() {
   return cur;
 }
 
+function hasPurpose1Consent(bidderRequest) {
+  let result = false;
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent.apiVersion === 2) {
+      result = !!(utils.deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
+    }
+  }
+  return result;
+}
+
 export const spec = {
   code: BIDDER_CODE,
 
@@ -28,9 +38,15 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     return validBidRequests.map(bidRequest => {
+      let endPoint = 'https://adscience-nocookie.nl/prebid/display';
+      if (bidRequest.gdprConsent) {
+        if (!bidRequest.gdprConsent.gdprApplies || hasPurpose1Consent(bidRequest)) {
+          endPoint = 'https://prebid.adscience.nl/prebid/display';
+        }
+      }
       return {
         method: 'POST',
-        url: 'https://prebid.adscience.nl/prebid/display',
+        url: endPoint,
         data: {
           requestId: bidRequest.bidId,
           publisher: bidRequest.params.publisher,
@@ -48,8 +64,21 @@ export const spec = {
     return serverResponse.body;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
-    return [];
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
+    var gdprParams;
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+      }
+      if (syncOptions.iframeEnabled && (gdprConsent.gdprApplies || hasPurpose1Consent({gdprConsent}))) {
+        return [{
+          type: 'iframe',
+          url: 'https://prebid.adscience.nl/matching/iframe?' + gdprParams
+        }];
+      }
+    }
   },
 };
 registerBidder(spec);

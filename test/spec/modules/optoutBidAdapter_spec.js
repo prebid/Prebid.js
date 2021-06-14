@@ -40,7 +40,7 @@ describe('optoutAdapterTest', function () {
     });
   });
 
-  describe('bidRequest', function () {
+  describe('bidRequest', function (consentString) {
     const bidRequests = [{
       'bidder': 'optout',
       'params': {
@@ -51,6 +51,11 @@ describe('optoutAdapterTest', function () {
       'transactionId': '1b8389fe-615c-482d-9f1a-177fb8f7d5b0',
       'bidId': '9304jr394ddfj',
       'bidderRequestId': '70deaff71c281d',
+      'gdprConsent': {
+        consentString: consentString,
+        gdprApplies: true,
+        apiVersion: 2
+      },
       'auctionId': '5c66da22-426a-4bac-b153-77360bef5337'
     },
     {
@@ -63,25 +68,30 @@ describe('optoutAdapterTest', function () {
       'transactionId': '193995b4-7122-4739-959b-2463282a138b',
       'bidId': '893j4f94e8jei',
       'bidderRequestId': '70deaff71c281d',
+      'gdprConsent': {
+        consentString: consentString,
+        gdprApplies: true,
+        apiVersion: 2
+      },
       'auctionId': 'e97cafd0-ebfc-4f5c-b7c9-baa0fd335a4a'
     }];
 
     it('bidRequest HTTP method', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, null);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('POST');
       });
     });
 
-    it('bidRequest url', function () {
-      const requests = spec.buildRequests(bidRequests);
-      requests.forEach(function(requestItem) {
-        expect(requestItem.url).to.match(new RegExp('prebid\\.adscience\\.nl/prebid/display'));
-      });
-    });
+    // it('bidRequest url without consent', function () {
+    //  const requests = spec.buildRequests(bidRequests, null);
+    //  requests.forEach(function(requestItem) {
+    //    expect(requestItem.url).to.match(new RegExp('adscience-nocookie\\.nl/prebid/display'));
+    //  });
+    // });
 
     it('bidRequest id', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, null);
       expect(requests[0].data.requestId).to.equal('9304jr394ddfj');
       expect(requests[1].data.requestId).to.equal('893j4f94e8jei');
     });
@@ -94,7 +104,7 @@ describe('optoutAdapterTest', function () {
         }
       })
 
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, null);
       expect(requests[0].data.cur.adServerCurrency).to.equal('USD');
       expect(requests[1].data.cur.adServerCurrency).to.equal('USD');
     });
@@ -102,7 +112,7 @@ describe('optoutAdapterTest', function () {
     it('bidRequest without config for currency', function () {
       config.resetConfig();
 
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, null);
       expect(requests[0].data.cur.adServerCurrency).to.equal('EUR');
       expect(requests[1].data.cur.adServerCurrency).to.equal('EUR');
     });
