@@ -39,8 +39,8 @@ The following settings are available for the `storage` property in the `userSync
 | Param under `storage` | Scope    | Type         | Description                                                                      | Example   |
 | --------------------- | -------- | ------------ | -------------------------------------------------------------------------------- | --------- |
 | name                  | Required | String       | Where the ID will be stored                                                      | `"amxId"` |
-| type                  | required | String       | This must be `"html5"`                                                           | `"html5"` |
-| expires               | Optional | Number <= 30 | number of days until the stored ID expires. **Must be less than or equal to 30** | `30`      |
+| type                  | Required | String       | This must be `"html5"`                                                           | `"html5"` |
+| expires               | Required | Number <= 30 | number of days until the stored ID expires. **Must be less than or equal to 30** | `14`      |
 
 ### Params
 
