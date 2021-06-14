@@ -307,7 +307,7 @@ describe('SonobiBidAdapter', function () {
     }];
 
     let keyMakerData = {
-      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25|gpid=/123123/gpt_publisher/adunit-code-1',
+      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|gpid=/123123/gpt_publisher/adunit-code-1',
       '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|gpid=/123123/gpt_publisher/adunit-code-3',
       '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB',
     };
@@ -461,18 +461,6 @@ describe('SonobiBidAdapter', function () {
               'atype': 1
             }
           ]
-        },
-        {
-          'source': 'sharedid.org',
-          'uids': [
-            {
-              'id': '01ERJ6W40EXJZNQJVJZWASEG7J',
-              'atype': 1,
-              'ext': {
-                'third': '01ERJ6W40EXJZNQJVJZWASEG7J'
-              }
-            }
-          ]
         }
       ];
       bidRequest[1].userIdAsEids = [
@@ -482,18 +470,6 @@ describe('SonobiBidAdapter', function () {
             {
               'id': '97b1ff9b-6bf1-41fc-95de-acfd33dbb95a',
               'atype': 1
-            }
-          ]
-        },
-        {
-          'source': 'sharedid.org',
-          'uids': [
-            {
-              'id': '01ERJ6W40EXJZNQJVJZWASEG7J',
-              'atype': 1,
-              'ext': {
-                'third': '01ERJ6W40EXJZNQJVJZWASEG7J'
-              }
             }
           ]
         }
@@ -510,18 +486,6 @@ describe('SonobiBidAdapter', function () {
             {
               'id': '97b1ff9b-6bf1-41fc-95de-acfd33dbb95a',
               'atype': 1
-            }
-          ]
-        },
-        {
-          'source': 'sharedid.org',
-          'uids': [
-            {
-              'id': '01ERJ6W40EXJZNQJVJZWASEG7J',
-              'atype': 1,
-              'ext': {
-                'third': '01ERJ6W40EXJZNQJVJZWASEG7J'
-              }
             }
           ]
         }

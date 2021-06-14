@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.10607';
+const TAPPX_BIDDER_VERSION = '0.1.10610';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream'];
@@ -375,7 +375,15 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // > GDPR
 
   // Universal ID
-  const eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
+  let eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
+  if (typeof eidsArr !== 'undefined') {
+    eidsArr = eidsArr.filter(
+      uuid =>
+        uuid !== null &&
+          (uuid.source !== undefined && uuid.source !== null && typeof uuid.uids[0].id == 'string') &&
+          (uuid.uids[0].id !== undefined && uuid.uids[0].id !== null && typeof uuid.uids[0].id == 'string')
+    )
+  }
   payload.user = {
     ext: {
       eids: eidsArr
