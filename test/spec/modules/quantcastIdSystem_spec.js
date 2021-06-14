@@ -48,7 +48,7 @@ describe('QuantcastId fire pixel', function () {
     let urlString = utils.triggerPixel.getCall(0).args[0];
     let url = new URL(urlString);
     let urlSearchParams = new URLSearchParams(url.search);
-    assert.equal(urlSearchParams.get('fpan'), '0');
+    assert.equal(urlSearchParams.get('fpan'), '1');
     assert.notEqual(urlSearchParams.get('fpa'), null);
   });
 
@@ -92,7 +92,7 @@ describe('Quantcast GDPR consent check', function() {
           }
         }
       }
-    })).toBe(false);
+    })).to.equal(false);
   });
 
   it('returns false if publisher flatly denies required purpose', function() {
@@ -111,7 +111,7 @@ describe('Quantcast GDPR consent check', function() {
           }
         }
       }
-    })).toBe(false);
+    })).to.equal(false);
   });
 
   it('returns true if positive consent for required purpose', function() {
@@ -123,7 +123,7 @@ describe('Quantcast GDPR consent check', function() {
       purpose: {
         consents: { '1': true }
       }
-    })).toBe(true);
+    })).to.equal(true);
   });
 
   it('returns false if positive consent but publisher requires legitimate interest for required purpose', function() {
@@ -142,7 +142,7 @@ describe('Quantcast GDPR consent check', function() {
           }
         }
       }
-    })).toBe(false);
+    })).to.equal(false);
   });
 
   it('returns false if no vendor consent and no legitimate interest', function() {
@@ -154,7 +154,7 @@ describe('Quantcast GDPR consent check', function() {
       purpose: {
         consents: { '1': true }
       }
-    })).toBe(false);
+    })).to.equal(false);
   });
 
   it('returns false if no purpose consent and no legitimate interest', function() {
@@ -166,7 +166,7 @@ describe('Quantcast GDPR consent check', function() {
       purpose: {
         consents: { '1': false }
       }
-    })).toBe(false);
+    })).to.equal(false);
   });
 
   it('returns false if no consent, but legitimate interest for consent-first purpose, and no restrictions specified', function() {
@@ -180,7 +180,7 @@ describe('Quantcast GDPR consent check', function() {
         consents: { '1': false },
         legitimateInterests: { '1': true }
       }
-    })).toBe(false);
+    })).to.equal(false);
   });
 
   it('returns false if consent, but no legitimate interest for legitimate-interest-first purpose, and no restrictions specified', function() {
@@ -194,7 +194,7 @@ describe('Quantcast GDPR consent check', function() {
         consents: { '10': true },
         legitimateInterests: { '10': false }
       }
-    })).toBe(false);
+    })).to.equal(false);
   });
 
   it('returns true if consent, but no legitimate interest for legitimate-interest-first purpose, and corresponding consent restriction specified', function() {
@@ -215,7 +215,7 @@ describe('Quantcast GDPR consent check', function() {
           }
         }
       }
-    })).toBe(true);
+    })).to.equal(true);
   });
 
   it('returns false if no consent but legitimate interest for required purpose other than 1, but publisher requires consent', function() {
@@ -236,7 +236,7 @@ describe('Quantcast GDPR consent check', function() {
           }
         }
       }
-    })).toBe(false);
+    })).to.equal(false);
   });
 
   it('returns false if no consent and no legitimate interest for vendor for required purpose other than 1', function() {
@@ -250,6 +250,61 @@ describe('Quantcast GDPR consent check', function() {
         consents: { '10': false },
         legitimateInterests: { '10': true }
       }
-    })).toBe(false);
+    })).to.equal(false);
+  });
+
+  it('returns false if no consent and no legitimate interest for required purpose other than 1', function() {
+    expect(checkTCFv2({
+      gdprApplies: true,
+      vendor: {
+        consents: { '11': false },
+        legitimateInterests: { '11': true }
+      },
+      purpose: {
+        consents: { '10': false },
+        legitimateInterests: { '10': false }
+      }
+    })).to.equal(false);
+  });
+
+  it('returns false if no consent but legitimate interest for required purpose, but required purpose is purpose 1', function() {
+    expect(checkTCFv2({
+      gdprApplies: true,
+      vendor: {
+        consents: { '11': false },
+        legitimateInterests: { '11': true }
+      },
+      purpose: {
+        consents: { '1': false },
+        legitimateInterests: { '1': true }
+      }
+    })).to.equal(false);
+  });
+
+  it('returns true if different legal bases for multiple required purposes', function() {
+    expect(checkTCFv2({
+      gdprApplies: true,
+      vendor: {
+        consents: { '11': true },
+        legitimateInterests: { '11': true }
+      },
+      purpose: {
+        consents: {
+          '1': true,
+          '10': false
+        },
+        legitimateInterests: {
+          '1': false,
+          '10': true
+        }
+      },
+      publisher: {
+        restrictions: {
+          '10': {
+            '11': 2 // require legitimate interest for Quantcast
+          }
+        }
+      }
+    })).to.equal(true);
   });
 });
