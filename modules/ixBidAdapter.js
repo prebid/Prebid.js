@@ -42,7 +42,6 @@ const PROVIDERS = [
   'merkleId',
   'parrableId',
   'connectid',
-  'sharedid',
   'tapadId',
   'quantcastId',
   'pubcid',
