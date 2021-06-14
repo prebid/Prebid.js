@@ -64,8 +64,8 @@ export const spec = {
     };
     const rInfo = bidderRequest.refererInfo;
     payload.device.ua = navigator.userAgent;
-    payload.site.page = (rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href;
-    payload.site.domain = getDomainFromURL(payload.site.page);
+    payload.site.page = config.getConfig('pageUrl') || ((rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href);
+    payload.site.domain = config.getConfig('publisherDomain') || getDomainFromURL(payload.site.page);
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
 
     if (params.test) {
