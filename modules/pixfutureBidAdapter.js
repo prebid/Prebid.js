@@ -5,6 +5,7 @@ import { config } from '../src/config.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import * as utils from '../src/utils.js';
 import { auctionManager } from '../src/auctionManager.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager();
