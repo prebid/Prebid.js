@@ -79,7 +79,7 @@ export const dmdIdSubmodule = {
             callback();
           }
         };
-        ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true, customHeaders: headers });
+        ajax(url, callbacks, undefined, { method: 'GET', customHeaders: headers });
       };
       return { callback: resp };
     }
