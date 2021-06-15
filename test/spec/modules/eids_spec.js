@@ -224,42 +224,6 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
-  it('Sharedid', function() {
-    const userId = {
-      sharedid: {
-        id: 'test_sharedId',
-        third: 'test_sharedId'
-      }
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'sharedid.org',
-      uids: [{
-        id: 'test_sharedId',
-        atype: 1,
-        ext: {
-          third: 'test_sharedId'
-        }
-      }]
-    });
-  });
-  it('Sharedid: Not Synched', function() {
-    const userId = {
-      sharedid: {
-        id: 'test_sharedId'
-      }
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'sharedid.org',
-      uids: [{
-        id: 'test_sharedId',
-        atype: 1
-      }]
-    });
-  });
 
   it('zeotapIdPlus', function() {
     const userId = {
@@ -351,6 +315,22 @@ describe('eids array generation for known sub-modules', function() {
       source: 'id-partner.com',
       uids: [{
         id: 'value read from cookie or local storage'
+      }]
+    });
+  });
+
+  it('amxId', () => {
+    const id = 'c4bcadb0-124f-4468-a91a-d3d44cf311c5'
+    const userId = {
+      amxId: id
+    };
+
+    const [eid] = createEidsArray(userId);
+    expect(eid).to.deep.equal({
+      source: 'amxrtb.com',
+      uids: [{
+        atype: 1,
+        id,
       }]
     });
   });

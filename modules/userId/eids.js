@@ -134,20 +134,6 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // sharedid
-  'sharedid': {
-    source: 'sharedid.org',
-    atype: 1,
-    getValue: function(data) {
-      return data.id;
-    },
-    getUidExt: function(data) {
-      return (data && data.third) ? {
-        third: data.third
-      } : undefined;
-    }
-  },
-
   // zeotapIdPlus
   'IDP': {
     source: 'zeotap.com',
@@ -226,6 +212,10 @@ const USER_IDS_CONFIG = {
   'adtelligentId': {
     source: 'adtelligent.com',
     atype: 3
+  },
+  amxId: {
+    source: 'amxrtb.com',
+    atype: 1,
   }
 };
 
