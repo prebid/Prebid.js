@@ -743,7 +743,15 @@ function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
   // fpdUserData - data set from global and bidder level configs
   // segmentData - data set from permutive
   var dataMerged = false;
-  if (!fpdUserData.data && segmentData.length > 0) {
+
+  if ((!fpdUserData || !fpdUserData.data) && (!segmentData || segmentData.length === 0)) {
+    return;
+  }
+
+  if ((!fpdUserData || !fpdUserData.data) && segmentData.length > 0) {
+    if (fpdUserData === undefined) {
+      fpdUserData = {};
+    }
     fpdUserData.data = [{
       name: PERMUTIVE_SEGMENT_NAME,
       segment: []
@@ -751,7 +759,9 @@ function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
   }
   for (var id in fpdUserData.data) {
     if (fpdUserData.data[id].name === PERMUTIVE_SEGMENT_NAME) {
-      var mergedArr = utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment.concat(segmentData), 'id');
+      var mergedArr = segmentData && segmentData.length > 0
+        ? utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment.concat(segmentData), 'id')
+        : utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment, 'id');
       fpdUserData.data[id].segment = mergedArr;
       dataMerged = true;
     }
@@ -1141,10 +1151,6 @@ export const spec = {
     if (commonFpd.site) {
       utils.mergeDeep(payload, {site: commonFpd.site});
     }
-    /* if (segmentData && segmentData.data) {
-      commonFpd.user.data = segmentData.data;
-    } */
-
     if (commonFpd.user) {
       utils.mergeDeep(payload, {user: commonFpd.user});
     }

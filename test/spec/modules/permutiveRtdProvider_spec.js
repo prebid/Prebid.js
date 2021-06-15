@@ -113,7 +113,7 @@ describe('permutiveRtdProvider', function () {
       }
     })
 
-    it('sets segment targeting for PubMatic', function () {
+    /* it('sets segment targeting for PubMatic', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
       const config = getConfig()
@@ -133,7 +133,7 @@ describe('permutiveRtdProvider', function () {
           })
         })
       }
-    })
+    }) */
   })
 
   describe('Custom segment targeting', function () {

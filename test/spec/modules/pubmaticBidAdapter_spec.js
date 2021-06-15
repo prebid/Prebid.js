@@ -1525,6 +1525,123 @@ describe('PubMatic adapter', function () {
           sandbox.restore();
         });
 
+        it('ortb2.user.data should be merged in the request', function() {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'ortb2': {
+                user: {
+                  yob: 1985,
+                  data: [{
+                    name: 'fpds.com',
+                    segment: [{id: '1'}]
+                  }, {
+                    name: 'someotherDataProvider.com',
+                    segment: [{id: '2'}]
+                  }]
+                }
+              }
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.yob).to.equal(1985);
+          expect(data.user.data.length).to.equal(2);
+          expect(data.user.data[0].name).to.equal('fpds.com');
+          expect(data.user.data[1].name).to.equal('someotherDataProvider.com');
+          sandbox.restore();
+        });
+
+        it('ortb2.user.data and permutive data should be concatenated and merged in the request', function() {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'ortb2': {
+                user: {
+                  yob: 1985,
+                  data: [{
+                    name: 'fpds.com',
+                    segment: [{id: '1'}]
+                  }, {
+                    name: 'someotherDataProvider.com',
+                    segment: [{id: '2'}]
+                  }]
+                }
+              }
+            };
+            return config[key];
+          });
+          bidRequests[0].params.permutiveData = [
+            {id: 'pcrprs1'},
+            {id: 'pcrprs2'},
+            {id: 'ppam1'},
+            {id: 'ppam2'},
+            {id: '1000001'},
+            {id: '1000002'}
+          ];
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.yob).to.equal(1985);
+          expect(data.user.data.length).to.equal(2);
+          expect(data.user.data[0].name).to.equal('fpds.com');
+          expect(data.user.data[0].segment.length).to.equal(7);
+          expect(data.user.data[1].name).to.equal('someotherDataProvider.com');
+
+          bidRequests[0].params.permutiveData = [];
+
+          request = spec.buildRequests(bidRequests, {});
+          data = JSON.parse(request.data);
+          expect(data.user.data[0].segment.length).to.equal(1);
+
+          sandbox.restore();
+        });
+
+        it('ortb2.user.data and permutive data should be concatenated, duplicates removed and merged in the request', function() {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'ortb2': {
+                user: {
+                  yob: 1985,
+                  data: [{
+                    name: 'fpds.com',
+                    segment: [{id: '1'}]
+                  }, {
+                    name: 'someotherDataProvider.com',
+                    segment: [{id: '2'}]
+                  }]
+                }
+              }
+            };
+            return config[key];
+          });
+          bidRequests[0].params.permutiveData = [
+            {id: '1'},
+            {id: 'pcrprs1'},
+            {id: 'pcrprs2'},
+            {id: 'ppam1'},
+            {id: 'ppam2'},
+            {id: '1000001'},
+            {id: '1000002'}
+          ];
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.yob).to.equal(1985);
+          expect(data.user.data.length).to.equal(2);
+          expect(data.user.data[0].name).to.equal('fpds.com');
+          expect(data.user.data[0].segment.length).to.equal(7);
+          expect(data.user.data[1].name).to.equal('someotherDataProvider.com');
+
+          bidRequests[0].params.permutiveData = [];
+
+          request = spec.buildRequests(bidRequests, {});
+          data = JSON.parse(request.data);
+          expect(data.user.data[0].segment.length).to.equal(1);
+
+          sandbox.restore();
+        });
+
         describe('ortb2Imp', function() {
           describe('ortb2Imp.ext.data.pbadslot', function() {
             beforeEach(function () {
