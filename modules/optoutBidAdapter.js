@@ -40,9 +40,11 @@ export const spec = {
     return validBidRequests.map(bidRequest => {
       let endPoint = 'https://adscience-nocookie.nl/prebid/display';
       let consentString = '';
+      let gdpr = 0;
       if (bidRequest.gdprConsent) {
+        gdpr = (typeof bidRequest.gdprConsent.gdprApplies === 'boolean') ? Number(bidRequest.gdprConsent.gdprApplies) : 0;
         consentString = bidRequest.gdprConsent.consentString;
-        if (!bidRequest.gdprConsent.gdprApplies || hasPurpose1Consent(bidRequest)) {
+        if (!gdpr || hasPurpose1Consent(bidRequest)) {
           endPoint = 'https://prebid.adscience.nl/prebid/display';
         }
       }
@@ -56,7 +58,8 @@ export const spec = {
           cur: getCurrency(),
           url: getDomain(bidRequest),
           ortb2: config.getConfig('ortb2'),
-          consent: consentString
+          consent: consentString,
+          gdpr: gdpr
 
         },
       };
@@ -68,17 +71,12 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
-    var gdprParams;
     if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
-      }
-      if (syncOptions.iframeEnabled && (gdprConsent.gdprApplies || hasPurpose1Consent({gdprConsent}))) {
+      let gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? Number(gdprConsent.gdprApplies) : 0;
+      if (syncOptions.iframeEnabled && (!gdprConsent.gdprApplies || hasPurpose1Consent({gdprConsent}))) {
         return [{
           type: 'iframe',
-          url: 'https://umframe.adscience.nl/matching/iframe?' + gdprParams
+          url: 'https://umframe.adscience.nl/matching/iframe?gdpr=' + gdpr + '&gdpr_consent=' + gdprConsent.consentString
         }];
       }
     }
