@@ -39,7 +39,9 @@ export const spec = {
   buildRequests: function(validBidRequests) {
     return validBidRequests.map(bidRequest => {
       let endPoint = 'https://adscience-nocookie.nl/prebid/display';
+      let consentString = '';
       if (bidRequest.gdprConsent) {
+        consentString = bidRequest.gdprConsent.consentString;
         if (!bidRequest.gdprConsent.gdprApplies || hasPurpose1Consent(bidRequest)) {
           endPoint = 'https://prebid.adscience.nl/prebid/display';
         }
@@ -54,7 +56,8 @@ export const spec = {
           cur: getCurrency(),
           url: getDomain(bidRequest),
           ortb2: config.getConfig('ortb2'),
-          consent: bidRequest.gdprConsent
+          consent: consentString
+
         },
       };
     });
@@ -75,7 +78,7 @@ export const spec = {
       if (syncOptions.iframeEnabled && (gdprConsent.gdprApplies || hasPurpose1Consent({gdprConsent}))) {
         return [{
           type: 'iframe',
-          url: 'https://prebid.adscience.nl/matching/iframe?' + gdprParams
+          url: 'https://umframe.adscience.nl/matching/iframe?' + gdprParams
         }];
       }
     }
