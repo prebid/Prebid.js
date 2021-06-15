@@ -103,7 +103,8 @@ describe('justpremium adapter', function () {
             'width': 970,
             'price': 0.52,
             'format': 'lb',
-            'adm': 'creative code'
+            'adm': 'creative code',
+            'adomain': ['justpremium.com']
           }]
         },
         'pass': {
@@ -123,7 +124,10 @@ describe('justpremium adapter', function () {
           netRevenue: true,
           currency: 'USD',
           ttl: 60000,
-          format: 'lb'
+          format: 'lb',
+          meta: {
+            advertiserDomains: ['justpremium.com']
+          },
         }
       ]
 
@@ -140,6 +144,7 @@ describe('justpremium adapter', function () {
       expect(result[0].creativeId).to.equal(3213123)
       expect(result[0].netRevenue).to.equal(true)
       expect(result[0].format).to.equal('lb')
+      expect(result[0].meta.advertiserDomains[0]).to.equal('justpremium.com')
     })
 
     it('Verify wrong server response', function () {
