@@ -347,8 +347,11 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
         height: serverBid.h,
         creativeId: serverBid.auid, // bid.bidId,
         currency: 'USD',
-        netRevenue: false,
+        netRevenue: true,
         ttl: TIME_TO_LIVE,
+        meta: {
+          advertiserDomains: serverBid.adomain ? serverBid.adomain : []
+        },
         dealId: serverBid.dealid
       };
 

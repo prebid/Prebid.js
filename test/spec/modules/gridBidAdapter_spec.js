@@ -555,8 +555,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         }
       ];
 
@@ -612,8 +615,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '4dff80cc4ee346',
@@ -625,8 +631,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 2</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '5703af74d0472a',
@@ -638,8 +647,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 3</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         }
       ];
 
@@ -697,8 +709,11 @@ describe('TheMediaGrid Adapter', function () {
           'height': 600,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
@@ -713,8 +728,11 @@ describe('TheMediaGrid Adapter', function () {
           'height': undefined,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>',
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>'
@@ -844,8 +862,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '4e111f1b66e4',
@@ -857,8 +878,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 2</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '26d6f897b516',
@@ -870,8 +894,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 3</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '326bde7fbf69',
@@ -883,8 +910,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 4</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         }
       ];
 

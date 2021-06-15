@@ -9,7 +9,7 @@ Maintainer: prebid@tappx.com
 Module that connects to :tappx demand sources.
 Suppots Banner and Instream Video.
 Please use ```tappx``` as the bidder code.
-Ads sizes available: [320,50], [300,250], [320,480], [1024,768], [728,90]
+Ads sizes available: [300,250], [320,50], [320,480], [480,320], [728,90], [768,1024], [1024,768]
 
 # Banner Test Parameters
 ```
@@ -62,7 +62,21 @@ Ads sizes available: [320,50], [300,250], [320,480], [1024,768], [728,90]
                     tappxkey: "pub-1234-desktop-1234",
                     endpoint: "VZ12TESTCTV",
                     bidfloor: 0.005,
-                    test: true
+                    test: true,
+                    video: {                                  // optional
+                        skippable: true,                      // optional
+                        minduration: 5,                       // optional
+                        maxduration: 30,                      // optional
+                        startdelay: 5,                        // optional
+                        playbackmethod: [1,3],                // optional
+                        api: [ 1, 2 ],                        // optional
+                        protocols: [ 2, 3 ],                  // optional
+                        battr: [ 13, 14 ],                    // optional
+                        linearity: 1,                         // optional
+                        placement: 2,                         // optional
+                        minbitrate: 10,                       // optional
+                        maxbitrate: 10                        // optional
+                    }
                 }
             }]
         }

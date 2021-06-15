@@ -170,12 +170,12 @@ function makeWebpackPkg() {
     .pipe(webpackStream(cloned, webpack))
     .pipe(uglify())
     .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
-    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid})))
+    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));
 }
 
-function getModulesListToAddInBanner(modules){
-  return (modules.length > 0) ? modules.join(', ') :  'All available modules in current version.';
+function getModulesListToAddInBanner(modules) {
+  return (modules.length > 0) ? modules.join(', ') : 'All available modules in current version.';
 }
 
 function gulpBundle(dev) {

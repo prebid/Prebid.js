@@ -38,6 +38,23 @@ export const helper = {
       }
     }
     return BANNER;
+  },
+  getBidFloor(bid) {
+    if (!utils.isFn(bid.getFloor)) {
+      return bid.params.bidfloor ? bid.params.bidfloor : null;
+    }
+
+    let bidFloor = bid.getFloor({
+      mediaType: '*',
+      size: '*',
+      currency: 'USD'
+    });
+
+    if (utils.isPlainObject(bidFloor) && !isNaN(bidFloor.floor) && bidFloor.currency === 'USD') {
+      return bidFloor.floor;
+    }
+
+    return null;
   }
 };
 
@@ -106,7 +123,7 @@ export const spec = {
         id: transactionId,
         instl: params.instl === 1 ? 1 : 0,
         tagid: adUnitCode,
-        bidfloor: params.bidfloor || 0,
+        bidfloor: helper.getBidFloor(bidRequest) || 0,
         bidfloorcur: 'USD',
         secure: 1
       };
@@ -133,11 +150,19 @@ export const spec = {
           const playerSize = mediaTypes.video.playerSize || sizes;
           const videoImp = Object.assign({}, imp, {
             video: {
-              protocols: params.protocols || [1, 2, 3, 4, 5, 6],
+              protocols: bidRequest.mediaTypes.video.protocols || params.protocols || [1, 2, 3, 4, 5, 6],
               pos: params.pos || 0,
               ext: {
                 context: mediaTypes.video.context
-              }
+              },
+              mimes: bidRequest.mediaTypes.video.mimes,
+              maxduration: bidRequest.mediaTypes.video.maxduration,
+              api: bidRequest.mediaTypes.video.api,
+              skip: bidRequest.mediaTypes.video.skip || bidRequest.params.video.skip,
+              placement: bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement,
+              minduration: bidRequest.mediaTypes.video.minduration || bidRequest.params.video.minduration,
+              playbackmethod: bidRequest.mediaTypes.video.playbackmethod || bidRequest.params.video.playbackmethod,
+              startdelay: bidRequest.mediaTypes.video.startdelay || bidRequest.params.video.startdelay
             }
           });
 
@@ -198,8 +223,14 @@ export const spec = {
         creativeId: bid.crid || bid.adid,
         netRevenue: true,
         currency: bid.cur || response.cur,
-        mediaType: helper.getMediaType(bid)
+        mediaType: helper.getMediaType(bid),
       };
+
+      if (bid.adomain && bid.adomain.length) {
+        outBid.meta = {
+          advertiserDomains: bid.adomain
+        }
+      }
 
       if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
         if (outBid.mediaType === BANNER) {
