@@ -43,6 +43,22 @@ const addBidFloorInfo = (validBid) => {
   });
 };
 
+const RemoveDuplicateSizes = (validBid) => {
+  let bannerMediaType = utils.deepAccess(validBid, 'mediaTypes.banner');
+  if (bannerMediaType) {
+    let seenSizes = {};
+    let newSizesArray = [];
+    bannerMediaType.sizes.forEach((size) => {
+      if (!seenSizes[size.toString()]) {
+        seenSizes[size.toString()] = true;
+        newSizesArray.push(size);
+      }
+    });
+
+    bannerMediaType.sizes = newSizesArray;
+  }
+};
+
 const getRequests = (conf, validBidRequests, bidderRequest) => {
   const {bids, bidderRequestId, auctionId, bidderCode, ...bidderRequestData} = bidderRequest;
   const invalidBidsCount = bidderRequest.bids.length - validBidRequests.length;
@@ -51,6 +67,7 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
   validBidRequests.forEach((validBid) => {
     const currSiteId = validBid.params.siteId;
     addBidFloorInfo(validBid);
+    RemoveDuplicateSizes(validBid);
     requestBySiteId[currSiteId] = requestBySiteId[currSiteId] || [];
     requestBySiteId[currSiteId].push(validBid);
   });
@@ -75,6 +92,7 @@ const handleBidResponseByMediaType = (bids) => {
     let parsedBidResponse;
     let bidMediaType = utils.deepAccess(bid, 'meta.mediaType');
     if (bidMediaType && bidMediaType.toLowerCase() === 'banner') {
+      bid.mediaType = BANNER;
       parsedBidResponse = handleBannerBid(bid);
     } else if (bidMediaType && bidMediaType.toLowerCase() === 'video') {
       let context = utils.deepAccess(bid, 'meta.videoContext');
@@ -100,7 +118,6 @@ const handleBannerBid = (bid) => {
     return;
   }
 
-  bid.mediaType = BANNER;
   return bid;
 };
 
@@ -173,19 +190,7 @@ const isVideoMediaTypeValid = (mediaTypeVideoData) => {
 };
 
 const isBannerMediaTypeValid = (mediaTypeBannerData) => {
-  return !hasDuplicates(mediaTypeBannerData.sizes);
-};
-
-const hasDuplicates = (mediaTypeSizes) => {
-  let seenSizes = [];
-  for (let i = 0; i < mediaTypeSizes.length; i++) {
-    if (seenSizes[mediaTypeSizes[i].toString()]) {
-      return true;
-    } else {
-      seenSizes[mediaTypeSizes[i].toString()] = true;
-    }
-  }
-  return false;
+  return mediaTypeBannerData.sizes;
 };
 
 export const adapter = {
@@ -198,9 +203,9 @@ export const adapter = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const url = 'https://targeting.unrulymedia.com/unruly_prebid';
+    const url = '//targeting.unrulymedia.com/unruly_prebid';
     const method = 'POST';
-    const options = {contentType: 'text/plain'};
+    const options = {contentType: 'application/json'};
     return getRequests({url, method, options}, validBidRequests, bidderRequest);
   },
 
