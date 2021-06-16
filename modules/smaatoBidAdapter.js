@@ -190,58 +190,70 @@ export const spec = {
       return []; // no bids
     }
 
-    let serverResponseHeaders = serverResponse.headers;
-    const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
+    const serverResponseHeaders = serverResponse.headers;
 
     const smtExpires = serverResponseHeaders.get('X-SMT-Expires');
-    let ttlSec = 300;
     utils.logInfo('[SMAATO] Expires:', smtExpires);
-    if (smtExpires) {
-      ttlSec = Math.floor((smtExpires - Date.now()) / 1000);
-    }
+    const ttlInSec = smtExpires ? Math.floor((smtExpires - Date.now()) / 1000) : 300;
 
-    const res = serverResponse.body;
-    utils.logInfo('[SMAATO] OpenRTB Response:', res);
+    const response = serverResponse.body;
+    utils.logInfo('[SMAATO] OpenRTB Response:', response);
 
-    var bids = [];
-    res.seatbid.forEach(sb => {
-      sb.bid.forEach(b => {
+    const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
+    const bids = [];
+    response.seatbid.forEach(seatbid => {
+      seatbid.bid.forEach(bid => {
         let resultingBid = {
-          requestId: b.impid,
-          cpm: b.price || 0,
-          width: b.w,
-          height: b.h,
-          ttl: ttlSec,
-          creativeId: b.crid,
-          dealId: b.dealid || null,
-          netRevenue: utils.deepAccess(b, 'ext.net', true),
-          currency: res.cur,
+          requestId: bid.impid,
+          cpm: bid.price || 0,
+          width: bid.w,
+          height: bid.h,
+          ttl: ttlInSec,
+          creativeId: bid.crid,
+          dealId: bid.dealid || null,
+          netRevenue: utils.deepAccess(bid, 'ext.net', true),
+          currency: response.cur,
           meta: {
-            advertiserDomains: b.adomain,
-            networkName: b.bidderName,
-            agencyId: sb.seat
+            advertiserDomains: bid.adomain,
+            networkName: bid.bidderName,
+            agencyId: seatbid.seat
           }
         };
 
-        switch (smtAdType) {
-          case 'Img':
-            resultingBid.ad = createImgAd(b.adm);
-            resultingBid.meta.mediaType = BANNER;
-            bids.push(resultingBid);
-            break;
-          case 'Richmedia':
-            resultingBid.ad = createRichmediaAd(b.adm);
-            resultingBid.meta.mediaType = BANNER;
-            bids.push(resultingBid);
-            break;
-          case 'Video':
-            resultingBid.vastXml = b.adm;
-            resultingBid.meta.mediaType = VIDEO;
-            bids.push(resultingBid);
-            break;
-          default:
-            utils.logInfo('[SMAATO] Invalid ad type:', smtAdType);
+        const videoContext = utils.deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context')
+        if (videoContext === ADPOD) {
+          resultingBid.vastXml = bid.adm;
+          resultingBid.mediaType = VIDEO;
+          if (config.getConfig('adpod.brandCategoryExclusion')) {
+            resultingBid.meta.primaryCatId = bid.cat[0];
+          }
+          resultingBid.video = {
+            context: ADPOD,
+            durationSeconds: bid.ext.duration
+          };
+          bids.push(resultingBid);
+        } else {
+          switch (smtAdType) {
+            case 'Img':
+              resultingBid.ad = createImgAd(bid.adm);
+              resultingBid.mediaType = BANNER;
+              bids.push(resultingBid);
+              break;
+            case 'Richmedia':
+              resultingBid.ad = createRichmediaAd(bid.adm);
+              resultingBid.mediaType = BANNER;
+              bids.push(resultingBid);
+              break;
+            case 'Video':
+              resultingBid.vastXml = bid.adm;
+              resultingBid.mediaType = VIDEO;
+              bids.push(resultingBid);
+              break;
+            default:
+              utils.logInfo('[SMAATO] Invalid ad type:', smtAdType);
+          }
         }
+        resultingBid.meta.mediaType = resultingBid.mediaType;
       });
     });
 

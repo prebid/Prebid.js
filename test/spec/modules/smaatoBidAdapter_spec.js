@@ -7,12 +7,6 @@ const ADTYPE_IMG = 'Img';
 const ADTYPE_RICHMEDIA = 'Richmedia';
 const ADTYPE_VIDEO = 'Video';
 
-const request = {
-  method: 'POST',
-  url: 'https://prebid.ad.smaato.net/oapi/prebid',
-  data: ''
-};
-
 const REFERRER = 'http://example.com/page.html'
 const CONSENT_STRING = 'HFIDUYFIUYIUYWIPOI87392DSU'
 
@@ -649,6 +643,14 @@ describe('smaatoBidAdapterTest', () => {
   });
 
   describe('interpretResponse', () => {
+    function buildBidRequest(payloadAsJsObj = {imp: [{}]}) {
+      return {
+        method: 'POST',
+        url: 'https://prebid.ad.smaato.net/oapi/prebid',
+        data: JSON.stringify(payloadAsJsObj)
+      }
+    }
+
     const buildOpenRtbBidResponse = (adType) => {
       let adm = '';
 
@@ -739,99 +741,184 @@ describe('smaatoBidAdapterTest', () => {
     };
 
     it('returns empty array on no bid responses', () => {
-      const response_with_empty_body = {body: {}}
+      const response_with_empty_body = {body: {}};
 
-      const bids = spec.interpretResponse(response_with_empty_body, request);
+      const bids = spec.interpretResponse(response_with_empty_body, buildBidRequest());
 
-      expect(bids).to.be.empty
+      expect(bids).to.be.empty;
     });
 
-    it('single image reponse', () => {
-      const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_IMG), request);
+    describe('non ad pod', () => {
+      it('single image reponse', () => {
+        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_IMG), buildBidRequest());
 
-      expect(bids).to.deep.equal([
-        {
-          requestId: '226416e6e6bf41',
-          cpm: 0.01,
-          width: 350,
-          height: 50,
-          ad: '<div style="cursor:pointer" onclick="fetch(decodeURIComponent(\'https%3A%2F%2Fprebid%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});;window.open(decodeURIComponent(\'https%3A%2F%2Fprebid%2Ftrack%2Fctaurl\'));"><img src="https://prebid/static/ad.jpg" width="320" height="50"/><img src="https://prebid/track/imp/1" alt="" width="0" height="0"/><img src="https://prebid/track/imp/2" alt="" width="0" height="0"/></div>',
-          ttl: 300,
-          creativeId: 'CR69381',
-          dealId: '12345',
-          netRevenue: true,
-          currency: 'USD',
-          meta: {
-            advertiserDomains: ['smaato.com'],
-            agencyId: 'CM6523',
-            networkName: 'smaato',
-            mediaType: 'banner'
+        expect(bids).to.deep.equal([
+          {
+            requestId: '226416e6e6bf41',
+            cpm: 0.01,
+            width: 350,
+            height: 50,
+            ad: '<div style="cursor:pointer" onclick="fetch(decodeURIComponent(\'https%3A%2F%2Fprebid%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});;window.open(decodeURIComponent(\'https%3A%2F%2Fprebid%2Ftrack%2Fctaurl\'));"><img src="https://prebid/static/ad.jpg" width="320" height="50"/><img src="https://prebid/track/imp/1" alt="" width="0" height="0"/><img src="https://prebid/track/imp/2" alt="" width="0" height="0"/></div>',
+            ttl: 300,
+            creativeId: 'CR69381',
+            dealId: '12345',
+            netRevenue: true,
+            currency: 'USD',
+            mediaType: 'banner',
+            meta: {
+              advertiserDomains: ['smaato.com'],
+              agencyId: 'CM6523',
+              networkName: 'smaato',
+              mediaType: 'banner'
+            }
           }
-        }
-      ]);
-    });
+        ]);
+      });
 
-    it('single richmedia reponse', () => {
-      const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_RICHMEDIA), request);
+      it('single richmedia reponse', () => {
+        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_RICHMEDIA), buildBidRequest());
 
-      expect(bids).to.deep.equal([
-        {
-          requestId: '226416e6e6bf41',
-          cpm: 0.01,
-          width: 350,
-          height: 50,
-          ad: '<div onclick="fetch(decodeURIComponent(\'https%3A%2F%2Fprebid%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});"><div><h3>RICHMEDIA CONTENT</h3></div><img src="https://prebid/track/imp/1" alt="" width="0" height="0"/><img src="https://prebid/track/imp/2" alt="" width="0" height="0"/></div>',
-          ttl: 300,
-          creativeId: 'CR69381',
-          dealId: '12345',
-          netRevenue: true,
-          currency: 'USD',
-          meta: {
-            advertiserDomains: ['smaato.com'],
-            agencyId: 'CM6523',
-            networkName: 'smaato',
-            mediaType: 'banner'
+        expect(bids).to.deep.equal([
+          {
+            requestId: '226416e6e6bf41',
+            cpm: 0.01,
+            width: 350,
+            height: 50,
+            ad: '<div onclick="fetch(decodeURIComponent(\'https%3A%2F%2Fprebid%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});"><div><h3>RICHMEDIA CONTENT</h3></div><img src="https://prebid/track/imp/1" alt="" width="0" height="0"/><img src="https://prebid/track/imp/2" alt="" width="0" height="0"/></div>',
+            ttl: 300,
+            creativeId: 'CR69381',
+            dealId: '12345',
+            netRevenue: true,
+            currency: 'USD',
+            mediaType: 'banner',
+            meta: {
+              advertiserDomains: ['smaato.com'],
+              agencyId: 'CM6523',
+              networkName: 'smaato',
+              mediaType: 'banner'
+            }
           }
-        }
-      ]);
-    });
+        ]);
+      });
 
-    it('single video reponse', () => {
-      const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_VIDEO), request);
+      it('single video reponse', () => {
+        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_VIDEO), buildBidRequest());
 
-      expect(bids).to.deep.equal([
-        {
-          requestId: '226416e6e6bf41',
-          cpm: 0.01,
-          width: 350,
-          height: 50,
-          vastXml: '<VAST version="2.0"></VAST>',
-          ttl: 300,
-          creativeId: 'CR69381',
-          dealId: '12345',
-          netRevenue: true,
-          currency: 'USD',
-          meta: {
-            advertiserDomains: ['smaato.com'],
-            agencyId: 'CM6523',
-            networkName: 'smaato',
-            mediaType: 'video'
+        expect(bids).to.deep.equal([
+          {
+            requestId: '226416e6e6bf41',
+            cpm: 0.01,
+            width: 350,
+            height: 50,
+            vastXml: '<VAST version="2.0"></VAST>',
+            ttl: 300,
+            creativeId: 'CR69381',
+            dealId: '12345',
+            netRevenue: true,
+            currency: 'USD',
+            mediaType: 'video',
+            meta: {
+              advertiserDomains: ['smaato.com'],
+              agencyId: 'CM6523',
+              networkName: 'smaato',
+              mediaType: 'video'
+            }
           }
-        }
-      ]);
+        ]);
+      });
+
+      it('ignores bid response with invalid ad type', () => {
+        const serverResponse = buildOpenRtbBidResponse(ADTYPE_IMG);
+        serverResponse.headers.get = (header) => {
+          if (header === 'X-SMT-ADTYPE') {
+            return undefined;
+          }
+        };
+
+        const bids = spec.interpretResponse(serverResponse, buildBidRequest());
+
+        expect(bids).to.be.empty;
+      });
     });
 
-    it('ignores bid response with invalid ad type', () => {
-      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
-      resp.headers.get = (header) => {
-        if (header === 'X-SMT-ADTYPE') {
-          return undefined;
-        }
-      }
+    describe('ad pod', () => {
+      const bidRequestWithAdpodContext = buildBidRequest({imp: [{video: {ext: {context: 'adpod'}}}]});
+      const PRIMARY_CAT_ID = 1337
+      const serverResponse = {
+        body: {
+          bidid: '04db8629-179d-4bcd-acce-e54722969006',
+          cur: 'USD',
+          ext: {},
+          id: '5ebea288-f13a-4754-be6d-4ade66c68877',
+          seatbid: [
+            {
+              bid: [
+                {
+                  adm: '<VAST version="2.0"></VAST>',
+                  adomain: [
+                    'smaato.com'
+                  ],
+                  bidderName: 'smaato',
+                  cid: 'CM6523',
+                  crid: 'CR69381',
+                  dealid: '12345',
+                  id: '6906aae8-7f74-4edd-9a4f-f49379a3cadd',
+                  impid: '226416e6e6bf41',
+                  iurl: 'https://prebid/iurl',
+                  nurl: 'https://prebid/nurl',
+                  price: 0.01,
+                  w: 350,
+                  h: 50,
+                  cat: [PRIMARY_CAT_ID],
+                  ext: {
+                    duration: 42
+                  }
+                }
+              ],
+              seat: 'CM6523'
+            }
+          ]
+        },
+        headers: {get: () => undefined}
+      };
 
-      const bids = spec.interpretResponse(resp, request);
+      it('sets required values for adpod bid from server response', () => {
+        const bids = spec.interpretResponse(serverResponse, bidRequestWithAdpodContext);
 
-      expect(bids).to.be.empty
+        expect(bids).to.deep.equal([
+          {
+            requestId: '226416e6e6bf41',
+            cpm: 0.01,
+            width: 350,
+            height: 50,
+            vastXml: '<VAST version="2.0"></VAST>',
+            ttl: 300,
+            creativeId: 'CR69381',
+            dealId: '12345',
+            netRevenue: true,
+            currency: 'USD',
+            mediaType: 'video',
+            video: {
+              context: 'adpod',
+              durationSeconds: 42
+            },
+            meta: {
+              advertiserDomains: ['smaato.com'],
+              agencyId: 'CM6523',
+              networkName: 'smaato',
+              mediaType: 'video'
+            }
+          }
+        ]);
+      });
+
+      it('sets primary category id in case of enabled brand category exclusion', () => {
+        config.setConfig({adpod: {brandCategoryExclusion: true}});
+
+        const bids = spec.interpretResponse(serverResponse, bidRequestWithAdpodContext)
+
+        expect(bids[0].meta.primaryCatId).to.be.equal(PRIMARY_CAT_ID)
+      })
     });
 
     it('uses correct TTL when expire header exists', () => {
@@ -845,9 +932,9 @@ describe('smaatoBidAdapterTest', () => {
         if (header === 'X-SMT-Expires') {
           return 2000 + (400 * 1000);
         }
-      }
+      };
 
-      const bids = spec.interpretResponse(resp, request);
+      const bids = spec.interpretResponse(resp, buildBidRequest());
 
       expect(bids[0].ttl).to.equal(400);
 
@@ -858,10 +945,10 @@ describe('smaatoBidAdapterTest', () => {
       const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
       resp.body.seatbid[0].bid[0].ext = {net: false};
 
-      const bids = spec.interpretResponse(resp, request);
+      const bids = spec.interpretResponse(resp, buildBidRequest());
 
       expect(bids[0].netRevenue).to.equal(false);
-    })
+    });
   });
 
   describe('getUserSyncs', () => {
