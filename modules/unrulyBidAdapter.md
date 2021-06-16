@@ -33,14 +33,12 @@ Module that connects to UnrulyX for bids.
               "enforceFloors": true,
               "currency": "USD",
               "schema": {
-                "delimiter": "|",
                 "fields": [
                   "mediaType",
-                  "size"
                 ]
               },
               "values": {
-                "video|*": 0.01
+                "video": 0.01
               }
             },
             "bids": [
@@ -48,6 +46,34 @@ Module that connects to UnrulyX for bids.
                 "bidder": "unruly",
                 "params": {
                   "siteId": 1081534
+                }
+              }
+            ]
+          },
+          {
+            "code": "unmissable-ad",
+            "mediaTypes": {
+              "video": {
+                "context": "outstream",
+                "mimes": [
+                  "video/mp4"
+                ],
+                "playerSize": [
+                  [
+                    640,
+                    480
+                  ]
+                ]
+              }
+            },
+            "bids": [
+              {
+                "bidder": "unruly",
+                "params": {
+                  "siteId": 1081534,
+                  "featureOverrides": {
+                    "canRunUnmissable": true
+                  }
                 }
               }
             ]

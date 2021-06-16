@@ -25,21 +25,18 @@ function notifyRenderer(bidResponseBid) {
 
 const addBidFloorInfo = (validBid) => {
   Object.keys(validBid.mediaTypes).forEach((key) => {
-    let floorInfo = {};
+    let floor;
     if (typeof validBid.getFloor === 'function') {
-      floorInfo = validBid.getFloor({
+      floor = validBid.getFloor({
         currency: 'USD',
         mediaType: key,
         size: '*'
-      });
+      }).floor || 0;
     } else {
-      floorInfo = {
-        currency: 'USD',
-        floor: validBid.params.floor || 0
-      };
+      floor = validBid.params.floor || 0;
     }
 
-    validBid.mediaTypes[key].floor = floorInfo.floor;
+    validBid.mediaTypes[key].floor = floor;
   });
 };
 
@@ -203,7 +200,12 @@ export const adapter = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const url = '//targeting.unrulymedia.com/unruly_prebid';
+    let endPoint = '//targeting.unrulymedia.com/unruly_prebid';
+    if (validBidRequests[0]) {
+      endPoint = utils.deepAccess(validBidRequests[0], 'params.endpoint') || endPoint;
+    }
+
+    const url = endPoint;
     const method = 'POST';
     const options = {contentType: 'application/json'};
     return getRequests({url, method, options}, validBidRequests, bidderRequest);

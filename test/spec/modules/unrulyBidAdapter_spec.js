@@ -422,6 +422,10 @@ describe('UnrulyAdapter', function () {
     it('should return a server request with a valid exchange url', function () {
       expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].url).to.equal('//targeting.unrulymedia.com/unruly_prebid')
     });
+    it('should return a server request with a the end point url instead of the exchange url', function () {
+      mockBidRequests.bids[0].params.endpoint = '//testendpoint.com';
+      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].url).to.equal('//testendpoint.com');
+    });
     it('should return a server request with method === POST', function () {
       expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].method).to.equal('POST');
     });
@@ -534,6 +538,97 @@ describe('UnrulyAdapter', function () {
                   'floor': 0
                 }
               },
+              'adUnitCode': 'video2',
+              'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+              'bidId': '27a3ee1626a5c7',
+              'bidderRequestId': '12e00d17dff07b',
+            }
+          ],
+          'invalidBidsCount': 0
+        }
+      };
+
+      let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+      expect(result[0].data).to.deep.equal(expectedResult);
+    });
+
+    it('should return have the floor value from the bid', function () {
+      mockBidRequests = {
+        'bidderCode': 'unruly',
+        'bids': [
+          {
+            'bidder': 'unruly',
+            'params': {
+              'siteId': 233261,
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [
+                  [
+                    640,
+                    480
+                  ]
+                ]
+              }
+            },
+            'floors': {
+              'enforceFloors': true,
+              'currency': 'USD',
+              'schema': {
+                'fields': [
+                  'mediaType'
+                ]
+              },
+              'values': {
+                'banner': 3
+              },
+            },
+            'adUnitCode': 'video2',
+            'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+            'bidId': '27a3ee1626a5c7',
+            'bidderRequestId': '12e00d17dff07b',
+          }
+        ]
+      };
+
+      const getFloor = (data) => {
+        return {floor: 3}
+      };
+
+      mockBidRequests.bids[0].getFloor = getFloor;
+
+      const expectedResult = {
+        bidderRequest: {
+          'bids': [
+            {
+              'bidder': 'unruly',
+              'params': {
+                'siteId': 233261
+              },
+              'mediaTypes': {
+                'banner': {
+                  'sizes': [
+                    [
+                      640,
+                      480
+                    ]
+                  ],
+                  'floor': 3
+                }
+              },
+              'floors': {
+                'enforceFloors': true,
+                'currency': 'USD',
+                'schema': {
+                  'fields': [
+                    'mediaType'
+                  ]
+                },
+                'values': {
+                  'banner': 3
+                },
+              },
+              getFloor: getFloor,
               'adUnitCode': 'video2',
               'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
               'bidId': '27a3ee1626a5c7',
