@@ -1606,7 +1606,7 @@ describe('PubMatic adapter', function () {
                   yob: 1985,
                   data: [{
                     name: 'fpds.com',
-                    segment: [{id: '1'}]
+                    segment: [{id: '1'}, {id: 'pcrprs2'}]
                   }, {
                     name: 'someotherDataProvider.com',
                     segment: [{id: '2'}]
@@ -1637,7 +1637,7 @@ describe('PubMatic adapter', function () {
 
           request = spec.buildRequests(bidRequests, {});
           data = JSON.parse(request.data);
-          expect(data.user.data[0].segment.length).to.equal(1);
+          expect(data.user.data[0].segment.length).to.equal(2);
 
           sandbox.restore();
         });

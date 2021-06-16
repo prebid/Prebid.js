@@ -1292,12 +1292,9 @@ export function cyrb53Hash(str, seed = 0) {
 export function removeDuplicatesFromObjectArray(array, key) {
   // function to remove duplicates from a singel level object array
   // object type in array is  { id: value }
-  for (var i = 0; i < array.length; ++i) {
-    for (var j = i + 1; j < array.length; ++j) {
-      if (array[i][key] === array[j][key]) {
-        array.splice(j--, 1);
-      }
-    }
-  }
-  return array;
+  return array.filter(function(filterValue, filterIndex, arry) {
+    return arry.slice(filterIndex + 1).find(function(findValue, findIndex) {
+      return findValue[key] == filterValue[key]
+    }) == undefined
+  });
 }
