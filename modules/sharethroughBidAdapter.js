@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 
-const VERSION = '3.3.2';
+const VERSION = '3.4.0';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
@@ -57,8 +57,9 @@ export const sharethroughAdapterSpec = {
         query.schain = JSON.stringify(bidRequest.schain);
       }
 
-      if (bidRequest.bidfloor) {
-        query.bidfloor = parseFloat(bidRequest.bidfloor);
+      const floor = getFloor(bidRequest);
+      if (floor) {
+        query.bidfloor = floor;
       }
 
       if (bidRequest.params.badv) {
@@ -164,9 +165,6 @@ function handleUniversalIds(bidRequest) {
 
   const lipb = utils.deepAccess(bidRequest, 'userId.lipb.lipbid');
   if (lipb) universalIds.liuid = lipb;
-
-  const shd = utils.deepAccess(bidRequest, 'userId.sharedid');
-  if (shd) universalIds.shduid = shd; // object with keys: id & third
 
   return universalIds;
 }
@@ -290,6 +288,20 @@ function canAutoPlayHTML5Video() {
 
 function getProtocol() {
   return document.location.protocol;
+}
+
+function getFloor(bid) {
+  if (utils.isFn(bid.getFloor)) {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: 'banner',
+      size: bid.sizes.map(size => ({ w: size[0], h: size[1] }))
+    });
+    if (utils.isPlainObject(floorInfo) && !isNaN(floorInfo.floor) && floorInfo.currency === 'USD') {
+      return parseFloat(floorInfo.floor);
+    }
+  }
+  return null;
 }
 
 registerBidder(sharethroughAdapterSpec);

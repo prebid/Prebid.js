@@ -124,6 +124,7 @@ export const spec = {
           bid.width = decision.width;
           bid.height = decision.height;
           bid.dealid = decision.dealid || null;
+          bid.meta = { advertiserDomains: decision && decision.adomain ? decision.adomain : [] };
           bid.ad = retrieveAd(decision);
           bid.currency = 'USD';
           bid.creativeId = decision.adId;

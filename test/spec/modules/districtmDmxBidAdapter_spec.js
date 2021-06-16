@@ -114,7 +114,6 @@ const bidRequest = [{
     lotamePanoramaId: {},
     parrableId: {},
     netId: {},
-    sharedid: {},
     lipb: {
       lipbid: {}
     },

@@ -190,7 +190,10 @@ function createBid(bidResponse, mediaType, bidderParams) {
     cpm: bidResponse.cpm,
     netRevenue: true,
     mediaType,
-    ttl: 3600
+    ttl: 3600,
+    meta: {
+      advertiserDomains: bidResponse.adomain || []
+    }
   };
 
   if (mediaType === DISPLAY) {

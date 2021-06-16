@@ -9,6 +9,15 @@ const REQUEST = {
   'params': {
     zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f',
     pos: 7
+  },
+  'schain': {
+    ver: '1.0',
+    complete: 1,
+    nodes: [{
+      asi: 'qwarry.com',
+      sid: '00001',
+      hp: 1
+    }]
   }
 }
 
@@ -24,7 +33,8 @@ const BIDDER_BANNER_RESPONSE = {
     'creativeId': 1,
     'netRevenue': true,
     'winUrl': 'http://test.com',
-    'format': 'banner'
+    'format': 'banner',
+    'adomain': ['test.com']
   }]
 }
 
@@ -40,7 +50,8 @@ const BIDDER_VIDEO_RESPONSE = {
     'creativeId': 2,
     'netRevenue': true,
     'winUrl': 'http://test.com',
-    'format': 'video'
+    'format': 'video',
+    'adomain': ['test.com']
   }]
 }
 
@@ -86,6 +97,7 @@ describe('qwarryBidAdapter', function () {
       expect(bidderRequest.method).to.equal('POST')
       expect(bidderRequest.data.requestId).to.equal('123')
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
+      expect(bidderRequest.data.schain).to.deep.contains({ver: '1.0', complete: 1, nodes: [{asi: 'qwarry.com', sid: '00001', hp: 1}]})
       expect(bidderRequest.data.bids).to.deep.contains({ bidId: '456', zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, sizes: [{ width: 100, height: 200 }, { width: 300, height: 400 }] })
       expect(bidderRequest.data.gdprConsent).to.deep.contains({ consentRequired: true, consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==' })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
@@ -109,6 +121,8 @@ describe('qwarryBidAdapter', function () {
       expect(result[0]).to.have.property('netRevenue').equal(true)
       expect(result[0]).to.have.property('winUrl').equal('http://test.com')
       expect(result[0]).to.have.property('format').equal('banner')
+      expect(result[0].meta).to.exist.property('advertiserDomains')
+      expect(result[0].meta).to.have.property('advertiserDomains').lengthOf(1)
     })
 
     it('handles video request : should get correct bid response', function () {
@@ -126,6 +140,8 @@ describe('qwarryBidAdapter', function () {
       expect(result[0]).to.have.property('winUrl').equal('http://test.com')
       expect(result[0]).to.have.property('format').equal('video')
       expect(result[0]).to.have.property('vastXml').equal('<xml>vast</xml>')
+      expect(result[0].meta).to.exist.property('advertiserDomains')
+      expect(result[0].meta).to.have.property('advertiserDomains').lengthOf(1)
     })
 
     it('handles no bid response : should get empty array', function () {
