@@ -165,7 +165,7 @@ const mapImpression = slot => {
      send this info as ext.pbsize
   */
   const slotSize = slot.sizes.length ? slot.sizes.reduce((prev, next) => prev[0] * prev[1] <= next[0] * next[1] ? next : prev).join('x') : '1x1';
-  adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] += 1 : 1;
+  adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] + 1 : 1;
   ext.data = Object.assign({ pbsize: `${slotSize}_${adSizesCalled[slotSize]}` }, ext.data);
 
   const imp = {
