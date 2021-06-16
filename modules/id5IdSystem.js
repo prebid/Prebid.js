@@ -310,7 +310,7 @@ export function storeInLocalStorage(key, value, expDays) {
  * gets the existing abTesting config or generates a default config with abTesting off
  *
  * @param {SubmoduleConfig|undefined} config
- * @returns {(Object|undefined)}
+ * @returns {Object} an object which always contains at least the property "enabled"
  */
 function getAbTestingConfig(config) {
   return utils.deepAccess(config, 'params.abTesting', { enabled: false });
