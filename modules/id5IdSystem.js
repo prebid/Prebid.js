@@ -140,7 +140,7 @@ export const id5IdSubmodule = {
     if (abTestingConfig.enabled === true) {
       data.ab_testing = {
         enabled: true,
-        control_group_pct: abTestingConfig.controlGroupPct
+        control_group_pct: abTestingConfig.controlGroupPct // The server validates
       };
     }
 

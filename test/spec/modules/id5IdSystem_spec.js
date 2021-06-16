@@ -74,9 +74,6 @@ describe('ID5 ID System', function() {
       }
     }
   }
-  function getFetchCookieConfig() {
-    return getUserSyncConfig([getId5FetchConfig(ID5_STORAGE_NAME, 'cookie')]);
-  }
   function getFetchLocalStorageConfig() {
     return getUserSyncConfig([getId5FetchConfig(ID5_STORAGE_NAME, 'html5')]);
   }
@@ -241,7 +238,7 @@ describe('ID5 ID System', function() {
 
     it('should call the ID5 server with ab_testing object when abTesting is turned on', function () {
       let id5Config = getId5FetchConfig();
-      id5Config.params.abTesting = { enabled: true, controlGroupPct: 10 }
+      id5Config.params.abTesting = { enabled: true, controlGroupPct: 0.234 }
 
       let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
@@ -249,13 +246,14 @@ describe('ID5 ID System', function() {
       let request = server.requests[0];
       let requestBody = JSON.parse(request.requestBody);
       expect(requestBody.ab_testing.enabled).to.eq(true);
+      expect(requestBody.ab_testing.control_group_pct).to.eq(0.234);
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
 
     it('should call the ID5 server without ab_testing object when abTesting is turned off', function () {
       let id5Config = getId5FetchConfig();
-      id5Config.params.abTesting = { enabled: false, controlGroupPct: 10 }
+      id5Config.params.abTesting = { enabled: false, controlGroupPct: 0.55 }
 
       let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
@@ -267,7 +265,7 @@ describe('ID5 ID System', function() {
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
 
-    it('should call the ID5 server without ab feature when when abTesting is not set', function () {
+    it('should call the ID5 server without ab_testing when when abTesting is not set', function () {
       let id5Config = getId5FetchConfig();
 
       let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
