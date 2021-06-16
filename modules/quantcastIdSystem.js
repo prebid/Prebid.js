@@ -17,6 +17,9 @@ const DOMAIN_QSERVE = 'https://pixel.quantserve.com/pixel';
 const QUANTCAST_VENDOR_ID = '11';
 const PURPOSE_DATA_COLLECT = '1';
 const PURPOSE_PRODUCT_IMPROVEMENT = '10';
+const QC_TCF_REQUIRED_PURPOSES = [PURPOSE_DATA_COLLECT, PURPOSE_PRODUCT_IMPROVEMENT];
+const QC_TCF_CONSENT_FIRST_PURPOSES = [PURPOSE_DATA_COLLECT];
+const QC_TCF_CONSENT_ONLY_PUPROSES = [PURPOSE_DATA_COLLECT];
 
 var clientId;
 var cookieExpTime;
@@ -41,9 +44,8 @@ export function firePixel() {
 
     if (!(hasGDPRConsent(gdprPrivacyString) && hasCCPAConsent(usPrivacyString))) {
       var expired = new Date(0).toUTCString();
-      fpan = 'u';
-      fpa = '';
-      storage.setCookie(QUANTCAST_FPA, fpa, expired, '/', domain, null);
+      storage.setCookie(QUANTCAST_FPA, '', expired, '/', domain, null);
+      return;
     } else if (!fpa) {
       var expires = new Date(now.getTime() + (cookieExpTime * 86400000)).toGMTString();
       fpa = 'B0-' + Math.round(Math.random() * 2147483647) + '-' + et;
@@ -98,51 +100,62 @@ export function checkTCFv1(vendorData) {
   return !!(vendorConsent && purposeConsent);
 }
 
-export function checkTCFv2(vendorData) {
-  var vendorConsent = vendorData.vendor && vendorData.vendor.consents && vendorData.vendor.consents[QUANTCAST_VENDOR_ID];
-  var vendorInterest = vendorData.vendor.legitimateInterests && vendorData.vendor.legitimateInterests[QUANTCAST_VENDOR_ID];
+export function checkTCFv2(vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOSES) {
+  var gdprApplies = vendorData.gdprApplies;
+  var purposes = vendorData.purpose;
+  var vendors = vendorData.vendor;
+  var qcConsent = vendors && vendors.consents && vendors.consents[QUANTCAST_VENDOR_ID];
+  var qcInterest = vendors && vendors.legitimateInterests && vendors.legitimateInterests[QUANTCAST_VENDOR_ID];
   var restrictions = vendorData.publisher ? vendorData.publisher.restrictions : {};
 
-  // Restrictions for purpose 1
-  var qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
-    ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
-    : null;
-
-  var purposeConsent = vendorData.purpose && vendorData.purpose.consents && vendorData.purpose.consents[PURPOSE_DATA_COLLECT];
-
-  // No consent, not allowed by publisher or requires legitimate interest
-  if (!vendorConsent || !purposeConsent || qcRestriction === 0 || qcRestriction === 2) {
-    return false;
+  if (!gdprApplies) {
+    return true;
   }
 
-  // Restrictions for purpose 10
-  qcRestriction = restrictions && restrictions[PURPOSE_PRODUCT_IMPROVEMENT]
-    ? restrictions[PURPOSE_PRODUCT_IMPROVEMENT][QUANTCAST_VENDOR_ID]
-    : null;
+  return requiredPurposes.map(function(purpose) {
+    var purposeConsent = purposes.consents ? purposes.consents[purpose] : false;
+    var purposeInterest = purposes.legitimateInterests ? purposes.legitimateInterests[purpose] : false;
 
-  // Not allowed by publisher
-  if (qcRestriction === 0) {
-    return false;
-  }
+    var qcRestriction = restrictions && restrictions[purpose]
+      ? restrictions[purpose][QUANTCAST_VENDOR_ID]
+      : null;
 
-  // publisher has explicitly restricted to consent
-  if (qcRestriction === 1) {
-    purposeConsent = vendorData.purpose && vendorData.purpose.consents && vendorData.purpose.consents[PURPOSE_PRODUCT_IMPROVEMENT];
-
-    // No consent, or requires legitimate interest
-    if (!vendorConsent || !purposeConsent) {
+    if (qcRestriction === 0) {
       return false;
     }
-  } else if (qcRestriction === 2) {
-    let purposeInterest = vendorData.purpose.LegitimateInterests && vendorData.purpose.LegitimateInterests[PURPOSE_PRODUCT_IMPROVEMENT];
 
-    // No legitimate interest, not allowed by publisher or requires legitimate interest
-    if (!vendorInterest || !purposeInterest) {
-      return false;
+    // Seek consent or legitimate interest based on our default legal
+    // basis for the purpose, falling back to the other if possible.
+    if (
+      // we have positive vendor consent
+      qcConsent &&
+      // there is positive purpose consent
+      purposeConsent &&
+      // publisher does not require legitimate interest
+      qcRestriction !== 2 &&
+      // purpose is a consent-first purpose or publisher has explicitly restricted to consent
+      (QC_TCF_CONSENT_FIRST_PURPOSES.indexOf(purpose) != -1 || qcRestriction === 1)
+    ) {
+      return true;
+    } else if (
+      // publisher does not require consent
+      qcRestriction !== 1 &&
+      // we have legitimate interest for vendor
+      qcInterest &&
+      // there is legitimate interest for purpose
+      purposeInterest &&
+      // purpose's legal basis does not require consent
+      QC_TCF_CONSENT_ONLY_PUPROSES.indexOf(purpose) == -1 &&
+      // purpose is a legitimate-interest-first purpose or publisher has explicitly restricted to legitimate interest
+      (QC_TCF_CONSENT_FIRST_PURPOSES.indexOf(purpose) == -1 || qcRestriction === 2)
+    ) {
+      return true;
     }
-  }
 
-  return true;
+    return false;
+  }).reduce(function(a, b) {
+    return a && b;
+  }, true);
 }
 
 /**
