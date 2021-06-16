@@ -215,6 +215,40 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].hb_source).to.deep.equal(1);
     });
 
+    it('should include ORTB video values when video params were not set', function() {
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.params = {
+        placementId: '1234235',
+        video: {
+          skippable: true,
+          playback_method: ['auto_play_sound_off', 'auto_play_sound_unknown'],
+          context: 'outstream'
+        }
+      };
+      bidRequest.mediaTypes = {
+        video: {
+          playerSize: [640, 480],
+          context: 'outstream',
+          mimes: ['video/mp4'],
+          skip: 0,
+          minduration: 5,
+          api: [1, 5, 6],
+          playbackmethod: [2, 4]
+        }
+      };
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].video).to.deep.equal({
+        minduration: 5,
+        playback_method: 2,
+        skippable: true,
+        context: 4
+      });
+      expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+    });
+
     it('should add video property when adUnit includes a renderer', function () {
       const videoData = {
         mediaTypes: {
@@ -679,7 +713,8 @@ describe('AppNexusAdapter', function () {
         'timeout': 3000,
         'gdprConsent': {
           consentString: consentString,
-          gdprApplies: true
+          gdprApplies: true,
+          addtlConsent: '1~7.12.35.62.66.70.89.93.108'
         }
       };
       bidderRequest.bids = bidRequests;
@@ -691,6 +726,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.gdpr_consent).to.exist;
       expect(payload.gdpr_consent.consent_string).to.exist.and.to.equal(consentString);
       expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
+      expect(payload.gdpr_consent.addtl_consent).to.exist.and.to.deep.equal([7, 12, 35, 62, 66, 70, 89, 93, 108]);
     });
 
     it('should add us privacy string to payload', function() {
