@@ -751,7 +751,7 @@ const OPEN_RTB_PROTOCOL = {
 
     // set debug flag if in debug mode
     if (getConfig('debug')) {
-      request.ext.prebid = Object.assign(request.ext.prebid, {debug: 1})
+      request.ext.prebid = Object.assign(request.ext.prebid, {debug: true})
     }
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
