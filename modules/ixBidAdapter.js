@@ -635,19 +635,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         _bannerImpression.bidfloorcur = impressionObjects[0].bidfloorcur;
       }
 
-      if ('ext' in impressionObjects[0]) {
-        _bannerImpression.ext = impressionObjects[0].ext;
-      }
-
       r.imp.push(_bannerImpression);
       r.ext.ixdiag.msd += missingCount;
       r.ext.ixdiag.msi += missingBannerImpressions.length;
     } else {
       r.imp.push(...impressionObjects);
     }
-
-    currentRequestSize += currentImpressionSize;
-    remainingRequestSize = MAX_REQUEST_SIZE - currentRequestSize;
 
     const isLastAdUnit = adUnitIndex === transactionIds.length - 1;
 
