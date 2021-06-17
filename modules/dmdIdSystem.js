@@ -65,9 +65,9 @@ export const dmdIdSubmodule = {
         const callbacks = {
           success: response => {
             let responseObj;
-            if (response) {
+            if (response & response.dgid) {
               try {
-                responseObj = JSON.parse(response);
+                responseObj = JSON.parse(response.dgid);
               } catch (error) {
                 utils.logError(error);
               }
