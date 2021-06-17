@@ -1949,7 +1949,7 @@ describe('adapterManager tests', function () {
       };
 
       const removeAdUnitsBidSource = adUnits => adUnits.map(adUnit => {
-        const newAdUnit = { ...adUnit };
+        const newAdUnit = {...adUnit};
         newAdUnit.bids = newAdUnit.bids.map(bid => {
           if (bid.bidSource) delete bid.bidSource;
           return bid;
