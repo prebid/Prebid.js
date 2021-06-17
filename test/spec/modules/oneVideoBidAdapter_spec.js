@@ -237,11 +237,12 @@ describe('OneVideoBidAdapter', function () {
           },
           video: {
             context: 'outstream',
-            playerSize: [640, 480]
+            playerSize: [640, 480],
+            mimes: ['video/mp4', 'application/javascript'],
           }
         }
       }
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     })
   });
 
