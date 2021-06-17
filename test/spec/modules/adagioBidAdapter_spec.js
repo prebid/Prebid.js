@@ -696,7 +696,7 @@ describe('Adagio bid adapter', () => {
 
     describe('with userID modules', function() {
       const userId = {
-        sharedid: {id: '01EAJWWNEPN3CYMM5N8M5VXY22', third: '01EAJWWNEPN3CYMM5N8M5VXY22'},
+        pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
         unsuported: '666'
       };
 
@@ -710,13 +710,10 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         const expected = [{
-          source: 'sharedid.org',
+          source: 'pubcid.org',
           uids: [
             {
               atype: 1,
-              ext: {
-                third: '01EAJWWNEPN3CYMM5N8M5VXY22'
-              },
               id: '01EAJWWNEPN3CYMM5N8M5VXY22'
             }
           ]

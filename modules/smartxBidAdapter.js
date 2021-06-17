@@ -81,7 +81,7 @@ export const spec = {
       const bidfloorcur = utils.getBidIdParameter('bidfloorcur', bid.params) || 'EUR';
       const siteId = utils.getBidIdParameter('siteId', bid.params);
       const domain = utils.getBidIdParameter('domain', bid.params);
-      const cat = utils.getBidIdParameter('cat', bid.params);
+      const cat = utils.getBidIdParameter('cat', bid.params) || [''];
       let pubcid = null;
       const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
       const contentWidth = playerSize[0][0];
@@ -108,7 +108,7 @@ export const spec = {
         placement = 3;
       }
 
-      let smartxReq = {
+      let smartxReq = [{
         id: bid.bidId,
         secure: secure,
         bidfloor: bidfloor,
@@ -134,7 +134,7 @@ export const spec = {
         ext: {
           'smart.bidpricetype': 1
         }
-      };
+      }];
 
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
@@ -153,7 +153,7 @@ export const spec = {
 
       const at = utils.getBidIdParameter('at', bid.params) || 2;
 
-      const cur = utils.getBidIdParameter('cur', bid.params) || 'EUR';
+      const cur = utils.getBidIdParameter('cur', bid.params) || ['EUR'];
 
       const requestPayload = {
         id: utils.generateUUID(),
@@ -162,7 +162,6 @@ export const spec = {
           id: siteId,
           page: page,
           cat: cat,
-          content: 'content',
           domain: domain,
           publisher: {
             id: publisherId

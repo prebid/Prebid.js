@@ -163,10 +163,6 @@ export const spec = {
         }
       };
 
-      if (utils.getBidIdParameter('price_floor', bid.params) != '') {
-        spotxReq.bidfloor = utils.getBidIdParameter('price_floor', bid.params);
-      }
-
       if (utils.getBidIdParameter('start_delay', bid.params) != '') {
         spotxReq.video.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params));
       }
