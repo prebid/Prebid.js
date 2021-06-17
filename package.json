@@ -56,7 +56,7 @@
     "gulp-clean": "^0.3.2",
     "gulp-concat": "^2.6.0",
     "gulp-connect": "^5.7.0",
-    "gulp-eslint": "^5.0.0",
+    "gulp-eslint": "^6.0.0",
     "gulp-footer": "^2.0.2",
     "gulp-header": "^2.0.9",
     "gulp-if": "^3.0.0",
