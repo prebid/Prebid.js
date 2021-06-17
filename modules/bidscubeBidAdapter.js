@@ -70,7 +70,7 @@ export const spec = {
   }
 }
 
-registerBidder(spec)
+registerBidder(spec);
 
 function isBidResponseValid (bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
