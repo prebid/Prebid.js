@@ -275,6 +275,7 @@ function sendDataToAnalytic () {
 
 // preflight request, to check did publisher have permission to send data to analytics endpoint
 function preflightRequest (envelopeSourceCookieValue) {
+  utils.logInfo('ATS Analytics - preflight request!');
   ajax(preflightUrl + atsAnalyticsAdapter.context.pid, function (data) {
     let samplingRateObject = JSON.parse(data);
     utils.logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
@@ -322,7 +323,6 @@ let atsAnalyticsAdapter = Object.assign(adapter(
     if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
       let envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
       try {
-        utils.logInfo('ATS Analytics - preflight request!');
         let samplingRateCookie = storage.getCookie('_lr_sampling_rate');
         if (!samplingRateCookie) {
           preflightRequest(envelopeSourceCookieValue);
@@ -341,11 +341,16 @@ let atsAnalyticsAdapter = Object.assign(adapter(
 // save the base class function
 atsAnalyticsAdapter.originEnableAnalytics = atsAnalyticsAdapter.enableAnalytics;
 
-// add check to not fire request every time, but instead to send 1/10 events
+// add check to not fire request every time, but instead to send 1/100
 atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
-  let shouldFireRequestValue = (Math.floor((Math.random() * samplingRate + 1)) === samplingRate);
-  utils.logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
-  return shouldFireRequestValue;
+  if (samplingRate !== 0) {
+    let shouldFireRequestValue = (Math.floor((Math.random() * 100 + 1)) === 100);
+    utils.logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
+    return shouldFireRequestValue;
+  } else {
+    utils.logInfo('ATS Analytics - Should Fire Request: ', false);
+    return false;
+  }
 };
 
 atsAnalyticsAdapter.getUserAgent = function () {
@@ -362,6 +367,7 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
     pid: config.options.pid
   };
   let initOptions = config.options;
+  utils.logInfo('ATS Analytics - adapter enabled! ');
   atsAnalyticsAdapter.originEnableAnalytics(initOptions); // call the base class function
 };
 

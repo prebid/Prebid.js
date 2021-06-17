@@ -1873,15 +1873,34 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.sid).to.equal(sidValue); // TODO undefined - 400x600
     });
 
-    it('should set correct placement if context is outstream', function () {
+    it('should not use default placement values when placement is defined at adUnit level', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.placement = 2;
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video.placement).to.equal(2);
+    });
+
+    it('should set correct default placement, if context is instream', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'instream';
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video.placement).to.equal(1);
+    });
+
+    it('should set correct default placement, if context is outstream', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.mediaTypes.video.context = 'outstream';
       const request = spec.buildRequests([bid])[0];
       const impression = JSON.parse(request.data.r).imp[0];
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
-      expect(impression.video).to.exist;
-      expect(impression.video.placement).to.exist;
       expect(impression.video.placement).to.equal(4);
     });
 
