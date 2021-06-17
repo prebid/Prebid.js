@@ -482,7 +482,7 @@ describe('ID5 ID System', function() {
           expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
         });
 
-        it('should set abTestingControlGroup to false when A/B testing is on but in norml group', function () {
+        it('should set abTestingControlGroup to false when A/B testing is on but in normal group', function () {
           storedObject.ab_testing = { result: 'normal' };
           let decoded = id5IdSubmodule.decode(storedObject, testConfig);
           expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOn);
