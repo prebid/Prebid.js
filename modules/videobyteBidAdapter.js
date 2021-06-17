@@ -103,6 +103,49 @@ export const spec = {
     return bidResponses;
   },
 
+  /**
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs: function(syncOptions, serverResponses) {
+    let syncs = [];
+
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
+      return syncs;
+    }
+
+    serverResponses.forEach(resp => {
+      const userSync = utils.deepAccess(resp, 'body.ext.usersync');
+      if (userSync) {
+        let syncDetails = [];
+        Object.keys(userSync).forEach(key => {
+          const value = userSync[key];
+          if (value.syncs && value.syncs.length) {
+            syncDetails = syncDetails.concat(value.syncs);
+          }
+        });
+        syncDetails.forEach(syncDetails => {
+          syncs.push({
+            type: syncDetails.type === 'iframe' ? 'iframe' : 'image',
+            url: syncDetails.url
+          });
+        });
+
+        // if iframe is enabled return only iframe (videobyte)
+        // if iframe is disabled, we can proceed to pixels if any
+        if (syncOptions.iframeEnabled) {
+          syncs = syncs.filter(s => s.type === 'iframe')
+        } else if (syncOptions.pixelEnabled) {
+          syncs = syncs.filter(s => s.type === 'image')
+        }
+      }
+    });
+    return syncs;
+  }
+
 }
 
 // BUILD REQUESTS: VIDEO

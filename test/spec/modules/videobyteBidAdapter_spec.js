@@ -563,4 +563,64 @@ describe('VideoByteBidAdapter', function () {
       expect(data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent);
     });
   });
+
+  describe('getUserSyncs', function () {
+    const ortbResponse = {
+      'body': {
+        'ext': {
+          'usersync': {
+            'sovrn': {
+              'status': 'none',
+              'syncs': [
+                {
+                  'url': 'urlsovrn',
+                  'type': 'iframe'
+                }
+              ]
+            },
+            'appnexus': {
+              'status': 'none',
+              'syncs': [
+                {
+                  'url': 'urlappnexus',
+                  'type': 'pixel'
+                }
+              ]
+            }
+          }
+        }
+      }
+    };
+    it('handles no parameters', function () {
+      let opts = spec.getUserSyncs({});
+      expect(opts).to.be.an('array').that.is.empty;
+    });
+    it('returns non if sync is not allowed', function () {
+      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+
+      expect(opts).to.be.an('array').that.is.empty;
+    });
+
+    it('iframe sync enabled should return results', function () {
+      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [ortbResponse]);
+
+      expect(opts.length).to.equal(1);
+      expect(opts[0].type).to.equal('iframe');
+      expect(opts[0].url).to.equal(ortbResponse.body.ext.usersync['sovrn'].syncs[0].url);
+    });
+
+    it('pixel sync enabled should return results', function () {
+      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [ortbResponse]);
+
+      expect(opts.length).to.equal(1);
+      expect(opts[0].type).to.equal('image');
+      expect(opts[0].url).to.equal(ortbResponse.body.ext.usersync['appnexus'].syncs[0].url);
+    });
+
+    it('all sync enabled should return only iframe result', function () {
+      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [ortbResponse]);
+
+      expect(opts.length).to.equal(1);
+    });
+  });
 });
