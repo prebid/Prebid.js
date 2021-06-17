@@ -721,6 +721,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       r.imp = [];
       r.ext.ixdiag.msd = 0;
       r.ext.ixdiag.msi = 0;
+      isFpdAdded = false;
     }
   }
 
