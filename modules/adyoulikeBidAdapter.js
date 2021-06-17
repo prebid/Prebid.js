@@ -170,16 +170,17 @@ function getCanonicalUrl() {
 
 /* Get mediatype from bidRequest */
 function getMediatype(bidRequest) {
-  var type = NATIVE;
-
-  if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
-    type = BANNER;
-  } else if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
-    type = VIDEO;
+  if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+    return VIDEO;
   }
-
-  return type;
+  else if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
+    return BANNER;
+  }
+  else if (utils.deepAccess(bidRequest, 'mediaTypes.native')) {
+    return NATIVE;
+  }
 }
+
 /* Get Floor price information */
 function getFloor(bidRequest, size, mediaType) {
   const bidFloors = bidRequest.getFloor({

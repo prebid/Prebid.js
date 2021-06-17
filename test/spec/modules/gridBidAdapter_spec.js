@@ -555,7 +555,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -615,7 +615,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -631,7 +631,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 2</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -647,7 +647,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 3</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -709,7 +709,7 @@ describe('TheMediaGrid Adapter', function () {
           'height': 600,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -728,7 +728,7 @@ describe('TheMediaGrid Adapter', function () {
           'height': undefined,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -862,7 +862,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -878,7 +878,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 2</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -894,7 +894,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 3</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -910,7 +910,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 4</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []

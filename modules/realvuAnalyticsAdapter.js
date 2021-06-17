@@ -42,7 +42,7 @@ export let lib = {
   init: function () {
     let z = this;
     let u = navigator.userAgent;
-    z.device = u.match(/iPad|Tablet/gi) ? 'tablet' : u.match(/iPhone|iPod|Android|Opera Mini|IEMobile/gi) ? 'mobile' : 'desktop';
+    z.device = u.match(/iPhone|iPod|Android|Opera Mini|IEMobile/gi) ? 'mobile' : 'desktop';
     if (typeof (z.len) == 'undefined') z.len = 0;
     z.ie = navigator.appVersion.match(/MSIE/);
     z.saf = (u.match(/Safari/) && !u.match(/Chrome/));
