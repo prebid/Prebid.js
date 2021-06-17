@@ -52,12 +52,12 @@ export const spec = {
         utils.logError('Failed validation: Dynamic Ad Placement cannot be used with context Outstream (params.video.display=1)');
         return false;
       };
-    };
-
-    // DAP Validation
-    if (bid.mediaTypes.banner && bid.params.video && !bid.params.video.display) {
-      utils.logError('Failed validation: If you are trying to use Dynamic Ad Placement you must pass params.video.display=1');
-      return false;
+    } else if (bid.mediaTypes.banner) {
+      // DAP Validation
+      if (bid.mediaTypes.banner && bid.params.video && !bid.params.video.display) {
+        utils.logError('Failed validation: If you are trying to use Dynamic Ad Placement you must pass params.video.display=1');
+        return false;
+      };
     };
 
     // Publisher Id (Exchange) validation
