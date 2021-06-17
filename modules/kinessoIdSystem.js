@@ -11,7 +11,7 @@ import {submodule} from '../src/hook.js';
 import {coppaDataHandler, uspDataHandler} from '../src/adapterManager.js';
 
 const MODULE_NAME = 'kpuid';
-const ID_SVC = 'https://de-id-sync-endpoint-dev.usw2.fanops.net/id';
+const ID_SVC = 'https://id.knsso.com/id';
 // These values should NEVER change. If
 // they do, we're no longer making ulids!
 const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford's Base32
