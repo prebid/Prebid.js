@@ -21,14 +21,11 @@ const QC_TCF_REQUIRED_PURPOSES = [PURPOSE_DATA_COLLECT, PURPOSE_PRODUCT_IMPROVEM
 const QC_TCF_CONSENT_FIRST_PURPOSES = [PURPOSE_DATA_COLLECT];
 const QC_TCF_CONSENT_ONLY_PUPROSES = [PURPOSE_DATA_COLLECT];
 
-var clientId;
-var cookieExpTime;
-
 export const storage = getStorageManager();
 
-export function firePixel() {
-  // check for presence of Quantcast Measure tag _qevent obj
-  if (!window._qevents) {
+export function firePixel(clientId, cookieExpTime = DEFAULT_COOKIE_EXP_TIME) {
+  // check for presence of Quantcast Measure tag _qevent obj and publisher provided clientID
+  if (!window._qevents && clientId && clientId != '') {
     const gdprPrivacyString = gdprDataHandler.getConsentData();
     const usPrivacyString = uspDataHandler.getConsentData();
 
@@ -205,14 +202,16 @@ export const quantcastIdSubmodule = {
     const configParams = (config && config.params) || {};
     const storageParams = (config && config.storage) || {};
 
-    clientId = configParams.clientId || '';
-    cookieExpTime = storageParams.expires || DEFAULT_COOKIE_EXP_TIME;
+    var clientId = configParams.clientId || '';
+    var cookieExpTime = storageParams.expires || DEFAULT_COOKIE_EXP_TIME;
 
     // Callbacks on Event Listeners won't trigger if the event is already complete so this check is required
     if (document.readyState === 'complete') {
-      firePixel();
+      firePixel(clientId, cookieExpTime);
     }
-    window.addEventListener('load', firePixel);
+    window.addEventListener('load', function () {
+      firePixel(clientId, cookieExpTime);
+    });
 
     return { id: fpa ? { quantcastId: fpa } : undefined }
   }
