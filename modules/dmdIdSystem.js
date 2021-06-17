@@ -65,14 +65,16 @@ export const dmdIdSubmodule = {
         const callbacks = {
           success: response => {
             let responseObj;
-            if (response & response.dgid) {
-              try {
-                responseObj = JSON.parse(response.dgid);
-              } catch (error) {
-                utils.logError(error);
+            let responseId;
+            try {
+              responseObj = JSON.parse(response);
+              if (responseObj && responseObj.dgid) {
+                responseId = responseObj.dgid;
               }
+            } catch (error) {
+              utils.logError(error);
             }
-            callback(responseObj);
+            callback(responseId);
           },
           error: error => {
             utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
