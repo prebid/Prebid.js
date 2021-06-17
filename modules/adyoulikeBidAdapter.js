@@ -391,32 +391,30 @@ function getNativeAssets(response, nativeConfig) {
         }
 
         native[key] = {
-          url: getImageUrl(adJson, adJson.Content.Preview.Thumbnail.Image, imgSize[0], imgSize[1]),
+          url: getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Thumbnail.Image'), imgSize[0], imgSize[1]),
           width: imgSize[0],
           height: imgSize[1]
         };
         break;
       case 'icon':
-        if (adJson.HasSponsorImage) {
-          // icon requested size
-          const iconSize = nativeConfig.icon.sizes || [];
-          if (!iconSize.length) {
-            iconSize[0] = 50;
-            iconSize[1] = 50;
-          }
-
-          native[key] = {
-            url: getImageUrl(adJson, adJson.Content.Preview.Sponsor.Logo.Resource, iconSize[0], iconSize[1]),
-            width: iconSize[0],
-            height: iconSize[1]
-          };
+        // icon requested size
+        const iconSize = nativeConfig.icon.sizes || [];
+        if (!iconSize.length) {
+          iconSize[0] = 50;
+          iconSize[1] = 50;
         }
+
+        native[key] = {
+          url: getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Sponsor.Logo.Resource'), iconSize[0], iconSize[1]),
+          width: iconSize[0],
+          height: iconSize[1]
+        };
         break;
       case 'privacyIcon':
-        native[key] = getImageUrl(adJson, adJson.Content.Preview.Credit.Logo.Resource, 25, 25);
+        native[key] = getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Credit.Logo.Resource'), 25, 25);
         break;
       case 'privacyLink':
-        native[key] = adJson.Content.Preview.Credit.Url;
+        native[key] = utils.deepAccess(adJson, 'Content.Preview.Credit.Url');
         break;
     }
   });
