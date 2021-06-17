@@ -170,10 +170,10 @@ function getCanonicalUrl() {
 
 /* Get mediatype from bidRequest */
 function getMediatype(bidRequest) {
-  var type = BANNER;
+  var type = NATIVE;
 
-  if (utils.deepAccess(bidRequest, 'mediaTypes.native')) {
-    type = NATIVE;
+  if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
+    type = BANNER;
   } else if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
     type = VIDEO;
   }
