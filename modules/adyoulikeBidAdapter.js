@@ -172,11 +172,9 @@ function getCanonicalUrl() {
 function getMediatype(bidRequest) {
   if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
     return VIDEO;
-  }
-  else if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
+  } else if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
     return BANNER;
-  }
-  else if (utils.deepAccess(bidRequest, 'mediaTypes.native')) {
+  } else if (utils.deepAccess(bidRequest, 'mediaTypes.native')) {
     return NATIVE;
   }
 }
@@ -282,30 +280,31 @@ function getInternalImgUrl(uid) {
 
 function getImageUrl(config, resource, width, height) {
   let url = '';
+  if (resource && resource.Kind) {
+    switch (resource.Kind) {
+      case 'INTERNAL':
+        url = getInternalImgUrl(resource.Data.Internal.BlobReference.Uid);
 
-  switch (resource.Kind) {
-    case 'INTERNAL':
-      url = getInternalImgUrl(resource.Data.Internal.BlobReference.Uid);
+        break;
 
-      break;
+      case 'EXTERNAL':
+        const dynPrefix = config.DynamicPrefix;
+        let extUrl = resource.Data.External.Url;
+        extUrl = extUrl.replace(/\[height\]/i, '' + height);
+        extUrl = extUrl.replace(/\[width\]/i, '' + width);
 
-    case 'EXTERNAL':
-      const dynPrefix = config.DynamicPrefix;
-      let extUrl = resource.Data.External.Url;
-      extUrl = extUrl.replace(/\[height\]/i, '' + height);
-      extUrl = extUrl.replace(/\[width\]/i, '' + width);
-
-      if (extUrl.indexOf(dynPrefix) >= 0) {
-        const urlmatch = (/.*url=([^&]*)/gm).exec(extUrl);
-        url = urlmatch ? urlmatch[1] : '';
-        if (!url) {
-          url = getInternalImgUrl((/.*key=([^&]*)/gm).exec(extUrl)[1]);
+        if (extUrl.indexOf(dynPrefix) >= 0) {
+          const urlmatch = (/.*url=([^&]*)/gm).exec(extUrl);
+          url = urlmatch ? urlmatch[1] : '';
+          if (!url) {
+            url = getInternalImgUrl((/.*key=([^&]*)/gm).exec(extUrl)[1]);
+          }
+        } else {
+          url = extUrl;
         }
-      } else {
-        url = extUrl;
-      }
 
-      break;
+        break;
+    }
   }
 
   return url;
@@ -391,11 +390,15 @@ function getNativeAssets(response, nativeConfig) {
           imgSize[1] = response.Height || 250;
         }
 
-        native[key] = {
-          url: getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Thumbnail.Image'), imgSize[0], imgSize[1]),
-          width: imgSize[0],
-          height: imgSize[1]
-        };
+        const url = getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Thumbnail.Image'), imgSize[0], imgSize[1]);
+        if (url) {
+          native[key] = {
+            url,
+            width: imgSize[0],
+            height: imgSize[1]
+          };
+        }
+
         break;
       case 'icon':
         // icon requested size
@@ -405,11 +408,15 @@ function getNativeAssets(response, nativeConfig) {
           iconSize[1] = 50;
         }
 
-        native[key] = {
-          url: getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Sponsor.Logo.Resource'), iconSize[0], iconSize[1]),
-          width: iconSize[0],
-          height: iconSize[1]
-        };
+        const icurl = getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Sponsor.Logo.Resource'), iconSize[0], iconSize[1]);
+
+        if (url) {
+          native[key] = {
+            url: icurl,
+            width: iconSize[0],
+            height: iconSize[1]
+          };
+        }
         break;
       case 'privacyIcon':
         native[key] = getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Credit.Logo.Resource'), 25, 25);
