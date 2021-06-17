@@ -238,10 +238,25 @@ describe('OneVideoBidAdapter', function () {
           video: {
             context: 'outstream',
             playerSize: [640, 480],
-            mimes: ['video/mp4', 'application/javascript'],
+            mimes: ['video/mp4', 'application/javascript']
           }
+        },
+        bidder: 'oneVideo',
+        sizes: [640, 480],
+        bidId: '30b3efwfwe1e',
+        adUnitCode: 'video1',
+        params: {
+          video: {
+            protocols: [2, 5],
+            api: [2]
+          },
+          site: {
+            page: 'https://news.yahoo.com/portfolios',
+            referrer: 'http://www.yahoo.com'
+          },
+          pubId: 'brxd'
         }
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     })
   });
