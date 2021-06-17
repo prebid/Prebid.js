@@ -23,7 +23,7 @@ module.exports = {
   },
   "parserOptions": {
     "sourceType": "module",
-    "ecmaVersion": 9
+    "ecmaVersion": 10
   },
   "rules": {
     "comma-dangle": "off",
