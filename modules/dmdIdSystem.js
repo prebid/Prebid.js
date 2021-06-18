@@ -65,21 +65,23 @@ export const dmdIdSubmodule = {
         const callbacks = {
           success: response => {
             let responseObj;
-            if (response) {
-              try {
-                responseObj = JSON.parse(response);
-              } catch (error) {
-                utils.logError(error);
+            let responseId;
+            try {
+              responseObj = JSON.parse(response);
+              if (responseObj && responseObj.dgid) {
+                responseId = responseObj.dgid;
               }
+            } catch (error) {
+              utils.logError(error);
             }
-            callback(responseObj);
+            callback(responseId);
           },
           error: error => {
             utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
             callback();
           }
         };
-        ajax(url, callbacks, undefined, { method: 'GET', customHeaders: headers });
+        ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true, customHeaders: headers });
       };
       return { callback: resp };
     }
