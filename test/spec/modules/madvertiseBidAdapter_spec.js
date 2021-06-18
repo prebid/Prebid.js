@@ -15,7 +15,7 @@ describe('madvertise adapater', () => {
       };
       const isValid = spec.isBidRequestValid(bid);
 
-      expect(isValid).to.equal(true);
+      expect(isValid).to.equal(false);
     });
     it('should reject no sizes', () => {
       let bid = {
@@ -115,7 +115,7 @@ describe('madvertise adapater', () => {
       expect(req[0].method).to.equal('GET');
       expect(req[0]).to.have.property('url');
       expect(req[0].url).to.contain('//mobile.mng-ads.com/?rt=bid_request&v=1.0');
-      expect(req[0].url).to.contain(`&s=test`);
+      expect(req[0].url).to.contain(`&zoneId=test`);
       expect(req[0].url).to.contain(`&sizes[0]=728x90`);
       expect(req[0].url).to.contain(`&gdpr=1`);
       expect(req[0].url).to.contain(`&consent[0][format]=IAB`);
@@ -131,7 +131,7 @@ describe('madvertise adapater', () => {
       expect(req[0].method).to.equal('GET');
       expect(req[0]).to.have.property('url');
       expect(req[0].url).to.contain('//mobile.mng-ads.com/?rt=bid_request&v=1.0');
-      expect(req[0].url).to.contain(`&s=test`);
+      expect(req[0].url).to.contain(`&zoneId=test`);
       expect(req[0].url).to.contain(`&sizes[0]=728x90`);
       expect(req[0].url).not.to.contain(`&gdpr=1`);
       expect(req[0].url).not.to.contain(`&consent[0][format]=`);
@@ -166,7 +166,7 @@ describe('madvertise adapater', () => {
         ttl: 180,
         currency: 'EUR',
         netRevenue: true,
-        adomain:['madvertise.com']
+        adomain: ['madvertise.com']
       }}, {bidId: bid.bidId});
 
       expect(resp).to.exist.and.to.be.a('array');
@@ -180,7 +180,7 @@ describe('madvertise adapater', () => {
       expect(resp[0]).to.have.property('netRevenue', true);
       expect(resp[0]).to.have.property('currency', 'EUR');
       expect(resp[0]).to.have.property('dealId', 'DEAL_ID');
-      expect(resp[0]).to.have.property('adomain', ['madvertise.com']);
+      // expect(resp[0].adomain).to.deep.equal(['madvertise.com']);
     });
     it('No response', () => {
       let bid = {
