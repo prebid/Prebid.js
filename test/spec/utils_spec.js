@@ -1197,5 +1197,18 @@ describe('Utils', function () {
         expect(typeof utils.cyrb53Hash(stringOne)).to.equal('string');
       });
     });
+
+    describe('removeDuplicatesFromObjectArray', function() {
+      it('should remove the duplicates from an array of objects with the specified key', function() {
+        const objArray = [
+          {id: '1'},
+          {id: '2'},
+          {id: '1'},
+          {id: '3'},
+          {id: '4'},
+          {id: '4'}];
+        expect(utils.removeDuplicatesFromObjectArray(objArray, 'id').length).to.equal(4);
+      });
+    });
   });
 });
