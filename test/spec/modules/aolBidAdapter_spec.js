@@ -1,7 +1,7 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import {spec} from 'modules/aolBidAdapter.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { spec } from 'modules/aolBidAdapter.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
 const DEFAULT_AD_CONTENT = '<script>logInfo(\'ad\');</script>';
 
@@ -19,7 +19,7 @@ let getDefaultBidResponse = () => {
         h: 90,
         w: 728,
         dealid: 'deal-id',
-        ext: {sizeid: 225}
+        ext: { sizeid: 225 }
       }]
     }]
   };
@@ -102,13 +102,13 @@ describe('AolAdapter', function () {
     tdid: SUPPORTED_USER_ID_SOURCES['adserver.org'],
     id5id: {
       uid: SUPPORTED_USER_ID_SOURCES['id5-sync.com'],
-      ext: {foo: 'bar'}
+      ext: { foo: 'bar' }
     },
     intentIqId: SUPPORTED_USER_ID_SOURCES['intentiq.com'],
     quantcastId: SUPPORTED_USER_ID_SOURCES['quantcast.com']
   };
 
-  function createCustomBidRequest({bids, params} = {}) {
+  function createCustomBidRequest({ bids, params } = {}) {
     var bidderRequest = getDefaultBidRequest();
     if (bids && Array.isArray(bids)) {
       bidderRequest.bids = bids;
@@ -640,7 +640,7 @@ describe('AolAdapter', function () {
       };
 
       serverResponses = [
-        {body: bidResponse}
+        { body: bidResponse }
       ];
     });
 
@@ -648,8 +648,8 @@ describe('AolAdapter', function () {
       let userSyncs = spec.getUserSyncs({}, serverResponses);
 
       expect(userSyncs).to.deep.equal([
-        {type: 'image', url: 'img.org'},
-        {type: 'iframe', url: 'pixels1.org'}
+        { type: 'image', url: 'img.org' },
+        { type: 'iframe', url: 'pixels1.org' }
       ]);
     });
 

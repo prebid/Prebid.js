@@ -180,7 +180,7 @@ describe('TheMediaGridNM Adapter', function () {
       });
       return res;
     }
-    const bidderRequest = {refererInfo: {referer: 'https://example.com'}};
+    const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
     const referrer = bidderRequest.refererInfo.referer;
     let bidRequests = [
       {
@@ -269,7 +269,7 @@ describe('TheMediaGridNM Adapter', function () {
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
-      const [request] = spec.buildRequests([bidRequests[0]], {gdprConsent: {consentString: 'AAA', gdprApplies: true}, refererInfo: bidderRequest.refererInfo});
+      const [request] = spec.buildRequests([bidRequests[0]], { gdprConsent: { consentString: 'AAA', gdprApplies: true }, refererInfo: bidderRequest.refererInfo });
       expect(request.url).to.be.an('string');
       const payload = parseRequestUrl(request.url);
       expect(payload).to.have.property('u', referrer);
@@ -278,7 +278,7 @@ describe('TheMediaGridNM Adapter', function () {
     });
 
     it('if gdprApplies is false gdpr_applies must be 0', function () {
-      const [request] = spec.buildRequests([bidRequests[0]], {gdprConsent: {consentString: 'AAA', gdprApplies: false}});
+      const [request] = spec.buildRequests([bidRequests[0]], { gdprConsent: { consentString: 'AAA', gdprApplies: false } });
       expect(request.url).to.be.an('string');
       const payload = parseRequestUrl(request.url);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
@@ -286,7 +286,7 @@ describe('TheMediaGridNM Adapter', function () {
     });
 
     it('if gdprApplies is undefined gdpr_applies must be 1', function () {
-      const [request] = spec.buildRequests([bidRequests[0]], {gdprConsent: {consentString: 'AAA'}});
+      const [request] = spec.buildRequests([bidRequests[0]], { gdprConsent: { consentString: 'AAA' } });
       expect(request.url).to.be.an('string');
       const payload = parseRequestUrl(request.url);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
@@ -294,7 +294,7 @@ describe('TheMediaGridNM Adapter', function () {
     });
 
     it('if usPrivacy is present payload must have us_privacy param', function () {
-      const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
+      const bidderRequestWithUSP = Object.assign({ uspConsent: '1YNN' }, bidderRequest);
       const [request] = spec.buildRequests([bidRequests[0]], bidderRequestWithUSP);
       expect(request.url).to.be.an('string');
       const payload = parseRequestUrl(request.url);
@@ -304,13 +304,13 @@ describe('TheMediaGridNM Adapter', function () {
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 250, 'w': 300, 'dealid': 11}], 'seat': '2'},
-      {'bid': [{'price': 0.5, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 600, 'w': 300, adomain: ['my_domain.ru']}], 'seat': '2'},
-      {'bid': [{'price': 0, 'h': 250, 'w': 300}], 'seat': '2'},
-      {'bid': [{'price': 0, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341237\"><\/Ad>\n<\/VAST>', 'h': 250, 'w': 300}], 'seat': '2'},
+      { 'bid': [{ 'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 250, 'w': 300, 'dealid': 11 }], 'seat': '2' },
+      { 'bid': [{ 'price': 0.5, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 600, 'w': 300, adomain: ['my_domain.ru'] }], 'seat': '2' },
+      { 'bid': [{ 'price': 0, 'h': 250, 'w': 300 }], 'seat': '2' },
+      { 'bid': [{ 'price': 0, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341237\"><\/Ad>\n<\/VAST>', 'h': 250, 'w': 300 }], 'seat': '2' },
       undefined,
-      {'bid': [], 'seat': '2'},
-      {'seat': '2'},
+      { 'bid': [], 'seat': '2' },
+      { 'seat': '2' },
     ];
 
     it('should get correct video bid response', function () {
@@ -404,7 +404,7 @@ describe('TheMediaGridNM Adapter', function () {
       ];
 
       requests.forEach((req, i) => {
-        const result = spec.interpretResponse({'body': {'seatbid': [responses[i]]}}, req);
+        const result = spec.interpretResponse({ 'body': { 'seatbid': [responses[i]] } }, req);
         expect(result[0]).to.deep.equal(expectedResponse[i]);
       });
     });
@@ -437,7 +437,7 @@ describe('TheMediaGridNM Adapter', function () {
             }
           }
         }]);
-        const result = spec.interpretResponse({'body': {'seatbid': [resp]}}, request[0]);
+        const result = spec.interpretResponse({ 'body': { 'seatbid': [resp] } }, request[0]);
         expect(result.length).to.equal(0);
       });
     });
@@ -455,14 +455,14 @@ describe('TheMediaGridNM Adapter', function () {
         pixelEnabled: true
       });
 
-      expect(syncs).to.deep.equal({type: 'image', url: syncUrl});
+      expect(syncs).to.deep.equal({ type: 'image', url: syncUrl });
     });
 
     it('should not register the Emily iframe more than once', function () {
       let syncs = spec.getUserSyncs({
         pixelEnabled: true
       });
-      expect(syncs).to.deep.equal({type: 'image', url: syncUrl});
+      expect(syncs).to.deep.equal({ type: 'image', url: syncUrl });
 
       // when called again, should still have only been called once
       syncs = spec.getUserSyncs();

@@ -1231,7 +1231,7 @@ export function getCurrencyRates() {
   };
 }
 
-export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId}) {
+export function createBidReceived({ bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId }) {
   let bid = {
     'bidderCode': bidder,
     'width': '300',

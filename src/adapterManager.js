@@ -38,7 +38,7 @@ var _analyticsRegistry = {};
  * @property {Array<string>} activeLabels the labels specified as being active by requestBids
  */
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}) {
+function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src }) {
   return adUnits.reduce((result, adUnit) => {
     let {
       active,
@@ -267,7 +267,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
           auctionId,
           bidderRequestId,
           tid,
-          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
+          bids: hookedGetBids({ bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC }),
           auctionStart: auctionStart,
           timeout: s2sConfig.timeout,
           src: CONSTANTS.S2S.SRC,
@@ -303,7 +303,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
+      bids: hookedGetBids({ bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client' }),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo
@@ -373,7 +373,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.tid === tid)
 
       if (s2sAdapter) {
-        let s2sBidRequest = {tid, 'ad_units': adUnitsS2SCopy, s2sConfig};
+        let s2sBidRequest = { tid, 'ad_units': adUnitsS2SCopy, s2sConfig };
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();
@@ -441,7 +441,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
         )
       );
     } catch (e) {
-      utils.logError(`${bidRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, {e, bidRequest});
+      utils.logError(`${bidRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, { e, bidRequest });
       adapterDone();
     }
   });
@@ -464,7 +464,7 @@ function getSupportedMediaTypes(bidderCode) {
 
 adapterManager.videoAdapters = []; // added by adapterLoader for now
 
-adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supportedMediaTypes = []} = {}) {
+adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, { supportedMediaTypes = [] } = {}) {
   if (bidAdapter && bidderCode) {
     if (typeof bidAdapter.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdapter;
@@ -532,7 +532,7 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
   }
 };
 
-adapterManager.registerAnalyticsAdapter = function ({adapter, code, gvlid}) {
+adapterManager.registerAnalyticsAdapter = function ({ adapter, code, gvlid }) {
   if (adapter && code) {
     if (typeof adapter.enableAnalytics === 'function') {
       adapter.code = code;

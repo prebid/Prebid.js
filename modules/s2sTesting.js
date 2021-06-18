@@ -12,7 +12,7 @@ s2sTesting.bidSource = {}; // store bidder sources determined from s2sConfig bid
 s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB should be server-side, make it the same 10%
 
 s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
-  var sourceBidders = {[SERVER]: {}, [CLIENT]: {}};
+  var sourceBidders = { [SERVER]: {}, [CLIENT]: {} };
 
   adUnits.forEach((adUnit) => {
     // if any adUnit bidders specify a bidSource, include them

@@ -36,7 +36,7 @@ function getConfigMock() {
 function getAdUnitMock(code = 'adUnit-code') {
   return {
     code,
-    mediaTypes: {banner: {}, native: {}},
+    mediaTypes: { banner: {}, native: {} },
     sizes: [
       [300, 200],
       [300, 600]
@@ -168,7 +168,7 @@ describe('Parrable ID System', function() {
 
       it('should log an error and continue to callback if ajax request errors', function () {
         let callBackSpy = sinon.spy();
-        let submoduleCallback = parrableIdSubmodule.getId({ params: {partners: 'prebid'} }).callback;
+        let submoduleCallback = parrableIdSubmodule.getId({ params: { partners: 'prebid' } }).callback;
         submoduleCallback(callBackSpy);
         let request = server.requests[0];
         expect(request.url).to.contain('h.parrable.com');
@@ -572,7 +572,7 @@ describe('Parrable ID System', function() {
         timezoneFilter: {
           blockedOffsets: [ blockedOffset ]
         }
-      }})).to.have.property('callback');
+      } })).to.have.property('callback');
       expect(Date.prototype.getTimezoneOffset.called).to.equal(true);
     });
 

@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -99,7 +99,7 @@ export const spec = {
       } else {
         const bannerData = utils.deepAccess(bid, 'mediaTypes.banner') || {};
         const format = convertSizes(bannerData.sizes || bid.sizes);
-        const banner = {format: format};
+        const banner = { format: format };
 
         copyOptProperty(bid.params.position, banner, 'pos');
 
@@ -164,7 +164,7 @@ export const spec = {
 
     // Only add the user object if it's not empty
     if (!utils.isEmpty(userExt)) {
-      payload.user = {ext: userExt};
+      payload.user = { ext: userExt };
     }
 
     return {
@@ -289,9 +289,9 @@ function convertSizes(bidSizes) {
   let format;
   if (Array.isArray(bidSizes)) {
     if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
-      format = [{w: bidSizes[0], h: bidSizes[1]}];
+      format = [{ w: bidSizes[0], h: bidSizes[1] }];
     } else {
-      format = utils._map(bidSizes, d => { return {w: d[0], h: d[1]}; });
+      format = utils._map(bidSizes, d => { return { w: d[0], h: d[1] }; });
     }
   }
 

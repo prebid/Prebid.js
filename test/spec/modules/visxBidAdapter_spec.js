@@ -74,8 +74,8 @@ describe('VisxAdapter', function () {
     const schainObject = {
       ver: '1.0',
       nodes: [
-        {asi: 'exchange2.com', sid: 'abcd', hp: 1},
-        {asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com'}
+        { asi: 'exchange2.com', sid: 'abcd', hp: 1 },
+        { asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com' }
       ]
     };
     const schainString = JSON.stringify(schainObject);
@@ -231,7 +231,7 @@ describe('VisxAdapter', function () {
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}});
+      const request = spec.buildRequests(bidRequests, { gdprConsent: { consentString: 'AAA', gdprApplies: true } });
       const payload = request.data;
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('gdpr_consent', 'AAA');
@@ -239,7 +239,7 @@ describe('VisxAdapter', function () {
     });
 
     it('if gdprApplies is false gdpr_applies must be 0', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: false}});
+      const request = spec.buildRequests(bidRequests, { gdprConsent: { consentString: 'AAA', gdprApplies: false } });
       const payload = request.data;
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('gdpr_consent', 'AAA');
@@ -247,7 +247,7 @@ describe('VisxAdapter', function () {
     });
 
     it('if gdprApplies is undefined gdpr_applies must be 1', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA'}});
+      const request = spec.buildRequests(bidRequests, { gdprConsent: { consentString: 'AAA' } });
       const payload = request.data;
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('gdpr_consent', 'AAA');
@@ -256,7 +256,7 @@ describe('VisxAdapter', function () {
 
     it('if schain is present payload must have schain param', function () {
       const schainBidRequests = [
-        Object.assign({schain: schainObject}, bidRequests[0]),
+        Object.assign({ schain: schainObject }, bidRequests[0]),
         bidRequests[1],
         bidRequests[2]
       ];
@@ -274,11 +274,11 @@ describe('VisxAdapter', function () {
 
     it('if userId is available payload must have appropriate params', function () {
       const schainBidRequests = [
-        Object.assign({userId: {
+        Object.assign({ userId: {
           tdid: '111',
           id5id: { uid: '222' },
-          digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}}
-        }}, bidRequests[0]),
+          digitrustid: { data: { id: 'DTID', keyv: 4, privacy: { optout: false }, producer: 'ABC', version: 2 } }
+        } }, bidRequests[0]),
         bidRequests[1],
         bidRequests[2]
       ];
@@ -343,14 +343,14 @@ describe('VisxAdapter', function () {
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'},
-      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-      {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-      {'bid': [{'price': 0, 'auid': 903537, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
-      {'bid': [{'price': 0, 'adm': '<div>test content 5</div>', 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
+      { 'bid': [{ 'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com'] }], 'seat': '1' },
+      { 'bid': [{ 'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
+      { 'bid': [{ 'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
+      { 'bid': [{ 'price': 0, 'auid': 903537, 'h': 250, 'w': 300, 'cur': 'EUR' }], 'seat': '1' },
+      { 'bid': [{ 'price': 0, 'adm': '<div>test content 5</div>', 'h': 250, 'w': 300, 'cur': 'EUR' }], 'seat': '1' },
       undefined,
-      {'bid': [], 'seat': '1'},
-      {'seat': '1'},
+      { 'bid': [], 'seat': '1' },
+      { 'seat': '1' },
     ];
 
     it('should get correct bid response', function () {
@@ -387,7 +387,7 @@ describe('VisxAdapter', function () {
         }
       ];
 
-      const result = spec.interpretResponse({'body': {'seatbid': [responses[0]]}}, request);
+      const result = spec.interpretResponse({ 'body': { 'seatbid': [responses[0]] } }, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
@@ -479,7 +479,7 @@ describe('VisxAdapter', function () {
         }
       ];
 
-      const result = spec.interpretResponse({'body': {'seatbid': responses.slice(0, 3)}}, request);
+      const result = spec.interpretResponse({ 'body': { 'seatbid': responses.slice(0, 3) } }, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
@@ -519,8 +519,8 @@ describe('VisxAdapter', function () {
       ];
 
       const response = Object.assign({}, responses[0]);
-      response.bid = [Object.assign({}, response.bid[0], {'cur': 'PLN'})];
-      const result = spec.interpretResponse({'body': {'seatbid': [response]}}, request);
+      response.bid = [Object.assign({}, response.bid[0], { 'cur': 'PLN' })];
+      const result = spec.interpretResponse({ 'body': { 'seatbid': [response] } }, request);
       expect(result).to.deep.equal(expectedResponse);
       getConfigStub.restore();
     });
@@ -562,17 +562,17 @@ describe('VisxAdapter', function () {
         }
       ];
       const request = spec.buildRequests(bidRequests);
-      const result = spec.interpretResponse({'body': {'seatbid': responses.slice(3)}}, request);
+      const result = spec.interpretResponse({ 'body': { 'seatbid': responses.slice(3) } }, request);
       expect(result.length).to.equal(0);
     });
 
     it('complicated case', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 903535, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 5</div>', 'auid': 903536, 'h': 600, 'w': 350, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        { 'bid': [{ 'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com'] }], 'seat': '1' },
+        { 'bid': [{ 'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
+        { 'bid': [{ 'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
+        { 'bid': [{ 'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 903535, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
+        { 'bid': [{ 'price': 0.5, 'adm': '<div>test content 5</div>', 'auid': 903536, 'h': 600, 'w': 350, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
       ];
       const bidRequests = [
         {
@@ -715,14 +715,14 @@ describe('VisxAdapter', function () {
         }
       ];
 
-      const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
+      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
     it('dublicate uids and sizes in one slot', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        { 'bid': [{ 'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
+        { 'bid': [{ 'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
       ];
       const bidRequests = [
         {
@@ -795,13 +795,13 @@ describe('VisxAdapter', function () {
         }
       ];
 
-      const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
+      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
     it('handles video bid', function () {
       const fullResponse = [
-        {'bid': [{'price': 0.5, 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
+        { 'bid': [{ 'price': 0.5, 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video' }], 'seat': '1' },
       ];
       const bidRequests = [
         {
@@ -844,7 +844,7 @@ describe('VisxAdapter', function () {
           },
         }
       ];
-      const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
+      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
@@ -890,15 +890,15 @@ describe('VisxAdapter', function () {
         }
       ];
       const serverResponse = Object.assign({}, responses[0]);
-      serverResponse.bid = [Object.assign({}, {ext: {
+      serverResponse.bid = [Object.assign({}, { ext: {
         prebid: {
           events: {
             'pending': pendingUrl,
             'win': winUrl
           }
         }
-      }}, serverResponse.bid[0])];
-      const result = spec.interpretResponse({'body': {'seatbid': [serverResponse]}}, request);
+      } }, serverResponse.bid[0])];
+      const result = spec.interpretResponse({ 'body': { 'seatbid': [serverResponse] } }, request);
       expect(result).to.deep.equal(expectedResponse);
     });
   });

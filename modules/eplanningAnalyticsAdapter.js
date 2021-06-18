@@ -1,4 +1,4 @@
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
@@ -9,7 +9,7 @@ const analyticsType = 'endpoint';
 const EPL_HOST = 'https://ads.us.e-planning.net/hba/1/';
 
 function auctionEndHandler(args) {
-  return {auctionId: args.auctionId};
+  return { auctionId: args.auctionId };
 }
 
 function auctionInitHandler(args) {
@@ -81,7 +81,7 @@ function callHandler(evtype, args) {
   }
 
   if (handler) {
-    eplAnalyticsAdapter.context.events.push({ec: evtype, p: handler(args)});
+    eplAnalyticsAdapter.context.events.push({ ec: evtype, p: handler(args) });
   }
 }
 
@@ -91,7 +91,7 @@ var eplAnalyticsAdapter = Object.assign(adapter(
     analyticsType
   }),
 {
-  track({eventType, args}) {
+  track({ eventType, args }) {
     if (typeof args !== 'undefined') {
       callHandler(eventType, args);
     }

@@ -141,14 +141,14 @@
  * @type {boolean}
  */
 
-import {config} from '../../src/config.js';
-import {module} from '../../src/hook.js';
+import { config } from '../../src/config.js';
+import { module } from '../../src/hook.js';
 import * as utils from '../../src/utils.js';
 import events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
-import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler } from '../../src/adapterManager.js';
 import find from 'core-js-pure/features/array/find.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -172,7 +172,7 @@ export function attachRealTimeDataProvider(submodule) {
 }
 
 export function init(config) {
-  const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
+  const confListener = config.getConfig(MODULE_NAME, ({ realTimeData }) => {
     if (!realTimeData.dataProviders) {
       utils.logError('missing parameters for real time module');
       return;
@@ -205,7 +205,7 @@ function initSubModules() {
     const sm = find(registeredSubModules, s => s.name === provider.name);
     const initResponse = sm && sm.init && sm.init(provider, _userConsent);
     if (initResponse) {
-      subModulesByOrder.push(Object.assign(sm, {config: provider}));
+      subModulesByOrder.push(Object.assign(sm, { config: provider }));
     }
   });
   subModules = subModulesByOrder;

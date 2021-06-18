@@ -87,24 +87,24 @@ describe('user sync', function () {
   });
 
   it('should not register pixel URL since it is not supported', function () {
-    const userSync = newTestUserSync({filterSettings: {
+    const userSync = newTestUserSync({ filterSettings: {
       image: {
         bidders: '*',
         filter: 'exclude'
       }
-    }});
+    } });
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.be.null;
   });
 
   it('should register and load an iframe', function () {
-    const userSync = newTestUserSync({filterSettings: {
+    const userSync = newTestUserSync({ filterSettings: {
       iframe: {
         bidders: '*',
         filter: 'include'
       }
-    }});
+    } });
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
     userSync.syncUsers();
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
@@ -202,12 +202,12 @@ describe('user sync', function () {
   });
 
   it('should only sync enabled bidders', function () {
-    const userSync = newTestUserSync({filterSettings: {
+    const userSync = newTestUserSync({ filterSettings: {
       image: {
         bidders: ['testBidderA'],
         filter: 'include'
       }
-    }});
+    } });
     userSync.registerSync('image', 'testBidderA', 'http://example.com/1');
     userSync.registerSync('image', 'testBidderB', 'http://example.com/2');
     userSync.syncUsers();

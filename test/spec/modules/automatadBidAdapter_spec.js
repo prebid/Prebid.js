@@ -7,7 +7,7 @@ describe('automatadBidAdapter', function () {
 
   let bidRequest = {
     bidder: 'automatad',
-    params: {siteId: '123ad', placementId: '123abc345'},
+    params: { siteId: '123ad', placementId: '123abc345' },
     mediaTypes: {
       banner: {
         sizes: [[300, 600]],
@@ -156,7 +156,7 @@ describe('automatadBidAdapter', function () {
         }
       }]
       let result = spec.interpretResponse(multipleBidResponse[0]).map(bid => {
-        const {requestId} = bid;
+        const { requestId } = bid;
         return [ requestId ];
       });
 

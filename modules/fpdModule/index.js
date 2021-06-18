@@ -27,7 +27,7 @@ export function init() {
     ortb2 = submodule.init(modConf, ortb2);
   });
 
-  config.setConfig({ortb2});
+  config.setConfig({ ortb2 });
 }
 
 /**

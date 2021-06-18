@@ -147,7 +147,7 @@ function validateAdUnitPos(adUnit, mediaType) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     utils.logWarn(warning);
-    events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: warning});
+    events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: warning });
     delete adUnit.mediaTypes[mediaType].pos;
   }
 
@@ -424,7 +424,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
 
           // replacing clickthrough if submitted
           if (options && options.clickThrough) {
-            const {clickThrough} = options;
+            const { clickThrough } = options;
             bid.ad = utils.replaceClickThrough(bid.ad, clickThrough);
             bid.adUrl = utils.replaceClickThrough(bid.adUrl, clickThrough);
           }
@@ -435,7 +435,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
           // emit 'bid won' event here
           events.emit(BID_WON, bid);
 
-          const {height, width, ad, mediaType, adUrl, renderer} = bid;
+          const { height, width, ad, mediaType, adUrl, renderer } = bid;
 
           const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
           utils.insertElement(creativeComment, doc, 'body');
@@ -444,7 +444,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
             executeRenderer(renderer, bid);
           } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
-            emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
+            emitAdRenderFail({ reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id });
           } else if (ad) {
             // will check if browser is firefox and below version 67, if so execute special doc.open()
             // for details see: https://github.com/prebid/Prebid.js/pull/3524
@@ -473,7 +473,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
             utils.callBurl(bid);
           } else {
             const message = `Error trying to write ad. No ad for bid response id: ${id}`;
-            emitAdRenderFail({reason: NO_AD, message, bid, id});
+            emitAdRenderFail({ reason: NO_AD, message, bid, id });
           }
         }
       } else {

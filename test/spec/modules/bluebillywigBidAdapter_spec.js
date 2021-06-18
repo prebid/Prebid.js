@@ -362,7 +362,7 @@ describe('BlueBillywigAdapter', () => {
     });
 
     it('sets coppa to 1 when specified in config', () => {
-      config.setConfig({'coppa': true});
+      config.setConfig({ 'coppa': true });
 
       const request = spec.buildRequests(baseValidBidRequests, validBidderRequest);
       const payload = JSON.parse(request.data);
@@ -374,7 +374,7 @@ describe('BlueBillywigAdapter', () => {
     });
 
     it('does not set coppa when disabled in the config', () => {
-      config.setConfig({'coppa': false});
+      config.setConfig({ 'coppa': false });
 
       const request = spec.buildRequests(baseValidBidRequests, validBidderRequest);
       const payload = JSON.parse(request.data);
@@ -1072,7 +1072,7 @@ describe('BlueBillywigAdapter', () => {
     });
 
     it('should return empty if iframeEnabled is not true', () => {
-      const result = spec.getUserSyncs({iframeEnabled: false}, [serverResponse], gdpr);
+      const result = spec.getUserSyncs({ iframeEnabled: false }, [serverResponse], gdpr);
       expect(result).to.be.empty;
     });
 
@@ -1080,7 +1080,7 @@ describe('BlueBillywigAdapter', () => {
       // push data to syncStore
       spec.buildRequests(validBidRequests, validBidderRequest);
 
-      const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse], gdpr);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse], gdpr);
 
       expect(result).to.not.be.empty;
 

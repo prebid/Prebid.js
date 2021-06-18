@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {VIDEO, BANNER} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
 import findIndex from 'core-js-pure/features/array/find-index.js';
 
 const URL = 'https://ghb.sync.viewdeos.com/auction/';
@@ -77,7 +77,7 @@ export const spec = {
    * @param bidderRequest
    * @return {Bid[]} An array of bids which were nested inside the server
    */
-  interpretResponse: function (serverResponse, {bidderRequest}) {
+  interpretResponse: function (serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     let bids = [];
 

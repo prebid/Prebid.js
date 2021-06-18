@@ -152,7 +152,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   return bidRequests;
 }
 function getCpmData(xml) {
-  let ret = {cpm: 0, currency: 'USD'};
+  let ret = { cpm: 0, currency: 'USD' };
   if (xml) {
     let ext = xml.getElementsByTagName('Extensions');
     if (ext && ext.length > 0) {
@@ -239,10 +239,10 @@ function getSyncData(xml, options) {
                       (data[j].e === 'inventory' || data[j].e === 'sync')
                     ) {
                       if (data[j].t == 1 && options.pixelEnabled) {
-                        ret.push({url: data[j].url, type: 'image'});
+                        ret.push({ url: data[j].url, type: 'image' });
                       } else {
                         if (data[j].t == 3 && options.iframeEnabled) {
-                          ret.push({url: data[j].url, type: 'iframe'});
+                          ret.push({ url: data[j].url, type: 'iframe' });
                         }
                       }
                     }

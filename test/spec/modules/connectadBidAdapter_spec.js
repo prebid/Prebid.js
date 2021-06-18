@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/connectadBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/connectadBidAdapter.js';
 import { config } from 'src/config.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('ConnectAd Adapter', function () {
   let bidRequests;
@@ -472,7 +472,7 @@ describe('ConnectAd Adapter', function () {
       },
       {
         name: 'iframe/gdpr',
-        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}],
+        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, { gdprApplies: true, consentString: '234234' }],
         expect: {
           type: 'iframe',
           pixels: ['https://cdn.connectad.io/connectmyusers.php?gdpr=1&gdpr_consent=234234&']
@@ -488,7 +488,7 @@ describe('ConnectAd Adapter', function () {
       },
       {
         name: 'iframe/ccpa & gdpr',
-        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}, 'YN12'],
+        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, { gdprApplies: true, consentString: '234234' }, 'YN12'],
         expect: {
           type: 'iframe',
           pixels: ['https://cdn.connectad.io/connectmyusers.php?gdpr=1&gdpr_consent=234234&us_privacy=YN12&']

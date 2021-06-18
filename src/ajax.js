@@ -15,7 +15,7 @@ const XHR_DONE = 4;
  */
 export const ajax = ajaxBuilder();
 
-export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
+export function ajaxBuilder(timeout = 3000, { request, done } = {}) {
   return function(url, callback, data, options = {}) {
     try {
       let x;

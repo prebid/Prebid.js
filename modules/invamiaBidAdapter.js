@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'invamia';
 const ENDPOINT_URL = 'https://ad.invamia.com/delivery/impress';
@@ -58,12 +58,12 @@ export const spec = {
    * @param {BidRequest} bidderRequest A matched bid request for this response.
    * @return Array<BidResponse> An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function(serverResponse, { bidderRequest }) {
     const response = serverResponse.body;
     const bidResponses = [];
 
     if (response && response.template && response.template.html) {
-      const {bidId} = bidderRequest;
+      const { bidId } = bidderRequest;
       const [width, height] = bidderRequest.params.requestedSizes;
 
       const bidResponse = {

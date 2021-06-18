@@ -106,7 +106,7 @@ describe('eplanning analytics adapter', function () {
       });
 
       // Step 6: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {auctionId: pauctionId});
+      events.emit(constants.EVENTS.AUCTION_END, { auctionId: pauctionId });
 
       // Step 7: Find the request data sent (filtering other hosts)
       let requests = server.requests.filter(req => {
@@ -127,23 +127,23 @@ describe('eplanning analytics adapter', function () {
       // Step 9 verify that we only receive the parameters we need
       let expectedEventValues = [
         // AUCTION INIT
-        {ec: constants.EVENTS.AUCTION_INIT,
-          p: {auctionId: pauctionId, time: auctionTimestamp}},
+        { ec: constants.EVENTS.AUCTION_INIT,
+          p: { auctionId: pauctionId, time: auctionTimestamp } },
         // BID REQ
-        {ec: constants.EVENTS.BID_REQUESTED,
-          p: {auctionId: pauctionId, time: 1509369418389, bidder: pbidderCode, bids: [{time: 1509369418389, sizes: [[300, 250]], bidder: pbidderCode, placementCode: 'container-1', auctionId: pauctionId}]}},
+        { ec: constants.EVENTS.BID_REQUESTED,
+          p: { auctionId: pauctionId, time: 1509369418389, bidder: pbidderCode, bids: [{ time: 1509369418389, sizes: [[300, 250]], bidder: pbidderCode, placementCode: 'container-1', auctionId: pauctionId }] } },
         // BID RESP
-        {ec: constants.EVENTS.BID_RESPONSE,
-          p: {auctionId: pauctionId, bidder: pbidderCode, cpm: 0.015, size: '300x250', time: 1509369418832}},
+        { ec: constants.EVENTS.BID_RESPONSE,
+          p: { auctionId: pauctionId, bidder: pbidderCode, cpm: 0.015, size: '300x250', time: 1509369418832 } },
         // BID T.O.
-        {ec: constants.EVENTS.BID_TIMEOUT,
-          p: [{auctionId: pauctionId, bidder: pbidderCode}]},
+        { ec: constants.EVENTS.BID_TIMEOUT,
+          p: [{ auctionId: pauctionId, bidder: pbidderCode }] },
         // BID WON
-        {ec: constants.EVENTS.BID_WON,
-          p: {auctionId: pauctionId, size: '300x250'}},
+        { ec: constants.EVENTS.BID_WON,
+          p: { auctionId: pauctionId, size: '300x250' } },
         // AUCTION END
-        {ec: constants.EVENTS.AUCTION_END,
-          p: {auctionId: pauctionId}}
+        { ec: constants.EVENTS.AUCTION_END,
+          p: { auctionId: pauctionId } }
       ];
 
       for (let evid = 0; evid < eplData.length; evid++) {

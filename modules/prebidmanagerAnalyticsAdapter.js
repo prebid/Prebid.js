@@ -1,4 +1,4 @@
-import {ajaxBuilder} from '../src/ajax.js';
+import { ajaxBuilder } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -46,8 +46,8 @@ var _eventQueue = [
   _pageView
 ];
 
-let prebidmanagerAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
-  track({eventType, args}) {
+let prebidmanagerAnalytics = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType }), {
+  track({ eventType, args }) {
     handleEvent(eventType, args);
   }
 });

@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import {
   filterArrayData,
@@ -65,7 +65,7 @@ describe('the first party data validation module', function () {
     it('returns empty array if no valid data', function () {
       let arr = [{}];
       let path = 'site.children.cat';
-      let child = {type: 'string'};
+      let child = { type: 'string' };
       let parent = 'site';
       let key = 'cat';
       let validated = filterArrayData(arr, child, path, parent, key);
@@ -73,9 +73,9 @@ describe('the first party data validation module', function () {
     });
 
     it('filters invalid type of array data', function () {
-      let arr = ['foo', {test: 1}];
+      let arr = ['foo', { test: 1 }];
       let path = 'site.children.cat';
-      let child = {type: 'string'};
+      let child = { type: 'string' };
       let parent = 'site';
       let key = 'cat';
       let validated = filterArrayData(arr, child, path, parent, key);
@@ -83,9 +83,9 @@ describe('the first party data validation module', function () {
     });
 
     it('filters all data for missing required children', function () {
-      let arr = [{test: 1}];
+      let arr = [{ test: 1 }];
       let path = 'site.children.content.children.data';
-      let child = {type: 'object'};
+      let child = { type: 'object' };
       let parent = 'site';
       let key = 'data';
       let validated = filterArrayData(arr, child, path, parent, key);
@@ -93,9 +93,9 @@ describe('the first party data validation module', function () {
     });
 
     it('filters all data for invalid required children types', function () {
-      let arr = [{name: 'foo', segment: 1}];
+      let arr = [{ name: 'foo', segment: 1 }];
       let path = 'site.children.content.children.data';
-      let child = {type: 'object'};
+      let child = { type: 'object' };
       let parent = 'site';
       let key = 'data';
       let validated = filterArrayData(arr, child, path, parent, key);
@@ -103,13 +103,13 @@ describe('the first party data validation module', function () {
     });
 
     it('returns only data with valid required nested children types', function () {
-      let arr = [{name: 'foo', segment: [{id: '1'}, {id: 2}, 'foobar']}];
+      let arr = [{ name: 'foo', segment: [{ id: '1' }, { id: 2 }, 'foobar'] }];
       let path = 'site.children.content.children.data';
-      let child = {type: 'object'};
+      let child = { type: 'object' };
       let parent = 'site';
       let key = 'data';
       let validated = filterArrayData(arr, child, path, parent, key);
-      expect(validated).to.deep.equal([{name: 'foo', segment: [{id: '1'}]}]);
+      expect(validated).to.deep.equal([{ name: 'foo', segment: [{ id: '1' }] }]);
     });
   });
 
@@ -189,8 +189,8 @@ describe('the first party data validation module', function () {
         }
       };
 
-      duplicate.user.data[0].segment.push({test: 3});
-      duplicate.user.data[0].segment[0] = {foo: 'bar'};
+      duplicate.user.data[0].segment.push({ test: 3 });
+      duplicate.user.data[0].segment[0] = { foo: 'bar' };
 
       validated = validateFpd(duplicate);
       expect(validated).to.deep.equal(expected);
@@ -227,7 +227,7 @@ describe('the first party data validation module', function () {
         }
       };
 
-      duplicate.site.content.data[0].segment.push({test: 3});
+      duplicate.site.content.data[0].segment.push({ test: 3 });
 
       validated = validateFpd(duplicate);
       expect(validated).to.deep.equal(expected);
@@ -265,7 +265,7 @@ describe('the first party data validation module', function () {
         }
       };
 
-      duplicate.site.content.data[0].segment.push({test: 3});
+      duplicate.site.content.data[0].segment.push({ test: 3 });
 
       validated = validateFpd(duplicate);
       expect(validated).to.deep.equal(expected);
@@ -304,7 +304,7 @@ describe('the first party data validation module', function () {
         }
       };
 
-      duplicate.site.content.data[0].segment.push({test: 3});
+      duplicate.site.content.data[0].segment.push({ test: 3 });
 
       validated = validateFpd(duplicate);
       expect(validated).to.deep.equal(expected);

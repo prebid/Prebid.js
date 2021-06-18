@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/docereeBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/docereeBidAdapter.js';
 import { config } from '../../../src/config.js';
 
 describe('BidlabBidAdapter', function () {

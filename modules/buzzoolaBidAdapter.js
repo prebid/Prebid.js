@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {OUTSTREAM} from '../src/video.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'buzzoola';
 const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
@@ -46,7 +46,7 @@ export const spec = {
    * @param bidderRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function ({body}, {data}) {
+  interpretResponse: function ({ body }, { data }) {
     let requestBids = {};
     let response;
 

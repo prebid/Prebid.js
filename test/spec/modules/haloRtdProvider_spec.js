@@ -1,8 +1,8 @@
-import {config} from 'src/config.js';
-import {HALOID_LOCAL_NAME, RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, haloSubmodule, storage} from 'modules/haloRtdProvider.js';
-import {server} from 'test/mocks/xhr.js';
+import { config } from 'src/config.js';
+import { HALOID_LOCAL_NAME, RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, haloSubmodule, storage } from 'modules/haloRtdProvider.js';
+import { server } from 'test/mocks/xhr.js';
 
-const responseHeader = {'Content-Type': 'application/json'};
+const responseHeader = { 'Content-Type': 'application/json' };
 
 describe('haloRtdProvider', function() {
   let getDataFromLocalStorageStub;
@@ -128,9 +128,9 @@ describe('haloRtdProvider', function() {
         params: {
           handleRtd: function(bidConfig, rtd, rtdConfig, pbConfig) {
             if (rtd.ortb2.user.data[0].segment[0].id == '1776') {
-              pbConfig.setConfig({ortb2: rtd.ortb2});
+              pbConfig.setConfig({ ortb2: rtd.ortb2 });
             } else {
-              pbConfig.setConfig({ortb2: {}});
+              pbConfig.setConfig({ ortb2: {} });
             }
           }
         }
@@ -236,8 +236,8 @@ describe('haloRtdProvider', function() {
       };
 
       const rtd = {
-        adBuzz: [{id: 'adBuzzSeg2'}, {id: 'adBuzzSeg3'}],
-        trueBid: [{id: 'truebidSeg1'}, {id: 'truebidSeg2'}, {id: 'truebidSeg3'}]
+        adBuzz: [{ id: 'adBuzzSeg2' }, { id: 'adBuzzSeg3' }],
+        trueBid: [{ id: 'truebidSeg1' }, { id: 'truebidSeg2' }, { id: 'truebidSeg3' }]
       };
 
       addRealTimeData(bidConfig, rtd, rtdConfig);

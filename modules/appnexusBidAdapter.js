@@ -113,7 +113,7 @@ export const spec = {
             let segs = [];
             userObjBid.params.user[param].forEach(val => {
               if (utils.isNumber(val)) {
-                segs.push({'id': val});
+                segs.push({ 'id': val });
               } else if (utils.isPlainObject(val)) {
                 segs.push(val);
               }
@@ -338,7 +338,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
-    if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
+    if (syncOptions.iframeEnabled && hasPurpose1Consent({ gdprConsent })) {
       return [{
         type: 'iframe',
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'

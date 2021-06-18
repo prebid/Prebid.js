@@ -60,7 +60,7 @@ function roundUp(number, precision) {
 
 let referrerHostname;
 function getHostNameFromReferer(referer) {
-  referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
+  referrerHostname = utils.parseUrl(referer, { noDecodeWholeURL: true }).hostname;
   return referrerHostname;
 }
 
@@ -103,7 +103,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
   // if we already have gotten the matching rule from this matching input then use it! No need to look again
   let previousMatch = utils.deepAccess(floorData, `matchingInputs.${matchingInput}`);
   if (previousMatch) {
-    return {...previousMatch};
+    return { ...previousMatch };
   }
   let allPossibleMatches = generatePossibleEnumerations(fieldValues, utils.deepAccess(floorData, 'schema.delimiter') || '|');
   let matchingRule = find(allPossibleMatches, hashValue => floorData.values.hasOwnProperty(hashValue));
@@ -116,7 +116,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
   };
   matchingData.matchingFloor = Math.max(matchingData.floorMin, matchingData.floorRuleValue);
   // save for later lookup if needed
-  utils.deepSetValue(floorData, `matchingInputs.${matchingInput}`, {...matchingData});
+  utils.deepSetValue(floorData, `matchingInputs.${matchingInput}`, { ...matchingData });
   return matchingData;
 }
 
@@ -143,7 +143,7 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
 export function getBiddersCpmAdjustment(bidderName, inputCpm, bid = {}) {
   const adjustmentFunction = utils.deepAccess(getGlobal(), `bidderSettings.${bidderName}.bidCpmAdjustment`) || utils.deepAccess(getGlobal(), 'bidderSettings.standard.bidCpmAdjustment');
   if (adjustmentFunction) {
-    return parseFloat(adjustmentFunction(inputCpm, {...bid, cpm: inputCpm}));
+    return parseFloat(adjustmentFunction(inputCpm, { ...bid, cpm: inputCpm }));
   }
   return parseFloat(inputCpm);
 }
@@ -188,13 +188,13 @@ function updateRequestParamsFromContext(bidRequest, requestParams) {
  * @summary This is the function which will return a single floor based on the input requests
  * and matching it to a rule for the current auction
  */
-export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size: '*'}) {
+export function getFloor(requestParams = { currency: 'USD', mediaType: '*', size: '*' }) {
   let bidRequest = this;
   let floorData = _floorDataForAuction[bidRequest.auctionId];
   if (!floorData || floorData.skipped) return {};
 
   requestParams = updateRequestParamsFromContext(bidRequest, requestParams);
-  let floorInfo = getFirstMatchingFloor(floorData.data, {...bidRequest}, {mediaType: requestParams.mediaType, size: requestParams.size});
+  let floorInfo = getFirstMatchingFloor(floorData.data, { ...bidRequest }, { mediaType: requestParams.mediaType, size: requestParams.size });
   let currency = requestParams.currency || floorData.data.currency;
 
   // if bidder asked for a currency which is not what floors are set in convert
@@ -616,8 +616,8 @@ export function handleSetFloorsConfig(config) {
     _floorsConfig = {};
     _floorDataForAuction = {};
 
-    getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
-    getGlobal().requestBids.getHooks({hook: requestBidsHook}).remove();
+    getHook('addBidResponse').getHooks({ hook: addBidResponseHook }).remove();
+    getGlobal().requestBids.getHooks({ hook: requestBidsHook }).remove();
 
     addedFloorsHook = false;
   }
@@ -634,7 +634,7 @@ function addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm) {
     floorRuleValue: floorInfo.floorRuleValue,
     floorCurrency: floorData.data.currency,
     cpmAfterAdjustments: adjustedCpm,
-    enforcements: {...floorData.enforcement},
+    enforcements: { ...floorData.enforcement },
     matchedFields: {}
   };
   floorData.data.schema.fields.forEach((field, index) => {
@@ -666,7 +666,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   }
 
   // get the matching rule
-  let floorInfo = getFirstMatchingFloor(floorData.data, {...matchingBidRequest}, {...bid, size: [bid.width, bid.height]});
+  let floorInfo = getFirstMatchingFloor(floorData.data, { ...matchingBidRequest }, { ...bid, size: [bid.width, bid.height] });
 
   if (!floorInfo.matchingFloor) {
     utils.logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);

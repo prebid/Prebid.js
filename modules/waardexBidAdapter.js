@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -59,7 +59,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     zoneId = +validBidRequests[0].params.zoneId;
   }
 
-  return {method: 'POST', url: `${ENDPOINT}?pubId=${zoneId}`, data: dataToSend};
+  return { method: 'POST', url: `${ENDPOINT}?pubId=${zoneId}`, data: dataToSend };
 };
 
 const getCommonBidsData = bidderRequest => {

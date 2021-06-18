@@ -73,7 +73,7 @@ describe('jixie Adapter', function () {
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
-      refererInfo: {referer: pageurl_},
+      refererInfo: { referer: pageurl_ },
       auctionId: auctionId_,
       timeout: timeout_
     };
@@ -388,14 +388,14 @@ describe('jixie Adapter', function () {
 
   describe('interpretResponse', function () {
     it('handles nobid responses', function () {
-      expect(spec.interpretResponse({body: {}}, {validBidRequests: []}).length).to.equal(0)
-      expect(spec.interpretResponse({body: []}, {validBidRequests: []}).length).to.equal(0)
+      expect(spec.interpretResponse({ body: {} }, { validBidRequests: [] }).length).to.equal(0)
+      expect(spec.interpretResponse({ body: [] }, { validBidRequests: [] }).length).to.equal(0)
     });
 
     it('should get correct bid response', function () {
       let setCookieSpy = sinon.spy(storage, 'setCookie');
       let setLocalStorageSpy = sinon.spy(storage, 'setDataInLocalStorage');
-      const result = spec.interpretResponse({body: responseBody_}, requestObj_)
+      const result = spec.interpretResponse({ body: responseBody_ }, requestObj_)
       expect(setLocalStorageSpy.calledWith('_jx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setLocalStorageSpy.calledWith('_jxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setCookieSpy.calledWith('_jxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
@@ -558,8 +558,8 @@ describe('jixie Adapter', function () {
 
     it('check it is sending the correct ajax url and qparameters', function() {
       spec.onTimeout([
-        {auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000},
-        {auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000}
+        { auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000 },
+        { auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000 }
       ])
       expect(jixieaux.ajax.calledWith(spec.EVENTS_URL, null, QPARAMS_)).to.equal(true);
     })
@@ -577,8 +577,8 @@ describe('jixie Adapter', function () {
         called = true;
       });
       spec.onTimeout([
-        {auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000},
-        {auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000}
+        { auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000 },
+        { auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000 }
       ])
       expect(called).to.equal(false);
       getConfigStub.restore();
@@ -594,8 +594,8 @@ describe('jixie Adapter', function () {
         return null;
       });
       spec.onTimeout([
-        {auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000},
-        {auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000}
+        { auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000 },
+        { auctionId: '028d5dee-2c83-44e3-bed1-b75002475cdf', timeout: 1000 }
       ])
       expect(jixieaux.ajax.calledWith(otherUrl_, null, QPARAMS_)).to.equal(true);
       getConfigStub.restore();

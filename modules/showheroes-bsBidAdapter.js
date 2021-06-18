@@ -93,7 +93,7 @@ export const spec = {
     return {
       url: isStage ? STAGE_ENDPOINT : PROD_ENDPOINT,
       method: 'POST',
-      options: {contentType: 'application/json', accept: 'application/json'},
+      options: { contentType: 'application/json', accept: 'application/json' },
       data: {
         'user': [],
         'meta': {

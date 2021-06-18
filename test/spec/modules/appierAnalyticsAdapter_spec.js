@@ -2,7 +2,7 @@ import {
   appierAnalyticsAdapter, getCpmInUsd, parseBidderCode, parseAdUnitCode,
   ANALYTICS_VERSION, BIDDER_STATUS
 } from 'modules/appierAnalyticsAdapter.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
 const events = require('src/events');
 const constants = require('src/constants.json');
 
@@ -122,7 +122,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
     });
 
     describe('#getCachedAuction()', function() {
-      const existing = {timeoutBids: [{}]};
+      const existing = { timeoutBids: [{}] };
       appierAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing;
 
       it('should get the existing cached object if it exists', function() {

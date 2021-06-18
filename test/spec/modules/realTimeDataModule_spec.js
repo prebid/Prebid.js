@@ -8,7 +8,7 @@ const validSM = {
   name: 'validSM',
   init: () => { return true },
   getTargetingData: (adUnitsCodes) => {
-    return {'ad2': {'key': 'validSM'}}
+    return { 'ad2': { 'key': 'validSM' } }
   },
   getBidRequestData: getBidRequestDataSpy
 };
@@ -17,7 +17,7 @@ const validSMWait = {
   name: 'validSMWait',
   init: () => { return true },
   getTargetingData: (adUnitsCodes) => {
-    return {'ad1': {'key': 'validSMWait'}}
+    return { 'ad1': { 'key': 'validSMWait' } }
   },
   getBidRequestData: getBidRequestDataSpy
 };
@@ -82,9 +82,9 @@ describe('Real time module', function () {
   it('should be able to modify bid request', function (done) {
     rtdModule.setBidRequestsData(() => {
       assert(getBidRequestDataSpy.calledTwice);
-      assert(getBidRequestDataSpy.calledWith({bidRequest: {}}));
+      assert(getBidRequestDataSpy.calledWith({ bidRequest: {} }));
       done();
-    }, {bidRequest: {}})
+    }, { bidRequest: {} })
   });
 
   it('deep merge object', function () {
@@ -134,7 +134,7 @@ describe('Real time module', function () {
         },
         {
           code: 'ad2',
-          adserverTargeting: {preKey: 'preValue'}
+          adserverTargeting: { preKey: 'preValue' }
         }
       ]
     };
@@ -142,7 +142,7 @@ describe('Real time module', function () {
     const expectedAdUnits = [
       {
         code: 'ad1',
-        adserverTargeting: {key: 'validSMWait'}
+        adserverTargeting: { key: 'validSMWait' }
       },
       {
         code: 'ad2',

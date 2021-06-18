@@ -1,5 +1,5 @@
 import adomikAnalytics from 'modules/adomikAnalyticsAdapter.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
@@ -74,7 +74,7 @@ describe('Adomik Prebid Analytic', function () {
       });
 
       // Step 2: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, auctionId: 'test-test-test'});
+      events.emit(constants.EVENTS.AUCTION_INIT, { config: initOptions, auctionId: 'test-test-test' });
 
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',

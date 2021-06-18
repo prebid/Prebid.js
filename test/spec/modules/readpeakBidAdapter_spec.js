@@ -218,7 +218,7 @@ describe('ReadPeakAdapter', function() {
           consentString: undefined,
         }
       }
-      const request = spec.buildRequests([bidRequest], {...bidderRequest, ...gdprData});
+      const request = spec.buildRequests([bidRequest], { ...bidderRequest, ...gdprData });
 
       const data = JSON.parse(request.data);
 
@@ -242,7 +242,7 @@ describe('ReadPeakAdapter', function() {
           consentString: tcString
         }
       }
-      const request = spec.buildRequests([bidRequest], {...bidderRequest, ...gdprData});
+      const request = spec.buildRequests([bidRequest], { ...bidderRequest, ...gdprData });
 
       const data = JSON.parse(request.data);
 

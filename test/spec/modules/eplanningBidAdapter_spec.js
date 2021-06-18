@@ -960,8 +960,8 @@ describe('E-Planning Adapter', function () {
         userSync: {
           userIds: [
             { name: 'id5Id', value: { 'id5id': { uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } } } },
-            { name: 'pubCommonId', value: {'pubcid': 'c29cb2ae-769d-42f6-891a-f53cadee823d'} },
-            { name: 'unifiedId', value: {'tdid': 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3'} }
+            { name: 'pubCommonId', value: { 'pubcid': 'c29cb2ae-769d-42f6-891a-f53cadee823d' } },
+            { name: 'unifiedId', value: { 'tdid': 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3' } }
           ]
         }
       });

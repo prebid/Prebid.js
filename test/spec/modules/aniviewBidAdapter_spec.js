@@ -219,9 +219,9 @@ describe('ANIVIEW Bid Adapter Test', function () {
       let pixelType = '3';
       let bidResponse = createBidResponse(pixelEvent, pixelType);
       let serverResponse = [
-        {body: bidResponse}
+        { body: bidResponse }
       ];
-      let syncPixels = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse);
+      let syncPixels = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponse);
       expect(syncPixels.length).to.equal(1);
       let pixel = syncPixels[0];
       expect(pixel.url).to.equal(pixelUrl);
@@ -233,9 +233,9 @@ describe('ANIVIEW Bid Adapter Test', function () {
       let pixelType = '1';
       let bidResponse = createBidResponse(pixelEvent, pixelType);
       let serverResponse = [
-        {body: bidResponse}
+        { body: bidResponse }
       ];
-      let syncPixels = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse);
+      let syncPixels = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponse);
       expect(syncPixels.length).to.equal(1);
       let pixel = syncPixels[0];
       expect(pixel.url).to.equal(pixelUrl);

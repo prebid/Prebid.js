@@ -409,7 +409,7 @@ describe('IndexexchangeAdapter', function () {
     netId: 'testnetid123', // NetId
     IDP: 'userIDP000', // IDP
     fabrickId: 'fabrickId9000', // FabrickId
-    uid2: {id: 'testuid2'} // UID 2.0
+    uid2: { id: 'testuid2' } // UID 2.0
   };
 
   const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
@@ -461,7 +461,7 @@ describe('IndexexchangeAdapter', function () {
 
   const DEFAULT_USERID_BID_DATA = {
     lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4',
-    flocId: {id: '1234', version: 'chrome.1.2'}
+    flocId: { id: '1234', version: 'chrome.1.2' }
   };
 
   const DEFAULT_FLOC_USERID_PAYLOAD = [
@@ -958,7 +958,7 @@ describe('IndexexchangeAdapter', function () {
     it('IX adapter reads empty floc obj from prebid userId it, floc is not added to eids', function() {
       const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
-      cloneValidBid[0].userId = {'flocId': {}}
+      cloneValidBid[0].userId = { 'flocId': {} }
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
@@ -974,7 +974,7 @@ describe('IndexexchangeAdapter', function () {
     it('IX adapter reads floc obj from prebid userId it version is missing, floc is not added to eids', function() {
       const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
-      cloneValidBid[0].userId = {'flocId': {'id': 'abcd'}}
+      cloneValidBid[0].userId = { 'flocId': { 'id': 'abcd' } }
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
@@ -990,7 +990,7 @@ describe('IndexexchangeAdapter', function () {
     it('IX adapter reads floc obj from prebid userId it ID is missing, floc is not added to eids', function() {
       const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
-      cloneValidBid[0].userId = {'flocId': {'version': 'chrome.a.b.c'}}
+      cloneValidBid[0].userId = { 'flocId': { 'version': 'chrome.a.b.c' } }
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
@@ -1006,7 +1006,7 @@ describe('IndexexchangeAdapter', function () {
     it('IX adapter reads floc id with empty id from prebid userId and it does not added to eids', function() {
       const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
-      cloneValidBid[0].userId = {flocID: {id: '', ver: 'chrome.1.2.3'}};
+      cloneValidBid[0].userId = { flocID: { id: '', ver: 'chrome.1.2.3' } };
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
@@ -1339,7 +1339,7 @@ describe('IndexexchangeAdapter', function () {
     it('video impression has #priceFloors floors', function () {
       const bid = utils.deepClone(ONE_VIDEO[0]);
       const flr = 5.5
-      const floorInfo = {floor: flr, currency: 'USD'};
+      const floorInfo = { floor: flr, currency: 'USD' };
       bid.getFloor = function () {
         return floorInfo;
       }

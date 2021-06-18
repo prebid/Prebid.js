@@ -98,19 +98,19 @@ describe('adagio analytics adapter', () => {
       expect(call0.args[0].action).to.equal('pb-analytics-event');
       expect(call0.args[0].ts).to.not.be.undefined;
       expect(call0.args[0].data).to.not.be.undefined;
-      expect(call0.args[0].data).to.deep.equal({eventName: constants.EVENTS.BID_REQUESTED, args: bidRequest});
+      expect(call0.args[0].data).to.deep.equal({ eventName: constants.EVENTS.BID_REQUESTED, args: bidRequest });
 
       const call1 = adagioQueuePushSpy.getCall(1);
       expect(call1.args[0].action).to.equal('pb-analytics-event');
       expect(call1.args[0].ts).to.not.be.undefined;
       expect(call1.args[0].data).to.not.be.undefined;
-      expect(call1.args[0].data).to.deep.equal({eventName: constants.EVENTS.BID_RESPONSE, args: bidResponse});
+      expect(call1.args[0].data).to.deep.equal({ eventName: constants.EVENTS.BID_RESPONSE, args: bidResponse });
 
       const call2 = adagioQueuePushSpy.getCall(2);
       expect(call2.args[0].action).to.equal('pb-analytics-event');
       expect(call2.args[0].ts).to.not.be.undefined;
       expect(call2.args[0].data).to.not.be.undefined;
-      expect(call2.args[0].data).to.deep.equal({eventName: constants.EVENTS.AUCTION_END, args: {}});
+      expect(call2.args[0].data).to.deep.equal({ eventName: constants.EVENTS.AUCTION_END, args: {} });
     });
   });
 

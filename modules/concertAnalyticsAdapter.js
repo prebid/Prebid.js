@@ -1,4 +1,4 @@
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
@@ -22,7 +22,7 @@ const {
 
 let queue = [];
 
-let concertAnalytics = Object.assign(adapter({url, analyticsType}), {
+let concertAnalytics = Object.assign(adapter({ url, analyticsType }), {
   track({ eventType, args }) {
     switch (eventType) {
       case BID_RESPONSE:

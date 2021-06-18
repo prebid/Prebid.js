@@ -122,7 +122,7 @@ describe('My6sense Bid adapter test', function () {
   });
   describe('test bid responses', function () {
     it('success 1', function () {
-      var bids = spec.interpretResponse(serverResponses[0], {'bidRequest': bidRequests[0]});
+      var bids = spec.interpretResponse(serverResponses[0], { 'bidRequest': bidRequests[0] });
       expect(bids).to.be.lengthOf(1);
       expect(bids[0].cpm).to.equal(1.5);
       expect(bids[0].width).to.equal(300);

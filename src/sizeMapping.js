@@ -1,5 +1,5 @@
 import { config } from './config.js';
-import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
+import { logWarn, isPlainObject, deepAccess, deepClone, getWindowTop } from './utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
 let sizeConfig = [];
@@ -32,9 +32,9 @@ config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
  */
 export function getLabels(bidOrAdUnit, activeLabels) {
   if (bidOrAdUnit.labelAll) {
-    return {labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels};
+    return { labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels };
   }
-  return {labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels};
+  return { labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels };
 }
 
 /**
@@ -61,7 +61,7 @@ export function sizeSupported(size, configs = sizeConfig) {
  * @param {Array<SizeConfig>} configs
  * @returns {{labels: Array<string>, sizes: Array<Array<number>>}}
  */
-export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, sizes, configs = sizeConfig) {
+export function resolveStatus({ labels = [], labelAll = false, activeLabels = [] } = {}, mediaTypes, sizes, configs = sizeConfig) {
   let maps = evaluateSizeConfig(configs);
 
   if (!isPlainObject(mediaTypes)) {

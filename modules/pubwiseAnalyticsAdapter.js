@@ -1,4 +1,4 @@
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -30,10 +30,10 @@ const analyticsType = 'endpoint';
 const analyticsName = 'PubWise:';
 const prebidVersion = '$prebid.version$';
 let pubwiseVersion = '4.0.1';
-let configOptions = {site: '', endpoint: 'https://api.pubwise.io/api/v5/event/add/', debug: null};
+let configOptions = { site: '', endpoint: 'https://api.pubwise.io/api/v5/event/add/', debug: null };
 let pwAnalyticsEnabled = false;
-let utmKeys = {utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: ''};
-let sessionData = {sessionId: '', activationId: ''};
+let utmKeys = { utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: '' };
+let sessionData = { sessionId: '', activationId: '' };
 let pwNamespace = 'pubwise';
 let pwEvents = [];
 let metaData = {};
@@ -167,7 +167,7 @@ function sessionExpired() {
 
 function flushEvents() {
   if (pwEvents.length > 0) {
-    let dataBag = {metaData: metaData, eventList: pwEvents.splice(0)}; // put all the events together with the metadata and send
+    let dataBag = { metaData: metaData, eventList: pwEvents.splice(0) }; // put all the events together with the metadata and send
     ajax(configOptions.endpoint, (result) => pwInfo(`Result`, result), JSON.stringify(dataBag));
   }
 }
@@ -252,9 +252,9 @@ function filterAuctionInit(data) {
   return modified;
 }
 
-let pubwiseAnalytics = Object.assign(adapter({analyticsType}), {
+let pubwiseAnalytics = Object.assign(adapter({ analyticsType }), {
   // Override AnalyticsAdapter functions by supplying custom methods
-  track({eventType, args}) {
+  track({ eventType, args }) {
     this.handleEvent(eventType, args);
   }
 });

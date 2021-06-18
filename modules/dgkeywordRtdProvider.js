@@ -62,7 +62,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
                 let addOrtb2 = {};
                 utils.deepSetValue(addOrtb2, 'site.keywords', keywords);
                 utils.deepSetValue(addOrtb2, 'user.keywords', keywords);
-                const ortb2 = {ortb2: addOrtb2};
+                const ortb2 = { ortb2: addOrtb2 };
                 reqBidsConfigObj.setBidderConfig({ bidders: Object.keys(targetBidKeys), config: ortb2 });
               }
             }

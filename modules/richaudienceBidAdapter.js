@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 
@@ -253,7 +253,7 @@ function renderAd(bid) {
       end: bid.params[0].player.end != null ? bid.params[0].player.end : 'close',
       init: bid.params[0].player.init != null ? bid.params[0].player.init : 'close',
       skin: bid.params[0].player.skin != null ? bid.params[0].player.skin : 'light',
-    } : {end: 'close', init: 'close', skin: 'light'},
+    } : { end: 'close', init: 'close', skin: 'light' },
     pid: bid.params[0].pid,
     adUnit: bid.adUnitCode
   };

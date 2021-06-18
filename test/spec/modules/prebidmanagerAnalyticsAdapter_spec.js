@@ -1,8 +1,8 @@
 import prebidmanagerAnalytics, {
   storage
 } from 'modules/prebidmanagerAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
 
 let events = require('src/events');

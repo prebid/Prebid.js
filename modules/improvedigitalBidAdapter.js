@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
+import { Renderer } from '../src/Renderer.js';
 import { createEidsArray } from './userId/eids.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
@@ -84,7 +84,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, {bidderRequest}) {
+  interpretResponse: function (serverResponse, { bidderRequest }) {
     const bids = [];
     utils._each(serverResponse.body.bid, function (bidObject) {
       if (!bidObject.price || bidObject.price === null ||

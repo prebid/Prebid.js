@@ -1,16 +1,16 @@
 import { expect } from 'chai';
-import {intentIqIdSubmodule, readData, FIRST_PARTY_KEY} from 'modules/intentIqIdSystem.js';
+import { intentIqIdSubmodule, readData, FIRST_PARTY_KEY } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
-import {server} from 'test/mocks/xhr.js';
+import { server } from 'test/mocks/xhr.js';
 
 const partner = 10;
 const pai = '11';
 const pcid = '12';
-const defaultConfigParams = { params: {partner: partner} };
-const paiConfigParams = { params: {partner: partner, pai: pai} };
-const pcidConfigParams = { params: {partner: partner, pcid: pcid} };
-const allConfigParams = { params: {partner: partner, pai: pai, pcid: pcid} };
-const responseHeader = {'Content-Type': 'application/json'}
+const defaultConfigParams = { params: { partner: partner } };
+const paiConfigParams = { params: { partner: partner, pai: pai } };
+const pcidConfigParams = { params: { partner: partner, pcid: pcid } };
+const allConfigParams = { params: { partner: partner, pai: pai, pcid: pcid } };
+const responseHeader = { 'Content-Type': 'application/json' }
 
 describe('IntentIQ tests', function () {
   let logErrorStub;
@@ -36,7 +36,7 @@ describe('IntentIQ tests', function () {
   });
 
   it('should log an error if partner configParam was not a numeric value', function () {
-    let submodule = intentIqIdSubmodule.getId({ params: {partner: '10'} });
+    let submodule = intentIqIdSubmodule.getId({ params: { partner: '10' } });
     expect(logErrorStub.calledOnce).to.be.true;
     expect(submodule).to.be.undefined;
   });
@@ -143,7 +143,7 @@ describe('IntentIQ tests', function () {
     request.respond(
       200,
       responseHeader,
-      JSON.stringify({pid: 'test_pid', data: 'test_personid', ls: true})
+      JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
     );
     expect(callBackSpy.calledOnce).to.be.true;
     expect(callBackSpy.args[0][0]).to.be.eq('test_personid');
@@ -158,7 +158,7 @@ describe('IntentIQ tests', function () {
     request.respond(
       200,
       responseHeader,
-      JSON.stringify({pid: 'test_pid', data: 'test_personid', ls: false})
+      JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: false })
     );
     expect(callBackSpy.calledOnce).to.be.true;
     expect(callBackSpy.args[0][0]).to.be.undefined;
@@ -173,7 +173,7 @@ describe('IntentIQ tests', function () {
     request.respond(
       200,
       responseHeader,
-      JSON.stringify({pid: 'test_pid', data: '', ls: true})
+      JSON.stringify({ pid: 'test_pid', data: '', ls: true })
     );
     expect(callBackSpy.calledOnce).to.be.true;
     expect(callBackSpy.args[0][0]).to.be.eq('INVALID_ID');

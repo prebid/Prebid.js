@@ -57,7 +57,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl} from './utils.js';
+import { flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl } from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
 import { getNativeTargeting } from './native.js';
 import { getCacheUrl, store } from './videoCache.js';
@@ -103,7 +103,7 @@ const queuedCalls = [];
   *
   * @returns {Auction} auction instance
   */
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId}) {
+export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId }) {
   let _adUnits = adUnits;
   let _labels = labels;
   let _adUnitCodes = adUnitCodes;
@@ -387,7 +387,7 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
     outstandingBidsAdded++;
     let auctionId = auctionInstance.getAuctionId();
 
-    let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId});
+    let bidResponse = getPreparedBidForAuction({ adUnitCode, bid, bidderRequest, auctionId });
 
     if (bidResponse.mediaType === 'video') {
       tryAddVideoBid(auctionInstance, bidResponse, bidderRequest, afterBidAdded);
@@ -499,7 +499,7 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
 // This should be called before addBidToAuction().
-function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
+function getPreparedBidForAuction({ adUnitCode, bid, bidderRequest, auctionId }) {
   const start = bidderRequest.start;
 
   let bidObject = Object.assign({}, bid, {

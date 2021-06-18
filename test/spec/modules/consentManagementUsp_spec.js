@@ -45,7 +45,7 @@ describe('consentManagement', function () {
       });
 
       it('should use system default values', function () {
-        setConsentConfig({usp: {}});
+        setConsentConfig({ usp: {} });
         expect(consentAPI).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(50);
         sinon.assert.callCount(utils.logInfo, 3);

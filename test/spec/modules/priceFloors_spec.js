@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import CONSTANTS from 'src/constants.json';
@@ -113,8 +113,8 @@ describe('the price floors module', function () {
   function getAdUnitMock(code = 'adUnit-code') {
     return {
       code,
-      mediaTypes: {banner: { sizes: [[300, 200], [300, 600]] }, native: {}},
-      bids: [{bidder: 'someBidder'}, {bidder: 'someOtherBidder'}]
+      mediaTypes: { banner: { sizes: [[300, 200], [300, 600]] }, native: {} },
+      bids: [{ bidder: 'someBidder' }, { bidder: 'someOtherBidder' }]
     };
   }
   beforeEach(function() {
@@ -126,7 +126,7 @@ describe('the price floors module', function () {
 
   afterEach(function() {
     clock.restore();
-    handleSetFloorsConfig({enabled: false});
+    handleSetFloorsConfig({ enabled: false });
     sandbox.restore();
     utils.logError.restore();
     utils.logWarn.restore();
@@ -226,7 +226,7 @@ describe('the price floors module', function () {
   describe('getFirstMatchingFloor', function () {
     it('selects the right floor for different mediaTypes', function () {
       // banner with * size (not in rule file so does not do anything)
-      expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
+      expect(getFirstMatchingFloor({ ...basicFloorData }, basicBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 1.0,
         matchingFloor: 1.0,
@@ -234,7 +234,7 @@ describe('the price floors module', function () {
         matchingRule: 'banner'
       });
       // video with * size (not in rule file so does not do anything)
-      expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'video', size: '*'})).to.deep.equal({
+      expect(getFirstMatchingFloor({ ...basicFloorData }, basicBidRequest, { mediaType: 'video', size: '*' })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 5.0,
         matchingFloor: 5.0,
@@ -242,7 +242,7 @@ describe('the price floors module', function () {
         matchingRule: 'video'
       });
       // native (not in the rule list) with * size (not in rule file so does not do anything)
-      expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'native', size: '*'})).to.deep.equal({
+      expect(getFirstMatchingFloor({ ...basicFloorData }, basicBidRequest, { mediaType: 'native', size: '*' })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 2.5,
         matchingFloor: 2.5,
@@ -253,7 +253,7 @@ describe('the price floors module', function () {
       handleSetFloorsConfig({
         ...minFloorConfigHigh
       });
-      expect(getFirstMatchingFloor({...basicFloorDataHigh}, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
+      expect(getFirstMatchingFloor({ ...basicFloorDataHigh }, basicBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
         floorMin: 7,
         floorRuleValue: 1.0,
         matchingFloor: 7,
@@ -264,7 +264,7 @@ describe('the price floors module', function () {
       handleSetFloorsConfig({
         ...minFloorConfigLow
       });
-      expect(getFirstMatchingFloor({...basicFloorDataLow}, basicBidRequest, {mediaType: 'video', size: '*'})).to.deep.equal({
+      expect(getFirstMatchingFloor({ ...basicFloorDataLow }, basicBidRequest, { mediaType: 'video', size: '*' })).to.deep.equal({
         floorMin: 2.3,
         floorRuleValue: 5,
         matchingFloor: 5,
@@ -273,9 +273,9 @@ describe('the price floors module', function () {
       });
     });
     it('does not alter cached matched input if conversion occurs', function () {
-      let inputData = {...basicFloorData};
+      let inputData = { ...basicFloorData };
       [0.2, 0.4, 0.6, 0.8].forEach(modifier => {
-        let result = getFirstMatchingFloor(inputData, basicBidRequest, {mediaType: 'banner', size: '*'});
+        let result = getFirstMatchingFloor(inputData, basicBidRequest, { mediaType: 'banner', size: '*' });
         // result should always be the same
         expect(result).to.deep.equal({
           floorMin: 0,
@@ -304,7 +304,7 @@ describe('the price floors module', function () {
         }
       }
       // banner with 300x250 size
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: [300, 250]})).to.deep.equal({
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, { mediaType: 'banner', size: [300, 250] })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 1.1,
         matchingFloor: 1.1,
@@ -312,7 +312,7 @@ describe('the price floors module', function () {
         matchingRule: '300x250'
       });
       // video with 300x250 size
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'video', size: [300, 250]})).to.deep.equal({
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, { mediaType: 'video', size: [300, 250] })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 1.1,
         matchingFloor: 1.1,
@@ -320,7 +320,7 @@ describe('the price floors module', function () {
         matchingRule: '300x250'
       });
       // native (not in the rule list) with 300x600 size
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'native', size: [600, 300]})).to.deep.equal({
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, { mediaType: 'native', size: [600, 300] })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 4.4,
         matchingFloor: 4.4,
@@ -328,7 +328,7 @@ describe('the price floors module', function () {
         matchingRule: '600x300'
       });
       // n/a mediaType with a size not in file should go to catch all
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: undefined, size: [1, 1]})).to.deep.equal({
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, { mediaType: undefined, size: [1, 1] })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 5.5,
         matchingFloor: 5.5,
@@ -353,7 +353,7 @@ describe('the price floors module', function () {
         default: 0.5
       };
       // banner with 300x250 size
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: [300, 250]})).to.deep.equal({
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, { mediaType: 'banner', size: [300, 250] })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 1.1,
         matchingFloor: 1.1,
@@ -361,7 +361,7 @@ describe('the price floors module', function () {
         matchingRule: 'test_div_1^banner^300x250'
       });
       // video with 300x250 size -> No matching rule so should use default
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'video', size: [300, 250]})).to.deep.equal({
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, { mediaType: 'video', size: [300, 250] })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 0.5,
         matchingFloor: 0.5,
@@ -370,7 +370,7 @@ describe('the price floors module', function () {
       });
       // remove default and should still return the same floor as above since matches are cached
       delete inputFloorData.default;
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'video', size: [300, 250]})).to.deep.equal({
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, { mediaType: 'video', size: [300, 250] })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 0.5,
         matchingFloor: 0.5,
@@ -379,7 +379,7 @@ describe('the price floors module', function () {
       });
       // update adUnitCode to test_div_2 with weird other params
       let newBidRequest = { ...basicBidRequest, adUnitCode: 'test_div_2' }
-      expect(getFirstMatchingFloor(inputFloorData, newBidRequest, {mediaType: 'badmediatype', size: [900, 900]})).to.deep.equal({
+      expect(getFirstMatchingFloor(inputFloorData, newBidRequest, { mediaType: 'badmediatype', size: [900, 900] })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 3.3,
         matchingFloor: 3.3,
@@ -389,12 +389,12 @@ describe('the price floors module', function () {
     });
     it('it does not break if floorData has bad values', function () {
       let inputFloorData = {};
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
         matchingFloor: undefined
       });
       // if default is there use it
       inputFloorData = { default: 5.0 };
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
         matchingFloor: 5.0
       });
     });
@@ -417,7 +417,7 @@ describe('the price floors module', function () {
     let actualAllowedFields = allowedFields;
     let actualFieldMatchingFunctions = fieldMatchingFunctions;
     const defaultAllowedFields = [...allowedFields];
-    const defaultMatchingFunctions = {...fieldMatchingFunctions};
+    const defaultMatchingFunctions = { ...fieldMatchingFunctions };
     beforeEach(function() {
       fakeFloorProvider = sinon.fakeServer.create();
     });
@@ -425,7 +425,7 @@ describe('the price floors module', function () {
       fakeFloorProvider.restore();
       exposedAdUnits = undefined;
       actualAllowedFields = [...defaultAllowedFields];
-      actualFieldMatchingFunctions = {...defaultMatchingFunctions};
+      actualFieldMatchingFunctions = { ...defaultMatchingFunctions };
     });
     it('should not do floor stuff if no resulting floor object can be resolved for auciton', function () {
       handleSetFloorsConfig({
@@ -518,7 +518,7 @@ describe('the price floors module', function () {
       });
     });
     it('bidRequests should have getFloor function and flooring meta data when setConfig occurs', function () {
-      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider'});
+      handleSetFloorsConfig({ ...basicFloorConfig, floorProvider: 'floorprovider' });
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
@@ -741,7 +741,7 @@ describe('the price floors module', function () {
       });
     });
     it('should not overwrite previous data object if the new one is bad', function () {
-      handleSetFloorsConfig({...basicFloorConfig});
+      handleSetFloorsConfig({ ...basicFloorConfig });
       handleSetFloorsConfig({
         ...basicFloorConfig,
         data: undefined
@@ -753,8 +753,8 @@ describe('the price floors module', function () {
       handleSetFloorsConfig({
         ...basicFloorConfig,
         data: {
-          schema: {fields: ['thisIsNotAllowedSoShouldFail']},
-          values: {'*': 1.2},
+          schema: { fields: ['thisIsNotAllowedSoShouldFail'] },
+          values: { '*': 1.2 },
           modelVersion: 'FAIL'
         }
       });
@@ -776,7 +776,7 @@ describe('the price floors module', function () {
       handleSetFloorsConfig({
         ...basicFloorConfig,
         data: {
-          schema: {fields: ['deviceType']},
+          schema: { fields: ['deviceType'] },
           values: {
             'mobile': 1.0,
             'desktop': 2.0,
@@ -824,7 +824,7 @@ describe('the price floors module', function () {
       });
     });
     it('Should continue auction of delay is hit without a response from floor provider', function () {
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({ ...basicFloorConfig, auctionDelay: 250, endpoint: { url: 'http://www.fakeFloorProvider.json' } });
 
       // start the auction it should delay and not immediately call `continueAuction`
       runStandardAuction();
@@ -862,7 +862,7 @@ describe('the price floors module', function () {
       fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
 
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider', auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({ ...basicFloorConfig, floorProvider: 'floorprovider', auctionDelay: 250, endpoint: { url: 'http://www.fakeFloorProvider.json' } });
 
       // floor provider should be called
       expect(fakeFloorProvider.requests.length).to.equal(1);
@@ -902,7 +902,7 @@ describe('the price floors module', function () {
       fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
 
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorproviderC', auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({ ...basicFloorConfig, floorProvider: 'floorproviderC', auctionDelay: 250, endpoint: { url: 'http://www.fakeFloorProvider.json' } });
 
       // floor provider should be called
       expect(fakeFloorProvider.requests.length).to.equal(1);
@@ -943,7 +943,7 @@ describe('the price floors module', function () {
       fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
 
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider', auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({ ...basicFloorConfig, floorProvider: 'floorprovider', auctionDelay: 250, endpoint: { url: 'http://www.fakeFloorProvider.json' } });
 
       // floor provider should be called
       expect(fakeFloorProvider.requests.length).to.equal(1);
@@ -975,7 +975,7 @@ describe('the price floors module', function () {
     });
     it('Should not break if floor provider returns 404', function () {
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({ ...basicFloorConfig, auctionDelay: 250, endpoint: { url: 'http://www.fakeFloorProvider.json' } });
 
       // run the auction and make server respond with 404
       fakeFloorProvider.respond();
@@ -1001,7 +1001,7 @@ describe('the price floors module', function () {
       fakeFloorProvider.respondWith('Not valid response');
 
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({ ...basicFloorConfig, auctionDelay: 250, endpoint: { url: 'http://www.fakeFloorProvider.json' } });
 
       // run the auction and make server respond
       fakeFloorProvider.respond();
@@ -1026,8 +1026,8 @@ describe('the price floors module', function () {
     it('should handle not using fetch correctly', function () {
       // run setConfig twice indicating fetch
       fakeFloorProvider.respondWith(JSON.stringify(basicFloorData));
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({ ...basicFloorConfig, auctionDelay: 250, endpoint: { url: 'http://www.fakeFloorProvider.json' } });
+      handleSetFloorsConfig({ ...basicFloorConfig, auctionDelay: 250, endpoint: { url: 'http://www.fakeFloorProvider.json' } });
 
       // log warn should be called and server only should have one request
       expect(logWarnSpy.calledOnce).to.equal(true);
@@ -1036,7 +1036,7 @@ describe('the price floors module', function () {
 
       // now we respond and then run again it should work and make another request
       fakeFloorProvider.respond();
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({ ...basicFloorConfig, auctionDelay: 250, endpoint: { url: 'http://www.fakeFloorProvider.json' } });
       fakeFloorProvider.respond();
 
       // now warn still only called once and server called twice
@@ -1045,7 +1045,7 @@ describe('the price floors module', function () {
 
       // should log error if method is not GET for now
       expect(logErrorSpy.calledOnce).to.equal(false);
-      handleSetFloorsConfig({...basicFloorConfig, endpoint: {url: 'http://www.fakeFloorProvider.json', method: 'POST'}});
+      handleSetFloorsConfig({ ...basicFloorConfig, endpoint: { url: 'http://www.fakeFloorProvider.json', method: 'POST' } });
       expect(logErrorSpy.calledOnce).to.equal(true);
     });
     describe('isFloorsDataValid', function () {
@@ -1158,7 +1158,7 @@ describe('the price floors module', function () {
         inputFloorData.modelGroups[1].modelWeight = 40;
 
         // remove values from a model and it should not validate
-        const tempValues = {...inputFloorData.modelGroups[0].values};
+        const tempValues = { ...inputFloorData.modelGroups[0].values };
         delete inputFloorData.modelGroups[0].values;
         expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
         inputFloorData.modelGroups[0].values = tempValues;
@@ -1189,21 +1189,21 @@ describe('the price floors module', function () {
         });
 
         // ask for banner
-        inputParams = {mediaType: 'banner'};
+        inputParams = { mediaType: 'banner' };
         expect(bidRequest.getFloor(inputParams)).to.deep.equal({
           currency: 'USD',
           floor: 1.0
         });
 
         // ask for video
-        inputParams = {mediaType: 'video'};
+        inputParams = { mediaType: 'video' };
         expect(bidRequest.getFloor(inputParams)).to.deep.equal({
           currency: 'USD',
           floor: 5.0
         });
 
         // ask for *
-        inputParams = {mediaType: '*'};
+        inputParams = { mediaType: '*' };
         expect(bidRequest.getFloor(inputParams)).to.deep.equal({
           currency: 'USD',
           floor: 2.5
@@ -1235,28 +1235,28 @@ describe('the price floors module', function () {
         });
 
         // ask for banner with a size
-        inputParams = {mediaType: 'banner', size: [300, 600]};
+        inputParams = { mediaType: 'banner', size: [300, 600] };
         expect(bidRequest.getFloor(inputParams)).to.deep.equal({
           currency: 'USD',
           floor: 1.5
         });
 
         // ask for video with a size
-        inputParams = {mediaType: 'video', size: [640, 480]};
+        inputParams = { mediaType: 'video', size: [640, 480] };
         expect(bidRequest.getFloor(inputParams)).to.deep.equal({
           currency: 'USD',
           floor: 4.5
         });
 
         // ask for video with a size not in rules (should pick rule which has video and *)
-        inputParams = {mediaType: 'video', size: [111, 222]};
+        inputParams = { mediaType: 'video', size: [111, 222] };
         expect(bidRequest.getFloor(inputParams)).to.deep.equal({
           currency: 'USD',
           floor: 5.5
         });
 
         // ask for native * but no native rule so should use default value if there
-        inputParams = {mediaType: 'native', size: '*'};
+        inputParams = { mediaType: 'native', size: '*' };
         expect(bidRequest.getFloor(inputParams)).to.deep.equal({
           currency: 'USD',
           floor: 10.0
@@ -1270,14 +1270,14 @@ describe('the price floors module', function () {
         };
 
         // assumes banner *
-        let inputParams = {mediaType: 'banner'};
+        let inputParams = { mediaType: 'banner' };
         expect(bidRequest.getFloor(inputParams)).to.deep.equal({
           currency: 'USD',
           floor: 1.7778
         });
 
         // assumes banner *
-        inputParams = {mediaType: 'video'};
+        inputParams = { mediaType: 'video' };
         expect(bidRequest.getFloor(inputParams)).to.deep.equal({
           currency: 'USD',
           floor: 1.1112
@@ -1402,23 +1402,23 @@ describe('the price floors module', function () {
         };
 
         // because bid req only has video, if a bidder asks for a floor for * we can actually give them the right mediaType
-        expect(inputBidReq.getFloor({mediaType: '*'})).to.deep.equal({
+        expect(inputBidReq.getFloor({ mediaType: '*' })).to.deep.equal({
           currency: 'USD',
           floor: 5.0 // 'video': 5.0
         });
         delete _floorDataForAuction[inputBidReq.auctionId].data.matchingInputs;
 
         // Same for if only banner is in the input bid
-        inputBidReq.mediaTypes = {banner: {}};
-        expect(inputBidReq.getFloor({mediaType: '*'})).to.deep.equal({
+        inputBidReq.mediaTypes = { banner: {} };
+        expect(inputBidReq.getFloor({ mediaType: '*' })).to.deep.equal({
           currency: 'USD',
           floor: 3.0 // 'banner': 3.0,
         });
         delete _floorDataForAuction[inputBidReq.auctionId].data.matchingInputs;
 
         // if both are present then it will really use the *
-        inputBidReq.mediaTypes = {banner: {}, video: {}};
-        expect(inputBidReq.getFloor({mediaType: '*'})).to.deep.equal({
+        inputBidReq.mediaTypes = { banner: {}, video: {} };
+        expect(inputBidReq.getFloor({ mediaType: '*' })).to.deep.equal({
           currency: 'USD',
           floor: 1.0 // '*': 1.0,
         });
@@ -1437,47 +1437,47 @@ describe('the price floors module', function () {
         };
         // mediaType is banner and only one size, so if someone asks for banner * we should give them banner 300x250
         // instead of banner|*
-        inputBidReq.mediaTypes = {banner: {sizes: [[300, 250]]}};
-        expect(inputBidReq.getFloor({mediaType: 'banner', size: '*'})).to.deep.equal({
+        inputBidReq.mediaTypes = { banner: { sizes: [[300, 250]] } };
+        expect(inputBidReq.getFloor({ mediaType: 'banner', size: '*' })).to.deep.equal({
           currency: 'USD',
           floor: 2.0 // 'banner|300x250': 2.0,
         });
         delete _floorDataForAuction[inputBidReq.auctionId].data.matchingInputs;
 
         // now for video it should look at playersize (prebid core translates playersize into typical array of size arrays)
-        inputBidReq.mediaTypes = {video: {playerSize: [[728, 90]]}};
-        expect(inputBidReq.getFloor({mediaType: 'video', size: '*'})).to.deep.equal({
+        inputBidReq.mediaTypes = { video: { playerSize: [[728, 90]] } };
+        expect(inputBidReq.getFloor({ mediaType: 'video', size: '*' })).to.deep.equal({
           currency: 'USD',
           floor: 6.0 // 'video|728x90': 6.0,
         });
         delete _floorDataForAuction[inputBidReq.auctionId].data.matchingInputs;
 
         // Now if multiple sizes are there, it will actually use * since can't infer
-        inputBidReq.mediaTypes = {banner: {sizes: [[300, 250], [728, 90]]}};
-        expect(inputBidReq.getFloor({mediaType: 'banner', size: '*'})).to.deep.equal({
+        inputBidReq.mediaTypes = { banner: { sizes: [[300, 250], [728, 90]] } };
+        expect(inputBidReq.getFloor({ mediaType: 'banner', size: '*' })).to.deep.equal({
           currency: 'USD',
           floor: 4.0 // 'banner|*': 4.0,
         });
         delete _floorDataForAuction[inputBidReq.auctionId].data.matchingInputs;
 
         // lastly, if you pass in * mediaType and * size it should resolve both if possble
-        inputBidReq.mediaTypes = {banner: {sizes: [[300, 250]]}};
-        expect(inputBidReq.getFloor({mediaType: '*', size: '*'})).to.deep.equal({
+        inputBidReq.mediaTypes = { banner: { sizes: [[300, 250]] } };
+        expect(inputBidReq.getFloor({ mediaType: '*', size: '*' })).to.deep.equal({
           currency: 'USD',
           floor: 2.0 // 'banner|300x250': 2.0,
         });
         delete _floorDataForAuction[inputBidReq.auctionId].data.matchingInputs;
 
-        inputBidReq.mediaTypes = {video: {playerSize: [[300, 250]]}};
-        expect(inputBidReq.getFloor({mediaType: '*', size: '*'})).to.deep.equal({
+        inputBidReq.mediaTypes = { video: { playerSize: [[300, 250]] } };
+        expect(inputBidReq.getFloor({ mediaType: '*', size: '*' })).to.deep.equal({
           currency: 'USD',
           floor: 5.0 // 'video|300x250': 5.0,
         });
         delete _floorDataForAuction[inputBidReq.auctionId].data.matchingInputs;
 
         // now it has both mediaTypes so will use * mediaType and thus not use sizes either
-        inputBidReq.mediaTypes = {video: {playerSize: [[300, 250]]}, banner: {sizes: [[300, 250]]}};
-        expect(inputBidReq.getFloor({mediaType: '*', size: '*'})).to.deep.equal({
+        inputBidReq.mediaTypes = { video: { playerSize: [[300, 250]] }, banner: { sizes: [[300, 250]] } };
+        expect(inputBidReq.getFloor({ mediaType: '*', size: '*' })).to.deep.equal({
           currency: 'USD',
           floor: 1.0 // '*|*': 1.0,
         });
@@ -1632,7 +1632,7 @@ describe('the price floors module', function () {
       };
     });
     it('should wait 3 seconds before deleting auction floor data', function () {
-      handleSetFloorsConfig({enabled: true});
+      handleSetFloorsConfig({ enabled: true });
       _floorDataForAuction[AUCTION_END_EVENT.auctionId] = utils.deepClone(basicFloorConfig);
       events.emit(CONSTANTS.EVENTS.AUCTION_END, AUCTION_END_EVENT);
       // should still be here

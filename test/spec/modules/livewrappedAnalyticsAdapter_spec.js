@@ -452,7 +452,7 @@ describe('Livewrapped analytics adapter', function () {
             'bidId': '3ecff0db240757',
             'lwflr': {
               'flr': 1.1,
-              'bflrs': {'livewrapped': 2.2}
+              'bflrs': { 'livewrapped': 2.2 }
             }
           }
         ],

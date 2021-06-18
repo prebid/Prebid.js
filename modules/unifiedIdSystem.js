@@ -6,8 +6,8 @@
  */
 
 import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js'
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js'
 
 const MODULE_NAME = 'unifiedId';
 
@@ -64,9 +64,9 @@ export const unifiedIdSubmodule = {
           callback();
         }
       };
-      ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
     };
-    return {callback: resp};
+    return { callback: resp };
   }
 };
 

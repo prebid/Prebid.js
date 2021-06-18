@@ -93,12 +93,12 @@ describe('Adot Adapter', function () {
       params: {},
       mediaTypes: {
         native: {
-          title: {required: true, len: 140},
-          icon: {required: true, sizes: [50, 50]},
-          image: {required: false, sizes: [320, 200]},
-          sponsoredBy: {required: false},
-          body: {required: false},
-          cta: {required: true}
+          title: { required: true, len: 140 },
+          icon: { required: true, sizes: [50, 50] },
+          image: { required: false, sizes: [320, 200] },
+          sponsoredBy: { required: false },
+          body: { required: false },
+          cta: { required: true }
         }
       }
     },
@@ -3133,7 +3133,7 @@ describe('Adot Adapter', function () {
         const serverRequest = examples.serverRequest_native;
         const serverResponse = examples.serverResponse_native;
         const native = JSON.parse(serverResponse.body.seatbid[0].bid[0].adm).native;
-        const {link, assets} = native;
+        const { link, assets } = native;
         const ads = spec.interpretResponse(serverResponse, serverRequest);
 
         expect(ads).to.be.an('array').and.to.have.length(1);

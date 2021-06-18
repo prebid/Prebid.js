@@ -1,4 +1,4 @@
-import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
+import { britepoolIdSubmodule } from 'modules/britepoolIdSystem.js';
 import * as utils from '../../../src/utils.js';
 
 describe('BritePool Submodule', () => {

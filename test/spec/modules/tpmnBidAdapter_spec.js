@@ -65,13 +65,13 @@ describe('tpmnAdapterTests', function() {
         }
       };
       const tempBidRequests = [bid];
-      const tempBidderRequest = {refererInfo: {
+      const tempBidderRequest = { refererInfo: {
         referer: 'http://localhost/test',
         site: {
           domain: 'localhost',
           page: 'http://localhost/test'
         }
-      }};
+      } };
       const builtRequest = spec.buildRequests(tempBidRequests, tempBidderRequest);
 
       expect(builtRequest).to.have.lengthOf(1);

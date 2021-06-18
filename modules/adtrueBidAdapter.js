@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
 const BIDDER_CODE = 'adtrue';
@@ -47,28 +47,28 @@ const VIDEO_CUSTOM_PARAMS = {
 }
 
 const NATIVE_ASSETS = {
-  'TITLE': {ID: 1, KEY: 'title', TYPE: 0},
-  'IMAGE': {ID: 2, KEY: 'image', TYPE: 0},
-  'ICON': {ID: 3, KEY: 'icon', TYPE: 0},
-  'SPONSOREDBY': {ID: 4, KEY: 'sponsoredBy', TYPE: 1}, // please note that type of SPONSORED is also 1
-  'BODY': {ID: 5, KEY: 'body', TYPE: 2}, // please note that type of DESC is also set to 2
-  'CLICKURL': {ID: 6, KEY: 'clickUrl', TYPE: 0},
-  'VIDEO': {ID: 7, KEY: 'video', TYPE: 0},
-  'EXT': {ID: 8, KEY: 'ext', TYPE: 0},
-  'DATA': {ID: 9, KEY: 'data', TYPE: 0},
-  'LOGO': {ID: 10, KEY: 'logo', TYPE: 0},
-  'SPONSORED': {ID: 11, KEY: 'sponsored', TYPE: 1}, // please note that type of SPONSOREDBY is also set to 1
-  'DESC': {ID: 12, KEY: 'data', TYPE: 2}, // please note that type of BODY is also set to 2
-  'RATING': {ID: 13, KEY: 'rating', TYPE: 3},
-  'LIKES': {ID: 14, KEY: 'likes', TYPE: 4},
-  'DOWNLOADS': {ID: 15, KEY: 'downloads', TYPE: 5},
-  'PRICE': {ID: 16, KEY: 'price', TYPE: 6},
-  'SALEPRICE': {ID: 17, KEY: 'saleprice', TYPE: 7},
-  'PHONE': {ID: 18, KEY: 'phone', TYPE: 8},
-  'ADDRESS': {ID: 19, KEY: 'address', TYPE: 9},
-  'DESC2': {ID: 20, KEY: 'desc2', TYPE: 10},
-  'DISPLAYURL': {ID: 21, KEY: 'displayurl', TYPE: 11},
-  'CTA': {ID: 22, KEY: 'cta', TYPE: 12}
+  'TITLE': { ID: 1, KEY: 'title', TYPE: 0 },
+  'IMAGE': { ID: 2, KEY: 'image', TYPE: 0 },
+  'ICON': { ID: 3, KEY: 'icon', TYPE: 0 },
+  'SPONSOREDBY': { ID: 4, KEY: 'sponsoredBy', TYPE: 1 }, // please note that type of SPONSORED is also 1
+  'BODY': { ID: 5, KEY: 'body', TYPE: 2 }, // please note that type of DESC is also set to 2
+  'CLICKURL': { ID: 6, KEY: 'clickUrl', TYPE: 0 },
+  'VIDEO': { ID: 7, KEY: 'video', TYPE: 0 },
+  'EXT': { ID: 8, KEY: 'ext', TYPE: 0 },
+  'DATA': { ID: 9, KEY: 'data', TYPE: 0 },
+  'LOGO': { ID: 10, KEY: 'logo', TYPE: 0 },
+  'SPONSORED': { ID: 11, KEY: 'sponsored', TYPE: 1 }, // please note that type of SPONSOREDBY is also set to 1
+  'DESC': { ID: 12, KEY: 'data', TYPE: 2 }, // please note that type of BODY is also set to 2
+  'RATING': { ID: 13, KEY: 'rating', TYPE: 3 },
+  'LIKES': { ID: 14, KEY: 'likes', TYPE: 4 },
+  'DOWNLOADS': { ID: 15, KEY: 'downloads', TYPE: 5 },
+  'PRICE': { ID: 16, KEY: 'price', TYPE: 6 },
+  'SALEPRICE': { ID: 17, KEY: 'saleprice', TYPE: 7 },
+  'PHONE': { ID: 18, KEY: 'phone', TYPE: 8 },
+  'ADDRESS': { ID: 19, KEY: 'address', TYPE: 9 },
+  'DESC2': { ID: 20, KEY: 'desc2', TYPE: 10 },
+  'DISPLAYURL': { ID: 21, KEY: 'displayurl', TYPE: 11 },
+  'CTA': { ID: 22, KEY: 'cta', TYPE: 12 }
 };
 
 function _getDomainFromURL(url) {
@@ -295,7 +295,7 @@ function _createBannerRequest(bid) {
       format = [];
       sizes.forEach(function (size) {
         if (size.length > 1) {
-          format.push({w: size[0], h: size[1]});
+          format.push({ w: size[0], h: size[1] });
         }
       });
       if (format.length > 0) {

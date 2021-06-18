@@ -78,7 +78,7 @@ describe('YieldmoAdapter', function () {
     ...params
   });
 
-  const mockGetFloor = floor => ({getFloor: () => ({ currency: 'USD', floor })});
+  const mockGetFloor = floor => ({ getFloor: () => ({ currency: 'USD', floor }) });
 
   describe('isBidRequestValid', function () {
     describe('Banner:', function () {
@@ -91,10 +91,10 @@ describe('YieldmoAdapter', function () {
         expect(spec.isBidRequestValid({})).to.be.false;
 
         // empty bidId
-        expect(spec.isBidRequestValid(mockBannerBid({bidId: ''}))).to.be.false;
+        expect(spec.isBidRequestValid(mockBannerBid({ bidId: '' }))).to.be.false;
 
         // empty adUnitCode
-        expect(spec.isBidRequestValid(mockBannerBid({adUnitCode: ''}))).to.be.false;
+        expect(spec.isBidRequestValid(mockBannerBid({ adUnitCode: '' }))).to.be.false;
 
         let invalidBid = mockBannerBid();
         delete invalidBid.mediaTypes.banner;
@@ -115,10 +115,10 @@ describe('YieldmoAdapter', function () {
 
       it('should return false when necessary information is not found', function () {
         // empty bidId
-        expect(spec.isBidRequestValid(mockVideoBid({bidId: ''}))).to.be.false;
+        expect(spec.isBidRequestValid(mockVideoBid({ bidId: '' }))).to.be.false;
 
         // empty adUnitCode
-        expect(spec.isBidRequestValid(mockVideoBid({adUnitCode: ''}))).to.be.false;
+        expect(spec.isBidRequestValid(mockVideoBid({ adUnitCode: '' }))).to.be.false;
       });
 
       it('should return false when required mediaTypes.video.* param is not found', function () {
@@ -164,7 +164,7 @@ describe('YieldmoAdapter', function () {
 
       it('should not blow up if crumbs is undefined', function () {
         expect(function () {
-          build([mockBannerBid({crumbs: undefined})]);
+          build([mockBannerBid({ crumbs: undefined })]);
         }).not.to.throw();
       });
 
@@ -176,7 +176,7 @@ describe('YieldmoAdapter', function () {
 
         // multiple placements
         bidArray.push(mockBannerBid(
-          {adUnitCode: 'adunit-2', bidId: '123a', bidderRequestId: '321', auctionId: '222'}, {bidFloor: 0.2}));
+          { adUnitCode: 'adunit-2', bidId: '123a', bidderRequestId: '321', auctionId: '222' }, { bidFloor: 0.2 }));
         expect(buildAndGetPlacementInfo(bidArray)).to.equal(
           '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1},' +
         '{"placement_id":"adunit-2","callback_id":"123a","sizes":[[300,250],[300,600]],"bidFloor":0.2}]'
@@ -184,12 +184,12 @@ describe('YieldmoAdapter', function () {
       });
 
       it('should add placement id if given', function () {
-        let bidArray = [mockBannerBid({}, {placementId: 'ym_1293871298'})];
+        let bidArray = [mockBannerBid({}, { placementId: 'ym_1293871298' })];
         let placementInfo = buildAndGetPlacementInfo(bidArray);
         expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"');
         expect(placementInfo).not.to.include('"ym_placement_id":"ym_0987654321"');
 
-        bidArray.push(mockBannerBid({}, {placementId: 'ym_0987654321'}));
+        bidArray.push(mockBannerBid({}, { placementId: 'ym_0987654321' }));
         placementInfo = buildAndGetPlacementInfo(bidArray);
         expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"');
         expect(placementInfo).to.include('"ym_placement_id":"ym_0987654321"');
@@ -213,28 +213,28 @@ describe('YieldmoAdapter', function () {
 
       it('should add pubcid as parameter of request', function () {
         const pubcid = 'c604130c-0144-4b63-9bf2-c2bd8c8d86da2';
-        const pubcidBid = mockBannerBid({crumbs: undefined, userId: {pubcid}});
+        const pubcidBid = mockBannerBid({ crumbs: undefined, userId: { pubcid } });
         expect(buildAndGetData([pubcidBid]).pubcid).to.deep.equal(pubcid);
       });
 
       it('should add unified id as parameter of request', function () {
-        const unifiedIdBid = mockBannerBid({crumbs: undefined});
+        const unifiedIdBid = mockBannerBid({ crumbs: undefined });
         expect(buildAndGetData([unifiedIdBid]).tdid).to.deep.equal(mockBannerBid().userId.tdid);
       });
 
       it('should add CRITEO RTUS id as parameter of request', function () {
         const criteoId = 'aff4';
-        const criteoIdBid = mockBannerBid({crumbs: undefined, userId: { criteoId }});
+        const criteoIdBid = mockBannerBid({ crumbs: undefined, userId: { criteoId } });
         expect(buildAndGetData([criteoIdBid]).cri_prebid).to.deep.equal(criteoId);
       });
 
       it('should add gdpr information to request if available', () => {
         const gdprConsent = {
           consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-          vendorData: {blerp: 1},
+          vendorData: { blerp: 1 },
           gdprApplies: true,
         };
-        const data = buildAndGetData([mockBannerBid()], 0, mockBidderRequest({gdprConsent}));
+        const data = buildAndGetData([mockBannerBid()], 0, mockBidderRequest({ gdprConsent }));
         expect(data.userConsent).equal(
           JSON.stringify({
             gdprApplies: true,
@@ -245,7 +245,7 @@ describe('YieldmoAdapter', function () {
 
       it('should add ccpa information to request if available', () => {
         const uspConsent = '1YNY';
-        const data = buildAndGetData([mockBannerBid()], 0, mockBidderRequest({uspConsent}));
+        const data = buildAndGetData([mockBannerBid()], 0, mockBidderRequest({ uspConsent }));
         expect(data.us_privacy).equal(uspConsent);
       });
 
@@ -253,16 +253,16 @@ describe('YieldmoAdapter', function () {
         const schain = {
           ver: '1.0',
           complete: 1,
-          nodes: [{asi: 'indirectseller.com', sid: '00001', hp: 1}],
+          nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
         };
-        const data = buildAndGetData([mockBannerBid({schain})]);
+        const data = buildAndGetData([mockBannerBid({ schain })]);
         expect(data.schain).equal(JSON.stringify(schain));
       });
 
       it('should process floors module if available', function () {
         const placementsData = JSON.parse(buildAndGetPlacementInfo([
-          mockBannerBid({...mockGetFloor(3.99)}),
-          mockBannerBid({...mockGetFloor(1.23)}, { bidFloor: 1.1 }),
+          mockBannerBid({ ...mockGetFloor(3.99) }),
+          mockBannerBid({ ...mockGetFloor(1.23) }, { bidFloor: 1.1 }),
         ]));
         expect(placementsData[0].bidFloor).to.equal(3.99);
         expect(placementsData[1].bidFloor).to.equal(1.23);
@@ -409,8 +409,8 @@ describe('YieldmoAdapter', function () {
 
       it('should process floors module if available', function () {
         const requests = build([
-          mockVideoBid({...mockGetFloor(3.99)}),
-          mockVideoBid({...mockGetFloor(1.23)}, { bidfloor: 1.1 }),
+          mockVideoBid({ ...mockGetFloor(3.99) }),
+          mockVideoBid({ ...mockGetFloor(1.23) }, { bidfloor: 1.1 }),
         ]);
         const imps = requests[0].data.imp;
         expect(imps[0].bidfloor).to.equal(3.99);

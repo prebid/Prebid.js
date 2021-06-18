@@ -6,7 +6,7 @@
  */
 
 import * as utils from '../src/utils.js'
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'uid2';
@@ -88,7 +88,7 @@ export const uid2IdSubmodule = {
     logInfo('Creating UID 2.0');
     let value = readCookie() || readFromLocalStorage();
     logInfo('The advertising token: ' + value);
-    return {id: value}
+    return { id: value }
   },
 
 };

@@ -5,12 +5,12 @@
  * @module modules/haloRtdProvider
  * @requires module:modules/realTimeData
  */
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
-import {isFn, isStr, isPlainObject, mergeDeep, logError} from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
+import { isFn, isStr, isPlainObject, mergeDeep, logError } from '../src/utils.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'halo';
@@ -74,7 +74,7 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
   } else if (rtd.ortb2) {
-    config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+    config.setConfig({ ortb2: mergeLazy(ortb2, rtd.ortb2) });
   }
 }
 
@@ -167,8 +167,8 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
       logError('unable to get audigent segment data');
     }
   },
-  JSON.stringify({'userIds': userIds, 'config': reqParams}),
-  {contentType: 'application/json'}
+  JSON.stringify({ 'userIds': userIds, 'config': reqParams }),
+  { contentType: 'application/json' }
   );
 }
 

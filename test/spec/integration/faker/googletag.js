@@ -44,7 +44,7 @@ export function makeSlot() {
 }
 
 export function emitEvent(eventName, params) {
-  (window.googletag._callbackMap[eventName] || []).forEach(eventCb => eventCb({...params, eventName}));
+  (window.googletag._callbackMap[eventName] || []).forEach(eventCb => eventCb({ ...params, eventName }));
 }
 
 export function enable() {

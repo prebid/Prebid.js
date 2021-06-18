@@ -224,7 +224,7 @@ export function parseGPTSingleSizeArray(singleSize) {
 // into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
 export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return {w: singleSize[0], h: singleSize[1]};
+    return { w: singleSize[0], h: singleSize[1] };
   }
 }
 
@@ -264,14 +264,14 @@ export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
-  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
+  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
 }
 
 export function logError() {
   if (debugTurnedOn() && consoleErrorExists) {
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
-  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
 }
 
 function decorateLog(args, prefix) {
@@ -936,7 +936,7 @@ export function getGptSlotInfoForAdUnitCode(adUnitCode) {
  * @return {string} warning message to display when condition is met
  */
 export function unsupportedBidderMessage(adUnit, bidder) {
-  const mediaType = Object.keys(adUnit.mediaTypes || {'banner': 'banner'}).join(', ');
+  const mediaType = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' }).join(', ');
 
   return `
     ${adUnit.code} is a ${mediaType} ad unit
@@ -1040,7 +1040,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
         return;
       } // unsuported types - don't send a key
     }
-    arrs.push({key: k, value: v});
+    arrs.push({ key: k, value: v });
   });
 
   return arrs;

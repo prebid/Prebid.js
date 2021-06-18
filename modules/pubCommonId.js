@@ -214,7 +214,7 @@ export function requestBidHook(next, config) {
     adUnits.forEach((unit) => {
       if (unit.bids && utils.isArray(unit.bids)) {
         unit.bids.forEach((bid) => {
-          Object.assign(bid, {crumbs: {pubcid}});
+          Object.assign(bid, { crumbs: { pubcid } });
         });
       }
     });

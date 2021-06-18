@@ -1,5 +1,5 @@
 import * as browsiRTD from '../../../modules/browsiRtdProvider.js';
-import {makeSlot} from '../integration/faker/googletag.js';
+import { makeSlot } from '../integration/faker/googletag.js';
 
 describe('browsi Real time  data sub module', function () {
   const conf = {
@@ -29,7 +29,7 @@ describe('browsi Real time  data sub module', function () {
   });
 
   it('should match placement with ad unit', function () {
-    const slot = makeSlot({code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1'});
+    const slot = makeSlot({ code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1' });
 
     const test1 = browsiRTD.isIdMatchingAdUnit(slot, ['/57778053/Browsi_Demo_300x250']); // true
     const test2 = browsiRTD.isIdMatchingAdUnit(slot, ['/57778053/Browsi_Demo_300x250', '/57778053/Browsi']); // true
@@ -43,17 +43,17 @@ describe('browsi Real time  data sub module', function () {
   });
 
   it('should return correct macro values', function () {
-    const slot = makeSlot({code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1'});
+    const slot = makeSlot({ code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1' });
 
     slot.setTargeting('test', ['test', 'value']);
     // slot getTargeting doesn't act like GPT so we can't expect real value
-    const macroResult = browsiRTD.getMacroId({p: '<AD_UNIT>/<KEY_test>'}, slot);
+    const macroResult = browsiRTD.getMacroId({ p: '<AD_UNIT>/<KEY_test>' }, slot);
     expect(macroResult).to.equal('/57778053/Browsi_Demo_300x250/NA');
 
     const macroResultB = browsiRTD.getMacroId({}, slot);
     expect(macroResultB).to.equal('browsiAd_1');
 
-    const macroResultC = browsiRTD.getMacroId({p: '<AD_UNIT>', s: {s: 0, e: 1}}, slot);
+    const macroResultC = browsiRTD.getMacroId({ p: '<AD_UNIT>', s: { s: 0, e: 1 } }, slot);
     expect(macroResultC).to.equal('/');
   });
 
@@ -64,20 +64,20 @@ describe('browsi Real time  data sub module', function () {
     });
 
     it('should return NA if no prediction for ad unit', function () {
-      makeSlot({code: 'adMock', divId: 'browsiAd_2'});
+      makeSlot({ code: 'adMock', divId: 'browsiAd_2' });
       browsiRTD.setData({});
-      expect(browsiRTD.browsiSubmodule.getTargetingData(['adMock'])).to.eql({adMock: {bv: 'NA'}});
+      expect(browsiRTD.browsiSubmodule.getTargetingData(['adMock'])).to.eql({ adMock: { bv: 'NA' } });
     });
 
     it('should return prediction from server', function () {
-      makeSlot({code: 'hasPrediction', divId: 'hasPrediction'});
+      makeSlot({ code: 'hasPrediction', divId: 'hasPrediction' });
       const data = {
-        p: {'hasPrediction': {p: 0.234}},
+        p: { 'hasPrediction': { p: 0.234 } },
         kn: 'bv',
         pmd: undefined
       };
       browsiRTD.setData(data);
-      expect(browsiRTD.browsiSubmodule.getTargetingData(['hasPrediction'])).to.eql({hasPrediction: {bv: '0.20'}});
+      expect(browsiRTD.browsiSubmodule.getTargetingData(['hasPrediction'])).to.eql({ hasPrediction: { bv: '0.20' } });
     })
   })
 });

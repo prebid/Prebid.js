@@ -1,7 +1,7 @@
-import {assert} from 'chai';
-import {spec} from 'modules/stroeerCoreBidAdapter.js';
+import { assert } from 'chai';
+import { spec } from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 
 describe('stroeerCore bid adapter', function () {
@@ -41,7 +41,7 @@ describe('stroeerCore bid adapter', function () {
       data: {
         id: 'encrypted-user-id==',
         keyv: 4,
-        privacy: {optout: false},
+        privacy: { optout: false },
         producer: 'ABC',
         version: 2
       }
@@ -99,14 +99,14 @@ describe('stroeerCore bid adapter', function () {
 
   const buildBidderResponse = () => ({
     'bids': [{
-      'bidId': 'bid1', 'cpm': 4.0, 'width': 300, 'height': 600, 'ad': '<div>tag1</div>', 'tracking': {'brandId': 123}
+      'bidId': 'bid1', 'cpm': 4.0, 'width': 300, 'height': 600, 'ad': '<div>tag1</div>', 'tracking': { 'brandId': 123 }
     }, {
       'bidId': 'bid2', 'cpm': 7.3, 'width': 728, 'height': 90, 'ad': '<div>tag2</div>'
     }]
   });
 
   const createWindow = (href, params = {}) => {
-    let {parent, referrer, top, frameElement, placementElements = []} = params;
+    let { parent, referrer, top, frameElement, placementElements = [] } = params;
 
     const protocol = (href.indexOf('https') === 0) ? 'https:' : 'http:';
     const win = {
@@ -166,10 +166,10 @@ describe('stroeerCore bid adapter', function () {
   }
 
   function setupNestedWindows(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
-    const topWin = createWindow('http://www.abc.org/', {referrer: 'http://www.google.com/?query=monkey'});
+    const topWin = createWindow('http://www.abc.org/', { referrer: 'http://www.google.com/?query=monkey' });
     topWin.innerHeight = 800;
 
-    const midWin = createWindow('http://www.abc.org/', {parent: topWin, top: topWin, frameElement: createElement()});
+    const midWin = createWindow('http://www.abc.org/', { parent: topWin, top: topWin, frameElement: createElement() });
     midWin.innerHeight = 400;
 
     const win = createWindow('http://www.xyz.com/', {
@@ -181,7 +181,7 @@ describe('stroeerCore bid adapter', function () {
     sandBox.stub(utils, 'getWindowSelf').returns(win);
     sandBox.stub(utils, 'getWindowTop').returns(topWin);
 
-    return {topWin, midWin, win};
+    return { topWin, midWin, win };
   }
 
   it('should only support BANNER mediaType', function () {
@@ -250,15 +250,15 @@ describe('stroeerCore bid adapter', function () {
 
       describe('should use custom url if provided', () => {
         const samples = [{
-          protocol: 'http:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'
+          protocol: 'http:', params: { sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz' }, expected: 'https://other.com:234/xyz'
         }, {
-          protocol: 'https:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'
+          protocol: 'https:', params: { sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz' }, expected: 'https://other.com:234/xyz'
         }, {
           protocol: 'https:',
-          params: {sid: 'ODA=', host: 'other.com', port: '234', securePort: '871', path: '/xyz'},
+          params: { sid: 'ODA=', host: 'other.com', port: '234', securePort: '871', path: '/xyz' },
           expected: 'https://other.com:871/xyz'
         }, {
-          protocol: 'http:', params: {sid: 'ODA=', port: '234', path: '/xyz'}, expected: 'https://hb.adscale.de:234/xyz'
+          protocol: 'http:', params: { sid: 'ODA=', port: '234', path: '/xyz' }, expected: 'https://hb.adscale.de:234/xyz'
         }, ];
 
         samples.forEach(sample => {
@@ -360,7 +360,7 @@ describe('stroeerCore bid adapter', function () {
           }
         });
 
-        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true}, {consentString: 'UGluZyBQb25n', gdprApplies: false}];
+        const gdprSamples = [{ consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true }, { consentString: 'UGluZyBQb25n', gdprApplies: false }];
         gdprSamples.forEach((sample) => {
           it(`should add GDPR info ${JSON.stringify(sample)} when provided`, () => {
             const bidReq = buildBidderRequest();
@@ -374,12 +374,12 @@ describe('stroeerCore bid adapter', function () {
           });
         });
 
-        const skippableGdprSamples = [{consentString: null, gdprApplies: true}, //
-          {consentString: 'UGluZyBQb25n', gdprApplies: null}, //
-          {consentString: null, gdprApplies: null}, //
-          {consentString: undefined, gdprApplies: true}, //
-          {consentString: 'UGluZyBQb25n', gdprApplies: undefined}, //
-          {consentString: undefined, gdprApplies: undefined}];
+        const skippableGdprSamples = [{ consentString: null, gdprApplies: true }, //
+          { consentString: 'UGluZyBQb25n', gdprApplies: null }, //
+          { consentString: null, gdprApplies: null }, //
+          { consentString: undefined, gdprApplies: true }, //
+          { consentString: 'UGluZyBQb25n', gdprApplies: undefined }, //
+          { consentString: undefined, gdprApplies: undefined }];
         skippableGdprSamples.forEach((sample) => {
           it(`should not add GDPR info ${JSON.stringify(sample)} when one or more values are missing`, () => {
             const bidReq = buildBidderRequest();
@@ -411,7 +411,7 @@ describe('stroeerCore bid adapter', function () {
     const invalidResponses = ['', '  ', ' ', undefined, null];
     invalidResponses.forEach(sample => {
       it('should ignore invalid responses (\"' + sample + '\") response', () => {
-        const result = spec.interpretResponse({body: sample});
+        const result = spec.interpretResponse({ body: sample });
         assert.isArray(result);
         assert.lengthOf(result, 0);
       });
@@ -420,23 +420,23 @@ describe('stroeerCore bid adapter', function () {
     it('should interpret a standard response', () => {
       const bidderResponse = buildBidderResponse();
 
-      const result = spec.interpretResponse({body: bidderResponse});
+      const result = spec.interpretResponse({ body: bidderResponse });
       assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4);
       assertStandardFieldsOnBid(result[1], 'bid2', '<div>tag2</div>', 728, 90, 7.3);
     });
 
     it('should return empty array, when response contains no bids', () => {
-      const result = spec.interpretResponse({body: {bids: []}});
+      const result = spec.interpretResponse({ body: { bids: [] } });
       assert.deepStrictEqual(result, []);
     });
 
     it('should add data to meta object', () => {
       const response = buildBidderResponse();
-      response.bids[0] = Object.assign(response.bids[0], {adomain: ['website.org', 'domain.com']});
-      const result = spec.interpretResponse({body: response});
-      assert.deepPropertyVal(result[0], 'meta', {advertiserDomains: ['website.org', 'domain.com']});
+      response.bids[0] = Object.assign(response.bids[0], { adomain: ['website.org', 'domain.com'] });
+      const result = spec.interpretResponse({ body: response });
+      assert.deepPropertyVal(result[0], 'meta', { advertiserDomains: ['website.org', 'domain.com'] });
       // nothing provided for the second bid
-      assert.deepPropertyVal(result[1], 'meta', {advertiserDomains: undefined});
+      assert.deepPropertyVal(result[1], 'meta', { advertiserDomains: undefined });
     });
   });
 
@@ -466,13 +466,13 @@ describe('stroeerCore bid adapter', function () {
     describe('when iframe option is enabled', () => {
       it('should perform user connect when there was a response', () => {
         const expectedUrl = 'https://js.adscale.de/pbsync.html';
-        const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, ['']);
+        const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, ['']);
 
-        assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+        assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
       });
 
       it('should not perform user connect when there was no response', () => {
-        const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, []);
+        const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, []);
 
         assert.deepStrictEqual(userSyncResponse, []);
       });
@@ -481,26 +481,26 @@ describe('stroeerCore bid adapter', function () {
         describe('and gdpr applies', () => {
           it('should place gdpr query param to the user sync url with value of 1', () => {
             const expectedUrl = 'https://js.adscale.de/pbsync.html?gdpr=1&gdpr_consent=';
-            const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, [''], {gdprApplies: true});
+            const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, [''], { gdprApplies: true });
 
-            assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+            assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
           });
         });
 
         describe('and gdpr does not apply', () => {
           it('should place gdpr query param to the user sync url with zero value', () => {
             const expectedUrl = 'https://js.adscale.de/pbsync.html?gdpr=0&gdpr_consent=';
-            const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, [''], {gdprApplies: false});
+            const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, [''], { gdprApplies: false });
 
-            assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+            assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
           });
 
           describe('because consent does not specify it', () => {
             it('should place gdpr query param to the user sync url with zero value', () => {
               const expectedUrl = 'https://js.adscale.de/pbsync.html?gdpr=0&gdpr_consent=';
-              const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, [''], {});
+              const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, [''], {});
 
-              assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+              assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
             });
           });
         });
@@ -509,17 +509,17 @@ describe('stroeerCore bid adapter', function () {
           it('should pass consent string to gdpr consent query param', () => {
             const consentString = 'consent_string';
             const expectedUrl = `https://js.adscale.de/pbsync.html?gdpr=1&gdpr_consent=${consentString}`;
-            const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, [''], {gdprApplies: true, consentString});
+            const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, [''], { gdprApplies: true, consentString });
 
-            assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+            assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
           });
 
           it('should correctly escape invalid characters', () => {
             const consentString = 'consent ?stri&ng';
             const expectedUrl = `https://js.adscale.de/pbsync.html?gdpr=1&gdpr_consent=consent%20%3Fstri%26ng`;
-            const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, [''], {gdprApplies: true, consentString});
+            const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, [''], { gdprApplies: true, consentString });
 
-            assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+            assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
           });
         });
       });
@@ -527,13 +527,13 @@ describe('stroeerCore bid adapter', function () {
 
     describe('when iframe option is disabled', () => {
       it('should not perform user connect even when there was a response', () => {
-        const userSyncResponse = spec.getUserSyncs({iframeEnabled: false}, ['']);
+        const userSyncResponse = spec.getUserSyncs({ iframeEnabled: false }, ['']);
 
         assert.deepStrictEqual(userSyncResponse, []);
       });
 
       it('should not perform user connect when there was no response', () => {
-        const userSyncResponse = spec.getUserSyncs({iframeEnabled: false}, []);
+        const userSyncResponse = spec.getUserSyncs({ iframeEnabled: false }, []);
 
         assert.deepStrictEqual(userSyncResponse, []);
       });

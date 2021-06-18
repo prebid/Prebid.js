@@ -129,7 +129,7 @@ describe('ConcertAdapter', function () {
     });
 
     it('should return empty bids if there are no bids from the server', function() {
-      const bids = spec.interpretResponse({ body: {bids: []} }, bidRequest);
+      const bids = spec.interpretResponse({ body: { bids: [] } }, bidRequest);
       expect(bids).to.have.lengthOf(0);
     });
   });

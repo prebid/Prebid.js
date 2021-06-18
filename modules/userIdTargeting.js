@@ -1,5 +1,5 @@
-import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { config } from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import CONSTANTS from '../src/constants.json';
 import events from '../src/events.js';
 import { isStr, isPlainObject, isBoolean, isFn, hasOwn, logInfo } from '../src/utils.js';

@@ -403,7 +403,7 @@ describe('bidders created by newBidder', function () {
         netRevenue: true,
         ttl: 300,
         bidderCode: 'sampleBidder',
-        sampleBidder: {advertiserId: '12345', networkId: '111222'}
+        sampleBidder: { advertiserId: '12345', networkId: '111222' }
       };
       const bidderRequest = Object.assign({}, MOCK_BIDS_REQUEST);
       bidderRequest.bids[0].bidder = 'sampleBidder';
@@ -428,7 +428,7 @@ describe('bidders created by newBidder', function () {
       expect(doneStub.calledOnce).to.equal(true);
       expect(logErrorSpy.callCount).to.equal(0);
       expect(bidObject.meta).to.exist;
-      expect(bidObject.meta).to.deep.equal({advertiserId: '12345', networkId: '111222'});
+      expect(bidObject.meta).to.deep.equal({ advertiserId: '12345', networkId: '111222' });
     });
 
     it('should call spec.getUserSyncs() with the response', function () {
@@ -633,7 +633,7 @@ describe('registerBidder', function () {
     const thisSpec = Object.assign(newEmptySpec(), { supportedMediaTypes: ['video'] });
     registerBidder(thisSpec);
     expect(registerBidAdapterStub.calledOnce).to.equal(true);
-    expect(registerBidAdapterStub.firstCall.args[2]).to.deep.equal({supportedMediaTypes: ['video']});
+    expect(registerBidAdapterStub.firstCall.args[2]).to.deep.equal({ supportedMediaTypes: ['video'] });
   });
 
   it('should register bidders with the appropriate aliases', function () {
@@ -757,7 +757,7 @@ describe('validate bid response: ', function () {
           param: 5
         },
         nativeParams: {
-          title: {'required': true},
+          title: { 'required': true },
         },
         mediaType: 'native',
       }]
@@ -794,7 +794,7 @@ describe('validate bid response: ', function () {
           param: 5
         },
         nativeParams: {
-          title: {'required': true},
+          title: { 'required': true },
         },
         mediaType: 'native',
       }]
@@ -830,7 +830,7 @@ describe('validate bid response: ', function () {
           param: 5
         },
         mediaTypes: {
-          video: {context: 'outstream'}
+          video: { context: 'outstream' }
         }
       }]
     };
@@ -840,7 +840,7 @@ describe('validate bid response: ', function () {
       {
         bidderCode: CODE,
         mediaType: 'video',
-        renderer: {render: () => true, url: 'render.js'},
+        renderer: { render: () => true, url: 'render.js' },
       }
     );
 

@@ -68,12 +68,12 @@ export const spec = {
 
       if (bidderRequest.gdprConsent.apiVersion === 2) {
         const purposes = [
-          {id: 1, kw: 'nocookies'},
-          {id: 2, kw: 'nocontext'},
-          {id: 3, kw: 'nodmp'},
-          {id: 4, kw: 'nodata'},
-          {id: 7, kw: 'noclicks'},
-          {id: 9, kw: 'noresearch'}
+          { id: 1, kw: 'nocookies' },
+          { id: 2, kw: 'nocontext' },
+          { id: 3, kw: 'nodmp' },
+          { id: 4, kw: 'nodata' },
+          { id: 7, kw: 'noclicks' },
+          { id: 9, kw: 'noresearch' }
         ];
 
         const d = bidderRequest.gdprConsent.vendorData;
@@ -281,7 +281,7 @@ function retrieveAd(bidId, decision) {
 }
 
 function checkConsent(P, d) {
-  const GVL = {'150': {'id': 150, 'name': 'Inskin Media LTD', 'purposes': {'1': 1, '3': 3, '4': 4, '9': 9, '10': 10}, 'legIntPurposes': {'2': 2, '7': 7}, 'flexiblePurposes': {'2': 2, '7': 7}, 'specialPurposes': {'1': 1, '2': 2}, 'features': {'3': 3}, 'specialFeatures': {}, 'policyUrl': 'http://www.inskinmedia.com/privacy-policy.html'}};
+  const GVL = { '150': { 'id': 150, 'name': 'Inskin Media LTD', 'purposes': { '1': 1, '3': 3, '4': 4, '9': 9, '10': 10 }, 'legIntPurposes': { '2': 2, '7': 7 }, 'flexiblePurposes': { '2': 2, '7': 7 }, 'specialPurposes': { '1': 1, '2': 2 }, 'features': { '3': 3 }, 'specialFeatures': {}, 'policyUrl': 'http://www.inskinmedia.com/privacy-policy.html' } };
   const V = 150;
 
   // vendor claims (inflexible) consent as their basis, publisher doesn't

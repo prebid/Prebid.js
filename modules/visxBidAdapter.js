@@ -66,7 +66,7 @@ export const spec = {
 
     bids.forEach(bid => {
       reqId = bid.bidderRequestId;
-      const {params: {uid}, adUnitCode, schain, userId} = bid;
+      const { params: { uid }, adUnitCode, schain, userId } = bid;
       auids.push(uid);
       if (!payloadSchain && schain) {
         payloadSchain = schain;
@@ -81,7 +81,7 @@ export const spec = {
       }
       const slotsMap = slotsMapByUid[uid];
       if (!slotsMap[adUnitCode]) {
-        slotsMap[adUnitCode] = {adUnitCode, bids: [bid], parents: []};
+        slotsMap[adUnitCode] = { adUnitCode, bids: [bid], parents: [] };
       } else {
         slotsMap[adUnitCode].bids.push(bid);
       }
@@ -98,7 +98,7 @@ export const spec = {
         } else {
           bidsMap[uid][sizeId].push(slot);
         }
-        slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
+        slot.parents.push({ parent: bidsMap[uid], key: sizeId, uid });
       });
     });
 
@@ -268,7 +268,7 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
           bidResponses.push(bidResponse);
 
           if (!slot.bids.length) {
-            slot.parents.forEach(({parent, key, uid}) => {
+            slot.parents.forEach(({ parent, key, uid }) => {
               const index = parent[key].indexOf(slot);
               if (index > -1) {
                 parent[key].splice(index, 1);

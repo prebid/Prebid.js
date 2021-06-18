@@ -123,7 +123,7 @@ function getCoordinates(adUnitCode) {
   let element = document.getElementById(adUnitCode);
   if (!element && adUnitCode.indexOf('/') !== -1) {
     // now it means that adUnitCode is GAM AdUnitPath
-    const {divId} = utils.getGptSlotInfoForAdUnitCode(adUnitCode);
+    const { divId } = utils.getGptSlotInfoForAdUnitCode(adUnitCode);
     if (utils.isStr(divId)) {
       element = document.getElementById(divId);
     }
@@ -161,11 +161,11 @@ function extParams(bidRequest, bidderRequests) {
     (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
     { usp_applies: uspApplies },
     uspApplies && { usp_consent_string: uspConsent || '' },
-    {coppa_applies: coppaApplies},
+    { coppa_applies: coppaApplies },
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
     $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true },
-    !utils.isEmpty(sChain) && {schain: sChain}
+    !utils.isEmpty(sChain) && { schain: sChain }
   );
 }
 
@@ -249,7 +249,7 @@ function getBidFloorByType(bidRequest) {
   return floorInfo;
 }
 function setFloorInfo(bidRequest, mediaType, size, floorInfo) {
-  let floor = bidRequest.getFloor({currency: 'USD', mediaType: mediaType, size: size});
+  let floor = bidRequest.getFloor({ currency: 'USD', mediaType: mediaType, size: size });
   if (size.length > 1) floor.size = size;
   floor.mediaType = mediaType;
   floorInfo.push(floor);
@@ -269,7 +269,7 @@ function getSlotVisibility(topLeft, size) {
     return 0;
   }
 
-  return getOverlapArea(topLeft, bottomRight, {x: 0, y: 0}, {x: windowSize.w, y: windowSize.h}) / maxArea;
+  return getOverlapArea(topLeft, bottomRight, { x: 0, y: 0 }, { x: windowSize.w, y: windowSize.h }) / maxArea;
 }
 
 // find the overlapping area between two rectangles
@@ -414,7 +414,7 @@ export const spec = {
       return false;
     }
 
-    Object.assign($$PREBID_GLOBAL$$.medianetGlobals, !$$PREBID_GLOBAL$$.medianetGlobals.cid && {cid: bid.params.cid});
+    Object.assign($$PREBID_GLOBAL$$.medianetGlobals, !$$PREBID_GLOBAL$$.medianetGlobals.cid && { cid: bid.params.cid });
 
     return true;
   },

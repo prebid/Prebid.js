@@ -4,8 +4,8 @@ import { server } from 'test/mocks/xhr.js';
 import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from 'modules/liveIntentIdSystem.js';
 
 const PUBLISHER_ID = '89899';
-const defaultConfigParams = { params: {publisherId: PUBLISHER_ID} };
-const responseHeader = {'Content-Type': 'application/json'};
+const defaultConfigParams = { params: { publisherId: PUBLISHER_ID } };
+const responseHeader = { 'Content-Type': 'application/json' };
 
 describe('LiveIntentMinimalId', function() {
   let logErrorStub;
@@ -61,7 +61,7 @@ describe('LiveIntentMinimalId', function() {
   it('should call the Custom URL of the LiveIntent Identity Exchange endpoint', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({ params: {...defaultConfigParams.params, ...{'url': 'https://dummy.liveintent.com/idex'}} }).callback;
+    let submoduleCallback = liveIntentIdSubmodule.getId({ params: { ...defaultConfigParams.params, ...{ 'url': 'https://dummy.liveintent.com/idex' } } }).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/prebid/89899');
@@ -150,7 +150,7 @@ describe('LiveIntentMinimalId', function() {
       ...{
         'identifiersToResolve': ['_thirdPC']
       }
-    }};
+    } };
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
@@ -166,13 +166,13 @@ describe('LiveIntentMinimalId', function() {
 
   it('should include an additional identifier value to resolve even if it is an object', function() {
     getCookieStub.returns(null);
-    getDataFromLocalStorageStub.withArgs('_thirdPC').returns({'key': 'value'});
+    getDataFromLocalStorageStub.withArgs('_thirdPC').returns({ 'key': 'value' });
     const configParams = { params: {
       ...defaultConfigParams.params,
       ...{
         'identifiersToResolve': ['_thirdPC']
       }
-    }};
+    } };
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);

@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://x.padsquad.com/auction';
 
@@ -57,8 +57,8 @@ export const spec = {
 
     // apply gdpr
     if (bidderRequest.gdprConsent) {
-      openrtbRequest.regs = {ext: {gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0}};
-      openrtbRequest.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
+      openrtbRequest.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+      openrtbRequest.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
     }
 
     const payloadString = JSON.stringify(openrtbRequest);

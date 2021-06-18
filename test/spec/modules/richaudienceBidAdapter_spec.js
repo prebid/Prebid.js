@@ -1,9 +1,9 @@
 // import or require modules necessary for the test, e.g.:
-import {expect} from 'chai'; // may prefer 'assert' in place of 'expect'
+import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
 import {
   spec
 } from 'modules/richaudienceBidAdapter.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS_NEW_SIZES = [{
@@ -183,7 +183,7 @@ describe('Richaudience adapter tests', function () {
 
   it('Referer undefined', function() {
     config.setConfig({
-      'currency': {'adServerCurrency': 'USD'}
+      'currency': { 'adServerCurrency': 'USD' }
     })
 
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
@@ -794,14 +794,14 @@ describe('Richaudience adapter tests', function () {
   describe('userSync', function () {
     it('Verifies user syncs iframe include', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
+        'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'include' } } }
       })
 
       var syncs = spec.getUserSyncs({
         iframeEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true },
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
@@ -824,24 +824,24 @@ describe('Richaudience adapter tests', function () {
 
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(1);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
     it('Verifies user syncs iframe exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}}}
+        'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'exclude' } } }
       })
 
       var syncs = spec.getUserSyncs({
         iframeEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true },
       );
       expect(syncs).to.have.lengthOf(0);
 
@@ -863,18 +863,18 @@ describe('Richaudience adapter tests', function () {
 
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(0);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
 
     it('Verifies user syncs image include', function () {
       config.setConfig({
-        'userSync': {filterSettings: {image: {bidders: '*', filter: 'include'}}}
+        'userSync': { filterSettings: { image: { bidders: '*', filter: 'include' } } }
       })
 
       var syncs = spec.getUserSyncs({
@@ -913,7 +913,7 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs image exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings: {image: {bidders: '*', filter: 'exclude'}}}
+        'userSync': { filterSettings: { image: { bidders: '*', filter: 'exclude' } } }
       })
 
       var syncs = spec.getUserSyncs({
@@ -949,7 +949,7 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs iframe/image include', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}, image: {bidders: '*', filter: 'include'}}}
+        'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'include' }, image: { bidders: '*', filter: 'include' } } }
       })
 
       var syncs = spec.getUserSyncs({
@@ -957,7 +957,7 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true },
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
@@ -983,19 +983,19 @@ describe('Richaudience adapter tests', function () {
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(1);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: false
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
 
     it('Verifies user syncs iframe/image exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}, image: {bidders: '*', filter: 'exclude'}}}
+        'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'exclude' }, image: { bidders: '*', filter: 'exclude' } } }
       })
 
       var syncs = spec.getUserSyncs({
@@ -1003,7 +1003,7 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true },
       );
       expect(syncs).to.have.lengthOf(0);
 
@@ -1028,19 +1028,19 @@ describe('Richaudience adapter tests', function () {
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(0);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: false
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
 
     it('Verifies user syncs iframe exclude / image include', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}, image: {bidders: '*', filter: 'include'}}}
+        'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'exclude' }, image: { bidders: '*', filter: 'include' } } }
       })
 
       var syncs = spec.getUserSyncs({
@@ -1048,7 +1048,7 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true },
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
@@ -1074,19 +1074,19 @@ describe('Richaudience adapter tests', function () {
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(1);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: false
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
 
     it('Verifies user syncs iframe include / image exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}, image: {bidders: '*', filter: 'exclude'}}}
+        'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'include' }, image: { bidders: '*', filter: 'exclude' } } }
       })
 
       var syncs = spec.getUserSyncs({
@@ -1094,7 +1094,7 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true },
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
@@ -1120,13 +1120,13 @@ describe('Richaudience adapter tests', function () {
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(1);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: false
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
   })

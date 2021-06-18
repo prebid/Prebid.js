@@ -1,6 +1,6 @@
 import sovrnAnalyticsAdapter from '../../../modules/sovrnAnalyticsAdapter.js';
 import { expect } from 'chai';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import adaptermanager from 'src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 var assert = require('assert');
@@ -435,7 +435,7 @@ describe('Sovrn Analytics Adapter', function () {
       let requestsFromRequestBody = requestBody.requests[0];
       let bidsFromRequests = requestsFromRequestBody.bids[0];
       expect(requestBody).to.deep.include(expectedPostBody);
-      expect(requestBody.timeouts).to.deep.equal({buffer: 400, bidder: 3000});
+      expect(requestBody.timeouts).to.deep.equal({ buffer: 400, bidder: 3000 });
       expect(requestsFromRequestBody).to.deep.include(expectedRequests);
       expect(bidsFromRequests).to.deep.include(expectedBids);
       let bidsFromRequests2 = requestsFromRequestBody.bids[1];

@@ -1,4 +1,4 @@
-import {hook} from './hook.js';
+import { hook } from './hook.js';
 import * as utils from './utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
@@ -22,7 +22,7 @@ export let storageCallbacks = [];
  * - Module type: Some modules may need these functions but are not vendor. e.g prebid core files in src and modules like currency.
  * @param {storageOptions} options
  */
-export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
+export function newStorageManager({ gvlid, moduleName, moduleType } = {}) {
   function isValid(cb) {
     if (includes(moduleTypeWhiteList, moduleType)) {
       let result = {
@@ -298,7 +298,7 @@ export const validateStorageEnforcement = hook('async', function(gvlid, moduleNa
  * @param {string} moduleName Module name
  */
 export function getCoreStorageManager(moduleName) {
-  return newStorageManager({moduleName: moduleName, moduleType: 'core'});
+  return newStorageManager({ moduleName: moduleName, moduleType: 'core' });
 }
 
 /**
@@ -308,7 +308,7 @@ export function getCoreStorageManager(moduleName) {
  * @param {string=} moduleName BidderCode or module name
  */
 export function getStorageManager(gvlid, moduleName) {
-  return newStorageManager({gvlid: gvlid, moduleName: moduleName});
+  return newStorageManager({ gvlid: gvlid, moduleName: moduleName });
 }
 
 export function resetData() {

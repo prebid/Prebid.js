@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/addefendBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/addefendBidAdapter.js';
 
 describe('addefendBidAdapter', () => {
   const defaultBidRequest = {
@@ -153,7 +153,7 @@ describe('addefendBidAdapter', () => {
         }
       ];
 
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
       expect(result.length).to.equal(expectedResponse.length);
       Object.keys(expectedResponse[0]).forEach((key) => {
         expect(result[0][key]).to.deep.equal(expectedResponse[0][key]);
@@ -169,14 +169,14 @@ describe('addefendBidAdapter', () => {
           'ttl': 60
         }
       ];
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
 
       expect(result.length).to.equal(0);
     });
 
     it('handles nobid responses', () => {
       const serverResponse = [];
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
 
       expect(result.length).to.equal(0);
     });

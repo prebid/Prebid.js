@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://x.yieldlift.com/auction';
 

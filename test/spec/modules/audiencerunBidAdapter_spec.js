@@ -198,7 +198,7 @@ describe('AudienceRun bid adapter tests', function() {
 
     it('should return user syncs', function () {
       const syncs = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(syncs).to.deep.equal([{type: 'iframe', url: 'https://ac.audiencerun.com/f/sync.html'}])
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: 'https://ac.audiencerun.com/f/sync.html' }])
     });
   });
 });

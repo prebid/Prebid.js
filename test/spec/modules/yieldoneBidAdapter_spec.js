@@ -93,7 +93,7 @@ describe('yieldoneBidAdapter', function() {
     it('width and height should be set as separate parameters on outstream requests', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
       bidRequest.mediaTypes = {};
-      bidRequest.mediaTypes.video = {context: 'outstream'};
+      bidRequest.mediaTypes.video = { context: 'outstream' };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       expect(request[0].data.w).to.equal('300');
       expect(request[0].data.h).to.equal('250');

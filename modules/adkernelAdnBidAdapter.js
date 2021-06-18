@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -58,7 +58,7 @@ function canonicalizeSizesArray(sizes) {
 }
 
 function buildRequestParams(tags, bidderRequest) {
-  let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
+  let { auctionId, gdprConsent, uspConsent, transactionId, refererInfo } = bidderRequest;
   let req = {
     id: auctionId,
     tid: transactionId,
@@ -150,7 +150,7 @@ function getBidFloor(bid, mediaType, sizes) {
   var floor;
   var size = sizes.length === 1 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    const floorInfo = bid.getFloor({ currency: 'USD', mediaType, size });
     if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }
@@ -227,7 +227,7 @@ function buildSyncs(serverResponses, propName, type) {
   return serverResponses.filter(rps => rps.body && rps.body[propName])
     .map(rsp => rsp.body[propName])
     .reduce((a, b) => a.concat(b), [])
-    .map(syncUrl => ({type: type, url: syncUrl}));
+    .map(syncUrl => ({ type: type, url: syncUrl }));
 }
 
 registerBidder(spec);

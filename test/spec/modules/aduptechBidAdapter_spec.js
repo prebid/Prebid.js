@@ -172,7 +172,7 @@ describe('AduptechBidAdapter', () => {
           sizes: [[12, 34], [56, 78]]
         };
 
-        expect(internal.extractBannerConfig(bidRequest)).to.deep.equal({sizes: bidRequest.sizes});
+        expect(internal.extractBannerConfig(bidRequest)).to.deep.equal({ sizes: bidRequest.sizes });
       });
     });
 

@@ -172,7 +172,7 @@ function setS2sConfig(options) {
     return _s2sConfigs = normalizedOptions;
   }
 }
-getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
+getConfig('s2sConfig', ({ s2sConfig }) => setS2sConfig(s2sConfig));
 
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
@@ -323,7 +323,7 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   // ORTB specifies app OR site
   if (typeof config.getConfig('app') === 'object') {
     request.app = config.getConfig('app');
-    request.app.publisher = {id: accountId}
+    request.app.publisher = { id: accountId }
   } else {
     request.site = {};
     if (utils.isPlainObject(config.getConfig('site'))) {
@@ -601,7 +601,7 @@ const OPEN_RTB_PROTOCOL = {
           return { w, h };
         });
 
-        mediaTypes['banner'] = {format};
+        mediaTypes['banner'] = { format };
 
         if (bannerParams.pos) mediaTypes['banner'].pos = bannerParams.pos;
       }
@@ -636,7 +636,7 @@ const OPEN_RTB_PROTOCOL = {
               context: 1,
               plcmttype: 1,
               eventtrackers: [
-                {event: 1, methods: [1]}
+                { event: 1, methods: [1] }
               ],
               // TODO: figure out how to support privacy field
               // privacy: int
@@ -658,11 +658,11 @@ const OPEN_RTB_PROTOCOL = {
         }
         acc[bid.bidder] = (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params;
         return acc;
-      }, {...utils.deepAccess(adUnit, 'ortb2Imp.ext')});
+      }, { ...utils.deepAccess(adUnit, 'ortb2Imp.ext') });
 
       const imp = { id: impressionId, ext, secure: s2sConfig.secure };
 
-      const ortb2 = {...utils.deepAccess(adUnit, 'ortb2Imp.ext.data')};
+      const ortb2 = { ...utils.deepAccess(adUnit, 'ortb2Imp.ext.data') };
       Object.keys(ortb2).forEach(prop => {
         /**
           * Prebid AdSlot
@@ -727,7 +727,7 @@ const OPEN_RTB_PROTOCOL = {
     }
     const request = {
       id: s2sBidRequest.tid,
-      source: {tid: s2sBidRequest.tid},
+      source: { tid: s2sBidRequest.tid },
       tmax: s2sConfig.timeout,
       imp: imps,
       // to do: add setconfig option to pass test = 1
@@ -747,11 +747,11 @@ const OPEN_RTB_PROTOCOL = {
     };
 
     // Sets pbjs version, can be overwritten below if channel exists in s2sConfig.extPrebid
-    request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
+    request.ext.prebid = Object.assign(request.ext.prebid, { channel: { name: 'pbjs', version: $$PREBID_GLOBAL$$.version } })
 
     // set debug flag if in debug mode
     if (getConfig('debug')) {
-      request.ext.prebid = Object.assign(request.ext.prebid, {debug: true})
+      request.ext.prebid = Object.assign(request.ext.prebid, { debug: true })
     }
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
@@ -782,7 +782,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     if (!utils.isEmpty(aliases)) {
-      request.ext.prebid.aliases = {...request.ext.prebid.aliases, ...aliases};
+      request.ext.prebid.aliases = { ...request.ext.prebid.aliases, ...aliases };
     }
 
     const bidUserIdAsEids = utils.deepAccess(bidRequests, '0.bids.0.userIdAsEids');
@@ -842,10 +842,10 @@ const OPEN_RTB_PROTOCOL = {
 
     const commonFpd = getConfig('ortb2') || {};
     if (commonFpd.site) {
-      utils.mergeDeep(request, {site: commonFpd.site});
+      utils.mergeDeep(request, { site: commonFpd.site });
     }
     if (commonFpd.user) {
-      utils.mergeDeep(request, {user: commonFpd.user});
+      utils.mergeDeep(request, { user: commonFpd.user });
     }
     addBidderFirstPartyDataToRequest(request);
 
@@ -1126,7 +1126,7 @@ export function PrebidServer() {
         s2sConfig
       );
 
-      bids.forEach(({adUnit, bid}) => {
+      bids.forEach(({ adUnit, bid }) => {
         if (isValid(adUnit, bid, bidderRequests)) {
           addBidResponse(adUnit, bid);
         }

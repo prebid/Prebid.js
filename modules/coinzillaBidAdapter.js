@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'coinzilla';
 const ENDPOINT_URL = 'https://request.czilladx.com/serve/request.php';

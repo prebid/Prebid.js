@@ -140,7 +140,7 @@ describe('adWMG Analytics', function () {
         }
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {timestamp, auctionId, timeout, adUnits});
+      events.emit(constants.EVENTS.AUCTION_INIT, { timestamp, auctionId, timeout, adUnits });
       events.emit(constants.EVENTS.BID_REQUESTED, {});
       events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
       events.emit(constants.EVENTS.NO_BID, {});

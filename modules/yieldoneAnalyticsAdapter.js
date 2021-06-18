@@ -1,4 +1,4 @@
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
@@ -66,9 +66,9 @@ function addAdUnitName(params, map) {
   });
 }
 
-const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
+const yieldoneAnalytics = Object.assign(adapter({ analyticsType }), {
   getUrl() { return url; },
-  track({eventType, args = {}}) {
+  track({ eventType, args = {} }) {
     if (eventType === CONSTANTS.EVENTS.BID_REQUESTED) {
       const reqBidderId = `${args.bidderCode}_${args.auctionId}`;
       requestedBidders[reqBidderId] = utils.deepClone(args);
@@ -83,11 +83,11 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
       args.forEach((bid) => {
         const reqBidId = `${bid.bidId}_${bid.auctionId}`;
         const reqBidderId = `${bid.bidder}_${bid.auctionId}`;
-        if (!eventsStorage[bid.auctionId]) eventsStorage[bid.auctionId] = {events: []};
+        if (!eventsStorage[bid.auctionId]) eventsStorage[bid.auctionId] = { events: [] };
         if ((requestedBidders[reqBidderId] || reqBidders[bid.bidder]) && requestedBids[reqBidId]) {
           if (!reqBidders[bid.bidder]) {
             reqBidders[bid.bidder] = requestedBidders[reqBidderId];
-            eventsStorage[bid.auctionId].events.push({eventType, params: reqBidders[bid.bidder]});
+            eventsStorage[bid.auctionId].events.push({ eventType, params: reqBidders[bid.bidder] });
             delete requestedBidders[reqBidderId];
           }
           reqBidders[bid.bidder].bids.push(requestedBids[reqBidId]);
@@ -98,7 +98,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
       currentAuctionId = args.auctionId || currentAuctionId;
       if (currentAuctionId) {
         const eventsStorage = yieldoneAnalytics.eventsStorage;
-        if (!eventsStorage[currentAuctionId]) eventsStorage[currentAuctionId] = {events: []};
+        if (!eventsStorage[currentAuctionId]) eventsStorage[currentAuctionId] = { events: [] };
         const referrer = args.refererInfo && args.refererInfo.referer;
         if (referrer && referrers[currentAuctionId] !== referrer) {
           referrers[currentAuctionId] = referrer;
@@ -113,7 +113,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
           });
         }
         if (!ignoredEvents[eventType]) {
-          eventsStorage[currentAuctionId].events.push({eventType, params});
+          eventsStorage[currentAuctionId].events.push({ eventType, params });
         }
 
         if (
@@ -124,7 +124,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
             auctionManager.getBidsReceived()
           );
           if (yieldoneAnalytics.eventsStorage[currentAuctionId] && yieldoneAnalytics.eventsStorage[currentAuctionId].events.length) {
-            yieldoneAnalytics.eventsStorage[currentAuctionId].page = {url: referrers[currentAuctionId]};
+            yieldoneAnalytics.eventsStorage[currentAuctionId].page = { url: referrers[currentAuctionId] };
             yieldoneAnalytics.eventsStorage[currentAuctionId].pubId = pubId;
             yieldoneAnalytics.eventsStorage[currentAuctionId].wrapper_version = '$prebid.version$';
             const adUnitNameMap = makeAdUnitNameMap();

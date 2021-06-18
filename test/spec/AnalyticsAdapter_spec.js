@@ -39,7 +39,7 @@ FEATURE: Analytics Adapters API
     adapter.track({ eventType, args });
 
     let result = JSON.parse(server.requests[0].requestBody);
-    expect(result).to.deep.equal({args: {some: 'data'}, eventType: 'bidRequested'});
+    expect(result).to.deep.equal({ args: { some: 'data' }, eventType: 'bidRequested' });
   });
 
   it(`SHOULD queue the event first and then track it WHEN an event occurs before tracking library is available`, function () {
@@ -52,7 +52,7 @@ FEATURE: Analytics Adapters API
     // As now AUCTION_DEBUG is triggered for WARNINGS too, the BID_RESPONSE goes last in the array
     const index = server.requests.length - 1;
     let result = JSON.parse(server.requests[index].requestBody);
-    expect(result).to.deep.equal({eventType: 'bidResponse', args: {wat: 'wot'}});
+    expect(result).to.deep.equal({ eventType: 'bidResponse', args: { wat: 'wot' } });
   });
 
   describe(`WHEN an event occurs after enable analytics\n`, function () {
@@ -72,7 +72,7 @@ FEATURE: Analytics Adapters API
       events.emit(eventType, args);
 
       let result = JSON.parse(server.requests[0].requestBody);
-      expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
+      expect(result).to.deep.equal({ args: { more: 'info' }, eventType: 'bidWon' });
     });
 
     it('SHOULD call global when a adRenderFailed event occurs', function () {
@@ -83,7 +83,7 @@ FEATURE: Analytics Adapters API
       events.emit(eventType, args);
 
       let result = JSON.parse(server.requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'adRenderFailed'}, eventType: 'adRenderFailed'});
+      expect(result).to.deep.equal({ args: { call: 'adRenderFailed' }, eventType: 'adRenderFailed' });
     });
 
     it('SHOULD call global when an auction debug event occurs', function () {
@@ -94,7 +94,7 @@ FEATURE: Analytics Adapters API
       events.emit(eventType, args);
 
       let result = JSON.parse(server.requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'auctionDebug'}, eventType: 'auctionDebug'});
+      expect(result).to.deep.equal({ args: { call: 'auctionDebug' }, eventType: 'auctionDebug' });
     });
 
     it('SHOULD call global when an addAdUnits event occurs', function () {
@@ -105,7 +105,7 @@ FEATURE: Analytics Adapters API
       events.emit(eventType, args);
 
       let result = JSON.parse(server.requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'addAdUnits'}, eventType: 'addAdUnits'});
+      expect(result).to.deep.equal({ args: { call: 'addAdUnits' }, eventType: 'addAdUnits' });
     });
 
     it('SHOULD call global when a requestBids event occurs', function () {
@@ -116,7 +116,7 @@ FEATURE: Analytics Adapters API
       events.emit(eventType, args);
 
       let result = JSON.parse(server.requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'request'}, eventType: 'requestBids'});
+      expect(result).to.deep.equal({ args: { call: 'request' }, eventType: 'requestBids' });
     });
 
     it('SHOULD call global when a bidRequest event occurs', function () {
@@ -127,7 +127,7 @@ FEATURE: Analytics Adapters API
       events.emit(eventType, args);
 
       let result = JSON.parse(server.requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'request'}, eventType: 'bidRequested'});
+      expect(result).to.deep.equal({ args: { call: 'request' }, eventType: 'bidRequested' });
     });
 
     it('SHOULD call global when a bidResponse event occurs', function () {
@@ -138,7 +138,7 @@ FEATURE: Analytics Adapters API
       events.emit(eventType, args);
 
       let result = JSON.parse(server.requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'response'}, eventType: 'bidResponse'});
+      expect(result).to.deep.equal({ args: { call: 'response' }, eventType: 'bidResponse' });
     });
 
     it('SHOULD call global when a bidTimeout event occurs', function () {
@@ -149,7 +149,7 @@ FEATURE: Analytics Adapters API
       events.emit(eventType, args);
 
       let result = JSON.parse(server.requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'timeout'}, eventType: 'bidTimeout'});
+      expect(result).to.deep.equal({ args: { call: 'timeout' }, eventType: 'bidTimeout' });
     });
 
     it('SHOULD NOT call global again when adapter.enableAnalytics is called with previous timeout', function () {
@@ -185,7 +185,7 @@ FEATURE: Analytics Adapters API
 
         expect(server.requests.length).to.equal(1);
         let result = JSON.parse(server.requests[0].requestBody);
-        expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
+        expect(result).to.deep.equal({ args: { more: 'info' }, eventType: 'bidWon' });
       });
 
       it(`THEN should disable analytics when random number is outside sample range`, function () {

@@ -196,7 +196,7 @@ function video(slot) {
     return Object.assign({},
       slot.params.video, // previously supported as bidder param
       slot.mediaTypes && slot.mediaTypes.video ? slot.mediaTypes.video : {}, // params on mediaTypes.video
-      {battr: slot.params.battr}
+      { battr: slot.params.battr }
     );
   }
   return null;

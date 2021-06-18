@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/feedadBidAdapter.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
-import {server} from 'test/mocks/xhr.js';
+import { expect } from 'chai';
+import { spec } from 'modules/feedadBidAdapter.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { server } from 'test/mocks/xhr.js';
 
 const CODE = 'feedad';
 
@@ -40,7 +40,7 @@ describe('FeedAdAdapter', function () {
       let result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {placementId: 'placement'}
+        params: { placementId: 'placement' }
       });
       expect(result).to.equal(false);
     });
@@ -48,7 +48,7 @@ describe('FeedAdAdapter', function () {
       let result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {clientToken: '', placementId: 'placement'}
+        params: { clientToken: '', placementId: 'placement' }
       });
       expect(result).to.equal(false);
     });
@@ -56,7 +56,7 @@ describe('FeedAdAdapter', function () {
       let result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {clientToken: 'clientToken'}
+        params: { clientToken: 'clientToken' }
       });
       expect(result).to.equal(false);
     });
@@ -64,7 +64,7 @@ describe('FeedAdAdapter', function () {
       let result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {clientToken: 'clientToken', placementId: ''}
+        params: { clientToken: 'clientToken', placementId: '' }
       });
       expect(result).to.equal(false);
     });
@@ -76,7 +76,7 @@ describe('FeedAdAdapter', function () {
       let result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {clientToken: 'clientToken', placementId}
+        params: { clientToken: 'clientToken', placementId }
       });
       expect(result).to.equal(false);
     });
@@ -90,7 +90,7 @@ describe('FeedAdAdapter', function () {
         let result = spec.isBidRequestValid({
           bidder: 'feedad',
           sizes: [],
-          params: {clientToken: 'clientToken', placementId: id}
+          params: { clientToken: 'clientToken', placementId: id }
         });
         expect(result).to.equal(false);
       });
@@ -99,7 +99,7 @@ describe('FeedAdAdapter', function () {
       let result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       });
       expect(result).to.equal(true);
     });
@@ -125,7 +125,7 @@ describe('FeedAdAdapter', function () {
             sizes: [[300, 250], [300, 600]],
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid], bidderRequest);
       expect(result).to.be.empty;
@@ -138,7 +138,7 @@ describe('FeedAdAdapter', function () {
             context: 'instream'
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid], bidderRequest);
       expect(result).to.be.empty;
@@ -151,7 +151,7 @@ describe('FeedAdAdapter', function () {
             context: 'outstream'
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids).to.be.lengthOf(1);
@@ -165,7 +165,7 @@ describe('FeedAdAdapter', function () {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids).to.be.lengthOf(1);
@@ -179,7 +179,7 @@ describe('FeedAdAdapter', function () {
           video: undefined,
           native: undefined
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid], bidderRequest);
       expect(result).to.be.empty;
@@ -192,7 +192,7 @@ describe('FeedAdAdapter', function () {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid], bidderRequest);
       expect(result.method).to.equal('POST');
@@ -205,7 +205,7 @@ describe('FeedAdAdapter', function () {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid], bidderRequest);
       expect(result.url).to.equal('https://api.feedad.com/1/prebid/web/bids');
@@ -218,7 +218,7 @@ describe('FeedAdAdapter', function () {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid], bidderRequest);
       expect(result.options).to.deep.equal({
@@ -233,7 +233,7 @@ describe('FeedAdAdapter', function () {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid, bid, bid], bidderRequest);
       expect(result.data).to.deep.include(bidderRequest);
@@ -246,7 +246,7 @@ describe('FeedAdAdapter', function () {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid, bid, bid]);
       expect(result).to.be.empty;
@@ -259,7 +259,7 @@ describe('FeedAdAdapter', function () {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.gdprApplies).to.be.undefined;
@@ -273,7 +273,7 @@ describe('FeedAdAdapter', function () {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
       let request = Object.assign({}, bidderRequest, {
         gdprConsent: {
@@ -298,12 +298,12 @@ describe('FeedAdAdapter', function () {
     }];
 
     it('should convert string bodies to JSON', function () {
-      let result = spec.interpretResponse({body: JSON.stringify(body)});
+      let result = spec.interpretResponse({ body: JSON.stringify(body) });
       expect(result).to.deep.equal(body);
     });
 
     it('should pass through body objects', function () {
-      let result = spec.interpretResponse({body});
+      let result = spec.interpretResponse({ body });
       expect(result).to.deep.equal(body);
     });
   });
@@ -449,7 +449,7 @@ describe('FeedAdAdapter', function () {
           expect(call.url).to.equal('https://api.feedad.com/1/prebid/web/events');
           expect(JSON.parse(call.requestBody)).to.deep.equal(expectedData);
           expect(call.method).to.equal('POST');
-          expect(call.requestHeaders).to.include({'Content-Type': 'application/json;charset=utf-8'});
+          expect(call.requestHeaders).to.include({ 'Content-Type': 'application/json;charset=utf-8' });
         })
       });
     });

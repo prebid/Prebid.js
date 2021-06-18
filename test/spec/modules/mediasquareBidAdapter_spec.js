@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/mediasquareBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/mediasquareBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { requestBidsHook } from 'modules/consentManagement.js';
 
@@ -62,7 +62,7 @@ describe('MediaSquare bid adapter tests', function () {
     },
   }];
 
-  var BID_RESPONSE = {'body': {
+  var BID_RESPONSE = { 'body': {
     'responses': [{
       'transaction_id': 'cccc1234',
       'cpm': 22.256608,
@@ -78,7 +78,7 @@ describe('MediaSquare bid adapter tests', function () {
       'bid_id': 'aaaa1234',
       'adomain': ['test.com'],
     }],
-  }};
+  } };
 
   const DEFAULT_OPTIONS = {
     gdprConsent: {
@@ -163,7 +163,7 @@ describe('MediaSquare bid adapter tests', function () {
     expect(syncs).to.have.property('type').and.to.equal('iframe');
   });
   it('Verifies user sync with cookies in bid response', function () {
-    BID_RESPONSE.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
+    BID_RESPONSE.body.cookies = [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }];
     var syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0]).to.have.property('type').and.to.equal('image');
@@ -181,7 +181,7 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies native in bid response', function () {
     const request = spec.buildRequests(NATIVE_PARAMS, DEFAULT_OPTIONS);
-    BID_RESPONSE.body.responses[0].native = {'title': 'native title'};
+    BID_RESPONSE.body.responses[0].native = { 'title': 'native title' };
     const response = spec.interpretResponse(BID_RESPONSE, request);
     expect(response).to.have.lengthOf(1);
     const bid = response[0];
@@ -190,7 +190,7 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies video in bid response', function () {
     const request = spec.buildRequests(VIDEO_PARAMS, DEFAULT_OPTIONS);
-    BID_RESPONSE.body.responses[0].video = {'xml': 'my vast XML', 'url': 'my vast url'};
+    BID_RESPONSE.body.responses[0].video = { 'xml': 'my vast XML', 'url': 'my vast url' };
     const response = spec.interpretResponse(BID_RESPONSE, request);
     expect(response).to.have.lengthOf(1);
     const bid = response[0];

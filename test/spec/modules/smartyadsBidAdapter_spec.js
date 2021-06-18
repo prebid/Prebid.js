@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/smartyadsBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/smartyadsBidAdapter.js';
 import { config } from '../../../src/config.js';
 
 describe('SmartyadsAdapter', function () {

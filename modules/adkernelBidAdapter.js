@@ -1,9 +1,9 @@
 import * as utils from '../src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 
 /*
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -25,25 +25,25 @@ const SYNC_TYPES = Object.freeze({
 const GVLID = 14;
 
 const NATIVE_MODEL = [
-  {name: 'title', assetType: 'title'},
-  {name: 'icon', assetType: 'img', type: 1},
-  {name: 'image', assetType: 'img', type: 3},
-  {name: 'body', assetType: 'data', type: 2},
-  {name: 'body2', assetType: 'data', type: 10},
-  {name: 'sponsoredBy', assetType: 'data', type: 1},
-  {name: 'phone', assetType: 'data', type: 8},
-  {name: 'address', assetType: 'data', type: 9},
-  {name: 'price', assetType: 'data', type: 6},
-  {name: 'salePrice', assetType: 'data', type: 7},
-  {name: 'cta', assetType: 'data', type: 12},
-  {name: 'rating', assetType: 'data', type: 3},
-  {name: 'downloads', assetType: 'data', type: 5},
-  {name: 'likes', assetType: 'data', type: 4},
-  {name: 'displayUrl', assetType: 'data', type: 11}
+  { name: 'title', assetType: 'title' },
+  { name: 'icon', assetType: 'img', type: 1 },
+  { name: 'image', assetType: 'img', type: 3 },
+  { name: 'body', assetType: 'data', type: 2 },
+  { name: 'body2', assetType: 'data', type: 10 },
+  { name: 'sponsoredBy', assetType: 'data', type: 1 },
+  { name: 'phone', assetType: 'data', type: 8 },
+  { name: 'address', assetType: 'data', type: 9 },
+  { name: 'price', assetType: 'data', type: 6 },
+  { name: 'salePrice', assetType: 'data', type: 7 },
+  { name: 'cta', assetType: 'data', type: 12 },
+  { name: 'rating', assetType: 'data', type: 3 },
+  { name: 'downloads', assetType: 'data', type: 5 },
+  { name: 'likes', assetType: 'data', type: 4 },
+  { name: 'displayUrl', assetType: 'data', type: 11 }
 ];
 
 const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
-  acc[val.name] = {id: idx, ...val};
+  acc[val.name] = { id: idx, ...val };
   return acc;
 }, {});
 
@@ -54,22 +54,22 @@ export const spec = {
   code: 'adkernel',
   gvlid: GVLID,
   aliases: [
-    {code: 'headbidding'},
-    {code: 'adsolut'},
-    {code: 'oftmediahb'},
-    {code: 'audiencemedia'},
-    {code: 'waardex_ak'},
-    {code: 'roqoon'},
-    {code: 'andbeyond'},
-    {code: 'adbite'},
-    {code: 'houseofpubs'},
-    {code: 'torchad'},
-    {code: 'stringads'},
-    {code: 'bcm'},
-    {code: 'engageadx'},
-    {code: 'converge_digital', gvlid: 248},
-    {code: 'adomega'},
-    {code: 'denakop'}
+    { code: 'headbidding' },
+    { code: 'adsolut' },
+    { code: 'oftmediahb' },
+    { code: 'audiencemedia' },
+    { code: 'waardex_ak' },
+    { code: 'roqoon' },
+    { code: 'andbeyond' },
+    { code: 'adbite' },
+    { code: 'houseofpubs' },
+    { code: 'torchad' },
+    { code: 'stringads' },
+    { code: 'bcm' },
+    { code: 'engageadx' },
+    { code: 'converge_digital', gvlid: 248 },
+    { code: 'adomega' },
+    { code: 'denakop' }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -190,7 +190,7 @@ export const spec = {
     return serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.adk_usersync)
       .map(rsp => rsp.body.ext.adk_usersync)
       .reduce((a, b) => a.concat(b), [])
-      .map(({url, type}) => ({type: SYNC_TYPES[type], url: url}));
+      .map(({ url, type }) => ({ type: SYNC_TYPES[type], url: url }));
   }
 };
 
@@ -206,7 +206,7 @@ function dispatchImps(bidRequests, refererInfo) {
   return bidRequests.map(bidRequest => buildImp(bidRequest, secure))
     .reduce((acc, curr, index) => {
       let bidRequest = bidRequests[index];
-      let {zoneId, host} = bidRequest.params;
+      let { zoneId, host } = bidRequest.params;
       acc[host] = acc[host] || {};
       acc[host][zoneId] = acc[host][zoneId] || [];
       acc[host][zoneId].push(curr);
@@ -218,7 +218,7 @@ function getBidFloor(bid, mediaType, sizes) {
   var floor;
   var size = sizes.length === 1 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    const floorInfo = bid.getFloor({ currency: 'USD', mediaType, size });
     if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }
@@ -283,7 +283,7 @@ function buildImp(bidRequest, secure) {
  * Builds native request from native adunit
  */
 function buildNativeRequest(nativeReq) {
-  let request = {ver: '1.1', assets: []};
+  let request = { ver: '1.1', assets: [] };
   for (let k of Object.keys(nativeReq)) {
     let v = nativeReq[k];
     let desc = NATIVE_INDEX[k];
@@ -297,9 +297,9 @@ function buildNativeRequest(nativeReq) {
     if (desc.assetType === 'img') {
       assetRoot[desc.assetType] = buildImageAsset(desc, v);
     } else if (desc.assetType === 'data') {
-      assetRoot.data = utils.cleanObj({type: desc.type, len: v.len});
+      assetRoot.data = utils.cleanObj({ type: desc.type, len: v.len });
     } else if (desc.assetType === 'title') {
-      assetRoot.title = {len: v.len || 90};
+      assetRoot.title = { len: v.len || 90 };
     } else {
       return;
     }
@@ -364,7 +364,7 @@ function getAllowedSyncMethod(bidderCode) {
  * @return {Object} Complete rtb request
  */
 function buildRtbRequest(imps, bidderRequest, schain) {
-  let {bidderCode, gdprConsent, auctionId, refererInfo, timeout, uspConsent} = bidderRequest;
+  let { bidderCode, gdprConsent, auctionId, refererInfo, timeout, uspConsent } = bidderRequest;
   let coppa = config.getConfig('coppa');
   let req = {
     'id': auctionId,
@@ -487,7 +487,7 @@ function validateNativeImageSize(img) {
  * Creates native ad for native 1.1 response
  */
 function buildNativeAd(nativeResp) {
-  const {assets, link, imptrackers, jstracker, privacy} = nativeResp.native;
+  const { assets, link, imptrackers, jstracker, privacy } = nativeResp.native;
   let nativeAd = {
     clickUrl: link.url,
     impressionTrackers: imptrackers,

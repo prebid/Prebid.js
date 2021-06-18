@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/h12mediaBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import { expect } from 'chai';
+import { spec } from 'modules/h12mediaBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
 describe('H12 Media Adapter', function () {
@@ -88,8 +88,8 @@ describe('H12 Media Adapter', function () {
       }
     },
     usersync: [
-      {url: 'https://cookiesync.3rdpartypartner.com/?3rdparty_partner_user_id={user_id}&partner_id=h12media&gdpr_applies={gdpr}&gdpr_consent_string={gdpr_cs}', type: 'image'},
-      {url: 'https://cookiesync.3rdpartypartner.com/?3rdparty_partner_user_id={user_id}&partner_id=h12media&gdpr_applies={gdpr}&gdpr_consent_string={gdpr_cs}', type: 'iframe'}
+      { url: 'https://cookiesync.3rdpartypartner.com/?3rdparty_partner_user_id={user_id}&partner_id=h12media&gdpr_applies={gdpr}&gdpr_consent_string={gdpr_cs}', type: 'image' },
+      { url: 'https://cookiesync.3rdpartypartner.com/?3rdparty_partner_user_id={user_id}&partner_id=h12media&gdpr_applies={gdpr}&gdpr_consent_string={gdpr_cs}', type: 'iframe' }
     ],
   };
 
@@ -194,7 +194,7 @@ describe('H12 Media Adapter', function () {
       const requests = spec.buildRequests([validBid, validBid2], bidderRequest);
       const requestsData = requests[0].data.bidrequest;
 
-      expect(requestsData).to.include({adunitSize: validBid.mediaTypes.banner.sizes});
+      expect(requestsData).to.include({ adunitSize: validBid.mediaTypes.banner.sizes });
     });
 
     it('should return empty bid size', function () {
@@ -203,7 +203,7 @@ describe('H12 Media Adapter', function () {
       const requests = spec.buildRequests([validBid, validBid2], bidderRequest);
       const requestsData2 = requests[1].data.bidrequest;
 
-      expect(requestsData2).to.deep.include({adunitSize: []});
+      expect(requestsData2).to.deep.include({ adunitSize: [] });
     });
 
     it('should return pubsubid from params', function () {
@@ -213,19 +213,19 @@ describe('H12 Media Adapter', function () {
       const requestsData = requests[0].data.bidrequest;
       const requestsData2 = requests[1].data.bidrequest;
 
-      expect(requestsData).to.include({pubsubid: 'pubsubtestid'});
-      expect(requestsData2).to.include({pubsubid: ''});
+      expect(requestsData).to.include({ pubsubid: 'pubsubtestid' });
+      expect(requestsData2).to.include({ pubsubid: '' });
     });
 
     it('should return empty for incorrect pubsubid from params', function () {
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
-      const bidWithPub = {...validBid};
+      const bidWithPub = { ...validBid };
       bidWithPub.params.pubsubid = 'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii'; // More than 32 chars
       const requests = spec.buildRequests([bidWithPub], bidderRequest);
       const requestsData = requests[0].data.bidrequest;
 
-      expect(requestsData).to.include({pubsubid: ''});
+      expect(requestsData).to.include({ pubsubid: '' });
     });
 
     it('should return bid size from params', function () {
@@ -235,8 +235,8 @@ describe('H12 Media Adapter', function () {
       const requestsData = requests[0].data.bidrequest;
       const requestsData2 = requests[1].data.bidrequest;
 
-      expect(requestsData).to.include({size: ''});
-      expect(requestsData2).to.include({size: validBid2.params.size});
+      expect(requestsData).to.include({ size: '' });
+      expect(requestsData2).to.include({ size: validBid2.params.size });
     });
 
     it('should return GDPR info', function () {
@@ -246,32 +246,32 @@ describe('H12 Media Adapter', function () {
       const requestsData = requests[0].data;
       const requestsData2 = requests[1].data;
 
-      expect(requestsData).to.include({gdpr: true, gdpr_cs: bidderRequest.gdprConsent.consentString});
-      expect(requestsData2).to.include({gdpr: true, gdpr_cs: bidderRequest.gdprConsent.consentString});
+      expect(requestsData).to.include({ gdpr: true, gdpr_cs: bidderRequest.gdprConsent.consentString });
+      expect(requestsData2).to.include({ gdpr: true, gdpr_cs: bidderRequest.gdprConsent.consentString });
     });
 
     it('should not have error on empty GDPR', function () {
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
-      const bidderRequestWithoutGDRP = {...bidderRequest, gdprConsent: null};
+      const bidderRequestWithoutGDRP = { ...bidderRequest, gdprConsent: null };
       const requests = spec.buildRequests([validBid, validBid2], bidderRequestWithoutGDRP);
       const requestsData = requests[0].data;
       const requestsData2 = requests[1].data;
 
-      expect(requestsData).to.include({gdpr: false});
-      expect(requestsData2).to.include({gdpr: false});
+      expect(requestsData).to.include({ gdpr: false });
+      expect(requestsData2).to.include({ gdpr: false });
     });
 
     it('should not have error on empty USP', function () {
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
-      const bidderRequestWithoutUSP = {...bidderRequest, uspConsent: null};
+      const bidderRequestWithoutUSP = { ...bidderRequest, uspConsent: null };
       const requests = spec.buildRequests([validBid, validBid2], bidderRequestWithoutUSP);
       const requestsData = requests[0].data;
       const requestsData2 = requests[1].data;
 
-      expect(requestsData).to.include({usp: false});
-      expect(requestsData2).to.include({usp: false});
+      expect(requestsData).to.include({ usp: false });
+      expect(requestsData2).to.include({ usp: false });
     });
 
     it('should create single POST', function () {
@@ -290,7 +290,7 @@ describe('H12 Media Adapter', function () {
       const requests = spec.buildRequests([validBid], bidderRequest);
       const requestsData = requests[0].data.bidrequest;
 
-      expect(requestsData).to.deep.include({coords: {x: 10, y: 10}});
+      expect(requestsData).to.deep.include({ coords: { x: 10, y: 10 } });
     });
 
     it('should define iframe', function () {
@@ -300,8 +300,8 @@ describe('H12 Media Adapter', function () {
       const requestsData = requests[0].data;
       const requestsData2 = requests[1].data;
 
-      expect(requestsData).to.include({isiframe: true});
-      expect(requestsData2).to.include({isiframe: true});
+      expect(requestsData).to.include({ isiframe: true });
+      expect(requestsData2).to.include({ isiframe: true });
     });
 
     it('should define visible element', function () {
@@ -309,7 +309,7 @@ describe('H12 Media Adapter', function () {
       const requests = spec.buildRequests([validBid], bidderRequest);
       const requestsData = requests[0].data.bidrequest;
 
-      expect(requestsData).to.include({ishidden: false});
+      expect(requestsData).to.include({ ishidden: false });
     });
 
     it('should define invisible element', function () {
@@ -317,7 +317,7 @@ describe('H12 Media Adapter', function () {
       const requests = spec.buildRequests([validBid], bidderRequest);
       const requestsData = requests[0].data.bidrequest;
 
-      expect(requestsData).to.include({ishidden: true});
+      expect(requestsData).to.include({ ishidden: true });
     });
 
     it('should define hidden element', function () {
@@ -325,7 +325,7 @@ describe('H12 Media Adapter', function () {
       const requests = spec.buildRequests([validBid], bidderRequest);
       const requestsData = requests[0].data.bidrequest;
 
-      expect(requestsData).to.include({ishidden: true});
+      expect(requestsData).to.include({ ishidden: true });
     });
   });
 
@@ -346,7 +346,7 @@ describe('H12 Media Adapter', function () {
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
       const request = spec.buildRequests([validBid, validBid2], bidderRequest);
-      const bidResponse = spec.interpretResponse({body: serverResponse}, request[0]);
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, request[0]);
 
       expect(bidResponse[0]).to.deep.include({
         requestId: validBid.bidId,
@@ -368,7 +368,7 @@ describe('H12 Media Adapter', function () {
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
       const request = spec.buildRequests([validBid, validBid2], bidderRequest);
-      const bidResponse = spec.interpretResponse({body: serverResponse2}, request[0]);
+      const bidResponse = spec.interpretResponse({ body: serverResponse2 }, request[0]);
 
       expect(bidResponse[0]).to.deep.include({
         requestId: validBid2.bidId,
@@ -402,7 +402,7 @@ describe('H12 Media Adapter', function () {
         type: 'image',
         url: `https://cookiesync.3rdpartypartner.com/?3rdparty_partner_user_id={user_id}&partner_id=h12media&gdpr_applies=${bidderRequest.gdprConsent.gdprApplies}&gdpr_consent_string=${bidderRequest.gdprConsent.consentString}`,
       };
-      const syncs = spec.getUserSyncs(syncOptions, [{body: serverResponse}], bidderRequest.gdprConsent);
+      const syncs = spec.getUserSyncs(syncOptions, [{ body: serverResponse }], bidderRequest.gdprConsent);
 
       expect(syncs).to.deep.include(result);
     });
@@ -412,7 +412,7 @@ describe('H12 Media Adapter', function () {
         type: 'iframe',
         url: `https://cookiesync.3rdpartypartner.com/?3rdparty_partner_user_id={user_id}&partner_id=h12media&gdpr_applies=${bidderRequest.gdprConsent.gdprApplies}&gdpr_consent_string=${bidderRequest.gdprConsent.consentString}`,
       };
-      const syncs = spec.getUserSyncs(syncOptions, [{body: serverResponse}], bidderRequest.gdprConsent);
+      const syncs = spec.getUserSyncs(syncOptions, [{ body: serverResponse }], bidderRequest.gdprConsent);
 
       expect(syncs).to.deep.include(result);
     });
@@ -423,15 +423,15 @@ describe('H12 Media Adapter', function () {
         url: `https://cookiesync.3rdpartypartner.com/?3rdparty_partner_user_id={user_id}&partner_id=h12media&gdpr_applies=false&gdpr_consent_string=`,
       };
 
-      expect(spec.getUserSyncs(syncOptions, [{body: serverResponse}], null)).to.deep.include(result);
+      expect(spec.getUserSyncs(syncOptions, [{ body: serverResponse }], null)).to.deep.include(result);
     });
 
     it('should success without usersync url', function () {
-      expect(spec.getUserSyncs(syncOptions, [{body: serverResponse2}], bidderRequest.gdprConsent)).to.deep.equal([]);
+      expect(spec.getUserSyncs(syncOptions, [{ body: serverResponse2 }], bidderRequest.gdprConsent)).to.deep.equal([]);
     });
 
     it('should return empty usersync on empty response', function () {
-      expect(spec.getUserSyncs(syncOptions, [{body: {}}])).to.deep.equal([]);
+      expect(spec.getUserSyncs(syncOptions, [{ body: {} }])).to.deep.equal([]);
     });
   });
 });

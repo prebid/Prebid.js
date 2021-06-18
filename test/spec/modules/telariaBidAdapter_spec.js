@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter.js';
+import { expect } from 'chai';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec, getTimeoutUrl } from 'modules/telariaBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
@@ -240,7 +240,7 @@ describe('TelariaAdapter', () => {
 
       let bidRequest = spec.buildRequests(stub, BIDDER_REQUEST)[0];
       bidRequest.bidId = '1234';
-      let result = spec.interpretResponse({body: responseStub}, bidRequest);
+      let result = spec.interpretResponse({ body: responseStub }, bidRequest);
       expect(Object.keys(result[0])).to.have.members(expectedResponseKeys);
     });
 
@@ -251,23 +251,23 @@ describe('TelariaAdapter', () => {
       let bidRequest = spec.buildRequests(stub, BIDDER_REQUEST)[0];
       bidRequest.bidId = '1234';
 
-      let result = spec.interpretResponse({body: tempResponse}, bidRequest);
+      let result = spec.interpretResponse({ body: tempResponse }, bidRequest);
       expect(result.length).to.equal(0);
     });
 
     it('handles invalid responses', () => {
-      let result = spec.interpretResponse(null, {bbidderCode: 'telaria'});
+      let result = spec.interpretResponse(null, { bbidderCode: 'telaria' });
       expect(result.length).to.equal(0);
     });
 
     it('handles error responses', () => {
-      let result = spec.interpretResponse({body: {error: 'Invalid request'}}, {bbidderCode: 'telaria'});
+      let result = spec.interpretResponse({ body: { error: 'Invalid request' } }, { bbidderCode: 'telaria' });
       expect(result.length).to.equal(0);
     });
   });
 
   describe('getUserSyncs', () => {
-    const responses = [{body: RESPONSE}];
+    const responses = [{ body: RESPONSE }];
     responses[0].body.ext = {
       telaria: {
         userSync: [
@@ -278,7 +278,7 @@ describe('TelariaAdapter', () => {
     };
 
     it('should get the correct number of sync urls', () => {
-      let urls = spec.getUserSyncs({pixelEnabled: true}, responses);
+      let urls = spec.getUserSyncs({ pixelEnabled: true }, responses);
       expect(urls.length).to.equal(2);
     });
   });

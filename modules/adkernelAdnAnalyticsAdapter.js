@@ -2,9 +2,9 @@ import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {config} from '../src/config.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { config } from '../src/config.js';
 
 const GVLID = 14;
 const ANALYTICS_VERSION = '1.0.2';
@@ -22,7 +22,7 @@ const ADK_HB_EVENTS = {
 };
 
 function buildRequestTemplate(pubId) {
-  const {loc, ref} = getNavigationInfo();
+  const { loc, ref } = getNavigationInfo();
 
   return {
     ver: ANALYTICS_VERSION,
@@ -41,9 +41,9 @@ function buildRequestTemplate(pubId) {
   }
 }
 
-let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
+let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }),
   {
-    track({eventType, args}) {
+    track({ eventType, args }) {
       if (!analyticsAdapter.context) {
         return;
       }
@@ -113,7 +113,7 @@ export default analyticsAdapter;
 function sendAll() {
   let events = analyticsAdapter.context.queue.popAll();
   if (events.length !== 0) {
-    let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
+    let req = Object.assign({}, analyticsAdapter.context.requestTemplate, { hb_ev: events });
     analyticsAdapter.ajaxCall(JSON.stringify(req));
   }
 }
@@ -156,7 +156,7 @@ function trackBidTimeout(args) {
 }
 
 function createHbEvent(adapter, event, tagid = undefined, value = 0, time = 0) {
-  let ev = {event: event};
+  let ev = { event: event };
   if (adapter) {
     ev.adapter = adapter
   }

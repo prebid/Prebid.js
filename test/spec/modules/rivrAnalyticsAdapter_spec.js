@@ -16,7 +16,7 @@ import {
   arrayDifference,
   activelyWaitForBannersToRender,
 } from 'modules/rivrAnalyticsAdapter.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import CONSTANTS from 'src/constants.json';
@@ -98,7 +98,7 @@ describe('RIVR Analytics adapter', () => {
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
 
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000});
+    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, { auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000 });
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
 
@@ -111,7 +111,7 @@ describe('RIVR Analytics adapter', () => {
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
 
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000});
+    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, { auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000 });
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(1);
 

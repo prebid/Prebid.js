@@ -151,7 +151,7 @@ function initCurrency(url) {
 function resetCurrency() {
   utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-  getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
+  getHook('addBidResponse').getHooks({ hook: addBidResponseHook }).remove();
   delete getGlobal().convertCurrency;
 
   adServerCurrency = 'USD';

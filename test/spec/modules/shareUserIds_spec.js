@@ -1,4 +1,4 @@
-import {userIdTargeting} from '../../../modules/userIdTargeting.js';
+import { userIdTargeting } from '../../../modules/userIdTargeting.js';
 import { expect } from 'chai';
 
 describe('#userIdTargeting', function() {

@@ -251,7 +251,7 @@ describe('The DFP video support module', function () {
 
     before(function () {
       targetingStub = sinon.stub(targeting, 'getAllTargeting');
-      targetingStub.returns({'video1': allTargetingData});
+      targetingStub.returns({ 'video1': allTargetingData });
 
       config.setConfig({
         enableSendAllBids: true

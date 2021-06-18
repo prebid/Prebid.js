@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
@@ -113,7 +113,7 @@ export const spec = {
         paramsVideo.maxd = video.maxduration;
       }
 
-      const paramsToSend = Object.assign({}, params, {video: paramsVideo});
+      const paramsToSend = Object.assign({}, params, { video: paramsVideo });
 
       requests.push({
         method: 'POST',

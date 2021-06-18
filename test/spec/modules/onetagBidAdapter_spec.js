@@ -2,7 +2,7 @@ import { spec, isValid, hasTypeVideo } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 import find from 'core-js-pure/features/array/find.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import {INSTREAM, OUTSTREAM} from 'src/video.js';
+import { INSTREAM, OUTSTREAM } from 'src/video.js';
 
 describe('onetag', function () {
   function createBid() {
@@ -244,7 +244,7 @@ describe('onetag', function () {
         let dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');
         if (dataItem.meta.mediaType === VIDEO) {
-          const {context} = find(requestData.bids, (item) => item.bidId === dataItem.requestId);
+          const { context } = find(requestData.bids, (item) => item.bidId === dataItem.requestId);
           if (context === INSTREAM) {
             expect(dataItem).to.include.all.keys('videoCacheKey', 'vastUrl');
             expect(dataItem.vastUrl).to.be.a('string');
@@ -278,7 +278,7 @@ describe('onetag', function () {
   describe('getUserSyncs', function () {
     const sync_endpoint = 'https://onetag-sys.com/usync/';
     it('Returns an iframe if iframeEnabled is true', function () {
-      const syncs = spec.getUserSyncs({iframeEnabled: true});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true });
       expect(syncs).to.be.an('array');
       expect(syncs.length).to.equal(1);
       expect(syncs[0].type).to.equal('iframe');

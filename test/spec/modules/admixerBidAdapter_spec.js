@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/admixerBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from '../../../src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/admixerBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from '../../../src/config.js';
 
 const BIDDER_CODE = 'admixer';
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.1.aspx';
@@ -81,7 +81,7 @@ describe('AdmixerAdapter', function () {
     it('sends bid request to CUSTOM_ENDPOINT via GET', function () {
       config.setBidderConfig({
         bidders: [BIDDER_CODE], // one or more bidders
-        config: {[BIDDER_CODE]: {endpoint_url: ENDPOINT_URL_CUSTOM}}
+        config: { [BIDDER_CODE]: { endpoint_url: ENDPOINT_URL_CUSTOM } }
       });
       const request = config.runWithBidder(BIDDER_CODE, () => spec.buildRequests(validRequest, bidderRequest));
       expect(request.url).to.equal(ENDPOINT_URL_CUSTOM);
@@ -103,7 +103,7 @@ describe('AdmixerAdapter', function () {
           'netRevenue': false,
           'bidId': '5e4e763b6bc60b',
           'dealId': 'asd123',
-          'meta': {'advertiserId': 123, 'networkId': 123, 'advertiserDomains': ['test.com']}
+          'meta': { 'advertiserId': 123, 'networkId': 123, 'advertiserDomains': ['test.com'] }
         }]
       }
     };
@@ -123,7 +123,7 @@ describe('AdmixerAdapter', function () {
           'netRevenue': ads[0].netRevenue,
           'ttl': ads[0].ttl,
           'dealId': ads[0].dealId,
-          'meta': {'advertiserId': 123, 'networkId': 123, 'advertiserDomains': ['test.com']}
+          'meta': { 'advertiserId': 123, 'networkId': 123, 'advertiserDomains': ['test.com'] }
         }
       ];
 
@@ -156,9 +156,9 @@ describe('AdmixerAdapter', function () {
     }];
 
     it('Returns valid values', function () {
-      let userSyncAll = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, responses);
-      let userSyncImg = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false}, responses);
-      let userSyncFrm = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: true}, responses);
+      let userSyncAll = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, responses);
+      let userSyncImg = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, responses);
+      let userSyncFrm = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, responses);
       expect(userSyncAll).to.be.an('array').with.lengthOf(2);
       expect(userSyncImg).to.be.an('array').with.lengthOf(1);
       expect(userSyncImg[0].url).to.be.equal(imgUrl);

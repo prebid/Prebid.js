@@ -2,11 +2,11 @@ import {
   _sendAdToCreative, receiveMessage
 } from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
-import {getAdUnits, getBidRequests, getBidResponses} from 'test/fixtures/fixtures.js';
-import {auctionManager} from 'src/auctionManager.js';
+import { getAdUnits, getBidRequests, getBidResponses } from 'test/fixtures/fixtures.js';
+import { auctionManager } from 'src/auctionManager.js';
 import * as auctionModule from 'src/auction.js';
 import * as native from 'src/native.js';
-import {fireNativeTrackers, getAllAssetsMessage} from 'src/native.js';
+import { fireNativeTrackers, getAllAssetsMessage } from 'src/native.js';
 import events from 'src/events.js';
 import { config as configObj } from 'src/config.js';
 
@@ -105,7 +105,7 @@ describe('secureCreatives', () => {
       const adUnitCodes = getAdUnits().map(unit => unit.code);
       const bidsBackHandler = function() {};
       const timeout = 2000;
-      auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout});
+      auction = auctionManager.createAuction({ adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout });
       resetAuction();
     });
 
@@ -133,7 +133,7 @@ describe('secureCreatives', () => {
     describe('Prebid Request', function() {
       it('should render', function () {
         pushBidResponseToAuction({
-          renderer: {render: sinon.stub(), url: 'some url'}
+          renderer: { render: sinon.stub(), url: 'some url' }
         });
 
         const data = {
@@ -160,7 +160,7 @@ describe('secureCreatives', () => {
 
       it('should allow stale rendering without config', function () {
         pushBidResponseToAuction({
-          renderer: {render: sinon.stub(), url: 'some url'}
+          renderer: { render: sinon.stub(), url: 'some url' }
         });
 
         const data = {
@@ -198,10 +198,10 @@ describe('secureCreatives', () => {
       });
 
       it('should stop stale rendering with config', function () {
-        configObj.setConfig({'auctionOptions': {'suppressStaleRender': true}});
+        configObj.setConfig({ 'auctionOptions': { 'suppressStaleRender': true } });
 
         pushBidResponseToAuction({
-          renderer: {render: sinon.stub(), url: 'some url'}
+          renderer: { render: sinon.stub(), url: 'some url' }
         });
 
         const data = {
@@ -235,7 +235,7 @@ describe('secureCreatives', () => {
         sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
         sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER, adResponse);
 
-        configObj.setConfig({'auctionOptions': {}});
+        configObj.setConfig({ 'auctionOptions': {} });
       });
     });
 
@@ -317,7 +317,7 @@ describe('secureCreatives', () => {
       });
 
       it('Prebid native should allow stale rendering with config', function () {
-        configObj.setConfig({'auctionOptions': {'suppressStaleRender': true}});
+        configObj.setConfig({ 'auctionOptions': { 'suppressStaleRender': true } });
 
         pushBidResponseToAuction({});
 
@@ -363,7 +363,7 @@ describe('secureCreatives', () => {
         sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
         sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
 
-        configObj.setConfig({'auctionOptions': {}});
+        configObj.setConfig({ 'auctionOptions': {} });
       });
     });
   });

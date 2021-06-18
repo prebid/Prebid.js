@@ -7,7 +7,7 @@ describe('jwplayerRtdProvider', function() {
   const testIdForSuccess = 'test_id_for_success';
   const testIdForFailure = 'test_id_for_failure';
   const validSegments = ['test_seg_1', 'test_seg_2'];
-  const responseHeader = {'Content-Type': 'application/json'};
+  const responseHeader = { 'Content-Type': 'application/json' };
 
   describe('Fetch targeting for mediaID tests', function () {
     let request;
@@ -481,10 +481,10 @@ describe('jwplayerRtdProvider', function() {
   });
 
   describe('Add Targeting to Bid', function () {
-    const targeting = {foo: 'bar'};
+    const targeting = { foo: 'bar' };
 
     it('creates realTimeData when absent from Bid', function () {
-      const targeting = {foo: 'bar'};
+      const targeting = { foo: 'bar' };
       const bid = {};
       addTargetingToBid(bid, targeting);
       expect(bid).to.have.property('rtd');

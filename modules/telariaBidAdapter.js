@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
-import {createBid as createBidFactory} from '../src/bidfactory.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {VIDEO} from '../src/mediaTypes.js';
-import {STATUS} from '../src/constants.json';
+import { createBid as createBidFactory } from '../src/bidfactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO } from '../src/mediaTypes.js';
+import { STATUS } from '../src/constants.json';
 
 const BIDDER_CODE = 'telaria';
 const DOMAIN = 'tremorhub.com';
@@ -102,7 +102,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     if (syncOptions.pixelEnabled && serverResponses.length) {
-      (utils.deepAccess(serverResponses, '0.body.ext.telaria.userSync') || []).forEach(url => syncs.push({type: 'image', url: url}));
+      (utils.deepAccess(serverResponses, '0.body.ext.telaria.userSync') || []).forEach(url => syncs.push({ type: 'image', url: url }));
     }
     return syncs;
   },

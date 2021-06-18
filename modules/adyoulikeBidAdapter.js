@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';

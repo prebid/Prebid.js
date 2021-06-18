@@ -1,7 +1,7 @@
 import { addSegmentData, getSegmentsAndCategories, sirdataSubmodule } from 'modules/sirdataRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
-const responseHeader = {'Content-Type': 'application/json'};
+const responseHeader = { 'Content-Type': 'application/json' };
 
 describe('sirdataRtdProvider', function() {
   describe('sirdataSubmodule', function() {
@@ -39,7 +39,7 @@ describe('sirdataRtdProvider', function() {
 
       let data = {
         segments: [111111, 222222],
-        contextual_categories: {'333333': 100}
+        contextual_categories: { '333333': 100 }
       };
 
       addSegmentData(adUnits, data, config, () => {});
@@ -78,7 +78,7 @@ describe('sirdataRtdProvider', function() {
 
       let data = {
         segments: [111111, 222222],
-        contextual_categories: {'333333': 100}
+        contextual_categories: { '333333': 100 }
       };
 
       getSegmentsAndCategories(reqBidsConfigObj, () => {}, config, {});

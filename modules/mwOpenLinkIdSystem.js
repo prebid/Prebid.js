@@ -96,7 +96,7 @@ function register(configParams, olid) {
 function setID(configParams) {
   if (!isValidConfig(configParams)) return undefined;
   const mwOlId = readCookie();
-  const newMwOlId = mwOlId ? utils.deepClone(mwOlId) : {eid: utils.generateUUID()};
+  const newMwOlId = mwOlId ? utils.deepClone(mwOlId) : { eid: utils.generateUUID() };
   writeCookie(newMwOlId);
   register(configParams, newMwOlId.eid);
   return {

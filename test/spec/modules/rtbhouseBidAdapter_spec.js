@@ -183,7 +183,7 @@ describe('RTBHouseAdapter', () => {
 
     it('should include bidfloor from floor module if avaiable', () => {
       const bidRequest = Object.assign([], bidRequests);
-      bidRequest[0].getFloor = () => ({floor: 1.22});
+      bidRequest[0].getFloor = () => ({ floor: 1.22 });
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].bidfloor).to.equal(1.22)
@@ -191,7 +191,7 @@ describe('RTBHouseAdapter', () => {
 
     it('should use bidfloor from floor module if both floor module and bid floor avaiable', () => {
       const bidRequest = Object.assign([], bidRequests);
-      bidRequest[0].getFloor = () => ({floor: 1.22});
+      bidRequest[0].getFloor = () => ({ floor: 1.22 });
       bidRequest[0].params.bidfloor = 0.01;
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
@@ -457,14 +457,14 @@ describe('RTBHouseAdapter', () => {
         }
       ];
       let bidderRequest;
-      let result = spec.interpretResponse({body: response}, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', function () {
       let response = '';
       let bidderRequest;
-      let result = spec.interpretResponse({body: response}, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
 
@@ -514,7 +514,7 @@ describe('RTBHouseAdapter', () => {
       }];
 
       it('should contain native assets in valid format', () => {
-        const bids = spec.interpretResponse({body: response}, {});
+        const bids = spec.interpretResponse({ body: response }, {});
         expect(bids[0].meta.advertiserDomains).to.deep.equal(['rtbhouse.com']);
         expect(bids[0].native).to.deep.equal({
           title: 'Title text',

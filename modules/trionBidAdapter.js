@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
@@ -54,7 +54,7 @@ export const spec = {
         bid.currency = result.currency;
         bid.netRevenue = result.netRevenue;
         if (result.adomain) {
-          bid.meta = {advertiserDomains: result.adomain}
+          bid.meta = { advertiserDomains: result.adomain }
         }
         bidResponses.push(bid);
       }

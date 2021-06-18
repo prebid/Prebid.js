@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
 import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'haloId';
@@ -31,7 +31,7 @@ export const haloIdSubmodule = {
   decode(value) {
     let haloId = storage.getDataFromLocalStorage('auHaloId');
     if (utils.isStr(haloId)) {
-      return {haloId: haloId};
+      return { haloId: haloId };
     }
     return (value && typeof value['haloId'] === 'string') ? { 'haloId': value['haloId'] } : undefined;
   },
@@ -47,7 +47,7 @@ export const haloIdSubmodule = {
     const resp = function (callback) {
       let haloId = storage.getDataFromLocalStorage('auHaloId');
       if (utils.isStr(haloId)) {
-        const responseObj = {haloId: haloId};
+        const responseObj = { haloId: haloId };
         callback(responseObj);
       } else {
         const callbacks = {
@@ -67,10 +67,10 @@ export const haloIdSubmodule = {
             callback();
           }
         };
-        ajax(url, callbacks, undefined, {method: 'GET'});
+        ajax(url, callbacks, undefined, { method: 'GET' });
       }
     };
-    return {callback: resp};
+    return { callback: resp };
   }
 };
 

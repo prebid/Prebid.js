@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   spec,
   getPriceGranularity,
@@ -7,11 +7,11 @@ import {
   hasVideoMediaType,
   resetRubiConf
 } from 'modules/rubiconBidAdapter.js';
-import {parse as parseQuery} from 'querystring';
-import {config} from 'src/config.js';
+import { parse as parseQuery } from 'querystring';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
-import {createEidsArray} from 'modules/userId/eids.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 const PBS_INTEGRATION = 'pbjs';
@@ -227,7 +227,7 @@ describe('the rubicon adapter', function () {
       'size_id': 201,
     };
     bid.userId = {
-      lipb: {lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB']},
+      lipb: { lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB'] },
       idl_env: '1111-2222-3333-4444',
       tdid: '3000',
       pubcid: '4000',
@@ -339,19 +339,19 @@ describe('the rubicon adapter', function () {
     };
 
     sizeMap = [
-      {sizeId: 1, size: '468x60'},
-      {sizeId: 2, size: '728x90'},
-      {sizeId: 5, size: '120x90'},
-      {sizeId: 8, size: '120x600'},
-      {sizeId: 9, size: '160x600'},
-      {sizeId: 10, size: '300x600'},
-      {sizeId: 13, size: '200x200'},
-      {sizeId: 14, size: '250x250'},
-      {sizeId: 15, size: '300x250'},
-      {sizeId: 16, size: '336x280'},
-      {sizeId: 19, size: '300x100'},
-      {sizeId: 31, size: '980x120'},
-      {sizeId: 32, size: '250x360'}
+      { sizeId: 1, size: '468x60' },
+      { sizeId: 2, size: '728x90' },
+      { sizeId: 5, size: '120x90' },
+      { sizeId: 8, size: '120x600' },
+      { sizeId: 9, size: '160x600' },
+      { sizeId: 10, size: '300x600' },
+      { sizeId: 13, size: '200x200' },
+      { sizeId: 14, size: '250x250' },
+      { sizeId: 15, size: '300x250' },
+      { sizeId: 16, size: '336x280' },
+      { sizeId: 19, size: '300x100' },
+      { sizeId: 31, size: '980x120' },
+      { sizeId: 32, size: '250x360' }
       // Create convenience properties for [sizeAsArray, width, height] by parsing the size string
     ].map(item => {
       const sizeAsArray = item.size.split('x').map(s => parseInt(s));
@@ -465,25 +465,25 @@ describe('the rubicon adapter', function () {
           expect(data.rp_hard_floor).to.be.undefined;
 
           // make it respond with a non USD floor should not send it
-          getFloorResponse = {currency: 'EUR', floor: 1.0};
+          getFloorResponse = { currency: 'EUR', floor: 1.0 };
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.be.undefined;
 
           // make it respond with a non USD floor should not send it
-          getFloorResponse = {currency: 'EUR'};
+          getFloorResponse = { currency: 'EUR' };
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.be.undefined;
 
           // make it respond with USD floor and string floor
-          getFloorResponse = {currency: 'USD', floor: '1.23'};
+          getFloorResponse = { currency: 'USD', floor: '1.23' };
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.equal('1.23');
 
           // make it respond with USD floor and num floor
-          getFloorResponse = {currency: 'USD', floor: 1.23};
+          getFloorResponse = { currency: 'USD', floor: 1.23 };
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.equal('1.23');
@@ -554,7 +554,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should correctly send p_pos in sra fashion', function() {
-          config.setConfig({rubicon: {singleRequest: true}});
+          config.setConfig({ rubicon: { singleRequest: true } });
           // first one is atf
           var sraPosRequest = utils.deepClone(bidderRequest);
 
@@ -675,7 +675,7 @@ describe('the rubicon adapter', function () {
             ]
           };
 
-          bidderRequest = Object.assign({refererInfo}, bidderRequest);
+          bidderRequest = Object.assign({ refererInfo }, bidderRequest);
           delete bidderRequest.bids[0].params.referrer;
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
@@ -688,8 +688,8 @@ describe('the rubicon adapter', function () {
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
-          let refererInfo = {referer: 'https://www.prebid.org'};
-          bidderRequest = Object.assign({refererInfo}, bidderRequest);
+          let refererInfo = { referer: 'https://www.prebid.org' };
+          bidderRequest = Object.assign({ refererInfo }, bidderRequest);
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
 
@@ -905,7 +905,7 @@ describe('the rubicon adapter', function () {
               }],
               gender: 'M',
               yob: '1984',
-              geo: {country: 'ca'},
+              geo: { country: 'ca' },
               keywords: 'd',
               ext: {
                 data: {
@@ -955,7 +955,7 @@ describe('the rubicon adapter', function () {
           it('should group all bid requests with the same site id', function () {
             sandbox.stub(Math, 'random').callsFake(() => 0.1);
 
-            config.setConfig({rubicon: {singleRequest: true}});
+            config.setConfig({ rubicon: { singleRequest: true } });
 
             const expectedQuery = {
               'account_id': '14062',
@@ -1062,7 +1062,7 @@ describe('the rubicon adapter', function () {
           });
 
           it('should not send more than 10 bids in a request (split into separate requests with <= 10 bids each)', function () {
-            config.setConfig({rubicon: {singleRequest: true}});
+            config.setConfig({ rubicon: { singleRequest: true } });
             let serverRequests;
             let data;
 
@@ -1104,7 +1104,7 @@ describe('the rubicon adapter', function () {
           });
 
           it('should not group bid requests if singleRequest does not equal true', function () {
-            config.setConfig({rubicon: {singleRequest: false}});
+            config.setConfig({ rubicon: { singleRequest: false } });
 
             const bidCopy = utils.deepClone(bidderRequest.bids[0]);
             bidderRequest.bids.push(bidCopy);
@@ -1122,7 +1122,7 @@ describe('the rubicon adapter', function () {
           });
 
           it('should not group video bid requests', function () {
-            config.setConfig({rubicon: {singleRequest: true}});
+            config.setConfig({ rubicon: { singleRequest: true } });
 
             const bidCopy = utils.deepClone(bidderRequest.bids[0]);
             bidderRequest.bids.push(bidCopy);
@@ -1323,7 +1323,7 @@ describe('the rubicon adapter', function () {
 
           describe('Config user.id support', function () {
             it('should send ppuid when config defines user.id', function () {
-              config.setConfig({user: {id: '123'}});
+              config.setConfig({ user: { id: '123' } });
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 pubcid: '1111'
@@ -1532,7 +1532,7 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
           // should contain version
-          expect(post.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: 'v$prebid.version$'});
+          expect(post.ext.prebid.channel).to.deep.equal({ name: 'pbjs', version: 'v$prebid.version$' });
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           // EIDs should exist
           expect(post.user.ext).to.have.property('eids').that.is.an('array');
@@ -1603,22 +1603,22 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].bidfloor).to.be.undefined;
 
           // make it respond with a non USD floor should not send it
-          getFloorResponse = {currency: 'EUR', floor: 1.0};
+          getFloorResponse = { currency: 'EUR', floor: 1.0 };
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.imp[0].bidfloor).to.be.undefined;
 
           // make it respond with a non USD floor should not send it
-          getFloorResponse = {currency: 'EUR'};
+          getFloorResponse = { currency: 'EUR' };
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.imp[0].bidfloor).to.be.undefined;
 
           // make it respond with USD floor and string floor
-          getFloorResponse = {currency: 'USD', floor: '1.23'};
+          getFloorResponse = { currency: 'USD', floor: '1.23' };
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.imp[0].bidfloor).to.equal(1.23);
 
           // make it respond with USD floor and num floor
-          getFloorResponse = {currency: 'USD', floor: 1.23};
+          getFloorResponse = { currency: 'USD', floor: 1.23 };
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.imp[0].bidfloor).to.equal(1.23);
         });
@@ -1655,7 +1655,7 @@ describe('the rubicon adapter', function () {
 
           // should have the aliases object sent to PBS
           expect(request.data.ext.prebid).to.haveOwnProperty('aliases');
-          expect(request.data.ext.prebid.aliases).to.deep.equal({superRubicon: 'rubicon'});
+          expect(request.data.ext.prebid.aliases).to.deep.equal({ superRubicon: 'rubicon' });
 
           // should have the imp ext bidder params be under the alias name not rubicon superRubicon
           expect(request.data.imp[0].ext).to.have.property('superRubicon').that.is.an('object');
@@ -1680,7 +1680,7 @@ describe('the rubicon adapter', function () {
             maxbids: 2
           }];
 
-          config.setConfig({multibid: multibid});
+          config.setConfig({ multibid: multibid });
 
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
@@ -1696,7 +1696,7 @@ describe('the rubicon adapter', function () {
           let payload = request.data;
 
           expect(payload.ext.prebid.analytics).to.not.be.undefined;
-          expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
+          expect(payload.ext.prebid.analytics).to.deep.equal({ 'rubicon': { 'client-analytics': true } });
         });
 
         it('should pass client analytics to PBS endpoint if rubicon analytics adapter is included', function () {
@@ -1706,7 +1706,7 @@ describe('the rubicon adapter', function () {
           let payload = request.data;
 
           expect(payload.ext.prebid.analytics).to.not.be.undefined;
-          expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
+          expect(payload.ext.prebid.analytics).to.deep.equal({ 'rubicon': { 'client-analytics': true } });
         });
 
         it('should not pass client analytics to PBS endpoint if rubicon analytics adapter is not included', function () {
@@ -1720,7 +1720,7 @@ describe('the rubicon adapter', function () {
 
         it('should send video exp param correctly when set', function () {
           createVideoBidderRequest();
-          config.setConfig({s2sConfig: {defaultTtl: 600}});
+          config.setConfig({ s2sConfig: { defaultTtl: 600 } });
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let post = request.data;
 
@@ -1985,11 +1985,11 @@ describe('the rubicon adapter', function () {
               }
             },
             content: {
-              data: [{foo: 'bar'}]
+              data: [{ foo: 'bar' }]
             },
             keywords: 'e,f',
             rating: '4-star',
-            data: [{foo: 'bar'}]
+            data: [{ foo: 'bar' }]
           };
           const user = {
             ext: {
@@ -2000,8 +2000,8 @@ describe('the rubicon adapter', function () {
             keywords: 'd',
             gender: 'M',
             yob: '1984',
-            geo: {country: 'ca'},
-            data: [{foo: 'bar'}]
+            geo: { country: 'ca' },
+            data: [{ foo: 'bar' }]
           };
 
           sandbox.stub(config, 'getConfig').callsFake(key => {
@@ -2017,7 +2017,7 @@ describe('the rubicon adapter', function () {
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           const expected = {
-            site: Object.assign({}, site, {keywords: bidderRequest.bids[0].params.keywords.join(',')}),
+            site: Object.assign({}, site, { keywords: bidderRequest.bids[0].params.keywords.join(',') }),
             user: Object.assign({}, user),
             siteData: Object.assign({}, site.ext.data, bidderRequest.bids[0].params.inventory),
             userData: Object.assign({}, user.ext.data, bidderRequest.bids[0].params.visitor),
@@ -2090,13 +2090,13 @@ describe('the rubicon adapter', function () {
 
         it('should use the integration type provided in the config instead of the default', () => {
           createVideoBidderRequest();
-          config.setConfig({rubicon: {int_type: 'testType'}});
+          config.setConfig({ rubicon: { int_type: 'testType' } });
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
         });
 
         it('should pass the user.id provided in the config', function () {
-          config.setConfig({user: {id: '123'}});
+          config.setConfig({ user: { id: '123' } });
           createVideoBidderRequest();
 
           sandbox.stub(Date, 'now').callsFake(() =>
@@ -2150,29 +2150,29 @@ describe('the rubicon adapter', function () {
         it('should combine an array of slot url params', function () {
           expect(spec.combineSlotUrlParams([])).to.deep.equal({});
 
-          expect(spec.combineSlotUrlParams([{p1: 'foo', p2: 'test', p3: ''}])).to.deep.equal({
+          expect(spec.combineSlotUrlParams([{ p1: 'foo', p2: 'test', p3: '' }])).to.deep.equal({
             p1: 'foo',
             p2: 'test',
             p3: ''
           });
 
-          expect(spec.combineSlotUrlParams([{}, {p1: 'foo', p2: 'test'}])).to.deep.equal({p1: ';foo', p2: ';test'});
+          expect(spec.combineSlotUrlParams([{}, { p1: 'foo', p2: 'test' }])).to.deep.equal({ p1: ';foo', p2: ';test' });
 
-          expect(spec.combineSlotUrlParams([{}, {}, {p1: 'foo', p2: ''}, {}])).to.deep.equal({p1: ';;foo;', p2: ''});
+          expect(spec.combineSlotUrlParams([{}, {}, { p1: 'foo', p2: '' }, {}])).to.deep.equal({ p1: ';;foo;', p2: '' });
 
-          expect(spec.combineSlotUrlParams([{}, {p1: 'foo'}, {p1: ''}])).to.deep.equal({p1: ';foo;'});
-
-          expect(spec.combineSlotUrlParams([
-            {p1: 'foo', p2: 'test'},
-            {p2: 'test', p3: 'bar'},
-            {p1: 'bar', p2: 'test', p4: 'bar'}
-          ])).to.deep.equal({p1: 'foo;;bar', p2: 'test', p3: ';bar;', p4: ';;bar'});
+          expect(spec.combineSlotUrlParams([{}, { p1: 'foo' }, { p1: '' }])).to.deep.equal({ p1: ';foo;' });
 
           expect(spec.combineSlotUrlParams([
-            {p1: 'foo', p2: 'test', p3: 'baz'},
-            {p1: 'foo', p2: 'bar'},
-            {p2: 'test'}
-          ])).to.deep.equal({p1: 'foo;foo;', p2: 'test;bar;test', p3: 'baz;;'});
+            { p1: 'foo', p2: 'test' },
+            { p2: 'test', p3: 'bar' },
+            { p1: 'bar', p2: 'test', p4: 'bar' }
+          ])).to.deep.equal({ p1: 'foo;;bar', p2: 'test', p3: ';bar;', p4: ';;bar' });
+
+          expect(spec.combineSlotUrlParams([
+            { p1: 'foo', p2: 'test', p3: 'baz' },
+            { p1: 'foo', p2: 'bar' },
+            { p2: 'test' }
+          ])).to.deep.equal({ p1: 'foo;foo;', p2: 'test;bar;test', p3: 'baz;;' });
         });
       });
 
@@ -2337,7 +2337,7 @@ describe('the rubicon adapter', function () {
             ]
           };
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -2440,7 +2440,7 @@ describe('the rubicon adapter', function () {
               netRevenue: false
             }
           });
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
           expect(bids).to.be.lengthOf(2);
@@ -2453,7 +2453,7 @@ describe('the rubicon adapter', function () {
               netRevenue: true
             }
           });
-          bids = spec.interpretResponse({body: response}, {
+          bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
           expect(bids).to.be.lengthOf(2);
@@ -2466,7 +2466,7 @@ describe('the rubicon adapter', function () {
               netRevenue: undefined
             }
           });
-          bids = spec.interpretResponse({body: response}, {
+          bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
           expect(bids).to.be.lengthOf(2);
@@ -2479,7 +2479,7 @@ describe('the rubicon adapter', function () {
               netRevenue: 'someString'
             }
           });
-          bids = spec.interpretResponse({body: response}, {
+          bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
           expect(bids).to.be.lengthOf(2);
@@ -2525,7 +2525,7 @@ describe('the rubicon adapter', function () {
             }
           ];
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
           expect(bids[0].creativeId).to.equal('8-7');
@@ -2551,7 +2551,7 @@ describe('the rubicon adapter', function () {
             }
           ];
 
-          bids = spec.interpretResponse({body: response}, {
+          bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
           expect(bids[0].creativeId).to.equal('-');
@@ -2578,7 +2578,7 @@ describe('the rubicon adapter', function () {
             }
           ];
 
-          bids = spec.interpretResponse({body: response}, {
+          bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
           expect(bids[0].creativeId).to.equal('8-');
@@ -2605,7 +2605,7 @@ describe('the rubicon adapter', function () {
             }
           ];
 
-          bids = spec.interpretResponse({body: response}, {
+          bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
           expect(bids[0].creativeId).to.equal('-7');
@@ -2630,7 +2630,7 @@ describe('the rubicon adapter', function () {
             }]
           };
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -2767,9 +2767,9 @@ describe('the rubicon adapter', function () {
             ]
           };
 
-          config.setConfig({ multibid: [{bidder: 'rubicon', maxbids: 2, targetbiddercodeprefix: 'rubi'}] });
+          config.setConfig({ multibid: [{ bidder: 'rubicon', maxbids: 2, targetbiddercodeprefix: 'rubi' }] });
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidRequests
           });
 
@@ -2793,7 +2793,7 @@ describe('the rubicon adapter', function () {
             'ads': []
           };
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -2817,7 +2817,7 @@ describe('the rubicon adapter', function () {
             }]
           };
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -2827,7 +2827,7 @@ describe('the rubicon adapter', function () {
         it('should handle an error because of malformed json response', function () {
           let response = '{test{';
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -2853,7 +2853,7 @@ describe('the rubicon adapter', function () {
             }]
           };
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: [utils.deepClone(bidderRequest.bids[0])]
           });
 
@@ -2864,7 +2864,7 @@ describe('the rubicon adapter', function () {
         describe('singleRequest enabled', function () {
           it('handles bidRequest of type Array and returns associated adUnits', function () {
             const overrideMap = [];
-            overrideMap[0] = {impression_id: '1'};
+            overrideMap[0] = { impression_id: '1' };
 
             const stubAds = [];
             for (let i = 0; i < 10; i++) {
@@ -2887,7 +2887,7 @@ describe('the rubicon adapter', function () {
                 'inventory': {},
                 'ads': stubAds
               }
-            }, {bidRequest: stubBids});
+            }, { bidRequest: stubBids });
             expect(bids).to.be.a('array').with.lengthOf(10);
 
             bids.forEach((bid) => {
@@ -2920,7 +2920,7 @@ describe('the rubicon adapter', function () {
 
           it('handles incorrect adUnits length by returning all bids with matching ads', function () {
             const overrideMap = [];
-            overrideMap[0] = {impression_id: '1'};
+            overrideMap[0] = { impression_id: '1' };
 
             const stubAds = [];
             for (let i = 0; i < 6; i++) {
@@ -2943,7 +2943,7 @@ describe('the rubicon adapter', function () {
                 'inventory': {},
                 'ads': stubAds
               }
-            }, {bidRequest: stubBids});
+            }, { bidRequest: stubBids });
 
             // no bids expected because response didn't match requested bid number
             expect(bids).to.be.a('array').with.lengthOf(6);
@@ -2954,11 +2954,11 @@ describe('the rubicon adapter', function () {
             // Create overrides to break associations between bids and ads
             // Each override should cause one less bid to be returned by interpretResponse
             const overrideMap = [];
-            overrideMap[0] = {impression_id: '1'};
-            overrideMap[2] = {status: 'error'};
-            overrideMap[4] = {status: 'error'};
-            overrideMap[7] = {status: 'error'};
-            overrideMap[8] = {status: 'error'};
+            overrideMap[0] = { impression_id: '1' };
+            overrideMap[2] = { status: 'error' };
+            overrideMap[4] = { status: 'error' };
+            overrideMap[7] = { status: 'error' };
+            overrideMap[8] = { status: 'error' };
 
             for (let i = 0; i < 10; i++) {
               stubAds.push(createResponseAdByIndex(i, sizeMap[i].sizeId, overrideMap));
@@ -2980,7 +2980,7 @@ describe('the rubicon adapter', function () {
                 'inventory': {},
                 'ads': stubAds
               }
-            }, {bidRequest: stubBids});
+            }, { bidRequest: stubBids });
             expect(bids).to.be.a('array').with.lengthOf(6);
 
             bids.forEach((bid) => {
@@ -3051,7 +3051,7 @@ describe('the rubicon adapter', function () {
             }],
           };
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -3062,7 +3062,7 @@ describe('the rubicon adapter', function () {
           expect(bids[0].cpm).to.equal(2);
           expect(bids[0].ttl).to.equal(300);
           expect(bids[0].netRevenue).to.equal(true);
-          expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
+          expect(bids[0].adserverTargeting).to.deep.equal({ hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64' });
           expect(bids[0].mediaType).to.equal('video');
           expect(bids[0].meta.mediaType).to.equal('video');
           expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
@@ -3078,13 +3078,13 @@ describe('the rubicon adapter', function () {
         const sandbox = sinon.createSandbox();
         beforeEach(function () {
           createVideoBidderRequestOutstream();
-          config.setConfig({rubicon: {
+          config.setConfig({ rubicon: {
             rendererConfig: {
               align: 'left',
               closeButton: true
             },
             rendererUrl: 'https://example.test/renderer.js'
-          }});
+          } });
           window.MagniteApex = {
             renderAd: function() {
               return null;
@@ -3128,7 +3128,7 @@ describe('the rubicon adapter', function () {
             }],
           };
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
 
@@ -3139,7 +3139,7 @@ describe('the rubicon adapter', function () {
           expect(bids[0].cpm).to.equal(2);
           expect(bids[0].ttl).to.equal(300);
           expect(bids[0].netRevenue).to.equal(true);
-          expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
+          expect(bids[0].adserverTargeting).to.deep.equal({ hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64' });
           expect(bids[0].mediaType).to.equal('video');
           expect(bids[0].meta.mediaType).to.equal('video');
           expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
@@ -3191,7 +3191,7 @@ describe('the rubicon adapter', function () {
 
           sinon.spy(window.MagniteApex, 'renderAd');
 
-          let bids = spec.interpretResponse({body: response}, {
+          let bids = spec.interpretResponse({ body: response }, {
             bidRequest: bidderRequest.bids[0]
           });
           const bid = bids[0];
@@ -3223,7 +3223,7 @@ describe('the rubicon adapter', function () {
 
       describe('config with integration type', () => {
         it('should use the integration type provided in the config instead of the default', () => {
-          config.setConfig({rubicon: {int_type: 'testType'}});
+          config.setConfig({ rubicon: { int_type: 'testType' } });
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).tk_flint).to.equal('testType_v$prebid.version$');
         });
@@ -3243,14 +3243,14 @@ describe('the rubicon adapter', function () {
         iframeEnabled: true
       });
 
-      expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
+      expect(syncs).to.deep.equal({ type: 'iframe', url: emilyUrl });
     });
 
     it('should not register the Emily iframe more than once', function () {
       let syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
-      expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
+      expect(syncs).to.deep.equal({ type: 'iframe', url: emilyUrl });
 
       // when called again, should still have only been called once
       syncs = spec.getUserSyncs();
@@ -3258,7 +3258,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass gdpr params if consent is true', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
         gdprApplies: true, consentString: 'foo'
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr=1&gdpr_consent=foo`
@@ -3266,7 +3266,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass gdpr params if consent is false', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
         gdprApplies: false, consentString: 'foo'
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr=0&gdpr_consent=foo`
@@ -3274,7 +3274,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass gdpr param gdpr_consent only when gdprApplies is undefined', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
         consentString: 'foo'
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr_consent=foo`
@@ -3282,13 +3282,13 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass no params if gdpr consentString is not defined', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {})).to.deep.equal({
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {})).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
       });
     });
 
     it('should pass no params if gdpr consentString is a number', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
         consentString: 0
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
@@ -3296,7 +3296,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass no params if gdpr consentString is null', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
         consentString: null
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
@@ -3304,7 +3304,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass no params if gdpr consentString is a object', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
         consentString: {}
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
@@ -3312,19 +3312,19 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass no params if gdpr is not defined', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, undefined)).to.deep.equal({
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined)).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
       });
     });
 
     it('should pass us_privacy if uspConsent is defined', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, undefined, '1NYN')).to.deep.equal({
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?us_privacy=1NYN`
       });
     });
 
     it('should pass us_privacy after gdpr if both are present', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
         consentString: 'foo'
       }, '1NYN')).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr_consent=foo&us_privacy=1NYN`
@@ -3334,7 +3334,7 @@ describe('the rubicon adapter', function () {
 
   describe('get price granularity', function () {
     it('should return correct buckets for all price granularity values', function () {
-      const CUSTOM_PRICE_BUCKET_ITEM = {max: 5, increment: 0.5};
+      const CUSTOM_PRICE_BUCKET_ITEM = { max: 5, increment: 0.5 };
 
       const mockConfig = {
         priceGranularity: undefined,
@@ -3347,12 +3347,12 @@ describe('the rubicon adapter', function () {
       });
 
       [
-        {key: 'low', val: {max: 5.00, increment: 0.50}},
-        {key: 'medium', val: {max: 20.00, increment: 0.10}},
-        {key: 'high', val: {max: 20.00, increment: 0.01}},
-        {key: 'auto', val: {max: 5.00, increment: 0.05}},
-        {key: 'dense', val: {max: 3.00, increment: 0.01}},
-        {key: 'custom', val: CUSTOM_PRICE_BUCKET_ITEM},
+        { key: 'low', val: { max: 5.00, increment: 0.50 } },
+        { key: 'medium', val: { max: 20.00, increment: 0.10 } },
+        { key: 'high', val: { max: 20.00, increment: 0.01 } },
+        { key: 'auto', val: { max: 5.00, increment: 0.05 } },
+        { key: 'dense', val: { max: 3.00, increment: 0.01 } },
+        { key: 'custom', val: CUSTOM_PRICE_BUCKET_ITEM },
 
       ].forEach(kvPair => {
         mockConfig.priceGranularity = kvPair.key;
@@ -3503,7 +3503,7 @@ describe('the rubicon adapter', function () {
       let syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
-      expect(syncs).to.deep.equal({type: 'iframe', url: 'https://eus-qa.rubiconproject.com/usync.html'});
+      expect(syncs).to.deep.equal({ type: 'iframe', url: 'https://eus-qa.rubiconproject.com/usync.html' });
     });
   });
 });

@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec, storage} from 'modules/conversantBidAdapter.js';
+import { expect } from 'chai';
+import { spec, storage } from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
@@ -168,7 +168,7 @@ describe('Conversant adapter tests', function() {
         }]
       }]
     },
-    headers: {}};
+    headers: {} };
 
   it('Verify basic properties', function() {
     expect(spec.code).to.equal('conversant');
@@ -180,8 +180,8 @@ describe('Conversant adapter tests', function() {
 
   it('Verify isBidRequestValid', function() {
     expect(spec.isBidRequestValid({})).to.be.false;
-    expect(spec.isBidRequestValid({params: {}})).to.be.false;
-    expect(spec.isBidRequestValid({params: {site_id: '123'}})).to.be.true;
+    expect(spec.isBidRequestValid({ params: {} })).to.be.false;
+    expect(spec.isBidRequestValid({ params: { site_id: '123' } })).to.be.true;
     expect(spec.isBidRequestValid(bidRequests[0])).to.be.true;
     expect(spec.isBidRequestValid(bidRequests[1])).to.be.true;
     expect(spec.isBidRequestValid(bidRequests[2])).to.be.true;
@@ -227,7 +227,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[0]).to.have.property('banner');
     expect(payload.imp[0].banner).to.have.property('pos', 1);
     expect(payload.imp[0].banner).to.have.property('format');
-    expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}]);
+    expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
     expect(payload.imp[0]).to.not.have.property('video');
 
     expect(payload.imp[1]).to.have.property('id', 'bid001');
@@ -239,7 +239,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[1]).to.have.property('banner');
     expect(payload.imp[1].banner).to.not.have.property('pos');
     expect(payload.imp[1].banner).to.have.property('format');
-    expect(payload.imp[1].banner.format).to.deep.equal([{w: 728, h: 90}, {w: 468, h: 60}]);
+    expect(payload.imp[1].banner.format).to.deep.equal([{ w: 728, h: 90 }, { w: 468, h: 60 }]);
 
     expect(payload.imp[2]).to.have.property('id', 'bid002');
     expect(payload.imp[2]).to.have.property('secure', 1);
@@ -249,7 +249,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[2]).to.have.property('banner');
     expect(payload.imp[2].banner).to.have.property('pos', 2);
     expect(payload.imp[2].banner).to.have.property('format');
-    expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 600}, {w: 160, h: 600}]);
+    expect(payload.imp[2].banner.format).to.deep.equal([{ w: 300, h: 600 }, { w: 160, h: 600 }]);
 
     expect(payload.imp[3]).to.have.property('id', 'bid003');
     expect(payload.imp[3]).to.have.property('secure', 1);
@@ -323,7 +323,7 @@ describe('Conversant adapter tests', function() {
 
   it('Verify override url', function() {
     const testUrl = 'https://someurl?name=value';
-    const request = spec.buildRequests([{params: {white_label_url: testUrl}}]);
+    const request = spec.buildRequests([{ params: { white_label_url: testUrl } }]);
     expect(request.url).to.equal(testUrl);
   });
 
@@ -376,9 +376,9 @@ describe('Conversant adapter tests', function() {
   it('Verify handling of bad responses', function() {
     let response = spec.interpretResponse({}, {});
     expect(response).to.be.an('array').with.lengthOf(0);
-    response = spec.interpretResponse({id: '123'}, {});
+    response = spec.interpretResponse({ id: '123' }, {});
     expect(response).to.be.an('array').with.lengthOf(0);
-    response = spec.interpretResponse({id: '123', seatbid: []}, {});
+    response = spec.interpretResponse({ id: '123', seatbid: [] }, {});
     expect(response).to.be.an('array').with.lengthOf(0);
   });
 
@@ -388,7 +388,7 @@ describe('Conversant adapter tests', function() {
 
     // add pubcid to every entry
     requests.forEach((unit) => {
-      Object.assign(unit, {crumbs: {pubcid: 12345}});
+      Object.assign(unit, { crumbs: { pubcid: 12345 } });
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
@@ -402,8 +402,8 @@ describe('Conversant adapter tests', function() {
 
     // add pubcid to every entry
     requests.forEach((unit) => {
-      Object.assign(unit, {userId: {pubcid: 67890}});
-      Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
+      Object.assign(unit, { userId: { pubcid: 67890 } });
+      Object.assign(unit, { userIdAsEids: createEidsArray(unit.userId) });
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
@@ -477,14 +477,14 @@ describe('Conversant adapter tests', function() {
 
       // add pubcid to every entry
       requests.forEach((unit) => {
-        Object.assign(unit, {userId: {pubcid: '112233', tdid: '223344', idl_env: '334455'}});
-        Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
+        Object.assign(unit, { userId: { pubcid: '112233', tdid: '223344', idl_env: '334455' } });
+        Object.assign(unit, { userIdAsEids: createEidsArray(unit.userId) });
       });
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
-        {source: 'adserver.org', uids: [{id: '223344', atype: 1, ext: {rtiPartner: 'TDID'}}]},
-        {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}
+        { source: 'adserver.org', uids: [{ id: '223344', atype: 1, ext: { rtiPartner: 'TDID' } }] },
+        { source: 'liveramp.com', uids: [{ id: '334455', atype: 3 }] }
       ]);
     });
   });

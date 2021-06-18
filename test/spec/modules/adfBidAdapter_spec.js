@@ -52,7 +52,7 @@ describe('Adf adapter', function () {
 
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://10.8.57.207/adx/openrtb');
-      assert.deepEqual(request.options, {contentType: 'application/json'});
+      assert.deepEqual(request.options, { contentType: 'application/json' });
       assert.ok(request.data);
     });
 
@@ -96,13 +96,13 @@ describe('Adf adapter', function () {
           bidId: 'bidId',
           params: { siteId: 'siteId' }
         }];
-        let bidderRequest = {gdprConsent: {gdprApplies: false, consentString: 'consentDataString'}, refererInfo: { referer: 'page' }};
+        let bidderRequest = { gdprConsent: { gdprApplies: false, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.user.ext.consent, 'consentDataString');
         assert.equal(request.regs.ext.gdpr, 0);
 
-        bidderRequest = {gdprConsent: {consentString: 'consentDataString'}, refererInfo: { referer: 'page' }};
+        bidderRequest = { gdprConsent: { consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
         request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.user, undefined);
@@ -283,15 +283,15 @@ describe('Adf adapter', function () {
         let validBidRequests = [{
           bidId: 'bidId',
           params: { mid: '1000' },
-          mediaTypes: {video: {}}
+          mediaTypes: { video: {} }
         }, {
           bidId: 'bidId2',
           params: { mid: '1000' },
-          mediaTypes: {video: {}}
+          mediaTypes: { video: {} }
         }, {
           bidId: 'bidId3',
           params: { mid: '1000' },
-          mediaTypes: {video: {}}
+          mediaTypes: { video: {} }
         }];
         let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
 
@@ -301,9 +301,9 @@ describe('Adf adapter', function () {
       });
 
       it('should add mid', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} },
-          { bidId: 'bidId2', params: {mid: 1001}, mediaTypes: {video: {}} },
-          { bidId: 'bidId3', params: {mid: 1002}, mediaTypes: {video: {}} }];
+        let validBidRequests = [{ bidId: 'bidId', params: { mid: 1000 }, mediaTypes: { video: {} } },
+          { bidId: 'bidId2', params: { mid: 1001 }, mediaTypes: { video: {} } },
+          { bidId: 'bidId3', params: { mid: 1002 }, mediaTypes: { video: {} } }];
         let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
         for (let i = 0; i < 3; i++) {
           assert.equal(imps[i].tagid, validBidRequests[i].params.mid);
@@ -563,9 +563,9 @@ describe('Adf adapter', function () {
       let serverResponse = {
         body: {
           seatbid: [{
-            bid: [{impid: '1', native: {ver: '1.1', link: { url: 'link' }, assets: [{id: 1, title: {text: 'Asset title text'}}]}}]
+            bid: [{ impid: '1', native: { ver: '1.1', link: { url: 'link' }, assets: [{ id: 1, title: { text: 'Asset title text' } }] } }]
           }, {
-            bid: [{impid: '2', native: {ver: '1.1', link: { url: 'link' }, assets: [{id: 1, data: {value: 'Asset title text'}}]}}]
+            bid: [{ impid: '2', native: { ver: '1.1', link: { url: 'link' }, assets: [{ id: 1, data: { value: 'Asset title text' } }] } }]
           }]
         }
       };
@@ -602,11 +602,11 @@ describe('Adf adapter', function () {
         body: {
           seatbid: [{
             bid: [
-              {impid: '1', native: {ver: '1.1', link: { url: 'link1' }, assets: [{id: 1, title: {text: 'Asset title text'}}]}},
-              {impid: '4', native: {ver: '1.1', link: { url: 'link4' }, assets: [{id: 1, title: {text: 'Asset title text'}}]}}
+              { impid: '1', native: { ver: '1.1', link: { url: 'link1' }, assets: [{ id: 1, title: { text: 'Asset title text' } }] } },
+              { impid: '4', native: { ver: '1.1', link: { url: 'link4' }, assets: [{ id: 1, title: { text: 'Asset title text' } }] } }
             ]
           }, {
-            bid: [{impid: '2', native: {ver: '1.1', link: { url: 'link2' }, assets: [{id: 1, data: {value: 'Asset title text'}}]}}]
+            bid: [{ impid: '2', native: { ver: '1.1', link: { url: 'link2' }, assets: [{ id: 1, data: { value: 'Asset title text' } }] } }]
           }]
         }
       };
@@ -727,38 +727,38 @@ describe('Adf adapter', function () {
                 id: 0,
                 img: null,
                 required: 0,
-                title: {text: 'title', len: null},
+                title: { text: 'title', len: null },
                 video: null
               }, {
                 data: null,
                 id: 2,
-                img: {type: null, url: 'test.url.com/Files/58345/308185.jpg?bv=1', w: 30, h: 10},
+                img: { type: null, url: 'test.url.com/Files/58345/308185.jpg?bv=1', w: 30, h: 10 },
                 required: 0,
                 title: null,
                 video: null
               }, {
                 data: null,
                 id: 3,
-                img: {type: null, url: 'test.url.com/Files/58345/308200.jpg?bv=1', w: 100, h: 100},
+                img: { type: null, url: 'test.url.com/Files/58345/308200.jpg?bv=1', w: 100, h: 100 },
                 required: 0,
                 title: null,
                 video: null
               }, {
-                data: {type: null, len: null, value: 'body'},
+                data: { type: null, len: null, value: 'body' },
                 id: 4,
                 img: null,
                 required: 0,
                 title: null,
                 video: null
               }, {
-                data: {type: null, len: null, value: 'cta'},
+                data: { type: null, len: null, value: 'cta' },
                 id: 1,
                 img: null,
                 required: 0,
                 title: null,
                 video: null
               }, {
-                data: {type: null, len: null, value: 'sponsoredBy'},
+                data: { type: null, len: null, value: 'sponsoredBy' },
                 id: 5,
                 img: null,
                 required: 0,
@@ -794,8 +794,8 @@ describe('Adf adapter', function () {
         impressionTrackers: native.imptrackers,
         javascriptTrackers: [ native.jstracker ],
         title: assets[0].title.text,
-        icon: {url: assets[1].img.url, width: assets[1].img.w, height: assets[1].img.h},
-        image: {url: assets[2].img.url, width: assets[2].img.w, height: assets[2].img.h},
+        icon: { url: assets[1].img.url, width: assets[1].img.w, height: assets[1].img.h },
+        image: { url: assets[2].img.url, width: assets[2].img.w, height: assets[2].img.h },
         body: assets[3].data.value,
         cta: assets[4].data.value,
         sponsoredBy: assets[5].data.value

@@ -78,7 +78,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     }
     var coppa = function() {
       if (config.getConfig('coppa') === true) {
-        return {'coppa': true};
+        return { 'coppa': true };
       }
       if (bids && bids.length > 0) {
         return bids[0].coppa
@@ -121,11 +121,11 @@ function nobidBuildRequests(bids, bidderRequest) {
           let ids = [];
           if (eid.uids) {
             eid.uids.forEach(value => {
-              ids.push({'id': value.id + ''});
+              ids.push({ 'id': value.id + '' });
             });
           }
           if (eid.source && ids.length > 0) {
-            src.push({source: eid.source, uids: ids});
+            src.push({ source: eid.source, uids: ids });
           }
         });
         return src;

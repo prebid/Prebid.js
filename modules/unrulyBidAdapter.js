@@ -58,7 +58,7 @@ const buildPrebidResponseAndInstallRenderer = bids =>
       return { rendererInstance, serverBid };
     })
     .map(
-      ({rendererInstance, serverBid}) => {
+      ({ rendererInstance, serverBid }) => {
         const prebidBid = serverResponseToBid(serverBid, rendererInstance);
 
         const rendererConfig = Object.assign(

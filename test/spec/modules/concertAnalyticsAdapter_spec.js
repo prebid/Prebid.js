@@ -148,8 +148,8 @@ describe('ConcertAnalyticsAdapter', function() {
   }
 
   function fireBidEvents(events) {
-    events.emit(constants.EVENTS.AUCTION_INIT, {timestamp, auctionId, timeout, adUnits});
-    events.emit(constants.EVENTS.BID_REQUESTED, {bidder: 'concert'});
+    events.emit(constants.EVENTS.AUCTION_INIT, { timestamp, auctionId, timeout, adUnits });
+    events.emit(constants.EVENTS.BID_REQUESTED, { bidder: 'concert' });
     events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
     events.emit(constants.EVENTS.AUCTION_END, {});
     events.emit(constants.EVENTS.BID_WON, bidWon);

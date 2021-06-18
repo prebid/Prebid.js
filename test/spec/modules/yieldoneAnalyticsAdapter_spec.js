@@ -9,7 +9,7 @@ describe('Yieldone Prebid Analytic', function () {
   let sendStatStub;
   let getAllTargetingStub;
   const fakeTargeting = {
-    '0000': {'someId': 'someValue'}
+    '0000': { 'someId': 'someValue' }
   };
 
   describe('enableAnalytics', function () {
@@ -46,15 +46,15 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_1',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: { referer: testReferrer },
           bids: [
             {
               adUnitCode: '0000',
               auctionId: auctionId,
               bidId: '1234',
               bidder: 'biddertest_1',
-              mediaTypes: {banner: {sizes: [[300, 250], [336, 280]]}},
-              params: {param1: '111', param2: '222'},
+              mediaTypes: { banner: { sizes: [[300, 250], [336, 280]] } },
+              params: { param1: '111', param2: '222' },
               sizes: [[300, 250], [336, 280]]
             },
             {
@@ -62,8 +62,8 @@ describe('Yieldone Prebid Analytic', function () {
               auctionId: auctionId,
               bidId: '5678',
               bidder: 'biddertest_1',
-              mediaTypes: {banner: {sizes: [[300, 250], [336, 280]]}},
-              params: {param1: '222', param2: '222'},
+              mediaTypes: { banner: { sizes: [[300, 250], [336, 280]] } },
+              params: { param1: '222', param2: '222' },
               sizes: [[300, 250], [336, 280]]
             }
           ]
@@ -71,15 +71,15 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_2',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: { referer: testReferrer },
           bids: [
             {
               adUnitCode: '0000',
               auctionId: auctionId,
               bidId: '91011',
               bidder: 'biddertest_2',
-              mediaTypes: {banner: {sizes: [[300, 250], [336, 280]]}},
-              params: {paramA: '111', paramB: '222'},
+              mediaTypes: { banner: { sizes: [[300, 250], [336, 280]] } },
+              params: { paramA: '111', paramB: '222' },
               sizes: [[300, 250], [336, 280]]
             }
           ]
@@ -87,15 +87,15 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_3',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: { referer: testReferrer },
           bids: [
             {
               adUnitCode: '0000',
               auctionId: auctionId,
               bidId: '12131',
               bidder: 'biddertest_3',
-              mediaTypes: {banner: {sizes: [[300, 250], [336, 280]]}},
-              params: {param_1: '111', param_2: '222'},
+              mediaTypes: { banner: { sizes: [[300, 250], [336, 280]] } },
+              params: { param_1: '111', param_2: '222' },
               sizes: [[300, 250], [336, 280]]
             },
             {
@@ -103,8 +103,8 @@ describe('Yieldone Prebid Analytic', function () {
               auctionId: auctionId,
               bidId: '14151',
               bidder: 'biddertest_3',
-              mediaTypes: {banner: {sizes: [[300, 250], [336, 280]]}},
-              params: {param_1: '333', param_2: '222'},
+              mediaTypes: { banner: { sizes: [[300, 250], [336, 280]] } },
+              params: { param_1: '333', param_2: '222' },
               sizes: [[300, 250], [336, 280]]
             }
           ]
@@ -223,12 +223,12 @@ describe('Yieldone Prebid Analytic', function () {
       ];
       const expectedResult = {
         pubId: initOptions.pubId,
-        page: {url: testReferrer},
+        page: { url: testReferrer },
         wrapper_version: '$prebid.version$',
         events: expectedEvents
       };
 
-      const preparedWinnerParams = Object.assign({adServerTargeting: fakeTargeting}, winner);
+      const preparedWinnerParams = Object.assign({ adServerTargeting: fakeTargeting }, winner);
       delete preparedWinnerParams.ad;
       const wonExpectedEvents = [
         {
@@ -238,7 +238,7 @@ describe('Yieldone Prebid Analytic', function () {
       ];
       const wonExpectedResult = {
         pubId: initOptions.pubId,
-        page: {url: testReferrer},
+        page: { url: testReferrer },
         wrapper_version: '$prebid.version$',
         events: wonExpectedEvents
       };
@@ -248,7 +248,7 @@ describe('Yieldone Prebid Analytic', function () {
         options: initOptions
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, auctionId: auctionId});
+      events.emit(constants.EVENTS.AUCTION_INIT, { config: initOptions, auctionId: auctionId });
 
       events.emit(constants.EVENTS.BID_REQUESTED, request[0]);
       events.emit(constants.EVENTS.BID_REQUESTED, request[1]);

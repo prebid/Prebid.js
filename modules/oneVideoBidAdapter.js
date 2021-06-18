@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
@@ -101,7 +101,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(response, {bidRequest}) {
+  interpretResponse: function(response, { bidRequest }) {
     let bid;
     let size;
     let bidResponse;

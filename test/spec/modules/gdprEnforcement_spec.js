@@ -1035,7 +1035,7 @@ describe('gdpr enforcement', function () {
         enforcePurpose: false,
         enforceVendor: false
       }]
-      setEnforcementConfig({gdpr: { rules }});
+      setEnforcementConfig({ gdpr: { rules } });
 
       expect(enforcementRules).to.deep.equal(rules);
     });
@@ -1061,7 +1061,7 @@ describe('gdpr enforcement', function () {
         enforcePurpose: false,
         enforceVendor: false
       }]
-      setEnforcementConfig({gdpr: { rules }});
+      setEnforcementConfig({ gdpr: { rules } });
 
       events.emit('auctionEnd', {})
 

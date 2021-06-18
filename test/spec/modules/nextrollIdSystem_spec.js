@@ -21,28 +21,28 @@ describe('NextrollId module', function () {
   const testCases = [
     {
       expect: {
-        id: {nextrollId: 'id_value'},
+        id: { nextrollId: 'id_value' },
       },
-      params: {partnerId: '1002'},
+      params: { partnerId: '1002' },
       localStorage: LS_VALUE
     },
     {
-      expect: {id: undefined},
-      params: {partnerId: '1003'},
+      expect: { id: undefined },
+      params: { partnerId: '1003' },
       localStorage: LS_VALUE
     },
     {
-      expect: {id: undefined},
-      params: {partnerId: ''},
+      expect: { id: undefined },
+      params: { partnerId: '' },
       localStorage: LS_VALUE
     },
     {
-      expect: {id: undefined},
-      params: {partnerId: '102'},
+      expect: { id: undefined },
+      params: { partnerId: '102' },
       localStorage: undefined
     },
     {
-      expect: {id: undefined},
+      expect: { id: undefined },
       params: undefined,
       localStorage: undefined
     }
@@ -50,7 +50,7 @@ describe('NextrollId module', function () {
   testCases.forEach(
     (testCase, i) => it(`getId() (TC #${i}) should return the nextroll id if it exists`, function () {
       getLocalStorageStub.withArgs('dca0.com').returns(testCase.localStorage);
-      const id = nextrollIdSubmodule.getId({params: testCase.params});
+      const id = nextrollIdSubmodule.getId({ params: testCase.params });
       expect(id).to.be.deep.equal(testCase.expect);
     }))
 });

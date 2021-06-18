@@ -64,7 +64,7 @@ function wrapAd(bid, bidData) {
                 parentDocument.style.height = "100%";
                 parentDocument.style.width = "100%";
             }
-            var _html = "${encodeURIComponent(JSON.stringify({...bid, content: bidData.content}))}";
+            var _html = "${encodeURIComponent(JSON.stringify({ ...bid, content: bidData.content }))}";
             window._ao_ssp.registerInImage(JSON.parse(decodeURIComponent(_html)));
         </script>
     </body>

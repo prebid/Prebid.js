@@ -481,8 +481,8 @@ describe('OneVideoBidAdapter', function () {
           series: ['Series'],
           season: ['Season'],
           genre: ['Genre'],
-          contentrating: {1: 'C-Rating'},
-          language: {1: 'EN'}
+          contentrating: { 1: 'C-Rating' },
+          language: { 1: 'EN' }
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
@@ -493,7 +493,7 @@ describe('OneVideoBidAdapter', function () {
         bidRequest.params.video.content = {
           episode: '1',
           context: 'context',
-          livestream: {0: 'stream'},
+          livestream: { 0: 'stream' },
           len: [360],
           prodq: [1],
         };
@@ -758,25 +758,25 @@ describe('OneVideoBidAdapter', function () {
     });
 
     it('should default ttl to 300', function () {
-      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' };
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.ttl).to.equal(300);
     });
     it('should not allow ttl above 3601, default to 300', function () {
       bidRequest.params.video.ttl = 3601;
-      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' };
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.ttl).to.equal(300);
     });
     it('should not allow ttl below 1, default to 300', function () {
       bidRequest.params.video.ttl = 0;
-      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' };
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.ttl).to.equal(300);
     });
     it('should use custom ttl if under 3600', function () {
       bidRequest.params.video.ttl = 1000;
-      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' };
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.ttl).to.equal(1000);
     });

@@ -203,7 +203,7 @@ export const spec = {
       utils.deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    var options = {contentType: 'text/plain'}
+    var options = { contentType: 'text/plain' }
 
     _logInfo('buildRequests payload', payload);
     _logInfo('buildRequests bidderRequest', bidderRequest);

@@ -24,7 +24,7 @@ function getConfigMock() {
 function getAdUnitMock(code = 'adUnit-code') {
   return {
     code,
-    mediaTypes: {banner: {}, native: {}},
+    mediaTypes: { banner: {}, native: {} },
     sizes: [
       [300, 200],
       [300, 600]

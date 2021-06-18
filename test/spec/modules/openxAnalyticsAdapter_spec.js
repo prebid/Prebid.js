@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import openxAdapter, {AUCTION_STATES} from 'modules/openxAnalyticsAdapter.js';
+import openxAdapter, { AUCTION_STATES } from 'modules/openxAnalyticsAdapter.js';
 import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
@@ -157,7 +157,7 @@ describe('openx analytics adapter', function() {
         adUnitCode: AD_UNIT_CODE,
         auctionId: 'test-auction-id',
         bidId: 'test-openx-request-id'
-      }};
+      } };
 
     const bidTimeoutCloseX = {
       0: {
@@ -242,7 +242,7 @@ describe('openx analytics adapter', function() {
       let auction;
       let auction2;
       beforeEach(function () {
-        openxAdapter.enableAnalytics({options: DEFAULT_V2_ANALYTICS_CONFIG});
+        openxAdapter.enableAnalytics({ options: DEFAULT_V2_ANALYTICS_CONFIG });
 
         simulateAuction([
           [AUCTION_INIT, auctionInit],
@@ -250,7 +250,7 @@ describe('openx analytics adapter', function() {
         ]);
 
         simulateAuction([
-          [AUCTION_INIT, {...auctionInit, auctionId: 'second-auction-id'}],
+          [AUCTION_INIT, { ...auctionInit, auctionId: 'second-auction-id' }],
           [SLOT_LOADED]
         ]);
 
@@ -335,13 +335,13 @@ describe('openx analytics adapter', function() {
       });
 
       it('should track values from query params when they exist', function () {
-        sinon.stub(utils, 'getWindowLocation').returns({search: '?' +
+        sinon.stub(utils, 'getWindowLocation').returns({ search: '?' +
             'utm_campaign=test%20campaign-name&' +
             'utm_source=test-source&' +
             'utm_medium=test-medium&'
         });
 
-        openxAdapter.enableAnalytics({options: DEFAULT_V2_ANALYTICS_CONFIG});
+        openxAdapter.enableAnalytics({ options: DEFAULT_V2_ANALYTICS_CONFIG });
 
         simulateAuction([
           [AUCTION_INIT, auctionInit],
@@ -359,7 +359,7 @@ describe('openx analytics adapter', function() {
       });
 
       it('should override query params if configuration parameters exist', function () {
-        sinon.stub(utils, 'getWindowLocation').returns({search: '?' +
+        sinon.stub(utils, 'getWindowLocation').returns({ search: '?' +
             'utm_campaign=test-campaign-name&' +
             'utm_source=test-source&' +
             'utm_medium=test-medium&' +
@@ -399,7 +399,7 @@ describe('openx analytics adapter', function() {
       let closexBidder;
 
       beforeEach(function () {
-        openxAdapter.enableAnalytics({options: DEFAULT_V2_ANALYTICS_CONFIG});
+        openxAdapter.enableAnalytics({ options: DEFAULT_V2_ANALYTICS_CONFIG });
 
         simulateAuction([
           [AUCTION_INIT, auctionInit],
@@ -443,7 +443,7 @@ describe('openx analytics adapter', function() {
       let closexBidRequest;
 
       beforeEach(function () {
-        openxAdapter.enableAnalytics({options: DEFAULT_V2_ANALYTICS_CONFIG});
+        openxAdapter.enableAnalytics({ options: DEFAULT_V2_ANALYTICS_CONFIG });
 
         simulateAuction([
           [AUCTION_INIT, auctionInit],
@@ -482,7 +482,7 @@ describe('openx analytics adapter', function() {
       let closexBidResponse;
 
       beforeEach(function () {
-        openxAdapter.enableAnalytics({options: DEFAULT_V2_ANALYTICS_CONFIG});
+        openxAdapter.enableAnalytics({ options: DEFAULT_V2_ANALYTICS_CONFIG });
 
         simulateAuction([
           [AUCTION_INIT, auctionInit],
@@ -565,7 +565,7 @@ describe('openx analytics adapter', function() {
     describe('when there are bidder wins', function () {
       let auction;
       beforeEach(function () {
-        openxAdapter.enableAnalytics({options: DEFAULT_V2_ANALYTICS_CONFIG});
+        openxAdapter.enableAnalytics({ options: DEFAULT_V2_ANALYTICS_CONFIG });
 
         simulateAuction([
           [AUCTION_INIT, auctionInit],
@@ -588,19 +588,19 @@ describe('openx analytics adapter', function() {
 
       it('should track that bidder as the winner', function () {
         let openxBidder = find(auction.adUnits[0].bidRequests, bidderRequest => bidderRequest.bidder === 'openx');
-        expect(openxBidder.bidResponses[0]).to.contain({winner: true});
+        expect(openxBidder.bidResponses[0]).to.contain({ winner: true });
       });
 
       it('should track that bidder as the losers', function () {
         let closexBidder = find(auction.adUnits[0].bidRequests, bidderRequest => bidderRequest.bidder === 'closex');
-        expect(closexBidder.bidResponses[0]).to.contain({winner: false});
+        expect(closexBidder.bidResponses[0]).to.contain({ winner: false });
       });
     });
 
     describe('when a winning bid renders', function () {
       let auction;
       beforeEach(function () {
-        openxAdapter.enableAnalytics({options: DEFAULT_V2_ANALYTICS_CONFIG});
+        openxAdapter.enableAnalytics({ options: DEFAULT_V2_ANALYTICS_CONFIG });
 
         simulateAuction([
           [AUCTION_INIT, auctionInit],
@@ -624,12 +624,12 @@ describe('openx analytics adapter', function() {
 
       it('should track that winning bid rendered', function () {
         let openxBidder = find(auction.adUnits[0].bidRequests, bidderRequest => bidderRequest.bidder === 'openx');
-        expect(openxBidder.bidResponses[0]).to.contain({rendered: true});
+        expect(openxBidder.bidResponses[0]).to.contain({ rendered: true });
       });
 
       it('should track that winning bid render time', function () {
         let openxBidder = find(auction.adUnits[0].bidRequests, bidderRequest => bidderRequest.bidder === 'openx');
-        expect(openxBidder.bidResponses[0]).to.contain({renderTime: CURRENT_TIME});
+        expect(openxBidder.bidResponses[0]).to.contain({ renderTime: CURRENT_TIME });
       });
 
       it('should track that the auction completed', function () {

@@ -85,7 +85,7 @@ function typeValidation(data, mapping) {
  */
 export function filterArrayData(arr, child, path, parent) {
   arr = arr.filter((index, i) => {
-    let check = typeValidation(index, {type: child.type, isArray: child.isArray});
+    let check = typeValidation(index, { type: child.type, isArray: child.isArray });
 
     if (check && Array.isArray(index) === Boolean(child.isArray)) {
       return true;
@@ -153,7 +153,7 @@ export function validateFpd(fpd, path = '', parent = '') {
   }).filter(key => {
     let mapping = utils.deepAccess(ORTB_MAP, path + key);
     // let typeBool = false;
-    let typeBool = (mapping) ? typeValidation(fpd[key], {type: mapping.type, isArray: mapping.isArray}) : true;
+    let typeBool = (mapping) ? typeValidation(fpd[key], { type: mapping.type, isArray: mapping.isArray }) : true;
 
     if (typeBool || !mapping) return key;
 

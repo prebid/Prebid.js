@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -149,7 +149,7 @@ function buildRequest(bidRequests, bidderRequest) {
     method: CONSTANTS.METHOD,
     url: _customEndpoint || CONSTANTS.BID_ENDPOINT,
     data: data,
-    options: {withCredentials: true},
+    options: { withCredentials: true },
     // for POST: { contentType: 'application/json', withCredentials: true }
     bidRequests: bidRequests
   };

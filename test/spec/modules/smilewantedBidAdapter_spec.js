@@ -301,7 +301,7 @@ describe('smilewantedBidAdapterTests', function () {
   });
 
   it('SmileWanted - Verify user sync', function () {
-    var syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {
+    var syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
       consentString: 'foo'
     }, '1NYN');
     expect(syncs).to.have.lengthOf(1);

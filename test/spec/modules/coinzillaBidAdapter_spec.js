@@ -1,6 +1,6 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/coinzillaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { assert, expect } from 'chai';
+import { spec } from 'modules/coinzillaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT_URL = 'https://request.czilladx.com/serve/request.php';
 
@@ -114,7 +114,7 @@ describe('coinzillaBidAdapter', function () {
         'ttl': 3000,
         'ad': '<html><h3>I am an ad</h3></html>',
         'mediaType': 'banner',
-        'meta': {'advertiserDomains': ['none.com']}
+        'meta': { 'advertiserDomains': ['none.com'] }
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));

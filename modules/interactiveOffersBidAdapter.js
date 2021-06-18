@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'interactiveOffers';
@@ -124,7 +124,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest) {
             imp.banner.w = adSize[0];
             imp.banner.h = adSize[1];
           }
-          imp.banner.format.push({w: adSize[0], h: adSize[1]});
+          imp.banner.format.push({ w: adSize[0], h: adSize[1] });
         });
       }
     });

@@ -397,7 +397,7 @@ describe('triplelift adapter', function () {
     it('should only parse sizes that are of the proper length and format', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].banner.format).to.have.length(2);
-      expect(request.data.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(request.data.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
     });
 
     it('should be a post request and populate the payload', function () {
@@ -406,22 +406,22 @@ describe('triplelift adapter', function () {
       expect(payload).to.exist;
       expect(payload.imp[0].tagid).to.equal('12345');
       expect(payload.imp[0].floor).to.equal(1.0);
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
       expect(payload.imp[1].tagid).to.equal('insteam_test');
       expect(payload.imp[1].floor).to.equal(1.0);
       expect(payload.imp[1].video).to.exist.and.to.be.a('object');
       // banner and outstream video
       expect(payload.imp[2]).to.not.have.property('video');
       expect(payload.imp[2]).to.have.property('banner');
-      expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[2].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
       // banner and incomplete video
       expect(payload.imp[3]).to.not.have.property('video');
       expect(payload.imp[3]).to.have.property('banner');
-      expect(payload.imp[3].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[3].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
       // incomplete mediatypes.banner and incomplete video
       expect(payload.imp[4]).to.not.have.property('video');
       expect(payload.imp[4]).to.have.property('banner');
-      expect(payload.imp[4].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[4].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
       // banner and instream video
       expect(payload.imp[5]).to.not.have.property('banner');
       expect(payload.imp[5]).to.have.property('video');
@@ -429,7 +429,7 @@ describe('triplelift adapter', function () {
       // banner and outream video and native
       expect(payload.imp[6]).to.not.have.property('video');
       expect(payload.imp[6]).to.have.property('banner');
-      expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[6].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
     });
 
     it('should add tdid to the payload if included', function () {
@@ -438,7 +438,7 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adserver.org', uids: [{id, ext: {rtiPartner: 'TDID'}}]}]}});
+      expect(payload.user).to.deep.equal({ ext: { eids: [{ source: 'adserver.org', uids: [{ id, ext: { rtiPartner: 'TDID' } }] }] } });
     });
 
     it('should add idl_env to the payload if included', function () {
@@ -447,7 +447,7 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'liveramp.com', uids: [{id, ext: {rtiPartner: 'idl'}}]}]}});
+      expect(payload.user).to.deep.equal({ ext: { eids: [{ source: 'liveramp.com', uids: [{ id, ext: { rtiPartner: 'idl' } }] }] } });
     });
 
     it('should add criteoId to the payload if included', function () {
@@ -456,7 +456,7 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'criteo.com', uids: [{id, ext: {rtiPartner: 'criteoId'}}]}]}});
+      expect(payload.user).to.deep.equal({ ext: { eids: [{ source: 'criteo.com', uids: [{ id, ext: { rtiPartner: 'criteoId' } }] }] } });
     });
 
     it('should add tdid, idl_env and criteoId to the payload if both are included', function () {
@@ -805,25 +805,25 @@ describe('triplelift adapter', function () {
           meta: {}
         }
       ];
-      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      let result = tripleliftAdapterSpec.interpretResponse(response, { bidderRequest });
       expect(result).to.have.length(2);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(Object.keys(result[1])).to.have.members(Object.keys(expectedResponse[1]));
     });
 
     it('should return multiple responses to support SRA', function () {
-      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      let result = tripleliftAdapterSpec.interpretResponse(response, { bidderRequest });
       expect(result).to.have.length(2);
     });
 
     it('should include the advertiser name in the meta field if available', function () {
-      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      let result = tripleliftAdapterSpec.interpretResponse(response, { bidderRequest });
       expect(result[0].meta.advertiserName).to.equal('fake advertiser name');
       expect(result[1].meta).to.not.have.key('advertiserName');
     });
 
     it('should include the advertiser domain array in the meta field if available', function () {
-      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      let result = tripleliftAdapterSpec.interpretResponse(response, { bidderRequest });
       expect(result[0].meta.advertiserDomains[0]).to.equal('basspro.com');
       expect(result[0].meta.advertiserDomains[1]).to.equal('internetalerts.org');
       expect(result[1].meta).to.not.have.key('advertiserDomains');

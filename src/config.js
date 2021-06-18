@@ -353,7 +353,7 @@ export function newConfig() {
         if (key === 'ext') {
           utils.mergeDeep(result, obj[type][key]);
         } else {
-          utils.mergeDeep(result, {[key]: obj[type][key]});
+          utils.mergeDeep(result, { [key]: obj[type][key] });
         }
 
         return result;
@@ -374,11 +374,11 @@ export function newConfig() {
     if (utils.deepAccess(obj, 'ext.data')) {
       Object.keys(obj.ext.data).forEach((key) => {
         if (key === 'pbadslot') {
-          utils.mergeDeep(duplicate, {context: {pbAdSlot: obj.ext.data[key]}});
+          utils.mergeDeep(duplicate, { context: { pbAdSlot: obj.ext.data[key] } });
         } else if (key === 'adserver') {
-          utils.mergeDeep(duplicate, {context: {adServer: obj.ext.data[key]}});
+          utils.mergeDeep(duplicate, { context: { adServer: obj.ext.data[key] } });
         } else {
-          utils.mergeDeep(duplicate, {context: {data: {[key]: obj.ext.data[key]}}});
+          utils.mergeDeep(duplicate, { context: { data: { [key]: obj.ext.data[key] } } });
         }
       });
     }
@@ -396,9 +396,9 @@ export function newConfig() {
       let prop = (type === 'context') ? 'site' : type;
       duplicate[prop] = (prop === 'site' || prop === 'user') ? Object.keys(opt[type]).reduce((result, key) => {
         if (key === 'data') {
-          utils.mergeDeep(result, {ext: {data: opt[type][key]}});
+          utils.mergeDeep(result, { ext: { data: opt[type][key] } });
         } else {
-          utils.mergeDeep(result, {[key]: opt[type][key]});
+          utils.mergeDeep(result, { [key]: opt[type][key] });
         }
 
         return result;
@@ -418,14 +418,14 @@ export function newConfig() {
     Object.keys(opt).filter(prop => prop === 'context').forEach((type) => {
       Object.keys(opt[type]).forEach((key) => {
         if (key === 'data') {
-          utils.mergeDeep(duplicate, {ext: {data: opt[type][key]}});
+          utils.mergeDeep(duplicate, { ext: { data: opt[type][key] } });
         } else {
           if (typeof opt[type][key] === 'object' && !Array.isArray(opt[type][key])) {
             Object.keys(opt[type][key]).forEach(data => {
-              utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: {[data.toLowerCase()]: opt[type][key][data]}}}});
+              utils.mergeDeep(duplicate, { ext: { data: { [key.toLowerCase()]: { [data.toLowerCase()]: opt[type][key][data] } } } });
             });
           } else {
-            utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
+            utils.mergeDeep(duplicate, { ext: { data: { [key.toLowerCase()]: opt[type][key] } } });
           }
         }
       });

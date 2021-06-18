@@ -53,8 +53,8 @@ export const spec = {
       const consentStr = (bidderRequest.gdprConsent.consentString)
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      request.regs = {ext: {gdpr: gdpr}};
-      request.user = {ext: {consent: consentStr}};
+      request.regs = { ext: { gdpr: gdpr } };
+      request.user = { ext: { consent: consentStr } };
     }
     if (validBidRequests[0].schain) {
       const schain = mapSchain(validBidRequests[0].schain);
@@ -70,7 +70,7 @@ export const spec = {
       if (request.user && request.user.ext) {
         request.user.ext = { ...request.user.ext, ...eids };
       } else {
-        request.user = {ext: eids};
+        request.user = { ext: eids };
       }
     }
 
@@ -302,7 +302,7 @@ function mapNativeAssets(slot) {
  * @returns {object} Request Image by OpenRTB Native Ads 1.1 §4.4
  */
 function mapNativeImage(image, type) {
-  const img = {type: type};
+  const img = { type: type };
   if (image.aspect_ratios) {
     const ratio = image.aspect_ratios[0];
     const minWidth = ratio.min_width || 100;

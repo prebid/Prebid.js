@@ -76,33 +76,33 @@ describe('MASS Module', function() {
   });
 
   it('can be disabled', function() {
-    init({enabled: false});
+    init({ enabled: false });
     expect(isEnabled).to.equal(false);
   });
 
   it('should only affect MASS bids', function() {
-    init({renderUrl: 'https://...'});
+    init({ renderUrl: 'https://...' });
     mockedNonMassBids.forEach(function(mockedBid) {
       const originalBid = Object.assign({}, mockedBid);
       const bid = Object.assign({}, originalBid);
 
       bidderRequest.bids = [bid];
 
-      addBidResponseHook.call({bidderRequest}, noop, 'ad-code-id', bid);
+      addBidResponseHook.call({ bidderRequest }, noop, 'ad-code-id', bid);
 
       expect(bid).to.deep.equal(originalBid);
     });
   });
 
   it('should only update the ad markup field', function() {
-    init({renderUrl: 'https://...'});
+    init({ renderUrl: 'https://...' });
     mockedMassBids.forEach(function(mockedBid) {
       const originalBid = Object.assign({}, mockedBid);
       const bid = Object.assign({}, originalBid);
 
       bidderRequest.bids = [bid];
 
-      addBidResponseHook.call({bidderRequest}, noop, 'ad-code-id', bid);
+      addBidResponseHook.call({ bidderRequest }, noop, 'ad-code-id', bid);
 
       expect(bid.ad).to.not.equal(originalBid.ad);
 
@@ -137,8 +137,8 @@ describe('MASS Module', function() {
   it('should match bids by deal ID with the default matcher', function() {
     const match = useDefaultMatch(/abc/);
 
-    expect(match({dealId: 'abc'})).to.equal(true);
-    expect(match({dealId: 'xyz'})).to.equal(false);
+    expect(match({ dealId: 'abc' })).to.equal(true);
+    expect(match({ dealId: 'xyz' })).to.equal(false);
   });
 
   it('should have a default renderer', function() {

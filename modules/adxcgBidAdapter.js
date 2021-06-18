@@ -1,7 +1,7 @@
-import {config} from '../src/config.js'
+import { config } from '../src/config.js'
 import * as utils from '../src/utils.js'
-import {registerBidder} from '../src/adapters/bidderFactory.js'
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
 import includes from 'core-js-pure/features/array/includes.js'
 
 /**

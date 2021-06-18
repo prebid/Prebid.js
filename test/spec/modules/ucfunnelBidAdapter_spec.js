@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/ucfunnelBidAdapter.js';
-import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 const URL = 'https://hb.aralego.com/header';
 const BIDDER_CODE = 'ucfunnel';
 
@@ -10,14 +10,14 @@ const bidderRequest = {
 
 const userId = {
   'criteoId': 'vYlICF9oREZlTHBGRVdrJTJCUUJnc3U2ckNVaXhrV1JWVUZVSUxzZmJlcnJZR0ZxbVhFRnU5bDAlMkJaUWwxWTlNcmdEeHFrJTJGajBWVlV4T3lFQ0FyRVcxNyUyQlIxa0lLSlFhcWJpTm9PSkdPVkx0JTJCbzlQRTQlM0Q',
-  'id5id': {'uid': 'ID5-8ekgswyBTQqnkEKy0ErmeQ1GN5wV4pSmA-RE4eRedA'},
+  'id5id': { 'uid': 'ID5-8ekgswyBTQqnkEKy0ErmeQ1GN5wV4pSmA-RE4eRedA' },
   'netId': 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
-  'parrableId': {'eid': '01.1608624401.fe44bca9b96873084a0d4e9d0ac5729f13790ba8f8e58fa4707b6b3c096df91c6b5f254992bdad4ab1dd4a89919081e9b877d7a039ac3183709277665bac124f28e277d109f0ff965058'},
+  'parrableId': { 'eid': '01.1608624401.fe44bca9b96873084a0d4e9d0ac5729f13790ba8f8e58fa4707b6b3c096df91c6b5f254992bdad4ab1dd4a89919081e9b877d7a039ac3183709277665bac124f28e277d109f0ff965058' },
   'pubcid': 'd8aa10fa-d86c-451d-aad8-5f16162a9e64',
   'tdid': 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3',
   'haloId': {},
-  'uid2': {'id': 'eb33b0cb-8d35-4722-b9c0-1a31d4064888'},
-  'flocId': {'id': '12144', 'version': 'chrome.1.1'},
+  'uid2': { 'id': 'eb33b0cb-8d35-4722-b9c0-1a31d4064888' },
+  'flocId': { 'id': '12144', 'version': 'chrome.1.1' },
   'connectid': '4567'
 }
 
@@ -213,7 +213,7 @@ describe('ucfunnel Adapter', function () {
   describe('interpretResponse', function () {
     describe('should support banner', function () {
       const request = spec.buildRequests([ validBannerBidReq ]);
-      const result = spec.interpretResponse({body: validBannerBidRes}, request[0]);
+      const result = spec.interpretResponse({ body: validBannerBidRes }, request[0]);
       it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
       });
@@ -232,7 +232,7 @@ describe('ucfunnel Adapter', function () {
 
     describe('handle banner no ad', function () {
       const request = spec.buildRequests([ validBannerBidReq ]);
-      const result = spec.interpretResponse({body: invalidBannerBidRes}, request[0]);
+      const result = spec.interpretResponse({ body: invalidBannerBidRes }, request[0]);
       it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
       });
@@ -250,7 +250,7 @@ describe('ucfunnel Adapter', function () {
 
     describe('handle banner cpm under bidfloor', function () {
       const request = spec.buildRequests([ validBannerBidReq ]);
-      const result = spec.interpretResponse({body: invalidBannerBidRes}, request[0]);
+      const result = spec.interpretResponse({ body: invalidBannerBidRes }, request[0]);
       it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
       });
@@ -268,7 +268,7 @@ describe('ucfunnel Adapter', function () {
 
     describe('should support video', function () {
       const request = spec.buildRequests([ validVideoBidReq ]);
-      const result = spec.interpretResponse({body: validVideoBidRes}, request[0]);
+      const result = spec.interpretResponse({ body: validVideoBidRes }, request[0]);
       it('should build bid array', function () {
         expect(result.length).to.equal(1);
       });
@@ -288,7 +288,7 @@ describe('ucfunnel Adapter', function () {
 
     describe('should support native', function () {
       const request = spec.buildRequests([ validNativeBidReq ]);
-      const result = spec.interpretResponse({body: validNativeBidRes}, request[0]);
+      const result = spec.interpretResponse({ body: validNativeBidRes }, request[0]);
       it('should build bid array', function () {
         expect(result.length).to.equal(1);
       });
@@ -310,7 +310,7 @@ describe('ucfunnel Adapter', function () {
 
   describe('cookie sync', function () {
     describe('cookie sync iframe', function () {
-      const result = spec.getUserSyncs({'iframeEnabled': true}, null, gdprConsent);
+      const result = spec.getUserSyncs({ 'iframeEnabled': true }, null, gdprConsent);
 
       it('should return cookie sync iframe info', function () {
         expect(result[0].type).to.equal('iframe');
@@ -318,7 +318,7 @@ describe('ucfunnel Adapter', function () {
       });
     });
     describe('cookie sync image', function () {
-      const result = spec.getUserSyncs({'pixelEnabled': true}, null, gdprConsent);
+      const result = spec.getUserSyncs({ 'pixelEnabled': true }, null, gdprConsent);
       it('should return cookie sync image info', function () {
         expect(result[0].type).to.equal('image');
         expect(result[0].url).to.equal('https://sync.aralego.com/idSync?gdpr=1&euconsent-v2=CO9rhBTO9rhBTAcABBENBCCsAP_AAH_AACiQHItf_X_fb3_j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vB36pq4KuR4Eu3LBIQdlHOHcTUmw6IkVqTPsbk2Mr7NKJ7PEinMbe2dYGH9_n9XTuZKY79_s___z__-__v__7_f_r-3_3_vp9V---3YHIgEmGpfARZiWOBJNGlUKIEIVxIdACACihGFomsICVwU7K4CP0EDABAagIwIgQYgoxZBAAAAAElEQEgB4IBEARAIAAQAqQEIACNAEFgBIGAQACgGhYARQBCBIQZHBUcpgQESLRQTyVgCUXexhhCGUUANAg4AA.YAAAAAAAAAAA&');

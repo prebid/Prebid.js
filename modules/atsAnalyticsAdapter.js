@@ -2,8 +2,8 @@ import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 export const storage = getStorageManager();
 
@@ -263,11 +263,11 @@ export function parseBrowser() {
 function sendDataToAnalytic () {
   // send data to ats analytic endpoint
   try {
-    let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
+    let dataToSend = { 'Data': atsAnalyticsAdapter.context.events };
     let strJSON = JSON.stringify(dataToSend);
     utils.logInfo('ATS Analytics - tried to send analytics data!');
     ajax(analyticsUrl, function () {
-    }, strJSON, {method: 'POST', contentType: 'application/json'});
+    }, strJSON, { method: 'POST', contentType: 'application/json' });
   } catch (err) {
     utils.logError('ATS Analytics - request encounter an error: ', err);
   }
@@ -316,7 +316,7 @@ let atsAnalyticsAdapter = Object.assign(adapter(
     analyticsType
   }),
 {
-  track({eventType, args}) {
+  track({ eventType, args }) {
     if (typeof args !== 'undefined') {
       callHandler(eventType, args);
     }

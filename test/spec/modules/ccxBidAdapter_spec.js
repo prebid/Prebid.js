@@ -81,7 +81,7 @@ describe('ccxAdapter', function () {
     });
 
     it('Valid bid request - default', function () {
-      let response = spec.buildRequests(bids, {bids});
+      let response = spec.buildRequests(bids, { bids });
       expect(response).to.be.not.empty;
       expect(response.data).to.be.not.empty;
 
@@ -168,7 +168,7 @@ describe('ccxAdapter', function () {
       bidsClone[1].params.video.skip = 1;
       bidsClone[1].params.video.skipafter = 5;
 
-      let response = spec.buildRequests(bidsClone, {'bids': bidsClone});
+      let response = spec.buildRequests(bidsClone, { 'bids': bidsClone });
       let data = JSON.parse(response.data);
 
       expect(data.imp).to.deep.have.same.members(imps);
@@ -213,7 +213,7 @@ describe('ccxAdapter', function () {
         }
       ];
 
-      let response = spec.buildRequests(bidsClone, {'bids': bidsClone});
+      let response = spec.buildRequests(bidsClone, { 'bids': bidsClone });
       let data = JSON.parse(response.data);
 
       expect(data.imp).to.deep.have.same.members(imps);
@@ -241,7 +241,7 @@ describe('ccxAdapter', function () {
         }
       ];
 
-      let response = spec.buildRequests(bidsClone, {'bids': bidsClone});
+      let response = spec.buildRequests(bidsClone, { 'bids': bidsClone });
       let data = JSON.parse(response.data);
 
       expect(data.imp).to.deep.have.same.members(imps);
@@ -255,7 +255,7 @@ describe('ccxAdapter', function () {
         consentString: 'awefasdfwefasdfasd',
         gdprApplies: true
       };
-      let response = spec.buildRequests(bidsClone, {'bids': bidsClone, 'gdprConsent': gdprConsent});
+      let response = spec.buildRequests(bidsClone, { 'bids': bidsClone, 'gdprConsent': gdprConsent });
       let data = JSON.parse(response.data);
 
       expect(data.regs.ext.gdpr).to.equal(1);
@@ -265,7 +265,7 @@ describe('ccxAdapter', function () {
 
   describe('GDPR absence conformity', function () {
     it('should transmit correct data', function () {
-      let response = spec.buildRequests(bids, {bids});
+      let response = spec.buildRequests(bids, { bids });
       let data = JSON.parse(response.data);
 
       expect(data.regs).to.be.undefined;
@@ -357,7 +357,7 @@ describe('ccxAdapter', function () {
           }
         }
       ];
-      expect(spec.interpretResponse({body: response})).to.deep.have.same.members(bidResponses);
+      expect(spec.interpretResponse({ body: response })).to.deep.have.same.members(bidResponses);
     });
 
     it('Valid bid response - single', function () {
@@ -378,7 +378,7 @@ describe('ccxAdapter', function () {
           }
         }
       ];
-      expect(spec.interpretResponse({body: response})).to.deep.have.same.members(bidResponses);
+      expect(spec.interpretResponse({ body: response })).to.deep.have.same.members(bidResponses);
     });
 
     it('Empty bid response', function () {
@@ -402,7 +402,7 @@ describe('ccxAdapter', function () {
           url: 'http://foo.sync?param=2'
         }
       ];
-      expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.deep.have.same.members(expectedSyncs);
+      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.deep.have.same.members(expectedSyncs);
     });
 
     it('Valid syncs - only image', function () {
@@ -415,23 +415,23 @@ describe('ccxAdapter', function () {
           type: 'image', url: 'http://foo.sync?param=1'
         }
       ];
-      expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.deep.have.same.members(expectedSyncs);
+      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.deep.have.same.members(expectedSyncs);
     });
 
     it('Valid syncs - only iframe', function () {
-      let syncOptions = {iframeEnabled: true, pixelEnabled: false};
+      let syncOptions = { iframeEnabled: true, pixelEnabled: false };
       let expectedSyncs = [
         {
           type: 'iframe', url: 'http://foo.sync?param=2'
         }
       ];
-      expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.deep.have.same.members(expectedSyncs);
+      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.deep.have.same.members(expectedSyncs);
     });
 
     it('Valid syncs - empty', function () {
-      let syncOptions = {iframeEnabled: true, pixelEnabled: true};
+      let syncOptions = { iframeEnabled: true, pixelEnabled: true };
       response.ext.usersync = {};
-      expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.be.empty;
+      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.be.empty;
     });
   });
   describe('mediaTypesVideoParams', function () {
@@ -482,7 +482,7 @@ describe('ccxAdapter', function () {
 
       let bidsClone = utils.deepClone(bids);
 
-      let response = spec.buildRequests(bidsClone, {'bids': bidsClone});
+      let response = spec.buildRequests(bidsClone, { 'bids': bidsClone });
       let data = JSON.parse(response.data);
 
       expect(data.imp).to.deep.have.same.members(imps);

@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
@@ -19,15 +19,15 @@ const cache = {
   auctions: {}
 };
 
-let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE}), {
-  track({eventType, args}) {
+let livewrappedAnalyticsAdapter = Object.assign(adapter({ EMPTYURL, ANALYTICSTYPE }), {
+  track({ eventType, args }) {
     const time = utils.timestamp();
     utils.logInfo('LIVEWRAPPED_EVENT:', [eventType, args]);
 
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
         utils.logInfo('LIVEWRAPPED_AUCTION_INIT:', args);
-        cache.auctions[args.auctionId] = {bids: {}, bidAdUnits: {}};
+        cache.auctions[args.auctionId] = { bids: {}, bidAdUnits: {} };
         break;
       case CONSTANTS.EVENTS.BID_REQUESTED:
         utils.logInfo('LIVEWRAPPED_BID_REQUESTED:', args);
@@ -154,7 +154,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     return;
   }
 
-  ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
+  ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), { method: 'POST' });
 }
 
 function getAdblockerRecovered() {
@@ -193,7 +193,7 @@ function getSentRequests() {
     });
   });
 
-  return {gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests};
+  return { gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests };
 }
 
 function getResponses(gdpr, auctionIds) {
@@ -279,7 +279,7 @@ function getGdprPos(gdpr, auction) {
   }
 
   if (gdprPos == gdpr.length) {
-    gdpr[gdprPos] = {gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent};
+    gdpr[gdprPos] = { gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent };
   }
 
   return gdprPos;

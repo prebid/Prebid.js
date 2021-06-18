@@ -151,7 +151,7 @@ describe('Adagio bid adapter', () => {
         site: 'site-name',
         useAdUnitCodeAsPlacement: true,
         useAdUnitCodeAsAdUnitElementId: true
-      }}).build();
+      } }).build();
 
       expect(spec.isBidRequestValid(bid01)).to.equal(true);
       expect(bid01.params.adUnitElementId).to.equal('adunit-code');
@@ -162,17 +162,17 @@ describe('Adagio bid adapter', () => {
       const bid01 = new BidRequestBuilder({ params: {
         organizationId: '1000',
         placement: 'PAVE_ATF'
-      }}).build();
+      } }).build();
 
       const bid02 = new BidRequestBuilder({ params: {
         organizationId: '1000',
         site: 'SITE-NAME'
-      }}).build();
+      } }).build();
 
       const bid03 = new BidRequestBuilder({ params: {
         placement: 'PAVE_ATF',
         site: 'SITE-NAME'
-      }}).build();
+      } }).build();
 
       expect(spec.isBidRequestValid(bid01)).to.equal(false);
       expect(spec.isBidRequestValid(bid02)).to.equal(false);
@@ -194,10 +194,10 @@ describe('Adagio bid adapter', () => {
       sandbox.spy(utils, 'logWarn');
       sandbox.spy(adagio, 'enqueue');
 
-      const bid = new BidRequestBuilder({'params': {
+      const bid = new BidRequestBuilder({ 'params': {
         organizationId: '1000',
         placement: 'PAVE_ATF'
-      }}).build();
+      } }).build();
 
       const expectedEnqueued = {
         action: 'pb-dbg',
@@ -761,9 +761,9 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.adUnits[0].floors.length).to.equal(3);
-        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'banner', s: '300x250'});
-        expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'banner', s: '300x600'});
-        expect(requests[0].data.adUnits[0].floors[2]).to.deep.equal({f: 1, mt: 'video', s: '600x480'});
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({ f: 1, mt: 'banner', s: '300x250' });
+        expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({ f: 1, mt: 'banner', s: '300x600' });
+        expect(requests[0].data.adUnits[0].floors[2]).to.deep.equal({ f: 1, mt: 'video', s: '600x480' });
       });
 
       it('should get and set floor by mediatype if no size provided (ex native, video)', function() {
@@ -785,8 +785,8 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.adUnits[0].floors.length).to.equal(2);
-        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'video'});
-        expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'native'});
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({ f: 1, mt: 'video' });
+        expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({ f: 1, mt: 'native' });
       });
 
       it('should get and set floor with default value if no floors found', function() {
@@ -805,7 +805,7 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.adUnits[0].floors.length).to.equal(1);
-        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 0.1, mt: 'video'});
+        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({ f: 0.1, mt: 'video' });
       });
     });
   });
@@ -1327,8 +1327,8 @@ describe('Adagio bid adapter', () => {
       it('should compute the viewport dimensions in cross-origin iframe w/ safeFrame api', function() {
         window.$sf = $sf;
         sandbox.stub(window.$sf.ext, 'geom').returns({
-          win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
-          self: {t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250},
+          win: { t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177 },
+          self: { t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250 },
         });
         const result = _features.getViewPortDimensions();
         expect(result).to.eq('1920x1177');
@@ -1399,8 +1399,8 @@ describe('Adagio bid adapter', () => {
       it('should compute the slot position in cross-origin iframe w/ safeFrame api', function() {
         window.$sf = $sf;
         sandbox.stub(window.$sf.ext, 'geom').returns({
-          win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
-          self: {t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250},
+          win: { t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177 },
+          self: { t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250 },
         });
         const result = _features.getSlotPosition({ adUnitElementId: 'gpt-adunit-code', postBid: false });
         expect(result).to.eq('210x859');
@@ -1455,7 +1455,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should auto detect adUnitElementId when GPT is used', function() {
-      sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').withArgs('banner').returns({divId: 'gpt-banner'});
+      sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').withArgs('banner').returns({ divId: 'gpt-banner' });
       expect(adagio.autoDetectAdUnitElementId('banner')).to.eq('gpt-banner');
     });
   });

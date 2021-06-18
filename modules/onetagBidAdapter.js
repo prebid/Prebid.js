@@ -109,7 +109,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
-      const {context, adUnitCode} = find(requestData.bids, (item) => item.bidId === bid.requestId);
+      const { context, adUnitCode } = find(requestData.bids, (item) => item.bidId === bid.requestId);
       if (context === INSTREAM) {
         responseBid.vastUrl = bid.vastUrl;
         responseBid.videoCacheKey = bid.videoCacheKey;
@@ -135,7 +135,7 @@ function createRenderer(bid, rendererOptions = {}) {
     loaded: false
   });
   try {
-    renderer.setRender(({renderer, width, height, vastXml, adUnitCode}) => {
+    renderer.setRender(({ renderer, width, height, vastXml, adUnitCode }) => {
       renderer.push(() => {
         window.onetag.Player.init({
           ...bid,
@@ -339,7 +339,7 @@ function getSizes(sizes) {
   const ret = [];
   for (let i = 0; i < sizes.length; i++) {
     const size = sizes[i];
-    ret.push({width: size[0], height: size[1]})
+    ret.push({ width: size[0], height: size[1] })
   }
   return ret;
 }

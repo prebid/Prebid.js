@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid';
@@ -54,7 +54,7 @@ export const spec = {
       cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
-      device: {...fpd.device, ...params.device},
+      device: { ...fpd.device, ...params.device },
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {

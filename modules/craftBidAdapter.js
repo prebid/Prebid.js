@@ -55,7 +55,7 @@ export const spec = {
     return request;
   },
 
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function(serverResponse, { bidderRequest }) {
     try {
       serverResponse = serverResponse.body;
       const bids = [];

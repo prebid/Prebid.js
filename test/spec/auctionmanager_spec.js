@@ -105,7 +105,7 @@ function mockBidder(bidderCode, bids) {
     getUserSyncs: sinon.stub()
   };
 
-  spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+  spec.buildRequests.returns([{ 'id': 123, 'method': 'POST' }]);
   spec.isBidRequestValid.returns(true);
   spec.interpretResponse.returns(bids);
 
@@ -674,11 +674,11 @@ describe('auctionmanager.js', function () {
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
-            {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+            { bidder: BIDDER_CODE, params: { placementId: 'id' } },
           ]
         }];
         adUnitCodes = [ADUNIT_CODE];
-        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+        auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000 });
         createAuctionStub = sinon.stub(auctionModule, 'newAuction');
         createAuctionStub.returns(auction);
 
@@ -885,7 +885,7 @@ describe('auctionmanager.js', function () {
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
-            {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+            { bidder: BIDDER_CODE, params: { placementId: 'id' } },
           ]
         }];
         adUnitCodes = [ADUNIT_CODE];
@@ -918,7 +918,7 @@ describe('auctionmanager.js', function () {
           assert.equal(auctionProps.auctionStatus, AUCTION_COMPLETED)
           done();
         }
-        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
+        auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20 });
 
         auction.callBids();
         respondToRequest(0);
@@ -936,7 +936,7 @@ describe('auctionmanager.js', function () {
           assert.ok(eventsEmitSpy.withArgs(CONSTANTS.EVENTS.BID_TIMEOUT).notCalled, 'did not emit event BID_TIMEOUT');
           done();
         }
-        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
+        auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20 });
 
         auction.callBids();
         respondToRequest(0);
@@ -958,7 +958,7 @@ describe('auctionmanager.js', function () {
           assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
           done();
         }
-        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
+        auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20 });
 
         auction.callBids();
         respondToRequest(0);
@@ -998,16 +998,16 @@ describe('auctionmanager.js', function () {
       adUnits = [{
         code: ADUNIT_CODE,
         bids: [
-          {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+          { bidder: BIDDER_CODE, params: { placementId: 'id' } },
         ]
       }, {
         code: ADUNIT_CODE1,
         bids: [
-          {bidder: BIDDER_CODE1, params: {placementId: 'id'}},
+          { bidder: BIDDER_CODE1, params: { placementId: 'id' } },
         ]
       }];
       adUnitCodes = adUnits.map(({ code }) => code);
-      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+      auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000 });
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
 
@@ -1143,16 +1143,16 @@ describe('auctionmanager.js', function () {
       adUnits = [{
         code: ADUNIT_CODE,
         bids: [
-          {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+          { bidder: BIDDER_CODE, params: { placementId: 'id' } },
         ]
       }, {
         code: ADUNIT_CODE1,
         bids: [
-          {bidder: BIDDER_CODE1, params: {placementId: 'id'}},
+          { bidder: BIDDER_CODE1, params: { placementId: 'id' } },
         ]
       }];
       adUnitCodes = adUnits.map(({ code }) => code);
-      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+      auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000 });
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
 
@@ -1188,7 +1188,7 @@ describe('auctionmanager.js', function () {
   describe('getMediaTypeGranularity', function () {
     it('video', function () {
       let bidReq = {
-        'mediaTypes': { video: {id: '1'} }
+        'mediaTypes': { video: { id: '1' } }
       };
 
       // mediaType is video and video.context is undefined
@@ -1243,13 +1243,13 @@ describe('auctionmanager.js', function () {
         banner: 'low', video: 'medium'
       })).to.equal('medium');
 
-      expect(getMediaTypeGranularity('video', {mediaTypes: {banner: {}}}, {
+      expect(getMediaTypeGranularity('video', { mediaTypes: { banner: {} } }, {
         banner: 'low', video: 'medium'
       })).to.equal('medium');
     });
 
     it('native', function () {
-      expect(getMediaTypeGranularity('native', {mediaTypes: {native: {}}}, {
+      expect(getMediaTypeGranularity('native', { mediaTypes: { native: {} } }, {
         banner: 'low', video: 'medium', native: 'high'
       })).to.equal('high');
     });

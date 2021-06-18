@@ -5,9 +5,9 @@ import * as events from '../src/events.js';
 import * as utils from '../src/utils.js';
 import { BID_STATUS, EVENTS, TARGETING_KEYS } from '../src/constants.json';
 
-const {CACHE_ID, UUID} = TARGETING_KEYS;
-const {BID_WON, AUCTION_END} = EVENTS;
-const {RENDERED} = BID_STATUS;
+const { CACHE_ID, UUID } = TARGETING_KEYS;
+const { BID_WON, AUCTION_END } = EVENTS;
+const { RENDERED } = BID_STATUS;
 
 const INSTREAM_TRACKING_DEFAULT_CONFIG = {
   enabled: false,
@@ -41,7 +41,7 @@ const whitelistedResources = /video|fetch|xmlhttprequest|other/;
  *
  * @return {boolean} returns TRUE if tracking started
  */
-export function trackInstreamDeliveredImpressions({adUnits, bidsReceived, bidderRequests}) {
+export function trackInstreamDeliveredImpressions({ adUnits, bidsReceived, bidderRequests }) {
   const instreamTrackingConfig = config.getConfig('instreamTracking') || {};
   // check if instreamTracking is enabled and performance api is available
   if (!instreamTrackingConfig.enabled || !window.performance || !window.performance.getEntriesByType) {
@@ -67,7 +67,7 @@ export function trackInstreamDeliveredImpressions({adUnits, bidsReceived, bidder
   const instreamAdUnitsCount = Object.keys(instreamAdUnitMap).length;
 
   const start = Date.now();
-  const {maxWindow, pollingFreq, urlPattern} = instreamTrackingConfig;
+  const { maxWindow, pollingFreq, urlPattern } = instreamTrackingConfig;
 
   let instreamWinningBidsCount = 0;
   let lastRead = 0; // offset for performance.getEntriesByType

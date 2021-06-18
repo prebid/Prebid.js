@@ -107,7 +107,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: { referer: REFERER }
     }
 
     it('should add source and version to the tag', function () {
@@ -196,7 +196,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: { referer: REFERER }
     }
 
     it('should add source and version to the tag', function () {
@@ -281,7 +281,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: { referer: REFERER }
     }
 
     it('should criteo eid', function () {
@@ -315,7 +315,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: { referer: REFERER }
     }
 
     it('should add source and version to the tag', function () {
@@ -449,7 +449,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: { referer: REFERER }
     }
 
     it('should refreshCount = 4', function () {
@@ -477,12 +477,12 @@ describe('Nobid Adapter', function () {
       device: 'COMPUTER',
       site: 2,
       bids: [
-        {id: 1,
+        { id: 1,
           bdrid: 101,
           divid: ADUNIT_300x250,
           dealid: DEAL_ID,
           creativeid: CREATIVE_ID_300x250,
-          size: {'w': 300, 'h': 250},
+          size: { 'w': 300, 'h': 250 },
           adm: ADMARKUP_300x250,
           price: '' + PRICE_300x250
         }
@@ -512,7 +512,7 @@ describe('Nobid Adapter', function () {
           adUnitCode: ADUNIT_300x250
         }]
       }
-      let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      let result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       expect(result.length).to.equal(expectedResponse.length);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
@@ -526,7 +526,7 @@ describe('Nobid Adapter', function () {
           adUnitCode: ADUNIT_300x250 + '1'
         }]
       }
-      let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      let result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       expect(result.length).to.equal(0);
     });
 
@@ -553,7 +553,7 @@ describe('Nobid Adapter', function () {
           adUnitCode: ADUNIT_300x250
         }]
       }
-      let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      let result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       expect(result.length).to.equal(expectedResponse.length);
       expect(result[0].dealId).to.equal(expectedResponse[0].dealId);
     });
@@ -574,12 +574,12 @@ describe('Nobid Adapter', function () {
       site: 2,
       rlimit: REFRESH_LIMIT,
       bids: [
-        {id: 1,
+        { id: 1,
           bdrid: 101,
           divid: ADUNIT_300x250,
           dealid: DEAL_ID,
           creativeid: CREATIVE_ID_300x250,
-          size: {'w': 300, 'h': 250},
+          size: { 'w': 300, 'h': 250 },
           adm: ADMARKUP_300x250,
           price: '' + PRICE_300x250
         }
@@ -593,7 +593,7 @@ describe('Nobid Adapter', function () {
           adUnitCode: ADUNIT_300x250
         }]
       }
-      let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      let result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       expect(nobid.refreshLimit).to.equal(REFRESH_LIMIT);
     });
   });
@@ -612,12 +612,12 @@ describe('Nobid Adapter', function () {
       device: 'COMPUTER',
       site: 2,
       bids: [
-        {id: 1,
+        { id: 1,
           bdrid: 101,
           divid: ADUNIT_300x250,
           dealid: DEAL_ID,
           creativeid: CREATIVE_ID_300x250,
-          size: {'w': 300, 'h': 250},
+          size: { 'w': 300, 'h': 250 },
           adm: ADMARKUP_300x250,
           price: '' + PRICE_300x250,
           meta: {
@@ -634,7 +634,7 @@ describe('Nobid Adapter', function () {
           adUnitCode: ADUNIT_300x250
         }]
       }
-      let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      let result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       expect(result[0].meta.advertiserDomains).to.equal(ADOMAINS);
     });
   });
@@ -704,12 +704,12 @@ describe('Nobid Adapter', function () {
       site: 2,
       ublock: ULIMIT,
       bids: [
-        {id: 1,
+        { id: 1,
           bdrid: 101,
           divid: ADUNIT_300x250,
           dealid: DEAL_ID,
           creativeid: CREATIVE_ID_300x250,
-          size: {'w': 300, 'h': 250},
+          size: { 'w': 300, 'h': 250 },
           adm: ADMARKUP_300x250,
           price: '' + PRICE_300x250
         }
@@ -736,7 +736,7 @@ describe('Nobid Adapter', function () {
           'auctionId': '1d1a030790a475',
         }
       ];
-      spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request).to.equal(undefined);
     });
@@ -745,30 +745,30 @@ describe('Nobid Adapter', function () {
   describe('getUserSyncs', function () {
     const GDPR_CONSENT_STRING = 'GDPR_CONSENT_STRING';
     it('should get correct user sync when iframeEnabled', function () {
-      let pixel = spec.getUserSyncs({iframeEnabled: true})
+      let pixel = spec.getUserSyncs({ iframeEnabled: true })
       expect(pixel[0].type).to.equal('iframe');
       expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html');
     });
 
     it('should get correct user sync when iframeEnabled and pixelEnabled', function () {
-      let pixel = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true})
+      let pixel = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true })
       expect(pixel[0].type).to.equal('iframe');
       expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html');
     });
 
     it('should get correct user sync when iframeEnabled', function () {
-      let pixel = spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: true, consentString: GDPR_CONSENT_STRING})
+      let pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: GDPR_CONSENT_STRING })
       expect(pixel[0].type).to.equal('iframe');
       expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING);
     });
 
     it('should get correct user sync when !iframeEnabled', function () {
-      let pixel = spec.getUserSyncs({iframeEnabled: false})
+      let pixel = spec.getUserSyncs({ iframeEnabled: false })
       expect(pixel.length).to.equal(0);
     });
 
     it('should get correct user sync when !iframeEnabled and pixelEnabled', function () {
-      let pixel = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{body: {syncs: ['sync_url']}}])
+      let pixel = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [{ body: { syncs: ['sync_url'] } }])
       expect(pixel.length).to.equal(1);
       expect(pixel[0].type).to.equal('image');
       expect(pixel[0].url).to.equal('sync_url');

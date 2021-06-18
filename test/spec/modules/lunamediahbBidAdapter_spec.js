@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/lunamediahbBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/lunamediahbBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 
 describe('LunamediaHBBidAdapter', function () {

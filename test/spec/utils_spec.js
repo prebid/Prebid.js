@@ -218,13 +218,13 @@ describe('Utils', function () {
     it('should return size string with input single size array', function () {
       var size = [300, 250];
       var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
-      assert.deepEqual(output, {w: 300, h: 250});
+      assert.deepEqual(output, { w: 300, h: 250 });
     });
 
     it('should return size string with input single size array', function () {
       var size = ['300', '250'];
       var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
-      assert.deepEqual(output, {w: 300, h: 250});
+      assert.deepEqual(output, { w: 300, h: 250 });
     });
 
     it('return undefined using string input', function () {
@@ -704,7 +704,7 @@ describe('Utils', function () {
     it('deep copies objects', function () {
       const adUnit = [{
         code: 'swan',
-        mediaTypes: {video: {context: 'outstream'}},
+        mediaTypes: { video: { context: 'outstream' } },
         renderer: {
           render: bid => player.render(bid),
           url: '/video/renderer.js'
@@ -847,7 +847,7 @@ describe('Utils', function () {
       let parsed;
 
       beforeEach(function () {
-        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {noDecodeWholeURL: true});
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', { noDecodeWholeURL: true });
       });
 
       it('extracts the search query', function () {
@@ -867,7 +867,7 @@ describe('Utils', function () {
           hostname: 'example.com',
           port: 3000,
           pathname: '/pathname/',
-          search: {foo: 'bar', search: 'test', bar: 'foo%26foo%3Dxxx'},
+          search: { foo: 'bar', search: 'test', bar: 'foo%26foo%3Dxxx' },
           hash: 'hash'
         })).to.equal('http://example.com:3000/pathname/?foo=bar&search=test&bar=foo%26foo%3Dxxx#hash');
       });
@@ -883,7 +883,7 @@ describe('Utils', function () {
       let parsed;
 
       beforeEach(function () {
-        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {decodeSearchAsString: true});
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', { decodeSearchAsString: true });
       });
 
       it('extracts the search query', function () {

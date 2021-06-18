@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 const BIDDER_CODE = 'deepintent';
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';

@@ -163,21 +163,21 @@ const sampleServerResponse = {
 describe('AmxBidAdapter', () => {
   describe('isBidRequestValid', () => {
     it('endpoint must be an optional string', () => {
-      expect(spec.isBidRequestValid({params: { endpoint: 1 }})).to.equal(false)
-      expect(spec.isBidRequestValid({params: { endpoint: 'test' }})).to.equal(true)
+      expect(spec.isBidRequestValid({ params: { endpoint: 1 } })).to.equal(false)
+      expect(spec.isBidRequestValid({ params: { endpoint: 'test' } })).to.equal(true)
     });
 
     it('tagId is an optional string', () => {
-      expect(spec.isBidRequestValid({params: { tagId: 1 }})).to.equal(false)
-      expect(spec.isBidRequestValid({params: { tagId: 'test' }})).to.equal(true)
+      expect(spec.isBidRequestValid({ params: { tagId: 1 } })).to.equal(false)
+      expect(spec.isBidRequestValid({ params: { tagId: 'test' } })).to.equal(true)
     });
 
     it('testMode is an optional truthy value', () => {
-      expect(spec.isBidRequestValid({params: { testMode: 1 }})).to.equal(true)
-      expect(spec.isBidRequestValid({params: { testMode: 'true' }})).to.equal(true)
+      expect(spec.isBidRequestValid({ params: { testMode: 1 } })).to.equal(true)
+      expect(spec.isBidRequestValid({ params: { testMode: 'true' } })).to.equal(true)
       // ignore invalid values (falsy)
-      expect(spec.isBidRequestValid({params: { testMode: 'non-truthy-invalid-value' }})).to.equal(true)
-      expect(spec.isBidRequestValid({params: { testMode: false }})).to.equal(true)
+      expect(spec.isBidRequestValid({ params: { testMode: 'non-truthy-invalid-value' } })).to.equal(true)
+      expect(spec.isBidRequestValid({ params: { testMode: false } })).to.equal(true)
     });
 
     it('none of the params are required', () => {
@@ -191,14 +191,14 @@ describe('AmxBidAdapter', () => {
     });
 
     it('will return valid syncs from a server response', () => {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [{body: sampleServerResponse}]);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: sampleServerResponse }]);
       expect(syncs.length).to.equal(2);
       expect(syncs[0].type).to.equal('image');
       expect(syncs[1].type).to.equal('iframe');
     });
 
     it('will filter out iframe syncs based on options', () => {
-      const syncs = spec.getUserSyncs({ iframeEnabled: false }, [{body: sampleServerResponse}, {body: sampleServerResponse}]);
+      const syncs = spec.getUserSyncs({ iframeEnabled: false }, [{ body: sampleServerResponse }, { body: sampleServerResponse }]);
       expect(syncs.length).to.equal(2);
       expect(syncs).to.satisfy((allSyncs) => allSyncs.every((sync) => sync.type === 'image'))
     });
@@ -304,10 +304,10 @@ describe('AmxBidAdapter', () => {
       const userId = {
         britepoolid: 'sample-britepool',
         criteoId: 'sample-criteo',
-        digitrustid: {data: {id: 'sample-digitrust'}},
-        id5id: {uid: 'sample-id5'},
+        digitrustid: { data: { id: 'sample-digitrust' } },
+        id5id: { uid: 'sample-id5' },
         idl_env: 'sample-liveramp',
-        lipb: {lipbid: 'sample-liveintent'},
+        lipb: { lipbid: 'sample-liveintent' },
         netId: 'sample-netid',
         parrableId: { eid: 'sample-parrable' },
         pubcid: 'sample-pubcid',

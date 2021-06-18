@@ -37,10 +37,10 @@ const videoBidReq = [{
       maxDuration: 30
     }
   },
-  mediaTypes: {video: {
+  mediaTypes: { video: {
     context: 'outstream',
     playerSize: [640, 480]
-  }},
+  } },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
@@ -52,10 +52,10 @@ const videoBidReq = [{
     placementId: '10433395',
     publisherId: 12345
   },
-  mediaTypes: {video: {
+  mediaTypes: { video: {
     context: 'outstream',
     playerSize: [640, 480]
-  }},
+  } },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
@@ -94,7 +94,7 @@ const bidReqUserIds = [{
   userId: {
     idl_env: '1111',
     tdid: '123456',
-    digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
+    digitrustid: { data: { id: 'DTID', keyv: 4, privacy: { optout: false }, producer: 'ABC', version: 2 } },
     id5id: { uid: '1111' }
   }
 },
@@ -346,12 +346,12 @@ describe('Undertone Adapter', () => {
 
   describe('interpretResponse', () => {
     it('should build bid array', () => {
-      let result = spec.interpretResponse({body: bidResponse});
+      let result = spec.interpretResponse({ body: bidResponse });
       expect(result.length).to.equal(1);
     });
 
     it('should have all relevant fields', () => {
-      const result = spec.interpretResponse({body: bidResponse});
+      const result = spec.interpretResponse({ body: bidResponse });
       const bid = result[0];
 
       expect(bid.requestId).to.equal('263be71e91dd9d');
@@ -366,8 +366,8 @@ describe('Undertone Adapter', () => {
     });
 
     it('should return empty array when response is incorrect', () => {
-      expect(spec.interpretResponse({body: {}}).length).to.equal(0);
-      expect(spec.interpretResponse({body: []}).length).to.equal(0);
+      expect(spec.interpretResponse({ body: {} }).length).to.equal(0);
+      expect(spec.interpretResponse({ body: [] }).length).to.equal(0);
     });
 
     it('should only use valid bid responses', () => {
@@ -375,7 +375,7 @@ describe('Undertone Adapter', () => {
     });
 
     it('should detect video response', () => {
-      const videoResult = spec.interpretResponse({body: bidVideoResponse});
+      const videoResult = spec.interpretResponse({ body: bidVideoResponse });
       const vbid = videoResult[0];
 
       expect(vbid.mediaType).to.equal('video');
@@ -394,7 +394,7 @@ describe('Undertone Adapter', () => {
       },
       {
         name: 'with iframe and gdpr on',
-        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}],
+        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, { gdprApplies: true, consentString: '234234' }],
         expect: {
           type: 'iframe',
           pixels: ['https://cdn.undertone.com/js/usersync.html?gdpr=1&gdprstr=234234']
@@ -410,7 +410,7 @@ describe('Undertone Adapter', () => {
       },
       {
         name: 'with iframe and no gdpr off or ccpa',
-        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, {gdprApplies: false}],
+        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, { gdprApplies: false }],
         expect: {
           type: 'iframe',
           pixels: ['https://cdn.undertone.com/js/usersync.html?gdpr=0&gdprstr=']
@@ -418,7 +418,7 @@ describe('Undertone Adapter', () => {
       },
       {
         name: 'with iframe and gdpr and ccpa',
-        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}, 'YN12'],
+        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, { gdprApplies: true, consentString: '234234' }, 'YN12'],
         expect: {
           type: 'iframe',
           pixels: ['https://cdn.undertone.com/js/usersync.html?gdpr=1&gdprstr=234234&ccpa=YN12']
@@ -435,7 +435,7 @@ describe('Undertone Adapter', () => {
       },
       {
         name: 'with pixels and gdpr on',
-        arguments: [{ pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}],
+        arguments: [{ pixelEnabled: true }, {}, { gdprApplies: true, consentString: '234234' }],
         expect: {
           type: 'image',
           pixels: ['https://usr.undertone.com/userPixel/syncOne?id=1&of=2&gdpr=1&gdprstr=234234',
@@ -453,7 +453,7 @@ describe('Undertone Adapter', () => {
       },
       {
         name: 'with pixels and gdpr off',
-        arguments: [{ pixelEnabled: true }, {}, {gdprApplies: false}],
+        arguments: [{ pixelEnabled: true }, {}, { gdprApplies: false }],
         expect: {
           type: 'image',
           pixels: ['https://usr.undertone.com/userPixel/syncOne?id=1&of=2&gdpr=0&gdprstr=',
@@ -462,7 +462,7 @@ describe('Undertone Adapter', () => {
       },
       {
         name: 'with pixels and gdpr and ccpa on',
-        arguments: [{ pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}, 'YN12'],
+        arguments: [{ pixelEnabled: true }, {}, { gdprApplies: true, consentString: '234234' }, 'YN12'],
         expect: {
           type: 'image',
           pixels: ['https://usr.undertone.com/userPixel/syncOne?id=1&of=2&gdpr=1&gdprstr=234234&ccpa=YN12',

@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/temedyaBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/temedyaBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://adm.vidyome.com/';
@@ -165,7 +165,7 @@ describe('temedya adapter', function() {
         }
       ];
       let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({body: response}, request);
+      let result = spec.interpretResponse({ body: response }, request);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(result[0].cpm).to.not.equal(null);
       expect(result[0].creativeId).to.not.equal(null);

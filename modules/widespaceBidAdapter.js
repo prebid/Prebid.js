@@ -1,5 +1,5 @@
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {
   parseQueryStringParameters,
   parseSizesInput
@@ -102,7 +102,7 @@ export const spec = {
 
       // GDPR Consent info
       if (data.gdprCmp) {
-        const {gdprApplies, consentString, vendorData} = bidderRequest.gdprConsent;
+        const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent;
         const hasGlobalScope = vendorData && vendorData.hasGlobalScope;
         data.gdprApplies = gdprApplies ? 1 : gdprApplies === undefined ? '' : 0;
         data.gdprConsentData = consentString;
@@ -166,7 +166,7 @@ export const spec = {
     userSyncs = serverResponses.reduce((allSyncPixels, response) => {
       if (response && response.body && response.body[0]) {
         (response.body[0].syncPixels || []).forEach((url) => {
-          allSyncPixels.push({type: 'image', url});
+          allSyncPixels.push({ type: 'image', url });
         });
       }
       return allSyncPixels;

@@ -47,7 +47,7 @@ function sizeToDimensions(size) {
 }
 
 function validMediaType(type) {
-  return ({'banner': 1, 'native': 1, 'video': 1}).hasOwnProperty(type);
+  return ({ 'banner': 1, 'native': 1, 'video': 1 }).hasOwnProperty(type);
 }
 
 function formatSource(src) {
@@ -250,7 +250,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
-  outputObj['dvc'] = {'plt': getDevicePlatform()};
+  outputObj['dvc'] = { 'plt': getDevicePlatform() };
   outputObj['tgid'] = (function() {
     var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
     if (testGroupId <= 15 && testGroupId >= 0) {
@@ -404,7 +404,7 @@ function bidTimeoutHandler(args) {
 
 /// /////////// ADAPTER DEFINITION //////////////
 
-let baseAdapter = adapter({analyticsType: 'endpoint'});
+let baseAdapter = adapter({ analyticsType: 'endpoint' });
 let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(conf = {}) {
@@ -441,7 +441,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
-  track({eventType, args}) {
+  track({ eventType, args }) {
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
         auctionInitHandler(args);

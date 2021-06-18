@@ -95,14 +95,14 @@ const extractPayloadOfFirstAndOnlyRequest = (reqs) => {
 describe('smaatoBidAdapterTest', () => {
   describe('isBidRequestValid', () => {
     it('has valid params', () => {
-      expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456'}})).to.be.true;
+      expect(spec.isBidRequestValid({ params: { publisherId: '123', adspaceId: '456' } })).to.be.true;
       expect(spec.isBidRequestValid(singleBannerBidRequest)).to.be.true;
     });
     it('has invalid params', () => {
       expect(spec.isBidRequestValid({})).to.be.false;
-      expect(spec.isBidRequestValid({params: {}})).to.be.false;
-      expect(spec.isBidRequestValid({params: {publisherId: '123'}})).to.be.false;
-      expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: 456}})).to.be.false;
+      expect(spec.isBidRequestValid({ params: {} })).to.be.false;
+      expect(spec.isBidRequestValid({ params: { publisherId: '123' } })).to.be.false;
+      expect(spec.isBidRequestValid({ params: { publisherId: '123', adspaceId: 456 } })).to.be.false;
     });
   });
 
@@ -279,7 +279,7 @@ describe('smaatoBidAdapterTest', () => {
               skip: 1,
               skipmin: 5,
               api: [7],
-              ext: {rewarded: 0}
+              ext: { rewarded: 0 }
             }
           },
           adUnitCode: '/19968336/header-bid-tag-0',
@@ -344,7 +344,7 @@ describe('smaatoBidAdapterTest', () => {
               skip: 1,
               skipmin: 5,
               api: [7],
-              ext: {rewarded: 0}
+              ext: { rewarded: 0 }
             }
           },
           adUnitCode: '/19968336/header-bid-tag-0',
@@ -402,7 +402,7 @@ describe('smaatoBidAdapterTest', () => {
         const reqs = spec.buildRequests([inAppBidRequest], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.device.geo).to.deep.equal({'lat': 33.3, 'lon': -88.8});
+        expect(req.device.geo).to.deep.equal({ 'lat': 33.3, 'lon': -88.8 });
         expect(req.device.ifa).to.equal('aDeviceId');
       });
 
@@ -559,7 +559,7 @@ describe('smaatoBidAdapterTest', () => {
     };
 
     it('returns empty array on no bid responses', () => {
-      const response_with_empty_body = {body: {}}
+      const response_with_empty_body = { body: {} }
 
       const bids = spec.interpretResponse(response_with_empty_body, request);
 
@@ -676,7 +676,7 @@ describe('smaatoBidAdapterTest', () => {
 
     it('uses net revenue flag send from server', () => {
       const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
-      resp.body.seatbid[0].bid[0].ext = {net: false};
+      resp.body.seatbid[0].bid[0].ext = { net: false };
 
       const bids = spec.interpretResponse(resp, request);
 

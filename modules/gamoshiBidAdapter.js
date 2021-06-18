@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
 const ENDPOINTS = {
@@ -74,7 +74,7 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
+      const { adUnitCode, auctionId, mediaTypes, params, sizes, transactionId } = bidRequest;
       const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS['gamoshi'];
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       let url = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
@@ -95,9 +95,9 @@ export const spec = {
         },
         imp: [],
         ext: {},
-        user: {ext: {}},
-        source: {ext: {}},
-        regs: {ext: {}}
+        user: { ext: {} },
+        source: { ext: {} },
+        regs: { ext: {} }
       };
       const gdprConsent = bidderRequest.gdprConsent;
 
@@ -234,7 +234,7 @@ export const spec = {
 
       if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
         if (outBid.mediaType === BANNER) {
-          outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
+          outBids.push(Object.assign({}, outBid, { ad: bid.adm }));
         } else if (outBid.mediaType === VIDEO) {
           const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
           outBids.push(Object.assign({}, outBid, {
@@ -280,7 +280,7 @@ export const spec = {
           bidResponse.ext['utrk']
             .forEach(pixel => {
               const url = replaceMacros(pixel.url, macroValues);
-              syncs.push({type: pixel.type, url});
+              syncs.push({ type: pixel.type, url });
             });
         }
 
@@ -292,7 +292,7 @@ export const spec = {
                   bid.ext['utrk']
                     .forEach(pixel => {
                       const url = replaceMacros(pixel.url, macroValues);
-                      syncs.push({type: pixel.type, url});
+                      syncs.push({ type: pixel.type, url });
                     });
                 }
               });

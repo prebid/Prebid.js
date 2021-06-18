@@ -56,20 +56,20 @@ describe('config API', function () {
   });
 
   it('overwrites existing config properties', function () {
-    setConfig({ foo: {biz: 'buz'} });
-    setConfig({ foo: {baz: 'qux'} });
-    expect(getConfig('foo')).to.eql({baz: 'qux'});
+    setConfig({ foo: { biz: 'buz' } });
+    setConfig({ foo: { baz: 'qux' } });
+    expect(getConfig('foo')).to.eql({ baz: 'qux' });
   });
 
   it('moves fpd config into ortb2 properties', function () {
-    setConfig({fpd: {context: {keywords: 'foo,bar', data: {inventory: [1]}}}});
-    expect(getConfig('ortb2')).to.eql({site: {keywords: 'foo,bar', ext: {data: {inventory: [1]}}}});
+    setConfig({ fpd: { context: { keywords: 'foo,bar', data: { inventory: [1] } } } });
+    expect(getConfig('ortb2')).to.eql({ site: { keywords: 'foo,bar', ext: { data: { inventory: [1] } } } });
     expect(getConfig('fpd')).to.eql(undefined);
   });
 
   it('moves fpd bidderconfig into ortb2 properties', function () {
-    setBidderConfig({bidders: ['bidderA'], config: {fpd: {context: {keywords: 'foo,bar', data: {inventory: [1]}}}}});
-    expect(getBidderConfig()).to.eql({'bidderA': {ortb2: {site: {keywords: 'foo,bar', ext: {data: {inventory: [1]}}}}}});
+    setBidderConfig({ bidders: ['bidderA'], config: { fpd: { context: { keywords: 'foo,bar', data: { inventory: [1] } } } } });
+    expect(getBidderConfig()).to.eql({ 'bidderA': { ortb2: { site: { keywords: 'foo,bar', ext: { data: { inventory: [1] } } } } } });
   });
 
   it('sets debugging', function () {
@@ -95,7 +95,7 @@ describe('config API', function () {
       syncDelay: 3000,
       auctionDelay: 0
     };
-    setDefaults({'userSync': DEFAULT_USERSYNC});
+    setDefaults({ 'userSync': DEFAULT_USERSYNC });
     expect(getConfig('userSync')).to.eql(DEFAULT_USERSYNC);
   });
 
@@ -259,7 +259,7 @@ describe('config API', function () {
   it('should log warning for invalid auctionOptions bidder values', function () {
     setConfig({ auctionOptions: {
       'secondaryBidders': 'appnexus, rubicon',
-    }});
+    } });
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options secondaryBidders must be of type Array';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
@@ -268,7 +268,7 @@ describe('config API', function () {
   it('should log warning for invalid auctionOptions suppress stale render', function () {
     setConfig({ auctionOptions: {
       'suppressStaleRender': 'test',
-    }});
+    } });
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options suppressStaleRender must be of type boolean';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
@@ -277,7 +277,7 @@ describe('config API', function () {
   it('should log warning for invalid properties to auctionOptions', function () {
     setConfig({ auctionOptions: {
       'testing': true
-    }});
+    } });
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options given an incorrect param: testing';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');

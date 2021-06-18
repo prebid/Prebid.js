@@ -89,7 +89,7 @@ function createRenderer_(bidAd, scriptUrl, createFcn) {
     id: bidAd.adUnitCode,
     url: scriptUrl,
     loaded: false,
-    config: {'player_height': bidAd.height, 'player_width': bidAd.width},
+    config: { 'player_height': bidAd.height, 'player_width': bidAd.width },
     adUnitCode: bidAd.adUnitCode
   });
   try {

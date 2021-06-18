@@ -86,9 +86,9 @@ describe('ID5 ID System', function() {
   function getAdUnitMock(code = 'adUnit-code') {
     return {
       code,
-      mediaTypes: {banner: {}, native: {}},
+      mediaTypes: { banner: {}, native: {} },
       sizes: [[300, 200], [300, 600]],
-      bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}]
+      bids: [{ bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }]
     };
   }
 
@@ -382,7 +382,7 @@ describe('ID5 ID System', function() {
       config.setConfig(getFetchLocalStorageConfig());
 
       let innerAdUnits;
-      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, { adUnits });
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(1);
     });
@@ -396,7 +396,7 @@ describe('ID5 ID System', function() {
       config.setConfig(getFetchLocalStorageConfig());
 
       let innerAdUnits;
-      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, { adUnits });
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(2);
     });
@@ -414,7 +414,7 @@ describe('ID5 ID System', function() {
       config.setConfig(id5Config);
 
       let innerAdUnits;
-      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, { adUnits });
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(2);
 

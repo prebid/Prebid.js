@@ -1,6 +1,6 @@
 import ooloAnalytics, { PAGEVIEW_ID } from 'modules/ooloAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
 import constants from 'src/constants.json'
 import events from 'src/events'
 import { config } from 'src/config';

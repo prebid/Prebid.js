@@ -4,7 +4,7 @@ import { getAdUnitSizes, logWarn, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 
 const BID_SCHEME = 'https://';
 const BID_DOMAIN = 'technoratimedia.com';
@@ -209,7 +209,7 @@ export const spec = {
       logWarn('Synacormedia: server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
       return;
     }
-    const {id, seatbid: seatbids} = serverResponse.body;
+    const { id, seatbid: seatbids } = serverResponse.body;
     let bids = [];
     if (id && seatbids) {
       seatbids.forEach(seatbid => {

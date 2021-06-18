@@ -1,9 +1,9 @@
 // import or require modules necessary for the test, e.g.:
-import {expect} from 'chai'; // may prefer 'assert' in place of 'expect'
+import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
 import {
   spec
 } from 'modules/inmarBidAdapter.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 
 describe('Inmar adapter tests', function () {
   var DEFAULT_PARAMS_NEW_SIZES = [{

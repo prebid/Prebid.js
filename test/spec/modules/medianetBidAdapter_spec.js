@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/medianetBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/medianetBidAdapter.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from 'src/config.js';
 
@@ -1362,7 +1362,7 @@ describe('Media.net bid adapter', function () {
         getBoundingClientRect: () => boundingRect
       });
 
-      const bidRequest = [{...VALID_BID_REQUEST[0], adUnitCode: code}]
+      const bidRequest = [{ ...VALID_BID_REQUEST[0], adUnitCode: code }]
       const bidReq = spec.buildRequests(bidRequest, VALID_AUCTIONDATA);
       const data = JSON.parse(bidReq.data);
       expect(data.imp[0].ext.visibility).to.equal(2);

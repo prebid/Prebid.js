@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 
 /** @type {Submodule} */
 export const netIdSubmodule = {

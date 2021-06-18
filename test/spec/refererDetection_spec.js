@@ -163,7 +163,7 @@ describe('Referer detection', () => {
       });
 
       it('Should override canonical URL with config pageUrl', () => {
-        config.setConfig({'pageUrl': 'testUrl.com'});
+        config.setConfig({ 'pageUrl': 'testUrl.com' });
 
         const testWindow = buildWindowTree(['https://example.com/some/page', 'https://example.com/other/page', 'https://example.com/third/page'], 'https://othersite.com/', 'https://example.com/canonical/page'),
           result = detectReferer(testWindow)();

@@ -279,7 +279,7 @@ export const spec = {
 
     const request = {
       id: bidderRequest.auctionId,
-      source: {tid: bidderRequest.auctionId},
+      source: { tid: bidderRequest.auctionId },
       tmax: BB_CONSTANTS.DEFAULT_TIMEOUT,
       imp: imps,
       test: DEV_MODE ? 1 : 0,

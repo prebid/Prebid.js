@@ -1,9 +1,9 @@
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {logError, logInfo, deepClone} from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { logError, logInfo, deepClone } from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 
@@ -37,7 +37,7 @@ export const parseAdUnitCode = function (bidResponse) {
   return bidResponse.adUnitCode.toLowerCase();
 };
 
-export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER, analyticsType}), {
+export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ ANALYTICS_SERVER, analyticsType }), {
 
   cachedAuctions: {},
 
@@ -109,7 +109,7 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER,
     message.adUnits[adUnitCode][bidder] = bidResponse;
   },
   createBidMessage(auctionEndArgs, winningBids, timeoutBids) {
-    const {auctionId, timestamp, auctionEnd, adUnitCodes, bidsReceived, noBids} = auctionEndArgs;
+    const { auctionId, timestamp, auctionEnd, adUnitCodes, bidsReceived, noBids } = auctionEndArgs;
     const message = this.createCommonMessage(auctionId);
 
     message.auctionElapsed = (auctionEnd - timestamp);
@@ -163,7 +163,7 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER,
   handleBidWon(bidWonArgs) {
     this.sendEventMessage('imp', this.createImpressionMessage(bidWonArgs));
   },
-  track({eventType, args}) {
+  track({ eventType, args }) {
     if (analyticsOptions.sampled) {
       switch (eventType) {
         case BID_WON:

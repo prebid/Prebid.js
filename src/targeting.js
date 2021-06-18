@@ -634,14 +634,14 @@ export function newTargeting(auctionManager) {
 
       return Object.keys(aut)
         .map(function(key) {
-          return {[key]: utils.isArray(aut[key]) ? aut[key] : aut[key].split(',')};
+          return { [key]: utils.isArray(aut[key]) ? aut[key] : aut[key].split(',') };
         });
     }
 
     return auctionManager.getAdUnits()
       .filter(adUnit => includes(adUnitCodes, adUnit.code) && getTargetingObj(adUnit))
       .map(adUnit => {
-        return {[adUnit.code]: getTargetingValues(adUnit)}
+        return { [adUnit.code]: getTargetingValues(adUnit) }
       });
   }
 

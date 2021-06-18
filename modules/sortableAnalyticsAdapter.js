@@ -2,8 +2,8 @@ import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { ajax } from '../src/ajax.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import { config } from '../src/config.js';
 
 const DEFAULT_PROTOCOL = 'https';
@@ -159,7 +159,7 @@ function getSessionParams() {
     const paramsFromStorage = getParams(UTM_STORE_KEY);
     sessionParams = paramsFromStorage && stillValid(paramsFromStorage) ? paramsFromStorage : null;
   }
-  sessionParams = sessionParams || {'created': +new Date(), 'sessionId': generateRandomId()};
+  sessionParams = sessionParams || { 'created': +new Date(), 'sessionId': generateRandomId() };
   const urlParams = UTM_PARAMS.map(utils.getParameterByName);
   if (UTM_PARAMS.every(key => !sessionParams[key])) {
     UTM_PARAMS.forEach((v, i) => sessionParams[v] = urlParams[i] || sessionParams[v]);
@@ -237,7 +237,7 @@ function getBidFactor(bidderAlias) {
   return typeof factor !== 'undefined' ? factor : 1.0;
 }
 
-function createPrebidBidWonEvent({auctionId, adUnitCode, bidderAlias, cpm, currency, isNetRevenue}) {
+function createPrebidBidWonEvent({ auctionId, adUnitCode, bidderAlias, cpm, currency, isNetRevenue }) {
   const bidFactor = getBidFactor(bidderAlias);
   const event = getBaseEvent(auctionId, adUnitCode, bidderAlias);
   event.bif = bidFactor;
@@ -249,7 +249,7 @@ function createPrebidBidWonEvent({auctionId, adUnitCode, bidderAlias, cpm, curre
   return event;
 }
 
-function createPrebidTimeoutEvent({auctionId, adUnitCode, bidderAlias}) {
+function createPrebidTimeoutEvent({ auctionId, adUnitCode, bidderAlias }) {
   const event = getBaseEvent(auctionId, adUnitCode, bidderAlias);
   event._type = SORTABLE_EVENTS.BID_TIMEOUT;
   return event;
@@ -341,7 +341,7 @@ function handleBidRequested(event) {
     const adUnitCode = bid.adUnitCode;
     const tagId = bid.bidder === 'sortable' ? bid.params.tagId : '';
     if (!auctionCache[auctionId].adUnits[adUnitCode]) {
-      auctionCache[auctionId].adUnits[adUnitCode] = {bids: {}};
+      auctionCache[auctionId].adUnits[adUnitCode] = { bids: {} };
     }
     const adUnit = auctionCache[auctionId].adUnits[adUnitCode];
     const bids = adUnit.bids;
@@ -425,7 +425,7 @@ function handleBidTimeout(event) {
       const bid = adUnit.bids[bidderAlias];
       bid.isTimeout = true;
     } else {
-      const prebidTimeoutEvent = createPrebidTimeoutEvent({auctionId, adUnitCode, bidderAlias});
+      const prebidTimeoutEvent = createPrebidTimeoutEvent({ auctionId, adUnitCode, bidderAlias });
       registerEvents([prebidTimeoutEvent]);
     }
   });
@@ -434,7 +434,7 @@ function handleBidTimeout(event) {
 function handleAuctionInit(event) {
   const auctionId = event.auctionId;
   const timeout = event.timeout;
-  auctionCache[auctionId] = {timeout: timeout, auctionId: auctionId, adUnits: {}};
+  auctionCache[auctionId] = { timeout: timeout, auctionId: auctionId, adUnits: {} };
 }
 
 function handleAuctionEnd(event) {
@@ -474,8 +474,8 @@ function handleError(eventType, event, e) {
   registerEvents([ev]);
 }
 
-const sortableAnalyticsAdapter = Object.assign(adapter({url: DEFAULT_URL, ANALYTICS_TYPE}), {
-  track({eventType, args}) {
+const sortableAnalyticsAdapter = Object.assign(adapter({ url: DEFAULT_URL, ANALYTICS_TYPE }), {
+  track({ eventType, args }) {
     try {
       switch (eventType) {
         case AUCTION_INIT:

@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 import { Renderer } from '../src/Renderer.js';
 import { getGlobal } from '../src/prebidGlobal.js';
@@ -207,7 +207,7 @@ export const spec = {
 
       let modules = (getGlobal()).installedModules;
       if (modules && (!modules.length || modules.indexOf('rubiconAnalyticsAdapter') !== -1)) {
-        utils.deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
+        utils.deepSetValue(data, 'ext.prebid.analytics', { 'rubicon': { 'client-analytics': true } });
       }
 
       let bidFloor;
@@ -482,7 +482,7 @@ export const spec = {
 
     // add p_pos only if specified and valid
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
-    let posMapping = {1: 'atf', 3: 'btf'};
+    let posMapping = { 1: 'atf', 3: 'btf' };
     let pos = posMapping[utils.deepAccess(bidRequest, 'mediaTypes.banner.pos')] || '';
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : pos;
 
@@ -585,7 +585,7 @@ export const spec = {
    * non-SRA responses return a plain BidRequest object
    * @return {Bid[]} An array of bids which
    */
-  interpretResponse: function (responseObj, {bidRequest}) {
+  interpretResponse: function (responseObj, { bidRequest }) {
     responseObj = responseObj.body;
 
     // check overall response
@@ -740,7 +740,7 @@ export const spec = {
           .reduce((memo, item) => {
             memo[item.key] = item.values[0];
             return memo;
-          }, {'rpfl_elemid': associatedBidRequest.adUnitCode});
+          }, { 'rpfl_elemid': associatedBidRequest.adUnitCode });
 
         bids.push(bid);
       } else {
@@ -936,7 +936,7 @@ function appendSiteAppDevice(data, bidRequest, bidderRequest) {
   if (bidRequest.params.video.language) {
     ['site', 'device'].forEach(function(param) {
       if (data[param]) {
-        data[param].content = Object.assign({language: bidRequest.params.video.language}, data[param].content)
+        data[param].content = Object.assign({ language: bidRequest.params.video.language }, data[param].content)
       }
     });
   }
@@ -970,16 +970,16 @@ function addVideoParameters(data, bidRequest) {
 
 function applyFPD(bidRequest, mediaType, data) {
   const BID_FPD = {
-    user: {ext: {data: {...bidRequest.params.visitor}}},
-    site: {ext: {data: {...bidRequest.params.inventory}}}
+    user: { ext: { data: { ...bidRequest.params.visitor } } },
+    site: { ext: { data: { ...bidRequest.params.inventory } } }
   };
 
   if (bidRequest.params.keywords) BID_FPD.site.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
   let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
   let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
-  const SEGTAX = {user: [3], site: [1, 2]};
-  const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
+  const SEGTAX = { user: [3], site: [1, 2] };
+  const MAP = { user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw' };
   const validate = function(prop, key, parentName) {
     if (key === 'data' && Array.isArray(prop)) {
       return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.segtax') && SEGTAX[parentName] &&
@@ -1035,7 +1035,7 @@ function applyFPD(bidRequest, mediaType, data) {
     });
   } else {
     if (Object.keys(impData).length) {
-      utils.mergeDeep(data.imp[0].ext, {data: impData});
+      utils.mergeDeep(data.imp[0].ext, { data: impData });
     }
 
     utils.mergeDeep(data, fpd);
@@ -1161,18 +1161,18 @@ export function determineRubiconVideoSizeId(bid) {
 export function getPriceGranularity(config) {
   return {
     ranges: {
-      low: [{max: 5.00, increment: 0.50}],
-      medium: [{max: 20.00, increment: 0.10}],
-      high: [{max: 20.00, increment: 0.01}],
+      low: [{ max: 5.00, increment: 0.50 }],
+      medium: [{ max: 20.00, increment: 0.10 }],
+      high: [{ max: 20.00, increment: 0.01 }],
       auto: [
-        {max: 5.00, increment: 0.05},
-        {min: 5.00, max: 10.00, increment: 0.10},
-        {min: 10.00, max: 20.00, increment: 0.50}
+        { max: 5.00, increment: 0.05 },
+        { min: 5.00, max: 10.00, increment: 0.10 },
+        { min: 10.00, max: 20.00, increment: 0.50 }
       ],
       dense: [
-        {max: 3.00, increment: 0.01},
-        {min: 3.00, max: 8.00, increment: 0.05},
-        {min: 8.00, max: 20.00, increment: 0.50}
+        { max: 3.00, increment: 0.01 },
+        { min: 3.00, max: 8.00, increment: 0.05 },
+        { min: 8.00, max: 20.00, increment: 0.50 }
       ],
       custom: config.getConfig('customPriceBucket') && config.getConfig('customPriceBucket').buckets
     }[config.getConfig('priceGranularity')]

@@ -89,7 +89,7 @@ describe('gammaBidAdapter', function() {
         'netRevenue': true,
         'ttl': 300,
         'ad': '<!-- adtag -->',
-        'meta': {'advertiserDomains': ['testdomain.com']}
+        'meta': { 'advertiserDomains': ['testdomain.com'] }
       }];
       let result = spec.interpretResponse(serverResponse);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));

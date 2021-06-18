@@ -5,9 +5,9 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 const userId = {
   'criteoId': 'vYlICF9oREZlTHBGRVdrJTJCUUJnc3U2ckNVaXhrV1JWVUZVSUxzZmJlcnJZR0ZxbVhFRnU5bDAlMkJaUWwxWTlNcmdEeHFrJTJGajBWVlV4T3lFQ0FyRVcxNyUyQlIxa0lLSlFhcWJpTm9PSkdPVkx0JTJCbzlQRTQlM0Q',
   'pubcid': '074864cb-3705-430e-9ff7-48ccf3c21b94',
-  'sharedid': {'id': '01F61MX53D786DSB2WYD38ZVM7', 'third': '01F61MX53D786DSB2WYD38ZVM7'},
-  'uid2': {'id': 'eb33b0cb-8d35-1234-b9c0-1a31d4064777'},
-  'flocId': {'id': '12345', 'version': 'chrome.1.1'},
+  'sharedid': { 'id': '01F61MX53D786DSB2WYD38ZVM7', 'third': '01F61MX53D786DSB2WYD38ZVM7' },
+  'uid2': { 'id': 'eb33b0cb-8d35-1234-b9c0-1a31d4064777' },
+  'flocId': { 'id': '12345', 'version': 'chrome.1.1' },
 }
 
 describe('bridgewellBidAdapter', function () {

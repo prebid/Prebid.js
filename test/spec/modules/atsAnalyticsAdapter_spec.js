@@ -1,10 +1,10 @@
 import atsAnalyticsAdapter from '../../../modules/atsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
-import {server} from '../../mocks/xhr.js';
-import {parseBrowser} from '../../../modules/atsAnalyticsAdapter.js';
-import {getStorageManager} from '../../../src/storageManager.js';
-import {analyticsUrl} from '../../../modules/atsAnalyticsAdapter.js';
+import { server } from '../../mocks/xhr.js';
+import { parseBrowser } from '../../../modules/atsAnalyticsAdapter.js';
+import { getStorageManager } from '../../../src/storageManager.js';
+import { analyticsUrl } from '../../../modules/atsAnalyticsAdapter.js';
 
 let events = require('src/events');
 let constants = require('src/constants.json');

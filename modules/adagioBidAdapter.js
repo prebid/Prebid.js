@@ -1,7 +1,7 @@
 import find from 'core-js-pure/features/array/find.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -44,7 +44,7 @@ export const ORTB_VIDEO_PARAMS = {
   'skipmin': (value) => utils.isInteger(value),
   'skipafter': (value) => utils.isInteger(value),
   'sequence': (value) => utils.isInteger(value),
-  'battr': (value) => Array.isArray(value) && value.every(v => Array.from({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
+  'battr': (value) => Array.isArray(value) && value.every(v => Array.from({ length: 17 }, (_, i) => i + 1).indexOf(v) !== -1),
   'maxextended': (value) => utils.isInteger(value),
   'minbitrate': (value) => utils.isInteger(value),
   'maxbitrate': (value) => utils.isInteger(value),

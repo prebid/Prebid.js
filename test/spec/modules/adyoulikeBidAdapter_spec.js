@@ -16,7 +16,7 @@ describe('Adyoulike Adapter', function () {
       consentString: consentString,
       gdprApplies: true
     },
-    refererInfo: {referer: referrerUrl}
+    refererInfo: { referer: referrerUrl }
   };
   const bidRequestWithEmptyPlacement = [
     {
@@ -27,7 +27,7 @@ describe('Adyoulike Adapter', function () {
       'sizes': '300x250',
       'mediaTypes':
         { 'banner':
-          {'sizes': ['300x250', '300x600']
+          { 'sizes': ['300x250', '300x600']
           }
         }
     }
@@ -57,7 +57,7 @@ describe('Adyoulike Adapter', function () {
       'sizes': '300x250',
       'mediaTypes':
         { 'banner':
-          {'sizes': ['300x250']
+          { 'sizes': ['300x250']
           },
         'native':
           { 'image': {
@@ -201,7 +201,7 @@ describe('Adyoulike Adapter', function () {
       'sizes': '300x250',
       'mediaTypes':
         { 'banner':
-          {'sizes': ['300x250']
+          { 'sizes': ['300x250']
           }
         },
       'transactionId': 'bid_id_0_transaction_id'
@@ -219,7 +219,7 @@ describe('Adyoulike Adapter', function () {
       'sizes': '300x250',
       'mediaTypes':
         { 'banner':
-          {'sizes': ['300x250']
+          { 'sizes': ['300x250']
           }
         },
       'transactionId': 'bid_id_0_transaction_id'
@@ -234,7 +234,7 @@ describe('Adyoulike Adapter', function () {
       'sizes': [[300, 600]],
       'mediaTypes':
         { 'banner':
-          {'sizes': ['300x600']
+          { 'sizes': ['300x600']
           }
         },
       'transactionId': 'bid_id_1_transaction_id'
@@ -625,7 +625,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with single placement', function () {
       serverResponse.body = responseWithSinglePlacement;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataOnePlacement) + '}'});
+      let result = spec.interpretResponse(serverResponse, { data: '{"Bids":' + JSON.stringify(requestDataOnePlacement) + '}' });
 
       expect(result.length).to.equal(1);
       expect(result[0].cpm).to.equal(0.5);
@@ -637,7 +637,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with multiple placement', function () {
       serverResponse.body = responseWithMultiplePlacements;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataMultiPlacement) + '}'});
+      let result = spec.interpretResponse(serverResponse, { data: '{"Bids":' + JSON.stringify(requestDataMultiPlacement) + '}' });
 
       expect(result.length).to.equal(2);
 
@@ -654,7 +654,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with Native from ad markup', function () {
       serverResponse.body = responseWithSinglePlacement;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
+      let result = spec.interpretResponse(serverResponse, { data: '{"Bids":' + JSON.stringify(sentBidNative) + '}' });
 
       expect(result.length).to.equal(1);
 
@@ -663,7 +663,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with Native ad', function () {
       serverResponse.body = responseWithSingleNative;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
+      let result = spec.interpretResponse(serverResponse, { data: '{"Bids":' + JSON.stringify(sentBidNative) + '}' });
 
       expect(result.length).to.equal(1);
 

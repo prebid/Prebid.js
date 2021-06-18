@@ -439,21 +439,21 @@ describe('sharethrough adapter spec', function() {
 
     describe('coppa', function() {
       it('should add coppa to request if enabled', function() {
-        config.setConfig({coppa: true});
+        config.setConfig({ coppa: true });
         const bidRequest = Object.assign({}, bidRequests[0]);
         const builtBidRequest = spec.buildRequests([bidRequest])[0];
         expect(builtBidRequest.data.coppa).to.eq(true);
       });
 
       it('should not add coppa to request if disabled', function() {
-        config.setConfig({coppa: false});
+        config.setConfig({ coppa: false });
         const bidRequest = Object.assign({}, bidRequests[0]);
         const builtBidRequest = spec.buildRequests([bidRequest])[0];
         expect(builtBidRequest.data.coppa).to.be.undefined;
       });
 
       it('should not add coppa to request if unknown value', function() {
-        config.setConfig({coppa: 'something'});
+        config.setConfig({ coppa: 'something' });
         const bidRequest = Object.assign({}, bidRequests[0]);
         const builtBidRequest = spec.buildRequests([bidRequest])[0];
         expect(builtBidRequest.data.coppa).to.be.undefined;

@@ -1,7 +1,7 @@
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
-import {ajaxBuilder} from '../src/ajax.js';
+import { ajaxBuilder } from '../src/ajax.js';
 
 const utils = require('../src/utils.js');
 let ajax = ajaxBuilder(0);
@@ -64,7 +64,7 @@ function getBid(data) {
   }
 }
 function buildItem(data, response, phase = 1) {
-  let size = data.width ? {width: data.width, height: data.height} : {width: data.sizes[0][0], height: data.sizes[0][1]};
+  let size = data.width ? { width: data.width, height: data.height } : { width: data.sizes[0][0], height: data.sizes[0][1] };
   return {
     'bidid': data.bidId || data.requestId,
     'p': phase,
@@ -100,7 +100,7 @@ function addToAuctionQueue(auctionId, id) {
 }
 function updateBidStats(auctionId, id, data) {
   let auction = auctionCache[auctionId];
-  auction.stats[id].data = {...auction.stats[id].data, ...data};
+  auction.stats[id].data = { ...auction.stats[id].data, ...data };
   addToAuctionQueue(auctionId, id);
   logInfo('Updated Bid Stats: ', auction.stats[id]);
   return auction.stats[id];
@@ -123,7 +123,7 @@ function handlerBidRequested(args) {
   args.bids.forEach(function (bidRequest) {
     auction = auctionCache[bidRequest.auctionId]
     let built = buildItem(bidRequest, response, phase);
-    auction.stats[built.bidid] = {id: built.bidid, adUnitCode: bidRequest.adUnitCode, data: built};
+    auction.stats[built.bidid] = { id: built.bidid, adUnitCode: bidRequest.adUnitCode, data: built };
     addToAuctionQueue(args.auctionId, built.bidid);
   })
 
@@ -141,39 +141,39 @@ function handlerAuctionEnd(args) {
   let winners = {};
   args.bidsReceived.forEach((bid) => {
     if (!winners[bid.adUnitCode]) {
-      winners[bid.adUnitCode] = {bidId: bid.requestId, cpm: bid.cpm};
+      winners[bid.adUnitCode] = { bidId: bid.requestId, cpm: bid.cpm };
     } else if (winners[bid.adUnitCode].cpm < bid.cpm) {
-      winners[bid.adUnitCode] = {bidId: bid.requestId, cpm: bid.cpm};
+      winners[bid.adUnitCode] = { bidId: bid.requestId, cpm: bid.cpm };
     }
   })
   args.adUnitCodes.forEach((adUnitCode) => {
     if (winners[adUnitCode]) {
       let bidId = winners[adUnitCode].bidId;
-      updateBidStats(args.auctionId, bidId, {response: 4});
+      updateBidStats(args.auctionId, bidId, { response: 4 });
     }
   })
   logInfo('Auction End', args);
   logInfo('Auction Cache', auctionCache[args.auctionId].stats);
 }
 function handlerBidWon(args) {
-  let {auctionId, requestId} = args;
-  let res = updateBidStats(auctionId, requestId, {p: 3, response: 6});
+  let { auctionId, requestId } = args;
+  let res = updateBidStats(auctionId, requestId, { p: 3, response: 6 });
   logInfo('Bid Won ', args);
   logInfo('Bid Update Result: ', res);
 }
 function handlerBidResponse(args) {
-  let {auctionId, requestId, cpm, size, timeToRespond} = args;
-  updateBidStats(auctionId, requestId, {bid: cpm, s: size, jsLatency: timeToRespond, latency: timeToRespond, p: 2, response: 9});
+  let { auctionId, requestId, cpm, size, timeToRespond } = args;
+  updateBidStats(auctionId, requestId, { bid: cpm, s: size, jsLatency: timeToRespond, latency: timeToRespond, p: 2, response: 9 });
 
   logInfo('Bid Response ', args);
 }
 function handlerBidTimeout(args) {
-  let {auctionId, bidId} = args;
+  let { auctionId, bidId } = args;
   logInfo('Bid Timeout ', args);
-  updateBidStats(auctionId, bidId, {p: 2, response: 0, latency: args.timeout, jsLatency: args.timeout});
+  updateBidStats(auctionId, bidId, { p: 2, response: 0, latency: args.timeout, jsLatency: args.timeout });
 }
-let sonobiAdapter = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
-  track({eventType, args}) {
+let sonobiAdapter = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType }), {
+  track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
         handlerAuctionInit(args);

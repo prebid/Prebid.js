@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/craftBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/craftBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 
 describe('craftAdapter', function () {
   let adapter = newBidder(spec);
@@ -128,7 +128,7 @@ describe('craftAdapter', function () {
       }]
     };
     it('should get correct bid response', function() {
-      let bids = spec.interpretResponse(serverResponse, {bidderRequest: bidderRequest});
+      let bids = spec.interpretResponse(serverResponse, { bidderRequest: bidderRequest });
       expect(bids).to.have.lengthOf(1);
       expect(bids[0]).to.deep.equals({
         _adUnitCode: 'craft-prebid-example',

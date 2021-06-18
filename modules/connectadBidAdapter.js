@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
-import {config} from '../src/config.js';
-import {createEidsArray} from './userId/eids.js';
+import { config } from '../src/config.js';
+import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';

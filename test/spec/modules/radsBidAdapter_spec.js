@@ -100,7 +100,7 @@ describe('radsAdapter', function () {
       },
       gdprConsent: {
         consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-        vendorData: {someData: 'value'},
+        vendorData: { someData: 'value' },
         gdprApplies: true
       }
     };
@@ -266,17 +266,17 @@ describe('radsAdapter', function () {
       expect(userSync.type).to.be.equal('iframe');
     });
     it(`we have valid sync url for iframe`, function () {
-      let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, {consentString: 'anyString'});
+      let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, { consentString: 'anyString' });
       expect(userSync.url).to.be.equal('anyIframeUrl?a=1&gdpr_consent=anyString')
       expect(userSync.type).to.be.equal('iframe');
     });
     it(`we have valid sync url for image`, function () {
-      let [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+      let [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, { gdprApplies: true, consentString: 'anyString' });
       expect(userSync.url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
       expect(userSync.type).to.be.equal('image');
     });
     it(`we have valid sync url for image and iframe`, function () {
-      let userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+      let userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, { gdprApplies: true, consentString: 'anyString' });
       expect(userSync.length).to.be.equal(3);
       expect(userSync[0].url).to.be.equal('anyIframeUrl?a=1&gdpr=1&gdpr_consent=anyString')
       expect(userSync[0].type).to.be.equal('iframe');

@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 import * as utils from '../src/utils.js'
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';

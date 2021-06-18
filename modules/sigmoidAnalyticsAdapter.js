@@ -21,8 +21,8 @@ const bidAdjustmentConst = CONSTANTS.EVENTS.BID_ADJUSTMENT;
 const bidResponseConst = CONSTANTS.EVENTS.BID_RESPONSE;
 
 let initOptions = { publisherIds: [], utmTagData: [], adUnits: [] };
-let bidWon = {options: {}, events: []};
-let eventStack = {options: {}, events: []};
+let bidWon = { options: {}, events: [] };
+let eventStack = { options: {}, events: [] };
 
 let auctionStatus = 'not_started';
 
@@ -161,9 +161,9 @@ function flushEventStack() {
   eventStack.events = [];
 }
 
-let sigmoidAdapter = Object.assign(adapter({url, analyticsType}),
+let sigmoidAdapter = Object.assign(adapter({ url, analyticsType }),
   {
-    track({eventType, args}) {
+    track({ eventType, args }) {
       if (!checkOptions()) {
         return;
       }

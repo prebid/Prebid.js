@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'pubmatic';
@@ -684,7 +684,7 @@ function _createImpressionObject(bid, conf) {
 }
 
 function _addImpressionFPD(imp, bid) {
-  const ortb2 = {...utils.deepAccess(bid, 'ortb2Imp.ext.data')};
+  const ortb2 = { ...utils.deepAccess(bid, 'ortb2Imp.ext.data') };
   Object.keys(ortb2).forEach(prop => {
     /**
       * Prebid AdSlot
@@ -1106,10 +1106,10 @@ export const spec = {
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
     if (commonFpd.site) {
-      utils.mergeDeep(payload, {site: commonFpd.site});
+      utils.mergeDeep(payload, { site: commonFpd.site });
     }
     if (commonFpd.user) {
-      utils.mergeDeep(payload, {user: commonFpd.user});
+      utils.mergeDeep(payload, { user: commonFpd.user });
     }
 
     // Note: Do not move this block up

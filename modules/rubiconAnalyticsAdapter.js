@@ -43,7 +43,7 @@ const {
 } = CONSTANTS;
 
 let serverConfig;
-config.getConfig('s2sConfig', ({s2sConfig}) => {
+config.getConfig('s2sConfig', ({ s2sConfig }) => {
   serverConfig = s2sConfig;
 });
 
@@ -74,7 +74,7 @@ config.getConfig('rubicon', config => {
 
 export function getHostNameFromReferer(referer) {
   try {
-    rubiconAdapter.referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
+    rubiconAdapter.referrerHostname = utils.parseUrl(referer, { noDecodeWholeURL: true }).hostname;
   } catch (e) {
     utils.logError('Rubicon Analytics: Unable to parse hostname from supplied url: ', referer, e);
     rubiconAdapter.referrerHostname = '';
@@ -371,7 +371,7 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
     'dimensions', () => {
       const width = bid.width || bid.playerWidth;
       const height = bid.height || bid.playerHeight;
-      return (width && height) ? {width, height} : undefined;
+      return (width && height) ? { width, height } : undefined;
     },
     // Handling use case where pbs sends back 0 or '0' bidIds
     'pbsBidId', pbsBidId => pbsBidId == 0 ? utils.generateUUID() : pbsBidId,
@@ -472,7 +472,7 @@ function updateRpaCookie() {
   // possible that decodedRpaCookie is undefined, and if it is, we probably are blocked by storage or some other exception
   if (Object.keys(decodedRpaCookie).length) {
     decodedRpaCookie.lastSeen = currentTime;
-    decodedRpaCookie.fpkvs = {...decodedRpaCookie.fpkvs, ...getFpkvs()};
+    decodedRpaCookie.fpkvs = { ...decodedRpaCookie.fpkvs, ...getFpkvs() };
     decodedRpaCookie.pvid = rubiConf.pvid;
     setRpaCookie(decodedRpaCookie)
   }
@@ -516,7 +516,7 @@ function subscribeToGamSlots() {
   });
 }
 
-let baseAdapter = adapter({analyticsType: 'endpoint'});
+let baseAdapter = adapter({ analyticsType: 'endpoint' });
 let rubiconAdapter = Object.assign({}, baseAdapter, {
   MODULE_INITIALIZED_TIME: Date.now(),
   referrerHostname: '',
@@ -566,7 +566,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
     cache.gpt.registered = false;
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
-  track({eventType, args}) {
+  track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
         // set the rubicon aliases
@@ -581,7 +581,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.referrer = utils.deepAccess(args, 'bidderRequests.0.refererInfo.referer');
         const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (floorData) {
-          cacheEntry.floorData = {...floorData};
+          cacheEntry.floorData = { ...floorData };
         }
         cacheEntry.gdprConsent = utils.deepAccess(args, 'bidderRequests.0.gdprConsent');
         cacheEntry.session = storage.localStorageIsEnabled() && updateRpaCookie();
@@ -674,7 +674,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
               },
               'gam', () => {
                 if (utils.deepAccess(bid, 'ortb2Imp.ext.data.adserver.name') === 'gam') {
-                  return {adSlot: bid.ortb2Imp.ext.data.adserver.adslot}
+                  return { adSlot: bid.ortb2Imp.ext.data.adserver.adslot }
                 }
               },
               'pbAdSlot', () => utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot'),
@@ -688,7 +688,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         let auctionEntry = cache.auctions[args.auctionId];
 
         if (!auctionEntry.bids[args.requestId] && args.originalRequestId) {
-          auctionEntry.bids[args.requestId] = {...auctionEntry.bids[args.originalRequestId]};
+          auctionEntry.bids[args.requestId] = { ...auctionEntry.bids[args.originalRequestId] };
           auctionEntry.bids[args.requestId].bidId = args.requestId;
           auctionEntry.bids[args.requestId].bidderDetail = args.targetingBidder;
         }
@@ -700,7 +700,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }
         // if we have not set enforcements yet set it
         if (!utils.deepAccess(auctionEntry, 'floorData.enforcements') && utils.deepAccess(args, 'floorData.enforcements')) {
-          auctionEntry.floorData.enforcements = {...args.floorData.enforcements};
+          auctionEntry.floorData.enforcements = { ...args.floorData.enforcements };
         }
         if (!bid) {
           utils.logError('Rubicon Anlytics Adapter Error: Could not find associated bid request for bid response with requestId: ', args.requestId);

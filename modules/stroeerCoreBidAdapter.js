@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 
 const GVL_ID = 136;
@@ -60,12 +60,12 @@ function elementInView(elementId) {
   return undefined;
 }
 
-function buildUrl({host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH}) {
+function buildUrl({ host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH }) {
   if (securePort) {
     port = securePort;
   }
 
-  return utils.buildUrl({protocol: 'https', hostname, port, pathname});
+  return utils.buildUrl({ protocol: 'https', hostname, port, pathname });
 }
 
 function getGdprParams(gdprConsent) {

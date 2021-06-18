@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/rakutenBidAdapter/index.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import {config} from '../../../src/config.js';
+import { config } from '../../../src/config.js';
 
 describe('rakutenBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -163,8 +163,8 @@ describe('rakutenBidAdapter', function() {
     });
     it('sucess usersync url', function () {
       const result = [];
-      result.push({type: 'image', url: 'https://rdn1.test/sync?uid=9876543210'});
-      result.push({type: 'image', url: 'https://rdn2.test/sync?uid=9876543210'});
+      result.push({ type: 'image', url: 'https://rdn1.test/sync?uid=9876543210' });
+      result.push({ type: 'image', url: 'https://rdn2.test/sync?uid=9876543210' });
       expect(spec.getUserSyncs(syncOptions, syncResponse)).to.deep.equal(result);
     });
   });

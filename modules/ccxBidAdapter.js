@@ -73,13 +73,13 @@ function _buildBid (bid) {
   let sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes') || utils.deepAccess(bid, 'mediaTypes.video.playerSize') || utils.deepAccess(bid, 'sizes')
 
   if (utils.deepAccess(bid, 'mediaTypes.banner') || utils.deepAccess(bid, 'mediaType') === 'banner' || (!utils.deepAccess(bid, 'mediaTypes.video') && !utils.deepAccess(bid, 'mediaType'))) {
-    placement.banner = {'format': []}
+    placement.banner = { 'format': [] }
     if (utils.isArray(sizes[0])) {
       utils._each(sizes, function (size) {
-        placement.banner.format.push({'w': size[0], 'h': size[1]})
+        placement.banner.format.push({ 'w': size[0], 'h': size[1] })
       })
     } else {
-      placement.banner.format.push({'w': sizes[0], 'h': sizes[1]})
+      placement.banner.format.push({ 'w': sizes[0], 'h': sizes[1] })
     }
   } else if (utils.deepAccess(bid, 'mediaTypes.video') || utils.deepAccess(bid, 'mediaType') === 'video') {
     placement.video = {}
@@ -103,7 +103,7 @@ function _buildBid (bid) {
     }
   }
 
-  placement.ext = {'pid': bid.params.placementId}
+  placement.ext = { 'pid': bid.params.placementId }
 
   return placement
 }
@@ -178,7 +178,7 @@ export const spec = {
       requestBody.site = _getSiteObj(bidderRequest)
       requestBody.device = _getDeviceObj()
       requestBody.id = bidderRequest.bids[0].auctionId
-      requestBody.ext = {'ce': (storage.cookiesAreEnabled() ? 1 : 0)}
+      requestBody.ext = { 'ce': (storage.cookiesAreEnabled() ? 1 : 0) }
 
       // Attaching GDPR Consent Params
       if (bidderRequest && bidderRequest.gdprConsent) {

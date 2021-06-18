@@ -33,7 +33,7 @@ export const spec = {
         method: 'GET',
         url: URL,
         data: params,
-        options: {withCredentials: false}
+        options: { withCredentials: false }
       }
     });
 

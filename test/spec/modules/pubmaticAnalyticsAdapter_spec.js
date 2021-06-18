@@ -703,7 +703,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(100);
       expect(data.s[1].ps[0].ocry).to.equal('JPY');
-      expect(data.dvc).to.deep.equal({'plt': 3});
+      expect(data.dvc).to.deep.equal({ 'plt': 3 });
     });
 
     it('Logger: regexPattern in bid.params', function() {
@@ -748,7 +748,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
-      expect(data.dvc).to.deep.equal({'plt': 2});
+      expect(data.dvc).to.deep.equal({ 'plt': 2 });
       // respective tracker slot
       let firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -801,7 +801,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
-      expect(data.dvc).to.deep.equal({'plt': 1});
+      expect(data.dvc).to.deep.equal({ 'plt': 1 });
       // respective tracker slot
       let firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');

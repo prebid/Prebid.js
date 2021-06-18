@@ -27,7 +27,7 @@ function buildRequests(bidReqs, bidderRequest) {
       let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
       bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
       bidSizes = bidSizes.filter(size => utils.isArray(size));
-      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
+      const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }));
 
       const element = document.getElementById(bid.adUnitCode);
       const minSize = _getMinSize(processedSizes);
@@ -79,10 +79,10 @@ function buildRequests(bidReqs, bidderRequest) {
       method: 'POST',
       url: URL,
       data: JSON.stringify(brightcomBidReq),
-      options: {contentType: 'text/plain', withCredentials: false}
+      options: { contentType: 'text/plain', withCredentials: false }
     };
   } catch (e) {
-    utils.logError(e, {bidReqs, bidderRequest});
+    utils.logError(e, { bidReqs, bidderRequest });
   }
 }
 
@@ -103,7 +103,7 @@ function interpretResponse(serverResponse) {
     utils.logWarn('Brightcom server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
     return [];
   }
-  const { body: {id, seatbid} } = serverResponse;
+  const { body: { id, seatbid } } = serverResponse;
   try {
     const brightcomBidResponses = [];
     if (id &&
@@ -131,7 +131,7 @@ function interpretResponse(serverResponse) {
     }
     return brightcomBidResponses;
   } catch (e) {
-    utils.logError(e, {id, seatbid});
+    utils.logError(e, { id, seatbid });
   }
 }
 

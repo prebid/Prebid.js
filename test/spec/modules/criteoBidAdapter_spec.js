@@ -897,8 +897,8 @@ describe('The Criteo bidding adapter', function () {
       });
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.publisher.ext).to.deep.equal({keywords: ['power tools'], data: {pageType: 'article'}});
-      expect(request.data.user.ext).to.deep.equal({gender: 'M', data: {registered: true}});
+      expect(request.data.publisher.ext).to.deep.equal({ keywords: ['power tools'], data: { pageType: 'article' } });
+      expect(request.data.user.ext).to.deep.equal({ gender: 'M', data: { registered: true } });
       expect(request.data.slots[0].ext).to.deep.equal({
         bidfloor: 0.75,
         data: {
@@ -1043,13 +1043,13 @@ describe('The Criteo bidding adapter', function () {
               'advertiser': {
                 'description': 'sponsor',
                 'domain': 'criteo.com',
-                'logo': {'url': 'https://www.criteo.com/images/criteo-logo.svg', 'height': 300, 'width': 300}
+                'logo': { 'url': 'https://www.criteo.com/images/criteo-logo.svg', 'height': 300, 'width': 300 }
               },
               'privacy': {
                 'optout_click_url': 'https://info.criteo.com/privacy/informations',
                 'optout_image_url': 'https://static.criteo.net/flash/icon/nai_small.png',
               },
-              'impression_pixels': [{'url': 'https://my-impression-pixel/test/impression'}, {'url': 'https://cas.com/lg.com'}]
+              'impression_pixels': [{ 'url': 'https://my-impression-pixel/test/impression' }, { 'url': 'https://cas.com/lg.com' }]
             }
           }],
         },
@@ -1148,7 +1148,7 @@ describe('The Criteo bidding adapter', function () {
         .withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)')
         .exactly(nativeParamsWithSendTargetingKeys.length * bidRequests.length);
       nativeParamsWithSendTargetingKeys.forEach(nativeParams => {
-        let transformedBidRequests = {...bidRequests};
+        let transformedBidRequests = { ...bidRequests };
         transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
         spec.buildRequests(transformedBidRequests, bidderRequest);
       });
@@ -1428,7 +1428,7 @@ describe('The Criteo bidding adapter', function () {
         .withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)')
         .exactly(nativeParamsWithoutSendId.length * bidRequests.length);
       nativeParamsWithoutSendId.forEach(nativeParams => {
-        let transformedBidRequests = {...bidRequests};
+        let transformedBidRequests = { ...bidRequests };
         transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
         spec.buildRequests(transformedBidRequests, bidderRequest);
       });

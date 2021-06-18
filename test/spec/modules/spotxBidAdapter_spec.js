@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {config} from 'src/config.js';
-import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter.js';
+import { expect } from 'chai';
+import { config } from 'src/config.js';
+import { spec, GOOGLE_CONSENT } from 'modules/spotxBidAdapter.js';
 
 describe('the spotx adapter', function () {
   function getValidBidObject() {
@@ -60,7 +60,7 @@ describe('the spotx adapter', function () {
 
     it('should succeed with ad_unit outstream, options set for outstream and slot provided', function() {
       bid.params.ad_unit = 'outstream';
-      bid.params.outstream_options = {slot: 'ad_container_id'};
+      bid.params.outstream_options = { slot: 'ad_container_id' };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
@@ -96,7 +96,7 @@ describe('the spotx adapter', function () {
 
     beforeEach(function() {
       bid = getValidBidObject();
-      bidRequestObj = {refererInfo: {referer: 'prebid.js'}};
+      bidRequestObj = { refererInfo: { referer: 'prebid.js' } };
     });
 
     it('should build a very basic request', function() {
@@ -141,9 +141,9 @@ describe('the spotx adapter', function () {
         hide_skin: 1,
         ad_volume: 1,
         ad_unit: 'incontent',
-        outstream_options: {foo: 'bar'},
+        outstream_options: { foo: 'bar' },
         outstream_function: '987',
-        custom: {bar: 'foo'},
+        custom: { bar: 'foo' },
         start_delay: true,
         number_of_ads: 2,
         spotx_all_google_consent: 1,
@@ -183,9 +183,9 @@ describe('the spotx adapter', function () {
         ad_volume: 1,
         hide_skin: 1,
         ad_unit: 'incontent',
-        outstream_options: {foo: 'bar'},
+        outstream_options: { foo: 'bar' },
         outstream_function: '987',
-        custom: {bar: 'foo'},
+        custom: { bar: 'foo' },
         sdk_name: 'Prebid 1+',
         versionOrtb: '2.3',
         placement: 1,
@@ -423,7 +423,7 @@ describe('the spotx adapter', function () {
               player_height: 300,
               content_page_url: 'prebid.js',
               ad_mute: 1,
-              outstream_options: {foo: 'bar'},
+              outstream_options: { foo: 'bar' },
               outstream_function: 'function'
             }
           }, {
@@ -438,7 +438,7 @@ describe('the spotx adapter', function () {
               player_height: 100,
               content_page_url: 'prebid.js',
               ad_mute: 1,
-              outstream_options: {foo: 'bar'},
+              outstream_options: { foo: 'bar' },
               outstream_function: 'function'
             }
           }]

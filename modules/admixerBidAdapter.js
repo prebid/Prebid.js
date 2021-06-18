@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'admixer';
 const ALIASES = ['go2net', 'adblender'];
@@ -25,7 +25,7 @@ export const spec = {
     };
     let endpointUrl;
     if (bidderRequest) {
-      const {bidderCode} = bidderRequest;
+      const { bidderCode } = bidderRequest;
       endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
@@ -61,7 +61,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     try {
-      const {body: {ads = []} = {}} = serverResponse;
+      const { body: { ads = [] } = {} } = serverResponse;
       ads.forEach((bidResponse) => {
         const bidResp = {
           requestId: bidResponse.bidId,
@@ -89,13 +89,13 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const pixels = [];
-    serverResponses.forEach(({body: {cm = {}} = {}}) => {
-      const {pixels: img = [], iframes: frm = []} = cm;
+    serverResponses.forEach(({ body: { cm = {} } = {} }) => {
+      const { pixels: img = [], iframes: frm = [] } = cm;
       if (syncOptions.pixelEnabled) {
-        img.forEach((url) => pixels.push({type: 'image', url}));
+        img.forEach((url) => pixels.push({ type: 'image', url }));
       }
       if (syncOptions.iframeEnabled) {
-        frm.forEach((url) => pixels.push({type: 'iframe', url}));
+        frm.forEach((url) => pixels.push({ type: 'iframe', url }));
       }
     });
     return pixels;

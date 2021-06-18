@@ -112,14 +112,14 @@ describe('brightcomBidAdapter', function() {
     it('sets the proper banner object', function() {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
     });
 
     it('accepts a single array as a size', function() {
       bidRequests[0].mediaTypes.banner.sizes = [300, 250];
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}]);
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
     });
 
     it('sends bidfloor param if present', function () {
@@ -307,7 +307,7 @@ describe('brightcomBidAdapter', function() {
   });
 
   describe('getUserSyncs ', () => {
-    let syncOptions = {iframeEnabled: true, pixelEnabled: true};
+    let syncOptions = { iframeEnabled: true, pixelEnabled: true };
 
     it('should not return', () => {
       let returnStatement = spec.getUserSyncs(syncOptions, []);

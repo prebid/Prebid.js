@@ -377,7 +377,7 @@ describe('marsmedia adapter tests', function () {
             'zoneId': 9999
           },
           'mediaTypes': {
-            'banner': {'sizes': [['400', '500'], ['4n0', '5g0']]}
+            'banner': { 'sizes': [['400', '500'], ['4n0', '5g0']] }
           },
           'adUnitCode': 'Unit-Code',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',

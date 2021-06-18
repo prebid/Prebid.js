@@ -171,7 +171,7 @@ describe('Sublime Adapter', function() {
           ad: '',
         },
       ];
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
@@ -197,7 +197,7 @@ describe('Sublime Adapter', function() {
         }
       };
 
-      const result = spec.interpretResponse({body: serverResponse}, bidRequest);
+      const result = spec.interpretResponse({ body: serverResponse }, bidRequest);
 
       const expectedResponse = {
         requestId: 'xyz654_2',

@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'mediaforce';
 const ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid';
@@ -291,7 +291,7 @@ function createBannerRequest(bid) {
 }
 
 function parseNative(native) {
-  const {assets, link, imptrackers, jstracker} = native;
+  const { assets, link, imptrackers, jstracker } = native;
   const result = {
     clickUrl: link.url,
     clickTrackers: link.clicktrackers || [],
@@ -300,7 +300,7 @@ function parseNative(native) {
   };
 
   (assets || []).forEach((asset) => {
-    const {id, img, data, title} = asset;
+    const { id, img, data, title } = asset;
     const key = NATIVE_ID_MAP[id];
     if (key) {
       if (!utils.isEmpty(title)) {
@@ -325,9 +325,9 @@ function createNativeRequest(bid) {
   if (bid.nativeParams) {
     Object.keys(bid.nativeParams).forEach((key) => {
       if (NATIVE_PARAMS[key]) {
-        const {name, type, id} = NATIVE_PARAMS[key];
-        const assetObj = type ? {type} : {};
-        let {len, sizes, required, aspect_ratios: aRatios} = bid.nativeParams[key];
+        const { name, type, id } = NATIVE_PARAMS[key];
+        const assetObj = type ? { type } : {};
+        let { len, sizes, required, aspect_ratios: aRatios } = bid.nativeParams[key];
         if (len) {
           assetObj.len = len;
         }
@@ -343,7 +343,7 @@ function createNativeRequest(bid) {
           assetObj.w = sizes[0];
           assetObj.h = sizes[1];
         }
-        const asset = {required: required ? 1 : 0, id};
+        const asset = { required: required ? 1 : 0, id };
         asset[name] = assetObj;
         assets.push(asset);
       }

@@ -28,7 +28,7 @@ export function init(userCfg) {
 
   if (cfg.enabled === false) {
     if (isEnabled) {
-      getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
+      getHook('addBidResponse').getHooks({ hook: addBidResponseHook }).remove();
       isEnabled = false;
     }
   } else {

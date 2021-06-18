@@ -2,7 +2,7 @@ import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import includes from 'core-js-pure/features/array/includes.js';
-import {ajaxBuilder} from '../src/ajax.js';
+import { ajaxBuilder } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
@@ -309,8 +309,8 @@ function handleOtherEvents(eventType, args) {
   registerEvent(eventType, eventType, args);
 }
 
-let roxotAdapter = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
-  track({eventType, args}) {
+let roxotAdapter = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType }), {
+  track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
         handleAuctionInit(args);

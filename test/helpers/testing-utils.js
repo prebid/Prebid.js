@@ -4,7 +4,7 @@ module.exports = {
   protocol: (process.env.TEST_SERVER_PROTOCOL) ? 'https' : 'http',
   waitForElement: function(elementRef, time = 2000) {
     let element = $(elementRef);
-    element.waitForExist({timeout: time});
+    element.waitForExist({ timeout: time });
   },
   switchFrame: function(frameRef, frameName) {
     let iframe = $(frameRef);

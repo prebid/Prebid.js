@@ -1,5 +1,5 @@
-import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter';
-import {expect} from 'chai';
+import analyticsAdapter, { ExpiringQueue, getUmtSource, storage } from 'modules/adkernelAdnAnalyticsAdapter';
+import { expect } from 'chai';
 import adapterManager from 'src/adapterManager';
 import CONSTANTS from 'src/constants.json';
 
@@ -230,17 +230,17 @@ describe('', function () {
     });
 
     it('should handle auction init event', function () {
-      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {config: {}, bidderRequests: [REQUEST], timeout: 3000});
+      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, { config: {}, bidderRequests: [REQUEST], timeout: 3000 });
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(1);
-      expect(ev[0]).to.be.eql({event: 'auctionInit'});
+      expect(ev[0]).to.be.eql({ event: 'auctionInit' });
     });
 
     it('should handle bid request event', function () {
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(2);
-      expect(ev[1]).to.be.eql({event: 'bidRequested', adapter: 'adapter', tagid: 'container-1'});
+      expect(ev[1]).to.be.eql({ event: 'bidRequested', adapter: 'adapter', tagid: 'container-1' });
     });
 
     it('should handle bid response event', function () {
@@ -263,7 +263,7 @@ describe('', function () {
       expect(ev).to.have.length(0);
       expect(ajaxStub.calledOnce).to.be.equal(true);
       ev = JSON.parse(ajaxStub.firstCall.args[0]).hb_ev;
-      expect(ev[3]).to.be.eql({event: 'auctionEnd', time: 0.447});
+      expect(ev[3]).to.be.eql({ event: 'auctionEnd', time: 0.447 });
     });
 
     it('should handle winning bid', function () {
@@ -271,7 +271,7 @@ describe('', function () {
       timer.tick(4500);
       expect(ajaxStub.calledTwice).to.be.equal(true);
       let ev = JSON.parse(ajaxStub.secondCall.args[0]).hb_ev;
-      expect(ev[0]).to.be.eql({event: 'bidWon', adapter: 'adapter', tagid: 'container-1', val: 0.015});
+      expect(ev[0]).to.be.eql({ event: 'bidWon', adapter: 'adapter', tagid: 'container-1', val: 0.015 });
     });
   });
 });

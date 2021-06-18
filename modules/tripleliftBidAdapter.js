@@ -65,7 +65,7 @@ export const tripleliftAdapterSpec = {
     };
   },
 
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function(serverResponse, { bidderRequest }) {
     let bids = serverResponse.body.bids || [];
     return bids.map(function(bid) {
       return _buildResponseObject(bidderRequest, bid);
@@ -137,7 +137,7 @@ function _buildPostBody(bidRequests) {
 
   if (eids.length > 0) {
     data.user = {
-      ext: {eids}
+      ext: { eids }
     };
   }
 

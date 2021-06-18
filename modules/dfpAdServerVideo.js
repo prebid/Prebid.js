@@ -76,7 +76,7 @@ export function buildDfpVideoUrl(options) {
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parseUrl(options.url, {noDecodeWholeURL: true});
+    urlComponents = parseUrl(options.url, { noDecodeWholeURL: true });
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
@@ -139,7 +139,7 @@ if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('reg
  * @param {DfpAdpodOptions} options
  * @returns {string} A URL which calls DFP with custom adpod targeting key values to compete with rest of the demand in DFP
  */
-export function buildAdpodVideoUrl({code, params, callback} = {}) {
+export function buildAdpodVideoUrl({ code, params, callback } = {}) {
   if (!params || !callback) {
     logError(`A params object and a callback is required to use pbjs.adServers.dfp.buildAdpodVideoUrl`);
     return;
@@ -276,7 +276,7 @@ function getCustParams(bid, options) {
     allTargetingData,
     adserverTargeting,
   );
-  events.emit(CONSTANTS.EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
+  events.emit(CONSTANTS.EVENTS.SET_TARGETING, { [adUnit.code]: prebidTargetingSet });
 
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = deepAccess(options, 'params.cust_params');

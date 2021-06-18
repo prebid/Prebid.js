@@ -105,8 +105,8 @@ describe('glomexBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('handles nobid responses', function () {
-      expect(spec.interpretResponse({body: {}}, {validBidRequests: []}).length).to.equal(0)
-      expect(spec.interpretResponse({body: []}, {validBidRequests: []}).length).to.equal(0)
+      expect(spec.interpretResponse({ body: {} }, { validBidRequests: [] }).length).to.equal(0)
+      expect(spec.interpretResponse({ body: [] }, { validBidRequests: [] }).length).to.equal(0)
     })
 
     it('handles the server response', function () {

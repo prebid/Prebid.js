@@ -5,8 +5,8 @@ import { server } from 'test/mocks/xhr.js';
 resetLiveIntentIdSubmodule();
 liveIntentIdSubmodule.setModuleMode('standard')
 const PUBLISHER_ID = '89899';
-const defaultConfigParams = { params: {publisherId: PUBLISHER_ID} };
-const responseHeader = {'Content-Type': 'application/json'}
+const defaultConfigParams = { params: { publisherId: PUBLISHER_ID } };
+const responseHeader = { 'Content-Type': 'application/json' }
 
 describe('LiveIntentId', function() {
   let logErrorStub;
@@ -73,7 +73,7 @@ describe('LiveIntentId', function() {
     liveIntentIdSubmodule.getId({ params: {
       ...defaultConfigParams,
       emailHash: '58131bc547fb87af94cebdaf3102321f'
-    }});
+    } });
     expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/)
   });
 
@@ -87,7 +87,7 @@ describe('LiveIntentId', function() {
           collectorUrl: 'https://collector.liveintent.com'
         }
       }
-    }});
+    } });
     expect(server.requests[0].url).to.match(/https:\/\/collector.liveintent.com\/j\?aid=a-0001&wpn=prebid.*/);
   });
 
@@ -105,7 +105,7 @@ describe('LiveIntentId', function() {
     liveIntentIdSubmodule.decode({}, { params: {
       ...defaultConfigParams.params,
       emailHash: '58131bc547fb87af94cebdaf3102321f'
-    }});
+    } });
     expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/);
   });
 
@@ -130,7 +130,7 @@ describe('LiveIntentId', function() {
   it('should call the Custom URL of the LiveIntent Identity Exchange endpoint', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({ params: {...defaultConfigParams.params, ...{'url': 'https://dummy.liveintent.com/idex'}} }).callback;
+    let submoduleCallback = liveIntentIdSubmodule.getId({ params: { ...defaultConfigParams.params, ...{ 'url': 'https://dummy.liveintent.com/idex' } } }).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[1];
     expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/prebid/89899');
@@ -218,7 +218,7 @@ describe('LiveIntentId', function() {
       ...{
         'identifiersToResolve': ['_thirdPC']
       }
-    }};
+    } };
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
@@ -234,13 +234,13 @@ describe('LiveIntentId', function() {
 
   it('should include an additional identifier value to resolve even if it is an object', function() {
     getCookieStub.returns(null);
-    getDataFromLocalStorageStub.withArgs('_thirdPC').returns({'key': 'value'});
+    getDataFromLocalStorageStub.withArgs('_thirdPC').returns({ 'key': 'value' });
     const configParams = { params: {
       ...defaultConfigParams.params,
       ...{
         'identifiersToResolve': ['_thirdPC']
       }
-    }};
+    } };
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);

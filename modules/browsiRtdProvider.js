@@ -16,10 +16,10 @@
  */
 
 import * as utils from '../src/utils.js';
-import {submodule} from '../src/hook.js';
-import {ajaxBuilder} from '../src/ajax.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { getStorageManager } from '../src/storageManager.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const storage = getStorageManager();
@@ -71,9 +71,9 @@ export function collectData() {
       sh: (win.screen && win.screen.height) || -1,
       url: `${doc.location.protocol}//${doc.location.host}${doc.location.pathname}`,
     },
-    ...(browsiData ? {us: browsiData} : {us: '{}'}),
-    ...(document.referrer ? {r: document.referrer} : {}),
-    ...(document.title ? {at: document.title} : {})
+    ...(browsiData ? { us: browsiData } : { us: '{}' }),
+    ...(document.referrer ? { r: document.referrer } : {}),
+    ...(document.title ? { at: document.title } : {})
   };
   getPredictionsFromServer(`//${_moduleParams.url}/prebid?${toUrlParams(predictorData)}`);
 }
@@ -205,7 +205,7 @@ function getPredictionsFromServer(url) {
           try {
             const data = JSON.parse(response);
             if (data && data.p && data.kn) {
-              setData({p: data.p, kn: data.kn, pmd: data.pmd});
+              setData({ p: data.p, kn: data.kn, pmd: data.pmd });
             } else {
               setData({});
             }

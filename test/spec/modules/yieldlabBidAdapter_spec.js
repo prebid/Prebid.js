@@ -162,12 +162,12 @@ describe('yieldlabBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('handles nobid responses', function () {
-      expect(spec.interpretResponse({body: {}}, {validBidRequests: []}).length).to.equal(0)
-      expect(spec.interpretResponse({body: []}, {validBidRequests: []}).length).to.equal(0)
+      expect(spec.interpretResponse({ body: {} }, { validBidRequests: [] }).length).to.equal(0)
+      expect(spec.interpretResponse({ body: [] }, { validBidRequests: [] }).length).to.equal(0)
     })
 
     it('should get correct bid response', function () {
-      const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [REQUEST], queryParams: REQPARAMS})
+      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [REQUEST], queryParams: REQPARAMS })
 
       expect(result[0].requestId).to.equal('2d925f27f5079f')
       expect(result[0].cpm).to.equal(0.01)
@@ -185,7 +185,7 @@ describe('yieldlabBidAdapter', function () {
     })
 
     it('should append gdpr parameters to adtag', function () {
-      const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [REQUEST], queryParams: REQPARAMS_GDPR})
+      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [REQUEST], queryParams: REQPARAMS_GDPR })
 
       expect(result[0].ad).to.include('&gdpr=true')
       expect(result[0].ad).to.include('&consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA')
@@ -199,7 +199,7 @@ describe('yieldlabBidAdapter', function () {
           [970, 90],
         ]
       })
-      const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [REQUEST2], queryParams: REQPARAMS})
+      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [REQUEST2], queryParams: REQPARAMS })
 
       expect(result[0].requestId).to.equal('2d925f27f5079f')
       expect(result[0].cpm).to.equal(0.01)
@@ -224,7 +224,7 @@ describe('yieldlabBidAdapter', function () {
           }
         }
       })
-      const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST], queryParams: REQPARAMS})
+      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [VIDEO_REQUEST], queryParams: REQPARAMS })
 
       expect(result[0].requestId).to.equal('2d925f27f5079f')
       expect(result[0].cpm).to.equal(0.01)
@@ -241,7 +241,7 @@ describe('yieldlabBidAdapter', function () {
           }
         }
       })
-      const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST], queryParams: REQPARAMS_GDPR})
+      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [VIDEO_REQUEST], queryParams: REQPARAMS_GDPR })
 
       expect(result[0].vastUrl).to.include('&gdpr=true')
       expect(result[0].vastUrl).to.include('&consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA')
@@ -256,7 +256,7 @@ describe('yieldlabBidAdapter', function () {
           }
         }
       })
-      const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [OUTSTREAM_REQUEST], queryParams: REQPARAMS})
+      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [OUTSTREAM_REQUEST], queryParams: REQPARAMS })
 
       expect(result[0].renderer.id).to.equal('2d925f27f5079f')
       expect(result[0].renderer.url).to.equal('https://ad.adition.com/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event')

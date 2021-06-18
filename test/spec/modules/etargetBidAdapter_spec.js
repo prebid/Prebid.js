@@ -1,5 +1,5 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/etargetBidAdapter.js';
+import { assert, expect } from 'chai';
+import { spec } from 'modules/etargetBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 describe('etarget adapter', function () {
@@ -101,7 +101,7 @@ describe('etarget adapter', function () {
     describe('gdpr', function () {
       it('should send GDPR Consent data to etarget if gdprApplies', function () {
         let resultBids = JSON.parse(JSON.stringify(bids[0]));
-        let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
+        let request = spec.buildRequests([bids[0]], { gdprConsent: { gdprApplies: true, consentString: 'concentDataString' } });
         let parsedUrl = parseUrl(request.url).query;
 
         assert.equal(parsedUrl.gdpr, 'true');
@@ -110,19 +110,19 @@ describe('etarget adapter', function () {
 
       it('should not send GDPR Consent data to etarget if gdprApplies is false or undefined', function () {
         let resultBids = JSON.parse(JSON.stringify(bids[0]));
-        let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: false, consentString: 'concentDataString'}});
+        let request = spec.buildRequests([bids[0]], { gdprConsent: { gdprApplies: false, consentString: 'concentDataString' } });
         let parsedUrl = parseUrl(request.url).query;
 
         assert.ok(!parsedUrl.gdpr);
         assert.ok(!parsedUrl.gdpr_consent);
 
-        request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: undefined, consentString: 'concentDataString'}});
+        request = spec.buildRequests([bids[0]], { gdprConsent: { gdprApplies: undefined, consentString: 'concentDataString' } });
         assert.ok(!parsedUrl.gdpr);
         assert.ok(!parsedUrl.gdpr_consent);
       });
 
       it('should return GDPR Consent data with request data', function () {
-        let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
+        let request = spec.buildRequests([bids[0]], { gdprConsent: { gdprApplies: true, consentString: 'concentDataString' } });
 
         assert.deepEqual(request.gdpr, {
           gdpr: true,
@@ -273,7 +273,7 @@ describe('etarget adapter', function () {
   beforeEach(function () {
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
-    let params = [{refid: 1, country: 1, url: 'some// there'}, {refid: 2, country: 1, someVar: 'someValue', pt: 'gross'}, {refid: 3, country: 1, pdom: 'home'}, {refid: 5, country: 1, pt: 'net'}, {refid: 6, country: 1, pt: 'gross'}];
+    let params = [{ refid: 1, country: 1, url: 'some// there' }, { refid: 2, country: 1, someVar: 'someValue', pt: 'gross' }, { refid: 3, country: 1, pdom: 'home' }, { refid: 5, country: 1, pt: 'net' }, { refid: 6, country: 1, pt: 'gross' }];
     bids = [
       {
         adUnitCode: placementCode[0],

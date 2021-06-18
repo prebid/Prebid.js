@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/consumableBidAdapter.js';
-import {createBid} from 'src/bidfactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/consumableBidAdapter.js';
+import { createBid } from 'src/bidfactory.js';
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
 const SMARTSYNC_CALLBACK = 'serverbidCallBids';
@@ -148,7 +148,7 @@ const AD_SERVER_RESPONSE = {
         'height': 90,
         'width': 728,
         'events': [],
-        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+        'pricing': { 'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5 }
       },
       '123': {
         'adId': 2364764,
@@ -171,7 +171,7 @@ const AD_SERVER_RESPONSE = {
         'height': 90,
         'width': 728,
         'events': [],
-        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+        'pricing': { 'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5 }
       }
     }
   }
@@ -306,7 +306,7 @@ describe('Consumable BidAdapter', function () {
     });
 
     it('handles nobid responses', function () {
-      let EMPTY_RESP = Object.assign({}, AD_SERVER_RESPONSE, {'body': {'decisions': null}})
+      let EMPTY_RESP = Object.assign({}, AD_SERVER_RESPONSE, { 'body': { 'decisions': null } })
       let bids = spec.interpretResponse(EMPTY_RESP, BUILD_REQUESTS_OUTPUT);
 
       expect(bids).to.be.empty;
@@ -319,7 +319,7 @@ describe('Consumable BidAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    let syncOptions = {'iframeEnabled': true};
+    let syncOptions = { 'iframeEnabled': true };
 
     it('handles empty sync options', function () {
       let opts = spec.getUserSyncs({});
@@ -334,7 +334,7 @@ describe('Consumable BidAdapter', function () {
     });
 
     it('should return a sync url if pixel syncs are enabled and some are returned from the server', function () {
-      let syncOptions = {'pixelEnabled': true};
+      let syncOptions = { 'pixelEnabled': true };
       let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE]);
 
       expect(opts.length).to.equal(1);

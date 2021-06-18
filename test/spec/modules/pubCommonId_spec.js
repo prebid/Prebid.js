@@ -55,7 +55,7 @@ describe('Publisher Common ID', function () {
       expect(getCookie(ID_NAME)).to.be.null; // there should be no cookie initially
       expect(localStorage.getItem(ID_NAME)).to.be.null; // there should be no local storage item either
 
-      requestBidHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
+      requestBidHook((config) => { innerAdUnits1 = config.adUnits }, { adUnits: adUnits1 });
       pubcid = localStorage.getItem(ID_NAME); // local storage item is created after requestbidHook
 
       innerAdUnits1.forEach((unit) => {
@@ -69,7 +69,7 @@ describe('Publisher Common ID', function () {
       expect(getCookie(ID_NAME)).to.be.null;
 
       // verify same pubcid is preserved
-      requestBidHook((config) => { innerAdUnits2 = config.adUnits }, {adUnits: adUnits2});
+      requestBidHook((config) => { innerAdUnits2 = config.adUnits }, { adUnits: adUnits2 });
       assert.deepEqual(innerAdUnits1, innerAdUnits2);
     });
 
@@ -81,7 +81,7 @@ describe('Publisher Common ID', function () {
       let pubcid1;
       let pubcid2;
 
-      requestBidHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
+      requestBidHook((config) => { innerAdUnits1 = config.adUnits }, { adUnits: adUnits1 });
       pubcid1 = localStorage.getItem(ID_NAME); // get first pubcid
       removeStorageItem(ID_NAME); // remove storage
 
@@ -94,7 +94,7 @@ describe('Publisher Common ID', function () {
         });
       });
 
-      requestBidHook((config) => { innerAdUnits2 = config.adUnits }, {adUnits: adUnits2});
+      requestBidHook((config) => { innerAdUnits2 = config.adUnits }, { adUnits: adUnits2 });
       pubcid2 = localStorage.getItem(ID_NAME); // get second pubcid
 
       innerAdUnits2.forEach((unit) => {
@@ -114,7 +114,7 @@ describe('Publisher Common ID', function () {
       let pubcid = utils.generateUUID();
 
       setCookie(ID_NAME, pubcid, 600);
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('crumbs.pubcid');
@@ -129,7 +129,7 @@ describe('Publisher Common ID', function () {
       let pubcid = utils.generateUUID();
 
       setCookie(ID_NAME, pubcid, 600);
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
 
       expect(getStorageItem(ID_NAME)).to.equal(pubcid);
     });
@@ -140,28 +140,28 @@ describe('Publisher Common ID', function () {
       let pubcid = utils.generateUUID();
 
       setStorageItem(ID_NAME, pubcid, 600);
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
 
       expect(getCookie(ID_NAME)).to.be.null;
     });
 
     it('Cookie only', function() {
-      setConfig({type: 'cookie'});
+      setConfig({ type: 'cookie' });
       let adUnits = getAdUnits();
       let innerAdUnits;
 
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
 
       expect(getCookie(ID_NAME)).to.match(uuidPattern);
       expect(getStorageItem(ID_NAME)).to.be.null;
     });
 
     it('Storage only', function() {
-      setConfig({type: 'html5'});
+      setConfig({ type: 'html5' });
       let adUnits = getAdUnits();
       let innerAdUnits;
 
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
 
       expect(getCookie(ID_NAME)).to.be.null;
       expect(getStorageItem(ID_NAME)).to.match(uuidPattern);
@@ -172,7 +172,7 @@ describe('Publisher Common ID', function () {
       let innerAdUnits;
 
       setStorageItem(ID_NAME, 'undefined', 600);
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
 
       expect(getStorageItem(ID_NAME)).to.match(uuidPattern);
     });
@@ -193,7 +193,7 @@ describe('Publisher Common ID', function () {
       setConfig({});
       let adUnits = getAdUnits();
       let innerAdUnits;
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
       let pubcid = localStorage.getItem(ID_NAME);
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -204,16 +204,16 @@ describe('Publisher Common ID', function () {
     });
 
     it('disable', function () {
-      setConfig({enable: false});
+      setConfig({ enable: false });
       let adUnits = getAdUnits();
       let unmodified = getAdUnits();
       let innerAdUnits;
       expect(isPubcidEnabled()).to.be.false;
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
       expect(getCookie(ID_NAME)).to.be.null;
       assert.deepEqual(innerAdUnits, unmodified);
-      setConfig({enable: true}); // reset
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      setConfig({ enable: true }); // reset
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('crumbs.pubcid');
@@ -222,11 +222,11 @@ describe('Publisher Common ID', function () {
     });
 
     it('change expiration time', function () {
-      setConfig({expInterval: 100});
+      setConfig({ expInterval: 100 });
       expect(getExpInterval()).to.equal(100);
       let adUnits = getAdUnits();
       let innerAdUnits;
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
       innerAdUnits.every((unit) => {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('crumbs.pubcid');
@@ -245,7 +245,7 @@ describe('Publisher Common ID', function () {
 
       let adUnits = getAdUnits();
       let innerAdUnits;
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
 
       const pubcid = localStorage.getItem(ID_NAME);
       expect(pubcid).to.be.null;
@@ -274,11 +274,11 @@ describe('Publisher Common ID', function () {
         },
         sizes: [[300, 200], [300, 600]],
         bids: [
-          {bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}
+          { bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }
         ]
       }];
       adUnitCodes = ['adUnit-code'];
-      let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: TIMEOUT});
+      let auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: function() {}, cbTimeout: TIMEOUT });
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
       initPubcid();
@@ -290,7 +290,7 @@ describe('Publisher Common ID', function () {
     });
 
     it('test hook', function() {
-      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      $$PREBID_GLOBAL$$.requestBids({ adUnits });
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('crumbs.pubcid');
@@ -359,7 +359,7 @@ describe('Publisher Common ID', function () {
 
       let adUnits = getAdUnits();
       let innerAdUnits;
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
 
       expect(utils.triggerPixel.called).to.be.false;
       events.emit(constants.EVENTS.AUCTION_END, {});

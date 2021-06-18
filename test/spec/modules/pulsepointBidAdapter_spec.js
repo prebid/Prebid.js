@@ -1,7 +1,7 @@
 /* eslint dot-notation:0, quote-props:0 */
-import {expect} from 'chai';
-import {spec} from 'modules/pulsepointBidAdapter.js';
-import {deepClone} from 'src/utils.js';
+import { expect } from 'chai';
+import { spec } from 'modules/pulsepointBidAdapter.js';
+import { deepClone } from 'src/utils.js';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
@@ -578,7 +578,7 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify outstream renderer', function () {
-    const bidderRequestOutstream = Object.assign({}, bidderRequest, {bids: [outstreamSlotConfig[0]]});
+    const bidderRequestOutstream = Object.assign({}, bidderRequest, { bids: [outstreamSlotConfig[0]] });
     const request = spec.buildRequests(outstreamSlotConfig, bidderRequestOutstream);
     const ortbRequest = request.data;
     expect(ortbRequest).to.not.be.null;
@@ -622,7 +622,7 @@ describe('PulsePoint Adapter Tests', function () {
         data: {
           id: 'userid_digitrust',
           keyv: 4,
-          privacy: {optout: false},
+          privacy: { optout: false },
           producer: 'ABC',
           version: 2
         }

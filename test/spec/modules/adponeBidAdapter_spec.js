@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adponeBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 const EMPTY_ARRAY = [];
@@ -66,7 +66,7 @@ describe('adponeBidAdapter', function () {
 
     it('should return false when necessary information is not found', function () {
       // empty bid
-      expect(spec.isBidRequestValid({bidId: '', params: {}})).to.be.false;
+      expect(spec.isBidRequestValid({ bidId: '', params: {} })).to.be.false;
 
       // empty bidId
       bid.bidId = '';
@@ -112,7 +112,7 @@ describe('adponeBidAdapter', function () {
   });
   describe('interpretResponse', function () {
     let serverResponse;
-    let bidRequest = { data: {id: '1234'} };
+    let bidRequest = { data: { id: '1234' } };
 
     beforeEach(function () {
       serverResponse = {

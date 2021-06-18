@@ -8,7 +8,7 @@
 import * as utils from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 export const storage = getStorageManager();
 
@@ -41,7 +41,7 @@ export const admixerIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
-    const {e, p, pid} = (config && config.params) || {};
+    const { e, p, pid } = (config && config.params) || {};
     if (!pid || typeof pid !== 'string') {
       utils.logError('admixerId submodule requires partner id to be defined');
       return;
@@ -75,7 +75,7 @@ export const admixerIdSubmodule = {
 function retrieveVisitorId(url, callback) {
   ajax(url, {
     success: response => {
-      const {setData: {visitorid} = {}} = JSON.parse(response || '{}');
+      const { setData: { visitorid } = {} } = JSON.parse(response || '{}');
       if (visitorid) {
         callback(visitorid);
       } else {

@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/bucksenseBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/bucksenseBidAdapter.js';
 
 describe('Bucksense Adapter', function() {
   const BIDDER_CODE = 'bucksense';

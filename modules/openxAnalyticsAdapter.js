@@ -85,12 +85,12 @@ let openxAdapter = Object.assign(adapter({ urlParam: URL_PARAM, analyticsType: A
 
 openxAdapter.originEnableAnalytics = openxAdapter.enableAnalytics;
 
-openxAdapter.enableAnalytics = function(adapterConfig = {options: {}}) {
+openxAdapter.enableAnalytics = function(adapterConfig = { options: {} }) {
   if (isValidConfig(adapterConfig)) {
-    analyticsConfig = {...DEFAULT_ANALYTICS_CONFIG, ...adapterConfig.options};
+    analyticsConfig = { ...DEFAULT_ANALYTICS_CONFIG, ...adapterConfig.options };
 
     // campaign properties defined by config will override utm query parameters
-    analyticsConfig.campaign = {...buildCampaignFromUtmCodes(), ...analyticsConfig.campaign};
+    analyticsConfig.campaign = { ...buildCampaignFromUtmCodes(), ...analyticsConfig.campaign };
 
     utils.logInfo('OpenX Analytics enabled with config', analyticsConfig);
 
@@ -102,7 +102,7 @@ openxAdapter.enableAnalytics = function(adapterConfig = {options: {}}) {
 
       if (pubads.addEventListener) {
         pubads.addEventListener(SLOT_LOADED, args => {
-          openxAdapter.track({eventType: SLOT_LOADED, args});
+          openxAdapter.track({ eventType: SLOT_LOADED, args });
           utils.logInfo('OX: SlotOnLoad event triggered');
         });
       }
@@ -133,7 +133,7 @@ openxAdapter.reset = function() {
  * Private Functions
  */
 
-function isValidConfig({options: analyticsOptions}) {
+function isValidConfig({ options: analyticsOptions }) {
   let hasOrgId = analyticsOptions && analyticsOptions.orgId !== void (0);
 
   const fieldValidations = [
@@ -230,7 +230,7 @@ function detectBrowser() {
   return 'Others';
 }
 
-function prebidAnalyticsEventHandler({eventType, args}) {
+function prebidAnalyticsEventHandler({ eventType, args }) {
   utils.logMessage(eventType, Object.assign({}, args));
   switch (eventType) {
     case AUCTION_INIT:
@@ -274,7 +274,7 @@ function prebidAnalyticsEventHandler({eventType, args}) {
  * @property {Object} config //: {publisherPlatformId: "a3aece0c-9e80-4316-8deb-faf804779bd1", publisherAccountId: 537143056, sampling: 1, enableV2: true}/*
  */
 
-function onAuctionInit({auctionId, timestamp: startTime, timeout, adUnitCodes}) {
+function onAuctionInit({ auctionId, timestamp: startTime, timeout, adUnitCodes }) {
   auctionMap[auctionId] = {
     id: auctionId,
     startTime,
@@ -327,7 +327,7 @@ function onAuctionInit({auctionId, timestamp: startTime, timeout, adUnitCodes}) 
  * @param {PbBidRequest} bidRequest
  */
 function onBidRequested(bidRequest) {
-  const {auctionId, bids: bidderRequests, start, timeout} = bidRequest;
+  const { auctionId, bids: bidderRequests, start, timeout } = bidRequest;
   const auction = auctionMap[auctionId];
   const adUnitCodeToAdUnitMap = auction.adUnitCodeToAdUnitMap;
 
@@ -401,7 +401,7 @@ function onBidResponse(bidResponse) {
 }
 
 function onBidTimeout(args) {
-  utils._each(args, ({auctionId, adUnitCode, bidId: requestId}) => {
+  utils._each(args, ({ auctionId, adUnitCode, bidId: requestId }) => {
     let timedOutRequest = utils.deepAccess(auctionMap,
       `${auctionId}.adUnitCodeToAdUnitMap.${adUnitCode}.bidRequestsMap.${requestId}`);
 
@@ -469,7 +469,7 @@ function onSlotLoadedV2({ slot }) {
 
   // mark adunit as rendered
   if (bid) {
-    let {x, y} = getPageOffset();
+    let { x, y } = getPageOffset();
     bid.rendered = true;
     bid.renderTime = renderTime;
     adUnit.adPosition = isAtf(elementId, x, y) ? 'ATF' : 'BTF';
@@ -525,7 +525,7 @@ function getPageOffset() {
   var y = (window.pageYOffset !== undefined)
     ? window.pageYOffset
     : (document.documentElement || document.body.parentNode || document.body).scrollTop;
-  return {x, y};
+  return { x, y };
 }
 
 function delayedSend(auction) {
@@ -606,8 +606,8 @@ function getAuctionByGoogleTagSLot(slot) {
 }
 
 function buildAuctionPayload(auction) {
-  let {startTime, endTime, state, timeout, auctionOrder, userIds, adUnitCodeToAdUnitMap} = auction;
-  let {orgId, publisherPlatformId, publisherAccountId, campaign} = analyticsConfig;
+  let { startTime, endTime, state, timeout, auctionOrder, userIds, adUnitCodeToAdUnitMap } = auction;
+  let { orgId, publisherPlatformId, publisherAccountId, campaign } = analyticsConfig;
 
   return {
     adapterVersion: ADAPTER_VERSION,
@@ -632,7 +632,7 @@ function buildAuctionPayload(auction) {
 
   function buildAdUnitsPayload(adUnitCodeToAdUnitMap) {
     return utils._map(adUnitCodeToAdUnitMap, (adUnit) => {
-      let {code, adPosition} = adUnit;
+      let { code, adPosition } = adUnit;
 
       return {
         code,
@@ -642,7 +642,7 @@ function buildAuctionPayload(auction) {
 
       function buildBidRequestPayload(bidRequestsMap) {
         return utils._map(bidRequestsMap, (bidRequest) => {
-          let {bidder, source, bids, mediaTypes, timeLimit, timedOut} = bidRequest;
+          let { bidder, source, bids, mediaTypes, timeLimit, timedOut } = bidRequest;
           return {
             bidder,
             source,

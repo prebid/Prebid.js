@@ -5,8 +5,8 @@
  * @requires module:modules/userId
  */
 
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
 import * as utils from '../src/utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
@@ -38,7 +38,7 @@ export const verizonMediaIdSubmodule = {
    */
   decode(value) {
     return (typeof value === 'object' && (value.connectid || value.vmuid))
-      ? {connectid: value.connectid || value.vmuid} : undefined;
+      ? { connectid: value.connectid || value.vmuid } : undefined;
   },
   /**
    * Gets the Verizon Media Connect ID
@@ -87,9 +87,9 @@ export const verizonMediaIdSubmodule = {
       };
       const endpoint = VMCID_ENDPOINT.replace(PLACEHOLDER, params.pixelId);
       let url = `${params.endpoint || endpoint}?${utils.formatQS(data)}`;
-      verizonMediaIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
+      verizonMediaIdSubmodule.getAjaxFn()(url, callbacks, null, { method: 'GET', withCredentials: true });
     };
-    return {callback: resp};
+    return { callback: resp };
   },
 
   /**

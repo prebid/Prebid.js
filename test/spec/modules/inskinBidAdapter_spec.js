@@ -69,7 +69,7 @@ const RESPONSE = {
         'height': 90,
         'width': 728,
         'events': [],
-        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+        'pricing': { 'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5 }
       },
       '123': {
         'adId': 2364764,
@@ -95,7 +95,7 @@ const RESPONSE = {
         'height': 90,
         'width': 728,
         'events': [],
-        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+        'pricing': { 'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5 }
       }
     }
   }
@@ -341,7 +341,7 @@ describe('InSkin BidAdapter', function () {
     });
 
     it('handles nobid responses', function () {
-      let EMPTY_RESP = Object.assign({}, RESPONSE, {'body': {'decisions': null}})
+      let EMPTY_RESP = Object.assign({}, RESPONSE, { 'body': { 'decisions': null } })
       let bids = spec.interpretResponse(EMPTY_RESP, REQUEST);
 
       expect(bids).to.be.empty;
@@ -361,14 +361,14 @@ describe('InSkin BidAdapter', function () {
     });
 
     it('should return two sync urls if pixel syncs are enabled', function () {
-      let syncOptions = {'pixelEnabled': true};
+      let syncOptions = { 'pixelEnabled': true };
       let opts = spec.getUserSyncs(syncOptions);
 
       expect(opts.length).to.equal(2);
     });
 
     it('should return three sync urls if pixel and iframe syncs are enabled', function () {
-      let syncOptions = {'iframeEnabled': true, 'pixelEnabled': true};
+      let syncOptions = { 'iframeEnabled': true, 'pixelEnabled': true };
       let opts = spec.getUserSyncs(syncOptions);
 
       expect(opts.length).to.equal(3);

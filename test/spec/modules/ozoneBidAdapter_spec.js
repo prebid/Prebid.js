@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec, getWidthAndHeightFromVideoObject, playerSizeIsNestedArray, defaultSize } from 'modules/ozoneBidAdapter.js';
 import { config } from 'src/config.js';
-import {Renderer} from '../../../src/Renderer.js';
-import {getGranularityKeyName, getGranularityObject} from '../../../modules/ozoneBidAdapter.js';
+import { Renderer } from '../../../src/Renderer.js';
+import { getGranularityKeyName, getGranularityObject } from '../../../modules/ozoneBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const BIDDER_CODE = 'ozone';
@@ -12,7 +12,7 @@ const BIDDER_CODE = 'ozone';
 NOTE - use firefox console to deep copy the objects to use here
 
  */
-var originalPropertyBag = {'pageId': null};
+var originalPropertyBag = { 'pageId': null };
 var validBidRequests = [
   {
     adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -21,8 +21,8 @@ var validBidRequests = [
     bidRequestsCount: 1,
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
-    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
+    params: { publisherId: '9876abcd12-3', customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
     sizes: [[300, 250], [300, 600]],
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
@@ -35,7 +35,7 @@ var validBidRequestsNoCustomData = [
     bidRequestsCount: 1,
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
-    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
+    crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
     params: { publisherId: '9876abcd12-3', placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
     sizes: [[300, 250], [300, 600]],
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
@@ -50,8 +50,8 @@ var validBidRequestsMulti = [
     bidRequestsCount: 1,
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
-    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
+    params: { publisherId: '9876abcd12-3', customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
     sizes: [[300, 250], [300, 600]],
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   },
@@ -63,8 +63,8 @@ var validBidRequestsMulti = [
     bidRequestsCount: 1,
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c0',
-    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
+    params: { publisherId: '9876abcd12-3', customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
     sizes: [[300, 250], [300, 600]],
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
@@ -79,8 +79,8 @@ var validBidRequestsWithUserIdData = [
     bidRequestsCount: 1,
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
-    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
+    params: { publisherId: '9876abcd12-3', customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
     sizes: [[300, 250], [300, 600]],
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87',
     userId: {
@@ -89,9 +89,9 @@ var validBidRequestsWithUserIdData = [
       'id5id': { uid: '1111', ext: { linkType: 2, abTestingControlGroup: false } },
       'criteoId': '1111criteoId',
       'idl_env': 'liverampId',
-      'lipb': {'lipbid': 'lipbidId123'},
-      'parrableId': {'eid': '01.5678.parrableid'},
-      'sharedid': {'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22'}
+      'lipb': { 'lipbid': 'lipbidId123' },
+      'parrableId': { 'eid': '01.5678.parrableid' },
+      'sharedid': { 'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22' }
     },
     userIdAsEids: [
       {
@@ -137,14 +137,14 @@ var validBidRequestsWithUserIdData = [
       {
         'source': 'lipb',
         'uids': [{
-          'id': {'lipbid': 'lipbidId123'},
+          'id': { 'lipbid': 'lipbidId123' },
           'atype': 1,
         }]
       },
       {
         'source': 'parrableId',
         'uids': [{
-          'id': {'eid': '01.5678.parrableid'},
+          'id': { 'eid': '01.5678.parrableid' },
           'atype': 1,
         }]
       }
@@ -173,8 +173,8 @@ var validBidRequestsNoSizes = [
     bidRequestsCount: 1,
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
-    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
+    params: { publisherId: '9876abcd12-3', customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
@@ -187,9 +187,9 @@ var validBidRequestsWithBannerMediaType = [
     bidRequestsCount: 1,
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
-    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
-    mediaTypes: {banner: {sizes: [[300, 250], [300, 600]]}},
+    crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
+    params: { publisherId: '9876abcd12-3', customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
@@ -201,9 +201,9 @@ var validBidRequestsWithNonBannerMediaTypesAndValidOutstreamVideo = [
     bidRequestsCount: 1,
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
-    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, video: {skippable: true, playback_method: ['auto_play_sound_off'], targetDiv: 'some-different-div-id-to-my-adunitcode'} } ] },
-    mediaTypes: {video: {mimes: ['video/mp4'], 'context': 'outstream', 'sizes': [640, 480], playerSize: [640, 480]}, native: {info: 'dummy data'}},
+    crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
+    params: { publisherId: '9876abcd12-3', customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, video: { skippable: true, playback_method: ['auto_play_sound_off'], targetDiv: 'some-different-div-id-to-my-adunitcode' } } ] },
+    mediaTypes: { video: { mimes: ['video/mp4'], 'context': 'outstream', 'sizes': [640, 480], playerSize: [640, 480] }, native: { info: 'dummy data' } },
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
@@ -408,8 +408,8 @@ var validBidderRequest = {
       bidRequestsCount: 1,
       bidder: 'ozone',
       bidderRequestId: '1c1586b27a1b5c8',
-      crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-      params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] }, id: '2899ec066a91ff8', secure: 1, tagid: 'undefined' } ] },
+      crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
+      params: { publisherId: '9876abcd12-3', customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] }, id: '2899ec066a91ff8', secure: 1, tagid: 'undefined' } ] },
       sizes: [[300, 250], [300, 600]],
       transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
     }],
@@ -437,8 +437,8 @@ var bidderRequestWithFullGdpr = {
       bidRequestsCount: 1,
       bidder: 'ozone',
       bidderRequestId: '1c1586b27a1b5c8',
-      crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-      params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] }, id: '2899ec066a91ff8', secure: 1, tagid: 'undefined' } ] },
+      crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
+      params: { publisherId: '9876abcd12-3', customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] }, id: '2899ec066a91ff8', secure: 1, tagid: 'undefined' } ] },
       sizes: [[300, 250], [300, 600]],
       transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
     }],
@@ -526,16 +526,16 @@ var bidderRequestWithPartialGdpr = {
       bidRequestsCount: 1,
       bidder: 'ozone',
       bidderRequestId: '1c1586b27a1b5c8',
-      crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
+      crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
       params: {
         publisherId: '9876abcd12-3',
-        customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}],
+        customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }],
         placementId: '1310000099',
         siteId: '1234567890',
         id: 'fea37168-78f1-4a23-a40e-88437a99377e',
         auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
         imp: [{
-          banner: {topframe: 1, w: 300, h: 250, format: [{w: 300, h: 250}, {w: 300, h: 600}]},
+          banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] },
           id: '2899ec066a91ff8',
           secure: 1,
           tagid: 'undefined'
@@ -1528,7 +1528,7 @@ describe('ozone Adapter', function () {
         placementId: '1310000099',
         publisherId: '9876abcd12-3',
         siteId: '1234567890',
-        customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}]
+        customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }]
       },
       siteId: 1234567890
     }
@@ -1762,7 +1762,7 @@ describe('ozone Adapter', function () {
         'placementId': '1234567890',
         'publisherId': '9876abcd12-3',
         'siteId': '1234567890',
-        'customData': {'gender': 'bart', 'age': 'low'}
+        'customData': { 'gender': 'bart', 'age': 'low' }
       }
     };
 
@@ -1789,7 +1789,7 @@ describe('ozone Adapter', function () {
       params: {
         'placementId': '1234567890',
         'publisherId': '9876abcd12-3',
-        'customData': [{'settings': {}, 'xx': {'gender': 'bart', 'age': 'low'}}],
+        'customData': [{ 'settings': {}, 'xx': { 'gender': 'bart', 'age': 'low' } }],
         siteId: '1234567890'
       }
     };
@@ -1802,7 +1802,7 @@ describe('ozone Adapter', function () {
       params: {
         'placementId': '1234567890',
         'publisherId': '9876abcd12-3',
-        'customData': [{'settings': {}, 'targeting': 'this should be an object'}],
+        'customData': [{ 'settings': {}, 'targeting': 'this should be an object' }],
         siteId: '1234567890'
       }
     };
@@ -1831,7 +1831,7 @@ describe('ozone Adapter', function () {
       },
       mediaTypes: {
         video: {
-          mimes: ['video/mp4']}
+          mimes: ['video/mp4'] }
       }
     };
 
@@ -1849,7 +1849,7 @@ describe('ozone Adapter', function () {
       mediaTypes: {
         video: {
           mimes: ['video/mp4'],
-          'context': 'outstream'},
+          'context': 'outstream' },
       }
     };
 
@@ -1901,7 +1901,7 @@ describe('ozone Adapter', function () {
 
     it('ignores ozoneData in & after version 2.1.1', function () {
       let validBidRequestsWithOzoneData = JSON.parse(JSON.stringify(validBidRequests));
-      validBidRequestsWithOzoneData[0].params.ozoneData = {'networkID': '3048', 'dfpSiteID': 'd.thesun', 'sectionID': 'homepage', 'path': '/', 'sec_id': 'null', 'sec': 'sec', 'topics': 'null', 'kw': 'null', 'aid': 'null', 'search': 'null', 'article_type': 'null', 'hide_ads': '', 'article_slug': 'null'};
+      validBidRequestsWithOzoneData[0].params.ozoneData = { 'networkID': '3048', 'dfpSiteID': 'd.thesun', 'sectionID': 'homepage', 'path': '/', 'sec_id': 'null', 'sec': 'sec', 'topics': 'null', 'kw': 'null', 'aid': 'null', 'search': 'null', 'article_type': 'null', 'hide_ads': '', 'article_slug': 'null' };
       const request = spec.buildRequests(validBidRequestsWithOzoneData, validBidderRequest.bidderRequest);
       expect(request.data).to.be.a('string');
       var data = JSON.parse(request.data);
@@ -1937,12 +1937,12 @@ describe('ozone Adapter', function () {
     });
 
     it('should be able to handle non-single requests', function () {
-      config.setConfig({'ozone': {'singleRequest': false}});
+      config.setConfig({ 'ozone': { 'singleRequest': false } });
       const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest.bidderRequest);
       expect(request).to.be.a('array');
       expect(request[0]).to.have.all.keys(['bidderRequest', 'data', 'method', 'url']);
       // need to reset the singleRequest config flag:
-      config.setConfig({'ozone': {'singleRequest': true}});
+      config.setConfig({ 'ozone': { 'singleRequest': true } });
     });
 
     it('should add gdpr consent information to the request when ozone is true', function () {
@@ -1954,8 +1954,8 @@ describe('ozone Adapter', function () {
         vendorData: {
           metadata: consentString,
           gdprApplies: true,
-          vendorConsents: {524: true},
-          purposeConsents: {1: true, 2: true, 3: true, 4: true, 5: true}
+          vendorConsents: { 524: true },
+          purposeConsents: { 1: true, 2: true, 3: true, 4: true, 5: true }
         }
       }
 
@@ -1994,7 +1994,7 @@ describe('ozone Adapter', function () {
           metadata: consentString,
           gdprApplies: true,
           vendorConsents: {}, /* 524 is not present */
-          purposeConsents: {1: true, 2: true, 3: true, 4: true, 5: true}
+          purposeConsents: { 1: true, 2: true, 3: true, 4: true, 5: true }
         }
       };
 
@@ -2012,21 +2012,21 @@ describe('ozone Adapter', function () {
         vendorData: {
           metadata: consentString,
           gdprApplies: true,
-          vendorConsents: {524: true},
-          purposeConsents: {1: true, 2: true, 3: true, 4: true, 5: true}
+          vendorConsents: { 524: true },
+          purposeConsents: { 1: true, 2: true, 3: true, 4: true, 5: true }
         }
       };
 
       let bidRequests = validBidRequests;
       // values from http://prebid.org/dev-docs/modules/userId.html#pubcommon-id
       bidRequests[0]['userId'] = {
-        'digitrustid': {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
+        'digitrustid': { data: { id: 'DTID', keyv: 4, privacy: { optout: false }, producer: 'ABC', version: 2 } },
         'id5id': { uid: '1111', ext: { linkType: 2, abTestingControlGroup: false } },
         'idl_env': '3333',
         'parrableid': 'eidVersion.encryptionKeyReference.encryptedValue',
         'pubcid': '5555',
         'tdid': '6666',
-        'sharedid': {'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22'}
+        'sharedid': { 'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22' }
       };
       bidRequests[0]['userIdAsEids'] = validBidRequestsWithUserIdData[0]['userIdAsEids'];
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -2040,13 +2040,13 @@ describe('ozone Adapter', function () {
       let bidRequests = validBidRequests;
       // values from http://prebid.org/dev-docs/modules/userId.html#pubcommon-id
       bidRequests[0]['userId'] = {
-        'digitrustid': {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
+        'digitrustid': { data: { id: 'DTID', keyv: 4, privacy: { optout: false }, producer: 'ABC', version: 2 } },
         'id5id': { uid: '1111', ext: { linkType: 2, abTestingControlGroup: false } },
         'idl_env': '3333',
         'parrableid': 'eidVersion.encryptionKeyReference.encryptedValue',
         // 'pubcid': '5555', // remove pubcid from here to emulate the OLD module & cause the failover code to kick in
         'tdid': '6666',
-        'sharedid': {'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22'}
+        'sharedid': { 'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22' }
       };
       bidRequests[0]['userIdAsEids'] = validBidRequestsWithUserIdData[0]['userIdAsEids'];
       const request = spec.buildRequests(bidRequests, validBidderRequest.bidderRequest);
@@ -2089,44 +2089,44 @@ describe('ozone Adapter', function () {
     it('replaces the auction url for a config override', function () {
       spec.propertyBag.whitelabel = null;
       let fakeOrigin = 'http://sometestendpoint';
-      config.setConfig({'ozone': {'endpointOverride': {'origin': fakeOrigin}}});
+      config.setConfig({ 'ozone': { 'endpointOverride': { 'origin': fakeOrigin } } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       expect(request.url).to.equal(fakeOrigin + '/openrtb2/auction');
       expect(request.method).to.equal('POST');
       const data = JSON.parse(request.data);
       expect(data.ext.ozone.origin).to.equal(fakeOrigin);
-      config.setConfig({'ozone': {'kvpPrefix': null, 'endpointOverride': null}});
+      config.setConfig({ 'ozone': { 'kvpPrefix': null, 'endpointOverride': null } });
       spec.propertyBag.whitelabel = null;
     });
 
     it('replaces the FULL auction url for a config override', function () {
       spec.propertyBag.whitelabel = null;
       let fakeurl = 'http://sometestendpoint/myfullurl';
-      config.setConfig({'ozone': {'endpointOverride': {'auctionUrl': fakeurl}}});
+      config.setConfig({ 'ozone': { 'endpointOverride': { 'auctionUrl': fakeurl } } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       expect(request.url).to.equal(fakeurl);
       expect(request.method).to.equal('POST');
       const data = JSON.parse(request.data);
       expect(data.ext.ozone.origin).to.equal(fakeurl);
-      config.setConfig({'ozone': {'kvpPrefix': null, 'endpointOverride': null}});
+      config.setConfig({ 'ozone': { 'kvpPrefix': null, 'endpointOverride': null } });
       spec.propertyBag.whitelabel = null;
     });
 
     it('replaces the renderer url for a config override', function () {
       spec.propertyBag.whitelabel = null;
       let fakeUrl = 'http://renderer.com';
-      config.setConfig({'ozone': {'endpointOverride': {'rendererUrl': fakeUrl}}});
+      config.setConfig({ 'ozone': { 'endpointOverride': { 'rendererUrl': fakeUrl } } });
       const request = spec.buildRequests(validBidRequests1OutstreamVideo2020, validBidderRequest1OutstreamVideo2020.bidderRequest);
       const result = spec.interpretResponse(getCleanValidVideoResponse(), validBidderRequest1OutstreamVideo2020);
       const bid = result[0];
       expect(bid.renderer).to.be.an.instanceOf(Renderer);
       expect(bid.renderer.url).to.equal(fakeUrl);
-      config.setConfig({'ozone': {'kvpPrefix': null, 'endpointOverride': null}});
+      config.setConfig({ 'ozone': { 'kvpPrefix': null, 'endpointOverride': null } });
       spec.propertyBag.whitelabel = null;
     });
     it('should generate all the adservertargeting keys correctly named', function () {
       var specMock = utils.deepClone(spec);
-      config.setConfig({'ozone': {'kvpPrefix': 'xx'}});
+      config.setConfig({ 'ozone': { 'kvpPrefix': 'xx' } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.interpretResponse(validResponse, request);
       expect(result[0].adserverTargeting).to.have.own.property('xx_appnexus_crid');
@@ -2149,30 +2149,30 @@ describe('ozone Adapter', function () {
 
     it('replaces the kvp prefix ', function () {
       spec.propertyBag.whitelabel = null;
-      config.setConfig({'ozone': {'kvpPrefix': 'test'}});
+      config.setConfig({ 'ozone': { 'kvpPrefix': 'test' } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.ext.ozone).to.haveOwnProperty('test_rw');
-      config.setConfig({'ozone': {'kvpPrefix': null}});
+      config.setConfig({ 'ozone': { 'kvpPrefix': null } });
       spec.propertyBag.whitelabel = null;
     });
 
     it('handles an alias ', function () {
       spec.propertyBag.whitelabel = null;
-      config.setConfig({'lmc': {'kvpPrefix': 'test'}});
+      config.setConfig({ 'lmc': { 'kvpPrefix': 'test' } });
       let br = JSON.parse(JSON.stringify(validBidRequests));
       br[0]['bidder'] = 'lmc';
       const request = spec.buildRequests(br, validBidderRequest.bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.ext.lmc).to.haveOwnProperty('test_rw');
-      config.setConfig({'lmc': {'kvpPrefix': null}}); // I cant remove the key so set the value to null
+      config.setConfig({ 'lmc': { 'kvpPrefix': null } }); // I cant remove the key so set the value to null
       spec.propertyBag.whitelabel = null;
     });
     it('should use oztestmode GET value if set', function() {
       var specMock = utils.deepClone(spec);
       // mock the getGetParametersAsObject function to simulate GET parameters for oztestmode:
       specMock.getGetParametersAsObject = function() {
-        return {'oztestmode': 'mytestvalue_123'};
+        return { 'oztestmode': 'mytestvalue_123' };
       };
       const request = specMock.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const data = JSON.parse(request.data);
@@ -2183,7 +2183,7 @@ describe('ozone Adapter', function () {
       var specMock = utils.deepClone(spec);
       // mock the getGetParametersAsObject function to simulate GET parameters :
       specMock.getGetParametersAsObject = function() {
-        return {ozf: '1', ozpf: '0', ozrp: '2', ozip: '123'};
+        return { ozf: '1', ozpf: '0', ozrp: '2', ozip: '123' };
       };
       const request = specMock.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const data = JSON.parse(request.data);
@@ -2196,7 +2196,7 @@ describe('ozone Adapter', function () {
       var specMock = utils.deepClone(spec);
       // mock the getGetParametersAsObject function to simulate GET parameters :
       specMock.getGetParametersAsObject = function() {
-        return {ozf: 'false', ozpf: 'true', ozrp: 'xyz', ozip: 'hello'};
+        return { ozf: 'false', ozpf: 'true', ozrp: 'xyz', ozip: 'hello' };
       };
       const request = specMock.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const data = JSON.parse(request.data);
@@ -2209,7 +2209,7 @@ describe('ozone Adapter', function () {
       var specMock = utils.deepClone(spec);
       // mock the getGetParametersAsObject function to simulate GET parameters for oztestmode:
       specMock.getGetParametersAsObject = function() {
-        return {'oztestmode': 'mytestvalue_123'};
+        return { 'oztestmode': 'mytestvalue_123' };
       };
       const request = specMock.buildRequests(validBidRequestsMinimal, validBidderRequest.bidderRequest);
       const data = JSON.parse(request.data);
@@ -2232,7 +2232,7 @@ describe('ozone Adapter', function () {
 
       specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
-        return {'auction': 'dev', 'cookiesync': 'dev'};
+        return { 'auction': 'dev', 'cookiesync': 'dev' };
       };
       request = specMock.buildRequests(validBidRequestsMinimal, validBidderRequest.bidderRequest);
       url = request.url;
@@ -2244,7 +2244,7 @@ describe('ozone Adapter', function () {
       // mock the getGetParametersAsObject function to simulate GET parameters for ozstoredrequest:
       var specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
-        return {'ozstoredrequest': '1122334455'}; // 10 digits are valid
+        return { 'ozstoredrequest': '1122334455' }; // 10 digits are valid
       };
       const request = specMock.buildRequests(validBidRequestsMinimal, validBidderRequest.bidderRequest);
       const data = JSON.parse(request.data);
@@ -2255,7 +2255,7 @@ describe('ozone Adapter', function () {
       // mock the getGetParametersAsObject function to simulate GET parameters for ozstoredrequest:
       var specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
-        return {'ozstoredrequest': 'BADVAL'}; // 10 digits are valid
+        return { 'ozstoredrequest': 'BADVAL' }; // 10 digits are valid
       };
       const request = specMock.buildRequests(validBidRequestsMinimal, validBidderRequest.bidderRequest);
       const data = JSON.parse(request.data);
@@ -2264,7 +2264,7 @@ describe('ozone Adapter', function () {
     });
 
     it('should pick up the config value of coppa & set it in the request', function () {
-      config.setConfig({'coppa': true});
+      config.setConfig({ 'coppa': true });
       const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.regs).to.include.keys('coppa');
@@ -2272,21 +2272,21 @@ describe('ozone Adapter', function () {
       config.resetConfig();
     });
     it('should pick up the config value of coppa & only set it in the request if its true', function () {
-      config.setConfig({'coppa': false});
+      config.setConfig({ 'coppa': false });
       const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(utils.deepAccess(payload, 'regs.coppa')).to.be.undefined;
       config.resetConfig();
     });
     it('should handle oz_omp_floor correctly', function () {
-      config.setConfig({'ozone': {'oz_omp_floor': 1.56}});
+      config.setConfig({ 'ozone': { 'oz_omp_floor': 1.56 } });
       const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(utils.deepAccess(payload, 'ext.ozone.oz_omp_floor')).to.equal(1.56);
       config.resetConfig();
     });
     it('should ignore invalid oz_omp_floor values', function () {
-      config.setConfig({'ozone': {'oz_omp_floor': '1.56'}});
+      config.setConfig({ 'ozone': { 'oz_omp_floor': '1.56' } });
       const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(utils.deepAccess(payload, 'ext.ozone.oz_omp_floor')).to.be.undefined;
@@ -2302,14 +2302,14 @@ describe('ozone Adapter', function () {
       expect(utils.deepAccess(payload2, 'ext.ozone.pv')).to.equal(utils.deepAccess(payload, 'ext.ozone.pv'));
     });
     it('should indicate that the whitelist was used when it contains valid data', function () {
-      config.setConfig({'ozone': {'oz_whitelist_adserver_keys': ['oz_ozappnexus_pb', 'oz_ozappnexus_imp_id']}});
+      config.setConfig({ 'ozone': { 'oz_whitelist_adserver_keys': ['oz_ozappnexus_pb', 'oz_ozappnexus_imp_id'] } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.ext.ozone.oz_kvp_rw).to.equal(1);
       config.resetConfig();
     });
     it('should indicate that the whitelist was not used when it contains no data', function () {
-      config.setConfig({'ozone': {'oz_whitelist_adserver_keys': []}});
+      config.setConfig({ 'ozone': { 'oz_whitelist_adserver_keys': [] } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.ext.ozone.oz_kvp_rw).to.equal(0);
@@ -2321,7 +2321,7 @@ describe('ozone Adapter', function () {
       expect(payload.ext.ozone.oz_kvp_rw).to.equal(0);
     });
     it('should handle ortb2 site data', function () {
-      config.setConfig({'ortb2': {
+      config.setConfig({ 'ortb2': {
         'site': {
           'name': 'example_ortb2_name',
           'domain': 'page.example.com',
@@ -2333,7 +2333,7 @@ describe('ozone Adapter', function () {
           'keywords': 'power tools, drills',
           'search': 'drill'
         }
-      }});
+      } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].ext.ozone.customData[0].targeting.name).to.equal('example_ortb2_name');
@@ -2341,7 +2341,7 @@ describe('ozone Adapter', function () {
       config.resetConfig();
     });
     it('should add ortb2 site data when there is no customData already created', function () {
-      config.setConfig({'ortb2': {
+      config.setConfig({ 'ortb2': {
         'site': {
           'name': 'example_ortb2_name',
           'domain': 'page.example.com',
@@ -2353,7 +2353,7 @@ describe('ozone Adapter', function () {
           'keywords': 'power tools, drills',
           'search': 'drill'
         }
-      }});
+      } });
       const request = spec.buildRequests(validBidRequestsNoCustomData, validBidderRequest.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].ext.ozone.customData[0].targeting.name).to.equal('example_ortb2_name');
@@ -2361,25 +2361,25 @@ describe('ozone Adapter', function () {
       config.resetConfig();
     });
     it('should add ortb2 user data to the user object', function () {
-      config.setConfig({'ortb2': {
+      config.setConfig({ 'ortb2': {
         'user': {
           'gender': 'who knows these days'
         }
-      }});
+      } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.user.gender).to.equal('who knows these days');
       config.resetConfig();
     });
     it('should not override the user.ext.consent string even if this is set in config ortb2', function () {
-      config.setConfig({'ortb2': {
+      config.setConfig({ 'ortb2': {
         'user': {
           'ext': {
             'consent': 'this is the consent override that shouldnt work',
             'consent2': 'this should be set'
           }
         }
-      }});
+      } });
       const request = spec.buildRequests(validBidRequests, bidderRequestWithFullGdpr.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.user.ext.consent2).to.equal('this should be set');
@@ -2395,7 +2395,7 @@ describe('ozone Adapter', function () {
       for (let i = 0; i < keys.length; i++) {
         expect(allowed).to.include(keys[i]);
       }
-      expect(payload.imp[0].video.ext).to.include({'context': 'outstream'});
+      expect(payload.imp[0].video.ext).to.include({ 'context': 'outstream' });
     });
     it('should handle standard floor config correctly', function () {
       config.setConfig({
@@ -2417,7 +2417,7 @@ describe('ozone Adapter', function () {
         }
       });
       let localBidRequest = JSON.parse(JSON.stringify(validBidRequestsWithBannerMediaType));
-      localBidRequest[0].getFloor = function(x) { return {'currency': 'USD', 'floor': 0.8} };
+      localBidRequest[0].getFloor = function(x) { return { 'currency': 'USD', 'floor': 0.8 } };
       const request = spec.buildRequests(localBidRequest, validBidderRequest.bidderRequest);
       const payload = JSON.parse(request.data);
       expect(utils.deepAccess(payload, 'imp.0.floor.banner.currency')).to.equal('USD');
@@ -2444,7 +2444,7 @@ describe('ozone Adapter', function () {
 
     it('should build bid array with gdpr', function () {
       let validBR = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr.bidderRequest));
-      validBR.gdprConsent = {'gdprApplies': 1, 'consentString': 'This is the gdpr consent string'};
+      validBR.gdprConsent = { 'gdprApplies': 1, 'consentString': 'This is the gdpr consent string' };
       const request = spec.buildRequests(validBidRequests, validBR); // works the old way, with GDPR not enforced by default
       const result = spec.interpretResponse(validResponse, request);
       expect(result.length).to.equal(1);
@@ -2459,7 +2459,7 @@ describe('ozone Adapter', function () {
 
     it('should build bid array with only partial gdpr', function () {
       var validBidderRequestWithGdpr = bidderRequestWithPartialGdpr.bidderRequest;
-      validBidderRequestWithGdpr.gdprConsent = {'gdprApplies': 1, 'consentString': 'This is the gdpr consent string'};
+      validBidderRequestWithGdpr.gdprConsent = { 'gdprApplies': 1, 'consentString': 'This is the gdpr consent string' };
       const request = spec.buildRequests(validBidRequests, validBidderRequestWithGdpr);
       const payload = JSON.parse(request.data);
       expect(payload.user.ext.consent).to.be.a('string');
@@ -2472,7 +2472,7 @@ describe('ozone Adapter', function () {
     });
 
     it('should fail ok if seatbid is not an array', function () {
-      const result = spec.interpretResponse({'body': {'seatbid': 'nothing_here'}}, {});
+      const result = spec.interpretResponse({ 'body': { 'seatbid': 'nothing_here' } }, {});
       expect(result).to.be.an('array');
       expect(result).to.be.empty;
     });
@@ -2508,14 +2508,14 @@ describe('ozone Adapter', function () {
     });
 
     it('should handle oz_omp_floor_dollars correctly, inserting 1 as necessary', function () {
-      config.setConfig({'ozone': {'oz_omp_floor': 0.01}});
+      config.setConfig({ 'ozone': { 'oz_omp_floor': 0.01 } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.interpretResponse(validResponse, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_omp')).to.equal('1');
       config.resetConfig();
     });
     it('should handle oz_omp_floor_dollars correctly, inserting 0 as necessary', function () {
-      config.setConfig({'ozone': {'oz_omp_floor': 2.50}});
+      config.setConfig({ 'ozone': { 'oz_omp_floor': 2.50 } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.interpretResponse(validResponse, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_omp')).to.equal('0');
@@ -2529,7 +2529,7 @@ describe('ozone Adapter', function () {
     it('should handle ext.bidder.ozone.floor correctly, setting flr & rid as necessary', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       let vres = JSON.parse(JSON.stringify(validResponse));
-      vres.body.seatbid[0].bid[0].ext.bidder.ozone = {floor: 1, ruleId: 'ZjbsYE1q'};
+      vres.body.seatbid[0].bid[0].ext.bidder.ozone = { floor: 1, ruleId: 'ZjbsYE1q' };
       const result = spec.interpretResponse(vres, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_flr')).to.equal(1);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_rid')).to.equal('ZjbsYE1q');
@@ -2538,7 +2538,7 @@ describe('ozone Adapter', function () {
     it('should handle ext.bidder.ozone.floor correctly, inserting 0 as necessary', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       let vres = JSON.parse(JSON.stringify(validResponse));
-      vres.body.seatbid[0].bid[0].ext.bidder.ozone = {floor: 0, ruleId: 'ZjbXXE1q'};
+      vres.body.seatbid[0].bid[0].ext.bidder.ozone = { floor: 0, ruleId: 'ZjbXXE1q' };
       const result = spec.interpretResponse(vres, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_flr')).to.equal(0);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_rid')).to.equal('ZjbXXE1q');
@@ -2562,7 +2562,7 @@ describe('ozone Adapter', function () {
       config.resetConfig();
     });
     it('should handle a valid whitelist, removing items not on the list & leaving others', function () {
-      config.setConfig({'ozone': {'oz_whitelist_adserver_keys': ['oz_appnexus_crid', 'oz_appnexus_adId']}});
+      config.setConfig({ 'ozone': { 'oz_whitelist_adserver_keys': ['oz_appnexus_crid', 'oz_appnexus_adId'] } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.interpretResponse(validResponse, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_adv')).to.be.undefined;
@@ -2570,7 +2570,7 @@ describe('ozone Adapter', function () {
       config.resetConfig();
     });
     it('should ignore a whitelist if enhancedAdserverTargeting is false', function () {
-      config.setConfig({'ozone': {'oz_whitelist_adserver_keys': ['oz_appnexus_crid', 'oz_appnexus_imp_id'], 'enhancedAdserverTargeting': false}});
+      config.setConfig({ 'ozone': { 'oz_whitelist_adserver_keys': ['oz_appnexus_crid', 'oz_appnexus_imp_id'], 'enhancedAdserverTargeting': false } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.interpretResponse(validResponse, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_adv')).to.be.undefined;
@@ -2578,7 +2578,7 @@ describe('ozone Adapter', function () {
       config.resetConfig();
     });
     it('should correctly handle enhancedAdserverTargeting being false', function () {
-      config.setConfig({'ozone': {'enhancedAdserverTargeting': false}});
+      config.setConfig({ 'ozone': { 'enhancedAdserverTargeting': false } });
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.interpretResponse(validResponse, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_adv')).to.be.undefined;
@@ -2588,7 +2588,7 @@ describe('ozone Adapter', function () {
     it('should add flr into ads request if floor exists in the auction response', function () {
       const request = spec.buildRequests(validBidRequestsMulti, validBidderRequest.bidderRequest);
       let validres = JSON.parse(JSON.stringify(validResponse2Bids));
-      validres.body.seatbid[0].bid[0].ext.bidder.ozone = {'floor': 1};
+      validres.body.seatbid[0].bid[0].ext.bidder.ozone = { 'floor': 1 };
       const result = spec.interpretResponse(validres, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_flr')).to.equal(1);
       expect(utils.deepAccess(result[1].adserverTargeting, 'oz_appnexus_flr', '')).to.equal('');
@@ -2596,7 +2596,7 @@ describe('ozone Adapter', function () {
     it('should add rid into ads request if ruleId exists in the auction response', function () {
       const request = spec.buildRequests(validBidRequestsMulti, validBidderRequest.bidderRequest);
       let validres = JSON.parse(JSON.stringify(validResponse2Bids));
-      validres.body.seatbid[0].bid[0].ext.bidder.ozone = {'ruleId': 123};
+      validres.body.seatbid[0].bid[0].ext.bidder.ozone = { 'ruleId': 123 };
       const result = spec.interpretResponse(validres, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_rid')).to.equal(123);
       expect(utils.deepAccess(result[1].adserverTargeting, 'oz_appnexus_rid', '')).to.equal('');
@@ -2649,7 +2649,7 @@ describe('ozone Adapter', function () {
     it('should append the various values if they exist', function() {
       // get the cookie bag populated
       spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
-      const result = spec.getUserSyncs({iframeEnabled: true}, 'good server response', gdpr1);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, 'good server response', gdpr1);
       expect(result).to.be.an('array');
       expect(result[0].url).to.include('publisherId=9876abcd12-3');
       expect(result[0].url).to.include('siteId=1234567890');
@@ -2659,14 +2659,14 @@ describe('ozone Adapter', function () {
     it('should append ccpa (usp data)', function() {
       // get the cookie bag populated
       spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
-      const result = spec.getUserSyncs({iframeEnabled: true}, 'good server response', gdpr1, '1YYN');
+      const result = spec.getUserSyncs({ iframeEnabled: true }, 'good server response', gdpr1, '1YYN');
       expect(result).to.be.an('array');
       expect(result[0].url).to.include('usp_consent=1YYN');
     });
     it('should use "" if no usp is sent to cookieSync', function() {
       // get the cookie bag populated
       spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
-      const result = spec.getUserSyncs({iframeEnabled: true}, 'good server response', gdpr1);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, 'good server response', gdpr1);
       expect(result).to.be.an('array');
       expect(result[0].url).to.include('usp_consent=&');
     });
@@ -2674,54 +2674,54 @@ describe('ozone Adapter', function () {
 
   describe('video object utils', function () {
     it('should find width & height from video object', function () {
-      let obj = {'playerSize': [640, 480], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      let obj = { 'playerSize': [640, 480], 'mimes': ['video/mp4'], 'context': 'outstream' };
       const result = getWidthAndHeightFromVideoObject(obj);
       expect(result.w).to.equal(640);
       expect(result.h).to.equal(480);
     });
     it('should find null from bad video object', function () {
-      let obj = {'playerSize': [], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      let obj = { 'playerSize': [], 'mimes': ['video/mp4'], 'context': 'outstream' };
       const result = getWidthAndHeightFromVideoObject(obj);
       expect(result).to.be.null;
     });
     it('should find null from bad video object2', function () {
-      let obj = {'mimes': ['video/mp4'], 'context': 'outstream'};
+      let obj = { 'mimes': ['video/mp4'], 'context': 'outstream' };
       const result = getWidthAndHeightFromVideoObject(obj);
       expect(result).to.be.null;
     });
     it('should find null from bad video object3', function () {
-      let obj = {'playerSize': 'should be an array', 'mimes': ['video/mp4'], 'context': 'outstream'};
+      let obj = { 'playerSize': 'should be an array', 'mimes': ['video/mp4'], 'context': 'outstream' };
       const result = getWidthAndHeightFromVideoObject(obj);
       expect(result).to.be.null;
     });
     it('should find that player size is nested', function () {
-      let obj = {'playerSize': [[640, 480]], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      let obj = { 'playerSize': [[640, 480]], 'mimes': ['video/mp4'], 'context': 'outstream' };
       const result = getWidthAndHeightFromVideoObject(obj);
       expect(result.w).to.equal(640);
       expect(result.h).to.equal(480);
     });
     it('should fail if player size is 2 x nested', function () {
-      let obj = {'playerSize': [[[640, 480]]], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      let obj = { 'playerSize': [[[640, 480]]], 'mimes': ['video/mp4'], 'context': 'outstream' };
       const result = getWidthAndHeightFromVideoObject(obj);
       expect(result).to.be.null;
     });
     it('should find that player size is nested', function () {
-      let obj = {'playerSize': [[640, 480]], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      let obj = { 'playerSize': [[640, 480]], 'mimes': ['video/mp4'], 'context': 'outstream' };
       const result = playerSizeIsNestedArray(obj);
       expect(result).to.be.true;
     });
     it('should find null from bad video object', function () {
-      let obj = {'playerSize': [], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      let obj = { 'playerSize': [], 'mimes': ['video/mp4'], 'context': 'outstream' };
       const result = playerSizeIsNestedArray(obj);
       expect(result).to.be.null;
     });
     it('should find null from bad video object2', function () {
-      let obj = {'mimes': ['video/mp4'], 'context': 'outstream'};
+      let obj = { 'mimes': ['video/mp4'], 'context': 'outstream' };
       const result = playerSizeIsNestedArray(obj);
       expect(result).to.be.null;
     });
     it('should find null from bad video object3', function () {
-      let obj = {'playerSize': 'should be an array', 'mimes': ['video/mp4'], 'context': 'outstream'};
+      let obj = { 'playerSize': 'should be an array', 'mimes': ['video/mp4'], 'context': 'outstream' };
       const result = playerSizeIsNestedArray(obj);
       expect(result).to.be.null;
     });
@@ -2761,24 +2761,24 @@ describe('ozone Adapter', function () {
 
   describe('getGranularityObject', function() {
     it('should return an object as-is', function() {
-      const result = getGranularityObject('', {'name': 'mark'}, '', '');
+      const result = getGranularityObject('', { 'name': 'mark' }, '', '');
       expect(result.name).to.equal('mark');
     });
     it('should return an object as-is', function() {
-      const result = getGranularityObject('', false, 'custom', {'name': 'rupert'});
+      const result = getGranularityObject('', false, 'custom', { 'name': 'rupert' });
       expect(result.name).to.equal('rupert');
     });
   });
 
   describe('blockTheRequest', function() {
     it('should return true if oz_request is false', function() {
-      config.setConfig({'ozone': {'oz_request': false}});
+      config.setConfig({ 'ozone': { 'oz_request': false } });
       let result = spec.blockTheRequest(bidderRequestWithFullGdpr);
       expect(result).to.be.true;
       config.resetConfig();
     });
     it('should return false if oz_request is true', function() {
-      config.setConfig({'ozone': {'oz_request': true}});
+      config.setConfig({ 'ozone': { 'oz_request': true } });
       let result = spec.blockTheRequest(bidderRequestWithFullGdpr);
       expect(result).to.be.false;
       config.resetConfig();

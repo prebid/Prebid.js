@@ -6,7 +6,7 @@
  */
 
 import * as utils from '../src/utils.js'
-import {submodule} from '../src/hook.js'
+import { submodule } from '../src/hook.js'
 
 const MODULE_NAME = 'flocId';
 
@@ -102,7 +102,7 @@ export const flocIdSubmodule = {
         });
       };
 
-      return {callback: returnCallback};
+      return { callback: returnCallback };
     }
   }
 };

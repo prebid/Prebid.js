@@ -24,7 +24,7 @@ describe('HaloIdSystem', function () {
       const request = server.requests[0];
       expect(request.url).to.eq(`https://id.halo.ad.gt/api/v1/pbhid`);
       request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ haloId: 'testHaloId1' }));
-      expect(callbackSpy.lastCall.lastArg).to.deep.equal({haloId: 'testHaloId1'});
+      expect(callbackSpy.lastCall.lastArg).to.deep.equal({ haloId: 'testHaloId1' });
     });
 
     it('gets a cached haloid', function() {
@@ -36,7 +36,7 @@ describe('HaloIdSystem', function () {
       const callbackSpy = sinon.spy();
       const callback = haloIdSubmodule.getId(config).callback;
       callback(callbackSpy);
-      expect(callbackSpy.lastCall.lastArg).to.deep.equal({haloId: 'tstCachedHaloId1'});
+      expect(callbackSpy.lastCall.lastArg).to.deep.equal({ haloId: 'tstCachedHaloId1' });
     });
   });
 });

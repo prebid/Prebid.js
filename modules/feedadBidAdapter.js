@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
 
 /**
  * Version of the FeedAd bid adapter
@@ -247,7 +247,7 @@ function createTrackingParams(data, klass) {
   if (!BID_METADATA.hasOwnProperty(bidId)) {
     return null;
   }
-  const {referer, transactionId} = BID_METADATA[bidId];
+  const { referer, transactionId } = BID_METADATA[bidId];
   delete BID_METADATA[bidId];
   return {
     app_hybrid: false,

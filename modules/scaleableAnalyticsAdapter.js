@@ -74,7 +74,7 @@ const sendDataToServer = data => ajax(URL, () => {}, JSON.stringify(data));
 
 // Track auction initiated
 const onAuctionInit = args => {
-  const config = scaleableAnalytics.config || {options: {}};
+  const config = scaleableAnalytics.config || { options: {} };
 
   let adunitObj = {};
   let adunits = [];
@@ -114,7 +114,7 @@ const onAuctionInit = args => {
 
 // Handle all events besides requests and wins
 const onAuctionEnd = args => {
-  const config = scaleableAnalytics.config || {options: {}};
+  const config = scaleableAnalytics.config || { options: {} };
 
   let adunitObj = {};
   let adunits = [];
@@ -167,7 +167,7 @@ const onAuctionEnd = args => {
 
 // Bid Win Events occur after auction end
 const onBidWon = args => {
-  const config = scaleableAnalytics.config || {options: {}};
+  const config = scaleableAnalytics.config || { options: {} };
 
   const data = {
     event: 'win',

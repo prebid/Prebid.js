@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'pubProvidedId';
@@ -26,7 +26,7 @@ export const pubProvidedIdSubmodule = {
    * @returns {{pubProvidedId: array}} or undefined if value doesn't exists
    */
   decode(value) {
-    const res = value ? {pubProvidedId: value} : undefined;
+    const res = value ? { pubProvidedId: value } : undefined;
     utils.logInfo('PubProvidedId: Decoded value ' + JSON.stringify(res));
     return res;
   },
@@ -46,7 +46,7 @@ export const pubProvidedIdSubmodule = {
     if (typeof configParams.eidsFunction === 'function') {
       res = res.concat(configParams.eidsFunction());
     }
-    return {id: res};
+    return { id: res };
   }
 };
 

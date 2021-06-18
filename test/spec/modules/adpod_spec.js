@@ -34,7 +34,7 @@ describe('adpod.js', function () {
 
     const fakeStoreFn = function(bids, callback) {
       let payload = [];
-      bids.forEach(bid => payload.push({uuid: bid.customCacheKey}));
+      bids.forEach(bid => payload.push({ uuid: bid.customCacheKey }));
       callback(null, payload);
     };
 
@@ -545,7 +545,7 @@ describe('adpod.js', function () {
     it('should not add bid to auction when Prebid Cache detects an existing key', function () {
       storeStub.callsFake(function(bids, callback) {
         let payload = [];
-        bids.forEach(bid => payload.push({uuid: bid.customCacheKey}));
+        bids.forEach(bid => payload.push({ uuid: bid.customCacheKey }));
 
         // fake a duplicate bid response from PBC (sets an empty string for the uuid)
         payload[1].uuid = '';

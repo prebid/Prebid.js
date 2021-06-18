@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
@@ -159,7 +159,7 @@ function buildRequests(bidRequests, bidderRequest) {
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
-function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl}) {
+function _createServerRequest({ bidRequest, gdprConsent = {}, uspConsent, pageUrl }) {
   const ttxRequest = {};
   const params = bidRequest.params;
 
@@ -364,7 +364,7 @@ function _buildVideoORTB(bidRequest) {
 
   const video = {}
 
-  const {w, h} = _getSize(videoParams.playerSize[0]);
+  const { w, h } = _getSize(videoParams.playerSize[0]);
   video.w = w;
   video.h = h;
 
@@ -389,7 +389,7 @@ function _buildVideoORTB(bidRequest) {
 
   // bidfloors
   if (typeof bidRequest.getFloor === 'function') {
-    const bidfloors = _getBidFloors(bidRequest, {w: video.w, h: video.h}, VIDEO);
+    const bidfloors = _getBidFloors(bidRequest, { w: video.w, h: video.h }, VIDEO);
 
     if (bidfloors) {
       Object.assign(video, {

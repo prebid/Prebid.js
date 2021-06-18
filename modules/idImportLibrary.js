@@ -1,6 +1,6 @@
-import {getGlobal} from '../src/prebidGlobal.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 import MD5 from 'crypto-js/md5.js';
 
@@ -206,7 +206,7 @@ function postData() {
   syncPayload.uids = userIds;
   const payloadString = JSON.stringify(syncPayload);
   logInfo(payloadString);
-  ajax(conf.url, syncCallback(), payloadString, {method: 'POST', withCredentials: true});
+  ajax(conf.url, syncCallback(), payloadString, { method: 'POST', withCredentials: true });
 }
 
 function associateIds() {

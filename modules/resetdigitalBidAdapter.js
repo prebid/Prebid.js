@@ -1,8 +1,8 @@
 
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getOrigin} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getOrigin } from '../src/utils.js';
 const BIDDER_CODE = 'resetdigital';
 
 export const spec = {

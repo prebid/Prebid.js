@@ -140,7 +140,7 @@ import CONSTANTS from '../../src/constants.json';
 import { module, hook } from '../../src/hook.js';
 import { createEidsArray, buildEidPermissions } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
-import {getPrebidInternal} from '../../src/utils.js';
+import { getPrebidInternal } from '../../src/utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
 const MODULE_NAME = 'User ID';
@@ -594,7 +594,7 @@ function refreshUserIds(options, callback) {
     let consentData = gdprDataHandler.getConsentData()
 
     // gdpr consent with purpose one is required, otherwise exit immediately
-    let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
+    let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
     if (!hasValidated && !hasGDPRConsent(consentData)) {
       utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
       return;

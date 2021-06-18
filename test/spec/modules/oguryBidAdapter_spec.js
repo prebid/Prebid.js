@@ -59,7 +59,7 @@ describe('OguryBidAdapter', function () {
 
   bidderRequest = {
     auctionId: bidRequests[0].auctionId,
-    gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
+    gdprConsent: { consentString: 'myConsentString', vendorData: {}, gdprApplies: true },
   };
 
   describe('isBidRequestValid', function () {

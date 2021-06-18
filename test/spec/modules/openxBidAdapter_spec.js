@@ -1,9 +1,9 @@
-import {expect} from 'chai';
-import {spec, USER_ID_CODE_TO_QUERY_ARG} from 'modules/openxBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from 'src/mediaTypes.js';
-import {userSync} from 'src/userSync.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec, USER_ID_CODE_TO_QUERY_ARG } from 'modules/openxBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { userSync } from 'src/userSync.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 
 const URLBASE = '/w/1.0/arj';
@@ -136,7 +136,7 @@ describe('OpenxAdapter', function () {
           bidder: 'openx',
           params: {},
           adUnitCode: 'adunit-code',
-          mediaTypes: {banner: {}},
+          mediaTypes: { banner: {} },
           sizes: [[300, 250], [300, 600]],
           bidId: '30b31c1838de1e',
           bidderRequestId: '22edbae2733bf6',
@@ -145,13 +145,13 @@ describe('OpenxAdapter', function () {
       });
 
       it('should return false when there is no delivery domain', function () {
-        bannerBid.params = {'unit': '12345678'};
+        bannerBid.params = { 'unit': '12345678' };
         expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
       });
 
       describe('when there is a delivery domain', function () {
         beforeEach(function () {
-          bannerBid.params = {delDomain: 'test-delivery-domain'}
+          bannerBid.params = { delDomain: 'test-delivery-domain' }
         });
 
         it('should return false when there is no ad unit id and size', function () {
@@ -312,7 +312,7 @@ describe('OpenxAdapter', function () {
           transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
         };
 
-        let mockBidderRequest = {refererInfo: {}};
+        let mockBidderRequest = { refererInfo: {} };
 
         it('should return true when required params found', function () {
           expect(spec.isBidRequestValid(videoBidWithTest)).to.equal(true);
@@ -393,7 +393,7 @@ describe('OpenxAdapter', function () {
       'auctionId': 'test-auction-1'
     }];
 
-    const mockBidderRequest = {refererInfo: {}};
+    const mockBidderRequest = { refererInfo: {} };
 
     it('should send bid request to openx url via GET, with mediaTypes specified with banner type', function () {
       const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
@@ -536,7 +536,7 @@ describe('OpenxAdapter', function () {
           params: {
             'unit': '12345678',
             'delDomain': 'test-del-domain',
-            'customParams': {'Test1': 'testval1+', 'test2': ['testval2/', 'testval3']}
+            'customParams': { 'Test1': 'testval1+', 'test2': ['testval2/', 'testval3'] }
           }
         }
       );
@@ -1052,12 +1052,12 @@ describe('OpenxAdapter', function () {
         criteoId: '1111-criteoId',
         fabrickId: '1111-fabrickid',
         haloId: '1111-haloid',
-        id5id: {uid: '1111-id5id'},
+        id5id: { uid: '1111-id5id' },
         idl_env: '1111-idl_env',
         IDP: '1111-zeotap-idplusid',
         idxId: '1111-idxid',
         intentIqId: '1111-intentiqid',
-        lipb: {lipbid: '1111-lipb'},
+        lipb: { lipbid: '1111-lipb' },
         lotamePanoramaId: '1111-lotameid',
         merkleId: '1111-merkleid',
         netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
@@ -1066,7 +1066,7 @@ describe('OpenxAdapter', function () {
         quantcastId: '1111-quantcastid',
         tapadId: '111-tapadid',
         tdid: '1111-tdid',
-        uid2: {id: '1111-uid2'}
+        uid2: { id: '1111-uid2' }
       };
 
       // generates the same set of tests for each id provider
@@ -1250,7 +1250,7 @@ describe('OpenxAdapter', function () {
       'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e',
       'ortb2Imp': { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } }
     }];
-    const mockBidderRequest = {refererInfo: {}};
+    const mockBidderRequest = { refererInfo: {} };
 
     it('should send bid request to openx url via GET, with mediaTypes having video parameter', function () {
       const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
@@ -1281,7 +1281,7 @@ describe('OpenxAdapter', function () {
 
     describe('when using the video param', function () {
       let videoBidRequest;
-      let mockBidderRequest = {refererInfo: {}};
+      let mockBidderRequest = { refererInfo: {} };
 
       beforeEach(function () {
         videoBidRequest = {
@@ -1302,7 +1302,7 @@ describe('OpenxAdapter', function () {
           'auctionId': '1d1a030790a475',
           'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
         };
-        mockBidderRequest = {refererInfo: {}};
+        mockBidderRequest = { refererInfo: {} };
       });
 
       it('should not allow you to set a url', function () {
@@ -1326,60 +1326,60 @@ describe('OpenxAdapter', function () {
 
       describe('when using the openrtb video params', function () {
         it('should parse legacy params.video.openrtb', function () {
-          let myOpenRTBObject = {mimes: ['application/javascript']};
+          let myOpenRTBObject = { mimes: ['application/javascript'] };
           videoBidRequest.params.video = {
             openrtb: myOpenRTBObject
           };
-          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const expected = { imp: [{ video: { w: 640, h: 480, mimes: ['application/javascript'] } }] }
           const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
 
           expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
         });
 
         it('should parse legacy params.openrtb', function () {
-          let myOpenRTBObject = {mimes: ['application/javascript']};
+          let myOpenRTBObject = { mimes: ['application/javascript'] };
           videoBidRequest.params.openrtb = myOpenRTBObject;
-          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const expected = { imp: [{ video: { w: 640, h: 480, mimes: ['application/javascript'] } }] }
           const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
 
           expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
         });
 
         it('should parse legacy params.video', function () {
-          let myOpenRTBObject = {mimes: ['application/javascript']};
+          let myOpenRTBObject = { mimes: ['application/javascript'] };
           videoBidRequest.params.video = myOpenRTBObject;
-          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const expected = { imp: [{ video: { w: 640, h: 480, mimes: ['application/javascript'] } }] }
           const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
 
           expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
         });
 
         it('should parse legacy params.video as full openrtb', function () {
-          let myOpenRTBObject = {imp: [{video: {mimes: ['application/javascript']}}]};
+          let myOpenRTBObject = { imp: [{ video: { mimes: ['application/javascript'] } }] };
           videoBidRequest.params.video = myOpenRTBObject;
-          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const expected = { imp: [{ video: { w: 640, h: 480, mimes: ['application/javascript'] } }] }
           const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
 
           expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
         });
 
         it('should parse legacy video.openrtb', function () {
-          let myOpenRTBObject = {mimes: ['application/javascript']};
+          let myOpenRTBObject = { mimes: ['application/javascript'] };
           videoBidRequest.params.video = {
             openrtb: myOpenRTBObject
           };
-          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const expected = { imp: [{ video: { w: 640, h: 480, mimes: ['application/javascript'] } }] }
           const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
 
           expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
         });
 
         it('should omit filtered values for legacy', function () {
-          let myOpenRTBObject = {mimes: ['application/javascript'], dont: 'use'};
+          let myOpenRTBObject = { mimes: ['application/javascript'], dont: 'use' };
           videoBidRequest.params.video = {
             openrtb: myOpenRTBObject
           };
-          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const expected = { imp: [{ video: { w: 640, h: 480, mimes: ['application/javascript'] } }] }
           const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
 
           expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
@@ -1406,7 +1406,7 @@ describe('OpenxAdapter', function () {
         it("should use the bidRequest's playerSize", function () {
           const width = 200;
           const height = 100;
-          const myOpenRTBObject = {v: height, w: width};
+          const myOpenRTBObject = { v: height, w: width };
           videoBidRequest.params.video = {
             openrtb: myOpenRTBObject
           };
@@ -1522,7 +1522,7 @@ describe('OpenxAdapter', function () {
       auctionId: '1d1a030790a475',
       transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
     };
-    let mockBidderRequest = {refererInfo: {}};
+    let mockBidderRequest = { refererInfo: {} };
 
     it('should default to a banner request', function () {
       const request = spec.buildRequests([multiformatBid], mockBidderRequest);
@@ -1584,12 +1584,12 @@ describe('OpenxAdapter', function () {
           method: 'GET',
           url: 'https://openx-d.openx.net/v/1.0/arj',
           data: {},
-          payload: {'bids': bidRequestConfigs, 'startTime': new Date()}
+          payload: { 'bids': bidRequestConfigs, 'startTime': new Date() }
         };
 
         adUnit = mockAdUnit(adUnitOverride, creativeOverride);
         bidResponse = mockArjResponse(undefined, [adUnit]);
-        bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
+        bid = spec.interpretResponse({ body: bidResponse }, bidRequest)[0];
       });
 
       it('should return a price', function () {
@@ -1672,11 +1672,11 @@ describe('OpenxAdapter', function () {
           method: 'GET',
           url: 'https://openx-d.openx.net/v/1.0/arj',
           data: {},
-          payload: {'bids': bidRequestConfigs, 'startTime': new Date()}
+          payload: { 'bids': bidRequestConfigs, 'startTime': new Date() }
         };
         adUnit = mockAdUnit(adUnitOverride);
         bidResponse = mockArjResponse(null, [adUnit]);
-        bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
+        bid = spec.interpretResponse({ body: bidResponse }, bidRequest)[0];
         mockArjResponse();
       });
 
@@ -1708,7 +1708,7 @@ describe('OpenxAdapter', function () {
           method: 'GET',
           url: 'https://openx-d.openx.net/v/1.0/arj',
           data: {},
-          payload: {'bids': bidRequestConfigs, 'startTime': new Date()}
+          payload: { 'bids': bidRequestConfigs, 'startTime': new Date() }
         };
       });
 
@@ -1723,7 +1723,7 @@ describe('OpenxAdapter', function () {
             }
         };
 
-        const result = spec.interpretResponse({body: bidResponse}, bidRequest);
+        const result = spec.interpretResponse({ body: bidResponse }, bidRequest);
         expect(result.length).to.equal(0);
       });
     });
@@ -1779,7 +1779,7 @@ describe('OpenxAdapter', function () {
         method: 'GET',
         url: 'https://openx-d.openx.net/v/1.0/arj',
         data: {},
-        payload: {'bids': bidRequests, 'startTime': new Date()}
+        payload: { 'bids': bidRequests, 'startTime': new Date() }
       };
 
       let outOfOrderAdunits = [
@@ -1806,7 +1806,7 @@ describe('OpenxAdapter', function () {
       let bidResponse = mockArjResponse(undefined, outOfOrderAdunits);
 
       it('should return map adunits back to the proper request', function () {
-        const bids = spec.interpretResponse({body: bidResponse}, bidRequest);
+        const bids = spec.interpretResponse({ body: bidResponse }, bidRequest);
         expect(bids[0].requestId).to.equal(bidRequests[1].bidId);
         expect(bids[0].width).to.equal(bidRequests[1].mediaTypes.banner.sizes[0][0]);
         expect(bids[0].height).to.equal(bidRequests[1].mediaTypes.banner.sizes[0][1]);
@@ -1831,7 +1831,7 @@ describe('OpenxAdapter', function () {
 
     const bidsWithMediaTypes = [{
       'bidder': 'openx',
-      'mediaTypes': {video: {}},
+      'mediaTypes': { video: {} },
       'params': {
         'unit': '12345678',
         'delDomain': 'test-del-domain'
@@ -1861,13 +1861,13 @@ describe('OpenxAdapter', function () {
       method: 'GET',
       url: 'https://openx-d.openx.net/v/1.0/avjp',
       data: {},
-      payload: {'bid': bidsWithMediaTypes[0], 'startTime': new Date()}
+      payload: { 'bid': bidsWithMediaTypes[0], 'startTime': new Date() }
     };
     const bidRequestsWithMediaType = {
       method: 'GET',
       url: 'https://openx-d.openx.net/v/1.0/avjp',
       data: {},
-      payload: {'bid': bidsWithMediaType[0], 'startTime': new Date()}
+      payload: { 'bid': bidsWithMediaType[0], 'startTime': new Date() }
     };
     const bidResponse = {
       'pub_rev': '1000',
@@ -1893,7 +1893,7 @@ describe('OpenxAdapter', function () {
         'currency': 'AUD'
       };
 
-      const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
+      const result = spec.interpretResponse({ body: bidResponse }, bidRequestsWithMediaTypes);
       expect(result[0]).to.eql(expectedResponse);
     });
 
@@ -1913,26 +1913,26 @@ describe('OpenxAdapter', function () {
         }
       ];
 
-      const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaType);
+      const result = spec.interpretResponse({ body: bidResponse }, bidRequestsWithMediaType);
       expect(JSON.stringify(Object.keys(result[0]).sort())).to.eql(JSON.stringify(Object.keys(expectedResponse[0]).sort()));
     });
 
     it('should return correct bid response with MediaType and deal_id', function () {
       const bidResponseOverride = { 'deal_id': 'OX-mydeal' };
       const bidResponseWithDealId = Object.assign({}, bidResponse, bidResponseOverride);
-      const result = spec.interpretResponse({body: bidResponseWithDealId}, bidRequestsWithMediaType);
+      const result = spec.interpretResponse({ body: bidResponseWithDealId }, bidRequestsWithMediaType);
       expect(result[0].dealId).to.equal(bidResponseOverride.deal_id);
     });
 
     it('should handle nobid responses for bidRequests with MediaTypes', function () {
-      const bidResponse = {'vastUrl': '', 'pub_rev': '', 'width': '', 'height': '', 'adid': '', 'pixels': ''};
-      const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
+      const bidResponse = { 'vastUrl': '', 'pub_rev': '', 'width': '', 'height': '', 'adid': '', 'pixels': '' };
+      const result = spec.interpretResponse({ body: bidResponse }, bidRequestsWithMediaTypes);
       expect(result.length).to.equal(0);
     });
 
     it('should handle nobid responses for bidRequests with MediaType', function () {
-      const bidResponse = {'vastUrl': '', 'pub_rev': '', 'width': '', 'height': '', 'adid': '', 'pixels': ''};
-      const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaType);
+      const bidResponse = { 'vastUrl': '', 'pub_rev': '', 'width': '', 'height': '', 'adid': '', 'pixels': '' };
+      const result = spec.interpretResponse({ body: bidResponse }, bidRequestsWithMediaType);
       expect(result.length).to.equal(0);
     });
   });
@@ -1943,61 +1943,61 @@ describe('OpenxAdapter', function () {
     describe('iframe sync', function () {
       it('should register the pixel iframe from banner ad response', function () {
         let syncs = spec.getUserSyncs(
-          {iframeEnabled: true},
-          [{body: {ads: {pixels: syncUrl}}}]
+          { iframeEnabled: true },
+          [{ body: { ads: { pixels: syncUrl } } }]
         );
-        expect(syncs).to.deep.equal([{type: 'iframe', url: syncUrl}]);
+        expect(syncs).to.deep.equal([{ type: 'iframe', url: syncUrl }]);
       });
 
       it('should register the pixel iframe from video ad response', function () {
         let syncs = spec.getUserSyncs(
-          {iframeEnabled: true},
-          [{body: {pixels: syncUrl}}]
+          { iframeEnabled: true },
+          [{ body: { pixels: syncUrl } }]
         );
-        expect(syncs).to.deep.equal([{type: 'iframe', url: syncUrl}]);
+        expect(syncs).to.deep.equal([{ type: 'iframe', url: syncUrl }]);
       });
 
       it('should register the default iframe if no pixels available', function () {
         let syncs = spec.getUserSyncs(
-          {iframeEnabled: true},
+          { iframeEnabled: true },
           []
         );
-        expect(syncs).to.deep.equal([{type: 'iframe', url: 'https://u.openx.net/w/1.0/pd'}]);
+        expect(syncs).to.deep.equal([{ type: 'iframe', url: 'https://u.openx.net/w/1.0/pd' }]);
       });
     });
 
     describe('pixel sync', function () {
       it('should register the image pixel from banner ad response', function () {
         let syncs = spec.getUserSyncs(
-          {pixelEnabled: true},
-          [{body: {ads: {pixels: syncUrl}}}]
+          { pixelEnabled: true },
+          [{ body: { ads: { pixels: syncUrl } } }]
         );
-        expect(syncs).to.deep.equal([{type: 'image', url: syncUrl}]);
+        expect(syncs).to.deep.equal([{ type: 'image', url: syncUrl }]);
       });
 
       it('should register the image pixel from video ad response', function () {
         let syncs = spec.getUserSyncs(
-          {pixelEnabled: true},
-          [{body: {pixels: syncUrl}}]
+          { pixelEnabled: true },
+          [{ body: { pixels: syncUrl } }]
         );
-        expect(syncs).to.deep.equal([{type: 'image', url: syncUrl}]);
+        expect(syncs).to.deep.equal([{ type: 'image', url: syncUrl }]);
       });
 
       it('should register the default image pixel if no pixels available', function () {
         let syncs = spec.getUserSyncs(
-          {pixelEnabled: true},
+          { pixelEnabled: true },
           []
         );
-        expect(syncs).to.deep.equal([{type: 'image', url: 'https://u.openx.net/w/1.0/pd'}]);
+        expect(syncs).to.deep.equal([{ type: 'image', url: 'https://u.openx.net/w/1.0/pd' }]);
       });
     });
 
     it('should prioritize iframe over image for user sync', function () {
       let syncs = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
-        [{body: {ads: {pixels: syncUrl}}}]
+        { iframeEnabled: true, pixelEnabled: true },
+        [{ body: { ads: { pixels: syncUrl } } }]
       );
-      expect(syncs).to.deep.equal([{type: 'iframe', url: syncUrl}]);
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: syncUrl }]);
     });
 
     describe('when gdpr applies', function () {
@@ -2013,9 +2013,9 @@ describe('OpenxAdapter', function () {
       });
 
       it('when there is a response, it should have the gdpr query params', () => {
-        let [{url}] = spec.getUserSyncs(
-          {iframeEnabled: true, pixelEnabled: true},
-          [{body: {ads: {pixels: gdprPixelUrl}}}],
+        let [{ url }] = spec.getUserSyncs(
+          { iframeEnabled: true, pixelEnabled: true },
+          [{ body: { ads: { pixels: gdprPixelUrl } } }],
           gdprConsent
         );
 
@@ -2024,8 +2024,8 @@ describe('OpenxAdapter', function () {
       });
 
       it('when there is no response, it should append gdpr query params', () => {
-        let [{url}] = spec.getUserSyncs(
-          {iframeEnabled: true, pixelEnabled: true},
+        let [{ url }] = spec.getUserSyncs(
+          { iframeEnabled: true, pixelEnabled: true },
           [],
           gdprConsent
         );
@@ -2034,8 +2034,8 @@ describe('OpenxAdapter', function () {
       });
 
       it('should not send signals if no consent object is available', function () {
-        let [{url}] = spec.getUserSyncs(
-          {iframeEnabled: true, pixelEnabled: true},
+        let [{ url }] = spec.getUserSyncs(
+          { iframeEnabled: true, pixelEnabled: true },
           [],
         );
         expect(url).to.not.have.string('gdpr_consent=');
@@ -2051,9 +2051,9 @@ describe('OpenxAdapter', function () {
         uspPixelUrl = 'https://testpixels.net?us_privacy=AAAA'
       });
       it('when there is a response, it should send the us privacy string from the response, ', () => {
-        let [{url}] = spec.getUserSyncs(
-          {iframeEnabled: true, pixelEnabled: true},
-          [{body: {ads: {pixels: uspPixelUrl}}}],
+        let [{ url }] = spec.getUserSyncs(
+          { iframeEnabled: true, pixelEnabled: true },
+          [{ body: { ads: { pixels: uspPixelUrl } } }],
           undefined,
           usPrivacyConsent
         );
@@ -2061,8 +2061,8 @@ describe('OpenxAdapter', function () {
         expect(url).to.have.string('us_privacy=AAAA');
       });
       it('when there is no response, it send have the us privacy string', () => {
-        let [{url}] = spec.getUserSyncs(
-          {iframeEnabled: true, pixelEnabled: true},
+        let [{ url }] = spec.getUserSyncs(
+          { iframeEnabled: true, pixelEnabled: true },
           [],
           undefined,
           usPrivacyConsent
@@ -2071,8 +2071,8 @@ describe('OpenxAdapter', function () {
       });
 
       it('should not send signals if no consent string is available', function () {
-        let [{url}] = spec.getUserSyncs(
-          {iframeEnabled: true, pixelEnabled: true},
+        let [{ url }] = spec.getUserSyncs(
+          { iframeEnabled: true, pixelEnabled: true },
           [],
         );
         expect(url).to.not.have.string('us_privacy=');

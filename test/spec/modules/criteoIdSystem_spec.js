@@ -33,7 +33,7 @@ describe('CriteoId module', function () {
     removeFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
     ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse('{}'));
-    parseUrlStub = sinon.stub(utils, 'parseUrl').returns({protocol: 'https', hostname: 'testdev.com'})
+    parseUrlStub = sinon.stub(utils, 'parseUrl').returns({ protocol: 'https', hostname: 'testdev.com' })
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     done();
   });
@@ -62,7 +62,7 @@ describe('CriteoId module', function () {
     getLocalStorageStub.withArgs('cto_bidid').returns(testCase.localStorage);
 
     const id = criteoIdSubmodule.getId();
-    expect(id).to.be.deep.equal({id: testCase.expected ? { criteoId: testCase.expected } : undefined});
+    expect(id).to.be.deep.equal({ id: testCase.expected ? { criteoId: testCase.expected } : undefined });
   }))
 
   it('decode() should return the bidId when it exists in local storages', function () {

@@ -1,9 +1,9 @@
 import adapter from '../src/AnalyticsAdapter.js'
 import adaptermanager from '../src/adapterManager.js'
 import CONSTANTS from '../src/constants.json'
-import {ajaxBuilder} from '../src/ajax.js'
+import { ajaxBuilder } from '../src/ajax.js'
 import * as utils from '../src/utils.js'
-import {config} from '../src/config.js'
+import { config } from '../src/config.js'
 import find from 'core-js-pure/features/array/find.js'
 import includes from 'core-js-pure/features/array/includes.js'
 
@@ -44,7 +44,7 @@ const getClosestTop = () => {
   };
 };
 
-const getBestPageUrl = ({err: crossDomainError, topFrame}) => {
+const getBestPageUrl = ({ err: crossDomainError, topFrame }) => {
   let sBestPageUrl = '';
 
   if (!crossDomainError) {
@@ -67,7 +67,7 @@ const getBestPageUrl = ({err: crossDomainError, topFrame}) => {
 };
 const rootURL = getBestPageUrl(getClosestTop())
 
-let sovrnAnalyticsAdapter = Object.assign(adapter({url: pbaUrl, analyticsType}), {
+let sovrnAnalyticsAdapter = Object.assign(adapter({ url: pbaUrl, analyticsType }), {
   track({ eventType, args }) {
     try {
       if (eventType === BID_WON) {
@@ -95,7 +95,7 @@ let sovrnAnalyticsAdapter = Object.assign(adapter({url: pbaUrl, analyticsType}),
           break
       }
     } catch (e) {
-      new LogError(e, this.sovrnId, {eventType, args}).send()
+      new LogError(e, this.sovrnId, { eventType, args }).send()
     }
   },
 })
@@ -260,7 +260,7 @@ class AuctionData {
     let maxBids = {}
     this.auction.requests.forEach(request => {
       request.bids.forEach(bid => {
-        maxBids[bid.adUnitCode] = maxBids[bid.adUnitCode] || {cpm: 0}
+        maxBids[bid.adUnitCode] = maxBids[bid.adUnitCode] || { cpm: 0 }
         if (bid.cpm > maxBids[bid.adUnitCode].cpm) {
           maxBids[bid.adUnitCode] = bid
         }
@@ -273,7 +273,7 @@ class AuctionData {
     ajax(
       pbaUrl,
       () => {
-        currentAuctions[this.auction.auctionId] = {status: 'complete', auctionId: this.auction.auctionId}
+        currentAuctions[this.auction.auctionId] = { status: 'complete', auctionId: this.auction.auctionId }
       },
       JSON.stringify(this.auction),
       {

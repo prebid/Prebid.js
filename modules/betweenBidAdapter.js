@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
@@ -75,7 +75,7 @@ export const spec = {
         }
       }
 
-      requests.push({data: params})
+      requests.push({ data: params })
     })
     return {
       method: 'POST',

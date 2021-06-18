@@ -46,7 +46,7 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   };
 
   if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
-    const sizes = utils.getAdUnitSizes(bidRequest).map((size) => ({w: size[0], h: size[1]}));
+    const sizes = utils.getAdUnitSizes(bidRequest).map((size) => ({ w: size[0], h: size[1] }));
     request.imp[0].banner = {
       w: sizes[0].w,
       h: sizes[0].h,

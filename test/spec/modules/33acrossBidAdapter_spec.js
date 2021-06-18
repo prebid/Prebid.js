@@ -536,7 +536,7 @@ describe('33acrossBidAdapter:', function () {
       it('returns false when video startdelay is invalid for instream context', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'instream', protocols: [1, 2], mimes: ['foo', 'bar']})
+            .withVideo({ context: 'instream', protocols: [1, 2], mimes: ['foo', 'bar'] })
             .build()
         );
 
@@ -556,7 +556,7 @@ describe('33acrossBidAdapter:', function () {
       it('returns true when video startdelay is invalid for outstream context', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'outstream', protocols: [1, 2], mimes: ['foo', 'bar']})
+            .withVideo({ context: 'outstream', protocols: [1, 2], mimes: ['foo', 'bar'] })
             .build()
         );
 
@@ -581,7 +581,7 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
-          .withViewability({amount: 100})
+          .withViewability({ amount: 100 })
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -599,7 +599,7 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
-          .withViewability({amount: 0})
+          .withViewability({ amount: 0 })
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -617,7 +617,7 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
-          .withViewability({amount: 75})
+          .withViewability({ amount: 75 })
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -636,7 +636,7 @@ describe('33acrossBidAdapter:', function () {
           .withBanner()
           .withProduct()
           .withSizes([{ w: 800, h: 2400 }])
-          .withViewability({amount: 25})
+          .withViewability({ amount: 25 })
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -655,7 +655,7 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
-          .withViewability({amount: spec.NON_MEASURABLE})
+          .withViewability({ amount: spec.NON_MEASURABLE })
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -678,7 +678,7 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
-          .withViewability({amount: 0})
+          .withViewability({ amount: 0 })
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -1017,7 +1017,7 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('sets bidfloors in ttxRequest if there is a floor', function() {
-        bidRequests[0].getFloor = ({size, currency, mediaType}) => {
+        bidRequests[0].getFloor = ({ size, currency, mediaType }) => {
           const floor = (size[0] === 300 && size[1] === 250) ? 1.0 : 0.10
           return (
             {
@@ -1046,7 +1046,7 @@ describe('33acrossBidAdapter:', function () {
       it('builds instream request with default params', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'instream'})
+            .withVideo({ context: 'instream' })
             .build()
         );
 
@@ -1069,12 +1069,12 @@ describe('33acrossBidAdapter:', function () {
       it('builds instream request with params passed', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'instream', startdelay: -2})
+            .withVideo({ context: 'instream', startdelay: -2 })
             .build()
         );
 
         const ttxRequest = new TtxRequestBuilder()
-          .withVideo({startdelay: -2, placement: 1})
+          .withVideo({ startdelay: -2, placement: 1 })
           .withProduct('instream')
           .build();
 
@@ -1088,7 +1088,7 @@ describe('33acrossBidAdapter:', function () {
       it('builds siab request with video only with default params', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'outstream'})
+            .withVideo({ context: 'outstream' })
             .build()
         );
 
@@ -1110,12 +1110,12 @@ describe('33acrossBidAdapter:', function () {
       it('builds siab request with video params passed', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'outstream', placement: 3, playbackmethod: [2]})
+            .withVideo({ context: 'outstream', placement: 3, playbackmethod: [2] })
             .build()
         );
 
         const ttxRequest = new TtxRequestBuilder()
-          .withVideo({placement: 3, playbackmethod: [2]})
+          .withVideo({ placement: 3, playbackmethod: [2] })
           .withProduct('siab')
           .build();
 
@@ -1176,7 +1176,7 @@ describe('33acrossBidAdapter:', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withBanner()
-            .withVideo({context: 'outstream'})
+            .withVideo({ context: 'outstream' })
             .build()
         );
 
@@ -1198,7 +1198,7 @@ describe('33acrossBidAdapter:', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withBanner()
-            .withVideo({context: 'instream'})
+            .withVideo({ context: 'instream' })
             .build()
         );
 
@@ -1223,7 +1223,7 @@ describe('33acrossBidAdapter:', function () {
       it('does not set any bidfloors in video if there is no floor', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'outstream'})
+            .withVideo({ context: 'outstream' })
             .build()
         );
 
@@ -1242,11 +1242,11 @@ describe('33acrossBidAdapter:', function () {
       it('sets bidfloors in video if there is a floor', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'outstream'})
+            .withVideo({ context: 'outstream' })
             .build()
         );
 
-        bidRequests[0].getFloor = ({size, currency, mediaType}) => {
+        bidRequests[0].getFloor = ({ size, currency, mediaType }) => {
           const floor = (mediaType === 'video') ? 1.0 : 0.10
           return (
             {
@@ -1334,7 +1334,7 @@ describe('33acrossBidAdapter:', function () {
         const eidsScenarios = [
           'foo',
           [],
-          {foo: 1}
+          { foo: 1 }
         ];
 
         eidsScenarios.forEach((eids) => {
@@ -1696,7 +1696,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns sync urls with undefined consent string as param and gdpr=1', function() {
           spec.buildRequests(bidRequests);
 
-          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: true});
+          const syncResults = spec.getUserSyncs(syncOptions, {}, { gdprApplies: true });
           const expectedSyncs = [
             {
               type: 'iframe',
@@ -1716,7 +1716,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns sync urls with gdpr_consent=consent string as param and gdpr=1', function() {
           spec.buildRequests(bidRequests);
 
-          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: true, consentString: 'consent123A'});
+          const syncResults = spec.getUserSyncs(syncOptions, {}, { gdprApplies: true, consentString: 'consent123A' });
           const expectedSyncs = [
             {
               type: 'iframe',
@@ -1736,7 +1736,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns sync urls with undefined consent string as param and gdpr=0', function() {
           spec.buildRequests(bidRequests);
 
-          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: false});
+          const syncResults = spec.getUserSyncs(syncOptions, {}, { gdprApplies: false });
           const expectedSyncs = [
             {
               type: 'iframe',
@@ -1755,7 +1755,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns sync urls with only consent string as param', function() {
           spec.buildRequests(bidRequests);
 
-          const syncResults = spec.getUserSyncs(syncOptions, {}, {consentString: 'consent123A'});
+          const syncResults = spec.getUserSyncs(syncOptions, {}, { consentString: 'consent123A' });
           const expectedSyncs = [
             {
               type: 'iframe',
@@ -1774,7 +1774,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns sync urls with consent string as param and gdpr=0', function() {
           spec.buildRequests(bidRequests);
 
-          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: false, consentString: 'consent123A'});
+          const syncResults = spec.getUserSyncs(syncOptions, {}, { gdprApplies: false, consentString: 'consent123A' });
           const expectedSyncs = [
             {
               type: 'iframe',

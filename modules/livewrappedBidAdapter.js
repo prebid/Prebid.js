@@ -154,11 +154,11 @@ export const spec = {
 
     userSync.forEach(function(sync) {
       if (syncOptions.pixelEnabled && sync.type == 'Redirect') {
-        syncList.push({type: 'image', url: sync.url});
+        syncList.push({ type: 'image', url: sync.url });
       }
 
       if (syncOptions.iframeEnabled && sync.type == 'Iframe') {
-        syncList.push({type: 'iframe', url: sync.url});
+        syncList.push({ type: 'iframe', url: sync.url });
       }
     });
 
@@ -264,7 +264,7 @@ function getAdblockerRecovered() {
 function handleEids(bidRequests) {
   const bidRequest = bidRequests[0];
   if (bidRequest && bidRequest.userIdAsEids) {
-    return {user: {ext: {eids: bidRequest.userIdAsEids}}};
+    return { user: { ext: { eids: bidRequest.userIdAsEids } } };
   }
 
   return undefined;

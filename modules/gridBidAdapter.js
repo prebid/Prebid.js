@@ -54,7 +54,7 @@ export const spec = {
     let userIdAsEids = null;
     let user = null;
     let userExt = null;
-    let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
+    let { bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo } = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.referer) : '';
     const imp = [];
@@ -76,7 +76,7 @@ export const spec = {
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
       }
-      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
+      const { params: { uid, keywords }, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp } = bid;
       bidsMap[bidId] = bid;
       if (!pageKeywords && !utils.isEmpty(keywords)) {
         pageKeywords = utils.transformBidderParamKeywords(keywords);
@@ -161,14 +161,14 @@ export const spec = {
         data: [{
           name: 'iow_labs_pub_data',
           segment: jwpseg.map((seg) => {
-            return {name: 'jwpseg', value: seg};
+            return { name: 'jwpseg', value: seg };
           })
         }]
       };
     }
 
     if (gdprConsent && gdprConsent.consentString) {
-      userExt = {consent: gdprConsent.consentString};
+      userExt = { consent: gdprConsent.consentString };
     }
 
     if (userIdAsEids && userIdAsEids.length) {
@@ -214,7 +214,7 @@ export const spec = {
 
     if (uspConsent) {
       if (!request.regs) {
-        request.regs = {ext: {}};
+        request.regs = { ext: {} };
       }
       request.regs.ext.us_privacy = uspConsent;
     }
@@ -298,7 +298,7 @@ function _getFloor (mediaTypes, bid) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: curMediaType,
-      size: bid.sizes.map(([w, h]) => ({w, h}))
+      size: bid.sizes.map(([w, h]) => ({ w, h }))
     });
 
     if (typeof floorInfo === 'object' &&
@@ -380,7 +380,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
 }
 
 function createVideoRequest(bid, mediaType) {
-  const {playerSize, mimes, durationRangeSec, protocols} = mediaType;
+  const { playerSize, mimes, durationRangeSec, protocols } = mediaType;
   const size = (playerSize || bid.sizes || [])[0];
   if (!size) return;
 

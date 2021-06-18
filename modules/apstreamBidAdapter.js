@@ -16,7 +16,7 @@ var dsuModule = (function() {
   var DSU_KEY = 'apr_dsu';
   var DSU_VERSION_NUMBER = '1';
   var SIGNATURE_SALT = 'YicAu6ZpNG';
-  var DSU_CREATOR = {'USERREPORT': '1'};
+  var DSU_CREATOR = { 'USERREPORT': '1' };
 
   function stringToU8(str) {
     if (typeof TextEncoder === 'function') {

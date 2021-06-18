@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/adxcgBidAdapter.js';
-import {deepClone, parseUrl} from 'src/utils.js';
+import { expect } from 'chai';
+import { spec } from 'modules/adxcgBidAdapter.js';
+import { deepClone, parseUrl } from 'src/utils.js';
 import * as utils from '../../../src/utils.js';
 
 describe('AdxcgAdapter', function () {
@@ -250,7 +250,7 @@ describe('AdxcgAdapter', function () {
   describe('userid pubcid should be passed to querystring', function () {
     let bidderRequests = {};
     let bid = deepClone([bidBanner]);
-    bid[0].userId = {pubcid: 'pubcidabcd'};
+    bid[0].userId = { pubcid: 'pubcidabcd' };
 
     it('should send pubcid if available', function () {
       let request = spec.buildRequests(bid, bidderRequests);
@@ -264,7 +264,7 @@ describe('AdxcgAdapter', function () {
     let bid = deepClone([bidBanner]);
     let bidderRequests = {};
 
-    bid[0].userId = {tdid: 'tdidabcd'};
+    bid[0].userId = { tdid: 'tdidabcd' };
 
     it('should send pubcid if available', function () {
       let request = spec.buildRequests(bid, bidderRequests);
@@ -278,7 +278,7 @@ describe('AdxcgAdapter', function () {
     let bid = deepClone([bidBanner]);
     let bidderRequests = {};
 
-    bid[0].userId = {id5id: {uid: 'id5idsample'}};
+    bid[0].userId = { id5id: { uid: 'id5idsample' } };
 
     it('should send pubcid if available', function () {
       let request = spec.buildRequests(bid, bidderRequests);
@@ -292,7 +292,7 @@ describe('AdxcgAdapter', function () {
     let bid = deepClone([bidBanner]);
     let bidderRequests = {};
 
-    bid[0].userId = {idl_env: 'idl_envsample'};
+    bid[0].userId = { idl_env: 'idl_envsample' };
 
     it('should send pubcid if available', function () {
       let request = spec.buildRequests(bid, bidderRequests);
@@ -349,7 +349,7 @@ describe('AdxcgAdapter', function () {
         }],
         cur: 'USD'
       },
-      headers: {someheader: 'fakedata'}
+      headers: { someheader: 'fakedata' }
     };
 
     let BANNER_RESPONSE_WITHDEALID = {
@@ -399,7 +399,7 @@ describe('AdxcgAdapter', function () {
         }],
         cur: 'USD'
       },
-      headers: {someheader: 'fakedata'}
+      headers: { someheader: 'fakedata' }
     };
 
     let NATIVE_RESPONSEob = {
@@ -474,7 +474,7 @@ describe('AdxcgAdapter', function () {
         }],
         cur: 'USD'
       },
-      headers: {someheader: 'fakedata'}
+      headers: { someheader: 'fakedata' }
     };
 
     it('handles regular responses', function () {
@@ -644,7 +644,7 @@ describe('AdxcgAdapter', function () {
           'hb_banner_linkurl': 'hb_banner_linkurl:3d0b6ff1dda89'
         },
         'status': 'targetingSet',
-        'params': [{'adzoneid': '20'}]
+        'params': [{ 'adzoneid': '20' }]
       };
       spec.onBidWon(bid);
       expect(bid.burl).to.deep.equal(burl);

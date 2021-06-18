@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/orbidderBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/orbidderBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -47,7 +47,7 @@ describe('orbidderBidAdapter', () => {
 
     it('accepts optional profile object', () => {
       const bidRequest = deepClone(defaultBidRequest);
-      bidRequest.params.profile = {'key': 'value'};
+      bidRequest.params.profile = { 'key': 'value' };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
@@ -166,7 +166,7 @@ describe('orbidderBidAdapter', () => {
         }
       ];
 
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
 
       expect(result.length).to.equal(expectedResponse.length);
       Object.keys(expectedResponse[0]).forEach((key) => {
@@ -207,7 +207,7 @@ describe('orbidderBidAdapter', () => {
         }
       ];
 
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
 
       expect(result.length).to.equal(expectedResponse.length);
       Object.keys(expectedResponse[0]).forEach((key) => {
@@ -224,14 +224,14 @@ describe('orbidderBidAdapter', () => {
           'ttl': 60
         }
       ];
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
 
       expect(result.length).to.equal(0);
     });
 
     it('handles nobid responses', () => {
       const serverResponse = [];
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
 
       expect(result.length).to.equal(0);
     });

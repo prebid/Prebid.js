@@ -9,11 +9,11 @@ describe('QuantcastId module', function () {
     storage.setCookie('__qca', 'P0-TestFPA');
 
     const id = quantcastIdSubmodule.getId();
-    expect(id).to.be.deep.equal({id: {quantcastId: 'P0-TestFPA'}});
+    expect(id).to.be.deep.equal({ id: { quantcastId: 'P0-TestFPA' } });
   });
 
   it('getId() should return an empty id when the Quantcast first party cookie is missing', function () {
     const id = quantcastIdSubmodule.getId();
-    expect(id).to.be.deep.equal({id: undefined});
+    expect(id).to.be.deep.equal({ id: undefined });
   });
 });

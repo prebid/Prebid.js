@@ -669,7 +669,7 @@ describe('sizeMappingV2', function () {
             },
             native: {}
           },
-          bids: [{bidder: 'appnexus', params: 1234}]
+          bids: [{ bidder: 'appnexus', params: 1234 }]
         }];
 
         checkAdUnitSetupHook(adUnit);
@@ -691,7 +691,7 @@ describe('sizeMappingV2', function () {
             },
             native: {}
           },
-          bids: [{bidder: 'appnexus', params: 1234}]
+          bids: [{ bidder: 'appnexus', params: 1234 }]
         }];
 
         checkAdUnitSetupHook(adUnit);
@@ -710,7 +710,7 @@ describe('sizeMappingV2', function () {
           mediaTypes: {
             native: {}
           },
-          bids: [{bidder: 'appnexus', params: 1234}]
+          bids: [{ bidder: 'appnexus', params: 1234 }]
         }];
 
         checkAdUnitSetupHook(adUnit);

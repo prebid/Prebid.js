@@ -60,7 +60,7 @@ export const spec = {
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj;
     if (config.getConfig('coppa') === true) {
-      userObj = {'coppa': true};
+      userObj = { 'coppa': true };
     }
     if (userObjBid) {
       userObj = {};
@@ -139,7 +139,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function(serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     const bids = [];
     if (!serverResponse || serverResponse.error) {
@@ -429,7 +429,7 @@ function bidToTag(bid) {
   tag.prebid = true;
   tag.disable_psa = true;
   if (bid.params.position) {
-    tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
+    tag.position = { 'above': 1, 'below': 2 }[bid.params.position] || 0;
   }
   if (bid.params.trafficSourceCode) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
@@ -469,7 +469,7 @@ function bidToTag(bid) {
 
     if (bid.nativeParams) {
       const nativeRequest = buildNativeRequest(bid.nativeParams);
-      tag[NATIVE] = {layouts: [nativeRequest]};
+      tag[NATIVE] = { layouts: [nativeRequest] };
     }
   }
 
@@ -495,7 +495,7 @@ function bidToTag(bid) {
   }
 
   if (bid.renderer) {
-    tag.video = Object.assign({}, tag.video, {custom_renderer_present: true});
+    tag.video = Object.assign({}, tag.video, { custom_renderer_present: true });
   }
 
   if (

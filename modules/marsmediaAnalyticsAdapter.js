@@ -1,4 +1,4 @@
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
@@ -20,7 +20,7 @@ var marsmediaAnalyticsAdapter = Object.assign(adapter(
     analyticsType
   }),
 {
-  track({eventType, args}) {
+  track({ eventType, args }) {
     if (typeof args !== 'undefined' && args.bidderCode === MARS_BIDDER_CODE) {
       events[eventType] = args;
     }
@@ -33,7 +33,7 @@ var marsmediaAnalyticsAdapter = Object.assign(adapter(
             success: function() {},
             error: function() {}
           },
-          JSON.stringify({act: 'prebid_analytics', params: events, 'pbjs': $$PREBID_GLOBAL$$.getBidResponses(), ver: MARS_VERSION}),
+          JSON.stringify({ act: 'prebid_analytics', params: events, 'pbjs': $$PREBID_GLOBAL$$.getBidResponses(), ver: MARS_VERSION }),
           {
             method: 'POST'
           }

@@ -178,7 +178,7 @@ export const id5IdSubmodule = {
       utils.logInfo(LOG_PREFIX + 'requesting an ID from the server', data);
       ajax(url, callbacks, JSON.stringify(data), { method: 'POST', withCredentials: true });
     };
-    return {callback: resp};
+    return { callback: resp };
   },
 
   /**

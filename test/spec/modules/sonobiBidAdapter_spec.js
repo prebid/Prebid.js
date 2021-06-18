@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec, _getPlatform } from 'modules/sonobiBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import {userSync} from '../../../src/userSync.js';
+import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
 import * as utils from '../../../src/utils.js';
 
@@ -241,7 +241,7 @@ describe('SonobiBidAdapter', function () {
     beforeEach(function() {
       sinon.stub(userSync, 'canBidderRegisterSync');
       sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .onFirstCall().returns({gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id'})
+        .onFirstCall().returns({ gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id' })
     });
     afterEach(function() {
       userSync.canBidderRegisterSync.restore();
@@ -328,14 +328,14 @@ describe('SonobiBidAdapter', function () {
     };
 
     it('should populate coppa as 1 if set in config', function () {
-      config.setConfig({coppa: true});
+      config.setConfig({ coppa: true });
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
 
       expect(bidRequests.data.coppa).to.equal(1);
     });
 
     it('should populate coppa as 0 if set in config', function () {
-      config.setConfig({coppa: false});
+      config.setConfig({ coppa: false });
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
 
       expect(bidRequests.data.coppa).to.equal(0);
@@ -430,7 +430,7 @@ describe('SonobiBidAdapter', function () {
     })
 
     it('should return null if there is nothing to bid on', function () {
-      const bidRequests = spec.buildRequests([{params: {}}], bidderRequests)
+      const bidRequests = spec.buildRequests([{ params: {} }], bidderRequests)
       expect(bidRequests).to.equal(null);
     });
 
@@ -493,14 +493,14 @@ describe('SonobiBidAdapter', function () {
     });
 
     it('should return a properly formatted request with userid as a JSON-encoded set of User ID results', function () {
-      bidRequest[0].userId = {'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': {'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': {'linkType': 2}}};
-      bidRequest[1].userId = {'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': {'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': {'linkType': 2}}};
+      bidRequest[0].userId = { 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': { 'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': { 'linkType': 2 } } };
+      bidRequest[1].userId = { 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': { 'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': { 'linkType': 2 } } };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
       expect(bidRequests.method).to.equal('GET');
       expect(bidRequests.data.ref).not.to.be.empty;
       expect(bidRequests.data.s).not.to.be.empty;
-      expect(JSON.parse(bidRequests.data.userid)).to.eql({'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ'});
+      expect(JSON.parse(bidRequests.data.userid)).to.eql({ 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ' });
     });
 
     it('should return a properly formatted request with userid omitted if there are no userIds', function () {
@@ -795,13 +795,13 @@ describe('SonobiBidAdapter', function () {
   })
   describe('_getPlatform', function () {
     it('should return mobile', function () {
-      expect(_getPlatform({innerWidth: 767})).to.equal('mobile')
+      expect(_getPlatform({ innerWidth: 767 })).to.equal('mobile')
     })
     it('should return tablet', function () {
-      expect(_getPlatform({innerWidth: 800})).to.equal('tablet')
+      expect(_getPlatform({ innerWidth: 800 })).to.equal('tablet')
     })
     it('should return desktop', function () {
-      expect(_getPlatform({innerWidth: 1000})).to.equal('desktop')
+      expect(_getPlatform({ innerWidth: 1000 })).to.equal('desktop')
     })
   })
 })

@@ -43,7 +43,7 @@ export const nextrollIdSubmodule = {
     const data = JSON.parse(dataString);
     const idValue = deepAccess(data, `${key}.value`);
 
-    return { id: idValue ? {nextrollId: idValue} : undefined };
+    return { id: idValue ? { nextrollId: idValue } : undefined };
   }
 };
 

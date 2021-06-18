@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
 export const helper = {
@@ -142,7 +142,7 @@ export const spec = {
             video: {
               protocols: params.protocols || [1, 2, 3, 4, 5, 6],
               pos: params.pos || 0,
-              ext: {context: mediaTypes.video.context}
+              ext: { context: mediaTypes.video.context }
             }
           };
 
@@ -209,7 +209,7 @@ export const spec = {
         )
       ) {
         if (outBid.mediaType === BANNER) {
-          outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
+          outBids.push(Object.assign({}, outBid, { ad: bid.adm }));
         } else if (outBid.mediaType === VIDEO) {
           const context = utils.deepAccess(
             bidRequest.bidRequest,
@@ -248,7 +248,7 @@ export const spec = {
             const url =
               pixel.url +
               (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
-            return syncs.push({type: pixel.type, url});
+            return syncs.push({ type: pixel.type, url });
           });
         }
         if (Array.isArray(bidResponse.seatbid)) {
@@ -262,7 +262,7 @@ export const spec = {
                       (pixel.url.indexOf('?') > 0
                         ? '&' + suffix
                         : '?' + suffix);
-                    return syncs.push({type: pixel.type, url});
+                    return syncs.push({ type: pixel.type, url });
                   });
                 }
               });

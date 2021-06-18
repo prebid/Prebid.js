@@ -32,15 +32,15 @@ describe('VOX Adapter', function() {
   }
   const validBidRequests = [
     getSlotConfigs({ banner: {} }, bannerMandatoryParams),
-    getSlotConfigs({ video: {playerSize: [[640, 480]], context: 'outstream'} }, videoMandatoryParams),
-    getSlotConfigs({ banner: {sizes: [0, 0]} }, inImageMandatoryParams)
+    getSlotConfigs({ video: { playerSize: [[640, 480]], context: 'outstream' } }, videoMandatoryParams),
+    getSlotConfigs({ banner: { sizes: [0, 0] } }, inImageMandatoryParams)
   ]
   describe('isBidRequestValid method', function() {
     describe('returns true', function() {
       describe('when banner slot config has all mandatory params', () => {
         describe('and banner placement has the correct value', function() {
           const slotConfig = getSlotConfigs(
-            {banner: {}},
+            { banner: {} },
             {
               placementId: PLACE_ID,
               placement: 'banner'

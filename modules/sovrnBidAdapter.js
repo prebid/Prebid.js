@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 import { createEidsArray } from './userId/eids.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 
 export const spec = {
   code: 'sovrn',
@@ -40,7 +40,7 @@ export const spec = {
               if (id.source === 'criteo.com') {
                 criteoId = id.uids[0].id
               }
-              tpid.push({source: id.source, uid: id.uids[0].id})
+              tpid.push({ source: id.source, uid: id.uids[0].id })
             }
           })
         }
@@ -53,7 +53,7 @@ export const spec = {
         let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes
         bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
         bidSizes = bidSizes.filter(size => utils.isArray(size))
-        const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
+        const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }))
         const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
           currency: 'USD',
           mediaType: 'banner',
@@ -128,7 +128,7 @@ export const spec = {
         method: 'POST',
         url: url,
         data: JSON.stringify(sovrnBidReq),
-        options: {contentType: 'text/plain'}
+        options: { contentType: 'text/plain' }
       }
     } catch (e) {
       utils.logError('Could not build bidrequest, error deatils:', e);
@@ -140,7 +140,7 @@ export const spec = {
    * @param {id, seatbid} sovrnResponse A successful response from Sovrn.
    * @return {Bid[]} An array of formatted bids.
   */
-  interpretResponse: function({ body: {id, seatbid} }) {
+  interpretResponse: function({ body: { id, seatbid } }) {
     try {
       let sovrnBidResponses = [];
       if (id &&

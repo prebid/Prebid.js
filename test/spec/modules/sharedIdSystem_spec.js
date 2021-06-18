@@ -2,13 +2,13 @@ import {
   sharedIdSystemSubmodule,
 } from 'modules/sharedIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
-import {uspDataHandler} from 'src/adapterManager';
+import { uspDataHandler } from 'src/adapterManager';
 import sinon from 'sinon';
 
 let expect = require('chai').expect;
 
 describe('SharedId System', function() {
-  const SHAREDID_RESPONSE = {sharedId: 'testsharedid'};
+  const SHAREDID_RESPONSE = { sharedId: 'testsharedid' };
   let uspConsentDataStub;
   describe('Xhr Requests from getId()', function() {
     let callbackSpy = sinon.spy();

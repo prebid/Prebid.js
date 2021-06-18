@@ -86,7 +86,7 @@ describe('truereachBidAdapterTests', function () {
     const user_sync_url = 'http://ads.momagic.com/jsp/usersync.jsp';
     it('register_iframe_pixel_if_iframeEnabled_is_true', function() {
       let syncs = spec.getUserSyncs(
-        {iframeEnabled: true}
+        { iframeEnabled: true }
       );
       expect(syncs).to.be.an('array');
       expect(syncs.length).to.equal(1);
@@ -96,7 +96,7 @@ describe('truereachBidAdapterTests', function () {
 
     it('if_pixelEnabled_is_true', function() {
       let syncs = spec.getUserSyncs(
-        {pixelEnabled: true}
+        { pixelEnabled: true }
       );
       expect(syncs).to.be.an('array');
       expect(syncs.length).to.equal(0);

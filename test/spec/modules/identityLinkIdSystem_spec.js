@@ -1,19 +1,19 @@
-import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
+import { identityLinkSubmodule } from 'modules/identityLinkIdSystem.js';
 import * as utils from 'src/utils.js';
-import {server} from 'test/mocks/xhr.js';
-import {getStorageManager} from '../../../src/storageManager.js';
+import { server } from 'test/mocks/xhr.js';
+import { getStorageManager } from '../../../src/storageManager.js';
 
 export const storage = getStorageManager();
 
 const pid = '14';
 let defaultConfigParams;
-const responseHeader = {'Content-Type': 'application/json'}
+const responseHeader = { 'Content-Type': 'application/json' }
 
 describe('IdentityLinkId tests', function () {
   let logErrorStub;
 
   beforeEach(function () {
-    defaultConfigParams = { params: {pid: pid} };
+    defaultConfigParams = { params: { pid: pid } };
     logErrorStub = sinon.stub(utils, 'logError');
     // remove _lr_retry_request cookie before test
     storage.setCookie('_lr_retry_request', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');

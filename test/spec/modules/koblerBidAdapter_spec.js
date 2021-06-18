@@ -1,9 +1,9 @@
-import {expect} from 'chai';
-import {spec} from 'modules/koblerBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/koblerBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {getRefererInfo} from 'src/refererDetection.js';
+import { getRefererInfo } from 'src/refererDetection.js';
 
 function createBidderRequest(auctionId, timeout, pageUrl) {
   return {

@@ -1,7 +1,7 @@
-import {Renderer} from '../src/Renderer.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {isStr, isArray, isNumber, isPlainObject, isBoolean, logError, replaceAuctionPrice} from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { isStr, isArray, isNumber, isPlainObject, isBoolean, logError, replaceAuctionPrice } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 import { config } from '../src/config.js';
 
@@ -23,14 +23,14 @@ const DOMAIN_REGEX = new RegExp('//([^/]*)');
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://adserver.adotmob.com/video/player.min.js';
 
 const NATIVE_PLACEMENTS = {
-  title: {id: 1, name: 'title'},
-  icon: {id: 2, type: 1, name: 'img'},
-  image: {id: 3, type: 3, name: 'img'},
-  sponsoredBy: {id: 4, name: 'data', type: 1},
-  body: {id: 5, name: 'data', type: 2},
-  cta: {id: 6, type: 12, name: 'data'}
+  title: { id: 1, name: 'title' },
+  icon: { id: 2, type: 1, name: 'img' },
+  image: { id: 3, type: 3, name: 'img' },
+  sponsoredBy: { id: 4, name: 'data', type: 1 },
+  body: { id: 5, name: 'data', type: 2 },
+  cta: { id: 6, type: 12, name: 'data' }
 };
-const NATIVE_ID_MAPPING = {1: 'title', 2: 'icon', 3: 'image', 4: 'sponsoredBy', 5: 'body', 6: 'cta'};
+const NATIVE_ID_MAPPING = { 1: 'title', 2: 'icon', 3: 'image', 4: 'sponsoredBy', 5: 'body', 6: 'cta' };
 const NATIVE_PRESET_FORMATTERS = {
   image: formatNativePresetImage
 }
@@ -51,7 +51,7 @@ function groupBy(values, key) {
 
   return Object
     .keys(groups)
-    .map(id => ({id, key, values: groups[id]}));
+    .map(id => ({ id, key, values: groups[id] }));
 }
 
 function validateMediaTypes(mediaTypes, allowedMediaTypes) {
@@ -155,8 +155,8 @@ function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
 
 function generateAdotInternal(adUnits) {
   const impressions = adUnits.reduce((acc, adUnit) => {
-    const {bidId, mediaTypes, adUnitCode, params} = adUnit;
-    const base = {bidId, adUnitCode, container: params.video && params.video.container};
+    const { bidId, mediaTypes, adUnitCode, params } = adUnit;
+    const base = { bidId, adUnitCode, container: params.video && params.video.container };
 
     const imps = Object
       .keys(mediaTypes)
@@ -164,9 +164,9 @@ function generateAdotInternal(adUnits) {
         const data = mediaTypes[mediaType];
         const impressionId = `${bidId}_${index}`;
 
-        if (mediaType !== 'banner') return acc.concat({...base, impressionId});
+        if (mediaType !== 'banner') return acc.concat({ ...base, impressionId });
 
-        const bannerImps = data.sizes.map((item, i) => ({...base, impressionId: `${impressionId}_${i}`}));
+        const bannerImps = data.sizes.map((item, i) => ({ ...base, impressionId: `${impressionId}_${i}` }));
 
         return acc.concat(bannerImps);
       }, []);
@@ -174,7 +174,7 @@ function generateAdotInternal(adUnits) {
     return acc.concat(imps);
   }, []);
 
-  return {impressions};
+  return { impressions };
 }
 
 function generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext) {
@@ -191,12 +191,12 @@ function generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext) {
 }
 
 function generateImpressionsFromAdUnit(acc, adUnit) {
-  const {bidId, mediaTypes, params} = adUnit;
-  const {placementId} = params;
+  const { bidId, mediaTypes, params } = adUnit;
+  const { placementId } = params;
   const pmp = {};
-  const ext = {placementId};
+  const ext = { placementId };
 
-  if (placementId) pmp.deals = [{id: placementId}]
+  if (placementId) pmp.deals = [{ id: placementId }]
 
   const imps = Object
     .keys(mediaTypes)
@@ -205,8 +205,8 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
       const impId = `${bidId}_${index}`;
 
       if (mediaType === 'banner') return acc.concat(generateBannerFromAdUnit(impId, data, params));
-      if (mediaType === 'video') return acc.concat({id: impId, video: generateVideoFromAdUnit(data, params), pmp, ext});
-      if (mediaType === 'native') return acc.concat({id: impId, native: generateNativeFromAdUnit(data), pmp, ext});
+      if (mediaType === 'video') return acc.concat({ id: impId, video: generateVideoFromAdUnit(data, params), pmp, ext });
+      if (mediaType === 'native') return acc.concat({ id: impId, native: generateNativeFromAdUnit(data), pmp, ext });
     }, []);
 
   return acc.concat(imps);
@@ -217,25 +217,25 @@ function isImpressionAVideo(impression) {
 }
 
 function generateBannerFromAdUnit(impId, data, params) {
-  const {position, placementId} = params;
+  const { position, placementId } = params;
   const pos = position || 0;
   const pmp = {};
-  const ext = {placementId};
+  const ext = { placementId };
 
-  if (placementId) pmp.deals = [{id: placementId}]
+  if (placementId) pmp.deals = [{ id: placementId }]
 
-  return data.sizes.map(([w, h], index) => ({id: `${impId}_${index}`, banner: {format: [{w, h}], w, h, pos}, pmp, ext}));
+  return data.sizes.map(([w, h], index) => ({ id: `${impId}_${index}`, banner: { format: [{ w, h }], w, h, pos }, pmp, ext }));
 }
 
 function generateVideoFromAdUnit(data, params) {
-  const {playerSize} = data;
+  const { playerSize } = data;
   const video = data
 
   const hasPlayerSize = isArray(playerSize) && playerSize.length > 0;
-  const {minDuration, maxDuration, protocols} = video;
+  const { minDuration, maxDuration, protocols } = video;
 
-  const size = {width: hasPlayerSize ? playerSize[0][0] : null, height: hasPlayerSize ? playerSize[0][1] : null};
-  const duration = {min: isNumber(minDuration) ? minDuration : null, max: isNumber(maxDuration) ? maxDuration : null};
+  const size = { width: hasPlayerSize ? playerSize[0][0] : null, height: hasPlayerSize ? playerSize[0][1] : null };
+  const duration = { min: isNumber(minDuration) ? minDuration : null, max: isNumber(maxDuration) ? maxDuration : null };
   const startdelay = computeStartDelay(data, params);
 
   return {
@@ -250,7 +250,7 @@ function generateVideoFromAdUnit(data, params) {
     protocols,
     api: getApi(protocols),
     format: hasPlayerSize ? playerSize.map(s => {
-      return {w: s[0], h: s[1]};
+      return { w: s[0], h: s[1] };
     }) : null,
     pos: video.position || 0
   };
@@ -259,12 +259,12 @@ function generateVideoFromAdUnit(data, params) {
 function getApi(protocols) {
   let defaultValue = [2];
   let listProtocols = [
-    {key: 'VPAID_1_0', value: 1},
-    {key: 'VPAID_2_0', value: 2},
-    {key: 'MRAID_1', value: 3},
-    {key: 'ORMMA', value: 4},
-    {key: 'MRAID_2', value: 5},
-    {key: 'MRAID_3', value: 6},
+    { key: 'VPAID_1_0', value: 1 },
+    { key: 'VPAID_2_0', value: 2 },
+    { key: 'MRAID_1', value: 3 },
+    { key: 'ORMMA', value: 4 },
+    { key: 'MRAID_2', value: 5 },
+    { key: 'MRAID_3', value: 6 },
   ];
   if (protocols) {
     return listProtocols.filter(p => {
@@ -294,7 +294,7 @@ function computeStartDelay(data, params) {
 }
 
 function generateNativeFromAdUnit(data) {
-  const {type} = data;
+  const { type } = data;
   const presetFormatter = type && NATIVE_PRESET_FORMATTERS[data.type];
   const nativeFields = presetFormatter ? presetFormatter(data) : data;
 
@@ -306,8 +306,8 @@ function generateNativeFromAdUnit(data) {
 
       if (!assetInfo) return acc;
 
-      const {id, name, type} = assetInfo;
-      const {required, len, sizes = []} = placementData;
+      const { id, name, type } = assetInfo;
+      const { required, len, sizes = [] } = placementData;
       let wmin;
       let hmin;
 
@@ -326,13 +326,13 @@ function generateNativeFromAdUnit(data) {
       if (wmin) content.wmin = wmin;
       if (hmin) content.hmin = hmin;
 
-      acc.push({id, required, [name]: content});
+      acc.push({ id, required, [name]: content });
 
       return acc;
     }, []);
 
   return {
-    request: JSON.stringify({assets})
+    request: JSON.stringify({ assets })
   };
 }
 
@@ -391,7 +391,7 @@ function extractSiteDomainFromURL(url) {
 }
 
 function getDeviceInfo() {
-  return {ua: navigator.userAgent, language: navigator.language};
+  return { ua: navigator.userAgent, language: navigator.language };
 }
 
 function getUserInfoFromAdUnitContext(adUnitContext) {
@@ -418,7 +418,7 @@ function getRegulationFromAdUnitContext(adUnitContext) {
 
 function generateBidRequestExtension() {
   return {
-    adot: {adapter_version: ADAPTER_VERSION},
+    adot: { adapter_version: ADAPTER_VERSION },
     should_use_gzip: true
   };
 }
@@ -534,7 +534,7 @@ function generateAdFromBid(bid, bidResponse, serverRequest) {
     base.meta = { advertiserDomains: bid.adomain };
   }
 
-  if (isBidANative(bid)) return {...base, native: formatNativeData(bid)};
+  if (isBidANative(bid)) return { ...base, native: formatNativeData(bid) };
 
   const size = getSizeFromBid(bid, impressionData);
   const creative = getCreativeFromBid(bid, impressionData);
@@ -551,9 +551,9 @@ function generateAdFromBid(bid, bidResponse, serverRequest) {
   };
 }
 
-function formatNativeData({adm, price}) {
+function formatNativeData({ adm, price }) {
   const parsedAdm = tryParse(adm);
-  const {assets, link: {url, clicktrackers}, imptrackers, jstracker} = parsedAdm.native;
+  const { assets, link: { url, clicktrackers }, imptrackers, jstracker } = parsedAdm.native;
   const placements = NATIVE_PLACEMENTS;
   const placementIds = NATIVE_ID_MAPPING;
 
@@ -561,7 +561,7 @@ function formatNativeData({adm, price}) {
     const placementName = placementIds[asset.id];
     const content = placementName && asset[placements[placementName].name];
     if (!content) return acc;
-    acc[placementName] = content.text || content.value || {url: content.url, width: content.w, height: content.h};
+    acc[placementName] = content.text || content.value || { url: content.url, width: content.w, height: content.h };
     return acc;
   }, {
     clickUrl: url,
@@ -691,4 +691,4 @@ const adotBidderSpec = {
 
 registerBidder(adotBidderSpec);
 
-export {adotBidderSpec as spec};
+export { adotBidderSpec as spec };

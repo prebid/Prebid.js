@@ -94,7 +94,7 @@ const handleSetGptConfig = moduleConfig => {
   } else {
     utils.logInfo(`${MODULE_NAME}: Turning off module`);
     _currentConfig = {};
-    getHook('makeBidRequests').getHooks({hook: makeBidRequestsHook}).remove();
+    getHook('makeBidRequests').getHooks({ hook: makeBidRequestsHook }).remove();
     hooksAdded = false;
   }
 };

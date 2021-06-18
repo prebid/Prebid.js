@@ -1,6 +1,6 @@
-import {expect, assert} from 'chai';
-import {spec} from 'modules/kargoBidAdapter.js';
-import {config} from 'src/config.js';
+import { expect, assert } from 'chai';
+import { spec } from 'modules/kargoBidAdapter.js';
+import { config } from 'src/config.js';
 
 describe('kargo adapter tests', function () {
   var sandbox, clock, frozenNow = new Date();
@@ -17,11 +17,11 @@ describe('kargo adapter tests', function () {
 
   describe('bid request validity', function() {
     it('passes when the bid includes a placement ID', function() {
-      assert(spec.isBidRequestValid({params: {placementId: 'foo'}}) === true);
+      assert(spec.isBidRequestValid({ params: { placementId: 'foo' } }) === true);
     });
 
     it('fails when the bid does not include a placement ID', function() {
-      assert(spec.isBidRequestValid({params: {}}) === false);
+      assert(spec.isBidRequestValid({ params: {} }) === false);
     });
 
     it('fails when bid is falsey', function() {
@@ -47,7 +47,7 @@ describe('kargo adapter tests', function () {
           if (noAdServerCurrency) {
             return {};
           }
-          return {adServerCurrency: 'USD'};
+          return { adServerCurrency: 'USD' };
         }
         if (key === 'debug') return true;
         if (key === 'deviceAccess') return true;
@@ -467,7 +467,7 @@ describe('kargo adapter tests', function () {
 
   describe('response handler', function() {
     it('handles bid responses', function() {
-      var resp = spec.interpretResponse({body: {
+      var resp = spec.interpretResponse({ body: {
         1: {
           id: 'foo',
           cpm: 3,
@@ -494,7 +494,7 @@ describe('kargo adapter tests', function () {
           width: 300,
           height: 250
         }
-      }}, {
+      } }, {
         currency: 'USD',
         bids: [{
           bidId: 1,
@@ -591,7 +591,7 @@ describe('kargo adapter tests', function () {
     });
 
     function getUserSyncsWhenAllowed(gdprConsent, usPrivacy) {
-      return spec.getUserSyncs({iframeEnabled: true}, null, gdprConsent, usPrivacy);
+      return spec.getUserSyncs({ iframeEnabled: true }, null, gdprConsent, usPrivacy);
     }
 
     function getUserSyncsWhenForbidden() {

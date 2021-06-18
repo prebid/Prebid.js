@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/sovrnBidAdapter.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/sovrnBidAdapter.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js'
 
 const ENDPOINT = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
@@ -32,15 +32,15 @@ describe('sovrnBidAdapter', function() {
     });
 
     it('should return false when tagid not passed correctly', function () {
-      const bid = {...adUnitBidRequest}
+      const bid = { ...adUnitBidRequest }
       const params = adUnitBidRequest.params
-      bid.params = {...params}
+      bid.params = { ...params }
       bid.params.tagid = 'ABCD'
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     });
 
     it('should return false when require params are not passed', function () {
-      const bid = {...adUnitBidRequest}
+      const bid = { ...adUnitBidRequest }
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -61,7 +61,7 @@ describe('sovrnBidAdapter', function() {
 
       it('sets the proper banner object', function() {
         const payload = JSON.parse(request.data)
-        expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
+        expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }])
         expect(payload.imp[0].banner.w).to.equal(1)
         expect(payload.imp[0].banner.h).to.equal(1)
       })
@@ -91,7 +91,7 @@ describe('sovrnBidAdapter', function() {
       }]
       const request = spec.buildRequests(singleSize, bidderRequest)
       const payload = JSON.parse(request.data)
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}])
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }])
       expect(payload.imp[0].banner.w).to.equal(1)
       expect(payload.imp[0].banner.h).to.equal(1)
     })
@@ -268,7 +268,7 @@ describe('sovrnBidAdapter', function() {
       expect(payload.imp[0].ext.deals[1]).to.equal('test2')
     })
     it('should use the floor provided from the floor module if present', function() {
-      const floorBid = {...adUnitBidRequest, getFloor: () => ({currency: 'USD', floor: 1.10})}
+      const floorBid = { ...adUnitBidRequest, getFloor: () => ({ currency: 'USD', floor: 1.10 }) }
       floorBid.params = {
         tagid: 1234,
         bidfloor: 2.00
@@ -278,7 +278,7 @@ describe('sovrnBidAdapter', function() {
       expect(payload.imp[0].bidfloor).to.equal(1.10)
     })
     it('should use the floor from the param if there is no floor from the floor module', function() {
-      const floorBid = {...adUnitBidRequest, getFloor: () => ({})}
+      const floorBid = { ...adUnitBidRequest, getFloor: () => ({}) }
       floorBid.params = {
         tagid: 1234,
         bidfloor: 2.00
@@ -318,7 +318,7 @@ describe('sovrnBidAdapter', function() {
         expect(payload.site.domain).to.equal('example.com')
       })
       it('should append impression first party data', function () {
-        const fpdBid = {...adUnitBidRequest}
+        const fpdBid = { ...adUnitBidRequest }
         fpdBid.ortb2Imp = {
           ext: {
             data: {
@@ -333,8 +333,8 @@ describe('sovrnBidAdapter', function() {
         expect(payload.imp[0].ext.data.adUnitSpecificAttribute).to.equal('123')
       })
       it('should not overwrite deals when impression fpd is present', function() {
-        const fpdBid = {...adUnitBidRequest}
-        fpdBid.params = {...adUnitBidRequest.params}
+        const fpdBid = { ...adUnitBidRequest }
+        fpdBid.params = { ...adUnitBidRequest.params }
         fpdBid.params.segments = 'seg1, seg2'
         fpdBid.ortb2Imp = {
           ext: {
@@ -673,7 +673,7 @@ describe('sovrnBidAdapter', function() {
     const payload = JSON.parse(request.data);
 
     it('gets sizes from mediaTypes.banner', function() {
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }])
       expect(payload.imp[0].banner.w).to.equal(1)
       expect(payload.imp[0].banner.h).to.equal(1)
     })

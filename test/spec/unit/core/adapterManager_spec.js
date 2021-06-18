@@ -84,12 +84,12 @@ describe('adapterManager tests', function () {
     adapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
     adapterManager.bidderRegistry['rubicon'] = orgRubiconAdapter;
     adapterManager.bidderRegistry['badBidder'] = orgBadBidderAdapter;
-    config.setConfig({s2sConfig: { enabled: false }});
+    config.setConfig({ s2sConfig: { enabled: false } });
   });
 
   describe('callBids', function () {
     before(function () {
-      config.setConfig({s2sConfig: { enabled: false }});
+      config.setConfig({ s2sConfig: { enabled: false } });
     });
 
     beforeEach(function () {
@@ -114,8 +114,8 @@ describe('adapterManager tests', function () {
         code: 'adUnit-code',
         sizes: [[728, 90]],
         bids: [
-          {bidder: 'appnexus', params: {placementId: 'id'}},
-          {bidder: 'fakeBidder', params: {placementId: 'id'}}
+          { bidder: 'appnexus', params: { placementId: 'id' } },
+          { bidder: 'fakeBidder', params: { placementId: 'id' } }
         ]
       }];
 
@@ -130,9 +130,9 @@ describe('adapterManager tests', function () {
         code: 'adUnit-code',
         sizes: [[728, 90]],
         bids: [
-          {bidder: 'appnexus', params: {placementId: 'id'}},
-          {bidder: 'badBidder', params: {placementId: 'id'}},
-          {bidder: 'rubicon', params: {account: 1111, site: 2222, zone: 3333}}
+          { bidder: 'appnexus', params: { placementId: 'id' } },
+          { bidder: 'badBidder', params: { placementId: 'id' } },
+          { bidder: 'rubicon', params: { account: 1111, site: 2222, zone: 3333 } }
         ]
       }];
       let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
@@ -186,7 +186,7 @@ describe('adapterManager tests', function () {
       let adUnits = [{
         code: 'adUnit-code',
         bids: [
-          {bidder: 'appnexus', params: {placementId: 'id'}},
+          { bidder: 'appnexus', params: { placementId: 'id' } },
         ]
       }];
       adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
@@ -309,7 +309,7 @@ describe('adapterManager tests', function () {
       getSpec: function() { return criteoSpec; }
     }
     before(function () {
-      config.setConfig({s2sConfig: { enabled: false }});
+      config.setConfig({ s2sConfig: { enabled: false } });
     });
 
     beforeEach(function () {
@@ -325,7 +325,7 @@ describe('adapterManager tests', function () {
         code: 'adUnit-code',
         sizes: [[728, 90]],
         bids: [
-          {bidder: 'criteo', params: {placementId: 'id'}},
+          { bidder: 'criteo', params: { placementId: 'id' } },
         ]
       }];
       const timedOutBidders = [{
@@ -346,7 +346,7 @@ describe('adapterManager tests', function () {
       getSpec: function() { return criteoSpec; }
     }
     before(function () {
-      config.setConfig({s2sConfig: { enabled: false }});
+      config.setConfig({ s2sConfig: { enabled: false } });
     });
 
     beforeEach(function () {
@@ -359,7 +359,7 @@ describe('adapterManager tests', function () {
 
     it('should call spec\'s onBidWon callback when a bid is won', function () {
       const bids = [
-        {bidder: 'criteo', params: {placementId: 'id'}},
+        { bidder: 'criteo', params: { placementId: 'id' } },
       ];
       const adUnits = [{
         code: 'adUnit-code',
@@ -379,7 +379,7 @@ describe('adapterManager tests', function () {
       getSpec: function() { return criteoSpec; }
     }
     before(function () {
-      config.setConfig({s2sConfig: { enabled: false }});
+      config.setConfig({ s2sConfig: { enabled: false } });
     });
 
     beforeEach(function () {
@@ -392,7 +392,7 @@ describe('adapterManager tests', function () {
 
     it('should call spec\'s onSetTargeting callback when setTargeting is called', function () {
       const bids = [
-        {bidder: 'criteo', params: {placementId: 'id'}},
+        { bidder: 'criteo', params: { placementId: 'id' } },
       ];
       const adUnits = [{
         code: 'adUnit-code',
@@ -411,7 +411,7 @@ describe('adapterManager tests', function () {
       getSpec: function() { return criteoSpec; }
     }
     before(function () {
-      config.setConfig({s2sConfig: { enabled: false }});
+      config.setConfig({ s2sConfig: { enabled: false } });
     });
 
     beforeEach(function () {
@@ -424,7 +424,7 @@ describe('adapterManager tests', function () {
 
     it('should call spec\'s onBidViewable callback when callBidViewableBidder is called', function () {
       const bids = [
-        {bidder: 'criteo', params: {placementId: 'id'}},
+        { bidder: 'criteo', params: { placementId: 'id' } },
       ];
       const adUnits = [{
         code: 'adUnit-code',
@@ -438,7 +438,7 @@ describe('adapterManager tests', function () {
 
   describe('S2S tests', function () {
     beforeEach(function () {
-      config.setConfig({s2sConfig: CONFIG});
+      config.setConfig({ s2sConfig: CONFIG });
       adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
       prebidServerAdapterMock.callBids.reset();
     });
@@ -663,7 +663,7 @@ describe('adapterManager tests', function () {
 
   describe('Multiple S2S tests', function () {
     beforeEach(function () {
-      config.setConfig({s2sConfig: [CONFIG, CONFIG2]});
+      config.setConfig({ s2sConfig: [CONFIG, CONFIG2] });
       adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
       prebidServerAdapterMock.callBids.reset();
     });
@@ -1068,7 +1068,7 @@ describe('adapterManager tests', function () {
     let stubGetSourceBidderMap;
 
     beforeEach(function () {
-      config.setConfig({s2sConfig: TESTING_CONFIG});
+      config.setConfig({ s2sConfig: TESTING_CONFIG });
       adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
       adapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
@@ -1087,7 +1087,7 @@ describe('adapterManager tests', function () {
     });
 
     it('calls server adapter if no sources defined', function () {
-      stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: [], [s2sTesting.SERVER]: []});
+      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: [], [s2sTesting.SERVER]: [] });
       callBids();
 
       // server adapter
@@ -1101,7 +1101,7 @@ describe('adapterManager tests', function () {
     });
 
     it('calls client adapter if one client source defined', function () {
-      stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus'], [s2sTesting.SERVER]: []});
+      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus'], [s2sTesting.SERVER]: [] });
       callBids();
 
       // server adapter
@@ -1115,7 +1115,7 @@ describe('adapterManager tests', function () {
     });
 
     it('calls client adapters if client sources defined', function () {
-      stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
+      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: [] });
       callBids();
 
       // server adapter
@@ -1129,7 +1129,7 @@ describe('adapterManager tests', function () {
     });
 
     it('does not call server adapter for bidders that go to client', function () {
-      stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
+      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: [] });
       var adUnits = getTestAdUnits();
       adUnits[0].bids[0].finalSource = s2sTesting.CLIENT;
       adUnits[0].bids[1].finalSource = s2sTesting.CLIENT;
@@ -1148,7 +1148,7 @@ describe('adapterManager tests', function () {
     });
 
     it('does not call client adapters for bidders that go to server', function () {
-      stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
+      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: [] });
       var adUnits = getTestAdUnits();
       adUnits[0].bids[0].finalSource = s2sTesting.SERVER;
       adUnits[0].bids[1].finalSource = s2sTesting.SERVER;
@@ -1167,7 +1167,7 @@ describe('adapterManager tests', function () {
     });
 
     it('calls client and server adapters for bidders that go to both', function () {
-      stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
+      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: [] });
       var adUnits = getTestAdUnits();
       // adUnits[0].bids[0].finalSource = s2sTesting.BOTH;
       // adUnits[0].bids[1].finalSource = s2sTesting.BOTH;
@@ -1186,7 +1186,7 @@ describe('adapterManager tests', function () {
     });
 
     it('makes mixed client/server adapter calls for mixed bidder sources', function () {
-      stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
+      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: [] });
       var adUnits = getTestAdUnits();
       adUnits[0].bids[0].finalSource = s2sTesting.CLIENT;
       adUnits[0].bids[1].finalSource = s2sTesting.CLIENT;
@@ -1286,7 +1286,7 @@ describe('adapterManager tests', function () {
         testing: true
       });
 
-      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      config.setConfig({ s2sConfig: [TEST_CONFIG, TEST_CONFIG2] });
 
       callBids();
 
@@ -1325,7 +1325,7 @@ describe('adapterManager tests', function () {
         testing: true
       });
 
-      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      config.setConfig({ s2sConfig: [TEST_CONFIG, TEST_CONFIG2] });
       callBids();
 
       // server adapter
@@ -1367,7 +1367,7 @@ describe('adapterManager tests', function () {
         testing: true
       });
 
-      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      config.setConfig({ s2sConfig: [TEST_CONFIG, TEST_CONFIG2] });
 
       callBids();
 
@@ -1416,7 +1416,7 @@ describe('adapterManager tests', function () {
         testing: true
       });
 
-      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      config.setConfig({ s2sConfig: [TEST_CONFIG, TEST_CONFIG2] });
       callBids();
 
       sinon.assert.notCalled(prebidServerAdapterMock.callBids);
@@ -1464,7 +1464,7 @@ describe('adapterManager tests', function () {
         testing: true
       });
 
-      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      config.setConfig({ s2sConfig: [TEST_CONFIG, TEST_CONFIG2] });
       callBids();
 
       // server adapter
@@ -1513,7 +1513,7 @@ describe('adapterManager tests', function () {
         testing: true
       });
 
-      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      config.setConfig({ s2sConfig: [TEST_CONFIG, TEST_CONFIG2] });
       callBids();
 
       // server adapter
@@ -1572,7 +1572,7 @@ describe('adapterManager tests', function () {
       it('should allow an alias if alias is part of s2sConfig.bidders', function () {
         let testS2sConfig = utils.deepClone(CONFIG);
         testS2sConfig.bidders = ['s2sAlias'];
-        config.setConfig({s2sConfig: testS2sConfig});
+        config.setConfig({ s2sConfig: testS2sConfig });
 
         adapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
         expect(adapterManager.aliasRegistry).to.have.property('s2sAlias');
@@ -1581,7 +1581,7 @@ describe('adapterManager tests', function () {
       it('should allow an alias if alias is part of s2sConfig.bidders for multiple s2sConfigs', function () {
         let testS2sConfig = utils.deepClone(CONFIG);
         testS2sConfig.bidders = ['s2sAlias'];
-        config.setConfig({s2sConfig: [
+        config.setConfig({ s2sConfig: [
           testS2sConfig, {
             enabled: true,
             endpoint: 'rp-pbs-endpoint-test.com',
@@ -1591,7 +1591,7 @@ describe('adapterManager tests', function () {
             bidders: ['s2sRpAlias'],
             accountId: 'def'
           }
-        ]});
+        ] });
 
         adapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
         expect(adapterManager.aliasRegistry).to.have.property('s2sAlias');
@@ -1602,7 +1602,7 @@ describe('adapterManager tests', function () {
       it('should throw an error if alias + bidder are unknown and not part of s2sConfig.bidders', function () {
         let testS2sConfig = utils.deepClone(CONFIG);
         testS2sConfig.bidders = ['s2sAlias'];
-        config.setConfig({s2sConfig: testS2sConfig});
+        config.setConfig({ s2sConfig: testS2sConfig });
 
         adapterManager.aliasBidAdapter('s2sBidder1', 's2sAlias1');
         sinon.assert.calledOnce(utils.logError);
@@ -1668,7 +1668,7 @@ describe('adapterManager tests', function () {
       beforeEach(function () {
         allS2SBidders.length = 0;
         clientTestAdapters.length = 0;
-        sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
+        sinon.stub(window, 'matchMedia').callsFake(() => ({ matches: true }));
       });
 
       afterEach(function () {
@@ -2052,7 +2052,7 @@ describe('adapterManager tests', function () {
 
     describe('Multiple s2sTesting - testServerOnly', () => {
       beforeEach(() => {
-        config.setConfig({s2sConfig: [getServerTestingConfig(CONFIG), CONFIG2]});
+        config.setConfig({ s2sConfig: [getServerTestingConfig(CONFIG), CONFIG2] });
       });
 
       afterEach(() => {
@@ -2122,7 +2122,7 @@ describe('adapterManager tests', function () {
             includeSourceKvp: true,
           },
         };
-        config.setConfig({s2sConfig: [testConfig1, testConfig2]});
+        config.setConfig({ s2sConfig: [testConfig1, testConfig2] });
 
         let ads = [
           {

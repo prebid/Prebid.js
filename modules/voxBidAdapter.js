@@ -1,9 +1,9 @@
 import * as utils from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import {BANNER, VIDEO} from '../src/mediaTypes.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
 import find from 'core-js-pure/features/array/find.js';
-import {auctionManager} from '../src/auctionManager.js';
-import {Renderer} from '../src/Renderer.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'vox';
 const SSP_ENDPOINT = 'https://ssp.hybrid.ai/auction/prebid';

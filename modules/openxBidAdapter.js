@@ -1,7 +1,7 @@
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js'
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
@@ -69,7 +69,7 @@ export const spec = {
 
     return requests;
   },
-  interpretResponse: function ({body: oxResponseObj}, serverRequest) {
+  interpretResponse: function ({ body: oxResponseObj }, serverRequest) {
     let mediaType = getMediaTypeFromRequest(serverRequest);
 
     return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
@@ -117,7 +117,7 @@ function isVideoRequest(bidRequest) {
   return (utils.deepAccess(bidRequest, 'mediaTypes.video') && !utils.deepAccess(bidRequest, 'mediaTypes.banner')) || bidRequest.mediaType === VIDEO;
 }
 
-function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
+function createBannerBidResponses(oxResponseObj, { bids, startTime }) {
   let adUnits = oxResponseObj.ads.ad;
   let bidResponses = [];
   for (let i = 0; i < adUnits.length; i++) {
@@ -375,7 +375,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
     method: 'GET',
     url: url,
     data: queryParams,
-    payload: {'bids': bids, 'startTime': new Date()}
+    payload: { 'bids': bids, 'startTime': new Date() }
   };
 }
 
@@ -388,7 +388,7 @@ function buildOXVideoRequest(bid, bidderRequest) {
     method: 'GET',
     url: url,
     data: oxVideoParams,
-    payload: {'bid': bid, 'startTime': new Date()}
+    payload: { 'bid': bid, 'startTime': new Date() }
   };
 }
 
@@ -413,7 +413,7 @@ function generateVideoParameters(bid, bidderRequest) {
     height = parseInt(playerSize[1], 10);
   }
 
-  let openRtbParams = {w: width, h: height};
+  let openRtbParams = { w: width, h: height };
 
   // legacy openrtb params could be in video, openrtb, or video.openrtb
   let legacyParams = bid.params.video || bid.params.openrtb || {};
@@ -471,7 +471,7 @@ function generateVideoParameters(bid, bidderRequest) {
   return queryParams;
 }
 
-function createVideoBidResponses(response, {bid, startTime}) {
+function createVideoBidResponses(response, { bid, startTime }) {
   let bidResponses = [];
 
   if (response !== undefined && response.vastUrl !== '' && response.pub_rev > 0) {

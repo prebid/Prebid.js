@@ -797,7 +797,7 @@ export let lib = {
         a.y = parseInt(v[1], 10);
         a.w = parseInt(v[2], 10);
         a.h = parseInt(v[3], 10);
-        a.box = {x: a.x, y: a.y, w: a.w, h: a.h};
+        a.box = { x: a.x, y: a.y, w: a.w, h: a.h };
         return true;
       }
     } catch (ex) {
@@ -875,7 +875,7 @@ realvuAnalyticsAdapter.enableAnalytics = function (config) {
 
 const time0 = (new Date()).getTime();
 
-realvuAnalyticsAdapter.track = function ({eventType, args}) {
+realvuAnalyticsAdapter.track = function ({ eventType, args }) {
   // @if NODE_ENV='debug'
   let msg = '';
   let now = new Date();

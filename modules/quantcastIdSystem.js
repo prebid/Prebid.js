@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js'
+import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 
 const QUANTCAST_FPA = '__qca';

@@ -118,9 +118,9 @@ describe('UnrulyAdapter', function () {
     });
     it('should return a server request with valid payload', function () {
       const mockBidRequests = ['mockBid'];
-      const mockBidderRequest = {bidderCode: 'mockBidder'};
+      const mockBidderRequest = { bidderCode: 'mockBidder' };
       expect(adapter.buildRequests(mockBidRequests, mockBidderRequest).data)
-        .to.deep.equal({bidRequests: mockBidRequests, bidderRequest: mockBidderRequest})
+        .to.deep.equal({ bidRequests: mockBidRequests, bidderRequest: mockBidderRequest })
     })
   });
 
@@ -136,7 +136,7 @@ describe('UnrulyAdapter', function () {
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([])
     });
     it('should return array of bids when receive a successful response from server', function () {
-      const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockExchangeBid = createOutStreamExchangeBid({ adUnitCode: 'video1', bidId: 'mockBidId' });
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([
         {
@@ -160,7 +160,7 @@ describe('UnrulyAdapter', function () {
       expect(Renderer.install.called).to.be.false;
       expect(fakeRenderer.setRender.called).to.be.false;
 
-      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockReturnedBid = createOutStreamExchangeBid({ adUnitCode: 'video1', bidId: 'mockBidId' });
       const mockRenderer = {
         url: 'value: mockRendererURL',
         config: {
@@ -176,7 +176,7 @@ describe('UnrulyAdapter', function () {
       expect(Renderer.install.calledOnce).to.be.true;
       sinon.assert.calledWithExactly(
         Renderer.install,
-        Object.assign({}, mockRenderer, {callback: sinon.match.func})
+        Object.assign({}, mockRenderer, { callback: sinon.match.func })
       );
 
       sinon.assert.calledOnce(fakeRenderer.setRender);
@@ -189,7 +189,7 @@ describe('UnrulyAdapter', function () {
       expect(Renderer.install.called).to.be.false;
       expect(fakeRenderer.setRender.called).to.be.false;
 
-      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockReturnedBid = createOutStreamExchangeBid({ adUnitCode: 'video1', bidId: 'mockBidId' });
       const mockRenderer = {
         url: 'value: mockRendererURL'
       };
@@ -216,7 +216,7 @@ describe('UnrulyAdapter', function () {
       expect(Renderer.install.called).to.be.false;
       expect(fakeRenderer.setRender.called).to.be.false;
 
-      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockReturnedBid = createOutStreamExchangeBid({ adUnitCode: 'video1', bidId: 'mockBidId' });
       const mockRenderer = {
         url: 'value: mockRendererURL',
         config: {}
@@ -256,7 +256,7 @@ describe('UnrulyAdapter', function () {
     });
 
     it('should ensure that renderer is placed in Prebid supply mode', function () {
-      const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockExchangeBid = createOutStreamExchangeBid({ adUnitCode: 'video1', bidId: 'mockBidId' });
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
 
       expect('unruly' in window.parent).to.equal(false);

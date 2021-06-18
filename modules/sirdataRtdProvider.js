@@ -6,10 +6,10 @@
  * @module modules/sirdataRtdProvider
  * @requires module:modules/realTimeData
  */
-import {getGlobal} from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import * as utils from '../src/utils.js';
-import {submodule} from '../src/hook.js';
-import {ajax} from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
 import findIndex from 'core-js-pure/features/array/find-index.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';
@@ -96,7 +96,7 @@ export function setGlobalOrtb2(segments, categories) {
       utils.deepSetValue(addOrtb2, 'site.ext.data.sd_rtd', categories || {});
     }
     if (!utils.isEmpty(addOrtb2)) {
-      let ortb2 = {ortb2: utils.mergeDeep({}, testGlobal, addOrtb2)};
+      let ortb2 = { ortb2: utils.mergeDeep({}, testGlobal, addOrtb2) };
       getGlobal().setConfig(ortb2);
     }
   } catch (e) {
@@ -117,7 +117,7 @@ export function setBidderOrtb2(bidder, segments, categories) {
       utils.deepSetValue(addOrtb2, 'site.ext.data.sd_rtd', categories || {});
     }
     if (!utils.isEmpty(addOrtb2)) {
-      let ortb2 = {ortb2: utils.mergeDeep({}, testBidder, addOrtb2)};
+      let ortb2 = { ortb2: utils.mergeDeep({}, testBidder, addOrtb2) };
       getGlobal().setBidderConfig({ bidders: [bidder], config: ortb2 });
     }
   } catch (e) {
@@ -137,7 +137,7 @@ export function loadCustomFunction (todo, adUnit, list, data, bid) {
 }
 
 export function getSegAndCatsArray(data, minScore) {
-  var sirdataData = {'segments': [], 'categories': []};
+  var sirdataData = { 'segments': [], 'categories': [] };
   minScore = minScore && typeof minScore == 'number' ? minScore : 30;
   try {
     if (data && data.contextual_categories) {
@@ -169,7 +169,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
 
   const sirdataList = sirdataData.segments.concat(sirdataData.categories);
 
-  var curationData = {'segments': [], 'categories': []};
+  var curationData = { 'segments': [], 'categories': [] };
   var curationId = '1';
   const biddersParamsExist = (!!(moduleConfig.params && moduleConfig.params.bidders));
 
@@ -207,7 +207,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
       bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? findIndex(moduleConfig.params.bidders, function(i) { return i.bidder === bid.bidder; }) : false);
       indexFound = (!!(typeof bidderIndex == 'number' && bidderIndex >= 0));
       try {
-        curationData = {'segments': [], 'categories': []};
+        curationData = { 'segments': [], 'categories': [] };
         let minScore = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.bidders[bidderIndex].contextualMinRelevancyScore : globalMinScore)
 
         if (!biddersParamsExist || (indexFound && (!moduleConfig.params.bidders[bidderIndex].hasOwnProperty('adUnitCodes') || moduleConfig.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
@@ -297,7 +297,7 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
                       ixLength += entry.toString().length;
                     }
                   });
-                  getGlobal().setConfig({ix: {firstPartyData: {sd_rtd: cappIxCategories}}});
+                  getGlobal().setConfig({ ix: { firstPartyData: { sd_rtd: cappIxCategories } } });
                 }
               }
               break;
@@ -308,12 +308,12 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
               } else {
-                data.shared_taxonomy[curationId] = {contextual_categories: {}};
+                data.shared_taxonomy[curationId] = { contextual_categories: {} };
               }
               if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
                 loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
               } else {
-                utils.deepSetValue(bid, 'ortb2.user.ext.data', {segments: sirdataData.segments.concat(curationData.segments), contextual_categories: {...data.contextual_categories, ...data.shared_taxonomy[curationId].contextual_categories}});
+                utils.deepSetValue(bid, 'ortb2.user.ext.data', { segments: sirdataData.segments.concat(curationData.segments), contextual_categories: { ...data.contextual_categories, ...data.shared_taxonomy[curationId].contextual_categories } });
               }
               break;
 

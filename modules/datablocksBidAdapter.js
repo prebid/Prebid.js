@@ -94,7 +94,7 @@ export const spec = {
   code: 'datablocks',
 
   // DATABLOCKS SCOPED OBJECT
-  db_obj: {metrics_host: 'prebid.datablocks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0},
+  db_obj: { metrics_host: 'prebid.datablocks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0 },
 
   // STORE THE DATABLOCKS BUYERID IN STORAGE
   store_dbid: function(dbid) {
@@ -188,7 +188,7 @@ export const spec = {
   // POST CONSOLIDATED METRICS BACK TO SERVER
   send_metrics: function() {
     // POST TO SERVER
-    ajax(`https://${this.db_obj.metrics_host}/a/pb/`, null, JSON.stringify(this.db_obj.metrics), {method: 'POST', withCredentials: true});
+    ajax(`https://${this.db_obj.metrics_host}/a/pb/`, null, JSON.stringify(this.db_obj.metrics), { method: 'POST', withCredentials: true });
 
     // RESET THE QUEUE OF METRIC DATA
     this.db_obj.metrics = [];
@@ -229,10 +229,10 @@ export const spec = {
       if (utils.isGptPubadsDefined()) {
         if (typeof window['googletag'].pubads().addEventListener == 'function') {
           window['googletag'].pubads().addEventListener('impressionViewable', function(event) {
-            scope.queue_metric({type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
+            scope.queue_metric({ type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath() });
           });
           window['googletag'].pubads().addEventListener('slotRenderEnded', function(event) {
-            scope.queue_metric({type: 'slot_render', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
+            scope.queue_metric({ type: 'slot_render', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath() });
           })
         }
       }
@@ -263,9 +263,9 @@ export const spec = {
       if (bid.nativeParams) {
         Object.keys(bid.nativeParams).forEach((key) => {
           if (NATIVE_PARAMS[key]) {
-            const {name, type, id} = NATIVE_PARAMS[key];
-            const assetObj = type ? {type} : {};
-            let {len, sizes, required, aspect_ratios: aRatios} = bid.nativeParams[key];
+            const { name, type, id } = NATIVE_PARAMS[key];
+            const assetObj = type ? { type } : {};
+            let { len, sizes, required, aspect_ratios: aRatios } = bid.nativeParams[key];
             if (len) {
               assetObj.len = len;
             }
@@ -281,7 +281,7 @@ export const spec = {
               assetObj.w = sizes[0];
               assetObj.h = sizes[1];
             }
-            const asset = {required: required ? 1 : 0, id};
+            const asset = { required: required ? 1 : 0, id };
             asset[name] = assetObj;
             assets.push(asset);
           }
@@ -496,7 +496,7 @@ export const spec = {
 
   // DATABLOCKS WON THE AUCTION - REPORT SUCCESS
   onBidWon: function(bid) {
-    this.queue_metric({type: 'bid_won', source_id: bid.params[0].source_id, req_id: bid.requestId, slot_id: bid.adUnitCode, auction_id: bid.auctionId, size: bid.size, cpm: bid.cpm, pb: bid.adserverTargeting.hb_pb, rt: bid.timeToRespond, ttl: bid.ttl});
+    this.queue_metric({ type: 'bid_won', source_id: bid.params[0].source_id, req_id: bid.requestId, slot_id: bid.adUnitCode, auction_id: bid.auctionId, size: bid.size, cpm: bid.cpm, pb: bid.adserverTargeting.hb_pb, rt: bid.timeToRespond, ttl: bid.ttl });
   },
 
   // TARGETING HAS BEEN SET
@@ -509,7 +509,7 @@ export const spec = {
   interpretResponse: function(rtbResponse, bidRequest) {
     // CONVERT NATIVE RTB RESPONSE INTO PREBID RESPONSE
     function parseNative(native) {
-      const {assets, link, imptrackers, jstracker} = native;
+      const { assets, link, imptrackers, jstracker } = native;
       const result = {
         clickUrl: link.url,
         clickTrackers: link.clicktrackers || [],
@@ -518,7 +518,7 @@ export const spec = {
       };
 
       (assets || []).forEach((asset) => {
-        const {id, img, data, title} = asset;
+        const { id, img, data, title } = asset;
         const key = NATIVE_ID_MAP[id];
         if (key) {
           if (!utils.isEmpty(title)) {
@@ -541,17 +541,17 @@ export const spec = {
     let bids = [];
     let resBids = utils.deepAccess(rtbResponse, 'body.seatbid') || [];
     resBids.forEach(bid => {
-      let resultItem = {requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: {advertiserDomains: bid.adomain}};
+      let resultItem = { requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: { advertiserDomains: bid.adomain } };
 
       let mediaType = utils.deepAccess(bid, 'ext.mtype') || '';
       switch (mediaType) {
         case 'banner':
-          bids.push(Object.assign({}, resultItem, {mediaType: BANNER, width: bid.w, height: bid.h, ad: bid.adm}));
+          bids.push(Object.assign({}, resultItem, { mediaType: BANNER, width: bid.w, height: bid.h, ad: bid.adm }));
           break;
 
         case 'native':
           let nativeResult = JSON.parse(bid.adm);
-          bids.push(Object.assign({}, resultItem, {mediaType: NATIVE, native: parseNative(nativeResult.native)}));
+          bids.push(Object.assign({}, resultItem, { mediaType: NATIVE, native: parseNative(nativeResult.native) }));
           break;
 
         default:

@@ -6,10 +6,10 @@
  */
 
 import * as utils from '../src/utils.js';
-import {submodule} from '../src/hook.js';
-import {ajax} from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
 import { uspDataHandler, coppaDataHandler } from '../src/adapterManager.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 887;
 const storage = getStorageManager(GVLID, 'pubCommonId');
@@ -168,7 +168,7 @@ function getIdCallback(pubcid, pixelCallback, config, consentData) {
     if (typeof pixelCallback === 'function') {
       pixelCallback();
     }
-    ajax(sharedIdUrl(consentData), handleResponse(pubcid, callback, config), undefined, {method: 'GET', withCredentials: true});
+    ajax(sharedIdUrl(consentData), handleResponse(pubcid, callback, config), undefined, { method: 'GET', withCredentials: true });
   }
 }
 export const sharedIdSystemSubmodule = {
@@ -205,12 +205,12 @@ export const sharedIdSystemSubmodule = {
    * @returns {{pubcid:string}}
    */
   decode(value, config) {
-    const idObj = {'pubcid': value};
-    const {params: {enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
+    const idObj = { 'pubcid': value };
+    const { params: { enableSharedId = SHAREDID_DEFAULT_STATE } = {} } = config;
 
     if (enableSharedId) {
       const sharedId = readData(config);
-      if (sharedId) idObj['sharedid'] = {id: sharedId};
+      if (sharedId) idObj['sharedid'] = { id: sharedId };
     }
 
     return idObj;
@@ -229,7 +229,7 @@ export const sharedIdSystemSubmodule = {
       utils.logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
-    const {params: {create = true, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
+    const { params: { create = true, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE } = {} } = config;
     let newId = storedId;
     if (!newId) {
       try {
@@ -246,7 +246,7 @@ export const sharedIdSystemSubmodule = {
     const pixelCallback = this.makeCallback(pixelUrl, newId);
     const combinedCallback = enableSharedId ? getIdCallback(newId, pixelCallback, config, consentData) : pixelCallback;
 
-    return {id: newId, callback: combinedCallback};
+    return { id: newId, callback: combinedCallback };
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -274,7 +274,7 @@ export const sharedIdSystemSubmodule = {
       utils.logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
-    const {params: {extend = false, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
+    const { params: { extend = false, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE } = {} } = config;
 
     if (extend) {
       try {
@@ -291,13 +291,13 @@ export const sharedIdSystemSubmodule = {
 
       if (pixelUrl) {
         const callback = this.makeCallback(pixelUrl, storedId);
-        return {callback: callback};
+        return { callback: callback };
       } else {
         if (enableSharedId) {
           // Update with the same value to extend expiration time
           storeData(config, readData(config));
         }
-        return {id: storedId};
+        return { id: storedId };
       }
     }
   },

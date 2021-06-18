@@ -64,7 +64,7 @@ export const spec = {
       return {
         method: 'POST',
         url: requestUrl,
-        options: {withCredentials: true},
+        options: { withCredentials: true },
         data: {
           gdpr: !!utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
           gdpr_cs: utils.deepAccess(bidderRequest, 'gdprConsent.consentString', ''),

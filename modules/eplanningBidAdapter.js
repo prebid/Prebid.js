@@ -245,7 +245,7 @@ function cleanName(name) {
 
 function getSpaces(bidRequests, ml) {
   let spacesStruct = getSpacesStruct(bidRequests);
-  let es = {str: '', vs: '', map: {}};
+  let es = { str: '', vs: '', map: {} };
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
 

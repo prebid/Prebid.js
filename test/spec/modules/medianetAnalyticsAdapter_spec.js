@@ -9,23 +9,23 @@ const {
 } = CONSTANTS;
 
 const MOCK = {
-  Ad_Units: [{'code': 'div-gpt-ad-1460505748561-0', 'mediaTypes': {'banner': {'sizes': [[300, 250]]}}, 'bids': [], 'ext': {'prop1': 'value1'}}],
-  MULTI_FORMAT_TWIN_AD_UNITS: [{'code': 'div-gpt-ad-1460505748561-0', 'mediaTypes': {'banner': {'sizes': [[300, 250]]}, 'native': {'image': {'required': true, 'sizes': [150, 50]}}}, 'bids': [], 'ext': {'prop1': 'value1'}}, {'code': 'div-gpt-ad-1460505748561-0', 'mediaTypes': {'video': {'playerSize': [640, 480], 'context': 'instream'}}, 'bids': [], 'ext': {'prop1': 'value1'}}],
-  AUCTION_INIT: {'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'timestamp': 1584563605739, 'timeout': 6000},
-  AUCTION_INIT_WITH_FLOOR: {'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'timestamp': 1584563605739, 'timeout': 6000, 'bidderRequests': [{'bids': [{ 'floorData': {'enforcements': {'enforceJS': true}} }]}]},
-  BID_REQUESTED: {'bidderCode': 'medianet', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'bids': [{'bidder': 'medianet', 'params': {'cid': 'TEST_CID', 'crid': '451466393'}, 'mediaTypes': {'banner': {'sizes': [[300, 250]], 'ext': ['asdads']}}, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'sizes': [[300, 250]], 'bidId': '28248b0e6aece2', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'src': 'client'}], 'auctionStart': 1584563605739, 'timeout': 6000, 'uspConsent': '1YY', 'start': 1584563605743},
-  MULTI_FORMAT_BID_REQUESTED: {'bidderCode': 'medianet', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'bids': [{'bidder': 'medianet', 'params': {'cid': 'TEST_CID', 'crid': '451466393'}, 'mediaTypes': {'banner': {'sizes': [[300, 250]]}, 'video': {'playerSize': [640, 480], 'context': 'instream'}, 'native': {'image': {'required': true, 'sizes': [150, 50]}, 'title': {'required': true, 'len': 80}}}, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'sizes': [[300, 250]], 'bidId': '28248b0e6aece2', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'src': 'client'}], 'auctionStart': 1584563605739, 'timeout': 6000, 'uspConsent': '1YY', 'start': 1584563605743},
-  BID_RESPONSE: {'bidderCode': 'medianet', 'width': 300, 'height': 250, 'adId': '3e6e4bce5c8fb3', 'requestId': '28248b0e6aece2', 'mediaType': 'banner', 'source': 'client', 'ext': {'pvid': 123, 'crid': '321'}, 'no_bid': false, 'cpm': 2.299, 'ad': 'AD_CODE', 'ttl': 180, 'creativeId': 'Test1', 'netRevenue': true, 'currency': 'USD', 'dfp_id': 'div-gpt-ad-1460505748561-0', 'originalCpm': 1.1495, 'originalCurrency': 'USD', 'floorData': {'floorValue': 1.10, 'floorRule': 'banner'}, 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'responseTimestamp': 1584563606009, 'requestTimestamp': 1584563605743, 'bidder': 'medianet', 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'timeToRespond': 266, 'pbLg': '2.00', 'pbMg': '2.20', 'pbHg': '2.29', 'pbAg': '2.25', 'pbDg': '2.29', 'pbCg': '2.00', 'size': '300x250', 'adserverTargeting': {'hb_bidder': 'medianet', 'hb_adid': '3e6e4bce5c8fb3', 'hb_pb': '2.00', 'hb_size': '300x250', 'hb_source': 'client', 'hb_format': 'banner', 'prebid_test': 1}, 'status': 'rendered', 'params': [{'cid': 'test123', 'crid': '451466393'}]},
-  AUCTION_END: {'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'auctionEnd': 1584563605739},
-  SET_TARGETING: {'div-gpt-ad-1460505748561-0': {'prebid_test': '1', 'hb_format': 'banner', 'hb_source': 'client', 'hb_size': '300x250', 'hb_pb': '2.00', 'hb_adid': '3e6e4bce5c8fb3', 'hb_bidder': 'medianet', 'hb_format_medianet': 'banner', 'hb_source_medianet': 'client', 'hb_size_medianet': '300x250', 'hb_pb_medianet': '2.00', 'hb_adid_medianet': '3e6e4bce5c8fb3', 'hb_bidder_medianet': 'medianet'}},
-  NO_BID_SET_TARGETING: {'div-gpt-ad-1460505748561-0': {}},
-  BID_WON: {'bidderCode': 'medianet', 'width': 300, 'height': 250, 'statusMessage': 'Bid available', 'adId': '3e6e4bce5c8fb3', 'requestId': '28248b0e6aece2', 'mediaType': 'banner', 'source': 'client', 'no_bid': false, 'cpm': 2.299, 'ad': 'AD_CODE', 'ttl': 180, 'creativeId': 'Test1', 'netRevenue': true, 'currency': 'USD', 'dfp_id': 'div-gpt-ad-1460505748561-0', 'originalCpm': 1.1495, 'originalCurrency': 'USD', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'responseTimestamp': 1584563606009, 'requestTimestamp': 1584563605743, 'bidder': 'medianet', 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'timeToRespond': 266, 'pbLg': '2.00', 'pbMg': '2.20', 'pbHg': '2.29', 'pbAg': '2.25', 'pbDg': '2.29', 'pbCg': '2.00', 'size': '300x250', 'adserverTargeting': {'hb_bidder': 'medianet', 'hb_adid': '3e6e4bce5c8fb3', 'hb_pb': '2.00', 'hb_size': '300x250', 'hb_source': 'client', 'hb_format': 'banner', 'prebid_test': 1}, 'status': 'rendered', 'params': [{'cid': 'test123', 'crid': '451466393'}]},
-  NO_BID: {'bidder': 'medianet', 'params': {'cid': 'test123', 'crid': '451466393', 'site': {}}, 'mediaTypes': {'banner': {'sizes': [[300, 250]], 'ext': ['asdads']}}, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'transactionId': '303fa0c6-682f-4aea-8e4a-dc68f0d5c7d5', 'sizes': [[300, 250], [300, 600]], 'bidId': '28248b0e6aece2', 'bidderRequestId': '13fccf3809fe43', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'src': 'client'},
-  BID_TIMEOUT: [{'bidId': '28248b0e6aece2', 'bidder': 'medianet', 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'params': [{'cid': 'test123', 'crid': '451466393', 'site': {}}, {'cid': '8CUX0H51P', 'crid': '451466393', 'site': {}}], 'timeout': 6}]
+  Ad_Units: [{ 'code': 'div-gpt-ad-1460505748561-0', 'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } }, 'bids': [], 'ext': { 'prop1': 'value1' } }],
+  MULTI_FORMAT_TWIN_AD_UNITS: [{ 'code': 'div-gpt-ad-1460505748561-0', 'mediaTypes': { 'banner': { 'sizes': [[300, 250]] }, 'native': { 'image': { 'required': true, 'sizes': [150, 50] } } }, 'bids': [], 'ext': { 'prop1': 'value1' } }, { 'code': 'div-gpt-ad-1460505748561-0', 'mediaTypes': { 'video': { 'playerSize': [640, 480], 'context': 'instream' } }, 'bids': [], 'ext': { 'prop1': 'value1' } }],
+  AUCTION_INIT: { 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'timestamp': 1584563605739, 'timeout': 6000 },
+  AUCTION_INIT_WITH_FLOOR: { 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'timestamp': 1584563605739, 'timeout': 6000, 'bidderRequests': [{ 'bids': [{ 'floorData': { 'enforcements': { 'enforceJS': true } } }] }] },
+  BID_REQUESTED: { 'bidderCode': 'medianet', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'bids': [{ 'bidder': 'medianet', 'params': { 'cid': 'TEST_CID', 'crid': '451466393' }, 'mediaTypes': { 'banner': { 'sizes': [[300, 250]], 'ext': ['asdads'] } }, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'sizes': [[300, 250]], 'bidId': '28248b0e6aece2', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'src': 'client' }], 'auctionStart': 1584563605739, 'timeout': 6000, 'uspConsent': '1YY', 'start': 1584563605743 },
+  MULTI_FORMAT_BID_REQUESTED: { 'bidderCode': 'medianet', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'bids': [{ 'bidder': 'medianet', 'params': { 'cid': 'TEST_CID', 'crid': '451466393' }, 'mediaTypes': { 'banner': { 'sizes': [[300, 250]] }, 'video': { 'playerSize': [640, 480], 'context': 'instream' }, 'native': { 'image': { 'required': true, 'sizes': [150, 50] }, 'title': { 'required': true, 'len': 80 } } }, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'sizes': [[300, 250]], 'bidId': '28248b0e6aece2', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'src': 'client' }], 'auctionStart': 1584563605739, 'timeout': 6000, 'uspConsent': '1YY', 'start': 1584563605743 },
+  BID_RESPONSE: { 'bidderCode': 'medianet', 'width': 300, 'height': 250, 'adId': '3e6e4bce5c8fb3', 'requestId': '28248b0e6aece2', 'mediaType': 'banner', 'source': 'client', 'ext': { 'pvid': 123, 'crid': '321' }, 'no_bid': false, 'cpm': 2.299, 'ad': 'AD_CODE', 'ttl': 180, 'creativeId': 'Test1', 'netRevenue': true, 'currency': 'USD', 'dfp_id': 'div-gpt-ad-1460505748561-0', 'originalCpm': 1.1495, 'originalCurrency': 'USD', 'floorData': { 'floorValue': 1.10, 'floorRule': 'banner' }, 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'responseTimestamp': 1584563606009, 'requestTimestamp': 1584563605743, 'bidder': 'medianet', 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'timeToRespond': 266, 'pbLg': '2.00', 'pbMg': '2.20', 'pbHg': '2.29', 'pbAg': '2.25', 'pbDg': '2.29', 'pbCg': '2.00', 'size': '300x250', 'adserverTargeting': { 'hb_bidder': 'medianet', 'hb_adid': '3e6e4bce5c8fb3', 'hb_pb': '2.00', 'hb_size': '300x250', 'hb_source': 'client', 'hb_format': 'banner', 'prebid_test': 1 }, 'status': 'rendered', 'params': [{ 'cid': 'test123', 'crid': '451466393' }] },
+  AUCTION_END: { 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'auctionEnd': 1584563605739 },
+  SET_TARGETING: { 'div-gpt-ad-1460505748561-0': { 'prebid_test': '1', 'hb_format': 'banner', 'hb_source': 'client', 'hb_size': '300x250', 'hb_pb': '2.00', 'hb_adid': '3e6e4bce5c8fb3', 'hb_bidder': 'medianet', 'hb_format_medianet': 'banner', 'hb_source_medianet': 'client', 'hb_size_medianet': '300x250', 'hb_pb_medianet': '2.00', 'hb_adid_medianet': '3e6e4bce5c8fb3', 'hb_bidder_medianet': 'medianet' } },
+  NO_BID_SET_TARGETING: { 'div-gpt-ad-1460505748561-0': {} },
+  BID_WON: { 'bidderCode': 'medianet', 'width': 300, 'height': 250, 'statusMessage': 'Bid available', 'adId': '3e6e4bce5c8fb3', 'requestId': '28248b0e6aece2', 'mediaType': 'banner', 'source': 'client', 'no_bid': false, 'cpm': 2.299, 'ad': 'AD_CODE', 'ttl': 180, 'creativeId': 'Test1', 'netRevenue': true, 'currency': 'USD', 'dfp_id': 'div-gpt-ad-1460505748561-0', 'originalCpm': 1.1495, 'originalCurrency': 'USD', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'responseTimestamp': 1584563606009, 'requestTimestamp': 1584563605743, 'bidder': 'medianet', 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'timeToRespond': 266, 'pbLg': '2.00', 'pbMg': '2.20', 'pbHg': '2.29', 'pbAg': '2.25', 'pbDg': '2.29', 'pbCg': '2.00', 'size': '300x250', 'adserverTargeting': { 'hb_bidder': 'medianet', 'hb_adid': '3e6e4bce5c8fb3', 'hb_pb': '2.00', 'hb_size': '300x250', 'hb_source': 'client', 'hb_format': 'banner', 'prebid_test': 1 }, 'status': 'rendered', 'params': [{ 'cid': 'test123', 'crid': '451466393' }] },
+  NO_BID: { 'bidder': 'medianet', 'params': { 'cid': 'test123', 'crid': '451466393', 'site': {} }, 'mediaTypes': { 'banner': { 'sizes': [[300, 250]], 'ext': ['asdads'] } }, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'transactionId': '303fa0c6-682f-4aea-8e4a-dc68f0d5c7d5', 'sizes': [[300, 250], [300, 600]], 'bidId': '28248b0e6aece2', 'bidderRequestId': '13fccf3809fe43', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'src': 'client' },
+  BID_TIMEOUT: [{ 'bidId': '28248b0e6aece2', 'bidder': 'medianet', 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'auctionId': '8e0d5245-deb3-406c-96ca-9b609e077ff7', 'params': [{ 'cid': 'test123', 'crid': '451466393', 'site': {} }, { 'cid': '8CUX0H51P', 'crid': '451466393', 'site': {} }], 'timeout': 6 }]
 }
 
 function performAuctionWithFloorConfig() {
-  events.emit(AUCTION_INIT, {...MOCK.AUCTION_INIT_WITH_FLOOR, adUnits: MOCK.Ad_Units});
+  events.emit(AUCTION_INIT, { ...MOCK.AUCTION_INIT_WITH_FLOOR, adUnits: MOCK.Ad_Units });
   events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
   events.emit(AUCTION_END, MOCK.AUCTION_END);
@@ -34,7 +34,7 @@ function performAuctionWithFloorConfig() {
 }
 
 function performStandardAuctionWithWinner() {
-  events.emit(AUCTION_INIT, {...MOCK.AUCTION_INIT, adUnits: MOCK.Ad_Units});
+  events.emit(AUCTION_INIT, { ...MOCK.AUCTION_INIT, adUnits: MOCK.Ad_Units });
   events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
   events.emit(AUCTION_END, MOCK.AUCTION_END);
@@ -43,7 +43,7 @@ function performStandardAuctionWithWinner() {
 }
 
 function performMultiFormatAuctionWithNoBid() {
-  events.emit(AUCTION_INIT, {...MOCK.AUCTION_INIT, adUnits: MOCK.MULTI_FORMAT_TWIN_AD_UNITS});
+  events.emit(AUCTION_INIT, { ...MOCK.AUCTION_INIT, adUnits: MOCK.MULTI_FORMAT_TWIN_AD_UNITS });
   events.emit(BID_REQUESTED, MOCK.MULTI_FORMAT_BID_REQUESTED);
   events.emit(NO_BID, MOCK.NO_BID);
   events.emit(AUCTION_END, MOCK.AUCTION_END);
@@ -51,7 +51,7 @@ function performMultiFormatAuctionWithNoBid() {
 }
 
 function performStandardAuctionWithNoBid() {
-  events.emit(AUCTION_INIT, {...MOCK.AUCTION_INIT, adUnits: MOCK.Ad_Units});
+  events.emit(AUCTION_INIT, { ...MOCK.AUCTION_INIT, adUnits: MOCK.Ad_Units });
   events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
   events.emit(NO_BID, MOCK.NO_BID);
   events.emit(AUCTION_END, MOCK.AUCTION_END);
@@ -59,7 +59,7 @@ function performStandardAuctionWithNoBid() {
 }
 
 function performStandardAuctionWithTimeout() {
-  events.emit(AUCTION_INIT, {...MOCK.AUCTION_INIT, adUnits: MOCK.Ad_Units});
+  events.emit(AUCTION_INIT, { ...MOCK.AUCTION_INIT, adUnits: MOCK.Ad_Units });
   events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
   events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);
   events.emit(AUCTION_END, MOCK.AUCTION_END);

@@ -168,8 +168,8 @@ const floorMinRequest = {
     'zoneId': '335918',
     'userId': '12346',
     'keywords': ['a', 'b', 'c'],
-    'inventory': {'rating': '4-star', 'prodtype': 'tech'},
-    'visitor': {'ucat': 'new', 'lastsearch': 'iphone'},
+    'inventory': { 'rating': '4-star', 'prodtype': 'tech' },
+    'visitor': { 'ucat': 'new', 'lastsearch': 'iphone' },
     'position': 'atf'
   },
   'mediaTypes': {
@@ -259,7 +259,7 @@ const MOCK = {
           'userId': '12346',
           'keywords': ['a', 'b', 'c'],
           'inventory': 'test',
-          'visitor': {'ucat': 'new', 'lastsearch': 'iphone'},
+          'visitor': { 'ucat': 'new', 'lastsearch': 'iphone' },
           'position': 'btf',
           'video': {
             'language': 'en',
@@ -296,8 +296,8 @@ const MOCK = {
           'zoneId': '335918',
           'userId': '12346',
           'keywords': ['a', 'b', 'c'],
-          'inventory': {'rating': '4-star', 'prodtype': 'tech'},
-          'visitor': {'ucat': 'new', 'lastsearch': 'iphone'},
+          'inventory': { 'rating': '4-star', 'prodtype': 'tech' },
+          'visitor': { 'ucat': 'new', 'lastsearch': 'iphone' },
           'position': 'atf'
         },
         'mediaTypes': {
@@ -658,7 +658,7 @@ describe('rubicon analytics adapter', function () {
   describe('config subscribe', function() {
     it('should update the pvid if user asks', function () {
       expect(utils.generateUUID.called).to.equal(false);
-      config.setConfig({rubicon: {updatePageView: true}});
+      config.setConfig({ rubicon: { updatePageView: true } });
       expect(utils.generateUUID.called).to.equal(true);
     });
     it('should merge in and preserve older set configs', function () {
@@ -1148,7 +1148,7 @@ describe('rubicon analytics adapter', function () {
     describe('with session handling', function () {
       const expectedPvid = STUBBED_UUID.slice(0, 8);
       beforeEach(function () {
-        config.setConfig({rubicon: {updatePageView: true}});
+        config.setConfig({ rubicon: { updatePageView: true } });
       });
 
       it('should not log any session data if local storage is not enabled', function () {
@@ -1172,12 +1172,12 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should should pass along custom rubicon kv and pvid when defined', function () {
-        config.setConfig({rubicon: {
+        config.setConfig({ rubicon: {
           fpkvs: {
             source: 'fb',
             link: 'email'
           }
-        }});
+        } });
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1187,22 +1187,22 @@ describe('rubicon analytics adapter', function () {
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
         expectedMessage.fpkvs = [
-          {key: 'source', value: 'fb'},
-          {key: 'link', value: 'email'}
+          { key: 'source', value: 'fb' },
+          { key: 'link', value: 'email' }
         ]
         expect(message).to.deep.equal(expectedMessage);
       });
 
       it('should convert kvs to strings before sending', function () {
-        config.setConfig({rubicon: {
+        config.setConfig({ rubicon: {
           fpkvs: {
             number: 24,
             boolean: false,
             string: 'hello',
             array: ['one', 2, 'three'],
-            object: {one: 'two'}
+            object: { one: 'two' }
           }
-        }});
+        } });
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1212,24 +1212,24 @@ describe('rubicon analytics adapter', function () {
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
         expectedMessage.fpkvs = [
-          {key: 'number', value: '24'},
-          {key: 'boolean', value: 'false'},
-          {key: 'string', value: 'hello'},
-          {key: 'array', value: 'one,2,three'},
-          {key: 'object', value: '[object Object]'}
+          { key: 'number', value: '24' },
+          { key: 'boolean', value: 'false' },
+          { key: 'string', value: 'hello' },
+          { key: 'array', value: 'one,2,three' },
+          { key: 'object', value: '[object Object]' }
         ]
         expect(message).to.deep.equal(expectedMessage);
       });
 
       it('should use the query utm param rubicon kv value and pass updated kv and pvid when defined', function () {
-        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=other', 'pbjs_debug': 'true'});
+        sandbox.stub(utils, 'getWindowLocation').returns({ 'search': '?utm_source=other', 'pbjs_debug': 'true' });
 
-        config.setConfig({rubicon: {
+        config.setConfig({ rubicon: {
           fpkvs: {
             source: 'fb',
             link: 'email'
           }
-        }});
+        } });
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1239,8 +1239,8 @@ describe('rubicon analytics adapter', function () {
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
         expectedMessage.fpkvs = [
-          {key: 'source', value: 'other'},
-          {key: 'link', value: 'email'}
+          { key: 'source', value: 'other' },
+          { key: 'link', value: 'email' }
         ]
 
         message.fpkvs.sort((left, right) => left.key < right.key);
@@ -1260,11 +1260,11 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        config.setConfig({rubicon: {
+        config.setConfig({ rubicon: {
           fpkvs: {
             link: 'email' // should merge this with what is in the localStorage!
           }
-        }});
+        } });
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1279,8 +1279,8 @@ describe('rubicon analytics adapter', function () {
           pvid: expectedPvid
         }
         expectedMessage.fpkvs = [
-          {key: 'source', value: 'tw'},
-          {key: 'link', value: 'email'}
+          { key: 'source', value: 'tw' },
+          { key: 'link', value: 'email' }
         ]
         expect(message).to.deep.equal(expectedMessage);
 
@@ -1302,7 +1302,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should overwrite matching localstorge value and use its remaining values', function () {
-        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=fb&utm_click=dog'});
+        sandbox.stub(utils, 'getWindowLocation').returns({ 'search': '?utm_source=fb&utm_click=dog' });
 
         // set some localStorage
         let inputlocalStorage = {
@@ -1314,11 +1314,11 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        config.setConfig({rubicon: {
+        config.setConfig({ rubicon: {
           fpkvs: {
             link: 'email' // should merge this with what is in the localStorage!
           }
-        }});
+        } });
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1333,9 +1333,9 @@ describe('rubicon analytics adapter', function () {
           pvid: expectedPvid
         }
         expectedMessage.fpkvs = [
-          {key: 'source', value: 'fb'},
-          {key: 'link', value: 'email'},
-          {key: 'click', value: 'dog'}
+          { key: 'source', value: 'fb' },
+          { key: 'link', value: 'email' },
+          { key: 'click', value: 'dog' }
         ]
 
         message.fpkvs.sort((left, right) => left.key < right.key);
@@ -1371,11 +1371,11 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        config.setConfig({rubicon: {
+        config.setConfig({ rubicon: {
           fpkvs: {
             link: 'email' // should merge this with what is in the localStorage!
           }
-        }});
+        } });
 
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
@@ -1389,7 +1389,7 @@ describe('rubicon analytics adapter', function () {
 
         // the saved fpkvs should have been thrown out since session expired
         expectedMessage.fpkvs = [
-          {key: 'link', value: 'email'}
+          { key: 'link', value: 'email' }
         ]
         expect(message).to.deep.equal(expectedMessage);
 
@@ -1421,11 +1421,11 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        config.setConfig({rubicon: {
+        config.setConfig({ rubicon: {
           fpkvs: {
             link: 'email' // should merge this with what is in the localStorage!
           }
-        }});
+        } });
 
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
@@ -1439,7 +1439,7 @@ describe('rubicon analytics adapter', function () {
 
         // the saved fpkvs should have been thrown out since session expired
         expectedMessage.fpkvs = [
-          {key: 'link', value: 'email'}
+          { key: 'link', value: 'email' }
         ]
         expect(message).to.deep.equal(expectedMessage);
 
@@ -1465,7 +1465,7 @@ describe('rubicon analytics adapter', function () {
       let gptSlotRenderEnded0, gptSlotRenderEnded1;
       beforeEach(function () {
         mockGpt.enable();
-        gptSlot0 = mockGpt.makeSlot({code: '/19968336/header-bid-tag-0'});
+        gptSlot0 = mockGpt.makeSlot({ code: '/19968336/header-bid-tag-0' });
         gptSlotRenderEnded0 = {
           eventName: 'slotRenderEnded',
           params: {
@@ -1477,7 +1477,7 @@ describe('rubicon analytics adapter', function () {
           }
         };
 
-        gptSlot1 = mockGpt.makeSlot({code: '/19968336/header-bid-tag1'});
+        gptSlot1 = mockGpt.makeSlot({ code: '/19968336/header-bid-tag1' });
         gptSlotRenderEnded1 = {
           eventName: 'slotRenderEnded',
           params: {
@@ -2006,9 +2006,9 @@ describe('rubicon analytics adapter', function () {
 
   describe('config with integration type', () => {
     it('should use the integration type provided in the config instead of the default', () => {
-      config.setConfig({rubicon: {
+      config.setConfig({ rubicon: {
         int_type: 'testType'
-      }})
+      } })
 
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
@@ -2030,11 +2030,11 @@ describe('rubicon analytics adapter', function () {
 
   describe('wrapper details passed in', () => {
     it('should correctly pass in the wrapper details if provided', () => {
-      config.setConfig({rubicon: {
+      config.setConfig({ rubicon: {
         wrapperName: '1001_wrapperName_exp.4',
         wrapperFamily: '1001_wrapperName',
         rule_name: 'na-mobile'
-      }});
+      } });
 
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {

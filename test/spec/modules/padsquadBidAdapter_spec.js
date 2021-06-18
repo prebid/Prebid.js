@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/padsquadBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/padsquadBidAdapter.js';
 
 const REQUEST = {
   'bidderCode': 'padsquad',
@@ -219,7 +219,7 @@ describe('Padsquad bid adapter', function () {
     });
 
     it('handles empty response', function () {
-      const EMPTY_RESP = Object.assign({}, RESPONSE, {'body': {}});
+      const EMPTY_RESP = Object.assign({}, RESPONSE, { 'body': {} });
       const bids = spec.interpretResponse(EMPTY_RESP, REQUEST);
 
       expect(bids).to.be.empty;
@@ -232,13 +232,13 @@ describe('Padsquad bid adapter', function () {
       expect(opts).to.be.an('array').that.is.empty;
     });
     it('returns non if sync is not allowed', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
 
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('iframe sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [RESPONSE]);
+      let opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [RESPONSE]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
@@ -246,7 +246,7 @@ describe('Padsquad bid adapter', function () {
     });
 
     it('pixel sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [RESPONSE]);
+      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [RESPONSE]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
@@ -254,7 +254,7 @@ describe('Padsquad bid adapter', function () {
     });
 
     it('all sync enabled should return all results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [RESPONSE]);
+      let opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [RESPONSE]);
 
       expect(opts.length).to.equal(2);
     });

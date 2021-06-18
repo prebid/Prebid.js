@@ -38,7 +38,7 @@ const PBJS_VERSION = $$PREBID_GLOBAL$$.version;
 const ID5_REDACTED = '__ID5_REDACTED__';
 const isArray = Array.isArray;
 
-let id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
+let id5Analytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }), {
   // Keeps an array of events for each auction
   eventBuffer: {},
 

@@ -25,12 +25,12 @@ function addHooks(overrides) {
 }
 
 function removeHooks() {
-  addBidResponse.getHooks({hook: addBidResponseBound}).remove();
-  addBidderRequests.getHooks({hook: addBidderRequestsBound}).remove();
+  addBidResponse.getHooks({ hook: addBidResponseBound }).remove();
+  addBidderRequests.getHooks({ hook: addBidderRequestsBound }).remove();
 }
 
 export function enableOverrides(overrides, fromSession = false) {
-  config.setConfig({'debug': true});
+  config.setConfig({ 'debug': true });
   removeHooks();
   addHooks(overrides);
   logMessage(`bidder overrides enabled${fromSession ? ' from session' : ''}`);
@@ -138,7 +138,7 @@ export function getConfig(debugging) {
     enableOverrides(debugging);
   }
 }
-config.getConfig('debugging', ({debugging}) => getConfig(debugging));
+config.getConfig('debugging', ({ debugging }) => getConfig(debugging));
 
 export function sessionLoader(storage) {
   let overrides;

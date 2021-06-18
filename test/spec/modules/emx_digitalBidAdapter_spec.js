@@ -631,7 +631,7 @@ describe('emx_digital Adapter', function () {
       const vastServerResponse = utils.deepClone(serverResponse);
       vastServerResponse.seatbid[0].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
       vastServerResponse.seatbid[1].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
-      let result = spec.interpretResponse({body: vastServerResponse}, bid_outstream);
+      let result = spec.interpretResponse({ body: vastServerResponse }, bid_outstream);
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.renderer).to.exist.and.to.be.a('object');
@@ -663,7 +663,7 @@ describe('emx_digital Adapter', function () {
 
     it('returns valid advertiser domain', function () {
       const bidResponse = utils.deepClone(serverResponse);
-      let result = spec.interpretResponse({body: bidResponse});
+      let result = spec.interpretResponse({ body: bidResponse });
       expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
       // case where adomains are not in request
       expect(result[1].meta).to.not.exist;

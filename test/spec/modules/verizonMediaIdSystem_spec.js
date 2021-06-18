@@ -1,6 +1,6 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import {verizonMediaIdSubmodule} from 'modules/verizonMediaIdSystem.js';
+import { verizonMediaIdSubmodule } from 'modules/verizonMediaIdSystem.js';
 
 describe('Verizon Media ID Submodule', () => {
   const HASHED_EMAIL = '6bda6f2fa268bf0438b5423a9861a2cedaa5dec163c03f743cfe05c08a8397b2';
@@ -94,7 +94,7 @@ describe('Verizon Media ID Submodule', () => {
 
       expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
       expect(requestQueryParams).to.deep.equal(expectedParams);
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
     });
 
     it('Makes an ajax GET request to the specified override API endpoint with query params', () => {
@@ -114,7 +114,7 @@ describe('Verizon Media ID Submodule', () => {
 
       expect(ajaxStub.firstCall.args[0].indexOf(`${OVERRIDE_ENDPOINT}?`)).to.equal(0);
       expect(requestQueryParams).to.deep.equal(expectedParams);
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
     });
 
     it('sets the callbacks param of the ajax function call correctly', () => {
@@ -190,12 +190,12 @@ describe('Verizon Media ID Submodule', () => {
     VALID_API_RESPONSES.forEach(responseData => {
       it('should return a newly constructed object with the connectid for a payload with ${responseData.key} key(s)', () => {
         expect(verizonMediaIdSubmodule.decode(responseData.payload)).to.deep.equal(
-          {connectid: responseData.expected}
+          { connectid: responseData.expected }
         );
       });
     });
 
-    [{}, '', {foo: 'bar'}].forEach((response) => {
+    [{}, '', { foo: 'bar' }].forEach((response) => {
       it(`should return undefined for an invalid response "${JSON.stringify(response)}"`, () => {
         expect(verizonMediaIdSubmodule.decode(response)).to.be.undefined;
       });

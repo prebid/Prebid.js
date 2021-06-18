@@ -6,7 +6,7 @@ import { config } from 'src/config.js';
 
 const DI_COOKIE_NAME = '_dpes_id';
 const DI_COOKIE_STORED = '{"id":"2cf40748c4f7f60d343336e08f80dc99"}';
-const DI_COOKIE_OBJECT = {id: '2cf40748c4f7f60d343336e08f80dc99'};
+const DI_COOKIE_OBJECT = { id: '2cf40748c4f7f60d343336e08f80dc99' };
 
 const cookieConfig = {
   name: 'deepintentId',
@@ -50,9 +50,9 @@ describe('Deepintent DPES System', () => {
       expect(deepintentDpesSubmodule.getId()).to.be.eq(undefined);
       expect(deepintentDpesSubmodule.getId({ })).to.be.eq(undefined);
 
-      expect(deepintentDpesSubmodule.getId({params: {}, storage: {}})).to.be.eq(undefined);
-      expect(deepintentDpesSubmodule.getId({params: {}, storage: {type: 'cookie'}})).to.be.eq(undefined);
-      expect(deepintentDpesSubmodule.getId({params: {}, storage: {name: '_dpes_id'}})).to.be.eq(undefined);
+      expect(deepintentDpesSubmodule.getId({ params: {}, storage: {} })).to.be.eq(undefined);
+      expect(deepintentDpesSubmodule.getId({ params: {}, storage: { type: 'cookie' } })).to.be.eq(undefined);
+      expect(deepintentDpesSubmodule.getId({ params: {}, storage: { name: '_dpes_id' } })).to.be.eq(undefined);
     });
 
     it('Get value stored in cookie for getId', () => {
@@ -70,7 +70,7 @@ describe('Deepintent DPES System', () => {
 
   describe('Deepintent Dpes System : test "decode" method', () => {
     it('Get the correct decoded value for dpes id', () => {
-      expect(deepintentDpesSubmodule.decode(DI_COOKIE_OBJECT, cookieConfig)).to.deep.equal({'deepintentId': {'id': '2cf40748c4f7f60d343336e08f80dc99'}});
+      expect(deepintentDpesSubmodule.decode(DI_COOKIE_OBJECT, cookieConfig)).to.deep.equal({ 'deepintentId': { 'id': '2cf40748c4f7f60d343336e08f80dc99' } });
     });
   });
 });

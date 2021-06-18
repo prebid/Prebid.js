@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -205,7 +205,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst) {
     }
 
     if (slot && !slot.bids.length) {
-      slot.parents.forEach(({parent, key, uid}) => {
+      slot.parents.forEach(({ parent, key, uid }) => {
         const index = parent[key].indexOf(slot);
         if (index > -1) {
           parent[key].splice(index, 1);
@@ -250,7 +250,7 @@ function createRenderer (bid, rendererParams, RendererConst) {
 }
 
 function createVideoRequest(bid, mediaType) {
-  const {playerSize, mimes, durationRangeSec, protocols} = mediaType;
+  const { playerSize, mimes, durationRangeSec, protocols } = mediaType;
   const size = (playerSize || bid.sizes || [])[0];
   if (!size) return;
 
@@ -299,7 +299,7 @@ function _getFloor (mediaTypes, bid) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: curMediaType,
-      size: bid.sizes.map(([w, h]) => ({w, h}))
+      size: bid.sizes.map(([w, h]) => ({ w, h }))
     });
 
     if (typeof floorInfo === 'object' &&
@@ -324,7 +324,7 @@ function newFormatRequest(validBidRequests, bidderRequest) {
   let userIdAsEids = null;
   let user = null;
   let userExt = null;
-  let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
+  let { bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo } = bidderRequest || {};
 
   const referer = refererInfo ? encodeURIComponent(refererInfo.referer) : '';
   const imp = [];
@@ -346,7 +346,7 @@ function newFormatRequest(validBidRequests, bidderRequest) {
     if (!userIdAsEids) {
       userIdAsEids = bid.userIdAsEids;
     }
-    const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd} = bid;
+    const { params: { uid, keywords }, mediaTypes, bidId, adUnitCode, rtd } = bid;
     bidsMap[bidId] = bid;
     if (!pageKeywords && !utils.isEmpty(keywords)) {
       pageKeywords = utils.transformBidderParamKeywords(keywords);
@@ -425,14 +425,14 @@ function newFormatRequest(validBidRequests, bidderRequest) {
       data: [{
         name: 'iow_labs_pub_data',
         segment: jwpseg.map((seg) => {
-          return {name: 'jwpseg', value: seg};
+          return { name: 'jwpseg', value: seg };
         })
       }]
     };
   }
 
   if (gdprConsent && gdprConsent.consentString) {
-    userExt = {consent: gdprConsent.consentString};
+    userExt = { consent: gdprConsent.consentString };
   }
 
   if (userIdAsEids && userIdAsEids.length) {
@@ -478,7 +478,7 @@ function newFormatRequest(validBidRequests, bidderRequest) {
 
   if (uspConsent) {
     if (!request.regs) {
-      request.regs = {ext: {}};
+      request.regs = { ext: {} };
     }
     request.regs.ext.us_privacy = uspConsent;
   }
@@ -507,7 +507,7 @@ function oldFormatRequest(validBidRequests, bidderRequest) {
       priceType = 'gross';
     }
     reqId = bid.bidderRequestId;
-    const {params: {uid}, adUnitCode} = bid;
+    const { params: { uid }, adUnitCode } = bid;
     auids.push(uid);
     const sizesId = utils.parseSizesInput(bid.sizes);
 
@@ -525,7 +525,7 @@ function oldFormatRequest(validBidRequests, bidderRequest) {
     }
     const slotsMap = slotsMapByUid[uid];
     if (!slotsMap[adUnitCode]) {
-      slotsMap[adUnitCode] = {adUnitCode, bids: [bid], parents: []};
+      slotsMap[adUnitCode] = { adUnitCode, bids: [bid], parents: [] };
     } else {
       slotsMap[adUnitCode].bids.push(bid);
     }
@@ -542,7 +542,7 @@ function oldFormatRequest(validBidRequests, bidderRequest) {
       } else {
         bidsMap[uid][sizeId].push(slot);
       }
-      slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
+      slot.parents.push({ parent: bidsMap[uid], key: sizeId, uid });
     });
   });
 

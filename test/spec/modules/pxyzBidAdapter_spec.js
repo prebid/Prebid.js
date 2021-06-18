@@ -70,7 +70,7 @@ describe('pxyzBidAdapter', function () {
 
       expect(Object.keys(data.imp[0].ext)).to.have.members(['appnexus', 'pxyz']);
       expect([banner.w, banner.h]).to.deep.equal([300, 250]);
-      expect(banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
       expect(request.url).to.equal(URL);
       expect(request.method).to.equal('POST');
     });
@@ -197,14 +197,14 @@ describe('pxyzBidAdapter', function () {
           }
         }
       ];
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
     });
 
     it('handles nobid response', function () {
       const response = undefined;
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   });

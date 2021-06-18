@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/pubmaticBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 const constants = require('src/constants.json');
 
@@ -210,37 +210,37 @@ describe('PubMatic adapter', function () {
       ],
       mediaTypes: {
         native: {
-          title: {required: true, len: 80, ext: {'title1': 'title2'}},
-          icon: {required: true, sizes: [50, 50], ext: {'icon1': 'icon2'}},
-          image: {required: true, sizes: [728, 90], ext: {'image1': 'image2'}, 'mimes': ['image/png', 'image/gif']},
-          sponsoredBy: {required: true, len: 10, ext: {'sponsor1': 'sponsor2'}},
-          body: {required: true, len: 10, ext: {'body1': 'body2'}},
-          rating: {required: true, len: 10, ext: {'rating1': 'rating2'}},
-          likes: {required: true, len: 10, ext: {'likes1': 'likes2'}},
-          downloads: {required: true, len: 10, ext: {'downloads1': 'downloads2'}},
-          price: {required: true, len: 10, ext: {'price1': 'price2'}},
-          saleprice: {required: true, len: 10, ext: {'saleprice1': 'saleprice2'}},
-          phone: {required: true, len: 10, ext: {'phone1': 'phone2'}},
-          address: {required: true, len: 10, ext: {'address1': 'address2'}},
-          desc2: {required: true, len: 10, ext: {'desc21': 'desc22'}},
-          displayurl: {required: true, len: 10, ext: {'displayurl1': 'displayurl2'}}
+          title: { required: true, len: 80, ext: { 'title1': 'title2' } },
+          icon: { required: true, sizes: [50, 50], ext: { 'icon1': 'icon2' } },
+          image: { required: true, sizes: [728, 90], ext: { 'image1': 'image2' }, 'mimes': ['image/png', 'image/gif'] },
+          sponsoredBy: { required: true, len: 10, ext: { 'sponsor1': 'sponsor2' } },
+          body: { required: true, len: 10, ext: { 'body1': 'body2' } },
+          rating: { required: true, len: 10, ext: { 'rating1': 'rating2' } },
+          likes: { required: true, len: 10, ext: { 'likes1': 'likes2' } },
+          downloads: { required: true, len: 10, ext: { 'downloads1': 'downloads2' } },
+          price: { required: true, len: 10, ext: { 'price1': 'price2' } },
+          saleprice: { required: true, len: 10, ext: { 'saleprice1': 'saleprice2' } },
+          phone: { required: true, len: 10, ext: { 'phone1': 'phone2' } },
+          address: { required: true, len: 10, ext: { 'address1': 'address2' } },
+          desc2: { required: true, len: 10, ext: { 'desc21': 'desc22' } },
+          displayurl: { required: true, len: 10, ext: { 'displayurl1': 'displayurl2' } }
         }
       },
       nativeParams: {
-        title: {required: true, len: 80, ext: {'title1': 'title2'}},
-        icon: {required: true, sizes: [50, 50], ext: {'icon1': 'icon2'}},
-        image: {required: true, sizes: [728, 90], ext: {'image1': 'image2'}, 'mimes': ['image/png', 'image/gif']},
-        sponsoredBy: {required: true, len: 10, ext: {'sponsor1': 'sponsor2'}},
-        body: {required: true, len: 10, ext: {'body1': 'body2'}},
-        rating: {required: true, len: 10, ext: {'rating1': 'rating2'}},
-        likes: {required: true, len: 10, ext: {'likes1': 'likes2'}},
-        downloads: {required: true, len: 10, ext: {'downloads1': 'downloads2'}},
-        price: {required: true, len: 10, ext: {'price1': 'price2'}},
-        saleprice: {required: true, len: 10, ext: {'saleprice1': 'saleprice2'}},
-        phone: {required: true, len: 10, ext: {'phone1': 'phone2'}},
-        address: {required: true, len: 10, ext: {'address1': 'address2'}},
-        desc2: {required: true, len: 10, ext: {'desc21': 'desc22'}},
-        displayurl: {required: true, len: 10, ext: {'displayurl1': 'displayurl2'}}
+        title: { required: true, len: 80, ext: { 'title1': 'title2' } },
+        icon: { required: true, sizes: [50, 50], ext: { 'icon1': 'icon2' } },
+        image: { required: true, sizes: [728, 90], ext: { 'image1': 'image2' }, 'mimes': ['image/png', 'image/gif'] },
+        sponsoredBy: { required: true, len: 10, ext: { 'sponsor1': 'sponsor2' } },
+        body: { required: true, len: 10, ext: { 'body1': 'body2' } },
+        rating: { required: true, len: 10, ext: { 'rating1': 'rating2' } },
+        likes: { required: true, len: 10, ext: { 'likes1': 'likes2' } },
+        downloads: { required: true, len: 10, ext: { 'downloads1': 'downloads2' } },
+        price: { required: true, len: 10, ext: { 'price1': 'price2' } },
+        saleprice: { required: true, len: 10, ext: { 'saleprice1': 'saleprice2' } },
+        phone: { required: true, len: 10, ext: { 'phone1': 'phone2' } },
+        address: { required: true, len: 10, ext: { 'address1': 'address2' } },
+        desc2: { required: true, len: 10, ext: { 'desc21': 'desc22' } },
+        displayurl: { required: true, len: 10, ext: { 'displayurl1': 'displayurl2' } }
       },
       bidder: 'pubmatic',
       params: {
@@ -911,7 +911,7 @@ describe('PubMatic adapter', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(true);
 
         delete bid.mediaTypes.video.mimes; // mediaTypes.video.mimes undefined
-        bid.params.video = {mimes: 'string'}; // NOT array
+        bid.params.video = { mimes: 'string' }; // NOT array
         expect(spec.isBidRequestValid(bid)).to.equal(false);
 
         delete bid.mediaTypes.video.mimes; // mediaTypes.video.mimes undefined
@@ -1195,7 +1195,7 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].tagid).to.deep.equal(undefined); // tagid
         expect(data.imp[0].banner.w).to.equal(728); // width
         expect(data.imp[0].banner.h).to.equal(90); // height
-        expect(data.imp[0].banner.format).to.deep.equal([{w: 160, h: 600}]);
+        expect(data.imp[0].banner.format).to.deep.equal([{ w: 160, h: 600 }]);
         expect(data.imp[0].ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
         expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
@@ -3419,23 +3419,23 @@ describe('PubMatic adapter', function () {
       });
 
       it('GDPR', function() {
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo`
         }]);
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&gdpr=0&gdpr_consent=foo`
         }]);
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=`
         }]);
 
-        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
           type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo`
         }]);
-        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
           type: 'image', url: `${syncurl_image}&gdpr=0&gdpr_consent=foo`
         }]);
-        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
           type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=`
         }]);
       });
@@ -3477,10 +3477,10 @@ describe('PubMatic adapter', function () {
           };
           return config[key];
         });
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, '1NYN')).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
         }]);
-        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, { gdprApplies: true, consentString: 'foo' }, '1NYN')).to.deep.equal([{
           type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
         }]);
       });

@@ -455,7 +455,7 @@ function interpretResponse (serverResponse, bidRequest) {
       // dealId: DEAL_ID,
       // referrer: REFERER,
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
-      ...(mediaType === VIDEO && {ad: markup, vastXml: markup}),
+      ...(mediaType === VIDEO && { ad: markup, vastXml: markup }),
       mediaType,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,

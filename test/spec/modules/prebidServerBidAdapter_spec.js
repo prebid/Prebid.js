@@ -895,11 +895,11 @@ describe('S2S Adapter', function () {
         ).to.be.true;
 
         // if getFloor does not return number
-        getFloorResponse = {currency: 'EUR', floor: 'not a number'};
+        getFloorResponse = { currency: 'EUR', floor: 'not a number' };
         runTest(undefined, undefined);
 
         // if getFloor does not return currency
-        getFloorResponse = {floor: 1.1};
+        getFloorResponse = { floor: 1.1 };
         runTest(undefined, undefined);
       });
 
@@ -914,7 +914,7 @@ describe('S2S Adapter', function () {
         sinon.spy(BID_REQUESTS[0].bids[0], 'getFloor');
 
         // returns USD and string floor
-        getFloorResponse = {currency: 'USD', floor: '1.23'};
+        getFloorResponse = { currency: 'USD', floor: '1.23' };
         runTest(1.23, 'USD');
         // make sure getFloor was called
         expect(
@@ -924,7 +924,7 @@ describe('S2S Adapter', function () {
         ).to.be.true;
 
         // returns non USD and number floor
-        getFloorResponse = {currency: 'EUR', floor: 0.85};
+        getFloorResponse = { currency: 'EUR', floor: 0.85 };
         runTest(0.85, 'EUR');
       });
 
@@ -941,7 +941,7 @@ describe('S2S Adapter', function () {
         sinon.spy(BID_REQUESTS[0].bids[0], 'getFloor');
 
         // returns USD and string floor
-        getFloorResponse = {currency: 'JPY', floor: 97.2};
+        getFloorResponse = { currency: 'JPY', floor: 97.2 };
         runTest(97.2, 'JPY');
         // make sure getFloor was called with JPY
         expect(
@@ -1633,7 +1633,7 @@ describe('S2S Adapter', function () {
         maxbids: 2
       }];
 
-      config.setConfig({multibid: multibid});
+      config.setConfig({ multibid: multibid });
 
       adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
@@ -1647,19 +1647,19 @@ describe('S2S Adapter', function () {
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
 
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: 'v$prebid.version$'});
+      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({ name: 'pbjs', version: 'v$prebid.version$' });
     });
 
     it('does not set pbjs version in request if channel does exist in s2sConfig', () => {
       const s2sBidRequest = utils.deepClone(REQUEST);
       const bidRequests = utils.deepClone(BID_REQUESTS);
 
-      utils.deepSetValue(s2sBidRequest, 's2sConfig.extPrebid.channel', {test: 1});
+      utils.deepSetValue(s2sBidRequest, 's2sConfig.extPrebid.channel', { test: 1 });
 
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
 
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({test: 1});
+      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({ test: 1 });
     });
 
     it('passes first party data in request', () => {
@@ -1718,7 +1718,7 @@ describe('S2S Adapter', function () {
           }
         }
       }));
-      const commonContextExpected = utils.mergeDeep({'page': 'http://mytestpage.com', 'publisher': {'id': '1'}}, commonContext);
+      const commonContextExpected = utils.mergeDeep({ 'page': 'http://mytestpage.com', 'publisher': { 'id': '1' } }, commonContext);
 
       config.setConfig({ fpd: { context: commonContext, user: commonUser } });
       config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
@@ -1971,7 +1971,7 @@ describe('S2S Adapter', function () {
     });
 
     it('should pass through default adserverTargeting if present in bidObject for video request', function () {
-      config.setConfig({s2sConfig: CONFIG});
+      config.setConfig({ s2sConfig: CONFIG });
       const cacheResponse = utils.deepClone(RESPONSE_OPENRTB);
       const targetingTestData = {
         hb_cache_path: '/cache',
@@ -2520,8 +2520,8 @@ describe('S2S Adapter', function () {
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
       expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig.endpoint).to.deep.equal({p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction', noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/openrtb2/auction'});
-      expect(vendorConfig.syncEndpoint).to.deep.equal({p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync', noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync'});
+      expect(vendorConfig.endpoint).to.deep.equal({ p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction', noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/openrtb2/auction' });
+      expect(vendorConfig.syncEndpoint).to.deep.equal({ p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync', noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync' });
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 
@@ -2541,8 +2541,8 @@ describe('S2S Adapter', function () {
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['rubicon']);
       expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig.endpoint).to.deep.equal({p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction', noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction'});
-      expect(vendorConfig.syncEndpoint).to.deep.equal({p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync', noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync'});
+      expect(vendorConfig.endpoint).to.deep.equal({ p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction', noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction' });
+      expect(vendorConfig.syncEndpoint).to.deep.equal({ p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync', noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync' });
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 
@@ -2561,8 +2561,8 @@ describe('S2S Adapter', function () {
         'bidders': ['rubicon'],
         'defaultVendor': 'rubicon',
         'enabled': true,
-        'endpoint': {p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction', noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction'},
-        'syncEndpoint': {p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync', noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync'},
+        'endpoint': { p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction', noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction' },
+        'syncEndpoint': { p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync', noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync' },
         'timeout': 750
       })
     });
@@ -2583,8 +2583,8 @@ describe('S2S Adapter', function () {
         accountId: 'abc',
         bidders: ['rubicon'],
         defaultVendor: 'rubicon',
-        endpoint: {p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction', noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction'},
-        syncEndpoint: {p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync', noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync'},
+        endpoint: { p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction', noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction' },
+        syncEndpoint: { p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync', noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync' },
       })
     });
 
@@ -2632,7 +2632,7 @@ describe('S2S Adapter', function () {
 
       // Add syncEndpoint so that the request goes to the User Sync endpoint
       // Modify the bidders property to include an alias for Rubicon adapter
-      s2sConfig.syncEndpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'};
+      s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
       s2sConfig.bidders = ['appnexus', 'rubicon-alias'];
 
       const s2sBidRequest = utils.deepClone(REQUEST);
@@ -2703,7 +2703,7 @@ describe('S2S Adapter', function () {
     it('should add cooperative sync flag to cookie_sync request if property is present', function () {
       let s2sConfig = utils.deepClone(CONFIG);
       s2sConfig.coopSync = false;
-      s2sConfig.syncEndpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'};
+      s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
 
       const s2sBidRequest = utils.deepClone(REQUEST);
       s2sBidRequest.s2sConfig = s2sConfig;
@@ -2718,7 +2718,7 @@ describe('S2S Adapter', function () {
 
     it('should not add cooperative sync flag to cookie_sync request if property is not present', function () {
       let s2sConfig = utils.deepClone(CONFIG);
-      s2sConfig.syncEndpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'};
+      s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
 
       const s2sBidRequest = utils.deepClone(REQUEST);
       s2sBidRequest.s2sConfig = s2sConfig;
@@ -2732,7 +2732,7 @@ describe('S2S Adapter', function () {
     });
 
     it('adds debug flag', function () {
-      config.setConfig({debug: true});
+      config.setConfig({ debug: true });
 
       let bidRequest = utils.deepClone(BID_REQUESTS);
 

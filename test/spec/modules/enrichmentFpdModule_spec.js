@@ -86,7 +86,7 @@ describe('the first party data enrichment module', function() {
     width = 800;
     height = 500;
 
-    let validated = initSubmodule({}, {device: {w: 1200, h: 700}, site: {ref: 'https://someUrl.com', page: 'test.com'}});
+    let validated = initSubmodule({}, { device: { w: 1200, h: 700 }, site: { ref: 'https://someUrl.com', page: 'test.com' } });
 
     expect(validated.site.ref).to.equal('https://someUrl.com');
     expect(validated.site.page).to.equal('test.com');

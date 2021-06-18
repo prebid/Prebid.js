@@ -1,6 +1,6 @@
 // ADRIVER BID ADAPTER for Prebid 1.13
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'adriver';
 const ADRIVER_BID_URL = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
@@ -74,7 +74,7 @@ export const spec = {
         }
         par = {
           'id': bid.params.placementId,
-          'ext': {'query': 'bn=15&custom=111=' + bid.bidId},
+          'ext': { 'query': 'bn=15&custom=111=' + bid.bidId },
           'banner': {
             'w': width || undefined,
             'h': height || undefined

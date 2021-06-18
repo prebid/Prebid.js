@@ -6,8 +6,8 @@
  */
 
 import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js'
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'merkleId';
@@ -116,9 +116,9 @@ export const merkleIdSubmodule = {
           callback();
         }
       };
-      ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
     };
-    return {callback: resp};
+    return { callback: resp };
   }
 };
 
