@@ -66,7 +66,7 @@ describe('radsAdapter', function () {
         },
         'banner': {
           'sizes': [
-            [300, 250]
+            [100, 100], [400, 400], [500, 500]
           ]
         }
       },
@@ -93,7 +93,7 @@ describe('radsAdapter', function () {
       },
       'mediaTypes': {
         'video': {
-          'playerSize': [640, 480],
+          'playerSize': [[640, 480], [500, 500], [600, 600]],
           'context': 'instream'
         }
       },
@@ -125,13 +125,13 @@ describe('radsAdapter', function () {
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
       let data = request[0].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('rt=bid-response&_f=prebid_js&_ps=6682&srw=300&srh=250&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&i=1.1.1.1&did_netid=123&did_uid2=456');
+      expect(data).to.equal('_f=prebid_js&_ps=6682&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&rt=bid-response&srw=100&srh=100&alt_ad_sizes%5B0%5D=400x400&alt_ad_sizes%5B1%5D=500x500&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&i=1.1.1.1&did_netid=123&did_uid2=456');
     });
 
     it('sends bid video request to our rads endpoint via GET', function () {
       expect(request[1].method).to.equal('GET');
       let data = request[1].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('rt=vast2&_f=prebid_js&_ps=6682&srw=640&srh=480&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgeo%5D%5Bregion%5D=DE-BE&bcat=IAB2%2CIAB4&dvt=desktop');
+      expect(data).to.equal('_f=prebid_js&_ps=6682&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&rt=vast2&srw=640&srh=480&alt_ad_sizes%5B0%5D=500x500&alt_ad_sizes%5B1%5D=600x600&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgeo%5D%5Bregion%5D=DE-BE&bcat=IAB2%2CIAB4&dvt=desktop');
     });
 
     // with gdprConsent
@@ -139,13 +139,13 @@ describe('radsAdapter', function () {
     it('sends bid request to our endpoint via GET', function () {
       expect(request2[0].method).to.equal('GET');
       let data = request2[0].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('rt=bid-response&_f=prebid_js&_ps=6682&srw=300&srh=250&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&i=1.1.1.1&did_netid=123&did_uid2=456');
+      expect(data).to.equal('_f=prebid_js&_ps=6682&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&rt=bid-response&srw=100&srh=100&alt_ad_sizes%5B0%5D=400x400&alt_ad_sizes%5B1%5D=500x500&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&i=1.1.1.1&did_netid=123&did_uid2=456');
     });
 
     it('sends bid video request to our rads endpoint via GET', function () {
       expect(request2[1].method).to.equal('GET');
       let data = request2[1].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('rt=vast2&_f=prebid_js&_ps=6682&srw=640&srh=480&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgeo%5D%5Bregion%5D=DE-BE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop');
+      expect(data).to.equal('_f=prebid_js&_ps=6682&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&rt=vast2&srw=640&srh=480&alt_ad_sizes%5B0%5D=500x500&alt_ad_sizes%5B1%5D=600x600&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgeo%5D%5Bregion%5D=DE-BE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop');
     });
   });
 

@@ -12,7 +12,7 @@ const GVLID = 602;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['rads'],
+  aliases: [],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     return !!(bid.params.placement);
@@ -29,35 +29,36 @@ export const spec = {
 
       let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
 
-      let payload = {};
+      let payload = {
+        _f: 'prebid_js',
+        _ps: placementId,
+        idt: 100,
+        rnd: rnd,
+        p: referrer,
+        bid_id: bidId,
+      };
+
+      let sizes;
       if (isBannerRequest(bidRequest)) {
-        let size = getBannerSizes(bidRequest)[0];
-        payload = {
-          rt: 'bid-response',
-          _f: 'prebid_js',
-          _ps: placementId,
-          srw: size.width,
-          srh: size.height,
-          idt: 100,
-          rnd: rnd,
-          p: referrer,
-          bid_id: bidId,
-        };
+        sizes = getBannerSizes(bidRequest);
+        payload.rt = 'bid-response';
+        payload.srw = sizes[0].width;
+        payload.srh = sizes[0].height;
       } else {
         let vastFormat = params.vastFormat || DEFAULT_VAST_FORMAT;
-        let size = getVideoSizes(bidRequest)[0];
-        payload = {
-          rt: vastFormat,
-          _f: 'prebid_js',
-          _ps: placementId,
-          srw: size.width,
-          srh: size.height,
-          idt: 100,
-          rnd: rnd,
-          p: referrer,
-          bid_id: bidId,
-        };
+        sizes = getVideoSizes(bidRequest);
+        payload.rt = vastFormat;
+        payload.srw = sizes[0].width;
+        payload.srh = sizes[0].height;
       }
+
+      if (sizes.length > 1) {
+        payload.alt_ad_sizes = [];
+        for (let i = 1; i < sizes.length; i++) {
+          payload.alt_ad_sizes.push(sizes[i].width + 'x' + sizes[i].height);
+        }
+      }
+
       prepareExtraParams(params, payload, bidderRequest, bidRequest);
 
       return {
