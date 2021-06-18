@@ -14,7 +14,9 @@ Connects to AppNexus exchange for bids.
 
 This bid adapter supports the Banner media type only.
 
-Please reach out to the WINR team before using this plugin to get placementId. `domParent` and `child` position settings are usually determined and remotely controlled for each publisher site by the WINR team. If you would prefer to have control over these settings, please get in touch.
+Please reach out to the WINR team before using this plugin to get `placementId`.
+
+`domParent` and `child` position settings are usually determined and remotely controlled for each publisher site by the WINR team. If you would prefer to have control over these settings, please get in touch.
 
 The code below returns a demo ad.
 
@@ -295,7 +297,7 @@ var adUnits = [
           code: "div-gpt-ad-1460505748561-0",
           mediaTypes: {
             banner: {
-              sizes: [1, 1],
+              sizes: [[1, 1]],
             },
           },
           bids: [
