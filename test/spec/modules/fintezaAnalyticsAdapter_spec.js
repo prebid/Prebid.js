@@ -76,10 +76,10 @@ describe('finteza analytics adapter', function () {
         // Emit the events with the "real" arguments
         events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
 
-        expect(server.requests.length).to.equal(1);
-
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
+
+        expect(server.requests.length).to.equal(1);
 
         const url = parseUrl(server.requests[0].url);
 
