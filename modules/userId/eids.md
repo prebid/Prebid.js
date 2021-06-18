@@ -86,17 +86,6 @@ userIdAsEids = [
 
     {
         source: 'hcn.health',
-<<<<<<< HEAD
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 3
-        }]
-    },
-
-    {
-        source: 'criteo.com',
-=======
->>>>>>> 9e87c74c9fbc8d546b41c39c84b29f629e7afa4b
         uids: [{
             id: 'some-random-id-value',
             atype: 3
