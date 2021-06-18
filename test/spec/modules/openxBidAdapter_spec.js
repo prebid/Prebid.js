@@ -1064,10 +1064,9 @@ describe('OpenxAdapter', function () {
         parrableId: { eid: 'eidVersion.encryptionKeyReference.encryptedValue' },
         pubcid: '1111-pubcid',
         quantcastId: '1111-quantcastid',
-        sharedId: '1111-sharedid',
         tapadId: '111-tapadid',
         tdid: '1111-tdid',
-        verizonMediaId: '1111-verizonmediaid',
+        uid2: {id: '1111-uid2'}
       };
 
       // generates the same set of tests for each id provider
@@ -1105,6 +1104,9 @@ describe('OpenxAdapter', function () {
             let userIdValue;
             // handle cases where userId key refers to an object
             switch (userIdProviderKey) {
+              case 'uid2':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.uid2.id;
+                break;
               case 'lipb':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.lipb.lipbid;
                 break;

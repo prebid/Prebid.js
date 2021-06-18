@@ -103,6 +103,48 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     let serverRequest = spec.buildRequests([bidBanner], bidderRequest);
     testServerRequestBody(serverRequest);
 
+    it('sends bidfloor param if present', function () {
+      bidBanner.getFloor = function () {
+        return {
+          currency: 'USD',
+          floor: 0.5,
+        }
+      };
+      const request = spec.buildRequests([bidBanner], bidderRequest);
+      expect(request.data.placements[0].floor['300x250']).to.equal(0.5);
+    });
+
+    it('sends gdpr info if exists', function () {
+      const gdprConsent = {
+        consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+        gdprApplies: true
+      };
+
+      bidderRequest['gdprConsent'] = gdprConsent;
+      const request = spec.buildRequests([bidBanner], bidderRequest);
+
+      expect(request.data.gdpr_require).to.exist.and.to.be.a('number');
+      expect(request.data.gdpr_consent).to.exist.and.to.be.a('string');
+    });
+
+    it('sends schain info if exists', function () {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'directseller.com',
+            sid: '00001',
+            rid: 'BidRequest1',
+            hp: 1
+          }
+        ]
+      };
+      bidBanner.schain = schain;
+      const request = spec.buildRequests([bidBanner], bidderRequest);
+      expect(request.data.placements[0].schain).to.be.an('object');
+    });
+
     bidderRequest['bids'] = [bidVideo];
     serverRequest = spec.buildRequests([bidVideo], bidderRequest);
     testServerRequestBody(serverRequest);
@@ -129,6 +171,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         expect(dataItem.netRevenue).to.be.a('boolean');
         expect(dataItem.currency).to.be.a('string');
         expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta.advertiserDomains[0]).to.be.a('string');
       }
     });
   }
@@ -145,7 +188,8 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         ttl: 1000,
         creativeId: '123asd',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        adomain: ['adomain.com'],
       }]
     };
 
@@ -160,7 +204,8 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         ttl: 1000,
         creativeId: '123asd',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        adomain: ['adomain.com'],
       }]
     };
     let serverResponses = spec.interpretResponse(resObjectBanner);

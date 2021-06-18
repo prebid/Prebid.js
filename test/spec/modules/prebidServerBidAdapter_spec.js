@@ -271,9 +271,11 @@ const RESPONSE_OPENRTB = {
               'type': 'banner',
               'event': {
                 'win': 'http://wurl.org?id=333'
+              },
+              'meta': {
+                'dchain': { 'ver': '1.0', 'complete': 0, 'nodes': [ { 'asi': 'magnite.com', 'bsid': '123456789', } ] }
               }
             },
-            'dchain': { 'ver': '1.0', 'complete': 0, 'nodes': [ { 'asi': 'magnite.com', 'bsid': '123456789', } ] },
             'bidder': {
               'appnexus': {
                 'brand_id': 1,
@@ -2727,6 +2729,17 @@ describe('S2S Adapter', function () {
       let requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.coopSync).to.be.undefined;
+    });
+
+    it('adds debug flag', function () {
+      config.setConfig({debug: true});
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.debug).is.equal(true);
     });
   });
 });
