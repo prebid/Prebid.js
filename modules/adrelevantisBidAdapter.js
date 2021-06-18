@@ -124,7 +124,7 @@ export const spec = {
     if (fpdcfg && fpdcfg.context) {
       let fdata = {
         keywords: fpdcfg.context.keywords || '',
-        category: utils.deepAccess(fpdcfg, 'context.data.category') || ''
+        category: fpdcfg.context.category || ''
       }
       payload.fpd = fdata;
     }
