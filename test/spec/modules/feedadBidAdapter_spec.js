@@ -444,8 +444,9 @@ describe('FeedAdAdapter', function () {
             sdk_version: '1.0.2'
           };
           subject(data);
-          expect(server.requests.length).to.equal(1);
+
           let call = server.requests[0];
+          expect(server.requests.length).to.equal(1);
           expect(call.url).to.equal('https://api.feedad.com/1/prebid/web/events');
           expect(JSON.parse(call.requestBody)).to.deep.equal(expectedData);
           expect(call.method).to.equal('POST');
