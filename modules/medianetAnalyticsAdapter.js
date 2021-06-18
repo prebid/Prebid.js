@@ -66,7 +66,6 @@ class ErrorLogger {
     this.project = 'prebidanalytics';
     this.dn = pageDetails.domain || '';
     this.requrl = pageDetails.requrl || '';
-    this.event = this.event;
     this.pbversion = PREBID_VERSION;
     this.cid = config.cid || '';
     this.rd = additionalData;
