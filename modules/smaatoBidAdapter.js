@@ -5,7 +5,7 @@ import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.2'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.3'
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const request = {
