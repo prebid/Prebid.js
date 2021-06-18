@@ -3,6 +3,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -42,7 +43,6 @@ const PROVIDERS = [
   'merkleId',
   'parrableId',
   'connectid',
-  'sharedid',
   'tapadId',
   'quantcastId',
   'pubcid',
@@ -104,6 +104,7 @@ function bidToVideoImp(bid) {
 
   imp.video = videoParamRef ? utils.deepClone(bid.params.video) : {};
 
+  // copy all video properties to imp object
   for (const adUnitProperty in videoAdUnitRef) {
     if (VIDEO_PARAMS_ALLOW_LIST.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
       imp.video[adUnitProperty] = videoAdUnitRef[adUnitProperty];
@@ -112,19 +113,20 @@ function bidToVideoImp(bid) {
 
   if (imp.video.minduration > imp.video.maxduration) {
     utils.logError('IX Bid Adapter: video minduration [' + imp.video.minduration +
-    '] cannot be greater than video maxduration [' + imp.video.maxduration + ']');
+      '] cannot be greater than video maxduration [' + imp.video.maxduration + ']');
     return {};
   }
 
   const context = (videoParamRef && videoParamRef.context) || (videoAdUnitRef && videoAdUnitRef.context);
 
-  if (context) {
-    if (context === 'instream') {
+  // if placement not already defined, pick one based on `context`
+  if (context && !imp.video.hasOwnProperty('placement')) {
+    if (context === INSTREAM) {
       imp.video.placement = 1;
-    } else if (context === 'outstream') {
+    } else if (context === OUTSTREAM) {
       imp.video.placement = 4;
     } else {
-      utils.logWarn(`IX Bid Adapter: video context '${context}' is not supported`);
+      utils.logWarn(`IX Bid Adapter: Video context '${context}' is not supported`);
     }
   }
 
@@ -208,24 +210,7 @@ function _applyFloor(bid, imp, mediaType) {
     }
   }
 
-  if (adapterFloor && moduleFloor) {
-    if (adapterFloor.currency !== moduleFloor.currency) {
-      utils.logWarn('The bid floor currency mismatch between IX params and priceFloors module config');
-      return;
-    }
-
-    if (adapterFloor.floor > moduleFloor.floor) {
-      imp.bidfloor = adapterFloor.floor;
-      imp.bidfloorcur = adapterFloor.currency;
-      imp.ext.fl = FLOOR_SOURCE.IX;
-    } else {
-      imp.bidfloor = moduleFloor.floor;
-      imp.bidfloorcur = moduleFloor.currency;
-      imp.ext.fl = FLOOR_SOURCE.PBJS;
-    }
-    return;
-  }
-
+  // Prioritize module floor over bidder.param floor
   if (moduleFloor) {
     imp.bidfloor = moduleFloor.floor;
     imp.bidfloorcur = moduleFloor.currency;
@@ -234,8 +219,6 @@ function _applyFloor(bid, imp, mediaType) {
     imp.bidfloor = adapterFloor.floor;
     imp.bidfloorcur = adapterFloor.currency;
     imp.ext.fl = FLOOR_SOURCE.IX;
-  } else {
-    utils.logInfo('IX Bid Adapter: No floors available, no floors applied');
   }
 }
 

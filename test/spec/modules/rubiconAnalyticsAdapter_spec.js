@@ -274,7 +274,12 @@ const MOCK = {
             }
           }
         },
-        'mediaType': 'video',
+        'mediaTypes': {
+          'video': {
+            'context': 'instream',
+            'playerSize': [640, 480]
+          }
+        },
         'adUnitCode': '/19968336/header-bid-tag-0',
         'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
         'sizes': [[640, 480]],
@@ -362,7 +367,6 @@ const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
 
 const ANALYTICS_MESSAGE = {
   'channel': 'web',
-  'eventTimeMillis': 1519767013781,
   'integration': 'pbjs',
   'version': '$prebid.version$',
   'referrerUri': 'http://www.test.com/page.html',
@@ -371,6 +375,12 @@ const ANALYTICS_MESSAGE = {
     'id': STUBBED_UUID,
     'start': 1519767013781
   },
+  'timestamps': {
+    'auctionEnded': 1519767013781,
+    'eventTime': 1519767013781,
+    'prebidLoaded': rubiconAnalyticsAdapter.MODULE_INITIALIZED_TIME
+  },
+  'trigger': 'allBidWons',
   'referrerHostname': 'www.test.com',
   'auctions': [
     {
@@ -1658,6 +1668,7 @@ describe('rubicon analytics adapter', function () {
           lineItemId: 6666,
           adSlot: '/19968336/header-bid-tag1'
         };
+        expectedMessage.trigger = 'gam';
         expect(message).to.deep.equal(expectedMessage);
       });
 
