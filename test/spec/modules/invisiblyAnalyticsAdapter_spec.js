@@ -287,10 +287,10 @@ describe('Invisibly Analytics Adapter test suite', function () {
         const invisiblyEvents = JSON.parse(
           requests[0].requestBody.substring(0)
         );
-        expect(requests.length).to.equal(1);
         expect(requests[0].url).to.equal(
           'https://api.pymx5.com/v1/sites/events'
         );
+        expect(requests.length).to.equal(1);
         expect(invisiblyEvents.event_data.pageViewId).to.exist;
         expect(invisiblyEvents.event_data.ver).to.equal(1);
         expect(invisiblyEvents.event_type).to.equal('PREBID_bidTimeout');
