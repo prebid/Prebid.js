@@ -41,7 +41,7 @@ module.exports = {
     "no-undef": 2,
     "no-useless-escape": "off",
     "no-console": "error",
-    "object-curly-spacing": ["error", "always"]
+    "object-curly-spacing": ["warn", "always"]
   },
   "overrides": Object.keys(allowedModules).map((key) => ({
     "files": key + "/**/*.js",
