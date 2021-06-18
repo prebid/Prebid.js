@@ -43,7 +43,7 @@
     "documentation": "^13.2.5",
     "es5-shim": "^4.5.14",
     "eslint": "^7.27.0",
-    "eslint-config-standard": "^12.0.0",
+    "eslint-config-standard": "^13.0.0",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prebid": "file:./plugins/eslint",
