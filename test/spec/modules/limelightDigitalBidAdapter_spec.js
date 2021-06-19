@@ -215,6 +215,13 @@ describe('limelightDigitalAdapter', function () {
     };
 
     it('should return true when required params found', function() {
+      [bid, bid1, bid2, bid3].forEach(bid => {
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+    });
+
+    it('should return true when adUnitId is zero', function() {
+      bid.params.adUnitId = 0;
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
