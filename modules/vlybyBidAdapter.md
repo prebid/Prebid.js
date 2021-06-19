@@ -4,11 +4,12 @@
 Module Name:    VLYBY Prebid Outstream
 Module Type:    Bidder Adapter
 Tech-Support:   prebid@vlyby.com
+Client-Support: support@vlyby.com
 ```
 
 # Description
 
-VLYBY Digital GmbH provides with the VLYBY Prebid Adapter a Mediation for the Outstream Product. Please contact prebid@vlyby.com for additional information and access to VLYBY User Interface.
+VLYBY Digital GmbH provides with this VLYBY Prebid Adapter a Mediation for the Outstream Product. Please contact support@vlyby.com for additional information and access to VLYBY User Interface and Prebid IDs.
 
 # Demo Implementation
 
