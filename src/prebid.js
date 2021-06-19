@@ -23,7 +23,7 @@ const events = require('./events.js');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED, STALE_RENDER } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
 const eventValidators = {
@@ -391,6 +391,14 @@ function emitAdRenderFail({ reason, message, bid, id }) {
   events.emit(AD_RENDER_FAILED, data);
 }
 
+function emitAdRenderSucceeded({ doc, bid, id }) {
+  const data = { doc };
+  if (bid) data.bid = bid;
+  if (id) data.adId = id;
+
+  events.emit(AD_RENDER_SUCCEEDED, data);
+}
+
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
@@ -442,6 +450,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
 
           if (isRendererRequired(renderer)) {
             executeRenderer(renderer, bid);
+            emitAdRenderSucceeded({ doc, bid, id });
           } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
             emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
@@ -460,6 +469,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
             doc.close();
             setRenderSize(doc, width, height);
             utils.callBurl(bid);
+            emitAdRenderSucceeded({ doc, bid, id });
           } else if (adUrl) {
             const iframe = utils.createInvisibleIframe();
             iframe.height = height;
@@ -471,6 +481,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
             utils.insertElement(iframe, doc, 'body');
             setRenderSize(doc, width, height);
             utils.callBurl(bid);
+            emitAdRenderSucceeded({ doc, bid, id });
           } else {
             const message = `Error trying to write ad. No ad for bid response id: ${id}`;
             emitAdRenderFail({reason: NO_AD, message, bid, id});
