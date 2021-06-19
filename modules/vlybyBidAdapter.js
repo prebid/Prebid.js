@@ -22,7 +22,7 @@ export const spec = {
       method: 'POST',
       url: `${ENDPOINT}`,
       data: {
-        request:{
+        request: {
           auctionId: bidderRequest.auctionId
         },
         gdprConsent: {
