@@ -11,7 +11,7 @@ export const spec = {
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: function (bid) {
-    if (bid && bid.params && bid.params.publisherId && bid.params.siteId) {
+    if (bid && bid.params && bid.params.publisherId) {
       return true
     }
     return false
@@ -19,13 +19,11 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest = {}) {
     const gdprConsent = bidderRequest.gdprConsent || {};
-    const publisherDomain = config.getConfig('publisherDomain');
     return {
       method: 'POST',
       url: `${ENDPOINT}`,
       data: {
         request:{
-          pubDomain: publisherDomain,
           auctionId: bidderRequest.auctionId
         },
         gdprConsent: {
