@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js'
 import { config } from '../src/config.js';
 
-const ENDPOINT = '//europe-west3-vlybypoc2019.cloudfunctions.net/prebid';
+const ENDPOINT = '//prebid.vlyby.com/';
 const BIDDER_CODE = 'vlyby';
 
 export const spec = {
@@ -18,20 +18,15 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest = {}) {
-    const refererInfo = bidderRequest.refererInfo || {};
     const gdprConsent = bidderRequest.gdprConsent || {};
     const publisherDomain = config.getConfig('publisherDomain');
     return {
       method: 'POST',
       url: `${ENDPOINT}`,
       data: {
-        pubDomain: publisherDomain,
-        auctionId: bidderRequest.auctionId,
-        refererInfo: {
-          isAmp: refererInfo.isAmp,
-          numIframes: refererInfo.numIframes,
-          reachedTop: refererInfo.reachedTop,
-          referer: refererInfo.referer
+        request:{
+          pubDomain: publisherDomain,
+          auctionId: bidderRequest.auctionId
         },
         gdprConsent: {
           consentString: gdprConsent.consentString,
