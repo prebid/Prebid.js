@@ -33,7 +33,7 @@ const BIDDER_REQUEST = {
   ]
 }
 
-const RESPONSE = {
+const bids = {
   bids: {
     bid: '2ab3ae978e021',
     cpm: 5.2,
@@ -91,26 +91,19 @@ describe('vlybyBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('nobid responses', function () {
-      expect(spec.interpretResponse({body: {}}, {validBidRequests: []}).length).to.equal(0)
-      expect(spec.interpretResponse({body: []}, {validBidRequests: []}).length).to.equal(0)
+      expect(spec.interpretResponse({body: {}}).length).to.equal(0)
+      expect(spec.interpretResponse({body: []}).length).to.equal(0)
     })
 
     it('handles the response', function () {
-      const result = spec.interpretResponse(
-        {
-          body: RESPONSE
-        },
-        {
-          validBidRequests: [REQUEST]
-        }
-      )
-    });
+      const response = spec.interpretResponse({body: bids});
 
-    expect(result[0].bid).to.equal('2ab3ae978e021')
-    expect(result[0].cpm).to.equal(5.2)
-    expect(result[0].size.width).to.equal(1)
-    expect(result[0].size.height).to.equal(1)
-    expect(result[0].creative.id).to.equal('60fe2250-d13d-11eb-8983-d7b28b8ba5af')
-    expect(result[0].creative.id).to.equal('<ad/>')
+      expect(response, 'response is not an Array').to.be.an('array')
+      expect(response[0].cpm, 'cpm does not match').to.equal(5.2)
+      expect(response[0].width, 'width does not match').to.equal(1)
+      expect(response[0].height, 'height does not match').to.equal(1)
+      expect(response[0].creativeId, 'creative ID does not match').to.equal('60fe2250-d13d-11eb-8983-d7b28b8ba5af')
+      expect(response[0].ad, 'creative Ad does not match').to.equal('<ad/>')
+    });
   });
 });
