@@ -119,8 +119,8 @@ const handleBannerBid = (bid) => {
 };
 
 const handleInStreamBid = (bid) => {
-  if (!bid.vastUrl) {
-    utils.logError(new Error('UnrulyBidAdapter: Missing vastUrl config.'));
+  if (!(bid.vastUrl || bid.vastXml)) {
+    utils.logError(new Error('UnrulyBidAdapter: Missing vastUrl or vastXml config.'));
     return;
   }
 

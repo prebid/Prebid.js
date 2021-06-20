@@ -62,6 +62,22 @@ describe('UnrulyAdapter', function () {
     }
   };
 
+  const inStreamServerResponseWithVastXml = {
+    'requestId': '262594d5d1f8104',
+    'cpm': 0.3825,
+    'currency': 'USD',
+    'width': 640,
+    'height': 480,
+    'creativeId': 'cr-test-video-3',
+    'netRevenue': true,
+    'ttl': 350,
+    'vastXml': 'https://adserve.rhythmxchange.dvl/rtbtest/nurlvast?event=impnurl&doc_type=testad&doc_version=2&crid=cr-test-video-3&ssp=2057&pubid=545454&placementid=1052819&oppid=b516bc57-0475-4377-bdc6-369c44b31d46&mediatype=site&attempt_ts=1622740567081&extra=1',
+    'meta': {
+      'mediaType': 'video',
+      'videoContext': 'instream'
+    }
+  };
+
   const bannerServerResponse = {
     'requestId': '2de3a9047fa9c6',
     'cpm': 5.34,
@@ -801,9 +817,17 @@ describe('UnrulyAdapter', function () {
       expect(supplyMode).to.equal('prebid');
     });
 
-    it('should return correct response when ad type is instream', function () {
+    it('should return correct response when ad type is instream with vastUrl', function () {
       const mockServerResponse = createExchangeResponse(inStreamServerResponse);
       const expectedResponse = inStreamServerResponse;
+      expectedResponse.mediaType = 'video';
+
+      expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([expectedResponse]);
+    });
+
+    it('should return correct response when ad type is instream with vastXml', function () {
+      const mockServerResponse = {...createExchangeResponse(inStreamServerResponseWithVastXml)};
+      const expectedResponse = inStreamServerResponseWithVastXml;
       expectedResponse.mediaType = 'video';
 
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([expectedResponse]);
@@ -822,7 +846,7 @@ describe('UnrulyAdapter', function () {
       const [siteIdErrorCall] = logErrorCalls;
 
       expect(siteIdErrorCall.args.length).to.equal(1);
-      expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing vastUrl config.');
+      expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing vastUrl or vastXml config.');
     });
 
     it('should return correct response when ad type is banner', function () {
