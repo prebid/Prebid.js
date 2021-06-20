@@ -91,7 +91,7 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
         config.setBidderConfig({
           bidders: [bidder],
           config: mergeLazy(bidderOptions, rtdOptions)
-        })
+        });
       });
     }
   }
