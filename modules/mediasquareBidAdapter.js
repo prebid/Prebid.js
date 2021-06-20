@@ -59,7 +59,11 @@ export const spec = {
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
       if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
-      if (bidderRequest.userId) { payload.userId = bidderRequest.userId; }
+      if (bidderRequest.userId) {
+        payload.userId = bidderRequest.userId;
+      } else if (bidderRequest.hasOwnProperty('bids') && typeof bidderRequest.bids == 'object' && bidderRequest.bids.length > 0 && bidderRequest.bids[0].hasOwnProperty('userId')) {
+        payload.userId = bidderRequest.bids[0].userId;
+      }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -97,6 +101,9 @@ export const spec = {
           mediasquare: {
             'bidder': value['bidder'],
             'code': value['code']
+          },
+          meta: {
+            'advertiserDomains': value['adomain']
           }
         };
         if ('native' in value) {
@@ -124,7 +131,8 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     let params = '';
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    if (serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
+    if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
+        serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
     } else {
       if (gdprConsent && typeof gdprConsent.consentString === 'string') { params += typeof gdprConsent.gdprApplies === 'boolean' ? `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}` : `&gdpr_consent=${gdprConsent.consentString}`; }
@@ -144,7 +152,7 @@ export const spec = {
     // fires a pixel to confirm a winning bid
     let params = [];
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond']
+    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId']
     if (bid.hasOwnProperty('mediasquare')) {
       if (bid['mediasquare'].hasOwnProperty('bidder')) { params.push('bidder=' + bid['mediasquare']['bidder']); }
       if (bid['mediasquare'].hasOwnProperty('code')) { params.push('code=' + bid['mediasquare']['code']); }

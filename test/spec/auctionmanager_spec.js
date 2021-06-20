@@ -143,6 +143,9 @@ describe('auctionmanager.js', function () {
       adId: '1adId',
       source: 'client',
       mediaType: 'banner',
+      meta: {
+        advertiserDomains: ['adomain']
+      }
     };
 
     /* return the expected response for a given bid, filter by keys if given */
@@ -154,6 +157,7 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.SIZE ] = bid.getSize();
       expected[ CONSTANTS.TARGETING_KEYS.SOURCE ] = bid.source;
       expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
+      expected[ CONSTANTS.TARGETING_KEYS.ADOMAIN ] = bid.meta.advertiserDomains[0];
       if (bid.mediaType === 'video') {
         expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
         expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
@@ -239,6 +243,12 @@ describe('auctionmanager.js', function () {
                 return bidResponse.mediaType;
               }
             },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ADOMAIN,
+              val: function (bidResponse) {
+                return bidResponse.meta.advertiserDomains[0];
+              }
+            }
           ]
 
         }
@@ -308,6 +318,12 @@ describe('auctionmanager.js', function () {
               key: CONSTANTS.TARGETING_KEYS.CACHE_ID,
               val: function (bidResponse) {
                 return bidResponse.videoCacheKey;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ADOMAIN,
+              val: function (bidResponse) {
+                return bidResponse.meta.advertiserDomains[0];
               }
             }
           ]
@@ -791,6 +807,38 @@ describe('auctionmanager.js', function () {
 
         const addedBid = auction.getBidsReceived().pop();
         assert.equal(addedBid.renderer.url, renderer.url);
+      });
+
+      it('installs bidder-defined renderer when onlyBackup is true in mediaTypes.video options ', function () {
+        const renderer = {
+          url: 'videoRenderer.js',
+          backupOnly: true,
+          render: (bid) => bid
+        };
+        let myBid = mockBid();
+        let bidRequest = mockBidRequest(myBid);
+
+        bidRequest.bids[0] = {
+          ...bidRequest.bids[0],
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              renderer
+            }
+          }
+        };
+        makeRequestsStub.returns([bidRequest]);
+
+        myBid.mediaType = 'video';
+        myBid.renderer = {
+          url: 'renderer.js',
+          render: sinon.spy()
+        };
+        spec.interpretResponse.returns(myBid);
+        auction.callBids();
+
+        const addedBid = auction.getBidsReceived().pop();
+        assert.strictEqual(addedBid.renderer.url, myBid.renderer.url);
       });
 
       it('bid for a regular unit and a video unit', function() {

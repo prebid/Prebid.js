@@ -199,29 +199,52 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
     let apiName = (cmpVersion === 2) ? '__tcfapi' : '__cmp';
 
+    let callName = `${apiName}Call`;
+
     /* Setup up a __cmp function to do the postMessage and stash the callback.
-      This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
-    window[apiName] = function (cmd, arg, callback) {
-      let callId = Math.random() + '';
-      let callName = `${apiName}Call`;
-      let msg = {
-        [callName]: {
-          command: cmd,
-          parameter: arg,
-          callId: callId
-        }
-      };
-      if (cmpVersion !== 1) msg[callName].version = cmpVersion;
+    This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
+    if (cmpVersion === 2) {
+      window[apiName] = function (cmd, cmpVersion, callback, arg) {
+        let callId = Math.random() + '';
+        let msg = {
+          [callName]: {
+            command: cmd,
+            version: cmpVersion,
+            parameter: arg,
+            callId: callId
+          }
+        };
 
-      cmpCallbacks[callId] = callback;
-      cmpFrame.postMessage(msg, '*');
+        cmpCallbacks[callId] = callback;
+        cmpFrame.postMessage(msg, '*');
+      }
+
+      /** when we get the return message, call the stashed callback */
+      window.addEventListener('message', readPostMessageResponse, false);
+
+      // call CMP
+      window[apiName](commandName, cmpVersion, moduleCallback);
+    } else {
+      window[apiName] = function (cmd, arg, callback) {
+        let callId = Math.random() + '';
+        let msg = {
+          [callName]: {
+            command: cmd,
+            parameter: arg,
+            callId: callId
+          }
+        };
+
+        cmpCallbacks[callId] = callback;
+        cmpFrame.postMessage(msg, '*');
+      }
+
+      /** when we get the return message, call the stashed callback */
+      window.addEventListener('message', readPostMessageResponse, false);
+
+      // call CMP
+      window[apiName](commandName, undefined, moduleCallback);
     }
-
-    /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', readPostMessageResponse, false);
-
-    // call CMP
-    window[apiName](commandName, undefined, moduleCallback);
 
     function readPostMessageResponse(event) {
       let cmpDataPkgName = `${apiName}Return`;

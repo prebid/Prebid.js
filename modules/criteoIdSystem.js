@@ -17,18 +17,10 @@ export const storage = getStorageManager(gvlid, bidderCode);
 
 const bididStorageKey = 'cto_bidid';
 const bundleStorageKey = 'cto_bundle';
-const cookieWriteableKey = 'cto_test_cookie';
 const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
 
 const pastDateString = new Date(0).toString();
 const expirationString = new Date(utils.timestamp() + cookiesMaxAge).toString();
-
-function areCookiesWriteable() {
-  storage.setCookie(cookieWriteableKey, '1');
-  const canWrite = storage.getCookie(cookieWriteableKey) === '1';
-  storage.setCookie(cookieWriteableKey, '', pastDateString);
-  return canWrite;
-}
 
 function extractProtocolHost (url, returnOnlyHost = false) {
   const parsedUrl = utils.parseUrl(url, {noDecodeWholeURL: true})
@@ -60,20 +52,22 @@ function getCriteoDataFromAllStorages() {
   }
 }
 
-function buildCriteoUsersyncUrl(topUrl, domain, bundle, areCookiesWriteable, isPublishertagPresent, gdprString) {
+function buildCriteoUsersyncUrl(topUrl, domain, bundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent, gdprString) {
   const url = 'https://gum.criteo.com/sid/json?origin=prebid' +
     `${topUrl ? '&topUrl=' + encodeURIComponent(topUrl) : ''}` +
     `${domain ? '&domain=' + encodeURIComponent(domain) : ''}` +
     `${bundle ? '&bundle=' + encodeURIComponent(bundle) : ''}` +
     `${gdprString ? '&gdprString=' + encodeURIComponent(gdprString) : ''}` +
     `${areCookiesWriteable ? '&cw=1' : ''}` +
-    `${isPublishertagPresent ? '&pbt=1' : ''}`
+    `${isPublishertagPresent ? '&pbt=1' : ''}` +
+    `${isLocalStorageWritable ? '&lsw=1' : ''}`;
 
   return url;
 }
 
 function callCriteoUserSync(parsedCriteoData, gdprString) {
-  const cw = areCookiesWriteable();
+  const cw = storage.cookiesAreEnabled();
+  const lsw = storage.localStorageIsEnabled();
   const topUrl = extractProtocolHost(getRefererInfo().referer);
   const domain = extractProtocolHost(document.location.href, true);
   const isPublishertagPresent = typeof criteo_pubtag !== 'undefined'; // eslint-disable-line camelcase
@@ -83,6 +77,7 @@ function callCriteoUserSync(parsedCriteoData, gdprString) {
     domain,
     parsedCriteoData.bundle,
     cw,
+    lsw,
     isPublishertagPresent,
     gdprString
   );

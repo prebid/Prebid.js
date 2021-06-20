@@ -85,7 +85,6 @@ describe('coinzillaBidAdapter', function () {
           'bidId': 'bidId123',
           'referer': 'www.example.com'
         }
-
       }
     ];
     let serverResponse = {
@@ -98,7 +97,9 @@ describe('coinzillaBidAdapter', function () {
         'requestId': 'bidId123',
         'width': 300,
         'height': 250,
-        'netRevenue': true
+        'netRevenue': true,
+        'mediaType': 'banner',
+        'advertiserDomain': ['none.com']
       }
     };
     it('should get the correct bid response', function () {
@@ -111,7 +112,9 @@ describe('coinzillaBidAdapter', function () {
         'currency': 'EUR',
         'netRevenue': true,
         'ttl': 3000,
-        'ad': '<html><h3>I am an ad</h3></html>'
+        'ad': '<html><h3>I am an ad</h3></html>',
+        'mediaType': 'banner',
+        'meta': {'advertiserDomains': ['none.com']}
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));

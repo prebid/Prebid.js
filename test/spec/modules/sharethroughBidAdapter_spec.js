@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from '../../../src/utils.js';
+import { config } from 'src/config';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 const bidRequests = [
@@ -14,7 +16,17 @@ const bidRequests = [
     },
     userId: {
       tdid: 'fake-tdid',
-      pubcid: 'fake-pubcid'
+      pubcid: 'fake-pubcid',
+      idl_env: 'fake-identity-link',
+      id5id: {
+        uid: 'fake-id5id',
+        ext: {
+          linkType: 2
+        }
+      },
+      lipb: {
+        lipbid: 'fake-lipbid'
+      }
     },
     crumbs: {
       pubcid: 'fake-pubcid-in-crumbs-obj'
@@ -40,12 +52,32 @@ const bidRequests = [
       iframe: true,
       iframeSize: [500, 500]
     }
-  }
+  },
+  {
+    bidder: 'sharethrough',
+    bidId: 'bidId4',
+    sizes: [[700, 400]],
+    placementCode: 'bar',
+    params: {
+      pkey: 'dddd4444',
+      badv: ['domain1.com', 'domain2.com']
+    }
+  },
+  {
+    bidder: 'sharethrough',
+    bidId: 'bidId5',
+    sizes: [[700, 400]],
+    placementCode: 'bar',
+    params: {
+      pkey: 'eeee5555',
+      bcat: ['IAB1-1', 'IAB1-2']
+    }
+  },
 ];
 
 const prebidRequests = [
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -57,7 +89,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -69,7 +101,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -82,7 +114,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -94,7 +126,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -133,16 +165,20 @@ const setUserAgent = (uaString) => {
 };
 
 describe('sharethrough internal spec', function() {
-  let windowSpy, windowTopSpy;
-
+  let windowStub, windowTopStub;
+  let stubbedReturn = [{
+    appendChild: () => undefined
+  }]
   beforeEach(function() {
-    windowSpy = sinon.spy(window.document, 'getElementsByTagName');
-    windowTopSpy = sinon.spy(window.top.document, 'getElementsByTagName');
+    windowStub = sinon.stub(window.document, 'getElementsByTagName');
+    windowTopStub = sinon.stub(window.top.document, 'getElementsByTagName');
+    windowStub.withArgs('body').returns(stubbedReturn);
+    windowTopStub.withArgs('body').returns(stubbedReturn);
   });
 
   afterEach(function() {
-    windowSpy.restore();
-    windowTopSpy.restore();
+    windowStub.restore();
+    windowTopStub.restore();
     window.STR = undefined;
     window.top.STR = undefined;
   });
@@ -158,29 +194,29 @@ describe('sharethrough internal spec', function() {
 
     it('appends sfp.js to the safeframe', function() {
       sharethroughInternal.handleIframe();
-      expect(windowSpy.calledOnce).to.be.true;
+      expect(windowStub.calledOnce).to.be.true;
     });
 
     it('does not append anything if sfp.js is already loaded in the safeframe', function() {
       window.STR = { Tag: true };
       sharethroughInternal.handleIframe();
-      expect(windowSpy.notCalled).to.be.true;
-      expect(windowTopSpy.notCalled).to.be.true;
+      expect(windowStub.notCalled).to.be.true;
+      expect(windowTopStub.notCalled).to.be.true;
     });
   });
 
   describe('we are able to bust out of the iframe', function() {
     it('appends sfp.js to window.top', function() {
       sharethroughInternal.handleIframe();
-      expect(windowSpy.calledOnce).to.be.true;
-      expect(windowTopSpy.calledOnce).to.be.true;
+      expect(windowStub.calledOnce).to.be.true;
+      expect(windowTopStub.calledOnce).to.be.true;
     });
 
     it('only appends sfp-set-targeting.js if sfp.js is already loaded on the page', function() {
       window.top.STR = { Tag: true };
       sharethroughInternal.handleIframe();
-      expect(windowSpy.calledOnce).to.be.true;
-      expect(windowTopSpy.notCalled).to.be.true;
+      expect(windowStub.calledOnce).to.be.true;
+      expect(windowTopStub.notCalled).to.be.true;
     });
   });
 });
@@ -225,7 +261,7 @@ describe('sharethrough adapter spec', function() {
 
       expect(builtBidRequests[0].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
       expect(builtBidRequests[1].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
-      expect(builtBidRequests[0].method).to.eq('GET');
+      expect(builtBidRequests[0].method).to.eq('POST');
     });
 
     it('should set the instant_play_capable parameter correctly based on browser userAgent string', function() {
@@ -310,9 +346,34 @@ describe('sharethrough adapter spec', function() {
 
     it('should add the pubcid parameter if a bid request contains a value for the Publisher Common ID Module in the' +
       ' crumbs object of the bidrequest', function() {
+      const bidData = utils.deepClone(bidRequests);
+      delete bidData[0].userId.pubcid;
+
+      const bidRequest = spec.buildRequests(bidData)[0];
+      expect(bidRequest.data.pubcid).to.eq('fake-pubcid-in-crumbs-obj');
+    });
+
+    it('should add the pubcid parameter if a bid request contains a value for the Publisher Common ID Module in the' +
+      ' crumbs object of the bidrequest', function() {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       delete bidRequest.userId;
       expect(bidRequest.data.pubcid).to.eq('fake-pubcid');
+    });
+
+    it('should add the idluid parameter if a bid request contains a value for Identity Link from Live Ramp', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.idluid).to.eq('fake-identity-link');
+    });
+
+    it('should add the id5uid parameter if a bid request contains a value for ID5', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.id5uid.id).to.eq('fake-id5id');
+      expect(bidRequest.data.id5uid.linkType).to.eq(2);
+    });
+
+    it('should add the liuid parameter if a bid request contains a value for LiveIntent ID', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.liuid).to.eq('fake-lipbid');
     });
 
     it('should add Sharethrough specific parameters', function() {
@@ -346,6 +407,18 @@ describe('sharethrough adapter spec', function() {
       expect(builtBidRequest.data.schain).to.eq(JSON.stringify(bidRequest.schain));
     });
 
+    it('should add badv if provided', () => {
+      const builtBidRequest = spec.buildRequests([bidRequests[3]])[0];
+
+      expect(builtBidRequest.data.badv).to.have.members(['domain1.com', 'domain2.com'])
+    });
+
+    it('should add bcat if provided', () => {
+      const builtBidRequest = spec.buildRequests([bidRequests[4]])[0];
+
+      expect(builtBidRequest.data.bcat).to.have.members(['IAB1-1', 'IAB1-2'])
+    });
+
     it('should not add a supply chain parameter if schain is missing', function() {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       expect(bidRequest.data).to.not.include.any.keys('schain');
@@ -353,7 +426,7 @@ describe('sharethrough adapter spec', function() {
 
     it('should include the bidfloor parameter if it is present in the bid request', function() {
       const bidRequest = Object.assign({}, bidRequests[0]);
-      bidRequest['bidfloor'] = 0.50;
+      bidRequest['getFloor'] = () => ({ currency: 'USD', floor: 0.5 });
       const builtBidRequest = spec.buildRequests([bidRequest])[0];
       expect(builtBidRequest.data.bidfloor).to.eq(0.5);
     });
@@ -363,11 +436,34 @@ describe('sharethrough adapter spec', function() {
       const builtBidRequest = spec.buildRequests([bidRequest])[0];
       expect(builtBidRequest.data).to.not.include.any.keys('bidfloor');
     });
+
+    describe('coppa', function() {
+      it('should add coppa to request if enabled', function() {
+        config.setConfig({coppa: true});
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        const builtBidRequest = spec.buildRequests([bidRequest])[0];
+        expect(builtBidRequest.data.coppa).to.eq(true);
+      });
+
+      it('should not add coppa to request if disabled', function() {
+        config.setConfig({coppa: false});
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        const builtBidRequest = spec.buildRequests([bidRequest])[0];
+        expect(builtBidRequest.data.coppa).to.be.undefined;
+      });
+
+      it('should not add coppa to request if unknown value', function() {
+        config.setConfig({coppa: 'something'});
+        const bidRequest = Object.assign({}, bidRequests[0]);
+        const builtBidRequest = spec.buildRequests([bidRequest])[0];
+        expect(builtBidRequest.data.coppa).to.be.undefined;
+      });
+    });
   });
 
   describe('.interpretResponse', function() {
     it('returns a correctly parsed out response', function() {
-      expect(spec.interpretResponse(bidderResponse, prebidRequests[0])[0]).to.include(
+      expect(spec.interpretResponse(bidderResponse, prebidRequests[0])[0]).to.deep.include(
         {
           width: 1,
           height: 1,
@@ -376,7 +472,8 @@ describe('sharethrough adapter spec', function() {
           dealId: 'aDealId',
           currency: 'USD',
           netRevenue: true,
-          ttl: 360
+          ttl: 360,
+          meta: { advertiserDomains: [] }
         });
     });
 
