@@ -80,7 +80,9 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
     if (isPlainObject(rtd.ortb2b)) {
       let bidderConfig = config.getBidderConfig();
 
-      for (const [bidder, rtdOptions] of Object.entries(rtd.ortb2b)) {
+      Object.keys(rtd.ortb2b).forEach(bidder => {
+        let rtdOptions = rtd.ortb2b[bidder] || {};
+
         let bidderOptions = {};
         if (isPlainObject(bidderConfig[bidder])) {
           bidderOptions = bidderConfig[bidder];
@@ -90,7 +92,7 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
           bidders: [bidder],
           config: mergeLazy(bidderOptions, rtdOptions)
         })
-      }
+      });
     }
   }
 }
