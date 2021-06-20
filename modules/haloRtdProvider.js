@@ -72,7 +72,7 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
   } else {
-    if (rtd.ortb2) {
+    if (isPlainObject(rtd.ortb2)) {
       let ortb2 = config.getConfig('ortb2') || {};
       config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
     }
