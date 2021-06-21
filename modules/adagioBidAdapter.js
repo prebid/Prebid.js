@@ -84,7 +84,7 @@ export const GlobalExchange = (function() {
 
     prepareExchangeData(storageValue) {
       const adagioStorage = JSON.parse(storageValue, function(name, value) {
-        if (!name.startsWith('_') || name === '') {
+        if (name.charAt(0) !== '_' || name === '') {
           return value;
         }
       });
@@ -796,7 +796,7 @@ function getPrintNumber(adUnitCode, bidderRequest) {
   if (!bidderRequest.bids || !bidderRequest.bids.length) {
     return 1;
   }
-  const adagioBid = bidderRequest.bids.find(bid => bid.adUnitCode === adUnitCode);
+  const adagioBid = find(bidderRequest.bids, bid => bid.adUnitCode === adUnitCode);
   return adagioBid.bidRequestsCount || 1;
 }
 
@@ -1065,8 +1065,8 @@ export const spec = {
    * @returns {object} updated params
    */
   transformBidParams(params, isOrtb, adUnit, bidRequests) {
-    const adagioBidderRequest = bidRequests.find(bidRequest => bidRequest.bidderCode === 'adagio');
-    const adagioBid = adagioBidderRequest.bids.find(bid => bid.adUnitCode === adUnit.code);
+    const adagioBidderRequest = find(bidRequests, bidRequest => bidRequest.bidderCode === 'adagio');
+    const adagioBid = find(adagioBidderRequest.bids, bid => bid.adUnitCode === adUnit.code);
 
     if (isOrtb) {
       autoFillParams(adagioBid);
