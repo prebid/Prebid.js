@@ -112,6 +112,7 @@ describe('Prebid Manager Analytics Adapter', function () {
     let prebid_options = {
       bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
     };
+    const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
@@ -131,8 +132,6 @@ describe('Prebid Manager Analytics Adapter', function () {
         options: prebid_options
       });
 
-      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
-
       expect(pmEvents.utmTags.utm_source).to.equal('utm_source');
       expect(pmEvents.utmTags.utm_medium).to.equal('utm_medium');
       expect(pmEvents.utmTags.utm_campaign).to.equal('utm_camp');
@@ -145,15 +144,16 @@ describe('Prebid Manager Analytics Adapter', function () {
     afterEach(function () {
       prebidmanagerAnalytics.disableAnalytics()
     });
+    const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
+    
     it('should build page info', function () {
-      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
-
+      
       expect(pmEvents.pageInfo.domain).to.equal(window.location.hostname);
       expect(pmEvents.pageInfo.referrerDomain).to.equal(utils.parseUrl(document.referrer).hostname);
     });
