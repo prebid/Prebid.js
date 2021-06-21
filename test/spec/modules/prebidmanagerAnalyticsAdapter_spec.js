@@ -132,7 +132,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       });
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
-      
+
       expect(pmEvents.utmTags.utm_source).to.equal('utm_source');
       expect(pmEvents.utmTags.utm_medium).to.equal('utm_medium');
       expect(pmEvents.utmTags.utm_campaign).to.equal('utm_camp');
