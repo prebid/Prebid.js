@@ -166,6 +166,12 @@ export const quantcastIdSubmodule = {
    */
   name: 'quantcastId',
 
+    /**
+   * Vendor id of Quantcast
+   * @type {Number}
+   */
+  gvlid: QUANTCAST_VENDOR_ID,
+
   /**
    * decode the stored id value for passing to bid requests
    * @function
