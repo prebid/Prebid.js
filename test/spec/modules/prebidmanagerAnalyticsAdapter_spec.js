@@ -147,7 +147,6 @@ describe('Prebid Manager Analytics Adapter', function () {
     });
     it('should build page info', function () {
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
-      
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {
