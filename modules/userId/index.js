@@ -277,6 +277,7 @@ function makeStoredConsentDataHash(consentData) {
     storedConsentData.gdprApplies = consentData.gdprApplies;
     storedConsentData.apiVersion = consentData.apiVersion;
   }
+
   return utils.cyrb53Hash(JSON.stringify(storedConsentData));
 }
 
@@ -306,17 +307,17 @@ function getStoredConsentData() {
 }
 
 /**
- * test if the consent object stored locally matches the current consent data.
- * if there is nothing in storage, return true and we'll do an actual comparison next time.
- * this way, we don't force a refresh for every user when this code rolls out
+ * test if the consent object stored locally matches the current consent data. if they
+ * don't match or there is nothing stored locally, it means a refresh of the user id
+ * submodule is needed
  * @param storedConsentData
  * @param consentData
  * @returns {boolean}
  */
 function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
   return (
-    typeof storedConsentData === 'undefined' ||
-    storedConsentData === null ||
+    typeof storedConsentData !== 'undefined' &&
+    storedConsentData !== null &&
     storedConsentData === makeStoredConsentDataHash(consentData)
   );
 }
@@ -757,7 +758,8 @@ function updateSubmodules() {
 
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   submodules = addedSubmodules.map(i => {
-    const submoduleConfig = find(configs, j => j.name && j.name.toLowerCase() === i.name.toLowerCase());
+    const submoduleConfig = find(configs, j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
+      (i.aliasName && j.name.toLowerCase() === i.aliasName.toLowerCase())));
     if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
     i.findRootDomain = findRootDomain;
     return submoduleConfig ? {

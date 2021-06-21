@@ -331,11 +331,80 @@ describe('YieldmoAdapter', function () {
     });
 
     describe('Instream video:', function () {
+      let videoBid;
+      const buildVideoBidAndGetVideoParam = () => build([videoBid])[0].data.imp[0].video;
+
+      beforeEach(() => {
+        videoBid = mockVideoBid();
+      });
+
       it('should attempt to send video bid requests to the endpoint via POST', function () {
-        const requests = build([mockVideoBid()]);
+        const requests = build([videoBid]);
         expect(requests.length).to.equal(1);
         expect(requests[0].method).to.equal('POST');
         expect(requests[0].url).to.be.equal(VIDEO_ENDPOINT);
+      });
+
+      it('should add mediaTypes.video prop to the imp.video prop', function () {
+        utils.deepAccess(videoBid, 'mediaTypes.video')['minduration'] = 40;
+        expect(buildVideoBidAndGetVideoParam().minduration).to.equal(40);
+      });
+
+      it('should override mediaTypes.video prop if params.video prop is present', function () {
+        utils.deepAccess(videoBid, 'mediaTypes.video')['minduration'] = 50;
+        utils.deepAccess(videoBid, 'params.video')['minduration'] = 40;
+        expect(buildVideoBidAndGetVideoParam().minduration).to.equal(40);
+      });
+
+      it('should add mediaTypes.video.mimes prop to the imp.video', function () {
+        utils.deepAccess(videoBid, 'mediaTypes.video')['minduration'] = ['video/mp4'];
+        expect(buildVideoBidAndGetVideoParam().minduration).to.deep.equal(['video/mp4']);
+      });
+
+      it('should override mediaTypes.video.mimes prop if params.video.mimes is present', function () {
+        utils.deepAccess(videoBid, 'mediaTypes.video')['mimes'] = ['video/mp4'];
+        utils.deepAccess(videoBid, 'params.video')['mimes'] = ['video/mkv'];
+        expect(buildVideoBidAndGetVideoParam().mimes).to.deep.equal(['video/mkv']);
+      });
+
+      describe('video.skip state check', () => {
+        it('should not set video.skip if neither *.video.skip nor *.video.skippable is present', function () {
+          utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
+          utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
+          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+        });
+
+        it('should set video.skip=1 if mediaTypes.video.skip is present', function () {
+          utils.deepAccess(videoBid, 'mediaTypes.video')['skip'] = 1;
+          expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
+        });
+
+        it('should set video.skip=1 if params.video.skip is present', function () {
+          utils.deepAccess(videoBid, 'params.video')['skip'] = 1;
+          expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
+        });
+
+        it('should set video.skip=1 if mediaTypes.video.skippable is present', function () {
+          utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = true;
+          expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
+        });
+
+        it('should set video.skip=1 if mediaTypes.video.skippable is present', function () {
+          utils.deepAccess(videoBid, 'params.video')['skippable'] = true;
+          expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
+        });
+
+        it('should set video.skip=1 if mediaTypes.video.skippable is present', function () {
+          utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
+          utils.deepAccess(videoBid, 'params.video')['skippable'] = true;
+          expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
+        });
+
+        it('should not set video.skip if params.video.skippable is false', function () {
+          utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = true;
+          utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
+          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+        });
       });
 
       it('should process floors module if available', function () {
