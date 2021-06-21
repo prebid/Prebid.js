@@ -34,8 +34,6 @@ export function firePixel(clientId, cookieExpTime = DEFAULT_COOKIE_EXP_TIME) {
     var fpan = '0';
     var domain = quantcastIdSubmodule.findRootDomain();
     var now = new Date();
-    var et = now.getTime();
-    var tzo = now.getTimezoneOffset();
     var usPrivacyParamString = '';
     var firstPartyParamStrings;
     var gdprParamStrings;
@@ -58,8 +56,6 @@ export function firePixel(clientId, cookieExpTime = DEFAULT_COOKIE_EXP_TIME) {
 
     let url = DOMAIN_QSERVE +
     '?d=' + domain +
-    '&et=' + et +
-    '&tzo=' + tzo +
     '&client_id=' + clientId +
     '&a=' + PREBID_PCODE +
     usPrivacyParamString +
