@@ -7,11 +7,13 @@ describe('QuantcastId module', function () {
     storage.setCookie('__qca', '', 'Thu, 01 Jan 1970 00:00:00 GMT');
     sinon.stub(coppaDataHandler, 'getCoppa');
     sinon.stub(utils, 'triggerPixel');
+    sinon.stub(window, 'addEventListener');
   });
 
   afterEach(function () {
     utils.triggerPixel.restore();
     coppaDataHandler.getCoppa.restore();
+    window.addEventListener.restore();
   });
 
   it('getId() should return a quantcast id when the Quantcast first party cookie exists', function () {

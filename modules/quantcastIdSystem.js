@@ -20,30 +20,27 @@ const PURPOSE_PRODUCT_IMPROVEMENT = '10';
 const QC_TCF_REQUIRED_PURPOSES = [PURPOSE_DATA_COLLECT, PURPOSE_PRODUCT_IMPROVEMENT];
 const QC_TCF_CONSENT_FIRST_PURPOSES = [PURPOSE_DATA_COLLECT];
 const QC_TCF_CONSENT_ONLY_PUPROSES = [PURPOSE_DATA_COLLECT];
+const GDPR_PRIVACY_STRING = gdprDataHandler.getConsentData();
+const US_PRIVACY_STRING = uspDataHandler.getConsentData();
 
 export const storage = getStorageManager();
 
 export function firePixel(clientId, cookieExpTime = DEFAULT_COOKIE_EXP_TIME) {
-  // check for presence of Quantcast Measure tag _qevent obj and publisher provided clientID
-  if (!window._qevents && clientId && clientId != '') {
-    const gdprPrivacyString = gdprDataHandler.getConsentData();
-    const usPrivacyString = uspDataHandler.getConsentData();
-
+  // check for presence of Quantcast Measure tag _qevent obj,
+  // required gdpr consent / legitimate interest for purpose 1 and 10
+  // for Quantcast as a vendor, and publisher provided clientID
+  if (!window._qevents && hasGDPRConsent(GDPR_PRIVACY_STRING) && clientId && clientId != '') {
     var fpa = storage.getCookie(QUANTCAST_FPA);
     var fpan = '0';
-    var now = new Date();
     var domain = quantcastIdSubmodule.findRootDomain();
+    var now = new Date();
     var et = now.getTime();
     var tzo = now.getTimezoneOffset();
     var usPrivacyParamString = '';
     var firstPartyParamStrings;
     var gdprParamStrings;
 
-    if (!(hasGDPRConsent(gdprPrivacyString) && hasCCPAConsent(usPrivacyString))) {
-      var expired = new Date(0).toUTCString();
-      storage.setCookie(QUANTCAST_FPA, '', expired, '/', domain, null);
-      return;
-    } else if (!fpa) {
+    if (!fpa) {
       var expires = new Date(now.getTime() + (cookieExpTime * 86400000)).toGMTString();
       fpa = 'B0-' + Math.round(Math.random() * 2147483647) + '-' + et;
       fpan = '1';
@@ -52,11 +49,11 @@ export function firePixel(clientId, cookieExpTime = DEFAULT_COOKIE_EXP_TIME) {
 
     firstPartyParamStrings = `&fpan=${fpan}&fpa=${fpa}`;
     gdprParamStrings = '&gdpr=0';
-    if (gdprPrivacyString && typeof gdprPrivacyString.gdprApplies === 'boolean' && gdprPrivacyString.gdprApplies) {
-      gdprParamStrings = `gdpr=1&gdpr_consent=${gdprPrivacyString.consentString}`;
+    if (GDPR_PRIVACY_STRING && typeof GDPR_PRIVACY_STRING.gdprApplies === 'boolean' && GDPR_PRIVACY_STRING.gdprApplies) {
+      gdprParamStrings = `gdpr=1&gdpr_consent=${GDPR_PRIVACY_STRING.consentString}`;
     }
-    if (usPrivacyString && typeof usPrivacyString === 'string') {
-      usPrivacyParamString = `&us_privacy=${usPrivacyString}`;
+    if (US_PRIVACY_STRING && typeof US_PRIVACY_STRING === 'string') {
+      usPrivacyParamString = `&us_privacy=${US_PRIVACY_STRING}`;
     }
 
     let url = DOMAIN_QSERVE +
@@ -81,20 +78,14 @@ export function hasGDPRConsent(gdprConsent) {
       return false;
     }
     if (gdprConsent.apiVersion === 1) {
-      return checkTCFv1(gdprConsent.vendorData);
+      // We are not supporting TCF v1
+      return false;
     }
     if (gdprConsent.apiVersion === 2) {
       return checkTCFv2(gdprConsent.vendorData);
     }
   }
   return true;
-}
-
-export function checkTCFv1(vendorData) {
-  var vendorConsent = vendorData.vendorConsents && vendorData.vendorConsents[QUANTCAST_VENDOR_ID];
-  var purposeConsent = vendorData.purposeConsents && vendorData.purposeConsents[PURPOSE_DATA_COLLECT];
-
-  return !!(vendorConsent && purposeConsent);
 }
 
 export function checkTCFv2(vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOSES) {
@@ -194,9 +185,13 @@ export const quantcastIdSubmodule = {
     let fpa = storage.getCookie(QUANTCAST_FPA);
 
     const coppa = coppaDataHandler.getCoppa();
-    if (coppa) {
-      logInfo('QuantcastId: IDs not provided for coppa requests, exiting QuantcastId');
-      return;
+
+    if (coppa || !hasCCPAConsent(US_PRIVACY_STRING)) {
+      var expired = new Date(0).toUTCString();
+      var domain = quantcastIdSubmodule.findRootDomain();
+      logInfo('QuantcastId: Necessary consent not present for Id, exiting QuantcastId');
+      storage.setCookie(QUANTCAST_FPA, '', expired, '/', domain, null);
+      return undefined;
     }
 
     const configParams = (config && config.params) || {};
