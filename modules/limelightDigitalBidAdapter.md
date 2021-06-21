@@ -20,7 +20,7 @@ var adUnits = [{
         }
     },
     bids: [{
-        bidder: 'limelight-digital',
+        bidder: 'limelightDigital',
         params: {
             host: 'exchange.ortb.net',
             adUnitId: 0,
@@ -36,7 +36,7 @@ var videoAdUnit = [{
     code: 'video1',
     sizes: [[300, 250]],
     bids: [{
-        bidder: 'limelight-digital',
+        bidder: 'limelightDigital',
         params: {
             host: 'exchange.ortb.net',
             adUnitId: 0,

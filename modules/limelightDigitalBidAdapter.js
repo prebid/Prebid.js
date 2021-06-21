@@ -3,7 +3,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import * as utils from '../src/utils.js';
 
-const BIDDER_CODE = 'limelight-digital';
+const BIDDER_CODE = 'limelightDigital';
 
 /**
  * Determines whether or not the given bid response is valid.

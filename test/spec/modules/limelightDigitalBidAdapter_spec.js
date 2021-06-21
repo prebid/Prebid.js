@@ -4,7 +4,7 @@ import {spec} from '../../../modules/limelightDigitalBidAdapter.js';
 describe('limelightDigitalAdapter', function () {
   const bid1 = {
     bidId: '2dd581a2b6281d',
-    bidder: 'limelight-digital',
+    bidder: 'limelightDigital',
     bidderRequestId: '145e1d6a7837c9',
     params: {
       host: 'exchange.ortb.net',
@@ -22,7 +22,7 @@ describe('limelightDigitalAdapter', function () {
   }
   const bid2 = {
     bidId: '58ee9870c3164a',
-    bidder: 'limelight-digital',
+    bidder: 'limelightDigital',
     bidderRequestId: '209fdaf1c81649',
     params: {
       host: 'ads.project-limelight.com',
@@ -36,7 +36,7 @@ describe('limelightDigitalAdapter', function () {
   }
   const bid3 = {
     bidId: '019645c7d69460',
-    bidder: 'limelight-digital',
+    bidder: 'limelightDigital',
     bidderRequestId: 'f2b15f89e77ba6',
     params: {
       host: 'exchange.ortb.net',
@@ -50,7 +50,7 @@ describe('limelightDigitalAdapter', function () {
   }
   const bid4 = {
     bidId: '019645c7d69460',
-    bidder: 'limelight-digital',
+    bidder: 'limelightDigital',
     bidderRequestId: 'f2b15f89e77ba6',
     params: {
       host: 'exchange.ortb.net',
@@ -201,7 +201,7 @@ describe('limelightDigitalAdapter', function () {
   describe('isBidRequestValid', function() {
     let bid = {
       bidId: '2dd581a2b6281d',
-      bidder: 'limelight-digital',
+      bidder: 'limelightDigital',
       bidderRequestId: '145e1d6a7837c9',
       params: {
         host: 'exchange.ortb.net',
@@ -227,7 +227,7 @@ describe('limelightDigitalAdapter', function () {
 
     it('should return false when required params are not passed', function() {
       let bidFailed = {
-        bidder: 'limelight-digital',
+        bidder: 'limelightDigital',
         bidderRequestId: '145e1d6a7837c9',
         params: {
           adUnitId: 123,
