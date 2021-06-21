@@ -47,12 +47,13 @@ describe('Prebid Manager Analytics Adapter', function () {
 
     it('support custom endpoint', function () {
       let custom_url = 'custom url';
-      prebidmanagerAnalytics.enableAnalytics({
-        provider: 'prebidmanager',
-        options: {
+      let prebid_option = {
           url: custom_url,
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-        }
+      };
+      prebidmanagerAnalytics.enableAnalytics({
+        provider: 'prebidmanager',
+        options: prebid_option
       });
 
       expect(prebidmanagerAnalytics.getOptions().url).to.equal(custom_url);
@@ -108,6 +109,9 @@ describe('Prebid Manager Analytics Adapter', function () {
 
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
+    let prebid_options = {
+          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+    };
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
@@ -124,9 +128,7 @@ describe('Prebid Manager Analytics Adapter', function () {
     it('should build utm data from local storage', function () {
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
-        options: {
-          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-        }
+        options: prebid_options
       });
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
