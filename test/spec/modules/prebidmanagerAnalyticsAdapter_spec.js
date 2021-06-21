@@ -146,14 +146,14 @@ describe('Prebid Manager Analytics Adapter', function () {
       prebidmanagerAnalytics.disableAnalytics()
     });
     it('should build page info', function () {
+      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
+      
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
-
-      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 
       expect(pmEvents.pageInfo.domain).to.equal(window.location.hostname);
       expect(pmEvents.pageInfo.referrerDomain).to.equal(utils.parseUrl(document.referrer).hostname);
