@@ -48,8 +48,8 @@ describe('Prebid Manager Analytics Adapter', function () {
     it('support custom endpoint', function () {
       let custom_url = 'custom url';
       let prebid_option = {
-          url: custom_url,
-          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        url: custom_url,
+        bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
       };
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
@@ -110,7 +110,7 @@ describe('Prebid Manager Analytics Adapter', function () {
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
     let prebid_options = {
-          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
     };
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
