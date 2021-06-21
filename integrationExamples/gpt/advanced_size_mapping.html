@@ -1,0 +1,148 @@
+<!-- Test page for Size Mapping V2 module. Don't forget to include that module in the build before you run this page!
+Feel free to play around with different settings and configurations for size mapping v2 -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<script async src="../../../build/dev/prebid.js"></script>
+	<script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+	<script>
+		const FAILSAFE_TIMEOUT = 3300;
+		const PREBID_TIMEOUT = 1000;
+
+		// Example of a multi-format ad unit setup with uses the module `sizeMappingV2.js`.
+		const adUnits = [{
+			code: 'div-gpt-ad-1460505748561-0',
+			mediaTypes: {
+				banner: {
+					sizeConfig: [
+						{ minViewPort: [0, 0], sizes: [] },		// remove if < 750px
+						{ minViewPort: [750, 0], sizes: [[300, 250], [300, 600]] },		// between 750px and 1199px, use sizes: [[300, 250], [300, 600]]
+						{ minViewPort: [1200, 0], sizes: [[970, 90], [728, 90], [300, 250]] },  // between 1200px and 1599px, use sizes: [[970, 90], [728, 90], [300, 250]]
+						{ minViewPort: [1600, 0], sizes: [[1000, 300], [970, 90], [728, 90], [300, 250]] } // greater than 1600px, use sizes: [[1000, 300], [970, 90], [728, 90], [300, 250]]
+					]
+				},
+				video: {
+					context: 'instream',
+					sizeConfig: [
+						{ minViewPort: [0, 0], playerSize: [] },
+						{ minViewPort: [800, 0], playerSize: [640, 480] }
+					]
+				},
+				native: {
+					image: {
+						required: true,
+						sizes: [150, 50]
+					},
+					// native media type enters auction only if device width is > 600px
+					sizeConfig: [
+						{ minViewPort: [0, 0], active: false }, 
+						{ minViewPort: [600, 0], active: true }
+					]
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13144370
+				},
+				sizeConfig: [
+					{ minViewPort: [0, 0], relevantMediaTypes: ['none'] },
+					{ minViewPort: [850, 0], relevantMediaTypes: ['banner'] }
+				]
+			}, {
+				bidder: 'rubicon',
+				params: {
+					accountId: 14062,
+					siteId: 70608,
+					zoneId: 498816
+				},
+				// example of a bidder level size config. In the scenario below, bidder 'rubicon' enters auction only if the device width
+				// is between 850-1200 and it'll only send request for the 'native' media type.
+				sizeConfig: [
+					{ minViewPort: [0, 0], relevantMediaTypes: ['none'] },
+					{ minViewPort: [850, 0], relevantMediaTypes: ['native'] },
+					{ minViewPort: [1200, 0], relevantMediaTypes: ['none'] }
+				]
+			}]
+		}, {
+			// Example of an 'Identical Ad Unit' (same 'code' as previous ad unit but different 'mediaTypes' object)
+			// Ad Unit makes use of the 'labelAll' operator. (the label operators can be applied at the bidder lever as well)
+			code: 'div-gpt-ad-1460505748561-0',
+			labelAll: ['tablet'],  // Label check fails since labels passed to pbjs.requestBids() equals ['mobile']. This disables the entire ad unit.
+			mediaTypes: {
+				banner: {
+					sizeConfig: [
+						{ minViewPort: [800, 0], sizes: [[360, 400], [640, 200]] },
+						{ minViewPort: [1000, 0], sizes: [] }
+					]
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 4232323
+				}
+			}]
+		}];
+		var pbjs = pbjs || {};
+		pbjs.que = pbjs.que || [];
+
+	</script>
+
+	<script>
+		var googletag = googletag || {};
+		googletag.cmd = googletag.cmd || [];
+		googletag.cmd.push(function () {
+			googletag.pubads().disableInitialLoad();
+		});
+
+		pbjs.que.push(function () {
+			pbjs.addAdUnits(adUnits);
+			pbjs.setConfig({debug: true});
+			pbjs.requestBids({
+				bidsBackHandler: sendAdserverRequest,
+				timeout: PREBID_TIMEOUT,
+				labels: ['mobile']
+			});
+		});
+
+		function sendAdserverRequest() {
+			if (pbjs.adserverRequestSent) return;
+			pbjs.adserverRequestSent = true;
+			googletag.cmd.push(function () {
+				pbjs.que.push(function () {
+					pbjs.setTargetingForGPTAsync();
+					googletag.pubads().refresh();
+				});
+			});
+		}
+
+		setTimeout(function () {
+			sendAdserverRequest();
+		}, FAILSAFE_TIMEOUT);
+
+	</script>
+
+	<script>
+		googletag.cmd.push(function () {
+			googletag.defineSlot('/19968336/header-bid-tag-0', [728, 90], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+			googletag.pubads().enableSingleRequest();
+			googletag.enableServices();
+		});
+	</script>
+</head>
+
+<body>
+	<h2>Prebid.js Test</h2>
+	<h5>Div-1</h5>
+	<div id='div-gpt-ad-1460505748561-0'>
+		<script type='text/javascript'>
+			googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+		</script>
+	</div>
+</body>
+
+</html>

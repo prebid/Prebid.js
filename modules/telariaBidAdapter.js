@@ -124,7 +124,7 @@ function getDefaultSrcPageUrl() {
 }
 
 function getEncodedValIfNotEmpty(val) {
-  return !utils.isEmpty(val) ? encodeURIComponent(val) : '';
+  return (val !== '' && val !== undefined) ? encodeURIComponent(val) : '';
 }
 
 /**
@@ -276,12 +276,16 @@ function createBid(status, reqBid, response, width, height, bidderCode) {
       width: width,
       height: height,
       bidderCode: bidderCode,
-      adId: response.id,
       currency: 'USD',
       netRevenue: true,
       ttl: 300,
       ad: response.adm
     });
+  }
+
+  bid.meta = bid.meta || {};
+  if (response && response.adomain && response.adomain.length > 0) {
+    bid.meta.advertiserDomains = response.adomain;
   }
 
   return bid;

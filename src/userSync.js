@@ -225,7 +225,7 @@ export function newUserSync(userSyncDependencies) {
       }
       return checkForFiltering[filterType](biddersToFilter, bidder);
     }
-    return false;
+    return !permittedPixels[type];
   }
 
   /**

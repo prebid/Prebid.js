@@ -342,7 +342,7 @@ function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid,
     },
     'customCacheKey': `${priceIndustryDuration}_${uuid}`,
     'meta': {
-      'iabSubCatId': 'iab-1',
+      'primaryCatId': 'iab-1',
       'adServerCatId': industry
     },
     'videoCacheKey': '4cf395af-8fee-4960-af0e-88d44e399f14'

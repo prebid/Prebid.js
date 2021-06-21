@@ -49,6 +49,14 @@
       };
 
       pbjs.que.push(function(){
+        pbjs.onEvent('auctionEnd', function() {
+          let pEl = document.createElement('p');
+          pEl.innerText = 'PREBID HAS FINISHED';
+          pEl.id = 'statusText';
+          let parDiv = document.getElementById('event-window');
+          parDiv.appendChild(pEl);
+        });
+        
         pbjs.addAdUnits(videoAdUnit);
         pbjs.setConfig({
                     debug: true,
@@ -57,7 +65,6 @@
                     }
                 });
         pbjs.requestBids({
-          timeout : 700,
           bidsBackHandler : function(bids) {
             var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
               adUnit: videoAdUnit,
@@ -70,36 +77,13 @@
           }
         });
       });
-
-      pbjs.bidderSettings =
-        {
-          standard: {
-            adserverTargeting: [
-              {
-                key: "hb_bidder",
-                val: function (bidResponse) {
-                  return bidResponse.bidderCode;
-                }
-              }, {
-                key: "hb_adid",
-                val: function (bidResponse) {
-                  return bidResponse.adId;
-                }
-              }, {
-                key: "hb_pb",
-                val: function (bidResponse) {
-                  return "10.00";
-                }
-              }, {
-                key: "hb_size",
-                val: function (bidResponse) {
-                  return bidResponse.size;
-
-                }
-              }
-            ]
+      pbjs.bidderSettings = {
+        appnexus: {
+          bidCpmAdjustment: function() {
+            return 10.00;
           }
-        };
+        }
+      };
     </script>
 </head>
 
@@ -107,6 +91,7 @@
 
 <h2>Prebid Video -- video.js</h2>
 
+<div id="event-window"></div>
 <div class="example-video-container">
 
     <video id="vid1" class="video-js vjs-default-skin vjs-big-play-centered" controls

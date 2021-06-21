@@ -1,39 +1,41 @@
-import {detectReferer} from '../src/refererDetection.js';
-import {ajax} from '../src/ajax.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import * as utils from '../src/utils.js';
 
-const storage = getStorageManager();
+const storageManager = getStorageManager();
 
 export const spec = {
   code: 'orbidder',
-  bidParams: {},
-  orbidderHost: (() => {
-    let ret = 'https://orbidder.otto.de';
+  hostname: 'https://orbidder.otto.de',
+
+  getHostname() {
+    let ret = this.hostname;
     try {
-      ret = storage.getDataFromLocalStorage('ov_orbidder_host') || ret;
+      ret = storageManager.getDataFromLocalStorage('ov_orbidder_host') || ret;
     } catch (e) {
     }
     return ret;
-  })(),
+  },
 
   isBidRequestValid(bid) {
     return !!(bid.sizes && bid.bidId && bid.params &&
       (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
       (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
-      ((typeof bid.params.bidfloor === 'undefined') || (typeof bid.params.bidfloor === 'number')) &&
       ((typeof bid.params.profile === 'undefined') || (typeof bid.params.profile === 'object')));
   },
 
   buildRequests(validBidRequests, bidderRequest) {
+    const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.referer || '';
       }
 
+      bidRequest.params.bidfloor = getBidFloor(bidRequest);
+
       const ret = {
-        url: `${spec.orbidderHost}/bid`,
+        url: `${hostname}/bid`,
         method: 'POST',
         options: { withCredentials: true },
         data: {
@@ -48,7 +50,6 @@ export const spec = {
           params: bidRequest.params
         }
       };
-      spec.bidParams[bidRequest.bidId] = bidRequest.params;
       if (bidderRequest && bidderRequest.gdprConsent) {
         ret.data.gdprConsent = {
           consentString: bidderRequest.gdprConsent.consentString,
@@ -71,26 +72,39 @@ export const spec = {
           }
           bidResponse[requiredKey] = bid[requiredKey];
         }
+
+        if (Array.isArray(bid.advertiserDomains)) {
+          bidResponse.meta = {
+            advertiserDomains: bid.advertiserDomains
+          }
+        }
+
         bidResponses.push(bidResponse);
       });
     }
     return bidResponses;
   },
-
-  onBidWon(bid) {
-    const getRefererInfo = detectReferer(window);
-
-    bid.v = $$PREBID_GLOBAL$$.version;
-    bid.pageUrl = getRefererInfo().referer;
-    if (spec.bidParams[bid.requestId] && (typeof bid.params === 'undefined')) {
-      bid.params = [spec.bidParams[bid.requestId]];
-    }
-    spec.ajaxCall(`${spec.orbidderHost}/win`, JSON.stringify(bid));
-  },
-
-  ajaxCall(endpoint, data) {
-    ajax(endpoint, null, data, { withCredentials: true });
-  }
 };
+
+/**
+ * Get bid floor from Price Floors Module
+ * @param {Object} bid
+ * @returns {float||undefined}
+ */
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return bid.params.bidfloor;
+  }
+
+  const floor = bid.getFloor({
+    currency: 'EUR',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+    return floor.floor;
+  }
+  return undefined;
+}
 
 registerBidder(spec);

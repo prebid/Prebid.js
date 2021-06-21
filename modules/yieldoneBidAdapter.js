@@ -8,6 +8,7 @@ const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
 const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
+const CMER_PLAYER_URL = 'https://an.cmertv.com/hb/renderer/cmertv-video-yone-prebid.min.js';
 const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/prebid-adformat-config.js';
 
 export const spec = {
@@ -136,7 +137,11 @@ export const spec = {
       } else if (response.adm) {
         bidResponse.mediaType = VIDEO;
         bidResponse.vastXml = response.adm;
-        bidResponse.renderer = newRenderer(response);
+        if (renderId === 'cmer') {
+          bidResponse.renderer = newCmerRenderer(response);
+        } else {
+          bidResponse.renderer = newRenderer(response);
+        }
       }
 
       bidResponses.push(bidResponse);
@@ -172,6 +177,28 @@ function newRenderer(response) {
 function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.DACIVTPREBID.renderPrebid(bid);
+  });
+}
+
+function newCmerRenderer(response) {
+  const renderer = Renderer.install({
+    id: response.uid,
+    url: CMER_PLAYER_URL,
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender(cmerRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+  }
+
+  return renderer;
+}
+
+function cmerRender(bid) {
+  bid.renderer.push(() => {
+    window.CMERYONEPREBID.renderPrebid(bid);
   });
 }
 

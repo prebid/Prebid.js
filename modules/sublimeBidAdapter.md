@@ -9,7 +9,7 @@ Maintainer: pbjs@sublimeskinz.com
 # Description
 
 Connects to Sublime for bids.
-Sublime bid adapter supports Skinz and M-Skinz formats.
+Sublime bid adapter supports Skinz.
 
 # Nota Bene
 
@@ -53,10 +53,13 @@ var adUnits = [{
     bids: [{
         bidder: 'sublime',
         params: {
-            zoneId: <zoneId>
+            zoneId: <zoneId>,
+            notifyId: <notifyId>
         }
     }]
 }];
 ```
 
-Where you replace `<zoneId>` by your Sublime Zone id
+Where you replace:
+- `<zoneId>` by your Sublime Zone id;
+- `<notifyId>` by your Sublime Notify id

@@ -1,8 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/orbidderBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import openxAdapter from '../../../modules/openxAnalyticsAdapter.js';
-import {detectReferer} from 'src/refererDetection.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -70,21 +68,6 @@ describe('orbidderBidAdapter', () => {
       delete bidRequest.params;
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
-
-    it('accepts optional bidfloor', () => {
-      const bidRequest = deepClone(defaultBidRequest);
-      bidRequest.params.bidfloor = 123;
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-
-      bidRequest.params.bidfloor = 1.23;
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
-
-    it('doesn\'t accept malformed bidfloor', () => {
-      const bidRequest = deepClone(defaultBidRequest);
-      bidRequest.params.bidfloor = 'another not usable string';
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
   });
 
   describe('buildRequests', () => {
@@ -93,7 +76,7 @@ describe('orbidderBidAdapter', () => {
     it('sends bid request to endpoint via https using post', () => {
       expect(request.method).to.equal('POST');
       expect(request.url.indexOf('https://')).to.equal(0);
-      expect(request.url).to.equal(`${spec.orbidderHost}/bid`);
+      expect(request.url).to.equal(`${spec.hostname}/bid`);
     });
 
     it('contains prebid version parameter', () => {
@@ -106,7 +89,7 @@ describe('orbidderBidAdapter', () => {
       expect(request.data.pageUrl).to.equal('https://localhost:9876/');
       // expect(request.data.referrer).to.equal('');
       Object.keys(defaultBidRequest).forEach((key) => {
-        expect(defaultBidRequest[key]).to.equal(request.data[key]);
+        expect(request.data[key]).to.deep.equal(defaultBidRequest[key]);
       });
     });
 
@@ -153,40 +136,6 @@ describe('orbidderBidAdapter', () => {
     });
   });
 
-  describe('onCallbackHandler', () => {
-    let ajaxStub;
-    const bidObj = {
-      adId: 'testId',
-      test: 1,
-      pageUrl: 'www.someurl.de',
-      referrer: 'www.somereferrer.de',
-      requestId: '123req456'
-    };
-
-    spec.bidParams['123req456'] = {'accountId': '123acc456'};
-
-    let bidObjClone = deepClone(bidObj);
-    bidObjClone.v = $$PREBID_GLOBAL$$.version;
-    bidObjClone.pageUrl = detectReferer(window)().referer;
-    bidObjClone.params = [{'accountId': '123acc456'}];
-
-    beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'ajaxCall');
-    });
-
-    afterEach(() => {
-      ajaxStub.restore();
-    });
-
-    it('calls orbidder\'s callback endpoint', () => {
-      spec.onBidWon(bidObj);
-      expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
-      expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/win`);
-      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObjClone));
-    });
-  });
-
   describe('interpretResponse', () => {
     it('should get correct bid response', () => {
       const serverResponse = [
@@ -222,6 +171,47 @@ describe('orbidderBidAdapter', () => {
       expect(result.length).to.equal(expectedResponse.length);
       Object.keys(expectedResponse[0]).forEach((key) => {
         expect(result[0][key]).to.equal(expectedResponse[0][key]);
+      });
+    });
+
+    it('should get correct bid response with advertiserDomains', () => {
+      const serverResponse = [
+        {
+          'width': 300,
+          'height': 250,
+          'creativeId': '29681110',
+          'ad': '<!-- Creative -->',
+          'cpm': 0.5,
+          'requestId': '30b31c1838de1e',
+          'ttl': 60,
+          'netRevenue': true,
+          'currency': 'EUR',
+          'advertiserDomains': ['cm.tavira.pt']
+        }
+      ];
+
+      const expectedResponse = [
+        {
+          'requestId': '30b31c1838de1e',
+          'cpm': 0.5,
+          'creativeId': '29681110',
+          'width': 300,
+          'height': 250,
+          'ttl': 60,
+          'currency': 'EUR',
+          'ad': '<!-- Creative -->',
+          'netRevenue': true,
+          'meta': {
+            'advertiserDomains': ['cm.tavira.pt']
+          }
+        }
+      ];
+
+      const result = spec.interpretResponse({body: serverResponse});
+
+      expect(result.length).to.equal(expectedResponse.length);
+      Object.keys(expectedResponse[0]).forEach((key) => {
+        expect(result[0][key]).to.deep.equal(expectedResponse[0][key]);
       });
     });
 

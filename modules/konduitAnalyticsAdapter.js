@@ -7,6 +7,7 @@ import { config } from '../src/config.js';
 import CONSTANTS from '../src/constants.json';
 
 const TRACKER_HOST = 'tracker.konduit.me';
+const KONDUIT_PREBID_MODULE_VERSION = '1.0.0';
 
 const analyticsType = 'endpoint';
 
@@ -168,6 +169,7 @@ function composeRequestPayload () {
   return {
     konduitId,
     prebidVersion: '$prebid.version$',
+    konduitPrebidModuleVersion: KONDUIT_PREBID_MODULE_VERSION,
     environment: {
       screen: { width, height },
       language: navigator.language,

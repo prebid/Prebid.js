@@ -148,6 +148,7 @@ describe('UnrulyAdapter', function () {
           netRevenue: true,
           creativeId: 'mockBidId',
           ttl: 360,
+          meta: { advertiserDomains: [] },
           currency: 'USD',
           renderer: fakeRenderer,
           mediaType: 'video'
