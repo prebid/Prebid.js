@@ -67,8 +67,8 @@ describe('Dmd ID System', function () {
     expect(request.method).to.eq('GET');
     expect(request.requestHeaders['x-domain']).to.be.eq(domain);
     expect(request.url).to.eq(config.params.api_url);
-    request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ dmdId: 'U12345' }));
-    expect(callbackSpy.lastCall.lastArg).to.deep.equal({ dmdId: 'U12345' });
+    request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ dgid: 'U12345' }));
+    expect(callbackSpy.lastCall.lastArg).to.deep.equal('U12345');
   });
 
   it('Should log error if API response is not valid', function () {
