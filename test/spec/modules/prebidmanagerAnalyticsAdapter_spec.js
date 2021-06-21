@@ -110,7 +110,7 @@ describe('Prebid Manager Analytics Adapter', function () {
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
     let prebid_options = {
-        bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+      bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
     };
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
