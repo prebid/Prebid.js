@@ -167,7 +167,7 @@ function newBid(serverBid, rtbBid, placementId, uuid) {
   };
   
   if (rtbBid.adomain) {
-    bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [] });
+    bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [rtbBid.adomain] });
   };
 
   Object.assign(bid, {
