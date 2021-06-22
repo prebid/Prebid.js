@@ -513,7 +513,7 @@ describe('S2S Adapter', function () {
 
       let badCfgRequest = utils.deepClone(REQUEST);
       badCfgRequest.s2sConfig = badConfig;
-      
+
       adapter.callBids(badCfgRequest, BID_REQUESTS, addBidResponse, done, ajax);
 
       expect(server.requests.length).to.equal(0);
