@@ -29,8 +29,13 @@ export const sharethroughAdapterSpec = {
         instant_play_capable: canAutoPlayHTML5Video(),
         hbSource: 'prebid',
         hbVersion: '$prebid.version$',
-        strVersion: VERSION
+        strVersion: VERSION,
       };
+
+      const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        query.gpid = gpid;
+      }
 
       Object.assign(query, handleUniversalIds(bidRequest));
 
