@@ -11,9 +11,9 @@ import { triggerPixel, logInfo } from '../src/utils.js';
 import { uspDataHandler, coppaDataHandler, gdprDataHandler } from '../src/adapterManager.js';
 
 const QUANTCAST_FPA = '__qca';
-const DEFAULT_COOKIE_EXP_TIME = 392; // (13 months - 2 days)
-const PREBID_PCODE = 'p-KceJUEvXN48CE'; // Not associated with a real account
-const DOMAIN_QSERVE = 'https://pixel.quantserve.com/pixel';
+const DEFAULT_COOKIE_EXP_DAYS = 392; // (13 months - 2 days)
+const PREBID_PCODE = 'p-KceJUEvXN48CE';
+const QSERVE_URL = 'https://pixel.quantserve.com/pixel';
 const QUANTCAST_VENDOR_ID = '11';
 const PURPOSE_DATA_COLLECT = '1';
 const PURPOSE_PRODUCT_IMPROVEMENT = '10';
@@ -25,21 +25,20 @@ const US_PRIVACY_STRING = uspDataHandler.getConsentData();
 
 export const storage = getStorageManager();
 
-export function firePixel(clientId, cookieExpTime = DEFAULT_COOKIE_EXP_TIME) {
-  // check for presence of Quantcast Measure tag _qevent obj,
-  // required gdpr consent / legitimate interest for purpose 1 and 10
-  // for Quantcast as a vendor, and publisher provided clientID
-  if (!window._qevents && hasGDPRConsent(GDPR_PRIVACY_STRING) && clientId && clientId != '') {
+export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
+  // check for presence of Quantcast Measure tag _qevent obj and publisher provided clientID
+  if (!window._qevents && clientId && clientId != '') {
     var fpa = storage.getCookie(QUANTCAST_FPA);
     var fpan = '0';
     var domain = quantcastIdSubmodule.findRootDomain();
     var now = new Date();
+    var et = now.getTime();
     var usPrivacyParamString = '';
     var firstPartyParamStrings;
     var gdprParamStrings;
 
     if (!fpa) {
-      var expires = new Date(now.getTime() + (cookieExpTime * 86400000)).toGMTString();
+      var expires = new Date(now.getTime() + (cookieExpDays * 86400000)).toGMTString();
       fpa = 'B0-' + Math.round(Math.random() * 2147483647) + '-' + et;
       fpan = '1';
       storage.setCookie(QUANTCAST_FPA, fpa, expires, '/', domain, null);
@@ -54,7 +53,7 @@ export function firePixel(clientId, cookieExpTime = DEFAULT_COOKIE_EXP_TIME) {
       usPrivacyParamString = `&us_privacy=${US_PRIVACY_STRING}`;
     }
 
-    let url = DOMAIN_QSERVE +
+    let url = QSERVE_URL +
     '?d=' + domain +
     '&client_id=' + clientId +
     '&a=' + PREBID_PCODE +
@@ -143,12 +142,17 @@ export function checkTCFv2(vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOS
 }
 
 /**
- * tests if us_privacy consent string is present, us_privacy applies, and do-not-sell is not set
+ * tests if us_privacy consent string is present, us_privacy applies, and notice_given / do-not-sell is set to yes
  * @returns {boolean}
  */
-function hasCCPAConsent(usPrivacyConsent) {
-  // TODO : Needs to be revisited
-  if (usPrivacyConsent && usPrivacyConsent !== '1---') {
+export function hasCCPAConsent(usPrivacyConsent) {
+  if (
+    usPrivacyConsent &&
+    typeof usPrivacyConsent === 'string' &&
+    usPrivacyConsent.length == 4 &&
+    usPrivacyConsent.charAt(1) == 'Y' &&
+    usPrivacyConsent.charAt(2) == 'Y'
+  ) {
     return false
   }
   return true;
@@ -162,7 +166,7 @@ export const quantcastIdSubmodule = {
    */
   name: 'quantcastId',
 
-    /**
+  /**
    * Vendor id of Quantcast
    * @type {Number}
    */
@@ -188,7 +192,7 @@ export const quantcastIdSubmodule = {
 
     const coppa = coppaDataHandler.getCoppa();
 
-    if (coppa || !hasCCPAConsent(US_PRIVACY_STRING)) {
+    if (coppa || !hasCCPAConsent(US_PRIVACY_STRING) || !hasGDPRConsent(GDPR_PRIVACY_STRING)) {
       var expired = new Date(0).toUTCString();
       var domain = quantcastIdSubmodule.findRootDomain();
       logInfo('QuantcastId: Necessary consent not present for Id, exiting QuantcastId');
@@ -200,14 +204,14 @@ export const quantcastIdSubmodule = {
     const storageParams = (config && config.storage) || {};
 
     var clientId = configParams.clientId || '';
-    var cookieExpTime = storageParams.expires || DEFAULT_COOKIE_EXP_TIME;
+    var cookieExpDays = storageParams.expires || DEFAULT_COOKIE_EXP_DAYS;
 
     // Callbacks on Event Listeners won't trigger if the event is already complete so this check is required
     if (document.readyState === 'complete') {
-      firePixel(clientId, cookieExpTime);
+      firePixel(clientId, cookieExpDays);
     }
     window.addEventListener('load', function () {
-      firePixel(clientId, cookieExpTime);
+      firePixel(clientId, cookieExpDays);
     });
 
     return { id: fpa ? { quantcastId: fpa } : undefined }

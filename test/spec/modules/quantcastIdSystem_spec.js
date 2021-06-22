@@ -75,6 +75,22 @@ describe('QuantcastId fire pixel', function () {
   });
 });
 
+describe('Quantcast CCPA consent check', function() {
+  it('returns true when CCPA constent string is not present', function() {
+    expect(hasCCPAConsent()).to.equal(true);
+  });
+
+  it("returns true when notice_given or do-not-sell in CCPA constent string is not 'Y' ", function() {
+    expect(hasCCPAConsent('1NNN')).to.equal(true);
+    expect(hasCCPAConsent('1YNN')).to.equal(true);
+    expect(hasCCPAConsent('1NYN')).to.equal(true);
+  });
+
+  it("returns false when CCPA consent string is present, and notice_given or do-not-sell in the string is 'Y' ", function() {
+    expect(hasCCPAConsent('1YYN')).to.equal(false);
+  });
+});
+
 describe('Quantcast GDPR consent check', function() {
   it("returns true when GDPR doesn't apply", function() {
     expect(hasGDPRConsent({gdprApplies: false})).to.equal(true);
