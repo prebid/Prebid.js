@@ -208,7 +208,7 @@ function _getVidParams (attributes) {
  * @param {Object} bid
  * @returns {Number} floor
  */
-function _getFloor (mediaTypes, staticBidfloor, bid) {
+function _getFloor (mediaTypes, staticBidFloor, bid) {
   const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
   const bidFloor = { floor: 0, currency: 'USD' };
 
@@ -220,9 +220,11 @@ function _getFloor (mediaTypes, staticBidfloor, bid) {
     floor && (bidFloor.floor = floor);
     currency && (bidFloor.currency = currency);
 
-    if (staticBidfloor && floor && currency === 'USD') {
-      bidFloor.floor = Math.max(staticBidfloor, parseFloat(floor));
+    if (staticBidFloor && floor && currency === 'USD') {
+      bidFloor.floor = Math.max(staticBidFloor, parseFloat(floor));
     }
+  } else if (staticBidFloor) {
+    bidFloor.floor = staticBidFloor
   }
 
   return bidFloor;

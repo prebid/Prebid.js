@@ -166,9 +166,6 @@ function handleUniversalIds(bidRequest) {
   const lipb = utils.deepAccess(bidRequest, 'userId.lipb.lipbid');
   if (lipb) universalIds.liuid = lipb;
 
-  const shd = utils.deepAccess(bidRequest, 'userId.sharedid');
-  if (shd) universalIds.shduid = shd; // object with keys: id & third
-
   return universalIds;
 }
 
