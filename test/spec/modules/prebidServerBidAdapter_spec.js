@@ -506,6 +506,19 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
+    it('should block request if config did not define proper URL in endpoint object config', function() {
+      let badConfig = utils.deepClone(CONFIG);
+      badConfig.endpoint = { noP1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };
+      config.setConfig({ s2sConfig: badConfig });
+
+      let badCfgRequest = utils.deepClone(REQUEST);
+      badCfgRequest.s2sConfig = badConfig;
+      
+      adapter.callBids(badCfgRequest, BID_REQUESTS, addBidResponse, done, ajax);
+
+      expect(server.requests.length).to.equal(0);
+    });
+
     it('should not add outstrean without renderer', function () {
       config.setConfig({ s2sConfig: CONFIG });
 

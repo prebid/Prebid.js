@@ -136,7 +136,7 @@ function formatUrlParams(option) {
     if (utils.isPlainObject(option[prop]) && (!option[prop].p1Consent || !option[prop].noP1Consent)) {
       ['p1Consent', 'noP1Consent'].forEach((conUrl) => {
         if (!option[prop][conUrl]) {
-          utils.logWarn(`s2sConfig.${prop}.${conUrl} was not defined in manually set s2sConfig.  This may prevent PBS requests from executing in certain cases.  Please define field manually or instead use the defaultVendor settings of host company (if avialable).`);
+          utils.logWarn(`s2sConfig.${prop}.${conUrl} not defined.  PBS request will be skipped in some P1 scenarios.`);
         }
       });
     }
@@ -1115,7 +1115,7 @@ export function PrebidServer() {
           { contentType: 'text/plain', withCredentials: true }
         );
       } else {
-        utils.logError('Prebid Server request did not execute.  Please ensure endpoint URL(s) are properly defined in your s2sConfig.  Otherwise check for warnings/errors, likely noted earlier in console logs...');
+        utils.logError('PBS request not made.  Check endpoints.');
       }
     }
   };
