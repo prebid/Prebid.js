@@ -219,15 +219,6 @@ describe('ApacdexBidAdapter', function () {
           'id': '2ae366c2-2576-45e5-bd21-72ed10598f17',
           'atype': 1
         }]
-      }, {
-        'source': 'sharedid.org',
-        'uids': [{
-          'id': '01EZXQDVAPER4KE1VBS29XKV4Z',
-          'atype': 1,
-          'ext': {
-            'third': '01EZXQDVAPER4KE1VBS29XKV4Z'
-          }
-        }]
       }],
     },
     {

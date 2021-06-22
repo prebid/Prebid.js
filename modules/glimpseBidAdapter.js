@@ -3,6 +3,17 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'glimpse';
 
+function transformEachBidResponse(glimpseBid) {
+  const bid = glimpseBid;
+  bid.meta = { advertiserDomains: [] };
+
+  if (glimpseBid.adomain) {
+    bid.meta.advertiserDomains = glimpseBid.adomain;
+  }
+
+  return bid;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   url: 'https://api.glimpseprotocol.io/cloud/v1/vault/prebid',
@@ -45,10 +56,10 @@ export const spec = {
   },
 
   interpretResponse: (serverResponse, _) => {
-    const bids = [];
+    let bids = [];
     try {
       const { body } = serverResponse;
-      bids.push(...body);
+      bids = body.map(transformEachBidResponse);
     } catch (error) {}
 
     return bids;

@@ -1,8 +1,9 @@
 import {
-  sharedIdSubmodule,
+  sharedIdSystemSubmodule,
 } from 'modules/sharedIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
 import {uspDataHandler} from 'src/adapterManager';
+import sinon from 'sinon';
 
 let expect = require('chai').expect;
 
@@ -22,7 +23,7 @@ describe('SharedId System', function() {
     });
 
     it('should call shared id endpoint without consent data and handle a valid response', function () {
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, undefined).callback;
+      let submoduleCallback = sharedIdSystemSubmodule.getId(undefined, undefined).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -32,7 +33,7 @@ describe('SharedId System', function() {
       request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(callbackSpy.lastCall.lastArg.id).to.equal(SHAREDID_RESPONSE.sharedId);
+      expect(callbackSpy.lastCall.lastArg).to.equal(SHAREDID_RESPONSE.sharedId);
     });
 
     it('should call shared id endpoint with consent data and handle a valid response', function () {
@@ -41,7 +42,7 @@ describe('SharedId System', function() {
         consentString: 'abc12345234',
       };
 
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, consentData).callback;
+      let submoduleCallback = sharedIdSystemSubmodule.getId(undefined, consentData).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -51,7 +52,7 @@ describe('SharedId System', function() {
       request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(callbackSpy.lastCall.lastArg.id).to.equal(SHAREDID_RESPONSE.sharedId);
+      expect(callbackSpy.lastCall.lastArg).to.equal(SHAREDID_RESPONSE.sharedId);
     });
 
     it('should call shared id endpoint with usp consent data and handle a valid response', function () {
@@ -61,7 +62,7 @@ describe('SharedId System', function() {
         consentString: 'abc12345234',
       };
 
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, consentData).callback;
+      let submoduleCallback = sharedIdSystemSubmodule.getId(undefined, consentData).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -71,7 +72,7 @@ describe('SharedId System', function() {
       request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(callbackSpy.lastCall.lastArg.id).to.equal(SHAREDID_RESPONSE.sharedId);
+      expect(callbackSpy.lastCall.lastArg).to.equal(SHAREDID_RESPONSE.sharedId);
     });
   });
 });

@@ -14,6 +14,7 @@ const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
+const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
@@ -215,6 +216,13 @@ export const spec = {
         consent_string: bidderRequest.gdprConsent.consentString,
         consent_required: bidderRequest.gdprConsent.gdprApplies
       };
+
+      if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+        let ac = bidderRequest.gdprConsent.addtlConsent;
+        // pull only the ids from the string (after the ~) and convert them to an array of ints
+        let acStr = ac.substring(ac.indexOf('~') + 1);
+        payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
+      }
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
@@ -809,6 +817,51 @@ function bidToTag(bid) {
     if (bid.params.video.frameworks && utils.isArray(bid.params.video.frameworks)) {
       tag['video_frameworks'] = bid.params.video.frameworks;
     }
+  }
+
+  // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
+  if (videoMediaType) {
+    tag.video = tag.video || {};
+    Object.keys(videoMediaType)
+      .filter(param => includes(VIDEO_RTB_TARGETING, param))
+      .forEach(param => {
+        switch (param) {
+          case 'minduration':
+          case 'maxduration':
+            if (typeof tag.video[param] !== 'number') tag.video[param] = videoMediaType[param];
+            break;
+          case 'skip':
+            if (typeof tag.video['skippable'] !== 'boolean') tag.video['skippable'] = (videoMediaType[param] === 1);
+            break;
+          case 'skipafter':
+            if (typeof tag.video['skipoffset'] !== 'number') tag.video['skippoffset'] = videoMediaType[param];
+            break;
+          case 'playbackmethod':
+            if (typeof tag.video['playback_method'] !== 'number') {
+              let type = videoMediaType[param];
+              type = (utils.isArray(type)) ? type[0] : type;
+
+              // we only support iab's options 1-4 at this time.
+              if (type >= 1 && type <= 4) {
+                tag.video['playback_method'] = type;
+              }
+            }
+            break;
+          case 'api':
+            if (!tag['video_frameworks'] && utils.isArray(videoMediaType[param])) {
+              // need to read thru array; remove 6 (we don't support it), swap 4 <> 5 if found (to match our adserver mapping for these specific values)
+              let apiTmp = videoMediaType[param].map(val => {
+                let v = (val === 4) ? 5 : (val === 5) ? 4 : val;
+
+                if (v >= 1 && v <= 5) {
+                  return v;
+                }
+              }).filter(v => v);
+              tag['video_frameworks'] = apiTmp;
+            }
+            break;
+        }
+      });
   }
 
   if (bid.renderer) {
