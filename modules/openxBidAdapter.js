@@ -31,10 +31,9 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   parrableId: 'parrableid', // Parrable ID
   pubcid: 'pubcid', // PubCommon ID
   quantcastId: 'quantcastid', // Quantcast ID
-  sharedId: 'sharedid', // Shared ID User ID
   tapadId: 'tapadid', // Tapad Id
   tdid: 'ttduuid', // The Trade Desk Unified ID
-  verizonMediaId: 'verizonmediaid', // Verizon Media ConnectID
+  uid2: 'uid2', // Unified ID 2.0
 };
 
 export const spec = {
@@ -292,6 +291,9 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
 
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
       switch (userIdProviderKey) {
+        case 'uid2':
+          queryParams[key] = userIdObjectOrValue.id;
+          break;
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
           break;

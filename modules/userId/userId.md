@@ -72,16 +72,6 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
-             name: 'sharedId',
-              params: {
-                    syncTime: 60 // in seconds, default is 24 hours
-               },
-             storage: {
-                 type: 'cookie',
-                 name: 'sharedid',
-                 expires: 28
-              }
-        }, {
              name: 'criteo',
              storage: {             // It is best not to specify this parameter since the module needs to be called as many times as possible
                  type: 'cookie',
