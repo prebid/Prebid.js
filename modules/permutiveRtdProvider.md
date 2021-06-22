@@ -37,6 +37,8 @@ The below bidders are currently support by the Permutive RTD module. Please reac
 | Magnite     | `rubicon`  | Yes                  | No                |
 | Ozone       | `ozone`    | No                   | Yes                |
 | TrustX      | `trustx`   | No                   | Yes                |
+| PubMatic    | `pubmatic` | No                   | Yes                |
+
 
 * **First-party segments:** When enabling the respective Activation for a segment in Permutive, this module will automatically attach that segment to the bid request. There is no need to enable individual bidders in the module configuration, it will automatically reflect which SSP integrations you have enabled in Permutive. Permutive segments will be sent in the `permutive` key-value.
 
