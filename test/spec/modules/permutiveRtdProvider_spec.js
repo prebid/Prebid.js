@@ -93,25 +93,6 @@ describe('permutiveRtdProvider', function () {
         })
       }
     })
-    it('sets segment targeting for TrustX', function () {
-      const data = transformedTargeting()
-      const adUnits = getAdUnits()
-      const config = getConfig()
-
-      initSegments({ adUnits }, callback, config)
-
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, rtd } = bid
-
-            if (bidder === 'trustx') {
-              expect(deepAccess(rtd, 'p_standard.targeting.segments')).to.eql(data.ac)
-            }
-          })
-        })
-      }
-    })
   })
 
   describe('Custom segment targeting', function () {

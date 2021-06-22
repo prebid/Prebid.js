@@ -125,18 +125,32 @@ function getDefaultBidderFn (bidder) {
     },
     trustx: function (bid, data, acEnabled) {
       if (acEnabled && data.ac && data.ac.length) {
-        const currRtd = bid.rtd || {}
-        const targeting = { segments: data.ac }
-        const pRtd = { p_standard: { targeting } }
-
-        bid.rtd = Object.assign({}, currRtd, pRtd)
+        setBidderRtb('trustx', data.ac)
       }
-
-      return bid
     }
   }
 
   return bidderMapper[bidder]
+}
+
+function setBidderRtb (bidder, segments) {
+  const segment = segments.map(seg => {
+    return { id: seg }
+  })
+
+  getGlobal().setBidderConfig({
+    bidders: [bidder],
+    config: {
+      ortb2: {
+        user: {
+          data: [{
+            name: 'permutive.com',
+            segment
+          }]
+        }
+      }
+    }
+  })
 }
 
 export function isAcEnabled (config, bidder) {
