@@ -133,6 +133,13 @@ function formatUrlParams(option) {
       let temp = option[prop];
       option[prop] = { p1Consent: temp, noP1Consent: temp };
     }
+    if (utils.isPlainObject(option[prop]) && (!option[prop].p1Consent || !option[prop].noP1Consent)) {
+      ['p1Consent', 'noP1Consent'].forEach((conUrl) => {
+        if (!option[prop][conUrl]) {
+          utils.logWarn(`s2sConfig.${prop}.${conUrl} was not defined in manually set s2sConfig.  This may prevent PBS requests from executing in certain cases.  Please define field manually or instead use the defaultVendor settings of host company (if avialable).`);
+        }
+      });
+    }
   });
 }
 
@@ -1097,7 +1104,7 @@ export function PrebidServer() {
       const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits, s2sBidRequest.s2sConfig, requestedBidders);
       const requestJson = request && JSON.stringify(request);
       utils.logInfo('BidRequest: ' + requestJson);
-      if (request && requestJson) {
+      if (request && requestJson && getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent)) {
         ajax(
           getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
           {
@@ -1107,6 +1114,8 @@ export function PrebidServer() {
           requestJson,
           { contentType: 'text/plain', withCredentials: true }
         );
+      } else {
+        utils.logError('Prebid Server request did not execute.  Please ensure endpoint URL(s) are properly defined in your s2sConfig.  Otherwise check for warnings/errors, likely noted earlier in console logs...');
       }
     }
   };
