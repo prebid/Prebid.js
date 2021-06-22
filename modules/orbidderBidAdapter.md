@@ -21,7 +21,7 @@ var adUnits = [
             }
         },
         bids: [{
-            bidder: 'orbidder'
+            bidder: 'orbidder',
             params: {
                 accountId: "someAccount",
                 placementId: "somePlace"
@@ -44,9 +44,9 @@ var adUnits = [
                     required: true
                 }
             },
-        }
+        },
         bids: [{
-            bidder: 'orbidder'
+            bidder: 'orbidder',
             params: {
                 accountId: "someAccount",
                 placementId: "somePlace"
