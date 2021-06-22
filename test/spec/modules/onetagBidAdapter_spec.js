@@ -142,6 +142,9 @@ describe('onetag', function () {
         expect(data.wHeight).to.be.a('number');
         expect(data.oHeight).to.be.a('number');
         expect(data.oWidth).to.be.a('number');
+        expect(data.ancestorOrigin).to.satisfy(function (value) {
+          return value === null || typeof value === 'string';
+        });
         expect(data.aWidth).to.be.a('number');
         expect(data.aHeight).to.be.a('number');
         expect(data.sLeft).to.be.a('number');
@@ -153,9 +156,33 @@ describe('onetag', function () {
         for (let i = 0; i < bids.length; i++) {
           const bid = bids[i];
           if (hasTypeVideo(bid)) {
-            expect(bid).to.have.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'pubId', 'transactionId', 'context', 'mimes', 'playerSize', 'protocols', 'maxDuration', 'api', 'type');
+            expect(bid).to.have.all.keys(
+              'adUnitCode',
+              'auctionId',
+              'bidId',
+              'bidderRequestId',
+              'pubId',
+              'transactionId',
+              'context',
+              'mimes',
+              'playerSize',
+              'protocols',
+              'maxDuration',
+              'api',
+              'playbackmethod',
+              'type'
+            );
           } else if (isValid(BANNER, bid)) {
-            expect(bid).to.have.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'pubId', 'transactionId', 'sizes', 'type');
+            expect(bid).to.have.all.keys(
+              'adUnitCode',
+              'auctionId',
+              'bidId',
+              'bidderRequestId',
+              'pubId',
+              'transactionId',
+              'sizes',
+              'type'
+            );
           }
           expect(bid.bidId).to.be.a('string');
           expect(bid.pubId).to.be.a('string');

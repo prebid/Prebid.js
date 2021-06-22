@@ -304,7 +304,7 @@ function _validateSlot (bid) {
 
 function _validateFloor (bid) {
   if (bid.params.floor) {
-    return `|f=${bid.params.floor}`;
+    return '';
   }
   return '';
 }
