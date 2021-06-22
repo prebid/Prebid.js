@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
+import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'bmtm';
 const AD_URL = 'https://one.elitebidder.com/api/hb';
@@ -42,9 +43,10 @@ export const spec = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
-      'secure': 1,
+      'secure': document.location.protocol === 'https:' ? 1 : 0,
       'host': location.host,
-      'page': location.pathname,
+      'page': location.href,
+      'prebidVersion': '$prebid.version$',
       'placements': placements
     };
     if (bidderRequest) {
@@ -59,6 +61,7 @@ export const spec = {
         placementId: bid.params.placement_id,
         bidId: bid.bidId,
         floor: {},
+        userIds: {},
       };
 
       if (bid.mediaTypes.hasOwnProperty(BANNER)) {
@@ -107,6 +110,10 @@ export const spec = {
 
       if (bid.schain) {
         placement.schain = bid.schain;
+      }
+
+      if (bid.userId) {
+        placement.userIds = { eids: createEidsArray(bid.userId) };
       }
       placements.push(placement);
     }
