@@ -225,6 +225,41 @@ describe('TrustXAdapter', function () {
         'key': 'emptyArr'
       }]);
     });
+
+    it('should attach rtd segments as keywords', function () {
+      const bidRequestWithKeywords = [].concat(bidRequests);
+      bidRequestWithKeywords[1] = Object.assign({},
+        bidRequests[1],
+        {
+          rtd: {
+            p_standard: {
+              targeting: {
+                segments: ['perm_seg_1', 'perm_seg_2']
+              }
+            },
+            jwplayer: {
+              targeting: {
+                segments: ['jwp_seg_1', 'jwp_seg_2']
+              }
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests(bidRequestWithKeywords, bidderRequest)[0];
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.keywords).to.be.an('string');
+      payload.keywords = JSON.parse(payload.keywords);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'jwpseg',
+        'value': ['jwp_seg_1', 'jwp_seg_2']
+      }, {
+        'key': 'p_standard',
+        'value': ['perm_seg_1', 'perm_seg_2']
+      }]);
+    });
   });
 
   describe('buildRequests with new format', function () {
@@ -591,6 +626,32 @@ describe('TrustXAdapter', function () {
       }]);
       expect(payload).to.have.property('site');
       expect(payload.site.content).to.deep.equal(jsContent);
+    });
+
+    it('if segment is present in permutive targeting, payload must have right params', function () {
+      const permSegments = ['test_perm_1', 'test_perm_2'];
+      const bidRequestsWithPermutiveTargeting = bidRequests.map((bid) => {
+        return Object.assign({
+          rtd: {
+            p_standard: {
+              targeting: {
+                segments: permSegments
+              }
+            }
+          }
+        }, bid);
+      });
+      const request = spec.buildRequests(bidRequestsWithPermutiveTargeting, bidderRequest)[0];
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('user');
+      expect(payload.user.data).to.deep.equal([{
+        name: 'permutive',
+        segment: [
+          {name: 'p_standard', value: permSegments[0]},
+          {name: 'p_standard', value: permSegments[1]}
+        ]
+      }]);
     });
 
     it('should contain the keyword values if it present in ortb2.(site/user)', function () {
