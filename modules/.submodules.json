@@ -42,6 +42,7 @@
     "haloRtdProvider",
     "iasRtdProvider",
     "jwplayerRtdProvider",
+    "medianetRtdProvider",
     "optimeraRtdProvider",
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
