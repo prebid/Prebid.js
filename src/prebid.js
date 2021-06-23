@@ -398,7 +398,7 @@ function emitAdRenderFail({ reason, message, bid, id }) {
  * @param  {string} id bid id to locate the ad
  * @alias module:pbjs.renderAd
  */
-$$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
+$$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
 
@@ -488,7 +488,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
     const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
     emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
   }
-};
+});
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all
