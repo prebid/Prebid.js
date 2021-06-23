@@ -28,7 +28,8 @@
     "uid2IdSystem",
     "admixerIdSystem",
     "dmdIdSystem",
-    "flocIdSystem"
+    "flocIdSystem",
+    "amxIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",

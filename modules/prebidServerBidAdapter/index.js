@@ -654,7 +654,7 @@ const OPEN_RTB_PROTOCOL = {
       const ext = adUnit.bids.reduce((acc, bid) => {
         const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
-          bid.params = adapter.getSpec().transformBidParams(bid.params, true);
+          bid.params = adapter.getSpec().transformBidParams(bid.params, true, adUnit, bidRequests);
         }
         acc[bid.bidder] = (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params;
         return acc;
@@ -751,7 +751,7 @@ const OPEN_RTB_PROTOCOL = {
 
     // set debug flag if in debug mode
     if (getConfig('debug')) {
-      request.ext.prebid = Object.assign(request.ext.prebid, {debug: 1})
+      request.ext.prebid = Object.assign(request.ext.prebid, {debug: true})
     }
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS

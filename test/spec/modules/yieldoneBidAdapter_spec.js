@@ -132,7 +132,10 @@ describe('yieldoneBidAdapter', function() {
         'crid': '2494768',
         'currency': 'JPY',
         'statusMessage': 'Bid available',
-        'dealId': 'P1-FIX-7800-DSP-MON'
+        'dealId': 'P1-FIX-7800-DSP-MON',
+        'admoain': [
+          'www.example.com'
+        ]
       }
     };
 
@@ -148,6 +151,11 @@ describe('yieldoneBidAdapter', function() {
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
+        'meta': {
+          'advertiserDomains': [
+            'www.example.com'
+          ]
+        },
         'mediaType': 'banner',
         'ad': '<!-- adtag -->'
       }];
@@ -199,6 +207,9 @@ describe('yieldoneBidAdapter', function() {
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
+        'meta': {
+          'advertiserDomains': []
+        },
         'mediaType': 'video',
         'vastXml': '<!-- vast -->',
         'renderer': {

@@ -318,6 +318,22 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
+  it('amxId', () => {
+    const id = 'c4bcadb0-124f-4468-a91a-d3d44cf311c5'
+    const userId = {
+      amxId: id
+    };
+
+    const [eid] = createEidsArray(userId);
+    expect(eid).to.deep.equal({
+      source: 'amxrtb.com',
+      uids: [{
+        atype: 1,
+        id,
+      }]
+    });
+  });
 });
 describe('Negative case', function() {
   it('eids array generation for UN-known sub-module', function() {
