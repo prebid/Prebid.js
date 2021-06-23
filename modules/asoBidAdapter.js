@@ -2,10 +2,12 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
 
 const BIDDER_CODE = 'aso';
 const DEFAULT_SERVER_URL = 'https://srv.aso1.net';
 const DEFAULT_SERVER_PATH = '/prebid/bidder';
+const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const TTL = 300;
 
 export const spec = {
@@ -90,7 +92,10 @@ export const spec = {
     if (bid.mediaType === BANNER) {
       bid.ad = serverBid.adm;
     } else if (bid.mediaType === VIDEO) {
-      bid.vastXml = serverBid.adm
+      bid.vastXml = serverBid.adm;
+      if (utils.deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream') {
+        bid.renderer = createRenderer(bidRequest, OUTSTREAM_RENDERER_URL);
+      }
     }
 
     bids.push(bid);
@@ -134,6 +139,29 @@ export const spec = {
     return urls;
   }
 };
+
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      sizes: [bid.width, bid.height],
+      targetId: bid.adUnitCode,
+      rendererOptions: {
+        content: bid.vastXml
+      }
+    });
+  });
+}
+
+function createRenderer(bid, url) {
+  const renderer = Renderer.install({
+    id: bid.bidId,
+    url: url,
+    loaded: false,
+    adUnitCode: bid.adUnitCode
+  });
+  renderer.setRender(outstreamRender);
+  return renderer;
+}
 
 function getUrlsInfo(bidderRequest) {
   let page = '';
@@ -179,7 +207,7 @@ function getBidFloor(bidRequest, size) {
 
   const bidFloor = bidRequest.getFloor({
     mediaType: bidRequest.mediaType,
-    size: size ? [ size.w, size.h ] : '*'
+    size: size ? [size.w, size.h] : '*'
   });
 
   if (!isNaN(bidFloor.floor)) {
