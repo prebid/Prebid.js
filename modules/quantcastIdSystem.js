@@ -13,7 +13,7 @@ import { uspDataHandler, coppaDataHandler, gdprDataHandler } from '../src/adapte
 const QUANTCAST_FPA = '__qca';
 const DEFAULT_COOKIE_EXP_DAYS = 392; // (13 months - 2 days)
 const PREBID_PCODE = 'p-KceJUEvXN48CE';
-const QSERVE_URL = 'https://pixel.quantserve.com/pixel';
+const QSERVE_URL = '//pixel.quantserve.com/pixel';
 const QUANTCAST_VENDOR_ID = '11';
 const PURPOSE_DATA_COLLECT = '1';
 const PURPOSE_PRODUCT_IMPROVEMENT = '10';
@@ -32,13 +32,13 @@ export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
     var fpan = '0';
     var domain = quantcastIdSubmodule.findRootDomain();
     var now = new Date();
-    var et = now.getTime();
     var usPrivacyParamString = '';
     var firstPartyParamStrings;
     var gdprParamStrings;
 
     if (!fpa) {
       var expires = new Date(now.getTime() + (cookieExpDays * 86400000)).toGMTString();
+      var et = now.getTime();
       fpa = 'B0-' + Math.round(Math.random() * 2147483647) + '-' + et;
       fpan = '1';
       storage.setCookie(QUANTCAST_FPA, fpa, expires, '/', domain, null);
