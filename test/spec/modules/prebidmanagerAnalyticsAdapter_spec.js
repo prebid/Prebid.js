@@ -106,7 +106,7 @@ describe('Prebid Manager Analytics Adapter', function () {
     });
   });
 
-  /*describe('build utm tag data', function () {
+  /*  describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
@@ -137,7 +137,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       expect(pmEvents.utmTags.utm_term).to.equal('');
       expect(pmEvents.utmTags.utm_content).to.equal('');
     });
-  });*/
+  }); */
 
   describe('build page info', function () {
     afterEach(function () {
