@@ -10,27 +10,36 @@ Maintainer: support@adsrv.org
 
 Adserver.Online Bidder Adapter for Prebid.js.
 
-For more information, please visit https://www.adserver.online
+For more information, please visit [Adserver.Online](https://adserver.online).
+
+# Parameters
+
+| Name          | Scope    | Description             | Example   | Type      |
+|---------------|----------|-------------------------|-----------|-----------|
+| `zone`        | required | Zone ID                 | `73815`   | `Integer` |
+| `attr`        | optional | Custom targeting params | `{keywords: ["a", "b"]}` | `Object` |
+
+
 
 # Test parameters for banner
 ```js
 var adUnits = [
-   {
-       code: 'banner1',
-       mediaTypes: {
-           banner: {
-               sizes: [[300, 250]],
-           }
-       },
-       bids: [
-           {
+    {
+        code: 'banner1',
+        mediaTypes: {
+            banner: {
+                sizes: [[300, 250]],
+            }
+        },
+        bids: [
+            {
                 bidder: 'aso',
                 params: {
                     zone: 73815
                 }
-           }
-       ]
-   }
+            }
+        ]
+    }
 ];
 ```
 
@@ -42,14 +51,14 @@ var videoAdUnit = [
         mediaTypes: {
             video: {
                 playerSize: [[640, 480]],
-                context: 'instream'
+                context: 'instream' // or 'outstream'
             }
         },
         bids: [{
-                bidder: 'aso',
-                params: {
-                    zone: 34668
-                }
+            bidder: 'aso',
+            params: {
+                zone: 34668
+            }
         }]
     }
 ];
