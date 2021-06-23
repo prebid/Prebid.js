@@ -506,14 +506,55 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should block request if config did not define proper URL in endpoint object config', function() {
+    it('should block request if config did not define p1Consent URL in endpoint object config', function() {
       let badConfig = utils.deepClone(CONFIG);
       badConfig.endpoint = { noP1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };
       config.setConfig({ s2sConfig: badConfig });
 
       let badCfgRequest = utils.deepClone(REQUEST);
       badCfgRequest.s2sConfig = badConfig;
-      
+
+      adapter.callBids(badCfgRequest, BID_REQUESTS, addBidResponse, done, ajax);
+
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('should block request if config did not define noP1Consent URL in endpoint object config', function() {
+      let badConfig = utils.deepClone(CONFIG);
+      badConfig.endpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };
+      config.setConfig({ s2sConfig: badConfig });
+
+      let badCfgRequest = utils.deepClone(REQUEST);
+      badCfgRequest.s2sConfig = badConfig;
+
+      let badBidderRequest = utils.deepClone(BID_REQUESTS);
+      badBidderRequest[0].gdprConsent = {
+        consentString: 'abc123',
+        addtlConsent: 'superduperconsent',
+        gdprApplies: true,
+        apiVersion: 2,
+        vendorData: {
+          purpose: {
+            consents: {
+              1: false
+            }
+          }
+        }
+      };
+
+      adapter.callBids(badCfgRequest, badBidderRequest, addBidResponse, done, ajax);
+
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('should block request if config did not define any URLs in endpoint object config', function() {
+      let badConfig = utils.deepClone(CONFIG);
+      badConfig.endpoint = {};
+      config.setConfig({ s2sConfig: badConfig });
+
+      let badCfgRequest = utils.deepClone(REQUEST);
+      badCfgRequest.s2sConfig = badConfig;
+
       adapter.callBids(badCfgRequest, BID_REQUESTS, addBidResponse, done, ajax);
 
       expect(server.requests.length).to.equal(0);

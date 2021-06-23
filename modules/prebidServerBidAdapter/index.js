@@ -1104,9 +1104,10 @@ export function PrebidServer() {
       const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits, s2sBidRequest.s2sConfig, requestedBidders);
       const requestJson = request && JSON.stringify(request);
       utils.logInfo('BidRequest: ' + requestJson);
-      if (request && requestJson && getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent)) {
+      const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
+      if (request && requestJson && endpointUrl) {
         ajax(
-          getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
+          endpointUrl,
           {
             success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done, s2sBidRequest.s2sConfig),
             error: done
