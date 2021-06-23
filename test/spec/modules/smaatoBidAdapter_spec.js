@@ -1,7 +1,7 @@
-import { spec } from 'modules/smaatoBidAdapter.js';
+import {spec} from 'modules/smaatoBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
-import { createEidsArray } from 'modules/userId/eids.js';
+import {config} from 'src/config.js';
+import {createEidsArray} from 'modules/userId/eids.js';
 
 const ADTYPE_IMG = 'Img';
 const ADTYPE_RICHMEDIA = 'Richmedia';
@@ -9,6 +9,7 @@ const ADTYPE_VIDEO = 'Video';
 
 const REFERRER = 'http://example.com/page.html'
 const CONSENT_STRING = 'HFIDUYFIUYIUYWIPOI87392DSU'
+const AUCTION_ID = '6653';
 
 const defaultBidderRequest = {
   gdprConsent: {
@@ -19,7 +20,8 @@ const defaultBidderRequest = {
   refererInfo: {
     referer: REFERRER,
   },
-  timeout: 1200
+  timeout: 1200,
+  auctionId: AUCTION_ID
 };
 
 const BANNER_PREBID_MEDIATYPE = {
@@ -40,7 +42,6 @@ const singleBannerBidRequest = {
   sizes: [[300, 50]],
   bidId: 'bidId',
   bidderRequestId: 'bidderRequestId',
-  auctionId: 'auctionId',
   src: 'client',
   bidRequestsCount: 1,
   bidderRequestsCount: 1,
@@ -67,7 +68,7 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     describe('for ad pod / long form video requests', () => {
-      const ADPOD = {video: {context: "adpod"}}
+      const ADPOD = {video: {context: 'adpod'}}
       it('is invalid, when adbreakId is missing', () => {
         expect(spec.isBidRequestValid({mediaTypes: ADPOD, params: {publisherId: '123'}})).to.be.false;
       });
@@ -83,7 +84,7 @@ describe('smaatoBidAdapterTest', () => {
       it('is invalid, when forbidden adspaceId param is present', () => {
         expect(spec.isBidRequestValid({
           mediaTypes: ADPOD,
-          params: {publisherId: '123', adbreakId: '456', adspaceId: "42"}
+          params: {publisherId: '123', adbreakId: '456', adspaceId: '42'}
         })).to.be.false;
       });
     });
@@ -102,7 +103,7 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('is invalid, when forbidden adbreakId param is present', () => {
-        expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456', adbreakId: "42"}})).to.be.false;
+        expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456', adbreakId: '42'}})).to.be.false;
       });
     });
   });
@@ -314,7 +315,6 @@ describe('smaatoBidAdapterTest', () => {
           sizes: [[300, 50]],
           bidId: 'bidId',
           bidderRequestId: 'bidderRequestId',
-          auctionId: 'auctionId',
           src: 'client',
           bidRequestsCount: 1,
           bidderRequestsCount: 1,
@@ -343,7 +343,6 @@ describe('smaatoBidAdapterTest', () => {
           sizes: [[300, 50]],
           bidId: 'bidId',
           bidderRequestId: 'bidderRequestId',
-          auctionId: 'auctionId',
           src: 'client',
           bidRequestsCount: 1,
           bidderRequestsCount: 1,
@@ -358,9 +357,10 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       describe('ad pod / long form video', () => {
-        describe('required parameters', () => {
+        describe('required parameters with requireExactDuration false', () => {
           const ADBREAK_ID = 'adbreakId';
           const ADPOD = 'adpod';
+          const BID_ID = '4331';
           const W = 640;
           const H = 480;
           const ADPOD_DURATION = 300;
@@ -376,21 +376,32 @@ describe('smaatoBidAdapterTest', () => {
                 playerSize: [[W, H]],
                 adPodDurationSec: ADPOD_DURATION,
                 durationRangeSec: DURATION_RANGE,
+                requireExactDuration: false
               }
             },
-            bidId: 'bidId',
+            bidId: BID_ID
           };
 
           it('sends required fields', () => {
             const reqs = spec.buildRequests([longFormVideoBidRequest], defaultBidderRequest);
 
             const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+            expect(req.id).to.be.equal(AUCTION_ID);
+            expect(req.imp.length).to.be.equal(ADPOD_DURATION / DURATION_RANGE[0]);
+            expect(req.imp[0].id).to.be.equal(BID_ID);
             expect(req.imp[0].tagid).to.be.equal(ADBREAK_ID);
             expect(req.imp[0].video.ext.context).to.be.equal(ADPOD);
             expect(req.imp[0].video.w).to.be.equal(W);
             expect(req.imp[0].video.h).to.be.equal(H);
-            expect(req.imp[0].video.ext.adpodduration).to.be.equal(ADPOD_DURATION);
-            expect(req.imp[0].video.ext.durationrange).to.be.deep.equal(DURATION_RANGE);
+            expect(req.imp[0].video.maxduration).to.be.equal(DURATION_RANGE[1]);
+            expect(req.imp[0].video.sequence).to.be.equal(1);
+            expect(req.imp[1].id).to.be.equal(BID_ID);
+            expect(req.imp[1].tagid).to.be.equal(ADBREAK_ID);
+            expect(req.imp[1].video.ext.context).to.be.equal(ADPOD);
+            expect(req.imp[1].video.w).to.be.equal(W);
+            expect(req.imp[1].video.h).to.be.equal(H);
+            expect(req.imp[1].video.maxduration).to.be.equal(DURATION_RANGE[1]);
+            expect(req.imp[1].video.sequence).to.be.equal(2);
           });
 
           it('sends brand category exclusion as true when config is set to true', () => {
@@ -418,8 +429,72 @@ describe('smaatoBidAdapterTest', () => {
             expect(req.imp[0].video.ext.brandcategoryexclusion).to.be.equal(false);
           });
         });
+        describe('required parameters with requireExactDuration true', () => {
+          const ADBREAK_ID = 'adbreakId';
+          const ADPOD = 'adpod';
+          const BID_ID = '4331';
+          const W = 640;
+          const H = 480;
+          const ADPOD_DURATION = 5;
+          const DURATION_RANGE = [5, 15, 25];
+          const longFormVideoBidRequest = {
+            params: {
+              publisherId: 'publisherId',
+              adbreakId: ADBREAK_ID,
+            },
+            mediaTypes: {
+              video: {
+                context: ADPOD,
+                playerSize: [[W, H]],
+                adPodDurationSec: ADPOD_DURATION,
+                durationRangeSec: DURATION_RANGE,
+                requireExactDuration: true
+              }
+            },
+            bidId: BID_ID
+          };
+
+          it('sends required fields', () => {
+            const reqs = spec.buildRequests([longFormVideoBidRequest], defaultBidderRequest);
+
+            const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+            expect(req.id).to.be.equal(AUCTION_ID);
+            expect(req.imp.length).to.be.equal(DURATION_RANGE.length);
+            expect(req.imp[0].id).to.be.equal(BID_ID);
+            expect(req.imp[0].tagid).to.be.equal(ADBREAK_ID);
+            expect(req.imp[0].video.ext.context).to.be.equal(ADPOD);
+            expect(req.imp[0].video.w).to.be.equal(W);
+            expect(req.imp[0].video.h).to.be.equal(H);
+            expect(req.imp[0].video.minduration).to.be.equal(DURATION_RANGE[0]);
+            expect(req.imp[0].video.maxduration).to.be.equal(DURATION_RANGE[0]);
+            expect(req.imp[0].video.sequence).to.be.equal(1);
+            expect(req.imp[1].id).to.be.equal(BID_ID);
+            expect(req.imp[1].tagid).to.be.equal(ADBREAK_ID);
+            expect(req.imp[1].video.ext.context).to.be.equal(ADPOD);
+            expect(req.imp[1].video.w).to.be.equal(W);
+            expect(req.imp[1].video.h).to.be.equal(H);
+            expect(req.imp[1].video.minduration).to.be.equal(DURATION_RANGE[1]);
+            expect(req.imp[1].video.maxduration).to.be.equal(DURATION_RANGE[1]);
+            expect(req.imp[1].video.sequence).to.be.equal(2);
+            expect(req.imp[2].id).to.be.equal(BID_ID);
+            expect(req.imp[2].tagid).to.be.equal(ADBREAK_ID);
+            expect(req.imp[2].video.ext.context).to.be.equal(ADPOD);
+            expect(req.imp[2].video.w).to.be.equal(W);
+            expect(req.imp[2].video.h).to.be.equal(H);
+            expect(req.imp[2].video.minduration).to.be.equal(DURATION_RANGE[2]);
+            expect(req.imp[2].video.maxduration).to.be.equal(DURATION_RANGE[2]);
+            expect(req.imp[2].video.sequence).to.be.equal(3);
+          });
+        });
 
         describe('forwarding of optional parameters', () => {
+          const MIMES = ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'];
+          const STARTDELAY = 0;
+          const LINEARITY = 1;
+          const SKIP = 1;
+          const PROTOCOLS = [7];
+          const SKIPMIN = 5;
+          const API = [7];
           const validBasicAdpodBidRequest = {
             params: {
               publisherId: 'publisherId',
@@ -431,19 +506,29 @@ describe('smaatoBidAdapterTest', () => {
                 playerSize: [640, 480],
                 adPodDurationSec: 300,
                 durationRangeSec: [15, 30],
+                mimes: MIMES,
+                startdelay: STARTDELAY,
+                linearity: LINEARITY,
+                skip: SKIP,
+                protocols: PROTOCOLS,
+                skipmin: SKIPMIN,
+                api: API
               }
             },
-            bidId: 'bidId',
+            bidId: 'bidId'
           };
 
-          it('sends requireexactduration field when parameter is present and of type boolean', () => {
-            const adpodRequestWithParameter = utils.deepClone(validBasicAdpodBidRequest);
-            adpodRequestWithParameter.mediaTypes.video.requireExactDuration = true;
-
-            const reqs = spec.buildRequests([adpodRequestWithParameter], defaultBidderRequest);
+          it('sends general video fields when they are present', () => {
+            const reqs = spec.buildRequests([validBasicAdpodBidRequest], defaultBidderRequest);
 
             const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-            expect(req.imp[0].video.ext.requireexactduration).to.be.equal(true);
+            expect(req.imp[0].video.mimes).to.eql(MIMES);
+            expect(req.imp[0].video.startdelay).to.be.equal(STARTDELAY);
+            expect(req.imp[0].video.linearity).to.be.equal(LINEARITY);
+            expect(req.imp[0].video.skip).to.be.equal(SKIP);
+            expect(req.imp[0].video.protocols).to.eql(PROTOCOLS);
+            expect(req.imp[0].video.skipmin).to.be.equal(SKIPMIN);
+            expect(req.imp[0].video.api).to.eql(API);
           });
 
           it('sends series name when parameter is present', () => {
@@ -470,7 +555,7 @@ describe('smaatoBidAdapterTest', () => {
 
           it('sends season number as string when parameter is present', () => {
             const SEASON_NUMBER_AS_NUMBER_IN_PREBID_REQUEST = 42
-            const SEASON_NUMBER_AS_STRING_IN_OUTGOING_REQUEST = "42"
+            const SEASON_NUMBER_AS_STRING_IN_OUTGOING_REQUEST = '42'
             const adpodRequestWithParameter = utils.deepClone(validBasicAdpodBidRequest);
             adpodRequestWithParameter.mediaTypes.video.tvSeasonNumber = SEASON_NUMBER_AS_NUMBER_IN_PREBID_REQUEST;
 
@@ -553,7 +638,6 @@ describe('smaatoBidAdapterTest', () => {
         sizes: [[300, 50]],
         bidId: 'bidId',
         bidderRequestId: 'bidderRequestId',
-        auctionId: 'auctionId',
         src: 'client',
         bidRequestsCount: 1,
         bidderRequestsCount: 1,
@@ -618,7 +702,6 @@ describe('smaatoBidAdapterTest', () => {
           sizes: [[300, 50]],
           bidId: 'bidId',
           bidderRequestId: 'bidderRequestId',
-          auctionId: 'auctionId',
           src: 'client',
           bidRequestsCount: 1,
           bidderRequestsCount: 1,

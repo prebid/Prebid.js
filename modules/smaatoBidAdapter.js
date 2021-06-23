@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
@@ -57,9 +57,7 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
   if (videoMediaType) {
     if (videoMediaType.context === ADPOD) {
-      request.imp[0].tagid = utils.deepAccess(bidRequest, 'params.adbreakId')
-      request.imp[0].video = createVideoImpObjectFromRequiredAdpodParameters(videoMediaType);
-      addOptionalAdpodParameters(request, videoMediaType);
+      request.imp = createAdPodRequest(bidRequest, request, videoMediaType)
     } else {
       request.imp[0].video = {
         mimes: videoMediaType.mimes,
@@ -110,7 +108,7 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO, ADPOD],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -307,48 +305,94 @@ const createRichmediaAd = (adm) => {
   return markup + '</div>';
 };
 
-const createVideoImpObjectFromRequiredAdpodParameters = (videoMediaType) => {
+function createAdPodRequest(bidRequest, request, videoMediaType) {
+  const tagid = utils.deepAccess(bidRequest, 'params.adbreakId')
   const bce = config.getConfig('adpod.brandCategoryExclusion')
-
-  return {
-    w: videoMediaType.playerSize[0][0],
-    h: videoMediaType.playerSize[0][1],
-    ext: {
-      context: ADPOD,
-      adpodduration: videoMediaType.adPodDurationSec,
-      durationrange: videoMediaType.durationRangeSec,
-      brandcategoryexclusion: bce !== undefined && bce
+  let imp = {
+    id: bidRequest.bidId,
+    tagid: tagid,
+    video: {
+      w: videoMediaType.playerSize[0][0],
+      h: videoMediaType.playerSize[0][1],
+      ext: {
+        context: ADPOD,
+        brandcategoryexclusion: bce !== undefined && bce
+      }
     }
   }
+  addOptionalAdpodParameters(request, videoMediaType, imp)
+
+  const numberOfPlacements = getAdPodNumberOfPlacements(videoMediaType)
+  let imps = utils.fill(imp, numberOfPlacements)
+
+  const durationRangeSec = videoMediaType.durationRangeSec
+  if (videoMediaType.requireExactDuration) {
+    // equal distribution of numberOfPlacement over all available durations
+    const divider = Math.ceil(numberOfPlacements / durationRangeSec.length)
+    const chunked = utils.chunk(imps, divider)
+
+    // each configured duration is set as min/maxduration for a subset of requests
+    durationRangeSec.forEach((duration, index) => {
+      chunked[index].map(imp => {
+        const sequence = index + 1;
+        imp.video.minduration = duration
+        imp.video.maxduration = duration
+        imp.video.sequence = sequence
+      });
+    });
+  } else {
+    // all maxdurations should be the same
+    const maxDuration = utils.getMaxValueFromArray(durationRangeSec);
+    imps.map((imp, index) => {
+      const sequence = index + 1;
+      imp.video.maxduration = maxDuration
+      imp.video.sequence = sequence
+    });
+  }
+
+  return imps
 }
 
-const addOptionalAdpodParameters = (request, video) => {
-  if (typeof video.requireExactDuration === 'boolean') {
-    request.imp[0].video.ext.requireexactduration = video.requireExactDuration;
-  }
+function getAdPodNumberOfPlacements(videoMediaType) {
+  const {adPodDurationSec, durationRangeSec, requireExactDuration} = videoMediaType
+  const minAllowedDuration = utils.getMinValueFromArray(durationRangeSec)
+  const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration)
 
-  const content = {};
+  return requireExactDuration
+    ? Math.max(numberOfPlacements, durationRangeSec.length)
+    : numberOfPlacements
+}
 
-  if (video.tvSeriesName) {
-    content.series = video.tvSeriesName;
+const addOptionalAdpodParameters = (request, videoMediaType, imp) => {
+  const content = {}
+
+  if (videoMediaType.tvSeriesName) {
+    content.series = videoMediaType.tvSeriesName
   }
-  if (video.tvEpisodeName) {
-    content.title = video.tvEpisodeName;
+  if (videoMediaType.tvEpisodeName) {
+    content.title = videoMediaType.tvEpisodeName
   }
-  if (typeof video.tvSeasonNumber === "number") {
-    content.season = video.tvSeasonNumber.toString(); // conversion to string as in OpenRTB season is a string
+  if (typeof videoMediaType.tvSeasonNumber === 'number') {
+    content.season = videoMediaType.tvSeasonNumber.toString() // conversion to string as in OpenRTB season is a string
   }
-  if (typeof video.tvEpisodeNumber === "number") {
-    content.episode = video.tvEpisodeNumber;
+  if (typeof videoMediaType.tvEpisodeNumber === 'number') {
+    content.episode = videoMediaType.tvEpisodeNumber
   }
-  if (typeof video.contentLengthSec === "number") {
-    content.len = video.contentLengthSec;
+  if (typeof videoMediaType.contentLengthSec === 'number') {
+    content.len = videoMediaType.contentLengthSec
   }
-  if (video.contentMode && ['live', 'on-demand'].includes(video.contentMode)) {
-    content.livestream = video.contentMode === 'live' ? 1 : 0;
+  if (videoMediaType.contentMode && ['live', 'on-demand'].indexOf(videoMediaType.contentMode) >= 0) {
+    content.livestream = videoMediaType.contentMode === 'live' ? 1 : 0
   }
 
   if (!utils.isEmpty(content)) {
-    request.site.content = content;
+    request.site.content = content
   }
+  imp.video.mimes = videoMediaType.mimes
+  imp.video.startdelay = videoMediaType.startdelay
+  imp.video.linearity = videoMediaType.linearity
+  imp.video.skip = videoMediaType.skip
+  imp.video.protocols = videoMediaType.protocols
+  imp.video.skipmin = videoMediaType.skipmin
+  imp.video.api = videoMediaType.api
 }
