@@ -165,11 +165,11 @@ function newBid(serverBid, rtbBid, placementId, uuid) {
     ttl: 300,
     adUnitCode: placementId
   };
-  
+ 
   if (rtbBid.adomain) {
     bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [rtbBid.adomain] });
   };
-  
+ 
   Object.assign(bid, {
     width: rtbBid.width,
     height: rtbBid.height,
