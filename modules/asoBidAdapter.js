@@ -27,6 +27,11 @@ export const spec = {
       const videoParams = utils.deepAccess(bidRequest, 'mediaTypes.video');
 
       let imp;
+
+      if (bannerParams && videoParams) {
+        utils.logWarn('Please note, multiple mediaTypes are not supported. The only banner will be used.')
+      }
+
       if (bannerParams) {
         imp = createBannerImp(bidRequest, bannerParams)
       } else if (videoParams) {
@@ -167,17 +172,44 @@ function getSize(paramSizes) {
   return sizes[0] || null;
 }
 
-function createBaseImp(bidRequest) {
-  return {
+function getBidFloor(bidRequest, size) {
+  if (!utils.isFn(bidRequest.getFloor)) {
+    return null;
+  }
+
+  const bidFloor = bidRequest.getFloor({
+    mediaType: bidRequest.mediaType,
+    size: size ? [ size.w, size.h ] : '*'
+  });
+
+  if (!isNaN(bidFloor.floor)) {
+    return bidFloor;
+  }
+
+  return null;
+}
+
+function createBaseImp(bidRequest, size) {
+  const imp = {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode,
     secure: 1
   };
+
+  const bidFloor = getBidFloor(bidRequest, size);
+  if (bidFloor !== null) {
+    imp.bidfloor = bidFloor.floor;
+    imp.bidfloorcur = bidFloor.currency;
+  }
+
+  return imp;
 }
 
 function createBannerImp(bidRequest, bannerParams) {
-  const imp = createBaseImp(bidRequest);
+  bidRequest.mediaType = BANNER;
+
   const size = getSize(bannerParams.sizes);
+  const imp = createBaseImp(bidRequest, size);
 
   imp.banner = {
     w: size.w,
@@ -185,14 +217,13 @@ function createBannerImp(bidRequest, bannerParams) {
     topframe: utils.inIframe() ? 0 : 1
   }
 
-  bidRequest.mediaType = BANNER;
-
   return imp;
 }
 
 function createVideoImp(bidRequest, videoParams) {
-  const imp = createBaseImp(bidRequest);
+  bidRequest.mediaType = VIDEO;
   const size = getSize(videoParams.playerSize);
+  const imp = createBaseImp(bidRequest, size);
 
   imp.video = {
     mimes: videoParams.mimes,
@@ -210,8 +241,6 @@ function createVideoImp(bidRequest, videoParams) {
     imp.video.w = size.w;
     imp.video.h = size.h;
   }
-
-  bidRequest.mediaType = VIDEO;
 
   return imp;
 }
