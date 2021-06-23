@@ -417,7 +417,7 @@ describe('sharethrough adapter spec', function() {
     describe('gpid', () => {
       it('should include the gpid param if pbadslot is found in ortb2Imp in the bid request', () => {
         const bidRequest = spec.buildRequests(bidRequests)[0];
-        expect(bidRequest.data.gpid).to.be('adslot-id-1')
+        expect(bidRequest.data.gpid).to.eq('adslot-id-1')
       });
 
       it('should not include the gpid param if pbadslot is not found in ortb2Imp in the bid request', () => {
