@@ -7,7 +7,11 @@ describe('Adserver.Online bidding adapter', function () {
   const bannerRequest = {
     bidder: 'aso',
     params: {
-      zone: 1
+      zone: 1,
+      attr: {
+        keywords: ['a', 'b'],
+        tags: ['t1', 't2']
+      }
     },
     adUnitCode: 'adunit-banner',
     mediaTypes: {
@@ -42,7 +46,7 @@ describe('Adserver.Online bidding adapter', function () {
     },
     mediaTypes: {
       video: {
-        context: 'instream',
+        context: 'outstream',
         playerSize: [[640, 480]],
         protocols: [1, 2],
         mimes: ['video/mp4'],
@@ -107,6 +111,8 @@ describe('Adserver.Online bidding adapter', function () {
 
   describe('buildRequests', function () {
     it('creates a valid banner request', function () {
+      bannerRequest.getFloor = () => ({ currency: 'USD', floor: 0.5 });
+
       const requests = spec.buildRequests([bannerRequest], bidderRequest);
       expect(requests).to.have.lengthOf(1);
       const request = requests[0];
@@ -139,6 +145,8 @@ describe('Adserver.Online bidding adapter', function () {
       expect(payload.imp[0].banner).to.not.equal(null);
       expect(payload.imp[0].banner.w).to.equal(300);
       expect(payload.imp[0].banner.h).to.equal(250);
+      expect(payload.imp[0].bidfloor).to.equal(0.5);
+      expect(payload.imp[0].bidfloorcur).to.equal('USD');
     });
 
     it('creates a valid video request', function () {
@@ -178,9 +186,10 @@ describe('Adserver.Online bidding adapter', function () {
     });
   });
 
-  describe('gdpr compliance', function () {
-    it('should send GDPR Consent data if gdprApplies', function () {
+  describe('GDPR/USP compliance', function () {
+    it('should send GDPR/USP consent data if it applies', function () {
       bidderRequest.gdprConsent = gdprConsent;
+      bidderRequest.uspConsent = uspConsent;
 
       const requests = spec.buildRequests([bannerRequest], bidderRequest);
       expect(requests).to.have.lengthOf(1);
@@ -191,11 +200,14 @@ describe('Adserver.Online bidding adapter', function () {
       const payload = request.data;
 
       expect(payload.user.ext.consent).to.equal('consentString');
+      expect(payload.regs.ext.us_privacy).to.equal(uspConsent);
       expect(payload.regs.ext.gdpr).to.equal(1);
     });
 
-    it('should not send GDPR Consent data if gdprApplies is false or undefined', function () {
+    it('should not send GDPR/USP consent data if it does not apply', function () {
       bidderRequest.gdprConsent = null;
+      bidderRequest.uspConsent = null;
+
       const requests = spec.buildRequests([bannerRequest], bidderRequest);
       expect(requests).to.have.lengthOf(1);
       const request = requests[0];
@@ -206,6 +218,7 @@ describe('Adserver.Online bidding adapter', function () {
 
       expect(payload).to.not.have.nested.property('regs.ext.gdpr');
       expect(payload).to.not.have.nested.property('user.ext.consent');
+      expect(payload).to.not.have.nested.property('regs.ext.us_privacy');
     });
   });
 
@@ -283,11 +296,12 @@ describe('Adserver.Online bidding adapter', function () {
     });
 
     it('handles video responses', function () {
-      videoRequest.bidRequest = {
-        mediaType: VIDEO
+      const request = {
+        bidRequest: videoRequest
       };
+      request.bidRequest.mediaType = VIDEO;
 
-      const result = spec.interpretResponse(videoResponse, videoRequest);
+      const result = spec.interpretResponse(videoResponse, request);
       expect(result).to.have.lengthOf(1);
 
       expect(result[0].width).to.equal(640);
@@ -296,6 +310,7 @@ describe('Adserver.Online bidding adapter', function () {
       expect(result[0].creativeId).to.equal(123);
       expect(result[0].cpm).to.equal(0.5);
       expect(result[0].vastXml).to.equal('<!-- VAST XML -->');
+      expect(result[0].renderer).to.be.a('object');
       expect(result[0].currency).to.equal('USD');
       expect(result[0].netRevenue).to.equal(true);
       expect(result[0].ttl).to.equal(300);
