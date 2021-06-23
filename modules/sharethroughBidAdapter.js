@@ -81,30 +81,31 @@ export const sharethroughAdapterSpec = {
     }
 
     const imps = bidRequests.map(bidReq => {
-      let impression;
+      const impression = {};
+
+      const gpid = utils.deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        impression.ext = { gpid: gpid };
+      }
 
       if (bidReq.mediaTypes && bidReq.mediaTypes.video) {
-        impression = {
-          video: {
-            topframe: utils.inIframe() ? 0 : 1,
-            skip: bidReq.mediaTypes.video.skip || 0,
-            linearity: bidReq.mediaTypes.video.linearity || 1,
-            minduration: bidReq.mediaTypes.video.minduration || 5,
-            maxduration: bidReq.mediaTypes.video.maxduration || 60,
-            playbackmethod: bidReq.mediaTypes.video.playbackmethod || [2],
-            api: getVideoApi(bidReq.mediaTypes.video),
-            mimes: bidReq.mediaTypes.video.mimes || ['video/mp4'],
-            protocols: getVideoProtocols(bidReq.mediaTypes.video),
-            h: bidReq.mediaTypes.video.playerSize[0][1],
-            w: bidReq.mediaTypes.video.playerSize[0][0]
-          }
-        };
+        impression.video = {
+          topframe: utils.inIframe() ? 0 : 1,
+          skip: bidReq.mediaTypes.video.skip || 0,
+          linearity: bidReq.mediaTypes.video.linearity || 1,
+          minduration: bidReq.mediaTypes.video.minduration || 5,
+          maxduration: bidReq.mediaTypes.video.maxduration || 60,
+          playbackmethod: bidReq.mediaTypes.video.playbackmethod || [2],
+          api: getVideoApi(bidReq.mediaTypes.video),
+          mimes: bidReq.mediaTypes.video.mimes || ['video/mp4'],
+          protocols: getVideoProtocols(bidReq.mediaTypes.video),
+          h: bidReq.mediaTypes.video.playerSize[0][1],
+          w: bidReq.mediaTypes.video.playerSize[0][0]
+        }
       } else {
-        impression = {
-          banner: {
-            topframe: utils.inIframe() ? 0 : 1,
-            format: bidReq.sizes.map(size => ({ w: +size[0], h: +size[1] }))
-          }
+        impression.banner = {
+          topframe: utils.inIframe() ? 0 : 1,
+          format: bidReq.sizes.map(size => ({ w: +size[0], h: +size[1] }))
         };
       }
 
