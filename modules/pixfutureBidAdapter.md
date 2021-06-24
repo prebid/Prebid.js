@@ -22,6 +22,6 @@ var adUnits = [{
             ],
             "bidder": "pixfuture",
             "params": {
-                "pix_id": "777"
+                "pix_id": "Abc123"
             }];
 ```
