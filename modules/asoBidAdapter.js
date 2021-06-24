@@ -94,6 +94,9 @@ export const spec = {
     } else if (bid.mediaType === VIDEO) {
       bid.vastXml = serverBid.adm;
       if (utils.deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream') {
+        bid.adResponse = {
+          content: bid.vastXml,
+        };
         bid.renderer = createRenderer(bidRequest, OUTSTREAM_RENDERER_URL);
       }
     }
@@ -145,9 +148,8 @@ function outstreamRender(bid) {
     window.ANOutstreamVideo.renderAd({
       sizes: [bid.width, bid.height],
       targetId: bid.adUnitCode,
-      rendererOptions: {
-        content: bid.vastXml
-      }
+      adResponse: bid.adResponse,
+      rendererOptions: bid.renderer.getConfig()
     });
   });
 }
@@ -157,6 +159,7 @@ function createRenderer(bid, url) {
     id: bid.bidId,
     url: url,
     loaded: false,
+    config: utils.deepAccess(bid, 'renderer.options'),
     adUnitCode: bid.adUnitCode
   });
   renderer.setRender(outstreamRender);
