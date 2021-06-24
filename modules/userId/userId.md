@@ -86,16 +86,17 @@ pbjs.setConfig({
                 uid: '12345xyz'
             }
         },{
-            name: "merkleId",
+            name: "",
             params: {
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv'
+                sv_domain:'zxv',
+                refreshInSeconds: 10 // Refreshes the id based on this configuration, else by default every 7 days
             },
             storage: {
                 type: "cookie",
-                name: "merkleId",
+                name: "",
                 expires: 30
             }
         },{
@@ -203,16 +204,17 @@ pbjs.setConfig({
                  expires: 1
              }
         },{
-            name: "merkleId",
+            name: "",
             params: {
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv'
+                sv_domain:'zxv',
+                refreshInSeconds: 10 // Refreshes the id based on this configuration, else by default every 7 days
             },
             storage: {
                 type: "html5",
-                name: "merkleId",
+                name: "",
                 expires: 30
             }
         }, {
