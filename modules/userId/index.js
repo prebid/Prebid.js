@@ -491,7 +491,7 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
 /**
  * This is a common function that will initialize subModules if not already done and it will also execute subModule callbacks
  */
-function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
+function initializeSubmodulesAndExecuteCallbacks(continueAuction, skippedAuction) {
   let delayed = false;
 
   // initialize submodules only when undefined
@@ -503,7 +503,10 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
       const submodulesWithCallbacks = initializedSubmodules.filter(item => utils.isFn(item.callback));
 
       if (submodulesWithCallbacks.length) {
-        if (continueAuction && auctionDelay > 0) {
+        // used for encrypted signals
+        if(skippedAuction) {
+          processSubmoduleCallbacks(submodulesWithCallbacks, skippedAuction);
+        } else if (continueAuction && auctionDelay > 0) {
           // delay auction until ids are available
           delayed = true;
           let continued = false;
@@ -570,13 +573,73 @@ function getUserIds() {
   return getCombinedSubmoduleIds(initializedSubmodules);
 }
 
+let userIdPromise;
+function initUserIdSync(timeout) {
+  if(userIdPromise) return userIdPromise;
+  userIdPromise = new Promise(resolve => {
+    setTimeout(resolve, timeout); // hard cap: some user id modules give no indication that user id resolution was completed
+    getUserIdsAsEids(resolve);
+  });
+  return userIdPromise
+}
+
+function getEncryptedEid(eid, encrypt) {
+  if (true === encrypt) {
+    return "1||" + encryptSignals(eid); // If encryption is enabled append version (1|| and encrypt entire object
+  } else {
+    return eid.uids[0].id;
+  }
+}
+
+function encryptSignals(signals) {
+	return btoa(JSON.stringify(signals)); // Test encryption. To be replaced with better algo
+}
+
+function registerEidSignalSources(gtag, encrypt, timeout) {
+  gtag.encryptedSignalProviders = gtag.encryptedSignalProviders || [];
+  initUserIdSync(timeout).then(() => {
+    let eids = getUserIdsAsEids(() => {});
+    eids.forEach(eid => {
+      utils.logInfo(`${MODULE_NAME} - Registering signal provider: ` + eid.source);
+      var updatedSrc = eid.source;
+      if (true === encrypt) {
+        updatedSrc = source + "/enc"; // Update source value and append /enc to indicate encrypted signal. 
+      }
+      gtag.encryptedSignalProviders.push({
+        id: updatedSrc,
+        collectorFunction: function() {
+          return new Promise(resolve => resolve(getEncryptedEid(eid, encrypt)));
+        }
+      });
+    })
+  });
+}
+
+function registerCustomSignalSources(gtag, signalSourceToCustomFunc) {
+	gtag.encryptedSignalProviders = gtag.encryptedSignalProviders || [];
+  signalSourceToCustomFunc.forEach(function(customSignalSourceObject) {
+    let source = customSignalSourceObject.source;
+    let customFunc = customSignalSourceObject.customFunc;
+		utils.logInfo(`${MODULE_NAME} - Registering signal provider: ` + source);
+		gtag.encryptedSignalProviders.push({
+			id: source,
+			collectorFunction: function() {
+				return customFunc(source);
+			}
+		});
+  });
+}
+
+
+
+
 /**
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
-function getUserIdsAsEids() {
+function getUserIdsAsEids(skippedAuction) {
   // initialize submodules only when undefined
-  initializeSubmodulesAndExecuteCallbacks();
+  initializeSubmodulesAndExecuteCallbacks(undefined, skippedAuction);
   return createEidsArray(getCombinedSubmoduleIds(initializedSubmodules));
 }
 
@@ -850,6 +913,8 @@ export function init(config) {
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
+  (getGlobal()).registerCustomSignalSources = registerCustomSignalSources;
+  (getGlobal()).registerSignalSources = registerEidSignalSources;
   (getGlobal()).refreshUserIds = refreshUserIds;
 }
 
