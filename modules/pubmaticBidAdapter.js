@@ -739,7 +739,7 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
-function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
+function _populateSegmentDataIfAvailable(fpdUserData={}, segmentData=[]) {
   // fpdUserData - data set from global and bidder level configs
   // segmentData - data set from permutive
   var dataMerged = false;
@@ -749,9 +749,6 @@ function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
   }
 
   if ((!fpdUserData || !fpdUserData.data) && segmentData.length > 0) {
-    if (fpdUserData === undefined) {
-      fpdUserData = {};
-    }
     fpdUserData.data = [{
       name: PERMUTIVE_SEGMENT_NAME,
       segment: []
@@ -759,6 +756,9 @@ function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
   }
   for (var id in fpdUserData.data) {
     if (fpdUserData.data[id].name === PERMUTIVE_SEGMENT_NAME) {
+      if (!fpdUserData.data[id].segment) {
+        fpdUserData.data[id].segment = [];
+      }
       var mergedArr = segmentData && segmentData.length > 0
         ? utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment.concat(segmentData), 'id')
         : utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment, 'id');
