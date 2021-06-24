@@ -1336,7 +1336,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.sid).to.equal(sidValue);
     });
 
-    it('video impression has #priceFloors floors', function () {
+    it('video impression should contain floors from priceFloors module', function () {
       const bid = utils.deepClone(ONE_VIDEO[0]);
       const flr = 5.5
       const floorInfo = {floor: flr, currency: 'USD'};
@@ -1352,7 +1352,7 @@ describe('IndexexchangeAdapter', function () {
       expect(imp1.ext.fl).to.equal('p');
     });
 
-    it('banner imp has floors from #priceFloors module', function () {
+    it('banner impression should contain floors from priceFloors module', function () {
       const floor300x250 = 3.25
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0])
 
@@ -1370,16 +1370,13 @@ describe('IndexexchangeAdapter', function () {
       expect(imp1.ext.fl).to.equal('p');
     });
 
-    it('ix adapter floors chosen over #priceFloors ', function () {
+    it('should default to ix floors when priceFloors Module is not implemented', function () {
       const bid = utils.deepClone(ONE_BANNER[0]);
 
-      const floorhi = 4.5
-      const floorlow = 3.5
+      bid.params.bidFloor = 4.5;
+      bid.params.bidFloorCur = 'USD';
 
-      bid.params.bidFloor = floorhi
-      bid.params.bidFloorCur = 'USD'
-
-      const floorInfo = { floor: floorlow, currency: 'USD' };
+      const floorInfo = null;
       bid.getFloor = function () {
         return floorInfo;
       };
@@ -1387,21 +1384,21 @@ describe('IndexexchangeAdapter', function () {
       // check if floors are in imp
       const requestBidFloor = spec.buildRequests([bid])[0];
       const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
-      expect(imp1.bidfloor).to.equal(floorhi);
+      expect(imp1.bidfloor).to.equal(bid.params.bidFloor);
       expect(imp1.bidfloorcur).to.equal(bid.params.bidFloorCur);
       expect(imp1.ext.fl).to.equal('x');
     });
 
-    it(' #priceFloors floors chosen over ix adapter floors', function () {
+    it('should prioritize Floors Module over IX param floors', function () {
       const bid = utils.deepClone(ONE_BANNER[0]);
 
-      const floorhi = 4.5
-      const floorlow = 3.5
+      const floor1 = 4.5
+      const floor2 = 3.5
 
-      bid.params.bidFloor = floorlow
+      bid.params.bidFloor = floor2
       bid.params.bidFloorCur = 'USD'
 
-      const floorInfo = { floor: floorhi, currency: 'USD' };
+      const floorInfo = { floor: floor1, currency: 'USD' };
       bid.getFloor = function () {
         return floorInfo;
       };
@@ -1409,8 +1406,8 @@ describe('IndexexchangeAdapter', function () {
       // check if floors are in imp
       const requestBidFloor = spec.buildRequests([bid])[0];
       const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
-      expect(imp1.bidfloor).to.equal(floorhi);
-      expect(imp1.bidfloorcur).to.equal(bid.params.bidFloorCur);
+      expect(imp1.bidfloor).to.equal(floorInfo.floor);
+      expect(imp1.bidfloorcur).to.equal(floorInfo.currency);
       expect(imp1.ext.fl).to.equal('p');
     });
 
@@ -1426,7 +1423,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.fl).to.equal('x');
     });
 
-    it('missing sizes #priceFloors ', function () {
+    it('missing sizes impressions should contain floors from priceFloors module ', function () {
       const bid = utils.deepClone(ONE_BANNER[0]);
       bid.mediaTypes.banner.sizes.push([500, 400])
 
@@ -1873,15 +1870,34 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.sid).to.equal(sidValue); // TODO undefined - 400x600
     });
 
-    it('should set correct placement if context is outstream', function () {
+    it('should not use default placement values when placement is defined at adUnit level', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.placement = 2;
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video.placement).to.equal(2);
+    });
+
+    it('should set correct default placement, if context is instream', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'instream';
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video.placement).to.equal(1);
+    });
+
+    it('should set correct default placement, if context is outstream', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.mediaTypes.video.context = 'outstream';
       const request = spec.buildRequests([bid])[0];
       const impression = JSON.parse(request.data.r).imp[0];
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
-      expect(impression.video).to.exist;
-      expect(impression.video.placement).to.exist;
       expect(impression.video.placement).to.equal(4);
     });
 
