@@ -739,7 +739,7 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
-function _populateSegmentDataIfAvailable(fpdUserData={}, segmentData=[]) {
+function _populateSegmentDataIfAvailable(fpdUserData = {}, segmentData = []) {
   // fpdUserData - data set from global and bidder level configs
   // segmentData - data set from permutive
   var dataMerged = false;
