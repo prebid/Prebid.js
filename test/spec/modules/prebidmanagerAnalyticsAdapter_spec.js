@@ -108,6 +108,7 @@ describe('Prebid Manager Analytics Adapter', function () {
 
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
+    this.timeout(1000)
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
