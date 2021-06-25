@@ -67,18 +67,29 @@ export const spec = {
       return ori;
     };
 
+    let bidglass = window['bidglass'];
+
     utils._each(validBidRequests, function(bid) {
       bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
       bid.sizes = bid.sizes.filter(size => utils.isArray(size));
 
+      var adUnitId = utils.getBidIdParameter('adUnitId', bid.params);
       var options = utils.deepClone(bid.params);
+
       delete options.adUnitId;
+
+      // Merge externally set targeting params
+      if (typeof bidglass === 'object' && bidglass.getTargeting) {
+        let targeting = bidglass.getTargeting(adUnitId, options.targeting);
+
+        if (targeting && Object.keys(targeting).length > 0) options.targeting = targeting;
+      }
 
       // Stuff to send: [bid id, sizes, adUnitId, options]
       imps.push({
         bidId: bid.bidId,
         sizes: bid.sizes,
-        adUnitId: utils.getBidIdParameter('adUnitId', bid.params),
+        adUnitId: adUnitId,
         options: options
       });
     });
@@ -114,20 +125,31 @@ export const spec = {
   interpretResponse: function(serverResponse) {
     const bidResponses = [];
 
-    utils._each(serverResponse.body.bidResponses, function(bid) {
-      bidResponses.push({
-        requestId: bid.requestId,
-        cpm: parseFloat(bid.cpm),
-        width: parseInt(bid.width, 10),
-        height: parseInt(bid.height, 10),
-        creativeId: bid.creativeId,
-        dealId: bid.dealId || null,
-        currency: bid.currency || 'USD',
-        mediaType: bid.mediaType || 'banner',
+    utils._each(serverResponse.body.bidResponses, function(serverBid) {
+      const bidResponse = {
+        requestId: serverBid.requestId,
+        cpm: parseFloat(serverBid.cpm),
+        width: parseInt(serverBid.width, 10),
+        height: parseInt(serverBid.height, 10),
+        creativeId: serverBid.creativeId,
+        dealId: serverBid.dealId || null,
+        currency: serverBid.currency || 'USD',
+        mediaType: serverBid.mediaType || 'banner',
         netRevenue: true,
-        ttl: bid.ttl || 10,
-        ad: bid.ad
-      });
+        ttl: serverBid.ttl || 10,
+        ad: serverBid.ad,
+        meta: {}
+      };
+
+      if (serverBid.meta) {
+        let meta = serverBid.meta;
+
+        if (meta.advertiserDomains && meta.advertiserDomains.length) {
+          bidResponse.meta.advertiserDomains = meta.advertiserDomains;
+        }
+      }
+
+      bidResponses.push(bidResponse);
     });
 
     return bidResponses;

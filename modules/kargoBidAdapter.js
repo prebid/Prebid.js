@@ -3,17 +3,19 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
-const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
+const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}';
 const SYNC_COUNT = 5;
+const GVLID = 972;
+const storage = getStorageManager(GVLID, BIDDER_CODE);
 
 let sessionId,
   lastPageUrl,
   requestCounter;
 
 export const spec = {
+  gvlid: GVLID,
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
     if (!bid || !bid.params) {
@@ -48,7 +50,7 @@ export const spec = {
       bidIDs: bidIds,
       bidSizes: bidSizes,
       prebidRawBidRequests: validBidRequests
-    }, spec._getAllMetadata(tdid, bidderRequest.uspConsent));
+    }, spec._getAllMetadata(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent));
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
       method: 'GET',
@@ -85,15 +87,25 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
     const syncs = [];
     const seed = spec._generateRandomUuid();
     const clientId = spec._getClientId();
+    var gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
+    var gdprConsentString = (gdprConsent && gdprConsent.consentString) ? gdprConsent.consentString : '';
+    // don't sync if opted out via usPrivacy
+    if (typeof usPrivacy == 'string' && usPrivacy.length == 4 && usPrivacy[0] == 1 && usPrivacy[2] == 'Y') {
+      return syncs;
+    }
     if (syncOptions.iframeEnabled && seed && clientId) {
       for (let i = 0; i < SYNC_COUNT; i++) {
         syncs.push({
           type: 'iframe',
-          url: SYNC.replace('{UUID}', clientId).replace('{SEED}', seed).replace('{INDEX}', i)
+          url: SYNC.replace('{UUID}', clientId).replace('{SEED}', seed)
+            .replace('{INDEX}', i)
+            .replace('{GDPR}', gdpr)
+            .replace('{GDPR_CONSENT}', gdprConsentString)
+            .replace('{US_PRIVACY}', usPrivacy || '')
         });
       }
     }
@@ -183,7 +195,7 @@ export const spec = {
     }
   },
 
-  _getUserIds(tdid, usp) {
+  _getUserIds(tdid, usp, gdpr) {
     const crb = spec._getCrb();
     const userIds = {
       kargoID: crb.userId,
@@ -192,6 +204,16 @@ export const spec = {
       optOut: crb.optOut,
       usp: usp
     };
+
+    try {
+      if (gdpr) {
+        userIds['gdpr'] = {
+          consent: gdpr.consentString || '',
+          applies: !!gdpr.gdprApplies,
+        }
+      }
+    } catch (e) {
+    }
     if (tdid) {
       userIds.tdID = tdid;
     }
@@ -203,9 +225,9 @@ export const spec = {
     return crb.clientId;
   },
 
-  _getAllMetadata(tdid, usp) {
+  _getAllMetadata(tdid, usp, gdpr) {
     return {
-      userIDs: spec._getUserIds(tdid, usp),
+      userIDs: spec._getUserIds(tdid, usp, gdpr),
       krux: spec._getKrux(),
       pageURL: window.location.href,
       rawCRB: spec._readCookie('krg_crb'),

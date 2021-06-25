@@ -108,14 +108,13 @@ describe('The smartx adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should fail without bidfloor', function () {
+    it('should succeed with floor Module set', function () {
       delete bid.params.bidfloor;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should fail without bidfloorcur', function () {
       delete bid.params.bidfloorcur;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      bid.floors = {
+        currency: 'EUR'
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('should fail with context outstream but no options set for outstream', function () {
@@ -156,10 +155,10 @@ describe('The smartx adapter', function () {
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://bid.sxp.smartclip.net/bid/1000');
       expect(request.bidRequest).to.equal(bidRequestObj);
-      expect(request.data.imp.id).to.match(/\d+/);
-      expect(request.data.imp.secure).to.equal(0);
+      expect(request.data.imp[0].id).to.match(/\d+/);
+      expect(request.data.imp[0].secure).to.equal(0);
 
-      expect(request.data.imp.video).to.deep.equal({
+      expect(request.data.imp[0].video).to.deep.equal({
         ext: {
           sdk_name: 'Prebid 1+'
         },
@@ -184,10 +183,9 @@ describe('The smartx adapter', function () {
       });
 
       expect(request.data.site).to.deep.equal({
-        content: 'content',
         id: '__name__',
         page: 'prebid.js',
-        cat: '',
+        cat: [''],
         domain: '',
         publisher: {
           id: '__name__'
@@ -198,11 +196,11 @@ describe('The smartx adapter', function () {
     it('should change request parameters based on options sent', function () {
       var request = spec.buildRequests([bid], bidRequestObj)[0];
 
-      expect(request.data.imp.video.ext).to.deep.equal({
+      expect(request.data.imp[0].video.ext).to.deep.equal({
         sdk_name: 'Prebid 1+'
       });
 
-      expect(request.data.imp.video).to.contain({
+      expect(request.data.imp[0].video).to.contain({
         placement: 1
       });
 
@@ -234,30 +232,30 @@ describe('The smartx adapter', function () {
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
-      expect(request.data.imp.video.ext).to.deep.equal({
+      expect(request.data.imp[0].video.ext).to.deep.equal({
         sdk_name: 'Prebid 1+'
       });
 
-      expect(request.data.imp.video).to.contain({
+      expect(request.data.imp[0].video).to.contain({
         minduration: 5,
         maxduration: 10
       });
 
-      expect(request.data.imp.video.startdelay).to.equal(1);
+      expect(request.data.imp[0].video.startdelay).to.equal(1);
 
-      expect(request.data.imp.video).to.contain({
+      expect(request.data.imp[0].video).to.contain({
         placement: 3
       });
 
-      expect(request.data.imp.bidfloor).to.equal(55);
+      expect(request.data.imp[0].bidfloor).to.equal(55);
 
-      expect(request.data.imp.bidfloorcur).to.equal('foo');
+      expect(request.data.imp[0].bidfloorcur).to.equal('foo');
 
-      expect(request.data.imp.video.linearity).to.equal(2);
+      expect(request.data.imp[0].video.linearity).to.equal(2);
 
-      expect(request.data.imp.video.minbitrate).to.equal(50);
+      expect(request.data.imp[0].video.minbitrate).to.equal(50);
 
-      expect(request.data.imp.video.maxbitrate).to.equal(500);
+      expect(request.data.imp[0].video.maxbitrate).to.equal(500);
     });
 
     it('should pass GDPR params', function () {
@@ -322,7 +320,7 @@ describe('The smartx adapter', function () {
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
-      expect(request.data.imp.video.linearity).to.equal(3);
+      expect(request.data.imp[0].video.linearity).to.equal(3);
     });
 
     it('should pass min and max duration params', function () {
@@ -333,8 +331,8 @@ describe('The smartx adapter', function () {
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
-      expect(request.data.imp.video.minduration).to.equal(3);
-      expect(request.data.imp.video.maxduration).to.equal(15);
+      expect(request.data.imp[0].video.minduration).to.equal(3);
+      expect(request.data.imp[0].video.maxduration).to.equal(15);
     });
   });
 
@@ -423,6 +421,7 @@ describe('The smartx adapter', function () {
       expect(responses).to.be.an('array').with.length(2);
       expect(bidderRequestObj).to.be.an('Object');
       expect(bidderRequestObj.bidRequest.bids).to.be.an('array').with.length(2);
+      expect(responses[0].meta.advertiserDomains[0]).to.equal('abc.com');
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].currency).to.equal('USD');
       expect(responses[0].cpm).to.equal(12);
@@ -432,6 +431,7 @@ describe('The smartx adapter', function () {
       expect(responses[0].mediaType).to.equal('video');
       expect(responses[0].width).to.equal(400);
       expect(responses[0].height).to.equal(300);
+      expect(responses[1].meta.advertiserDomains[0]).to.equal('def.com');
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].currency).to.equal('USD');
       expect(responses[1].cpm).to.equal(13);
@@ -510,6 +510,103 @@ describe('The smartx adapter', function () {
       expect(scriptTag.getAttribute('src')).to.equal('https://dco.smartclip.net/?plc=7777778');
 
       window.document.getElementById.restore();
+    });
+  });
+
+  describe('price floor module', function () {
+    var bid,
+      bidRequestObj;
+
+    beforeEach(function () {
+      bid = getValidBidObject();
+      bidRequestObj = {
+        refererInfo: {
+          referer: 'prebid.js'
+        }
+      };
+      delete bid.params.bidfloor;
+    });
+
+    it('obtain floor from getFloor', function () {
+      bid.getFloor = () => {
+        return {
+          currency: 'EUR',
+          floor: 3.21
+        };
+      };
+
+      const payload = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(payload.data.imp[0]).to.have.property('bidfloor', 3.21);
+    });
+
+    it('obtain floor from params', function() {
+      bid.getFloor = () => {
+        return {
+          currency: 'EUR',
+          floor: 3.21
+        };
+      };
+      bid.params.bidfloor = 0.64;
+
+      const payload = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(payload.data.imp[0]).to.have.property('bidfloor', 0.64);
+    });
+
+    it('check currency USD', function() {
+      bid.getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 1.23
+        };
+      };
+      bid.params.bidfloorcur = 'USD'
+
+      const payload = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(payload.data.imp[0]).to.have.property('bidfloorcur', 'USD');
+      expect(payload.data.imp[0]).to.have.property('bidfloor', 1.23);
+    });
+
+    it('check defaut currency EUR', function() {
+      delete bid.params.bidfloorcur;
+
+      bid.getFloor = () => {
+        return {
+          currency: 'EUR',
+          floor: 4.56
+        };
+      };
+
+      const payload = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(payload.data.imp[0]).to.have.property('bidfloorcur', 'EUR');
+      expect(payload.data.imp[0]).to.have.property('bidfloor', 4.56);
+    });
+
+    it('bad floor value', function() {
+      bid.getFloor = () => {
+        return {
+          currency: 'EUR',
+          floor: 'bad'
+        };
+      };
+
+      const payload = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(payload.data.imp[0]).to.have.property('bidfloor', 0);
+    });
+
+    it('empty floor object', function() {
+      bid.getFloor = () => {
+        return {};
+      };
+
+      const payload = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(payload.data.imp[0]).to.have.property('bidfloor', 0);
+    });
+
+    it('undefined floor result', function() {
+      bid.getFloor = () => {};
+
+      const payload = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(payload.data.imp[0]).to.have.property('bidfloor', 0);
     });
   });
 })

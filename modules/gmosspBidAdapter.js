@@ -94,6 +94,10 @@ export const spec = {
       ttl: res.ttl || 300
     };
 
+    if (res.adomains) {
+      utils.deepSetValue(bid, 'meta.advertiserDomains', Array.isArray(res.adomains) ? res.adomains : [res.adomains]);
+    }
+
     return [bid];
   },
 
