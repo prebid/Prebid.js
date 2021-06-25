@@ -1,10 +1,12 @@
 import {ajaxBuilder} from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
  */
+export const storage = getStorageManager(undefined, 'prebidmanager');
 const DEFAULT_EVENT_URL = 'https://endpoint.prebidmanager.com/endpoint'
 const analyticsType = 'endpoint';
 const analyticsName = 'Prebid Manager Analytics: ';
@@ -82,14 +84,14 @@ function collectUtmTagData() {
     });
     if (newUtm === false) {
       utmTags.forEach(function (utmKey) {
-        let itemValue = localStorage.getItem(`pm_${utmKey}`);
+        let itemValue = storage.getDataFromLocalStorage(`pm_${utmKey}`);
         if (itemValue && itemValue.length !== 0) {
           pmUtmTags[utmKey] = itemValue;
         }
       });
     } else {
       utmTags.forEach(function (utmKey) {
-        localStorage.setItem(`pm_${utmKey}`, pmUtmTags[utmKey]);
+        storage.setDataInLocalStorage(`pm_${utmKey}`, pmUtmTags[utmKey]);
       });
     }
   } catch (e) {

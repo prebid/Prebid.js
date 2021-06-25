@@ -82,7 +82,10 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         ttl: config.getConfig('_bidderTimeout'),
-        referrer: referrer
+        referrer: referrer,
+        meta: {
+          advertiserDomains: response.adomain ? response.adomain : []
+        },
       };
 
       if (response.adTag && renderId === 'ViewableRendering') {

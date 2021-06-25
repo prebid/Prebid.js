@@ -11,7 +11,7 @@ const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js
 const VIDEO_TARGETING = ['skip', 'skipmin', 'skipafter'];
 
 export const spec = {
-  version: '7.3.0',
+  version: '7.4.0',
   code: BIDDER_CODE,
   gvlid: 253,
   aliases: ['id'],
@@ -158,6 +158,12 @@ export const spec = {
         bid.height = 1;
       }
 
+      if (bidObject.adomain) {
+        bid.meta = {
+          advertiserDomains: bidObject.adomain
+        };
+      }
+
       bids.push(bid);
     });
     return bids;
@@ -218,6 +224,21 @@ function getVideoTargetingParams(bid) {
   return result;
 }
 
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return null;
+  }
+  const floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
+
 function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
@@ -264,8 +285,6 @@ function getNormalizedBidRequest(bid) {
   const bidId = utils.getBidIdParameter('bidId', bid);
   const transactionId = utils.getBidIdParameter('transactionId', bid);
   const currency = config.getConfig('currency.adServerCurrency');
-  const bidFloor = utils.getBidIdParameter('bidFloor', bid.params);
-  const bidFloorCur = utils.getBidIdParameter('bidFloorCur', bid.params);
 
   let normalizedBidRequest = {};
   if (isInstreamVideo(bid)) {
@@ -308,6 +327,13 @@ function getNormalizedBidRequest(bid) {
   }
   if (currency) {
     normalizedBidRequest.currency = currency;
+  }
+  // Floor
+  let bidFloor = getBidFloor(bid);
+  let bidFloorCur = null;
+  if (!bidFloor) {
+    bidFloor = utils.getBidIdParameter('bidFloor', bid.params);
+    bidFloorCur = utils.getBidIdParameter('bidFloorCur', bid.params);
   }
   if (bidFloor) {
     normalizedBidRequest.bidFloor = bidFloor;

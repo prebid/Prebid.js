@@ -61,7 +61,10 @@ const templateBidResponse = {
 };
 
 const copyBidResponse = () => ({ ...templateBidResponse });
-const copyBidderRequest = () => ({ ...templateBidderRequest, bids: copyBidRequests() });
+const copyBidderRequest = () => ({
+  ...templateBidderRequest,
+  bids: copyBidRequests(),
+});
 const copyBidRequest = () => ({ ...templateBidRequest });
 
 const copyBidRequests = () => [copyBidRequest()];
@@ -139,7 +142,9 @@ describe('GlimpseProtocolAdapter', function () {
       expect(payload.gdprConsent).to.exist;
       const { gdprConsent } = payload;
       expect(gdprConsent.gdprApplies).to.be.true;
-      expect(gdprConsent.consentString).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(gdprConsent.consentString).to.equal(
+        bidderRequest.gdprConsent.consentString
+      );
     });
 
     it('should add referer info', function () {
@@ -147,7 +152,9 @@ describe('GlimpseProtocolAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.refererInfo.referer).to.equal(templateBidderRequest.refererInfo.referer);
+      expect(payload.refererInfo.referer).to.equal(
+        templateBidderRequest.refererInfo.referer
+      );
     });
   });
 
@@ -174,6 +181,27 @@ describe('GlimpseProtocolAdapter', function () {
 
       const bids = spec.interpretResponse(response);
       expect(bids).to.have.length(0);
+    });
+
+    it('should include advertiserDomains field in the response', function () {
+      const response = copyBidResponses();
+
+      const bids = spec.interpretResponse(response);
+      expect(bids[0].meta.advertiserDomains).to.be.an('array').that.is.empty;
+    });
+
+    it('should reflect the value of the OpenRTB adomain field', function () {
+      const advertiserDomainsMock = ['http://example.com'];
+      let response = copyBidResponses();
+      response.body = response.body.map((bid) => {
+        return {
+          ...bid,
+          adomain: advertiserDomainsMock,
+        };
+      });
+
+      const bids = spec.interpretResponse(response);
+      expect(bids[0].meta.advertiserDomains).to.equal(advertiserDomainsMock);
     });
   });
 });

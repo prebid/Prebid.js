@@ -174,6 +174,9 @@ export const spec = {
           currency: 'EUR',
           netRevenue: true,
           creativeId: '',
+          meta: {
+            advertiserDomains: bidResponse.adomain
+          },
         });
       });
     }

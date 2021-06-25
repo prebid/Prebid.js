@@ -86,9 +86,7 @@ function _isOneMobileBidder(bidderCode) {
 function _isNexageRequestPost(bid) {
   if (_isOneMobileBidder(bid.bidder) && bid.params.id && bid.params.imp && bid.params.imp[0]) {
     let imp = bid.params.imp[0];
-    return imp.id && imp.tagid &&
-      ((imp.banner && imp.banner.w && imp.banner.h) ||
-        (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
+    return imp.id && imp.tagid && imp.banner && imp.banner.w && imp.banner.h;
   }
 }
 
@@ -271,10 +269,6 @@ export const spec = {
   formatMarketplaceDynamicParams(params = {}, consentData = {}) {
     let queryParams = {};
 
-    if (params.bidFloor) {
-      queryParams.bidfloor = params.bidFloor;
-    }
-
     Object.assign(queryParams, this.formatKeyValues(params.keyValues));
     Object.assign(queryParams, this.formatConsentData(consentData));
 
@@ -370,7 +364,7 @@ export const spec = {
           let tagName = item.match(tagNameRegExp)[0];
           let url = item.match(srcRegExp)[2];
 
-          if (tagName && tagName) {
+          if (tagName && url) {
             pixelsItems.push({
               type: tagName === SYNC_TYPES.IMAGE.TAG ? SYNC_TYPES.IMAGE.TYPE : SYNC_TYPES.IFRAME.TYPE,
               url: url
@@ -417,6 +411,9 @@ export const spec = {
       currency: response.cur || 'USD',
       dealId: bidData.dealid,
       netRevenue: true,
+      meta: {
+        advertiserDomains: bidData && bidData.adomain ? bidData.adomain : []
+      },
       ttl: bidRequest.ttl
     };
   },

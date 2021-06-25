@@ -8,10 +8,11 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 5,
+  PREBID_VERSION: 6,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
-  USERID_PROVIDERS: ['pubcid', 'pubProvidedId']
+  USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
+  META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType']
 };
 
 const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
@@ -168,12 +169,6 @@ function handleResponse(responseObj, bidRequests) {
   responseObj = responseObj.body || responseObj;
   responseObj = responseObj.videoAdContentResult || responseObj;
 
-  let bidModel = responseObj.BidModel;
-  if (typeof bidModel !== 'object') {
-    utils.logInfo('Invibes Adapter - Bidding is not configured');
-    return [];
-  }
-
   if (typeof invibes.bidResponse === 'object') {
     utils.logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
     return [];
@@ -181,51 +176,83 @@ function handleResponse(responseObj, bidRequests) {
 
   invibes.bidResponse = responseObj;
 
-  let ads = responseObj.Ads;
-
-  if (!Array.isArray(ads) || ads.length < 1) {
-    if (responseObj.AdReason != null) {
-      utils.logInfo('Invibes Adapter - ' + responseObj.AdReason);
-    }
-
-    utils.logInfo('Invibes Adapter - No ads available');
-    return [];
-  }
-
-  let ad = ads[0];
-
-  if (bidModel.PlacementId == null) {
-    utils.logInfo('Invibes Adapter - No Placement Id in response');
-    return [];
-  }
-
   const bidResponses = [];
   for (let i = 0; i < bidRequests.length; i++) {
     let bidRequest = bidRequests[i];
 
-    if (bidModel.PlacementId == bidRequest.params.placementId) {
-      let size = getBiggerSize(bidRequest.sizes);
-
-      bidResponses.push({
-        requestId: bidRequest.bidId,
-        cpm: ad.BidPrice,
-        width: bidModel.Width || size[0],
-        height: bidModel.Height || size[1],
-        creativeId: ad.VideoExposedId,
-        currency: bidModel.Currency || CONSTANTS.DEFAULT_CURRENCY,
-        netRevenue: true,
-        ttl: CONSTANTS.TIME_TO_LIVE,
-        ad: renderCreative(bidModel)
-      });
-
-      const now = Date.now();
-      ivLogger.info('Bid auction started at ' + bidModel.AuctionStartTime + ' . Invibes registered the bid at ' + now + ' ; bid request took a total of ' + (now - bidModel.AuctionStartTime) + ' ms.');
+    let requestPlacement = null;
+    if (responseObj.AdPlacements != null) {
+      for (let j = 0; j < responseObj.AdPlacements.length; j++) {
+        let bidModel = responseObj.AdPlacements[j].BidModel;
+        if (bidModel != null && bidModel.PlacementId == bidRequest.params.placementId) {
+          requestPlacement = responseObj.AdPlacements[j];
+          break;
+        }
+      }
     } else {
-      utils.logInfo('Invibes Adapter - Incorrect Placement Id: ' + bidRequest.params.placementId);
+      let bidModel = responseObj.BidModel;
+      if (bidModel != null && bidModel.PlacementId == bidRequest.params.placementId) {
+        requestPlacement = responseObj;
+      }
+    }
+
+    let bid = createBid(bidRequest, requestPlacement);
+    if (bid !== null) {
+      bidResponses.push(bid);
     }
   }
 
   return bidResponses;
+}
+
+function createBid(bidRequest, requestPlacement) {
+  if (requestPlacement === null || requestPlacement.BidModel === null) {
+    utils.logInfo('Invibes Adapter - Placement not configured for bidding ' + bidRequest.params.placementId);
+    return null;
+  }
+
+  let bidModel = requestPlacement.BidModel;
+  let ads = requestPlacement.Ads;
+  if (!Array.isArray(ads) || ads.length < 1) {
+    if (requestPlacement.AdReason != null) {
+      utils.logInfo('Invibes Adapter - No ads ' + requestPlacement.AdReason);
+    }
+
+    utils.logInfo('Invibes Adapter - No ads available');
+    return null;
+  }
+
+  let ad = ads[0];
+  let size = getBiggerSize(bidRequest.sizes);
+
+  const now = Date.now();
+  utils.logInfo('Bid auction started at ' + bidModel.AuctionStartTime + ' . Invibes registered the bid at ' + now + ' ; bid request took a total of ' + (now - bidModel.AuctionStartTime) + ' ms.');
+
+  return {
+    requestId: bidRequest.bidId,
+    cpm: ad.BidPrice,
+    width: bidModel.Width || size[0],
+    height: bidModel.Height || size[1],
+    creativeId: ad.VideoExposedId,
+    currency: bidModel.Currency || CONSTANTS.DEFAULT_CURRENCY,
+    netRevenue: true,
+    ttl: CONSTANTS.TIME_TO_LIVE,
+    ad: renderCreative(bidModel),
+    meta: addMeta(bidModel.Meta)
+  };
+}
+
+function addMeta(bidModelMeta) {
+  var meta = {};
+  if (bidModelMeta != null) {
+    for (let i = 0; i < CONSTANTS.META_TAXONOMY.length; i++) {
+      if (bidModelMeta.hasOwnProperty(CONSTANTS.META_TAXONOMY[i])) {
+        meta[CONSTANTS.META_TAXONOMY[i]] = bidModelMeta[CONSTANTS.META_TAXONOMY[i]];
+      }
+    }
+  }
+
+  return meta;
 }
 
 function generateRandomId() {
@@ -357,17 +384,6 @@ function getCappedCampaignsAsString() {
     .join(',');
 }
 
-const noop = function () {
-};
-
-function initLogger() {
-  if (storage.hasLocalStorage() && localStorage.InvibesDEBUG) {
-    return window.console;
-  }
-
-  return {info: noop, error: noop, log: noop, warn: noop, debug: noop};
-}
-
 function buildSyncUrl() {
   let syncUrl = _customUserSync || CONSTANTS.SYNC_ENDPOINT;
   syncUrl += '?visitId=' + invibes.visitId;
@@ -392,7 +408,7 @@ function readGdprConsent(gdprConsent) {
 
     if (!gdprConsent.vendorData.gdprApplies || gdprConsent.vendorData.hasGlobalConsent) {
       var index;
-      for (index = 0; index < invibes.purposes; ++index) {
+      for (index = 0; index < invibes.purposes.length; ++index) {
         invibes.purposes[index] = true;
       }
 
@@ -448,7 +464,13 @@ function tryCopyValueToArray(value, target, length) {
       }
 
       if (value.hasOwnProperty(prop)) {
-        target[i] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null));
+        let parsedProp = parseInt(prop);
+        if (isNaN(parsedProp)) {
+          target[i] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null));
+        } else {
+          target[parsedProp - 1] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null));
+        }
+
         i++;
       }
     }
@@ -514,8 +536,6 @@ function getVendorLegitimateInterest(vendorData) {
 
   return {};
 }
-
-const ivLogger = initLogger();
 
 /// Local domain cookie management =====================
 invibes.Uid = {

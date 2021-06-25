@@ -189,6 +189,20 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.not.have.property('irisid');
     });
 
+    it('should set the global placement id (gpid)', function () {
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest).to.have.property('gpid');
+      expect(bidRequest.gpid).to.equal(123456);
+    });
+
+    it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {
+      const req = { ...bidRequests[0], params: { bidfloor: 42 } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest.data).to.have.property('fp');
+      expect(bidRequest.data.fp).to.equal(42);
+    });
+
     describe('product id', function () {
       it('should set the correct pi param if native param is found', function () {
         const request = { ...bidRequests[0], params: { ...zoneParam, native: 2 } };
