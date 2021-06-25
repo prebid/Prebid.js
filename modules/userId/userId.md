@@ -86,7 +86,7 @@ pbjs.setConfig({
                 uid: '12345xyz'
             }
         },{
-            name: "",
+            name: "merkleId",
             params: {
                 vendor:'sdfg',
                 sv_cid:'dfg',
@@ -96,7 +96,7 @@ pbjs.setConfig({
             },
             storage: {
                 type: "cookie",
-                name: "",
+                name: "merkleId",
                 expires: 30
             }
         },{
@@ -204,7 +204,7 @@ pbjs.setConfig({
                  expires: 1
              }
         },{
-            name: "",
+            name: "merkleId",
             params: {
                 vendor:'sdfg',
                 sv_cid:'dfg',
@@ -214,7 +214,7 @@ pbjs.setConfig({
             },
             storage: {
                 type: "html5",
-                name: "",
+                name: "merkleId",
                 expires: 30
             }
         }, {
