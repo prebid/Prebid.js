@@ -161,10 +161,13 @@ export const spec = {
    */
   getUserSyncs: function(syncOptions, serverResponses, definerId, gdprConsent, uspConsent) {
     const syncs = [];
+    if (definerId === "" || definerId === null) {
+      definerId = PREBID_DEFINER_ID;
+    }
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL.concat(definerId ? definerId : PREBID_DEFINER_ID)
+        url: USER_SYNC_URL.concat(definerId)
       });
     }
     return syncs;
