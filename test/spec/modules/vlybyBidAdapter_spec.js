@@ -105,7 +105,7 @@ describe('vlybyBidAdapter', function () {
       expect(response[0].height, 'height does not match').to.equal(1)
       expect(response[0].creativeId, 'creative ID does not match').to.equal('60fe2250-d13d-11eb-8983-d7b28b8ba5af')
       expect(response[0].ad, 'creative Ad does not match').to.equal('<ad/>')
-      expect(response[0].adomain, 'creative Ad does not match').to.be.an('array')
+      expect(response[0].meta.adomain, 'creative Ad does not match').to.be.an('array')
     });
   });
 });
