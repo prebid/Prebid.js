@@ -115,7 +115,6 @@ describe('Prebid Manager Analytics Adapter', function () {
       getDataFromLocalStorageStub.withArgs('pm_utm_campaign').returns('utm_camp');
       getDataFromLocalStorageStub.withArgs('pm_utm_term').returns('');
       getDataFromLocalStorageStub.withArgs('pm_utm_content').returns('');
-      getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
     });
     afterEach(function () {
       getDataFromLocalStorageStub.restore();
