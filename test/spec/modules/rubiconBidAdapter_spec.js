@@ -897,7 +897,7 @@ describe('the rubicon adapter', function () {
             const user = {
               data: [{
                 'name': 'www.dataprovider1.com',
-                'ext': { 'segtax': 3 },
+                'ext': { 'segtax': 4 },
                 'segment': [
                   { 'id': '687' },
                   { 'id': '123' }
