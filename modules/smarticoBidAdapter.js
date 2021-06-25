@@ -66,7 +66,7 @@ export const spec = {
       method: SMARTICO_CONFIG.method,
       url: SMARTICO_CONFIG.bidRequestUrl,
       bids: validBidRequests,
-      data: {bidParams: bidParams, auctionId: bidderRequest.auctionId, origin: window.location.origin}
+      data: {bidParams: bidParams, auctionId: bidderRequest.auctionId}
     }
 
     return ServerRequestObjects;
@@ -78,13 +78,16 @@ export const spec = {
     var url
     var html
     var ad
+    var ads
     var token
     var language
     var scriptId
     var bidResponses = []
+   
+    ads = serverResponse.body
 
-    for (i = 0; i < serverResponse.length; i++) {
-      ad = serverResponse[i];
+    for (i = 0; i < ads.length; i++) {
+      ad = ads[i];
       bid = find(bidRequest.bids, bid => bid.bidId === ad.bidId)
       if (bid) {
         token = bid.params.token || ''
@@ -103,7 +106,8 @@ export const spec = {
           width: parseInt(ad.bannerFormatWidth),
           height: parseInt(ad.bannerFormatHeight),
           creativeId: ad.id,
-          netRevenue: false, // gross
+          netRevenue: !!ad.netRevenue, // gross
+          currency: ad.currency,
           ttl: ad.ttl,
           ad: html
         }
