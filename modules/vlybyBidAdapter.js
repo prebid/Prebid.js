@@ -57,7 +57,10 @@ export const spec = {
           currency: 'EUR',
           netRevenue: true,
           ttl: 360,
-          ad: vHB.creative.ad
+          ad: vHB.creative.ad,
+          meta: {
+            adomain: vHB.adomain && Array.isArray(vHB.adomain) ? vHB.adomain : []
+          }
         };
         bidResponses.push(bidResponse);
       } catch (e) { }

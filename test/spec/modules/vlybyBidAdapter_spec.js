@@ -28,7 +28,7 @@ const BIDDER_REQUEST = {
       'params': {
         'publisherId': 'f363eb2b75459b34592cc4'
       },
-      'sizes': [[1]]
+      'sizes': [[1, 1]]
     }
   ]
 }
@@ -44,7 +44,8 @@ const bids = {
     creative: {
       id: '60fe2250-d13d-11eb-8983-d7b28b8ba5af',
       ad: '<ad/>'
-    }
+    },
+    adomain: ['vlyby.com']
   }
 }
 
@@ -104,6 +105,7 @@ describe('vlybyBidAdapter', function () {
       expect(response[0].height, 'height does not match').to.equal(1)
       expect(response[0].creativeId, 'creative ID does not match').to.equal('60fe2250-d13d-11eb-8983-d7b28b8ba5af')
       expect(response[0].ad, 'creative Ad does not match').to.equal('<ad/>')
+      expect(response[0].adomain, 'creative Ad does not match').to.be.an('array')
     });
   });
 });
