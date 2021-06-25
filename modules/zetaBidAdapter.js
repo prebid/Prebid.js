@@ -161,7 +161,7 @@ export const spec = {
    */
   getUserSyncs: function(syncOptions, serverResponses, definerId, gdprConsent, uspConsent) {
     const syncs = [];
-    if (definerId === "" || definerId === null) {
+    if (definerId === '' || definerId === null) {
       definerId = PREBID_DEFINER_ID;
     }
     if (syncOptions.iframeEnabled) {
