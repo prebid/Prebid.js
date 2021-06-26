@@ -39,7 +39,7 @@ export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
 
     if (!fpa) {
       var et = now.getTime();
-      var expires = new Date(et+ (cookieExpDays * DAY_MS)).toGMTString();
+      var expires = new Date(et + (cookieExpDays * DAY_MS)).toGMTString();
       var rand = Math.round(Math.random() * 2147483647);
       fpa = `B0-${rand}-${et}`;
       fpan = '1';
