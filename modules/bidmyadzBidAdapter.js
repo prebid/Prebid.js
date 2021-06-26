@@ -9,7 +9,7 @@ const SYNC_URL = 'https://cookie-sync.bidmyadz.com';
 
 function isBidResponseValid (bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency) {
+    !bid.ttl || !bid.currency || !bid.meta || !bid.meta) {
     return false;
   }
 
@@ -56,12 +56,26 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid = {}) => {
-    const { params, bidId } = bid;
-    return Boolean(bidId &&
+    const { params, bidId, mediaTypes } = bid;
+    let valid = Boolean(bidId &&
       params &&
       params.placementId &&
       params.traffic
     );
+    switch (params.traffic) {
+      case BANNER:
+        valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
+        break;
+      case VIDEO:
+        valid = valid && Boolean(mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize);
+        break;
+      case NATIVE:
+        valid = valid && Boolean(mediaTypes[NATIVE]);
+        break;
+      default:
+        valid = false;
+    }
+    return valid;
   },
 
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {

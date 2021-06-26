@@ -237,7 +237,11 @@ describe('BidmyadzBidAdapter', function () {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
-          dealId: '1'
+          dealId: '1',
+          meta: {
+            advertiserDomains: ['google.com'],
+            advertiserId: 1234
+          }
         }]
       };
       let videoResponses = spec.interpretResponse(video);
@@ -245,7 +249,7 @@ describe('BidmyadzBidAdapter', function () {
 
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');
@@ -253,6 +257,7 @@ describe('BidmyadzBidAdapter', function () {
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
+      expect(dataItem.meta).to.be.an('object');
     });
     it('Should interpret native response', function () {
       const native = {
@@ -270,6 +275,10 @@ describe('BidmyadzBidAdapter', function () {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
+          meta: {
+            advertiserDomains: ['google.com'],
+            advertiserId: 1234
+          }
         }]
       };
       let nativeResponses = spec.interpretResponse(native);
@@ -289,6 +298,7 @@ describe('BidmyadzBidAdapter', function () {
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
+      expect(dataItem.meta).to.be.an('object');
     });
     it('Should return an empty array if invalid banner response is passed', function () {
       const invBanner = {
