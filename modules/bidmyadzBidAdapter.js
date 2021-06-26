@@ -94,7 +94,14 @@ export const spec = {
     }
 
     const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-    const location = refferUrl ? new URL(refferUrl) : winLocation;
+    let refferLocation;
+    try {
+      refferLocation = refferUrl && new URL(refferUrl);
+    } catch (e) {
+      utils.logMessage(e);
+    }
+
+    let location = refferLocation || winLocation;
     const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const host = location.host;
     const page = location.pathname;
