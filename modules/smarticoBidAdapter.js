@@ -83,11 +83,9 @@ export const spec = {
     var language
     var scriptId
     var bidResponses = []
-   
     ads = serverResponse.body
-
     for (i = 0; i < ads.length; i++) {
-      ad = ads[i];
+      ad = ads[i]
       bid = find(bidRequest.bids, bid => bid.bidId === ad.bidId)
       if (bid) {
         token = bid.params.token || ''
