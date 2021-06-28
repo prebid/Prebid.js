@@ -68,7 +68,6 @@ export const spec = {
       bids: validBidRequests,
       data: {bidParams: bidParams, auctionId: bidderRequest.auctionId}
     }
-
     return ServerRequestObjects;
   },
   interpretResponse: function (serverResponse, bidRequest) {
@@ -104,7 +103,7 @@ export const spec = {
           width: parseInt(ad.bannerFormatWidth),
           height: parseInt(ad.bannerFormatHeight),
           creativeId: ad.id,
-          netRevenue: !!ad.netRevenue, // gross
+          netRevenue: !!ad.netRevenue,
           currency: ad.currency,
           ttl: ad.ttl,
           ad: html
