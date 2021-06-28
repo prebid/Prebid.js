@@ -208,25 +208,26 @@ function _getVidParams (attributes) {
  * @param {Object} bid
  * @returns {Number} floor
  */
-function _getFloor (mediaTypes, bidfloor, bid) {
+function _getFloor (mediaTypes, staticBidFloor, bid) {
   const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
-  let floor = bidfloor || 0;
+  const bidFloor = { floor: 0, currency: 'USD' };
 
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({
-      currency: 'USD',
+    const { currency, floor } = bid.getFloor({
       mediaType: curMediaType,
       size: '*'
     });
+    floor && (bidFloor.floor = floor);
+    currency && (bidFloor.currency = currency);
 
-    if (typeof floorInfo === 'object' &&
-      floorInfo.currency === 'USD' &&
-      !isNaN(parseFloat(floorInfo.floor))) {
-      floor = Math.max(floor, parseFloat(floorInfo.floor));
+    if (staticBidFloor && floor && currency === 'USD') {
+      bidFloor.floor = Math.max(staticBidFloor, parseFloat(floor));
     }
+  } else if (staticBidFloor) {
+    bidFloor.floor = staticBidFloor
   }
 
-  return floor;
+  return bidFloor;
 }
 
 /**
@@ -248,11 +249,18 @@ function buildRequests (validBidRequests, bidderRequest) {
       params = {},
       schain,
       transactionId,
-      userId = {}
+      userId = {},
+      ortb2Imp
     } = bidRequest;
-    const bidFloor = _getFloor(mediaTypes, params.bidfloor, bidRequest);
+    const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     let sizes = [1, 1];
     let data = {};
+    let gpid = '';
+
+    // ADJS-1024
+    if (utils.deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
+      gpid = ortb2Imp.ext.data.adserver.adslot
+    }
 
     if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;
@@ -265,8 +273,9 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.pv = pageViewId;
     }
 
-    if (bidFloor) {
-      data.fp = bidFloor;
+    if (floor) {
+      data.fp = floor;
+      data.fpc = currency;
     }
 
     if (params.iriscat && typeof params.iriscat === 'string') {
@@ -318,6 +327,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
+      gpid: gpid,
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
     })
   });
@@ -384,10 +394,16 @@ function interpretResponse (serverResponse, bidRequest) {
     ad: {
       price: 0,
       id: 0,
-      markup: ''
+      markup: '',
+      width: 0,
+      height: 0
     },
     pag: {
       pvid: 0
+    },
+    meta: {
+      adomain: [],
+      mediaType: ''
     }
   }
   const {
@@ -395,20 +411,31 @@ function interpretResponse (serverResponse, bidRequest) {
       price: cpm,
       id: creativeId,
       markup,
-      cur
+      cur,
+      width: responseWidth,
+      height: responseHeight
     },
     cw: wrapper,
     pag: {
       pvid
     },
-    jcsi
+    jcsi,
+    meta: {
+      adomain: advertiserDomains,
+      mediaType: type
+    }
   } = Object.assign(defaultResponse, serverResponseBody)
   let data = bidRequest.data || {}
   let product = data.pi
   let mediaType = (product === 6 || product === 7) ? VIDEO : BANNER
   let isTestUnit = (product === 3 && data.si === 9)
-  let sizes = utils.parseSizesInput(bidRequest.sizes)
+  // use response sizes if available
+  let sizes = responseWidth && responseHeight ? [`${responseWidth}x${responseHeight}`] : utils.parseSizesInput(bidRequest.sizes)
   let [width, height] = sizes[0].split('x')
+  let metaData = {
+    advertiserDomains: advertiserDomains || [],
+    mediaType: type || mediaType
+  }
 
   // return 1x1 when breakout expected
   if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
@@ -437,7 +464,8 @@ function interpretResponse (serverResponse, bidRequest) {
       netRevenue: true,
       requestId: bidRequest.id,
       ttl: TIME_TO_LIVE,
-      width
+      width,
+      meta: metaData
     })
   }
   return bidResponses

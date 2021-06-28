@@ -166,15 +166,7 @@ export const liveIntentIdSubmodule = {
     const result = function(callback) {
       liveConnect.resolve(
         response => {
-          let responseObj = {};
-          if (response) {
-            try {
-              responseObj = JSON.parse(response);
-            } catch (error) {
-              utils.logError(error);
-            }
-          }
-          callback(responseObj);
+          callback(response);
         },
         error => {
           utils.logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);

@@ -358,6 +358,7 @@ describe('Undertone Adapter', () => {
       expect(bid.cpm).to.equal(100);
       expect(bid.width).to.equal(300);
       expect(bid.height).to.equal(250);
+      expect(bid.meta.advertiserDomains).to.deep.equal([]);
       expect(bid.creativeId).to.equal(15);
       expect(bid.currency).to.equal('USD');
       expect(bid.netRevenue).to.equal(true);

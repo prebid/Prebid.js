@@ -55,11 +55,29 @@ describe('Seedtag Adapter', function() {
         })
       })
       describe('when video slot has all mandatory params', function() {
-        it('should return true, when video mediatype object are correct.', function() {
+        it('should return true, when video context is instream', function () {
           const slotConfig = getSlotConfigs(
             {
               video: {
                 context: 'instream',
+                playerSize: [[600, 200]]
+              }
+            },
+            {
+              publisherId: PUBLISHER_ID,
+              adUnitId: ADUNIT_ID,
+              placement: 'video'
+            }
+          )
+          const isBidRequestValid = spec.isBidRequestValid(slotConfig)
+          expect(isBidRequestValid).to.equal(true)
+        })
+
+        it('should return true, when video context is outstream', function () {
+          const slotConfig = getSlotConfigs(
+            {
+              video: {
+                context: 'outstream',
                 playerSize: [[600, 200]]
               }
             },
@@ -137,7 +155,7 @@ describe('Seedtag Adapter', function() {
           )
           expect(isBidRequestValid).to.equal(false)
         })
-        it('is not instream ', function() {
+        it('is outstream ', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createVideoSlotConfig({
               video: {
@@ -146,7 +164,7 @@ describe('Seedtag Adapter', function() {
               }
             })
           )
-          expect(isBidRequestValid).to.equal(false)
+          expect(isBidRequestValid).to.equal(true)
         })
         describe('order does not matter', function() {
           it('when video is not the first slot', function() {
@@ -200,6 +218,7 @@ describe('Seedtag Adapter', function() {
       expect(data.url).to.equal('referer')
       expect(data.publisherToken).to.equal('0000-0000-01')
       expect(typeof data.version).to.equal('string')
+      expect(['fixed', 'mobile', 'unknown'].indexOf(data.connectionType)).to.be.above(-1)
     })
 
     describe('adPosition param', function() {
@@ -272,6 +291,7 @@ describe('Seedtag Adapter', function() {
         expect(bannerBid.sizes[0][1]).to.equal(250)
         expect(bannerBid.sizes[1][0]).to.equal(300)
         expect(bannerBid.sizes[1][1]).to.equal(600)
+        expect(bannerBid.requestCount).to.equal(1)
       })
       it('should request an InStream Video', function() {
         const videoBid = bidRequests[1]
@@ -288,6 +308,7 @@ describe('Seedtag Adapter', function() {
         expect(videoBid.sizes[0][1]).to.equal(250)
         expect(videoBid.sizes[1][0]).to.equal(300)
         expect(videoBid.sizes[1][1]).to.equal(600)
+        expect(videoBid.requestCount).to.equal(1)
       })
     })
   })
@@ -325,7 +346,8 @@ describe('Seedtag Adapter', function() {
                   height: 90,
                   mediaType: 'display',
                   ttl: 360,
-                  nurl: 'testurl.com/nurl'
+                  nurl: 'testurl.com/nurl',
+                  adomain: ['advertiserdomain.com']
                 }
               ],
               cookieSync: { url: '' }
@@ -341,6 +363,7 @@ describe('Seedtag Adapter', function() {
           expect(bids[0].netRevenue).to.equal(true)
           expect(bids[0].ad).to.equal('content')
           expect(bids[0].nurl).to.equal('testurl.com/nurl')
+          expect(bids[0].meta.advertiserDomains).to.deep.equal(['advertiserdomain.com'])
         })
       })
       describe('the bid is a video', function() {
@@ -373,6 +396,7 @@ describe('Seedtag Adapter', function() {
           expect(bids[0].currency).to.equal('USD')
           expect(bids[0].netRevenue).to.equal(true)
           expect(bids[0].vastXml).to.equal('content')
+          expect(bids[0].meta.advertiserDomains).to.deep.equal([])
         })
       })
     })
@@ -408,6 +432,14 @@ describe('Seedtag Adapter', function() {
   })
 
   describe('onTimeout', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel')
+    })
+
+    afterEach(function() {
+      utils.triggerPixel.restore()
+    })
+
     it('should return the correct endpoint', function () {
       const params = { publisherId: '0000', adUnitId: '11111' }
       const timeoutData = [{ params: [ params ] }];
@@ -418,6 +450,16 @@ describe('Seedtag Adapter', function() {
         '&adUnitId=' +
         params.adUnitId
       )
+    })
+
+    it('should set the timeout pixel', function() {
+      const params = { publisherId: '0000', adUnitId: '11111' }
+      const timeoutData = [{ params: [ params ] }];
+      spec.onTimeout(timeoutData)
+      expect(utils.triggerPixel.calledWith('https://s.seedtag.com/se/hb/timeout?publisherToken=' +
+      params.publisherId +
+      '&adUnitId=' +
+      params.adUnitId)).to.equal(true);
     })
   })
 

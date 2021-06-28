@@ -101,7 +101,8 @@ function interpretResponse(serverResponse, bidderRequest) {
       netRevenue: bid.netRevenue || false,
       mediaType: bid.mediaType,
       meta: {
-        mediaType: bid.mediaType
+        mediaType: bid.mediaType,
+        advertiserDomains: bid.adomain
       },
       ttl: bid.ttl || 300
     };
@@ -200,6 +201,10 @@ function getPageInfo() {
       topmostFrame.document.referrer !== ''
         ? topmostFrame.document.referrer
         : null,
+    ancestorOrigin:
+      window.location.ancestorOrigins && window.location.ancestorOrigins[0] != null
+        ? window.location.ancestorOrigins[0]
+        : null,
     masked: currentFrameNesting,
     wWidth: topmostFrame.innerWidth,
     wHeight: topmostFrame.innerHeight,
@@ -239,6 +244,7 @@ function requestsToBids(bidRequests) {
     videoObj['protocols'] = bidRequest.mediaTypes.video.protocols;
     videoObj['maxDuration'] = bidRequest.mediaTypes.video.maxduration;
     videoObj['api'] = bidRequest.mediaTypes.video.api;
+    videoObj['playbackmethod'] = bidRequest.mediaTypes.video.playbackmethod || [];
     videoObj['type'] = VIDEO;
     return videoObj;
   });

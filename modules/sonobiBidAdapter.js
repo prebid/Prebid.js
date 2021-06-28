@@ -1,10 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
-
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -61,11 +60,11 @@ export const spec = {
       if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
         slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
         return {
-          [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}${_validateFloor(bid)}`
+          [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}${_validateFloor(bid)}${_validateGPID(bid)}`
         }
       } else if (/^[0-9a-fA-F]{20}$/.test(slotIdentifier) && slotIdentifier.length === 20) {
         return {
-          [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}${_validateFloor(bid)}`
+          [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}${_validateFloor(bid)}${_validateGPID(bid)}`
         }
       } else {
         logError(`The ad unit code or Sonobi Placement id for slot ${bid.bidId} is invalid`);
@@ -117,7 +116,18 @@ export const spec = {
       payload.schain = JSON.stringify(validBidRequests[0].schain)
     }
     if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
-      payload.userid = JSON.stringify(validBidRequests[0].userId);
+      const userIds = deepClone(validBidRequests[0].userId);
+
+      if (userIds.id5id) {
+        userIds.id5id = deepAccess(userIds, 'id5id.uid');
+      }
+
+      payload.userid = JSON.stringify(userIds);
+    }
+
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (Array.isArray(eids) && eids.length > 0) {
+      payload.eids = JSON.stringify(eids);
     }
 
     let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
@@ -128,6 +138,12 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
+    }
+
+    if (config.getConfig('coppa') === true) {
+      payload.coppa = 1;
+    } else {
+      payload.coppa = 0;
     }
 
     // If there is no key_maker data, then don't make the request.
@@ -183,6 +199,10 @@ export const spec = {
           width = 1,
           height = 1
         ] = bid.sbi_size.split('x');
+        let aDomains = [];
+        if (bid.sbi_adomain) {
+          aDomains = [bid.sbi_adomain]
+        }
         const bids = {
           requestId: bidId,
           cpm: Number(bid.sbi_mouse),
@@ -193,7 +213,10 @@ export const spec = {
           creativeId: bid.sbi_crid || bid.sbi_aid,
           aid: bid.sbi_aid,
           netRevenue: true,
-          currency: 'USD'
+          currency: 'USD',
+          meta: {
+            advertiserDomains: aDomains
+          }
         };
 
         if (bid.sbi_dozer) {
@@ -281,9 +304,18 @@ function _validateSlot (bid) {
 
 function _validateFloor (bid) {
   if (bid.params.floor) {
-    return `|f=${bid.params.floor}`;
+    return '';
   }
   return '';
+}
+
+function _validateGPID(bid) {
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
+
+  if (gpid) {
+    return `|gpid=${gpid}`
+  }
+  return ''
 }
 
 const _creative = (mediaType, referer) => (sbiDc, sbiAid) => {

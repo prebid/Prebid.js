@@ -11,8 +11,10 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
+const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
+const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
@@ -53,9 +55,9 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-const mappingFileUrl = 'https://acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
+const mappingFileUrl = 'https://acdn.adnxs-simple.com/prebid/appnexus-mapping/mappings.json';
 const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v/;
+const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
 const storage = getStorageManager(GVLID, BIDDER_CODE);
@@ -214,6 +216,13 @@ export const spec = {
         consent_string: bidderRequest.gdprConsent.consentString,
         consent_required: bidderRequest.gdprConsent.gdprApplies
       };
+
+      if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+        let ac = bidderRequest.gdprConsent.addtlConsent;
+        // pull only the ids from the string (after the ~) and convert them to an array of ints
+        let acStr = ac.substring(ac.indexOf('~') + 1);
+        payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
+      }
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
@@ -243,10 +252,12 @@ export const spec = {
     if (bidRequests[0].userId) {
       let eids = [];
 
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.flocId.id`), 'chrome.com', null);
       addUserId(eids, utils.deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
       addUserId(eids, utils.deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
       addUserId(eids, utils.deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
       addUserId(eids, utils.deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
 
       if (eids.length) {
         payload.eids = eids;
@@ -326,8 +337,8 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function (syncOptions) {
-    if (syncOptions.iframeEnabled) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
+    if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
       return [{
         type: 'iframe',
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
@@ -482,11 +493,14 @@ function hasPurpose1Consent(bidderRequest) {
 
 function formatRequest(payload, bidderRequest) {
   let request = [];
-  let options = {};
+  let options = {
+    withCredentials: true
+  };
+
+  let endpointUrl = URL;
+
   if (!hasPurpose1Consent(bidderRequest)) {
-    options = {
-      withCredentials: false
-    }
+    endpointUrl = URL_SIMPLE;
   }
 
   if (utils.getParameterByName('apn_test').toUpperCase() === 'TRUE' || config.getConfig('apn_test') === true) {
@@ -503,7 +517,7 @@ function formatRequest(payload, bidderRequest) {
       const payloadString = JSON.stringify(clonedPayload);
       request.push({
         method: 'POST',
-        url: URL,
+        url: endpointUrl,
         data: payloadString,
         bidderRequest,
         options
@@ -513,7 +527,7 @@ function formatRequest(payload, bidderRequest) {
     const payloadString = JSON.stringify(payload);
     request = {
       method: 'POST',
-      url: URL,
+      url: endpointUrl,
       data: payloadString,
       bidderRequest,
       options
@@ -573,6 +587,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       dealCode: rtbBid.deal_code
     }
   };
+
+  // WE DON'T FULLY SUPPORT THIS ATM - future spot for adomain code; creating a stub for 5.0 compliance
+  if (rtbBid.adomain) {
+    bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [] });
+  }
 
   if (rtbBid.advertiser_id) {
     bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
@@ -703,8 +722,9 @@ function bidToTag(bid) {
   tag.use_pmt_rule = bid.params.usePaymentRule || false
   tag.prebid = true;
   tag.disable_psa = true;
-  if (bid.params.reserve) {
-    tag.reserve = bid.params.reserve;
+  let bidFloor = getBidFloor(bid);
+  if (bidFloor) {
+    tag.reserve = bidFloor;
   }
   if (bid.params.position) {
     tag.position = { 'above': 1, 'below': 2 }[bid.params.position] || 0;
@@ -737,6 +757,11 @@ function bidToTag(bid) {
       keywords.forEach(deleteValues);
     }
     tag.keywords = keywords;
+  }
+
+  let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  if (gpid) {
+    tag.gpid = gpid;
   }
 
   if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
@@ -792,6 +817,51 @@ function bidToTag(bid) {
     if (bid.params.video.frameworks && utils.isArray(bid.params.video.frameworks)) {
       tag['video_frameworks'] = bid.params.video.frameworks;
     }
+  }
+
+  // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
+  if (videoMediaType) {
+    tag.video = tag.video || {};
+    Object.keys(videoMediaType)
+      .filter(param => includes(VIDEO_RTB_TARGETING, param))
+      .forEach(param => {
+        switch (param) {
+          case 'minduration':
+          case 'maxduration':
+            if (typeof tag.video[param] !== 'number') tag.video[param] = videoMediaType[param];
+            break;
+          case 'skip':
+            if (typeof tag.video['skippable'] !== 'boolean') tag.video['skippable'] = (videoMediaType[param] === 1);
+            break;
+          case 'skipafter':
+            if (typeof tag.video['skipoffset'] !== 'number') tag.video['skippoffset'] = videoMediaType[param];
+            break;
+          case 'playbackmethod':
+            if (typeof tag.video['playback_method'] !== 'number') {
+              let type = videoMediaType[param];
+              type = (utils.isArray(type)) ? type[0] : type;
+
+              // we only support iab's options 1-4 at this time.
+              if (type >= 1 && type <= 4) {
+                tag.video['playback_method'] = type;
+              }
+            }
+            break;
+          case 'api':
+            if (!tag['video_frameworks'] && utils.isArray(videoMediaType[param])) {
+              // need to read thru array; remove 6 (we don't support it), swap 4 <> 5 if found (to match our adserver mapping for these specific values)
+              let apiTmp = videoMediaType[param].map(val => {
+                let v = (val === 4) ? 5 : (val === 5) ? 4 : val;
+
+                if (v >= 1 && v <= 5) {
+                  return v;
+                }
+              }).filter(v => v);
+              tag['video_frameworks'] = apiTmp;
+            }
+            break;
+        }
+      });
   }
 
   if (bid.renderer) {
@@ -1034,6 +1104,22 @@ function addUserId(eids, id, source, rti) {
     }
   }
   return eids;
+}
+
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return (bid.params.reserve) ? bid.params.reserve : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
 }
 
 registerBidder(spec);

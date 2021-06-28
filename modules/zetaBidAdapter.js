@@ -2,8 +2,9 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
+const PREBID_DEFINER_ID = '44253'
 const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
-const USER_SYNC_URL = 'https://p.rfihub.com/cm?pub=42770&in=1';
+const USER_SYNC_URL = 'https://p.rfihub.com/cm?in=1&pub=';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
@@ -71,41 +72,51 @@ export const spec = {
     };
     let payload = {
       id: bidderRequest.auctionId,
-      cur: [DEFAULT_CUR],
       imp: [impData],
       site: params.site ? params.site : {},
+      app: params.app ? params.app : {},
       device: params.device ? params.device : {},
       user: params.user ? params.user : {},
-      app: params.app ? params.app : {},
-      ext: {
-        definerId: params.definerId
-      }
+      at: params.at,
+      tmax: params.tmax,
+      wseat: params.wseat,
+      bseat: params.bseat,
+      allimps: params.allimps,
+      cur: [DEFAULT_CUR],
+      wlang: params.wlang,
+      bcat: params.bcat,
+      badv: params.badv,
+      bapp: params.bapp,
+      source: params.source ? params.source : {},
+      regs: params.regs ? params.regs : {},
+      ext: params.ext ? params.ext : {}
     };
 
     payload.device.ua = navigator.userAgent;
+    payload.device.ip = navigator.ip;
     payload.site.page = bidderRequest.refererInfo.referer;
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
+    payload.ext.definerId = params.definerId;
 
     if (params.test) {
       payload.test = params.test;
     }
     if (request.gdprConsent) {
-      payload.regs = {
-        ext: {
-          gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0
-        }
-      };
+      payload.regs.ext = Object.assign(
+        payload.regs.ext,
+        {gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0}
+      );
     }
     if (request.gdprConsent && request.gdprConsent.gdprApplies) {
-      payload.user = {
-        ext: {
-          consent: request.gdprConsent.consentString
-        }
-      };
+      payload.user.ext = Object.assign(
+        payload.user.ext,
+        {consent: request.gdprConsent.consentString}
+      );
     }
+    const postUrl = params.definerId !== PREBID_DEFINER_ID ? ENDPOINT_URL.concat('/', params.definerId) : ENDPOINT_URL;
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: postUrl,
       data: JSON.stringify(payload),
     };
   },
@@ -152,7 +163,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL
+        url: USER_SYNC_URL.concat(PREBID_DEFINER_ID)
       });
     }
     return syncs;

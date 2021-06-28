@@ -1,11 +1,17 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { INSTREAM as VIDEO_INSTREAM } from '../src/video.js';
+const { parseSizesInput, getKeys, logError, deepAccess } = utils;
 const BIDDER_CODE = 'visx';
-const ENDPOINT_URL = 'https://t.visx.net/hb';
+const GVLID = 154;
+const BASE_URL = 'https://t.visx.net';
+const ENDPOINT_URL = BASE_URL + '/hb';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CUR = 'EUR';
-const ADAPTER_SYNC_URL = 'https://t.visx.net/push_sync';
+const ADAPTER_SYNC_URL = BASE_URL + '/push_sync';
+const TRACK_TIMEOUT_URL = BASE_URL + '/track/bid_timeout';
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -17,12 +23,25 @@ const LOG_ERROR_MESS = {
   hasEmptySeatbidArray: 'Response has empty seatbid array',
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - ',
   notAllowedCurrency: 'Currency is not supported - ',
-  currencyMismatch: 'Currency from the request is not match currency from the response - '
+  currencyMismatch: 'Currency from the request is not match currency from the response - ',
+  onlyVideoInstream: `Only video ${VIDEO_INSTREAM} supported`,
+  videoMissing: 'Bid request videoType property is missing - '
 };
 const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
+const RE_EMPTY_OR_ONLY_COMMAS = /^,*$/;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
+    if (_isVideoBid(bid)) {
+      if (!_isValidVideoBid(bid, true)) {
+        // in case if video bid configuration invalid will try to send bid request for banner
+        if (!_isBannerBid(bid)) {
+          return false;
+        }
+      }
+    }
     return !!bid.params.uid;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -38,9 +57,10 @@ export const spec = {
     let reqId;
     let payloadSchain;
     let payloadUserId;
+    const videoTypes = _initVideoTypes(bids);
 
     if (currencyWhiteList.indexOf(currency) === -1) {
-      utils.logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
+      logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
       return;
     }
 
@@ -54,7 +74,7 @@ export const spec = {
       if (!payloadUserId && userId) {
         payloadUserId = userId;
       }
-      const sizesId = utils.parseSizesInput(bid.sizes);
+      const sizesId = parseSizesInput(bid.sizes);
 
       if (!slotsMapByUid[uid]) {
         slotsMapByUid[uid] = {};
@@ -85,11 +105,12 @@ export const spec = {
     const payload = {
       pt: 'net',
       auids: auids.join(','),
-      sizes: utils.getKeys(sizeMap).join(','),
+      sizes: getKeys(sizeMap).join(','),
       r: reqId,
       cur: currency,
       wrapperType: 'Prebid_js',
-      wrapperVersion: '$prebid.version$'
+      wrapperVersion: '$prebid.version$',
+      ...videoTypes
     };
 
     if (payloadSchain) {
@@ -151,7 +172,7 @@ export const spec = {
         _addBidResponse(serverBid, bidsMap, currency, bidResponses);
       });
     }
-    if (errorMessage) utils.logError(errorMessage);
+    if (errorMessage) logError(errorMessage);
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
@@ -170,16 +191,32 @@ export const spec = {
         url: ADAPTER_SYNC_URL + (query.length ? '?' + query.join('&') : '')
       }];
     }
+  },
+  onSetTargeting: function(bid) {
+    // Call '/track/pending' with the corresponding bid.requestId
+    if (bid.ext && bid.ext.events && bid.ext.events.pending) {
+      utils.triggerPixel(bid.ext.events.pending);
+    }
+  },
+  onBidWon: function(bid) {
+    // Call '/track/win' with the corresponding bid.requestId
+    if (bid.ext && bid.ext.events && bid.ext.events.win) {
+      utils.triggerPixel(bid.ext.events.win);
+    }
+  },
+  onTimeout: function(timeoutData) {
+    // Call '/track/bid_timeout' with timeout data
+    utils.triggerPixel(TRACK_TIMEOUT_URL + '?data=' + JSON.stringify(timeoutData));
   }
 };
 
 function _getBidFromResponse(respItem) {
   if (!respItem) {
-    utils.logError(LOG_ERROR_MESS.emptySeatbid);
+    logError(LOG_ERROR_MESS.emptySeatbid);
   } else if (!respItem.bid) {
-    utils.logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
+    logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
   } else if (!respItem.bid[0]) {
-    utils.logError(LOG_ERROR_MESS.noBid);
+    logError(LOG_ERROR_MESS.noBid);
   }
   return respItem && respItem.bid && respItem.bid[0];
 }
@@ -201,7 +238,7 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
           const slot = awaitingBids[sizeId][0];
 
           const bid = slot.bids.shift();
-          bidResponses.push({
+          const bidResponse = {
             requestId: bid.bidId,
             cpm: serverBid.price,
             width: serverBid.w,
@@ -210,9 +247,25 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
             currency: reqCurrency,
             netRevenue: true,
             ttl: TIME_TO_LIVE,
-            ad: serverBid.adm,
-            dealId: serverBid.dealid
-          });
+            dealId: serverBid.dealid,
+            meta: {
+              advertiserDomains: serverBid.advertiserDomains ? serverBid.advertiserDomains : [],
+              mediaType: serverBid.mediaType
+            },
+          };
+
+          if (serverBid.ext && serverBid.ext.prebid) {
+            bidResponse.ext = serverBid.ext.prebid;
+          }
+
+          if (!_isVideoBid(bid)) {
+            bidResponse.ad = serverBid.adm;
+          } else {
+            bidResponse.vastXml = serverBid.adm;
+            bidResponse.mediaType = 'video';
+          }
+
+          bidResponses.push(bidResponse);
 
           if (!slot.bids.length) {
             slot.parents.forEach(({parent, key, uid}) => {
@@ -222,7 +275,7 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
               }
               if (!parent[key].length) {
                 delete parent[key];
-                if (!utils.getKeys(parent).length) {
+                if (!getKeys(parent).length) {
                   delete bidsMap[uid];
                 }
               }
@@ -237,8 +290,116 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
     }
   }
   if (errorMessage) {
-    utils.logError(errorMessage);
+    logError(errorMessage);
   }
+}
+
+function _isVideoBid(bid) {
+  return bid.mediaType === VIDEO || deepAccess(bid, 'mediaTypes.video');
+}
+
+function _isBannerBid(bid) {
+  return bid.mediaType === BANNER || deepAccess(bid, 'mediaTypes.banner');
+}
+
+function _isValidVideoBid(bid, logErrors = false) {
+  let result = true;
+  const videoMediaType = deepAccess(bid, 'mediaTypes.video');
+  if (videoMediaType.context !== VIDEO_INSTREAM) {
+    if (logErrors) {
+      logError(LOG_ERROR_MESS.onlyVideoInstream);
+    }
+    result = false;
+  }
+  if (!(videoMediaType.playerSize && parseSizesInput(deepAccess(videoMediaType, 'playerSize', [])))) {
+    if (logErrors) {
+      logError(LOG_ERROR_MESS.videoMissing + 'playerSize');
+    }
+    result = false;
+  }
+  if (!videoMediaType.mimes) {
+    if (logErrors) {
+      logError(LOG_ERROR_MESS.videoMissing + 'mimes');
+    }
+    result = false;
+  }
+  if (!videoMediaType.protocols) {
+    if (logErrors) {
+      logError(LOG_ERROR_MESS.videoMissing + 'protocols');
+    }
+    result = false;
+  }
+  return result;
+}
+
+function _initVideoTypes(bids) {
+  const result = {};
+  let _playerSize = [];
+  let _protocols = [];
+  let _api = [];
+  let _mimes = [];
+  let _minduration = [];
+  let _maxduration = [];
+  let _skip = [];
+  if (bids && bids.length) {
+    bids.forEach(function (bid) {
+      const mediaTypes = deepAccess(bid, 'mediaTypes.video', {});
+      let bidPlayerSize = '';
+      let bidProtocols = '';
+      let bidApi = '';
+      let bidMimes = '';
+      let bidMinduration = null;
+      let bidMaxduration = null;
+      let bidSkip = null;
+      if (_isVideoBid(bid) && _isValidVideoBid(bid)) {
+        bidPlayerSize = parseSizesInput(deepAccess(mediaTypes, 'playerSize', [])).join('|');
+        bidProtocols = deepAccess(mediaTypes, 'protocols', []).join('|');
+        bidApi = deepAccess(mediaTypes, 'api', []).join('|');
+        bidMimes = deepAccess(mediaTypes, 'mimes', []).join('|');
+        bidMinduration = deepAccess(mediaTypes, 'minduration', null);
+        bidMaxduration = deepAccess(mediaTypes, 'maxduration', null);
+        bidSkip = deepAccess(mediaTypes, 'skip', null);
+      }
+      _playerSize.push(bidPlayerSize);
+      _protocols.push(bidProtocols);
+      _api.push(bidApi);
+      _mimes.push(bidMimes);
+      _minduration.push(bidMinduration);
+      _maxduration.push(bidMaxduration);
+      _skip.push(bidSkip);
+    });
+  }
+  _playerSize = _playerSize.join(',');
+  _protocols = _protocols.join(',');
+  _api = _api.join(',');
+  _mimes = _mimes.join(',');
+  _minduration = _minduration.join(',');
+  _maxduration = _maxduration.join(',');
+  _skip = _skip.join(',');
+
+  if (!RE_EMPTY_OR_ONLY_COMMAS.test(_playerSize)) {
+    result.playerSize = _playerSize;
+  }
+  if (!RE_EMPTY_OR_ONLY_COMMAS.test(_protocols)) {
+    result.protocols = _protocols;
+  }
+  if (!RE_EMPTY_OR_ONLY_COMMAS.test(_api)) {
+    result.api = _api;
+  }
+  if (!RE_EMPTY_OR_ONLY_COMMAS.test(_mimes)) {
+    result.mimes = _mimes;
+  }
+  if (!RE_EMPTY_OR_ONLY_COMMAS.test(_minduration)) {
+    result.minduration = _minduration;
+  }
+  if (!RE_EMPTY_OR_ONLY_COMMAS.test(_maxduration)) {
+    result.maxduration = _maxduration;
+  }
+  if (!RE_EMPTY_OR_ONLY_COMMAS.test(_skip)) {
+    result.skip = _skip;
+  }
+
+  return result;
 }
 
 registerBidder(spec);
