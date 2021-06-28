@@ -1,4 +1,4 @@
-import { quantcastIdSubmodule, storage, firePixel, hasGDPRConsent, checkTCFv2 } from 'modules/quantcastIdSystem.js';
+import { quantcastIdSubmodule, storage, firePixel, hasCCPAConsent, hasGDPRConsent, checkTCFv2 } from 'modules/quantcastIdSystem.js';
 import * as utils from 'src/utils.js';
 import {coppaDataHandler, gdprDataHandler, uspDataHandler} from 'src/adapterManager';
 
@@ -45,21 +45,20 @@ describe('QuantcastId fire pixel', function () {
 
   it('fpa should be set when not present on this call', function () {
     firePixel('clientId');
-    let urlString = utils.triggerPixel.getCall(0).args[0];
-    let url = new URL(urlString);
-    let urlSearchParams = new URLSearchParams(url.search);
-    assert.equal(urlSearchParams.get('fpan'), '1');
-    assert.notEqual(urlSearchParams.get('fpa'), null);
+    var urlString = utils.triggerPixel.getCall(0).args[0];
+    var parsedUrl = utils.parseUrl(urlString);
+    var urlSearchParams = parsedUrl.search;
+    assert.equal(urlSearchParams.fpan, '1');
+    assert.notEqual(urlSearchParams.fpa, null);
   });
 
   it('fpa should be extracted from the Quantcast first party cookie when present on this call', function () {
     storage.setCookie('__qca', 'P0-TestFPA');
     firePixel('clientId');
-    let urlString = utils.triggerPixel.getCall(0).args[0];
-    let url = new URL(urlString);
-    let urlSearchParams = new URLSearchParams(url.search);
-    assert.equal(urlSearchParams.get('fpan'), '0');
-    assert.equal(urlSearchParams.get('fpa'), 'P0-TestFPA');
+    var urlString = utils.triggerPixel.getCall(0).args[0];
+    var parsedUrl = utils.parseUrl(urlString);
+    var urlSearchParams = parsedUrl.search;
+    assert.equal(urlSearchParams.fpan, '0');
   });
 
   it('function to trigger pixel is called once', function () {
