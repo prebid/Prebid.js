@@ -105,6 +105,7 @@ export const spec = {
         creativeId: body.creativeId,
         netRevenue: body.netRevenue,
         currency: body.currency,
+        meta: body.meta || { advertiserDomains: [] }
       };
 
       if (body.dealId) {
