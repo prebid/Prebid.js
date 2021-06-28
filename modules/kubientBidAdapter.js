@@ -94,6 +94,10 @@ export const spec = {
         if (bid.meta && bid.meta.adomain && utils.isArray(bid.meta.adomain)) {
           bidResponse.meta.advertiserDomains = bid.meta.adomain;
         }
+        if (bid.mediaType === VIDEO) {
+          bidResponse.mediaType = VIDEO;
+          bidResponse.vastXml = bid.adm;
+        }
         bidResponses.push(bidResponse);
       });
     });
