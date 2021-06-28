@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.4';
+const ADAPTER_VERSION = '1.0.5';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -140,7 +140,7 @@ function getUserSyncs(syncOptions, serverResponses) {
   }
   return [{
     type: 'iframe',
-    url: syncUrl
+    url: `${syncUrl}?uu=${getUuid()}`
   }];
 }
 
