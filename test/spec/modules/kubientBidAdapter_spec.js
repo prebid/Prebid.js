@@ -1,5 +1,6 @@
 import { expect, assert } from 'chai';
 import { spec } from 'modules/kubientBidAdapter.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('KubientAdapter', function () {
   let bidBanner = {
@@ -231,6 +232,57 @@ describe('KubientAdapter', function () {
       expect(dataItem.ttl).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].ttl);
       expect(dataItem.meta).to.exist.and.to.be.a('object');
       expect(dataItem.meta.advertiserDomains).to.exist.and.to.be.a('array').and.to.equal(serverResponse.body.seatbid[0].bid[0].meta.adomain);
+    });
+
+    it('Should return no ad when not given a server response', function () {
+      const ads = spec.interpretResponse(null);
+      expect(ads).to.be.an('array').and.to.have.length(0);
+    });
+  });
+
+  describe('interpretResponse Video', function () {
+    it('Should interpret response', function () {
+      const serverResponse = {
+        body:
+          {
+            seatbid: [
+              {
+                bid: [
+                  {
+                    bidId: '000',
+                    price: 1.5,
+                    adm: '<div>test</div>',
+                    creativeId: 'creativeId',
+                    w: 300,
+                    h: 250,
+                    mediaType: VIDEO,
+                    cur: 'USD',
+                    netRevenue: false,
+                    ttl: 360,
+                    meta: {adomain: ['google.com', 'yahoo.com']}
+                  }
+                ]
+              }
+            ]
+          }
+      };
+      let bannerResponses = spec.interpretResponse(serverResponse);
+      expect(bannerResponses).to.be.an('array').that.is.not.empty;
+      let dataItem = bannerResponses[0];
+      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'ad', 'creativeId', 'width', 'height', 'currency', 'netRevenue', 'ttl', 'meta', 'mediaType', 'vastXml');
+      expect(dataItem.requestId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].bidId);
+      expect(dataItem.cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
+      expect(dataItem.ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+      expect(dataItem.creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].creativeId);
+      expect(dataItem.width).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].w);
+      expect(dataItem.height).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].h);
+      expect(dataItem.currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].cur);
+      expect(dataItem.netRevenue).to.exist.and.to.be.a('boolean').and.to.equal(serverResponse.body.seatbid[0].bid[0].netRevenue);
+      expect(dataItem.ttl).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].ttl);
+      expect(dataItem.meta).to.exist.and.to.be.a('object');
+      expect(dataItem.meta.advertiserDomains).to.exist.and.to.be.a('array').and.to.equal(serverResponse.body.seatbid[0].bid[0].meta.adomain);
+      expect(dataItem.mediaType).to.exist.and.to.equal(VIDEO);
+      expect(dataItem.vastXml).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].adm);
     });
 
     it('Should return no ad when not given a server response', function () {
