@@ -5,7 +5,7 @@ import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'axonix';
-const BIDDER_VERSION = '1.0.1';
+const BIDDER_VERSION = '1.0.2';
 
 const CURRENCY = 'USD';
 const DEFAULT_REGION = 'us-east-1';
@@ -140,15 +140,17 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse) {
-    if (!utils.isArray(serverResponse)) {
+    const response = serverResponse ? serverResponse.body : [];
+
+    if (!utils.isArray(response)) {
       return [];
     }
 
     const responses = [];
 
-    for (const response of serverResponse) {
-      if (response.requestId) {
-        responses.push(Object.assign(response, {
+    for (const resp of response) {
+      if (resp.requestId) {
+        responses.push(Object.assign(resp, {
           ttl: config.getConfig('_bidderTimeout')
         }));
       }
@@ -171,15 +173,12 @@ export const spec = {
     }
   },
 
-  onBidWon: function(bids) {
-    for (const bid of bids) {
-      const { nurl } = bid || {};
+  onBidWon: function(bid) {
+    const { nurl } = bid || {};
 
-      if (bid.nurl) {
-        utils.replaceAuctionPrice(nurl, bid.cpm)
-        utils.triggerPixel(nurl);
-      };
-    }
+    if (bid.nurl) {
+      utils.triggerPixel(utils.replaceAuctionPrice(nurl, bid.cpm));
+    };
   }
 }
 

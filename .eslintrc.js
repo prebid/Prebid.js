@@ -28,7 +28,6 @@ module.exports = {
     "comma-dangle": "off",
     "semi": "off",
     "space-before-function-paren": "off",
-    "import/extensions": ["error", "ignorePackages"],
 
     // Exceptions below this line are temporary, so that eslint can be added into the CI process.
     // Violations of these styles should be fixed, and the exceptions removed over time.

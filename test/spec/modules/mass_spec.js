@@ -3,10 +3,12 @@ import {
   init,
   addBidResponseHook,
   addListenerOnce,
-  getRenderPayload,
-  render,
+  isMassBid,
+  useDefaultMatch,
+  useDefaultRender,
+  updateRenderers,
   listenerAdded,
-  massEnabled
+  isEnabled
 } from 'modules/mass';
 import { logInfo } from 'src/utils.js';
 
@@ -70,16 +72,16 @@ describe('MASS Module', function() {
   let bidderRequest = Object.assign({}, mockedBidderRequest);
 
   it('should be enabled by default', function() {
-    expect(massEnabled).to.equal(true);
+    expect(isEnabled).to.equal(true);
   });
 
   it('can be disabled', function() {
     init({enabled: false});
-    expect(massEnabled).to.equal(false);
+    expect(isEnabled).to.equal(false);
   });
 
   it('should only affect MASS bids', function() {
-    init({renderUrl: 'http://...'});
+    init({renderUrl: 'https://...'});
     mockedNonMassBids.forEach(function(mockedBid) {
       const originalBid = Object.assign({}, mockedBid);
       const bid = Object.assign({}, originalBid);
@@ -93,7 +95,7 @@ describe('MASS Module', function() {
   });
 
   it('should only update the ad markup field', function() {
-    init({renderUrl: 'http://...'});
+    init({renderUrl: 'https://...'});
     mockedMassBids.forEach(function(mockedBid) {
       const originalBid = Object.assign({}, mockedBid);
       const bid = Object.assign({}, originalBid);
@@ -116,15 +118,34 @@ describe('MASS Module', function() {
     expect(listenerAdded).to.equal(true);
   });
 
-  it('should get correct bid in render payload', function() {
-    const payload = getRenderPayload({data: {massBidId: 'mass-bid-1'}});
-    expect(payload.type).to.equal('prebid');
-    expect(payload.bid.bidId).to.equal('mass-bid-1');
+  it('should support custom renderers', function() {
+    init({
+      renderUrl: 'https://...',
+      custom: [
+        {
+          dealIdPattern: /abc/,
+          render: function() {}
+        }
+      ]
+    });
+
+    const renderers = updateRenderers();
+
+    expect(renderers.length).to.equal(2);
   });
 
-  it('should load the bootloader on rendering', function() {
+  it('should match bids by deal ID with the default matcher', function() {
+    const match = useDefaultMatch(/abc/);
+
+    expect(match({dealId: 'abc'})).to.equal(true);
+    expect(match({dealId: 'xyz'})).to.equal(false);
+  });
+
+  it('should have a default renderer', function() {
+    const render = useDefaultRender('https://example.com/render.js', 'abc');
     render({});
-    expect(window.mass).to.be.an('object');
-    expect(window.mass.bootloader.loaded).to.equal(true);
+
+    expect(window.abc.loaded).to.equal(true);
+    expect(window.abc.queue.length).to.equal(1);
   });
 });

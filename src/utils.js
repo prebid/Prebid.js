@@ -264,6 +264,7 @@ export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
+  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
 }
 
 export function logError() {
@@ -275,10 +276,19 @@ export function logError() {
 
 function decorateLog(args, prefix) {
   args = [].slice.call(args);
+  let bidder = config.getCurrentBidder();
+
   prefix && args.unshift(prefix);
-  args.unshift('display: inline-block; color: #fff; background: #3b88c3; padding: 1px 4px; border-radius: 3px;');
-  args.unshift('%cPrebid');
+  if (bidder) {
+    args.unshift(label('#aaa'));
+  }
+  args.unshift(label('#3b88c3'));
+  args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
   return args;
+
+  function label(color) {
+    return `display: inline-block; color: #fff; background: ${color}; padding: 1px 4px; border-radius: 3px;`
+  }
 }
 
 export function hasConsoleLogger() {
@@ -1228,7 +1238,13 @@ export function mergeDeep(target, ...sources) {
         if (!target[key]) {
           Object.assign(target, { [key]: source[key] });
         } else if (isArray(target[key])) {
-          target[key] = target[key].concat(source[key]);
+          source[key].forEach(function(ele, idx) {
+            if (target[key].indexOf(ele) < 0) {
+              target[key].push(ele);
+            }
+          });
+          // Commenting below as Set and Array.from is not supported in IE
+          // target[key] = Array.from(new Set(target[key].concat(source[key]))); // This will ensure unique values in target object.
         }
       } else {
         Object.assign(target, { [key]: source[key] });

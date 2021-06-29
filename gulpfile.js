@@ -30,7 +30,7 @@ const execa = require('execa');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '\nModules: <%= modules %> */\n';
+var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '*/\n';
 var port = 9999;
 console.timeEnd('Loading Plugins in Prebid');
 const FAKE_SERVER_HOST = argv.host ? argv.host : 'localhost';
@@ -145,6 +145,12 @@ function watch(done) {
   done();
 };
 
+function makeModuleList(modules) {
+  return modules.map(module => {
+    return '"' + module + '"'
+  });
+}
+
 function makeDevpackPkg() {
   var _ = require('lodash');
   var connect = require('gulp-connect');
@@ -163,6 +169,7 @@ function makeDevpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
+    .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 }
@@ -184,18 +191,18 @@ function makeWebpackPkg() {
 
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
-  const modulesString = getModulesListToAddInBanner(externalModules);
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(uglify())
-    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid, modules: modulesString })))
+    .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
+    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));
 }
 
-function getModulesListToAddInBanner(modules){
-  return (modules.length > 0) ? modules.join(', ') :  'All available modules in current version.';
+function getModulesListToAddInBanner(modules) {
+  return (modules.length > 0) ? modules.join(', ') : 'All available modules in current version.';
 }
 
 function gulpBundle(dev) {
@@ -328,7 +335,7 @@ function test(done) {
   } else {
     var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
-    var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+    var browserOverride = helpers.parseBrowserArgs(argv);
     if (browserOverride.length > 0) {
       karmaConf.browsers = browserOverride;
     }

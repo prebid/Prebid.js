@@ -224,12 +224,17 @@ function getUpdatedKGPVForVideo(kgpv, bidResponse) {
   return kgpv;
 }
 
+function getAdapterNameForAlias(aliasName){
+  return adapterManager.aliasRegistry[aliasName] || aliasName;
+}
+
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function (partnerBids, bidId) {
     let bid = adUnit.bids[bidId];
     partnerBids.push({
-      'pn': bid.bidder,
+      'pn': getAdapterNameForAlias(bid.bidder),
+      'bc': bid.bidder,
       'bidid': bid.bidId,
       'db': bid.bidResponse ? 0 : 1,
       'kgpv': getValueForKgpv(bid, adUnitId),
@@ -254,12 +259,11 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   }, [])
 }
 
-function getSizesForAdUnit(adUnit, adUnitId){
-  var bid = Object.values(adUnit.bids).filter((bid)=> !!bid.bidResponse && bid.bidResponse.mediaType === "native")[0];
-  if(!!bid || (bid === undefined  && adUnit.dimensions.length === 0)){
-    return ["1x1"];
-  }
-  else{
+function getSizesForAdUnit(adUnit, adUnitId) {
+  var bid = Object.values(adUnit.bids).filter((bid) => !!bid.bidResponse && bid.bidResponse.mediaType === 'native')[0];
+  if (!!bid || (bid === undefined && adUnit.dimensions.length === 0)) {
+    return ['1x1'];
+  } else {
     return adUnit.dimensions.map(function (e) {
       return e[0] + 'x' + e[1];
     })
@@ -328,6 +332,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
 function executeBidWonLoggerCall(auctionId, adUnitId) {
   const winningBidId = cache.auctions[auctionId].adUnitCodes[adUnitId].bidWon;
   const winningBid = cache.auctions[auctionId].adUnitCodes[adUnitId].bids[winningBidId];
+  const adapterName = getAdapterNameForAlias(winningBid.bidder);
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
@@ -337,7 +342,8 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&pid=' + enc(profileId);
   pixelURL += '&pdvid=' + enc(profileVersionId);
   pixelURL += '&slot=' + enc(adUnitId);
-  pixelURL += '&pn=' + enc(winningBid.bidder);
+  pixelURL += '&pn=' + enc(adapterName);
+  pixelURL += '&bc=' + enc(winningBid.bidder);
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));

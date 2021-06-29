@@ -2,16 +2,20 @@ import { expect } from 'chai';
 let { spec } = require('modules/proxistoreBidAdapter');
 const BIDDER_CODE = 'proxistore';
 describe('ProxistoreBidAdapter', function () {
+  const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
   const bidderRequest = {
     bidderCode: BIDDER_CODE,
     auctionId: '1025ba77-5463-4877-b0eb-14b205cb9304',
     bidderRequestId: '10edf38ec1a719',
     gdprConsent: {
+      apiVersion: 2,
       gdprApplies: true,
-      consentString: 'CONSENT_STRING',
+      consentString: consentString,
       vendorData: {
-        vendorConsents: {
-          418: true,
+        vendor: {
+          consents: {
+            418: true,
+          },
         },
       },
     },
@@ -50,7 +54,7 @@ describe('ProxistoreBidAdapter', function () {
     const url = {
       cookieBase: 'https://abs.proxistore.com/fr/v3/rtb/prebid/multi',
       cookieLess:
-        'https://abs.proxistore.com/fr/v3/rtb/prebid/multi/cookieless',
+        'https://abs.cookieless-proxistore.com/fr/v3/rtb/prebid/multi',
     };
     let request = spec.buildRequests([bid], bidderRequest);
     it('should return a valid object', function () {
@@ -75,6 +79,29 @@ describe('ProxistoreBidAdapter', function () {
       expect(request.url).equal(url.cookieBase);
       // doens't have gpdr consent
       bidderRequest.gdprConsent.vendorData = null;
+
+      request = spec.buildRequests([bid], bidderRequest);
+      expect(request.url).equal(url.cookieLess);
+
+      // api v2
+      bidderRequest.gdprConsent = {
+        gdprApplies: true,
+        allowAuctionWithoutConsent: true,
+        consentString: consentString,
+        vendorData: {
+          vendor: {
+            consents: {
+              '418': true
+            }
+          },
+        },
+        apiVersion: 2
+      };
+      // has gdpr consent
+      request = spec.buildRequests([bid], bidderRequest);
+      expect(request.url).equal(url.cookieBase);
+
+      bidderRequest.gdprConsent.vendorData.vendor = {};
       request = spec.buildRequests([bid], bidderRequest);
       expect(request.url).equal(url.cookieLess);
     });
@@ -105,26 +132,29 @@ describe('ProxistoreBidAdapter', function () {
       expect(data.bids[0].floor).to.be.null;
     });
   });
-  describe('interpretResponse', function() {
-    const emptyResponseParam = {body: []};
-    const fakeResponseParam = {body: [
-      { ad: '',
-        cpm: 6.25,
-        creativeId: '22c3290b-8cd5-4cd6-8e8c-28a2de180ccd',
-        currency: 'EUR',
-        dealId: '2021-03_a63ec55e-b9bb-4ca4-b2c9-f456be67e656',
-        height: 600,
-        netRevenue: true,
-        requestId: '3543724f2a033c9',
-        segments: [],
-        ttl: 10,
-        vastUrl: null,
-        vastXml: null,
-        width: 300}
-    ]
+  describe('interpretResponse', function () {
+    const emptyResponseParam = { body: [] };
+    const fakeResponseParam = {
+      body: [
+        {
+          ad: '',
+          cpm: 6.25,
+          creativeId: '22c3290b-8cd5-4cd6-8e8c-28a2de180ccd',
+          currency: 'EUR',
+          dealId: '2021-03_a63ec55e-b9bb-4ca4-b2c9-f456be67e656',
+          height: 600,
+          netRevenue: true,
+          requestId: '3543724f2a033c9',
+          segments: [],
+          ttl: 10,
+          vastUrl: null,
+          vastXml: null,
+          width: 300,
+        },
+      ],
     };
 
-    it('should always return an array', function() {
+    it('should always return an array', function () {
       let response = spec.interpretResponse(emptyResponseParam, bid);
       expect(response).to.be.an('array');
       expect(response.length).equal(0);

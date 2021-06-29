@@ -9,6 +9,7 @@ import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
+import { uspDataHandler, coppaDataHandler } from '../src/adapterManager.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
 const MODULE_NAME = 'pubCommonId';
@@ -142,9 +143,18 @@ function handleResponse(pubcid, callback, config) {
  * @return {string}
  */
 function sharedIdUrl(consentData) {
-  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return SHAREDID_URL;
-
-  return `${SHAREDID_URL}?gdpr=1&gdpr_consent=${consentData.consentString}`
+  const usPrivacyString = uspDataHandler.getConsentData();
+  let sharedIdUrl = SHAREDID_URL;
+  if (usPrivacyString && typeof usPrivacyString === 'string') {
+    sharedIdUrl = `${SHAREDID_URL}?us_privacy=${usPrivacyString}`;
+  }
+  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return sharedIdUrl;
+  if (usPrivacyString) {
+    sharedIdUrl = `${sharedIdUrl}&gdpr=1&gdpr_consent=${consentData.consentString}`
+    return sharedIdUrl;
+  }
+  sharedIdUrl = `${SHAREDID_URL}?gdpr=1&gdpr_consent=${consentData.consentString}`;
+  return sharedIdUrl
 }
 
 /**
@@ -223,6 +233,11 @@ export const pubCommonIdSubmodule = {
    * @returns {IdResponse}
    */
   getId: function (config = {}, consentData, storedId) {
+    const coppa = coppaDataHandler.getCoppa();
+    if (coppa) {
+      utils.logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      return;
+    }
     const {params: {create = true, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
     let newId = storedId;
     if (!newId) {
@@ -263,6 +278,11 @@ export const pubCommonIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   extendId: function(config = {}, consentData, storedId) {
+    const coppa = coppaDataHandler.getCoppa();
+    if (coppa) {
+      utils.logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      return;
+    }
     const {params: {extend = false, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
 
     if (extend) {

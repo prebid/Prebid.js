@@ -6,15 +6,16 @@ import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
 import find from 'core-js-pure/features/array/find.js';
 
-export let listenerAdded = false;
-export let massEnabled = false;
-
 const defaultCfg = {
   dealIdPattern: /^MASS/i
 };
 let cfg;
 
-const massBids = {};
+export let listenerAdded = false;
+export let isEnabled = false;
+
+const matchedBids = {};
+let renderers;
 
 init();
 config.getConfig('mass', config => init(config.mass));
@@ -22,45 +23,118 @@ config.getConfig('mass', config => init(config.mass));
 /**
  * Module init.
  */
-export function init(customCfg) {
-  cfg = Object.assign({}, defaultCfg, customCfg);
+export function init(userCfg) {
+  cfg = Object.assign({}, defaultCfg, window.massConfig && window.massConfig.mass, userCfg);
 
   if (cfg.enabled === false) {
-    if (massEnabled) {
-      massEnabled = false;
+    if (isEnabled) {
       getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
+      isEnabled = false;
     }
   } else {
-    if (!massEnabled) {
+    if (!isEnabled) {
       getHook('addBidResponse').before(addBidResponseHook);
-      massEnabled = true;
+      isEnabled = true;
     }
   }
+
+  if (isEnabled) {
+    updateRenderers();
+  }
+}
+
+/**
+ * Update the list of renderers based on current config.
+ */
+export function updateRenderers() {
+  renderers = [];
+
+  // official MASS renderer:
+  if (cfg.dealIdPattern && cfg.renderUrl) {
+    renderers.push({
+      match: isMassBid,
+      render: useDefaultRender(cfg.renderUrl, 'mass')
+    });
+  }
+
+  // add any custom renderer defined in the config:
+  (cfg.custom || []).forEach(renderer => {
+    if (!renderer.match && renderer.dealIdPattern) {
+      renderer.match = useDefaultMatch(renderer.dealIdPattern);
+    }
+
+    if (!renderer.render && renderer.renderUrl && renderer.namespace) {
+      renderer.render = useDefaultRender(renderer.renderUrl, renderer.namespace);
+    }
+
+    if (renderer.match && renderer.render) {
+      renderers.push(renderer);
+    }
+  });
+
+  return renderers;
 }
 
 /**
  * Before hook for 'addBidResponse'.
  */
 export function addBidResponseHook(next, adUnitCode, bid) {
-  if (!isMassBid(bid) || !cfg.renderUrl) {
-    return next(adUnitCode, bid);
+  let renderer;
+  for (let i = 0; i < renderers.length; i++) {
+    if (renderers[i].match(bid)) {
+      renderer = renderers[i];
+      break;
+    }
   }
 
-  const bidRequest = find(this.bidderRequest.bids, bidRequest =>
-    bidRequest.bidId === bid.requestId
-  );
+  if (renderer) {
+    const bidRequest = find(this.bidderRequest.bids, bidRequest =>
+      bidRequest.bidId === bid.requestId
+    );
 
-  massBids[bid.requestId] = {
-    bidRequest,
-    bid,
-    adm: bid.ad
-  };
+    matchedBids[bid.requestId] = {
+      renderer,
+      payload: {
+        bidRequest,
+        bid,
+        adm: bid.ad
+      }
+    };
 
-  bid.ad = '<script>window.parent.postMessage({massBidId: "' + bid.requestId + '"}, "*");\x3c/script>';
+    bid.ad = '<script>window.parent.postMessage({massBidId: "' + bid.requestId + '"}, "*");\x3c/script>';
 
-  addListenerOnce();
+    addListenerOnce();
+  }
 
   next(adUnitCode, bid);
+}
+
+/**
+ * Add listener for the "message" event sent by the winning bid
+ */
+export function addListenerOnce() {
+  if (!listenerAdded) {
+    window.addEventListener('message', e => {
+      if (!e || !e.data || !e.data.massBidId) {
+        return;
+      }
+
+      const matchedBid = matchedBids[e.data.massBidId];
+      if (matchedBid) {
+        const payload = {
+          type: 'prebid',
+          event: e,
+          ...matchedBid.payload
+        };
+
+        delete payload.bid.ad;
+
+        matchedBid.renderer.render(payload);
+      }
+    });
+
+    listenerAdded = true;
+  }
 }
 
 /**
@@ -77,53 +151,34 @@ export function isMassBid(bid) {
 }
 
 /**
- * Add listener to detect requests to render MASS ads.
+ * Default match (factory).
  */
-export function addListenerOnce() {
-  if (!listenerAdded) {
-    window.addEventListener('message', e => {
-      if (e && e.data && e.data.massBidId) {
-        render(getRenderPayload(e));
-      }
-    });
-
-    listenerAdded = true;
-  }
-}
-
-/**
- * Prepare payload for render.
- */
-export function getRenderPayload(e) {
-  const payload = {
-    type: 'prebid',
-    e
+export function useDefaultMatch(dealIdPattern) {
+  return function(bid) {
+    return dealIdPattern.test(bid.dealId);
   };
-
-  Object.assign(payload, massBids[e.data.massBidId]);
-  delete payload.bid.ad;
-
-  return payload;
 }
 
 /**
- * Render a MASS ad.
+ * Default render (factory).
  */
-export function render(payload) {
-  const ns = window.mass = window.mass || {};
+export function useDefaultRender(renderUrl, namespace) {
+  return function render(payload) {
+    const ns = window[namespace] = window[namespace] || {};
+    ns.queue = ns.queue || [];
 
-  ns.bootloader = ns.bootloader || {queue: []};
-  ns.bootloader.queue.push(payload);
+    ns.queue.push(payload);
 
-  if (!ns.bootloader.loaded) {
-    const s = document.createElement('script');
-    s.type = 'text/javascript';
-    s.async = true;
-    s.src = cfg.renderUrl;
+    if (!ns.loaded) {
+      const s = document.createElement('script');
+      s.type = 'text/javascript';
+      s.async = true;
+      s.src = renderUrl;
 
-    const x = document.getElementsByTagName('script')[0];
-    x.parentNode.insertBefore(s, x);
+      const x = document.getElementsByTagName('script')[0];
+      x.parentNode.insertBefore(s, x);
 
-    ns.bootloader.loaded = true;
-  }
+      ns.loaded = true;
+    }
+  };
 }

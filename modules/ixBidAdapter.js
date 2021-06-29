@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
-import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
@@ -23,19 +22,64 @@ const PRICE_TO_DOLLAR_FACTOR = {
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
+// determines which eids we send and the rtiPartner field in ext
+const SOURCE_RTI_MAPPING = {
+  'liveramp.com': 'idl',
+  'netid.de': 'NETID',
+  'neustar.biz': 'fabrickId',
+  'zeotap.com': 'zeotapIdPlus',
+  'uidapi.com': 'UID2',
+  'adserver.org': 'TDID'
+};
+
+const PROVIDERS = [
+  'britepoolid',
+  'id5id',
+  'lipbid',
+  'haloId',
+  'criteoId',
+  'lotamePanoramaId',
+  'merkleId',
+  'parrableId',
+  'connectid',
+  'sharedid',
+  'tapadId',
+  'quantcastId',
+  'pubcid',
+  'TDID',
+  'flocId'
+]
+
+const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
+
+const VIDEO_PARAMS_ALLOW_LIST = [
+  'mimes', 'minduration', 'maxduration', 'protocols', 'protocol',
+  'startdelay', 'placement', 'linearity', 'skip', 'skipmin',
+  'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate',
+  'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend',
+  'delivery', 'pos', 'companionad', 'api', 'companiontype', 'ext',
+  'playerSize', 'w', 'h'
+];
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
  *
- * @param  {object} bid A valid bid request config object.
+ * @param  {object} bid A valid bid request config object
  * @return {object}     A impression object that will be sent to ad server.
  */
 function bidToBannerImp(bid) {
   const imp = bidToImp(bid);
-
   imp.banner = {};
-  imp.banner.w = bid.params.size[0];
-  imp.banner.h = bid.params.size[1];
+  const impSize = utils.deepAccess(bid, 'params.size');
+  if (impSize) {
+    imp.banner.w = impSize[0];
+    imp.banner.h = impSize[1];
+    // populate sid with size if not id
+    if (!(utils.deepAccess(imp, 'ext.sid'))) {
+      imp.ext.sid = `${impSize[0]}x${impSize[1]}`;
+    }
+  }
+
   imp.banner.topframe = utils.inIframe() ? 0 : 1;
 
   _applyFloor(bid, imp, BANNER);
@@ -52,18 +96,27 @@ function bidToBannerImp(bid) {
 function bidToVideoImp(bid) {
   const imp = bidToImp(bid);
   const videoAdUnitRef = utils.deepAccess(bid, 'mediaTypes.video');
-  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-  const videoAdUnitAllowlist = [
-    'mimes', 'minduration', 'maxduration', 'protocols', 'protocol',
-    'startdelay', 'placement', 'linearity', 'skip', 'skipmin',
-    'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate',
-    'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend',
-    'delivery', 'pos', 'companionad', 'api', 'companiontype', 'ext'
-  ];
+  const videoParamRef = utils.deepAccess(bid, 'params.video');
 
-  imp.video = utils.deepClone(bid.params.video)
-  imp.video.w = bid.params.size[0];
-  imp.video.h = bid.params.size[1];
+  if (!checkVideoParams(bid, videoAdUnitRef, videoParamRef)) {
+    return {};
+  }
+
+  imp.video = videoParamRef ? utils.deepClone(bid.params.video) : {};
+
+  for (const adUnitProperty in videoAdUnitRef) {
+    if (VIDEO_PARAMS_ALLOW_LIST.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
+      imp.video[adUnitProperty] = videoAdUnitRef[adUnitProperty];
+    }
+  }
+
+  if (imp.video.minduration > imp.video.maxduration) {
+    utils.logError('IX Bid Adapter: video minduration [' + imp.video.minduration +
+    '] cannot be greater than video maxduration [' + imp.video.maxduration + ']');
+    return {};
+  }
+
+  const context = (videoParamRef && videoParamRef.context) || (videoAdUnitRef && videoAdUnitRef.context);
 
   if (context) {
     if (context === 'instream') {
@@ -71,13 +124,22 @@ function bidToVideoImp(bid) {
     } else if (context === 'outstream') {
       imp.video.placement = 4;
     } else {
-      utils.logWarn(`ix bidder params: video context '${context}' is not supported`);
+      utils.logWarn(`IX Bid Adapter: video context '${context}' is not supported`);
     }
   }
 
-  for (const adUnitProperty in videoAdUnitRef) {
-    if (videoAdUnitAllowlist.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
-      imp.video[adUnitProperty] = videoAdUnitRef[adUnitProperty];
+  if (!(imp.video.w && imp.video.h)) {
+    // Getting impression Size
+    const impSize = getFirstSize(utils.deepAccess(imp, 'video.playerSize')) || getFirstSize(utils.deepAccess(bid, 'params.size'));
+    if (impSize) {
+      imp.video.w = impSize[0];
+      imp.video.h = impSize[1];
+      if (!(utils.deepAccess(imp, 'ext.sid'))) {
+        imp.ext.sid = `${impSize[0]}x${impSize[1]}`;
+      }
+    } else {
+      utils.logWarn('IX Bid Adapter: Video size is missing in [mediaTypes.video] missing');
+      return {};
     }
   }
 
@@ -86,6 +148,11 @@ function bidToVideoImp(bid) {
   return imp;
 }
 
+/**
+ * Converts an incoming PBJS bid to an IX Impression
+ * @param {object} bid   PBJS bid object
+ * @returns {object}     IX impression object
+ */
 function bidToImp(bid) {
   const imp = {};
 
@@ -97,10 +164,12 @@ function bidToImp(bid) {
   if (bid.params.hasOwnProperty('id') &&
     (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
     imp.ext.sid = String(bid.params.id);
-  } else {
-    imp.ext.sid = `${bid.params.size[0]}x${bid.params.size[1]}`;
   }
 
+  const dfpAdUnitCode = utils.deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
+  if (dfpAdUnitCode) {
+    imp.ext.dfp_ad_unit_code = dfpAdUnitCode;
+  }
   return imp;
 }
 
@@ -179,6 +248,8 @@ function _applyFloor(bid, imp, mediaType) {
  */
 function parseBid(rawBid, currency, bidRequest) {
   const bid = {};
+  const isValidExpiry = !!((utils.deepAccess(rawBid, 'exp') && utils.isInteger(rawBid.exp)));
+  const dealID = utils.deepAccess(rawBid, 'dealid') || utils.deepAccess(rawBid, 'ext.dealid');
 
   if (PRICE_TO_DOLLAR_FACTOR.hasOwnProperty(currency)) {
     bid.cpm = rawBid.price / PRICE_TO_DOLLAR_FACTOR[currency];
@@ -188,7 +259,10 @@ function parseBid(rawBid, currency, bidRequest) {
 
   bid.requestId = rawBid.impid;
 
-  bid.dealId = utils.deepAccess(rawBid, 'ext.dealid');
+  if (dealID) {
+    bid.dealId = dealID;
+  }
+
   bid.netRevenue = NET_REVENUE;
   bid.currency = currency;
   bid.creativeId = rawBid.hasOwnProperty('crid') ? rawBid.crid : '-';
@@ -199,13 +273,13 @@ function parseBid(rawBid, currency, bidRequest) {
     bid.width = bidRequest.video.w;
     bid.height = bidRequest.video.h;
     bid.mediaType = VIDEO;
-    bid.ttl = VIDEO_TIME_TO_LIVE;
+    bid.ttl = isValidExpiry ? rawBid.exp : VIDEO_TIME_TO_LIVE;
   } else {
     bid.ad = rawBid.adm;
     bid.width = rawBid.w;
     bid.height = rawBid.h;
     bid.mediaType = BANNER;
-    bid.ttl = BANNER_TIME_TO_LIVE;
+    bid.ttl = isValidExpiry ? rawBid.exp : BANNER_TIME_TO_LIVE;
   }
 
   bid.meta = {};
@@ -226,7 +300,7 @@ function parseBid(rawBid, currency, bidRequest) {
  * @return {boolean}      True if this is a valid size format, and false otherwise.
  */
 function isValidSize(size) {
-  return Array.isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
+  return Array.isArray(size) && size.length === 2 && utils.isInteger(size[0]) && utils.isInteger(size[1]);
 }
 
 /**
@@ -238,15 +312,67 @@ function isValidSize(size) {
  * @return {boolean}          True if the size object is an element of the size array, and false
  *                            otherwise.
  */
-function includesSize(sizeArray, size) {
+function includesSize(sizeArray = [], size) {
   if (isValidSize(sizeArray)) {
     return sizeArray[0] === size[0] && sizeArray[1] === size[1];
   }
-
   for (let i = 0; i < sizeArray.length; i++) {
     if (sizeArray[i][0] === size[0] && sizeArray[i][1] === size[1]) {
       return true;
     }
+  }
+  return false;
+}
+
+/**
+ * Checks if all required video params are present
+ * @param {object} bid               Bid Object
+ * @param {object} mediaTypeVideoRef Ad unit level mediaTypes object
+ * @param {object} paramsVideoRef    IX bidder params level video object
+ * @returns bool                     Are the required video params available
+ */
+function checkVideoParams(bid, mediaTypeVideoRef, paramsVideoRef) {
+  let reqParamsPresent = true;
+
+  if (!mediaTypeVideoRef) {
+    utils.logWarn('IX Bid Adapter: mediaTypes.video is the preferred location for video params in ad unit');
+  }
+
+  for (let property of REQUIRED_VIDEO_PARAMS) {
+    const propInMediaType = mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty(property);
+    const propInVideoRef = paramsVideoRef && paramsVideoRef.hasOwnProperty(property);
+
+    if (!propInMediaType && !propInVideoRef) {
+      utils.logError('IX Bid Adapter: ' + property + ' is not included in either the adunit or params level');
+      reqParamsPresent = false;
+    }
+  }
+
+  // early return
+  if (!reqParamsPresent) {
+    return false;
+  }
+
+  // check protocols/protocol
+  const protocolMediaType = mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty('protocol');
+  const protocolsMediaType = mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty('protocols');
+  const protocolVideoRef = paramsVideoRef && paramsVideoRef.hasOwnProperty('protocol');
+  const protocolsVideoRef = paramsVideoRef && paramsVideoRef.hasOwnProperty('protocols');
+
+  return protocolMediaType || protocolsMediaType || protocolVideoRef || protocolsVideoRef;
+}
+
+/**
+ * Get One size from Size Array
+ * [[250,350]] -> [250, 350]
+ * [250, 350]  -> [250, 350]
+ * @param {array} sizes array of sizes
+ */
+function getFirstSize(sizes = []) {
+  if (isValidSize(sizes)) {
+    return sizes;
+  } else if (isValidSize(sizes[0])) {
+    return sizes[0];
   }
 
   return false;
@@ -255,9 +381,9 @@ function includesSize(sizeArray, size) {
 /**
  * Determines whether or not the given bidFloor parameters are valid.
  *
- * @param  {*}       bidFloor    The bidFloor parameter inside bid request config.
- * @param  {*}       bidFloorCur The bidFloorCur parameter inside bid request config.
- * @return {boolean}             True if this is a valid bidFloor parameters format, and false
+ * @param  {number}  bidFloor    The bidFloor parameter inside bid request config.
+ * @param  {number}  bidFloorCur The bidFloorCur parameter inside bid request config.
+ * @return {bool}                True if this is a valid bidFloor parameters format, and false
  *                               otherwise.
  */
 function isValidBidFloorParams(bidFloor, bidFloorCur) {
@@ -285,34 +411,37 @@ function getBidRequest(id, impressions) {
  * From the userIdAsEids array, filter for the ones our adserver can use, and modify them
  * for our purposes, e.g. add rtiPartner
  * @param {array} allEids userIdAsEids passed in by prebid
+ * @param {object} flocId flocId passed in by prebid
  * @return {object} contains toSend (eids to send to the adserver) and seenSources (used to filter
  *                  identity info from IX Library)
  */
-function getEidInfo(allEids) {
-  // determines which eids we send and the rtiPartner field in ext
-  var sourceRTIMapping = {
-    'liveramp.com': 'idl',
-    'netid.de': 'NETID',
-    'neustar.biz': 'fabrickId',
-    'zeotap.com': 'zeotapIdPlus'
-  };
-  var toSend = [];
-  var seenSources = {};
+function getEidInfo(allEids, flocData) {
+  let toSend = [];
+  let seenSources = {};
   if (utils.isArray(allEids)) {
-    for (var i = 0; i < allEids.length; i++) {
-      if (sourceRTIMapping[allEids[i].source] && utils.deepAccess(allEids[i], 'uids.0')) {
-        seenSources[allEids[i].source] = 1;
-        allEids[i].uids[0].ext = {
-          rtiPartner: sourceRTIMapping[allEids[i].source]
+    for (const eid of allEids) {
+      if (SOURCE_RTI_MAPPING[eid.source] && utils.deepAccess(eid, 'uids.0')) {
+        seenSources[eid.source] = true;
+        eid.uids[0].ext = {
+          rtiPartner: SOURCE_RTI_MAPPING[eid.source]
         };
-        delete allEids[i].uids[0].atype;
-        toSend.push(allEids[i]);
+        delete eid.uids[0].atype;
+        toSend.push(eid);
       }
     }
   }
-  return { toSend: toSend, seenSources: seenSources };
-}
+  const isValidFlocId = flocData && flocData.id && flocData.version;
+  if (isValidFlocId) {
+    const flocEid = {
+      'source': 'chrome.com',
+      'uids': [{ 'id': flocData.id, 'ext': { 'rtiPartner': 'flocId', 'ver': flocData.version } }]
+    };
+    toSend.push(flocEid);
+    seenSources['chrome.com'] = true;
+  }
 
+  return { toSend, seenSources };
+}
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
@@ -326,10 +455,9 @@ function getEidInfo(allEids) {
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
-
   // Get ids from Prebid User ID Modules
-  var eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'));
-  var userEids = eidInfo.toSend;
+  let eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'), utils.deepAccess(validBidRequests, '0.userId.flocId'));
+  let userEids = eidInfo.toSend;
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
@@ -356,7 +484,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   const r = {};
 
   // Since bidderRequestId are the same for different bid request, just use the first one.
-  r.id = validBidRequests[0].bidderRequestId;
+  r.id = validBidRequests[0].bidderRequestId.toString();
 
   r.site = {};
   r.ext = {};
@@ -421,6 +549,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (bidderRequest.refererInfo) {
       r.site.page = bidderRequest.refererInfo.referer;
     }
+  }
+
+  if (config.getConfig('coppa')) {
+    utils.deepSetValue(r, 'regs.coppa', 1);
   }
 
   const payload = {};
@@ -488,27 +620,31 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   let currMissingImps = [];
 
   while (i < transactionIds.length && requests.length < MAX_REQ_LIMIT) {
-    if (impressions[transactionIds[i]].hasOwnProperty('missingCount')) {
-      msd = impressions[transactionIds[i]].missingCount;
+    const impObj = impressions[transactionIds[i]];
+    msd = utils.deepAccess(impObj, 'missingCount') && utils.deepAccess(impObj, 'ixImps') ? impObj.missingCount : 0;
+
+    if (BASE_REQ_SIZE < MAX_REQ_SIZE) {
+      trimImpressions(impObj, MAX_REQ_SIZE - BASE_REQ_SIZE);
+    } else {
+      utils.logError('ix bidder: Base request size has exceeded maximum request size.');
     }
 
-    trimImpressions(impressions[transactionIds[i]], MAX_REQ_SIZE - BASE_REQ_SIZE);
+    msi = utils.deepAccess(impObj, 'missingImps') && utils.deepAccess(impObj, 'ixImps') ? impObj.missingImps.length : 0;
 
-    if (impressions[transactionIds[i]].hasOwnProperty('missingImps')) {
-      msi = impressions[transactionIds[i]].missingImps.length;
-    }
-
-    let currImpsSize = new Blob([encodeURIComponent(JSON.stringify(impressions[transactionIds[i]]))]).size;
+    let currImpsSize = new Blob([encodeURIComponent(JSON.stringify(impObj))]).size;
     currReqSize += currImpsSize;
     if (currReqSize < MAX_REQ_SIZE) {
-      // pushing ix configured sizes first
-      r.imp.push(...impressions[transactionIds[i]].ixImps);
+      // since not reading params.size, ixImps can be undefined/empty
+      if (impObj.ixImps && impObj.ixImps.length > 0) {
+        // pushing ix configured sizes first
+        r.imp.push(...impObj.ixImps);
+      }
       // update msd msi
       r.ext.ixdiag.msd += msd;
       r.ext.ixdiag.msi += msi;
 
-      if (impressions[transactionIds[i]].hasOwnProperty('missingImps')) {
-        currMissingImps.push(...impressions[transactionIds[i]].missingImps);
+      if (impObj.hasOwnProperty('missingImps') && impObj.missingImps.length > 0) {
+        currMissingImps.push(...impObj.missingImps);
       }
 
       i++;
@@ -558,6 +694,17 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 }
 
 /**
+ * Return an object of user IDs stored by Prebid User ID module
+ *
+ * @returns {array} ID providers that are present in userIds
+ */
+function _getUserIds(bidRequest) {
+  const userIds = bidRequest.userId || {};
+
+  return PROVIDERS.filter(provider => userIds[provider]);
+}
+
+/**
  * Calculates IX diagnostics values and packages them into an object
  *
  * @param {array} validBidRequests  The valid bid requests from prebid
@@ -576,7 +723,8 @@ function buildIXDiag(validBidRequests) {
     ou: 0,
     allu: 0,
     ren: false,
-    version: '$prebid.version$'
+    version: '$prebid.version$',
+    userIds: _getUserIds(validBidRequests[0])
   };
 
   // create ad unit map and collect the required diag properties
@@ -636,6 +784,7 @@ function trimImpressions(impressions, maxSize) {
     currSize = new Blob([encodeURIComponent(JSON.stringify(impressions))]).size;
   }
 }
+
 /**
  *
  * @param  {array}   bannerSizeList list of banner sizes
@@ -644,14 +793,15 @@ function trimImpressions(impressions, maxSize) {
  */
 
 function removeFromSizes(bannerSizeList, bannerSize) {
+  if (!bannerSize) return;
+
   for (let i = 0; i < bannerSizeList.length; i++) {
-    if (bannerSize[0] == bannerSizeList[i][0] && bannerSize[1] == bannerSizeList[i][1]) {
+    const size = bannerSizeList[i];
+    if (bannerSize[0] === size[0] && bannerSize[1] === size[1]) {
       bannerSizeList.splice(i, 1);
-      return true;
+      break;
     }
   }
-  // size not found
-  return false;
 }
 
 /**
@@ -727,40 +877,26 @@ export const spec = {
     const hasBidFloor = bid.params.hasOwnProperty('bidFloor');
     const hasBidFloorCur = bid.params.hasOwnProperty('bidFloorCur');
 
-    if (!isValidSize(bid.params.size)) {
-      utils.logError('ix bidder params: bid size has invalid format.');
-      return false;
-    }
-
     if (bid.hasOwnProperty('mediaType') && !(utils.contains(SUPPORTED_AD_TYPES, bid.mediaType))) {
       return false;
     }
 
-    if (bid.hasOwnProperty('mediaTypes') && !(mediaTypeBannerSizes || mediaTypeVideoPlayerSize)) {
+    if (utils.deepAccess(bid, 'mediaTypes.banner') && !mediaTypeBannerSizes) {
       return false;
     }
 
-    if (!includesSize(bid.sizes, paramsSize) && !((mediaTypeVideoPlayerSize && includesSize(mediaTypeVideoPlayerSize, paramsSize)) ||
-      (mediaTypeBannerSizes && includesSize(mediaTypeBannerSizes, paramsSize)))) {
-      utils.logError('ix bidder params: bid size is not included in ad unit sizes or player size.');
-      return false;
-    }
-
-    if (mediaTypeVideoRef && paramsVideoRef) {
-      const requiredIXParams = ['mimes', 'minduration', 'maxduration', 'protocols'];
-      let isParamsLevelValid = true;
-      for (let property of requiredIXParams) {
-        if (!mediaTypeVideoRef.hasOwnProperty(property) && !paramsVideoRef.hasOwnProperty(property)) {
-          const isProtocolsValid = (property === 'protocols' && (mediaTypeVideoRef.hasOwnProperty('protocol') || paramsVideoRef.hasOwnProperty('protocol')));
-          if (isProtocolsValid) {
-            continue;
-          }
-          utils.logError('ix bidder params: ' + property + ' is not included in either the adunit or params level');
-          isParamsLevelValid = false;
-        }
+    if (paramsSize) {
+      // since there is an ix bidder level size, make sure its valid
+      const ixSize = getFirstSize(paramsSize);
+      if (!ixSize) {
+        utils.logError('ix bidder params: size has invalid format.');
+        return false;
       }
-
-      if (!isParamsLevelValid) {
+      // check if the ix bidder level size, is present in ad unit level
+      if (!includesSize(bid.sizes, ixSize) &&
+        !(includesSize(mediaTypeVideoPlayerSize, ixSize)) &&
+        !(includesSize(mediaTypeBannerSizes, ixSize))) {
+        utils.logError('ix bidder params: bid size is not included in ad unit sizes or player size.');
         return false;
       }
     }
@@ -776,7 +912,10 @@ export const spec = {
         return false;
       }
     }
-
+    // For multi format unit
+    if (!mediaTypeBannerSizes && (mediaTypeVideoRef || paramsVideoRef)) {
+      return checkVideoParams(bid, mediaTypeVideoRef, paramsVideoRef);
+    }
     return true;
   },
 
@@ -804,30 +943,35 @@ export const spec = {
 
     for (let i = 0; i < validBidRequests.length; i++) {
       validBidRequest = validBidRequests[i];
+      const videoAdUnitRef = utils.deepAccess(validBidRequest, 'mediaTypes.video');
+      const videoParamRef = utils.deepAccess(validBidRequest, 'params.video');
 
-      if (validBidRequest.mediaType === VIDEO || utils.deepAccess(validBidRequest, 'mediaTypes.video')) {
-        if (validBidRequest.mediaType === VIDEO || includesSize(validBidRequest.mediaTypes.video.playerSize, validBidRequest.params.size)) {
-          if (!videoImps.hasOwnProperty(validBidRequest.transactionId)) {
+      // identify video ad unit
+      if (validBidRequest.mediaType === VIDEO || videoAdUnitRef || videoParamRef) {
+        if (!videoImps.hasOwnProperty(validBidRequest.transactionId)) {
+          const imp = bidToVideoImp(validBidRequest);
+          if (Object.keys(imp).length != 0) {
             videoImps[validBidRequest.transactionId] = {};
-          }
-          if (!videoImps[validBidRequest.transactionId].hasOwnProperty('ixImps')) {
             videoImps[validBidRequest.transactionId].ixImps = [];
+            videoImps[validBidRequest.transactionId].ixImps.push(imp);
           }
-          videoImps[validBidRequest.transactionId].ixImps.push(bidToVideoImp(validBidRequest));
         }
       }
+
       if (validBidRequest.mediaType === BANNER ||
-        (utils.deepAccess(validBidRequest, 'mediaTypes.banner') && includesSize(utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), validBidRequest.params.size)) ||
+        (utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes')) ||
         (!validBidRequest.mediaType && !validBidRequest.mediaTypes)) {
         let imp = bidToBannerImp(validBidRequest);
-
-        if (!bannerImps.hasOwnProperty(validBidRequest.transactionId)) {
-          bannerImps[validBidRequest.transactionId] = {};
+        // Create IX imps from params.size
+        if (utils.deepAccess(validBidRequest, 'params.size')) {
+          if (!bannerImps.hasOwnProperty(validBidRequest.transactionId)) {
+            bannerImps[validBidRequest.transactionId] = {};
+          }
+          if (!bannerImps[validBidRequest.transactionId].hasOwnProperty('ixImps')) {
+            bannerImps[validBidRequest.transactionId].ixImps = []
+          }
+          bannerImps[validBidRequest.transactionId].ixImps.push(imp);
         }
-        if (!bannerImps[validBidRequest.transactionId].hasOwnProperty('ixImps')) {
-          bannerImps[validBidRequest.transactionId].ixImps = []
-        }
-        bannerImps[validBidRequest.transactionId].ixImps.push(imp);
         if (ixConfig.hasOwnProperty('detectMissingSizes') && ixConfig.detectMissingSizes) {
           updateMissingSizes(validBidRequest, missingBannerSizes, imp);
         }

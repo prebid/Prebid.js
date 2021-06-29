@@ -49,8 +49,10 @@ FEATURE: Analytics Adapters API
     events.emit(eventType, args);
     adapter.enableAnalytics();
 
-    let result = JSON.parse(server.requests[0].requestBody);
-    expect(result).to.deep.equal({args: {wat: 'wot'}, eventType: 'bidResponse'});
+    // As now AUCTION_DEBUG is triggered for WARNINGS too, the BID_RESPONSE goes last in the array
+    const index = server.requests.length - 1;
+    let result = JSON.parse(server.requests[index].requestBody);
+    expect(result).to.deep.equal({eventType: 'bidResponse', args: {wat: 'wot'}});
   });
 
   describe(`WHEN an event occurs after enable analytics\n`, function () {

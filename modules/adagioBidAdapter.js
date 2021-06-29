@@ -3,33 +3,29 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { loadExternalScript } from '../src/adloader.js';
-import JSEncrypt from 'jsencrypt/bin/jsencrypt.js';
-import sha256 from 'crypto-js/sha256.js';
+import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { createEidsArray } from './userId/eids.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { OUTSTREAM } from '../src/video.js';
-
-export const BIDDER_CODE = 'adagio';
-export const LOG_PREFIX = 'Adagio:';
-export const VERSION = '2.10.0';
-export const FEATURES_VERSION = '1';
+const BIDDER_CODE = 'adagio';
+const LOG_PREFIX = 'Adagio:';
+export const VERSION = '2.11.0';
+const FEATURES_VERSION = '1';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
-export const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
-export const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
-export const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
-export const GVLID = 617;
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
+const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
+const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
+const GVLID = 617;
 export const storage = getStorageManager(GVLID, 'adagio');
 export const RENDERER_URL = 'https://script.4dex.io/outstream-player.js';
-export const MAX_SESS_DURATION = 30 * 60 * 1000;
-export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9el0+OEn6fvEh1RdVHQu4cnT0
-jFSzIbGJJyg3cKqvtE6A0iaz9PkIdJIvSSSNrmJv+lRGKPEyRA/VnzJIieL39Ngl
-t0b0lsHN+W4n9kitS/DZ/xnxWK/9vxhv0ZtL1LL/rwR5Mup7rmJbNtDoNBw4TIGj
-pV6EP3MTLosuUEpLaQIDAQAB
------END PUBLIC KEY-----`;
+const MAX_SESS_DURATION = 30 * 60 * 1000;
+const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0ki9JJI2uYm/6VEYo8TJED9WfMkiJ4vf02CW3RvSWwc35bif2SK1L8Nn/GfFYr/2/GG/Rm0vUsv+vBHky6nuuYls20Og0HDhMgaOlXoQ/cxMuiy5QSktp';
+const ADAGIO_PUBKEY_E = 65537;
+const CURRENCY = 'USD';
+const DEFAULT_FLOOR = 0.1;
 
 // This provide a whitelist and a basic validation
 // of OpenRTB 2.5 options used by the Adagio SSP.
@@ -81,10 +77,7 @@ export function adagioScriptFromLocalStorageCb(ls) {
       const hash = r[2];
       const content = r[3];
 
-      var jsEncrypt = new JSEncrypt();
-      jsEncrypt.setPublicKey(ADAGIO_PUBKEY);
-
-      if (jsEncrypt.verify(content, hash, sha256)) {
+      if (verify(content, hash, ADAGIO_PUBKEY, ADAGIO_PUBKEY_E)) {
         utils.logInfo(`${LOG_PREFIX} start script.`);
         Function(ls)(); // eslint-disable-line no-new-func
       } else {
@@ -524,19 +517,8 @@ function autoDetectAdUnitElementId(adUnitCode) {
 
 function autoDetectEnvironment() {
   const device = _features.getDevice();
-  let environment;
-  switch (device) {
-    case 2:
-      environment = 'desktop';
-      break;
-    case 4:
-      environment = 'mobile';
-      break;
-    case 5:
-      environment = 'tablet';
-      break;
-  };
-  return environment;
+  const map = { 2: 'desktop', 4: 'mobile', 5: 'tablet' };
+  return map[device] || 'unknown';
 };
 
 function supportIObs() {
@@ -653,25 +635,12 @@ function _getGdprConsent(bidderRequest) {
     allowAuctionWithoutConsent
   } = bidderRequest.gdprConsent;
 
-  const consent = {};
-
-  if (apiVersion !== undefined) {
-    consent.apiVersion = apiVersion;
-  }
-
-  if (consentString !== undefined) {
-    consent.consentString = consentString;
-  }
-
-  if (gdprApplies !== undefined) {
-    consent.consentRequired = (gdprApplies) ? 1 : 0;
-  }
-
-  if (allowAuctionWithoutConsent !== undefined) {
-    consent.allowAuctionWithoutConsent = allowAuctionWithoutConsent ? 1 : 0;
-  }
-
-  return consent;
+  return utils.cleanObj({
+    apiVersion,
+    consentString,
+    consentRequired: gdprApplies ? 1 : 0,
+    allowAuctionWithoutConsent: allowAuctionWithoutConsent ? 1 : 0
+  });
 }
 
 function _getCoppa() {
@@ -685,9 +654,7 @@ function _getUspConsent(bidderRequest) {
 }
 
 function _getSchain(bidRequest) {
-  if (utils.deepAccess(bidRequest, 'schain')) {
-    return bidRequest.schain;
-  }
+  return utils.deepAccess(bidRequest, 'schain');
 }
 
 function _getEids(bidRequest) {
@@ -854,6 +821,48 @@ function _parseNativeBidResponse(bid) {
   bid.native = native
 }
 
+function _getFloors(bidRequest) {
+  if (!utils.isFn(bidRequest.getFloor)) {
+    return false;
+  }
+
+  const floors = [];
+
+  const getAndPush = (mediaType, size) => {
+    const info = bidRequest.getFloor({
+      currency: CURRENCY,
+      mediaType,
+      size: []
+    });
+
+    floors.push(utils.cleanObj({
+      mt: mediaType,
+      s: utils.isArray(size) ? `${size[0]}x${size[1]}` : undefined,
+      f: (!isNaN(info.floor) && info.currency === CURRENCY) ? info.floor : DEFAULT_FLOOR
+    }));
+  }
+
+  Object.keys(bidRequest.mediaTypes).forEach(mediaType => {
+    if (SUPPORTED_MEDIA_TYPES.indexOf(mediaType) !== -1) {
+      const sizeProp = mediaType === VIDEO ? 'playerSize' : 'sizes';
+
+      if (bidRequest.mediaTypes[mediaType][sizeProp] && bidRequest.mediaTypes[mediaType][sizeProp].length) {
+        if (utils.isArray(bidRequest.mediaTypes[mediaType][sizeProp][0])) {
+          bidRequest.mediaTypes[mediaType][sizeProp].forEach(size => {
+            getAndPush(mediaType, [size[0], size[1]]);
+          });
+        } else {
+          getAndPush(mediaType, [bidRequest.mediaTypes[mediaType][sizeProp][0], bidRequest.mediaTypes[mediaType][sizeProp][1]]);
+        }
+      } else {
+        getAndPush(mediaType, '*');
+      }
+    }
+  });
+
+  return floors;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -949,6 +958,9 @@ export const spec = {
     const adUnits = utils._map(validBidRequests, (bidRequest) => {
       bidRequest.features = internal.getFeatures(bidRequest, bidderRequest);
 
+      // Handle priceFloors module
+      bidRequest.floors = _getFloors(bidRequest);
+
       if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
         _buildVideoBidRequest(bidRequest);
       }
@@ -958,10 +970,14 @@ export const spec = {
 
     // Group ad units by organizationId
     const groupedAdUnits = adUnits.reduce((groupedAdUnits, adUnit) => {
-      adUnit.params.organizationId = adUnit.params.organizationId.toString();
+      const adUnitCopy = utils.deepClone(adUnit);
+      adUnitCopy.params.organizationId = adUnitCopy.params.organizationId.toString();
 
-      groupedAdUnits[adUnit.params.organizationId] = groupedAdUnits[adUnit.params.organizationId] || [];
-      groupedAdUnits[adUnit.params.organizationId].push(adUnit);
+      // remove useless props
+      delete adUnitCopy.floorData;
+
+      groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
+      groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);
 
       return groupedAdUnits;
     }, {});

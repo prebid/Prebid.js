@@ -99,6 +99,12 @@ const USER_IDS_CONFIG = {
     atype: 3
   },
 
+  // dmdId
+  'dmdId': {
+    source: 'hcn.health',
+    atype: 3
+  },
+
   // lotamePanoramaId
   lotamePanoramaId: {
     source: 'crwdcntrl.net',
@@ -114,7 +120,15 @@ const USER_IDS_CONFIG = {
   // merkleId
   'merkleId': {
     source: 'merkleinc.com',
-    atype: 3
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      return (data && data.keyID) ? {
+        keyID: data.keyID
+      } : undefined;
+    }
   },
 
   // NetId
@@ -203,6 +217,15 @@ const USER_IDS_CONFIG = {
     getValue: function(data) {
       return data.id;
     }
+  },
+  'deepintentId': {
+    source: 'deepintent.com',
+    atype: 3
+  },
+  // Admixer Id
+  'admixerId': {
+    source: 'admixer.net',
+    atype: 3
   }
 };
 

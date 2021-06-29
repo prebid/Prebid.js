@@ -352,7 +352,7 @@ describe('Zemanta Adapter', function () {
                     nurl: 'http://example.com/win/${AUCTION_PRICE}',
                     adm: '{"ver":"1.2","assets":[{"id":3,"required":1,"img":{"url":"http://example.com/img/url","w":120,"h":100}},{"id":0,"required":1,"title":{"text":"Test title"}},{"id":5,"data":{"value":"Test sponsor"}}],"link":{"url":"http://example.com/click/url"},"eventtrackers":[{"event":1,"method":1,"url":"http://example.com/impression"}]}',
                     adomain: [
-                      'example.co'
+                      'example.com'
                     ],
                     cid: '3487171',
                     crid: '28023739',
@@ -386,6 +386,11 @@ describe('Zemanta Adapter', function () {
             currency: 'USD',
             mediaType: 'native',
             nurl: 'http://example.com/win/${AUCTION_PRICE}',
+            meta: {
+              'advertiserDomains': [
+                'example.com'
+              ]
+            },
             native: {
               clickTrackers: undefined,
               clickUrl: 'http://example.com/click/url',
@@ -459,7 +464,12 @@ describe('Zemanta Adapter', function () {
             nurl: 'http://example.com/win/${AUCTION_PRICE}',
             ad: '<div>ad</div>',
             width: 300,
-            height: 250
+            height: 250,
+            meta: {
+              'advertiserDomains': [
+                'example.com'
+              ]
+            },
           }
         ]
 
