@@ -286,11 +286,13 @@ function getEnpoint(bidRequest) {
 function getConsentsIds(gdprConsent) {
   const consents = utils.deepAccess(gdprConsent, 'vendorData.purpose.consents', []);
   let consentsIds = [];
-  for (const [key, value] of Object.entries(consents)) {
-    if (value === true) {
+
+  Object.keys(consents).forEach(function (key) {
+    if (consents[key] === true) {
       consentsIds.push(key);
     }
-  }
+  });
+
   return consentsIds.join(',');
 }
 
