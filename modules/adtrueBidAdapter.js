@@ -77,15 +77,6 @@ function _getDomainFromURL(url) {
   return anchor.hostname;
 }
 
-function _parseSlotParam(paramName, paramValue) {
-  switch (paramName) {
-    case 'reserve':
-      return parseFloat(paramValue) || UNDEFINED;
-    default:
-      return paramValue;
-  }
-}
-
 let platform = (function getPlatform() {
   var ua = navigator.userAgent;
   if (ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1) {
@@ -380,7 +371,7 @@ function _createImpressionObject(bid, conf) {
   impObj = {
     id: bid.bidId,
     tagid: String(bid.params.zoneId || undefined),
-    bidfloor: _parseSlotParam('reserve', bid.params.reserve),
+    bidfloor: 0,
     secure: 1,
     ext: {},
     bidfloorcur: ADTRUE_CURRENCY

@@ -40,6 +40,13 @@ describe('SSPBC adapter', function () {
       bidderRequestId,
       bidId: auctionId + '1',
       transactionId,
+      ortb2Imp: {
+        ext: {
+          data: {
+            pbadslot: 'test_wideboard'
+          }
+        }
+      }
     },
     {
       adUnitCode: 'test_rectangle',
@@ -61,6 +68,28 @@ describe('SSPBC adapter', function () {
       auctionId,
       bidderRequestId,
       bidId: auctionId + '2',
+      transactionId,
+    },
+    {
+      adUnitCode: 'test_rectangle_2',
+      bidder: BIDDER_CODE,
+      mediaTypes: {
+        banner: {
+          sizes: [
+            [300, 250]
+          ]
+        }
+      },
+      sizes: [
+        [300, 250]
+      ],
+      params: {
+        id: '011',
+        siteId: '8816',
+      },
+      auctionId,
+      bidderRequestId,
+      bidId: auctionId + '3',
       transactionId,
     }
     ];
@@ -235,6 +264,21 @@ describe('SSPBC adapter', function () {
           }],
           'seat': 'dsp2',
           'group': 0
+        }, {
+          'bid': [{
+            'id': '2d766853-ea07-4529-8299-5f0ebaddfaza',
+            'impid': '011',
+            'siteid': '8816',
+            'slotid': '011',
+            'price': 2,
+            'adm': 'AD CODE 3',
+            'cid': '57745',
+            'crid': '858253',
+            'w': 300,
+            'h': 250
+          }],
+          'seat': 'dsp3',
+          'group': 0
         }],
         'cur': 'PLN'
       }
@@ -338,6 +382,9 @@ describe('SSPBC adapter', function () {
     const requestSingle = spec.buildRequests([bids[0]], bidRequestSingle);
     const payload = request ? JSON.parse(request.data) : { site: false, imp: false };
     const payloadSingle = request ? JSON.parse(requestSingle.data) : { site: false, imp: false };
+    const payloadExt0 = payload.imp ? payload.imp[0].ext : {};
+    const payloadExt1 = payload.imp ? payload.imp[1].ext : {};
+    const payloadExt2 = payload.imp ? payload.imp[2].ext : {};
 
     it('should send bid request to endpoint via POST', function () {
       expect(request.url).to.contain(BIDDER_URL);
@@ -352,6 +399,17 @@ describe('SSPBC adapter', function () {
     it('should create one imp object per bid', function () {
       expect(payload.imp.length).to.equal(bids.length);
       expect(payloadSingle.imp.length).to.equal(1);
+    });
+
+    it('should add first party data (pbslot)', function () {
+      expect(payloadExt0.data).to.be.an('object').and.to.have.property('pbadslot');
+    });
+
+    it('should add maximum size of adunit, and how many times this size has been requested (pbsize)', function () {
+      expect(payloadExt0.data).to.be.an('object').and.to.have.property('pbsize');
+      expect(payloadExt0.data.pbsize).to.equal('750x200_1');
+      expect(payloadExt1.data.pbsize).to.equal('300x250_1');
+      expect(payloadExt2.data.pbsize).to.equal('300x250_2');
     });
 
     it('should save bidder request data', function () {

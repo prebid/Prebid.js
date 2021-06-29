@@ -229,7 +229,6 @@ describe('the rubicon adapter', function () {
     bid.userId = {
       lipb: {lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB']},
       idl_env: '1111-2222-3333-4444',
-      sharedid: {id: '1111', third: '2222'},
       tdid: '3000',
       pubcid: '4000',
       pubProvidedId: [{
@@ -371,6 +370,7 @@ describe('the rubicon adapter', function () {
     utils.logError.restore();
     config.resetConfig();
     resetRubiConf();
+    delete $$PREBID_GLOBAL$$.installedModules;
   });
 
   describe('MAS mapping / ordering', function () {
@@ -508,6 +508,38 @@ describe('the rubicon adapter', function () {
 
           expect(data['site_id']).to.equal('70608');
           expect(data['p_pos']).to.equal(undefined);
+        });
+
+        it('should not send p_pos to AE if not mediaTypes.banner.pos is invalid', function () {
+          var bidRequest = utils.deepClone(bidderRequest);
+          bidRequest.bids[0].mediaTypes = {
+            banner: {
+              pos: 5
+            }
+          };
+          delete bidRequest.bids[0].params.position;
+
+          let [request] = spec.buildRequests(bidRequest.bids, bidRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['site_id']).to.equal('70608');
+          expect(data['p_pos']).to.equal(undefined);
+        });
+
+        it('should send p_pos to AE if mediaTypes.banner.pos is valid', function () {
+          var bidRequest = utils.deepClone(bidderRequest);
+          bidRequest.bids[0].mediaTypes = {
+            banner: {
+              pos: 1
+            }
+          };
+          delete bidRequest.bids[0].params.position;
+
+          let [request] = spec.buildRequests(bidRequest.bids, bidRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['site_id']).to.equal('70608');
+          expect(data['p_pos']).to.equal('atf');
         });
 
         it('should not send p_pos to AE if not params.position is invalid', function () {
@@ -845,12 +877,27 @@ describe('the rubicon adapter', function () {
                 data: {
                   page: 'home'
                 }
+              },
+              content: {
+                data: [{
+                  'name': 'www.dataprovider1.com',
+                  'ext': { 'segtax': 1 },
+                  'segment': [
+                    { 'id': '987' }
+                  ]
+                }, {
+                  'name': 'www.dataprovider1.com',
+                  'ext': { 'segtax': 2 },
+                  'segment': [
+                    { 'id': '432' }
+                  ]
+                }]
               }
             };
             const user = {
               data: [{
                 'name': 'www.dataprovider1.com',
-                'ext': { 'taxonomyname': 'IAB Audience Taxonomy' },
+                'ext': { 'segtax': 4 },
                 'segment': [
                   { 'id': '687' },
                   { 'id': '123' }
@@ -885,6 +932,7 @@ describe('the rubicon adapter', function () {
               'tg_v.gender': 'M',
               'tg_v.age': '40',
               'tg_v.iab': '687,123',
+              'tg_i.iab': '987,432',
               'tg_v.yob': '1984',
               'tg_i.rating': '4-star,5-star',
               'tg_i.page': 'home',
@@ -1209,23 +1257,6 @@ describe('the rubicon adapter', function () {
             });
           });
 
-          describe('SharedID support', function () {
-            it('should send sharedid when userIdAsEids contains sharedId', function () {
-              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              clonedBid.userId = {
-                sharedid: {
-                  id: '1111',
-                  third: '2222'
-                }
-              };
-              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
-              let [request] = spec.buildRequests([clonedBid], bidderRequest);
-              let data = parseQuery(request.data);
-
-              expect(data['eid_sharedid.org']).to.equal('1111^1^2222');
-            });
-          });
-
           describe('pubProvidedId support', function () {
             it('should send pubProvidedId when userIdAsEids contains pubProvidedId ids', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
@@ -1295,10 +1326,7 @@ describe('the rubicon adapter', function () {
               config.setConfig({user: {id: '123'}});
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
-                sharedid: {
-                  id: '1111',
-                  third: '2222'
-                }
+                pubcid: '1111'
               };
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
@@ -1503,6 +1531,8 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
+          // should contain version
+          expect(post.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: 'v$prebid.version$'});
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           // EIDs should exist
           expect(post.user.ext).to.have.property('eids').that.is.an('array');
@@ -1518,29 +1548,24 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.user.ext.eids[1].uids[0].atype).to.equal(3);
-          // SharedId should exist
-          expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
-          expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[2].uids[0].atype).to.equal(1);
-          expect(post.user.ext.eids[2].uids[0].ext.third).to.equal('2222');
           // UnifiedId should exist
-          expect(post.user.ext.eids[3].source).to.equal('adserver.org');
-          expect(post.user.ext.eids[3].uids[0].atype).to.equal(1);
-          expect(post.user.ext.eids[3].uids[0].id).to.equal('3000');
+          expect(post.user.ext.eids[2].source).to.equal('adserver.org');
+          expect(post.user.ext.eids[2].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[2].uids[0].id).to.equal('3000');
           // PubCommonId should exist
-          expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
-          expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
-          expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
+          expect(post.user.ext.eids[3].source).to.equal('pubcid.org');
+          expect(post.user.ext.eids[3].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[3].uids[0].id).to.equal('4000');
           // example should exist
-          expect(post.user.ext.eids[5].source).to.equal('example.com');
-          expect(post.user.ext.eids[5].uids[0].id).to.equal('333333');
+          expect(post.user.ext.eids[4].source).to.equal('example.com');
+          expect(post.user.ext.eids[4].uids[0].id).to.equal('333333');
           // id-partner.com
-          expect(post.user.ext.eids[6].source).to.equal('id-partner.com');
-          expect(post.user.ext.eids[6].uids[0].id).to.equal('4444444');
+          expect(post.user.ext.eids[5].source).to.equal('id-partner.com');
+          expect(post.user.ext.eids[5].uids[0].id).to.equal('4444444');
           // CriteoId should exist
-          expect(post.user.ext.eids[7].source).to.equal('criteo.com');
-          expect(post.user.ext.eids[7].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[7].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[6].source).to.equal('criteo.com');
+          expect(post.user.ext.eids[6].uids[0].id).to.equal('1111');
+          expect(post.user.ext.eids[6].uids[0].atype).to.equal(1);
 
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
@@ -1662,6 +1687,35 @@ describe('the rubicon adapter', function () {
           // should have the aliases object sent to PBS
           expect(request.data.ext.prebid).to.haveOwnProperty('multibid');
           expect(request.data.ext.prebid.multibid).to.deep.equal(expected);
+        });
+
+        it('should pass client analytics to PBS endpoint if all modules included', function () {
+          createVideoBidderRequest();
+          $$PREBID_GLOBAL$$.installedModules = [];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let payload = request.data;
+
+          expect(payload.ext.prebid.analytics).to.not.be.undefined;
+          expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
+        });
+
+        it('should pass client analytics to PBS endpoint if rubicon analytics adapter is included', function () {
+          createVideoBidderRequest();
+          $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter', 'rubiconAnalyticsAdapter'];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let payload = request.data;
+
+          expect(payload.ext.prebid.analytics).to.not.be.undefined;
+          expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
+        });
+
+        it('should not pass client analytics to PBS endpoint if rubicon analytics adapter is not included', function () {
+          createVideoBidderRequest();
+          $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter'];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let payload = request.data;
+
+          expect(payload.ext.prebid.analytics).to.be.undefined;
         });
 
         it('should send video exp param correctly when set', function () {
@@ -3017,6 +3071,153 @@ describe('the rubicon adapter', function () {
           expect(bids[0].currency).to.equal('USD');
           expect(bids[0].width).to.equal(640);
           expect(bids[0].height).to.equal(480);
+        });
+      });
+
+      describe('for outstream video', function () {
+        const sandbox = sinon.createSandbox();
+        beforeEach(function () {
+          createVideoBidderRequestOutstream();
+          config.setConfig({rubicon: {
+            rendererConfig: {
+              align: 'left',
+              closeButton: true
+            },
+            rendererUrl: 'https://example.test/renderer.js'
+          }});
+          window.MagniteApex = {
+            renderAd: function() {
+              return null;
+            }
+          }
+        });
+
+        afterEach(function () {
+          sandbox.restore();
+          delete window.MagniteApex;
+        });
+
+        it('should register a successful bid', function () {
+          let response = {
+            cur: 'USD',
+            seatbid: [{
+              bid: [{
+                id: '0',
+                impid: 'outstream_video1',
+                adomain: ['test.com'],
+                price: 2,
+                crid: '4259970',
+                ext: {
+                  bidder: {
+                    rp: {
+                      mime: 'application/javascript',
+                      size_id: 201,
+                      advid: 12345
+                    }
+                  },
+                  prebid: {
+                    targeting: {
+                      hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                    },
+                    type: 'video'
+                  }
+                }
+              }],
+              group: 0,
+              seat: 'rubicon'
+            }],
+          };
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+
+          expect(bids).to.be.lengthOf(1);
+
+          expect(bids[0].seatBidId).to.equal('0');
+          expect(bids[0].creativeId).to.equal('4259970');
+          expect(bids[0].cpm).to.equal(2);
+          expect(bids[0].ttl).to.equal(300);
+          expect(bids[0].netRevenue).to.equal(true);
+          expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
+          expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].meta.mediaType).to.equal('video');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
+          expect(bids[0].meta.advertiserId).to.equal(12345);
+          expect(bids[0].bidderCode).to.equal('rubicon');
+          expect(bids[0].currency).to.equal('USD');
+          expect(bids[0].width).to.equal(640);
+          expect(bids[0].height).to.equal(320);
+          // check custom renderer
+          expect(typeof bids[0].renderer).to.equal('object');
+          expect(bids[0].renderer.getConfig()).to.deep.equal({
+            align: 'left',
+            closeButton: true
+          });
+          expect(bids[0].renderer.url).to.equal('https://example.test/renderer.js');
+        });
+
+        it('should render ad with Magnite renderer', function () {
+          let response = {
+            cur: 'USD',
+            seatbid: [{
+              bid: [{
+                id: '0',
+                impid: 'outstream_video1',
+                adomain: ['test.com'],
+                price: 2,
+                crid: '4259970',
+                ext: {
+                  bidder: {
+                    rp: {
+                      mime: 'application/javascript',
+                      size_id: 201,
+                      advid: 12345
+                    }
+                  },
+                  prebid: {
+                    targeting: {
+                      hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                    },
+                    type: 'video'
+                  }
+                },
+                nurl: 'https://test.com/vast.xml'
+              }],
+              group: 0,
+              seat: 'rubicon'
+            }],
+          };
+
+          sinon.spy(window.MagniteApex, 'renderAd');
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          const bid = bids[0];
+          bid.adUnitCode = 'outstream_video1_placement';
+          const adUnit = document.createElement('div');
+          adUnit.id = bid.adUnitCode;
+          document.body.appendChild(adUnit);
+
+          bid.renderer.render(bid);
+
+          const renderCall = window.MagniteApex.renderAd.getCall(0);
+          expect(renderCall.args[0]).to.deep.equal({
+            closeButton: true,
+            collapse: true,
+            height: 320,
+            label: undefined,
+            placement: {
+              align: 'left',
+              attachTo: '#outstream_video1_placement',
+              position: 'append',
+            },
+            vastUrl: 'https://test.com/vast.xml',
+            width: 640
+          });
+          // cleanup
+          adUnit.parentNode.removeChild(adUnit);
         });
       });
 

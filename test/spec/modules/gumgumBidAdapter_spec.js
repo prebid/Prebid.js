@@ -189,6 +189,20 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.not.have.property('irisid');
     });
 
+    it('should set the global placement id (gpid)', function () {
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest).to.have.property('gpid');
+      expect(bidRequest.gpid).to.equal(123456);
+    });
+
+    it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {
+      const req = { ...bidRequests[0], params: { bidfloor: 42 } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest.data).to.have.property('fp');
+      expect(bidRequest.data.fp).to.equal(42);
+    });
+
     describe('product id', function () {
       it('should set the correct pi param if native param is found', function () {
         const request = { ...bidRequests[0], params: { ...zoneParam, native: 2 } };
@@ -433,6 +447,20 @@ describe('gumgumAdapter', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.data).to.not.include.any.keys('tdid');
     });
+    it('should send IDL envelope ID if available', function () {
+      const idl_env = 'abc123';
+      const request = { ...bidRequests[0], userId: { idl_env } };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.have.property('idl_env');
+      expect(bidRequest.data.idl_env).to.equal(idl_env);
+    });
+    it('should not send IDL envelope if not available', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.not.have.property('idl_env');
+    });
     it('should send schain parameter in serialized form', function () {
       const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
       const request = spec.buildRequests(bidRequests)[0];
@@ -562,6 +590,25 @@ describe('gumgumAdapter', function () {
       let body;
       let result = spec.interpretResponse({ body }, bidRequest);
       expect(result.length).to.equal(0);
+    });
+
+    it('uses response width and height', function () {
+      const result = spec.interpretResponse({ body: serverResponse }, bidRequest)[0];
+      expect(result.width).to.equal(serverResponse.ad.width.toString());
+      expect(result.height).to.equal(serverResponse.ad.height.toString());
+    });
+
+    it('defaults to use bidRequest sizes when width and height are not found', function () {
+      const { ad, jcsi, pag, thms, meta } = serverResponse
+      const noAdSizes = { ...ad }
+      delete noAdSizes.width
+      delete noAdSizes.height
+      const responseWithoutSizes = { jcsi, pag, thms, meta, ad: noAdSizes }
+      const request = { ...bidRequest, sizes: [[100, 200]] }
+      const result = spec.interpretResponse({ body: responseWithoutSizes }, request)[0];
+
+      expect(result.width).to.equal(request.sizes[0][0].toString())
+      expect(result.height).to.equal(request.sizes[0][1].toString())
     });
 
     it('returns 1x1 when eligible product and size available', function () {
