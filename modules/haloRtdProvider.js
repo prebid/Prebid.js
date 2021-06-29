@@ -69,12 +69,31 @@ function paramOrDefault(param, defaultVal, arg) {
  * @param {Object} rtdConfig
  */
 export function addRealTimeData(bidConfig, rtd, rtdConfig) {
-  let ortb2 = config.getConfig('ortb2') || {};
-
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
-  } else if (rtd.ortb2) {
-    config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+  } else {
+    if (isPlainObject(rtd.ortb2)) {
+      let ortb2 = config.getConfig('ortb2') || {};
+      config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+    }
+
+    if (isPlainObject(rtd.ortb2b)) {
+      let bidderConfig = config.getBidderConfig();
+
+      Object.keys(rtd.ortb2b).forEach(bidder => {
+        let rtdOptions = rtd.ortb2b[bidder] || {};
+
+        let bidderOptions = {};
+        if (isPlainObject(bidderConfig[bidder])) {
+          bidderOptions = bidderConfig[bidder];
+        }
+
+        config.setBidderConfig({
+          bidders: [bidder],
+          config: mergeLazy(bidderOptions, rtdOptions)
+        });
+      });
+    }
   }
 }
 

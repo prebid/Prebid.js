@@ -40,7 +40,7 @@ describe('truereachBidAdapterTests', function () {
     expect(req_data.imp[0].id).to.equal('34ce3f3b15190a');
     expect(req_data.imp[0].banner.w).to.equal(300);
     expect(req_data.imp[0].banner.h).to.equal(250);
-    expect(req_data.imp[0].bidfloor).to.equal(0.1);
+    expect(req_data.imp[0].bidfloor).to.equal(0);
   });
 
   it('validate_response_params', function () {

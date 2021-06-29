@@ -140,6 +140,20 @@ function validateNativeMediaType(adUnit) {
   return validatedAdUnit;
 }
 
+function validateAdUnitPos(adUnit, mediaType) {
+  let pos = utils.deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
+
+  if (!pos || !utils.isNumber(pos) || !isFinite(pos)) {
+    let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
+
+    utils.logWarn(warning);
+    events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: warning});
+    delete adUnit.mediaTypes[mediaType].pos;
+  }
+
+  return adUnit
+}
+
 export const adUnitSetupChecks = {
   validateBannerMediaType,
   validateVideoMediaType,
@@ -167,10 +181,12 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
 
     if (mediaTypes.banner) {
       validatedBanner = validateBannerMediaType(adUnit);
+      if (mediaTypes.banner.hasOwnProperty('pos')) validatedBanner = validateAdUnitPos(validatedBanner, 'banner');
     }
 
     if (mediaTypes.video) {
       validatedVideo = validatedBanner ? validateVideoMediaType(validatedBanner) : validateVideoMediaType(adUnit);
+      if (mediaTypes.video.hasOwnProperty('pos')) validatedVideo = validateAdUnitPos(validatedVideo, 'video');
     }
 
     if (mediaTypes.native) {
@@ -382,7 +398,7 @@ function emitAdRenderFail({ reason, message, bid, id }) {
  * @param  {string} id bid id to locate the ad
  * @alias module:pbjs.renderAd
  */
-$$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
+$$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
 
@@ -472,7 +488,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
     const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
     emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
   }
-};
+});
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all

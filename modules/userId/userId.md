@@ -50,7 +50,15 @@ pbjs.setConfig({
                 // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
                 partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
             }
-        }, {
+        },{
+            name: 'akamaiDAPId',
+            params: {
+              apiHostname: '<see your Akamai account rep>',
+              domain: 'your-domain.com',
+              type: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
+              identity: ‘your@email.com’ | ‘6175551234' | ...
+            }
+        },{
             name: 'identityLink',
             params: {
                 pid: '999', // Set your real identityLink placement ID here
@@ -71,16 +79,6 @@ pbjs.setConfig({
                 name: '_li_pbid',
                 expires: 60
             }
-        }, {
-             name: 'sharedId',
-              params: {
-                    syncTime: 60 // in seconds, default is 24 hours
-               },
-             storage: {
-                 type: 'cookie',
-                 name: 'sharedid',
-                 expires: 28
-              }
         }, {
              name: 'criteo',
              storage: {             // It is best not to specify this parameter since the module needs to be called as many times as possible

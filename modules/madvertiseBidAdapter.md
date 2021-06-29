@@ -30,7 +30,7 @@ support@madvertise.com for more information.
             {
                 bidder: "madvertise",
                 params: {
-                    s: "/4543756/prebidadaptor/madvertiseHB"
+                    zoneId: "/4543756/prebidadaptor/madvertiseHB"
                 }
             }
         ]

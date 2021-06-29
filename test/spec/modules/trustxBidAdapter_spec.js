@@ -225,6 +225,41 @@ describe('TrustXAdapter', function () {
         'key': 'emptyArr'
       }]);
     });
+
+    it('should attach rtd segments as keywords', function () {
+      const bidRequestWithKeywords = [].concat(bidRequests);
+      bidRequestWithKeywords[1] = Object.assign({},
+        bidRequests[1],
+        {
+          rtd: {
+            p_standard: {
+              targeting: {
+                segments: ['perm_seg_1', 'perm_seg_2']
+              }
+            },
+            jwplayer: {
+              targeting: {
+                segments: ['jwp_seg_1', 'jwp_seg_2']
+              }
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests(bidRequestWithKeywords, bidderRequest)[0];
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.keywords).to.be.an('string');
+      payload.keywords = JSON.parse(payload.keywords);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'jwpseg',
+        'value': ['jwp_seg_1', 'jwp_seg_2']
+      }, {
+        'key': 'p_standard',
+        'value': ['perm_seg_1', 'perm_seg_2']
+      }]);
+    });
   });
 
   describe('buildRequests with new format', function () {
@@ -593,6 +628,32 @@ describe('TrustXAdapter', function () {
       expect(payload.site.content).to.deep.equal(jsContent);
     });
 
+    it('if segment is present in permutive targeting, payload must have right params', function () {
+      const permSegments = ['test_perm_1', 'test_perm_2'];
+      const bidRequestsWithPermutiveTargeting = bidRequests.map((bid) => {
+        return Object.assign({
+          rtd: {
+            p_standard: {
+              targeting: {
+                segments: permSegments
+              }
+            }
+          }
+        }, bid);
+      });
+      const request = spec.buildRequests(bidRequestsWithPermutiveTargeting, bidderRequest)[0];
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('user');
+      expect(payload.user.data).to.deep.equal([{
+        name: 'permutive',
+        segment: [
+          {name: 'p_standard', value: permSegments[0]},
+          {name: 'p_standard', value: permSegments[1]}
+        ]
+      }]);
+    });
+
     it('should contain the keyword values if it present in ortb2.(site/user)', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'ortb2.user' ? {'keywords': 'foo'} : (arg === 'ortb2.site' ? {'keywords': 'bar'} : null));
@@ -661,7 +722,7 @@ describe('TrustXAdapter', function () {
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 43, 'h': 250, 'w': 300}], 'seat': '1'},
+      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 43, 'h': 250, 'w': 300, 'adomain': ['somedomain.com']}], 'seat': '1'},
       {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 44, 'h': 600, 'w': 300}], 'seat': '1'},
       {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 43, 'h': 90, 'w': 728}], 'seat': '1'},
       {'bid': [{'price': 0, 'auid': 45, 'h': 250, 'w': 300}], 'seat': '1'},
@@ -699,6 +760,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': ['somedomain.com']
+          },
         }
       ];
 
@@ -756,6 +820,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': ['somedomain.com']
+          },
         },
         {
           'requestId': '4dff80cc4ee346',
@@ -769,6 +836,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         },
         {
           'requestId': '5703af74d0472a',
@@ -782,6 +852,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         }
       ];
 
@@ -909,6 +982,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         },
         {
           'requestId': '4e111f1b66e4',
@@ -922,6 +998,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         },
         {
           'requestId': '26d6f897b516',
@@ -935,6 +1014,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         },
         {
           'requestId': '326bde7fbf69',
@@ -948,6 +1030,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         }
       ];
 
@@ -1009,6 +1094,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         },
         {
           'requestId': '57b2ebe70e16',
@@ -1022,6 +1110,9 @@ describe('TrustXAdapter', function () {
           'mediaType': 'banner',
           'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            'advertiserDomains': []
+          },
         }
       ];
 
@@ -1082,6 +1173,9 @@ describe('TrustXAdapter', function () {
         'mediaType': 'video',
         'netRevenue': true,
         'ttl': 360,
+        'meta': {
+          'advertiserDomains': []
+        },
         'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
         'adResponse': {
           'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
@@ -1161,6 +1255,9 @@ describe('TrustXAdapter', function () {
         'mediaType': 'video',
         'netRevenue': true,
         'ttl': 360,
+        'meta': {
+          'advertiserDomains': []
+        },
         'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
         'adResponse': {
           'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
@@ -1178,6 +1275,9 @@ describe('TrustXAdapter', function () {
         'mediaType': 'video',
         'netRevenue': true,
         'ttl': 360,
+        'meta': {
+          'advertiserDomains': []
+        },
         'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>',
         'adResponse': {
           'content': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>'
@@ -1195,6 +1295,9 @@ describe('TrustXAdapter', function () {
         'mediaType': 'video',
         'netRevenue': true,
         'ttl': 360,
+        'meta': {
+          'advertiserDomains': []
+        },
         'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21376532\"><\/Ad>\n<\/VAST>',
         'adResponse': {
           'content': '<VAST version=\"3.0\">\n<Ad id=\"21376532\"><\/Ad>\n<\/VAST>'
