@@ -1151,14 +1151,24 @@ describe('Adagio bid adapter', () => {
       };
       const bid01 = new BidRequestBuilder({
         'mediaTypes': {
-          banner: { sizes: [[300, 250]] }
+          banner: { sizes: [[300, 250]] },
+          video: {
+            context: 'outstream',
+            playerSize: [300, 250],
+            renderer: {
+              url: 'https://url.tld',
+              render: () => true
+            }
+          }
         }
       }).withParams().build();
 
-      const params = spec.transformBidParams({ organizationId: '1000' }, true, adUnit, [{ bidderCode: 'adagio', bids: [bid01] }]);
+      const params = spec.transformBidParams({ organizationId: '1000' }, true, adUnit, [{ bidderCode: 'adagio', auctionId: bid01.auctionId, bids: [bid01] }]);
 
       expect(params.organizationId).to.exist;
-      expect(params.organizationId).to.exist;
+      expect(params.auctionId).to.exist;
+      expect(params.playerName).to.exist;
+      expect(params.playerName).to.equal('other');
       expect(params.features).to.exist;
       expect(params.features.page_dimensions).to.exist;
       expect(params.features.adunit_position).to.exist;
