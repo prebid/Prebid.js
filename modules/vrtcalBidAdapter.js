@@ -73,7 +73,7 @@ export const spec = {
       if (response.seatbid[0].bid[0].adomain && response.seatbid[0].bid[0].adomain.length) {
 	    bidResponse.meta = {
 	      advertiserDomains: response.seatbid[0].bid[0].adomain
-	    };
+	      };
       }
 
       bidResponses.push(bidResponse);
