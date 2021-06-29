@@ -14,6 +14,13 @@ const bidRequests = [
     params: {
       pkey: 'aaaa1111'
     },
+    ortb2Imp: {
+      ext: {
+        data: {
+          pbadslot: 'adslot-id-1'
+        }
+      }
+    },
     userId: {
       tdid: 'fake-tdid',
       pubcid: 'fake-pubcid',
@@ -405,6 +412,18 @@ describe('sharethrough adapter spec', function() {
 
       const builtBidRequest = spec.buildRequests([bidRequest])[0];
       expect(builtBidRequest.data.schain).to.eq(JSON.stringify(bidRequest.schain));
+    });
+
+    describe('gpid', () => {
+      it('should include the gpid param if pbadslot is found in ortb2Imp in the bid request', () => {
+        const bidRequest = spec.buildRequests(bidRequests)[0];
+        expect(bidRequest.data.gpid).to.eq('adslot-id-1')
+      });
+
+      it('should not include the gpid param if pbadslot is not found in ortb2Imp in the bid request', () => {
+        const bidRequest = spec.buildRequests(bidRequests)[1];
+        expect(bidRequest.data).to.not.include.any.keys('gpid');
+      });
     });
 
     it('should add badv if provided', () => {

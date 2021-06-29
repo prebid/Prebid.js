@@ -53,8 +53,8 @@ describe('Optimera RTD targeting object is properly formed', () => {
   const adDivs = ['div-0', 'div-1'];
   it('applyTargeting properly created the targeting object', () => {
     const targeting = optimeraRTD.returnTargetingData(adDivs);
-    expect(targeting).to.deep.include({'div-0': {'optimera': ['A5', 'A6']}});
-    expect(targeting).to.deep.include({'div-1': {'optimera': ['A7', 'A8']}});
+    expect(targeting).to.deep.include({'div-0': {'optimera': [['A5', 'A6']]}});
+    expect(targeting).to.deep.include({'div-1': {'optimera': [['A7', 'A8']]}});
   });
 });
 

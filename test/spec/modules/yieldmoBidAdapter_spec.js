@@ -431,6 +431,20 @@ describe('YieldmoAdapter', function () {
         const requests = build([mockVideoBid()]);
         expect(requests[0].data.imp[0].bidfloor).to.equal(0);
       });
+
+      it('should add ats_envelope to video bid request', function() {
+        const envelope = 'test_envelope';
+        const requests = build([mockVideoBid({}, { lr_env: envelope })]);
+
+        expect(requests[0].data.ats_envelope).to.equal(envelope);
+      });
+
+      it('should add ats_envelope to banner bid request', function() {
+        const envelope = 'test_envelope';
+        const requests = build([mockBannerBid({}, { lr_env: envelope })]);
+
+        expect(requests[0].data.ats_envelope).to.equal(envelope);
+      });
     });
   });
 
