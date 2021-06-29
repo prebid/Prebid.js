@@ -1,21 +1,24 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const VERSION = '4.0.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
 // Todo: Update URL to new open RTB endpoint
-const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
+const STR_ENDPOINT = `http://localhost:3030/universal/v1?supplyId=${SUPPLY_ID}`;
 
 // this allows stubbing of utility function that is used internally by the sharethrough adapter
 export const sharethroughInternal = {
-  getProtocol
+  getProtocol,
 };
 
 export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
+  supportedFormat: [BANNER, VIDEO],
+  supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
 
@@ -49,8 +52,8 @@ export const sharethroughAdapterSpec = {
             { attr: 'userId.parrableId', source: 'parrable.com' },
             { attr: 'userId.netId', source: 'netid.de' },
             { attr: 'userId.sharedid', source: 'sharedid.org' },
-          ])
-        }
+          ]),
+        },
       },
       regs: {
         coppa: config.getConfig('coppa') === true ? 1 : 0,
@@ -61,8 +64,8 @@ export const sharethroughAdapterSpec = {
           id: SUPPLY_ID,
           version: '$prebid.version$',
           str: VERSION,
-          schain: bidRequests[0].schain
-        }
+          schain: bidRequests[0].schain,
+        },
       },
       bcat: bidRequests[0].params.bcat || [],
       badv: bidRequests[0].params.badv || [],
@@ -100,12 +103,12 @@ export const sharethroughAdapterSpec = {
           mimes: bidReq.mediaTypes.video.mimes || ['video/mp4'],
           protocols: getVideoProtocols(bidReq.mediaTypes.video),
           h: bidReq.mediaTypes.video.playerSize[0][1],
-          w: bidReq.mediaTypes.video.playerSize[0][0]
-        }
+          w: bidReq.mediaTypes.video.playerSize[0][0],
+        };
       } else {
         impression.banner = {
           topframe: utils.inIframe() ? 0 : 1,
-          format: bidReq.sizes.map(size => ({ w: +size[0], h: +size[1] }))
+          format: bidReq.sizes.map(size => ({ w: +size[0], h: +size[1] })),
         };
       }
 
@@ -114,7 +117,7 @@ export const sharethroughAdapterSpec = {
         tagid: String(bidReq.params.pkey),
         secure: secure ? 1 : 0,
         bidfloor: getFloor(bidReq),
-        ...impression
+        ...impression,
       };
     });
 
@@ -128,9 +131,9 @@ export const sharethroughAdapterSpec = {
       },
       data: {
         ...req,
-        imp: imps
+        imp: imps,
       },
-      bidderRequest
+      bidderRequest,
     };
   },
 
@@ -139,21 +142,33 @@ export const sharethroughAdapterSpec = {
       return [];
     }
 
-    return body.seatbid[0].bid.map(bid => ({
-      requestId: bid.impid,
-      width: +bid.w,
-      height: +bid.h,
-      cpm: +bid.price,
-      creativeId: bid.crid,
-      dealId: bid.dealid || null,
-      currency: 'USD',
-      netRevenue: true,
-      ttl: 360,
-      ad: bid.adm,
-      meta: {
-        advertiserDomains: bid.adomain || []
-      },
-    }));
+    return body.seatbid[0].bid.map(bid => {
+      const request = matchRequest(bid.id, req);
+
+      const response = {
+        requestId: bid.impid,
+        width: +bid.w,
+        height: +bid.h,
+        cpm: +bid.price,
+        creativeId: bid.crid,
+        dealId: bid.dealid || null,
+        mediaType: request.mediaTypes && request.mediaTypes.video ? 'video' : 'banner',
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 360,
+        ad: bid.adm,
+        meta: {
+          advertiserDomains: bid.adomain || [],
+        },
+      };
+
+      if (response.mediaType === 'video') {
+        response.vastXml = cleanVast(bid.adm, bid.nurl);
+        response.ttl = 3600;
+      }
+
+      return response;
+    });
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
@@ -174,19 +189,22 @@ export const sharethroughAdapterSpec = {
   },
 
   // Empty implementation for prebid core to be able to find it
-  onTimeout: (data) => {},
+  onTimeout: (data) => {
+  },
 
   // Empty implementation for prebid core to be able to find it
-  onBidWon: (bid) => {},
+  onBidWon: (bid) => {
+  },
 
   // Empty implementation for prebid core to be able to find it
-  onSetTargeting: (bid) => {}
+  onSetTargeting: (bid) => {
+  },
 };
 
 function getVideoApi({ api }) {
   let defaultValue = [2];
   if (api && Array.isArray(api) && api.length > 0) {
-    return api
+    return api;
   } else {
     return defaultValue;
   }
@@ -207,7 +225,7 @@ function getFloor(bid) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: bid.mediaTypes.video ? 'video' : 'banner',
-      size: bid.sizes.map(size => ({ w: size[0], h: size[1] }))
+      size: bid.sizes.map(size => ({ w: size[0], h: size[1] })),
     });
     if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
@@ -220,12 +238,35 @@ function getFloor(bid) {
 function handleUniversalIds(bidRequest, uids) {
   return uids.map((uid) => ({
     source: uid.source,
-    uids: [{ id: utils.deepAccess(bidRequest, uid.attr), atype: 1 }]
-  }))
+    uids: [{ id: utils.deepAccess(bidRequest, uid.attr), atype: 1 }],
+  }));
 }
 
 function getProtocol() {
   return document.location.protocol;
+}
+
+function cleanVast(str, nurl) {
+  try {
+    const toBeRemoved = /<img\s[^>]*?src\s*=\s*['\"]([^'\"]*?)['\"][^>]*?>/;
+    const [img, url] = str.match(toBeRemoved);
+    str = str.replace(toBeRemoved, '');
+
+    if (img && url) {
+      const insrt = `<Impression><![CDATA[${url}]]></Impression>`;
+      str = str.replace('</Impression>', `</Impression>${insrt}`);
+    }
+    return str;
+  } catch (e) {
+    if (!nurl) return str;
+
+    const insrt = `<Impression><![CDATA[${nurl}]]></Impression>`;
+    return str.replace('</Impression>', `</Impression>${insrt}`);
+  }
+}
+
+function matchRequest(id, bidRequest) {
+  return bidRequest.bidderRequest.bids.find(bid => bid.bidId === id);
 }
 
 registerBidder(sharethroughAdapterSpec);
