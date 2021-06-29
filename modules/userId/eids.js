@@ -11,6 +11,12 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // naveggId
+  'naveggId': {
+    source: 'navegg.com',
+    atype: 1
+  },
+
   // pubCommonId
   'pubcid': {
     source: 'pubcid.org',
@@ -202,11 +208,6 @@ const USER_IDS_CONFIG = {
   'deepintentId': {
     source: 'deepintent.com',
     atype: 3
-  },
-  // Akamai Data Activation Platform (DAP)
-  'dapId': {
-    source: 'akamai.com',
-    atype: 1
   },
   // Admixer Id
   'admixerId': {
