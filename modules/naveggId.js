@@ -32,7 +32,7 @@ function readnavIDFromCookie() {
 }
 
 function readnvgnavFromLocalStorage() {
-  var i, results = [];
+  var i;
   const query = '^nvg|^nav';
   for (i in window.localStorage) {
     if (i.match(query) || (!query && typeof i === 'string')) {
