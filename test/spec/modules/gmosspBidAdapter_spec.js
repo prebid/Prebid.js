@@ -3,7 +3,7 @@ import { spec } from 'modules/gmosspBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
-const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
+const ENDPOINT = 'https://matsumoto-ad.devel.sp.gmossp-sp.jp/hb/prebid/query.ad';
 
 describe('GmosspAdapter', function () {
   const adapter = newBidder(spec);
