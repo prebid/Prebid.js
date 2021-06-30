@@ -107,7 +107,7 @@ export const merkleIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData, storedId) {
+  getId(config, consentData) {
     utils.logInfo('User ID - merkleId generating id');
 
     const configParams = (config && config.params) || {};
@@ -126,16 +126,15 @@ export const merkleIdSubmodule = {
       utils.logError('User ID - merkleId submodule requires a valid sv_pubid string to be defined');
       return;
     }
-
-    if (typeof configParams.sv_domain !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid sv_domain string to be defined');
-      return;
-    }
-
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
       utils.logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
     }
+
+    if (typeof configParams.sv_domain !== 'string') {
+      configParams.sv_domain = merkleIdSubmodule.findRootDomain();
+    }
+
     const configStorage = (config && config.storage) || {};
     const resp = generateId(configParams, configStorage)
     return {callback: resp};
@@ -147,6 +146,10 @@ export const merkleIdSubmodule = {
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
       utils.logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
+    }
+
+    if (typeof configParams.sv_domain !== 'string') {
+      configParams.sv_domain = merkleIdSubmodule.findRootDomain();
     }
     const configStorage = (config && config.storage) || {};
     if (configStorage && configStorage.refreshInSeconds && typeof configParams.refreshInSeconds === 'number') {
