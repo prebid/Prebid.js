@@ -77,7 +77,7 @@ describe('AudienceRun bid adapter tests', function() {
   });
 
   describe('buildRequests', function() {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'audiencerun',
         'bidId': '51ef8751f9aead',
@@ -96,6 +96,7 @@ describe('AudienceRun bid adapter tests', function() {
         'bidRequestsCount': 1
       }
     ];
+    const bidRequest = bidRequests[0];
 
     it('sends a valid bid request to ENDPOINT via POST', function() {
       const request = spec.buildRequests(bidRequests, {
@@ -155,6 +156,38 @@ describe('AudienceRun bid adapter tests', function() {
       expect(payload2.gdpr).to.exist;
       expect(payload2.gdpr.consent).to.equal(consentString);
       expect(payload2.gdpr.applies).to.equal(false);
+    });
+
+    it('should use a bidfloor with a 0 value', function() {
+      const bid = Object.assign({}, bidRequest);
+      const request = spec.buildRequests([bid]);
+      const payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(0);
+    })
+
+    it('should use bidfloor param value', function () {
+      const bid = Object.assign({}, bidRequest, {
+        params: {
+          'bidfloor': 0.2
+        }
+      })
+      const request = spec.buildRequests([bid]);
+      const payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(0.2);
+    });
+
+    it('should use floors module value', function () {
+      const bid = Object.assign({}, bidRequest, {
+        params: {
+          'bidfloor': 0.5
+        }
+      })
+      bid.getFloor = () => {
+        return { floor: 1, currency: 'USD' }
+      }
+      const request = spec.buildRequests([bid]);
+      const payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(1);
     });
   });
 
