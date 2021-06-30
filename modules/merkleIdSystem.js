@@ -30,7 +30,7 @@ function getSession(configParams) {
 function setCookie(name, value, expires) {
   let expTime = new Date();
   expTime.setTime(expTime.getTime() + expires * 1000 * 60);
-  storage.setCookie(name, value, expTime.toGMTString());
+  storage.setCookie(name, value, expTime.toUTCString());
 }
 
 function setSession(storage, response) {
@@ -40,8 +40,8 @@ function setSession(storage, response) {
   }
 }
 
-function constructUrl(configParams, storedId) {
-  const session = getSession(configParams, storedId);
+function constructUrl(configParams) {
+  const session = getSession(configParams);
   let url = ID_URL + `?vendor=${configParams.vendor}&sv_cid=${configParams.sv_cid}&sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}`;
   if (session) {
     url = `${url}&sv_session=${session}`;
@@ -50,8 +50,8 @@ function constructUrl(configParams, storedId) {
   return url;
 }
 
-function generateId(configParams, configStorage, storedId) {
-  const url = constructUrl(configParams, storedId);
+function generateId(configParams, configStorage) {
+  const url = constructUrl(configParams);
 
   const resp = function (callback) {
     const callbacks = {
@@ -137,7 +137,7 @@ export const merkleIdSubmodule = {
       return;
     }
     const configStorage = (config && config.storage) || {};
-    const resp = generateId(configParams, configStorage, storedId)
+    const resp = generateId(configParams, configStorage)
     return {callback: resp};
   },
   extendId: function (config = {}, consentData, storedId) {
@@ -163,7 +163,7 @@ export const merkleIdSubmodule = {
       refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > refreshInSeconds * 1000);
       if (refreshNeeded) {
         utils.logInfo('User ID - merkleId needs refreshing id');
-        const resp = generateId(configParams, configStorage, storedId)
+        const resp = generateId(configParams, configStorage)
         return {callback: resp};
       }
     }
