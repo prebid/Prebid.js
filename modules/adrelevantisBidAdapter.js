@@ -124,7 +124,7 @@ export const spec = {
     if (fpdcfg && fpdcfg.context) {
       let fdata = {
         keywords: fpdcfg.context.keywords || '',
-        category: utils.deepAccess(fpdcfg, 'context.data.category') || ''
+        category: fpdcfg.context.category || ''
       }
       payload.fpd = fdata;
     }
@@ -428,9 +428,6 @@ function bidToTag(bid) {
   tag.use_pmt_rule = bid.params.usePaymentRule || false
   tag.prebid = true;
   tag.disable_psa = true;
-  if (bid.params.reserve) {
-    tag.reserve = bid.params.reserve;
-  }
   if (bid.params.position) {
     tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
   }

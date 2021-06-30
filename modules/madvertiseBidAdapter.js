@@ -86,7 +86,11 @@ export const spec = {
       creativeId: responseObj.creativeId,
       netRevenue: responseObj.netRevenue,
       currency: responseObj.currency,
-      dealId: responseObj.dealId
+      dealId: responseObj.dealId,
+      meta: {
+        advertiserDomains: Array.isArray(responseObj.adomain) ? responseObj.adomain : []
+      }
+
     };
     return [bid];
   },

@@ -109,17 +109,6 @@ userIdAsEids = [
     },
 
     {
-        source: 'sharedid.org',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1,
-            ext: {
-                third: 'some-random-id-value'
-             }
-         }]
-    },
-
-    {
         source: 'zeotap.com',
         uids: [{
             id: 'some-random-id-value',
@@ -191,6 +180,13 @@ userIdAsEids = [
         uids: [{
             id: 'some-random-id-value',
             atype: 3
+        }]
+    },
+    {
+        source: 'akamai.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
         }]
     },
     {
