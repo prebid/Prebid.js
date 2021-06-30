@@ -436,7 +436,7 @@ describe('UnrulyAdapter', function () {
       expect(result[0].data.bidderRequest.bids.length).to.equal(2);
     });
     it('should return a server request with a valid exchange url', function () {
-      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].url).to.equal('//targeting.unrulymedia.com/unruly_prebid')
+      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].url).to.equal('https://targeting.unrulymedia.com/unruly_prebid')
     });
     it('should return a server request with a the end point url instead of the exchange url', function () {
       mockBidRequests.bids[0].params.endpoint = '//testendpoint.com';

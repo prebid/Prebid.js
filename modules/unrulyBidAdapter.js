@@ -200,7 +200,7 @@ export const adapter = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let endPoint = '//targeting.unrulymedia.com/unruly_prebid';
+    let endPoint = 'https://targeting.unrulymedia.com/unruly_prebid';
     if (validBidRequests[0]) {
       endPoint = utils.deepAccess(validBidRequests[0], 'params.endpoint') || endPoint;
     }
