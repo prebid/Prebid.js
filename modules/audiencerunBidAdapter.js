@@ -7,11 +7,12 @@ const BIDDER_CODE = 'audiencerun';
 const BASE_URL = 'https://d.audiencerun.com';
 const AUCTION_URL = `${BASE_URL}/prebid`;
 const TIMEOUT_EVENT_URL = `${BASE_URL}/ps/pbtimeout`;
+const DEFAULT_CURRENCY = 'USD';
 
 let requestedBids = [];
 
 /**
- * Get bidder request referer
+ * Gets bidder request referer
  *
  * @param {Object} bidderRequest
  * @return {string}
@@ -22,6 +23,29 @@ function getPageUrl(bidderRequest) {
     utils.deepAccess(bidderRequest, 'refererInfo.referer') ||
     null
   );
+}
+
+/**
+ * Returns bidfloor through floors module if available
+ *
+ * @param {Object} bid
+ * @returns {number}
+ */
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: DEFAULT_CURRENCY,
+      mediaType: BANNER,
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0
+  }
 }
 
 export const spec = {
@@ -60,7 +84,7 @@ export const spec = {
           w: size[0],
           h: size[1],
         })),
-        bidfloor: bid.params.bidfloor || 0.0,
+        bidfloor: getBidFloor(bid),
         bidId: bid.bidId,
         bidderRequestId: utils.getBidIdParameter('bidderRequestId', bid),
         adUnitCode: utils.getBidIdParameter('adUnitCode', bid),
@@ -125,7 +149,7 @@ export const spec = {
       bid.creativeId = bidObject.crid;
       bid.currency = bidObject.currency
         ? bidObject.currency.toUpperCase()
-        : 'USD';
+        : DEFAULT_CURRENCY;
 
       bid.height = bidObject.h;
       bid.width = bidObject.w;
