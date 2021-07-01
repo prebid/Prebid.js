@@ -89,7 +89,7 @@ describe('airgrid RTD Submodule', function() {
       const allBiddersConfig = config.getBidderConfig();
       const bidders = RTD_CONFIG.dataProviders[0].params.bidders;
       Object.keys(allBiddersConfig).forEach((bidder) => {
-        if (!bidders.includes(bidder)) return;
+        if (bidders.indexOf(bidder) === -1) return;
         expect(deepAccess(allBiddersConfig[bidder], 'ortb2.user.ext.data.airgrid')).to.eql(MATCHED_AUDIENCES);
       });
     });
