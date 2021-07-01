@@ -85,7 +85,7 @@ describe('airgrid RTD Submodule', function() {
       getDataFromLocalStorageStub.withArgs(agRTD.AG_AUDIENCE_IDS_KEY).returns(JSON.stringify(MATCHED_AUDIENCES));
       const audiences = agRTD.getMatchedAudiencesFromStorage();
       agRTD.setAudiencesUsingBidderOrtb2(RTD_CONFIG.dataProviders[0], audiences);
-      
+
       const allBiddersConfig = config.getBidderConfig();
       const bidders = RTD_CONFIG.dataProviders[0].params.bidders;
       Object.keys(allBiddersConfig).forEach((bidder) => {

@@ -87,7 +87,7 @@ export function setAudiencesUsingBidderOrtb2(rtdConfig, audiences) {
   const allBiddersConfig = config.getBidderConfig();
   const agOrtb2 = {}
   deepSetValue(agOrtb2, 'ortb2.user.ext.data.airgrid', audiences || []);
-  
+
   bidders.forEach((bidder) => {
     let bidderConfig = {};
     if (isPlainObject(allBiddersConfig[bidder])) {
@@ -127,7 +127,7 @@ export function passAudiencesToBidders(bidConfig, onDone, rtdConfig, userConsent
     if (adUnits) {
       setAudiencesToAppNexusAdUnits(adUnits, audiences);
     }
-  } 
+  }
   onDone();
 };
 
