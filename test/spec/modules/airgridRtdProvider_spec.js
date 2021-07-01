@@ -1,5 +1,6 @@
+/* eslint-disable */
 import {config} from 'src/config.js';
-import {deepAccess} from '../../../src/utils.js'
+import {deepAccess} from 'src/utils.js'
 import {getAdUnits} from '../../fixtures/fixtures.js';
 import * as agRTD from 'modules/airgridRtdProvider.js';
 
@@ -13,6 +14,7 @@ const RTD_CONFIG = {
       apiKey: 'key123',
       accountId: 'sdk',
       publisherId: 'pub123',
+      bidders: ['pubmatic']
     }
   }]
 };
@@ -55,7 +57,7 @@ describe('airgrid RTD Submodule', function() {
     it('merges matched audiences on appnexus AdUnits', function() {
       const adUnits = getAdUnits();
       getDataFromLocalStorageStub.withArgs(agRTD.AG_AUDIENCE_IDS_KEY).returns(JSON.stringify(MATCHED_AUDIENCES));
-      agRTD.getRealTimeData({ adUnits }, () => {}, {}, {});
+      agRTD.passAudiencesToBidders({ adUnits }, () => {}, {}, {});
 
       adUnits.forEach(adUnit => {
         adUnit.bids.forEach(bid => {
@@ -66,10 +68,10 @@ describe('airgrid RTD Submodule', function() {
         });
       });
     });
-    it('does not merge audiences, since none are matched', function() {
+    it('does not merge audiences on appnexus adunits, since none are matched', function() {
       const adUnits = getAdUnits();
       getDataFromLocalStorageStub.withArgs(agRTD.AG_AUDIENCE_IDS_KEY).returns(undefined);
-      agRTD.getRealTimeData({ adUnits }, () => {}, {}, {});
+      agRTD.passAudiencesToBidders({ adUnits }, () => {}, {}, {});
 
       adUnits.forEach(adUnit => {
         adUnit.bids.forEach(bid => {
@@ -78,6 +80,18 @@ describe('airgrid RTD Submodule', function() {
             expect(deepAccess(params, 'keywords.perid')).to.be.undefined;
           }
         });
+      });
+    });
+    it('sets bidder specific ORTB2 config', function() {
+      getDataFromLocalStorageStub.withArgs(agRTD.AG_AUDIENCE_IDS_KEY).returns(JSON.stringify(MATCHED_AUDIENCES));
+      const audiences = agRTD.getMatchedAudiencesFromStorage();
+      agRTD.setAudiencesUsingBidderOrtb2(RTD_CONFIG.dataProviders[0], audiences);
+      
+      const allBiddersConfig = config.getBidderConfig();
+      const bidders = RTD_CONFIG.dataProviders[0].params.bidders;
+      Object.keys(allBiddersConfig).forEach((bidder) => {
+        if (!bidders.includes(bidder)) return;
+        expect(deepAccess(allBiddersConfig[bidder], 'ortb2.user.ext.data.airgrid')).to.eql(MATCHED_AUDIENCES);
       });
     });
   });

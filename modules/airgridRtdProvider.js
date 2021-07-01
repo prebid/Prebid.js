@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * This module adds the AirGrid provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
@@ -5,8 +6,9 @@
  * @module modules/airgridRtdProvider
  * @requires module:modules/realTimeData
  */
-
+import {config} from '../src/config.js';
 import {submodule} from '../src/hook.js';
+import {mergeDeep, isPlainObject, deepSetValue, deepAccess} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -20,6 +22,7 @@ export const storage = getStorageManager(AG_TCF_ID, SUBMODULE_NAME);
 /**
  * Attach script tag to DOM
  * @param {Object} rtdConfig
+ * @return {void}
  */
 export function attachScriptTagToDOM(rtdConfig) {
   var edktInitializor = window.edktInitializor = window.edktInitializor || {};
@@ -59,8 +62,9 @@ export function getMatchedAudiencesFromStorage() {
  * Mutates the adUnits object
  * @param {Object} adUnits
  * @param {Array} audiences
+ * @return {void}
  */
-function appendAudiencesToAdUnits(adUnits, audiences) {
+function setAudiencesToAppNexusAdUnits(adUnits, audiences) {
   adUnits.forEach((adUnit) => {
     adUnit.bids.forEach((bid) => {
       if (bid.bidder && bid.bidder === 'appnexus') {
@@ -70,6 +74,31 @@ function appendAudiencesToAdUnits(adUnits, audiences) {
       }
     })
   })
+}
+
+/**
+ * Pass audience data to configured bidders, using ORTB2
+ * @param {Object} rtdConfig
+ * @param {Array} audiences
+ * @return {void}
+ */
+export function setAudiencesUsingBidderOrtb2(rtdConfig, audiences) {
+  const bidders = deepAccess(rtdConfig, 'params.bidders');
+  if (!bidders || bidders.length === 0) return;
+  const allBiddersConfig = config.getBidderConfig();
+  const agOrtb2 = {}
+  deepSetValue(agOrtb2, 'ortb2.user.ext.data.airgrid', audiences || []);
+  
+  bidders.forEach((bidder) => {
+    let bidderConfig = {};
+    if (isPlainObject(allBiddersConfig[bidder])) {
+      bidderConfig = allBiddersConfig[bidder];
+    }
+    config.setBidderConfig({
+      bidders: [bidder],
+      config: mergeDeep(bidderConfig, agOrtb2)
+    });
+  });
 }
 
 /**
@@ -89,13 +118,17 @@ function init(rtdConfig, userConsent) {
  * @param {function} onDone
  * @param {Object} rtdConfig
  * @param {Object} userConsent
+ * @return {void}
  */
-export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
+export function passAudiencesToBidders(bidConfig, onDone, rtdConfig, userConsent) {
   const adUnits = bidConfig.adUnits || getGlobal().adUnits;
   const audiences = getMatchedAudiencesFromStorage();
-  if (adUnits && audiences.length > 0) {
-    appendAudiencesToAdUnits(adUnits, audiences);
-  }
+  if (audiences.length > 0) {
+    setAudiencesUsingBidderOrtb2(rtdConfig, audiences);
+    if (adUnits) {
+      setAudiencesToAppNexusAdUnits(adUnits, audiences);
+    }
+  } 
   onDone();
 };
 
@@ -103,7 +136,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
 export const airgridSubmodule = {
   name: SUBMODULE_NAME,
   init: init,
-  getBidRequestData: getRealTimeData
+  getBidRequestData: passAudiencesToBidders
 };
 
 submodule(MODULE_NAME, airgridSubmodule);

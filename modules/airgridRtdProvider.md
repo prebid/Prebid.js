@@ -39,6 +39,7 @@ pbjs.setConfig(
                     apiKey: 'apiKey',
                     accountId: 'accountId',
                     publisherId: 'publisherId',
+                    bidders: ['appnexus', 'pubmatic']
                 }
             }
         ]
@@ -51,11 +52,14 @@ pbjs.setConfig(
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
-| name | String | RTD sub module name | Always 'airgrid' |
-| waitForIt | Boolean | Wether to delay auction for module response | Optional. Defaults to false |
-| params.apiKey | Boolean | Publisher partner specific API key | Required |
-| params.accountId | String | Publisher partner specific account ID | Required |
-| params.publisherId | String | Publisher partner specific publisher ID | Required |
+| name | `String` | RTD sub module name | Always 'airgrid' |
+| waitForIt | `Boolean` | Wether to delay auction for module response | Optional. Defaults to false |
+| params.apiKey | `Boolean` | Publisher partner specific API key | Required |
+| params.accountId | `String` | Publisher partner specific account ID | Required |
+| params.publisherId | `String` | Publisher partner specific publisher ID | Required |
+| params.bidders | `Array` | Bidders with which to share segment information | Optional |
+
+_Note: Although the module supports passing segment data to any bidder using the ORTB2 spec, there is no way for this to be currently monetised. Please reach out to support, to discuss using bidders other than Xandr/AppNexus._
 
 If you do not have your own `apiKey`, `accountId` & `publisherId` please reach out to [support@airgrid.io](mailto:support@airgrid.io)
 
@@ -63,11 +67,21 @@ If you do not have your own `apiKey`, `accountId` & `publisherId` please reach o
 
 To view an example of the on page setup required:
 
-`gulp serve-fast --modules=rtdModule,airgridRtdProvider,appnexusBidAdapter`
+```bash
+gulp serve-fast --modules=rtdModule,airgridRtdProvider,appnexusBidAdapter
+```
 
 Then in your browser access:
 
-`http://localhost:9999/integrationExamples/gpt/airgridRtdProvider_example.html`
+```
+http://localhost:9999/integrationExamples/gpt/airgridRtdProvider_example.html
+```
+
+Run the unit tests, just on the AirGrid RTD module test file:
+
+```bash
+gulp test --file "test/spec/modules/airgridRtdProvider_spec.js" 
+```
 
 ## Support
 

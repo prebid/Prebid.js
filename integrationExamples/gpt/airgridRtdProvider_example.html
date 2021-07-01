@@ -64,6 +64,22 @@
             ],
           },
         });
+        pbjs.setBidderConfig({
+          bidders: ['appnexus', 'pubmatic', 'space'],
+          config: {
+            ortb2: {
+              user: {
+                ext: {
+                  data: {
+                    registered: true,
+                    interests: ['cars']
+                  }
+                }
+              }
+            }
+          }
+        }); 
+        
         pbjs.addAdUnits(adUnits);
         pbjs.requestBids({ bidsBackHandler: sendAdserverRequest });
       });
