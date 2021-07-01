@@ -55,10 +55,6 @@ export const spec = {
         utils.logError(BIDDER_CODE + ': slot parameter is not defined in outstream_options object in the configuration');
         return false;
       }
-      if (!utils.getBidIdParameter('outstream_function', bid.params)) {
-        utils.logMessage(BIDDER_CODE + ': outstream_function parameter is not defined. The default outstream renderer will be injected in the header.');
-        return true;
-      }
     }
 
     return true;
@@ -303,8 +299,7 @@ export const spec = {
                 content_page_url: utils.deepAccess(bidderRequest, 'data.site.page'),
                 ad_mute: +!!utils.deepAccess(currentBidRequest, 'params.ad_mute'),
                 hide_skin: +!!utils.deepAccess(currentBidRequest, 'params.hide_skin'),
-                outstream_options: utils.deepAccess(currentBidRequest, 'params.outstream_options'),
-                outstream_function: utils.deepAccess(currentBidRequest, 'params.outstream_function')
+                outstream_options: utils.deepAccess(currentBidRequest, 'params.outstream_options')
               }
             });
             try {
