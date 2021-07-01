@@ -447,6 +447,20 @@ describe('gumgumAdapter', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.data).to.not.include.any.keys('tdid');
     });
+    it('should send IDL envelope ID if available', function () {
+      const idl_env = 'abc123';
+      const request = { ...bidRequests[0], userId: { idl_env } };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.have.property('idl_env');
+      expect(bidRequest.data.idl_env).to.equal(idl_env);
+    });
+    it('should not send IDL envelope if not available', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.not.have.property('idl_env');
+    });
     it('should send schain parameter in serialized form', function () {
       const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
       const request = spec.buildRequests(bidRequests)[0];

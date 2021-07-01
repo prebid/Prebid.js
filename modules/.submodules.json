@@ -28,6 +28,7 @@
     "uid2IdSystem",
     "admixerIdSystem",
     "dmdIdSystem",
+    "akamaiDAPId",
     "flocIdSystem",
     "amxIdSystem"
   ],
@@ -42,6 +43,7 @@
     "haloRtdProvider",
     "iasRtdProvider",
     "jwplayerRtdProvider",
+    "medianetRtdProvider",
     "optimeraRtdProvider",
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
