@@ -1,4 +1,3 @@
-/* eslint-disable */
 /**
  * This module adds the AirGrid provider to the real time data module
  * The {@link module:modules/realTimeData} module is required

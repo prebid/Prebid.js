@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {config} from 'src/config.js';
 import {deepAccess} from 'src/utils.js'
 import {getAdUnits} from '../../fixtures/fixtures.js';
