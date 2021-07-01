@@ -9,7 +9,7 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.7.1';
+const SUBLIME_VERSION = '0.7.2';
 
 /**
  * Identify the current device type
@@ -206,6 +206,12 @@ function interpretResponse(serverResponse, bidRequest) {
       pbav: SUBLIME_VERSION,
       sspname: response.sspname || null
     };
+
+    // We don't support advertiserDomains atm
+    if (response.advertiserDomains) {
+      // Creating a stub for Prebid.js 5.0 compliance
+      bidResponse.meta = Object.assign({}, bidResponse.meta, { advertiserDomains: [] });
+    }
 
     bidResponses.push(bidResponse);
   }

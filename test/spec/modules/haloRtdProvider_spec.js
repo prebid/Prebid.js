@@ -114,13 +114,195 @@ describe('haloRtdProvider', function() {
         }
       };
 
-      let pbConfig = config.getConfig();
       addRealTimeData(bidConfig, rtd, rtdConfig);
 
       let ortb2Config = config.getConfig().ortb2;
 
       expect(ortb2Config.user.data).to.deep.include.members([setConfigUserObj1, setConfigUserObj2, rtdUserObj1]);
       expect(ortb2Config.site.content.data).to.deep.include.members([setConfigSiteObj1, rtdSiteObj1]);
+    });
+
+    it('merges bidder-specific ortb2 data', function() {
+      let rtdConfig = {};
+      let bidConfig = {};
+
+      const configUserObj1 = {
+        name: 'www.dataprovider1.com',
+        ext: { segtax: 3 },
+        segment: [{
+          id: '1776'
+        }]
+      };
+
+      const configUserObj2 = {
+        name: 'www.dataprovider2.com',
+        ext: { segtax: 3 },
+        segment: [{
+          id: '1914'
+        }]
+      };
+
+      const configUserObj3 = {
+        name: 'www.dataprovider1.com',
+        ext: { segtax: 3 },
+        segment: [{
+          id: '2003'
+        }]
+      };
+
+      const configSiteObj1 = {
+        name: 'www.dataprovider3.com',
+        ext: {
+          segtax: 1
+        },
+        segment: [
+          {
+            id: '1812'
+          },
+          {
+            id: '1955'
+          }
+        ]
+      };
+
+      const configSiteObj2 = {
+        name: 'www.dataprovider3.com',
+        ext: {
+          segtax: 1
+        },
+        segment: [
+          {
+            id: '1812'
+          }
+        ]
+      };
+
+      config.setBidderConfig({
+        bidders: ['adbuzz'],
+        config: {
+          ortb2: {
+            user: {
+              data: [configUserObj1, configUserObj2]
+            },
+            site: {
+              content: {
+                data: [configSiteObj1]
+              }
+            }
+          }
+        }
+      });
+
+      config.setBidderConfig({
+        bidders: ['pubvisage'],
+        config: {
+          ortb2: {
+            user: {
+              data: [configUserObj3]
+            },
+            site: {
+              content: {
+                data: [configSiteObj2]
+              }
+            }
+          }
+        }
+      });
+
+      const rtdUserObj1 = {
+        name: 'www.dataprovider4.com',
+        ext: {
+          segtax: 501
+        },
+        segment: [
+          {
+            id: '1918'
+          },
+          {
+            id: '1939'
+          }
+        ]
+      };
+
+      const rtdUserObj2 = {
+        name: 'www.dataprovider2.com',
+        ext: {
+          segtax: 502
+        },
+        segment: [
+          {
+            id: '1939'
+          }
+        ]
+      };
+
+      const rtdSiteObj1 = {
+        name: 'www.dataprovider5.com',
+        ext: {
+          segtax: 1
+        },
+        segment: [
+          {
+            id: '441'
+          },
+          {
+            id: '442'
+          }
+        ]
+      };
+
+      const rtdSiteObj2 = {
+        name: 'www.dataprovider6.com',
+        ext: {
+          segtax: 2
+        },
+        segment: [
+          {
+            id: '676'
+          }
+        ]
+      };
+
+      const rtd = {
+        ortb2b: {
+          adbuzz: {
+            ortb2: {
+              user: {
+                data: [rtdUserObj1]
+              },
+              site: {
+                content: {
+                  data: [rtdSiteObj1]
+                }
+              }
+            }
+          },
+          pubvisage: {
+            ortb2: {
+              user: {
+                data: [rtdUserObj2]
+              },
+              site: {
+                content: {
+                  data: [rtdSiteObj2]
+                }
+              }
+            }
+          }
+        }
+      };
+
+      addRealTimeData(bidConfig, rtd, rtdConfig);
+
+      let ortb2Config = config.getBidderConfig().adbuzz.ortb2;
+
+      expect(ortb2Config.user.data).to.deep.include.members([configUserObj1, configUserObj2, rtdUserObj1]);
+      expect(ortb2Config.site.content.data).to.deep.include.members([configSiteObj1, rtdSiteObj1]);
+
+      ortb2Config = config.getBidderConfig().pubvisage.ortb2;
+
+      expect(ortb2Config.user.data).to.deep.include.members([configUserObj3, rtdUserObj2]);
+      expect(ortb2Config.site.content.data).to.deep.include.members([configSiteObj2, rtdSiteObj2]);
     });
 
     it('allows publisher defined rtd ortb2 logic', function() {
