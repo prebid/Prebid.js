@@ -78,9 +78,6 @@ export const spec = {
       }
       const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
       bidsMap[bidId] = bid;
-      if (!pageKeywords && !utils.isEmpty(keywords)) {
-        pageKeywords = utils.transformBidderParamKeywords(keywords);
-      }
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
       if (jwTargeting) {
@@ -103,6 +100,12 @@ export const spec = {
         if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
           impObj.ext.gpid = impObj.ext.data.adserver.adslot;
         }
+      }
+      if (!utils.isEmpty(keywords)) {
+        if (!pageKeywords) {
+          pageKeywords = keywords;
+        }
+        impObj.ext.bidder = { keywords };
       }
 
       if (bidFloor) {
@@ -185,17 +188,28 @@ export const spec = {
       request.user = user;
     }
 
-    const configKeywords = utils.transformBidderParamKeywords({
-      'user': utils.deepAccess(config.getConfig('ortb2.user'), 'keywords') || null,
-      'context': utils.deepAccess(config.getConfig('ortb2.site'), 'keywords') || null
-    });
+    const userKeywords = utils.deepAccess(config.getConfig('ortb2.user'), 'keywords') || null;
+    const siteKeywords = utils.deepAccess(config.getConfig('ortb2.site'), 'keywords') || null;
 
-    if (configKeywords.length) {
-      pageKeywords = (pageKeywords || []).concat(configKeywords);
+    if (userKeywords) {
+      pageKeywords = pageKeywords || {};
+      pageKeywords.user = pageKeywords.user || {};
+      pageKeywords.user.ortb2 = [
+        {
+          name: 'keywords',
+          keywords: userKeywords.split(','),
+        }
+      ];
     }
-
-    if (pageKeywords && pageKeywords.length > 0) {
-      pageKeywords.forEach(deleteValues);
+    if (siteKeywords) {
+      pageKeywords = pageKeywords || {};
+      pageKeywords.site = pageKeywords.site || {};
+      pageKeywords.site.ortb2 = [
+        {
+          name: 'keywords',
+          keywords: siteKeywords.split(','),
+        }
+      ];
     }
 
     if (pageKeywords) {
@@ -309,16 +323,6 @@ function _getFloor (mediaTypes, bid) {
   }
 
   return floor;
-}
-
-function isPopulatedArray(arr) {
-  return !!(utils.isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
 }
 
 function _getBidFromResponse(respItem) {
