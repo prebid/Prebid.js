@@ -55,6 +55,9 @@ export const sharethroughAdapterSpec = {
           ]),
         },
       },
+      device: {
+        ua: navigator.userAgent,
+      },
       regs: {
         coppa: config.getConfig('coppa') === true ? 1 : 0,
         ext: {},
@@ -94,16 +97,16 @@ export const sharethroughAdapterSpec = {
       if (bidReq.mediaTypes && bidReq.mediaTypes.video) {
         impression.video = {
           topframe: utils.inIframe() ? 0 : 1,
-          skip: bidReq.mediaTypes.video.skip || 0,
-          linearity: bidReq.mediaTypes.video.linearity || 1,
-          minduration: bidReq.mediaTypes.video.minduration || 5,
-          maxduration: bidReq.mediaTypes.video.maxduration || 60,
+          skip: bidReq.mediaTypes.video.skip ?? 0,
+          linearity: bidReq.mediaTypes.video.linearity ?? 1,
+          minduration: bidReq.mediaTypes.video.minduration ?? 5,
+          maxduration: bidReq.mediaTypes.video.maxduration ?? 60,
           playbackmethod: bidReq.mediaTypes.video.playbackmethod || [2],
           api: getVideoApi(bidReq.mediaTypes.video),
           mimes: bidReq.mediaTypes.video.mimes || ['video/mp4'],
           protocols: getVideoProtocols(bidReq.mediaTypes.video),
-          h: bidReq.mediaTypes.video.playerSize[0][1],
           w: bidReq.mediaTypes.video.playerSize[0][0],
+          h: bidReq.mediaTypes.video.playerSize[0][1],
         };
       } else {
         impression.banner = {
@@ -133,6 +136,7 @@ export const sharethroughAdapterSpec = {
         ...req,
         imp: imps,
       },
+      bidRequests,
       bidderRequest,
     };
   },
@@ -152,7 +156,7 @@ export const sharethroughAdapterSpec = {
         cpm: +bid.price,
         creativeId: bid.crid,
         dealId: bid.dealid || null,
-        mediaType: request.mediaTypes && request.mediaTypes.video ? 'video' : 'banner',
+        mediaType: request.mediaTypes && request.mediaTypes.video ? VIDEO : BANNER,
         currency: 'USD',
         netRevenue: true,
         ttl: 360,
@@ -162,9 +166,12 @@ export const sharethroughAdapterSpec = {
         },
       };
 
-      if (response.mediaType === 'video') {
-        response.vastXml = cleanVast(bid.adm, bid.nurl);
+      if (response.mediaType === VIDEO) {
         response.ttl = 3600;
+        response.vastXml = cleanVast(bid.adm, bid.nurl);
+
+        // const blob = new Blob([response.vastXml], { type: 'application/xml' });
+        // response.vastUrl = window.URL.createObjectURL(blob);
       }
 
       return response;
@@ -224,7 +231,7 @@ function getFloor(bid) {
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: 'USD',
-      mediaType: bid.mediaTypes.video ? 'video' : 'banner',
+      mediaType: bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner',
       size: bid.sizes.map(size => ({ w: size[0], h: size[1] })),
     });
     if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
@@ -243,7 +250,7 @@ function handleUniversalIds(bidRequest, uids) {
 }
 
 function getProtocol() {
-  return document.location.protocol;
+  return window.location.protocol;
 }
 
 function cleanVast(str, nurl) {
@@ -265,8 +272,8 @@ function cleanVast(str, nurl) {
   }
 }
 
-function matchRequest(id, bidRequest) {
-  return bidRequest.bidderRequest.bids.find(bid => bid.bidId === id);
+function matchRequest(id, request) {
+  return request.bidRequests.find(bid => bid.bidId === id);
 }
 
 registerBidder(sharethroughAdapterSpec);
