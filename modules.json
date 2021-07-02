@@ -23,5 +23,6 @@
   "sovrnBidAdapter",
   "synacormediaBidAdapter",
   "ucfunnelBidAdapter",
-  "unrulyBidAdapter"
+  "unrulyBidAdapter",
+  "verizonMediaSystem"
 ]
