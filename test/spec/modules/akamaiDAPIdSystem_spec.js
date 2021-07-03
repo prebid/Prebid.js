@@ -8,14 +8,25 @@ export const storage = getStorageManager();
 const signatureConfigParams = {params: {
   apiHostname: 'prebid.dap.akadns.net',
   domain: 'prebid.org',
-  type: 'dap-signature:1.0.0'
+  type: 'dap-signature:1.0.0',
+  apiVersion: 'v1'
 }};
 
 const tokenizeConfigParams = {params: {
   apiHostname: 'prebid.dap.akadns.net',
   domain: 'prebid.org',
   type: 'email',
-  identity: 'amishra@xyz.com'
+  identity: 'amishra@xyz.com',
+  apiVersion: 'v1'
+}};
+
+const x1TokenizeConfigParams = {params: {
+  apiHostname: 'prebid.dap.akadns.net',
+  domain: 'prebid.org',
+  type: 'email',
+  identity: 'amishra@xyz.com',
+  apiVersion: 'x1',
+  attributes: '{ "cohorts": [ "3:14400", "5:14400", "7:0" ],"first_name": "Ace","last_name": "McCool" }'
 }};
 
 const consentData = {
@@ -85,14 +96,20 @@ describe('akamaiDAPId getId', function () {
       expect(submoduleCallback).to.be.undefined;
     });
 
-    it('should call the signature API and store token in Local storage', function () {
+    it('should call the signature v1 API and store token in Local storage', function () {
       let submoduleCallback1 = akamaiDAPIdSubmodule.getId(signatureConfigParams, consentData).id;
       expect(submoduleCallback1).to.be.eq(storage.getDataFromLocalStorage('akamai_dap_token'))
       storage.removeDataFromLocalStorage('akamai_dap_token');
     });
 
-    it('should call the tokenize API and store token in Local storage', function () {
+    it('should call the tokenize v1 API and store token in Local storage', function () {
       let submoduleCallback = akamaiDAPIdSubmodule.getId(tokenizeConfigParams, consentData).id;
+      expect(submoduleCallback).to.be.eq(storage.getDataFromLocalStorage('akamai_dap_token'))
+      storage.removeDataFromLocalStorage('akamai_dap_token');
+    });
+
+    it('should call the tokenize x1 API and store token in Local storage', function () {
+      let submoduleCallback = akamaiDAPIdSubmodule.getId(x1TokenizeConfigParams, consentData).id;
       expect(submoduleCallback).to.be.eq(storage.getDataFromLocalStorage('akamai_dap_token'))
       storage.removeDataFromLocalStorage('akamai_dap_token');
     });
