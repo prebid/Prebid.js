@@ -86,9 +86,7 @@ function _isOneMobileBidder(bidderCode) {
 function _isNexageRequestPost(bid) {
   if (_isOneMobileBidder(bid.bidder) && bid.params.id && bid.params.imp && bid.params.imp[0]) {
     let imp = bid.params.imp[0];
-    return imp.id && imp.tagid &&
-      ((imp.banner && imp.banner.w && imp.banner.h) ||
-        (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
+    return imp.id && imp.tagid && imp.banner && imp.banner.w && imp.banner.h;
   }
 }
 

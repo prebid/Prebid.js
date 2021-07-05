@@ -63,10 +63,12 @@ export const spec = {
       }
     };
     const rInfo = bidderRequest.refererInfo;
+    payload.site.page = config.getConfig('pageUrl') || ((rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href);
+    payload.site.domain = config.getConfig('publisherDomain') || getDomainFromURL(payload.site.page);
+
     payload.device.ua = navigator.userAgent;
-    payload.site.page = (rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href;
-    payload.site.domain = getDomainFromURL(payload.site.page);
-    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
+    payload.device.devicetype = isMobile() ? 1 : isConnectedTV() ? 3 : 2;
+    payload.site.mobile = payload.device.devicetype === 1 ? 1 : 0;
 
     if (params.test) {
       payload.test = params.test;
@@ -188,6 +190,14 @@ function getDomainFromURL(url) {
     return hostname.substring(4);
   }
   return hostname;
+}
+
+function isMobile() {
+  return /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent);
+}
+
+function isConnectedTV() {
+  return /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(navigator.userAgent);
 }
 
 registerBidder(spec);

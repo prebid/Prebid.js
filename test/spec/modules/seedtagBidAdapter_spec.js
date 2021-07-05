@@ -291,6 +291,7 @@ describe('Seedtag Adapter', function() {
         expect(bannerBid.sizes[0][1]).to.equal(250)
         expect(bannerBid.sizes[1][0]).to.equal(300)
         expect(bannerBid.sizes[1][1]).to.equal(600)
+        expect(bannerBid.requestCount).to.equal(1)
       })
       it('should request an InStream Video', function() {
         const videoBid = bidRequests[1]
@@ -307,6 +308,7 @@ describe('Seedtag Adapter', function() {
         expect(videoBid.sizes[0][1]).to.equal(250)
         expect(videoBid.sizes[1][0]).to.equal(300)
         expect(videoBid.sizes[1][1]).to.equal(600)
+        expect(videoBid.requestCount).to.equal(1)
       })
     })
   })
