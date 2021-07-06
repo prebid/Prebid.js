@@ -99,13 +99,18 @@ export function getAdagioScript() {
     if (isValid) {
       loadExternalScript(ADAGIO_TAG_URL, BIDDER_CODE);
     } else {
-      // ensure adagio removing for next time.
-      // It's an antipattern regarding the TCF2 enforcement logic
-      // but it's the only way to respect the user choice update.
-      window.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
-      // Extra data from external script.
-      // This key is removed only if localStorage is not accessible.
-      window.localStorage.removeItem('adagio');
+      // Try-catch to avoid error when 3rd party cookies is disabled (e.g. in privacy mode)
+      try {
+        // ensure adagio removing for next time.
+        // It's an antipattern regarding the TCF2 enforcement logic
+        // but it's the only way to respect the user choice update.
+        window.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
+        // Extra data from external script.
+        // This key is removed only if localStorage is not accessible.
+        window.localStorage.removeItem('adagio');
+      } catch (e) {
+        utils.logInfo(`${LOG_PREFIX} unable to clear Adagio scripts from localstorage.`);
+      }
     }
   });
 }
