@@ -293,7 +293,7 @@ function transformFnFromCleanupRules(eventType) {
       for (let fragment = 0; fragment < ruleMatcher.length && match; fragment++) {
         const choices = makeSureArray(ruleMatcher[fragment]);
         match = !choices.every((choice) => choice !== '*' &&
-          (choice.startsWith('!')
+          (choice.charAt(0) === '!'
             ? path[fragment] === choice.substring(1)
             : path[fragment] !== choice));
       }
