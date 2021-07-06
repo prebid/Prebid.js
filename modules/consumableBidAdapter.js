@@ -122,6 +122,7 @@ export const spec = {
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 30;
+          bid.meta = { advertiserDomains: decision.adomain ? decision.adomain : [] }
           bid.netRevenue = true;
           bid.referrer = bidRequest.bidderRequest.refererInfo.referer;
 

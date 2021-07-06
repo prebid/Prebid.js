@@ -1316,6 +1316,41 @@ describe('the price floors module', function () {
           floor: 1.3334 // 1.3334 * 0.75 = 1.000005 which is the floor (we cut off getFloor at 4 decimal points)
         });
       });
+
+      it('should use standard cpmAdjustment if no bidder cpmAdjustment', function () {
+        getGlobal().bidderSettings = {
+          rubicon: {
+            bidCpmAdjustment: function (bidCpm, bidResponse) {
+              return bidResponse.cpm * 0.5;
+            },
+          },
+          standard: {
+            bidCpmAdjustment: function (bidCpm, bidResponse) {
+              return bidResponse.cpm * 0.75;
+            },
+          }
+        };
+        _floorDataForAuction[bidRequest.auctionId] = utils.deepClone(basicFloorConfig);
+        _floorDataForAuction[bidRequest.auctionId].data.values = { '*': 1.0 };
+        let appnexusBid = {
+          ...bidRequest,
+          bidder: 'appnexus'
+        };
+
+        // the conversion should be what the bidder would need to return in order to match the actual floor
+        // rubicon
+        expect(bidRequest.getFloor()).to.deep.equal({
+          currency: 'USD',
+          floor: 2.0 // a 2.0 bid after rubicons cpm adjustment would be 1.0 and thus is the floor after adjust
+        });
+
+        // appnexus
+        expect(appnexusBid.getFloor()).to.deep.equal({
+          currency: 'USD',
+          floor: 1.3334 // 1.3334 * 0.75 = 1.000005 which is the floor (we cut off getFloor at 4 decimal points)
+        });
+      });
+
       it('should work when cpmAdjust function uses bid object', function () {
         getGlobal().bidderSettings = {
           rubicon: {

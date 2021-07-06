@@ -5,11 +5,15 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
+import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'haloId';
+const AU_GVLID = 561;
+
+export const storage = getStorageManager(AU_GVLID, 'halo');
 
 /** @type {Submodule} */
 export const haloIdSubmodule = {
@@ -25,6 +29,10 @@ export const haloIdSubmodule = {
    * @returns {{haloId:Object}}
    */
   decode(value) {
+    let haloId = storage.getDataFromLocalStorage('auHaloId');
+    if (utils.isStr(haloId)) {
+      return {haloId: haloId};
+    }
     return (value && typeof value['haloId'] === 'string') ? { 'haloId': value['haloId'] } : undefined;
   },
   /**
@@ -37,24 +45,30 @@ export const haloIdSubmodule = {
     const url = `https://id.halo.ad.gt/api/v1/pbhid`;
 
     const resp = function (callback) {
-      const callbacks = {
-        success: response => {
-          let responseObj;
-          if (response) {
-            try {
-              responseObj = JSON.parse(response);
-            } catch (error) {
-              utils.logError(error);
+      let haloId = storage.getDataFromLocalStorage('auHaloId');
+      if (utils.isStr(haloId)) {
+        const responseObj = {haloId: haloId};
+        callback(responseObj);
+      } else {
+        const callbacks = {
+          success: response => {
+            let responseObj;
+            if (response) {
+              try {
+                responseObj = JSON.parse(response);
+              } catch (error) {
+                utils.logError(error);
+              }
             }
+            callback(responseObj);
+          },
+          error: error => {
+            utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+            callback();
           }
-          callback(responseObj);
-        },
-        error: error => {
-          utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
-          callback();
-        }
-      };
-      ajax(url, callbacks, undefined, {method: 'GET'});
+        };
+        ajax(url, callbacks, undefined, {method: 'GET'});
+      }
     };
     return {callback: resp};
   }

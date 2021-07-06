@@ -3,7 +3,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'vdo.ai';
+const BIDDER_CODE = 'vdoai';
 const ENDPOINT_URL = 'https://prebid.vdo.ai/auction';
 
 export const spec = {
@@ -98,8 +98,14 @@ export const spec = {
       } else {
         bidResponse.ad = adCreative;
       }
+      if (response.adDomain) {
+        bidResponse.meta = {
+          advertiserDomains: response.adDomain
+        }
+      }
       bidResponses.push(bidResponse);
     }
+
     return bidResponses;
   },
 

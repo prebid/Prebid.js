@@ -22,9 +22,9 @@ Module that connects to VDO.AI's demand sources
             },
             bids: [
                 {
-                    bidder: "vdo.ai",
+                    bidder: "vdoai",
                     params: {
-                        placement: 'newsdv77',
+                        placementId: 'newsdv77',
                         bidFloor: 0.01  // Optional
                     }
                 }
@@ -47,9 +47,9 @@ var videoAdUnit = {
   },
   bids: [
     {
-        bidder: "vdo.ai",
+        bidder: "vdoai",
         params: {
-            placement: 'newsdv77'
+            placementId: 'newsdv77'
         }
     }
   ]

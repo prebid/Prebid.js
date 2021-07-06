@@ -70,7 +70,10 @@ function buildBid(bidData) {
     netRevenue: true,
     mediaType: BANNER,
     ttl: TTL,
-    content: bidData.content
+    content: bidData.content,
+    meta: {
+      advertiserDomains: bidData.advertiserDomains || [],
+    }
   };
 
   if (bidData.placement === 'video') {
@@ -129,7 +132,7 @@ function wrapInImageBanner(bid, bidData) {
         var s = document.getElementById("prebidrenderer");
         s.onload = function () {
           var _html = "${encodeURIComponent(JSON.stringify(bid))}";
-          window._ao_ssp.registerInImage(JSON.parse(decodeURIComponent(_html)));
+          window._hyb_prebid_ssp.registerInImage(JSON.parse(decodeURIComponent(_html)));
         }
         s.src = "https://st.hybrid.ai/prebidrenderer.js?t=" + Date.now();
         if (parent.window.frames[window.name]) {
@@ -157,7 +160,7 @@ function wrapBanner(bid, bidData) {
         var s = document.getElementById("prebidrenderer");
         s.onload = function () {
             var _html = "${encodeURIComponent(JSON.stringify(bid))}";
-            window._ao_ssp.registerAds(JSON.parse(decodeURIComponent(_html)));
+            window._hyb_prebid_ssp.registerAds(JSON.parse(decodeURIComponent(_html)));
         }
         s.src = "https://st.hybrid.ai/prebidrenderer.js?t=" + Date.now();
       </script>
