@@ -72,7 +72,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   return {
     method: 'POST',
     url: BID_HOST,
-    data: openRtbBidRequestBanner
+    data: openRtbBidRequestBanner,
+    options: {contentType: 'application/json'},
   };
 }
 
