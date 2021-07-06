@@ -60,7 +60,10 @@ export const spec = {
           ttl: bid.ttl,
           ad: bid.ad,
           requestId: bid.bidId,
-          creativeId: bid.creativeId
+          creativeId: bid.creativeId,
+          meta: {
+            advertiserDomains: bid && bid.adomain ? bid.adomain : []
+          }
         };
         bidResponses.push(bidResponse);
       });
