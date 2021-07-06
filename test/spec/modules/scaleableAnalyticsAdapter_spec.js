@@ -1,8 +1,8 @@
-import scaleableAnalytics from 'modules/scaleableAnalyticsAdapter';
+import scaleableAnalytics from 'modules/scaleableAnalyticsAdapter.js';
 import { expect } from 'chai';
-import events from 'src/events';
+import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
-import { server } from 'test/mocks/xhr';
+import { server } from 'test/mocks/xhr.js';
 
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT;

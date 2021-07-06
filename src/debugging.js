@@ -1,7 +1,7 @@
 
-import { config } from './config';
-import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from './utils';
-import { addBidderRequests, addBidResponse } from './auction';
+import { config } from './config.js';
+import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from './utils.js';
+import { addBidderRequests, addBidResponse } from './auction.js';
 
 const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
 
@@ -74,7 +74,7 @@ export function bidderExcluded(bidders, bidderCode) {
  */
 export function applyBidOverrides(overrideObj, bidObj, bidType) {
   return Object.keys(overrideObj).filter(key => (['adUnitCode', 'bidder'].indexOf(key) === -1)).reduce(function(result, key) {
-    logMessage(`bidder overrides changed '${result.adUnitCode}/${result.bidderCode}' ${bidType}.${key} from '${result[key]}' to '${overrideObj[key]}'`);
+    logMessage(`bidder overrides changed '${result.adUnitCode}/${result.bidderCode}' ${bidType}.${key} from '${result[key]}.js' to '${overrideObj[key]}'`);
     result[key] = overrideObj[key];
     return result;
   }, bidObj);

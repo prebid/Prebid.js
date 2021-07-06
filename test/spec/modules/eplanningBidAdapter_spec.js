@@ -1,7 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/eplanningBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { spec, storage } from 'modules/eplanningBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
+import { init } from 'modules/userId/index.js';
+import * as utils from 'src/utils.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -13,6 +15,7 @@ describe('E-Planning Adapter', function () {
   const ADUNIT_CODE_VIEW3 = 'adunit-code-view3';
   const CLEAN_ADUNIT_CODE2 = '300x250_1';
   const CLEAN_ADUNIT_CODE = '300x250_0';
+  const CLEAN_ADUNIT_CODE_ML = 'adunitco_de';
   const BID_ID = '123456789';
   const BID_ID2 = '987654321';
   const BID_ID3 = '998877665';
@@ -23,6 +26,7 @@ describe('E-Planning Adapter', function () {
   const I_ID = '7854abc56248f873';
   const CRID = '1234567890';
   const TEST_ISV = 'leles.e-planning.net';
+  const ADOMAIN = 'adomain.com';
   const validBid = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
@@ -39,6 +43,27 @@ describe('E-Planning Adapter', function () {
       'ci': CI,
     },
     'adUnitCode': ADUNIT_CODE2,
+    'sizes': [[300, 250], [300, 600]],
+  };
+  const ML = '1';
+  const validBidMappingLinear = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'ml': ML,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[300, 250], [300, 600]],
+  };
+  const SN = 'spaceName';
+  const validBidSpaceName = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
     'sizes': [[300, 250], [300, 600]],
   };
   const validBidView = {
@@ -83,6 +108,39 @@ describe('E-Planning Adapter', function () {
     },
     'adUnitCode': 'adunit-code',
     'sizes': [[300, 250], [300, 600]],
+  };
+  const validBidExistingSizesInPriorityListForMobile = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [320, 50], [300, 50]],
+  };
+  const validBidSizesNotExistingInPriorityListForMobile = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [300, 70], [160, 600]],
+  };
+  const validBidExistingSizesInPriorityListForDesktop = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [300, 600], [300, 250]],
+    'ext': {
+      'screen': {
+        'w': 1025,
+        'h': 1025
+      }
+    }
   };
   const response = {
     body: {
@@ -180,6 +238,39 @@ describe('E-Planning Adapter', function () {
       ]
     }
   };
+  const responseWithAdomain = {
+    body: {
+      'sI': {
+        'k': '12345'
+      },
+      'sec': {
+        'k': 'ROS'
+      },
+      'sp': [{
+        'k': CLEAN_ADUNIT_CODE,
+        'a': [{
+          'adm': ADM,
+          'id': '7854abc56248f874',
+          'i': I_ID,
+          'fi': '7854abc56248f872',
+          'ip': '45621afd87462104',
+          'w': W,
+          'h': H,
+          'crid': CRID,
+          'pr': CPM,
+          'adom': ADOMAIN
+        }],
+      }],
+      'cs': [
+        'http://a-sync-url.com/',
+        {
+          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'ifr': true
+        }
+      ]
+    }
+  };
+
   const responseWithNoSpace = {
     body: {
       'sI': {
@@ -236,19 +327,35 @@ describe('E-Planning Adapter', function () {
 
   describe('buildRequests', function () {
     let bidRequests = [validBid];
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    const createWindow = () => {
+      const win = {};
+      win.self = win;
+      win.innerWidth = 1025;
+      return win;
+    };
+
+    function setupSingleWindow(sandBox) {
+      const win = createWindow();
+      sandBox.stub(utils, 'getWindowSelf').returns(win);
+    }
+
     it('should create the url correctly', function () {
       const url = spec.buildRequests(bidRequests, bidderRequest).url;
-      expect(url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
     });
 
     it('should return GET method', function () {
       const method = spec.buildRequests(bidRequests, bidderRequest).method;
       expect(method).to.equal('GET');
-    });
-
-    it('should return r parameter with value pbjs', function () {
-      const r = spec.buildRequests(bidRequests, bidderRequest).data.r;
-      expect(r).to.equal('pbjs');
     });
 
     it('should return pbv parameter with value prebid version', function () {
@@ -259,6 +366,18 @@ describe('E-Planning Adapter', function () {
     it('should return e parameter with value according to the adunit sizes', function () {
       const e = spec.buildRequests(bidRequests, bidderRequest).data.e;
       expect(e).to.equal('300x250_0:300x250,300x600');
+    });
+
+    it('should return e parameter with linear mapping attribute with value according to the adunit sizes', function () {
+      let bidRequestsML = [validBidMappingLinear];
+      const e = spec.buildRequests(bidRequestsML, bidderRequest).data.e;
+      expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':300x250,300x600');
+    });
+
+    it('should return e parameter with space name attribute with value according to the adunit sizes', function () {
+      let bidRequestsSN = [validBidSpaceName];
+      const e = spec.buildRequests(bidRequestsSN, bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600');
     });
 
     it('should return correct e parameter with more than one adunit', function () {
@@ -278,6 +397,42 @@ describe('E-Planning Adapter', function () {
       expect(e).to.equal('300x250_0:300x250,300x600+100x100_0:100x100');
     });
 
+    it('should return correct e parameter with linear mapping attribute with more than one adunit', function () {
+      let bidRequestsML = [validBidMappingLinear];
+      const NEW_CODE = ADUNIT_CODE + '2';
+      const CLEAN_NEW_CODE = CLEAN_ADUNIT_CODE_ML + '2';
+      const anotherBid = {
+        'bidder': 'eplanning',
+        'params': {
+          'ci': CI,
+          'ml': ML,
+        },
+        'adUnitCode': NEW_CODE,
+        'sizes': [[100, 100]],
+      };
+      bidRequestsML.push(anotherBid);
+
+      const e = spec.buildRequests(bidRequestsML, bidderRequest).data.e;
+      expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':300x250,300x600+' + CLEAN_NEW_CODE + ':100x100');
+    });
+
+    it('should return correct e parameter with space name attribute with more than one adunit', function () {
+      let bidRequestsSN = [validBidSpaceName];
+      const NEW_SN = 'anotherNameSpace';
+      const anotherBid = {
+        'bidder': 'eplanning',
+        'params': {
+          'ci': CI,
+          'sn': NEW_SN,
+        },
+        'sizes': [[100, 100]],
+      };
+      bidRequestsSN.push(anotherBid);
+
+      const e = spec.buildRequests(bidRequestsSN, bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600+' + NEW_SN + ':100x100');
+    });
+
     it('should return correct e parameter when the adunit has no size', function () {
       const noSizeBid = {
         'bidder': 'eplanning',
@@ -291,15 +446,29 @@ describe('E-Planning Adapter', function () {
       expect(e).to.equal('1x1_0:1x1');
     });
 
+    it('should return correct e parameter with linear mapping attribute when the adunit has no size', function () {
+      const noSizeBid = {
+        'bidder': 'eplanning',
+        'params': {
+          'ci': CI,
+          'ml': ML,
+        },
+        'adUnitCode': ADUNIT_CODE,
+      };
+
+      const e = spec.buildRequests([noSizeBid], bidderRequest).data.e;
+      expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':1x1');
+    });
+
     it('should return ur parameter with current window url', function () {
       const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
-      expect(ur).to.equal(encodeURIComponent(bidderRequest.refererInfo.referer));
+      expect(ur).to.equal(bidderRequest.refererInfo.referer);
     });
 
     it('should return fr parameter when there is a referrer', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const dataRequest = request.data;
-      expect(dataRequest.fr).to.equal(encodeURIComponent(refererUrl));
+      expect(dataRequest.fr).to.equal(refererUrl);
     });
 
     it('should return crs parameter with document charset', function () {
@@ -338,6 +507,25 @@ describe('E-Planning Adapter', function () {
       const dataRequest = request.data;
       expect(dataRequest.ccpa).to.equal('consentCcpa');
     });
+
+    it('should return the e parameter with a value according to the sizes in order corresponding to the mobile priority list of the ad units', function () {
+      let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForMobile];
+      const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
+      expect(e).to.equal('320x50_0:320x50,300x50,970x250');
+    });
+
+    it('should return the e parameter with a value according to the sizes in order corresponding to the desktop priority list of the ad units', function () {
+      let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
+      setupSingleWindow(sandbox);
+      const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
+      expect(e).to.equal('300x250_0:300x250,300x600,970x250');
+    });
+
+    it('should return the e parameter with a value according to the sizes in order as they are sent from the ad units', function () {
+      let bidRequestsPrioritySizes2 = [validBidSizesNotExistingInPriorityListForMobile];
+      const e = spec.buildRequests(bidRequestsPrioritySizes2, bidderRequest).data.e;
+      expect(e).to.equal('970x250_0:970x250,300x70,160x600');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -363,6 +551,25 @@ describe('E-Planning Adapter', function () {
         creativeId: CRID,
         netRevenue: true,
         currency: 'USD',
+      };
+      expect(bidResponse).to.deep.equal(expectedResponse);
+    });
+
+    it('should pass advertiserDomains when present', function () {
+      const bidResponse = spec.interpretResponse(responseWithAdomain, { adUnitToBidId: { [CLEAN_ADUNIT_CODE]: BID_ID } })[0];
+      const expectedResponse = {
+        requestId: BID_ID,
+        cpm: CPM,
+        width: W,
+        height: H,
+        ad: ADM,
+        ttl: 120,
+        creativeId: CRID,
+        netRevenue: true,
+        currency: 'USD',
+        meta: {
+          advertiserDomains: ADOMAIN
+        }
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });
@@ -508,10 +715,10 @@ describe('E-Planning Adapter', function () {
       });
     }
     beforeEach(function () {
-      getLocalStorageSpy = sandbox.spy(utils, 'getDataFromLocalStorage');
-      setDataInLocalStorageSpy = sandbox.spy(utils, 'setDataInLocalStorage');
+      getLocalStorageSpy = sandbox.spy(storage, 'getDataFromLocalStorage');
+      setDataInLocalStorageSpy = sandbox.spy(storage, 'setDataInLocalStorage');
 
-      hasLocalStorageStub = sandbox.stub(utils, 'hasLocalStorage');
+      hasLocalStorageStub = sandbox.stub(storage, 'hasLocalStorage');
       hasLocalStorageStub.returns(true);
 
       clock = sandbox.useFakeTimers();
@@ -533,7 +740,7 @@ describe('E-Planning Adapter', function () {
       hasLocalStorageStub.returns(false);
       const response = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(response.url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
       expect(response.data.vs).to.equal('F');
 
       sinon.assert.notCalled(getLocalStorageSpy);
@@ -543,7 +750,7 @@ describe('E-Planning Adapter', function () {
     it('should create the url correctly with LocalStorage', function() {
       createElementVisible();
       const response = spec.buildRequests(bidRequests, bidderRequest);
-      expect(response.url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
 
       expect(response.data.vs).to.equal('F');
 
@@ -552,7 +759,7 @@ describe('E-Planning Adapter', function () {
       sinon.assert.calledWith(getLocalStorageSpy, storageIdRender);
       sinon.assert.calledWith(setDataInLocalStorageSpy, storageIdRender);
 
-      expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+      expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
     });
 
     context('when element is fully in view', function() {
@@ -566,29 +773,29 @@ describe('E-Planning Adapter', function () {
 
         expect(respuesta.data.vs).to.equal('F');
 
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal('1');
       });
       it('when you have more than four render', function() {
-        utils.setDataInLocalStorage(storageIdRender, 4);
+        storage.setDataInLocalStorage(storageIdRender, 4);
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(respuesta.data.vs).to.equal('0');
 
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('5');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('5');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal('1');
       });
       it('when you have more than four render and already record visibility', function() {
-        utils.setDataInLocalStorage(storageIdRender, 4);
-        utils.setDataInLocalStorage(storageIdView, 4);
+        storage.setDataInLocalStorage(storageIdRender, 4);
+        storage.setDataInLocalStorage(storageIdView, 4);
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(respuesta.data.vs).to.equal('a');
 
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('5');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal('5');
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('5');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal('5');
       });
     });
 
@@ -603,17 +810,17 @@ describe('E-Planning Adapter', function () {
         clock.tick(1005);
         expect(respuesta.data.vs).to.equal('F');
 
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
       it('when you have more than four render', function() {
-        utils.setDataInLocalStorage(storageIdRender, 4);
+        storage.setDataInLocalStorage(storageIdRender, 4);
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
         expect(respuesta.data.vs).to.equal('0');
 
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('5');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('5');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
     });
 
@@ -624,16 +831,16 @@ describe('E-Planning Adapter', function () {
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal('1');
       });
       it('you should not register visibility with less than 50%', function() {
         createPartiallyInvisibleElement();
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
     });
     context('when width or height of the element is zero', function() {
@@ -645,16 +852,16 @@ describe('E-Planning Adapter', function () {
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
       it('if the height is zero but the width is within the range', function() {
         element.style.height = '0px';
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
       it('if both are zero', function() {
         element.style.height = '0px';
@@ -662,8 +869,8 @@ describe('E-Planning Adapter', function () {
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
     });
     context('when tab is inactive', function() {
@@ -672,8 +879,8 @@ describe('E-Planning Adapter', function () {
         focusStub.returns(false);
         spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
     });
     context('segmentBeginsBeforeTheVisibleRange', function() {
@@ -681,16 +888,16 @@ describe('E-Planning Adapter', function () {
         createElementOutOfRange();
         spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
-        expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
     });
     context('when there are multiple adunit', function() {
       let respuesta;
       beforeEach(function () {
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
-          utils.setDataInLocalStorage('pbsr_' + ac, 5);
-          utils.setDataInLocalStorage('pbvi_' + ac, 5);
+          storage.setDataInLocalStorage('pbsr_' + ac, 5);
+          storage.setDataInLocalStorage('pbvi_' + ac, 5);
         });
       });
       afterEach(function () {
@@ -710,8 +917,8 @@ describe('E-Planning Adapter', function () {
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
-          expect(utils.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
-          expect(utils.getDataFromLocalStorage('pbvi_' + ac)).to.equal('6');
+          expect(storage.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
+          expect(storage.getDataFromLocalStorage('pbvi_' + ac)).to.equal('6');
         });
         expect('aaa').to.equal(respuesta.data.vs);
       });
@@ -723,8 +930,8 @@ describe('E-Planning Adapter', function () {
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
-          expect(utils.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
-          expect(utils.getDataFromLocalStorage('pbvi_' + ac)).to.equal('5');
+          expect(storage.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
+          expect(storage.getDataFromLocalStorage('pbvi_' + ac)).to.equal('5');
         });
 
         expect('aaa').to.equal(respuesta.data.vs);
@@ -736,14 +943,36 @@ describe('E-Planning Adapter', function () {
 
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
-        expect(utils.getDataFromLocalStorage('pbsr_' + ADUNIT_CODE_VIEW)).to.equal('6');
-        expect(utils.getDataFromLocalStorage('pbvi_' + ADUNIT_CODE_VIEW)).to.equal('6');
+        expect(storage.getDataFromLocalStorage('pbsr_' + ADUNIT_CODE_VIEW)).to.equal('6');
+        expect(storage.getDataFromLocalStorage('pbvi_' + ADUNIT_CODE_VIEW)).to.equal('6');
         [ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
-          expect(utils.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
-          expect(utils.getDataFromLocalStorage('pbvi_' + ac)).to.equal('5');
+          expect(storage.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
+          expect(storage.getDataFromLocalStorage('pbvi_' + ac)).to.equal('5');
         });
         expect('aaa').to.equal(respuesta.data.vs);
       });
+    });
+  });
+  describe('Send eids', function() {
+    it('should add eids to the request', function() {
+      init(config);
+      config.setConfig({
+        userSync: {
+          userIds: [
+            { name: 'id5Id', value: { 'id5id': { uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } } } },
+            { name: 'pubCommonId', value: {'pubcid': 'c29cb2ae-769d-42f6-891a-f53cadee823d'} },
+            { name: 'unifiedId', value: {'tdid': 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3'} }
+          ]
+        }
+      });
+      let bidRequests = [validBidView];
+      const expected_id5id = encodeURIComponent(JSON.stringify({ uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }));
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const dataRequest = request.data;
+
+      expect('D6885E90-2A7A-4E0F-87CB-7734ED1B99A3').to.equal(dataRequest.e_tdid);
+      expect('c29cb2ae-769d-42f6-891a-f53cadee823d').to.equal(dataRequest.e_pubcid);
+      expect(expected_id5id).to.equal(dataRequest.e_id5id);
     });
   });
 });

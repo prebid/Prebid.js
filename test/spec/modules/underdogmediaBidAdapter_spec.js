@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, resetUserSync } from 'modules/underdogmediaBidAdapter';
+import { spec, resetUserSync } from 'modules/underdogmediaBidAdapter.js';
 
 describe('UnderdogMedia adapter', function () {
   let bidRequests;
@@ -276,6 +276,7 @@ describe('UnderdogMedia adapter', function () {
             mids: [
               {
                 ad_code_html: 'ad_code_html',
+                advertiser_domains: ['domain1'],
                 cpm: 2.5,
                 height: '600',
                 mid: '32634',
@@ -300,6 +301,7 @@ describe('UnderdogMedia adapter', function () {
 
         expect(bids).to.be.lengthOf(2);
 
+        expect(bids[0].meta.advertiserDomains).to.deep.equal(['domain1'])
         expect(bids[0].bidderCode).to.equal('underdogmedia');
         expect(bids[0].cpm).to.equal(2.5);
         expect(bids[0].width).to.equal('160');

@@ -1,5 +1,5 @@
-import yieldoneAnalytics from 'modules/yieldoneAnalyticsAdapter';
-import { targeting } from 'src/targeting';
+import yieldoneAnalytics from 'modules/yieldoneAnalyticsAdapter.js';
+import { targeting } from 'src/targeting.js';
 import { expect } from 'chai';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
@@ -219,14 +219,6 @@ describe('Yieldone Prebid Analytic', function () {
         {
           eventType: constants.EVENTS.BID_TIMEOUT,
           params: Object.assign(request[2])
-        },
-        {
-          eventType: constants.EVENTS.AUCTION_END,
-          params: {
-            auctionId: auctionId,
-            adServerTargeting: fakeTargeting,
-            bidsReceived: preparedResponses.slice(0, 3)
-          }
         }
       ];
       const expectedResult = {

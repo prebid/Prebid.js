@@ -1,6 +1,6 @@
 import {expect, assert} from 'chai';
-import {spec} from 'modules/kargoBidAdapter';
-import {config} from 'src/config';
+import {spec} from 'modules/kargoBidAdapter.js';
+import {config} from 'src/config.js';
 
 describe('kargo adapter tests', function () {
   var sandbox, clock, frozenNow = new Date();
@@ -50,6 +50,7 @@ describe('kargo adapter tests', function () {
           return {adServerCurrency: 'USD'};
         }
         if (key === 'debug') return true;
+        if (key === 'deviceAccess') return true;
         throw new Error(`Config stub incomplete! Missing key "${key}"`)
       });
 
@@ -131,6 +132,21 @@ describe('kargo adapter tests', function () {
     function simulateNoAdServerCurrency() {
       undefinedCurrency = false;
       noAdServerCurrency = true;
+    }
+
+    function generateGDPR(applies, haveConsent) {
+      var data = {
+        consentString: 'gdprconsentstring',
+        gdprApplies: applies,
+      };
+      return data;
+    }
+
+    function generateGDPRExpect(applies, haveConsent) {
+      return {
+        consent: 'gdprconsentstring',
+        applies: applies,
+      };
     }
 
     function initializeKruxUser() {
@@ -220,7 +236,7 @@ describe('kargo adapter tests', function () {
       return spec._getSessionId();
     }
 
-    function getExpectedKrakenParams(excludeUserIds, excludeKrux, expectedRawCRB, expectedRawCRBCookie) {
+    function getExpectedKrakenParams(excludeUserIds, excludeKrux, expectedRawCRB, expectedRawCRBCookie, expectedGDPR) {
       var base = {
         timeout: 200,
         requestCount: requestCount++,
@@ -298,6 +314,10 @@ describe('kargo adapter tests', function () {
         rawCRBLocalStorage: expectedRawCRB
       };
 
+      if (expectedGDPR) {
+        base.userIDs['gdpr'] = expectedGDPR;
+      }
+
       if (excludeUserIds === true) {
         base.userIDs = {
           crbIDs: {},
@@ -316,12 +336,16 @@ describe('kargo adapter tests', function () {
       return base;
     }
 
-    function testBuildRequests(excludeTdid, expected) {
+    function testBuildRequests(excludeTdid, expected, gdpr) {
       var clonedBids = JSON.parse(JSON.stringify(bids));
       if (excludeTdid) {
         delete clonedBids[0].userId.tdid;
       }
-      var request = spec.buildRequests(clonedBids, {timeout: 200, uspConsent: '1---', foo: 'bar'});
+      var payload = { timeout: 200, uspConsent: '1---', foo: 'bar' };
+      if (gdpr) {
+        payload['gdprConsent'] = gdpr
+      }
+      var request = spec.buildRequests(clonedBids, payload);
       expected.sessionId = getSessionId();
       sessionIds.push(expected.sessionId);
       var krakenParams = JSON.parse(decodeURIComponent(request.data.slice(5)));
@@ -430,6 +454,15 @@ describe('kargo adapter tests', function () {
       initializeKrgCrb();
       testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, getKrgCrb(), getKrgCrbOldStyle()));
     });
+
+    it('sends gdpr consent', function () {
+      initializeKruxUser();
+      initializeKruxSegments();
+      initializeKrgCrb();
+      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, getKrgCrb(), getKrgCrbOldStyle(), generateGDPRExpect(true, true)), generateGDPR(true, true));
+      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, getKrgCrb(), getKrgCrbOldStyle(), generateGDPRExpect(false, true)), generateGDPR(false, true));
+      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, getKrgCrb(), getKrgCrbOldStyle(), generateGDPRExpect(false, false)), generateGDPR(false, false));
+    });
   });
 
   describe('response handler', function() {
@@ -440,7 +473,8 @@ describe('kargo adapter tests', function () {
           cpm: 3,
           adm: '<div id="1"></div>',
           width: 320,
-          height: 50
+          height: 50,
+          metadata: {}
         },
         2: {
           id: 'bar',
@@ -448,7 +482,10 @@ describe('kargo adapter tests', function () {
           adm: '<div id="2"></div>',
           width: 300,
           height: 250,
-          targetingCustom: 'dmpmptest1234'
+          targetingCustom: 'dmpmptest1234',
+          metadata: {
+            landingPageDomain: 'https://foobar.com'
+          }
         },
         3: {
           id: 'bar',
@@ -486,7 +523,8 @@ describe('kargo adapter tests', function () {
         creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: undefined
       }, {
         requestId: '2',
         cpm: 2.5,
@@ -497,7 +535,11 @@ describe('kargo adapter tests', function () {
         creativeId: 'bar',
         dealId: 'dmpmptest1234',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: {
+          clickUrl: 'https://foobar.com',
+          advertiserDomains: ['https://foobar.com']
+        }
       }, {
         requestId: '3',
         cpm: 2.5,
@@ -508,7 +550,8 @@ describe('kargo adapter tests', function () {
         creativeId: 'bar',
         dealId: undefined,
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: undefined
       }];
       expect(resp).to.deep.equal(expectation);
     });
@@ -547,8 +590,8 @@ describe('kargo adapter tests', function () {
       });
     });
 
-    function getUserSyncsWhenAllowed() {
-      return spec.getUserSyncs({iframeEnabled: true});
+    function getUserSyncsWhenAllowed(gdprConsent, usPrivacy) {
+      return spec.getUserSyncs({iframeEnabled: true}, null, gdprConsent, usPrivacy);
     }
 
     function getUserSyncsWhenForbidden() {
@@ -563,17 +606,17 @@ describe('kargo adapter tests', function () {
       shouldSimulateOutdatedBrowser = true;
     }
 
-    function getSyncUrl(index) {
+    function getSyncUrl(index, gdprApplies, gdprConsentString, usPrivacy) {
       return {
         type: 'iframe',
-        url: `https://crb.kargo.com/api/v1/initsyncrnd/${clientId}?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=${index}`
+        url: `https://crb.kargo.com/api/v1/initsyncrnd/${clientId}?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=${index}&gdpr=${gdprApplies}&gdpr_consent=${gdprConsentString}&us_privacy=${usPrivacy}`
       };
     }
 
-    function getSyncUrls() {
+    function getSyncUrls(gdprApplies, gdprConsentString, usPrivacy) {
       var syncs = [];
       for (var i = 0; i < 5; i++) {
-        syncs[i] = getSyncUrl(i);
+        syncs[i] = getSyncUrl(i, gdprApplies || 0, gdprConsentString || '', usPrivacy || '');
       }
       return syncs;
     }
@@ -593,6 +636,21 @@ describe('kargo adapter tests', function () {
 
     it('no user syncs when there is no client id', function() {
       safelyRun(() => expect(getUserSyncsWhenAllowed()).to.be.an('array').that.is.empty);
+    });
+
+    it('no user syncs when there is no us privacy consent', function() {
+      turnOnClientId();
+      safelyRun(() => expect(getUserSyncsWhenAllowed(null, '1YYY')).to.be.an('array').that.is.empty);
+    });
+
+    it('pass through us privacy consent', function() {
+      turnOnClientId();
+      safelyRun(() => expect(getUserSyncsWhenAllowed(null, '1YNY')).to.deep.equal(getSyncUrls(0, '', '1YNY')));
+    });
+
+    it('pass through gdpr consent', function() {
+      turnOnClientId();
+      safelyRun(() => expect(getUserSyncsWhenAllowed({ gdprApplies: true, consentString: 'consentstring' })).to.deep.equal(getSyncUrls(1, 'consentstring', '')));
     });
 
     it('no user syncs when there is outdated browser', function() {

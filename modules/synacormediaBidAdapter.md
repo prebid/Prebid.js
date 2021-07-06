@@ -33,7 +33,7 @@ https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_cache_id_synacorm
           bidder: "synacormedia",
           params: {
               seatId: "prebid",
-              placementId: "demo1",
+              tagId: "demo1",
               bidfloor: 0.10,
               pos: 1
           }
@@ -42,15 +42,17 @@ https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_cache_id_synacorm
       code: 'test-div2',
       mediaTypes: {
         video: {
-            context: 'instream',
-            playerSize: [[300, 250]],
+          context: 'instream',
+          playerSize: [
+            [300, 250]
+          ],
         }
       },
       bids: [{
           bidder: "synacormedia",
           params: {
               seatId: "prebid",
-              placementId: "demo1",
+              tagId: "demo1",
               bidfloor: 0.20,
               pos: 1,
               video: {

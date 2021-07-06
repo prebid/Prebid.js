@@ -1,10 +1,10 @@
 /* COPYRIGHT SCALEABLE LLC 2019 */
 
-import { ajax } from '../src/ajax';
+import { ajax } from '../src/ajax.js';
 import CONSTANTS from '../src/constants.json';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
-import * as utils from '../src/utils';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+import * as utils from '../src/utils.js';
 
 // Object.entries polyfill
 const entries = Object.entries || function(obj) {

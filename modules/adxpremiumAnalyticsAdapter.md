@@ -32,10 +32,11 @@ pbjs.que.push(function () {
         provider: 'adxpremium',
         options: {
             pubID: 12345678
+            sid: "s2"
         }
     });
     }]);
 });
 ```
 
-*Note*: To use AdxPremium Prebid Analytics Adapter, you have to be AdxPremium publisher and get the publisher ID as well as include the adapter in your **Prebid Core** script.
+*Note*: To use AdxPremium Prebid Analytics Adapter, you have to be AdxPremium publisher and get the publisher ID & sid (Server ID) as well as include the adapter in your **Prebid Core** script. 

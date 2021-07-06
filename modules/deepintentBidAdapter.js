@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER} from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 const BIDDER_CODE = 'deepintent';
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
@@ -37,8 +37,19 @@ export const spec = {
       imp: validBidRequests.map(bid => buildImpression(bid)),
       site: buildSite(bidderRequest),
       device: buildDevice(),
-      user: user && user.length == 1 ? user[0] : {}
+      user: user && user.length === 1 ? user[0] : {}
     };
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      utils.deepSetValue(openRtbBidRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+    }
+
+    injectEids(openRtbBidRequest, validBidRequests);
 
     return {
       method: 'POST',
@@ -77,6 +88,9 @@ function formatResponse(bid) {
     width: bid && bid.w ? bid.w : 0,
     height: bid && bid.h ? bid.h : 0,
     ad: bid && bid.adm ? bid.adm : '',
+    meta: {
+      advertiserDomains: bid && bid.adomain ? bid.adomain : []
+    },
     creativeId: bid && bid.crid ? bid.crid : undefined,
     netRevenue: false,
     currency: bid && bid.cur ? bid.cur : 'USD',
@@ -119,6 +133,13 @@ function buildUser(bid) {
   }
 }
 
+function injectEids(openRtbBidRequest, validBidRequests) {
+  const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
+  if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    utils.deepSetValue(openRtbBidRequest, 'user.eids', bidUserIdAsEids);
+  }
+}
+
 function buildBanner(bid) {
   if (utils.deepAccess(bid, 'mediaTypes.banner')) {
     // Get Sizes from MediaTypes Object, Will always take first size, will be overrided by params for exact w,h
@@ -127,13 +148,15 @@ function buildBanner(bid) {
       if (utils.isArray(sizes) && sizes.length > 0) {
         return {
           h: sizes[0][1],
-          w: sizes[0][0]
+          w: sizes[0][0],
+          pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
         }
       }
     } else {
       return {
         h: bid.params.height,
-        w: bid.params.width
+        w: bid.params.width,
+        pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
       }
     }
   }

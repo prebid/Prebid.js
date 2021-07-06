@@ -1,5 +1,8 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
@@ -50,6 +53,9 @@ export const spec = {
         bid.creativeId = result.creativeId;
         bid.currency = result.currency;
         bid.netRevenue = result.netRevenue;
+        if (result.adomain) {
+          bid.meta = {advertiserDomains: result.adomain}
+        }
         bidResponses.push(bid);
       }
     }
@@ -176,8 +182,8 @@ function handlePostMessage() {
 export function getStorageData(key) {
   var item = null;
   try {
-    if (window.localStorage) {
-      item = window.localStorage.getItem(key);
+    if (storage.hasLocalStorage()) {
+      item = storage.getDataFromLocalStorage(key);
     }
   } catch (e) {
   }
@@ -186,8 +192,8 @@ export function getStorageData(key) {
 
 export function setStorageData(key, item) {
   try {
-    if (window.localStorage) {
-      window.localStorage.setItem(key, item);
+    if (storage.hasLocalStorage()) {
+      storage.setDataInLocalStorage(key, item);
     }
   } catch (e) {
   }

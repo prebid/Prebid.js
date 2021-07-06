@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'consumable';
 
@@ -122,6 +122,7 @@ export const spec = {
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 30;
+          bid.meta = { advertiserDomains: decision.adomain ? decision.adomain : [] }
           bid.netRevenue = true;
           bid.referrer = bidRequest.bidderRequest.refererInfo.referer;
 

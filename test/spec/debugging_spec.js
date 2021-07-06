@@ -1,8 +1,8 @@
 
 import { expect } from 'chai';
-import { sessionLoader, addBidResponseHook, addBidderRequestsHook, getConfig, disableOverrides, addBidResponseBound, addBidderRequestsBound } from 'src/debugging';
-import { addBidResponse, addBidderRequests } from 'src/auction';
-import { config } from 'src/config';
+import { sessionLoader, addBidResponseHook, addBidderRequestsHook, getConfig, disableOverrides, addBidResponseBound, addBidderRequestsBound } from 'src/debugging.js';
+import { addBidResponse, addBidderRequests } from 'src/auction.js';
+import { config } from 'src/config.js';
 
 describe('bid overrides', function () {
   let sandbox;

@@ -1,4 +1,4 @@
-import { deepAccess } from './utils';
+import { deepAccess } from './utils.js';
 
 let adUnits = {};
 

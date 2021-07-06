@@ -1,6 +1,10 @@
-import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter';
+import prebidmanagerAnalytics, {
+  storage
+} from 'modules/prebidmanagerAnalyticsAdapter.js';
 import {expect} from 'chai';
-import {server} from 'test/mocks/xhr';
+import {server} from 'test/mocks/xhr.js';
+import * as utils from 'src/utils.js';
+
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -99,6 +103,58 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
       sinon.assert.callCount(prebidmanagerAnalytics.track, 6);
+    });
+  });
+
+  describe('build utm tag data', function () {
+    let getDataFromLocalStorageStub;
+    this.timeout(4000)
+    beforeEach(function () {
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
+      getDataFromLocalStorageStub.withArgs('pm_utm_medium').returns('utm_medium');
+      getDataFromLocalStorageStub.withArgs('pm_utm_campaign').returns('utm_camp');
+      getDataFromLocalStorageStub.withArgs('pm_utm_term').returns('');
+      getDataFromLocalStorageStub.withArgs('pm_utm_content').returns('');
+    });
+    afterEach(function () {
+      getDataFromLocalStorageStub.restore();
+      prebidmanagerAnalytics.disableAnalytics()
+    });
+    it('should build utm data from local storage', function () {
+      prebidmanagerAnalytics.enableAnalytics({
+        provider: 'prebidmanager',
+        options: {
+          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        }
+      });
+
+      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
+
+      expect(pmEvents.utmTags.utm_source).to.equal('utm_source');
+      expect(pmEvents.utmTags.utm_medium).to.equal('utm_medium');
+      expect(pmEvents.utmTags.utm_campaign).to.equal('utm_camp');
+      expect(pmEvents.utmTags.utm_term).to.equal('');
+      expect(pmEvents.utmTags.utm_content).to.equal('');
+    });
+  });
+
+  describe('build page info', function () {
+    afterEach(function () {
+      prebidmanagerAnalytics.disableAnalytics()
+    });
+    it('should build page info', function () {
+      prebidmanagerAnalytics.enableAnalytics({
+        provider: 'prebidmanager',
+        options: {
+          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        }
+      });
+
+      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
+
+      expect(pmEvents.pageInfo.domain).to.equal(window.location.hostname);
+      expect(pmEvents.pageInfo.referrerDomain).to.equal(utils.parseUrl(document.referrer).hostname);
     });
   });
 });

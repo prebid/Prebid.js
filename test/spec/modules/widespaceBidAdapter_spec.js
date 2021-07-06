@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/widespaceBidAdapter';
-import includes from 'core-js/library/fn/array/includes';
+import {spec, storage} from 'modules/widespaceBidAdapter.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 describe('+widespaceAdatperTest', function () {
   // Dummy bid request
@@ -75,7 +75,10 @@ describe('+widespaceAdatperTest', function () {
       'status': 'ad',
       'ttl': 30,
       'width': 300,
-      'syncPixels': ['https://url1.com/url', 'https://url2.com/url']
+      'syncPixels': ['https://url1.com/url', 'https://url2.com/url'],
+      'meta': {
+        advertiserDomains: ['advertiserdomain.com']
+      }
     }],
     headers: {}
   };
@@ -141,8 +144,11 @@ describe('+widespaceAdatperTest', function () {
   });
 
   describe('+bidRequest', function () {
-    const request = spec.buildRequests(bidRequest, bidderRequest);
+    let request;
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
+    before(function() {
+      request = spec.buildRequests(bidRequest, bidderRequest);
+    })
 
     let fakeLocalStorage = {};
     let lsSetStub;
@@ -150,15 +156,15 @@ describe('+widespaceAdatperTest', function () {
     let lsRemoveStub;
 
     beforeEach(function () {
-      lsSetStub = sinon.stub(window.localStorage, 'setItem').callsFake(function (name, value) {
+      lsSetStub = sinon.stub(storage, 'setDataInLocalStorage').callsFake(function (name, value) {
         fakeLocalStorage[name] = value;
       });
 
-      lsGetStub = sinon.stub(window.localStorage, 'getItem').callsFake(function (key) {
+      lsGetStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(function (key) {
         return fakeLocalStorage[key] || null;
       });
 
-      lsRemoveStub = sinon.stub(window.localStorage, 'removeItem').callsFake(function (key) {
+      lsRemoveStub = sinon.stub(storage, 'removeDataFromLocalStorage').callsFake(function (key) {
         if (key && (fakeLocalStorage[key] !== null || fakeLocalStorage[key] !== undefined)) {
           delete fakeLocalStorage[key];
         }
@@ -192,10 +198,6 @@ describe('+widespaceAdatperTest', function () {
     it('-bidRequest options have header type', function () {
       expect(request[0].options.contentType).to.exist;
     });
-
-    it('-cookie test for wsCustomData ', function () {
-      expect(request[0].data.indexOf('hb.cd') > -1).to.equal(true);
-    });
   });
 
   describe('+interpretResponse', function () {
@@ -211,7 +213,8 @@ describe('+widespaceAdatperTest', function () {
         'netRevenue',
         'ttl',
         'referrer',
-        'ad'
+        'ad',
+        'meta'
       ];
       const resultKeys = Object.keys(result[0]);
       requiredKeys.forEach((key) => {

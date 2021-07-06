@@ -1,7 +1,7 @@
 import {
   appierAnalyticsAdapter, getCpmInUsd, parseBidderCode, parseAdUnitCode,
   ANALYTICS_VERSION, BIDDER_STATUS
-} from 'modules/appierAnalyticsAdapter';
+} from 'modules/appierAnalyticsAdapter.js';
 import {expect} from 'chai';
 const events = require('src/events');
 const constants = require('src/constants.json');

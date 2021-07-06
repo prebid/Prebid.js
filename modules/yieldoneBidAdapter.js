@@ -1,13 +1,14 @@
-import * as utils from '../src/utils';
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
 const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
+const CMER_PLAYER_URL = 'https://an.cmertv.com/hb/renderer/cmertv-video-yone-prebid.min.js';
 const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/prebid-adformat-config.js';
 
 export const spec = {
@@ -22,8 +23,9 @@ export const spec = {
       const params = bidRequest.params;
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
-      const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      const referrer = bidderRequest.refererInfo.referer;
       const bidId = bidRequest.bidId;
+      const transactionId = bidRequest.transactionId;
       const unitCode = bidRequest.adUnitCode;
       const timeout = config.getConfig('bidderTimeout');
       const payload = {
@@ -32,6 +34,7 @@ export const spec = {
         cb: cb,
         r: referrer,
         uid: bidId,
+        tid: transactionId,
         uc: unitCode,
         tmax: timeout,
         t: 'i'
@@ -47,6 +50,12 @@ export const spec = {
         const size = utils.parseSizesInput(sizes)[0];
         payload.w = size.split('x')[0];
         payload.h = size.split('x')[1];
+      }
+
+      // LiveRampID
+      const idlEnv = utils.deepAccess(bidRequest, 'userId.idl_env');
+      if (utils.isStr(idlEnv) && !utils.isEmpty(idlEnv)) {
+        payload.lr_env = idlEnv;
       }
 
       return {
@@ -79,7 +88,10 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         ttl: config.getConfig('_bidderTimeout'),
-        referrer: referrer
+        referrer: referrer,
+        meta: {
+          advertiserDomains: response.adomain ? response.adomain : []
+        },
       };
 
       if (response.adTag && renderId === 'ViewableRendering') {
@@ -134,7 +146,11 @@ export const spec = {
       } else if (response.adm) {
         bidResponse.mediaType = VIDEO;
         bidResponse.vastXml = response.adm;
-        bidResponse.renderer = newRenderer(response);
+        if (renderId === 'cmer') {
+          bidResponse.renderer = newCmerRenderer(response);
+        } else {
+          bidResponse.renderer = newRenderer(response);
+        }
       }
 
       bidResponses.push(bidResponse);
@@ -170,6 +186,28 @@ function newRenderer(response) {
 function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.DACIVTPREBID.renderPrebid(bid);
+  });
+}
+
+function newCmerRenderer(response) {
+  const renderer = Renderer.install({
+    id: response.uid,
+    url: CMER_PLAYER_URL,
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender(cmerRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+  }
+
+  return renderer;
+}
+
+function cmerRender(bid) {
+  bid.renderer.push(() => {
+    window.CMERYONEPREBID.renderPrebid(bid);
   });
 }
 
