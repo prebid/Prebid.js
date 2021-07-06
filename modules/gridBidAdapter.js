@@ -345,11 +345,11 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
     const bid = bidRequest.bidsMap[serverBid.impid];
     if (bid) {
       const bidResponse = {
-        requestId: bid.bidId, // bid.bidderRequestId,
+        requestId: bid.bidId, // bid.bidderRequestId
         cpm: serverBid.price,
         width: serverBid.w,
         height: serverBid.h,
-        creativeId: serverBid.auid, // bid.bidId,
+        creativeId: serverBid.auid, // bid.bidId
         currency: 'USD',
         netRevenue: true,
         ttl: TIME_TO_LIVE,
