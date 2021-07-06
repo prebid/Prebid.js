@@ -449,8 +449,8 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
 
           if (isRendererRequired(renderer)) {
             executeRenderer(renderer, bid);
-            emitAdRenderSucceeded({ doc, bid, id });
             utils.insertElement(creativeComment, doc, 'html');
+            emitAdRenderSucceeded({ doc, bid, id });
           } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
             emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
