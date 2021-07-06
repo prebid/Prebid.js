@@ -227,6 +227,7 @@ describe('AdgenerationAdapter', function () {
         ids: {},
         location_params: null,
         locationid: '58279',
+        adomain: ['advertiserdomain.com'],
         native_ad: {
           assets: [
             {
@@ -336,6 +337,7 @@ describe('AdgenerationAdapter', function () {
         currency: 'JPY',
         netRevenue: true,
         ttl: 1000,
+        adomain: ['advertiserdomain.com'],
         ad: '↵    <div id="medibasspContainer">↵      <iframe src="https://sdk-temp.s3-ap-northeast-1.amazonaws.com/adg-sample-ad/300x250.html?prc=-WjRm3cb&rd=https%3A%2F%2Ftg.socdm.com%2Frd%2Fv1%2Fz%2FhKFj2gDZY2hzbT0yMDAsN2NhNTY1NjQvNTgyNzgvU1NQTE9DLzUxMjYwMS83MjExNS43Njg1NS41MTI2MDEvMTA5MzkyNi82NDkxOS81ODI3ODpTU1BMT0M6Ki9jdD0xNTE1MDM4NTQ3NjQyO3NyPWh0dHBzO2RzcGlkPTMwMTtwcj16ZmkzaWYxV3h5VDJrVk90OXpmMWIzMHE7cHJiPXlRO3Bybz15UTtwcm9jPUpQWTtjcmQyeT0xMTM7Y3J5MmQ9MC4wMDg4NDk1NTc1MjIxMjM4OTAyO2lkeD0wO6VzZXFpZNoAJDgyZDcxYzA3LTg5ZjItM2E1ZC1kYmVmLTFjNjhiMDZkOTBmZKdzZXF0aW1lrTE1MTUwMzg1NDc2NDKkeHVpZLhXamg1c2NDbzRWSUFBR1hRelRrQUFBQUE%2Fp%2Fseqid%3D82d71c07-89f2-3a5d-dbef-1c68b06d90fd%3B%2Fg%2FU%3A%3Furl%3D" style="border: 0px;" width="300" height="250" frameborder="0" scrolling="no"></iframe>↵    </div>↵  <img src="https://tg.socdm.com/bc/v3?b=Y2hzbT0zNTQsMjZhOGQ2NTRpZD01ODI3OSZwb3M9U1NQTE9DJmFkPTUxMjYwMy83MjExNi43Njg1Ni41MTI2MDMvMTA5MzkyNy82NDkyMC81ODI3OTpTU1BMT0M6Ki9pZHg9MDtkc3BpZD0zMDE7cHI9emZpM2lmMVd4eVQya1ZPdDl6ZjFiMzBxO3ByYj15UTtwcm89eVE7cHJvYz1KUFk7Y3JkMnk9MTEyLjA1O2NyeTJkPTAuMDA4OTI0NTg3MjM3ODQwMjUwNDtwcnY9aWp6QVZtWW9wbmJUV1B0cWhtZEN1ZWRXNDd0MjU1MEtmYjFWYmI3SzthY2Q9JTdCJTIybWFyZ2luX2lkJTIyJTNBNSU3RDthc2Q9JTdCJTIybWFyZ2luX2lkJTIyJTNBNTIlMkMlMjJtYXJnaW4lMjIlM0FmYWxzZSU3RDsmZXg9MTUxNDE4NzQ4NiZjdD0xNTE0MTg3NDg2Mzc4JnNyPWh0dHA-&amp;xuid=Wjh5scCo4VIAAGXQzTkAAAAA&amp;ctsv=a-ad84&amp;seqid=ca7d6a2d-7cf1-6c6a-f4bd-a19b168ba94b&amp;seqtime=1514187486378&amp;t=.gif" width="1" height="1" style="display:none;border:none;padding:0;margin:0;width:1px;height:1px"/>',
         native: {
           title: 'Title',
@@ -405,6 +407,7 @@ describe('AdgenerationAdapter', function () {
       expect(result.native.impressionTrackers[0]).to.equal(bidResponses.native.native.impressionTrackers[0]);
       expect(result.native.clickTrackers[0]).to.equal(bidResponses.native.native.clickTrackers[0]);
       expect(result.mediaType).to.equal(bidResponses.native.mediaType);
+      expect(result.meta.advertiserDomains).deep.equal(bidResponses.native.adomain);
     });
   });
 });
