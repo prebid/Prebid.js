@@ -87,7 +87,7 @@ export const spec = {
       netRevenue: true,
       ttl: body.ttl || 10,
     };
-    if (body.adomain && body.adomain.length) {
+    if (body.adomain && Array.isArray(body.adomain) && body.adomain[0].length) {
       bidResponse.meta = {
         advertiserDomains: body.adomain
       }
