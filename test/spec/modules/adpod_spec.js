@@ -1,10 +1,10 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import * as videoCache from 'src/videoCache';
-import * as auction from 'src/auction';
-import { ADPOD } from 'src/mediaTypes';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import * as videoCache from 'src/videoCache.js';
+import * as auction from 'src/auction.js';
+import { ADPOD } from 'src/mediaTypes.js';
 
-import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond } from 'modules/adpod';
+import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond } from 'modules/adpod.js';
 
 let expect = require('chai').expect;
 
@@ -138,7 +138,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 300,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -220,7 +220,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -282,7 +282,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30],
             requireExactDuration: true
@@ -376,7 +376,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -465,7 +465,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -525,7 +525,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -602,7 +602,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -675,7 +675,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -748,7 +748,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -826,7 +826,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 300,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -922,7 +922,7 @@ describe('adpod.js', function () {
           },
           video: {
             context: 'adpod',
-            playerSize: [300, 250],
+            playerSize: [[300, 250]],
             durationRangeSec: [15, 30, 45],
             adPodDurationSec: 300
           }
@@ -941,7 +941,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 360,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: true
@@ -981,7 +981,7 @@ describe('adpod.js', function () {
         durationBucket: 15
       },
       meta: {
-        iabSubCatId: 'testCategory_123'
+        primaryCatId: 'testCategory_123'
       },
       vastXml: '<VAST>test XML here</VAST>'
     };
@@ -989,7 +989,7 @@ describe('adpod.js', function () {
       mediaTypes: {
         video: {
           context: ADPOD,
-          playerSize: [300, 400],
+          playerSize: [[300, 400]],
           durationRangeSec: [15, 45],
           requireExactDuration: false,
           adPodDurationSec: 300
@@ -1000,7 +1000,7 @@ describe('adpod.js', function () {
       mediaTypes: {
         video: {
           context: ADPOD,
-          playerSize: [300, 400],
+          playerSize: [[300, 400]],
           durationRangeSec: [15, 30, 45, 60],
           requireExactDuration: true,
           adPodDurationSec: 300
@@ -1050,7 +1050,7 @@ describe('adpod.js', function () {
       });
 
       let goodBid = utils.deepClone(adpodTestBid);
-      goodBid.meta.iabSubCatId = undefined;
+      goodBid.meta.primaryCatId = undefined;
       checkVideoBidSetupHook(callbackFn, goodBid, bidderRequestNoExact, {}, ADPOD);
       expect(callbackResult).to.be.null;
       expect(bailResult).to.equal(true);
@@ -1074,7 +1074,7 @@ describe('adpod.js', function () {
       }
 
       let noCatBid = utils.deepClone(adpodTestBid);
-      noCatBid.meta.iabSubCatId = undefined;
+      noCatBid.meta.primaryCatId = undefined;
       testInvalidAdpodBid(noCatBid, false);
 
       let noContextBid = utils.deepClone(adpodTestBid);
@@ -1101,7 +1101,7 @@ describe('adpod.js', function () {
           durationSeconds: 30
         },
         meta: {
-          iabSubCatId: 'testCategory_123'
+          primaryCatId: 'testCategory_123'
         },
         vastXml: '<VAST/>'
       };

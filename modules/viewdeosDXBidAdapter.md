@@ -14,10 +14,10 @@ Get access to multiple demand partners across Viewdeos and maximize your yield w
       // Video instream adUnit
       {
         code: 'div-test-div',
-        sizes: [[640, 480]],
         mediaTypes: {
           video: {
-            context: 'instream'
+            context: 'instream',
+            playerSize: [[640, 480]]
           }
         },
         bids: [{
@@ -31,16 +31,20 @@ Get access to multiple demand partners across Viewdeos and maximize your yield w
       // Video outstream adUnit
       {
         code: 'outstream-test-div',
-        sizes: [[640, 480]],
         mediaTypes: {
           video: {
-            context: 'outstream'
+            context: 'outstream',
+            playerSize: [[640, 480]]
           }
         },
         bids: [{
           bidder: 'viewdeosDX',
           params: {
-            aid: 331133
+            aid: 331133,
+            outstream: {
+                default_volume:50,
+                video_controls:'show'
+            }
           }
         }]
       },

@@ -1,6 +1,7 @@
 import {expect} from 'chai';
-import {spec} from 'modules/conversantBidAdapter';
-import * as utils from 'src/utils';
+import {spec, storage} from 'modules/conversantBidAdapter.js';
+import * as utils from 'src/utils.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -209,7 +210,7 @@ describe('Conversant adapter tests', function() {
     };
     const request = spec.buildRequests(bidRequests, bidderRequest);
     expect(request.method).to.equal('POST');
-    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/s2s/header/24');
+    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25');
     const payload = request.data;
 
     expect(payload).to.have.property('id', 'req000');
@@ -320,6 +321,12 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.not.have.property('user'); // there should be no user by default
   });
 
+  it('Verify override url', function() {
+    const testUrl = 'https://someurl?name=value';
+    const request = spec.buildRequests([{params: {white_label_url: testUrl}}]);
+    expect(request.url).to.equal(testUrl);
+  });
+
   it('Verify interpretResponse', function() {
     const request = spec.buildRequests(bidRequests);
     const response = spec.interpretResponse(bidResponses, request);
@@ -332,6 +339,7 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('creativeId', '1000');
     expect(bid).to.have.property('width', 300);
     expect(bid).to.have.property('height', 250);
+    expect(bid.meta.advertiserDomains).to.deep.equal(['https://example.com']);
     expect(bid).to.have.property('ad', 'markup000<img src="notify000" />');
     expect(bid).to.have.property('ttl', 300);
     expect(bid).to.have.property('netRevenue', true);
@@ -395,6 +403,7 @@ describe('Conversant adapter tests', function() {
     // add pubcid to every entry
     requests.forEach((unit) => {
       Object.assign(unit, {userId: {pubcid: 67890}});
+      Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
@@ -468,13 +477,14 @@ describe('Conversant adapter tests', function() {
 
       // add pubcid to every entry
       requests.forEach((unit) => {
-        Object.assign(unit, {userId: {pubcid: 112233, tdid: 223344, idl_env: 334455}});
+        Object.assign(unit, {userId: {pubcid: '112233', tdid: '223344', idl_env: '334455'}});
+        Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
       });
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
-        {source: 'adserver.org', uids: [{id: 223344, atype: 1}]},
-        {source: 'liveramp.com', uids: [{id: 334455, atype: 1}]}
+        {source: 'adserver.org', uids: [{id: '223344', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}
       ]);
     });
   });
@@ -505,7 +515,7 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid cookie
-      utils.setCookie(ID_NAME, '12345', expStr(TIMEOUT));
+      storage.setCookie(ID_NAME, '12345', expStr(TIMEOUT));
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -518,7 +528,7 @@ describe('Conversant adapter tests', function() {
       requests[0].params.pubcid_name = CUSTOM_ID_NAME;
 
       // add a pubcid cookie
-      utils.setCookie(CUSTOM_ID_NAME, '12345', expStr(TIMEOUT));
+      storage.setCookie(CUSTOM_ID_NAME, '12345', expStr(TIMEOUT));
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -530,8 +540,8 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(ID_NAME + EXP, '');
-      utils.setDataInLocalStorage(ID_NAME, 'abcde');
+      storage.setDataInLocalStorage(ID_NAME + EXP, '');
+      storage.setDataInLocalStorage(ID_NAME, 'abcde');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -543,8 +553,8 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(ID_NAME + EXP, expStr(TIMEOUT));
-      utils.setDataInLocalStorage(ID_NAME, 'fghijk');
+      storage.setDataInLocalStorage(ID_NAME + EXP, expStr(TIMEOUT));
+      storage.setDataInLocalStorage(ID_NAME, 'fghijk');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -556,8 +566,8 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(ID_NAME + EXP, expStr(-TIMEOUT));
-      utils.setDataInLocalStorage(ID_NAME, 'lmnopq');
+      storage.setDataInLocalStorage(ID_NAME + EXP, expStr(-TIMEOUT));
+      storage.setDataInLocalStorage(ID_NAME, 'lmnopq');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -570,12 +580,85 @@ describe('Conversant adapter tests', function() {
       requests[0].params.pubcid_name = CUSTOM_ID_NAME;
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(CUSTOM_ID_NAME + EXP, expStr(TIMEOUT));
-      utils.setDataInLocalStorage(CUSTOM_ID_NAME, 'fghijk');
+      storage.setDataInLocalStorage(CUSTOM_ID_NAME + EXP, expStr(TIMEOUT));
+      storage.setDataInLocalStorage(CUSTOM_ID_NAME, 'fghijk');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', 'fghijk');
+    });
+  });
+
+  describe('price floor module', function() {
+    let bidRequest;
+    beforeEach(function() {
+      bidRequest = [utils.deepClone(bidRequests[0])];
+      delete bidRequest[0].params.bidfloor;
+    });
+
+    it('obtain floor from getFloor', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 3.21
+        };
+      };
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 3.21);
+    });
+
+    it('obtain floor from params', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 3.21
+        };
+      };
+      bidRequest[0].params.bidfloor = 0.6;
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 0.6);
+    });
+
+    it('unsupported currency', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'EUR',
+          floor: 1.23
+        };
+      };
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 0);
+    });
+
+    it('bad floor value', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 'test'
+        };
+      };
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 0);
+    });
+
+    it('empty floor object', function() {
+      bidRequest[0].getFloor = () => {
+        return {};
+      };
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 0);
+    });
+
+    it('undefined floor result', function() {
+      bidRequest[0].getFloor = () => {};
+
+      const payload = spec.buildRequests(bidRequest).data;
+      expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
   });
 });

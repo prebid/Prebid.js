@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
-import {ajax} from '../src/ajax';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import {ajax} from '../src/ajax.js';
 
 export const spec = {
   code: 'vrtcal',
@@ -69,6 +69,12 @@ export const spec = {
         ad: response.seatbid[0].bid[0].adm,
         nurl: response.seatbid[0].bid[0].nurl
       };
+
+      if (response.seatbid[0].bid[0].adomain && response.seatbid[0].bid[0].adomain.length) {
+        bidResponse.meta = {
+          advertiserDomains: response.seatbid[0].bid[0].adomain
+        };
+      }
 
       bidResponses.push(bidResponse);
     }

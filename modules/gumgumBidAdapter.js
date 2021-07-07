@@ -1,15 +1,23 @@
-import * as utils from '../src/utils'
+import * as utils from '../src/utils.js'
 
-import { config } from '../src/config'
-import includes from 'core-js/library/fn/array/includes';
-import { registerBidder } from '../src/adapters/bidderFactory'
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+
+import { config } from '../src/config.js'
+import { getStorageManager } from '../src/storageManager.js';
+import includes from 'core-js-pure/features/array/includes';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+
+const storage = getStorageManager();
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
-const DT_CREDENTIALS = { member: 'YcXr87z2lpbB' }
+const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const TIME_TO_LIVE = 60
+const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 
+let invalidRequestIds = {};
 let browserParams = {};
 let pageViewId = null
 
@@ -23,7 +31,7 @@ function _getBrowserParams(topWindowUrl) {
   function getNetworkSpeed () {
     const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
     const Mbps = connection && (connection.downlink || connection.bandwidth)
-    return Mbps ? Math.round(Mbps * 1024) : null // 1 megabit -> 1024 kilobits
+    return Mbps ? Math.round(Mbps * 1024) : null
   }
   function getOgURL () {
     let ogURL = ''
@@ -53,9 +61,9 @@ function _getBrowserParams(topWindowUrl) {
     sw: topScreen.width,
     sh: topScreen.height,
     pu: topUrl,
-    ce: utils.cookiesAreEnabled(),
+    ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: JSON.stringify({ t: 0, rq: 8 }),
+    jcsi: JSON.stringify(JCSI),
     ogu: getOgURL()
   }
 
@@ -75,20 +83,8 @@ function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
 }
 
-function _getTradeDeskIDParam(userId) {
-  const unifiedIdObj = {};
-  if (userId.tdid) {
-    unifiedIdObj.tdid = userId.tdid;
-  }
-  return unifiedIdObj;
-}
-
 function _getDigiTrustQueryParams(userId) {
   let digiTrustId = userId.digitrustid && userId.digitrustid.data;
-  if (!digiTrustId) {
-    const digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
-    digiTrustId = (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
-  }
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return {};
@@ -131,11 +127,24 @@ function isBidRequestValid (bid) {
     params,
     adUnitCode
   } = bid;
+  const legacyParamID = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo;
+  const id = legacyParamID || params.slot || params.native || params.zone || params.pubID;
+
+  if (invalidRequestIds[id]) {
+    utils.logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
+    return false;
+  }
 
   switch (true) {
+    case !!(params.zone): break;
+    case !!(params.pubId): break;
     case !!(params.inScreen): break;
+    case !!(params.inScreenPubID): break;
     case !!(params.inSlot): break;
     case !!(params.ICV): break;
+    case !!(params.video): break;
+    case !!(params.inVideo): break;
+    case !!(params.videoPubID): break;
     default:
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
@@ -150,6 +159,93 @@ function isBidRequestValid (bid) {
 }
 
 /**
+ * Renames vid params from mediatypes.video keys
+ * @param {Object} attributes
+ * @returns {Object}
+ */
+function _getVidParams (attributes) {
+  const {
+    minduration: mind,
+    maxduration: maxd,
+    linearity: li,
+    startdelay: sd,
+    placement: pt,
+    protocols = [],
+    playerSize = []
+  } = attributes;
+  const sizes = utils.parseSizesInput(playerSize);
+  const [viw, vih] = sizes[0] && sizes[0].split('x');
+  let pr = '';
+
+  if (protocols.length) {
+    pr = protocols.join(',');
+  }
+
+  return {
+    mind,
+    maxd,
+    li,
+    sd,
+    pt,
+    pr,
+    viw,
+    vih
+  };
+}
+
+/**
+ * Gets bidfloor
+ * @param {Object} mediaTypes
+ * @param {Number} bidfloor
+ * @param {Object} bid
+ * @returns {Number} floor
+ */
+function _getFloor (mediaTypes, staticBidFloor, bid) {
+  const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
+  const bidFloor = { floor: 0, currency: 'USD' };
+
+  if (typeof bid.getFloor === 'function') {
+    const { currency, floor } = bid.getFloor({
+      mediaType: curMediaType,
+      size: '*'
+    });
+    floor && (bidFloor.floor = floor);
+    currency && (bidFloor.currency = currency);
+
+    if (staticBidFloor && floor && currency === 'USD') {
+      bidFloor.floor = Math.max(staticBidFloor, parseFloat(floor));
+    }
+  } else if (staticBidFloor) {
+    bidFloor.floor = staticBidFloor
+  }
+
+  return bidFloor;
+}
+
+function getEids (userId) {
+  const idProperties = [
+    'uid',
+    'eid',
+    'lipbid'
+  ];
+
+  return Object.keys(userId).reduce(function (eids, provider) {
+    const eid = userId[provider];
+    switch (typeof eid) {
+      case 'string':
+        eids[provider] = eid;
+        break;
+
+      case 'object':
+        const idProp = idProperties.filter(prop => eid.hasOwnProperty(prop));
+        idProp.length && (eids[provider] = eid[idProp[0]]);
+        break;
+    }
+    return eids;
+  }, {});
+}
+
+/**
  * Make a server request from the list of BidRequests.
  *
  * @param {validBidRequests[]} - an array of bids
@@ -158,45 +254,84 @@ function isBidRequestValid (bid) {
 function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+  const uspConsent = bidderRequest && bidderRequest.uspConsent;
+  const timeout = config.getConfig('bidderTimeout');
+  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
   utils._each(validBidRequests, bidRequest => {
-    const timeout = config.getConfig('bidderTimeout');
     const {
       bidId,
+      mediaTypes = {},
       params = {},
       schain,
       transactionId,
-      userId = {}
+      userId = {},
+      ortb2Imp
     } = bidRequest;
-    const data = {};
-    const sizes = bidRequest.mediaTypes && bidRequest.mediaTypes.banner && bidRequest.mediaTypes.banner.sizes;
-    const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+    const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
+    const eids = getEids(userId);
+    let sizes = [1, 1];
+    let data = {};
+    let gpid = '';
+
+    // ADTS-134 Retrieve ID envelopes
+    for (const eid in eids) data[eid] = eids[eid];
+
+    // ADJS-1024
+    if (utils.deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
+      gpid = ortb2Imp.ext.data.adserver.adslot
+    }
+
+    if (mediaTypes.banner) {
+      sizes = mediaTypes.banner.sizes;
+    } else if (mediaTypes.video) {
+      sizes = mediaTypes.video.playerSize;
+      data = _getVidParams(mediaTypes.video);
+    }
+
     if (pageViewId) {
-      data.pv = pageViewId
+      data.pv = pageViewId;
     }
-    if (params.bidfloor) {
-      data.fp = params.bidfloor;
+
+    if (floor) {
+      data.fp = floor;
+      data.fpc = currency;
     }
-    if (params.inScreenPubID) {
-      data.pubId = params.inScreenPubID;
-      data.pi = 2;
+
+    if (params.iriscat && typeof params.iriscat === 'string') {
+      data.iriscat = params.iriscat;
     }
-    if (params.inScreen) {
-      data.t = params.inScreen;
-      data.pi = 2;
+
+    if (params.irisid && typeof params.irisid === 'string') {
+      data.irisid = params.irisid;
     }
-    if (params.inSlot) {
-      data.si = parseInt(params.inSlot, 10);
-      data.pi = 3;
+
+    if (params.zone || params.pubId) {
+      params.zone ? (data.t = params.zone) : (data.pubId = params.pubId);
+
+      data.pi = 2; // inscreen
+      // override pi if the following is found
+      if (params.slot) {
+        data.si = parseInt(params.slot, 10);
+        data.pi = 3;
+        data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
+      } else if (params.native) {
+        data.ni = parseInt(params.native, 10);
+        data.pi = 5;
+      } else if (mediaTypes.video) {
+        data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
+      }
+    } else { // legacy params
+      data = { ...data, ...handleLegacyParams(params, sizes) }
     }
-    if (params.ICV) {
-      data.ni = parseInt(params.ICV, 10);
-      data.pi = 5;
-    }
+
     if (gdprConsent) {
       data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
     }
     if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
+    }
+    if (uspConsent) {
+      data.uspConsent = uspConsent;
     }
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
@@ -208,13 +343,48 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: sizes || bidRequest.sizes,
+      sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
+      gpid: gpid,
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId))
     })
   });
   return bids;
+}
+
+function handleLegacyParams (params, sizes) {
+  const data = {};
+  if (params.inScreenPubID) {
+    data.pubId = params.inScreenPubID;
+    data.pi = 2;
+  }
+  if (params.inScreen) {
+    data.t = params.inScreen;
+    data.pi = 2;
+  }
+  if (params.inSlot) {
+    data.si = parseInt(params.inSlot, 10);
+    data.pi = 3;
+    data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
+  }
+  if (params.ICV) {
+    data.ni = parseInt(params.ICV, 10);
+    data.pi = 5;
+  }
+  if (params.videoPubID) {
+    data.pubId = params.videoPubID;
+    data.pi = 7;
+  }
+  if (params.video) {
+    data.t = params.video;
+    data.pi = 7;
+  }
+  if (params.inVideo) {
+    data.t = params.inVideo;
+    data.pi = 6;
+  }
+  return data;
 }
 
 /**
@@ -226,37 +396,74 @@ function buildRequests (validBidRequests, bidderRequest) {
 function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = []
   const serverResponseBody = serverResponse.body
+
+  if (!serverResponseBody || serverResponseBody.err) {
+    const data = bidRequest.data || {}
+    const id = data.si || data.ni || data.t || data.pubId;
+    const delayTime = serverResponseBody ? serverResponseBody.err.drt : DELAY_REQUEST_TIME;
+    invalidRequestIds[id] = { productId: data.pi, timestamp: new Date().getTime() };
+
+    setTimeout(() => {
+      !!invalidRequestIds[id] && delete invalidRequestIds[id];
+    }, delayTime);
+    utils.logWarn(`[GumGum] Please check the implementation for ${id}`);
+  }
+
   const defaultResponse = {
     ad: {
       price: 0,
       id: 0,
-      markup: ''
+      markup: '',
+      width: 0,
+      height: 0
     },
     pag: {
       pvid: 0
+    },
+    meta: {
+      adomain: [],
+      mediaType: ''
     }
   }
   const {
     ad: {
       price: cpm,
       id: creativeId,
-      markup
+      markup,
+      cur,
+      width: responseWidth,
+      height: responseHeight
     },
     cw: wrapper,
     pag: {
       pvid
+    },
+    jcsi,
+    meta: {
+      adomain: advertiserDomains,
+      mediaType: type
     }
   } = Object.assign(defaultResponse, serverResponseBody)
   let data = bidRequest.data || {}
   let product = data.pi
+  let mediaType = (product === 6 || product === 7) ? VIDEO : BANNER
   let isTestUnit = (product === 3 && data.si === 9)
-  let sizes = utils.parseSizesInput(bidRequest.sizes)
+  // use response sizes if available
+  let sizes = responseWidth && responseHeight ? [`${responseWidth}x${responseHeight}`] : utils.parseSizesInput(bidRequest.sizes)
   let [width, height] = sizes[0].split('x')
+  let metaData = {
+    advertiserDomains: advertiserDomains || [],
+    mediaType: type || mediaType
+  }
 
   // return 1x1 when breakout expected
   if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
     width = '1'
     height = '1'
+  }
+
+  if (jcsi) {
+    serverResponseBody.jcsi = JCSI
   }
 
   // update Page View ID from server response
@@ -267,14 +474,17 @@ function interpretResponse (serverResponse, bidRequest) {
       // dealId: DEAL_ID,
       // referrer: REFERER,
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
+      ...(mediaType === VIDEO && {ad: markup, vastXml: markup}),
+      mediaType,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
-      currency: 'USD',
+      currency: cur || 'USD',
       height,
       netRevenue: true,
       requestId: bidRequest.id,
       ttl: TIME_TO_LIVE,
-      width
+      width,
+      meta: metaData
     })
   }
   return bidResponses
@@ -309,6 +519,7 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES
 }
 registerBidder(spec)

@@ -4,9 +4,9 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import { uspDataHandler } from '../src/adapterManager';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { uspDataHandler } from '../src/adapterManager.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -14,24 +14,65 @@ const USPAPI_VERSION = 1;
 
 export let consentAPI;
 export let consentTimeout;
+export let staticConsentData;
 
 let consentData;
 let addedConsentHook = false;
 
 // consent APIs
 const uspCallMap = {
-  'iab': lookupUspConsent
+  'iab': lookupUspConsent,
+  'static': lookupStaticConsentData
 };
+
+/**
+ * This function reads the consent string from the config to obtain the consent information of the user.
+ * @param {function(string)} cmpSuccess acts as a success callback when the value is read from config; pass along consentObject (string) from CMP
+ * @param {function(string)} cmpError acts as an error callback while interacting with the config string; pass along an error message (string)
+ * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
+ */
+function lookupStaticConsentData(cmpSuccess, cmpError, hookConfig) {
+  cmpSuccess(staticConsentData, hookConfig);
+}
 
 /**
  * This function handles interacting with an USP compliant consent manager to obtain the consent information of the user.
  * Given the async nature of the USP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
- * @param {function(string)} uspSuccess acts as a success callback when USPAPI returns a value; pass along consentObject (string) from UPSAPI
+ * @param {function(string)} uspSuccess acts as a success callback when USPAPI returns a value; pass along consentObject (string) from USPAPI
  * @param {function(string)} uspError acts as an error callback while interacting with USPAPI; pass along an error message (string)
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
 function lookupUspConsent(uspSuccess, uspError, hookConfig) {
+  function findUsp() {
+    let f = window;
+    let uspapiFrame;
+    let uspapiFunction;
+
+    while (!uspapiFrame) {
+      try {
+        if (typeof f.__uspapi === 'function') {
+          uspapiFunction = f.__uspapi;
+          uspapiFrame = f;
+          break;
+        }
+      } catch (e) {}
+
+      try {
+        if (f.frames['__uspapiLocator']) {
+          uspapiFrame = f;
+          break;
+        }
+      } catch (e) {}
+      if (f === window.top) break;
+      f = f.parent;
+    }
+    return {
+      uspapiFrame,
+      uspapiFunction,
+    };
+  }
+
   function handleUspApiResponseCallbacks() {
     const uspResponse = {};
 
@@ -49,42 +90,43 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
           uspResponse.usPrivacy = consentResponse.uspString;
         }
         afterEach();
-      }
+      },
     };
   }
 
   let callbackHandler = handleUspApiResponseCallbacks();
   let uspapiCallbacks = {};
 
-  // to collect the consent information from the user, we perform a call to USPAPI
-  // to collect the user's consent choices represented as a string (via getUSPData)
-
-  // the following code also determines where the USPAPI is located and uses the proper workflow to communicate with it:
-  // - use the USPAPI locator code to see if USP's located in the current window or an ancestor window. This works in friendly or cross domain iframes
-  // - if USPAPI is not found, the iframe function will call the uspError exit callback to abort the rest of the USPAPI workflow
-  // - try to call the __uspapi() function directly, otherwise use the postMessage() api
-
-  // find the CMP frame/window
-  let f = window;
-  let uspapiFrame;
-  while (!uspapiFrame) {
-    try {
-      if (f.frames['__uspapiLocator']) uspapiFrame = f;
-    } catch (e) { }
-    if (f === window.top) break;
-    f = f.parent;
-  }
+  let { uspapiFrame, uspapiFunction } = findUsp();
 
   if (!uspapiFrame) {
     return uspError('USP CMP not found.', hookConfig);
   }
 
-  try {
-    // try to call __uspapi directly
-    uspapiFrame.__uspapi('getUSPData', USPAPI_VERSION, callbackHandler.consentDataCallback);
-  } catch (e) {
-    // must not have been accessible, try using postMessage() api
-    callUspApiWhileInIframe('getUSPData', uspapiFrame, callbackHandler.consentDataCallback);
+  // to collect the consent information from the user, we perform a call to USPAPI
+  // to collect the user's consent choices represented as a string (via getUSPData)
+
+  // the following code also determines where the USPAPI is located and uses the proper workflow to communicate with it:
+  // - use the USPAPI locator code to see if USP's located in the current window or an ancestor window.
+  // - else assume prebid is in an iframe, and use the locator to see if the CMP is located in a higher parent window. This works in cross domain iframes.
+  // - if USPAPI is not found, the iframe function will call the uspError exit callback to abort the rest of the USPAPI workflow
+
+  if (utils.isFn(uspapiFunction)) {
+    utils.logInfo('Detected USP CMP is directly accessible, calling it now...');
+    uspapiFunction(
+      'getUSPData',
+      USPAPI_VERSION,
+      callbackHandler.consentDataCallback
+    );
+  } else {
+    utils.logInfo(
+      'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
+    );
+    callUspApiWhileInIframe(
+      'getUSPData',
+      uspapiFrame,
+      callbackHandler.consentDataCallback
+    );
   }
 
   function callUspApiWhileInIframe(commandName, uspapiFrame, moduleCallback) {
@@ -96,19 +138,19 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
         __uspapiCall: {
           command: cmd,
           version: ver,
-          callId: callId
-        }
+          callId: callId,
+        },
       };
 
       uspapiCallbacks[callId] = callback;
       uspapiFrame.postMessage(msg, '*');
-    }
+    };
 
     /** when we get the return message, call the stashed callback */
     window.addEventListener('message', readPostMessageResponse, false);
 
     // call uspapi
-    window.__uspapi(commandName, USPAPI_VERSION, uspapiCallback);
+    window.__uspapi(commandName, USPAPI_VERSION, moduleCallback);
 
     function readPostMessageResponse(event) {
       const res = event && event.data && event.data.__uspapiReturn;
@@ -118,11 +160,6 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
           delete uspapiCallbacks[res.callId];
         }
       }
-    }
-
-    function uspapiCallback(consentObject, success) {
-      window.removeEventListener('message', readPostMessageResponse, false);
-      moduleCallback(consentObject, success);
     }
   }
 }
@@ -146,11 +183,6 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     haveExited: false,
     timer: null
   };
-
-  // in case we already have consent (eg during bid refresh)
-  if (consentData) {
-    return exitModule(null, hookConfig);
-  }
 
   if (!uspCallMap[consentAPI]) {
     utils.logWarn(`USP framework (${consentAPI}) is not a supported framework. Aborting consentManagement module and resuming auction.`);
@@ -179,7 +211,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
 function processUspData(consentObject, hookConfig) {
   const valid = !!(consentObject && consentObject.usPrivacy);
   if (!valid) {
-    uspapiFailed(`UPSAPI returned unexpected value during lookup process.`, hookConfig, consentObject);
+    uspapiFailed(`USPAPI returned unexpected value during lookup process.`, hookConfig, consentObject);
     return;
   }
 
@@ -263,7 +295,7 @@ export function resetConsentData() {
  * @param {object} config required; consentManagementUSP module config settings; usp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
-  config = config.usp;
+  config = config && config.usp;
   if (!config || typeof config !== 'object') {
     utils.logWarn('consentManagement.usp config not defined, exiting usp consent manager');
     return;
@@ -284,6 +316,14 @@ export function setConsentConfig(config) {
 
   utils.logInfo('USPAPI consentManagement module has been activated...');
 
+  if (consentAPI === 'static') {
+    if (utils.isPlainObject(config.consentData) && utils.isPlainObject(config.consentData.getUSPData)) {
+      if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };
+      consentTimeout = 0;
+    } else {
+      utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
+    }
+  }
   if (!addedConsentHook) {
     $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
   }

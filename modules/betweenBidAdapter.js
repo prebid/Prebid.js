@@ -1,6 +1,9 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'between';
+const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -13,7 +16,7 @@ export const spec = {
    * @return boolean True  if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.w && bid.params.h && bid.params.s);
+    return Boolean(bid.params.s);
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -21,17 +24,19 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     let requests = [];
+    const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+    const refInfo = getRefererInfo();
+
     validBidRequests.forEach(i => {
       let params = {
+        sizes: parseSizesInput(getAdUnitSizes(i)),
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
         fl: getFl(),
         rr: getRr(),
-        w: i.params.w,
-        h: i.params.h,
         s: i.params.s,
         bidid: i.bidId,
         transactionid: i.transactionId,
@@ -54,9 +59,30 @@ export const spec = {
           params['pubside_macro[' + key + ']'] = encodeURIComponent(i.params.pubdata[key]);
         }
       }
-      requests.push({method: 'GET', url: 'https://ads.betweendigital.com/adjson', data: params})
+
+      if (i.schain) {
+        params.schain = encodeToBase64WebSafe(JSON.stringify(i.schain));
+      }
+
+      if (refInfo && refInfo.referer) params.ref = refInfo.referer;
+
+      if (gdprConsent) {
+        if (typeof gdprConsent.gdprApplies !== 'undefined') {
+          params.gdprApplies = !!gdprConsent.gdprApplies;
+        }
+        if (typeof gdprConsent.consentString !== 'undefined') {
+          params.consentString = gdprConsent.consentString;
+        }
+      }
+
+      requests.push({data: params})
     })
-    return requests;
+    return {
+      method: 'POST',
+      url: ENDPOINT,
+      data: JSON.stringify(requests)
+    }
+    // return requests;
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -76,7 +102,10 @@ export const spec = {
         creativeId: serverResponse.body[i].creativeid,
         currency: serverResponse.body[i].currency || 'RUB',
         netRevenue: serverResponse.body[i].netRevenue || true,
-        ad: serverResponse.body[i].ad
+        ad: serverResponse.body[i].ad,
+        meta: {
+          advertiserDomains: serverResponse.body[i].adomain ? serverResponse.body[i].adomain : []
+        }
       };
       bidResponses.push(bidResponse);
     }
@@ -96,7 +125,7 @@ export const spec = {
      if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: 'https://acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+        url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
       });
     }
      if (syncOptions.pixelEnabled && serverResponses.length > 0) {
@@ -108,7 +137,7 @@ export const spec = {
 
     // syncs.push({
     //   type: 'iframe',
-    //   url: 'https://acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+    //   url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
     // });
     syncs.push({
       type: 'iframe',
@@ -148,6 +177,10 @@ function getFl() {
 
 function getTz() {
   return new Date().getTimezoneOffset();
+}
+
+function encodeToBase64WebSafe(string) {
+  return btoa(string).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 /*

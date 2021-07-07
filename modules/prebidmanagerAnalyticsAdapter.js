@@ -1,15 +1,17 @@
-import {ajaxBuilder} from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import {ajaxBuilder} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
  */
+export const storage = getStorageManager(undefined, 'prebidmanager');
 const DEFAULT_EVENT_URL = 'https://endpoint.prebidmanager.com/endpoint'
 const analyticsType = 'endpoint';
 const analyticsName = 'Prebid Manager Analytics: ';
 
-var utils = require('../src/utils');
+var utils = require('../src/utils.js');
 var CONSTANTS = require('../src/constants.json');
 let ajax = ajaxBuilder(0);
 
@@ -20,6 +22,7 @@ var _startAuction = 0;
 var _bidRequestTimeout = 0;
 let flushInterval;
 var pmAnalyticsEnabled = false;
+const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 
 var w = window;
 var d = document;
@@ -68,6 +71,46 @@ prebidmanagerAnalytics.disableAnalytics = function() {
   prebidmanagerAnalytics.originDisableAnalytics();
 };
 
+function collectUtmTagData() {
+  let newUtm = false;
+  let pmUtmTags = {};
+  try {
+    utmTags.forEach(function (utmKey) {
+      let utmValue = utils.getParameterByName(utmKey);
+      if (utmValue !== '') {
+        newUtm = true;
+      }
+      pmUtmTags[utmKey] = utmValue;
+    });
+    if (newUtm === false) {
+      utmTags.forEach(function (utmKey) {
+        let itemValue = storage.getDataFromLocalStorage(`pm_${utmKey}`);
+        if (itemValue && itemValue.length !== 0) {
+          pmUtmTags[utmKey] = itemValue;
+        }
+      });
+    } else {
+      utmTags.forEach(function (utmKey) {
+        storage.setDataInLocalStorage(`pm_${utmKey}`, pmUtmTags[utmKey]);
+      });
+    }
+  } catch (e) {
+    utils.logError(`${analyticsName}Error`, e);
+    pmUtmTags['error_utm'] = 1;
+  }
+  return pmUtmTags;
+}
+
+function collectPageInfo() {
+  const pageInfo = {
+    domain: window.location.hostname,
+  }
+  if (document.referrer) {
+    pageInfo.referrerDomain = utils.parseUrl(document.referrer).hostname;
+  }
+  return pageInfo;
+}
+
 function flush() {
   if (!pmAnalyticsEnabled) {
     return;
@@ -78,7 +121,9 @@ function flush() {
       pageViewId: _pageViewId,
       ver: _VERSION,
       bundleId: initOptions.bundleId,
-      events: _eventQueue
+      events: _eventQueue,
+      utmTags: collectUtmTagData(),
+      pageInfo: collectPageInfo(),
     };
 
     ajax(

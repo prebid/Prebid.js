@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { OPENRTB, spec } from 'modules/rtbhouseBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { OPENRTB, spec } from 'modules/rtbhouseBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('RTBHouseAdapter', () => {
   const adapter = newBidder(spec);
@@ -51,26 +51,7 @@ describe('RTBHouseAdapter', () => {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
-      {
-        'bidder': 'rtbhouse',
-        'params': {
-          'publisherId': 'PREBID_TEST',
-          'region': 'prebid-eu',
-          'test': 1
-        },
-        'adUnitCode': 'adunit-code',
-        'mediaTypes': {
-          'banner': {
-            'sizes': [[300, 250], [300, 600]],
-          }
-        },
-        'bidId': '30b31c1838de1e',
-        'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
-        'transactionId': 'example-transaction-id',
-      }
-    ];
+    let bidRequests;
     const bidderRequest = {
       'refererInfo': {
         'numIframes': 0,
@@ -79,6 +60,41 @@ describe('RTBHouseAdapter', () => {
         'stack': ['https://example.com']
       }
     };
+
+    beforeEach(() => {
+      bidRequests = [
+        {
+          'bidder': 'rtbhouse',
+          'params': {
+            'publisherId': 'PREBID_TEST',
+            'region': 'prebid-eu',
+            'test': 1
+          },
+          'adUnitCode': 'adunit-code',
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250], [300, 600]],
+            }
+          },
+          'bidId': '30b31c1838de1e',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+          'transactionId': 'example-transaction-id',
+          'schain': {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [
+              {
+                'asi': 'directseller.com',
+                'sid': '00001',
+                'rid': 'BidRequest1',
+                'hp': 1
+              }
+            ]
+          }
+        }
+      ];
+    });
 
     it('should build test param into the request', () => {
       let builtTestRequest = spec.buildRequests(bidRequests, bidderRequest).data;
@@ -165,12 +181,66 @@ describe('RTBHouseAdapter', () => {
       expect(data.source.tid).to.equal('example-transaction-id');
     });
 
+    it('should include bidfloor from floor module if avaiable', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].getFloor = () => ({floor: 1.22});
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].bidfloor).to.equal(1.22)
+    });
+
+    it('should use bidfloor from floor module if both floor module and bid floor avaiable', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].getFloor = () => ({floor: 1.22});
+      bidRequest[0].params.bidfloor = 0.01;
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].bidfloor).to.equal(1.22)
+    });
+
     it('should include bidfloor in request if available', () => {
       const bidRequest = Object.assign([], bidRequests);
       bidRequest[0].params.bidfloor = 0.01;
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].bidfloor).to.equal(0.01)
+    });
+
+    it('should include schain in request', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.ext.schain).to.deep.equal({
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'directseller.com',
+            'sid': '00001',
+            'rid': 'BidRequest1',
+            'hp': 1
+          }
+        ]
+      });
+    });
+
+    it('should include source.tid in request', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.source).to.have.deep.property('tid');
+    });
+
+    it('should not include invalid schain', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].schain = {
+        'nodes': [{
+          'unknown_key': 1
+        }]
+      };
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.source).to.not.have.property('ext');
     });
 
     describe('native imp', () => {
@@ -382,6 +452,7 @@ describe('RTBHouseAdapter', () => {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
+          'meta': { advertiserDomains: ['rtbhouse.com'] },
           'netRevenue': true
         }
       ];
@@ -444,6 +515,7 @@ describe('RTBHouseAdapter', () => {
 
       it('should contain native assets in valid format', () => {
         const bids = spec.interpretResponse({body: response}, {});
+        expect(bids[0].meta.advertiserDomains).to.deep.equal(['rtbhouse.com']);
         expect(bids[0].native).to.deep.equal({
           title: 'Title text',
           clickUrl: encodeURIComponent('https://example.com'),

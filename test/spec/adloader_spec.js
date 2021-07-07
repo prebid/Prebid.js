@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import * as adLoader from 'test/mocks/adloaderStub';
+import * as utils from 'src/utils.js';
+import * as adLoader from 'test/mocks/adloaderStub.js';
 
 describe('adLoader', function () {
   let utilsinsertElementStub;

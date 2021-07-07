@@ -4,23 +4,126 @@
  * @module modules/liveIntentIdSystem
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils'
-import {ajax} from '../src/ajax';
-import {submodule} from '../src/hook';
+import * as utils from '../src/utils.js';
+import { triggerPixel } from '../src/utils.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { LiveConnect } from 'live-connect-js/esm/initializer.js';
+import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js';
 
 const MODULE_NAME = 'liveIntentId';
-const LIVE_CONNECT_DUID_KEY = '_li_duid';
-const DOMAIN_USER_ID_QUERY_PARAM_KEY = 'duid';
-const DEFAULT_LIVEINTENT_IDENTITY_URL = '//idx.liadm.com';
-const DEFAULT_PREBID_SOURCE = 'prebid';
+export const storage = getStorageManager(null, MODULE_NAME);
+const calls = {
+  ajaxGet: (url, onSuccess, onError, timeout) => {
+    ajaxBuilder(timeout)(
+      url,
+      {
+        success: onSuccess,
+        error: onError
+      },
+      undefined,
+      {
+        method: 'GET',
+        withCredentials: true
+      }
+    )
+  },
+  pixelGet: (url, onload) => triggerPixel(url, onload)
+}
+
+let eventFired = false;
+let liveConnect = null;
+
+/**
+ * This function is used in tests
+ */
+export function reset() {
+  if (window && window.liQ) {
+    window.liQ = [];
+  }
+  liveIntentIdSubmodule.setModuleMode(null)
+  eventFired = false;
+  liveConnect = null;
+}
+
+function parseLiveIntentCollectorConfig(collectConfig) {
+  const config = {};
+  collectConfig = collectConfig || {}
+  collectConfig.appId && (config.appId = collectConfig.appId);
+  collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
+  collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
+  collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
+  return config;
+}
+
+function initializeLiveConnect(configParams) {
+  configParams = configParams || {};
+  if (liveConnect) {
+    return liveConnect;
+  }
+
+  const publisherId = configParams.publisherId || 'any';
+  const identityResolutionConfig = {
+    source: 'prebid',
+    publisherId: publisherId
+  };
+  if (configParams.url) {
+    identityResolutionConfig.url = configParams.url
+  }
+  if (configParams.partner) {
+    identityResolutionConfig.source = configParams.partner
+  }
+  if (configParams.ajaxTimeout) {
+    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
+  }
+
+  const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
+  liveConnectConfig.wrapperName = 'prebid';
+  liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
+  liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
+  const usPrivacyString = uspDataHandler.getConsentData();
+  if (usPrivacyString) {
+    liveConnectConfig.usPrivacyString = usPrivacyString;
+  }
+  const gdprConsent = gdprDataHandler.getConsentData()
+  if (gdprConsent) {
+    liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
+    liveConnectConfig.gdprConsent = gdprConsent.consentString;
+  }
+
+  // The second param is the storage object, LS & Cookie manipulation uses PBJS utils.
+  // The third param is the ajax and pixel object, the ajax and pixel use PBJS utils.
+  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
+  if (configParams.emailHash) {
+    liveConnect.push({ hash: configParams.emailHash })
+  }
+  return liveConnect;
+}
+
+function tryFireEvent() {
+  if (!eventFired && liveConnect) {
+    liveConnect.fire();
+    eventFired = true;
+  }
+}
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
+  moduleMode: process.env.LiveConnectMode,
   /**
    * used to link submodule with config
    * @type {string}
    */
   name: MODULE_NAME,
+
+  setModuleMode(mode) {
+    this.moduleMode = mode
+  },
+  getInitializer() {
+    return this.moduleMode === 'minimal' ? MinimalLiveConnect : LiveConnect
+  },
 
   /**
    * decode the stored id value for passing to bid requests. Note that lipb object is a wrapper for everything, and
@@ -28,70 +131,51 @@ export const liveIntentIdSubmodule = {
    * `publisherId` params.
    * @function
    * @param {{unifiedId:string}} value
+   * @param {SubmoduleConfig|undefined} config
    * @returns {{lipb:Object}}
    */
-  decode(value) {
+  decode(value, config) {
+    const configParams = (config && config.params) || {};
     function composeIdObject(value) {
-      const base = {'lipbid': value['unifiedId']};
+      const base = { 'lipbid': value.unifiedId };
       delete value.unifiedId;
-      return {'lipb': {...base, ...value}};
+      return { 'lipb': { ...base, ...value } };
     }
+
+    if (!liveConnect) {
+      initializeLiveConnect(configParams);
+    }
+    tryFireEvent();
+
     return (value && typeof value['unifiedId'] === 'string') ? composeIdObject(value) : undefined;
   },
 
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams) {
-    const publisherId = configParams && configParams.publisherId;
-    if (!publisherId && typeof publisherId !== 'string') {
-      utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
+  getId(config) {
+    const configParams = (config && config.params) || {};
+    const liveConnect = initializeLiveConnect(configParams);
+    if (!liveConnect) {
       return;
     }
-    let baseUrl = DEFAULT_LIVEINTENT_IDENTITY_URL;
-    let source = DEFAULT_PREBID_SOURCE;
-    if (configParams.url) {
-      baseUrl = configParams.url
-    }
-    if (configParams.partner) {
-      source = configParams.partner
-    }
-
-    const additionalIdentifierNames = configParams.identifiersToResolve || [];
-
-    const additionalIdentifiers = additionalIdentifierNames.concat([LIVE_CONNECT_DUID_KEY]).reduce((obj, identifier) => {
-      const value = utils.getCookie(identifier) || utils.getDataFromLocalStorage(identifier);
-      const key = identifier.replace(LIVE_CONNECT_DUID_KEY, DOMAIN_USER_ID_QUERY_PARAM_KEY);
-      if (value) {
-        if (typeof value === 'object') {
-          obj[key] = JSON.stringify(value);
-        } else {
-          obj[key] = value;
+    tryFireEvent();
+    const result = function(callback) {
+      liveConnect.resolve(
+        response => {
+          callback(response);
+        },
+        error => {
+          utils.logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
+          callback();
         }
-      }
-      return obj
-    }, {});
+      )
+    }
 
-    const queryString = utils.parseQueryStringParameters(additionalIdentifiers)
-    const url = `${baseUrl}/idex/${source}/${publisherId}?${queryString}`;
-
-    const result = function (callback) {
-      ajax(url, response => {
-        let responseObj = {};
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            utils.logError(error);
-          }
-        }
-        callback(responseObj);
-      }, undefined, { method: 'GET', withCredentials: true });
-    };
-    return {callback: result};
+    return { callback: result };
   }
 };
 

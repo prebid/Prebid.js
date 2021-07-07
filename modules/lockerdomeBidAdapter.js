@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import {BANNER} from '../src/mediaTypes';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 export const spec = {
   code: 'lockerdome',
@@ -66,7 +66,10 @@ export const spec = {
         currency: bid.currency,
         netRevenue: bid.netRevenue,
         ad: bid.ad,
-        ttl: bid.ttl
+        ttl: bid.ttl,
+        meta: {
+          advertiserDomains: bid.adomain && Array.isArray(bid.adomain) ? bid.adomain : []
+        }
       };
     });
   },

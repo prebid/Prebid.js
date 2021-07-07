@@ -1,12 +1,17 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const GVLID = 24;
+export const storage = getStorageManager(GVLID);
 
 const BIDDER_CODE = 'conversant';
-const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
+const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['cnvr'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -28,10 +33,11 @@ export const spec = {
     }
 
     if (isVideoRequest(bid)) {
-      if (!bid.params.mimes) {
+      const mimes = bid.params.mimes || utils.deepAccess(bid, 'mediaTypes.video.mimes');
+      if (!mimes) {
         // Give a warning but let it pass
         utils.logWarn(BIDDER_CODE + ': mimes should be specified for videos');
-      } else if (!utils.isArray(bid.params.mimes) || !bid.params.mimes.every(s => utils.isStr(s))) {
+      } else if (!utils.isArray(mimes) || !mimes.every(s => utils.isStr(s))) {
         utils.logWarn(BIDDER_CODE + ': mimes must be an array of strings');
         return false;
       }
@@ -53,9 +59,10 @@ export const spec = {
     let requestId = '';
     let pubcid = null;
     let pubcidName = '_pubcid';
+    let bidurl = URL;
 
     const conversantImps = validBidRequests.map(function(bid) {
-      const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      const bidfloor = getBidFloor(bid);
 
       siteId = utils.getBidIdParameter('site_id', bid.params) || siteId;
       pubcidName = utils.getBidIdParameter('pubcid_name', bid.params) || pubcidName;
@@ -84,7 +91,7 @@ export const spec = {
 
         copyOptProperty(bid.params.position, video, 'pos');
         copyOptProperty(bid.params.mimes || videoData.mimes, video, 'mimes');
-        copyOptProperty(bid.params.maxduration, video, 'maxduration');
+        copyOptProperty(bid.params.maxduration || videoData.maxduration, video, 'maxduration');
         copyOptProperty(bid.params.protocols || videoData.protocols, video, 'protocols');
         copyOptProperty(bid.params.api || videoData.api, video, 'api');
 
@@ -103,6 +110,9 @@ export const spec = {
         pubcid = bid.userId.pubcid;
       } else if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
+      }
+      if (bid.params.white_label_url) {
+        bidurl = bid.params.white_label_url;
       }
 
       return imp;
@@ -159,7 +169,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: URL,
+      url: bidurl,
       data: payload,
     };
   },
@@ -196,6 +206,10 @@ export const spec = {
               ttl: 300,
               netRevenue: true
             };
+            bid.meta = {};
+            if (conversantBid.adomain && conversantBid.adomain.length > 0) {
+              bid.meta.advertiserDomains = conversantBid.adomain;
+            }
 
             if (request.video) {
               if (responseAd.charAt(0) === '<') {
@@ -314,36 +328,23 @@ function copyOptProperty(src, dst, dstName) {
 function collectEids(bidRequests) {
   const request = bidRequests[0]; // bidRequests have the same userId object
   const eids = [];
-
-  addEid(eids, request, 'userId.tdid', 'adserver.org');
-  addEid(eids, request, 'userId.idl_env', 'liveramp.com');
-  addEid(eids, request, 'userId.criteoId', 'criteo.com');
-  addEid(eids, request, 'userId.id5id', 'id5-sync.com');
-  addEid(eids, request, 'userId.parrableid', 'parrable.com');
-  addEid(eids, request, 'userId.digitrustid.data.id', 'digitru.st');
-  addEid(eids, request, 'userId.lipb.lipbid', 'liveintent.com');
-
-  return eids;
-}
-
-/**
- * Extract and push a single extended id into eids array
- * @param eids Array of extended IDs
- * @param idObj Object containing IDs
- * @param keyPath Nested properties expressed as a path
- * @param source Source for the ID
- */
-function addEid(eids, idObj, keyPath, source) {
-  const id = utils.deepAccess(idObj, keyPath);
-  if (id) {
-    eids.push({
-      source: source,
-      uids: [{
-        id: id,
-        atype: 1
-      }]
+  if (utils.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
+    // later following white-list can be converted to block-list if needed
+    const requiredSourceValues = {
+      'adserver.org': 1,
+      'liveramp.com': 1,
+      'criteo.com': 1,
+      'id5-sync.com': 1,
+      'parrable.com': 1,
+      'liveintent.com': 1
+    };
+    request.userIdAsEids.forEach(function(eid) {
+      if (requiredSourceValues.hasOwnProperty(eid.source)) {
+        eids.push(eid);
+      }
     });
   }
+  return eids;
 }
 
 /**
@@ -355,13 +356,13 @@ function readStoredValue(key) {
   let storedValue;
   try {
     // check cookies first
-    storedValue = utils.getCookie(key);
+    storedValue = storage.getCookie(key);
 
     if (!storedValue) {
       // check expiration time before reading local storage
-      const storedValueExp = utils.getDataFromLocalStorage(`${key}_exp`);
+      const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
       if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
-        storedValue = utils.getDataFromLocalStorage(key);
+        storedValue = storage.getDataFromLocalStorage(key);
         storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
       }
     }
@@ -375,6 +376,30 @@ function readStoredValue(key) {
   }
 
   return storedValue;
+}
+
+/**
+ * Get the floor price from bid.params for backward compatibility.
+ * If not found, then check floor module.
+ * @param bid A valid bid object
+ * @returns {*|number} floor price
+ */
+function getBidFloor(bid) {
+  let floor = utils.getBidIdParameter('bidfloor', bid.params);
+
+  if (!floor && utils.isFn(bid.getFloor)) {
+    const floorObj = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (utils.isPlainObject(floorObj) && !isNaN(floorObj.floor) && floorObj.currency === 'USD') {
+      floor = floorObj.floor;
+    }
+  }
+
+  return floor
 }
 
 registerBidder(spec);

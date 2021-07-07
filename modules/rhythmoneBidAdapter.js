@@ -1,8 +1,8 @@
 'use strict';
 
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 function RhythmOneBidAdapter() {
   this.code = 'rhythmone';
@@ -38,7 +38,7 @@ function RhythmOneBidAdapter() {
       slotsToBids[BRs[i].adUnitCode] = BRs[i];
       var impObj = {};
       impObj.id = BRs[i].adUnitCode;
-      impObj.bidfloor = parseFloat(utils.deepAccess(BRs[i], 'params.floor')) || 0;
+      impObj.bidfloor = 0;
       impObj.secure = isSecure;
 
       if (utils.deepAccess(BRs[i], 'mediaTypes.banner') || utils.deepAccess(BRs[i], 'mediaType') === 'banner') {
@@ -253,6 +253,9 @@ function RhythmOneBidAdapter() {
         cpm: parseFloat(bid.price),
         width: bid.w,
         height: bid.h,
+        meta: {
+          advertiserDomains: bid.adomain
+        },
         creativeId: bid.crid,
         currency: 'USD',
         netRevenue: true,

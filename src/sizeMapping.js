@@ -1,6 +1,6 @@
-import { config } from './config';
-import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils';
-import includes from 'core-js/library/fn/array/includes';
+import { config } from './config.js';
+import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 let sizeConfig = [];
 
@@ -121,7 +121,8 @@ function evaluateSizeConfig(configs) {
   return configs.reduce((results, config) => {
     if (
       typeof config === 'object' &&
-      typeof config.mediaQuery === 'string'
+      typeof config.mediaQuery === 'string' &&
+      config.mediaQuery.length > 0
     ) {
       let ruleMatch = false;
 

@@ -29,6 +29,7 @@ Module that connects to Deepintent's demand sources.
                 tagId: '1300',  // Required parameter
                 w: 300,   // Width and Height here will override sizes in mediatype
                 h: 250,
+                pos: 1,
                 custom: {              // Custom parameters in form of key value pairs
                     user_min_age: 18
                 }

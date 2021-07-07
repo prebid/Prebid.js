@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/consumableBidAdapter';
-import {createBid} from 'src/bidfactory';
+import {spec} from 'modules/consumableBidAdapter.js';
+import {createBid} from 'src/bidfactory.js';
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
 const SMARTSYNC_CALLBACK = 'serverbidCallBids';
@@ -299,6 +299,7 @@ describe('Consumable BidAdapter', function () {
         expect(b).to.have.property('currency', 'USD');
         expect(b).to.have.property('creativeId');
         expect(b).to.have.property('ttl', 30);
+        expect(b.meta).to.have.property('advertiserDomains');
         expect(b).to.have.property('netRevenue', true);
         expect(b).to.have.property('referrer');
       });
