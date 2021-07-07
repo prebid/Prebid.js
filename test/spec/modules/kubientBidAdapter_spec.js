@@ -55,7 +55,8 @@ describe('KubientAdapter', function () {
       video: {
         context: 'instream',
         playerSize: [640, 480],
-        mimes: ['video/mp4']
+        mimes: ['video/mp4'],
+        protocols: [1]
       }
     },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e61',

@@ -11,7 +11,12 @@ export const spec = {
   gvlid: VENDOR_ID,
   supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
-    return !!(bid && bid.params && bid.params.zoneid);
+    return !!(
+      bid &&
+      bid.params &&
+      bid.params.zoneid &&
+      ((!bid.mediaTypes.video) || (bid.mediaTypes.video && bid.mediaTypes.video.playerSize && bid.mediaTypes.video.mimes && bid.mediaTypes.video.protocols))
+    );
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests || !bidderRequest) {
