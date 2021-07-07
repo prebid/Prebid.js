@@ -56,7 +56,9 @@ pbjs.setConfig({
               apiHostname: '<see your Akamai account rep>',
               domain: 'your-domain.com',
               type: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
-              identity: ‘your@email.com’ | ‘6175551234' | ...
+              identity: ‘your@email.com’ | ‘6175551234' | ...,
+              apiVersion: 'v1' | 'x1',
+              attributes: '{ "cohorts": [ "3:14400", "5:14400", "7:0" ],"first_name": "...","last_name": "..." }'
             }
         },{
             name: 'identityLink',
