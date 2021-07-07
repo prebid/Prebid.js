@@ -24,8 +24,8 @@ describe('SharedId System', function() {
     utils.logInfo.restore();
   });
 
-  function optinCookie() {
-    coreStorage.setCookie(OPTOUT_NAME, null, EXPIRED_COOKIE_DATE);
+  function removeOptOutCookie() {
+    coreStorage.setCookie(OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
   }
   describe('SharedId System getId()', function() {
     const callbackSpy = sinon.spy();
@@ -35,6 +35,7 @@ describe('SharedId System', function() {
 
     beforeEach(function() {
       sandbox = sinon.sandbox.create();
+
       coppaDataHandlerDataStub = sandbox.stub(coppaDataHandler, 'getCoppa');
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       callbackSpy.resetHistory();
@@ -42,7 +43,7 @@ describe('SharedId System', function() {
 
     afterEach(function () {
       coppaDataHandlerDataStub.returns('false');
-      optinCookie();
+      removeOptOutCookie();
       sandbox.restore();
     });
 
@@ -67,8 +68,7 @@ describe('SharedId System', function() {
     });
     it('should log message if coppa is set', function() {
       coppaDataHandlerDataStub.returns('true');
-      sharedIdSystemSubmodule.getId({});
-      optinCookie();
+      sharedIdSystemSubmodule.getId({})
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
     });
   });
@@ -87,7 +87,7 @@ describe('SharedId System', function() {
 
     afterEach(function () {
       coppaDataHandlerDataStub.returns('false');
-      optinCookie();
+      removeOptOutCookie();
       sandbox.restore();
     });
 
@@ -113,8 +113,7 @@ describe('SharedId System', function() {
     });
     it('should log message if coppa is set', function() {
       coppaDataHandlerDataStub.returns('true');
-      sharedIdSystemSubmodule.extendId({}, undefined, 'TestId');
-      optinCookie();
+      sharedIdSystemSubmodule.extendId({}, undefined, 'TestId')
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
     });
   });
