@@ -36,6 +36,11 @@ const DEFAULT_PUBLISHER_ID = 0;
 const DEFAULT_PROFILE_ID = 0;
 const DEFAULT_PROFILE_VERSION_ID = 0;
 const enc = window.encodeURIComponent;
+const MEDIATYPE = {
+  BANNER: 0,
+  VIDEO: 1,
+  NATIVE: 2
+}
 
 /// /////////// VARIABLES //////////////
 let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
@@ -270,6 +275,17 @@ function getSizesForAdUnit(adUnit, adUnitId) {
   }
 }
 
+function getAdUnitCode(adUnitId) {
+  var adUnit = getGlobal().adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId));
+  return adUnit.length ? (adUnit[0].adUnitId ? adUnit[0].adUnitId : adUnit[0].code) : adUnitId;
+}
+
+function getAdUnitAdFormats(adUnitId) {
+  var adUnit = getGlobal().adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId));
+  var af = adUnit.length ? adUnit[0].mediaTypes.map(format => MEDIATYPE[format.toUpperCase()]) : [0];
+  return af;
+}
+
 function executeBidsLoggerCall(e, highestCpmBids) {
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
@@ -309,6 +325,8 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
     let slotObject = {
       'sn': adUnitId,
+      'au': getAdUnitCode(adUnitId),
+      'mt': getAdUnitAdFormats(adUnitId),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId))
     };
@@ -342,6 +360,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&pid=' + enc(profileId);
   pixelURL += '&pdvid=' + enc(profileVersionId);
   pixelURL += '&slot=' + enc(adUnitId);
+  pixelURL += '&au=' + enc(getAdUnitCode(adUnitId));
   pixelURL += '&pn=' + enc(adapterName);
   pixelURL += '&bc=' + enc(winningBid.bidder);
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
