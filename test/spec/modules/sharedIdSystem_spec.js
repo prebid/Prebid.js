@@ -16,10 +16,12 @@ describe('SharedId System', function() {
 
   before(function() {
     sinon.stub(utils, 'generateUUID').returns(UUID);
+    sinon.stub(utils, 'logInfo');
   });
 
   after(function() {
     utils.generateUUID.restore();
+    utils.logInfo.restore();
   });
 
   function removeOptOutCookie() {
@@ -61,17 +63,13 @@ describe('SharedId System', function() {
     });
     it('should log message opted out', function() {
       coreStorage.setCookie(OPTOUT_NAME, 'true', EXPIRE_COOKIE_TIME);
-      const infoMessageSpy = sinon.spy(utils, 'logInfo');
       sharedIdSystemSubmodule.getId({});
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: Has opted-out');
-      infoMessageSpy.restore();
     });
     it('should log message if coppa is set', function() {
       coppaDataHandlerDataStub.returns('true');
-      const infoMessageSpy = sinon.spy(utils, 'logInfo');
       sharedIdSystemSubmodule.getId({})
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
-      infoMessageSpy.restore();
     });
   });
   describe('SharedId System extendId()', function() {
@@ -82,7 +80,6 @@ describe('SharedId System', function() {
 
     beforeEach(function() {
       sandbox = sinon.sandbox.create();
-
       coppaDataHandlerDataStub = sandbox.stub(coppaDataHandler, 'getCoppa');
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       callbackSpy.resetHistory();
@@ -111,20 +108,13 @@ describe('SharedId System', function() {
     });
     it('should log message opted out', function() {
       coreStorage.setCookie(OPTOUT_NAME, 'true', EXPIRE_COOKIE_TIME);
-      const infoMessageSpy = sinon.spy(utils, 'logInfo');
       sharedIdSystemSubmodule.extendId({}, undefined, 'TestId');
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: Has opted-out');
-
-      infoMessageSpy.restore();
     });
     it('should log message if coppa is set', function() {
       coppaDataHandlerDataStub.returns('true');
-      const infoMessageSpy = sinon.spy(utils, 'logInfo');
       sharedIdSystemSubmodule.extendId({}, undefined, 'TestId')
-
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
-
-      infoMessageSpy.restore();
     });
   });
 });
