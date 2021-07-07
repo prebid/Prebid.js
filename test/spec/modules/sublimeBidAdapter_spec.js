@@ -16,7 +16,7 @@ describe('Sublime Adapter', function() {
       'e',
       'src',
       'puid',
-      'trId',
+      'notid',
       'pbav',
       'pubpbv',
       'device',
@@ -167,7 +167,7 @@ describe('Sublime Adapter', function() {
           sspname: 'foo',
           netRevenue: true,
           ttl: 600,
-          pbav: '0.7.2',
+          pbav: '0.7.3',
           ad: '',
         },
       ];
@@ -210,7 +210,7 @@ describe('Sublime Adapter', function() {
         netRevenue: true,
         ttl: 600,
         ad: '<!-- Creative -->',
-        pbav: '0.7.2',
+        pbav: '0.7.3',
         sspname: 'sublime'
       };
 
@@ -263,7 +263,7 @@ describe('Sublime Adapter', function() {
         netRevenue: true,
         ttl: 600,
         ad: '<!-- ad -->',
-        pbav: '0.7.2',
+        pbav: '0.7.3',
       };
 
       expect(result[0]).to.deep.equal(expectedResponse);

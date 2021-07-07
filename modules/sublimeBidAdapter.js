@@ -9,7 +9,7 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.7.2';
+const SUBLIME_VERSION = '0.7.3';
 
 /**
  * Identify the current device type
@@ -66,7 +66,7 @@ export function sendEvent(eventName, sspName) {
     e: eventName,
     src: 'pa',
     puid: state.transactionId || state.notifyId,
-    trId: state.transactionId || state.notifyId,
+    notid: state.notifyId || '',
     pbav: SUBLIME_VERSION,
     pubtimeout: config.getConfig('bidderTimeout'),
     pubpbv: '$prebid.version$',
