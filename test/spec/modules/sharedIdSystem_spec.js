@@ -63,15 +63,14 @@ describe('SharedId System', function() {
       coreStorage.setCookie(OPTOUT_NAME, 'true', EXPIRE_COOKIE_TIME);
       const infoMessageSpy = sinon.spy(utils, 'logInfo');
       sharedIdSystemSubmodule.getId({});
-      expect(infoMessageSpy.lastCall.lastArg).to.eq('PubCommonId: Has opted-out');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: Has opted-out');
       infoMessageSpy.restore();
     });
     it('should log message if coppa is set', function() {
       coppaDataHandlerDataStub.returns('true');
       const infoMessageSpy = sinon.spy(utils, 'logInfo');
       sharedIdSystemSubmodule.getId({})
-
-      expect(infoMessageSpy.lastCall.lastArg).to.eq('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       infoMessageSpy.restore();
     });
   });
@@ -114,7 +113,8 @@ describe('SharedId System', function() {
       coreStorage.setCookie(OPTOUT_NAME, 'true', EXPIRE_COOKIE_TIME);
       const infoMessageSpy = sinon.spy(utils, 'logInfo');
       sharedIdSystemSubmodule.extendId({}, undefined, 'TestId');
-      expect(infoMessageSpy.lastCall.lastArg).to.eq('PubCommonId: Has opted-out');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: Has opted-out');
+
       infoMessageSpy.restore();
     });
     it('should log message if coppa is set', function() {
@@ -122,7 +122,8 @@ describe('SharedId System', function() {
       const infoMessageSpy = sinon.spy(utils, 'logInfo');
       sharedIdSystemSubmodule.extendId({}, undefined, 'TestId')
 
-      expect(infoMessageSpy.lastCall.lastArg).to.eq('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+
       infoMessageSpy.restore();
     });
   });
