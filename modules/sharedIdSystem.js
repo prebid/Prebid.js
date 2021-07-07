@@ -38,7 +38,16 @@ function readValue(name, type) {
   }
 }
 
-function queuePixelCallback(pixelUrl, id = '') {
+function getIdCallback(pubcid, pixelCallback) {
+  return function (callback) {
+    if (typeof pixelCallback === 'function') {
+      pixelCallback();
+    }
+    callback(pubcid);
+  }
+}
+
+function queuePixelCallback(pixelUrl, id = '', callback) {
   if (!pixelUrl) {
     return;
   }
@@ -93,7 +102,7 @@ export const sharedIdSystemSubmodule = {
   getId: function (config = {}, consentData, storedId) {
     if (hasOptedOut()) {
       utils.logInfo('PubCommonId: Has opted-out');
-      return {id: undefined};
+      return;
     }
     const coppa = coppaDataHandler.getCoppa();
 
@@ -116,7 +125,7 @@ export const sharedIdSystemSubmodule = {
     }
 
     const pixelCallback = queuePixelCallback(pixelUrl, newId);
-    return {id: newId, callback: pixelCallback};
+    return {id: newId, callback: getIdCallback(newId, pixelCallback)};
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -155,36 +164,6 @@ export const sharedIdSystemSubmodule = {
         return {callback: callback};
       } else {
         return {id: storedId};
-      }
-    }
-  },
-
-  /**
-   * @param {string} domain
-   * @param {HTMLDocument} document
-   * @return {(string|undefined)}
-   */
-  domainOverride: function () {
-    const domainElements = document.domain.split('.');
-    const cookieName = `_gd${Date.now()}`;
-    for (let i = 0, topDomain, testCookie; i < domainElements.length; i++) {
-      const nextDomain = domainElements.slice(i).join('.');
-
-      // write test cookie
-      storage.setCookie(cookieName, '1', undefined, undefined, nextDomain);
-
-      // read test cookie to verify domain was valid
-      testCookie = storage.getCookie(cookieName);
-
-      // delete test cookie
-      storage.setCookie(cookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, nextDomain);
-
-      if (testCookie === '1') {
-        // cookie was written successfully using test domain so the topDomain is updated
-        topDomain = nextDomain;
-      } else {
-        // cookie failed to write using test domain so exit by returning the topDomain
-        return topDomain;
       }
     }
   }
