@@ -50,7 +50,15 @@ pbjs.setConfig({
                 // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
                 partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
             }
-        }, {
+        },{
+            name: 'akamaiDAPId',
+            params: {
+              apiHostname: '<see your Akamai account rep>',
+              domain: 'your-domain.com',
+              type: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
+              identity: ‘your@email.com’ | ‘6175551234' | ...
+            }
+        },{
             name: 'identityLink',
             params: {
                 pid: '999', // Set your real identityLink placement ID here
