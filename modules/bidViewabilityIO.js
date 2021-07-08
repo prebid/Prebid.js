@@ -49,7 +49,7 @@ export let markViewed = (bid, entry, observer) => {
 // is passed into the factory, so it can pass it into markViewed, so that it can be included
 // in the BID_VIEWABLE event data. If the ad leaves view before the timer goes off, the setTimeout
 // is cancelled, an the bid will not be marked as viewed. There's probably some kind of race-ish
-// thing going on between IO and setTimeout but this isn't going to be perfect, it's just going to 
+// thing going on between IO and setTimeout but this isn't going to be perfect, it's just going to
 // be pretty good.
 export let viewCallbackFactory = (bid) => {
   return (entries, observer) => {
@@ -76,7 +76,7 @@ export let init = () => {
     // this way we are adding a way for bidders to know (using pbjs.getConfig('bidViewability').enabled === true) whether this module is added in build and is enabled
     if (globalModuleConfig[CONFIG_ENABLED] && CLIENT_SUPPORTS_IO && isSupportedMediaType(bid)) {
       let viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
-      let element = document.getElementById(bid.adUnitCode); 
+      let element = document.getElementById(bid.adUnitCode);
       viewable.observe(element);
     }
   });

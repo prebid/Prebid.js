@@ -1,13 +1,9 @@
 import * as bidViewabilityIO from 'modules/bidViewabilityIO.js';
-import { config } from 'src/config.js';
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
-import {expect, spy} from 'chai';
-import * as prebidGlobal from 'src/prebidGlobal.js';
+import { expect } from 'chai';
 import { EVENTS } from 'src/constants.json';
-import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
-import parse from 'url-parse';
 
 describe('#bidViewabilityIO', function() {
   const makeElement = (id) => {

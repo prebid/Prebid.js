@@ -75,9 +75,9 @@
         Object.keys(bidResponses).forEach(adUnitCode => {
           var highestCpmBids = pbjs.getHighestCpmBids(adUnitCode);
           var winner = highestCpmBids.pop();
+          var iframe = document.getElementById(adUnitCode);
+          var iframeDoc = iframe.contentWindow.document;
           if (winner && winner.mediaType === 'banner') {
-            var iframe = document.getElementById(adUnitCode);
-            var iframeDoc = iframe.contentWindow.document;
             pbjs.renderAd(iframeDoc, winner.adId);
           } else if (winner) {
             iframe.width = 300;
