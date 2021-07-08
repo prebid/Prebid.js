@@ -23,7 +23,7 @@ const events = require('./events.js');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED, STALE_RENDER } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
 const eventValidators = {
@@ -391,6 +391,14 @@ function emitAdRenderFail({ reason, message, bid, id }) {
   events.emit(AD_RENDER_FAILED, data);
 }
 
+function emitAdRenderSucceeded({ doc, bid, id }) {
+  const data = { doc };
+  if (bid) data.bid = bid;
+  if (id) data.adId = id;
+
+  events.emit(AD_RENDER_SUCCEEDED, data);
+}
+
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
@@ -398,7 +406,7 @@ function emitAdRenderFail({ reason, message, bid, id }) {
  * @param  {string} id bid id to locate the ad
  * @alias module:pbjs.renderAd
  */
-$$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
+$$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
 
@@ -438,10 +446,11 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
           const {height, width, ad, mediaType, adUrl, renderer} = bid;
 
           const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
-          utils.insertElement(creativeComment, doc, 'body');
 
           if (isRendererRequired(renderer)) {
             executeRenderer(renderer, bid);
+            utils.insertElement(creativeComment, doc, 'html');
+            emitAdRenderSucceeded({ doc, bid, id });
           } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
             emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
@@ -459,7 +468,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
             doc.write(ad);
             doc.close();
             setRenderSize(doc, width, height);
+            utils.insertElement(creativeComment, doc, 'html');
             utils.callBurl(bid);
+            emitAdRenderSucceeded({ doc, bid, id });
           } else if (adUrl) {
             const iframe = utils.createInvisibleIframe();
             iframe.height = height;
@@ -470,7 +481,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
 
             utils.insertElement(iframe, doc, 'body');
             setRenderSize(doc, width, height);
+            utils.insertElement(creativeComment, doc, 'html');
             utils.callBurl(bid);
+            emitAdRenderSucceeded({ doc, bid, id });
           } else {
             const message = `Error trying to write ad. No ad for bid response id: ${id}`;
             emitAdRenderFail({reason: NO_AD, message, bid, id});
@@ -488,7 +501,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
     const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
     emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
   }
-};
+});
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all

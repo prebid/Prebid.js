@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.10614';
+const TAPPX_BIDDER_VERSION = '0.1.10623';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream'];
@@ -375,6 +375,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // < Params
 
   // > GDPR
+  let user = {};
+  user.ext = {};
 
   // Universal ID
   let eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
@@ -386,18 +388,14 @@ function buildOneRequest(validBidRequests, bidderRequest) {
         (typeof uuid.uids[0].id == 'string' && uuid.uids[0].id !== null)
     )
 
-    payload.user = {
-      ext: {
-        eids: eidsArr
-      }
-    }
+    if (typeof user !== 'undefined') { user.ext.eids = eidsArr }
   };
 
   let regs = {};
   regs.gdpr = 0;
   if (!(bidderRequest.gdprConsent == null)) {
     if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') { regs.gdpr = bidderRequest.gdprConsent.gdprApplies; }
-    if (regs.gdpr) { payload.user.ext.consent = bidderRequest.gdprConsent.consentString; }
+    if (regs.gdpr) { user.ext.consent = bidderRequest.gdprConsent.consentString; }
   }
 
   // CCPA
@@ -419,6 +417,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.tmax = bidderRequest.timeout ? bidderRequest.timeout : 600;
   payload.bidder = BIDDER_CODE;
   payload.imp = [imp];
+  payload.user = user;
 
   payload.device = device;
   payload.params = params;

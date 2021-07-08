@@ -285,6 +285,34 @@ function createBannerRequest(bid, mediaType) {
   return result;
 }
 
+function addSegments(name, segName, segments, data, bidConfigName) {
+  if (segments && segments.length) {
+    data.push({
+      name: name,
+      segment: segments.map((seg) => {
+        return {name: segName, value: seg};
+      })
+    });
+  } else if (bidConfigName) {
+    const configData = config.getConfig('ortb2.user.data');
+    let segData = null;
+    configData && configData.some(({name, segment}) => {
+      if (name === bidConfigName) {
+        segData = segment;
+        return true;
+      }
+    });
+    if (segData && segData.length) {
+      data.push({
+        name: name,
+        segment: segData.map((seg) => {
+          return {name: segName, value: seg};
+        })
+      });
+    }
+  }
+}
+
 /**
  * Gets bidfloor
  * @param {Object} mediaTypes
@@ -318,6 +346,7 @@ function newFormatRequest(validBidRequests, bidderRequest) {
   }
   let pageKeywords = null;
   let jwpseg = null;
+  let permutiveseg = null;
   let content = null;
   let schain = null;
   let userId = null;
@@ -352,13 +381,19 @@ function newFormatRequest(validBidRequests, bidderRequest) {
       pageKeywords = utils.transformBidderParamKeywords(keywords);
     }
     const bidFloor = _getFloor(mediaTypes || {}, bid);
-    const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
-    if (jwTargeting) {
-      if (!jwpseg && jwTargeting.segments) {
-        jwpseg = jwTargeting.segments;
+    if (rtd) {
+      const jwTargeting = rtd.jwplayer && rtd.jwplayer.targeting;
+      if (jwTargeting) {
+        if (!jwpseg && jwTargeting.segments) {
+          jwpseg = jwTargeting.segments;
+        }
+        if (!content && jwTargeting.content) {
+          content = jwTargeting.content;
+        }
       }
-      if (!content && jwTargeting.content) {
-        content = jwTargeting.content;
+      const permutiveTargeting = rtd.p_standard && rtd.p_standard.targeting;
+      if (!permutiveseg && permutiveTargeting && permutiveTargeting.segments) {
+        permutiveseg = permutiveTargeting.segments;
       }
     }
     let impObj = {
@@ -420,14 +455,13 @@ function newFormatRequest(validBidRequests, bidderRequest) {
     request.site.content = content;
   }
 
-  if (jwpseg && jwpseg.length) {
+  const userData = [];
+  addSegments('iow_labs_pub_data', 'jwpseg', jwpseg, userData);
+  addSegments('permutive', 'p_standard', permutiveseg, userData, 'permutive.com');
+
+  if (userData.length) {
     user = {
-      data: [{
-        name: 'iow_labs_pub_data',
-        segment: jwpseg.map((seg) => {
-          return {name: 'jwpseg', value: seg};
-        })
-      }]
+      data: userData
     };
   }
 
@@ -499,6 +533,8 @@ function oldFormatRequest(validBidRequests, bidderRequest) {
   const sizeMap = {};
   const bids = validBidRequests || [];
   let priceType = 'net';
+  let jwpseg = null;
+  let permutiveseg = null;
   let pageKeywords;
   let reqId;
 
@@ -507,7 +543,7 @@ function oldFormatRequest(validBidRequests, bidderRequest) {
       priceType = 'gross';
     }
     reqId = bid.bidderRequestId;
-    const {params: {uid}, adUnitCode} = bid;
+    const {params: {uid}, adUnitCode, rtd} = bid;
     auids.push(uid);
     const sizesId = utils.parseSizesInput(bid.sizes);
 
@@ -518,6 +554,19 @@ function oldFormatRequest(validBidRequests, bidderRequest) {
         keywords.forEach(deleteValues);
       }
       pageKeywords = keywords;
+    }
+
+    if (rtd) {
+      const jwTargeting = rtd.jwplayer && rtd.jwplayer.targeting;
+      if (jwTargeting) {
+        if (!jwpseg && jwTargeting.segments) {
+          jwpseg = jwTargeting.segments;
+        }
+      }
+      const permutiveTargeting = rtd.p_standard && rtd.p_standard.targeting;
+      if (!permutiveseg && permutiveTargeting && permutiveTargeting.segments) {
+        permutiveseg = permutiveTargeting.segments;
+      }
     }
 
     if (!slotsMapByUid[uid]) {
@@ -545,6 +594,24 @@ function oldFormatRequest(validBidRequests, bidderRequest) {
       slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
     });
   });
+
+  const segmentsData = [];
+  addSegments('iow_labs_pub_data', 'jwpseg', jwpseg, segmentsData);
+  addSegments('permutive', 'p_standard', permutiveseg, segmentsData, 'permutive.com');
+
+  if (segmentsData.length) {
+    if (!pageKeywords) {
+      pageKeywords = [];
+    }
+    segmentsData.forEach(({segment}) => {
+      if (segment.length) {
+        pageKeywords.push({
+          key: segment[0].name,
+          value: segment.map(({value}) => value)
+        });
+      }
+    });
+  }
 
   const payload = {
     pt: priceType,

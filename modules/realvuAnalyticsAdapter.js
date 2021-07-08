@@ -670,7 +670,7 @@ export let lib = {
       };
     }
     let a = window.top1.realvu_aa.check(p1);
-    return a.r;
+    return a.riff;
   },
 
   checkBidIn: function(partnerId, args, b) { // process a bid from hb

@@ -2,8 +2,19 @@ import { expect } from 'chai';
 import { Renderer } from 'src/Renderer.js';
 import * as utils from 'src/utils.js';
 import { loadExternalScript } from 'src/adloader.js';
+require('test/mocks/adloaderStub.js');
 
 describe('Renderer', function () {
+  let oldAdUnits;
+  beforeEach(function () {
+    oldAdUnits = $$PREBID_GLOBAL$$.adUnits;
+    $$PREBID_GLOBAL$$.adUnits = [];
+  });
+
+  afterEach(function () {
+    $$PREBID_GLOBAL$$.adUnits = oldAdUnits;
+  });
+
   describe('Renderer: A renderer installed on a bid response', function () {
     let testRenderer1;
     let testRenderer2;
@@ -99,15 +110,12 @@ describe('Renderer', function () {
   });
 
   describe('3rd party renderer', function () {
-    let adUnitsOld;
     let utilsSpy;
     before(function () {
-      adUnitsOld = $$PREBID_GLOBAL$$.adUnits;
       utilsSpy = sinon.spy(utils, 'logWarn');
     });
 
     after(function() {
-      $$PREBID_GLOBAL$$.adUnits = adUnitsOld;
       utilsSpy.restore();
     });
 
