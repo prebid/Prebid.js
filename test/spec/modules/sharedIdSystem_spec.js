@@ -73,7 +73,6 @@ describe('SharedId System', function() {
       sharedIdSystemSubmodule.getId({});
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: Has opted-out');
     });
-
   });
   describe('SharedId System extendId()', function() {
     const callbackSpy = sinon.spy();
