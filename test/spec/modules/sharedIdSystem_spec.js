@@ -2,9 +2,12 @@ import {
   sharedIdSystemSubmodule
 } from 'modules/sharedIdSystem.js';
 import {coppaDataHandler, uspDataHandler} from 'src/adapterManager';
+
+import { newStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
-import { coreStorage } from 'modules/userId/index.js'
+import { coreStorage } from 'modules/userId/index.js';
+const storage = newStorageManager();
 
 let expect = require('chai').expect;
 
@@ -22,10 +25,11 @@ describe('SharedId System', function() {
   after(function() {
     utils.generateUUID.restore();
     utils.logInfo.restore();
+    optinCookie();
   });
 
   function optinCookie() {
-    coreStorage.setCookie(OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
+    storage.setCookie(OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
   }
   describe('SharedId System getId()', function() {
     const callbackSpy = sinon.spy();
@@ -61,7 +65,7 @@ describe('SharedId System', function() {
       expect(callbackSpy.lastCall.lastArg).to.equal(UUID);
     });
     it('should log message opted out', function() {
-      coreStorage.setCookie(OPTOUT_NAME, 'true', EXPIRE_COOKIE_TIME);
+      storage.setCookie(OPTOUT_NAME, 'true', EXPIRE_COOKIE_TIME);
       sharedIdSystemSubmodule.getId({});
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: Has opted-out');
     });
@@ -106,7 +110,7 @@ describe('SharedId System', function() {
       expect(pubcommId).to.equal('TestId');
     });
     it('should log message opted out', function() {
-      coreStorage.setCookie(OPTOUT_NAME, 'true', EXPIRE_COOKIE_TIME);
+      storage.setCookie(OPTOUT_NAME, 'true', EXPIRE_COOKIE_TIME);
       sharedIdSystemSubmodule.extendId({}, undefined, 'TestId');
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: Has opted-out');
     });
