@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'integr8';
 const ENDPOINT_URL = 'https://integr8.central.gjirafa.tech/bid';
@@ -16,7 +17,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.propertyId && bid.params.placementId);
+    return !!(bid.params && bid.params.propertyId && bid.params.placementId);
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -33,26 +34,29 @@ export const spec = {
     let contents = [];
     let data = {};
 
+    if (bidderRequest) {
+      bidderRequestId = bidderRequest.bidderRequestId;
+
+      if (bidderRequest.refererInfo) {
+        url = bidderRequest.refererInfo.referer;
+      }
+    }
+
     let placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
-      if (!pageViewGuid && bidRequest.params) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
-      if (!storageId && bidRequest.params) { storageId = bidRequest.params.storageId || ''; }
-      if (!bidderRequestId) { bidderRequestId = bidRequest.bidderRequestId; }
-      if (!url && bidderRequest) { url = bidderRequest.refererInfo.referer; }
+      if (!pageViewGuid) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
+      if (!storageId) { storageId = bidRequest.params.storageId || ''; }
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
-      if (Object.keys(data).length === 0 && bidRequest.params.data && Object.keys(bidRequest.params.data).length !== 0) { data = bidRequest.params.data; }
-
-      let adUnitId = bidRequest.adUnitCode;
-      let placementId = bidRequest.params.placementId;
-      let sizes = generateSizeParam(bidRequest.sizes);
+      if (!Object.keys(data).length && bidRequest.params.data && Object.keys(bidRequest.params.data).length) { data = bidRequest.params.data; }
 
       return {
-        sizes: sizes,
-        adUnitId: adUnitId,
-        placementId: placementId,
+        sizes: generateSizeParam(bidRequest.sizes),
+        adUnitId: bidRequest.adUnitCode,
+        placementId: bidRequest.params.placementId,
         bidid: bidRequest.bidId,
         count: bidRequest.params.count,
-        skipTime: bidRequest.params.skipTime
+        skipTime: utils.deepAccess(bidRequest, 'mediaTypes.video.skipafter', bidRequest.params.skipTime),
+        floor: getBidFloor(bidRequest)
       };
     });
 
@@ -114,6 +118,24 @@ export const spec = {
 */
 function generateSizeParam(sizes) {
   return sizes.map(size => size.join(DIMENSION_SEPARATOR)).join(SIZE_SEPARATOR);
+}
+
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'EUR',
+    mediaType: '*',
+    size: '*'
+  });
+
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+    return floor.floor;
+  }
+
+  return null;
 }
 
 registerBidder(spec);
