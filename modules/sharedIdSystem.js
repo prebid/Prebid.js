@@ -63,8 +63,8 @@ function queuePixelCallback(pixelUrl, id = '', callback) {
 }
 
 function hasOptedOut() {
-  return (storage.cookiesAreEnabled() && readValue(OPTOUT_NAME, COOKIE)) ||
-    (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE));
+  return !!((storage.cookiesAreEnabled() && readValue(OPTOUT_NAME, COOKIE)) ||
+    (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE)));
 }
 
 export const sharedIdSystemSubmodule = {
