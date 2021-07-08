@@ -1,7 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'bmtm';
 const AD_URL = 'https://one.elitebidder.com/api/hb';
@@ -112,8 +111,8 @@ export const spec = {
         placement.schain = bid.schain;
       }
 
-      if (bid.userId) {
-        placement.userIds = { eids: createEidsArray(bid.userId) };
+      if (bid.userIdAsEids) {
+        placement.userIds = { eids: bid.userIdAsEids };
       }
       placements.push(placement);
     }

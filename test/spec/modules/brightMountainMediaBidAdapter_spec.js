@@ -146,11 +146,30 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     });
 
     it('sends userId info if exists', function () {
-      const userId = {
-        id5id: { uid: '1111' },
-        shareid: { 'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22' },
-      };
-      bidBanner.userId = userId;
+      const userIdAsEids = [
+        {
+          'source': 'id5-sync.com',
+          'uids': [
+            {
+              'id': 'ID5-ZHMOaW5vh_TJhKVSaTWmuoTpwqjGGwx5v0WbaSV8yw',
+              'atype': 1,
+              'ext': {
+                'linkType': 2
+              }
+            }
+          ]
+        },
+        {
+          'source': 'pubcid.org',
+          'uids': [
+            {
+              'id': '00000000000000000000000000',
+              'atype': 1
+            }
+          ]
+        }
+      ];
+      bidBanner.userIdAsEids = userIdAsEids;
       const request = spec.buildRequests([bidBanner], bidderRequest);
 
       expect(request.data.placements[0]).to.have.property('userIds');
