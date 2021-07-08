@@ -271,13 +271,13 @@ describe('pubmatic analytics adapter', function () {
         divID: 'Slot_1',
         code: '/19968336/header-bid-tag-0',
         adUnitId: '/19968336/header-bid-tag-0',
-        mediaTypes: ['banner']
+        mediaTypes: {'banner': {'sizes': [0]}}
       },
       {
         divID: 'Slot_2',
         code: '/19968336/header-bid-tag-1',
         adUnitId: '/19968336/header-bid-tag-1',
-        mediaTypes: ['banner', 'video']
+        mediaTypes: {'banner': {'sizes': [0]}, 'video': {'sizes': [1]}}
       }
     ];
 

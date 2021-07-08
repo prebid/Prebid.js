@@ -282,7 +282,7 @@ function getAdUnitCode(adUnitId) {
 
 function getAdUnitAdFormats(adUnitId) {
   var adUnit = getGlobal().adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId));
-  var af = adUnit.length ? adUnit[0].mediaTypes.map(format => MEDIATYPE[format.toUpperCase()]) : [0];
+  var af = adUnit.length ? Object.keys(adUnit[0].mediaTypes).map(format => MEDIATYPE[format.toUpperCase()]) : [0];
   return af;
 }
 
