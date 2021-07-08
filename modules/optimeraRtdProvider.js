@@ -98,7 +98,7 @@ export function returnTargetingData(adUnits, config) {
     adUnits.forEach(function(adUnit) {
       if (optimeraTargeting[adUnit]) {
         targeting[adUnit] = {};
-        targeting[adUnit][optimeraKeyName] = optimeraTargeting[adUnit];
+        targeting[adUnit][optimeraKeyName] = [optimeraTargeting[adUnit]];
       }
     });
   } catch (err) {
