@@ -6,8 +6,7 @@ import {coppaDataHandler, uspDataHandler} from 'src/adapterManager';
 import { newStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
-import { coreStorage } from 'modules/userId/index.js';
-const storage = newStorageManager();
+const storage = newStorageManager(sharedIdSystemSubmodule.gvlid, 'pubCommonId');
 
 let expect = require('chai').expect;
 
@@ -27,6 +26,15 @@ describe('SharedId System', function() {
     utils.logInfo.restore();
   });
 
+  function optout() {
+    cookiesAreEnabledStub.returns(true);
+    storage.setCookie(
+      OPTOUT_NAME,
+      'true',
+      (new Date(Date.now() + EXPIRE_COOKIE_TIME).toUTCString()),
+      'lax'
+    );
+  }
   function optinCookie() {
     storage.setCookie(OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
   }
@@ -35,18 +43,21 @@ describe('SharedId System', function() {
 
     let coppaDataHandlerDataStub
     let sandbox;
+    let cookiesAreEnabledStub;
 
     beforeEach(function() {
       sandbox = sinon.sandbox.create();
       coppaDataHandlerDataStub = sandbox.stub(coppaDataHandler, 'getCoppa');
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       coppaDataHandlerDataStub.returns('');
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
       callbackSpy.resetHistory();
     });
 
     afterEach(function () {
       optinCookie();
       sandbox.restore();
+      cookiesAreEnabledStub.restore();
     });
 
     it('should call UUID', function () {
@@ -69,7 +80,8 @@ describe('SharedId System', function() {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
     });
     it('should log message opted out', function() {
-      storage.setCookie(OPTOUT_NAME, 'true', EXPIRE_COOKIE_TIME);
+      coppaDataHandlerDataStub.returns('');
+      optout();
       sharedIdSystemSubmodule.getId({});
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: Has opted-out');
     });
@@ -77,11 +89,14 @@ describe('SharedId System', function() {
   describe('SharedId System extendId()', function() {
     const callbackSpy = sinon.spy();
 
-    let coppaDataHandlerDataStub
+    let coppaDataHandlerDataStub;
     let sandbox;
+    let cookiesAreEnabledStub;
 
     beforeEach(function() {
       sandbox = sinon.sandbox.create();
+
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
       coppaDataHandlerDataStub = sandbox.stub(coppaDataHandler, 'getCoppa');
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       callbackSpy.resetHistory();
@@ -91,6 +106,7 @@ describe('SharedId System', function() {
     afterEach(function () {
       optinCookie();
       sandbox.restore();
+      cookiesAreEnabledStub.restore();
     });
 
     it('should call UUID', function () {
@@ -114,7 +130,8 @@ describe('SharedId System', function() {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
     });
     it('should log message opted out', function() {
-      storage.setCookie(OPTOUT_NAME, 'true', EXPIRE_COOKIE_TIME);
+      coppaDataHandlerDataStub.returns('');
+      optout();
       sharedIdSystemSubmodule.extendId({}, undefined, 'TestId');
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: Has opted-out');
     });
