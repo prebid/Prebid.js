@@ -371,7 +371,7 @@ function interpretNativeAd(nativeResponse) {
         case NATIVE_DEFAULTS.ASSET_ID.ICON: {
           if (asset.img) {
             native.icon = {
-              url: encodeURIComponent(asset.img.url),
+              url: decodeURIComponent(asset.img.url),
               width: asset.img.w,
               height: asset.img.h
             }
