@@ -265,9 +265,6 @@ function buildBidResponse(bid, bidRequest, responseBody) {
     requestId: bid.impid,
     cpm: (parseFloat(bid.price) || 0).toFixed(2),
     currency: responseBody.cur || DEFAULT_CURRENCY,
-    ad: bid.adm,
-    width: bid.w,
-    height: bid.h,
     mediaType: mediaType,
     ttl: 300,
     creativeId: bid.crid || bid.id,
@@ -289,10 +286,10 @@ function buildBidResponse(bid, bidRequest, responseBody) {
       const playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize', VIDEO_DEFAULTS.SIZE);
       const size = canonicalizeSizesArray(playerSize)[0];
 
+      bidResponse.vastXml = bid.adm;
+
       bidResponse.width = bid.w || size[0];
       bidResponse.height = bid.h || size[1];
-
-      bidResponse.vastXml = bid.adm;
 
       const context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
 
@@ -316,6 +313,9 @@ function buildBidResponse(bid, bidRequest, responseBody) {
     }
     default: {
       bidResponse.ad = bid.adm;
+
+      bidResponse.width = bid.w;
+      bidResponse.height = bid.h;
     }
   }
   return bidResponse;
