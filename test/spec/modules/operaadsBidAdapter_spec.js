@@ -24,13 +24,19 @@ describe('Opera Ads Bid Adapter', function () {
 
     it('bid.params.publisherId should be set', function () {
       expect(spec.isBidRequestValid({
-        params: { placementId: 'ep12345678', endpointId: 'pub12345678' }
+        params: { placementId: 's12345678', endpointId: 'ep12345678' }
+      })).to.be.false;
+    });
+
+    it('bid.params.endpointId should be set', function () {
+      expect(spec.isBidRequestValid({
+        params: { placementId: 's12345678', publisherId: 'pub12345678' }
       })).to.be.false;
     });
 
     it('valid bid should return true', function () {
       expect(spec.isBidRequestValid({
-        params: { placementId: 'ep12345678', endpointId: 'pub12345678', publisherId: 'pub12345678' }
+        params: { placementId: 's12345678', endpointId: 'ep12345678', publisherId: 'pub12345678' }
       })).to.be.true;
     });
   });
@@ -45,9 +51,12 @@ describe('Opera Ads Bid Adapter', function () {
         referer: 'http://example.com',
         stack: ['http://example.com']
       },
-      userId: {
-        'shareId': 'b06c5141-fe8f-4cdf-9d7d-54415490a917'
-      }
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'IwuyYwpjmnsauyYasIUWwe'
+      },
+      uspConsent: 'Oush3@jmUw82has',
+      timeout: 3000
     };
 
     it('build request object', function () {
@@ -58,7 +67,134 @@ describe('Opera Ads Bid Adapter', function () {
           bidId: '22c4871113f461',
           bidder: 'operaads',
           bidderRequestId: '15246a574e859f',
-          mediaTypes: {banner: {sizes: [[300, 250]]}},
+          mediaTypes: {
+            banner: { sizes: [[300, 250]] }
+          },
+          params: {
+            placementId: 's12345678',
+            publisherId: 'pub12345678',
+            endpointId: 'ep12345678'
+          }
+        },
+        {
+          adUnitCode: 'test-native',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f4622',
+          bidder: 'operaads',
+          bidderRequestId: '15246a574e859f',
+          mediaTypes: {
+            native: {
+              title: {
+                required: true,
+                len: 20,
+              },
+              image: {
+                required: true,
+                sizes: [300, 250],
+                aspect_ratios: [{
+                  ratio_width: 1,
+                  ratio_height: 1
+                }]
+              },
+              icon: {
+                required: true,
+                sizes: [60, 60],
+                aspect_ratios: [{
+                  ratio_width: 1,
+                  ratio_height: 1
+                }]
+              },
+              sponsoredBy: {
+                required: true,
+                len: 20
+              },
+              body: {
+                required: true,
+                len: 140
+              },
+              cta: {
+                required: true,
+                len: 20,
+              }
+            }
+          },
+          params: {
+            placementId: 's12345678',
+            publisherId: 'pub12345678',
+            endpointId: 'ep12345678'
+          }
+        },
+        {
+          adUnitCode: 'test-native2',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f4632',
+          bidder: 'operaads',
+          bidderRequestId: '15246a574e859f',
+          mediaTypes: {
+            native: {
+              title: {},
+              image: {},
+              icon: {},
+              sponsoredBy: {},
+              body: {},
+              cta: {}
+            }
+          },
+          params: {
+            placementId: 's12345678',
+            publisherId: 'pub12345678',
+            endpointId: 'ep12345678'
+          }
+        },
+        {
+          adUnitCode: 'test-native3',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f4633',
+          bidder: 'operaads',
+          bidderRequestId: '15246a574e859f',
+          mediaTypes: {
+            native: {},
+          },
+          params: {
+            placementId: 's12345678',
+            publisherId: 'pub12345678',
+            endpointId: 'ep12345678'
+          }
+        },
+        {
+          adUnitCode: 'test-video',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f4623',
+          bidder: 'operaads',
+          bidderRequestId: '15246a574e859f',
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [[640, 480]],
+              mimes: ['video/mp4'],
+              protocols: [2, 3, 5, 6],
+              startdelay: 0,
+              skip: 1,
+              playbackmethod: [1, 2, 3, 4],
+              delivery: [1],
+              api: [1, 2, 5],
+            }
+          },
+          params: {
+            placementId: 's12345678',
+            publisherId: 'pub12345678',
+            endpointId: 'ep12345678'
+          }
+        },
+        {
+          adUnitCode: 'test-video',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f4643',
+          bidder: 'operaads',
+          bidderRequestId: '15246a574e859f',
+          mediaTypes: {
+            video: {}
+          },
           params: {
             placementId: 's12345678',
             publisherId: 'pub12345678',
@@ -67,20 +203,65 @@ describe('Opera Ads Bid Adapter', function () {
         }
       ];
 
-      const reqs = spec.buildRequests(bidRequests, bidderRequest);
+      let reqs;
 
-      expect(reqs).to.be.an('array');
+      expect(function () {
+        reqs = spec.buildRequests(bidRequests, bidderRequest);
+      }).to.not.throw();
 
-      for (const req of reqs) {
+      expect(reqs).to.be.an('array').that.have.lengthOf(bidRequests.length);
+
+      for (let i = 0, len = reqs.length; i < len; i++) {
+        const req = reqs[i];
+        const bidRequest = bidRequests[i];
+
         expect(req.method).to.equal('POST');
-        expect(req.url).to.equal('https://s.adx.opera.com/ortb/v2/pub12345678?ep=ep12345678');
+        expect(req.url).to.equal('https://s.adx.opera.com/ortb/v2/' +
+          bidRequest.params.publisherId + '?ep=' + bidRequest.params.endpointId);
 
         expect(req.options).to.be.an('object');
         expect(req.options.contentType).to.contain('application/json');
         expect(req.options.customHeaders).to.be.an('object');
         expect(req.options.customHeaders['x-openrtb-version']).to.equal(2.5);
 
+        expect(req.originalBidRequest).to.equal(bidRequest);
+
         expect(req.data).to.be.a('string');
+
+        let requestData;
+        expect(function () {
+          requestData = JSON.parse(req.data);
+        }).to.not.throw();
+
+        expect(requestData.id).to.equal(bidderRequest.auctionId);
+        expect(requestData.tmax).to.equal(bidderRequest.timeout);
+        expect(requestData.test).to.equal(0);
+        expect(requestData.imp).to.be.an('array').that.have.lengthOf(1);
+        expect(requestData.device).to.be.an('object');
+        expect(requestData.site).to.be.an('object');
+        expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
+        expect(requestData.site.domain).to.not.be.empty;
+        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.referer);
+        expect(requestData.at).to.equal(1);
+        expect(requestData.bcat).to.be.an('array').that.is.empty;
+        expect(requestData.cur).to.be.an('array').that.not.be.empty;
+        expect(requestData.user).to.be.an('object');
+
+        let impItem = requestData.imp[0];
+        expect(impItem).to.be.an('object');
+        expect(impItem.id).to.equal(bidRequest.bidId);
+        expect(impItem.tagid).to.equal(bidRequest.params.placementId);
+        expect(impItem.bidfloor).to.be.a('number');
+
+        if (bidRequest.mediaTypes.banner) {
+          expect(impItem.banner).to.be.an('object');
+        } else if (bidRequest.mediaTypes.native) {
+          expect(impItem.native).to.be.an('object');
+        } else if (bidRequest.mediaTypes.video) {
+          expect(impItem.video).to.be.an('object');
+        } else {
+          expect.fail('should not happen');
+        }
       }
     });
 
@@ -90,7 +271,7 @@ describe('Opera Ads Bid Adapter', function () {
           adUnitCode: 'test-div',
           auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
           bidId: '22c4871113f461',
-          mediaTypes: {banner: {sizes: [[300, 250]]}},
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
           params: {
             placementId: 's12345678',
             publisherId: 'pub12345678',
@@ -102,27 +283,25 @@ describe('Opera Ads Bid Adapter', function () {
 
       const reqs = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(reqs).to.be.an('array');
+      expect(reqs).to.be.an('array').that.have.lengthOf(1);
 
       for (const req of reqs) {
-        let data;
-        try {
-          data = JSON.parse(req.data);
-        } catch (e) {
-          data = {};
-        }
+        let requestData;
+        expect(function () {
+          requestData = JSON.parse(req.data);
+        }).to.not.throw();
 
-        expect(data.cur).to.be.an('array').that.includes('RMB');
+        expect(requestData.cur).to.be.an('array').that.includes('RMB');
       }
     });
 
-    it('bcat in params should be used', function() {
+    it('bcat in params should be used', function () {
       const bidRequests = [
         {
           adUnitCode: 'test-div',
           auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
           bidId: '22c4871113f461',
-          mediaTypes: {banner: {sizes: [[300, 250]]}},
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
           params: {
             placementId: 's12345678',
             publisherId: 'pub12345678',
@@ -134,19 +313,120 @@ describe('Opera Ads Bid Adapter', function () {
 
       const reqs = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(reqs).to.be.an('array');
+      expect(reqs).to.be.an('array').that.have.lengthOf(1);
 
       for (const req of reqs) {
-        let data;
-        try {
-          data = JSON.parse(req.data);
-        } catch (e) {
-          data = {};
-        }
+        let requestData;
+        expect(function () {
+          requestData = JSON.parse(req.data);
+        }).to.not.throw();
 
-        expect(data.bcat).to.be.an('array').that.includes('IAB1-1');
+        expect(requestData.bcat).to.be.an('array').that.includes('IAB1-1');
       }
     });
+
+    it('sharedid should be used', function () {
+      const bidRequests = [{
+        adUnitCode: 'test-div',
+        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+        bidId: '22c4871113f461',
+        bidder: 'operaads',
+        bidderRequestId: '15246a574e859f',
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] }
+        },
+        params: {
+          placementId: 's12345678',
+          publisherId: 'pub12345678',
+          endpointId: 'ep12345678'
+        },
+        userId: {
+          sharedid: {
+            id: '01F5DEQW731Q2VKT031KBKMW5W'
+          }
+        },
+        userIdAsEids: [{
+          source: 'pubcid.org',
+          uids: [{
+            atype: 1,
+            id: '01F5DEQW731Q2VKT031KBKMW5W'
+          }]
+        }]
+      }];
+
+      const reqs = spec.buildRequests(bidRequests, bidderRequest);
+
+      let requestData;
+      expect(function () {
+        requestData = JSON.parse(reqs[0].data);
+      }).to.not.throw();
+
+      expect(requestData.user.id).to.equal(bidRequests[0].userId.sharedid.id);
+    });
+
+    it('pubcid should be used when sharedid is empty', function () {
+      const bidRequests = [{
+        adUnitCode: 'test-div',
+        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+        bidId: '22c4871113f461',
+        bidder: 'operaads',
+        bidderRequestId: '15246a574e859f',
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] }
+        },
+        params: {
+          placementId: 's12345678',
+          publisherId: 'pub12345678',
+          endpointId: 'ep12345678'
+        },
+        userId: {
+          'pubcid': '21F5DEQW731Q2VKT031KBKMW5W'
+        },
+        userIdAsEids: [{
+          source: 'pubcid.org',
+          uids: [{
+            atype: 1,
+            id: '21F5DEQW731Q2VKT031KBKMW5W'
+          }]
+        }]
+      }];
+
+      const reqs = spec.buildRequests(bidRequests, bidderRequest);
+
+      let requestData;
+      expect(function () {
+        requestData = JSON.parse(reqs[0].data);
+      }).to.not.throw();
+
+      expect(requestData.user.id).to.equal(bidRequests[0].userId.pubcid);
+    });
+
+    it('random uid will be generate when userId is empty', function () {
+      const bidRequests = [{
+        adUnitCode: 'test-div',
+        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+        bidId: '22c4871113f461',
+        bidder: 'operaads',
+        bidderRequestId: '15246a574e859f',
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] }
+        },
+        params: {
+          placementId: 's12345678',
+          publisherId: 'pub12345678',
+          endpointId: 'ep12345678'
+        }
+      }];
+
+      const reqs = spec.buildRequests(bidRequests, bidderRequest);
+
+      let requestData;
+      expect(function () {
+        requestData = JSON.parse(reqs[0].data);
+      }).to.not.throw();
+
+      expect(requestData.user.id).to.not.be.empty;
+    })
   });
 
   describe('Test adapter request', function () {
@@ -158,63 +438,217 @@ describe('Opera Ads Bid Adapter', function () {
   });
 
   describe('Test response interpretResponse', function () {
-    const serverResponse = {
-      body: {
-        'id': 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-        'seatbid': [
-          {
-            'bid': [
-              {
-                'id': '003004d9c05c6bc7fec0',
-                'impid': '22c4871113f461',
-                'price': 1.04,
-                'nurl': 'https://s.adx.opera.com/win?a=a5311273992064&burl=aHR0cHM6Ly93d3cub3BlcmEuY29tL2J1cmw%3D&cc=HK&cm=1&crid=0.49379027&dvt=PHONE&ext=_6Ux3PNfxKD5lYt5CVWDTM-TRx6sr__qxRadWTKvNcOIzec2BXxScDVZDKJPkeCOCdUW-0I7YwEsmixrPTT4r1mGH8-plpXh3ws4p0JhEtuvrGK3LJOwhJfT2pBvrMSY&iabCat=IAB9-31%2CIAB8&m=m5311273992833&pubId=pub5311274436800&s=s5323636048704&se=003004d9c05c6bc7fec0&srid=b06c5141-fe8f-4cdf-9d7d-54415490a917&u=68a99bb21f5855f2&ac=${AUCTION_CURRENCY}&ap=${AUCTION_PRICE}',
-                'lurl': 'https://s.adx.opera.com/loss?a=a5311273992064&burl=aHR0cHM6Ly93d3cub3BlcmEuY29tL2J1cmw%3D&cc=HK&cm=1&crid=0.49379027&dvt=PHONE&ext=_6Ux3PNfxKD5lYt5CVWDTM-TRx6sr__qxRadWTKvNcOIzec2BXxScDVZDKJPkeCOCdUW-0I7YwEsmixrPTT4r1mGH8-plpXh3ws4p0JhEtuvrGK3LJOwhJfT2pBvrMSY&iabCat=IAB9-31%2CIAB8&m=m5311273992833&pubId=pub5311274436800&s=s5323636048704&se=003004d9c05c6bc7fec0&srid=b06c5141-fe8f-4cdf-9d7d-54415490a917&u=68a99bb21f5855f2&al=${AUCTION_LOSS}',
-                'adm': "<head><style type='text/css'>body {margin:auto auto;text-align:center;} </style></head><div id=\"-oadx_003004d9c05c6bc7fec0m53112739928331625630126518539006\"><div><img src=\"https://res.adx.opera.com/i/2021/7/6/5328860977280.jpeg\" width=\"300\" height=\"250\" onclick=\"window.open('http://www.opera.com')\" style=\"cursor: pointer;\" /></div><img id='adxImpressionTrackingPixel0' alt=\"\" src=\"https://s.adx.opera.com/impr?a=a5311273992064&burl=aHR0cHM6Ly93d3cub3BlcmEuY29tL2J1cmw%3D&cc=HK&cm=1&crid=0.49379027&dvt=PHONE&ext=_6Ux3PNfxKD5lYt5CVWDTM-TRx6sr__qxRadWTKvNcOIzec2BXxScDVZDKJPkeCOCdUW-0I7YwEsmixrPTT4r1mGH8-plpXh3ws4p0JhEtuvrGK3LJOwhJfT2pBvrMSY&iabCat=IAB9-31%2CIAB8&impr_dl=1625630626517&m=m5311273992833&pubId=pub5311274436800&s=s5323636048704&se=003004d9c05c6bc7fec0&srid=b06c5141-fe8f-4cdf-9d7d-54415490a917&u=68a99bb21f5855f2&ac=${AUCTION_CURRENCY}&ap=${AUCTION_PRICE}\" style='width:0px;height:0px;border:0px;margin:0px;float:left;'/></div><script type=\"text/javascript\" src=\"https://q.adrta.com/s/opr/aa.js?cb=003004d9c05c6bc7fec0#opr;paid=opr;avid=adv4199760017536;publisherId=pub5311274436800;plid=m5311273992833;siteId=app5323634070016;caid=o4199760017920;lineItemId=a5311273992064;kv1=250x300;kv2=http%3A%2F%2Fexample.com;kv3=68a99bb21f5855f2;kv4=103.196.20.138;kv10=;kv11=003004d9c05c6bc7fec0;kv12=s5323636048704;kv15=HK;kv16=0.00000000;kv17=0.00000000;kv18=;kv19=;kv28=;kv23=;kv25=sspMedia_93_web;kv26=;kv27=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+HeadlessChrome%2F91.0.4472.114+Safari%2F537.36;kv5=API;kv24=Mobile_Web\"></script><script type=\"text/javascript\">(function(){var clk = document.getElementById('-oadx_003004d9c05c6bc7fec0m53112739928331625630126518539006');clk.addEventListener(\"click\", function(){var httpRequest = new XMLHttpRequest();httpRequest.open('GET', 'https://s.adx.opera.com/click?a=a5311273992064&burl=aHR0cHM6Ly93d3cub3BlcmEuY29tL2J1cmw%3D&cc=HK&cm=1&crid=0.49379027&dvt=PHONE&ext=_6Ux3PNfxKD5lYt5CVWDTM-TRx6sr__qxRadWTKvNcOIzec2BXxScDVZDKJPkeCOCdUW-0I7YwEsmixrPTT4r1mGH8-plpXh3ws4p0JhEtuvrGK3LJOwhJfT2pBvrMSY&iabCat=IAB9-31%2CIAB8&m=m5311273992833&pubId=pub5311274436800&s=s5323636048704&se=003004d9c05c6bc7fec0&srid=b06c5141-fe8f-4cdf-9d7d-54415490a917&u=68a99bb21f5855f2&ac=${AUCTION_CURRENCY}&ap=${AUCTION_PRICE}', true);httpRequest.send();});})();</script>",
-                'adomain': [
-                  'opera.com',
-                  'www.algorx.cn'
-                ],
-                'bundle': 'com.opera.mini.beta',
-                'cid': '0.49379027',
-                'crid': '0.49379027',
-                'cat': [
-                  'IAB9-31',
-                  'IAB8'
-                ],
-                'language': 'EN',
-                'h': 300,
-                'w': 250,
-                'exp': 500,
-                'ext': {}
-              }
-            ],
-            'seat': 'adv4199760017536'
-          }
-        ],
-        'bidid': '003004d9c05c6bc7fec0',
-        'cur': 'USD'
-      }
-    };
+    it('Test banner interpretResponse', function () {
+      const serverResponse = {
+        body: {
+          'id': 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'id': '003004d9c05c6bc7fec0',
+                  'impid': '22c4871113f461',
+                  'price': 1.04,
+                  'nurl': 'https://s.adx.opera.com/win',
+                  'lurl': 'https://s.adx.opera.com/loss',
+                  'adm': '<img src="https://res.adx.opera.com/xxx.jpeg" width="300" height="250" />',
+                  'adomain': [
+                    'opera.com',
+                  ],
+                  'cid': '0.49379027',
+                  'crid': '0.49379027',
+                  'cat': [
+                    'IAB9-31',
+                    'IAB8'
+                  ],
+                  'language': 'EN',
+                  'h': 300,
+                  'w': 250,
+                  'exp': 500,
+                  'ext': {}
+                }
+              ],
+              'seat': 'adv4199760017536'
+            }
+          ],
+          'bidid': '003004d9c05c6bc7fec0',
+          'cur': 'USD'
+        }
+      };
 
-    it('interpretResponse', function () {
       const bidResponses = spec.interpretResponse(serverResponse, {
-        adUnitCode: 'test-div',
-        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-        bidId: '22c4871113f461',
-        bidder: 'operaads',
-        bidderRequestId: '15246a574e859f',
-        mediaTypes: {banner: {sizes: [[300, 250]]}},
-        params: {
-          placementId: 's12345678',
-          publisherId: 'pub123456',
-          endpointId: 'ep1234566'
-        },
-        src: 'client',
-        transactionId: '4781e6ac-93c4-42ba-86fe-ab5f278863cf'
+        originalBidRequest: {
+          adUnitCode: 'test-div',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f461',
+          bidder: 'operaads',
+          bidderRequestId: '15246a574e859f',
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          params: {
+            placementId: 's12345678',
+            publisherId: 'pub123456',
+            endpointId: 'ep1234566'
+          },
+          src: 'client',
+          transactionId: '4781e6ac-93c4-42ba-86fe-ab5f278863cf'
+        }
       });
 
       expect(bidResponses).to.be.an('array').that.is.not.empty;
+    });
+
+    it('Test video interpretResponse', function () {
+      const serverResponse = {
+        body: {
+          'id': 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'id': '003004d9c05c6bc7fec0',
+                  'impid': '22c4871113f461',
+                  'price': 1.04,
+                  'nurl': 'https://s.adx.opera.com/win',
+                  'lurl': 'https://s.adx.opera.com/loss',
+                  'adm': '<VAST version="2.0"><Ad id="static"><InLine><AdSystem>Static VAST Template</AdSystem><AdTitle>Static VAST Tag</AdTitle><Impression>http://example.com/pixel.gif?asi=[ADSERVINGID]</Impression><Creatives><Creative><Linear><Duration>00:00:08</Duration><TrackingEvents><Tracking event="start">http://example.com/pixel.gif</Tracking><Tracking event="firstQuartile">http://example.com/pixel.gif</Tracking><Tracking event="midpoint">http://example.com/pixel.gif</Tracking><Tracking event="thirdQuartile">http://example.com/pixel.gif</Tracking><Tracking event="complete">http://example.com/pixel.gif</Tracking><Tracking event="pause">http://example.com/pixel.gif</Tracking><Tracking event="mute">http://example.com/pixel.gif</Tracking><Tracking event="fullscreen">http://example.com/pixel.gif</Tracking></TrackingEvents><VideoClicks><ClickThrough>http://www.jwplayer.com/</ClickThrough><ClickTracking>http://example.com/pixel.gif?r=[REGULATIONS]&gdpr=[GDPRCONSENT]&pu=[PAGEURL]&da=[DEVICEUA]</ClickTracking></VideoClicks><MediaFiles><MediaFile type="video/mp4" bitrate="300" width="480" height="270"> http://example.com/uploads/myPrerollVideo.mp4</MediaFile></MediaFiles><Icons><Icon program="AdChoices" height="16" width="16" xPosition="right" yPosition="top"><StaticResource creativeType="image/png"> https://example.com/adchoices-sm.png</StaticResource><Iconclicks><IconClickThrough>https://sample-url.com</IconClickThrough></IconClicks></Icon></Icons></Linear></Creative></Creatives></InLine></Ad></VAST>',
+                  'adomain': [
+                    'opera.com',
+                  ],
+                  'cid': '0.49379027',
+                  'crid': '0.49379027',
+                  'cat': [
+                    'IAB9-31',
+                    'IAB8'
+                  ],
+                  'language': 'EN',
+                  'h': 300,
+                  'w': 250,
+                  'exp': 500,
+                  'ext': {}
+                }
+              ],
+              'seat': 'adv4199760017536'
+            }
+          ],
+          'bidid': '003004d9c05c6bc7fec0',
+          'cur': 'USD'
+        }
+      };
+
+      const bidResponses = spec.interpretResponse(serverResponse, {
+        originalBidRequest: {
+          adUnitCode: 'test-div',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f461',
+          bidder: 'operaads',
+          bidderRequestId: '15246a574e859f',
+          mediaTypes: { video: { context: 'outstream' } },
+          params: {
+            placementId: 's12345678',
+            publisherId: 'pub123456',
+            endpointId: 'ep1234566'
+          },
+          src: 'client',
+          transactionId: '4781e6ac-93c4-42ba-86fe-ab5f278863cf'
+        }
+      });
+
+      expect(bidResponses).to.be.an('array').that.is.not.empty;
+    });
+
+    it('Test native interpretResponse', function () {
+      const serverResponse = {
+        body: {
+          'id': 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'id': '003004d9c05c6bc7fec0',
+                  'impid': '22c4871113f461',
+                  'price': 1.04,
+                  'nurl': 'https://s.adx.opera.com/win',
+                  'lurl': 'https://s.adx.opera.com/loss',
+                  'adm': '{"native":{"ver":"1.1","assets":[{"id":1,"required":1,"title":{"text":"The first personal browser"}},{"id":2,"required":1,"img":{"url":"https://res.adx.opera.com/xxx.png","w":720,"h":1280}},{"id":5,"required":1,"data":{"value":"Opera","len":5}}],"link":{"url":"https://www.opera.com/mobile/opera","clicktrackers":["https://thirdpart-click.tracker.com","https://t-odx.op-mobile.opera.com/click"]}}}',
+                  'adomain': [
+                    'opera.com',
+                  ],
+                  'cid': '0.49379027',
+                  'crid': '0.49379027',
+                  'cat': [
+                    'IAB9-31',
+                    'IAB8'
+                  ],
+                  'language': 'EN',
+                  'h': 300,
+                  'w': 250,
+                  'exp': 500,
+                  'ext': {}
+                }
+              ],
+              'seat': 'adv4199760017536'
+            }
+          ],
+          'bidid': '003004d9c05c6bc7fec0',
+          'cur': 'USD'
+        }
+      };
+
+      const bidResponses = spec.interpretResponse(serverResponse, {
+        originalBidRequest: {
+          adUnitCode: 'test-div',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f461',
+          bidder: 'operaads',
+          bidderRequestId: '15246a574e859f',
+          mediaTypes: { native: { } },
+          params: {
+            placementId: 's12345678',
+            publisherId: 'pub123456',
+            endpointId: 'ep1234566'
+          },
+          src: 'client',
+          transactionId: '4781e6ac-93c4-42ba-86fe-ab5f278863cf'
+        }
+      });
+
+      expect(bidResponses).to.be.an('array').that.is.not.empty;
+    });
+
+    it('Test empty server response', function () {
+      const bidResponses = spec.interpretResponse({}, {});
+
+      expect(bidResponses).to.be.an('array').that.is.empty;
+    });
+
+    it('Test empty bid response', function () {
+      const bidResponses = spec.interpretResponse({ body: { seatbid: null } }, {});
+
+      expect(bidResponses).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('Test getUserSyncs', function () {
+    it('getUserSyncs should return empty array', function () {
+      expect(spec.getUserSyncs()).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('Test onTimeout', function () {
+    it('onTimeout should not throw', function () {
+      expect(spec.onTimeout()).to.not.throw;
+    });
+  });
+
+  describe('Test onBidWon', function () {
+    it('onBidWon should not throw', function () {
+      expect(spec.onTimeout()).to.not.throw;
+    });
+  });
+
+  describe('Test onSetTargeting', function () {
+    it('onSetTargeting should not throw', function () {
+      expect(spec.onTimeout()).to.not.throw;
     });
   });
 });
