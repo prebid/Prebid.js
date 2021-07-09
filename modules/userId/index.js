@@ -722,6 +722,7 @@ function updateInitializedSubmodules(submodule) {
     if (submodule.config.name.toLowerCase() === initializedSubmodules[i].config.name.toLowerCase()) {
       updated = true;
       initializedSubmodules[i] = submodule;
+      break;
     }
   }
 
