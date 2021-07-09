@@ -216,7 +216,9 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
       coppa: config.getConfig('coppa') ? 1 : 0,
       ext: {}
     },
-    user: {}
+    user: {
+      id: getUserId(bidRequest)
+    }
   }
 
   const gdprConsent = utils.deepAccess(bidderRequest, 'gdprConsent');
@@ -229,19 +231,6 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
   if (uspConsent) {
     utils.deepSetValue(payload, 'regs.ext.us_privacy', uspConsent);
   }
-
-  let userId;
-  for (const idModule of ['sharedId', 'pubcid', 'tdid']) {
-    if ((userId = utils.deepAccess(bidRequest, `userId.${idModule}`))) {
-      break;
-    }
-  }
-
-  if (!userId) {
-    userId = utils.generateUUID();
-  }
-
-  utils.deepSetValue(payload, 'user.id', userId);
 
   const eids = utils.deepAccess(bidRequest, 'userIdAsEids', []);
   if (eids.length > 0) {
@@ -623,6 +612,28 @@ function mapNativeImage(image, type) {
   }
 
   return img;
+}
+
+/**
+ * Get user id from bid request. if no user id module used, return a new uuid.
+ *
+ * @param {BidRequest} bidRequest
+ * @returns {String} userId
+ */
+function getUserId(bidRequest) {
+  let sharedId = utils.deepAccess(bidRequest, 'userId.sharedid.id');
+  if (sharedId) {
+    return sharedId;
+  }
+
+  for (const idModule of ['pubcid', 'tdid']) {
+    let userId = utils.deepAccess(bidRequest, `userId.${idModule}`);
+    if (userId) {
+      return userId;
+    }
+  }
+
+  return utils.generateUUID();
 }
 
 /**
