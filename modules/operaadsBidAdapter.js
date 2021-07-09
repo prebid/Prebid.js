@@ -8,7 +8,6 @@ import { OUTSTREAM } from '../src/video.js';
 const BIDDER_CODE = 'operaads';
 
 const ENDPOINT = 'https://s.adx.opera.com/ortb/v2/';
-const USER_SYNC_ENDPOINT = 'https://t.adx.opera.com/pbs/sync';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -138,28 +137,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = [];
-
-    const params = [];
-    if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params.push(`gdpr=${Number(gdprConsent.gdprApplies)}`);
-      }
-      params.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}`);
-    }
-
-    if (uspConsent) {
-      params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
-    }
-
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      syncs.push({
-        type: 'image',
-        url: USER_SYNC_ENDPOINT + '?' + params.join('&')
-      });
-    }
-
-    return syncs;
+    return [];
   },
 
   /**
