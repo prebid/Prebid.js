@@ -204,8 +204,8 @@ describe('ANIVIEW Bid Adapter Test', function () {
       expect(bidResponse.renderer.loaded).to.equal(false)
       expect(bidResponse.width).to.equal(640)
       expect(bidResponse.height).to.equal(480)
-    })
-    
+    });
+
     it('Support banner format', function () {
       const bidRequest = spec.buildRequests([
         {
@@ -228,7 +228,6 @@ describe('ANIVIEW Bid Adapter Test', function () {
       expect(bidResponse.width).to.equal(640)
       expect(bidResponse.height).to.equal(480)
     })
-    
   });
 
   describe('getUserSyncs', function () {
