@@ -221,10 +221,39 @@ function slotParams(bidRequest) {
   } else {
     params.ext.visibility = SLOT_VISIBILITY.NOT_DETERMINED;
   }
+  const floorInfo = getBidFloorByType(bidRequest);
+  if (floorInfo && floorInfo.length > 0) {
+    params.bidfloors = floorInfo;
+  }
 
   return params;
 }
 
+function getBidFloorByType(bidRequest) {
+  let floorInfo = [];
+  if (typeof bidRequest.getFloor === 'function') {
+    [BANNER, VIDEO, NATIVE].forEach(mediaType => {
+      if (bidRequest.mediaTypes.hasOwnProperty(mediaType)) {
+        if (mediaType == BANNER) {
+          bidRequest.mediaTypes.banner.sizes.forEach(
+            size => {
+              setFloorInfo(bidRequest, mediaType, size, floorInfo)
+            }
+          )
+        } else {
+          setFloorInfo(bidRequest, mediaType, '*', floorInfo)
+        }
+      }
+    });
+  }
+  return floorInfo;
+}
+function setFloorInfo(bidRequest, mediaType, size, floorInfo) {
+  let floor = bidRequest.getFloor({currency: 'USD', mediaType: mediaType, size: size});
+  if (size.length > 1) floor.size = size;
+  floor.mediaType = mediaType;
+  floorInfo.push(floor);
+}
 function getMinSize(sizes) {
   return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }

@@ -109,6 +109,7 @@ export const sharethroughAdapterSpec = {
       currency: 'USD',
       netRevenue: true,
       ttl: 360,
+      meta: { advertiserDomains: creative.creative && creative.creative.adomain ? creative.creative.adomain : [] },
       ad: generateAd(body, req)
     }];
   },

@@ -17,7 +17,9 @@ const userId = {
   'sharedid': {'id': '01ESHXW4HD29KMF387T63JQ9H5', 'third': '01ESHXW4HD29KMF387T63JQ9H5'},
   'tdid': 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3',
   'haloId': {},
-  'uid2': {'id': 'eb33b0cb-8d35-4722-b9c0-1a31d4064888'}
+  'uid2': {'id': 'eb33b0cb-8d35-4722-b9c0-1a31d4064888'},
+  'flocId': {'id': '12144', 'version': 'chrome.1.1'},
+  'connectid': '4567'
 }
 
 const validBannerBidReq = {
@@ -159,7 +161,8 @@ describe('ucfunnel Adapter', function () {
       expect(data.adid).to.equal('ad-34BBD2AA24B678BBFD4E7B9EE3B872D');
       expect(data.w).to.equal(width);
       expect(data.h).to.equal(height);
-      expect(data.eids).to.equal('uid2,eb33b0cb-8d35-4722-b9c0-1a31d4064888');
+      expect(data.eids).to.equal('uid2,eb33b0cb-8d35-4722-b9c0-1a31d4064888!verizonMediaId,4567');
+      expect(data.cid).to.equal('12144');
       expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
     });
 

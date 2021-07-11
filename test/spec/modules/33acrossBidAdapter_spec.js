@@ -1414,7 +1414,8 @@ describe('33acrossBidAdapter:', function () {
                 crid: 1,
                 h: 250,
                 w: 300,
-                price: 0.0938
+                price: 0.0938,
+                adomain: ['advertiserdomain.com']
               }]
             }
           ]
@@ -1430,7 +1431,10 @@ describe('33acrossBidAdapter:', function () {
           creativeId: 1,
           mediaType: 'banner',
           currency: 'USD',
-          netRevenue: true
+          netRevenue: true,
+          meta: {
+            advertiserDomains: ['advertiserdomain.com']
+          }
         };
 
         expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
@@ -1456,7 +1460,8 @@ describe('33acrossBidAdapter:', function () {
                 crid: 1,
                 h: 250,
                 w: 300,
-                price: 0.0938
+                price: 0.0938,
+                adomain: ['advertiserdomain.com']
               }]
             }
           ]
@@ -1473,10 +1478,53 @@ describe('33acrossBidAdapter:', function () {
           mediaType: 'video',
           currency: 'USD',
           netRevenue: true,
-          vastXml: videoBid
+          vastXml: videoBid,
+          meta: {
+            advertiserDomains: ['advertiserdomain.com']
+          }
         };
 
         expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
+      });
+
+      context('when the list of advertiser domains for block list checking is empty', function() {
+        it('doesn\'t include the empty list in the interpreted response', function() {
+          const serverResponse = {
+            cur: 'USD',
+            ext: {},
+            id: 'b1',
+            seatbid: [
+              {
+                bid: [{
+                  id: '1',
+                  adm: '<html><h3>I am an ad</h3></html>',
+                  crid: 1,
+                  h: 250,
+                  w: 300,
+                  price: 0.0938,
+                  adomain: [] // Empty list
+                }]
+              }
+            ]
+          };
+
+          // Bid response below doesn't contain meta.advertiserDomains
+          const bidResponse = {
+            requestId: 'b1',
+            bidderCode: BIDDER_CODE,
+            cpm: 0.0938,
+            width: 300,
+            height: 250,
+            ad: '<html><h3>I am an ad</h3></html>',
+            ttl: 60,
+            creativeId: 1,
+            mediaType: 'banner',
+            currency: 'USD',
+            netRevenue: true
+          };
+
+          expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
+        });
       });
     });
 

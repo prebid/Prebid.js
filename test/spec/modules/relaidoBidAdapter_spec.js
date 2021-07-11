@@ -208,10 +208,18 @@ describe('RelaidoAdapter', function () {
     });
 
     it('should build bid requests by banner', function () {
+      setUAMobile();
       bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [
+            [320, 180]
+          ]
+        },
         banner: {
           sizes: [
-            [640, 360]
+            [640, 360],
+            [1, 1]
           ]
         }
       };
@@ -219,6 +227,31 @@ describe('RelaidoAdapter', function () {
       expect(bidRequests).to.have.lengthOf(1);
       const request = bidRequests[0];
       expect(request.mediaType).to.equal('banner');
+    });
+
+    it('should take 1x1 size', function () {
+      setUAMobile();
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [
+            [320, 180]
+          ]
+        },
+        banner: {
+          sizes: [
+            [640, 360],
+            [1, 1]
+          ]
+        }
+      };
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      expect(bidRequests).to.have.lengthOf(1);
+      const request = bidRequests[0];
+
+      // eslint-disable-next-line no-console
+      console.log(bidRequests);
+      expect(request.width).to.equal(1);
     });
 
     it('The referrer should be the last', function () {

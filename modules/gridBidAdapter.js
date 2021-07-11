@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
@@ -219,6 +219,13 @@ export const spec = {
       request.regs.ext.us_privacy = uspConsent;
     }
 
+    if (config.getConfig('coppa') === true) {
+      if (!request.regs) {
+        request.regs = {};
+      }
+      request.regs.coppa = 1;
+    }
+
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -342,6 +349,9 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
         currency: 'USD',
         netRevenue: false,
         ttl: TIME_TO_LIVE,
+        meta: {
+          advertiserDomains: serverBid.adomain ? serverBid.adomain : []
+        },
         dealId: serverBid.dealid
       };
 
