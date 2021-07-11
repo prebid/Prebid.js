@@ -402,11 +402,47 @@ describe('TheMediaGrid Adapter', function () {
 
     it('should contain the keyword values if it present in ortb2.(site/user)', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'ortb2.user' ? {'keywords': 'foo'} : (arg === 'ortb2.site' ? {'keywords': 'bar'} : null));
-      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+        arg => arg === 'ortb2.user' ? {'keywords': 'foo,any'} : (arg === 'ortb2.site' ? {'keywords': 'bar'} : null));
+      const keywords = {
+        'site': {
+          'somePublisher': [
+            {
+              'name': 'someName',
+              'brandsafety': ['disaster'],
+              'topic': ['stress', 'fear']
+            }
+          ]
+        }
+      };
+      const bidRequestWithKW = { ...bidRequests[0], params: { ...bidRequests[0].params, keywords } }
+      const request = spec.buildRequests([bidRequestWithKW], bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload.ext.keywords).to.deep.equal([{'key': 'user', 'value': ['foo']}, {'key': 'context', 'value': ['bar']}]);
+      expect(payload.ext.keywords).to.deep.equal({
+        'site': {
+          'somePublisher': [
+            {
+              'name': 'someName',
+              'brandsafety': ['disaster'],
+              'topic': ['stress', 'fear']
+            }
+          ],
+          'ortb2': [
+            {
+              'name': 'keywords',
+              'keywords': ['bar']
+            }
+          ]
+        },
+        'user': {
+          'ortb2': [
+            {
+              'name': 'keywords',
+              'keywords': ['foo', 'any']
+            }
+          ]
+        }
+      });
       getConfigStub.restore();
     });
 
@@ -555,7 +591,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -615,7 +651,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -631,7 +667,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 2</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -647,7 +683,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 3</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -709,7 +745,7 @@ describe('TheMediaGrid Adapter', function () {
           'height': 600,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -728,7 +764,7 @@ describe('TheMediaGrid Adapter', function () {
           'height': undefined,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -862,7 +898,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -878,7 +914,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 2</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -894,7 +930,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 3</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []
@@ -910,7 +946,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 4</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'meta': {
             advertiserDomains: []

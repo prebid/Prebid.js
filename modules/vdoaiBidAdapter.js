@@ -98,8 +98,14 @@ export const spec = {
       } else {
         bidResponse.ad = adCreative;
       }
+      if (response.adDomain) {
+        bidResponse.meta = {
+          advertiserDomains: response.adDomain
+        }
+      }
       bidResponses.push(bidResponse);
     }
+
     return bidResponses;
   },
 

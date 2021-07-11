@@ -149,7 +149,7 @@ function interpretResponse(serverResponse, request) {
 
   try {
     results.forEach(result => {
-      const { creativeId, ad, price, exp, width, height, currency } = result;
+      const { creativeId, ad, price, exp, width, height, currency, advertiserDomains } = result;
       if (!ad || !price) {
         return;
       }
@@ -162,7 +162,10 @@ function interpretResponse(serverResponse, request) {
         currency: currency || CURRENCY,
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
-        ad: ad
+        ad: ad,
+        meta: {
+          advertiserDomains: advertiserDomains || []
+        }
       })
     });
     return output;
@@ -266,8 +269,8 @@ export function tryParseJSON(value) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   version: BIDDER_VERSION,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,

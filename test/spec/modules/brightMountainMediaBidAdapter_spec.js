@@ -86,7 +86,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'prebidVersion', 'placements');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.language).to.be.a('string');
@@ -102,6 +102,89 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     bidderRequest['bids'] = [bidBanner];
     let serverRequest = spec.buildRequests([bidBanner], bidderRequest);
     testServerRequestBody(serverRequest);
+
+    it('sends bidfloor param if present', function () {
+      bidBanner.getFloor = function () {
+        return {
+          currency: 'USD',
+          floor: 0.5,
+        }
+      };
+      const request = spec.buildRequests([bidBanner], bidderRequest);
+      expect(request.data.placements[0].floor['300x250']).to.equal(0.5);
+    });
+
+    it('sends gdpr info if exists', function () {
+      const gdprConsent = {
+        consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+        gdprApplies: true
+      };
+
+      bidderRequest['gdprConsent'] = gdprConsent;
+      const request = spec.buildRequests([bidBanner], bidderRequest);
+
+      expect(request.data.gdpr_require).to.exist.and.to.be.a('number');
+      expect(request.data.gdpr_consent).to.exist.and.to.be.a('string');
+    });
+
+    it('sends schain info if exists', function () {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'directseller.com',
+            sid: '00001',
+            rid: 'BidRequest1',
+            hp: 1
+          }
+        ]
+      };
+      bidBanner.schain = schain;
+      const request = spec.buildRequests([bidBanner], bidderRequest);
+      expect(request.data.placements[0].schain).to.be.an('object');
+    });
+
+    it('sends userId info if exists', function () {
+      const userIdAsEids = [
+        {
+          'source': 'id5-sync.com',
+          'uids': [
+            {
+              'id': 'ID5-ZHMOaW5vh_TJhKVSaTWmuoTpwqjGGwx5v0WbaSV8yw',
+              'atype': 1,
+              'ext': {
+                'linkType': 2
+              }
+            }
+          ]
+        },
+        {
+          'source': 'pubcid.org',
+          'uids': [
+            {
+              'id': '00000000000000000000000000',
+              'atype': 1
+            }
+          ]
+        }
+      ];
+      bidBanner.userIdAsEids = userIdAsEids;
+      const request = spec.buildRequests([bidBanner], bidderRequest);
+
+      expect(request.data.placements[0]).to.have.property('userIds');
+      expect(request.data.placements[0].userIds).to.not.equal(null).and.to.not.be.undefined;
+      expect(request.data.placements[0].userIds.eids.length).to.greaterThan(0);
+      for (let index in request.data.placements[0].userIds.eids) {
+        let eid = request.data.placements[0].userIds.eids[index];
+        expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
+        expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
+        for (let uidsIndex in eid.uids) {
+          let uid = eid.uids[uidsIndex];
+          expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
+        }
+      }
+    });
 
     bidderRequest['bids'] = [bidVideo];
     serverRequest = spec.buildRequests([bidVideo], bidderRequest);
@@ -129,6 +212,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         expect(dataItem.netRevenue).to.be.a('boolean');
         expect(dataItem.currency).to.be.a('string');
         expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta.advertiserDomains[0]).to.be.a('string');
       }
     });
   }
@@ -145,7 +229,8 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         ttl: 1000,
         creativeId: '123asd',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        adomain: ['adomain.com'],
       }]
     };
 
@@ -160,7 +245,8 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         ttl: 1000,
         creativeId: '123asd',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        adomain: ['adomain.com'],
       }]
     };
     let serverResponses = spec.interpretResponse(resObjectBanner);

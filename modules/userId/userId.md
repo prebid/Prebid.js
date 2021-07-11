@@ -50,7 +50,17 @@ pbjs.setConfig({
                 // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
                 partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
             }
-        }, {
+        },{
+            name: 'akamaiDAPId',
+            params: {
+              apiHostname: '<see your Akamai account rep>',
+              domain: 'your-domain.com',
+              type: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
+              identity: ‘your@email.com’ | ‘6175551234' | ...,
+              apiVersion: 'v1' | 'x1',
+              attributes: '{ "cohorts": [ "3:14400", "5:14400", "7:0" ],"first_name": "...","last_name": "..." }'
+            }
+        },{
             name: 'identityLink',
             params: {
                 pid: '999', // Set your real identityLink placement ID here
@@ -72,16 +82,6 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
-             name: 'sharedId',
-              params: {
-                    syncTime: 60 // in seconds, default is 24 hours
-               },
-             storage: {
-                 type: 'cookie',
-                 name: 'sharedid',
-                 expires: 28
-              }
-        }, {
              name: 'criteo',
              storage: {             // It is best not to specify this parameter since the module needs to be called as many times as possible
                  type: 'cookie',
@@ -101,7 +101,8 @@ pbjs.setConfig({
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv'
+                sv_domain:'zxv',
+                refreshInSeconds: 10 // Refreshes the id based on this configuration, else by default every 7 days
             },
             storage: {
                 type: "cookie",
@@ -218,7 +219,8 @@ pbjs.setConfig({
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv'
+                sv_domain:'zxv',
+                refreshInSeconds: 10 // Refreshes the id based on this configuration, else by default every 7 days
             },
             storage: {
                 type: "html5",

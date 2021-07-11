@@ -6,7 +6,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ogury';
 const DEFAULT_TIMEOUT = 1000;
-const BID_HOST = 'https://webmobile.presage.io/api/header-bidding-request';
+const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
@@ -72,7 +72,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   return {
     method: 'POST',
     url: BID_HOST,
-    data: openRtbBidRequestBanner
+    data: openRtbBidRequestBanner,
+    options: {contentType: 'application/json'},
   };
 }
 
@@ -98,6 +99,7 @@ function interpretResponse(openRtbBidResponse) {
         creativeId: bid.id,
         netRevenue: true,
         ttl: 60,
+        ext: bid.ext,
         meta: {
           advertiserDomains: bid.adomain
         }

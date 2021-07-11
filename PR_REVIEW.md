@@ -1,4 +1,5 @@
 ## Summary
+
 We take PR review seriously. Please read https://medium.com/@mrjoelkemp/giving-better-code-reviews-16109e0fdd36#.xa8lc4i23 to understand how a PR review should be conducted. Be rational and strict in your review, make sure you understand exactly what the submitter's intent is. Anyone in the community can review a PR, but a Prebid Org member is also required. A Prebid Org member should take ownership of a PR and do the initial review.
 
 If the PR is for a standard bid adapter or a standard analytics adapter, just the one review from a core member is sufficient. The reviewer will check against [required conventions](http://prebid.org/dev-docs/bidder-adaptor.html#required-adapter-conventions) and may merge the PR after approving and confirming that the documentation PR against prebid.org is open and linked to the issue.
@@ -11,14 +12,15 @@ General gulp commands include separate commands for serving the codebase on a bu
 
 - Run `gulp review-start`, adding the host parameter `gulp review-start --host=0.0.0.0` will bind to all IPs on the machine
     - A page will open which provides a hub for common reviewer tools.
-    - If you need to manually acceess the tools:
+    - If you need to manually access the tools:
         - Navigate to build/coverage/lcov-report/index.html to view coverage
         - Navigate to integrationExamples/gpt/hellow_world.html for basic integration testing
-        - The hello_world.html and other exampls can be edited and used as needed to verify functionality
+        - The hello_world.html and other examples can be edited and used as needed to verify functionality
 
 ### General PR review Process
+
 - All required global and bidder-adapter rules defined in the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html) must be followed. Please review these rules often - we depend on reviewers to enforce them.
-- Checkout the branch (these instructions are available on the github PR page as well).
+- Checkout the branch (these instructions are available on the GitHub PR page as well).
 - Verify PR is a single change type. Example, refactor OR bugfix. If more than 1 type, ask submitter to break out requests.
 - Verify code under review has at least 80% unit test coverage. If legacy code doesn't have enough unit test coverage, require that additional unit tests to be included in the PR.
 - Verify tests are green in Travis-ci + local build by running `gulp serve` | `gulp test`
@@ -29,13 +31,14 @@ General gulp commands include separate commands for serving the codebase on a bu
 - If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
 - If all above is good, add a `LGTM` comment and, if the change is in PBS-core or is an important module like the prebidServerBidAdapter, request 1 additional core member to review.
 - Once there are 2 `LGTM` on the PR, merge to master
-- The [draft release](https://github.com/prebid/Prebid.js/releases) notes are managed by [release drafter](https://github.com/release-drafter/release-drafter). To get the PR added to the release notes do the steps below. A github action will use that information to build the release notes.
+- The [draft release](https://github.com/prebid/Prebid.js/releases) notes are managed by [release drafter](https://github.com/release-drafter/release-drafter). To get the PR added to the release notes do the steps below. A GitHub action will use that information to build the release notes.
     - Adjust the PR Title to be appropriate for release notes
     - Add a label for `feature`, `maintenance`, `fix`, `bugfix` or `bug` to categorize the PR
-    - Add a semver label of `major`, `minor` or `patch` to indicate the scope of change    
+    - Add a SemVer label of `major`, `minor` or `patch` to indicate the scope of change    
 
 ### Reviewing a New or Updated Bid Adapter
-Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/bidder-adaptor.html
+
+Documentation: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
 Follow steps above for general review process. In addition, please verify the following:
 - Verify the biddercode and aliases are valid:
@@ -67,14 +70,16 @@ Follow steps above for general review process. In addition, please verify the fo
 - After a new adapter is approved, let the submitter know they may open a PR in the [headerbid-expert repository](https://github.com/prebid/headerbid-expert) to have their adapter recognized by the [Headerbid Expert extension](https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop). The PR should be to the [bidder patterns file](https://github.com/prebid/headerbid-expert/blob/master/bidderPatterns.js), adding an entry with their adapter's name and the url the adapter uses to send and receive bid responses.
 
 ### Reviewing a New or Updated Analytics Adapter
-Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
+
+Documentation: https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
 
 No additional steps above the general review process and making sure it conforms to the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html).
 
 Make sure there's a docs pull request
 
 ### Reviewing a New or Updated User ID Sub-Module
-Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/modules/userId.html#id-providers
+
+Documentation: https://docs.prebid.org/dev-docs/modules/userId.html#id-providers
 
 Follow steps above for general review process. In addition:
 - Try running the new user ID module with a basic config and confirm it hits the endpoint and stores the results.
@@ -102,9 +107,11 @@ Follow steps above for general review process. In addition:
 - make sure there's a docs pull request
 
 ### Reviewing a New or Updated Real-Time-Data Sub-Module
-Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/add-rtd-submodule.html
+
+Documentation: https://docs.prebid.org/dev-docs/add-rtd-submodule.html
 
 Follow steps above for general review process. In addition:
+
 - The RTD Provider must include a `providerRtdProvider.md` file. This file must have example parameters and document a sense of what to expect: what should change in the bidrequest, or what targeting data should be added?
 - Try running the new sub-module and confirm the provided test parameters.
 - Confirm that the module
@@ -118,9 +125,7 @@ Follow steps above for general review process. In addition:
 
 ## Ticket Coordinator
 
-Each week, Prebid Org assigns one person to keep an eye on incoming issues and PRs. Every Monday morning a reminder is
-sent to the prebid-js slack channel with a link to the spreadsheet. If you're on rotation, please check that list each
-Monday to see if you're on-duty.
+Each week, Prebid Org assigns one person to keep an eye on incoming issues and PRs. Every Monday morning a reminder is sent to the prebid-js slack channel with a link to the spreadsheet. If you're on rotation, please check that list each Monday to see if you're on-duty.
 
 When on-duty:
 - Review issues and PRs at least once per weekday for new items. Encourage a 48 "SLA" on PRs/issues assigned. Aim for touchpoint once every 48/hours. 
