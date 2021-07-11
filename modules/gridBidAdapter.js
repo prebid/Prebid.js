@@ -213,9 +213,12 @@ export const spec = {
     }
 
     if (pageKeywords) {
-      request.ext = {
-        keywords: pageKeywords
-      };
+      pageKeywords = reformatKeywords(pageKeywords);
+      if (pageKeywords) {
+        request.ext = {
+          keywords: pageKeywords
+        };
+      }
     }
 
     if (gdprConsent && gdprConsent.gdprApplies) {
@@ -345,11 +348,11 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
     const bid = bidRequest.bidsMap[serverBid.impid];
     if (bid) {
       const bidResponse = {
-        requestId: bid.bidId, // bid.bidderRequestId,
+        requestId: bid.bidId, // bid.bidderRequestId
         cpm: serverBid.price,
         width: serverBid.w,
         height: serverBid.h,
-        creativeId: serverBid.auid, // bid.bidId,
+        creativeId: serverBid.auid, // bid.bidId
         currency: 'USD',
         netRevenue: true,
         ttl: TIME_TO_LIVE,
@@ -417,6 +420,51 @@ function createBannerRequest(bid, mediaType) {
     result.format = format
   }
   return result;
+}
+
+function reformatKeywords(pageKeywords) {
+  const formatedPageKeywords = {};
+  Object.keys(pageKeywords).forEach((name) => {
+    const keywords = pageKeywords[name];
+    if (keywords) {
+      if (name === 'site' || name === 'user') {
+        const formatedKeywords = {};
+        Object.keys(keywords).forEach((pubName) => {
+          if (Array.isArray(keywords[pubName])) {
+            const formatedPublisher = [];
+            keywords[pubName].forEach((pubItem) => {
+              if (typeof pubItem === 'object' && pubItem.name) {
+                const formatedPubItem = { name: pubItem.name, segments: [] };
+                Object.keys(pubItem).forEach((key) => {
+                  if (Array.isArray(pubItem[key])) {
+                    pubItem[key].forEach((keyword) => {
+                      if (keyword) {
+                        if (typeof keyword === 'string') {
+                          formatedPubItem.segments.push({ name: key, value: keyword });
+                        } else if (key === 'segments' && typeof keyword.name === 'string' && typeof keyword.value === 'string') {
+                          formatedPubItem.segments.push(keyword);
+                        }
+                      }
+                    });
+                  }
+                });
+                if (formatedPubItem.segments.length) {
+                  formatedPublisher.push(formatedPubItem);
+                }
+              }
+            });
+            if (formatedPublisher.length) {
+              formatedKeywords[pubName] = formatedPublisher;
+            }
+          }
+        });
+        formatedPageKeywords[name] = formatedKeywords;
+      } else {
+        formatedPageKeywords[name] = keywords;
+      }
+    }
+  });
+  return Object.keys(formatedPageKeywords).length && formatedPageKeywords;
 }
 
 function outstreamRender (bid) {
