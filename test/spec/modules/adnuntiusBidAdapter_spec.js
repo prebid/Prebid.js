@@ -7,7 +7,7 @@ import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 
 describe('adnuntiusBidAdapter', function () {
-  const URL = 'https://delivery.adnuntius.com/i?tzo=';
+  const URL = 'https://ads.adnuntius.delivery/i?tzo=';
   const GVLID = 855;
   const usi = utils.generateUUID()
   const meta = [{ key: 'usi', value: usi }]
@@ -19,7 +19,6 @@ describe('adnuntiusBidAdapter', function () {
   });
   const tzo = new Date().getTimezoneOffset();
   const ENDPOINT_URL = `${URL}${tzo}&format=json&userId=${usi}`;
-  // const ENDPOINT_URL_SEGMENTS_ = `${URL}${tzo}&format=json`;
   const ENDPOINT_URL_SEGMENTS = `${URL}${tzo}&format=json&segments=segment1,segment2,segment3&userId=${usi}`;
   const ENDPOINT_URL_CONSENT = `${URL}${tzo}&format=json&consentString=consentString&userId=${usi}`;
   const adapter = newBidder(spec);
