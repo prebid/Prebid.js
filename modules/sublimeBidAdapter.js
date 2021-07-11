@@ -9,7 +9,23 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.5.2';
+const SUBLIME_VERSION = '0.7.2';
+
+/**
+ * Identify the current device type
+ * @returns {string}
+ */
+function detectDevice() {
+  const isMobile = /(?:phone|windowss+phone|ipod|blackberry|Galaxy Nexus|SM-G892A|(?:android|bbd+|meego|silk|googlebot) .+?mobile|palm|windowss+ce|opera mini|avantgo|docomo)/i;
+
+  const isTablet = /(?:ipad|playbook|Tablet|(?:android|bb\\d+|meego|silk)(?! .+? mobile))/i;
+
+  return (
+    (isMobile.test(navigator.userAgent) && 'm') || // mobile
+    (isTablet.test(navigator.userAgent) && 't') || // tablet
+    'd' // desktop
+  );
+}
 
 /**
  * Debug log message
@@ -23,7 +39,8 @@ export function log(msg, obj) {
 // Default state
 export const state = {
   zoneId: '',
-  transactionId: ''
+  transactionId: '',
+  notifyId: ''
 };
 
 /**
@@ -38,8 +55,9 @@ export function setState(value) {
 /**
  * Send pixel to our debug endpoint
  * @param {string} eventName - Event name that will be send in the e= query string
+ * @param {string} [sspName] - The optionnal name of the AD provider
  */
-export function sendEvent(eventName) {
+export function sendEvent(eventName, sspName) {
   const ts = Date.now();
   const eventObject = {
     t: ts,
@@ -47,10 +65,17 @@ export function sendEvent(eventName) {
     z: state.zoneId,
     e: eventName,
     src: 'pa',
-    puid: state.transactionId,
-    trId: state.transactionId,
-    ver: SUBLIME_VERSION,
+    puid: state.transactionId || state.notifyId,
+    trId: state.transactionId || state.notifyId,
+    pbav: SUBLIME_VERSION,
+    pubtimeout: config.getConfig('bidderTimeout'),
+    pubpbv: '$prebid.version$',
+    device: detectDevice(),
   };
+
+  if (eventName === 'bidwon') {
+    eventObject.sspname = sspName || '';
+  }
 
   log('Sending pixel for event: ' + eventName, eventObject);
 
@@ -101,6 +126,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     setState({
       transactionId: bid.transactionId,
+      notifyId: bid.params.notifyId,
       zoneId: bid.params.zoneId,
       debug: bid.params.debug || false,
     });
@@ -117,6 +143,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         h: size[1],
       })),
       transactionId: bid.transactionId,
+      notifyId: bid.params.notifyId,
       zoneId: bid.params.zoneId,
     };
 
@@ -125,10 +152,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     return {
       method: 'POST',
       url: protocol + '://' + bidHost + '/bid',
-      data: payload,
+      data: JSON.stringify(payload),
       options: {
-        contentType: 'application/json',
-        withCredentials: true
+        contentType: 'text/plain',
+        withCredentials: false
       },
     }
   });
@@ -176,8 +203,15 @@ function interpretResponse(serverResponse, bidRequest) {
       netRevenue: response.netRevenue || true,
       ttl: response.ttl || DEFAULT_TTL,
       ad: response.ad,
-      pbav: SUBLIME_VERSION
+      pbav: SUBLIME_VERSION,
+      sspname: response.sspname || null
     };
+
+    // We don't support advertiserDomains atm
+    if (response.advertiserDomains) {
+      // Creating a stub for Prebid.js 5.0 compliance
+      bidResponse.meta = Object.assign({}, bidResponse.meta, { advertiserDomains: [] });
+    }
 
     bidResponses.push(bidResponse);
   }
@@ -191,7 +225,7 @@ function interpretResponse(serverResponse, bidRequest) {
  */
 function onBidWon(bid) {
   log('Bid won', bid);
-  sendEvent('bidwon');
+  sendEvent('bidwon', bid.sspname);
 }
 
 /**
@@ -207,6 +241,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: BIDDER_GVLID,
   aliases: [],
+  sendEvent: sendEvent,
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,

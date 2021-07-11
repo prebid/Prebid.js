@@ -1,9 +1,10 @@
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import * as utils from './utils.js';
 
 const _requestCache = {};
 // The below list contains modules or vendors whom Prebid allows to load external JS.
 const _approvedLoadExternalJSList = [
+  'adloox',
   'criteo',
   'outstream',
   'adagio',

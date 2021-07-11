@@ -72,7 +72,7 @@ function getPricing(xmlNode) {
       price: priceNode.textContent || priceNode.innerText
     };
   } else {
-    utils.logWarn('PREBID - ' + BIDDER_CODE + ': Can\'t get pricing data. Is price awareness enabled?');
+    utils.logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
   }
 
   return princingData;
@@ -100,6 +100,51 @@ function getCreativeId(xmlNode) {
   });
 
   return creaId;
+}
+
+function getValueFromKeyInImpressionNode(xmlNode, key) {
+  var value = '';
+  var impNodes = xmlNode.querySelectorAll('Impression'); // Nodelist.forEach is not supported in IE and Edge
+  var isRootViewKeyPresent = false;
+  var isAdsDisplayStartedPresent = false;
+  Array.prototype.forEach.call(impNodes, function (el) {
+    if (isRootViewKeyPresent && isAdsDisplayStartedPresent) {
+      return value;
+    }
+    isRootViewKeyPresent = false;
+    isAdsDisplayStartedPresent = false;
+    var text = el.textContent;
+    var queries = text.substring(el.textContent.indexOf('?') + 1).split('&');
+    var tempValue = '';
+    Array.prototype.forEach.call(queries, function (item) {
+      var split = item.split('=');
+      if (split[0] == key) {
+        tempValue = split[1];
+      }
+      if (split[0] == 'reqType' && split[1] == 'AdsDisplayStarted') {
+        isAdsDisplayStartedPresent = true;
+      }
+      if (split[0] == 'rootViewKey') {
+        isRootViewKeyPresent = true;
+      }
+    });
+    if (isAdsDisplayStartedPresent) {
+      value = tempValue;
+    }
+  });
+  return value;
+}
+
+function getDealId(xmlNode) {
+  return getValueFromKeyInImpressionNode(xmlNode, 'dealId');
+}
+
+function getBannerId(xmlNode) {
+  return getValueFromKeyInImpressionNode(xmlNode, 'adId');
+}
+
+function getCampaignId(xmlNode) {
+  return getValueFromKeyInImpressionNode(xmlNode, 'campaignId');
 }
 
 /**
@@ -243,7 +288,8 @@ export const spec = {
         reqType: 'AdsSetup',
         protocolVersion: '2.0',
         zoneId: zone,
-        componentId: getComponentId(currentBidRequest.params.format),
+        componentId: 'prebid',
+        componentSubId: getComponentId(currentBidRequest.params.format),
         timestamp: timeInMillis,
         pKey: keyCode
       };
@@ -353,7 +399,9 @@ export const spec = {
 
     const princingData = getPricing(xmlDoc);
     const creativeId = getCreativeId(xmlDoc);
-
+    const dealId = getDealId(xmlDoc);
+    const campaignId = getCampaignId(xmlDoc);
+    const bannerId = getBannerId(xmlDoc);
     const topWin = getTopMostWindow();
     if (!topWin.freewheelssp_cache) {
       topWin.freewheelssp_cache = {};
@@ -371,7 +419,11 @@ export const spec = {
         creativeId: creativeId,
         currency: princingData.currency,
         netRevenue: true,
-        ttl: 360
+        ttl: 360,
+        meta: { advertiserDomains: princingData.adomain && utils.isArray(princingData.adomain) ? princingData.adomain : [] },
+        dealId: dealId,
+        campaignId: campaignId,
+        bannerId: bannerId
       };
 
       if (bidrequest.mediaTypes.video) {
@@ -386,16 +438,25 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
+    var gdprParams = '';
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `?gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
     if (syncOptions && syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: USER_SYNC_URL
+        url: USER_SYNC_URL + gdprParams
       }];
     } else {
       return [];
     }
   },
+};
 
-}
 registerBidder(spec);

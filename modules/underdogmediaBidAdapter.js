@@ -119,7 +119,10 @@ export const spec = {
           creativeId: mid.mid,
           currency: 'USD',
           netRevenue: false,
-          ttl: config.getConfig('_bidderTimeout'),
+          ttl: mid.ttl || 60,
+          meta: {
+            advertiserDomains: mid.advertiser_domains || []
+          }
         };
 
         if (bidResponse.cpm <= 0) {

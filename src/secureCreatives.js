@@ -4,21 +4,23 @@
  */
 
 import events from './events.js';
-import { fireNativeTrackers, getAssetMessage } from './native.js';
-import { EVENTS } from './constants.json';
-import { logWarn, replaceAuctionPrice } from './utils.js';
+import { fireNativeTrackers, getAssetMessage, getAllAssetsMessage } from './native.js';
+import constants from './constants.json';
+import { logWarn, replaceAuctionPrice, deepAccess } from './utils.js';
 import { auctionManager } from './auctionManager.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import { config } from './config.js';
 
-const BID_WON = EVENTS.BID_WON;
+const BID_WON = constants.EVENTS.BID_WON;
+const STALE_RENDER = constants.EVENTS.STALE_RENDER;
 
 export function listenMessagesFromCreative() {
   window.addEventListener('message', receiveMessage, false);
 }
 
-function receiveMessage(ev) {
+export function receiveMessage(ev) {
   var key = ev.message ? 'message' : 'data';
   var data = {};
   try {
@@ -33,7 +35,15 @@ function receiveMessage(ev) {
     });
 
     if (adObject && data.message === 'Prebid Request') {
-      _sendAdToCreative(adObject, data.adServerDomain, ev.source);
+      if (adObject.status === constants.BID_STATUS.RENDERED) {
+        logWarn(`Ad id ${adObject.adId} has been rendered before`);
+        events.emit(STALE_RENDER, adObject);
+        if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
+          return;
+        }
+      }
+
+      _sendAdToCreative(adObject, ev);
 
       // save winning bids
       auctionManager.addWinningBid(adObject);
@@ -51,6 +61,13 @@ function receiveMessage(ev) {
         const message = getAssetMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
         return;
+      } else if (data.action === 'allAssetRequest') {
+        const message = getAllAssetsMessage(data, adObject);
+        ev.source.postMessage(JSON.stringify(message), ev.origin);
+      } else if (data.action === 'resizeNativeHeight') {
+        adObject.height = data.height;
+        adObject.width = data.width;
+        resizeRemoteCreative(adObject);
       }
 
       const trackerType = fireNativeTrackers(data, adObject);
@@ -62,21 +79,21 @@ function receiveMessage(ev) {
   }
 }
 
-export function _sendAdToCreative(adObject, remoteDomain, source) {
+export function _sendAdToCreative(adObject, ev) {
   const { adId, ad, adUrl, width, height, renderer, cpm } = adObject;
   // rendering for outstream safeframe
   if (isRendererRequired(renderer)) {
     executeRenderer(renderer, adObject);
   } else if (adId) {
     resizeRemoteCreative(adObject);
-    source.postMessage(JSON.stringify({
+    ev.source.postMessage(JSON.stringify({
       message: 'Prebid Response',
       ad: replaceAuctionPrice(ad, cpm),
       adUrl: replaceAuctionPrice(adUrl, cpm),
       adId,
       width,
       height
-    }), remoteDomain);
+    }), ev.origin);
   }
 }
 

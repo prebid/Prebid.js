@@ -1,9 +1,14 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-
+import { getStorageManager } from '../src/storageManager.js';
+import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
+const storage = getStorageManager();
+const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
-
+const GVLID = 607;
+const CURRENCY = 'USD';
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
@@ -11,6 +16,7 @@ const VIDEO_CONTEXT = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   ENDPOINT: 'https://hb.aralego.com/header',
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -62,11 +68,12 @@ export const spec = {
     let bid = {
       requestId: bidRequest.bidId,
       cpm: ad.cpm || 0,
-      creativeId: ad.ad_id || bidRequest.params.adid,
+      creativeId: ad.crid || ad.ad_id || bidRequest.params.adid,
       dealId: ad.deal || null,
-      currency: 'USD',
+      currency: ad.currency || 'USD',
       netRevenue: true,
-      ttl: 1800
+      ttl: 1800,
+      meta: {}
     };
 
     if (bidRequest.params && bidRequest.params.bidfloor && ad.cpm && ad.cpm < bidRequest.params.bidfloor) {
@@ -74,6 +81,10 @@ export const spec = {
     }
     if (ad.creative_type) {
       bid.mediaType = ad.creative_type;
+      bid.meta.mediaType = ad.creative_type;
+    }
+    if (ad.adomain) {
+      bid.meta.advertiserDomains = ad.adomain;
     }
 
     switch (ad.creative_type) {
@@ -121,16 +132,19 @@ export const spec = {
     return [bid];
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent) {
+    let gdprApplies = (gdprConsent && gdprConsent.gdprApplies) ? '1' : '';
+    let apiVersion = (gdprConsent) ? gdprConsent.apiVersion : '';
+    let consentString = (gdprConsent) ? gdprConsent.consentString : '';
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: 'https://cdn.aralego.net/ucfad/cookie/sync.html'
+        url: 'https://cdn.aralego.net/ucfad/cookie/sync.html' + getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConsent)
       }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: 'https://sync.aralego.com/idSync'
+        url: 'https://sync.aralego.com/idSync' + getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConsent)
       }];
     }
   }
@@ -141,6 +155,22 @@ function transformSizes(requestSizes) {
   if (typeof requestSizes === 'object' && requestSizes.length) {
     return requestSizes[0];
   }
+}
+
+function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConsent) {
+  let param = '?';
+  if (gdprApplies == '1') {
+    param = param + 'gdpr=1&';
+  }
+  if (apiVersion == 1) {
+    param = param + 'euconsent=' + consentString + '&';
+  } else if (apiVersion == 2) {
+    param = param + 'euconsent-v2=' + consentString + '&';
+  }
+  if (uspConsent) {
+    param = param + 'usprivacy=' + uspConsent;
+  }
+  return (param == '?') ? '' : param;
 }
 
 function parseSizes(bid) {
@@ -181,15 +211,41 @@ function getSupplyChain(schain) {
   return supplyChain;
 }
 
+function getMediaType(mediaTypes) {
+  if (mediaTypes != null && mediaTypes.banner) {
+    return 'banner';
+  } else if (mediaTypes != null && mediaTypes.video) {
+    return 'video';
+  } else if (mediaTypes != null && mediaTypes.native) {
+    return 'native'
+  }
+  return 'banner';
+}
+
+function getFloor(bid, size, mediaTypes) {
+  if (bid.params.bidfloor) {
+    return bid.params.bidfloor;
+  }
+  if (typeof bid.getFloor === 'function') {
+    var bidFloor = bid.getFloor({
+      currency: CURRENCY,
+      mediaType: getMediaType(mediaTypes),
+      size: (size) ? [ size[0], size[1] ] : '*',
+    });
+    if (bidFloor.currency === CURRENCY) {
+      return bidFloor.floor;
+    }
+  }
+  return undefined;
+}
+
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
-  const loc = window.location;
-  const host = loc.host;
-  const page = loc.href;
   const language = navigator.language;
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   const supplyChain = getSupplyChain(bid.schain);
+  const bidFloor = getFloor(bid, size, bid.mediaTypes);
   // general bid data
   let bidData = {
     ver: VER,
@@ -197,13 +253,41 @@ function getRequestData(bid, bidderRequest) {
     bl: language,
     je: 1,
     dnt: dnt,
-    host: host,
-    u: page,
     adid: bid.params.adid,
     tdid: userIdTdid,
-    schain: supplyChain,
-    fp: bid.params.bidfloor
+    schain: supplyChain
   };
+
+  if (bidFloor) {
+    bidData.fp = bidFloor;
+  }
+
+  addUserId(bidData, bid.userId);
+  try {
+    bidData.host = window.top.location.hostname;
+    bidData.u = config.getConfig('publisherDomain') || window.top.location.href;
+    bidData.xr = 0;
+  } catch (e) {
+    bidData.host = window.location.hostname;
+    bidData.u = config.getConfig('publisherDomain') || bidderRequest.refererInfo.referrer || document.referrer || window.location.href;
+    bidData.xr = 1;
+  }
+
+  if (window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0) {
+    bidData.ao = window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1];
+  }
+
+  if (storage.cookiesAreEnabled()) {
+    let ucfUid = '';
+    if (storage.getCookie(COOKIE_NAME) != undefined) {
+      ucfUid = storage.getCookie(COOKIE_NAME);
+      bidData.ucfUid = ucfUid;
+    } else {
+      ucfUid = utils.generateUUID();
+      bidData.ucfUid = ucfUid;
+      storage.setCookie(COOKIE_NAME, ucfUid);
+    }
+  }
 
   if (size != undefined && size.length == 2) {
     bidData.w = size[0];
@@ -229,11 +313,75 @@ function getRequestData(bid, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    Object.assign(bidData, {
-      gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-      euconsent: bidderRequest.gdprConsent.consentString
-    });
+    if (bidderRequest.gdprConsent.apiVersion == 1) {
+      Object.assign(bidData, {
+        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+        euconsent: bidderRequest.gdprConsent.consentString
+      });
+    } else if (bidderRequest.gdprConsent.apiVersion == 2) {
+      Object.assign(bidData, {
+        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+        'euconsent-v2': bidderRequest.gdprConsent.consentString
+      });
+    }
   }
+
+  if (config.getConfig('coppa')) {
+    bidData.coppa = true;
+  }
+
+  return bidData;
+}
+
+function addUserId(bidData, userId) {
+  bidData['eids'] = '';
+  utils._each(userId, (userIdObjectOrValue, userIdProviderKey) => {
+    switch (userIdProviderKey) {
+      case 'haloId':
+        if (userIdObjectOrValue.haloId) {
+          bidData[userIdProviderKey + 'haloId'] = userIdObjectOrValue.haloId;
+        }
+        if (userIdObjectOrValue.auSeg) {
+          bidData[userIdProviderKey + '_auSeg'] = userIdObjectOrValue.auSeg;
+        }
+        break;
+      case 'parrableId':
+        if (userIdObjectOrValue.eid) {
+          bidData[userIdProviderKey + '_eid'] = userIdObjectOrValue.eid;
+        }
+        break;
+      case 'id5id':
+        if (userIdObjectOrValue.uid) {
+          bidData[userIdProviderKey + '_uid'] = userIdObjectOrValue.uid;
+        }
+        if (userIdObjectOrValue.ext && userIdObjectOrValue.ext.linkType) {
+          bidData[userIdProviderKey + '_linkType'] = userIdObjectOrValue.ext.linkType;
+        }
+        break;
+      case 'uid2':
+        if (userIdObjectOrValue.id) {
+          bidData['eids'] = (bidData['eids'].length > 0)
+            ? (bidData['eids'] + '!' + userIdProviderKey + ',' + userIdObjectOrValue.id)
+            : (userIdProviderKey + ',' + userIdObjectOrValue.id);
+        }
+        break;
+      case 'connectid':
+        if (userIdObjectOrValue) {
+          bidData['eids'] = (bidData['eids'].length > 0)
+            ? (bidData['eids'] + '!verizonMediaId,' + userIdObjectOrValue)
+            : ('verizonMediaId,' + userIdObjectOrValue);
+        }
+        break;
+      case 'flocId':
+        if (userIdObjectOrValue.id) {
+          bidData['cid'] = userIdObjectOrValue.id;
+        }
+        break;
+      default:
+        bidData[userIdProviderKey] = userIdObjectOrValue;
+        break;
+    }
+  });
 
   return bidData;
 }

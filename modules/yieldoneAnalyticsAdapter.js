@@ -13,6 +13,10 @@ const defaultUrl = 'https://pool.tsukiji.iponweb.net/hba';
 const requestedBidders = {};
 const requestedBids = {};
 const referrers = {};
+const ignoredEvents = {};
+ignoredEvents[CONSTANTS.EVENTS.BID_ADJUSTMENT] = true;
+ignoredEvents[CONSTANTS.EVENTS.BIDDER_DONE] = true;
+ignoredEvents[CONSTANTS.EVENTS.AUCTION_END] = true;
 
 let currentAuctionId = '';
 let url = defaultUrl;
@@ -108,7 +112,9 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
             return res;
           });
         }
-        eventsStorage[currentAuctionId].events.push({eventType, params});
+        if (!ignoredEvents[eventType]) {
+          eventsStorage[currentAuctionId].events.push({eventType, params});
+        }
 
         if (
           eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON
@@ -117,24 +123,24 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
             auctionManager.getAdUnitCodes(),
             auctionManager.getBidsReceived()
           );
-          if (yieldoneAnalytics.eventsStorage[currentAuctionId]) {
+          if (yieldoneAnalytics.eventsStorage[currentAuctionId] && yieldoneAnalytics.eventsStorage[currentAuctionId].events.length) {
             yieldoneAnalytics.eventsStorage[currentAuctionId].page = {url: referrers[currentAuctionId]};
             yieldoneAnalytics.eventsStorage[currentAuctionId].pubId = pubId;
             yieldoneAnalytics.eventsStorage[currentAuctionId].wrapper_version = '$prebid.version$';
-            yieldoneAnalytics.eventsStorage[currentAuctionId].events.forEach((it) => {
-              const adUnitNameMap = makeAdUnitNameMap();
-              if (adUnitNameMap) {
+            const adUnitNameMap = makeAdUnitNameMap();
+            if (adUnitNameMap) {
+              yieldoneAnalytics.eventsStorage[currentAuctionId].events.forEach((it) => {
                 addAdUnitName(it.params, adUnitNameMap);
-              }
-            });
+              });
+            }
           }
           yieldoneAnalytics.sendStat(yieldoneAnalytics.eventsStorage[currentAuctionId], currentAuctionId);
         }
       }
     }
   },
-  sendStat(events, auctionId) {
-    if (!events) return;
+  sendStat(data, auctionId) {
+    if (!data || !data.events || !data.events.length) return;
     delete yieldoneAnalytics.eventsStorage[auctionId];
     ajax(
       url,
@@ -142,7 +148,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
         success: function() {},
         error: function() {}
       },
-      JSON.stringify(events),
+      JSON.stringify(data),
       {
         method: 'POST'
       }

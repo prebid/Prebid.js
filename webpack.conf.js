@@ -13,7 +13,8 @@ var neverBundle = [
 ];
 
 var plugins = [
-  new RequireEnsureWithoutJsonp()
+  new RequireEnsureWithoutJsonp(),
+  new webpack.EnvironmentPlugin(['LiveConnectMode'])
 ];
 
 if (argv.analyze) {

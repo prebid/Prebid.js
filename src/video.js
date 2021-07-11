@@ -1,7 +1,7 @@
 import adapterManager from './adapterManager.js';
 import { getBidRequest, deepAccess, logError } from './utils.js';
 import { config } from '../src/config.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { hook } from './hook.js';
 
 const VIDEO_MEDIA_TYPE = 'video';
@@ -59,7 +59,7 @@ export const checkVideoBidSetup = hook('sync', function(bid, bidRequest, videoMe
 
   // outstream bids require a renderer on the bid or pub-defined on adunit
   if (context === OUTSTREAM) {
-    return !!(bid.renderer || bidRequest.renderer);
+    return !!(bid.renderer || bidRequest.renderer || videoMediaType.renderer);
   }
 
   return true;

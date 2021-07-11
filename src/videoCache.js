@@ -10,7 +10,8 @@
  */
 
 import { ajax } from './ajax.js';
-import { config } from '../src/config.js';
+import { config } from './config.js';
+import * as utils from './utils.js';
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -70,6 +71,11 @@ function toStorageRequest(bid) {
   if (config.getConfig('cache.vasttrack')) {
     payload.bidder = bid.bidder;
     payload.bidid = bid.requestId;
+    payload.aid = bid.auctionId;
+    // function has a thisArg set to bidderRequest for accessing the auctionStart
+    if (utils.isPlainObject(this) && this.hasOwnProperty('auctionStart')) {
+      payload.timestamp = this.auctionStart;
+    }
   }
 
   if (typeof bid.customCacheKey === 'string' && bid.customCacheKey !== '') {
@@ -126,11 +132,12 @@ function shimStorageCallback(done) {
  *
  * @param {CacheableBid[]} bids A list of bid objects which should be cached.
  * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
+ * @param {BidderRequest} [bidderRequest]
  * the data has been stored in the cache.
  */
-export function store(bids, done) {
+export function store(bids, done, bidderRequest) {
   const requestData = {
-    puts: bids.map(toStorageRequest)
+    puts: bids.map(toStorageRequest, bidderRequest)
   };
 
   ajax(config.getConfig('cache.url'), shimStorageCallback(done), JSON.stringify(requestData), {

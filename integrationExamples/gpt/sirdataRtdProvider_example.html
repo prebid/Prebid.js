@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <script type="text/javascript" src="https://cache.consentframework.com/js/pa/1020/c/Y1Dhs/stub" charset="utf-8"></script>
+    <script type="text/javascript" async src="https://choices.consentframework.com/js/pa/1020/c/Y1Dhs/cmp" charset="utf-8"></script>
+</head>
+<body>
+
+<script async src="https://pagead2.googlesyndication.com/tag/js/gpt.js"></script>
+<script src="../../build/dev/prebid.js" async></script>
+
+<script>
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    pbjs.que.push(function() {
+        pbjs.setConfig({
+            debug: true,
+            realTimeData: {
+                auctionDelay: 1000,
+                dataProviders: [
+                     {
+                        name: "SirdataRTDModule",
+                        waitForIt: true,
+                        params: {
+                            setGptKeyValues: true,
+                            partnerId: 1,
+                            key: 1,
+                        }
+                    }
+                ]
+            },
+            consentManagement: {
+                usp: {
+                    cmpApi: 'iab',
+                    timeout: 100 // US Privacy timeout 100ms
+                },
+                gdpr: {
+                  cmpApi: 'iab',
+                  timeout: 8000,
+                  defaultGdprScope: true,
+                  rules: [{
+                    purpose: "storage",
+                    enforcePurpose: true,
+                    enforceVendor: true,
+                    vendorExceptions: ["appnexus"] //Can work without consent for cookies
+                  },{
+                    purpose: "basicAds",
+                    enforcePurpose: true,
+                    enforceVendor: true,
+                    vendorExceptions: ["appnexus"]
+                  }]
+                },
+            }
+        });
+    });
+
+</script>
+<script>
+    var div_1_sizes = [
+        [728, 90]
+    ];
+    
+    var PREBID_TIMEOUT = 3000;
+    var FAILSAFE_TIMEOUT = 5000;
+
+    var adUnits = [
+        {
+            code: '/19968336/header-bid-tag-0',
+            mediaTypes: {
+                banner: {
+                    sizes: div_1_sizes
+                }
+            },
+            bids: [{
+                bidder: 'appnexus',
+                params: {
+                    placementId: 13144370
+                }
+            }]
+        }
+        ];
+
+    // ======== DO NOT EDIT BELOW THIS LINE =========== //
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function() {
+        googletag.pubads().disableInitialLoad();
+    });
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    pbjs.que.push(function() {
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+            bidsBackHandler: initAdserver,
+            timeout: PREBID_TIMEOUT
+        });
+    });
+
+    function initAdserver() {
+        if (pbjs.initAdserverSet) return;
+        pbjs.initAdserverSet = true;
+        googletag.cmd.push(function() {
+            pbjs.que.push(function() {
+                pbjs.setTargetingForGPTAsync();
+                googletag.pubads().refresh();
+            });
+        });
+    }
+
+
+    // in case PBJS doesn't load
+    setTimeout(function() {
+        initAdserver();
+    }, FAILSAFE_TIMEOUT);
+
+    googletag.cmd.push(function() {
+        googletag.defineSlot('/19968336/header-bid-tag-0', div_1_sizes, 'div-1').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+    });
+
+</script>
+
+<article>
+<p>
+Give consent or make a choice in Europe. Module will add key/value pairs in ad calls. Check out for sd_rtd key in Google Ad call (https://securepubads.g.doubleclick.net/gampad/ads...) and in the payload sent to Xandr to endpoint https://ib.adnxs.com/ut/v3/prebid : tags[0].keywords.key[sd_rtd] should have an array of string as value. This array will mix user segments and/or page categories based on user's choices.
+</p>
+</article>
+        <h2>Basic Prebid.js Example</h2>
+        <h5>Div-1</h5>
+        <div id='div-1'>
+            <script type='text/javascript'>
+                googletag.cmd.push(function() {
+                    googletag.display('div-1');
+                });
+
+            </script>
+        </div>
+
+</body>
+</html>

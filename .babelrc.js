@@ -20,7 +20,7 @@ module.exports = {
             "safari >=8",
             "edge >= 14",
             "ff >= 57",
-            "ie >= 10",
+            "ie >= 11",
             "ios >= 8"
           ]
         }

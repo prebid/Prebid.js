@@ -1,6 +1,6 @@
 import * as utils from './utils.js';
 import { config } from './config.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { getCoreStorageManager } from './storageManager.js';
 
 export const USERSYNC_DEFAULT_CONFIG = {
@@ -225,7 +225,7 @@ export function newUserSync(userSyncDependencies) {
       }
       return checkForFiltering[filterType](biddersToFilter, bidder);
     }
-    return false;
+    return !permittedPixels[type];
   }
 
   /**

@@ -1,5 +1,5 @@
 import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { expect } from 'chai';
 import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
@@ -12,7 +12,7 @@ function setCookie(name, value, expires) {
   document.cookie = name + '=' + value +
     '; path=/' +
     (expires ? ('; expires=' + expires.toUTCString()) : '') +
-    '; SameSite=None';
+    '; SameSite=Lax';
 }
 
 describe('finteza analytics adapter', function () {
