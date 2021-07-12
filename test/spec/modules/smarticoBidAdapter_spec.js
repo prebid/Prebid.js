@@ -76,8 +76,8 @@ describe('smarticoBidAdapter', function () {
         bidId: '22499d052045',
         id: 987654,
         cpm: 10,
-        netRevenue:0,
-        currency:'EUR',
+        netRevenue: 0,
+        currency: 'EUR',
         ttl: 30,
         bannerFormatWidth: 300,
         bannerFormatHeight: 250,
@@ -90,7 +90,7 @@ describe('smarticoBidAdapter', function () {
       width: 300,
       height: 250,
       creativeId: 987654,
-      currency:'EUR',
+      currency: 'EUR',
       netRevenue: false, // gross
       ttl: 30,
       ad: '<script id="smartico-widget-testPlacementId-0" async defer type="text/javascript" src="https://trmads.eu/get?token=FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya&auction-id=5kaj89l8-3456-2s56-c455-4g6h78jsdfgf&from-auction-buffer=1&own_session=1&ad=987654&scriptid=smartico-widget-testPlacementId-0&banner-format=medium_rectangle"><\/script>'}];
