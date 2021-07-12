@@ -412,6 +412,17 @@ describe('TheMediaGrid Adapter', function () {
               'topic': ['stress', 'fear']
             }
           ]
+        },
+        'user': {
+          'formatedPublisher': [
+            {
+              'name': 'fomatedName',
+              'segments': [
+                { 'name': 'segName1', 'value': 'segVal1' },
+                { 'name': 'segName2', 'value': 'segVal2' }
+              ]
+            }
+          ]
         }
       };
       const bidRequestWithKW = { ...bidRequests[0], params: { ...bidRequests[0].params, keywords } }
@@ -423,22 +434,39 @@ describe('TheMediaGrid Adapter', function () {
           'somePublisher': [
             {
               'name': 'someName',
-              'brandsafety': ['disaster'],
-              'topic': ['stress', 'fear']
+              'segments': [
+                { 'name': 'brandsafety', 'value': 'disaster' },
+                { 'name': 'topic', 'value': 'stress' },
+                { 'name': 'topic', 'value': 'fear' }
+              ]
             }
           ],
           'ortb2': [
             {
               'name': 'keywords',
-              'keywords': ['bar']
+              'segments': [
+                { 'name': 'keywords', 'value': 'bar' }
+              ]
             }
           ]
         },
         'user': {
+          'formatedPublisher': [
+            {
+              'name': 'fomatedName',
+              'segments': [
+                { 'name': 'segName1', 'value': 'segVal1' },
+                { 'name': 'segName2', 'value': 'segVal2' }
+              ]
+            }
+          ],
           'ortb2': [
             {
               'name': 'keywords',
-              'keywords': ['foo', 'any']
+              'segments': [
+                { 'name': 'keywords', 'value': 'foo' },
+                { 'name': 'keywords', 'value': 'any' }
+              ]
             }
           ]
         }
