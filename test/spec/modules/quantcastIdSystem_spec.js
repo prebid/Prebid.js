@@ -1,10 +1,9 @@
 import { quantcastIdSubmodule, storage, firePixel, hasCCPAConsent, hasGDPRConsent, checkTCFv2 } from 'modules/quantcastIdSystem.js';
 import * as utils from 'src/utils.js';
-import {coppaDataHandler, gdprDataHandler, uspDataHandler} from 'src/adapterManager';
+import {coppaDataHandler} from 'src/adapterManager';
 
 describe('QuantcastId module', function () {
   beforeEach(function() {
-    storage.setCookie('__qca', '', 'Thu, 01 Jan 1970 00:00:00 GMT');
     sinon.stub(coppaDataHandler, 'getCoppa');
     sinon.stub(utils, 'triggerPixel');
     sinon.stub(window, 'addEventListener');
@@ -17,10 +16,10 @@ describe('QuantcastId module', function () {
   });
 
   it('getId() should return a quantcast id when the Quantcast first party cookie exists', function () {
-    storage.setCookie('__qca', 'P0-TestFPA');
-
+    sinon.stub(storage, 'getCookie').returns('P0-TestFPA');
     const id = quantcastIdSubmodule.getId();
     expect(id).to.be.deep.equal({id: {quantcastId: 'P0-TestFPA'}});
+    storage.getCookie.restore();
   });
 
   it('getId() should return an empty id when the Quantcast first party cookie is missing', function () {
@@ -32,15 +31,13 @@ describe('QuantcastId module', function () {
 describe('QuantcastId fire pixel', function () {
   beforeEach(function () {
     storage.setCookie('__qca', '', 'Thu, 01 Jan 1970 00:00:00 GMT');
+    sinon.stub(storage, 'setCookie');
     sinon.stub(utils, 'triggerPixel');
-    sinon.stub(uspDataHandler, 'getConsentData');
-    sinon.stub(gdprDataHandler, 'getConsentData');
   });
 
   afterEach(function () {
     utils.triggerPixel.restore();
-    uspDataHandler.getConsentData.restore();
-    gdprDataHandler.getConsentData.restore();
+    storage.setCookie.restore();
   });
 
   it('fpa should be set when not present on this call', function () {
@@ -53,22 +50,22 @@ describe('QuantcastId fire pixel', function () {
   });
 
   it('fpa should be extracted from the Quantcast first party cookie when present on this call', function () {
-    storage.setCookie('__qca', 'P0-TestFPA');
+    sinon.stub(storage, 'getCookie').returns('P0-TestFPA');
     firePixel('clientId');
     var urlString = utils.triggerPixel.getCall(0).args[0];
     var parsedUrl = utils.parseUrl(urlString);
     var urlSearchParams = parsedUrl.search;
     assert.equal(urlSearchParams.fpan, '0');
+    assert.equal(urlSearchParams.fpa, 'P0-TestFPA');
+    storage.getCookie.restore();
   });
 
   it('function to trigger pixel is called once', function () {
-    storage.setCookie('__qca', 'P0-TestFPA');
     firePixel('clientId');
     expect(utils.triggerPixel.calledOnce).to.equal(true);
   });
 
   it('function to trigger pixel is not called when client id is absent', function () {
-    storage.setCookie('__qca', 'P0-TestFPA');
     firePixel();
     expect(utils.triggerPixel.calledOnce).to.equal(false);
   });

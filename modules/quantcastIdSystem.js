@@ -211,10 +211,11 @@ export const quantcastIdSubmodule = {
     // Callbacks on Event Listeners won't trigger if the event is already complete so this check is required
     if (document.readyState === 'complete') {
       firePixel(clientId, cookieExpDays);
+    } else {
+      window.addEventListener('load', function () {
+        firePixel(clientId, cookieExpDays);
+      });
     }
-    window.addEventListener('load', function () {
-      firePixel(clientId, cookieExpDays);
-    });
 
     return { id: fpa ? { quantcastId: fpa } : undefined }
   }
