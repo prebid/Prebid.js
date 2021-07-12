@@ -152,7 +152,26 @@ export const spec = {
    *
    * @param {Bid} bid The bid that won the auction
    */
-  onBidWon: function (bid) { },
+  onBidWon: function (bid) {
+    if (!bid || !utils.isStr(bid.nurl)) {
+      return;
+    }
+
+    let winCpm, winCurr;
+    if (Object.prototype.hasOwnProperty.call(bid, 'originalCpm')) {
+      winCpm = bid.originalCpm;
+      winCurr = bid.originalCurrency;
+    } else {
+      winCpm = bid.cpm;
+      winCurr = bid.currency;
+    }
+
+    utils.triggerPixel(
+      bid.nurl
+        .replace(/\$\{AUCTION_PRICE\}/g, winCpm)
+        .replace(/\$\{AUCTION_CURRENCY\}/g, winCurr)
+    );
+  },
 
   /**
    * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
@@ -261,16 +280,21 @@ function buildBidResponse(bid, bidRequest, responseBody) {
     }
   }
 
+  const currency = responseBody.cur || DEFAULT_CURRENCY;
+  const cpm = (parseFloat(bid.price) || 0).toFixed(2);
+
   const categories = utils.deepAccess(bid, 'cat', []);
 
   const bidResponse = {
     requestId: bid.impid,
-    cpm: (parseFloat(bid.price) || 0).toFixed(2),
-    currency: responseBody.cur || DEFAULT_CURRENCY,
+    cpm: cpm,
+    currency: currency,
     mediaType: mediaType,
     ttl: 300,
     creativeId: bid.crid || bid.id,
     netRevenue: NET_REVENUE,
+    nurl: bid.nurl,
+    lurl: bid.lurl,
     meta: {
       mediaType: mediaType,
       primaryCatId: categories[0],
@@ -310,7 +334,7 @@ function buildBidResponse(bid, bidRequest, responseBody) {
       break;
     }
     case NATIVE: {
-      bidResponse.native = interpretNativeAd(nativeResponse);
+      bidResponse.native = interpretNativeAd(nativeResponse, currency, cpm);
       break;
     }
     default: {
@@ -327,9 +351,11 @@ function buildBidResponse(bid, bidRequest, responseBody) {
  * Convert OpenRtb native response to bid native object.
  *
  * @param {OpenRtbNativeResponse} nativeResponse
+ * @param {String} currency
+ * @param {String} cpm
  * @returns {BidNative} native
  */
-function interpretNativeAd(nativeResponse) {
+function interpretNativeAd(nativeResponse, currency, cpm) {
   const native = {};
 
   // OpenRtb Link Object
@@ -341,11 +367,23 @@ function interpretNativeAd(nativeResponse) {
 
   const clickTrackers = utils.deepAccess(nativeResponse, 'link.clicktrackers');
   if (clickTrackers && utils.isArray(clickTrackers)) {
-    native.clickTrackers = clickTrackers.map(url => decodeURIComponent(url));
+    native.clickTrackers = clickTrackers
+      .filter(Boolean)
+      .map(
+        url => decodeURIComponent(url)
+          .replace(/\$\{AUCTION_PRICE\}/g, cpm)
+          .replace(/\$\{AUCTION_CURRENCY\}/g, currency)
+      );
   }
 
   if (nativeResponse.imptrackers && utils.isArray(nativeResponse.imptrackers)) {
-    native.impressionTrackers = nativeResponse.imptrackers.map(url => decodeURIComponent(url));
+    native.impressionTrackers = nativeResponse.imptrackers
+      .filter(Boolean)
+      .map(
+        url => decodeURIComponent(url)
+          .replace(/\$\{AUCTION_PRICE\}/g, cpm)
+          .replace(/\$\{AUCTION_CURRENCY\}/g, currency)
+      );
   }
 
   if (nativeResponse.jstracker && utils.isStr(nativeResponse.jstracker)) {
