@@ -88,6 +88,11 @@ export const sharedIdSystemSubmodule = {
    * @returns {{pubcid:string}}
    */
   decode(value, config) {
+    if (hasOptedOut()) {
+      utils.logInfo('PubCommonId decode: Has opted-out');
+      return undefined;
+    }
+    utils.logInfo(' Decoded value PubCommonId ' + value);
     const idObj = {'pubcid': value};
     return idObj;
   },
