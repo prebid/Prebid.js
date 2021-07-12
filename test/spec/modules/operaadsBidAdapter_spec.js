@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/operaadsBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 
 describe('Opera Ads Bid Adapter', function () {
   describe('Test isBidRequestValid', function () {
@@ -495,6 +496,29 @@ describe('Opera Ads Bid Adapter', function () {
       });
 
       expect(bidResponses).to.be.an('array').that.is.not.empty;
+
+      const bid = serverResponse.body.seatbid[0].bid[0];
+      const bidResponse = bidResponses[0];
+
+      expect(bidResponse.mediaType).to.equal(BANNER);
+      expect(bidResponse.requestId).to.equal(bid.impid);
+      expect(bidResponse.cpm).to.equal(parseFloat(bid.price).toFixed(2))
+      expect(bidResponse.currency).to.equal(serverResponse.body.cur);
+      expect(bidResponse.creativeId).to.equal(bid.crid || bid.id);
+      expect(bidResponse.netRevenue).to.be.true;
+      expect(bidResponse.nurl).to.equal(bid.nurl);
+      expect(bidResponse.lurl).to.equal(bid.lurl);
+
+      expect(bidResponse.meta).to.be.an('object');
+      expect(bidResponse.meta.mediaType).to.equal(BANNER);
+      expect(bidResponse.meta.primaryCatId).to.equal('IAB9-31');
+      expect(bidResponse.meta.secondaryCatIds).to.deep.equal(['IAB8']);
+      expect(bidResponse.meta.advertiserDomains).to.deep.equal(bid.adomain);
+      expect(bidResponse.meta.clickUrl).to.equal(bid.adomain[0]);
+
+      expect(bidResponse.ad).to.equal(bid.adm);
+      expect(bidResponse.width).to.equal(bid.w);
+      expect(bidResponse.height).to.equal(bid.h);
     });
 
     it('Test video interpretResponse', function () {
@@ -554,6 +578,17 @@ describe('Opera Ads Bid Adapter', function () {
       });
 
       expect(bidResponses).to.be.an('array').that.is.not.empty;
+
+      const bid = serverResponse.body.seatbid[0].bid[0];
+      const bidResponse = bidResponses[0];
+
+      expect(bidResponse.mediaType).to.equal(VIDEO);
+      expect(bidResponse.vastXml).to.equal(bid.adm);
+      expect(bidResponse.width).to.equal(bid.w);
+      expect(bidResponse.height).to.equal(bid.h);
+
+      expect(bidResponse.adResponse).to.be.an('object');
+      expect(bidResponse.renderer).to.be.an('object');
     });
 
     it('Test native interpretResponse', function () {
@@ -569,7 +604,7 @@ describe('Opera Ads Bid Adapter', function () {
                   'price': 1.04,
                   'nurl': 'https://s.adx.opera.com/win',
                   'lurl': 'https://s.adx.opera.com/loss',
-                  'adm': '{"native":{"ver":"1.1","assets":[{"id":1,"required":1,"title":{"text":"The first personal browser"}},{"id":2,"required":1,"img":{"url":"https://res.adx.opera.com/xxx.png","w":720,"h":1280}},{"id":5,"required":1,"data":{"value":"Opera","len":5}}],"link":{"url":"https://www.opera.com/mobile/opera","clicktrackers":["https://thirdpart-click.tracker.com","https://t-odx.op-mobile.opera.com/click"]}}}',
+                  'adm': '{"native":{"ver":"1.1","assets":[{"id":1,"required":1,"title":{"text":"The first personal browser"}},{"id":2,"required":1,"img":{"url":"https://res.adx.opera.com/xxx.png","w":720,"h":1280}},{"id":3,"required":1,"img":{"url":"https://res.adx.opera.com/xxx.png","w":60,"h":60}},{"id":4,"required":1,"data":{"value":"Download Opera","len":14}},{"id":5,"required":1,"data":{"value":"Opera","len":5}},{"id":6,"required":1,"data":{"value":"Download","len":8}}],"link":{"url":"https://www.opera.com/mobile/opera","clicktrackers":["https://thirdpart-click.tracker.com","https://t-odx.op-mobile.opera.com/click"]},"imptrackers":["https://thirdpart-imp.tracker.com","https://t-odx.op-mobile.opera.com/impr"],"jstracker":"<script src=\\"https://t-odx.op-mobile.opera.com/jstracker\\"></script>"}}',
                   'adomain': [
                     'opera.com',
                   ],
@@ -613,6 +648,15 @@ describe('Opera Ads Bid Adapter', function () {
       });
 
       expect(bidResponses).to.be.an('array').that.is.not.empty;
+
+      const bidResponse = bidResponses[0];
+
+      expect(bidResponse.mediaType).to.equal(NATIVE)
+      expect(bidResponse.native).to.be.an('object');
+      expect(bidResponse.native.clickUrl).is.not.empty;
+      expect(bidResponse.native.clickTrackers).to.have.lengthOf(2);
+      expect(bidResponse.native.impressionTrackers).to.have.lengthOf(2);
+      expect(bidResponse.native.javascriptTrackers).to.have.lengthOf(1);
     });
 
     it('Test empty server response', function () {
@@ -642,13 +686,13 @@ describe('Opera Ads Bid Adapter', function () {
 
   describe('Test onBidWon', function () {
     it('onBidWon should not throw', function () {
-      expect(spec.onTimeout()).to.not.throw;
+      expect(spec.onBidWon({nurl: '#', originalCpm: '1.04', currency: 'USD'})).to.not.throw;
     });
   });
 
   describe('Test onSetTargeting', function () {
     it('onSetTargeting should not throw', function () {
-      expect(spec.onTimeout()).to.not.throw;
+      expect(spec.onSetTargeting()).to.not.throw;
     });
   });
 });
