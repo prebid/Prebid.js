@@ -133,6 +133,13 @@ function formatUrlParams(option) {
       let temp = option[prop];
       option[prop] = { p1Consent: temp, noP1Consent: temp };
     }
+    if (utils.isPlainObject(option[prop]) && (!option[prop].p1Consent || !option[prop].noP1Consent)) {
+      ['p1Consent', 'noP1Consent'].forEach((conUrl) => {
+        if (!option[prop][conUrl]) {
+          utils.logWarn(`s2sConfig.${prop}.${conUrl} not defined.  PBS request will be skipped in some P1 scenarios.`);
+        }
+      });
+    }
   });
 }
 
@@ -1097,9 +1104,10 @@ export function PrebidServer() {
       const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits, s2sBidRequest.s2sConfig, requestedBidders);
       const requestJson = request && JSON.stringify(request);
       utils.logInfo('BidRequest: ' + requestJson);
-      if (request && requestJson) {
+      const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
+      if (request && requestJson && endpointUrl) {
         ajax(
-          getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
+          endpointUrl,
           {
             success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done, s2sBidRequest.s2sConfig),
             error: done
@@ -1107,6 +1115,8 @@ export function PrebidServer() {
           requestJson,
           { contentType: 'text/plain', withCredentials: true }
         );
+      } else {
+        utils.logError('PBS request not made.  Check endpoints.');
       }
     }
   };
