@@ -248,11 +248,13 @@ function buildBidResponse(bid, bidRequest, responseBody) {
   } else {
     let markup;
     try {
-      markup = JSON.parse(bid.adm.replace(/\\/g, ''));
+      markup = JSON.parse(bid.adm);
     } catch (e) {
       markup = null;
     }
 
+    // OpenRtb Markup Response Object
+    // https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-Native-Ads-Specification-1-1_2016.pdf#5.1
     if (markup && utils.isPlainObject(markup.native)) {
       mediaType = NATIVE;
       nativeResponse = markup.native;
@@ -330,21 +332,24 @@ function buildBidResponse(bid, bidRequest, responseBody) {
 function interpretNativeAd(nativeResponse) {
   const native = {};
 
+  // OpenRtb Link Object
+  // https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-Native-Ads-Specification-1-1_2016.pdf#5.7
   const clickUrl = utils.deepAccess(nativeResponse, 'link.url');
-  if (clickUrl) {
+  if (clickUrl && utils.isStr(clickUrl)) {
     native.clickUrl = decodeURIComponent(clickUrl);
+  }
+
+  const clickTrackers = utils.deepAccess(nativeResponse, 'link.clicktrackers');
+  if (clickTrackers && utils.isArray(clickTrackers)) {
+    native.clickTrackers = clickTrackers.map(url => decodeURIComponent(url));
   }
 
   if (nativeResponse.imptrackers && utils.isArray(nativeResponse.imptrackers)) {
     native.impressionTrackers = nativeResponse.imptrackers.map(url => decodeURIComponent(url));
   }
 
-  if (nativeResponse.clicktrackers && utils.isArray(nativeResponse.clicktrackers)) {
-    native.clickTrackers = nativeResponse.clicktrackers.map(url => decodeURIComponent(url));
-  }
-
-  if (nativeResponse.jstracker && utils.isArray(nativeResponse.jstracker)) {
-    native.jstracker = nativeResponse.jstracker.map(url => decodeURIComponent(url));
+  if (nativeResponse.jstracker && utils.isStr(nativeResponse.jstracker)) {
+    native.javascriptTrackers = [nativeResponse.jstracker];
   }
 
   let assets;
