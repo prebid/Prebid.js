@@ -40,7 +40,8 @@ export function log(msg, obj) {
 export const state = {
   zoneId: '',
   transactionId: '',
-  notifyId: ''
+  notifyId: '',
+  timeout: config.getConfig('bidderTimeout'),
 };
 
 /**
@@ -68,7 +69,7 @@ export function sendEvent(eventName, sspName) {
     puid: state.transactionId || state.notifyId,
     notid: state.notifyId || '',
     pbav: SUBLIME_VERSION,
-    pubtimeout: config.getConfig('bidderTimeout'),
+    pubtimeout: state.timeout,
     pubpbv: '$prebid.version$',
     device: detectDevice(),
   };
@@ -108,6 +109,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     currencyCode: config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY,
     timeout: (typeof bidderRequest === 'object' && !!bidderRequest) ? bidderRequest.timeout : config.getConfig('bidderTimeout'),
   };
+
+  setState({ timeout: commonPayload.timeout });
 
   // RefererInfo
   if (bidderRequest && bidderRequest.refererInfo) {
@@ -221,7 +224,7 @@ function interpretResponse(serverResponse, bidRequest) {
 
 /**
  * Send pixel when bidWon event is triggered
- * @param {Object} timeoutData
+ * @param {Object} bid
  */
 function onBidWon(bid) {
   log('Bid won', bid);
@@ -230,10 +233,16 @@ function onBidWon(bid) {
 
 /**
  * Send debug when we timeout
- * @param {Object} timeoutData
+ * @param {Array[{}]} timeoutData
  */
 function onTimeout(timeoutData) {
   log('Timeout from adapter', timeoutData);
+
+  const timeout = utils.deepAccess(timeoutData, '0.timeout');
+  if (timeout) {
+    // Set timeout to the one we got from the bid
+    setState({ timeout });
+  }
   sendEvent('bidtimeout');
 }
 
@@ -241,12 +250,15 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: BIDDER_GVLID,
   aliases: [],
-  sendEvent: sendEvent,
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
   onBidWon: onBidWon,
   onTimeout: onTimeout,
+  // Exposed for test purpose
+  sendEvent: sendEvent,
+  setState: setState,
+  state: state,
 };
 
 registerBidder(spec);
