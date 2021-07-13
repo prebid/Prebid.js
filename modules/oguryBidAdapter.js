@@ -72,7 +72,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   return {
     method: 'POST',
     url: BID_HOST,
-    data: openRtbBidRequestBanner
+    data: openRtbBidRequestBanner,
+    options: {contentType: 'application/json'},
   };
 }
 
@@ -98,6 +99,7 @@ function interpretResponse(openRtbBidResponse) {
         creativeId: bid.id,
         netRevenue: true,
         ttl: 60,
+        ext: bid.ext,
         meta: {
           advertiserDomains: bid.adomain
         }
