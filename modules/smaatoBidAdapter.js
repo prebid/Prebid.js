@@ -6,12 +6,13 @@ import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
 const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.3'
+const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const requestTemplate = {
     id: bidderRequest.auctionId,
     at: 1,
-    cur: ['USD'],
+    cur: [CURRENCY],
     tmax: bidderRequest.timeout,
     site: {
       id: window.location.hostname,
@@ -80,7 +81,6 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
       let adPodRequest = Object.assign({}, requestTemplate, createAdPodImp(bidRequest, videoMediaType));
       addOptionalAdpodParameters(adPodRequest, videoMediaType);
       requests.push(adPodRequest);
-
     } else {
       let videoRequest = Object.assign({}, requestTemplate, createVideoImp(bidRequest, videoMediaType));
       requests.push(videoRequest);
@@ -297,6 +297,7 @@ function createBannerImp(bidRequest, sizes) {
     imp: [{
       id: bidRequest.bidId,
       tagid: utils.deepAccess(bidRequest, 'params.adspaceId'),
+      floor: getBidFloor(bidRequest, BANNER, sizes),
       banner: {
         w: sizes[0].w,
         h: sizes[0].h,
@@ -311,6 +312,7 @@ function createVideoImp(bidRequest, videoMediaType) {
     imp: [{
       id: bidRequest.bidId,
       tagid: utils.deepAccess(bidRequest, 'params.adspaceId'),
+      floor: getBidFloor(bidRequest, VIDEO, videoMediaType.playerSize),
       video: {
         mimes: videoMediaType.mimes,
         minduration: videoMediaType.minduration,
@@ -337,6 +339,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
   let imp = {
     id: bidRequest.bidId,
     tagid: tagid,
+    floor: getBidFloor(bidRequest, VIDEO, videoMediaType.playerSize),
     video: {
       w: videoMediaType.playerSize[0][0],
       h: videoMediaType.playerSize[0][1],
@@ -423,5 +426,16 @@ const addOptionalAdpodParameters = (request, videoMediaType) => {
   if (!utils.isEmpty(content)) {
     request.site.content = content
   }
+}
 
+function getBidFloor(bidRequest, mediaType, sizes) {
+  if (typeof bidRequest.getFloor === 'function') {
+    const size = sizes.length === 1 ? sizes[0] : '*';
+    const floor = bidRequest.getFloor({currency: CURRENCY, mediaType: mediaType, size: size});
+    if (floor && !isNaN(floor.floor) && (floor.currency === CURRENCY)) {
+      return floor.floor;
+    }
+  }
+
+  return 0;
 }
