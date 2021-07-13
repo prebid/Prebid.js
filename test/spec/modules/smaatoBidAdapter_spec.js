@@ -161,12 +161,12 @@ describe('smaatoBidAdapterTest', () => {
             id: 'bidId',
             banner: BANNER_OPENRTB_IMP,
             tagid: 'adspaceId',
-            floor: 0
+            bidfloor: 0
           }
         ]);
       });
 
-      it('sends floor when configured', () => {
+      it('sends bidfloor when configured', () => {
         const singleBannerBidRequestWithFloor = Object.assign({}, singleBannerBidRequest);
         singleBannerBidRequestWithFloor.getFloor = function() {
           return {
@@ -177,10 +177,10 @@ describe('smaatoBidAdapterTest', () => {
         const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.imp[0].floor).to.be.equal(0.123);
+        expect(req.imp[0].bidfloor).to.be.equal(0.123);
       });
 
-      it('sends default floor when invalid', () => {
+      it('sends default bidfloor when invalid', () => {
         const singleBannerBidRequestWithFloor = Object.assign({}, singleBannerBidRequest);
         singleBannerBidRequestWithFloor.getFloor = function() {
           return undefined;
@@ -188,10 +188,10 @@ describe('smaatoBidAdapterTest', () => {
         const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.imp[0].floor).to.be.equal(0);
+        expect(req.imp[0].bidfloor).to.be.equal(0);
       });
 
-      it('sends default floor when not a number', () => {
+      it('sends default bidfloor when not a number', () => {
         const singleBannerBidRequestWithFloor = Object.assign({}, singleBannerBidRequest);
         singleBannerBidRequestWithFloor.getFloor = function() {
           return {
@@ -201,10 +201,10 @@ describe('smaatoBidAdapterTest', () => {
         const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.imp[0].floor).to.be.equal(0);
+        expect(req.imp[0].bidfloor).to.be.equal(0);
       });
 
-      it('sends default floor when wrong currency', () => {
+      it('sends default bidfloor when wrong currency', () => {
         const singleBannerBidRequestWithFloor = Object.assign({}, singleBannerBidRequest);
         singleBannerBidRequestWithFloor.getFloor = function() {
           return {
@@ -215,7 +215,7 @@ describe('smaatoBidAdapterTest', () => {
         const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.imp[0].floor).to.be.equal(0);
+        expect(req.imp[0].bidfloor).to.be.equal(0);
       });
 
       it('sends correct site', () => {
@@ -378,11 +378,11 @@ describe('smaatoBidAdapterTest', () => {
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.imp[0].id).to.be.equal('bidId');
         expect(req.imp[0].tagid).to.be.equal('adspaceId');
-        expect(req.imp[0].floor).to.be.equal(0);
+        expect(req.imp[0].bidfloor).to.be.equal(0);
         expect(req.imp[0].video).to.deep.equal(VIDEO_OUTSTREAM_OPENRTB_IMP);
       });
 
-      it('sends floor when configured', () => {
+      it('sends bidfloor when configured', () => {
         const singleVideoBidRequestWithFloor = Object.assign({}, singleVideoBidRequest);
         singleVideoBidRequestWithFloor.getFloor = function() {
           return {
@@ -393,7 +393,7 @@ describe('smaatoBidAdapterTest', () => {
         const reqs = spec.buildRequests([singleVideoBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.imp[0].floor).to.be.equal(0.456);
+        expect(req.imp[0].bidfloor).to.be.equal(0.456);
       });
 
       it('splits multi format bid requests', () => {
@@ -461,7 +461,7 @@ describe('smaatoBidAdapterTest', () => {
             expect(req.imp.length).to.be.equal(ADPOD_DURATION / DURATION_RANGE[0]);
             expect(req.imp[0].id).to.be.equal(BID_ID);
             expect(req.imp[0].tagid).to.be.equal(ADBREAK_ID);
-            expect(req.imp[0].floor).to.be.equal(0);
+            expect(req.imp[0].bidfloor).to.be.equal(0);
             expect(req.imp[0].video.ext.context).to.be.equal(ADPOD);
             expect(req.imp[0].video.w).to.be.equal(W);
             expect(req.imp[0].video.h).to.be.equal(H);
@@ -469,7 +469,7 @@ describe('smaatoBidAdapterTest', () => {
             expect(req.imp[0].video.sequence).to.be.equal(1);
             expect(req.imp[1].id).to.be.equal(BID_ID);
             expect(req.imp[1].tagid).to.be.equal(ADBREAK_ID);
-            expect(req.imp[1].floor).to.be.equal(0);
+            expect(req.imp[1].bidfloor).to.be.equal(0);
             expect(req.imp[1].video.ext.context).to.be.equal(ADPOD);
             expect(req.imp[1].video.w).to.be.equal(W);
             expect(req.imp[1].video.h).to.be.equal(H);
@@ -477,7 +477,7 @@ describe('smaatoBidAdapterTest', () => {
             expect(req.imp[1].video.sequence).to.be.equal(2);
           });
 
-          it('sends floor when configured', () => {
+          it('sends bidfloor when configured', () => {
             const longFormVideoBidRequestWithFloor = Object.assign({}, longFormVideoBidRequest);
             longFormVideoBidRequestWithFloor.getFloor = function() {
               return {
@@ -488,8 +488,8 @@ describe('smaatoBidAdapterTest', () => {
             const reqs = spec.buildRequests([longFormVideoBidRequestWithFloor], defaultBidderRequest);
 
             const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-            expect(req.imp[0].floor).to.be.equal(0.789);
-            expect(req.imp[1].floor).to.be.equal(0.789);
+            expect(req.imp[0].bidfloor).to.be.equal(0.789);
+            expect(req.imp[1].bidfloor).to.be.equal(0.789);
           });
 
           it('sends brand category exclusion as true when config is set to true', () => {

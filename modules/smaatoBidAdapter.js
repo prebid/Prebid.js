@@ -5,7 +5,7 @@ import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.3'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.4'
 const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
@@ -297,7 +297,7 @@ function createBannerImp(bidRequest, sizes) {
     imp: [{
       id: bidRequest.bidId,
       tagid: utils.deepAccess(bidRequest, 'params.adspaceId'),
-      floor: getBidFloor(bidRequest, BANNER, sizes),
+      bidfloor: getBidFloor(bidRequest, BANNER, sizes),
       banner: {
         w: sizes[0].w,
         h: sizes[0].h,
@@ -312,7 +312,7 @@ function createVideoImp(bidRequest, videoMediaType) {
     imp: [{
       id: bidRequest.bidId,
       tagid: utils.deepAccess(bidRequest, 'params.adspaceId'),
-      floor: getBidFloor(bidRequest, VIDEO, videoMediaType.playerSize),
+      bidfloor: getBidFloor(bidRequest, VIDEO, videoMediaType.playerSize),
       video: {
         mimes: videoMediaType.mimes,
         minduration: videoMediaType.minduration,
@@ -339,7 +339,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
   let imp = {
     id: bidRequest.bidId,
     tagid: tagid,
-    floor: getBidFloor(bidRequest, VIDEO, videoMediaType.playerSize),
+    bidfloor: getBidFloor(bidRequest, VIDEO, videoMediaType.playerSize),
     video: {
       w: videoMediaType.playerSize[0][0],
       h: videoMediaType.playerSize[0][1],
