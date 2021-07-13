@@ -63,10 +63,12 @@ export const spec = {
       }
     };
     const rInfo = bidderRequest.refererInfo;
+    payload.site.page = config.getConfig('pageUrl') || ((rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href);
+    payload.site.domain = config.getConfig('publisherDomain') || getDomainFromURL(payload.site.page);
+
     payload.device.ua = navigator.userAgent;
-    payload.site.page = (rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href;
-    payload.site.domain = getDomainFromURL(payload.site.page);
-    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
+    payload.device.devicetype = isMobile() ? 1 : isConnectedTV() ? 3 : 2;
+    payload.site.mobile = payload.device.devicetype === 1 ? 1 : 0;
 
     if (params.test) {
       payload.test = params.test;
@@ -100,29 +102,32 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    let bidResponse = [];
-    if (Object.keys(serverResponse.body).length !== 0) {
-      let zetaResponse = serverResponse.body;
-      let zetaBid = zetaResponse.seatbid[0].bid[0];
-      let bid = {
-        requestId: zetaBid.impid,
-        cpm: zetaBid.price,
-        currency: zetaResponse.cur,
-        width: zetaBid.w,
-        height: zetaBid.h,
-        ad: zetaBid.adm,
-        ttl: TTL,
-        creativeId: zetaBid.crid,
-        netRevenue: NET_REV,
-      };
-      if (zetaBid.adomain && zetaBid.adomain.length) {
-        bid.meta = {
-          advertiserDomains: zetaBid.adomain
-        };
-      }
-      bidResponse.push(bid);
+    let bidResponses = [];
+    const response = (serverResponse || {}).body;
+    if (response && response.seatbid && response.seatbid[0].bid && response.seatbid[0].bid.length) {
+      response.seatbid.forEach(zetaSeatbid => {
+        zetaSeatbid.bid.forEach(zetaBid => {
+          let bid = {
+            requestId: zetaBid.impid,
+            cpm: zetaBid.price,
+            currency: response.cur,
+            width: zetaBid.w,
+            height: zetaBid.h,
+            ad: zetaBid.adm,
+            ttl: TTL,
+            creativeId: zetaBid.crid,
+            netRevenue: NET_REV,
+          };
+          if (zetaBid.adomain && zetaBid.adomain.length) {
+            bid.meta = {
+              advertiserDomains: zetaBid.adomain
+            };
+          }
+          bidResponses.push(bid);
+        })
+      })
     }
-    return bidResponse;
+    return bidResponses;
   },
 
   /**
@@ -188,6 +193,14 @@ function getDomainFromURL(url) {
     return hostname.substring(4);
   }
   return hostname;
+}
+
+function isMobile() {
+  return /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent);
+}
+
+function isConnectedTV() {
+  return /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(navigator.userAgent);
 }
 
 registerBidder(spec);
