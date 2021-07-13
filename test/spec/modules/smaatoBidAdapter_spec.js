@@ -327,7 +327,7 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.imp[0].video).to.deep.equal(VIDEO_OUTSTREAM_OPENRTB_IMP);
       });
 
-      it('allows combined banner and video imp in single bid request', () => {
+      it('splits multi format bid requests', () => {
         const combinedBannerAndVideoBidRequest = {
           bidder: 'smaato',
           params: {
@@ -351,9 +351,11 @@ describe('smaatoBidAdapterTest', () => {
 
         const reqs = spec.buildRequests([combinedBannerAndVideoBidRequest], defaultBidderRequest);
 
-        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.imp[0].banner).to.deep.equal(BANNER_OPENRTB_IMP);
-        expect(req.imp[0].video).to.deep.equal(VIDEO_OUTSTREAM_OPENRTB_IMP);
+        expect(reqs).to.have.length(2);
+        expect(JSON.parse(reqs[0].data).imp[0].banner).to.deep.equal(BANNER_OPENRTB_IMP);
+        expect(JSON.parse(reqs[0].data).imp[0].video).to.not.exist;
+        expect(JSON.parse(reqs[1].data).imp[0].banner).to.not.exist;
+        expect(JSON.parse(reqs[1].data).imp[0].video).to.deep.equal(VIDEO_OUTSTREAM_OPENRTB_IMP);
       });
 
       describe('ad pod / long form video', () => {
@@ -884,7 +886,7 @@ describe('smaatoBidAdapterTest', () => {
         ]);
       });
 
-      it('single video reponse', () => {
+      it('single video response', () => {
         const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_VIDEO), buildBidRequest());
 
         expect(bids).to.deep.equal([
