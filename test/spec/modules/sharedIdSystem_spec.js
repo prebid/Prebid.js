@@ -1,28 +1,62 @@
 import {
-  sharedIdSubmodule,
+  sharedIdSystemSubmodule,
+  storage
 } from 'modules/sharedIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
 import {uspDataHandler} from 'src/adapterManager';
+import sinon from 'sinon';
+import * as utils from 'src/utils.js';
 
 let expect = require('chai').expect;
 
 describe('SharedId System', function() {
-  const SHAREDID_RESPONSE = {sharedId: 'testsharedid'};
-  let uspConsentDataStub;
+  const UUID = '15fde1dc-1861-4894-afdf-b757272f3568';
+  const START_TIME_MILLIS = 1234;
+
+  before(function() {
+    sinon.stub(utils, 'generateUUID').returns(UUID);
+  });
+
+  after(function() {
+    utils.generateUUID.restore();
+  });
+
   describe('Xhr Requests from getId()', function() {
-    let callbackSpy = sinon.spy();
+    const SHAREDID_RESPONSE = {sharedId: 'testsharedid'};
+    const callbackSpy = sinon.spy();
+
+    let uspConsentDataStub
+    let setCookeStub;
+    let sandbox;
 
     beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+
+      uspConsentDataStub = sandbox.stub(uspDataHandler, 'getConsentData');
+      setCookeStub = sandbox.stub(storage, 'setCookie');
+
+      sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+      sandbox.stub(utils, 'hasDeviceAccess').returns(true);
+
+      sandbox.useFakeTimers(START_TIME_MILLIS);
+
       callbackSpy.resetHistory();
-      uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
     });
 
     afterEach(function () {
-      uspConsentDataStub.restore();
+      sandbox.restore();
     });
 
     it('should call shared id endpoint without consent data and handle a valid response', function () {
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, undefined).callback;
+      let config = {
+        storage: {
+          type: 'cookie',
+          name: '_pubcid',
+          expires: 10
+        }
+      };
+
+      let submoduleCallback = sharedIdSystemSubmodule.getId(config, undefined).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -32,7 +66,16 @@ describe('SharedId System', function() {
       request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(callbackSpy.lastCall.lastArg.id).to.equal(SHAREDID_RESPONSE.sharedId);
+      expect(callbackSpy.lastCall.lastArg).to.equal(UUID);
+
+      expect(setCookeStub.calledThrice).to.be.true;
+
+      let testCookieName = `_gd${START_TIME_MILLIS}`;
+      expect(setCookeStub.firstCall.args).to.eql([testCookieName, '1', undefined, undefined, 'localhost']);
+      expect(setCookeStub.secondCall.args).to.eql([testCookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, 'localhost']);
+
+      let expires = new Date(START_TIME_MILLIS + (config.storage.expires * (60 * 60 * 24 * 1000))).toUTCString();
+      expect(setCookeStub.lastCall.args).to.eql(['_pubcid_sharedid', 'testsharedid', expires, 'LAX', undefined]);
     });
 
     it('should call shared id endpoint with consent data and handle a valid response', function () {
@@ -41,7 +84,7 @@ describe('SharedId System', function() {
         consentString: 'abc12345234',
       };
 
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, consentData).callback;
+      let submoduleCallback = sharedIdSystemSubmodule.getId(undefined, consentData).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -51,7 +94,7 @@ describe('SharedId System', function() {
       request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(callbackSpy.lastCall.lastArg.id).to.equal(SHAREDID_RESPONSE.sharedId);
+      expect(callbackSpy.lastCall.lastArg).to.equal(UUID);
     });
 
     it('should call shared id endpoint with usp consent data and handle a valid response', function () {
@@ -61,7 +104,7 @@ describe('SharedId System', function() {
         consentString: 'abc12345234',
       };
 
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, consentData).callback;
+      let submoduleCallback = sharedIdSystemSubmodule.getId(undefined, consentData).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -71,7 +114,7 @@ describe('SharedId System', function() {
       request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(callbackSpy.lastCall.lastArg.id).to.equal(SHAREDID_RESPONSE.sharedId);
+      expect(callbackSpy.lastCall.lastArg).to.equal(UUID);
     });
   });
 });

@@ -271,9 +271,11 @@ const RESPONSE_OPENRTB = {
               'type': 'banner',
               'event': {
                 'win': 'http://wurl.org?id=333'
+              },
+              'meta': {
+                'dchain': { 'ver': '1.0', 'complete': 0, 'nodes': [ { 'asi': 'magnite.com', 'bsid': '123456789', } ] }
               }
             },
-            'dchain': { 'ver': '1.0', 'complete': 0, 'nodes': [ { 'asi': 'magnite.com', 'bsid': '123456789', } ] },
             'bidder': {
               'appnexus': {
                 'brand_id': 1,
@@ -502,6 +504,60 @@ describe('S2S Adapter', function () {
   describe('request function', function () {
     beforeEach(function () {
       resetSyncedStatus();
+    });
+
+    it('should block request if config did not define p1Consent URL in endpoint object config', function() {
+      let badConfig = utils.deepClone(CONFIG);
+      badConfig.endpoint = { noP1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };
+      config.setConfig({ s2sConfig: badConfig });
+
+      let badCfgRequest = utils.deepClone(REQUEST);
+      badCfgRequest.s2sConfig = badConfig;
+
+      adapter.callBids(badCfgRequest, BID_REQUESTS, addBidResponse, done, ajax);
+
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('should block request if config did not define noP1Consent URL in endpoint object config', function() {
+      let badConfig = utils.deepClone(CONFIG);
+      badConfig.endpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };
+      config.setConfig({ s2sConfig: badConfig });
+
+      let badCfgRequest = utils.deepClone(REQUEST);
+      badCfgRequest.s2sConfig = badConfig;
+
+      let badBidderRequest = utils.deepClone(BID_REQUESTS);
+      badBidderRequest[0].gdprConsent = {
+        consentString: 'abc123',
+        addtlConsent: 'superduperconsent',
+        gdprApplies: true,
+        apiVersion: 2,
+        vendorData: {
+          purpose: {
+            consents: {
+              1: false
+            }
+          }
+        }
+      };
+
+      adapter.callBids(badCfgRequest, badBidderRequest, addBidResponse, done, ajax);
+
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('should block request if config did not define any URLs in endpoint object config', function() {
+      let badConfig = utils.deepClone(CONFIG);
+      badConfig.endpoint = {};
+      config.setConfig({ s2sConfig: badConfig });
+
+      let badCfgRequest = utils.deepClone(REQUEST);
+      badCfgRequest.s2sConfig = badConfig;
+
+      adapter.callBids(badCfgRequest, BID_REQUESTS, addBidResponse, done, ajax);
+
+      expect(server.requests.length).to.equal(0);
     });
 
     it('should not add outstrean without renderer', function () {
@@ -2727,6 +2783,17 @@ describe('S2S Adapter', function () {
       let requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.coopSync).to.be.undefined;
+    });
+
+    it('adds debug flag', function () {
+      config.setConfig({debug: true});
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.debug).is.equal(true);
     });
   });
 });

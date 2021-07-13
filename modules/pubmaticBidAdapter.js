@@ -7,7 +7,7 @@ import { Renderer } from '../src/Renderer.js';
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
 const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=prebid-client';
-const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
+const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=';
 const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
@@ -929,7 +929,16 @@ function _assignRenderer(newBid, request) {
       newBid.renderer = BB_RENDERER.newRenderer(newBid.rendererCode, adUnitCode);
     }
   }
-};
+}
+
+function isNonEmptyArray(test) {
+  if (utils.isArray(test) === true) {
+    if (test.length > 0) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -949,15 +958,23 @@ export const spec = {
       }
       // video ad validation
       if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
-        if (!bid.mediaTypes.video.mimes || (bid.params.video && (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0))) {
-          utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
+        // bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array
+        let mediaTypesVideoMimes = utils.deepAccess(bid.mediaTypes, 'video.mimes');
+        let paramsVideoMimes = utils.deepAccess(bid, 'params.video.mimes');
+        if (isNonEmptyArray(mediaTypesVideoMimes) === false && isNonEmptyArray(paramsVideoMimes) === false) {
+          utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
           return false;
         }
+
         if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
           utils.logError(`${LOG_WARN_PREFIX}: no context specified in bid. Rejecting bid: `, bid);
           return false;
         }
-        if (bid.mediaTypes[VIDEO].context === 'outstream' && !utils.isStr(bid.params.outstreamAU) && !bid.hasOwnProperty('renderer') && !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
+
+        if (bid.mediaTypes[VIDEO].context === 'outstream' &&
+          !utils.isStr(bid.params.outstreamAU) &&
+          !bid.hasOwnProperty('renderer') &&
+          !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
           utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
           return false;
         }

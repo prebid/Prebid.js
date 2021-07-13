@@ -132,6 +132,43 @@ describe('TheMediaGridNM Adapter', function () {
         expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
       });
     });
+
+    it('should return true when required params is absent, but available in mediaTypes', function () {
+      const paramsList = [
+        {
+          'source': 'jwp',
+          'secid': '11',
+          'pubid': '22',
+          'video': {
+            'protocols': [1, 2, 3, 4, 5, 6]
+          }
+        },
+        {
+          'source': 'jwp',
+          'secid': '11',
+          'pubid': '22',
+          'video': {
+            'mimes': ['video/mp4', 'video/x-ms-wmv'],
+          }
+        }
+      ];
+
+      const mediaTypes = {
+        video: {
+          mimes: ['video/mp4', 'video/x-ms-wmv'],
+          playerSize: [200, 300],
+          protocols: [1, 2, 3, 4, 5, 6]
+        }
+      };
+
+      paramsList.forEach((params) => {
+        const validBid = Object.assign({}, bid);
+        delete validBid.params;
+        validBid.params = params;
+        validBid.mediaTypes = mediaTypes;
+        expect(spec.isBidRequestValid(validBid)).to.equal(true);
+      });
+    });
   });
 
   describe('buildRequests', function () {
@@ -198,6 +235,39 @@ describe('TheMediaGridNM Adapter', function () {
       });
     });
 
+    it('should attach valid params from mediaTypes', function () {
+      const mediaTypes = {
+        video: {
+          skipafter: 10,
+          minduration: 10,
+          maxduration: 100,
+          protocols: [1, 3, 4],
+          playerSize: [300, 250]
+        }
+      };
+      const bidRequest = Object.assign({ mediaTypes }, bidRequests[0]);
+      const req = spec.buildRequests([bidRequest], bidderRequest)[0];
+      const expectedVideo = {
+        'skipafter': 10,
+        'mind': 10,
+        'maxd': 100,
+        'mimes': ['video/mp4', 'video/x-ms-wmv'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'size': '300x250'
+      };
+      const expectedParams = Object.assign({}, bidRequest.params);
+      expectedParams.video = Object.assign(expectedParams.video, expectedVideo);
+
+      expect(req.url).to.be.an('string');
+      const payload = parseRequestUrl(req.url);
+      expect(payload).to.have.property('u', referrer);
+      expect(payload).to.have.property('r', '22edbae2733bf6');
+      expect(payload).to.have.property('wrapperType', 'Prebid_js');
+      expect(payload).to.have.property('wrapperVersion', '$prebid.version$');
+      expect(payload).to.have.property('sizes', '300x250,300x600');
+      expect(req.data).to.deep.equal(expectedParams);
+    });
+
     it('if gdprConsent is present payload must have gdpr params', function () {
       const [request] = spec.buildRequests([bidRequests[0]], {gdprConsent: {consentString: 'AAA', gdprApplies: true}, refererInfo: bidderRequest.refererInfo});
       expect(request.url).to.be.an('string');
@@ -235,7 +305,7 @@ describe('TheMediaGridNM Adapter', function () {
   describe('interpretResponse', function () {
     const responses = [
       {'bid': [{'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 250, 'w': 300, 'dealid': 11}], 'seat': '2'},
-      {'bid': [{'price': 0.5, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 600, 'w': 300}], 'seat': '2'},
+      {'bid': [{'price': 0.5, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 600, 'w': 300, adomain: ['my_domain.ru']}], 'seat': '2'},
       {'bid': [{'price': 0, 'h': 250, 'w': 300}], 'seat': '2'},
       {'bid': [{'price': 0, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341237\"><\/Ad>\n<\/VAST>', 'h': 250, 'w': 300}], 'seat': '2'},
       undefined,
@@ -302,9 +372,12 @@ describe('TheMediaGridNM Adapter', function () {
           'height': 250,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
+          'meta': {
+            'advertiserDomains': []
+          },
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
           }
@@ -318,9 +391,12 @@ describe('TheMediaGridNM Adapter', function () {
           'height': 600,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>',
+          'meta': {
+            'advertiserDomains': ['my_domain.ru']
+          },
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>'
           }
@@ -352,6 +428,9 @@ describe('TheMediaGridNM Adapter', function () {
           'bidId': '2bc598e42b6a',
           'bidderRequestId': '39d74f5b71464',
           'auctionId': '1cbd2feafe5e8b',
+          'meta': {
+            'advertiserDomains': []
+          },
           'mediaTypes': {
             'video': {
               'context': 'instream'
