@@ -28,7 +28,8 @@
     "uid2IdSystem",
     "admixerIdSystem",
     "dmdIdSystem",
-    "flocIdSystem"
+    "flocIdSystem",
+    "amxIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -39,7 +40,9 @@
     "dgkeywordRtdProvider",
     "geoedgeRtdProvider",
     "haloRtdProvider",
+    "iasRtdProvider",
     "jwplayerRtdProvider",
+    "optimeraRtdProvider",
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
     "sirdataRtdProvider"

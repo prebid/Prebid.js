@@ -58,7 +58,8 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
             lwFloor: lwFloor,
             floorData: bidRequest.floorData,
             auc: bidRequest.auc,
-            buc: bidRequest.buc
+            buc: bidRequest.buc,
+            lw: bidRequest.lw
           }
 
           utils.logInfo(bidRequest);
@@ -83,6 +84,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
           cache.auctions[args.auctionId].bidAdUnits[bidResponse.adUnit] =
             {
               sent: 0,
+              lw: bidResponse.lw,
               timeStamp: cache.auctions[args.auctionId].timeStamp
             };
         }
@@ -184,7 +186,8 @@ function getSentRequests() {
           floor: bid.lwFloor,
           auctionId: auctionIdPos,
           auc: bid.auc,
-          buc: bid.buc
+          buc: bid.buc,
+          lw: bid.lw
         });
       }
     });
@@ -220,7 +223,8 @@ function getResponses(gdpr, auctionIds) {
           floorCur: bid.floorData ? bid.floorData.floorCurrency : undefined,
           auctionId: auctionIdPos,
           auc: bid.auc,
-          buc: bid.buc
+          buc: bid.buc,
+          lw: bid.lw
         });
       }
     });
@@ -255,7 +259,8 @@ function getWins(gdpr, auctionIds) {
           floorCur: bid.floorData ? bid.floorData.floorCurrency : undefined,
           auctionId: auctionIdPos,
           auc: bid.auc,
-          buc: bid.buc
+          buc: bid.buc,
+          lw: bid.lw
         });
       }
     });
@@ -312,7 +317,8 @@ function getTimeouts(auctionIds) {
           timeStamp: auction.timeStamp,
           auctionId: auctionIdPos,
           auc: bid.auc,
-          buc: bid.buc
+          buc: bid.buc,
+          lw: bid.lw
         });
       }
     });
@@ -333,7 +339,8 @@ function getbidAdUnits() {
 
         bidAdUnits.push({
           adUnit: adUnit,
-          timeStamp: bidAdUnit.timeStamp
+          timeStamp: bidAdUnit.timeStamp,
+          lw: bidAdUnit.lw
         });
       }
     });
