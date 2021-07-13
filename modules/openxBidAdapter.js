@@ -248,6 +248,24 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     nocache: new Date().getTime()
   };
 
+  const firstPartyData = config.getConfig('ortb2.user.data')
+  if (Array.isArray(firstPartyData) && firstPartyData.length > 0) {
+    const sm = firstPartyData
+      .filter(
+        data => (Array.isArray(data.segment) &&
+                data.segment.length > 0 &&
+                data.name !== undefined &&
+                data.name.length > 0)
+      )
+      .map(
+        data => data.name + ':' + data.segment.map(seg => seg.id).join('|')
+      )
+      .join(',')
+    if (sm.length > 0) {
+      defaultParams.sm = encodeURIComponent(sm);
+    }
+  }
+
   if (bids[0].params.platform) {
     defaultParams.ph = bids[0].params.platform;
   }
