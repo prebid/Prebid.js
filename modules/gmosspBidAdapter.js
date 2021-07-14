@@ -2,9 +2,11 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'gmossp';
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
+const storage = getStorageManager();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -32,6 +34,7 @@ export const spec = {
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
     const cur = getCurrencyType();
     const dnt = utils.getDNT() ? '1' : '0';
+    const imuid = storage.getCookie('_im_uid.1000283') || '';
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let queryString = '';
@@ -46,6 +49,7 @@ export const spec = {
       queryString = utils.tryAppendQueryString(queryString, 'bid', bid);
       queryString = utils.tryAppendQueryString(queryString, 'ver', ver);
       queryString = utils.tryAppendQueryString(queryString, 'sid', sid);
+      queryString = utils.tryAppendQueryString(queryString, 'im_uid', imuid);
       queryString = utils.tryAppendQueryString(queryString, 'url', urlInfo.url);
       queryString = utils.tryAppendQueryString(queryString, 'ref', urlInfo.ref);
       queryString = utils.tryAppendQueryString(queryString, 'cur', cur);
