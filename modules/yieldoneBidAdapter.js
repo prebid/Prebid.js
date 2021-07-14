@@ -52,6 +52,12 @@ export const spec = {
         payload.h = size.split('x')[1];
       }
 
+      // LiveRampID
+      const idlEnv = utils.deepAccess(bidRequest, 'userId.idl_env');
+      if (utils.isStr(idlEnv) && !utils.isEmpty(idlEnv)) {
+        payload.lr_env = idlEnv;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/gmosspBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import {getStorageManager} from 'src/storageManager';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
@@ -35,6 +36,7 @@ describe('GmosspAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    const storage = getStorageManager();
     const bidRequests = [
       {
         bidder: 'gmossp',
@@ -60,19 +62,21 @@ describe('GmosspAdapter', function () {
           referer: 'https://hoge.com'
         }
       };
+      storage.setCookie('_im_uid.1000283', 'h.0a4749e7ffe09fa6');
 
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
-      expect(requests[0].data).to.equal('tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&url=https%3A%2F%2Fhoge.com&cur=JPY&dnt=0&');
+      expect(requests[0].data).to.equal('tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&im_uid=h.0a4749e7ffe09fa6&url=https%3A%2F%2Fhoge.com&cur=JPY&dnt=0&');
     });
 
-    it('should use fallback if refererInfo.referer in bid request is empty', function () {
+    it('should use fallback if refererInfo.referer in bid request is empty and _im_uid.1000283 cookie is empty', function () {
       const bidderRequest = {
         refererInfo: {
           referer: ''
         }
       };
+      storage.setCookie('_im_uid.1000283', '');
 
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       const result = 'tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&url=' + encodeURIComponent(window.top.location.href) + '&cur=JPY&dnt=0&';
