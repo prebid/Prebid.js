@@ -225,6 +225,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   hostDomain = hostInfo.domain;
 
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
+  const MKTAG = utils.deepAccess(validBidRequests, 'params.mktag');
   const BIDFLOOR = utils.deepAccess(validBidRequests, 'params.bidfloor');
   const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.banner');
@@ -339,7 +340,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   }
 
   let bidder = {};
-  bidder.tappxkey = TAPPXKEY;
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
   bidder.bidfloor = BIDFLOOR;
@@ -410,6 +410,13 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   }
   // < GDPR
 
+  // > Payload Ext
+  let payloadExt = {};
+  payloadExt.bidder = {};
+  payloadExt.bidder.tappxkey = TAPPXKEY;
+  payloadExt.bidder.mktag = MKTAG;
+  // < Payload Ext
+
   // > Payload
   payload.id = validBidRequests.auctionId;
   payload.test = utils.deepAccess(validBidRequests, 'params.test') ? 1 : 0;
@@ -418,6 +425,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.bidder = BIDDER_CODE;
   payload.imp = [imp];
   payload.user = user;
+  payload.ext = payloadExt;
 
   payload.device = device;
   payload.params = params;
