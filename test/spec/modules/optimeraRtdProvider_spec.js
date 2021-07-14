@@ -81,4 +81,9 @@ describe('Optimera RTD error logging', () => {
     optimeraRTD.init(conf.dataProviders[0]);
     expect(utils.logError.called).to.equal(true);
   });
+
+  it('if adUnits is not an array should log an error', () => {
+    optimeraRTD.returnTargetingData('test');
+    expect(utils.logError.called).to.equal(true);
+  });
 });

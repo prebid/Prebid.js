@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'microad';
 
@@ -79,6 +80,11 @@ export const spec = {
         if (/^[0-9.\-]+,[0-9.\-]+$/.test(geo)) {
           params['geo'] = geo;
         }
+      }
+
+      const idlEnv = utils.deepAccess(bid, 'userId.idl_env')
+      if (!utils.isEmpty(idlEnv) && utils.isStr(idlEnv)) {
+        params['idl_env'] = idlEnv
       }
 
       requests.push({

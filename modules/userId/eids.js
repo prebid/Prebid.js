@@ -213,6 +213,11 @@ const USER_IDS_CONFIG = {
     source: 'admixer.net',
     atype: 3
   },
+  // Adtelligent Id
+  'adtelligentId': {
+    source: 'adtelligent.com',
+    atype: 3
+  },
   amxId: {
     source: 'amxrtb.com',
     atype: 1,
