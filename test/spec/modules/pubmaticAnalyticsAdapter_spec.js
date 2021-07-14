@@ -119,6 +119,30 @@ const MOCK = {
           'publisherId': '1001'
         }
       } ],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[640, 480]]
+        },
+        'video': {
+          'sizes': [[640, 480]]
+        }
+      },
+      'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
+    },
+    {
+      'code': '/19968336/header-bid-tag-0',
+      'sizes': [[640, 480]],
+      'bids': [ {
+        'bidder': 'pubmatic',
+        'params': {
+          'publisherId': '1001'
+        }
+      } ],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[640, 480]]
+        }
+      },
       'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
     }
     ],
