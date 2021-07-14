@@ -67,9 +67,7 @@ function setAudiencesToAppNexusAdUnits(adUnits, audiences) {
   adUnits.forEach((adUnit) => {
     adUnit.bids.forEach((bid) => {
       if (bid.bidder && bid.bidder === 'appnexus') {
-        if (!bid.params) bid.params = {};
-        if (!bid.params.keywords) bid.params.keywords = {};
-        bid.params.keywords.perid = audiences;
+        deepSetValue(bid, 'params.keywords.perid', audiences || []);
       }
     })
   })
