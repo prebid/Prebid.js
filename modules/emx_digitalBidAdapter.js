@@ -11,6 +11,11 @@ const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 
+const EIDS_SUPPORTED = [
+  { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
+  { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' }
+];
+
 export const emxAdapter = {
   validateSizes: (sizes) => {
     if (!utils.isArray(sizes) || typeof sizes[0] === 'undefined') {
@@ -168,6 +173,27 @@ export const emxAdapter = {
     }
 
     return emxData;
+  },
+  // supporting eids
+  getEids(bidRequests) {
+    return EIDS_SUPPORTED
+      .map(emxAdapter.getUserId(bidRequests))
+      .filter(x => x);
+  },
+  getUserId(bidRequests) {
+    return ({ key, source, rtiPartner }) => {
+      let id = utils.deepAccess(bidRequests, `userId.${key}`);
+      return id ? emxAdapter.formatEid(id, source, rtiPartner) : null;
+    };
+  },
+  formatEid(id, source, rtiPartner) {
+    return {
+      source,
+      uids: [{
+        id,
+        ext: { rtiPartner }
+      }]
+    };
   }
 };
 
@@ -252,6 +278,21 @@ export const spec = {
     if (bidderRequest && bidderRequest.uspConsent) {
       emxData.us_privacy = bidderRequest.uspConsent
     }
+
+    // adding eid support
+    if (bidderRequest.userId) {
+      let eids = emxAdapter.getEids(bidderRequest);
+      if (eids.length > 0) {
+        if (emxData.user && emxData.user.ext) {
+          emxData.user.ext.eids = eids;
+        } else {
+          emxData.user = {
+            ext: {eids}
+          };
+        }
+      }
+    }
+
     return {
       method: 'POST',
       url,

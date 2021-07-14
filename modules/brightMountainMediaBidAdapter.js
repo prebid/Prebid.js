@@ -42,9 +42,10 @@ export const spec = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
-      'secure': 1,
+      'secure': document.location.protocol === 'https:' ? 1 : 0,
       'host': location.host,
-      'page': location.pathname,
+      'page': location.href,
+      'prebidVersion': '$prebid.version$',
       'placements': placements
     };
     if (bidderRequest) {
@@ -59,6 +60,7 @@ export const spec = {
         placementId: bid.params.placement_id,
         bidId: bid.bidId,
         floor: {},
+        userIds: {},
       };
 
       if (bid.mediaTypes.hasOwnProperty(BANNER)) {
@@ -107,6 +109,10 @@ export const spec = {
 
       if (bid.schain) {
         placement.schain = bid.schain;
+      }
+
+      if (bid.userIdAsEids) {
+        placement.userIds = { eids: bid.userIdAsEids };
       }
       placements.push(placement);
     }

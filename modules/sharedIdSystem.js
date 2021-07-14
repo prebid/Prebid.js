@@ -12,7 +12,7 @@ import { uspDataHandler, coppaDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const GVLID = 887;
-const storage = getStorageManager(GVLID, 'pubCommonId');
+export const storage = getStorageManager(GVLID, 'pubCommonId');
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const SHAREDID_OPT_OUT_VALUE = '00000000000000000000000000';
@@ -33,7 +33,7 @@ function storeData(config, value) {
   try {
     if (value) {
       const key = config.storage.name + SHAREDID_SUFFIX;
-      const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
+      const expiresStr = (new Date(Date.now() + (config.storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
 
       if (config.storage.type === COOKIE) {
         if (storage.cookiesAreEnabled()) {
@@ -123,7 +123,7 @@ function handleResponse(pubcid, callback, config) {
             }
           }
           // Pass pubcid even though there is no change in order to trigger decode
-          callback(responseObj.sharedId);
+          callback(pubcid);
         } catch (error) {
           utils.logError(error);
         }

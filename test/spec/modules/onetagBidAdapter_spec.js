@@ -105,9 +105,36 @@ describe('onetag', function () {
       });
     });
     describe('multi format bidRequest', function () {
-      const multiFormatBid = createMultiFormatBid();
       it('Should return true when correct multi format bid is passed', function () {
-        expect(spec.isBidRequestValid(multiFormatBid)).to.be.true;
+        expect(spec.isBidRequestValid(createMultiFormatBid())).to.be.true;
+      });
+      it('Should split multi format bid into two single format bid with same bidId', function() {
+        const bids = JSON.parse(spec.buildRequests([ createMultiFormatBid() ]).data).bids;
+        expect(bids.length).to.equal(2);
+        expect(bids[0].bidId).to.equal(bids[1].bidId);
+      });
+      it('Should retrieve correct request bid when extracting video request data', function() {
+        const requestBid = createMultiFormatBid();
+        const multiFormatRequest = spec.buildRequests([ requestBid ]);
+        const serverResponse = {
+          body: {
+            bids: [
+              {
+                mediaType: BANNER,
+                requestId: requestBid.bidId,
+                ad: 'test-banner'
+              }, {
+                mediaType: VIDEO,
+                requestId: requestBid.bidId,
+                vastUrl: 'test-video'
+              }
+            ]
+          }
+        };
+        const responseBids = spec.interpretResponse(serverResponse, multiFormatRequest);
+        expect(responseBids.length).to.equal(2);
+        expect(responseBids[0].ad).to.equal('test-banner');
+        expect(responseBids[1].vastUrl).to.equal('test-video');
       });
     });
   });

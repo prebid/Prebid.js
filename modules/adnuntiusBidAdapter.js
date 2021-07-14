@@ -5,7 +5,7 @@ import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adnuntius';
-const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=';
+const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const GVLID = 855;
 
 const checkSegment = function (segment) {
@@ -33,7 +33,6 @@ const handleMeta = function () {
     adnMeta = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'))
   }
   const meta = (adnMeta !== null) ? adnMeta.reduce((acc, cur) => { return { ...acc, [cur.key]: cur.value } }, {}) : {}
-  utils.logMessage('STORE', adnMeta, meta)
   return meta
 }
 
@@ -62,6 +61,8 @@ export const spec = {
     const tzo = new Date().getTimezoneOffset();
     const gdprApplies = utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
+
+    request.push('tzo=' + tzo)
     request.push('format=json')
     if (gdprApplies !== undefined) request.push('consentString=' + consentString);
     if (segments.length > 0) request.push('segments=' + segments.join(','));
@@ -87,7 +88,7 @@ export const spec = {
       const network = networkKeys[j];
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL + tzo + '&' + request.join('&'),
+        url: ENDPOINT_URL + '?' + request.join('&'),
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });
