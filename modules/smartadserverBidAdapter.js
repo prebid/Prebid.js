@@ -178,7 +178,7 @@ export const spec = {
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
-    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
+    if (syncOptions.iframeEnabled && serverResponses.length > 0 && serverResponses[0].body.cSyncUrl != null) {
       syncs.push({
         type: 'iframe',
         url: serverResponses[0].body.cSyncUrl

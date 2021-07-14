@@ -153,6 +153,22 @@ describe('Smart bid adapter tests', function () {
     }
   };
 
+  var BID_RESPONSE_IFRAME_SYNC_MISSING_CSYNC = {
+    body: {
+      cpm: 12,
+      width: 300,
+      height: 250,
+      creativeId: 'zioeufg',
+      currency: 'GBP',
+      isNetCpm: true,
+      ttl: 300,
+      adUrl: 'http://awesome.fake.url',
+      ad: '< --- awesome script --- >',
+      cSyncUrl: null,
+      isNoAd: false
+    }
+  };
+
   it('Verify build request', function () {
     config.setConfig({
       'currency': {
@@ -301,6 +317,11 @@ describe('Smart bid adapter tests', function () {
     syncs = spec.getUserSyncs({
       iframeEnabled: true
     }, []);
+    expect(syncs).to.have.lengthOf(0);
+
+    syncs = spec.getUserSyncs({
+      iframeEnabled: true
+    }, [BID_RESPONSE_IFRAME_SYNC_MISSING_CSYNC]);
     expect(syncs).to.have.lengthOf(0);
   });
 
