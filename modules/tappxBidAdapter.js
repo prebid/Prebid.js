@@ -514,14 +514,14 @@ export function _extractPageUrl(validBidRequests, bidderRequest) {
     }
   }
 
-  if (typeof domainUrl == 'undefined' || domainUrl == null) {
-    domainUrl = window.location.hostname;
-  }
-
   try {
     domainUrl = domainUrl.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img)[0].replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?/img, '');
   } catch (error) {
     domainUrl = undefined;
+  }
+
+  if (typeof domainUrl == 'undefined' || domainUrl == null) {
+    domainUrl = window.location.hostname;
   }
 
   return domainUrl;
