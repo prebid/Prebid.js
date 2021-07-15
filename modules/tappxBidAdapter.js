@@ -408,6 +408,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payloadExt.bidder = {};
   payloadExt.bidder.tappxkey = TAPPXKEY;
   payloadExt.bidder.mktag = MKTAG;
+  payloadExt.bidder.bcid = utils.deepAccess(validBidRequests, 'params.bcid');
+  payloadExt.bidder.bcrid = utils.deepAccess(validBidRequests, 'params.bcrid');
   // < Payload Ext
 
   // > Payload
