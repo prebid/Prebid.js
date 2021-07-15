@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {ajaxBuilder} from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
@@ -112,6 +113,7 @@ function collectPageInfo() {
 }
 
 function flush() {
+  console.log(`Flush Called - Event Queue: `, _eventQueue);
   if (!pmAnalyticsEnabled) {
     return;
   }

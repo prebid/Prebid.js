@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import prebidmanagerAnalytics, {
   storage
 } from 'modules/prebidmanagerAnalyticsAdapter.js';
@@ -110,6 +111,7 @@ describe('Prebid Manager Analytics Adapter', function () {
     let getDataFromLocalStorageStub;
     this.timeout(4000)
     beforeEach(function () {
+      console.log(`\n\nBEFORE EACH - build utm tag data\n\n`);
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
       getDataFromLocalStorageStub.withArgs('pm_utm_medium').returns('utm_medium');
@@ -128,6 +130,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       prebidmanagerAnalytics.disableAnalytics()
     });
     it('should build utm data from local storage', function () {
+      console.log(`\n\nshould build utm data from local storage\n\n`);
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 
       expect(pmEvents.utmTags.utm_source).to.equal('utm_source');
