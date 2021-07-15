@@ -69,19 +69,19 @@ export let viewCallbackFactory = (bid) => {
 };
 
 export let init = () => {
-  const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
-
-  if (globalModuleConfig[CONFIG_ENABLED]) {
-    // if the module is enabled, then listen to AD_RENDER_SUCCEEDED to setup IO's for supported
-    // mediaTypes, on browsers that support IO
-    events.on(EVENTS.AD_RENDER_SUCCEEDED, ({doc, bid, id}) => {
-      if (CLIENT_SUPPORTS_IO && isSupportedMediaType(bid)) {
-        let viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
-        let element = document.getElementById(bid.adUnitCode);
-        viewable.observe(element);
-      }
-    });
-  }
+  config.getConfig(MODULE_NAME, conf => {
+    if (conf[MODULE_NAME][CONFIG_ENABLED] && CLIENT_SUPPORTS_IO) {
+      // if the module is enabled and the browser supports Intersection Observer,
+      // then listen to AD_RENDER_SUCCEEDED to setup IO's for supported mediaTypes
+      events.on(EVENTS.AD_RENDER_SUCCEEDED, ({doc, bid, id}) => {
+        if (isSupportedMediaType(bid)) {
+          let viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
+          let element = document.getElementById(bid.adUnitCode);
+          viewable.observe(element);
+        }
+      });
+    }
+  });
 }
 
 init()
