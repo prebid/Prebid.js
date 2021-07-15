@@ -985,68 +985,6 @@ describe('TheMediaGrid Adapter', function () {
       const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });
-
-    it('response with ext.bidder.grid.demandSource', function () {
-      const bidRequests = [
-        {
-          'bidder': 'grid',
-          'params': {
-            'uid': '1'
-          },
-          'adUnitCode': 'adunit-code-1',
-          'sizes': [[300, 250], [300, 600]],
-          'bidId': '26d6f897b516',
-          'bidderRequestId': '5f2009617a7c0a',
-          'auctionId': '1cbd2feafe5e8b',
-        }
-      ];
-      const serverResponse = {
-        'bid': [
-          {
-            'impid': '26d6f897b516',
-            'price': 1.15,
-            'adm': '<div>test content 1</div>',
-            'auid': 1,
-            'h': 250,
-            'w': 300,
-            'dealid': 11,
-            'ext': {
-              'bidder': {
-                'grid': {
-                  'demandSource': 'someValue'
-                }
-              }
-            }
-          }
-        ],
-        'seat': '1'
-      };
-      const request = spec.buildRequests(bidRequests);
-      const expectedResponse = [
-        {
-          'requestId': '26d6f897b516',
-          'cpm': 1.15,
-          'creativeId': 1,
-          'dealId': 11,
-          'width': 300,
-          'height': 250,
-          'ad': '<div>test content 1</div>',
-          'currency': 'USD',
-          'mediaType': 'banner',
-          'netRevenue': true,
-          'ttl': 360,
-          'meta': {
-            advertiserDomains: []
-          },
-          'adserverTargeting': {
-            'hb_ds': 'someValue'
-          }
-        }
-      ];
-
-      const result = spec.interpretResponse({'body': {'seatbid': [serverResponse]}}, request);
-      expect(result).to.deep.equal(expectedResponse);
-    });
   });
 
   describe('user sync', function () {
