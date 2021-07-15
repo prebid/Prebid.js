@@ -317,12 +317,12 @@ export let lib = {
             let q = z.findPosG(target);
             a.x = q.x;
             a.y = q.y;
-          }   
+          }
           a.box.x = a.x;
           a.box.y = a.y;
           a.box.w = a.w;
           a.box.h = a.h;
-        } else {        
+        } else {
           a.box.w = Math.max(target.offsetWidth, a.w);
           a.box.h = Math.max(target.offsetHeight, a.h);
           let q = z.findPosG(target);
