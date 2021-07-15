@@ -15,8 +15,8 @@ const NAME = 'amxId';
 const GVL_ID = 737;
 const ID_KEY = NAME;
 const version = '1.0';
-const SYNC_URL = 'https://translator.a-mo.net/sync';
-const AJAX_TIMEOUT = 150;
+const SYNC_URL = 'https://id.a-mx.com/sync/';
+const AJAX_TIMEOUT = 300;
 
 function validateConfig(config) {
   if (config == null || config.storage == null) {

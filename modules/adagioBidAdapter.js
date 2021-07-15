@@ -504,8 +504,8 @@ function _parseNativeBidResponse(bid) {
     if (bid.admNative.link.url) {
       native.clickUrl = bid.admNative.link.url;
     }
-    if (Array.isArray(bid.admNative.link.clickTrackers)) {
-      native.clickTrackers = bid.admNative.link.clickTrackers
+    if (Array.isArray(bid.admNative.link.clicktrackers)) {
+      native.clickTrackers = bid.admNative.link.clicktrackers
     }
   }
 
