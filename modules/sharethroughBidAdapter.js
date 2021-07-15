@@ -30,6 +30,7 @@ export const sharethroughAdapterSpec = {
 
     const req = {
       id: utils.generateUUID(),
+      at: 1,
       cur: ['USD'],
       tmax: timeout,
       site: {
@@ -41,22 +42,27 @@ export const sharethroughAdapterSpec = {
         ext: {
           eids: handleUniversalIds(bidRequests[0], [
             { attr: 'userId.idl_env', source: 'liveramp.com' },
-            { attr: 'userId.id5id.uid', source: 'id5-sync.com' },
+            { attr: 'userId.id5id.uid', source: 'id5-sync.com', ext: utils.deepAccess(bidRequests[0], 'userId.id5id.ext') },
             { attr: 'userId.pubcid', source: 'pubcid.org' },
             { attr: 'userId.tdid', source: 'adserver.org' },
             { attr: 'userId.criteoId', source: 'criteo.com' },
             { attr: 'userId.britepoolid', source: 'britepool.com' },
             { attr: 'userId.lipb.lipbid', source: 'liveintent.com' },
             { attr: 'userId.intentiqid', source: 'intentiq.com' },
-            { attr: 'userId.lotamePanoramaId', source: 'lotame.com' },
-            { attr: 'userId.parrableId', source: 'parrable.com' },
+            { attr: 'userId.lotamePanoramaId', source: 'crwdcntrl.net' },
+            { attr: 'userId.parrableId.eid', source: 'parrable.com' },
             { attr: 'userId.netId', source: 'netid.de' },
-            { attr: 'userId.sharedid', source: 'sharedid.org' },
+            { attr: 'userId.sharedid.id', source: 'sharedid.org' },
           ]),
         },
       },
       device: {
         ua: navigator.userAgent,
+        language: navigator.language,
+        js: 1,
+        dnt: navigator.doNotTrack === '1' ? 1 : 0,
+        h: window.screen.height,
+        w: window.screen.width,
       },
       regs: {
         coppa: config.getConfig('coppa') === true ? 1 : 0,
@@ -72,6 +78,7 @@ export const sharethroughAdapterSpec = {
       },
       bcat: bidRequests[0].params.bcat || [],
       badv: bidRequests[0].params.badv || [],
+      test: 0,
     };
 
     if (bidderRequest.gdprConsent) {
@@ -110,6 +117,7 @@ export const sharethroughAdapterSpec = {
         };
       } else {
         impression.banner = {
+          pos: 0,
           topframe: utils.inIframe() ? 0 : 1,
           format: bidReq.sizes.map(size => ({ w: +size[0], h: +size[1] })),
         };
@@ -157,10 +165,11 @@ export const sharethroughAdapterSpec = {
         creativeId: bid.crid,
         dealId: bid.dealid || null,
         mediaType: request.mediaTypes && request.mediaTypes.video ? VIDEO : BANNER,
-        currency: 'USD',
+        currency: body.cur || 'USD',
         netRevenue: true,
         ttl: 360,
         ad: bid.adm,
+        nurl: bid.nurl,
         meta: {
           advertiserDomains: bid.adomain || [],
         },
@@ -168,10 +177,7 @@ export const sharethroughAdapterSpec = {
 
       if (response.mediaType === VIDEO) {
         response.ttl = 3600;
-        response.vastXml = cleanVast(bid.adm, bid.nurl);
-
-        // const blob = new Blob([response.vastXml], { type: 'application/xml' });
-        // response.vastUrl = window.URL.createObjectURL(blob);
+        response.vastXml = bid.adm;
       }
 
       return response;
@@ -242,34 +248,22 @@ function getFloor(bid) {
 }
 
 
-function handleUniversalIds(bidRequest, uids) {
-  return uids.map((uid) => ({
-    source: uid.source,
-    uids: [{ id: utils.deepAccess(bidRequest, uid.attr), atype: 1 }],
-  }));
+function handleUniversalIds(bidRequest, eids) {
+  return eids
+    .map((eid) => {
+      const id = utils.deepAccess(bidRequest, eid.attr);
+      if (!id) return null;
+
+      const uid = { id: id, atype: 1 };
+      if (eid.ext) uid.ext = eid.ext;
+
+      return { source: eid.source, uids: [uid] };
+    })
+    .filter(eid => eid !== null);
 }
 
 function getProtocol() {
   return window.location.protocol;
-}
-
-function cleanVast(str, nurl) {
-  try {
-    const toBeRemoved = /<img\s[^>]*?src\s*=\s*['\"]([^'\"]*?)['\"][^>]*?>/;
-    const [img, url] = str.match(toBeRemoved);
-    str = str.replace(toBeRemoved, '');
-
-    if (img && url) {
-      const insrt = `<Impression><![CDATA[${url}]]></Impression>`;
-      str = str.replace('</Impression>', `</Impression>${insrt}`);
-    }
-    return str;
-  } catch (e) {
-    if (!nurl) return str;
-
-    const insrt = `<Impression><![CDATA[${nurl}]]></Impression>`;
-    return str.replace('</Impression>', `</Impression>${insrt}`);
-  }
 }
 
 function matchRequest(id, request) {

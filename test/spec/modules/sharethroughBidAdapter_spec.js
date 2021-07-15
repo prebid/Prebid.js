@@ -6,25 +6,6 @@ import * as utils from 'src/utils';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 
-const bidderResponse = {
-  body: {
-    'adserverRequestId': '40b6afd5-6134-4fbb-850a-bb8972a46994',
-    'bidId': 'bidId1',
-    'version': 1,
-    'creatives': [{
-      'auctionWinId': 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
-      'cpm': 12.34,
-      'creative': {
-        'deal_id': 'aDealId',
-        'creative_key': 'aCreativeId',
-        'title': '✓ à la mode'
-      }
-    }],
-    'stxUserId': ''
-  },
-  header: { get: (header) => header }
-};
-
 describe('sharethrough adapter spec', function() {
   let protocolStub;
   let inIframeStub;
@@ -116,6 +97,17 @@ describe('sharethrough adapter spec', function() {
             lipb: {
               lipbid: 'fake-lipbid',
             },
+            criteoId: 'fake-criteo',
+            britepoolid: 'fake-britepool',
+            intentiqid: 'fake-intentiq',
+            lotamePanoramaId: 'fake-lotame',
+            parrableId: {
+              eid: 'fake-parrable',
+            },
+            netId: 'fake-netid',
+            sharedid: {
+              id: 'fake-sharedid',
+            },
           },
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
@@ -166,8 +158,6 @@ describe('sharethrough adapter spec', function() {
     });
 
     describe('buildRequests', function() {
-
-
       describe('top level object', () => {
         it('should build openRTB request', () => {
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
@@ -190,11 +180,21 @@ describe('sharethrough adapter spec', function() {
           expect(openRtbReq.site.page).not.to.be.undefined;
           expect(openRtbReq.site.ref).to.equal('https://referer.com');
 
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'adserver.org', uids: [{ id: 'fake-tdid', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'pubcid.org', uids: [{ id: 'fake-pubcid', atype: 1 }] });
           expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'liveramp.com', uids: [{ id: 'fake-identity-link', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'id5-sync.com', uids: [{ id: 'fake-id5id', atype: 1 }] }); // todo linkType
-          // todo: rest of user sync when format is confirmed
+          expect(openRtbReq.user.ext.eids).to.deep.include({
+            source: 'id5-sync.com',
+            uids: [{ id: 'fake-id5id', atype: 1, ext: { linkType: 2 } }],
+          });
+          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'pubcid.org', uids: [{ id: 'fake-pubcid', atype: 1 }] });
+          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'adserver.org', uids: [{ id: 'fake-tdid', atype: 1 }] });
+          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'criteo.com', uids: [{ id: 'fake-criteo', atype: 1 }] });
+          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'britepool.com', uids: [{ id: 'fake-britepool', atype: 1 }] });
+          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'liveintent.com', uids: [{ id: 'fake-lipbid', atype: 1 }] });
+          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'intentiq.com', uids: [{ id: 'fake-intentiq', atype: 1 }] });
+          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'crwdcntrl.net', uids: [{ id: 'fake-lotame', atype: 1 }] });
+          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'parrable.com', uids: [{ id: 'fake-parrable', atype: 1 }] });
+          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'netid.de', uids: [{ id: 'fake-netid', atype: 1 }] });
+          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'sharedid.org', uids: [{ id: 'fake-sharedid', atype: 1 }] });
 
           expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
           expect(openRtbReq.regs.coppa).to.equal(1);
@@ -413,6 +413,7 @@ describe('sharethrough adapter spec', function() {
           expect(bannerBid.ttl).to.equal(360);
           expect(bannerBid.ad).to.equal('markup');
           expect(bannerBid.meta.advertiserDomains).to.deep.equal(['domain.com']);
+          expect(bannerBid.vastXml).to.be.undefined;
         });
       });
 
@@ -433,7 +434,7 @@ describe('sharethrough adapter spec', function() {
           expect(bannerBid.ttl).to.equal(3600);
           expect(bannerBid.ad).to.equal('vastTag');
           expect(bannerBid.meta.advertiserDomains).to.deep.equal([]);
-          expect(bannerBid.vastXml).not.to.be.undefined;
+          expect(bannerBid.vastXml).to.equal('vastTag');
         });
       });
     });
