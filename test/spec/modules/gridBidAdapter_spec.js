@@ -622,8 +622,7 @@ describe('TheMediaGrid Adapter', function () {
           'netRevenue': true,
           'ttl': 360,
           'meta': {
-            advertiserDomains: [],
-            networkName: ''
+            advertiserDomains: []
           },
         }
       ];
@@ -715,8 +714,7 @@ describe('TheMediaGrid Adapter', function () {
           'netRevenue': true,
           'ttl': 360,
           'meta': {
-            advertiserDomains: [],
-            networkName: ''
+            advertiserDomains: []
           },
         }
       ];
@@ -797,8 +795,7 @@ describe('TheMediaGrid Adapter', function () {
           'netRevenue': true,
           'ttl': 360,
           'meta': {
-            advertiserDomains: [],
-            networkName: ''
+            advertiserDomains: []
           },
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>',
           'adResponse': {
@@ -980,8 +977,7 @@ describe('TheMediaGrid Adapter', function () {
           'netRevenue': true,
           'ttl': 360,
           'meta': {
-            advertiserDomains: [],
-            networkName: ''
+            advertiserDomains: []
           },
         }
       ];
