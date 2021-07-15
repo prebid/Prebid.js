@@ -230,7 +230,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.banner');
   const videoMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.video');
-  const { refererInfo } = bidderRequest;
 
   // let requests = [];
   let payload = {};
@@ -250,12 +249,13 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     payload.app = app;
     api[0] = utils.deepAccess(validBidRequests, 'params.api') ? utils.deepAccess(validBidRequests, 'params.api') : [3, 5];
   } else {
+    let bundle = _extractPageUrl(validBidRequests, bidderRequest);
     let site = {};
-    site.name = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    site.bundle = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    site.domain = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    publisher.name = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    publisher.domain = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
+    site.name = bundle;
+    site.bundle = bundle;
+    site.domain = bundle;
+    publisher.name = bundle;
+    publisher.domain = bundle;
     tagid = `${site.name}_typeAdBanVid_${getOs()}`;
     payload.site = site;
   }
@@ -497,6 +497,34 @@ export function _checkParamDataType(key, value, datatype) {
   }
   utils.logWarn(LOG_PREFIX, errMsg);
   return undefined;
+}
+
+export function _extractPageUrl(validBidRequests, bidderRequest) {
+  let domainUrl = utils.deepAccess(validBidRequests, 'params.domainUrl');
+
+  if (typeof domainUrl == 'undefined' || domainUrl == null) {
+    domainUrl = config.getConfig('pageUrl') || utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
+  }
+
+  if (typeof domainUrl == 'undefined' || domainUrl == null) {
+    try {
+      domainUrl = window.top.document.head.querySelector('link[rel="canonical"][href]').getAttribute('href');
+    } catch (error) {
+      domainUrl = undefined;
+    }
+  }
+
+  if (typeof domainUrl == 'undefined' || domainUrl == null) {
+    domainUrl = window.location.hostname;
+  }
+
+  try {
+    domainUrl = domainUrl.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img)[0].replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?/img, '');
+  } catch (error) {
+    domainUrl = undefined;
+  }
+
+  return domainUrl;
 }
 
 registerBidder(spec);
