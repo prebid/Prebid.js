@@ -32,7 +32,7 @@ Maintainer: adam.prime@alum.utoronto.ca
 # Example of using config
 ```
 	pbjs.setConfig({
-        bidViewability: {
+        bidViewabilityIO: {
             enabled: true,
         }
     });
