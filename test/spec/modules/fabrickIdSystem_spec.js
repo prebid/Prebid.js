@@ -15,20 +15,19 @@ describe('Fabrick ID System', function() {
   let logErrorStub;
 
   beforeEach(function () {
+    logErrorStub = sinon.stub(utils, 'logError');
   });
 
   afterEach(function () {
-  });
-
-  it('should log an error if no configParams were passed into getId', function () {
-    logErrorStub = sinon.stub(utils, 'logError');
-    fabrickIdSubmodule.getId();
-    expect(logErrorStub.calledOnce).to.be.true;
     logErrorStub.restore();
   });
 
+  it('should log an error if no configParams were passed into getId', function () {
+    fabrickIdSubmodule.getId();
+    expect(logErrorStub.calledOnce).to.be.true;
+  });
+
   it('should error on json parsing', function() {
-    logErrorStub = sinon.stub(utils, 'logError');
     let submoduleCallback = fabrickIdSubmodule.getId({
       name: 'fabrickId',
       params: defaultConfigParams
@@ -43,7 +42,6 @@ describe('Fabrick ID System', function() {
     );
     expect(callBackSpy.calledOnce).to.be.true;
     expect(logErrorStub.calledOnce).to.be.true;
-    logErrorStub.restore();
   });
 
   it('should truncate the params', function() {
