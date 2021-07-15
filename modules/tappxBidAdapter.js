@@ -252,7 +252,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     let bundle = _extractPageUrl(validBidRequests, bidderRequest);
     let site = {};
     site.name = bundle;
-    site.bundle = bundle;
     site.domain = bundle;
     publisher.name = bundle;
     publisher.domain = bundle;
@@ -368,12 +367,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   geo.country = utils.deepAccess(validBidRequests, 'params.geo.country');
   // < Device object
 
-  // > Params
-  let params = {};
-  params.host = 'tappx.com';
-  params.bidfloor = BIDFLOOR;
-  // < Params
-
   // > GDPR
   let user = {};
   user.ext = {};
@@ -428,7 +421,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.ext = payloadExt;
 
   payload.device = device;
-  payload.params = params;
   payload.regs = regs;
   // < Payload
 
