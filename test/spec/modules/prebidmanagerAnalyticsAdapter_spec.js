@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import prebidmanagerAnalytics, {
   storage
 } from 'modules/prebidmanagerAnalyticsAdapter.js';
@@ -63,6 +62,7 @@ describe('Prebid Manager Analytics Adapter', function () {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
+      clock.tick(1200);
 
       expect(prebidmanagerAnalytics.getOptions().url).to.equal(custom_url);
     });
@@ -75,6 +75,7 @@ describe('Prebid Manager Analytics Adapter', function () {
           bundleId: bundleId
         }
       });
+      clock.tick(1200);
 
       events.emit(constants.EVENTS.BID_WON, bidWonEvent);
       prebidmanagerAnalytics.flush();
@@ -103,6 +104,7 @@ describe('Prebid Manager Analytics Adapter', function () {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
+      clock.tick(1200);
 
       events.emit(constants.EVENTS.AUCTION_INIT, {});
       events.emit(constants.EVENTS.BID_REQUESTED, {});
@@ -118,7 +120,6 @@ describe('Prebid Manager Analytics Adapter', function () {
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
     beforeEach(function () {
-      console.log(`\n\nBEFORE EACH - build utm tag data\n\n`);
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
       getDataFromLocalStorageStub.withArgs('pm_utm_medium').returns('utm_medium');
@@ -131,7 +132,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       prebidmanagerAnalytics.disableAnalytics();
     });
     it('should build utm data from local storage', function () {
-      console.log(`\n\nshould build utm data from local storage\n\n`); prebidmanagerAnalytics.enableAnalytics({
+      prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
@@ -159,6 +160,7 @@ describe('Prebid Manager Analytics Adapter', function () {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
+      clock.tick(1200);
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 
