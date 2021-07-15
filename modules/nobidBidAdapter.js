@@ -145,7 +145,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['ref'] = document.referrer;
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
-    state['pjbdr'] = (bidderRequest) ? bidderRequest.bidderCode : 'nobid';
+    state['pjbdr'] = (bidderRequest && bidderRequest.bidderCode) ? bidderRequest.bidderCode : 'nobid';
     const sch = schain(bids);
     if (sch) state['schain'] = sch;
     const cop = coppa();
@@ -341,7 +341,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: [
-    { code: 'duration', gvlib: 674 }
+    { code: 'duration', gvlid: 674 }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
   /**

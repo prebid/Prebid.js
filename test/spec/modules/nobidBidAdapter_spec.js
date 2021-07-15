@@ -53,9 +53,10 @@ describe('Nobid Adapter', function () {
   describe('isDurationBidRequestValid', function () {
     const SITE_ID = 2;
     const REFERER = 'https://www.examplereferer.com';
+    const BIDDER_CODE = 'duration';
     let bidRequests = [
       {
-        'bidder': 'duration',
+        'bidder': BIDDER_CODE,
         'params': {
           'siteId': SITE_ID
         },
@@ -68,13 +69,14 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {referer: REFERER}, bidderCode: BIDDER_CODE
     }
 
     it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.sid).to.equal(SITE_ID);
+      expect(payload.pjbdr).to.equal(BIDDER_CODE);
       expect(payload.l).to.exist.and.to.equal(encodeURIComponent(REFERER));
       expect(payload.tt).to.exist;
       expect(payload.a).to.exist;
@@ -248,6 +250,7 @@ describe('Nobid Adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.sid).to.equal(SITE_ID);
+      expect(payload.pjbdr).to.equal('nobid');
       expect(payload.l).to.exist.and.to.equal(encodeURIComponent(REFERER));
       expect(payload.a).to.exist;
       expect(payload.t).to.exist;
@@ -336,6 +339,7 @@ describe('Nobid Adapter', function () {
     it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
+      expect(payload.pjbdr).to.equal('nobid');
       expect(payload.sid).to.equal(SITE_ID);
       expect(payload.l).to.exist.and.to.equal(encodeURIComponent(REFERER));
       expect(payload.a).to.exist;
