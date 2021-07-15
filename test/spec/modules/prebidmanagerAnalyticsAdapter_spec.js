@@ -35,6 +35,14 @@ describe('Prebid Manager Analytics Adapter', function () {
     'ad': 'some ad',
     'adUrl': 'ad url'
   };
+  let clock;
+  beforeEach(function () {
+    clock = sinon.useFakeTimers();
+  });
+
+  afterEach(function () {
+    clock.restore();
+  });
 
   describe('Prebid Manager Analytic tests', function () {
     beforeEach(function () {
@@ -109,7 +117,6 @@ describe('Prebid Manager Analytics Adapter', function () {
 
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
-    this.timeout(4000)
     beforeEach(function () {
       console.log(`\n\nBEFORE EACH - build utm tag data\n\n`);
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
@@ -118,19 +125,19 @@ describe('Prebid Manager Analytics Adapter', function () {
       getDataFromLocalStorageStub.withArgs('pm_utm_campaign').returns('utm_camp');
       getDataFromLocalStorageStub.withArgs('pm_utm_term').returns('');
       getDataFromLocalStorageStub.withArgs('pm_utm_content').returns('');
-      prebidmanagerAnalytics.enableAnalytics({
+    });
+    afterEach(function () {
+      getDataFromLocalStorageStub.restore();
+      prebidmanagerAnalytics.disableAnalytics();
+    });
+    it('should build utm data from local storage', function () {
+      console.log(`\n\nshould build utm data from local storage\n\n`); prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
-    });
-    afterEach(function () {
-      getDataFromLocalStorageStub.restore();
-      prebidmanagerAnalytics.disableAnalytics()
-    });
-    it('should build utm data from local storage', function () {
-      console.log(`\n\nshould build utm data from local storage\n\n`);
+      clock.tick(1200);
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 
       expect(pmEvents.utmTags.utm_source).to.equal('utm_source');
