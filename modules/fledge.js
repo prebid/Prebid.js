@@ -22,16 +22,11 @@ let _fledgeConfig = {};
  */
 export function renderAdHook(fn, doc, id, options) {
   const bid = auctionManager.findBidByAdId(id);
-  console.log({bid});
 
-  console.log({_fledgeConfig});
   if (_fledgeConfig.auctionConfig) {
-    const fledge = new Fledge();
-    const auctionConfig = {
-      ..._fledgeConfig.auctionConfig,
-      ...bid,
-    };
-    console.log({fledge});
+    const fledge = new Fledge('https://magniteengineering.github.io/fledge.polyfill/iframe.html');
+    const auctionConfig = _fledgeConfig.auctionConfig;
+    auctionConfig.auctionSignals.winningContextualBid = bid;
     fledge
       .runAdAuction(auctionConfig)
       .then(results => {
@@ -39,7 +34,7 @@ export function renderAdHook(fn, doc, id, options) {
           // create an iframe within the Fledge auction iframe, render the winning ad
           const ad = document.createElement('iframe');
           ad.src = results;
-          document.getElementById('ad-slot-1').appendChild(ad);
+          document.getElementById(bid.adUnitCode).appendChild(ad);
         } else {
           return fn.call(this, doc, id, options);
         }
@@ -55,6 +50,7 @@ export function renderAdHook(fn, doc, id, options) {
 export function handleSetFledgeConfig(config) {
   _fledgeConfig = utils.pick(config, [
     'enabled', enabled => enabled !== false, // defaults to true
+    'auctionConfig',
   ]);
 
   // if enabled then do some stuff

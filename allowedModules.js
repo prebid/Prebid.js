@@ -13,7 +13,8 @@ module.exports = {
     ...sharedWhiteList,
     'criteo-direct-rsa-validate',
     'crypto-js',
-    'live-connect' // Maintained by LiveIntent : https://github.com/liveintent-berlin/live-connect/
+    'live-connect', // Maintained by LiveIntent : https://github.com/liveintent-berlin/live-connect/
+    '@magnite/fledge.polyfill'
   ],
   'src': [
     ...sharedWhiteList,

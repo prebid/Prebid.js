@@ -60,6 +60,9 @@
     "DENSE": "dense",
     "CUSTOM": "custom"
   },
+  "HOOK_PRIORITY": {
+    "RENDER_AD": 50
+  },
   "TARGETING_KEYS": {
     "BIDDER": "hb_bidder",
     "AD_ID": "hb_adid",
