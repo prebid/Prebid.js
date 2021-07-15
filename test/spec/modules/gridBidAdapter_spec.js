@@ -1037,7 +1037,7 @@ describe('TheMediaGrid Adapter', function () {
           'ttl': 360,
           'meta': {
             advertiserDomains: [],
-            networkName: 'someValue'
+            demandSource: 'someValue'
           },
           'adserverTargeting': {
             'hb_ds': 'someValue'
