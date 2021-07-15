@@ -357,8 +357,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
         netRevenue: true,
         ttl: TIME_TO_LIVE,
         meta: {
-          advertiserDomains: serverBid.adomain ? serverBid.adomain : [],
-          networkName: serverBid.ext && serverBid.ext.bidder && serverBid.ext.bidder.grid && serverBid.ext.bidder.grid.demandSource ? serverBid.ext.bidder.grid.demandSource : ''
+          advertiserDomains: serverBid.adomain ? serverBid.adomain : []
         },
         dealId: serverBid.dealid
       };
