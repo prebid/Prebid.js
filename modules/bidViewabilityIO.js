@@ -69,17 +69,19 @@ export let viewCallbackFactory = (bid) => {
 };
 
 export let init = () => {
-  events.on(EVENTS.AD_RENDER_SUCCEEDED, ({doc, bid, id}) => {
-    // read the config for the module
-    const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
-    // do nothing if module-config.enabled is not set to true
-    // this way we are adding a way for bidders to know (using pbjs.getConfig('bidViewability').enabled === true) whether this module is added in build and is enabled
-    if (globalModuleConfig[CONFIG_ENABLED] && CLIENT_SUPPORTS_IO && isSupportedMediaType(bid)) {
-      let viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
-      let element = document.getElementById(bid.adUnitCode);
-      viewable.observe(element);
-    }
-  });
+  const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
+
+  if (globalModuleConfig[CONFIG_ENABLED]) {
+    // if the module is enabled, then listen to AD_RENDER_SUCCEEDED to setup IO's for supported
+    // mediaTypes, on browsers that support IO
+    events.on(EVENTS.AD_RENDER_SUCCEEDED, ({doc, bid, id}) => {
+      if (CLIENT_SUPPORTS_IO && isSupportedMediaType(bid)) {
+        let viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
+        let element = document.getElementById(bid.adUnitCode);
+        viewable.observe(element);
+      }
+    });
+  }
 }
 
 init()
