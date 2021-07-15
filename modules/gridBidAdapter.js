@@ -358,13 +358,13 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
         ttl: TIME_TO_LIVE,
         meta: {
           advertiserDomains: serverBid.adomain ? serverBid.adomain : [],
-          networkName: serverBid.ext && serverBid.ext.bidder && serverBid.ext.bidder.grid && serverBid.ext.bidder.grid.demandSource ? serverBid.ext.bidder.grid.demandSource : ''
         },
         dealId: serverBid.dealid
       };
 
       if (serverBid.ext && serverBid.ext.bidder && serverBid.ext.bidder.grid && serverBid.ext.bidder.grid.demandSource) {
         bidResponse.adserverTargeting = { 'hb_ds': serverBid.ext.bidder.grid.demandSource };
+        bidResponse.meta.networkName = serverBid.ext.bidder.grid.demandSource;
       }
 
       if (serverBid.content_type === 'video') {
