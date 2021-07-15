@@ -116,19 +116,18 @@ describe('Prebid Manager Analytics Adapter', function () {
       getDataFromLocalStorageStub.withArgs('pm_utm_campaign').returns('utm_camp');
       getDataFromLocalStorageStub.withArgs('pm_utm_term').returns('');
       getDataFromLocalStorageStub.withArgs('pm_utm_content').returns('');
-    });
-    afterEach(function () {
-      getDataFromLocalStorageStub.restore();
-      prebidmanagerAnalytics.disableAnalytics()
-    });
-    it('should build utm data from local storage', function () {
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
-
+    });
+    afterEach(function () {
+      getDataFromLocalStorageStub.restore();
+      prebidmanagerAnalytics.disableAnalytics()
+    });
+    it('should build utm data from local storage', function () {
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 
       expect(pmEvents.utmTags.utm_source).to.equal('utm_source');
