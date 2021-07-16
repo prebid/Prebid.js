@@ -4,7 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  VERSION: '3.1.1',
+  VERSION: '3.1.2',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   E2ETESTENDPOINT: 'https://ads-wc.v.ssp.yahoo.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true',
@@ -52,12 +52,6 @@ export const spec = {
         utils.logError('Failed validation: Dynamic Ad Placement cannot be used with context Outstream (params.video.display=1)');
         return false;
       };
-    };
-
-    // DAP Validation
-    if (bid.mediaTypes.banner && bid.params.video && !bid.params.video.display) {
-      utils.logError('Failed validation: If you are trying to use Dynamic Ad Placement you must pass params.video.display=1');
-      return false;
     };
 
     // Publisher Id (Exchange) validation

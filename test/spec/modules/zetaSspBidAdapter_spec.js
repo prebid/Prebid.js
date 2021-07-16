@@ -1,6 +1,6 @@
 import {spec} from '../../../modules/zetaSspBidAdapter.js'
 
-describe('Zeta Ssp Bid Adapter', function() {
+describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
     {
       'source': 'example.com',
@@ -72,7 +72,7 @@ describe('Zeta Ssp Bid Adapter', function() {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
     expect(payload.site.page).to.eql('http://www.zetaglobal.com/page?param=value');
-    expect(payload.site.domain).to.eql('zetaglobal.com');
+    expect(payload.site.domain).to.eql(window.location.origin); // config.js -> DEFAULT_PUBLISHER_DOMAIN
   });
 
   it('Test the request processing function', function () {
@@ -83,45 +83,66 @@ describe('Zeta Ssp Bid Adapter', function() {
     expect(payload).to.not.be.empty;
   });
 
-  const responseBody = {
-    id: '12345',
-    seatbid: [
-      {
-        bid: [
-          {
-            id: 'auctionId',
-            impid: 'impId',
-            price: 0.0,
-            adm: 'adMarkup',
-            crid: 'creativeId',
-            adomain: [
-              'https://example.com'
-            ],
-            h: 250,
-            w: 300
-          }
-        ]
-      }
-    ],
-    cur: 'USD'
-  };
-
   it('Test the response parsing function', function () {
-    const receivedBid = responseBody.seatbid[0].bid[0];
-    const response = {};
-    response.body = responseBody;
+    const response = {
+      body: {
+        id: '12345',
+        seatbid: [
+          {
+            bid: [
+              {
+                id: 'auctionId',
+                impid: 'impId',
+                price: 0.0,
+                adm: 'adMarkup',
+                crid: 'creativeId',
+                adomain: [
+                  'https://example.com'
+                ],
+                h: 250,
+                w: 300
+              },
+              {
+                id: 'auctionId2',
+                impid: 'impId2',
+                price: 0.1,
+                adm: 'adMarkup2',
+                crid: 'creativeId2',
+                adomain: [
+                  'https://example2.com'
+                ],
+                h: 150,
+                w: 200
+              }
+            ]
+          }
+        ],
+        cur: 'USD'
+      }
+    };
 
     const bidResponse = spec.interpretResponse(response, null);
     expect(bidResponse).to.not.be.empty;
 
-    const bid = bidResponse[0];
-    expect(bid).to.not.be.empty;
-    expect(bid.ad).to.equal(receivedBid.adm);
-    expect(bid.cpm).to.equal(receivedBid.price);
-    expect(bid.height).to.equal(receivedBid.h);
-    expect(bid.width).to.equal(receivedBid.w);
-    expect(bid.requestId).to.equal(receivedBid.impid);
-    expect(bid.meta.advertiserDomains).to.equal(receivedBid.adomain);
+    const bid1 = bidResponse[0];
+    const receivedBid1 = response.body.seatbid[0].bid[0];
+    expect(bid1).to.not.be.empty;
+    expect(bid1.ad).to.equal(receivedBid1.adm);
+    expect(bid1.cpm).to.equal(receivedBid1.price);
+    expect(bid1.height).to.equal(receivedBid1.h);
+    expect(bid1.width).to.equal(receivedBid1.w);
+    expect(bid1.requestId).to.equal(receivedBid1.impid);
+    expect(bid1.meta.advertiserDomains).to.equal(receivedBid1.adomain);
+
+    const bid2 = bidResponse[1];
+    const receivedBid2 = response.body.seatbid[0].bid[1];
+    expect(bid2).to.not.be.empty;
+    expect(bid2.ad).to.equal(receivedBid2.adm);
+    expect(bid2.cpm).to.equal(receivedBid2.price);
+    expect(bid2.height).to.equal(receivedBid2.h);
+    expect(bid2.width).to.equal(receivedBid2.w);
+    expect(bid2.requestId).to.equal(receivedBid2.impid);
+    expect(bid2.meta.advertiserDomains).to.equal(receivedBid2.adomain);
   });
 
   it('Different cases for user syncs', function () {

@@ -402,11 +402,75 @@ describe('TheMediaGrid Adapter', function () {
 
     it('should contain the keyword values if it present in ortb2.(site/user)', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'ortb2.user' ? {'keywords': 'foo'} : (arg === 'ortb2.site' ? {'keywords': 'bar'} : null));
-      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+        arg => arg === 'ortb2.user' ? {'keywords': 'foo,any'} : (arg === 'ortb2.site' ? {'keywords': 'bar'} : null));
+      const keywords = {
+        'site': {
+          'somePublisher': [
+            {
+              'name': 'someName',
+              'brandsafety': ['disaster'],
+              'topic': ['stress', 'fear']
+            }
+          ]
+        },
+        'user': {
+          'formatedPublisher': [
+            {
+              'name': 'fomatedName',
+              'segments': [
+                { 'name': 'segName1', 'value': 'segVal1' },
+                { 'name': 'segName2', 'value': 'segVal2' }
+              ]
+            }
+          ]
+        }
+      };
+      const bidRequestWithKW = { ...bidRequests[0], params: { ...bidRequests[0].params, keywords } }
+      const request = spec.buildRequests([bidRequestWithKW], bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload.ext.keywords).to.deep.equal([{'key': 'user', 'value': ['foo']}, {'key': 'context', 'value': ['bar']}]);
+      expect(payload.ext.keywords).to.deep.equal({
+        'site': {
+          'somePublisher': [
+            {
+              'name': 'someName',
+              'segments': [
+                { 'name': 'brandsafety', 'value': 'disaster' },
+                { 'name': 'topic', 'value': 'stress' },
+                { 'name': 'topic', 'value': 'fear' }
+              ]
+            }
+          ],
+          'ortb2': [
+            {
+              'name': 'keywords',
+              'segments': [
+                { 'name': 'keywords', 'value': 'bar' }
+              ]
+            }
+          ]
+        },
+        'user': {
+          'formatedPublisher': [
+            {
+              'name': 'fomatedName',
+              'segments': [
+                { 'name': 'segName1', 'value': 'segVal1' },
+                { 'name': 'segName2', 'value': 'segVal2' }
+              ]
+            }
+          ],
+          'ortb2': [
+            {
+              'name': 'keywords',
+              'segments': [
+                { 'name': 'keywords', 'value': 'foo' },
+                { 'name': 'keywords', 'value': 'any' }
+              ]
+            }
+          ]
+        }
+      });
       getConfigStub.restore();
     });
 

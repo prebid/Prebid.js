@@ -203,10 +203,24 @@ const USER_IDS_CONFIG = {
     source: 'deepintent.com',
     atype: 3
   },
+  // Akamai Data Activation Platform (DAP)
+  'dapId': {
+    source: 'akamai.com',
+    atype: 1
+  },
   // Admixer Id
   'admixerId': {
     source: 'admixer.net',
     atype: 3
+  },
+  // Adtelligent Id
+  'adtelligentId': {
+    source: 'adtelligent.com',
+    atype: 3
+  },
+  amxId: {
+    source: 'amxrtb.com',
+    atype: 1,
   }
 };
 
