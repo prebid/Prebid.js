@@ -32,10 +32,10 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 
     let w, h;
     if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
-      [w, h] = bid.mediaTypes[BANNER].playerSize;
+      [w, h] = bid.mediaTypes[BANNER].sizes[0];
       adType = BANNER;
     } else if (bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
-      [w, h] = bid.mediaTypes[VIDEO].sizes[0];
+      [w, h] = bid.mediaTypes[VIDEO].playerSize;
       adType = VIDEO;
     }
 
