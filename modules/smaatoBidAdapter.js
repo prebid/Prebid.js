@@ -156,10 +156,10 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     utils.logInfo('[SMAATO] Client version:', SMAATO_CLIENT);
 
-    return validBidRequests.flatMap((validBidRequest) => {
+    return validBidRequests.map((validBidRequest) => {
       const openRtbBidRequests = buildOpenRtbBidRequest(validBidRequest, bidderRequest);
       return openRtbBidRequests.map((openRtbBidRequest) => buildServerRequest(validBidRequest, openRtbBidRequest));
-    });
+    }).reduce((acc, item) => item != null && acc.concat(item), []);
   },
   /**
    * Unpack the response from the server into a list of bids.
