@@ -99,7 +99,7 @@ describe('sharethrough adapter spec', function() {
             },
             criteoId: 'fake-criteo',
             britepoolid: 'fake-britepool',
-            intentiqid: 'fake-intentiq',
+            intentIqId: 'fake-intentiq',
             lotamePanoramaId: 'fake-lotame',
             parrableId: {
               eid: 'fake-parrable',
@@ -107,6 +107,10 @@ describe('sharethrough adapter spec', function() {
             netId: 'fake-netid',
             sharedid: {
               id: 'fake-sharedid',
+            },
+            flocId: {
+              id: 'fake-flocid',
+              version: '42',
             },
           },
           crumbs: {
@@ -180,21 +184,26 @@ describe('sharethrough adapter spec', function() {
           expect(openRtbReq.site.page).not.to.be.undefined;
           expect(openRtbReq.site.ref).to.equal('https://referer.com');
 
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'liveramp.com', uids: [{ id: 'fake-identity-link', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({
-            source: 'id5-sync.com',
-            uids: [{ id: 'fake-id5id', atype: 1, ext: { linkType: 2 } }],
-          });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'pubcid.org', uids: [{ id: 'fake-pubcid', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'adserver.org', uids: [{ id: 'fake-tdid', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'criteo.com', uids: [{ id: 'fake-criteo', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'britepool.com', uids: [{ id: 'fake-britepool', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'liveintent.com', uids: [{ id: 'fake-lipbid', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'intentiq.com', uids: [{ id: 'fake-intentiq', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'crwdcntrl.net', uids: [{ id: 'fake-lotame', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'parrable.com', uids: [{ id: 'fake-parrable', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'netid.de', uids: [{ id: 'fake-netid', atype: 1 }] });
-          expect(openRtbReq.user.ext.eids).to.deep.include({ source: 'sharedid.org', uids: [{ id: 'fake-sharedid', atype: 1 }] });
+          const expectedEids = {
+            'liveramp.com': { id: 'fake-identity-link' },
+            'id5-sync.com': { id: 'fake-id5id' },
+            'pubcid.org': { id: 'fake-pubcid' },
+            'adserver.org': { id: 'fake-tdid' },
+            'criteo.com': { id: 'fake-criteo' },
+            'britepool.com': { id: 'fake-britepool' },
+            'liveintent.com': { id: 'fake-lipbid' },
+            'intentiq.com': { id: 'fake-intentiq' },
+            'crwdcntrl.net': { id: 'fake-lotame' },
+            'parrable.com': { id: 'fake-parrable' },
+            'netid.de': { id: 'fake-netid' },
+            'chrome.com': { id: 'fake-flocid' },
+          };
+          expect(openRtbReq.user.ext.eids).to.be.an('array').that.have.length(Object.keys(expectedEids).length);
+          for (const eid of openRtbReq.user.ext.eids) {
+            expect(Object.keys(expectedEids)).to.include(eid.source);
+            expect(eid.uids[0].id).to.equal(expectedEids[eid.source].id);
+            expect(eid.uids[0].atype).to.be.ok;
+          }
 
           expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
           expect(openRtbReq.regs.coppa).to.equal(1);
@@ -218,6 +227,12 @@ describe('sharethrough adapter spec', function() {
           expect(openRtbReq.imp[1].tagid).to.equal('bbbb2222');
           expect(openRtbReq.imp[1].secure).to.equal(1);
           expect(openRtbReq.imp[1].bidfloor).to.equal(42);
+        });
+
+        it('should have empty eid array if no id is provided', () => {
+          const openRtbReq = spec.buildRequests([bidRequests[1]], bidderRequest).data;
+
+          expect(openRtbReq.user.ext.eids).to.deep.equal([]);
         });
       });
 

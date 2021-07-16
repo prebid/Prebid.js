@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes';
+import { createEidsArray } from './userId/eids';
 
 const VERSION = '4.0.0';
 const BIDDER_CODE = 'sharethrough';
@@ -40,20 +41,7 @@ export const sharethroughAdapterSpec = {
       },
       user: {
         ext: {
-          eids: handleUniversalIds(bidRequests[0], [
-            { attr: 'userId.idl_env', source: 'liveramp.com' },
-            { attr: 'userId.id5id.uid', source: 'id5-sync.com', ext: utils.deepAccess(bidRequests[0], 'userId.id5id.ext') },
-            { attr: 'userId.pubcid', source: 'pubcid.org' },
-            { attr: 'userId.tdid', source: 'adserver.org' },
-            { attr: 'userId.criteoId', source: 'criteo.com' },
-            { attr: 'userId.britepoolid', source: 'britepool.com' },
-            { attr: 'userId.lipb.lipbid', source: 'liveintent.com' },
-            { attr: 'userId.intentiqid', source: 'intentiq.com' },
-            { attr: 'userId.lotamePanoramaId', source: 'crwdcntrl.net' },
-            { attr: 'userId.parrableId.eid', source: 'parrable.com' },
-            { attr: 'userId.netId', source: 'netid.de' },
-            { attr: 'userId.sharedid.id', source: 'sharedid.org' },
-          ]),
+          eids: userIdAsEids(bidRequests[0]),
         },
       },
       device: {
@@ -248,18 +236,19 @@ function getFloor(bid) {
 }
 
 
-function handleUniversalIds(bidRequest, eids) {
-  return eids
-    .map((eid) => {
-      const id = utils.deepAccess(bidRequest, eid.attr);
-      if (!id) return null;
+function userIdAsEids(bidRequest) {
+  const eids = createEidsArray(utils.deepAccess(bidRequest, 'userId')) || [];
 
-      const uid = { id: id, atype: 1 };
-      if (eid.ext) uid.ext = eid.ext;
+  const flocData = utils.deepAccess(bidRequest, 'userId.flocId');
+  const isFlocIdValid = flocData && flocData.id && flocData.version;
+  if (isFlocIdValid) {
+    eids.push({
+      source: 'chrome.com',
+      uids: [{ id: flocData.id, atype: 1, ext: { ver: flocData.version } }],
+    });
+  }
 
-      return { source: eid.source, uids: [uid] };
-    })
-    .filter(eid => eid !== null);
+  return eids;
 }
 
 function getProtocol() {
