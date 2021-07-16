@@ -39,6 +39,9 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       adType = VIDEO;
     }
 
+    const host = bidderRequest.refererInfo.referer.split('#')[0].replace(/^(https\:\/\/|http\:\/\/)|(\/)$/g, '').split('/')[0];
+    const hostname = host.split(':')[0];
+
     const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
 
     const queryParams = [];
@@ -52,7 +55,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     queryParams.push(['dt', /Mobi/.test(navigator.userAgent) ? 2 : 1]);
     queryParams.push(['pid', bid.params.pid]);
     queryParams.push(['dealId', bid.bidId]);
-    queryParams.push(['d', new URL(bidderRequest.refererInfo.referer).hostname]);
+    queryParams.push(['d', hostname]);
     queryParams.push(['sp', encodeURIComponent(bidderRequest.refererInfo.referer)]);
     if (bidderRequest.gdprConsent) {
       queryParams.push(['gdpr', bidderRequest.gdprConsent.gdprApplies]);
