@@ -34,7 +34,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
       [w, h] = bid.mediaTypes[BANNER].sizes[0];
       adType = BANNER;
-    } else if (bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
+    } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
       [w, h] = bid.mediaTypes[VIDEO].playerSize;
       adType = VIDEO;
     }
