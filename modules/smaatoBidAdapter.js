@@ -70,19 +70,18 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   let requests = [];
 
   if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
-    const sizes = utils.getAdUnitSizes(bidRequest).map((size) => ({w: size[0], h: size[1]}));
-    let bannerRequest = Object.assign({}, requestTemplate, createBannerImp(bidRequest, sizes));
+    const bannerRequest = Object.assign({}, requestTemplate, createBannerImp(bidRequest));
     requests.push(bannerRequest);
   }
 
   const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
   if (videoMediaType) {
     if (videoMediaType.context === ADPOD) {
-      let adPodRequest = Object.assign({}, requestTemplate, createAdPodImp(bidRequest, videoMediaType));
+      const adPodRequest = Object.assign({}, requestTemplate, createAdPodImp(bidRequest, videoMediaType));
       addOptionalAdpodParameters(adPodRequest, videoMediaType);
       requests.push(adPodRequest);
     } else {
-      let videoRequest = Object.assign({}, requestTemplate, createVideoImp(bidRequest, videoMediaType));
+      const videoRequest = Object.assign({}, requestTemplate, createVideoImp(bidRequest, videoMediaType));
       requests.push(videoRequest);
     }
   }
@@ -292,12 +291,14 @@ const createRichmediaAd = (adm) => {
   return markup + '</div>';
 };
 
-function createBannerImp(bidRequest, sizes) {
+function createBannerImp(bidRequest) {
+  const adUnitSizes = utils.getAdUnitSizes(bidRequest);
+  const sizes = adUnitSizes.map((size) => ({w: size[0], h: size[1]}));
   return {
     imp: [{
       id: bidRequest.bidId,
       tagid: utils.deepAccess(bidRequest, 'params.adspaceId'),
-      bidfloor: getBidFloor(bidRequest, BANNER, sizes),
+      bidfloor: getBidFloor(bidRequest, BANNER, adUnitSizes),
       banner: {
         w: sizes[0].w,
         h: sizes[0].h,
@@ -356,7 +357,6 @@ function createAdPodImp(bidRequest, videoMediaType) {
       }
     }
   }
-
 
   const numberOfPlacements = getAdPodNumberOfPlacements(videoMediaType)
   let imps = utils.fill(imp, numberOfPlacements)
@@ -436,6 +436,4 @@ function getBidFloor(bidRequest, mediaType, sizes) {
       return floor.floor;
     }
   }
-
-  return 0;
 }
