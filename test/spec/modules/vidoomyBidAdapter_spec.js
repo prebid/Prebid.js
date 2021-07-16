@@ -67,7 +67,7 @@ describe('vidoomyBidAdapter', function() {
         'mediaTypes': {
           'video': {
             'context': 'outstream',
-            'playerSize': [300, 250],
+            'playerSize': [400, 225],
           }
         },
         'adUnitCode': 'code2',
@@ -185,7 +185,7 @@ describe('vidoomyBidAdapter', function() {
 
       let result = spec.interpretResponse(serverResponseVideo, bidRequest);
 
-      expect(result[0].renderer).not.to.be.undefined();
+      expect(result[0].renderer).to.not.be.undefined();
       expect(result[0].ad).to.equal(serverResponseVideo.vastUrl);
       expect(result[0].requestId).to.equal(serverResponseVideo.dealId);
     });
@@ -194,7 +194,7 @@ describe('vidoomyBidAdapter', function() {
       const bidRequest = {};
       let result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
-      expect(result[0].requestId).to.equal(serverResponseBanner.dealId);
+      expect(result[0].requestId).to.equal(serverResponseBanner.body.dealId);
     });
   });
 });
