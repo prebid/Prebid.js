@@ -41,27 +41,29 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 
     const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
 
-    const queryParams = new URLSearchParams();
-    queryParams.append('id', bid.params.id);
-    queryParams.append('adtype', adType);
-    queryParams.append('w', w);
-    queryParams.append('h', h);
-    queryParams.append('pos', parseInt(bid.params.position) || 1);
-    queryParams.append('ua', navigator.userAgent);
-    queryParams.append('l', navigator.language && navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : '');
-    queryParams.append('dt', /Mobi/.test(navigator.userAgent) ? 2 : 1);
-    queryParams.append('pid', bid.params.pid);
-    queryParams.append('dealId', bid.bidId);
-    queryParams.append('d', new URL(bidderRequest.refererInfo.referer).hostname);
-    queryParams.append('sp', encodeURIComponent(bidderRequest.refererInfo.referer));
+    const queryParams = [];
+    queryParams.push(['id', bid.params.id]);
+    queryParams.push(['adtype', adType]);
+    queryParams.push(['w', w]);
+    queryParams.push(['h', h]);
+    queryParams.push(['pos', parseInt(bid.params.position) || 1]);
+    queryParams.push(['ua', navigator.userAgent]);
+    queryParams.push(['l', navigator.language && navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : '']);
+    queryParams.push(['dt', /Mobi/.test(navigator.userAgent) ? 2 : 1]);
+    queryParams.push(['pid', bid.params.pid]);
+    queryParams.push(['dealId', bid.bidId]);
+    queryParams.push(['d', new URL(bidderRequest.refererInfo.referer).hostname]);
+    queryParams.push(['sp', encodeURIComponent(bidderRequest.refererInfo.referer)]);
     if (bidderRequest.gdprConsent) {
-      queryParams.append('gdpr', bidderRequest.gdprConsent.gdprApplies);
-      queryParams.append('gdprcs', bidderRequest.gdprConsent.consentString);
+      queryParams.push(['gdpr', bidderRequest.gdprConsent.gdprApplies]);
+      queryParams.push(['gdprcs', bidderRequest.gdprConsent.consentString]);
     }
-    queryParams.append('usp', bidderRequest.uspConsent || '');
-    queryParams.append('coppa', !!config.getConfig('coppa'));
+    queryParams.push(['usp', bidderRequest.uspConsent || '']);
+    queryParams.push(['coppa', !!config.getConfig('coppa')]);
 
-    const url = `${ENDPOINT}?${queryParams.toString()}`;
+    const rawQueryParams = queryParams.map(qp => qp.join('=')).join('&');
+
+    const url = `${ENDPOINT}?${rawQueryParams}`;
     return {
       method: 'GET',
       url: url,
