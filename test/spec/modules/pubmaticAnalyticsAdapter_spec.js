@@ -6,9 +6,6 @@ import {
   setConfig,
   addBidResponseHook,
 } from 'modules/currency.js';
-import {
-  getGlobal
-} from 'src/prebidGlobal.js';
 
 // using es6 "import * as events from 'src/events'" causes the events.getEvents stub not to work...
 let events = require('src/events');
@@ -290,21 +287,6 @@ describe('pubmatic analytics adapter', function () {
 
     sandbox.stub(events, 'getEvents').returns([]);
 
-    getGlobal().adUnits = [
-      {
-        divID: 'Slot_1',
-        code: '/19968336/header-bid-tag-0',
-        adUnitId: '/19968336/header-bid-tag-0',
-        mediaTypes: {'banner': {'sizes': [0]}}
-      },
-      {
-        divID: 'Slot_2',
-        code: '/19968336/header-bid-tag-1',
-        adUnitId: '/19968336/header-bid-tag-1',
-        mediaTypes: {'banner': {'sizes': [0]}, 'video': {'sizes': [1]}}
-      }
-    ];
-
     clock = sandbox.useFakeTimers(1519767013781);
 
     config.setConfig({
@@ -319,7 +301,6 @@ describe('pubmatic analytics adapter', function () {
   afterEach(function () {
     sandbox.restore();
     config.resetConfig();
-    getGlobal().adUnits = [];
   });
 
   it('should require publisherId', function () {
