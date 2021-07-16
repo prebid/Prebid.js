@@ -51,7 +51,12 @@ describe('vidoomyBidAdapter', function() {
           id: '123123'
         },
         'adUnitCode': 'code',
-        'sizes': [[300, 250], [200, 100]]
+        'mediaTypes': {
+          'banner': {
+            'context': 'outstream',
+            'sizes': [[300, 250], [200, 100]]
+          }
+        },
       },
       {
         'bidder': 'vidoomy',
@@ -59,8 +64,13 @@ describe('vidoomyBidAdapter', function() {
           pid: '456456',
           id: '456456'
         },
+        'mediaTypes': {
+          'video': {
+            'context': 'outstream',
+            'playerSize': [300, 250],
+          }
+        },
         'adUnitCode': 'code2',
-        'sizes': [[400, 225]]
       }
     ];
 
