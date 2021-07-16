@@ -186,8 +186,8 @@ describe('vidoomyBidAdapter', function() {
       let result = spec.interpretResponse(serverResponseVideo, bidRequest);
 
       expect(result[0].renderer).to.not.be.undefined;
-      expect(result[0].ad).to.equal(serverResponseVideo.vastUrl);
-      expect(result[0].requestId).to.equal(serverResponseVideo.dealId);
+      expect(result[0].ad).to.equal(serverResponseVideo.body.vastUrl);
+      expect(result[0].requestId).to.equal(serverResponseVideo.body.dealId);
     });
 
     it('should get the correct bid response for banner with a new requestId equal to dealId', function () {
