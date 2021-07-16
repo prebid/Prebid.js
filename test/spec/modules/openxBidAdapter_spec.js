@@ -1527,14 +1527,14 @@ describe('OpenxAdapter', function () {
 
   describe('buildRequests for all kinds of ads', function () {
     utils._each({
-      banner: BANNER_BID_REQUESTS_WITH_MEDIA_TYPES,
-      video: VIDEO_BID_REQUESTS_WITH_MEDIA_TYPES,
-      multi: MULTI_FORMAT_BID_REQUESTS
-    }, (bidRequests, name) => {
-      describe('when first party data is configured', function () {
+      banner: BANNER_BID_REQUESTS_WITH_MEDIA_TYPES[0],
+      video: VIDEO_BID_REQUESTS_WITH_MEDIA_TYPES[0],
+      multi: MULTI_FORMAT_BID_REQUESTS[0]
+    }, (bidRequest, name) => {
+      describe('with segments', function () {
         const TESTS = [
           {
-            name: 'should send out the two providers with their segments',
+            name: 'should send out the provider/segment data from first party config',
             config: {
               ortb2: {
                 user: {
@@ -1548,7 +1548,7 @@ describe('OpenxAdapter', function () {
             expect: 'dmp1:foo|bar,dmp2:baz',
           },
           {
-            name: 'should not send segments if config is incomplete',
+            name: 'should not send any segment data if first party config is incomplete',
             config: {
               ortb2: {
                 user: {
@@ -1560,10 +1560,57 @@ describe('OpenxAdapter', function () {
                 }
               }
             }
-          }
+          },
+          {
+            name: 'should send first party data segments and liveintent segments from request',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'dmp1', segment: [{id: 'foo'}, {id: 'bar'}]},
+                    {name: 'dmp2', segment: [{id: 'baz'}]},
+                  ]
+                }
+              }
+            },
+            request: {
+              userId: {
+                lipb: {
+                  lipbid: 'aaa',
+                  segments: ['l1', 'l2']
+                },
+              },
+            },
+            expect: 'dmp1:foo|bar,dmp2:baz,liveintent:l1|l2',
+          },
+          {
+            name: 'should send just liveintent segment from request if no first party config',
+            config: {},
+            request: {
+              userId: {
+                lipb: {
+                  lipbid: 'aaa',
+                  segments: ['l1', 'l2']
+                },
+              },
+            },
+            expect: 'liveintent:l1|l2',
+          },
+          {
+            name: 'should send nothing if lipb section does not contain segments',
+            config: {},
+            request: {
+              userId: {
+                lipb: {
+                  lipbid: 'aaa',
+                },
+              },
+            },
+          },
         ];
         utils._each(TESTS, (t) => {
           context('in ortb2.user.data', function () {
+            let bidRequests;
             let configStub;
 
             beforeEach(function () {
@@ -1574,6 +1621,7 @@ describe('OpenxAdapter', function () {
                 .callsFake((key) => {
                   return utils.deepAccess(fpdConfig, key);
                 });
+              bidRequests = [{...bidRequest, ...t.request}];
             });
 
             afterEach(function () {

@@ -318,6 +318,10 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
           break;
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
+          if (Array.isArray(userIdObjectOrValue.segments) && userIdObjectOrValue.segments.length > 0) {
+            const liveIntentSegments = 'liveintent:' + userIdObjectOrValue.segments.join('|')
+            queryParams.sm = `${queryParams.sm ? queryParams.sm + encodeURIComponent(',') : ''}${encodeURIComponent(liveIntentSegments)}`;
+          }
           break;
         case 'parrableId':
           queryParams[key] = userIdObjectOrValue.eid;
