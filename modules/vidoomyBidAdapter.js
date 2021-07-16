@@ -28,17 +28,17 @@ const isBidRequestValid = bid => {
 
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
-    const adType = Object.keys(bid.mediaTypes)[0];
+    let adType = BANNER;
 
     let w, h;
-
-    if (adType === VIDEO) {
-      [w, h] = bid.mediaTypes[adType].playerSize;
+    if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
+      [w, h] = bid.mediaTypes[BANNER].playerSize;
+      adType = BANNER;
+    } else if (bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
+      [w, h] = bid.mediaTypes[VIDEO].sizes[0];
+      adType = VIDEO;
     }
 
-    if (adType === BANNER) {
-      [w, h] = bid.mediaTypes[adType].sizes[0];
-    }
     const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
 
     const queryParams = new URLSearchParams();
