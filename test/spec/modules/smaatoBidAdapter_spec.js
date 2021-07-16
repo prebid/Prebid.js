@@ -187,7 +187,7 @@ describe('smaatoBidAdapterTest', () => {
         const singleBannerMultipleSizesBidRequestWithFloor = Object.assign({}, singleBannerBidRequest, {
           mediaTypes: {
             banner: {
-              sizes: [[320,50], [320,250]]
+              sizes: [[320, 50], [320, 250]]
             }
           }
         });
