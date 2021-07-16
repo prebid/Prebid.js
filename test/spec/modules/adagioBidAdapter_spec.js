@@ -943,7 +943,7 @@ describe('Adagio bid adapter', () => {
         ver: '1.2',
         link: {
           url: 'https://i.am.a.click.url',
-          clickTrackers: [
+          clicktrackers: [
             'https://i.am.a.clicktracker.url'
           ]
         },
