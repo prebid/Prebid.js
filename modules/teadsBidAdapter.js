@@ -4,7 +4,7 @@ import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
-const ENDPOINT_URL = '//SSP_PORT_8080_TCP_ADDR:SSP_PORT_8080_TCP_PORT/hb/bid-request';
+const ENDPOINT_URL = 'https://a.teads.tv/hb/bid-request';
 const gdprStatus = {
   GDPR_APPLIES_PUBLISHER: 12,
   GDPR_APPLIES_GLOBAL: 11,
@@ -12,6 +12,7 @@ const gdprStatus = {
   CMP_NOT_FOUND_OR_ERROR: 22
 };
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
+const storage = getStorageManager(GVL_ID, BIDDER_CODE);
 
 export const spec = {
   code: BIDDER_CODE,
@@ -262,7 +263,6 @@ function getUnifiedId2Parameter(optionalUid2) {
  * @returns `{} | {firstPartyCookieTeadsId: string}`
  */
 function getFirstPartyTeadsIdParameter() {
-  const storage = getStorageManager(GVL_ID, BIDDER_CODE);
   if (!storage.cookiesAreEnabled()) {
     return {};
   }

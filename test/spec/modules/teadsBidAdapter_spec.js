@@ -5,8 +5,8 @@ import {spec} from 'modules/teadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {getStorageManager} from 'src/storageManager';
 
-const ENDPOINT = '//SSP_PORT_8080_TCP_ADDR:SSP_PORT_8080_TCP_PORT/hb/bid-request';
-const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="http://localhost:8080/hb/getAdSettings"></script>"';
+const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
+const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
 
 describe('teadsBidAdapter', () => {
   const adapter = newBidder(spec);
