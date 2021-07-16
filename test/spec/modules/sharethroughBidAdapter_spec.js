@@ -374,8 +374,8 @@ describe('sharethrough adapter spec', function() {
           body: {
             seatbid: [{
               bid: [{
-                id: 'bidId1',
-                impid: '123',
+                id: '123',
+                impid: 'bidId1',
                 w: 300,
                 h: 250,
                 price: 42,
@@ -384,8 +384,8 @@ describe('sharethrough adapter spec', function() {
                 adomain: ['domain.com'],
                 adm: 'markup',
               }, {
-                id: 'bidId2',
-                impid: '456',
+                id: '456',
+                impid: 'bidId2',
                 w: 640,
                 h: 480,
                 price: 42,
@@ -401,7 +401,7 @@ describe('sharethrough adapter spec', function() {
           const resp = spec.interpretResponse(response, request);
 
           const bannerBid = resp[0];
-          expect(bannerBid.requestId).to.equal('123');
+          expect(bannerBid.requestId).to.equal('bidId1');
           expect(bannerBid.width).to.equal(300);
           expect(bannerBid.height).to.equal(250);
           expect(bannerBid.cpm).to.equal(42);
@@ -422,7 +422,7 @@ describe('sharethrough adapter spec', function() {
           const resp = spec.interpretResponse(response, request);
 
           const bannerBid = resp[1];
-          expect(bannerBid.requestId).to.equal('456');
+          expect(bannerBid.requestId).to.equal('bidId2');
           expect(bannerBid.width).to.equal(640);
           expect(bannerBid.height).to.equal(480);
           expect(bannerBid.cpm).to.equal(42);

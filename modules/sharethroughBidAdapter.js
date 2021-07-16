@@ -155,7 +155,7 @@ export const sharethroughAdapterSpec = {
     }
 
     return body.seatbid[0].bid.map(bid => {
-      const request = matchRequest(bid.id, req);
+      const request = matchRequest(bid.impid, req);
 
       const response = {
         requestId: bid.impid,
