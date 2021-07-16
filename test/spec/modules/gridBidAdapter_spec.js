@@ -1036,7 +1036,8 @@ describe('TheMediaGrid Adapter', function () {
           'netRevenue': true,
           'ttl': 360,
           'meta': {
-            advertiserDomains: []
+            advertiserDomains: [],
+            demandSource: 'someValue'
           },
           'adserverTargeting': {
             'hb_ds': 'someValue'
