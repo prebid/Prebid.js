@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/vidoomyBidadapter.js';
+import { spec } from 'modules/vidoomyBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
