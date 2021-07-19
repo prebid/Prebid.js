@@ -687,7 +687,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         }
       });
 
-      const fpdRequestSize = encodeURIComponent(utils.parseQueryStringParameters({ ...site, ...user })).length;
+      const fpdRequestSize = encodeURIComponent(JSON.stringify({ ...site, ...user })).length;
 
       if (currentRequestSize + fpdRequestSize < MAX_REQUEST_SIZE) {
         r.site = utils.mergeDeep({}, r.site, site);
