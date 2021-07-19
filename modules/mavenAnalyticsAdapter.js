@@ -33,6 +33,9 @@ if (navigator.connection) {
     setConnectionEffectiveType();
 }
 
+const height = window.innerHeight;
+const width = window.innerWidth;
+
 let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
     
     track({ eventType, args }) {
@@ -62,8 +65,10 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                         browserType: options.browserType,
                         connectionEffectiveType,
                         contentItemId: options.contentItemId,
+                        ccpaApplies: !!options.ccpaApplies,
                         correlator: window.hummingbirdCorrelator,
                         countryCode: options.countryCode,
+                        height,
                         mavenChannel: options.mavenChannel,
                         path: location.pathname,
                         pod: Number(options.pod),
@@ -71,6 +76,7 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                         screenSize: options.screenSize,
                         status: 'inProgress',
                         timeoutPeriod: undefined,
+                        width,
                         gdprApplies: false,
                         consentString: null,
                     };
