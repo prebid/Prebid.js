@@ -5,7 +5,8 @@ import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid';
-const USER_SYNC_URL = 'https://ssp.disqus.com/match';
+const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
+const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
@@ -42,7 +43,7 @@ export const spec = {
     const secure = 1; // treat all requests as secure
     const request = validBidRequests[0];
     const params = request.params;
-    let impData = {
+    const impData = {
       id: request.bidId,
       secure: secure,
       banner: buildBanner(request)
@@ -58,13 +59,16 @@ export const spec = {
       app: params.app ? params.app : {},
       ext: {
         tags: params.tags ? params.tags : {},
-        sid: params.sid ? params.sid : {}
+        sid: params.sid ? params.sid : undefined
       }
     };
+    const rInfo = bidderRequest.refererInfo;
+    payload.site.page = config.getConfig('pageUrl') || ((rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href);
+    payload.site.domain = config.getConfig('publisherDomain') || getDomainFromURL(payload.site.page);
 
     payload.device.ua = navigator.userAgent;
-    payload.site.page = bidderRequest.refererInfo.referer;
-    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
+    payload.device.devicetype = isMobile() ? 1 : isConnectedTV() ? 3 : 2;
+    payload.site.mobile = payload.device.devicetype === 1 ? 1 : 0;
 
     if (params.test) {
       payload.test = params.test;
@@ -75,14 +79,14 @@ export const spec = {
           gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0
         }
       };
-    }
-    if (request.gdprConsent && request.gdprConsent.gdprApplies) {
-      payload.user = {
-        ext: {
+      if (request.gdprConsent.gdprApplies && request.gdprConsent.consentString) {
+        payload.user.ext = {
+          ...payload.user.ext,
           consent: request.gdprConsent.consentString
         }
-      };
+      }
     }
+    provideEids(request, payload);
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -98,48 +102,67 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    let bidResponse = [];
-    if (Object.keys(serverResponse.body).length !== 0) {
-      let zetaResponse = serverResponse.body;
-      let zetaBid = zetaResponse.seatbid[0].bid[0];
-      let bid = {
-        requestId: zetaBid.impid,
-        cpm: zetaBid.price,
-        currency: zetaResponse.cur,
-        width: zetaBid.w,
-        height: zetaBid.h,
-        ad: zetaBid.adm,
-        ttl: TTL,
-        creativeId: zetaBid.crid,
-        netRevenue: NET_REV,
-      };
-      if (zetaBid.adomain && zetaBid.adomain.length) {
-        bid.meta = {};
-        bid.meta.advertiserDomains = zetaBid.adomain;
-      }
-      bidResponse.push(bid);
+    let bidResponses = [];
+    const response = (serverResponse || {}).body;
+    if (response && response.seatbid && response.seatbid[0].bid && response.seatbid[0].bid.length) {
+      response.seatbid.forEach(zetaSeatbid => {
+        zetaSeatbid.bid.forEach(zetaBid => {
+          let bid = {
+            requestId: zetaBid.impid,
+            cpm: zetaBid.price,
+            currency: response.cur,
+            width: zetaBid.w,
+            height: zetaBid.h,
+            ad: zetaBid.adm,
+            ttl: TTL,
+            creativeId: zetaBid.crid,
+            netRevenue: NET_REV,
+          };
+          if (zetaBid.adomain && zetaBid.adomain.length) {
+            bid.meta = {
+              advertiserDomains: zetaBid.adomain
+            };
+          }
+          bidResponses.push(bid);
+        })
+      })
     }
-    return bidResponse;
+    return bidResponses;
   },
 
   /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @param gdprConsent The GDPR consent parameters
-   * @param uspConsent The USP consent parameters
-   * @return {UserSync[]} The user syncs which should be dropped.
+   * Register User Sync.
    */
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = [];
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: USER_SYNC_URL
-      });
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+    let syncurl = '';
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
     }
-    return syncs;
+
+    // CCPA
+    if (uspConsent) {
+      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      syncurl += '&coppa=1';
+    }
+
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: USER_SYNC_URL_IFRAME + syncurl
+      }];
+    } else {
+      return [{
+        type: 'image',
+        url: USER_SYNC_URL_IMAGE + syncurl
+      }];
+    }
   }
 }
 
@@ -154,6 +177,30 @@ function buildBanner(request) {
     w: sizes[0][0],
     h: sizes[0][1]
   };
+}
+
+function provideEids(request, payload) {
+  if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
+    utils.deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
+  }
+}
+
+function getDomainFromURL(url) {
+  let anchor = document.createElement('a');
+  anchor.href = url;
+  let hostname = anchor.hostname;
+  if (hostname.indexOf('www.') === 0) {
+    return hostname.substring(4);
+  }
+  return hostname;
+}
+
+function isMobile() {
+  return /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent);
+}
+
+function isConnectedTV() {
+  return /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(navigator.userAgent);
 }
 
 registerBidder(spec);

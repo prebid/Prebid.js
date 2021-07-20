@@ -95,7 +95,10 @@ export const spec = {
         referrer: responses[i].Referrer,
         ad: responses[i].Ad,
         vastUrl: responses[i].VastUrl,
-        mediaType: responses[i].MediaType
+        mediaType: responses[i].MediaType,
+        meta: {
+          advertiserDomains: Array.isArray(responses[i].ADomain) ? responses[i].ADomain : []
+        }
       };
       bidResponses.push(bidResponse);
     }

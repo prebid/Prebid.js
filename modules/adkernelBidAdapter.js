@@ -67,8 +67,9 @@ export const spec = {
     {code: 'stringads'},
     {code: 'bcm'},
     {code: 'engageadx'},
-    {code: 'converge_digital', gvlid: 248},
-    {code: 'adomega'}
+    {code: 'converge', gvlid: 248},
+    {code: 'adomega'},
+    {code: 'denakop'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -403,6 +404,10 @@ function buildRtbRequest(imps, bidderRequest, schain) {
   if (schain) {
     utils.deepSetValue(req, 'source.ext.schain', schain);
   }
+  let eids = getExtendedUserIds(bidderRequest);
+  if (eids) {
+    utils.deepSetValue(req, 'user.ext.eids', eids);
+  }
   return req;
 }
 
@@ -432,6 +437,13 @@ function createSite(refInfo) {
     site.keywords = keywords.content;
   }
   return site;
+}
+
+function getExtendedUserIds(bidderRequest) {
+  let eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+  if (utils.isArray(eids)) {
+    return eids;
+  }
 }
 
 /**

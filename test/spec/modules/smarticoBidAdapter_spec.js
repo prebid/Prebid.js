@@ -71,21 +71,26 @@ describe('smarticoBidAdapter', function () {
         placementId: 'testPlacementId',
       }]
     };
-    let serverResponse = [{
-      bidId: '22499d052045',
-      id: 987654,
-      cpm: 10,
-      ttl: 30,
-      bannerFormatWidth: 300,
-      bannerFormatHeight: 250,
-      bannerFormatAlias: 'medium_rectangle'
-    }];
+    let serverResponse = {
+      body: [{
+        bidId: '22499d052045',
+        id: 987654,
+        cpm: 10,
+        netRevenue: 0,
+        currency: 'EUR',
+        ttl: 30,
+        bannerFormatWidth: 300,
+        bannerFormatHeight: 250,
+        bannerFormatAlias: 'medium_rectangle'
+      }]
+    };
     let expectedResponse = [{
       requestId: bid.bidId,
       cpm: 10,
       width: 300,
       height: 250,
       creativeId: 987654,
+      currency: 'EUR',
       netRevenue: false, // gross
       ttl: 30,
       ad: '<script id="smartico-widget-testPlacementId-0" async defer type="text/javascript" src="https://trmads.eu/get?token=FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya&auction-id=5kaj89l8-3456-2s56-c455-4g6h78jsdfgf&from-auction-buffer=1&own_session=1&ad=987654&scriptid=smartico-widget-testPlacementId-0&banner-format=medium_rectangle"><\/script>'}];
@@ -110,6 +115,9 @@ describe('smarticoBidAdapter', function () {
     });
     it('should contain correct netRevenue', function () {
 	  expect(result[0].netRevenue).to.equal(expectedResponse[0].netRevenue)
+    });
+    it('should contain correct netRevenue', function () {
+	  expect(result[0].currency).to.equal(expectedResponse[0].currency)
     });
     it('should contain correct ad content', function () {
 	  expect(result[0].ad).to.equal(expectedResponse[0].ad)
