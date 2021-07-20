@@ -248,7 +248,7 @@ function getSizeArray(bid) {
   }
 
   // handle size in bid.params in formats: [w, h] and [[w,h]].
-  if (Array.isArray(bid.params.size)) {
+  if (bid.params && Array.isArray(bid.params.size)) {
     inputSize = bid.params.size;
     if (!Array.isArray(inputSize[0])) {
       inputSize = [inputSize]

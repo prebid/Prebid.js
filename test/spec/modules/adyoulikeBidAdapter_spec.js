@@ -422,6 +422,17 @@ describe('Adyoulike Adapter', function () {
       'transactionId': 'bid_id_1_transaction_id'
     };
 
+    let bidWSize = {
+      'bidId': 'bid_id_1',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-1',
+      'params': {
+        'placement': 'placement_1',
+        'size': [250, 300],
+      },
+      'transactionId': 'bid_id_1_transaction_id'
+    };
+
     let nativeBid = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
@@ -439,6 +450,10 @@ describe('Adyoulike Adapter', function () {
 
     it('should return true when required params found', function () {
       expect(!!spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true when required params found with size in bid params', function () {
+      expect(!!spec.isBidRequestValid(bidWSize)).to.equal(true);
     });
 
     it('should return true when required params found for native ad', function () {
