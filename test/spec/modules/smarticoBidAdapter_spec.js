@@ -129,7 +129,7 @@ describe('smarticoBidAdapter', function () {
 	  expect(result[0].ad).to.equal(expectedResponse[0].ad)
     });
     it('should contain correct meta content', function () {
-	  expect(result[0].meta).to.equal(expectedResponse[0].meta)
+	  expect(result[0].meta).to.deep.equal(expectedResponse[0].meta)
     });
   });
 });
