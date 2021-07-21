@@ -20,7 +20,7 @@ const supportedMediaTypes = [
 ];
 
 export let isSupportedMediaType = (bid) => {
-  return supportedMediaTypes.includes(bid.mediaType);
+  return supportedMediaTypes.indexOf(bid.mediaType) > -1;
 }
 
 // returns options for the iO that detects if the ad is viewable
