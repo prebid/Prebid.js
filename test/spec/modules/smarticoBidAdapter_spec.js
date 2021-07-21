@@ -97,7 +97,7 @@ describe('smarticoBidAdapter', function () {
       ttl: 30,
       ad: '<script id="smartico-widget-testPlacementId-0" async defer type="text/javascript" src="https://trmads.eu/get?token=FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya&auction-id=5kaj89l8-3456-2s56-c455-4g6h78jsdfgf&from-auction-buffer=1&own_session=1&ad=987654&scriptid=smartico-widget-testPlacementId-0&banner-format=medium_rectangle"><\/script>',
       meta: {
-        advertiserDomains: 'www.advertiser.com',
+        advertiserDomains: ['www.advertiser.com'],
         advertiserName: 'Advertiser'
       }}];
     let result = spec.interpretResponse(serverResponse, bidRequest);
