@@ -50,7 +50,17 @@ pbjs.setConfig({
                 // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
                 partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
             }
-        }, {
+        },{
+            name: 'akamaiDAPId',
+            params: {
+              apiHostname: '<see your Akamai account rep>',
+              domain: 'your-domain.com',
+              type: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
+              identity: ‘your@email.com’ | ‘6175551234' | ...,
+              apiVersion: 'v1' | 'x1',
+              attributes: '{ "cohorts": [ "3:14400", "5:14400", "7:0" ],"first_name": "...","last_name": "..." }'
+            }
+        },{
             name: 'identityLink',
             params: {
                 pid: '999', // Set your real identityLink placement ID here
@@ -91,7 +101,8 @@ pbjs.setConfig({
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv'
+                sv_domain:'zxv',
+                refreshInSeconds: 10 // Refreshes the id based on this configuration, else by default every 7 days
             },
             storage: {
                 type: "cookie",
@@ -118,6 +129,12 @@ pbjs.setConfig({
                params: {
                     token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
            }
+        },{
+            name: 'quantcastId',
+            storage: {
+                type: 'cookie',
+                expires : 30
+            }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -208,7 +225,8 @@ pbjs.setConfig({
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv'
+                sv_domain:'zxv',
+                refreshInSeconds: 10 // Refreshes the id based on this configuration, else by default every 7 days
             },
             storage: {
                 type: "html5",

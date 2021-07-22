@@ -1,20 +1,23 @@
-import find from 'core-js-pure/features/array/find.js';
-import { expect, util } from 'chai';
+import { expect } from 'chai';
 import {
   _features,
   internal as adagio,
   adagioScriptFromLocalStorageCb,
   getAdagioScript,
   storage,
+  setExtraParam,
   spec,
   ENDPOINT,
   VERSION,
-  RENDERER_URL
+  RENDERER_URL,
+  GlobalExchange
 } from '../../../modules/adagioBidAdapter.js';
 import { loadExternalScript } from '../../../src/adloader.js';
 import * as utils from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 import { NATIVE } from '../../../src/mediaTypes.js';
+import * as prebidGlobal from 'src/prebidGlobal.js';
+import { executeRenderer } from '../../../src/Renderer.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -115,6 +118,9 @@ describe('Adagio bid adapter', () => {
     window.ADAGIO.versions.adagioBidderAdapter = VERSION;
     window.ADAGIO.pageviewId = 'dda61753-4059-4f75-b0bf-3f60bd2c4d9a';
 
+    GlobalExchange.clearFeatures();
+    GlobalExchange.clearExchangeData();
+
     adagioMock = sinon.mock(adagio);
     utilsMock = sinon.mock(utils);
 
@@ -130,12 +136,65 @@ describe('Adagio bid adapter', () => {
     sandbox.restore();
   });
 
+  describe('get and set params at adUnit level from global Prebid configuration', function() {
+    it('should set params get from ortb2 config or bidderSettings. Priority to bidderSetting', function() {
+      const bid = new BidRequestBuilder().build();
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+          adagio: {
+            pagetype: 'article'
+          },
+          ortb2: {
+            site: {
+              ext: {
+                data: {
+                  environment: 'desktop',
+                  pagetype: 'abc'
+                }
+              }
+            }
+          }
+        };
+        return utils.deepAccess(config, key);
+      });
+
+      setExtraParam(bid, 'environment');
+      expect(bid.params.environment).to.equal('desktop');
+
+      setExtraParam(bid, 'pagetype')
+      expect(bid.params.pagetype).to.equal('article');
+    });
+
+    it('should use the adUnit param unit if defined', function() {
+      const bid = new BidRequestBuilder({ params: { pagetype: 'article' } }).build();
+      sandbox.stub(config, 'getConfig').withArgs('adagio').returns({
+        pagetype: 'ignore-me'
+      });
+      setExtraParam(bid, 'pagetype')
+      expect(bid.params.pagetype).to.equal('article');
+    });
+  })
+
   describe('isBidRequestValid()', function() {
     it('should return true when required params have been found', function() {
       const bid = new BidRequestBuilder().withParams().build();
 
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
+
+    it('should compute organizationId and site params from global BidderSettings config', function() {
+      sandbox.stub(adagio, 'getRefererInfo').returns({ reachedTop: true });
+      sandbox.stub(config, 'getConfig').withArgs('adagio').returns({
+        siteId: '1000:SITE-NAME'
+      });
+
+      const bid = new BidRequestBuilder({
+        params: { placement: 'PAVE_ATF' }
+      }).build();
+
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    })
 
     it('should return false if bid.params is missing', function() {
       sandbox.spy(utils, 'logWarn');
@@ -156,7 +215,7 @@ describe('Adagio bid adapter', () => {
       expect(spec.isBidRequestValid(bid01)).to.equal(true);
       expect(bid01.params.adUnitElementId).to.equal('adunit-code');
       expect(bid01.params.placement).to.equal('adunit-code');
-    })
+    });
 
     it('should return false when a required param is missing', function() {
       const bid01 = new BidRequestBuilder({ params: {
@@ -174,9 +233,16 @@ describe('Adagio bid adapter', () => {
         site: 'SITE-NAME'
       }}).build();
 
+      sandbox.stub(config, 'getConfig').withArgs('adagio').returns({
+        siteId: '1000'
+      });
+
+      const bid04 = new BidRequestBuilder({ params: { placement: 'PAVE_ATF' } }).build();
+
       expect(spec.isBidRequestValid(bid01)).to.equal(false);
       expect(spec.isBidRequestValid(bid02)).to.equal(false);
       expect(spec.isBidRequestValid(bid03)).to.equal(false);
+      expect(spec.isBidRequestValid(bid04)).to.equal(false);
     });
 
     it('should return false when refererInfo.reachedTop is false', function() {
@@ -187,134 +253,6 @@ describe('Adagio bid adapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
       sinon.assert.callCount(utils.logWarn, 1);
       sinon.assert.calledWith(utils.logWarn, 'Adagio: the main page url is unreachabled.');
-    });
-
-    it('should log warning and enqueue the bid object in ADAGIO.queue when isBidRequestValid is false', function() {
-      sandbox.stub(Date, 'now').returns(12345);
-      sandbox.spy(utils, 'logWarn');
-      sandbox.spy(adagio, 'enqueue');
-
-      const bid = new BidRequestBuilder({'params': {
-        organizationId: '1000',
-        placement: 'PAVE_ATF'
-      }}).build();
-
-      const expectedEnqueued = {
-        action: 'pb-dbg',
-        ts: 12345,
-        data: { bid }
-      };
-
-      spec.isBidRequestValid(bid);
-
-      sinon.assert.calledWith(adagio.enqueue, expectedEnqueued);
-      sinon.assert.callCount(utils.logWarn, 1);
-    });
-
-    describe('Store ADAGIO global in window.top or window.self depending on context', function() {
-      const bid01 = new BidRequestBuilder({
-        adUnitCode: 'adunit-code-01',
-        sizes: [[300, 250], [300, 600]]
-      }).withParams().build();
-
-      const bid02 = new BidRequestBuilder({
-        adUnitCode: 'adunit-code-02',
-        mediaTypes: {
-          banner: { sizes: [[300, 250]] }
-        },
-      }).withParams().build();
-
-      const bid03 = new BidRequestBuilder({
-        adUnitCode: 'adunit-code-02',
-        mediaTypes: {
-          banner: { sizes: [[300, 600]] }
-        },
-      }).withParams().build();
-
-      const expected = [
-        {
-          code: 'adunit-code-01',
-          sizes: [[300, 250], [300, 600]],
-          mediaTypes: {},
-          bids: [{
-            bidder: 'adagio',
-            params: {
-              organizationId: '1000',
-              placement: 'PAVE_ATF',
-              site: 'SITE-NAME',
-              adUnitElementId: 'gpt-adunit-code',
-              environment: 'desktop',
-              supportIObs: true
-            }
-          }],
-          auctionId: '4fd1ca2d-846c-4211-b9e5-321dfe1709c9',
-          pageviewId: 'dda61753-4059-4f75-b0bf-3f60bd2c4d9a',
-          printNumber: 1,
-        },
-        {
-          code: 'adunit-code-02',
-          sizes: [[300, 600]],
-          mediaTypes: {
-            banner: { sizes: [[300, 600]] }
-          },
-          bids: [{
-            bidder: 'adagio',
-            params: {
-              organizationId: '1000',
-              placement: 'PAVE_ATF',
-              site: 'SITE-NAME',
-              adUnitElementId: 'gpt-adunit-code',
-              environment: 'desktop',
-              supportIObs: true
-            }
-          }],
-          auctionId: '4fd1ca2d-846c-4211-b9e5-321dfe1709c9',
-          pageviewId: 'dda61753-4059-4f75-b0bf-3f60bd2c4d9a',
-          printNumber: 2,
-        }
-      ];
-
-      it('should store bids config once by bid in window.top if it accessible', function() {
-        sandbox.stub(adagio, 'getCurrentWindow').returns(window.top);
-        sandbox.stub(adagio, 'supportIObs').returns(true);
-
-        // replace by the values defined in beforeEach
-        window.top.ADAGIO = {
-          ...window.ADAGIO
-        };
-
-        spec.isBidRequestValid(bid01);
-        spec.isBidRequestValid(bid02);
-        spec.isBidRequestValid(bid03);
-
-        expect(find(window.top.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-01')).to.deep.eql(expected[0]);
-        expect(find(window.top.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-02')).to.deep.eql(expected[1]);
-      });
-
-      it('should detect IntersectionObserver support', function() {
-        sandbox.stub(adagio, 'getCurrentWindow').returns(window.top);
-        sandbox.stub(adagio, 'supportIObs').returns(false);
-
-        window.top.ADAGIO = {
-          ...window.ADAGIO
-        };
-
-        spec.isBidRequestValid(bid01);
-        const validBidReq = find(window.top.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-01');
-        expect(validBidReq.bids[0].params.supportIObs).to.equal(false);
-      });
-
-      it('should store bids config once by bid in current window', function() {
-        sandbox.stub(adagio, 'getCurrentWindow').returns(window.self);
-        sandbox.stub(adagio, 'supportIObs').returns(true);
-
-        spec.isBidRequestValid(bid01);
-        spec.isBidRequestValid(bid02);
-        spec.isBidRequestValid(bid03);
-
-        expect(find(window.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-01')).to.deep.eql(expected[0]);
-        expect(find(window.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-02')).to.deep.eql(expected[1]);
-      });
     });
   });
 
@@ -331,7 +269,6 @@ describe('Adagio bid adapter', () => {
       'user',
       'schain',
       'prebidVersion',
-      'adapterVersion',
       'featuresVersion',
       'data'
     ];
@@ -360,7 +297,6 @@ describe('Adagio bid adapter', () => {
       sandbox.stub(adagio, 'getDevice').returns({ a: 'a' });
       sandbox.stub(adagio, 'getSite').returns({ domain: 'adagio.io', 'page': 'https://adagio.io/hb' });
       sandbox.stub(adagio, 'getPageviewId').returns('1234-567');
-      sandbox.stub(adagio, 'getFeatures').returns({});
 
       const bid01 = new BidRequestBuilder().withParams().build();
       const bidderRequest = new BidderRequestBuilder().build();
@@ -377,23 +313,10 @@ describe('Adagio bid adapter', () => {
     it('should enqueue computed features for collect usage', function() {
       sandbox.stub(Date, 'now').returns(12345);
 
-      for (const prop in _features) {
-        sandbox.stub(_features, prop).returns('');
-      }
-
-      adagioMock.expects('enqueue').withExactArgs({
-        action: 'features',
-        ts: 12345,
-        data: {
-          'gpt-adunit-code': {
-            features: {},
-            version: '1'
-          }
-        }
-      }).atLeast(1);
-
       const bid01 = new BidRequestBuilder().withParams().build();
       const bidderRequest = new BidderRequestBuilder().build();
+
+      adagioMock.expects('enqueue').withArgs(sinon.match({ action: 'features' })).atLeast(1);
 
       const requests = spec.buildRequests([bid01], bidderRequest);
 
@@ -497,7 +420,7 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
         expect(requests).to.have.lengthOf(1);
         expect(requests[0].data.adUnits[0].mediaTypes.video).to.deep.equal(expected);
-        sinon.assert.calledTwice(utils.logWarn);
+        sinon.assert.calledTwice(utils.logWarn.withArgs(sinon.match(new RegExp(/^Adagio: The OpenRTB/))));
       });
     });
 
@@ -997,6 +920,20 @@ describe('Adagio bid adapter', () => {
         expect(bidResponse.height).to.equal(250);
         expect(bidResponse.vastUrl).to.match(/^data:text\/xml;/)
       });
+
+      it('should execute Adagio outstreamPlayer if defined', function() {
+        window.ADAGIO.outstreamPlayer = sinon.stub();
+        const bidResponse = spec.interpretResponse(serverResponseWithOutstream, bidRequestWithOutstream)[0];
+        executeRenderer(bidResponse.renderer, bidResponse)
+        sinon.assert.calledOnce(window.ADAGIO.outstreamPlayer);
+        delete window.ADAGIO.outstreamPlayer;
+      });
+
+      it('should logError if Adagio outstreamPlayer is not defined', function() {
+        const bidResponse = spec.interpretResponse(serverResponseWithOutstream, bidRequestWithOutstream)[0];
+        executeRenderer(bidResponse.renderer, bidResponse)
+        utilsMock.expects('logError').withExactArgs('Adagio: Adagio outstream player is not defined').once();
+      });
     });
 
     describe('Response with native add', () => {
@@ -1006,7 +943,7 @@ describe('Adagio bid adapter', () => {
         ver: '1.2',
         link: {
           url: 'https://i.am.a.click.url',
-          clickTrackers: [
+          clicktrackers: [
             'https://i.am.a.clicktracker.url'
           ]
         },
@@ -1033,7 +970,6 @@ describe('Adagio bid adapter', () => {
         ],
         assets: [
           {
-            required: 1,
             title: {
               text: 'My title'
             }
@@ -1081,34 +1017,32 @@ describe('Adagio bid adapter', () => {
       };
 
       const bidRequestNative = utils.deepClone(bidRequest)
-      bidRequestNative.mediaTypes = {
-        native: {
-          sendTargetingKeys: false,
+      bidRequestNative.nativeParams = {
+        sendTargetingKeys: false,
 
-          clickUrl: {
-            required: true,
-          },
-          title: {
-            required: true,
-          },
-          body: {
-            required: true,
-          },
-          sponsoredBy: {
-            required: false
-          },
-          image: {
-            required: true
-          },
-          icon: {
-            required: true
-          },
-          privacyLink: {
-            required: false
-          },
-          ext: {
-            adagio_bvw: {}
-          }
+        clickUrl: {
+          required: true,
+        },
+        title: {
+          required: true,
+        },
+        body: {
+          required: true,
+        },
+        sponsoredBy: {
+          required: false
+        },
+        image: {
+          required: true
+        },
+        icon: {
+          required: true
+        },
+        privacyLink: {
+          required: false
+        },
+        ext: {
+          adagio_bvw: {}
         }
       };
 
@@ -1199,12 +1133,52 @@ describe('Adagio bid adapter', () => {
     });
   });
 
-  describe('Adagio features', function() {
+  describe('transformBidParams', function() {
+    it('Compute additional params in s2s mode', function() {
+      GlobalExchange.prepareExchangeData('{}');
+
+      sandbox.stub(window.top.document, 'getElementById').returns(
+        fixtures.getElementById()
+      );
+      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
+      sandbox.stub(utils, 'inIframe').returns(false);
+
+      const adUnit = {
+        code: 'adunit-code',
+        params: {
+          organizationId: '1000'
+        }
+      };
+      const bid01 = new BidRequestBuilder({
+        'mediaTypes': {
+          banner: { sizes: [[300, 250]] }
+        }
+      }).withParams().build();
+
+      const params = spec.transformBidParams({ organizationId: '1000' }, true, adUnit, [{ bidderCode: 'adagio', bids: [bid01] }]);
+
+      expect(params.organizationId).to.exist;
+      expect(params.organizationId).to.exist;
+      expect(params.features).to.exist;
+      expect(params.features.page_dimensions).to.exist;
+      expect(params.features.adunit_position).to.exist;
+      expect(params.features.dom_loading).to.exist;
+      expect(params.features.print_number).to.exist;
+      expect(params.features.user_timestamp).to.exist;
+      expect(params.placement).to.exist;
+      expect(params.adUnitElementId).to.exist;
+      expect(params.site).to.exist;
+      expect(params.data.session).to.exist;
+    });
+  });
+
+  describe('Adagio features when prebid in top.window', function() {
     it('should return all expected features when all expected bidder params are available', function() {
       sandbox.stub(window.top.document, 'getElementById').returns(
         fixtures.getElementById()
       );
       sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
+      sandbox.stub(utils, 'inIframe').returns(false);
 
       const bidRequest = new BidRequestBuilder({
         'mediaTypes': {
@@ -1214,7 +1188,8 @@ describe('Adagio bid adapter', () => {
 
       const bidderRequest = new BidderRequestBuilder().build();
 
-      const result = adagio.getFeatures(bidRequest, bidderRequest);
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
 
       expect(result.adunit_position).to.match(/^[\d]+x[\d]+$/);
       expect(result.page_dimensions).to.match(/^[\d]+x[\d]+$/);
@@ -1222,13 +1197,15 @@ describe('Adagio bid adapter', () => {
       expect(result.print_number).to.be.a('String');
       expect(result.dom_loading).to.be.a('String');
       expect(result.user_timestamp).to.be.a('String');
-      expect(result.url).to.be.a('String');
-      expect(result.device).to.be.a('String');
-      expect(result.os).to.be.a('String');
-      expect(result.browser).to.be.a('String');
+      expect(result.url).to.not.exist;
+      expect(result.device).to.not.exist;
+      expect(result.os).to.not.exist;
+      expect(result.browser).to.not.exist;
     });
 
     it('should return all expected features when `adUnitElementId` param is not available', function() {
+      sandbox.stub(utils, 'inIframe').returns(false);
+
       const bidRequest = new BidRequestBuilder({
         params: {
           organizationId: '1000',
@@ -1242,7 +1219,8 @@ describe('Adagio bid adapter', () => {
 
       const bidderRequest = new BidderRequestBuilder().build();
 
-      const result = adagio.getFeatures(bidRequest, bidderRequest);
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
 
       expect(result.adunit_position).to.not.exist;
       expect(result.page_dimensions).to.be.a('String');
@@ -1250,16 +1228,23 @@ describe('Adagio bid adapter', () => {
       expect(result.print_number).to.be.a('String');
       expect(result.dom_loading).to.be.a('String');
       expect(result.user_timestamp).to.be.a('String');
-      expect(result.url).to.be.a('String');
-      expect(result.device).to.be.a('String');
-      expect(result.os).to.be.a('String');
-      expect(result.browser).to.be.a('String');
+    });
+  });
+
+  describe('Adagio features when prebid in Safeframe', function() {
+    beforeEach(function () {
+      window.$sf = $sf;
     });
 
-    it('should not return feature with an empty value', function() {
-      sandbox.stub(_features, 'getDomLoadingDuration').returns('');
-      sandbox.stub(_features, 'getUrl').returns('');
-      sandbox.stub(_features, 'getBrowser').returns('');
+    afterEach(function () {
+      delete window.$sf;
+    });
+
+    it('should return all expected features when prebid is in safeframe iframe', function() {
+      sandbox.stub(window.$sf.ext, 'geom').returns({
+        win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
+        self: {t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250},
+      });
 
       const bidRequest = new BidRequestBuilder({
         'mediaTypes': {
@@ -1269,178 +1254,85 @@ describe('Adagio bid adapter', () => {
 
       const bidderRequest = new BidderRequestBuilder().build();
 
-      const result = adagio.getFeatures(bidRequest, bidderRequest);
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
 
+      expect(result.page_dimensions).to.not.exist;
+      expect(result.viewport_dimensions).to.be.a('String');
+      expect(result.print_number).to.be.a('String');
+      expect(result.dom_loading).to.be.a('String');
+      expect(result.user_timestamp).to.be.a('String');
+      expect(result.adunit_position).to.exist;
+    });
+
+    it('should return all expected features when prebid safeframe api not properly implemented', function() {
+      const bidRequest = new BidRequestBuilder({
+        'mediaTypes': {
+          banner: { sizes: [[300, 250]] }
+        }
+      }).withParams().build();
+
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
+
+      expect(result.page_dimensions).to.not.exist;
+      expect(result.viewport_dimensions).to.not.exist;
+      expect(result.print_number).to.be.a('String');
+      expect(result.dom_loading).to.be.a('String');
+      expect(result.user_timestamp).to.be.a('String');
       expect(result.adunit_position).to.not.exist;
-      expect(result.page_dimensions).to.exist;
-      expect(result.viewport_dimensions).to.exist;
-      expect(result.print_number).to.exist;
-      expect(result.dom_loading).to.not.exist;
-      expect(result.user_timestamp).to.exist;
-      expect(result.url).to.not.exist;
-      expect(result.device).to.exist;
-      expect(result.os).to.exist;
-      expect(result.browser).to.not.exist;
     });
 
-    describe('getPageDimensions feature', function() {
-      afterEach(() => {
-        delete window.$sf;
-      });
+    it('should return all expected features when prebid safeframe api not properly implemented bis', function() {
+      window.$sf.ext.geom = undefined;
 
-      it('should not compute the page dimensions in cross-origin iframe', function() {
-        sandbox.stub(utils, 'getWindowTop').throws();
-        const result = _features.getPageDimensions();
-        expect(result).to.eq('');
-      });
+      const bidRequest = new BidRequestBuilder({
+        'mediaTypes': {
+          banner: { sizes: [[300, 250]] }
+        }
+      }).withParams().build();
 
-      it('should not compute the page dimensions even with safeFrame api', function() {
-        window.$sf = $sf;
-        const result = _features.getPageDimensions();
-        expect(result).to.eq('');
-      });
+      const bidderRequest = new BidderRequestBuilder().build();
 
-      it('should not compute the page dimensions if <body> is not in the DOM', function() {
-        sandbox.stub(window.top.document, 'querySelector').withArgs('body').returns(null);
-        const result = _features.getPageDimensions();
-        expect(result).to.eq('');
-      });
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
 
-      it('should compute the page dimensions based on body and viewport dimensions', function() {
-        sandbox.stub(window.top.document, 'querySelector').withArgs('body').returns({ scrollWidth: 1360, offsetWidth: 1280, scrollHeight: 2000, offsetHeight: 1000 });
-        const result = _features.getPageDimensions();
-        expect(result).to.eq('1360x2000');
-      });
-    });
-
-    describe('getViewPortDimensions feature', function() {
-      afterEach(() => {
-        delete window.$sf;
-      });
-
-      it('should not compute the viewport dimensions in cross-origin iframe', function() {
-        sandbox.stub(utils, 'getWindowTop').throws();
-        const result = _features.getViewPortDimensions();
-        expect(result).to.eq('');
-      });
-
-      it('should compute the viewport dimensions in cross-origin iframe w/ safeFrame api', function() {
-        window.$sf = $sf;
-        sandbox.stub(window.$sf.ext, 'geom').returns({
-          win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
-          self: {t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250},
-        });
-        const result = _features.getViewPortDimensions();
-        expect(result).to.eq('1920x1177');
-      });
-
-      it('should not compute the viewport dimensions if safeFrame api is misimplemented', function() {
-        window.$sf = {
-          ext: { geom: 'nothing' }
-        };
-        const result = _features.getViewPortDimensions();
-        expect(result).to.eq('');
-      });
-
-      it('should not compute the viewport dimensions if <body> is not in the DOM', function() {
-        const querySelectorSpy = sandbox.spy(() => null);
-        sandbox.stub(utils, 'getWindowTop').returns({
-          location: { href: 'https://mytest.io' },
-          document: { querySelector: querySelectorSpy }
-        });
-        const result = _features.getViewPortDimensions();
-        expect(result).to.eq('');
-      });
-
-      it('should compute the viewport dimensions based on window', function() {
-        sandbox.stub(utils, 'getWindowTop').returns({
-          location: { href: 'https://mytest.io' },
-          innerWidth: 960,
-          innerHeight: 3000
-        });
-        const result = _features.getViewPortDimensions();
-        expect(result).to.eq('960x3000');
-      });
-
-      it('should compute the viewport dimensions based on body', function() {
-        const querySelectorSpy = sandbox.spy(() => ({ clientWidth: 1024, clientHeight: 2000 }));
-        sandbox.stub(utils, 'getWindowTop').returns({
-          location: { href: 'https://mytest.io' },
-          document: { querySelector: querySelectorSpy }
-        });
-        const result = _features.getViewPortDimensions();
-        expect(result).to.eq('1024x2000');
-      });
-    });
-
-    describe('getSlotPosition feature', function() {
-      let getElementByIdStub;
-      let getComputedStyleStub;
-
-      beforeEach(() => {
-        getElementByIdStub = sandbox.stub(window.top.document, 'getElementById');
-        getElementByIdStub.returns(fixtures.getElementById());
-        getComputedStyleStub = sandbox.stub(window.top, 'getComputedStyle');
-        getComputedStyleStub.returns({ display: 'block' });
-      });
-
-      afterEach(() => {
-        delete window.$sf;
-        getElementByIdStub.restore();
-        getComputedStyleStub.restore();
-      });
-
-      it('should not compute the slot position in cross-origin iframe', function() {
-        sandbox.stub(utils, 'getWindowTop').throws();
-        const result = _features.getSlotPosition({ adUnitElementId: 'gpt-adunit-code', postBid: false });
-        expect(result).to.eq('');
-      });
-
-      it('should compute the slot position in cross-origin iframe w/ safeFrame api', function() {
-        window.$sf = $sf;
-        sandbox.stub(window.$sf.ext, 'geom').returns({
-          win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
-          self: {t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250},
-        });
-        const result = _features.getSlotPosition({ adUnitElementId: 'gpt-adunit-code', postBid: false });
-        expect(result).to.eq('210x859');
-      });
-
-      it('should not compute the slot position if safeFrame api is misimplemented', function() {
-        window.$sf = {
-          ext: { geom: 'nothing' }
-        };
-        utilsMock.expects('logWarn').once();
-        const result = _features.getSlotPosition({ adUnitElementId: 'gpt-adunit-code', postBid: false });
-        expect(result).to.eq('');
-        utilsMock.verify();
-      });
-
-      it('should not compute the slot position due to unreachable adUnitElementId', function() {
-        getElementByIdStub.returns(null);
-        const result = _features.getSlotPosition({ adUnitElementId: 'gpt-adunit-code', postBid: false });
-        expect(result).to.eq('');
-      });
-
-      it('should use a quick switch to display slot and compute position', function() {
-        getComputedStyleStub.returns({ display: 'none' });
-        const result = _features.getSlotPosition({ adUnitElementId: 'gpt-adunit-code', postBid: false });
-        expect(result).to.eq('800x300');
-      });
-
-      it('should compute the slot position based on window.top w/o postBid param', function() {
-        const result = _features.getSlotPosition({ adUnitElementId: 'gpt-adunit-code', postBid: false });
-        expect(result).to.eq('800x300');
-      });
-
-      it.skip('should compute the slot position inside the parent window (window.top) when safeFrame is not available and postBid params is `true`', function() {
-        const result = _features.getSlotPosition({ adUnitElementId: 'gpt-adunit-code', postBid: true });
-        // expect(result).to.eq('800x300');
-      });
+      expect(result.page_dimensions).to.not.exist;
+      expect(result.viewport_dimensions).to.not.exist;
+      expect(result.print_number).to.be.a('String');
+      expect(result.dom_loading).to.be.a('String');
+      expect(result.user_timestamp).to.be.a('String');
+      expect(result.adunit_position).to.not.exist;
     });
   });
 
-  describe('optional params auto detection', function() {
+  describe('Adagio features when prebid in crossdomain iframe', function() {
+    it('should return all expected features', function() {
+      sandbox.stub(utils, 'getWindowTop').throws();
+
+      const bidRequest = new BidRequestBuilder({
+        'mediaTypes': {
+          banner: { sizes: [[300, 250]] }
+        }
+      }).withParams().build();
+
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
+
+      expect(result.page_dimensions).to.not.exist;
+      expect(result.viewport_dimensions).to.not.exist;
+      expect(result.print_number).to.be.a('String');
+      expect(result.dom_loading).to.be.a('String');
+      expect(result.user_timestamp).to.be.a('String');
+      expect(result.adunit_position).to.not.exist;
+    });
+  });
+
+  describe.skip('optional params auto detection', function() {
     it('should auto detect environment', function() {
       const getDeviceStub = sandbox.stub(_features, 'getDevice');
 
@@ -1460,7 +1352,7 @@ describe('Adagio bid adapter', () => {
     });
   });
 
-  describe('print number handling', function() {
+  describe.skip('print number handling', function() {
     it('should return 1 if no adunit-code found. This means it is the first auction', function() {
       sandbox.stub(adagio, 'getPageviewId').returns('abc-def');
       expect(adagio.computePrintNumber('adunit-code')).to.eql(1);

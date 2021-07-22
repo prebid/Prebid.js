@@ -5,6 +5,8 @@
  * @requires module:modules/userId
  */
 
+// ci trigger: 1
+
 import * as utils from '../src/utils.js'
 import find from 'core-js-pure/features/array/find.js';
 import { ajax } from '../src/ajax.js';
@@ -34,7 +36,7 @@ function deserializeParrableId(parrableIdStr) {
 
   values.forEach(function(value) {
     const pair = value.split(':');
-    if (+pair[1] === 1 || (pair[1] !== null && +pair[1] === 0)) { // unpack a value of 0 or 1 as boolean
+    if (pair[0] === 'ccpaOptout' || pair[0] === 'ibaOptout') { // unpack a value of 0 or 1 as boolean
       parrableId[pair[0]] = Boolean(+pair[1]);
     } else if (!isNaN(pair[1])) { // convert to number if is a number
       parrableId[pair[0]] = +pair[1]
@@ -63,6 +65,10 @@ function serializeParrableId(parrableIdAndParams) {
     const tpcUntil = `tpcUntil:${parrableIdAndParams.tpcUntil}`;
     components.push(tpcSupportComponent);
     components.push(tpcUntil);
+  }
+  if (parrableIdAndParams.filteredUntil) {
+    components.push(`filteredUntil:${parrableIdAndParams.filteredUntil}`);
+    components.push(`filterHits:${parrableIdAndParams.filterHits}`);
   }
 
   return components.join(',');
@@ -96,11 +102,19 @@ function readCookie() {
   const parrableIdStr = storage.getCookie(PARRABLE_COOKIE_NAME);
   if (parrableIdStr) {
     const parsedCookie = deserializeParrableId(decodeURIComponent(parrableIdStr));
-    const { tpc, tpcUntil, ...parrableId } = parsedCookie;
+    const { tpc, tpcUntil, filteredUntil, filterHits, ...parrableId } = parsedCookie;
     let { eid, ibaOptout, ccpaOptout, ...params } = parsedCookie;
 
     if ((Date.now() / 1000) >= tpcUntil) {
       params.tpc = undefined;
+    }
+
+    if ((Date.now() / 1000) < filteredUntil) {
+      params.shouldFilter = true;
+      params.filteredUntil = filteredUntil;
+    } else {
+      params.shouldFilter = false;
+      params.filterHits = filterHits;
     }
     return { parrableId, params };
   }
@@ -197,6 +211,11 @@ function epochFromTtl(ttl) {
   return Math.floor((Date.now() / 1000) + ttl);
 }
 
+function incrementFilterHits(parrableId, params) {
+  params.filterHits += 1;
+  writeCookie({ ...parrableId, ...params })
+}
+
 function fetchId(configParams, gdprConsentData) {
   if (!isValidConfig(configParams)) return;
 
@@ -212,7 +231,8 @@ function fetchId(configParams, gdprConsentData) {
 
   const eid = parrableId ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
-  const tpcSupport = params ? params.tpc : null
+  const tpcSupport = params ? params.tpc : null;
+  const shouldFilter = params ? params.shouldFilter : null;
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = (gdprConsentData && typeof gdprConsentData.gdprApplies === 'boolean' && gdprConsentData.gdprApplies);
   const gdprConsentString = (gdprConsentData && gdprApplies && gdprConsentData.consentString) || '';
@@ -229,6 +249,10 @@ function fetchId(configParams, gdprConsentData) {
     isIframe: utils.inIframe(),
     tpcSupport
   };
+
+  if (shouldFilter === false) {
+    data.filterHits = params.filterHits;
+  }
 
   const searchParams = {
     data: encodeBase64UrlSafe(btoa(JSON.stringify(data))),
@@ -271,6 +295,10 @@ function fetchId(configParams, gdprConsentData) {
                 newParams.tpcSupport = responseObj.tpcSupport;
                 newParams.tpcUntil = epochFromTtl(responseObj.tpcSupportTtl);
               }
+              if (responseObj.filterTtl) {
+                newParams.filteredUntil = epochFromTtl(responseObj.filterTtl);
+                newParams.filterHits = 0;
+              }
             }
           } catch (error) {
             utils.logError(error);
@@ -288,7 +316,12 @@ function fetchId(configParams, gdprConsentData) {
         cb();
       }
     };
-    ajax(PARRABLE_URL, callbacks, searchParams, options);
+
+    if (shouldFilter) {
+      incrementFilterHits(parrableId, params);
+    } else {
+      ajax(PARRABLE_URL, callbacks, searchParams, options);
+    }
   };
 
   return {

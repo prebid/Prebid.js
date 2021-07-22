@@ -93,6 +93,9 @@ export const spec = {
         if (request.schain) {
           serverRequest.schain = JSON.stringify(request.schain);
         }
+        if (utils.deepAccess(request, 'params.lr_env')) {
+          serverRequest.ats_envelope = request.params.lr_env;
+        }
       });
       serverRequest.p = '[' + serverRequest.p.toString() + ']';
 
@@ -322,7 +325,8 @@ function openRtbRequest(bidRequests, bidderRequest) {
     bcat: bidRequests[0].params.bcat || [],
     ext: {
       prebid: '$prebid.version$',
-    }
+    },
+    ats_envelope: bidRequests[0].params.lr_env,
   };
 
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
