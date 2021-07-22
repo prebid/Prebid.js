@@ -122,6 +122,77 @@ describe('haloRtdProvider', function() {
       expect(ortb2Config.site.content.data).to.deep.include.members([setConfigSiteObj1, rtdSiteObj1]);
     });
 
+    it('merges ortb2 data without duplication', function() {
+      let rtdConfig = {};
+      let bidConfig = {};
+
+      const userObj1 = {
+        name: 'www.dataprovider1.com',
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
+        segment: [{
+          id: '1776'
+        }]
+      };
+
+      const userObj2 = {
+        name: 'www.dataprovider2.com',
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
+        segment: [{
+          id: '1914'
+        }]
+      };
+
+      const siteObj1 = {
+        name: 'www.dataprovider3.com',
+        ext: {
+          taxonomyname: 'iab_audience_taxonomy'
+        },
+        segment: [
+          {
+            id: '1812'
+          },
+          {
+            id: '1955'
+          }
+        ]
+      }
+
+      config.setConfig({
+        ortb2: {
+          user: {
+            data: [userObj1, userObj2]
+          },
+          site: {
+            content: {
+              data: [siteObj1]
+            }
+          }
+        }
+      });
+
+      const rtd = {
+        ortb2: {
+          user: {
+            data: [userObj1]
+          },
+          site: {
+            content: {
+              data: [siteObj1]
+            }
+          }
+        }
+      };
+
+      addRealTimeData(bidConfig, rtd, rtdConfig);
+
+      let ortb2Config = config.getConfig().ortb2;
+
+      expect(ortb2Config.user.data).to.deep.include.members([userObj1, userObj2]);
+      expect(ortb2Config.site.content.data).to.deep.include.members([siteObj1]);
+      expect(ortb2Config.user.data).to.have.lengthOf(2);
+      expect(ortb2Config.site.content.data).to.have.lengthOf(1);
+    });
+
     it('merges bidder-specific ortb2 data', function() {
       let rtdConfig = {};
       let bidConfig = {};
