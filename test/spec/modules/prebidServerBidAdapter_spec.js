@@ -124,7 +124,16 @@ const OUTSTREAM_VIDEO_REQUEST = {
         'video': {
           playerSize: [[640, 480]],
           context: 'outstream',
-          mimes: ['video/mp4']
+          mimes: ['video/mp4'],
+          renderer: {
+            url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+            render: function (bid) {
+              ANOutstreamVideo.renderAd({
+                targetId: bid.adUnitCode,
+                adResponse: bid.adResponse,
+              });
+            }
+      }
         },
         banner: { sizes: [[300, 250]] }
       },
@@ -143,7 +152,8 @@ const OUTSTREAM_VIDEO_REQUEST = {
         video: {
           playerSize: [640, 480],
           context: 'outstream',
-          mimes: ['video/mp4']
+          mimes: ['video/mp4'],
+          skip: 1
         }
       },
       bids: [
@@ -157,16 +167,7 @@ const OUTSTREAM_VIDEO_REQUEST = {
             }
           }
         }
-      ],
-      renderer: {
-        url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
-        render: function (bid) {
-          ANOutstreamVideo.renderAd({
-            targetId: bid.adUnitCode,
-            adResponse: bid.adResponse,
-          });
-        }
-      }
+      ]
     }
   ],
 };
@@ -506,7 +507,7 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should add outstream bc renderer exists on ad unit', function () {
+    it('should add outstream bc renderer exists on mediatype', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
       adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -1190,7 +1191,7 @@ describe('S2S Adapter', function () {
           }
         }
       });
-    });
+    });ad unit
 
     it('converts appnexus params to expected format for PBS', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
