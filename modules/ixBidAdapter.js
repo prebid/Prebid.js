@@ -639,7 +639,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
     }
 
-    if (BANNER in impressionObjects[0]) {
+    if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
         id,
