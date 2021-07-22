@@ -159,7 +159,7 @@ const OUTSTREAM_VIDEO_REQUEST = {
         }
       ],
       renderer: {
-        url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+        url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
         render: function (bid) {
           ANOutstreamVideo.renderAd({
             targetId: bid.adUnitCode,
@@ -506,14 +506,14 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should not add outstrean without renderer', function () {
+    it('should add outstream without renderer', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
       adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.imp[0].banner).to.exist;
-      expect(requestBid.imp[0].video).to.not.exist;
+      expect(requestBid.imp[0].video).to.exist;
     });
 
     it('should default video placement if not defined and instream', function () {
