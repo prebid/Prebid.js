@@ -165,6 +165,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
 
   let haloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
   if (isStr(haloId)) {
+    (getGlobal()).refreshUserIds({submoduleNames: 'haloId'});
     userIds.haloId = haloId;
     getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {
