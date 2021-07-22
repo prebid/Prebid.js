@@ -250,15 +250,22 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
 
   const firstPartyData = config.getConfig('ortb2.user.data')
   if (Array.isArray(firstPartyData) && firstPartyData.length > 0) {
-    const sm = firstPartyData
+    // extract and merge valid segments by provider/taxonomy
+    const fpd = firstPartyData
       .filter(
         data => (Array.isArray(data.segment) &&
                 data.segment.length > 0 &&
                 data.name !== undefined &&
                 data.name.length > 0)
       )
+      .reduce((acc, data) => {
+        const name = typeof data.ext === 'object' && data.ext.segtax ? `${data.name}/${data.ext.segtax}` : data.name;
+        acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
+        return acc;
+      }, {})
+    const sm = Object.entries(fpd)
       .map(
-        data => data.name + ':' + data.segment.map(seg => seg.id).join('|')
+        ([name, segs], _) => name + ':' + segs.join('|')
       )
       .join(',')
     if (sm.length > 0) {

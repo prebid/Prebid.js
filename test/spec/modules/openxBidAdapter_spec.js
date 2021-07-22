@@ -1534,18 +1534,32 @@ describe('OpenxAdapter', function () {
       describe('with segments', function () {
         const TESTS = [
           {
-            name: 'should send out the provider/segment data from first party config',
+            name: 'should send proprietary segment data from first party config',
             config: {
               ortb2: {
                 user: {
                   data: [
-                    {name: 'dmp1', segment: [{id: 'foo'}, {id: 'bar'}]},
+                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
                     {name: 'dmp2', segment: [{id: 'baz'}]},
                   ]
                 }
               }
             },
-            expect: 'dmp1:foo|bar,dmp2:baz',
+            expect: 'dmp1/4:foo|bar,dmp2:baz',
+          },
+          {
+            name: 'should combine same provider segment data from first party config',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
+                    {name: 'dmp1', ext: {}, segment: [{id: 'baz'}]},
+                  ]
+                }
+              }
+            },
+            expect: 'dmp1/4:foo|bar,dmp1:baz',
           },
           {
             name: 'should not send any segment data if first party config is incomplete',
