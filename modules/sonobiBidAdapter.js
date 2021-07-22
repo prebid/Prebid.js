@@ -423,7 +423,7 @@ function getBidFloor(bid) {
   if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
     return floor.floor;
   }
-  return null;
+  return '';
 }
 
 registerBidder(spec);
