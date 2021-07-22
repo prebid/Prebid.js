@@ -1191,7 +1191,7 @@ describe('S2S Adapter', function () {
           }
         }
       });
-    });ad unit
+    });
 
     it('converts appnexus params to expected format for PBS', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
