@@ -20,13 +20,13 @@ gulp build
     * otherwise not passed at all
 
 ## Bid adapters
-* The [Sonobi adapter](https://github.com/guardian/Prebid.js/blob/master/modules/sonobiBidAdapter.js):
+* The [Sonobi adapter](/modules/sonobiBidAdapter.js):
     * has an extra request parameter, `gmgt`, holding AppNexus targeting key-values
     * has a customised `pv` parameter, holding the Ophan-generated pageview ID
-* The [AppNexus adapter](https://github.com/guardian/Prebid.js/blob/master/modules/appnexusBidAdapter.js) has an alias `xhb` for Xaxis, an alias `and` for AppNexus direct and an alias `pangaea` for Pangaea.
-* The [OpenX adapter](https://github.com/guardian/Prebid.js/blob/master/modules/openxBidAdapter.js) has an alias `oxd` for OpenX direct, instead of via server-side header bidding.
+* The [AppNexus adapter](/modules/appnexusBidAdapter.js) has an alias `xhb` for Xaxis, an alias `and` for AppNexus direct and an alias `pangaea` for Pangaea.
+* The [OpenX adapter](/modules/openxBidAdapter.js) has an alias `oxd` for OpenX direct, instead of via server-side header bidding.
 
 ## Analytics adapters
 * We have built two analytics adapters:
-    * an [adapter](https://github.com/guardian/Prebid.js/blob/master/modules/guAnalyticsAdapter.js) to send analytics to the data lake
-    * a simple console-logging [adapter](https://github.com/guardian/Prebid.js/blob/master/modules/consoleLoggingAnalyticsAdapter.js)
+    * an [adapter](/modules/guAnalyticsAdapter.js) to send analytics to the data lake
+    * a simple console-logging [adapter](/modules/consoleLoggingAnalyticsAdapter.js)
