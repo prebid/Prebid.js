@@ -133,7 +133,7 @@ const OUTSTREAM_VIDEO_REQUEST = {
                 adResponse: bid.adResponse,
               });
             }
-      }
+          }
         },
         banner: { sizes: [[300, 250]] }
       },
