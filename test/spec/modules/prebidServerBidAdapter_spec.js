@@ -506,7 +506,7 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should add outstream without renderer', function () {
+    it('should add outstream bc renderer exists on ad unit', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
       adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
