@@ -687,12 +687,18 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         }
       });
 
-      const fpdRequestSize = encodeURIComponent(JSON.stringify({ ...site, ...user })).length;
+      const clonedRObject = utils.deepClone(r);
 
-      if (currentRequestSize + fpdRequestSize < MAX_REQUEST_SIZE) {
+      clonedRObject.site = utils.mergeDeep({}, clonedRObject.site, site);
+      clonedRObject.user = utils.mergeDeep({}, clonedRObject.user, user);
+
+      const requestSize = `${baseUrl}${utils.parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
+
+      if (requestSize < MAX_REQUEST_SIZE) {
         r.site = utils.mergeDeep({}, r.site, site);
         r.user = utils.mergeDeep({}, r.user, user);
         isFpdAdded = true;
+        const fpdRequestSize = encodeURIComponent(JSON.stringify({ ...site, ...user })).length;
         currentRequestSize += fpdRequestSize;
       } else {
         utils.logError('ix bidder: FPD request size has exceeded maximum request size.');
