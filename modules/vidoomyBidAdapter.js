@@ -3,7 +3,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import * as utils from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
-import { OUTSTREAM } from '../src/video.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const BIDDER_CODE = 'vidoomy';
@@ -21,6 +21,11 @@ const isBidRequestValid = bid => {
 
   if (!+bid.params.id) {
     utils.logError(BIDDER_CODE + ': bid.params.id should be non-empty Number');
+    return false;
+  }
+
+  if (bid.params && bid.params.mediaTypes && bid.params.mediaTypes.video && bid.params.mediaTypes.context === INSTREAM && !bid.params.mediaTypes.video.playerSize) {
+    utils.logError(BIDDER_CODE + ': bid.params.mediaType.video should have a playerSize property to tell player size when is INSTREAM');
     return false;
   }
 
