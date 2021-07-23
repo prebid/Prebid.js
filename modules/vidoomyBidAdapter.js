@@ -7,6 +7,7 @@ import { OUTSTREAM } from '../src/video.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const BIDDER_CODE = 'vidoomy';
+const GVLID = 380;
 const isBidRequestValid = bid => {
   if (!bid.params) {
     utils.logError(BIDDER_CODE + ': bid.params should be non-empty');
@@ -127,6 +128,7 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
+  gvlid: GVLID,
 };
 
 registerBidder(spec);
