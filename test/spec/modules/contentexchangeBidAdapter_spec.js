@@ -158,8 +158,6 @@ describe('ContentexchangeBidAdapter', function () {
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
-            expect(placement.w).to.be.an('number');
-            expect(placement.h).to.be.an('number');
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
