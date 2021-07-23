@@ -125,6 +125,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
           responseBody.renderer = renderer;
         } catch (e) {
           responseBody.ad = responseBody.vastUrl;
+          utils.logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
         }
       }
     }
