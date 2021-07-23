@@ -59,8 +59,6 @@ function getPlacementReqData (bid) {
       placement.playbackmethod = mediaTypes[VIDEO].playbackmethod;
       placement.api = mediaTypes[VIDEO].api;
       placement.linearity = mediaTypes[VIDEO].linearity;
-      placement.w = mediaTypes[VIDEO].playerSize[0][0];
-      placement.h = mediaTypes[VIDEO].playerSize[0][1];
       break;
     case NATIVE:
       placement.native = mediaTypes[NATIVE];
