@@ -45,7 +45,16 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       adType = VIDEO;
     }
 
-    const host = bidderRequest.refererInfo.referer.split('#')[0].replace(/^(https\:\/\/|http\:\/\/)|(\/)$/g, '').split('/')[0];
+    let host = '';
+    try {
+      host = bidderRequest.refererInfo.referer.split('#')[0].replace(/^(https\:\/\/|http\:\/\/)|(\/)$/g, '').split('/')[0];
+    } catch (eBidRequest) {
+      try {
+        host = window.location.href.replace(/^(https\:\/\/|http\:\/\/)|(\/)$/g, '').split('/')[0];
+      } catch (eLocationHref) {
+        host = window.location.href;
+      }
+    }
     const hostname = host.split(':')[0];
 
     const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
