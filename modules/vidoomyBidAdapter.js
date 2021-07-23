@@ -69,7 +69,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     queryParams.push(['l', navigator.language && navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : '']);
     queryParams.push(['dt', /Mobi/.test(navigator.userAgent) ? 2 : 1]);
     queryParams.push(['pid', bid.params.pid]);
-    queryParams.push(['dealId', bid.bidId]);
+    queryParams.push(['requestId', bid.bidId]);
     queryParams.push(['d', hostname]);
     queryParams.push(['sp', encodeURIComponent(bidderRequest.refererInfo.referer)]);
     if (bidderRequest.gdprConsent) {
@@ -107,7 +107,6 @@ const render = (bid) => {
 const interpretResponse = (serverResponse, bidRequest) => {
   try {
     let responseBody = serverResponse.body;
-    responseBody.requestId = responseBody.dealId;
     if (responseBody.mediaType === 'video') {
       responseBody.ad = responseBody.vastUrl;
       const videoContext = bidRequest.data.videoContext;
