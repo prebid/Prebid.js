@@ -129,9 +129,42 @@ const interpretResponse = (serverResponse, bidRequest) => {
         }
       }
     }
+    const bid = {
+      vastUrl: responseBody.vastUrl,
+      ad: responseBody.ad,
+      renderer: responseBody.renderer,
+      mediaType: responseBody.mediaType,
+      requestId: responseBody.requestId,
+      cpm: responseBody.cpm,
+      currency: responseBody.currency,
+      width: responseBody.width,
+      height: responseBody.height,
+      creativeId: responseBody.creativeId,
+      netRevenue: responseBody.netRevenue,
+      ttl: responseBody.ttl,
+      meta: {
+        mediaType: responseBody.meta.mediaType,
+        rendererUrl: responseBody.meta.rendererUrl,
+        advertiserDomains: responseBody.meta.advertiserDomains,
+        advertiserId: responseBody.meta.advertiserId,
+        advertiserName: responseBody.meta.advertiserName,
+        agencyId: responseBody.meta.agencyId,
+        agencyName: responseBody.meta.agencyName,
+        brandId: responseBody.meta.brandId,
+        brandName: responseBody.meta.brandName,
+        dchain: responseBody.meta.dchain,
+        networkId: responseBody.meta.networkId,
+        networkName: responseBody.meta.networkName,
+        primaryCatId: responseBody.meta.primaryCatId,
+        secondaryCatIds: responseBody.meta.secondaryCatIds
+      }
+    };
 
-    return [responseBody];
+    const bids = [bid];
+
+    return bids;
   } catch (e) {
+    utils.logError(BIDDER_CODE + ': error parsing server response to Prebid format');
     return [];
   }
 };
