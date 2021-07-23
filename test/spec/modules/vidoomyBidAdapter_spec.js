@@ -176,7 +176,7 @@ describe('vidoomyBidAdapter', function() {
       }
     }
 
-    it('should get the correct bid response for outstream video, with renderer, an url in ad, and a new requestId equal to dealId', function () {
+    it('should get the correct bid response for outstream video, with renderer, an url in ad, and same requestId', function () {
       const bidRequest = {
         data: {
           videoContext: 'outstream'
@@ -187,14 +187,14 @@ describe('vidoomyBidAdapter', function() {
 
       expect(result[0].renderer).to.not.be.undefined;
       expect(result[0].ad).to.equal(serverResponseVideo.body.vastUrl);
-      expect(result[0].requestId).to.equal(serverResponseVideo.body.dealId);
+      expect(result[0].requestId).to.equal(serverResponseVideo.body.requestId);
     });
 
-    it('should get the correct bid response for banner with a new requestId equal to dealId', function () {
+    it('should get the correct bid response for banner with same requestId', function () {
       const bidRequest = {};
       let result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
-      expect(result[0].requestId).to.equal(serverResponseBanner.body.dealId);
+      expect(result[0].requestId).to.equal(serverResponseBanner.body.requestId);
     });
   });
 });
