@@ -47,7 +47,7 @@ export const spec = {
     const sizes = getSize(getSizeArray(bid));
     const sizeValid = sizes.width > 0 && sizes.height > 0;
 
-    // allows no size fornative only
+    // allows no size for native only
     return (bid.params && bid.params.placement &&
             (sizeValid || (bid.mediaTypes && bid.mediaTypes.native)));
   },
@@ -242,8 +242,17 @@ function createEndpointQS(bidderRequest) {
 
 function getSizeArray(bid) {
   let inputSize = bid.sizes || [];
+
   if (bid.mediaTypes && bid.mediaTypes.banner) {
     inputSize = bid.mediaTypes.banner.sizes || [];
+  }
+
+  // handle size in bid.params in formats: [w, h] and [[w,h]].
+  if (bid.params && Array.isArray(bid.params.size)) {
+    inputSize = bid.params.size;
+    if (!Array.isArray(inputSize[0])) {
+      inputSize = [inputSize]
+    }
   }
 
   return utils.parseSizesInput(inputSize);
