@@ -27,7 +27,7 @@ Contentexchange bid adapter supports Banner, Video (instream and outstream) and 
                         {
                             bidder: 'contentexchange',
                             params: {
-                                placementId: 'test',
+                                placementId: '0',
                                 adFormat: 'banner'
                             }
                         }
@@ -47,7 +47,7 @@ Contentexchange bid adapter supports Banner, Video (instream and outstream) and 
                         {
                             bidder: 'contentexchange',
                             params: {
-                                placementId: 'test',
+                                placementId: '0',
                                 adFormat: 'video'
                             }
                         }
@@ -73,7 +73,7 @@ Contentexchange bid adapter supports Banner, Video (instream and outstream) and 
                         {
                             bidder: 'contentexchange',
                             params: {
-                                placementId: 'test',
+                                placementId: '0',
                                 adFormat: 'native'
                             }
                         }

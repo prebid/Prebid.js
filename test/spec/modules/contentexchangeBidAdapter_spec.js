@@ -106,7 +106,7 @@ describe('ContentexchangeBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://endpoint.contentexchange.com/pbjs');
+      expect(serverRequest.url).to.equal('https://eu2.adnetwork.agency/pbjs');
     });
 
     it('Returns general data valid', function () {
@@ -384,7 +384,7 @@ describe('ContentexchangeBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cookie-sync.contentexchange.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0].url).to.equal('https://sync2.adnetwork.agency/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
       const syncData = spec.getUserSyncs({}, {}, {}, {
@@ -395,7 +395,7 @@ describe('ContentexchangeBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cookie-sync.contentexchange.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
+      expect(syncData[0].url).to.equal('https://sync2.adnetwork.agency/image?pbjs=1&ccpa_consent=1---&coppa=0')
     });
   });
 });

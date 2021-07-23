@@ -4,12 +4,12 @@ import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'contentexchange';
-const AD_URL = 'https://endpoint.contentexchange.com/pbjs';
-const SYNC_URL = 'https://cookie-sync.contentexchange.com';
+const AD_URL = 'https://eu2.adnetwork.agency/pbjs';
+const SYNC_URL = 'https://sync2.adnetwork.agency';
 
 function isBidResponseValid (bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency || !bid.meta) {
+    !bid.ttl || !bid.currency) {
     return false;
   }
 
