@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
 
 const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
@@ -102,6 +103,22 @@ describe('yieldoneBidAdapter', function() {
     it('adUnitCode should be sent as uc parameters on any requests', function () {
       expect(request[0].data.uc).to.equal('adunit-code1');
       expect(request[1].data.uc).to.equal('adunit-code2');
+    });
+
+    describe('userid idl_env should be passed to querystring', function () {
+      const bid = deepClone([bidRequests[0]]);
+
+      it('dont send LiveRampID if undefined', function () {
+        bid[0].userId = {};
+        const request = spec.buildRequests(bid, bidderRequest);
+        expect(request[0].data).to.not.have.property('lr_env');
+      });
+
+      it('should send LiveRampID if available', function () {
+        bid[0].userId = {idl_env: 'idl_env_sample'};
+        const request = spec.buildRequests(bid, bidderRequest);
+        expect(request[0].data.lr_env).to.equal('idl_env_sample');
+      });
     });
   });
 

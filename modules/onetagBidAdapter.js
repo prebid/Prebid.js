@@ -109,7 +109,10 @@ function interpretResponse(serverResponse, bidderRequest) {
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
-      const {context, adUnitCode} = find(requestData.bids, (item) => item.bidId === bid.requestId);
+      const {context, adUnitCode} = find(requestData.bids, (item) =>
+        item.bidId === bid.requestId &&
+        item.type === VIDEO
+      );
       if (context === INSTREAM) {
         responseBid.vastUrl = bid.vastUrl;
         responseBid.videoCacheKey = bid.videoCacheKey;
