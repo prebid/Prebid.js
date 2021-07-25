@@ -274,6 +274,19 @@ export function logError() {
   events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
 }
 
+let getTimestamp;
+if (window.performance && window.performance.now) {
+  getTimestamp = function getTimestamp() {
+    // truncate any partial millisecond
+    return window.performance.now() | 0;
+  }
+} else {
+  const initTime = +new Date();
+  getTimestamp = function getTimestamp() {
+    return new Date() - initTime;
+  }
+}
+
 function decorateLog(args, prefix) {
   args = [].slice.call(args);
   let bidder = config.getCurrentBidder();
@@ -282,6 +295,7 @@ function decorateLog(args, prefix) {
   if (bidder) {
     args.unshift(label('#aaa'));
   }
+  args.unshift(getTimestamp());
   args.unshift(label('#3b88c3'));
   args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
   return args;
