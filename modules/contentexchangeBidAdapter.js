@@ -9,7 +9,7 @@ const SYNC_URL = 'https://sync2.adnetwork.agency';
 
 function isBidResponseValid (bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency) {
+    !bid.ttl || !bid.currency || !bid.meta) {
     return false;
   }
 
