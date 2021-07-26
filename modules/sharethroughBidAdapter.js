@@ -58,7 +58,6 @@ export const sharethroughAdapterSpec = {
       },
       source: {
         ext: {
-          id: SUPPLY_ID,
           version: '$prebid.version$',
           str: VERSION,
           schain: bidRequests[0].schain,

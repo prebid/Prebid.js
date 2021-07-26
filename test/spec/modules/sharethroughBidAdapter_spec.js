@@ -208,7 +208,6 @@ describe('sharethrough adapter spec', function() {
           expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
           expect(openRtbReq.regs.coppa).to.equal(1);
 
-          expect(openRtbReq.source.ext.id).to.equal('WYu2BXv1');
           expect(openRtbReq.source.ext.version).not.to.be.undefined;
           expect(openRtbReq.source.ext.str).not.to.be.undefined;
           expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].schain);
