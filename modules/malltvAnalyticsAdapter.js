@@ -7,12 +7,11 @@ import {logInfo, logError, deepClone} from '../src/utils.js'
 
 const analyticsType = 'endpoint'
 export const ANALYTICS_VERSION = '1.0.0'
-export const DEFAULT_SERVER = 'http://localhost:51524/analytics'
+export const DEFAULT_SERVER = 'https://central.mall.tv/analytics'
 
 const {
   EVENTS: {
     AUCTION_END,
-    AD_RENDER_FAILED,
     BID_TIMEOUT
   }
 } = CONSTANTS
@@ -67,9 +66,6 @@ export const malltvAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
   },
   track({eventType, args}) {
     switch (eventType) {
-      case AD_RENDER_FAILED:
-        this.handleAdRenderFailed(args)
-        break
       case BID_TIMEOUT:
         this.handleBidTimeout(args)
         break
@@ -77,9 +73,6 @@ export const malltvAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
         this.handleAuctionEnd(args)
         break
     }
-  },
-  handleAdRenderFailed(args) {
-    this.sendEventMessage('err', args)
   },
   handleBidTimeout(timeoutBids) {
     timeoutBids.forEach((bid) => {
@@ -156,6 +149,7 @@ export const malltvAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
         originalCpm: bid.originalCpm || bid.cpm,
         cpmEur: getCpmInEur(bid),
         originalCurrency: bid.originalCurrency || bid.currency,
+        vastUrl: bid.vastUrl
       })
     }
     return result
