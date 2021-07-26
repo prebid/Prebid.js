@@ -144,7 +144,8 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           currency: 'EUR',
           originalCpm: 0.1,
           originalCurrency: 'EUR',
-          ad: '<html>fake ad1</html>'
+          ad: '<html>fake ad1</html>',
+          vastUrl: null
         },
         {
           auctionId: auctionId,
@@ -157,7 +158,8 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           currency: 'EUR',
           originalCpm: 0.08,
           originalCurrency: 'EUR',
-          ad: '<html>fake ad2</html>'
+          ad: '<html>fake ad2</html>',
+          vastUrl: null
         },
         {
           auctionId: auctionId,
@@ -170,7 +172,8 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           currency: 'EUR',
           originalCpm: 0.09,
           originalCurrency: 'EUR',
-          ad: '<html>fake ad3</html>'
+          ad: '<html>fake ad3</html>',
+          vastUrl: null
         },
       ]
       const highestCpmBids = [
@@ -185,7 +188,8 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           currency: 'EUR',
           originalCpm: 0.1,
           originalCurrency: 'EUR',
-          ad: '<html>fake ad1</html>'
+          ad: '<html>fake ad1</html>',
+          vastUrl: null
         }
       ]
       const noBids = [
@@ -388,6 +392,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
                   originalCpm: 0.1,
                   originalCurrency: 'EUR',
                   cpmEur: 0.1,
+                  vastUrl: null
                 },
                 'gjirafa': {
                   prebidWon: false,
@@ -399,6 +404,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
                   originalCpm: 0.08,
                   originalCurrency: 'EUR',
                   cpmEur: 0.08,
+                  vastUrl: null
                 }
               },
               'adunit_2': {
@@ -413,6 +419,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
                   originalCurrency: 'EUR',
                   cpmEur: 0.09,
                   status: BIDDER_STATUS.BID,
+                  vastUrl: null
                 },
                 'gjirafa': {
                   prebidWon: false,
@@ -482,13 +489,6 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
       events.emit(constants.EVENTS.AUCTION_END, {})
       sinon.assert.callCount(malltvAnalyticsAdapter.handleAuctionEnd, 1)
       malltvAnalyticsAdapter.handleAuctionEnd.restore()
-    })
-
-    it('should call handleAdRenderFailed as AD_RENDER_FAILED trigger event', function() {
-      sinon.spy(malltvAnalyticsAdapter, 'handleAdRenderFailed')
-      events.emit(constants.EVENTS.AD_RENDER_FAILED)
-      sinon.assert.callCount(malltvAnalyticsAdapter.handleAdRenderFailed, 1)
-      malltvAnalyticsAdapter.handleAdRenderFailed.restore()
     })
   })
 
