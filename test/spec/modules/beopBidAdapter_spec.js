@@ -93,7 +93,54 @@ describe('BeOp Bid Adapter tests', () => {
 
     it('should call the endpoint with GDPR consent and pageURL info if found', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      const request = spec.buildRequests(bidRequests, {});
+      let bidderRequest =
+      {
+        'gdprConsent':
+        {
+          'gdprApplies': true,
+          'consentString': consentString
+        },
+        'refererInfo':
+        {
+          'canonicalUrl': 'http://test.te'
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.tc_string).to.exist;
+      expect(payload.tc_string).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ+A==');
+      expect(payload.url).to.exist;
+      expect(payload.url).to.equal('http://test.te');
+    });
+  });
+
+  describe('interpretResponse', function() {
+    let serverResponse = {
+      'body': {
+        'bids': [
+          {
+            'requestId': 'aaaa',
+            'cpm': 1.0,
+            'currency': 'EUR',
+            'creativeId': '60f691be1515670a2a09aea2',
+            'netRevenue': true,
+            'width': 1,
+            'height': 1,
+            'ad': '<div class="BeOpWidget" data-content-id="60f691be1515670a2a09aea2" data-campaign-id="60f691bf1515670a2a09aea6" data-display-account-id="60f691be1515670a2a09aea1"></div>',
+            'meta': {
+              'advertiserId': '60f691be1515670a2a09aea1'
+            }
+          }
+        ]
+      }
+    }
+    it('should interpret the response by pushing it in the bids elem', function () {
+      const response = spec.interpretResponse(serverResponse, validBid);
+
+      expect(response[0].ad).to.exist;
+      expect(response[0].requestId).to.exist;
+      expect(response[0].requestId).to.equal('aaaa');
     });
   });
 
