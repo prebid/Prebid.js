@@ -120,7 +120,7 @@ function generateSizeParam(sizes) {
   return sizes.map(size => size.join(DIMENSION_SEPARATOR)).join(SIZE_SEPARATOR);
 }
 
-function getBidFloor(bid) {
+export function getBidFloor(bid) {
   if (!utils.isFn(bid.getFloor)) {
     return null;
   }

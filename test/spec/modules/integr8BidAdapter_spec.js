@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/integr8BidAdapter';
+import { spec, getBidFloor } from 'modules/integr8BidAdapter';
 
 describe('integr8AdapterTest', () => {
   describe('bidRequestValidity', () => {
@@ -181,5 +181,46 @@ describe('integr8AdapterTest', () => {
       expect(result[0].ad).to.equal('<div>Test ad</div>');
       expect(result[0].meta.advertiserDomains).to.deep.equal(['somedomain.com']);
     })
+  });
+
+  describe('floor pricing', () => {
+    it('should return null when getFloor is not a function', () => {
+      const bid = { getFloor: 2 };
+      const result = getBidFloor(bid);
+      expect(result).to.be.null;
+    });
+
+    it('should return null when getFloor doesnt return an object', () => {
+      const bid = { getFloor: () => 2 };
+      const result = getBidFloor(bid);
+      expect(result).to.be.null;
+    });
+
+    it('should return null when floor is not a number', () => {
+      const bid = {
+        getFloor: () => ({ floor: 'string', currency: 'EUR' })
+      };
+
+      const result = getBidFloor(bid);
+      expect(result).to.be.null;
+    });
+
+    it('should return null when currency is not EUR', () => {
+      const bid = {
+        getFloor: () => ({ floor: 5, currency: 'USD' })
+      };
+
+      const result = getBidFloor(bid);
+      expect(result).to.be.null;
+    });
+
+    it('should return floor value when everything is correct', () => {
+      const bid = {
+        getFloor: () => ({ floor: 5, currency: 'EUR' })
+      };
+
+      const result = getBidFloor(bid);
+      expect(result).to.equal(5);
+    });
   });
 });
