@@ -310,7 +310,7 @@ describe('BizzclickAdapter', function() {
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'meta', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
       expect(dataItem.ad).to.equal(expectedBidResponse.ad);
@@ -349,7 +349,7 @@ describe('BizzclickAdapter', function() {
       expect(videoResponses).to.be.an('array').that.is.not.empty;
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'meta', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
       expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml)
