@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { getAdUnitSizes, parseSizesInput , deepAccess } from '../src/utils.js';
+import { getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'between';
