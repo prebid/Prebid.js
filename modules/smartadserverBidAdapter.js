@@ -68,10 +68,10 @@ export const spec = {
     payload.isVideo = videoMediaType.context === 'instream';
     payload.mediaType = VIDEO;
     payload.videoData = {
-      videoProtocol: videoParams.protocol,
+      videoProtocol: videoParams !== undefined ? videoParams.protocol : null,
       playerWidth: playerSize[0],
       playerHeight: playerSize[1],
-      adBreak: videoParams.startDelay || 1
+      adBreak: videoParams !== undefined ? videoParams.startDelay : 1
     };
   },
 
