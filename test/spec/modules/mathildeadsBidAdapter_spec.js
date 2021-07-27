@@ -16,8 +16,7 @@ describe('MathildeAdsBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'test',
-        adFormat: BANNER
+        placementId: 'testBanner',
       }
     },
     {
@@ -31,8 +30,7 @@ describe('MathildeAdsBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'test',
-        adFormat: VIDEO
+        placementId: 'testVideo',
       }
     },
     {
@@ -55,8 +53,7 @@ describe('MathildeAdsBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'test',
-        adFormat: NATIVE
+        placementId: 'testNative',
       }
     }
   ];
@@ -69,9 +66,7 @@ describe('MathildeAdsBidAdapter', function () {
         sizes: [[300, 250]]
       }
     },
-    params: {
-      adFormat: BANNER
-    }
+    params: {}
   }
 
   const bidderRequest = {
@@ -141,7 +136,7 @@ describe('MathildeAdsBidAdapter', function () {
       const { placements } = serverRequest.data;
       for (let i = 0, len = placements.length; i < len; i++) {
         const placement = placements[i];
-        expect(placement.placementId).to.be.equal('test');
+        expect(placement.placementId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
         expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE]);
         expect(placement.bidId).to.be.a('string');
         expect(placement.schain).to.be.an('object');

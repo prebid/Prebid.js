@@ -28,41 +28,43 @@ function isBidResponseValid (bid) {
 function getPlacementReqData (bid) {
   const { params, bidId, mediaTypes } = bid;
   const schain = bid.schain || {};
-  const { placementId, adFormat } = params;
+  const { placementId } = params;
   const bidfloor = getBidFloor(bid);
 
   const placement = {
     placementId,
     bidId,
-    adFormat,
     schain,
     bidfloor
   };
 
-  switch (adFormat) {
-    case BANNER:
-      placement.sizes = mediaTypes[BANNER].sizes;
-      break;
-    case VIDEO:
-      placement.playerSize = mediaTypes[VIDEO].playerSize;
-      placement.minduration = mediaTypes[VIDEO].minduration;
-      placement.maxduration = mediaTypes[VIDEO].maxduration;
-      placement.mimes = mediaTypes[VIDEO].mimes;
-      placement.protocols = mediaTypes[VIDEO].protocols;
-      placement.startdelay = mediaTypes[VIDEO].startdelay;
-      placement.placement = mediaTypes[VIDEO].placement;
-      placement.skip = mediaTypes[VIDEO].skip;
-      placement.skipafter = mediaTypes[VIDEO].skipafter;
-      placement.minbitrate = mediaTypes[VIDEO].minbitrate;
-      placement.maxbitrate = mediaTypes[VIDEO].maxbitrate;
-      placement.delivery = mediaTypes[VIDEO].delivery;
-      placement.playbackmethod = mediaTypes[VIDEO].playbackmethod;
-      placement.api = mediaTypes[VIDEO].api;
-      placement.linearity = mediaTypes[VIDEO].linearity;
-      break;
-    case NATIVE:
-      placement.native = mediaTypes[NATIVE];
-      break;
+  if (mediaTypes[BANNER]) {
+    placement.adFormat = BANNER;
+    placement.sizes = mediaTypes[BANNER].sizes;
+  }
+
+  if (mediaTypes[VIDEO]) {
+    placement.adFormat = VIDEO;
+    placement.playerSize = mediaTypes[VIDEO].playerSize;
+    placement.minduration = mediaTypes[VIDEO].minduration;
+    placement.maxduration = mediaTypes[VIDEO].maxduration;
+    placement.mimes = mediaTypes[VIDEO].mimes;
+    placement.protocols = mediaTypes[VIDEO].protocols;
+    placement.startdelay = mediaTypes[VIDEO].startdelay;
+    placement.placement = mediaTypes[VIDEO].placement;
+    placement.skip = mediaTypes[VIDEO].skip;
+    placement.skipafter = mediaTypes[VIDEO].skipafter;
+    placement.minbitrate = mediaTypes[VIDEO].minbitrate;
+    placement.maxbitrate = mediaTypes[VIDEO].maxbitrate;
+    placement.delivery = mediaTypes[VIDEO].delivery;
+    placement.playbackmethod = mediaTypes[VIDEO].playbackmethod;
+    placement.api = mediaTypes[VIDEO].api;
+    placement.linearity = mediaTypes[VIDEO].linearity;
+  }
+
+  if (mediaTypes[NATIVE]) {
+    placement.adFormat = NATIVE;
+    placement.native = mediaTypes[NATIVE];
   }
 
   return placement;
@@ -91,24 +93,20 @@ export const spec = {
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
-    let valid = Boolean(bidId &&
-      params &&
-      params.placementId &&
-      params.adFormat
-    );
-    switch (params.adFormat) {
-      case BANNER:
-        valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
-        break;
-      case VIDEO:
-        valid = valid && Boolean(mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize);
-        break;
-      case NATIVE:
-        valid = valid && Boolean(mediaTypes[NATIVE]);
-        break;
-      default:
-        valid = false;
+    let valid = Boolean(bidId && params && params.placementId);
+
+    if (mediaTypes[BANNER]) {
+      valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
     }
+
+    if (mediaTypes[VIDEO]) {
+      valid = valid && Boolean(mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize);
+    }
+
+    if (mediaTypes[NATIVE]) {
+      valid = valid && Boolean(mediaTypes[NATIVE]);
+    }
+
     return valid;
   },
 

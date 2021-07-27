@@ -27,8 +27,7 @@ MathildeAds bid adapter supports Banner, Video (instream and outstream) and Nati
                         {
                             bidder: 'mathildeads',
                             params: {
-                                placementId: '0',
-                                adFormat: 'banner'
+                                placementId: 'testBanner',
                             }
                         }
                     ]
@@ -47,8 +46,7 @@ MathildeAds bid adapter supports Banner, Video (instream and outstream) and Nati
                         {
                             bidder: 'mathildeads',
                             params: {
-                                placementId: '0',
-                                adFormat: 'video'
+                                placementId: 'testVideo',
                             }
                         }
                     ]
@@ -73,8 +71,7 @@ MathildeAds bid adapter supports Banner, Video (instream and outstream) and Nati
                         {
                             bidder: 'mathildeads',
                             params: {
-                                placementId: '0',
-                                adFormat: 'native'
+                                placementId: 'testNative',
                             }
                         }
                     ]

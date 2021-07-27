@@ -18,17 +18,27 @@
         var adUnits = [{
             code: 'div-gpt-ad-1460505748561-0',
             mediaTypes: {
-                banner: {
-                    sizes: [[300, 250], [300,600]],
-                }
-            },
-            // Replace this object to test a new Adapter!
-            bids: [{
-                bidder: 'appnexus',
-                params: {
-                    placementId: 13144370
-                }
-            }]
+                        native: {
+                            title: {
+                                required: true
+                            },
+                            body: {
+                                required: true
+                            },
+                            icon: {
+                                required: true,
+                                size: [64, 64]
+                            }
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: 'mathildeads',
+                            params: {
+                                placementId: 'testNative',
+                            }
+                        }
+                    ]
 
         }];
 
