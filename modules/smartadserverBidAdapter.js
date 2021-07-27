@@ -68,11 +68,28 @@ export const spec = {
     payload.isVideo = videoMediaType.context === 'instream';
     payload.mediaType = VIDEO;
     payload.videoData = {
-      videoProtocol: videoParams !== undefined ? videoParams.protocol : null,
+      videoProtocol: this.getProtocolForVideoBidRequest(videoMediaType, videoParams),
       playerWidth: playerSize[0],
       playerHeight: playerSize[1],
       adBreak: this.getStartDelayForVideoBidRequest(videoMediaType, videoParams)
     };
+  },
+
+  /**
+   * Gets the protocols from either videoParams or VideoMediaType
+   * @param {*} videoMediaType
+   * @param {*} videoParams
+   * @returns protocol from either videoMediaType or videoParams
+   */
+  getProtocolForVideoBidRequest: function(videoMediaType, videoParams) {
+    if (videoParams !== undefined && videoParams.protocol) {
+      return videoParams.protocol;
+    } else if (videoMediaType !== undefined) {
+      if (Array.isArray(videoMediaType.protocols)) {
+        return Math.max.apply(Math, videoMediaType.protocols);
+      }
+    }
+    return null;
   },
 
   /**
@@ -84,8 +101,7 @@ export const spec = {
   getStartDelayForVideoBidRequest: function(videoMediaType, videoParams) {
     if (videoParams !== undefined && videoParams.startDelay) {
       return videoParams.startDelay;
-    }
-    else if (videoMediaType !== undefined) {
+    } else if (videoMediaType !== undefined) {
       if (videoMediaType.startdelay == 0) {
         return 1;
       } else if (videoMediaType.startdelay == -1) {
