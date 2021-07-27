@@ -71,8 +71,34 @@ export const spec = {
       videoProtocol: videoParams !== undefined ? videoParams.protocol : null,
       playerWidth: playerSize[0],
       playerHeight: playerSize[1],
-      adBreak: videoParams !== undefined ? videoParams.startDelay : 1
+      adBreak: this.getStartDelayForVideoBidRequest(videoMediaType, videoParams)
     };
+  },
+
+  /**
+   * Gets the startDelay from either videoParams or VideoMediaType
+   * @param {*} videoMediaType
+   * @param {*} videoParams
+   * @returns positive integer value of startdelay
+   */
+  getStartDelayForVideoBidRequest: function(videoMediaType, videoParams)
+  {
+    // Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
+    var startDelay = 2;
+    if (videoParams !== undefined && videoParams.startDelay) {
+      startDelay = videoParams.startDelay
+    }
+    else if (videoMediaType !== undefined)
+    {
+      if (videoMediaType.startdelay == 0) {
+        startDelay = 1;
+      } else if (videoMediaType.startdelay == -1) {
+        startDelay = 2;
+      } else if (videoMediaType.startdelay == -2) {
+        startDelay = 3;
+      }
+    }
+    return startdelay;
   },
 
   /**
