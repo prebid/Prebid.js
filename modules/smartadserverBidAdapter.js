@@ -81,24 +81,20 @@ export const spec = {
    * @param {*} videoParams
    * @returns positive integer value of startdelay
    */
-  getStartDelayForVideoBidRequest: function(videoMediaType, videoParams)
-  {
-    // Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
-    var startDelay = 2;
+  getStartDelayForVideoBidRequest: function(videoMediaType, videoParams) {
     if (videoParams !== undefined && videoParams.startDelay) {
-      startDelay = videoParams.startDelay
+      return videoParams.startDelay;
     }
-    else if (videoMediaType !== undefined)
-    {
+    else if (videoMediaType !== undefined) {
       if (videoMediaType.startdelay == 0) {
-        startDelay = 1;
+        return 1;
       } else if (videoMediaType.startdelay == -1) {
-        startDelay = 2;
+        return 2;
       } else if (videoMediaType.startdelay == -2) {
-        startDelay = 3;
+        return 3;
       }
     }
-    return startdelay;
+    return 2;// Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
   },
 
   /**
