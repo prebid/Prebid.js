@@ -1036,10 +1036,10 @@ describe('Smart bid adapter tests', function () {
       expect(requests).to.have.lengthOf(2);
 
       const requestContents = requests.map(r => JSON.parse(r.data));
-      const videoRequest = requestContents.find(r => r.videoData);
+      const videoRequest = requestContents.filter(r => r.videoData)[0];
       expect(videoRequest).to.not.equal(null).and.to.not.be.undefined;
 
-      const bannerRequest = requestContents.find(r => !r.videoData);
+      const bannerRequest = requestContents.filter(r => !r.videoData)[0];
       expect(bannerRequest).to.not.equal(null).and.to.not.be.undefined;
 
       expect(videoRequest).to.not.equal(bannerRequest);
