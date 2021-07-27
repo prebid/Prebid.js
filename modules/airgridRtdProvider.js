@@ -36,8 +36,7 @@ export function attachScriptTagToDOM(rtdConfig) {
       n.type = 'text/javascript';
       n.async = true;
       n.src = 'https://cdn.edkt.io/' + p + '/edgekit.min.js';
-      var a = document.getElementsByTagName('head')[0];
-      a.parentNode.insertBefore(n, a.nextSibling);
+      document.getElementsByTagName('head')[0].appendChild(n);
     };
     edktInitializor.load(edktInitializor.accountId);
   }
