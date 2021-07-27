@@ -167,6 +167,9 @@ let submodules = [];
 /** @type {SubmoduleContainer[]} */
 let initializedSubmodules;
 
+/** @type {boolean} */
+let initializedSubmodulesUpdated = false;
+
 /** @type {SubmoduleConfig[]} */
 let configRegistry = [];
 
@@ -494,8 +497,16 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
 function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
   let delayed = false;
 
+  // initializedSubmodulesUpdated - flag to identify if any module has been added from the page post module initialization. This is specifically for OW use case
+  if (initializedSubmodulesUpdated && initializedSubmodules !== undefined) {
+      for (var index in initializedSubmodules) {
+       submodules.push(initializedSubmodules[index]);
+      }
+  }
+
   // initialize submodules only when undefined
-  if (typeof initializedSubmodules === 'undefined') {
+  if (typeof initializedSubmodules === 'undefined' || initializedSubmodulesUpdated) {
+    initializedSubmodulesUpdated = false;
     initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
     if (initializedSubmodules.length) {
       setPrebidServerEidPermissions(initializedSubmodules);
@@ -584,7 +595,11 @@ function getUserIdsAsEids() {
 * This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
 * @param {RefreshUserIdsOptions} options
 */
-function refreshUserIds(options, callback) {
+function refreshUserIds(options, callback, moduleUpdated) {
+  if (moduleUpdated !== undefined) {
+    initializedSubmodulesUpdated = moduleUpdated;
+  }
+  
   let submoduleNames = options ? options.submoduleNames : null;
   if (!submoduleNames) {
     submoduleNames = [];
