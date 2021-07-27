@@ -79,7 +79,11 @@ export const spec = {
         netRevenue: netRevenue,
         ttl: config.getConfig('_bidderTimeout'),
         referrer: referrer,
-        ad: response.ad
+        ad: response.ad,
+        mediaType: response.mediaType,
+        meta: {
+          advertiserDomains: response.advertiserDomain || []
+        }
       };
       bidResponses.push(bidResponse);
     }

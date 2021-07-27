@@ -25,18 +25,15 @@ describe('Adot Adapter', function () {
       bidder: 'adot',
       bidderRequestId: 'bid_request_id',
       bidId: 'bid_id',
-      params: {
+      params: {},
+      mediaTypes: {
         video: {
+          context: 'outstream',
+          playerSize: [[300, 250]],
           mimes: ['video/mp4'],
           minDuration: 5,
           maxDuration: 30,
           protocols: [2, 3]
-        }
-      },
-      mediaTypes: {
-        video: {
-          context: 'outstream',
-          playerSize: [[300, 250]]
         }
       }
     },
@@ -48,17 +45,17 @@ describe('Adot Adapter', function () {
       bidId: 'bid_id',
       params: {
         video: {
-          instreamContext: 'pre-roll',
-          mimes: ['video/mp4'],
-          minDuration: 5,
-          maxDuration: 30,
-          protocols: [2, 3]
+          instreamContext: 'pre-roll'
         }
       },
       mediaTypes: {
         video: {
           context: 'instream',
-          playerSize: [[300, 250]]
+          playerSize: [[300, 250]],
+          mimes: ['video/mp4'],
+          minDuration: 5,
+          maxDuration: 30,
+          protocols: [2, 3]
         }
       }
     },
@@ -557,6 +554,7 @@ describe('Adot Adapter', function () {
                 price: 1.5,
                 h: 350,
                 w: 300,
+                adomain: ['adot'],
                 ext: {
                   adot: {
                     media_type: 'banner'
@@ -568,6 +566,7 @@ describe('Adot Adapter', function () {
                 crid: 'creative_id_2',
                 adm: 'creative_data_2_${AUCTION_PRICE}',
                 nurl: 'win_notice_url_2_${AUCTION_PRICE}',
+                adomain: ['adot'],
                 price: 2.5,
                 h: 400,
                 w: 350,
@@ -913,14 +912,14 @@ describe('Adot Adapter', function () {
 
       it('should return true when given an ad unit without minimum duration parameter', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.minDuration = undefined;
+        adUnit.mediaTypes.video.minDuration = undefined;
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(true);
       });
 
       it('should return true when given an ad unit without maximum duration parameter', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.maxDuration = undefined;
+        adUnit.mediaTypes.video.maxDuration = undefined;
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(true);
       });
@@ -941,84 +940,84 @@ describe('Adot Adapter', function () {
 
       it('should return false when given an ad unit without video parameters', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video = undefined;
+        adUnit.mediaTypes.video = undefined;
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit with invalid video parameters', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video = 'bad_bidder_parameters';
+        adUnit.mediaTypes.video = 'bad_bidder_parameters';
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit without mime types parameter', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.mimes = undefined;
+        adUnit.mediaTypes.video.mimes = undefined;
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit with an invalid mime types parameter', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.mimes = 'bad_mime_types';
+        adUnit.mediaTypes.video.mimes = 'bad_mime_types';
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit with an empty mime types parameter', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.mimes = [];
+        adUnit.mediaTypes.video.mimes = [];
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit with an invalid mime types parameter value', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.mimes = [200];
+        adUnit.mediaTypes.video.mimes = [200];
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit with an invalid minimum duration parameter', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.minDuration = 'bad_min_duration';
+        adUnit.mediaTypes.video.minDuration = 'bad_min_duration';
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit with an invalid maximum duration parameter', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.maxDuration = 'bad_max_duration';
+        adUnit.mediaTypes.video.maxDuration = 'bad_max_duration';
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit without protocols parameter', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.protocols = undefined;
+        adUnit.mediaTypes.video.protocols = undefined;
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit with an invalid protocols parameter', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.protocols = 'bad_protocols';
+        adUnit.mediaTypes.video.protocols = 'bad_protocols';
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit with an empty protocols parameter', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.protocols = [];
+        adUnit.mediaTypes.video.protocols = [];
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit with an invalid protocols parameter value', function () {
         const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-        adUnit.params.video.protocols = ['bad_protocols_value'];
+        adUnit.mediaTypes.video.protocols = ['bad_protocols_value'];
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
@@ -1452,13 +1451,13 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.minDuration);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
         });
 
         it('should return a server request with one impression when given a valid pre-roll instream ad unit', function () {
@@ -1476,13 +1475,13 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.exist.and.to.be.a('number').and.to.equal(0);
           expect(serverRequests[0].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.minDuration);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
         });
 
         it('should return a server request with one impression when given a valid mid-roll instream ad unit', function () {
@@ -1500,13 +1499,13 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.exist.and.to.be.a('number').and.to.equal(-1);
           expect(serverRequests[0].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.minDuration);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
         });
 
         it('should return a server request with one impression when given a valid post-roll instream ad unit', function () {
@@ -1524,13 +1523,13 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.exist.and.to.be.a('number').and.to.equal(-2);
           expect(serverRequests[0].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.minDuration);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
         });
 
         it('should return a server request with one impression when given a valid ad unit without player size', function () {
@@ -1548,13 +1547,13 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.w).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.h).to.equal(null);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.minDuration);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
         });
 
         it('should return a server request with one impression when given a valid ad unit with an empty player size', function () {
@@ -1572,13 +1571,13 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.w).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.h).to.equal(null);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.minDuration);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
         });
 
         it('should return a server request with one impression when given a valid ad unit with multiple player sizes', function () {
@@ -1596,18 +1595,18 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.minDuration);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
         });
 
         it('should return a server request with one impression when given a valid ad unit without minimum duration', function () {
           const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-          adUnit.params.video.minDuration = undefined;
+          adUnit.mediaTypes.video.minDuration = undefined;
 
           const adUnits = [adUnit];
 
@@ -1620,18 +1619,18 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][1]);
           expect(serverRequests[0].data.imp[0].video.minduration).to.equal(null);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
         });
 
         it('should return a server request with one impression when given a valid ad unit without maximum duration', function () {
           const adUnit = utils.deepClone(examples.adUnit_video_outstream);
-          adUnit.params.video.maxDuration = undefined;
+          adUnit.mediaTypes.video.maxDuration = undefined;
 
           const adUnits = [adUnit];
 
@@ -1644,13 +1643,13 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.minDuration);
           expect(serverRequests[0].data.imp[0].video.maxduration).to.equal(null);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
         });
 
         it('should return a server request with two impressions when given two valid ad units with different impression identifiers', function () {
@@ -1671,31 +1670,31 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.minDuration);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
           expect(serverRequests[0].data.imp[1]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[1].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[1].bidId}_0`);
           expect(serverRequests[0].data.imp[1].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[1].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[1].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[1].video.startdelay).to.equal(null);
           expect(serverRequests[0].data.imp[1].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[1].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[0].data.imp[1].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].params.video.minDuration);
-          expect(serverRequests[0].data.imp[1].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[1].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[1].params.video.protocols);
+          expect(serverRequests[0].data.imp[1].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[1].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[1].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[1].mediaTypes.video.protocols);
         });
 
         it('should return a server request with one overridden impression when given two valid ad units with identical identifiers', function () {
           const adUnit_1 = utils.deepClone(examples.adUnit_video_outstream);
-          adUnit_1.params.video.minDuration = 10;
+          adUnit_1.mediaTypes.video.minDuration = 10;
 
           const adUnit_2 = utils.deepClone(examples.adUnit_video_outstream);
-          adUnit_2.params.video.minDuration = 15;
+          adUnit_2.mediaTypes.video.minDuration = 15;
 
           const adUnits = [adUnit_1, adUnit_2];
 
@@ -1708,13 +1707,13 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[1].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].params.video.minDuration);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[1].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[1].mediaTypes.video.protocols);
         });
 
         it('should return two server requests with one impression when given two valid ad units with different bid request identifiers', function () {
@@ -1735,25 +1734,25 @@ describe('Adot Adapter', function () {
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0`);
           expect(serverRequests[0].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[0].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[0].data.imp[0].video.startdelay).to.equal(null);
           expect(serverRequests[0].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[0].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.minDuration);
-          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].params.video.maxDuration);
-          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.protocols);
+          expect(serverRequests[0].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.minDuration);
+          expect(serverRequests[0].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.video.maxDuration);
+          expect(serverRequests[0].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.protocols);
           expect(serverRequests[1].data).to.exist.and.to.be.an('object');
           expect(serverRequests[1].data.imp).to.exist.and.to.be.an('array').and.to.have.lengthOf(1);
           expect(serverRequests[1].data.imp[0]).to.exist.and.to.be.an('object');
           expect(serverRequests[1].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[1].bidId}_0`);
           expect(serverRequests[1].data.imp[0].video).to.exist.and.to.be.an('object');
-          expect(serverRequests[1].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].params.video.mimes);
+          expect(serverRequests[1].data.imp[0].video.mimes).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[0].mediaTypes.video.mimes);
           expect(serverRequests[1].data.imp[0].video.startdelay).to.equal(null);
           expect(serverRequests[1].data.imp[0].video.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.playerSize[0][0]);
           expect(serverRequests[1].data.imp[0].video.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.playerSize[0][1]);
-          expect(serverRequests[1].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].params.video.minDuration);
-          expect(serverRequests[1].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].params.video.maxDuration);
-          expect(serverRequests[1].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[1].params.video.protocols);
+          expect(serverRequests[1].data.imp[0].video.minduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.minDuration);
+          expect(serverRequests[1].data.imp[0].video.maxduration).to.exist.and.to.be.a('number').and.to.equal(adUnits[1].mediaTypes.video.maxDuration);
+          expect(serverRequests[1].data.imp[0].video.protocols).to.exist.and.to.be.an('array').and.to.deep.equal(adUnits[1].mediaTypes.video.protocols);
         });
       });
 
@@ -2108,6 +2107,48 @@ describe('Adot Adapter', function () {
         expect(ads[0].mediaType).to.exist.and.to.be.a('string').and.to.equal('banner');
         expect(ads[0].renderer).to.equal(null);
         expect(ads[1].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[1].bidId);
+        expect(ads[1].ad).to.exist.and.to.be.a('string').and.to.have.string(adm2WithAuctionPriceReplaced);
+        expect(ads[1].adUrl).to.equal(null);
+        expect(ads[1].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[1].crid);
+        expect(ads[1].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[1].price);
+        expect(ads[1].currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.cur);
+        expect(ads[1].netRevenue).to.exist.and.to.be.a('boolean').and.to.equal(true);
+        expect(ads[1].ttl).to.exist.and.to.be.a('number').and.to.equal(10);
+        expect(ads[1].height).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[1].h);
+        expect(ads[1].width).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[1].w);
+        expect(ads[1].mediaType).to.exist.and.to.be.a('string').and.to.equal('banner');
+        expect(ads[1].renderer).to.equal(null);
+      });
+
+      it('should return two ads when given a valid server response with two bids that contains adomain', function () {
+        const serverRequest = examples.serverRequest_banner_twoImps;
+
+        const serverResponse = examples.serverResponse_banner_twoBids;
+
+        const ads = spec.interpretResponse(serverResponse, serverRequest);
+
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
+        const adm2WithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[1].adm, serverResponse.body.seatbid[0].bid[1].price);
+
+        expect(ads).to.be.an('array').and.to.have.length(2);
+
+        expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
+        expect(ads[0].adUrl).to.equal(null);
+        expect(ads[0].vastXml).to.equal(null);
+        expect(ads[0].vastUrl).to.equal(null);
+        expect(ads[0].meta.advertiserDomains[0]).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].adomain[0])
+        expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
+        expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
+        expect(ads[0].currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.cur);
+        expect(ads[0].netRevenue).to.exist.and.to.be.a('boolean').and.to.equal(true);
+        expect(ads[0].ttl).to.exist.and.to.be.a('number').and.to.equal(10);
+        expect(ads[0].height).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].h);
+        expect(ads[0].width).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].w);
+        expect(ads[0].mediaType).to.exist.and.to.be.a('string').and.to.equal('banner');
+        expect(ads[0].renderer).to.equal(null);
+        expect(ads[1].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[1].bidId);
+        expect(ads[1].meta.advertiserDomains[0]).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[1].adomain[0])
         expect(ads[1].ad).to.exist.and.to.be.a('string').and.to.have.string(adm2WithAuctionPriceReplaced);
         expect(ads[1].adUrl).to.equal(null);
         expect(ads[1].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[1].crid);
@@ -3083,20 +3124,6 @@ describe('Adot Adapter', function () {
 
           expect(ads).to.be.an('array').and.to.have.length(1);
           expect(ads[0].renderer).to.be.an('object');
-        });
-
-        it('should append a command to the ad rendering queue when executing the renderer', function (done) {
-          const serverRequest = examples.serverRequest_video_outstream;
-          const serverResponse = examples.serverResponse_video_outstream;
-
-          const [ad] = spec.interpretResponse(serverResponse, serverRequest);
-
-          this.spyAdRenderingQueue(ad);
-
-          executeAdRenderer(ad, () => {
-            expect(ad.renderer.push.calledOnce).to.equal(true);
-            expect(ad.renderer.push.firstCall.args[0]).to.exist.and.to.be.a('function');
-          }, done);
         });
       });
     });

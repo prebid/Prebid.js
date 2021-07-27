@@ -3,6 +3,7 @@ import { spec, validateGeoObject, getDomain } from '../../../modules/apacdexBidA
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
+import { deepClone } from 'src/utils.js';
 
 describe('ApacdexBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -200,7 +201,7 @@ describe('ApacdexBidAdapter', function () {
       'bidder': 'apacdex',
       'params': {
         'siteId': '1a2b3c4d5e6f1a2b3c4d',
-        'geo': {'lat': 123.13123456, 'lon': 54.23467311, 'accuracy': 60}
+        'geo': { 'lat': 123.13123456, 'lon': 54.23467311, 'accuracy': 60 }
       },
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
@@ -217,15 +218,6 @@ describe('ApacdexBidAdapter', function () {
         'uids': [{
           'id': '2ae366c2-2576-45e5-bd21-72ed10598f17',
           'atype': 1
-        }]
-      }, {
-        'source': 'sharedid.org',
-        'uids': [{
-          'id': '01EZXQDVAPER4KE1VBS29XKV4Z',
-          'atype': 1,
-          'ext': {
-            'third': '01EZXQDVAPER4KE1VBS29XKV4Z'
-          }
         }]
       }],
     },
@@ -336,12 +328,50 @@ describe('ApacdexBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
     });
-    describe('debug test', function() {
-      beforeEach(function() {
-        config.setConfig({debug: true});
+    it('should attach bidFloor param when either bid param floorPrice or getFloor function exists', function () {
+      let getFloorResponse = { currency: 'USD', floor: 3 };
+      let singleBidRequest, request, payload = null;
+
+      // 1 -> floorPrice not defined, getFloor not defined > empty
+      singleBidRequest = deepClone(bidRequest[0]);
+      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      payload = request.data;
+      expect(payload.bids[0].bidFloor).to.not.exist;
+
+      // 2 -> floorPrice is defined, getFloor not defined > floorPrice is used
+      singleBidRequest = deepClone(bidRequest[0]);
+      singleBidRequest.params = {
+        'siteId': '1890909',
+        'floorPrice': 0.5
+      };
+      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      payload = request.data
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(0.5);
+
+      // 3 -> floorPrice is defined, getFloor is defined > getFloor is used
+      singleBidRequest = deepClone(bidRequest[0]);
+      singleBidRequest.params = {
+        'siteId': '1890909',
+        'floorPrice': 0.5
+      };
+      singleBidRequest.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      payload = request.data
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(3);
+
+      // 4 -> floorPrice not defined, getFloor is defined > getFloor is used
+      singleBidRequest = deepClone(bidRequest[0]);
+      singleBidRequest.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      payload = request.data
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(3);
+    });
+    describe('debug test', function () {
+      beforeEach(function () {
+        config.setConfig({ debug: true });
       });
-      afterEach(function() {
-        config.setConfig({debug: false});
+      afterEach(function () {
+        config.setConfig({ debug: false });
       });
       it('should return a properly formatted request with pbjs_debug is true', function () {
         const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
@@ -514,7 +544,10 @@ describe('ApacdexBidAdapter', function () {
             'netRevenue': true,
             'currency': 'USD',
             'dealId': 'apacdex',
-            'mediaType': 'banner'
+            'mediaType': 'banner',
+            'meta': {
+              'advertiserDomains': ['https://example.com']
+            }
           },
           {
             'requestId': '30024615be22ef66a',
@@ -527,7 +560,10 @@ describe('ApacdexBidAdapter', function () {
             'netRevenue': true,
             'currency': 'USD',
             'dealId': 'apacdex',
-            'mediaType': 'banner'
+            'mediaType': 'banner',
+            'meta': {
+              'advertiserDomains': ['https://example.com']
+            }
           },
           {
             'requestId': '1854b40107d6745c',
@@ -540,7 +576,10 @@ describe('ApacdexBidAdapter', function () {
             'netRevenue': true,
             'currency': 'USD',
             'dealId': 'apacdex',
-            'mediaType': 'video'
+            'mediaType': 'video',
+            'meta': {
+              'advertiserDomains': ['https://example.com']
+            }
           }
         ],
         'pixel': [{
@@ -610,6 +649,7 @@ describe('ApacdexBidAdapter', function () {
         if (resp.mediaType === 'banner') {
           expect(resp.ad.indexOf('Apacdex AD')).to.be.greaterThan(0);
         }
+        expect(resp.meta.advertiserDomains).to.deep.equal(['https://example.com']);
       });
     });
   });
@@ -693,17 +733,17 @@ describe('ApacdexBidAdapter', function () {
   describe('getDomain', function () {
     it('should return valid domain from publisherDomain config', () => {
       let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({publisherDomain: pageUrl});
+      config.setConfig({ publisherDomain: pageUrl });
       expect(getDomain(pageUrl)).to.equal('example.com');
     });
     it('should return valid domain from pageUrl argument', () => {
       let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({publisherDomain: ''});
+      config.setConfig({ publisherDomain: '' });
       expect(getDomain(pageUrl)).to.equal('example.com');
     });
     it('should return undefined if pageUrl and publisherDomain not config', () => {
       let pageUrl;
-      config.setConfig({publisherDomain: ''});
+      config.setConfig({ publisherDomain: '' });
       expect(getDomain(pageUrl)).to.equal(pageUrl);
     });
   });

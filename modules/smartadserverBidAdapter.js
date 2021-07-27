@@ -189,7 +189,8 @@ export const spec = {
           currency: response.currency,
           netRevenue: response.isNetCpm,
           ttl: response.ttl,
-          dspPixels: response.dspPixels
+          dspPixels: response.dspPixels,
+          meta: { advertiserDomains: response.adomain ? response.adomain : [] }
         };
 
         if (bidRequest.mediaType === VIDEO) {

@@ -10,7 +10,6 @@ const BID_SERVER_RESPONSE = {
       {
         'bidId': '51ef8751f9aead',
         'zoneId': '12345abcde',
-        'adId': '1234',
         'crid': '5678',
         'cpm': 8.021951999999999999,
         'currency': 'USD',
@@ -19,7 +18,8 @@ const BID_SERVER_RESPONSE = {
         'isNet': false,
         'buying_type': 'rtb',
         'syncUrl': 'https://ac.audiencerun.com/f/sync.html',
-        'adm': '<!-- test creative -->'
+        'adm': '<!-- test creative -->',
+        'adomain': ['example.com']
       }
     ]
   }
@@ -77,7 +77,7 @@ describe('AudienceRun bid adapter tests', function() {
   });
 
   describe('buildRequests', function() {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'audiencerun',
         'bidId': '51ef8751f9aead',
@@ -96,6 +96,7 @@ describe('AudienceRun bid adapter tests', function() {
         'bidRequestsCount': 1
       }
     ];
+    const bidRequest = bidRequests[0];
 
     it('sends a valid bid request to ENDPOINT via POST', function() {
       const request = spec.buildRequests(bidRequests, {
@@ -156,12 +157,43 @@ describe('AudienceRun bid adapter tests', function() {
       expect(payload2.gdpr.consent).to.equal(consentString);
       expect(payload2.gdpr.applies).to.equal(false);
     });
+
+    it('should use a bidfloor with a 0 value', function() {
+      const bid = Object.assign({}, bidRequest);
+      const request = spec.buildRequests([bid]);
+      const payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(0);
+    })
+
+    it('should use bidfloor param value', function () {
+      const bid = Object.assign({}, bidRequest, {
+        params: {
+          'bidfloor': 0.2
+        }
+      })
+      const request = spec.buildRequests([bid]);
+      const payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(0.2);
+    });
+
+    it('should use floors module value', function () {
+      const bid = Object.assign({}, bidRequest, {
+        params: {
+          'bidfloor': 0.5
+        }
+      })
+      bid.getFloor = () => {
+        return { floor: 1, currency: 'USD' }
+      }
+      const request = spec.buildRequests([bid]);
+      const payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(1);
+    });
   });
 
   describe('interpretResponse', function () {
     const expectedResponse = [{
       'requestId': '51ef8751f9aead',
-      'adId': '12345abcde',
       'cpm': 8.021951999999999999,
       'width': '728',
       'height': '90',
@@ -170,7 +202,10 @@ describe('AudienceRun bid adapter tests', function() {
       'netRevenue': false,
       'ttl': 300,
       'ad': '<!-- test creative -->',
-      'mediaType': 'banner'
+      'mediaType': 'banner',
+      'meta': {
+        'advertiserDomains': ['example.com']
+      }
     }];
 
     it('should get the correct bid response by display ad', function () {
@@ -178,7 +213,7 @@ describe('AudienceRun bid adapter tests', function() {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('handles empty bid response', function () {
+    it('should handle empty bid response', function () {
       const response = {
         body: {}
       };
@@ -199,6 +234,12 @@ describe('AudienceRun bid adapter tests', function() {
     it('should return user syncs', function () {
       const syncs = spec.getUserSyncs(syncOptions, serverResponses);
       expect(syncs).to.deep.equal([{type: 'iframe', url: 'https://ac.audiencerun.com/f/sync.html'}])
+    });
+  });
+
+  describe('onTimeout', function () {
+    it('should exists and be a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });
   });
 });

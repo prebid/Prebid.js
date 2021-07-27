@@ -277,6 +277,7 @@ function makeStoredConsentDataHash(consentData) {
     storedConsentData.gdprApplies = consentData.gdprApplies;
     storedConsentData.apiVersion = consentData.apiVersion;
   }
+
   return utils.cyrb53Hash(JSON.stringify(storedConsentData));
 }
 
@@ -306,17 +307,17 @@ function getStoredConsentData() {
 }
 
 /**
- * test if the consent object stored locally matches the current consent data.
- * if there is nothing in storage, return true and we'll do an actual comparison next time.
- * this way, we don't force a refresh for every user when this code rolls out
+ * test if the consent object stored locally matches the current consent data. if they
+ * don't match or there is nothing stored locally, it means a refresh of the user id
+ * submodule is needed
  * @param storedConsentData
  * @param consentData
  * @returns {boolean}
  */
 function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
   return (
-    typeof storedConsentData === 'undefined' ||
-    storedConsentData === null ||
+    typeof storedConsentData !== 'undefined' &&
+    storedConsentData !== null &&
     storedConsentData === makeStoredConsentDataHash(consentData)
   );
 }
@@ -592,15 +593,16 @@ function refreshUserIds(options, callback) {
   initializeSubmodulesAndExecuteCallbacks(function() {
     let consentData = gdprDataHandler.getConsentData()
 
-    const storedConsentData = getStoredConsentData();
-    setStoredConsentData(consentData);
-
     // gdpr consent with purpose one is required, otherwise exit immediately
     let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
     if (!hasValidated && !hasGDPRConsent(consentData)) {
       utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
       return;
     }
+
+    // we always want the latest consentData stored, even if we don't execute any submodules
+    const storedConsentData = getStoredConsentData();
+    setStoredConsentData(consentData);
 
     let callbackSubmodules = [];
     for (let submodule of userIdModules) {
@@ -611,6 +613,11 @@ function refreshUserIds(options, callback) {
 
       utils.logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
       populateSubmoduleId(submodule, consentData, storedConsentData, true);
+      updateInitializedSubmodules(submodule);
+
+      if (initializedSubmodules.length) {
+        setPrebidServerEidPermissions(initializedSubmodules);
+      }
 
       if (utils.isFn(submodule.callback)) {
         callbackSubmodules.push(submodule);
@@ -691,10 +698,6 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
  * @returns {SubmoduleContainer[]} initialized submodules
  */
 function initSubmodules(submodules, consentData) {
-  // we always want the latest consentData stored, even if we don't execute any submodules
-  const storedConsentData = getStoredConsentData();
-  setStoredConsentData(consentData);
-
   // gdpr consent with purpose one is required, otherwise exit immediately
   let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
   if (!hasValidated && !hasGDPRConsent(consentData)) {
@@ -702,11 +705,30 @@ function initSubmodules(submodules, consentData) {
     return [];
   }
 
+  // we always want the latest consentData stored, even if we don't execute any submodules
+  const storedConsentData = getStoredConsentData();
+  setStoredConsentData(consentData);
+
   return userIdModules.reduce((carry, submodule) => {
     populateSubmoduleId(submodule, consentData, storedConsentData, false);
     carry.push(submodule);
     return carry;
   }, []);
+}
+
+function updateInitializedSubmodules(submodule) {
+  let updated = false;
+  for (let i = 0; i < initializedSubmodules.length; i++) {
+    if (submodule.config.name.toLowerCase() === initializedSubmodules[i].config.name.toLowerCase()) {
+      updated = true;
+      initializedSubmodules[i] = submodule;
+      break;
+    }
+  }
+
+  if (!updated) {
+    initializedSubmodules.push(submodule);
+  }
 }
 
 /**
@@ -756,7 +778,8 @@ function updateSubmodules() {
 
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   submodules = addedSubmodules.map(i => {
-    const submoduleConfig = find(configs, j => j.name && j.name.toLowerCase() === i.name.toLowerCase());
+    const submoduleConfig = find(configs, j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
+      (i.aliasName && j.name.toLowerCase() === i.aliasName.toLowerCase())));
     if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
     i.findRootDomain = findRootDomain;
     return submoduleConfig ? {

@@ -53,9 +53,9 @@ function mergeLazy(target, source) {
  * @param {String} param
  * @param {String} defaultVal
  */
-function paramOrDefault(param, defaultVal) {
+function paramOrDefault(param, defaultVal, arg) {
   if (isFn(param)) {
-    return param();
+    return param(arg);
   } else if (isStr(param)) {
     return param;
   }
@@ -69,12 +69,31 @@ function paramOrDefault(param, defaultVal) {
  * @param {Object} rtdConfig
  */
 export function addRealTimeData(bidConfig, rtd, rtdConfig) {
-  let ortb2 = config.getConfig('ortb2') || {};
-
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
-  } else if (rtd.ortb2) {
-    config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+  } else {
+    if (isPlainObject(rtd.ortb2)) {
+      let ortb2 = config.getConfig('ortb2') || {};
+      config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+    }
+
+    if (isPlainObject(rtd.ortb2b)) {
+      let bidderConfig = config.getBidderConfig();
+
+      Object.keys(rtd.ortb2b).forEach(bidder => {
+        let rtdOptions = rtd.ortb2b[bidder] || {};
+
+        let bidderOptions = {};
+        if (isPlainObject(bidderConfig[bidder])) {
+          bidderOptions = bidderConfig[bidder];
+        }
+
+        config.setBidderConfig({
+          bidders: [bidder],
+          config: mergeLazy(bidderOptions, rtdOptions)
+        });
+      });
+    }
   }
 }
 
@@ -107,7 +126,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     userIds.haloId = haloId;
     getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {
-    var script = document.createElement('script')
+    var script = document.createElement('script');
     script.type = 'text/javascript';
 
     window.pubHaloCb = (haloId) => {
@@ -116,7 +135,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     }
 
     const haloIdUrl = rtdConfig.params && rtdConfig.params.haloIdUrl;
-    script.src = paramOrDefault(haloIdUrl, 'https://id.halo.ad.gt/api/v1/haloid');
+    script.src = paramOrDefault(haloIdUrl, 'https://id.halo.ad.gt/api/v1/haloid', userIds);
     document.getElementsByTagName('head')[0].appendChild(script);
   }
 }
@@ -134,6 +153,10 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
   if (isPlainObject(rtdConfig)) {
     set(rtdConfig, 'params.requestParams.ortb2', config.getConfig('ortb2'));
     reqParams = rtdConfig.params.requestParams;
+  }
+
+  if (isPlainObject(window.pubHaloPm)) {
+    reqParams.pubHaloPm = window.pubHaloPm;
   }
 
   const url = `https://seg.halo.ad.gt/api/v1/rtd`;

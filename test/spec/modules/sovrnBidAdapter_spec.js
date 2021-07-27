@@ -387,7 +387,8 @@ describe('sovrnBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
-        'ttl': 60000
+        'ttl': 60000,
+        'meta': { advertiserDomains: [] }
       }];
 
       let result = spec.interpretResponse(response);
@@ -407,7 +408,8 @@ describe('sovrnBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
-        'ttl': 90
+        'ttl': 90,
+        'meta': { advertiserDomains: [] }
       }];
 
       let result = spec.interpretResponse(response);
@@ -428,7 +430,8 @@ describe('sovrnBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
-        'ttl': 90
+        'ttl': 90,
+        'meta': { advertiserDomains: [] }
       }];
 
       let result = spec.interpretResponse(response);
@@ -449,7 +452,8 @@ describe('sovrnBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
-        'ttl': 480
+        'ttl': 480,
+        'meta': { advertiserDomains: [] }
       }];
 
       let result = spec.interpretResponse(response);
