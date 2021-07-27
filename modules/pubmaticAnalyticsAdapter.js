@@ -92,7 +92,7 @@ function setMediaTypes(types, bid) {
 
 function copyRequiredBidDetails(bid) {
   return utils.pick(bid, [
-    'bidder', bidder => bidder.toLowerCase(),
+    'bidder',
     'bidId',
     'status', () => NO_BID, // default a bid to NO_BID until response is recieved or bid is timed out
     'finalSource as source',
