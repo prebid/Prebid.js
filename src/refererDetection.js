@@ -3,11 +3,12 @@
  * The information that it tries to collect includes:
  * The detected top url in the nav bar,
  * Whether it was able to reach the top most window (if for example it was embedded in several iframes),
- * The number of iframes it was embedded in if applicable,
+ * The number of iframes it was embedded in if applicable (by default max ten iframes),
  * A list of the domains of each embedded window if applicable.
  * Canonical URL which refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
  */
 
+import { config } from './config.js';
 import { logWarn } from './utils.js';
 
 /**
@@ -41,6 +42,10 @@ export function detectReferer(win) {
    * @returns {string|null}
    */
   function getCanonicalUrl(doc) {
+    let pageURL = config.getConfig('pageUrl');
+
+    if (pageURL) return pageURL;
+
     try {
       const element = doc.querySelector("link[rel='canonical']");
 
@@ -72,6 +77,7 @@ export function detectReferer(win) {
   function refererInfo() {
     const stack = [];
     const ancestors = getAncestorOrigins(win);
+    const maxNestedIframes = config.getConfig('maxNestedIframes');
     let currentWindow;
     let bestReferrer;
     let bestCanonicalUrl;
@@ -161,7 +167,7 @@ export function detectReferer(win) {
 
       stack.push(foundReferrer);
       level++;
-    } while (currentWindow !== win.top);
+    } while (currentWindow !== win.top && level < maxNestedIframes);
 
     stack.reverse();
 

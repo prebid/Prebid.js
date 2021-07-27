@@ -42,7 +42,7 @@ export let lib = {
   init: function () {
     let z = this;
     let u = navigator.userAgent;
-    z.device = u.match(/iPad|Tablet/gi) ? 'tablet' : u.match(/iPhone|iPod|Android|Opera Mini|IEMobile/gi) ? 'mobile' : 'desktop';
+    z.device = u.match(/iPhone|iPod|Android|Opera Mini|IEMobile/gi) ? 'mobile' : 'desktop';
     if (typeof (z.len) == 'undefined') z.len = 0;
     z.ie = navigator.appVersion.match(/MSIE/);
     z.saf = (u.match(/Safari/) && !u.match(/Chrome/));
@@ -306,28 +306,46 @@ export let lib = {
       if (!restored) {
         a.target = z.questA(a.div);
         let target = (a.target !== null) ? a.target : a.div;
-        a.box.w = Math.max(target.offsetWidth, a.w);
-        a.box.h = Math.max(target.offsetHeight, a.h);
-        let q = z.findPosG(target);
-        let pad = {};
-        pad.t = z.padd(target, 'Top');
-        pad.l = z.padd(target, 'Left');
-        pad.r = z.padd(target, 'Right');
-        pad.b = z.padd(target, 'Bottom');
-        let ax = q.x + pad.l;
-        let ay = q.y + pad.t;
-        a.box.x = ax;
-        a.box.y = ay;
-        if (a.box.w > a.w && a.box.w > 1) {
-          ax += (a.box.w - a.w - pad.l - pad.r) / 2;
-        }
-        if (a.box.h > a.h && a.box.h > 1) {
-          ay += (a.box.h - a.h - pad.t - pad.b) / 2;
-        }
-        if ((ax > 0 && ay > 0) && (a.x != ax || a.y != ay)) {
-          a.x = ax;
-          a.y = ay;
-          z.writePos(a);
+        if (window.getComputedStyle(target).display == 'none') {
+          let targSibl = target.previousElementSibling; // for 'none' containers on mobile define y as previous sibling y+h
+          if (targSibl) {
+            let q = z.findPosG(targSibl);
+            a.x = q.x;
+            a.y = q.y + targSibl.offsetHeight;
+          } else {
+            target = target.parentNode;
+            let q = z.findPosG(target);
+            a.x = q.x;
+            a.y = q.y;
+          }
+          a.box.x = a.x;
+          a.box.y = a.y;
+          a.box.w = a.w;
+          a.box.h = a.h;
+        } else {
+          a.box.w = Math.max(target.offsetWidth, a.w);
+          a.box.h = Math.max(target.offsetHeight, a.h);
+          let q = z.findPosG(target);
+          let pad = {};
+          pad.t = z.padd(target, 'Top');
+          pad.l = z.padd(target, 'Left');
+          pad.r = z.padd(target, 'Right');
+          pad.b = z.padd(target, 'Bottom');
+          let ax = q.x + pad.l;
+          let ay = q.y + pad.t;
+          a.box.x = ax;
+          a.box.y = ay;
+          if (a.box.w > a.w && a.box.w > 1) {
+            ax += (a.box.w - a.w - pad.l - pad.r) / 2;
+          }
+          if (a.box.h > a.h && a.box.h > 1) {
+            ay += (a.box.h - a.h - pad.t - pad.b) / 2;
+          }
+          if ((ax > 0 && ay > 0) && (a.x != ax || a.y != ay)) {
+            a.x = ax;
+            a.y = ay;
+            z.writePos(a);
+          }
         }
       }
       let vtr = ((a.box.w * a.box.h) < 242500) ? 49 : 29; // treashfold more then 49% and more then 29% for "oversized"
@@ -670,7 +688,7 @@ export let lib = {
       };
     }
     let a = window.top1.realvu_aa.check(p1);
-    return a.r;
+    return a.riff;
   },
 
   checkBidIn: function(partnerId, args, b) { // process a bid from hb

@@ -1,7 +1,7 @@
 import { assert } from 'chai';
 import { trackInstreamDeliveredImpressions } from 'modules/instreamTracking.js';
 import { config } from 'src/config.js';
-import * as events from 'src/events.js';
+import events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';

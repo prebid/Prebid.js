@@ -66,7 +66,10 @@ export const spec = {
         currency: bid.currency,
         netRevenue: bid.netRevenue,
         ad: bid.ad,
-        ttl: bid.ttl
+        ttl: bid.ttl,
+        meta: {
+          advertiserDomains: bid.adomain && Array.isArray(bid.adomain) ? bid.adomain : []
+        }
       };
     });
   },
