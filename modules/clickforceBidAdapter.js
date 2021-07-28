@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, NATIVE} from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'clickforce';
-const ENDPOINT_URL = '//ad.doublemax.net/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
+const ENDPOINT_URL = 'https://ad.holmesmind.com/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -88,6 +88,9 @@ export const spec = {
               impressionTrackers: response.tag.iu,
             },
             mediaType: 'native',
+            meta: {
+              advertiserDomains: response.adomain || []
+            },
           });
         } else {
           // display ad
@@ -102,6 +105,9 @@ export const spec = {
             ttl: response.ttl,
             ad: response.tag,
             mediaType: 'banner',
+            meta: {
+              advertiserDomains: response.adomain || []
+            },
           });
         }
       }
@@ -112,12 +118,12 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: 'https://cdn.doublemax.net/js/capmapping.htm'
+        url: 'https://cdn.holmesmind.com/js/capmapping.htm'
       }]
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: 'https://c.doublemax.net/cm'
+        url: 'https://c.holmesmind.com/cm'
       }]
     }
   }

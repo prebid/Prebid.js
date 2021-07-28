@@ -1,9 +1,11 @@
 import { expect } from 'chai';
-import { spec } from 'modules/yieldoneBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/yieldoneBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
 
-const ENDPOINT = '//y.one.impact-ad.jp/h_bid';
-const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
+const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
+const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
+const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
 
 describe('yieldoneBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -63,7 +65,16 @@ describe('yieldoneBidAdapter', function() {
       }
     ];
 
-    const request = spec.buildRequests(bidRequests);
+    let bidderRequest = {
+      refererInfo: {
+        numIframes: 0,
+        reachedTop: true,
+        referer: 'http://example.com',
+        stack: ['http://example.com']
+      }
+    };
+
+    const request = spec.buildRequests(bidRequests, bidderRequest);
 
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
@@ -84,9 +95,30 @@ describe('yieldoneBidAdapter', function() {
       const bidRequest = Object.assign({}, bidRequests[0]);
       bidRequest.mediaTypes = {};
       bidRequest.mediaTypes.video = {context: 'outstream'};
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       expect(request[0].data.w).to.equal('300');
       expect(request[0].data.h).to.equal('250');
+    });
+
+    it('adUnitCode should be sent as uc parameters on any requests', function () {
+      expect(request[0].data.uc).to.equal('adunit-code1');
+      expect(request[1].data.uc).to.equal('adunit-code2');
+    });
+
+    describe('userid idl_env should be passed to querystring', function () {
+      const bid = deepClone([bidRequests[0]]);
+
+      it('dont send LiveRampID if undefined', function () {
+        bid[0].userId = {};
+        const request = spec.buildRequests(bid, bidderRequest);
+        expect(request[0].data).to.not.have.property('lr_env');
+      });
+
+      it('should send LiveRampID if available', function () {
+        bid[0].userId = {idl_env: 'idl_env_sample'};
+        const request = spec.buildRequests(bid, bidderRequest);
+        expect(request[0].data.lr_env).to.equal('idl_env_sample');
+      });
     });
   });
 
@@ -94,7 +126,7 @@ describe('yieldoneBidAdapter', function() {
     let bidRequestBanner = [
       {
         'method': 'GET',
-        'url': '//y.one.impact-ad.jp/h_bid',
+        'url': 'https://y.one.impact-ad.jp/h_bid',
         'data': {
           'v': 'hb1',
           'p': '36891',
@@ -117,7 +149,10 @@ describe('yieldoneBidAdapter', function() {
         'crid': '2494768',
         'currency': 'JPY',
         'statusMessage': 'Bid available',
-        'dealId': 'P1-FIX-7800-DSP-MON'
+        'dealId': 'P1-FIX-7800-DSP-MON',
+        'admoain': [
+          'www.example.com'
+        ]
       }
     };
 
@@ -133,6 +168,11 @@ describe('yieldoneBidAdapter', function() {
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
+        'meta': {
+          'advertiserDomains': [
+            'www.example.com'
+          ]
+        },
         'mediaType': 'banner',
         'ad': '<!-- adtag -->'
       }];
@@ -158,7 +198,7 @@ describe('yieldoneBidAdapter', function() {
     let bidRequestVideo = [
       {
         'method': 'GET',
-        'url': '//y.one.impact-ad.jp/h_bid',
+        'url': 'https://y.one.impact-ad.jp/h_bid',
         'data': {
           'v': 'hb1',
           'p': '41993',
@@ -184,12 +224,21 @@ describe('yieldoneBidAdapter', function() {
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
+        'meta': {
+          'advertiserDomains': []
+        },
         'mediaType': 'video',
-        'vastXml': '<!-- vast -->'
+        'vastXml': '<!-- vast -->',
+        'renderer': {
+          id: '23beaa6af6cdde',
+          url: VIDEO_PLAYER_URL
+        }
       }];
       let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
+      expect(result[0].renderer.id).to.equal(expectedResponse[0].renderer.id);
+      expect(result[0].renderer.url).to.equal(expectedResponse[0].renderer.url);
     });
 
     it('handles empty bid response', function () {

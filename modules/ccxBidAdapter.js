@@ -1,6 +1,9 @@
-import * as utils from '../src/utils'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { config } from '../src/config'
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 const BIDDER_CODE = 'ccx'
 const BID_URL = 'https://delivery.clickonometrics.pl/ortb/prebid/bid'
 const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6]
@@ -15,9 +18,9 @@ function _getDeviceObj () {
   return device
 }
 
-function _getSiteObj () {
+function _getSiteObj (bidderRequest) {
   let site = {}
-  let url = config.getConfig('pageUrl') || utils.getTopWindowUrl()
+  let url = config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
   if (url.length > 0) {
     url = url.split('?')[0]
   }
@@ -91,12 +94,12 @@ function _buildBid (bid) {
       }
     }
 
-    placement.video.protocols = utils.deepAccess(bid, 'params.video.protocols') || SUPPORTED_VIDEO_PROTOCOLS
-    placement.video.mimes = utils.deepAccess(bid, 'params.video.mimes') || SUPPORTED_VIDEO_MIMES
-    placement.video.playbackmethod = utils.deepAccess(bid, 'params.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS
-    placement.video.skip = utils.deepAccess(bid, 'params.video.skip') || 0
-    if (placement.video.skip === 1 && utils.deepAccess(bid, 'params.video.skipafter')) {
-      placement.video.skipafter = utils.deepAccess(bid, 'params.video.skipafter')
+    placement.video.protocols = utils.deepAccess(bid, 'mediaTypes.video.protocols') || utils.deepAccess(bid, 'params.video.protocols') || SUPPORTED_VIDEO_PROTOCOLS
+    placement.video.mimes = utils.deepAccess(bid, 'mediaTypes.video.mimes') || utils.deepAccess(bid, 'params.video.mimes') || SUPPORTED_VIDEO_MIMES
+    placement.video.playbackmethod = utils.deepAccess(bid, 'mediaTypes.video.playbackmethod') || utils.deepAccess(bid, 'params.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS
+    placement.video.skip = utils.deepAccess(bid, 'mediaTypes.video.skip') || utils.deepAccess(bid, 'params.video.skip') || 0
+    if (placement.video.skip === 1 && (utils.deepAccess(bid, 'mediaTypes.video.skipafter') || utils.deepAccess(bid, 'params.video.skipafter'))) {
+      placement.video.skipafter = utils.deepAccess(bid, 'mediaTypes.video.skipafter') || utils.deepAccess(bid, 'params.video.skipafter')
     }
   }
 
@@ -115,6 +118,11 @@ function _buildResponse (bid, currency, ttl) {
     netRevenue: false,
     ttl: ttl,
     currency: currency
+  }
+
+  resp.meta = {};
+  if (bid.adomain && bid.adomain.length > 0) {
+    resp.meta.advertiserDomains = bid.adomain;
   }
 
   if (bid.ext.type === 'video') {
@@ -167,10 +175,26 @@ export const spec = {
     if (validBidRequests.length > 0) {
       let requestBody = {}
       requestBody.imp = []
-      requestBody.site = _getSiteObj()
+      requestBody.site = _getSiteObj(bidderRequest)
       requestBody.device = _getDeviceObj()
       requestBody.id = bidderRequest.bids[0].auctionId
-      requestBody.ext = {'ce': (utils.cookiesAreEnabled() ? 1 : 0)}
+      requestBody.ext = {'ce': (storage.cookiesAreEnabled() ? 1 : 0)}
+
+      // Attaching GDPR Consent Params
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        requestBody.user = {
+          ext: {
+            consent: bidderRequest.gdprConsent.consentString
+          }
+        };
+
+        requestBody.regs = {
+          ext: {
+            gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
+          }
+        };
+      }
+
       utils._each(validBidRequests, function (bid) {
         requestBody.imp.push(_buildBid(bid))
       })

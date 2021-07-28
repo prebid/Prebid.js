@@ -1,3 +1,6 @@
+
+const allowedModules = require("./allowedModules");
+
 module.exports = {
   "env": {
     "browser": true,
@@ -11,6 +14,10 @@ module.exports = {
     }
   },
   "extends": "standard",
+  "plugins": [
+    "prebid",
+    "import"
+  ],
   "globals": {
     "$$PREBID_GLOBAL$$": false
   },
@@ -21,6 +28,7 @@ module.exports = {
     "comma-dangle": "off",
     "semi": "off",
     "space-before-function-paren": "off",
+    "import/extensions": ["error", "ignorePackages"],
 
     // Exceptions below this line are temporary, so that eslint can be added into the CI process.
     // Violations of these styles should be fixed, and the exceptions removed over time.
@@ -29,7 +37,14 @@ module.exports = {
     "eqeqeq": "off",
     "no-return-assign": "off",
     "no-throw-literal": "off",
-    "no-undef": "off",
+    "no-undef": 2,
     "no-useless-escape": "off",
-  }
+    "no-console": "error"
+  },
+  "overrides": Object.keys(allowedModules).map((key) => ({
+    "files": key + "/**/*.js",
+    "rules": {
+      "prebid/validate-imports": ["error", allowedModules[key]]
+    }
+  }))
 };

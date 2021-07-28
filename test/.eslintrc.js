@@ -25,6 +25,7 @@ module.exports = {
     "no-tabs": "off",
     "no-unused-expressions": "off",
     "import/no-duplicates": "off",
+    "import/extensions": "off",
     "no-template-curly-in-string": "off",
     "no-global-assign": "off",
     "no-path-concat": "off",
@@ -35,6 +36,6 @@ module.exports = {
     "no-unused-vars": "off",
     "no-use-before-define": "off",
     "no-useless-escape": "off",
-    "one-var": "off",
+    "one-var": "off"
   }
 };

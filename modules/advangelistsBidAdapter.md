@@ -43,10 +43,10 @@ var videoAdUnit = {
 	  video: {
 	  	playerSize : [[320, 480]], 
 	  	context: 'instream',
-		skip: 1,
-        mimes : ['video/mp4', 'application/javascript'],
-        playbackmethod : [2,6],
-        maxduration: 30
+		  skip: 1,
+      mimes : ['video/mp4', 'application/javascript'],
+      playbackmethod : [2,6],
+      maxduration: 30
 	  }
 	},
     bids: [

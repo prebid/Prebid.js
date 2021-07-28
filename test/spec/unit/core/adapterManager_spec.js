@@ -1,16 +1,19 @@
 import { expect } from 'chai';
-import adapterManager, {
-  gdprDataHandler
-} from 'src/adapterManager';
-import { getAdUnits } from 'test/fixtures/fixtures';
+import adapterManager, { allS2SBidders, clientTestAdapters, gdprDataHandler, coppaDataHandler } from 'src/adapterManager.js';
+import {
+  getAdUnits,
+  getServerTestingConfig,
+  getServerTestingsAds,
+  getBidRequests
+} from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { setSizeConfig } from 'src/sizeMapping';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import s2sTesting from 'modules/s2sTesting';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { setSizeConfig } from 'src/sizeMapping.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import s2sTesting from 'modules/s2sTesting.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -22,6 +25,17 @@ const CONFIG = {
   bidders: ['appnexus'],
   accountId: 'abc'
 };
+
+const CONFIG2 = {
+  enabled: true,
+  endpoint: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
+  timeout: 1000,
+  maxBids: 1,
+  adapter: 'prebidServer',
+  bidders: ['pubmatic'],
+  accountId: 'def'
+}
+
 var prebidServerAdapterMock = {
   bidder: 'prebidServer',
   callBids: sinon.stub()
@@ -40,16 +54,28 @@ var rubiconAdapterMock = {
   callBids: sinon.stub()
 };
 
+var pubmaticAdapterMock = {
+  bidder: 'rubicon',
+  callBids: sinon.stub()
+};
+
+var badAdapterMock = {
+  bidder: 'badBidder',
+  callBids: sinon.stub().throws(Error('some fake error'))
+};
+
 describe('adapterManager tests', function () {
   let orgAppnexusAdapter;
   let orgAdequantAdapter;
   let orgPrebidServerAdapter;
   let orgRubiconAdapter;
+  let orgBadBidderAdapter;
   before(function () {
     orgAppnexusAdapter = adapterManager.bidderRegistry['appnexus'];
     orgAdequantAdapter = adapterManager.bidderRegistry['adequant'];
     orgPrebidServerAdapter = adapterManager.bidderRegistry['prebidServer'];
     orgRubiconAdapter = adapterManager.bidderRegistry['rubicon'];
+    orgBadBidderAdapter = adapterManager.bidderRegistry['badBidder'];
   });
 
   after(function () {
@@ -57,6 +83,7 @@ describe('adapterManager tests', function () {
     adapterManager.bidderRegistry['adequant'] = orgAdequantAdapter;
     adapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
     adapterManager.bidderRegistry['rubicon'] = orgRubiconAdapter;
+    adapterManager.bidderRegistry['badBidder'] = orgBadBidderAdapter;
     config.setConfig({s2sConfig: { enabled: false }});
   });
 
@@ -69,11 +96,17 @@ describe('adapterManager tests', function () {
       sinon.stub(utils, 'logError');
       appnexusAdapterMock.callBids.reset();
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
+      adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
+      adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
+      adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
     });
 
     afterEach(function () {
       utils.logError.restore();
       delete adapterManager.bidderRegistry['appnexus'];
+      delete adapterManager.bidderRegistry['rubicon'];
+      delete adapterManager.bidderRegistry['badBidder'];
+      config.resetConfig();
     });
 
     it('should log an error if a bidder is used that does not exist', function () {
@@ -92,6 +125,34 @@ describe('adapterManager tests', function () {
       sinon.assert.called(utils.logError);
     });
 
+    it('should catch a bidder adapter thrown error and continue with other bidders', function () {
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'badBidder', params: {placementId: 'id'}},
+          {bidder: 'rubicon', params: {account: 1111, site: 2222, zone: 3333}}
+        ]
+      }];
+      let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+
+      let doneBidders = [];
+      function mockDoneCB() {
+        doneBidders.push(this.bidderCode)
+      }
+      adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB);
+      sinon.assert.calledOnce(appnexusAdapterMock.callBids);
+      sinon.assert.calledOnce(badAdapterMock.callBids);
+      sinon.assert.calledOnce(rubiconAdapterMock.callBids);
+
+      expect(utils.logError.calledOnce).to.be.true;
+      expect(utils.logError.calledWith(
+        'badBidder Bid Adapter emitted an uncaught error when parsing their bidRequest'
+      )).to.be.true;
+      // done should be called for our bidder!
+      expect(doneBidders.indexOf('badBidder') === -1).to.be.false;
+    });
     it('should emit BID_REQUESTED event', function () {
       // function to count BID_REQUESTED events
       let cnt = 0;
@@ -132,6 +193,112 @@ describe('adapterManager tests', function () {
       expect(cnt).to.equal(1);
       sinon.assert.calledOnce(appnexusAdapterMock.callBids);
       events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
+    });
+
+    it('should give bidders access to bidder-specific config', function(done) {
+      let mockBidders = ['rubicon', 'appnexus', 'pubmatic'];
+      let bidderRequest = getBidRequests().filter(bidRequest => includes(mockBidders, bidRequest.bidderCode));
+      let adUnits = getAdUnits();
+
+      let bidders = {};
+      let results = {};
+      let cbCount = 0;
+
+      function mock(bidder) {
+        bidders[bidder] = adapterManager.bidderRegistry[bidder];
+        adapterManager.bidderRegistry[bidder] = {
+          callBids: function(bidRequest, addBidResponse, done, ajax, timeout, configCallback) {
+            let myResults = results[bidRequest.bidderCode] = [];
+            myResults.push(config.getConfig('buildRequests'));
+            myResults.push(config.getConfig('test1'));
+            myResults.push(config.getConfig('test2'));
+            // emulate ajax callback that would register bids
+            setTimeout(configCallback(() => {
+              myResults.push(config.getConfig('interpretResponse'));
+              myResults.push(config.getConfig('afterInterpretResponse'));
+              if (++cbCount === Object.keys(bidders).length) {
+                assertions();
+              }
+            }), 1);
+            done();
+          }
+        }
+      }
+
+      mockBidders.forEach(bidder => {
+        mock(bidder);
+      });
+
+      config.setConfig({
+        buildRequests: {
+          data: 1
+        },
+        test1: { speedy: true, fun: { test: true } },
+        interpretResponse: 'baseInterpret',
+        afterInterpretResponse: 'anotherBaseInterpret'
+      });
+      config.setBidderConfig({
+        bidders: [ 'appnexus' ],
+        config: {
+          buildRequests: {
+            test: 2
+          },
+          test1: { fun: { safe: true, cheap: false } },
+          interpretResponse: 'appnexusInterpret'
+        }
+      });
+      config.setBidderConfig({
+        bidders: [ 'rubicon' ],
+        config: {
+          buildRequests: 'rubiconBuild',
+          interpretResponse: null
+        }
+      });
+      config.setBidderConfig({
+        bidders: [ 'appnexus', 'rubicon' ],
+        config: {
+          test2: { amazing: true }
+        }
+      });
+
+      adapterManager.callBids(adUnits, bidderRequest, () => {}, () => {});
+
+      function assertions() {
+        expect(results).to.deep.equal({
+          'appnexus': [
+            {
+              data: 1,
+              test: 2
+            },
+            { fun: { safe: true, cheap: false, test: true }, speedy: true },
+            { amazing: true },
+            'appnexusInterpret',
+            'anotherBaseInterpret'
+          ],
+          'pubmatic': [
+            {
+              data: 1
+            },
+            { fun: { test: true }, speedy: true },
+            undefined,
+            'baseInterpret',
+            'anotherBaseInterpret'
+          ],
+          'rubicon': [
+            'rubiconBuild',
+            { fun: { test: true }, speedy: true },
+            { amazing: true },
+            null,
+            'anotherBaseInterpret'
+          ]
+        });
+
+        // restore bid adapters
+        Object.keys(bidders).forEach(bidder => {
+          adapterManager.bidderRegistry[bidder] = bidders[bidder];
+        });
+        done();
+      }
     });
   });
 
@@ -237,6 +404,38 @@ describe('adapterManager tests', function () {
     });
   }); // end onSetTargeting
 
+  describe('onBidViewable', function () {
+    var criteoSpec = { onBidViewable: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      adapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete adapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onBidViewable callback when callBidViewableBidder is called', function () {
+      const bids = [
+        {bidder: 'criteo', params: {placementId: 'id'}},
+      ];
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids
+      }];
+      adapterManager.callBidViewableBidder(bids[0].bidder, bids[0]);
+      sinon.assert.called(criteoSpec.onBidViewable);
+    });
+  }); // end onBidViewable
+
   describe('S2S tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
@@ -244,144 +443,144 @@ describe('adapterManager tests', function () {
       prebidServerAdapterMock.callBids.reset();
     });
 
-    it('invokes callBids on the S2S adapter', function () {
-      let bidRequests = [{
-        'bidderCode': 'appnexus',
-        'auctionId': '1863e370099523',
-        'bidderRequestId': '2946b569352ef2',
-        'tid': '34566b569352ef2',
-        'timeout': 1000,
-        'src': 's2s',
-        'adUnitsS2SCopy': [
-          {
-            'code': '/19968336/header-bid-tag1',
-            'sizes': [
-              {
-                'w': 728,
-                'h': 90
-              },
-              {
-                'w': 970,
-                'h': 90
-              }
-            ],
-            'bids': [
-              {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': '543221',
-                  'test': 'me'
-                },
-                'adUnitCode': '/19968336/header-bid-tag1',
-                'sizes': [
-                  [
-                    728,
-                    90
-                  ],
-                  [
-                    970,
-                    90
-                  ]
-                ],
-                'bidId': '68136e1c47023d',
-                'bidderRequestId': '55e24a66bed717',
-                'auctionId': '1ff753bd4ae5cb',
-                'startTime': 1463510220995,
-                'status': 1,
-                'bid_id': '68136e1c47023d'
-              }
-            ]
-          },
-          {
-            'code': '/19968336/header-bid-tag-0',
-            'sizes': [
-              {
-                'w': 300,
-                'h': 250
-              },
-              {
-                'w': 300,
-                'h': 600
-              }
-            ],
-            'bids': [
-              {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': '5324321'
-                },
-                'adUnitCode': '/19968336/header-bid-tag-0',
-                'sizes': [
-                  [
-                    300,
-                    250
-                  ],
-                  [
-                    300,
-                    600
-                  ]
-                ],
-                'bidId': '7e5d6af25ed188',
-                'bidderRequestId': '55e24a66bed717',
-                'auctionId': '1ff753bd4ae5cb',
-                'startTime': 1463510220996,
-                'bid_id': '7e5d6af25ed188'
-              }
-            ]
-          }
-        ],
-        'bids': [
-          {
-            'bidder': 'appnexus',
-            'params': {
-              'placementId': '4799418',
-              'test': 'me'
+    const bidRequests = [{
+      'bidderCode': 'appnexus',
+      'auctionId': '1863e370099523',
+      'bidderRequestId': '2946b569352ef2',
+      'tid': '34566b569352ef2',
+      'timeout': 1000,
+      'src': 's2s',
+      'adUnitsS2SCopy': [
+        {
+          'code': '/19968336/header-bid-tag1',
+          'sizes': [
+            {
+              'w': 728,
+              'h': 90
             },
-            'adUnitCode': '/19968336/header-bid-tag1',
-            'sizes': [
-              [
-                728,
-                90
+            {
+              'w': 970,
+              'h': 90
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'appnexus',
+              'params': {
+                'placementId': '543221',
+                'test': 'me'
+              },
+              'adUnitCode': '/19968336/header-bid-tag1',
+              'sizes': [
+                [
+                  728,
+                  90
+                ],
+                [
+                  970,
+                  90
+                ]
               ],
-              [
-                970,
-                90
-              ]
-            ],
-            'bidId': '392b5a6b05d648',
-            'bidderRequestId': '2946b569352ef2',
-            'auctionId': '1863e370099523',
-            'startTime': 1462918897462,
-            'status': 1,
-            'transactionId': 'fsafsa'
-          },
-          {
-            'bidder': 'appnexus',
-            'params': {
-              'placementId': '4799418'
+              'bidId': '68136e1c47023d',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220995,
+              'status': 1,
+              'bid_id': '68136e1c47023d'
+            }
+          ]
+        },
+        {
+          'code': '/19968336/header-bid-tag-0',
+          'sizes': [
+            {
+              'w': 300,
+              'h': 250
             },
-            'adUnitCode': '/19968336/header-bid-tag-0',
-            'sizes': [
-              [
-                300,
-                250
+            {
+              'w': 300,
+              'h': 600
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'appnexus',
+              'params': {
+                'placementId': '5324321'
+              },
+              'adUnitCode': '/19968336/header-bid-tag-0',
+              'sizes': [
+                [
+                  300,
+                  250
+                ],
+                [
+                  300,
+                  600
+                ]
               ],
-              [
-                300,
-                600
-              ]
+              'bidId': '7e5d6af25ed188',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220996,
+              'bid_id': '7e5d6af25ed188'
+            }
+          ]
+        }
+      ],
+      'bids': [
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': '4799418',
+            'test': 'me'
+          },
+          'adUnitCode': '/19968336/header-bid-tag1',
+          'sizes': [
+            [
+              728,
+              90
             ],
-            'bidId': '4dccdc37746135',
-            'bidderRequestId': '2946b569352ef2',
-            'auctionId': '1863e370099523',
-            'startTime': 1462918897463,
-            'status': 1,
-            'transactionId': 'fsafsa'
-          }
-        ],
-        'start': 1462918897460
-      }];
+            [
+              970,
+              90
+            ]
+          ],
+          'bidId': '392b5a6b05d648',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897462,
+          'status': 1,
+          'transactionId': 'fsafsa'
+        },
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': '4799418'
+          },
+          'adUnitCode': '/19968336/header-bid-tag-0',
+          'sizes': [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          'bidId': '4dccdc37746135',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897463,
+          'status': 1,
+          'transactionId': 'fsafsa'
+        }
+      ],
+      'start': 1462918897460
+    }];
 
+    it('invokes callBids on the S2S adapter', function () {
       adapterManager.callBids(
         getAdUnits(),
         bidRequests,
@@ -408,143 +607,6 @@ describe('adapterManager tests', function () {
           }
         ]
       });
-
-      let bidRequests = [{
-        'bidderCode': 'appnexus',
-        'auctionId': '1863e370099523',
-        'bidderRequestId': '2946b569352ef2',
-        'tid': '34566b569352ef2',
-        'src': 's2s',
-        'timeout': 1000,
-        'adUnitsS2SCopy': [
-          {
-            'code': '/19968336/header-bid-tag1',
-            'sizes': [
-              {
-                'w': 728,
-                'h': 90
-              },
-              {
-                'w': 970,
-                'h': 90
-              }
-            ],
-            'bids': [
-              {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': '543221',
-                  'test': 'me'
-                },
-                'adUnitCode': '/19968336/header-bid-tag1',
-                'sizes': [
-                  [
-                    728,
-                    90
-                  ],
-                  [
-                    970,
-                    90
-                  ]
-                ],
-                'bidId': '68136e1c47023d',
-                'bidderRequestId': '55e24a66bed717',
-                'auctionId': '1ff753bd4ae5cb',
-                'startTime': 1463510220995,
-                'status': 1,
-                'bid_id': '378a8914450b334'
-              }
-            ]
-          },
-          {
-            'code': '/19968336/header-bid-tag-0',
-            'sizes': [
-              {
-                'w': 300,
-                'h': 250
-              },
-              {
-                'w': 300,
-                'h': 600
-              }
-            ],
-            'bids': [
-              {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': '5324321'
-                },
-                'adUnitCode': '/19968336/header-bid-tag-0',
-                'sizes': [
-                  [
-                    300,
-                    250
-                  ],
-                  [
-                    300,
-                    600
-                  ]
-                ],
-                'bidId': '7e5d6af25ed188',
-                'bidderRequestId': '55e24a66bed717',
-                'auctionId': '1ff753bd4ae5cb',
-                'startTime': 1463510220996,
-                'bid_id': '387d9d9c32ca47c'
-              }
-            ]
-          }
-        ],
-        'bids': [
-          {
-            'bidder': 'appnexus',
-            'params': {
-              'placementId': '4799418',
-              'test': 'me'
-            },
-            'adUnitCode': '/19968336/header-bid-tag1',
-            'sizes': [
-              [
-                728,
-                90
-              ],
-              [
-                970,
-                90
-              ]
-            ],
-            'bidId': '392b5a6b05d648',
-            'bidderRequestId': '2946b569352ef2',
-            'auctionId': '1863e370099523',
-            'startTime': 1462918897462,
-            'status': 1,
-            'transactionId': 'fsafsa'
-          },
-          {
-            'bidder': 'appnexus',
-            'params': {
-              'placementId': '4799418'
-            },
-            'adUnitCode': '/19968336/header-bid-tag-0',
-            'sizes': [
-              [
-                300,
-                250
-              ],
-              [
-                300,
-                600
-              ]
-            ],
-            'bidId': '4dccdc37746135',
-            'bidderRequestId': '2946b569352ef2',
-            'auctionId': '1863e370099523',
-            'startTime': 1462918897463,
-            'status': 1,
-            'transactionId': 'fsafsa'
-          }
-        ],
-        'start': 1462918897460
-      }];
 
       adapterManager.callBids(
         adUnits,
@@ -598,6 +660,371 @@ describe('adapterManager tests', function () {
       });
     });
   }); // end s2s tests
+
+  describe('Multiple S2S tests', function () {
+    beforeEach(function () {
+      config.setConfig({s2sConfig: [CONFIG, CONFIG2]});
+      adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
+      prebidServerAdapterMock.callBids.reset();
+    });
+
+    afterEach(function () {
+      allS2SBidders.length = 0;
+    });
+
+    const bidRequests = [{
+      'bidderCode': 'appnexus',
+      'auctionId': '1863e370099523',
+      'bidderRequestId': '2946b569352ef2',
+      'tid': '34566b569352ef2',
+      'timeout': 1000,
+      'src': 's2s',
+      'adUnitsS2SCopy': [
+        {
+          'code': '/19968336/header-bid-tag1',
+          'sizes': [
+            {
+              'w': 728,
+              'h': 90
+            },
+            {
+              'w': 970,
+              'h': 90
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'appnexus',
+              'params': {
+                'placementId': '543221',
+                'test': 'me'
+              },
+              'adUnitCode': '/19968336/header-bid-tag1',
+              'sizes': [
+                [
+                  728,
+                  90
+                ],
+                [
+                  970,
+                  90
+                ]
+              ],
+              'bidId': '68136e1c47023d',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220995,
+              'status': 1,
+              'bid_id': '68136e1c47023d'
+            }
+          ]
+        },
+        {
+          'code': '/19968336/header-bid-tag-0',
+          'sizes': [
+            {
+              'w': 300,
+              'h': 250
+            },
+            {
+              'w': 300,
+              'h': 600
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'appnexus',
+              'params': {
+                'placementId': '5324321'
+              },
+              'adUnitCode': '/19968336/header-bid-tag-0',
+              'sizes': [
+                [
+                  300,
+                  250
+                ],
+                [
+                  300,
+                  600
+                ]
+              ],
+              'bidId': '7e5d6af25ed188',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220996,
+              'bid_id': '7e5d6af25ed188'
+            }
+          ]
+        }
+      ],
+      'bids': [
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': '4799418',
+            'test': 'me'
+          },
+          'adUnitCode': '/19968336/header-bid-tag1',
+          'sizes': [
+            [
+              728,
+              90
+            ],
+            [
+              970,
+              90
+            ]
+          ],
+          'bidId': '392b5a6b05d648',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897462,
+          'status': 1,
+          'transactionId': 'fsafsa'
+        },
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': '4799418'
+          },
+          'adUnitCode': '/19968336/header-bid-tag-0',
+          'sizes': [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          'bidId': '4dccdc37746135',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897463,
+          'status': 1,
+          'transactionId': 'fsafsa'
+        }
+      ],
+      'start': 1462918897460
+    },
+    {
+      'bidderCode': 'pubmatic',
+      'auctionId': '1863e370099523',
+      'bidderRequestId': '2946b569352ef2',
+      'tid': '2342342342lfi23',
+      'timeout': 1000,
+      'src': 's2s',
+      'adUnitsS2SCopy': [
+        {
+          'code': '/19968336/header-bid-tag1',
+          'sizes': [
+            {
+              'w': 728,
+              'h': 90
+            },
+            {
+              'w': 970,
+              'h': 90
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'pubmatic',
+              'params': {
+                'placementId': '543221',
+                'test': 'me'
+              },
+              'adUnitCode': '/19968336/header-bid-tag1',
+              'sizes': [
+                [
+                  728,
+                  90
+                ],
+                [
+                  970,
+                  90
+                ]
+              ],
+              'bidId': '68136e1c47023d',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220995,
+              'status': 1,
+              'bid_id': '68136e1c47023d'
+            }
+          ]
+        },
+        {
+          'code': '/19968336/header-bid-tag-0',
+          'sizes': [
+            {
+              'w': 300,
+              'h': 250
+            },
+            {
+              'w': 300,
+              'h': 600
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'pubmatic',
+              'params': {
+                'placementId': '5324321'
+              },
+              'adUnitCode': '/19968336/header-bid-tag-0',
+              'sizes': [
+                [
+                  300,
+                  250
+                ],
+                [
+                  300,
+                  600
+                ]
+              ],
+              'bidId': '7e5d6af25ed188',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220996,
+              'bid_id': '7e5d6af25ed188'
+            }
+          ]
+        }
+      ],
+      'bids': [
+        {
+          'bidder': 'pubmatic',
+          'params': {
+            'placementId': '4799418',
+            'test': 'me'
+          },
+          'adUnitCode': '/19968336/header-bid-tag1',
+          'sizes': [
+            [
+              728,
+              90
+            ],
+            [
+              970,
+              90
+            ]
+          ],
+          'bidId': '392b5a6b05d648',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897462,
+          'status': 1,
+          'transactionId': '4r42r23r23'
+        },
+        {
+          'bidder': 'pubmatic',
+          'params': {
+            'placementId': '4799418'
+          },
+          'adUnitCode': '/19968336/header-bid-tag-0',
+          'sizes': [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          'bidId': '4dccdc37746135',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897463,
+          'status': 1,
+          'transactionId': '4r42r23r23'
+        }
+      ],
+      'start': 1462918897460
+    }];
+
+    it('invokes callBids on the S2S adapter', function () {
+      adapterManager.callBids(
+        getAdUnits(),
+        bidRequests,
+        () => {},
+        () => () => {}
+      );
+      sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+    });
+
+    // Enable this test when prebidServer adapter is made 1.0 compliant
+    it('invokes callBids with only s2s bids', function () {
+      const adUnits = getAdUnits();
+      // adUnit without appnexus bidder
+      adUnits.push({
+        'code': '123',
+        'sizes': [300, 250],
+        'bids': [
+          {
+            'bidder': 'adequant',
+            'params': {
+              'publisher_id': '1234567',
+              'bidfloor': 0.01
+            }
+          }
+        ]
+      });
+
+      adapterManager.callBids(
+        adUnits,
+        bidRequests,
+        () => {},
+        () => () => {}
+      );
+      const requestObj = prebidServerAdapterMock.callBids.firstCall.args[0];
+      expect(requestObj.ad_units.length).to.equal(2);
+      sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+    });
+
+    describe('BID_REQUESTED event', function () {
+      // function to count BID_REQUESTED events
+      let cnt, count = () => cnt++;
+
+      beforeEach(function () {
+        prebidServerAdapterMock.callBids.reset();
+        cnt = 0;
+        events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
+      });
+
+      afterEach(function () {
+        events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
+      });
+
+      it('should fire for s2s requests', function () {
+        let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+          adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'pubmatic'], bid.bidder));
+          return adUnit;
+        })
+        let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+        adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        expect(cnt).to.equal(2);
+        sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+      });
+
+      it('should fire for simultaneous s2s and client requests', function () {
+        adapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
+        let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+          adUnit.bids = adUnit.bids.filter(bid => includes(['adequant', 'appnexus', 'pubmatic'], bid.bidder));
+          return adUnit;
+        })
+        let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+        adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        expect(cnt).to.equal(3);
+        sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+        sinon.assert.calledOnce(adequantAdapterMock.callBids);
+        adequantAdapterMock.callBids.reset();
+        delete adapterManager.bidderRegistry['adequant'];
+      });
+    });
+  }); // end multiple s2s tests
 
   describe('s2sTesting', function () {
     let doneStub = sinon.stub();
@@ -656,7 +1083,6 @@ describe('adapterManager tests', function () {
     });
 
     afterEach(function () {
-      config.setConfig({s2sConfig: {}});
       s2sTesting.getSourceBidderMap.restore();
     });
 
@@ -686,20 +1112,6 @@ describe('adapterManager tests', function () {
 
       // adequant
       sinon.assert.notCalled(adequantAdapterMock.callBids);
-    });
-
-    it('calls client adapters if client sources defined', function () {
-      stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
-      callBids();
-
-      // server adapter
-      checkServerCalled(2, 2);
-
-      // appnexus
-      checkClientCalled(appnexusAdapterMock, 2);
-
-      // adequant
-      checkClientCalled(adequantAdapterMock, 2);
     });
 
     it('calls client adapters if client sources defined', function () {
@@ -793,6 +1205,334 @@ describe('adapterManager tests', function () {
     });
   });
 
+  describe('Multiple Server s2sTesting', function () {
+    let doneStub = sinon.stub();
+    let ajaxStub = sinon.stub();
+
+    function getTestAdUnits() {
+      // copy adUnits
+      return utils.deepClone(getAdUnits()).map(adUnit => {
+        adUnit.bids = adUnit.bids.filter(bid => {
+          return includes(['adequant', 'appnexus', 'pubmatic', 'rubicon'],
+            bid.bidder);
+        });
+        return adUnit;
+      })
+    }
+
+    function callBids(adUnits = getTestAdUnits()) {
+      let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+      adapterManager.callBids(adUnits, bidRequests, doneStub, ajaxStub);
+    }
+
+    function checkServerCalled(numAdUnits, firstConfigNumBids, secondConfigNumBids) {
+      let requestObjects = [];
+      let configBids;
+      if (firstConfigNumBids === 0 || secondConfigNumBids === 0) {
+        configBids = Math.max(firstConfigNumBids, secondConfigNumBids)
+        sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+        let requestObj1 = prebidServerAdapterMock.callBids.firstCall.args[0];
+        requestObjects.push(requestObj1)
+      } else {
+        sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+        let requestObj1 = prebidServerAdapterMock.callBids.firstCall.args[0];
+        let requestObj2 = prebidServerAdapterMock.callBids.secondCall.args[0];
+        requestObjects.push(requestObj1, requestObj2);
+      }
+
+      requestObjects.forEach((requestObj, index) => {
+        const numBids = configBids !== undefined ? configBids : index === 0 ? firstConfigNumBids : secondConfigNumBids
+        expect(requestObj.ad_units.length).to.equal(numAdUnits);
+        for (let i = 0; i < numAdUnits; i++) {
+          expect(requestObj.ad_units[i].bids.filter((bid) => {
+            return bid.bidder === 'appnexus' || bid.bidder === 'adequant' || bid.bidder === 'pubmatic';
+          }).length).to.equal(numBids);
+        }
+      })
+    }
+
+    function checkClientCalled(adapter, numBids) {
+      sinon.assert.calledOnce(adapter.callBids);
+      expect(adapter.callBids.firstCall.args[0].bids.length).to.equal(numBids);
+    }
+
+    beforeEach(function () {
+      allS2SBidders.length = 0;
+      clientTestAdapters.length = 0
+
+      adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
+      adapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
+      adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
+      adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
+      adapterManager.bidderRegistry['pubmatic'] = pubmaticAdapterMock;
+
+      prebidServerAdapterMock.callBids.reset();
+      adequantAdapterMock.callBids.reset();
+      appnexusAdapterMock.callBids.reset();
+      rubiconAdapterMock.callBids.reset();
+      pubmaticAdapterMock.callBids.reset();
+    });
+
+    it('calls server adapter if no sources defined for config where testing is true, ' +
+    'calls client adapter for second config where testing is false', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        testing: true,
+      });
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+
+      callBids();
+
+      // server adapter
+      checkServerCalled(2, 2, 1);
+
+      // appnexus
+      sinon.assert.notCalled(appnexusAdapterMock.callBids);
+
+      // adequant
+      sinon.assert.notCalled(adequantAdapterMock.callBids);
+
+      // pubmatic
+      sinon.assert.notCalled(pubmaticAdapterMock.callBids);
+
+      // rubicon
+      sinon.assert.called(rubiconAdapterMock.callBids);
+    });
+
+    it('calls client adapter if one client source defined for config where testing is true, ' +
+    'calls client adapter for second config where testing is false', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        bidderControl: {
+          appnexus: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true,
+      });
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      callBids();
+
+      // server adapter
+      checkServerCalled(2, 1, 1);
+
+      // appnexus
+      checkClientCalled(appnexusAdapterMock, 2);
+
+      // adequant
+      sinon.assert.notCalled(adequantAdapterMock.callBids);
+
+      // pubmatic
+      sinon.assert.notCalled(pubmaticAdapterMock.callBids);
+
+      // rubicon
+      checkClientCalled(rubiconAdapterMock, 1);
+    });
+
+    it('calls client adapters if client sources defined in first config and server in second config', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        bidderControl: {
+          appnexus: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+          adequant: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true,
+      });
+
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+
+      callBids();
+
+      // server adapter
+      checkServerCalled(2, 0, 1);
+
+      // appnexus
+      checkClientCalled(appnexusAdapterMock, 2);
+
+      // adequant
+      checkClientCalled(adequantAdapterMock, 2);
+
+      // pubmatic
+      sinon.assert.notCalled(pubmaticAdapterMock.callBids);
+
+      // rubicon
+      checkClientCalled(rubiconAdapterMock, 1);
+    });
+
+    it('does not call server adapter for bidders that go to client when both configs are set to client', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        bidderControl: {
+          appnexus: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+          adequant: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true,
+      });
+
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        bidderControl: {
+          pubmatic: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      callBids();
+
+      sinon.assert.notCalled(prebidServerAdapterMock.callBids);
+
+      // appnexus
+      checkClientCalled(appnexusAdapterMock, 2);
+
+      // adequant
+      checkClientCalled(adequantAdapterMock, 2);
+
+      // pubmatic
+      checkClientCalled(pubmaticAdapterMock, 2);
+
+      // rubicon
+      checkClientCalled(rubiconAdapterMock, 1);
+    });
+
+    it('does not call client adapters for bidders in either config when testServerOnly if true in first config', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        testServerOnly: true,
+        bidderControl: {
+          appnexus: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+          adequant: {
+            bidSource: { server: 100, client: 0 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true,
+      });
+
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        bidderControl: {
+          pubmatic: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          }
+        },
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      callBids();
+
+      // server adapter
+      checkServerCalled(2, 1, 0);
+
+      // appnexus
+      sinon.assert.notCalled(appnexusAdapterMock.callBids);
+
+      // adequant
+      sinon.assert.notCalled(adequantAdapterMock.callBids);
+
+      // pubmatic
+      sinon.assert.notCalled(pubmaticAdapterMock.callBids);
+
+      // rubicon
+      sinon.assert.notCalled(rubiconAdapterMock.callBids);
+    });
+
+    it('does not call client adapters for bidders in either config when testServerOnly if true in second config', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        bidderControl: {
+          appnexus: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+          adequant: {
+            bidSource: { server: 100, client: 0 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true,
+      });
+
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        testServerOnly: true,
+        bidderControl: {
+          pubmatic: {
+            bidSource: { server: 100, client: 0 },
+            includeSourceKvp: true,
+          }
+        },
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      callBids();
+
+      // server adapter
+      checkServerCalled(2, 1, 1);
+
+      // appnexus
+      sinon.assert.notCalled(appnexusAdapterMock.callBids);
+
+      // adequant
+      sinon.assert.notCalled(adequantAdapterMock.callBids);
+
+      // pubmatic
+      sinon.assert.notCalled(pubmaticAdapterMock.callBids);
+
+      // rubicon
+      sinon.assert.notCalled(rubiconAdapterMock.callBids);
+    });
+  });
+
   describe('aliasBidderAdaptor', function() {
     const CODE = 'sampleBidder';
 
@@ -838,6 +1578,27 @@ describe('adapterManager tests', function () {
         expect(adapterManager.aliasRegistry).to.have.property('s2sAlias');
       });
 
+      it('should allow an alias if alias is part of s2sConfig.bidders for multiple s2sConfigs', function () {
+        let testS2sConfig = utils.deepClone(CONFIG);
+        testS2sConfig.bidders = ['s2sAlias'];
+        config.setConfig({s2sConfig: [
+          testS2sConfig, {
+            enabled: true,
+            endpoint: 'rp-pbs-endpoint-test.com',
+            timeout: 500,
+            maxBids: 1,
+            adapter: 'prebidServer',
+            bidders: ['s2sRpAlias'],
+            accountId: 'def'
+          }
+        ]});
+
+        adapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
+        expect(adapterManager.aliasRegistry).to.have.property('s2sAlias');
+        adapterManager.aliasBidAdapter('s2sBidder', 's2sRpAlias');
+        expect(adapterManager.aliasRegistry).to.have.property('s2sRpAlias');
+      });
+
       it('should throw an error if alias + bidder are unknown and not part of s2sConfig.bidders', function () {
         let testS2sConfig = utils.deepClone(CONFIG);
         testS2sConfig.bidders = ['s2sAlias'];
@@ -853,6 +1614,7 @@ describe('adapterManager tests', function () {
   describe('makeBidRequests', function () {
     let adUnits;
     beforeEach(function () {
+      allS2SBidders.length = 0
       adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
         return adUnit;
@@ -904,6 +1666,8 @@ describe('adapterManager tests', function () {
 
     describe('sizeMapping', function () {
       beforeEach(function () {
+        allS2SBidders.length = 0;
+        clientTestAdapters.length = 0;
         sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
       });
 
@@ -913,7 +1677,7 @@ describe('adapterManager tests', function () {
         setSizeConfig([]);
       });
 
-      it('should not filter bids w/ no labels', function () {
+      it('should not filter banner bids w/ no labels', function () {
         let bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
@@ -925,12 +1689,91 @@ describe('adapterManager tests', function () {
         expect(bidRequests.length).to.equal(2);
         let rubiconBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'rubicon');
         expect(rubiconBidRequests.bids.length).to.equal(1);
-        expect(rubiconBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).sizes);
+        expect(rubiconBidRequests.bids[0].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).mediaTypes);
 
         let appnexusBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'appnexus');
         expect(appnexusBidRequests.bids.length).to.equal(2);
-        expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
-        expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
+        expect(appnexusBidRequests.bids[0].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).mediaTypes);
+        expect(appnexusBidRequests.bids[1].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).mediaTypes);
+      });
+
+      it('should not filter video bids', function () {
+        setSizeConfig([{
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'sizesSupported': [
+            [728, 90],
+            [300, 250]
+          ],
+          'labels': ['tablet', 'phone']
+        }]);
+
+        let videoAdUnits = [{
+          code: 'test_video',
+          mediaTypes: {
+            video: {
+              playerSize: [300, 300],
+              context: 'outstream'
+            }
+          },
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: 13232385,
+              video: {
+                skippable: true,
+                playback_method: ['auto_play_sound_off']
+              }
+            }
+          }]
+        }];
+        let bidRequests = adapterManager.makeBidRequests(
+          videoAdUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        expect(bidRequests[0].bids[0].sizes).to.deep.equal([300, 300]);
+      });
+
+      it('should not filter native bids', function () {
+        setSizeConfig([{
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'sizesSupported': [
+            [728, 90],
+            [300, 250]
+          ],
+          'labels': ['tablet', 'phone']
+        }]);
+
+        let nativeAdUnits = [{
+          code: 'test_native',
+          sizes: [[1, 1]],
+          mediaTypes: {
+            native: {
+              title: { required: true },
+              body: { required: false },
+              image: { required: true },
+              icon: { required: false },
+              sponsoredBy: { required: true },
+              clickUrl: { required: true },
+            },
+          },
+          bids: [
+            {
+              bidder: 'appnexus',
+              params: { placementId: 13232354 }
+            },
+          ]
+        }];
+        let bidRequests = adapterManager.makeBidRequests(
+          nativeAdUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        expect(bidRequests[0].bids[0].sizes).to.deep.equal([]);
       });
 
       it('should filter sizes using size config', function () {
@@ -958,7 +1801,7 @@ describe('adapterManager tests', function () {
           []
         );
 
-          // only valid sizes as specified in size config should show up in bidRequests
+        // only valid sizes as specified in size config should show up in bidRequests
         bidRequests.forEach(bidRequest => {
           bidRequest.bids.forEach(bid => {
             bid.sizes.forEach(size => {
@@ -1028,8 +1871,6 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].adUnitsS2SCopy.length).to.equal(1);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids.length).to.equal(1);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].bidder).to.equal('rubicon');
-        expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
-        expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].bid_id).to.equal(bidRequests[0].bids[0].bid_id);
         expect(bidRequests[0].adUnitsS2SCopy[0].labelAny).to.deep.equal(['visitor-uk', 'desktop']);
       });
     });
@@ -1062,6 +1903,338 @@ describe('adapterManager tests', function () {
         );
         expect(bidRequests[0].gdprConsent).to.be.undefined;
       });
+    });
+    describe('coppa consent module', function () {
+      afterEach(() => {
+        config.resetConfig();
+      });
+      it('test coppa configuration with value false', function () {
+        config.setConfig({ coppa: 0 });
+        const coppa = coppaDataHandler.getCoppa();
+        expect(coppa).to.be.false;
+      });
+      it('test coppa configuration with value true', function () {
+        config.setConfig({ coppa: 1 });
+        const coppa = coppaDataHandler.getCoppa();
+        expect(coppa).to.be.true;
+      });
+      it('test coppa configuration', function () {
+        const coppa = coppaDataHandler.getCoppa();
+        expect(coppa).to.be.false;
+      });
+    });
+    describe('s2sTesting - testServerOnly', () => {
+      beforeEach(() => {
+        config.setConfig({ s2sConfig: getServerTestingConfig(CONFIG) });
+        allS2SBidders.length = 0
+        s2sTesting.bidSource = {};
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      const makeBidRequests = ads => {
+        let bidRequests = adapterManager.makeBidRequests(
+          ads, 1111, 2222, 1000
+        );
+
+        bidRequests.sort((a, b) => {
+          if (a.bidderCode < b.bidderCode) return -1;
+          if (a.bidderCode > b.bidderCode) return 1;
+          return 0;
+        });
+
+        return bidRequests;
+      };
+
+      const removeAdUnitsBidSource = adUnits => adUnits.map(adUnit => {
+        const newAdUnit = { ...adUnit };
+        newAdUnit.bids = newAdUnit.bids.map(bid => {
+          if (bid.bidSource) delete bid.bidSource;
+          return bid;
+        });
+        return newAdUnit;
+      });
+
+      it('suppresses all client bids if there are server bids resulting from bidSource at the adUnit Level', () => {
+        const bidRequests = makeBidRequests(getServerTestingsAds());
+
+        expect(bidRequests).lengthOf(2);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('openx');
+        expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+      });
+
+      // todo: update description
+      it('suppresses all, and only, client bids if there are bids resulting from bidSource at the adUnit Level', () => {
+        const ads = getServerTestingsAds();
+
+        // change this adUnit to be server based
+        ads[1].bids[1].bidSource.client = 0;
+        ads[1].bids[1].bidSource.server = 100;
+
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(3);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[1].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('openx');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
+      });
+
+      // we have a server call now
+      it('does not suppress client bids if no "test case" bids result in a server bid', () => {
+        const ads = getServerTestingsAds();
+
+        // change this adUnit to be client based
+        ads[0].bids[0].bidSource.client = 100;
+        ads[0].bids[0].bidSource.server = 0;
+
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(4);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('adequant');
+        expect(bidRequests[0].bids[0].finalSource).equals('client');
+
+        expect(bidRequests[1].bids).lengthOf(2);
+        expect(bidRequests[1].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[1].bids[0].finalSource).equals('client');
+        expect(bidRequests[1].bids[1].bidder).equals('appnexus');
+        expect(bidRequests[1].bids[1].finalSource).equals('client');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('openx');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[3].bids).lengthOf(2);
+        expect(bidRequests[3].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[3].bids[0].finalSource).equals('client');
+        expect(bidRequests[3].bids[1].bidder).equals('rubicon');
+        expect(bidRequests[3].bids[1].finalSource).equals('client');
+      });
+
+      it(
+        'should surpress client side bids if no ad unit bidSources are set, ' +
+        'but bidderControl resolves to server',
+        () => {
+          const ads = removeAdUnitsBidSource(getServerTestingsAds());
+
+          const bidRequests = makeBidRequests(ads);
+
+          expect(bidRequests).lengthOf(2);
+
+          expect(bidRequests[0].bids).lengthOf(1);
+          expect(bidRequests[0].bids[0].bidder).equals('openx');
+          expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+          expect(bidRequests[1].bids).lengthOf(2);
+          expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+          expect(bidRequests[1].bids[0].finalSource).equals('server');
+        }
+      );
+    });
+
+    describe('Multiple s2sTesting - testServerOnly', () => {
+      beforeEach(() => {
+        config.setConfig({s2sConfig: [getServerTestingConfig(CONFIG), CONFIG2]});
+      });
+
+      afterEach(() => {
+        config.resetConfig()
+        allS2SBidders.length = 0;
+        s2sTesting.bidSource = {};
+      });
+
+      const makeBidRequests = ads => {
+        let bidRequests = adapterManager.makeBidRequests(
+          ads, 1111, 2222, 1000
+        );
+
+        bidRequests.sort((a, b) => {
+          if (a.bidderCode < b.bidderCode) return -1;
+          if (a.bidderCode > b.bidderCode) return 1;
+          return 0;
+        });
+
+        return bidRequests;
+      };
+
+      const removeAdUnitsBidSource = adUnits => adUnits.map(adUnit => {
+        const newAdUnit = { ...adUnit };
+        newAdUnit.bids = newAdUnit.bids.map(bid => {
+          if (bid.bidSource) delete bid.bidSource;
+          return bid;
+        });
+        return newAdUnit;
+      });
+
+      it('suppresses all client bids if there are server bids resulting from bidSource at the adUnit Level', () => {
+        let ads = getServerTestingsAds();
+        ads.push({
+          code: 'test_div_5',
+          sizes: [[300, 250]],
+          bids: [{ bidder: 'pubmatic' }]
+        })
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(3);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('openx');
+        expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('pubmatic');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
+      });
+
+      it('should not surpress client side bids if testServerOnly is true in one config, ' +
+      ',bidderControl resolves to server in another config' +
+      'and there are no bid with bidSource at the adUnit Level', () => {
+        let testConfig1 = utils.deepClone(getServerTestingConfig(CONFIG));
+        let testConfig2 = utils.deepClone(CONFIG2);
+        testConfig1.testServerOnly = false;
+        testConfig2.testServerOnly = true;
+        testConfig2.testing = true;
+        testConfig2.bidderControl = {
+          'pubmatic': {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+        };
+        config.setConfig({s2sConfig: [testConfig1, testConfig2]});
+
+        let ads = [
+          {
+            code: 'test_div_1',
+            sizes: [[300, 250]],
+            bids: [{ bidder: 'adequant' }]
+          },
+          {
+            code: 'test_div_2',
+            sizes: [[300, 250]],
+            bids: [{ bidder: 'openx' }]
+          },
+          {
+            code: 'test_div_3',
+            sizes: [[300, 250]],
+            bids: [{ bidder: 'pubmatic' }]
+          },
+        ];
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(3);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('adequant');
+        expect(bidRequests[0].bids[0].finalSource).equals('client');
+
+        expect(bidRequests[1].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('openx');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('pubmatic');
+        expect(bidRequests[2].bids[0].finalSource).equals('client');
+      });
+
+      // todo: update description
+      it('suppresses all, and only, client bids if there are bids resulting from bidSource at the adUnit Level', () => {
+        const ads = getServerTestingsAds();
+
+        // change this adUnit to be server based
+        ads[1].bids[1].bidSource.client = 0;
+        ads[1].bids[1].bidSource.server = 100;
+
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(3);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[1].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('openx');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
+      });
+
+      // we have a server call now
+      it('does not suppress client bids if no "test case" bids result in a server bid', () => {
+        const ads = getServerTestingsAds();
+
+        // change this adUnit to be client based
+        ads[0].bids[0].bidSource.client = 100;
+        ads[0].bids[0].bidSource.server = 0;
+
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(4);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('adequant');
+        expect(bidRequests[0].bids[0].finalSource).equals('client');
+
+        expect(bidRequests[1].bids).lengthOf(2);
+        expect(bidRequests[1].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[1].bids[0].finalSource).equals('client');
+        expect(bidRequests[1].bids[1].bidder).equals('appnexus');
+        expect(bidRequests[1].bids[1].finalSource).equals('client');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('openx');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[3].bids).lengthOf(2);
+        expect(bidRequests[3].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[3].bids[0].finalSource).equals('client');
+        expect(bidRequests[3].bids[1].bidder).equals('rubicon');
+        expect(bidRequests[3].bids[1].finalSource).equals('client');
+      });
+
+      it(
+        'should surpress client side bids if no ad unit bidSources are set, ' +
+        'but bidderControl resolves to server',
+        () => {
+          const ads = removeAdUnitsBidSource(getServerTestingsAds());
+
+          const bidRequests = makeBidRequests(ads);
+
+          expect(bidRequests).lengthOf(2);
+
+          expect(bidRequests[0].bids).lengthOf(1);
+          expect(bidRequests[0].bids[0].bidder).equals('openx');
+          expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+          expect(bidRequests[1].bids).lengthOf(2);
+          expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+          expect(bidRequests[1].bids[0].finalSource).equals('server');
+        }
+      );
     });
   });
 });
