@@ -986,5 +986,12 @@ describe('Smart bid adapter tests', function () {
       const floor = spec.getBidFloor(bidRequest, 'EUR');
       expect(floor).to.deep.equal(0.0);
     });
+
+    it('should return default floor when currency unknown', function() {
+      const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
+
+      const floor = spec.getBidFloor(bidRequest, null);
+      expect(floor).to.deep.equal(0);
+    });
   });
 });
