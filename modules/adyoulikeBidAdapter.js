@@ -477,7 +477,6 @@ function createBid(response, bidRequests) {
     bid.native = getNativeAssets(response, request.Native);
     bid.mediaType = 'native';
   } else if (request && request.Video) {
-    
     const vast64 = response.Vast || getVideoAd(response);
     bid.vastXml = vast64 ? window.atob(vast64) : '';
     bid.mediaType = 'video';
