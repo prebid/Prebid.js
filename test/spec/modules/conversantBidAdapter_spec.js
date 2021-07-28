@@ -661,7 +661,7 @@ describe('Conversant adapter tests', function() {
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
   });
-  
+
   describe('getUserSyncs', function() {
     const syncurl_iframe = 'https://sync.dotomi.com/iframe';
     const syncurl_image = 'https://sync.dotomi.com/pixel';
