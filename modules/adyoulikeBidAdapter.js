@@ -446,7 +446,7 @@ function getNativeAssets(response, nativeConfig) {
 
 /* Create bid from response */
 function createBid(response, bidRequests) {
-  if (!response || (!response.Ad && !response.Native)) {
+  if (!response || (!response.Ad && !response.Native && !response.Vast)) {
     return
   }
 
@@ -477,6 +477,7 @@ function createBid(response, bidRequests) {
     bid.native = getNativeAssets(response, request.Native);
     bid.mediaType = 'native';
   } else if (request && request.Video) {
+    
     const vast64 = response.Vast || getVideoAd(response);
     bid.vastXml = vast64 ? window.atob(vast64) : '';
     bid.mediaType = 'video';
