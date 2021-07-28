@@ -6,11 +6,11 @@ eCommerce with actionable 1st party audience and contextual data from the
 world’s most influential retailers, lifestyle publishers, content creators,
 athletes and artists.
 
-The Halo real-time data module for Prebid.org has been created for publishers
-so that they can maximize the power of their first-party audiences and
-contextual data.  This module provides both an integrated cookieless Halo
-identity with real-time contextual and audience segmentation solution that
-seamlessly and easily integrates into your existing Prebid deployment.
+The Halo real-time data module in Prebid has been built so that publishers
+can maximize the power of their first-party audiences and contextual data.
+This module provides both an integrated cookieless Halo identity with real-time
+contextual and audience segmentation solution that seamlessly and easily
+integrates into your existing Prebid deployment.
 
 Users, devices, content, cohorts and other features are identified and utilized
 to augment every bid request with targeted, 1st party data-derived segments
