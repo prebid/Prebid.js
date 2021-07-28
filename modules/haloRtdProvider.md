@@ -124,7 +124,3 @@ To view an example of available segments returned by Audigent's backends:
 and then point your browser at:
 
 `http://localhost:9999/integrationExamples/gpt/haloRtdProvider_example.html`
-
-
-
-
