@@ -16,7 +16,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.websiteId && bid.params.externalId);
+    return !!(bid.params.websiteId);
   },
 
   /**
@@ -85,6 +85,9 @@ export const spec = {
           height: bidData.height,
           ad: bidData.ad,
           ttl: 300,
+          meta: {
+            advertiserDomains: bidData.adomain ? bidData.adomain : []
+          },
           creativeId: bidData.creativeId,
           netRevenue: true,
         };

@@ -62,6 +62,9 @@ export const spec = {
       currency: ad.currency || 'USD',
       netRevenue: true,
       ttl: 300, // 5 minutes
+      meta: {
+        advertiserDomains: ad.adomain || []
+      },
     }
 
     if (AD_TYPE.VIDEO === ad.ad_type) {

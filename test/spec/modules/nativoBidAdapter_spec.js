@@ -65,8 +65,11 @@ describe('nativoBidAdapterTests', function () {
       expect(request.url).to.be.a('string')
 
       expect(request.url).to.include('?')
-      expect(request.url).to.include('ntv_url')
       expect(request.url).to.include('ntv_ptd')
+      expect(request.url).to.include('ntv_pb_rid')
+      expect(request.url).to.include('ntv_ppc')
+      expect(request.url).to.include('ntv_url')
+      expect(request.url).to.include('ntv_dbr')
     })
   })
 })
@@ -119,8 +122,8 @@ describe('interpretResponse', function () {
       bids: [
         {
           params: {
-            placementId: 1
-          }
+            placementId: 1,
+          },
         },
       ],
     }
@@ -171,11 +174,11 @@ describe('getUserSyncs', function () {
 
   const gdprConsent = {
     gdprApplies: true,
-    consentString: '111111'
+    consentString: '111111',
   }
 
   const uspConsent = {
-    uspConsent: '1YYY'
+    uspConsent: '1YYY',
   }
 
   it('Returns empty array if no supported user syncs', function () {
@@ -205,7 +208,9 @@ describe('getUserSyncs', function () {
     expect(userSync[0].type).to.exist
     expect(userSync[0].url).to.exist
     expect(userSync[0].type).to.be.equal('iframe')
-    expect(userSync[0].url).to.contain('gdpr=1&gdpr_consent=111111&us_privacy=1YYY')
+    expect(userSync[0].url).to.contain(
+      'gdpr=1&gdpr_consent=111111&us_privacy=1YYY'
+    )
   })
 
   it('Returns valid URL and type', function () {
@@ -222,6 +227,8 @@ describe('getUserSyncs', function () {
     expect(userSync[0].type).to.exist
     expect(userSync[0].url).to.exist
     expect(userSync[0].type).to.be.equal('image')
-    expect(userSync[0].url).to.contain('gdpr=1&gdpr_consent=111111&us_privacy=1YYY')
+    expect(userSync[0].url).to.contain(
+      'gdpr=1&gdpr_consent=111111&us_privacy=1YYY'
+    )
   })
 })

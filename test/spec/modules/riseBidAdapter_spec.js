@@ -3,6 +3,7 @@ import { spec } from 'modules/riseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { VIDEO } from '../../../src/mediaTypes.js';
+import { deepClone } from 'src/utils.js';
 
 const ENDPOINT = 'https://hb.yellowblue.io/hb';
 const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-test';
@@ -75,29 +76,11 @@ describe('riseAdapter', function () {
       bidderCode: 'rise',
     }
 
-    const customSessionId = '12345678';
-
     it('sends bid request to ENDPOINT via GET', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (const request of requests) {
         expect(request.url).to.equal(ENDPOINT);
         expect(request.method).to.equal('GET');
-      }
-    });
-
-    it('sends the is_wrapper query param', function () {
-      bidRequests[0].params.isWrapper = true;
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data.is_wrapper).to.equal(true);
-      }
-    });
-
-    it('sends the custom session id as a query param', function () {
-      bidRequests[0].params.sessionId = customSessionId;
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      for (const request of requests) {
-        expect(request.data.session_id).to.equal(customSessionId);
       }
     });
 
@@ -268,6 +251,34 @@ describe('riseAdapter', function () {
         expect(request.data).to.have.property('schain', '1.0,1!indirectseller.com,00001,,,,');
       }
     });
+
+    it('should set floor_price to getFloor.floor value if it is greater than params.floorPrice', function() {
+      const bid = deepClone(bidRequests[0]);
+      bid.getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 3.32
+        }
+      }
+      bid.params.floorPrice = 0.64;
+      const request = spec.buildRequests([bid], bidderRequest)[0];
+      expect(request.data).to.be.an('object');
+      expect(request.data).to.have.property('floor_price', 3.32);
+    });
+
+    it('should set floor_price to params.floorPrice value if it is greater than getFloor.floor', function() {
+      const bid = deepClone(bidRequests[0]);
+      bid.getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 0.8
+        }
+      }
+      bid.params.floorPrice = 1.5;
+      const request = spec.buildRequests([bid], bidderRequest)[0];
+      expect(request.data).to.be.an('object');
+      expect(request.data).to.have.property('floor_price', 1.5);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -278,7 +289,8 @@ describe('riseAdapter', function () {
       height: 480,
       requestId: '21e12606d47ba7',
       netRevenue: true,
-      currency: 'USD'
+      currency: 'USD',
+      adomain: ['abc.com']
     };
 
     it('should get correct bid response', function () {
@@ -293,7 +305,10 @@ describe('riseAdapter', function () {
           netRevenue: true,
           ttl: TTL,
           vastXml: '<VAST version="3.0"></VAST>',
-          mediaType: VIDEO
+          mediaType: VIDEO,
+          meta: {
+            advertiserDomains: ['abc.com']
+          }
         }
       ];
       const result = spec.interpretResponse({ body: response });
