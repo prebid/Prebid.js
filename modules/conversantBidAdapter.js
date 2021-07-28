@@ -249,7 +249,7 @@ export const spec = {
       'mobile': 'number'
     }, params);
   },
-  
+
   /**
    * Register User Sync.
    */
