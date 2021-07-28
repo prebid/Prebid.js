@@ -183,7 +183,8 @@ describe('LiveIntentId', function() {
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[1];
-    expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899');
+    expect(request.url).to.be.eq('https://rp.liadm.com/j?wpn=prebid&pu=http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D70114353&se=e30&e=58131bc547fb87af94cebdaf3102321f&dtstmp=1627484401289');
+    // expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899');
     request.respond(
       503,
       responseHeader,
