@@ -1,19 +1,13 @@
 import * as utils from '../src/utils.js';
-import {
-  BANNER,
-  VIDEO
-} from '../src/mediaTypes.js';
-import {
-  config
-} from '../src/config.js';
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
-import {
-  createEidsArray
-} from './userId/eids.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { createEidsArray } from './userId/eids.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+
 const BIDDER_CODE = 'smartadserver';
 const GVL_ID = 45;
+const DEFAULT_FLOOR = 0.0;
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
@@ -53,8 +47,8 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // use bidderRequest.bids[] to get bidder-dependent request info
-    // if your bidder supports multiple currencies, use config.getConfig(currency)
-    // to find which one the ad server needs
+
+    const adServerCurrency = config.getConfig('currency.adServerCurrency');
 
     // pull requested transaction ID from bidderRequest.bids[].transactionId
     return validBidRequests.map(bid => {
@@ -63,8 +57,8 @@ export const spec = {
         siteid: bid.params.siteId,
         pageid: bid.params.pageId,
         formatid: bid.params.formatId,
-        currencyCode: config.getConfig('currency.adServerCurrency'),
-        bidfloor: bid.params.bidfloor || 0.0,
+        currencyCode: adServerCurrency,
+        bidfloor: bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency),
         targeting: bid.params.target && bid.params.target !== '' ? bid.params.target : undefined,
         buid: bid.params.buId && bid.params.buId !== '' ? bid.params.buId : undefined,
         appname: bid.params.appName && bid.params.appName !== '' ? bid.params.appName : undefined,
@@ -86,15 +80,36 @@ export const spec = {
           h: size[1]
         }));
       } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
+        // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
+        // Assign a default protocol, the highest value possible means we are retrocompatible with all older values.
+        var protocol = null;
+        if (bid.params.video && bid.params.video.protocol) {
+          protocol = bid.params.video.protocol;
+        } else if (Array.isArray(videoMediaType.protocols)) {
+          protocol = Math.max.apply(Math, videoMediaType.protocols);
+        }
+
+        // Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
+        var startDelay = 2;
+        if (bid.params.video && bid.params.video.startDelay) {
+          startDelay = bid.params.video.startDelay
+        } else if (videoMediaType.startdelay == 0) {
+          startDelay = 1;
+        } else if (videoMediaType.startdelay == -1) {
+          startDelay = 2;
+        } else if (videoMediaType.startdelay == -2) {
+          startDelay = 3;
+        }
+
         // Specific attributes for instream.
         let playerSize = videoMediaType.playerSize[0];
         payload.isVideo = videoMediaType.context === 'instream';
         payload.mediaType = VIDEO;
         payload.videoData = {
-          videoProtocol: bid.params.video.protocol,
+          videoProtocol: protocol,
           playerWidth: playerSize[0],
           playerHeight: playerSize[1],
-          adBreak: bid.params.video.startDelay || 1
+          adBreak: startDelay
         };
       } else {
         return {};
@@ -148,7 +163,8 @@ export const spec = {
           currency: response.currency,
           netRevenue: response.isNetCpm,
           ttl: response.ttl,
-          dspPixels: response.dspPixels
+          dspPixels: response.dspPixels,
+          meta: { advertiserDomains: response.adomain ? response.adomain : [] }
         };
 
         if (bidRequest.mediaType === VIDEO) {
@@ -167,6 +183,31 @@ export const spec = {
       utils.logError('Error while parsing smart server response', error);
     }
     return bidResponses;
+  },
+
+  /**
+   * Get floors from Prebid Price Floors module
+   *
+   * @param {object} bid Bid request object
+   * @param {string} currency Ad server currency
+   * @return {number} Floor price
+   */
+  getBidFloor: function (bid, currency) {
+    if (!utils.isFn(bid.getFloor)) {
+      return DEFAULT_FLOOR;
+    }
+
+    const floor = bid.getFloor({
+      currency: currency || 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (utils.isPlainObject(floor) && !isNaN(floor.floor)) {
+      return floor.floor;
+    }
+
+    return DEFAULT_FLOOR;
   },
 
   /**
