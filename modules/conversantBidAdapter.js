@@ -248,8 +248,8 @@ export const spec = {
       'secure': 'number',
       'mobile': 'number'
     }, params);
-    },
-
+    }
+  
   /**
    * Register User Sync.
    */
