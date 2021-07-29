@@ -3,28 +3,55 @@ import * as utils from 'src/utils'
 // eslint-disable-next-line prebid/validate-imports
 import { registerBidder } from 'src/adapters/bidderFactory'
 
-const BIDDER_CODE = 'bliink'
-const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/delivery'
+export const BIDDER_CODE = 'bliink'
+export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/delivery'
 
 /**
- * @return {{}}
  * @param bidRequest
  * @param bliinkCreative
+ * @return {
+ *  {
+ *    cpm: number,
+ *    netRevenue: boolean,
+ *    ad, requestId,
+ *    meta: {mediaType},
+ *    width,
+ *    currency: string,
+ *    ttl: number,
+ *    creativeId,
+ *    height
+ *    } |null
+ *   }
  */
-const buildBid = (bidRequest, bliinkCreative) => {
+export const buildBid = (bidRequest, bliinkCreative) => {
+  if (!bidRequest && !bliinkCreative) return null
+  if (
+    !bidRequest.bidId ||
+    !bidRequest.sizes ||
+    !bliinkCreative.id ||
+    !bliinkCreative.adm ||
+    !bidRequest.params ||
+    !(bidRequest.params.placement)
+  ) return null
+
   delete bidRequest['bids']
+
+  const width = 300
+  const height = 250
+  const mediaType = (bidRequest.params && bidRequest.params.placement) || 'banner'
+
   return {
     requestId: bidRequest.bidId,
     cpm: 1,
     currency: 'EUR',
-    width: bidRequest.sizes[0],
-    height: bidRequest.sizes[1],
+    width,
+    height,
     creativeId: bliinkCreative.id,
     netRevenue: true,
     ad: bliinkCreative.adm,
     ttl: 360,
     meta: {
-      mediaType: bidRequest.params.placement
+      mediaType
     }
   };
 }
@@ -32,20 +59,23 @@ const buildBid = (bidRequest, bliinkCreative) => {
 /**
  * @description Verify the the AdUnits.bids, respond with true (valid) or false (invalid).
  *
+ * @param bid
  * @return boolean
  */
-const isBidRequestValid = () => {
-  return true
+export const isBidRequestValid = (bid) => {
+  return !(!bid || !bid.params || !bid.params.placement || !bid.params.tagId)
 }
 
 /**
  * @description Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
  *
- * @param validBidRequests[]
+ * @param _[]
  * @param bidderRequest
- * @return {{ method: string, url: string }}
+ * @return {{ method: string, url: string } | null}
  */
-const buildRequests = (validBidRequests, bidderRequest) => {
+export const buildRequests = (_, bidderRequest) => {
+  if (!bidderRequest) return null
+
   return {
     method: 'GET',
     url: `${BLIINK_ENDPOINT_ENGINE}/${bidderRequest.bids[0].params.tagId}`,
@@ -63,17 +93,22 @@ const buildRequests = (validBidRequests, bidderRequest) => {
  *
  * @param serverResponse
  * @param request
- * @return []
+ * @return
  */
 const interpretResponse = (serverResponse, request) => {
+  if (serverResponse && serverResponse.mode === 'no-ad') {
+    return []
+  }
+
   const serverBody = request.data;
+
   if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
     return utils._map(serverBody.bids, (bid) => {
       return buildBid(bid, serverResponse.body.creative);
-    });
-  } else {
-    return [];
+    })
   }
+
+  return []
 }
 
 /**
