@@ -28,7 +28,9 @@
     "uid2IdSystem",
     "admixerIdSystem",
     "dmdIdSystem",
+    "akamaiDAPId",
     "flocIdSystem",
+    "amxIdSystem",
     "justIdSystem"
   ],
   "adpod": [
@@ -37,9 +39,13 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
+    "dgkeywordRtdProvider",
     "geoedgeRtdProvider",
     "haloRtdProvider",
+    "iasRtdProvider",
     "jwplayerRtdProvider",
+    "medianetRtdProvider",
+    "optimeraRtdProvider",
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
     "sirdataRtdProvider"

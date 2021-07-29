@@ -101,7 +101,10 @@ describe('LogicadAdapter', function () {
             currency: 'JPY',
             netRevenue: true,
             ttl: 60,
-            ad: '<div>TEST</div>'
+            ad: '<div>TEST</div>',
+            meta: {
+              advertiserDomains: ['logicad.com']
+            }
           }
         }],
       userSync: {
@@ -135,6 +138,9 @@ describe('LogicadAdapter', function () {
               ],
               sponsoredBy: 'Logicad',
               title: 'Native Creative',
+            },
+            meta: {
+              advertiserDomains: ['logicad.com']
             }
           }
         }],
@@ -202,6 +208,7 @@ describe('LogicadAdapter', function () {
       expect(interpretedResponse[0].netRevenue).to.equal(serverResponse.body.seatbid[0].bid.netRevenue);
       expect(interpretedResponse[0].ad).to.equal(serverResponse.body.seatbid[0].bid.ad);
       expect(interpretedResponse[0].ttl).to.equal(serverResponse.body.seatbid[0].bid.ttl);
+      expect(interpretedResponse[0].meta.advertiserDomains).to.equal(serverResponse.body.seatbid[0].bid.meta.advertiserDomains);
 
       // native
       const nativeRequest = spec.buildRequests(nativeBidRequests, bidderRequest)[0];
@@ -223,6 +230,7 @@ describe('LogicadAdapter', function () {
       expect(interpretedResponseForNative[0].native.impressionTrackers).to.equal(nativeServerResponse.body.seatbid[0].bid.native.impressionTrackers);
       expect(interpretedResponseForNative[0].native.sponsoredBy).to.equal(nativeServerResponse.body.seatbid[0].bid.native.sponsoredBy);
       expect(interpretedResponseForNative[0].native.title).to.equal(nativeServerResponse.body.seatbid[0].bid.native.title);
+      expect(interpretedResponseForNative[0].meta.advertiserDomains[0]).to.equal(serverResponse.body.seatbid[0].bid.meta.advertiserDomains[0]);
     });
   });
 

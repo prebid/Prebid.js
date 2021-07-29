@@ -75,6 +75,9 @@ export const spec = {
         bid.vastXml = bid.ad;
       }
 
+      bid.meta = {};
+      bid.meta.advertiserDomains = bid.adomain || [];
+
       bids.push(bid);
     })
 

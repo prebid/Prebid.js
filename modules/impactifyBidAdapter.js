@@ -55,12 +55,12 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   request.site = {page: bidderRequest.refererInfo.referer};
 
   // Handle privacy settings for GDPR/CCPA/COPPA
+  let gdprApplies = 0;
   if (bidderRequest.gdprConsent) {
-    let gdprApplies = 0;
     if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-    utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
     utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
+  utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
 
   if (bidderRequest.uspConsent) {
     utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
@@ -108,6 +108,7 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: ['video'],
   aliases: BIDDER_ALIAS,
+
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -127,6 +128,7 @@ export const spec = {
 
     return true;
   },
+
   /**
    * Make a server request from the list of BidRequests.
    *
@@ -144,6 +146,7 @@ export const spec = {
       data: JSON.stringify(request),
     };
   },
+
   /**
    * Unpack the response from the server into a list of bids.
    *
@@ -180,7 +183,10 @@ export const spec = {
               ttl: 300,
               creativeId: bid.crid || 0,
               hash: bid.hash,
-              expiry: bid.expiry
+              expiry: bid.expiry,
+              meta: {
+                advertiserDomains: bid.adomain && bid.adomain.length ? bid.adomain : []
+              }
             })),
         ];
       }

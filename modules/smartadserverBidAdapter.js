@@ -86,15 +86,36 @@ export const spec = {
           h: size[1]
         }));
       } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
+        // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
+        // Assign a default protocol, the highest value possible means we are retrocompatible with all older values.
+        var protocol = null;
+        if (bid.params.video && bid.params.video.protocol) {
+          protocol = bid.params.video.protocol;
+        } else if (Array.isArray(videoMediaType.protocols)) {
+          protocol = Math.max.apply(Math, videoMediaType.protocols);
+        }
+
+        // Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
+        var startDelay = 2;
+        if (bid.params.video && bid.params.video.startDelay) {
+          startDelay = bid.params.video.startDelay
+        } else if (videoMediaType.startdelay == 0) {
+          startDelay = 1;
+        } else if (videoMediaType.startdelay == -1) {
+          startDelay = 2;
+        } else if (videoMediaType.startdelay == -2) {
+          startDelay = 3;
+        }
+
         // Specific attributes for instream.
         let playerSize = videoMediaType.playerSize[0];
         payload.isVideo = videoMediaType.context === 'instream';
         payload.mediaType = VIDEO;
         payload.videoData = {
-          videoProtocol: bid.params.video.protocol,
+          videoProtocol: protocol,
           playerWidth: playerSize[0],
           playerHeight: playerSize[1],
-          adBreak: bid.params.video.startDelay || 1
+          adBreak: startDelay
         };
       } else {
         return {};
@@ -148,7 +169,8 @@ export const spec = {
           currency: response.currency,
           netRevenue: response.isNetCpm,
           ttl: response.ttl,
-          dspPixels: response.dspPixels
+          dspPixels: response.dspPixels,
+          meta: { advertiserDomains: response.adomain ? response.adomain : [] }
         };
 
         if (bidRequest.mediaType === VIDEO) {
