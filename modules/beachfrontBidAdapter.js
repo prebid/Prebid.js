@@ -6,7 +6,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const ADAPTER_VERSION = '1.16';
+const ADAPTER_VERSION = '1.17';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 const CURRENCY = 'USD';
@@ -21,7 +21,8 @@ export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 export const SUPPORTED_USER_IDS = [
   { key: 'tdid', source: 'adserver.org', rtiPartner: 'TDID', queryParam: 'tdid' },
   { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
-  { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' }
+  { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' },
+  { key: 'haloId', source: 'audigent.com', atype: 1, queryParam: 'haloid' }
 ];
 
 let appId = '';
@@ -294,19 +295,23 @@ function getEids(bid) {
 }
 
 function getUserId(bid) {
-  return ({ key, source, rtiPartner }) => {
+  return ({ key, source, rtiPartner, atype }) => {
     let id = utils.deepAccess(bid, `userId.${key}`);
-    return id ? formatEid(id, source, rtiPartner) : null;
+    return id ? formatEid(id, source, rtiPartner, atype) : null;
   };
 }
 
-function formatEid(id, source, rtiPartner) {
+function formatEid(id, source, rtiPartner, atype) {
+  let uid = { id };
+  if (rtiPartner) {
+    uid.ext = { rtiPartner };
+  }
+  if (atype) {
+    uid.atype = atype;
+  }
   return {
     source,
-    uids: [{
-      id,
-      ext: { rtiPartner }
-    }]
+    uids: [uid]
   };
 }
 

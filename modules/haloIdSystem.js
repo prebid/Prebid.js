@@ -15,6 +15,20 @@ const AU_GVLID = 561;
 
 export const storage = getStorageManager(AU_GVLID, 'halo');
 
+/**
+ * Param or default.
+ * @param {String} param
+ * @param {String} defaultVal
+ */
+function paramOrDefault(param, defaultVal, arg) {
+  if (utils.isFn(param)) {
+    return param(arg);
+  } else if (utils.isStr(param)) {
+    return param;
+  }
+  return defaultVal;
+}
+
 /** @type {Submodule} */
 export const haloIdSubmodule = {
   /**
@@ -42,7 +56,12 @@ export const haloIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
-    const url = `https://id.halo.ad.gt/api/v1/pbhid`;
+    if (!utils.isPlainObject(config.params)) {
+      config.params = {};
+    }
+    const url = paramOrDefault(config.params.url,
+      `https://id.halo.ad.gt/api/v1/pbhid`,
+      config.params.urlArg);
 
     const resp = function (callback) {
       let haloId = storage.getDataFromLocalStorage('auHaloId');

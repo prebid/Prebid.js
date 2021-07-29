@@ -66,7 +66,7 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       }
 
       x.open(method, url, true);
-      // IE needs timoeut to be set after open - see #1410
+      // IE needs timeout to be set after open - see #1410
       // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
       if (!config.getConfig('disableAjaxTimeout')) {
         x.timeout = timeout;
@@ -94,6 +94,7 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       }
     } catch (error) {
       utils.logError('xhr construction', error);
+      typeof callback === 'object' && callback !== null && callback.error(error);
     }
   }
 }
