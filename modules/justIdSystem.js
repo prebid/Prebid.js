@@ -11,14 +11,16 @@ import {submodule} from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
+const MODULE_NAME = 'justId';
+const LOG_PREFIX = 'User ID - JustId submodule: ';
+const GVLID = 160;
+
 const MODE_ATM = 'ATM';
 const MODE_ID_SERVER = 'ID_SERVER';
 const UID_COOKIE_SUFFIX = 'uid';
 const UT_COOKIE_SUFFIX = 'ut';
-
-const MODULE_NAME = 'justId';
-const LOG_PREFIX = 'User ID - JustId submodule: ';
-const GVLID = 160;
+const DAY_IN_SECONDS = 24 * 60 * 60;
+const YEAR_IN_SECONDS = 365 * DAY_IN_SECONDS;
 
 const storage = getStorageManager(GVLID);
 
@@ -66,8 +68,8 @@ var UidFetcher = function(cbFun, config, consentData) {
   const idServcerUrl = 'https://id.bt-cera.audience-solutions.com/getId';
   const mode = param(config).mode || 'ATM';
   const atmVarName = param(config).atmVarName || '__atm';
-  const cookieTtlSeconds = param(config).cookieTtlSeconds || 2 * 365 * 24 * 60 * 60;
-  const cookieRefreshSeconds = param(config).cookieRefreshSeconds || 24 * 60 * 60;
+  const cookieTtlSeconds = param(config).cookieTtlSeconds || YEAR_IN_SECONDS;
+  const cookieRefreshSeconds = param(config).cookieRefreshSeconds || DAY_IN_SECONDS;
   const cookiePrefix = param(config).cookiePrefix || '__jt';
   const tcString = eoin(consentData).consentString;
   const prevStoredId = storage.getCookie(cookiePrefix + UID_COOKIE_SUFFIX);
@@ -79,13 +81,15 @@ var UidFetcher = function(cbFun, config, consentData) {
       return;
     }
     if (mode === MODE_ATM) {
+      // TODO rekurencja nas zabije...
       appendAtmAndRunGetUid();
     } else if (mode === MODE_ID_SERVER) {
       if (prevStoredId && now < uidTime + cookieRefreshSeconds * 1000) {
         utils.logInfo(LOG_PREFIX, 'returning cookie stored UID: ' + prevStoredId);
         returnUid(prevStoredId);
+      } else {
+        ajax(idServcerUrl, idServerCallback(), JSON.stringify(prepareIdServerRequest()), { method: 'POST', withCredentials: true });
       }
-      ajax(idServcerUrl, idServerCallback(), JSON.stringify(prepareIdServerRequest()), { method: 'POST', withCredentials: true });
     } else {
       utils.logError(LOG_PREFIX + 'Invalid mode: ' + mode);
     }
@@ -123,10 +127,19 @@ var UidFetcher = function(cbFun, config, consentData) {
   function idServerCallback() {
     return {
       success: response => {
-        utils.logInfo(LOG_PREFIX + 'getId request response: ', response);
-        var responseObj = JSON.parse(response);
-        returnUid(responseObj.uid);
-        setUidCookie(responseObj.uid, responseObj.tld);
+        utils.logInfo(LOG_PREFIX + 'getId response: ', response);
+
+        try {
+          if (utils.isEmpty(response)) {
+            utils.logError(LOG_PREFIX + 'empty getId response');
+            return;
+          }
+          var responseObj = JSON.parse(response);
+          returnUid(responseObj.uid);
+          setUidCookie(responseObj.uid, responseObj.tld);
+        } catch (e) {
+          utils.logError(LOG_PREFIX + 'error on parsing getId response', e);
+        }
       },
       error: error => {
         utils.logError(LOG_PREFIX + 'error during getId request', error);
@@ -166,7 +179,7 @@ function param(c) {
 
 function getPageUrl() {
   // może użyć: getRefererInfo().referer ?
-  utils.logInfo(LOG_PREFIX + 'refferer', getRefererInfo());
+  utils.logInfo(LOG_PREFIX + 'referrer', getRefererInfo());
 
   try {
     return window.top.location.href;
