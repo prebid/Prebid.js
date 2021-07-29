@@ -304,7 +304,7 @@ describe('pubmatic analytics adapter', function () {
 
     it('Logger: best case + win tracker', function() {
       this.timeout(5000)
-      
+
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
       });
