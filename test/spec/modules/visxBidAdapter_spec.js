@@ -848,6 +848,57 @@ describe('VisxAdapter', function () {
       expect(result).to.deep.equal(expectedResponse);
     });
 
+    it('handles multiformat bid response with outstream+banner as banner', function () {
+      const fullResponse = [
+        {'bid': [{'price': 0.5, 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
+      ];
+      const bidRequests = [
+        {
+          'bidder': 'visx',
+          'params': {
+            'uid': '903537'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'mediaTypes': {
+            'video': {
+              'context': 'outstream',
+              'playerSize': [400, 300],
+              'mimes': ['video/mp4'],
+              'protocols': [3, 6]
+            }
+          },
+          'banner': {
+            'sizes': []
+          },
+          'sizes': [[400, 300]],
+          'bidId': '2164be6358b9',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        }
+      ];
+      const request = spec.buildRequests(bidRequests);
+      const expectedResponse = [
+        {
+          'ad': '<VAST/>',
+          'requestId': '2164be6358b9',
+          'cpm': 0.5,
+          'creativeId': 903537,
+          'dealId': undefined,
+          'width': 400,
+          'height': 300,
+          'currency': 'EUR',
+          'netRevenue': true,
+          'ttl': 360,
+          'meta': {
+            'advertiserDomains': [],
+            'mediaType': 'video',
+          },
+        }
+      ];
+      const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
+      expect(result).to.deep.equal(expectedResponse);
+    });
+
     it('should get right ext data in bid response', function () {
       const bidRequests = [
         {
