@@ -1,7 +1,7 @@
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
-import { logMessage } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'bidViewabilityIO';
 const CONFIG_ENABLED = 'enabled';
@@ -21,6 +21,10 @@ const supportedMediaTypes = [
 
 export let isSupportedMediaType = (bid) => {
   return supportedMediaTypes.indexOf(bid.mediaType) > -1;
+}
+
+let logMessage = (message) => {
+  return utils.logMessage(`${MODULE_NAME}: ${message}`);
 }
 
 // returns options for the iO that detects if the ad is viewable

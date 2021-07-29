@@ -139,7 +139,7 @@ describe('#bidViewabilityIO', function() {
       func(mockEntries, mockObserver);
       expect(mockEntries[0].target.view_tracker).to.be.a('number');
       expect(mockEntries[1].target.view_tracker).to.be.undefined;
-      expect(logMessageSpy.lastCall.lastArg).to.eq('viewable timer stopped for id: false_id code: banner_id');
+      expect(logMessageSpy.lastCall.lastArg).to.eq('bidViewabilityIO: viewable timer stopped for id: false_id code: banner_id');
     });
   })
 });
