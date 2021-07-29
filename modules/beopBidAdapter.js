@@ -19,13 +19,13 @@ export const spec = {
     */
   isBidRequestValid: function(bid) {
     const id = bid.params.accountId || bid.params.networkId;
-    if (id == null) {
+    if (id === null || typeof id === 'undefined') {
       return false
     }
     if (!validIdRegExp.test(id)) {
       return false
     }
-    return bid.mediaTypes.banner != null;
+    return bid.mediaTypes.banner !== null && typeof bid.mediaTypes.banner !== 'undefined';
   },
   /**
     * Create a BeOp server request from a list of BidRequest
@@ -68,7 +68,7 @@ export const spec = {
     return [];
   },
   onTimeout: function(timeoutData) {
-    if (timeoutData === null || timeoutData === undefined || Object.keys(timeoutData).length === 0) {
+    if (timeoutData === null || typeof timeoutData === 'undefined' || Object.keys(timeoutData).length === 0) {
       return;
     }
 
@@ -83,7 +83,7 @@ export const spec = {
     }));
   },
   onBidWon: function(bid) {
-    if (bid === null || bid === undefined || Object.keys(bid).length === 0) {
+    if (bid === null || typeof bid === 'undefined' || Object.keys(bid).length === 0) {
       return;
     }
     let trackingParams = buildTrackingParams(bid, 'won', bid.cpm);
@@ -103,7 +103,7 @@ function buildTrackingParams(data, info, value) {
   return {
     pid: data.params.accountId,
     nid: data.params.networkId,
-    nptnid: data.params.networkPatnerId,
+    nptnid: data.params.networkPartnerId,
     bid: data.bidId,
     sl_n: data.adUnitCode,
     aid: data.auctionId,
@@ -114,8 +114,7 @@ function buildTrackingParams(data, info, value) {
 }
 
 function beOpRequestSlotsMaker(bid) {
-  const bannerReq = utils.deepAccess(bid, 'mediaTypes.banner');
-  const bannerSizes = bannerReq.sizes;
+  const bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
   const publisherCurrency = utils.getValue(bid.params, 'currency') || 'EUR';
   let floor;
   if (typeof bid.getFloor === 'function') {
@@ -125,11 +124,11 @@ function beOpRequestSlotsMaker(bid) {
     }
   }
   return {
-    sizes: utils.isArray(bannerSizes) ? utils.isArray(bannerSizes) : bid.sizes,
+    sizes: utils.isArray(bannerSizes) ? bannerSizes : bid.sizes,
     flr: floor,
     pid: utils.getValue(bid.params, 'accountId'),
     nid: utils.getValue(bid.params, 'networkId'),
-    nptnid: utils.getValue(bid.params, 'networkPatnerId'),
+    nptnid: utils.getValue(bid.params, 'networkPartnerId'),
     bid: utils.getBidIdParameter('bidId', bid),
     brid: utils.getBidIdParameter('bidderRequestId', bid),
     name: utils.getBidIdParameter('adUnitCode', bid),
