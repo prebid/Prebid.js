@@ -9,6 +9,12 @@ import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+
+const MODE_ATM = 'ATM';
+const MODE_ID_SERVER = 'ID_SERVER';
+const UID_COOKIE_SUFFIX = 'uid';
+const UT_COOKIE_SUFFIX = 'ut';
 
 const MODULE_NAME = 'justId';
 const LOG_PREFIX = 'User ID - JustId submodule: ';
@@ -45,29 +51,110 @@ export const justIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
-    const atmVarName = param(config).atmVarName || '__atm';
-    const mode = param(config).mode || 'ATM';
-    const sourceId = param(config).partner || 'pbjs';
-    const atmUrl = `https://atm.bt-cera.audience-solutions.com/atm.js?sourceId=${sourceId}`;
-    const idServcerUrl = 'https://id.bt-cera.audience-solutions.com/getId';
-
     utils.logInfo(LOG_PREFIX + 'getId', config, consentData, cacheIdObj);
     return {
-      callback: function (cbFun) {
-        if (atmGetUid(atmVarName, cbFun)) {
-          return;
-        }
-        if (mode === 'ATM') {
-          appendAtmAndRunGetUid(atmUrl, atmVarName, cbFun);
-        } else if (mode === 'ID_SERVER') {
-          ajax(idServcerUrl, idServerCallback(cbFun), JSON.stringify(prepareIdServerRequest(cacheIdObj, consentData)), { method: 'POST', withCredentials: true });
-        } else {
-          utils.logError(LOG_PREFIX + 'Invalid mode: ' + mode);
-        }
+      callback: function(cbFun) {
+        new UidFetcher(cbFun, config, consentData).fetchUid();
       }
     };
   }
 };
+
+var UidFetcher = function(cbFun, config, consentData) {
+  const sourceId = param(config).partner || 'pbjs';
+  const atmUrl = `https://atm.bt-cera.audience-solutions.com/atm.js?sourceId=${sourceId}`;
+  const idServcerUrl = 'https://id.bt-cera.audience-solutions.com/getId';
+  const mode = param(config).mode || 'ATM';
+  const atmVarName = param(config).atmVarName || '__atm';
+  const cookieTtlSeconds = param(config).cookieTtlSeconds || 2 * 365 * 24 * 60 * 60;
+  const cookieRefreshSeconds = param(config).cookieRefreshSeconds || 24 * 60 * 60;
+  const cookiePrefix = param(config).cookiePrefix || '__jt';
+  const tcString = eoin(consentData).consentString;
+  const prevStoredId = storage.getCookie(cookiePrefix + UID_COOKIE_SUFFIX);
+  const uidTime = storage.getCookie(cookiePrefix + UT_COOKIE_SUFFIX);
+  const now = new Date().getTime();
+
+  this.fetchUid = function() {
+    if (atmGetUid()) {
+      return;
+    }
+    if (mode === MODE_ATM) {
+      appendAtmAndRunGetUid();
+    } else if (mode === MODE_ID_SERVER) {
+      if (prevStoredId && now < uidTime + cookieRefreshSeconds * 1000) {
+        utils.logInfo(LOG_PREFIX, 'returning cookie stored UID: ' + prevStoredId);
+        returnUid(prevStoredId);
+      }
+      ajax(idServcerUrl, idServerCallback(), JSON.stringify(prepareIdServerRequest()), { method: 'POST', withCredentials: true });
+    } else {
+      utils.logError(LOG_PREFIX + 'Invalid mode: ' + mode);
+    }
+  }
+
+  function atmGetUid() {
+    var atmExist = utils.isFn(window[atmVarName]);
+    if (atmExist) {
+      window[atmVarName]('getUid', returnUid);
+    }
+    return atmExist;
+  }
+
+  function appendAtmAndRunGetUid() {
+    var script = document.createElement('script');
+    script.src = atmUrl;
+    script.async = true;
+    script.onload = () => atmGetUid();
+    utils.insertElement(script);
+  }
+
+  function prepareIdServerRequest() {
+    return {
+      prevStoredId: prevStoredId,
+      tcString: tcString,
+      url: getPageUrl(),
+      referrer: getReferrer(),
+      clientLib: 'pbjs',
+      pbjs: {
+        version: '$prebid.version$'
+      }
+    };
+  }
+
+  function idServerCallback() {
+    return {
+      success: response => {
+        utils.logInfo(LOG_PREFIX + 'getId request response: ', response);
+        var responseObj = JSON.parse(response);
+        returnUid(responseObj.uid);
+        setUidCookie(responseObj.uid, responseObj.tld);
+      },
+      error: error => {
+        utils.logError(LOG_PREFIX + 'error during getId request', error);
+        cbFun();
+      }
+    }
+  }
+
+  function setUidCookie(uid, tld) {
+    var d = new Date();
+    d.setTime(d.getTime() + cookieTtlSeconds * 1000);
+    var expires = d.toUTCString();
+    storage.setCookie(cookiePrefix + UID_COOKIE_SUFFIX, uid, expires, null, tld);
+    storage.setCookie(cookiePrefix + UT_COOKIE_SUFFIX, now, expires, null, tld);
+  }
+
+  function returnUid(uid) {
+    if (!utils.isFn(cbFun)) {
+      utils.logError(LOG_PREFIX + 'cbFun is not function!');
+      return;
+    }
+    if (utils.isEmptyStr(uid)) {
+      utils.logError(LOG_PREFIX + 'empty uid!');
+      return;
+    }
+    cbFun({uid: uid});
+  }
+}
 
 function eoin(o) {
   return o || {};
@@ -77,63 +164,10 @@ function param(c) {
   return eoin(c.params);
 }
 
-function prepareIdServerRequest(consentData) {
-  return {
-    prevStoredId: storage.getCookie('__jtuid'),
-    tcString: eoin(consentData).consentString,
-    url: getPageUrl(),
-    clientLib: 'pbjs',
-    pbjs: {
-      version: '$prebid.version$'
-    }
-  };
-}
-
-function idServerCallback(cbFun) {
-  return {
-    success: response => {
-      utils.logInfo(LOG_PREFIX + 'getId request response: ', response);
-      var responseObj = JSON.parse(response);
-      cbFun(prepareIdObject(responseObj.uid));
-
-      var d = new Date();
-      d.setTime(d.getTime() + (2 * 365 * 24 * 60 * 60 * 1000));
-
-      storage.setCookie('__jtuid', responseObj.uid, d.toUTCString(), null, responseObj.tld);
-    },
-    error: error => {
-      utils.logError(LOG_PREFIX + 'error during getId request', error);
-      cbFun();
-    }
-  }
-}
-
-function appendAtmAndRunGetUid(atmUrl, atmVarName, cbFun) {
-  var script = document.createElement('script');
-  script.src = atmUrl;
-  script.async = true;
-  script.onload = () => atmGetUid(atmVarName, cbFun);
-  utils.insertElement(script);
-}
-
-function atmGetUid(atmVarName, cbFun) {
-  var atmExist = typeof window[atmVarName] === 'function';
-  if (atmExist) {
-    window[atmVarName]('getUid', callbackWrapper(cbFun));
-  }
-  return atmExist;
-}
-
-function callbackWrapper(cbFun) {
-  return uid => cbFun(prepareIdObject(uid));
-}
-
-function prepareIdObject(uid) {
-  return {uid: uid};
-}
-
 function getPageUrl() {
-  // może użyć: import { getRefererInfo } from '../src/refererDetection.js'; ?
+  // może użyć: getRefererInfo().referer ?
+  utils.logInfo(LOG_PREFIX + 'refferer', getRefererInfo());
+
   try {
     return window.top.location.href;
   } catch (e) {
@@ -141,6 +175,12 @@ function getPageUrl() {
       return document.referrer;
     }
   }
+}
+
+function getReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) { }
 }
 
 submodule('userId', justIdSubmodule);

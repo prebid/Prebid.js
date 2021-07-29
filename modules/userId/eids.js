@@ -42,6 +42,21 @@ const USER_IDS_CONFIG = {
     }
   },
 
+  // justId
+  'justId': {
+    source: 'justtag.com',
+    atype: 1,
+    getValue: function(justId) {
+      return justId;
+    },
+    getEidExt: function(data) {
+      return 'jt-eid-ext';
+    },
+    getUidExt: function(data) {
+      return 'jt-uid-ext';
+    }
+  },
+
   // parrableId
   'parrableId': {
     source: 'parrable.com',
