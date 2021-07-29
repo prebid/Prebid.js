@@ -2580,6 +2580,27 @@ describe('S2S Adapter', function () {
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 
+    it('should configure the s2sConfig object with appnexuspsp vendor defaults unless specified by user', function () {
+      const options = {
+        accountId: '123',
+        bidders: ['appnexus'],
+        defaultVendor: 'appnexuspsp',
+        timeout: 750
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.notCalled(logErrorSpy);
+
+      let vendorConfig = config.getConfig('s2sConfig');
+      expect(vendorConfig).to.have.property('accountId', '123');
+      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+      expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
+      expect(vendorConfig.enabled).to.be.true;
+      expect(vendorConfig.endpoint).to.deep.equal({p1Consent: 'https://ib.adnxs.com/openrtb2/prebid', noP1Consent: 'https://ib.adnxs-simple.com/openrtb2/prebid'});
+      expect(vendorConfig.syncEndpoint).to.be.undefined;
+      expect(vendorConfig).to.have.property('timeout', 750);
+    });
+
     it('should configure the s2sConfig object with rubicon vendor defaults unless specified by user', function () {
       const options = {
         accountId: 'abc',
