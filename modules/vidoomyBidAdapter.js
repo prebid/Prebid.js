@@ -24,7 +24,7 @@ const isBidRequestValid = bid => {
     return false;
   }
 
-  if (bid.params && bid.params.mediaTypes && bid.params.mediaTypes.video && bid.params.mediaTypes.context === INSTREAM && !bid.params.mediaTypes.video.playerSize) {
+  if (bid.params && bid.params.mediaTypes && bid.params.mediaTypes.video && bid.params.mediaTypes.video.context === INSTREAM && !bid.params.mediaTypes.video.playerSize) {
     utils.logError(BIDDER_CODE + ': bid.params.mediaType.video should have a playerSize property to tell player size when is INSTREAM');
     return false;
   }
@@ -32,10 +32,23 @@ const isBidRequestValid = bid => {
   return true;
 };
 
+const isBidResponseValid = bid => {
+  if (!bid.requestId || !bid.cpm || !bid.ttl || !bid.currency) {
+    return false;
+  }
+  switch (bid.mediaType) {
+    case BANNER:
+      return Boolean(bid.width && bid.height && bid.ad);
+    case VIDEO:
+      return Boolean(bid.vastUrl);
+    default:
+      return false;
+  }
+}
+
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
     let adType = BANNER;
-
     let w, h;
     if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
       [w, h] = bid.mediaTypes[BANNER].sizes[0];
@@ -160,7 +173,13 @@ const interpretResponse = (serverResponse, bidRequest) => {
       }
     };
 
-    const bids = [bid];
+    const bids = [];
+
+    if (isBidResponseValid(bid)) {
+      bids.push(bid);
+    } else {
+      utils.logError(BIDDER_CODE + ': server returns invalid response');
+    }
 
     return bids;
   } catch (e) {
