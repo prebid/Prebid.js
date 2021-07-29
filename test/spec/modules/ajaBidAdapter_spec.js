@@ -79,7 +79,10 @@ describe('AjaAdapter', function () {
             'imps': [
               'https://as.amanad.adtdp.com/v1/imp'
             ]
-          }
+          },
+          'adomain': [
+            'www.example.com'
+          ]
         },
         'syncs': [
           'https://example.com'
@@ -98,7 +101,12 @@ describe('AjaAdapter', function () {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
-          'netRevenue': true
+          'netRevenue': true,
+          'meta': {
+            'advertiserDomains': [
+              'www.example.com'
+            ]
+          }
         }
       ];
 
@@ -218,7 +226,10 @@ describe('AjaAdapter', function () {
             'impressionTrackers': [
               'https://example.com/imp'
             ],
-            'privacyLink': 'https://aja-kk.co.jp/optout',
+            'privacyLink': 'https://aja-kk.co.jp/optout'
+          },
+          'meta': {
+            'advertiserDomains': []
           }
         }
       ];

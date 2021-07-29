@@ -191,11 +191,15 @@ describe('pxyzBidAdapter', function () {
           'mediaType': 'banner',
           'currency': 'AUD',
           'ttl': 300,
-          'netRevenue': true
+          'netRevenue': true,
+          'meta': {
+            advertiserDomains: ['pg.xyz']
+          }
         }
       ];
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
     });
 
     it('handles nobid response', function () {

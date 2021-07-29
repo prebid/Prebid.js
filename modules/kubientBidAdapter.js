@@ -1,48 +1,80 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'kubient';
-const END_POINT = 'https://kssp.kbntx.ch/pbjs';
-const VERSION = '1.0';
+const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
+const VERSION = '1.1';
 const VENDOR_ID = 794;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: VENDOR_ID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
-    return !!(bid && bid.params);
+    return !!(
+      bid &&
+      bid.params &&
+      bid.params.zoneid &&
+      ((!bid.mediaTypes.video) || (bid.mediaTypes.video && bid.mediaTypes.video.playerSize && bid.mediaTypes.video.mimes && bid.mediaTypes.video.protocols))
+    );
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests || !bidderRequest) {
       return;
     }
-    const result = validBidRequests.map(function (bid) {
+    return validBidRequests.map(function (bid) {
+      let floor = 0.0;
+      if (typeof bid.getFloor === 'function') {
+        const mediaType = (Object.keys(bid.mediaTypes).length == 1) ? Object.keys(bid.mediaTypes)[0] : '*';
+        const sizes = bid.sizes || '*';
+        const floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: sizes});
+        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+          floor = parseFloat(floorInfo.floor);
+        }
+      }
+
+      let adSlot = {
+        bidId: bid.bidId,
+        zoneId: bid.params.zoneid || '',
+        floor: floor || 0.0
+      };
+
+      if (bid.mediaTypes.banner) {
+        adSlot.banner = bid.mediaTypes.banner;
+      }
+
+      if (bid.mediaTypes.video) {
+        adSlot.video = bid.mediaTypes.video;
+      }
+
+      if (bid.schain) {
+        adSlot.schain = bid.schain;
+      }
+
       let data = {
         v: VERSION,
         requestId: bid.bidderRequestId,
-        adSlots: [{
-          bidId: bid.bidId,
-          zoneId: bid.params.zoneid || '',
-          floor: bid.params.floor || 0.0,
-          sizes: bid.sizes || [],
-          schain: bid.schain || {},
-          mediaTypes: bid.mediaTypes
-        }],
-        referer: (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) ? bidderRequest.refererInfo.referer : null,
+        adSlots: [adSlot],
         tmax: bidderRequest.timeout,
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,
-        consent: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) ? bidderRequest.gdprConsent.consentString : null,
         consentGiven: kubientGetConsentGiven(bidderRequest.gdprConsent),
         uspConsent: bidderRequest.uspConsent
       };
+
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        data.referer = bidderRequest.refererInfo.referer
+      }
+
+      if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
+        data.consent = bidderRequest.gdprConsent.consentString
+      }
+
       return {
         method: 'POST',
         url: END_POINT,
         data: JSON.stringify(data)
       };
     });
-    return result;
   },
   interpretResponse: function interpretResponse(serverResponse, request) {
     if (!serverResponse || !serverResponse.body || !serverResponse.body.seatbid) {
@@ -52,7 +84,7 @@ export const spec = {
     serverResponse.body.seatbid.forEach(seatbid => {
       let bids = seatbid.bid || [];
       bids.forEach(bid => {
-        bidResponses.push({
+        const bidResponse = {
           requestId: bid.bidId,
           cpm: bid.price,
           currency: bid.cur,
@@ -61,8 +93,17 @@ export const spec = {
           creativeId: bid.creativeId,
           netRevenue: bid.netRevenue,
           ttl: bid.ttl,
-          ad: bid.adm
-        });
+          ad: bid.adm,
+          meta: {}
+        };
+        if (bid.meta && bid.meta.adomain && utils.isArray(bid.meta.adomain)) {
+          bidResponse.meta.advertiserDomains = bid.meta.adomain;
+        }
+        if (bid.mediaType === VIDEO) {
+          bidResponse.mediaType = VIDEO;
+          bidResponse.vastXml = bid.adm;
+        }
+        bidResponses.push(bidResponse);
       });
     });
     return bidResponses;
