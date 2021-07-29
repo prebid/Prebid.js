@@ -299,7 +299,7 @@ function _isVideoBid(bid) {
 }
 
 function _isVideoInstreamBid(bid) {
-  return _isVideoBid(bid) && deepAccess(bid, 'mediaTypes.video', {}).context === VIDEO_INSTREAM
+  return _isVideoBid(bid) && deepAccess(bid, 'mediaTypes.video', {}).context === VIDEO_INSTREAM;
 }
 
 function _isBannerBid(bid) {
