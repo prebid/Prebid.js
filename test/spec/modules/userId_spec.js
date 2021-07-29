@@ -365,6 +365,46 @@ describe('User ID', function () {
       expect(mockIdCallback.callCount).to.equal(1);
     });
 
+    it('pbjs.refreshUserIds updates submodules', function() {
+      let sandbox = sinon.createSandbox();
+      let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
+      let mockIdSystem = {
+        name: 'mockId',
+        decode: function(value) {
+          return {
+            'mid': value['MOCKID']
+          };
+        },
+        getId: mockIdCallback
+      };
+      setSubmoduleRegistry([mockIdSystem]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'mockId',
+            value: {id: {mockId: '1111'}}
+          }]
+        }
+      });
+
+      expect(getGlobal().getUserIds().id.mockId).to.equal('1111');
+
+      // update to new config value
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'mockId',
+            value: {id: {mockId: '1212'}}
+          }]
+        }
+      });
+      getGlobal().refreshUserIds({ submoduleNames: ['mockId'] });
+      expect(getGlobal().getUserIds().id.mockId).to.equal('1212');
+    });
+
     it('pbjs.refreshUserIds refreshes single', function() {
       coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('REFRESH', '', EXPIRED_COOKIE_DATE);

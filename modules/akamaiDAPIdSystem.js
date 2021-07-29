@@ -66,27 +66,37 @@ export const akamaiDAPIdSubmodule = {
     let url = '';
     let postData;
     let tokenName = '';
-    if (configParams.type.indexOf('dap-signature:') == 0) {
-      let parts = configParams.type.split(':');
-      let v = parts[1];
-      url = `https://${configParams.apiHostname}/data-activation/v1/domain/${configParams.domain}/signature?v=${v}&gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
-      tokenName = 'SigToken';
+    if (configParams.apiVersion === 'v1') {
+      if (configParams.type.indexOf('dap-signature:') == 0) {
+        let parts = configParams.type.split(':');
+        let v = parts[1];
+        url = `https://${configParams.apiHostname}/data-activation/v1/domain/${configParams.domain}/signature?v=${v}&gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
+        tokenName = 'SigToken';
+      } else {
+        url = `https://${configParams.apiHostname}/data-activation/v1/identity/tokenize?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
+        postData = {
+          'version': 1,
+          'domain': configParams.domain,
+          'identity': configParams.identity,
+          'type': configParams.type
+        };
+        tokenName = 'PubToken';
+      }
     } else {
-      url = `https://${configParams.apiHostname}/data-activation/v1/identity/tokenize?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
+      url = `https://${configParams.apiHostname}/data-activation/x1/domain/${configParams.domain}/identity/tokenize?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
       postData = {
-        'version': 1,
-        'domain': configParams.domain,
+        'version': configParams.apiVersion,
         'identity': configParams.identity,
-        'type': configParams.type
+        'type': configParams.type,
+        'attributes': configParams.attributes
       };
-      tokenName = 'PubToken';
+      tokenName = 'x1Token';
     }
 
-    utils.logInfo('akamaiDAPId[getId] making API call for ' + tokenName);
-
     let cb = {
-      success: response => {
-        storage.setDataInLocalStorage(STORAGE_KEY, response);
+      success: (response, request) => {
+        var token = (response === '') ? request.getResponseHeader('Akamai-DAP-Token') : response;
+        storage.setDataInLocalStorage(STORAGE_KEY, token);
       },
       error: error => {
         utils.logError('akamaiDAPId [getId:ajax.error] failed to retrieve ' + tokenName, error);
