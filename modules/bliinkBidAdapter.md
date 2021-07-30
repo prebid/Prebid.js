@@ -4,6 +4,8 @@
 Module Name: BLIINK Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: samuel@bliink.io | jonathan@bliink.io
+gdpr_supported: true
+tcf2_supported: true
 ```
 
 # Description

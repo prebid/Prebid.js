@@ -80,6 +80,12 @@ export const buildRequests = (_, bidderRequest) => {
     method: 'GET',
     url: `${BLIINK_ENDPOINT_ENGINE}/${bidderRequest.bids[0].params.tagId}`,
     data: {
+      gdpr: bidderRequest.gdprConsent.gdprApplies,
+      gdpr_consent: bidderRequest.gdprConsent.consentString,
+      width: bidderRequest.bids[0].sizes[0][0],
+      height: bidderRequest.bids[0].sizes[0][1]
+    },
+    params: {
       bidderRequestId: bidderRequest.bidderRequestId,
       bidderCode: bidderRequest.bidderCode,
       bids: bidderRequest.bids,
@@ -100,7 +106,7 @@ const interpretResponse = (serverResponse, request) => {
     return []
   }
 
-  const serverBody = request.data;
+  const serverBody = request.params;
 
   if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
     return utils._map(serverBody.bids, (bid) => {
@@ -113,10 +119,36 @@ const interpretResponse = (serverResponse, request) => {
 
 /**
  * @description  If the publisher allows user-sync activity, the platform will call this function and the adapter may register pixels and/or iframe user syncs. For more information, see Registering User Syncs below
- *
- * @return void
+ * @param syncOptions
+ * @param serverResponses
+ * @param gdprConsent
+ * @return {[{type: string, url: string}]|*[]}
  */
-const getUserSyncs = () => {}
+const getUserSyncs = (syncOptions, serverResponses, gdprConsent) => {
+  const syncs = []
+
+  let gdprParams;
+  if (typeof gdprConsent.gdprApplies === 'boolean') {
+    gdprParams = `hasConsent=${Number(gdprConsent.gdprApplies)}&consentString=${gdprConsent.consentString}`;
+  } else {
+    gdprParams = `consentString=${gdprConsent.consentString}`;
+  }
+
+  if (syncOptions.iframeEnabled) {
+    syncs.push({
+      type: 'iframe',
+      url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html?' + gdprParams
+    });
+  }
+  if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+    syncs.push({
+      type: 'image',
+      url: `${BLIINK_ENDPOINT_ENGINE}/14f30eca-85d2-11e8-9eed-0242ac120007?${gdprParams}`
+    });
+  }
+
+  return syncs;
+}
 
 /**
  * @description If the adapter timed out for an auction, the platform will call this function and the adapter may register timeout. For more information, see Registering User Syncs below.
