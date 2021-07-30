@@ -20,6 +20,7 @@ let events = {
   pageDetail: {},
   deviceDetail: {}
 };
+let googletag = window.googletag || {};
 
 var pubxaiAnalyticsAdapter = Object.assign(adapter(
   {
@@ -53,10 +54,20 @@ var pubxaiAnalyticsAdapter = Object.assign(adapter(
   }
 });
 
+function getGptSlotName(adUnitCode) {
+  let slots = googletag.pubads().getSlots();
+  let slot = slots.find(slot => (slot.getSlotElementId() === adUnitCode || slot.getSlotId().getName() === adUnitCode));
+  if (slot) {
+    return slot.getSlotId().getName();
+  }
+  return null;
+}
+
 function mapBidResponse(bidResponse, status) {
   if (typeof bidResponse !== 'undefined') {
     let bid = {
       adUnitCode: bidResponse.adUnitCode,
+      gptSlotCode: getGptSlotName(bidResponse.adUnitCode),
       auctionId: bidResponse.auctionId,
       bidderCode: bidResponse.bidder,
       cpm: bidResponse.cpm,
