@@ -29,6 +29,16 @@ describe('33acrossBidAdapter:', function () {
       site: {
         id: SITE_ID
       },
+      device: {
+        ext: {
+          ttx: {
+            viewport: {
+              h: 600,
+              w: 800
+            }
+          }
+        }
+      },
       id: 'b1',
       regs: {
         ext: {
@@ -145,6 +155,11 @@ describe('33acrossBidAdapter:', function () {
 
     this.withSite = site => {
       Object.assign(ttxRequest, { site });
+      return this;
+    };
+
+    this.withDevice = (device = {}) => {
+      Object.assign(ttxRequest, { device });
       return this;
     };
 
@@ -315,8 +330,13 @@ describe('33acrossBidAdapter:', function () {
       }
     };
     win = {
+      parent: null,
       document: {
-        visibilityState: 'visible'
+        visibilityState: 'visible',
+        documentElement: {
+          clientWidth: 800,
+          clientHeight: 600
+        }
       },
 
       innerWidth: 800,
@@ -667,6 +687,52 @@ describe('33acrossBidAdapter:', function () {
         utils.getWindowSelf.restore();
         sandbox.stub(utils, 'getWindowTop').returns({});
         sandbox.stub(utils, 'getWindowSelf').returns(win);
+
+        const [ buildRequest ] = spec.buildRequests(bidRequests);
+        validateBuiltServerRequest(buildRequest, serverRequest);
+      });
+
+      it('returns the viewport dimensions of the top most accessible frame', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withDevice({
+            ext: {
+              ttx: {
+                viewport: {
+                  w: 9876,
+                  h: 5432
+                }
+              }
+            }
+          })
+          .withProduct()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const notAccessibleParentWindow = {};
+
+        Object.defineProperty(notAccessibleParentWindow, 'document', {
+          get() { throw new Error('fakeError'); }
+        });
+
+        sandbox.stub(win, 'parent').value({
+          document: {
+            documentElement: {
+              clientWidth: 1234,
+              clientHeight: 4567
+            }
+          },
+          parent: {
+            parent: notAccessibleParentWindow,
+            document: {
+              documentElement: {
+                clientWidth: 9876,
+                clientHeight: 5432
+              }
+            },
+          }
+        });
 
         const [ buildRequest ] = spec.buildRequests(bidRequests);
         validateBuiltServerRequest(buildRequest, serverRequest);

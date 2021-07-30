@@ -185,6 +185,7 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
   };
 
   ttxRequest.site = { id: params.siteId };
+  ttxRequest.device = _buildDeviceORTB();
 
   if (pageUrl) {
     ttxRequest.site.page = pageUrl;
@@ -402,6 +403,16 @@ function _buildVideoORTB(bidRequest) {
     }
   }
   return video;
+}
+
+function _buildDeviceORTB() {
+  return {
+    ext: {
+      ttx: {
+        viewport: getViewportDimensions()
+      }
+    }
+  }
 }
 
 // BUILD REQUESTS: BIDFLOORS
@@ -638,6 +649,31 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
   }
 
   return sync;
+}
+
+function getTopMostAccessibleFrame() {
+  let mostAccessibleWindow = utils.getWindowSelf();
+
+  try {
+    while (mostAccessibleWindow.parent !== mostAccessibleWindow &&
+      mostAccessibleWindow.parent.document) {
+      mostAccessibleWindow = mostAccessibleWindow.parent;
+    }
+  } catch (err) {
+    // Do not throw an exception if we can't access the topmost frame.
+  }
+
+  return mostAccessibleWindow;
+}
+
+function getViewportDimensions() {
+  const topWin = getTopMostAccessibleFrame();
+  const documentElement = topWin.document.documentElement;
+
+  return {
+    w: documentElement.clientWidth,
+    h: documentElement.clientHeight,
+  };
 }
 
 export const spec = {
