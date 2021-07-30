@@ -10,11 +10,14 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const MODULE_NAME = 'justId';
 const LOG_PREFIX = 'User ID - JustId submodule: ';
 const GVLID = 160;
 
+const DOMAIN_ATM = 'atm.bt-cera.audience-solutions.com';
+const DOMAIN_ID_SERVER = 'id.bt-cera.audience-solutions.com';
 const MODE_ATM = 'ATM';
 const MODE_ID_SERVER = 'ID_SERVER';
 const UID_COOKIE_SUFFIX = 'uid';
@@ -22,7 +25,8 @@ const UT_COOKIE_SUFFIX = 'ut';
 const DAY_IN_SECONDS = 24 * 60 * 60;
 const YEAR_IN_SECONDS = 365 * DAY_IN_SECONDS;
 
-const storage = getStorageManager(GVLID);
+const storage = getStorageManager(GVLID, MODULE_NAME);
+const pbjs = getGlobal();
 
 /** @type {Submodule} */
 export const justIdSubmodule = {
@@ -54,6 +58,7 @@ export const justIdSubmodule = {
    */
   getId(config, consentData, cacheIdObj) {
     utils.logInfo(LOG_PREFIX + 'getId', config, consentData, cacheIdObj);
+
     return {
       callback: function(cbFun) {
         new UidFetcher(cbFun, config, consentData).fetchUid();
@@ -64,8 +69,8 @@ export const justIdSubmodule = {
 
 var UidFetcher = function(cbFun, config, consentData) {
   const sourceId = param(config).partner || 'pbjs';
-  const atmUrl = `https://atm.bt-cera.audience-solutions.com/atm.js?sourceId=${sourceId}`;
-  const idServcerUrl = 'https://id.bt-cera.audience-solutions.com/getId';
+  const atmUrl = `https://${DOMAIN_ATM}/atm.js?sourceId=${sourceId}`;
+  const idServcerUrl = `https://${DOMAIN_ID_SERVER}/getId`;
   const mode = param(config).mode || 'ATM';
   const atmVarName = param(config).atmVarName || '__atm';
   const cookieTtlSeconds = param(config).cookieTtlSeconds || YEAR_IN_SECONDS;
@@ -81,14 +86,15 @@ var UidFetcher = function(cbFun, config, consentData) {
       return;
     }
     if (mode === MODE_ATM) {
-      // TODO rekurencja nas zabije...
       appendAtmAndRunGetUid();
     } else if (mode === MODE_ID_SERVER) {
       if (prevStoredId && now < uidTime + cookieRefreshSeconds * 1000) {
         utils.logInfo(LOG_PREFIX, 'returning cookie stored UID: ' + prevStoredId);
         returnUid(prevStoredId);
       } else {
-        ajax(idServcerUrl, idServerCallback(), JSON.stringify(prepareIdServerRequest()), { method: 'POST', withCredentials: true });
+        setTimeout(() => {
+          ajax(idServcerUrl, idServerCallback(), JSON.stringify(prepareIdServerRequest()), { method: 'POST', withCredentials: true });
+        }, 1);
       }
     } else {
       utils.logError(LOG_PREFIX + 'Invalid mode: ' + mode);
@@ -117,9 +123,12 @@ var UidFetcher = function(cbFun, config, consentData) {
       tcString: tcString,
       url: getPageUrl(),
       referrer: getReferrer(),
+      topLevelAccess: getRefererInfo().reachedTop,
+      userAgent: navigator.userAgent,
       clientLib: 'pbjs',
       pbjs: {
-        version: '$prebid.version$'
+        version: '$prebid.version$',
+        uids: getUserIds()
       }
     };
   }
@@ -178,9 +187,6 @@ function param(c) {
 }
 
 function getPageUrl() {
-  // może użyć: getRefererInfo().referer ?
-  utils.logInfo(LOG_PREFIX + 'referrer', getRefererInfo());
-
   try {
     return window.top.location.href;
   } catch (e) {
@@ -194,6 +200,12 @@ function getReferrer() {
   try {
     return window.top.document.referrer;
   } catch (e) { }
+}
+
+function getUserIds() {
+  if (utils.isFn(pbjs.getUserIds)) {
+    return pbjs.getUserIds();
+  }
 }
 
 submodule('userId', justIdSubmodule);
