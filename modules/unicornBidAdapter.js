@@ -99,7 +99,7 @@ const interpretResponse = (serverResponse, request) => {
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
-        bids.push({
+        var bid = {
           requestId: b.impid,
           cpm: b.price || 0,
           width: b.w,
@@ -109,7 +109,13 @@ const interpretResponse = (serverResponse, request) => {
           creativeId: b.crid,
           netRevenue: false,
           currency: res.cur
-        })
+        }
+
+        if (b.adomain != undefined || b.adomain != null) {
+          bid.meta = { advertiserDomains: b.adomain };
+        }
+
+        bids.push(bid)
       })
     });
   }

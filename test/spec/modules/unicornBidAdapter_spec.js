@@ -374,6 +374,7 @@ const serverResponse = {
           {
             adid: 'uqgbp4y0_OoqM1QOt',
             adm: '<div>test</div>',
+            adomain: ['test1.co.jp'],
             attr: [],
             bundle: 'com.test1.android',
             cat: ['IAB9'],
@@ -391,6 +392,7 @@ const serverResponse = {
           }, {
             adid: 'uqgbp4y0_uqjrNT7h_25512',
             adm: '<div>test</div>',
+            adomain: null,
             attr: ['6'],
             bundle: 'com.test1.android',
             cat: ['IAB9'],
@@ -451,6 +453,11 @@ const interpretedBids = [
     cpm: 1.0017,
     width: 300,
     height: 250,
+    meta: {
+      advertiserDomains: [
+        'test1.co.jp'
+      ]
+    },
     ad: '<div>test</div>',
     ttl: 1000,
     creativeId: 'ABCDE',
