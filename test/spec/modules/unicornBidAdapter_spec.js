@@ -6,7 +6,6 @@ const bidRequests = [
   {
     bidder: 'unicorn',
     params: {
-      bidfloorCpm: 0,
       accountId: 12345
     },
     mediaTypes: {
@@ -41,7 +40,6 @@ const bidRequests = [
   }, {
     bidder: 'unicorn',
     params: {
-      bidfloorCpm: 0,
       accountId: 12345
     },
     mediaTypes: {
@@ -65,7 +63,6 @@ const bidRequests = [
   }, {
     bidder: 'unicorn',
     params: {
-      bidfloorCpm: 0
     },
     mediaTypes: {
       banner: {
@@ -94,7 +91,6 @@ const validBidRequests = [
     bidder: 'unicorn',
     params: {
       placementId: 'rectangle-ad-1',
-      bidfloorCpm: 0,
       accountId: 12345,
       publisherId: 99999,
       mediaId: 'example'
@@ -131,7 +127,6 @@ const validBidRequests = [
   }, {
     bidder: 'unicorn',
     params: {
-      bidfloorCpm: 0,
       accountId: 12345
     },
     mediaTypes: {
@@ -157,7 +152,6 @@ const validBidRequests = [
     bidder: 'unicorn',
     params: {
       placementId: 'rectangle-ad-2',
-      bidfloorCpm: 0,
       accountId: 12345
     },
     mediaTypes: {
@@ -191,7 +185,6 @@ const bidderRequest = {
       bidder: 'unicorn',
       params: {
         placementId: 'rectangle-ad-1',
-        bidfloorCpm: 0,
         accountId: 12345
       },
       mediaTypes: {
@@ -226,7 +219,6 @@ const bidderRequest = {
     }, {
       bidder: 'unicorn',
       params: {
-        bidfloorCpm: 0,
         accountId: 12345
       },
       mediaTypes: {
@@ -252,7 +244,6 @@ const bidderRequest = {
       bidder: 'unicorn',
       params: {
         placementId: 'rectangle-ad-2',
-        bidfloorCpm: 0,
         accountId: 12345
       },
       mediaTypes: {
