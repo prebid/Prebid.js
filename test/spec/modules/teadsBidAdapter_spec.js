@@ -1,7 +1,5 @@
 import {expect} from 'chai';
-// import prebid.js to make processQueue available and flush hooks (in particular, those used for cookies)
-import 'src/prebid.js';
-import {spec} from 'modules/teadsBidAdapter.js';
+import {spec, storage} from 'modules/teadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {getStorageManager} from 'src/storageManager';
 
@@ -10,12 +8,16 @@ const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src
 
 describe('teadsBidAdapter', () => {
   const adapter = newBidder(spec);
+  let cookiesAreEnabledStub, getCookieStub;
 
-  before(function () {
-    // Following the introduction of tests involving reading/writing cookies,
-    // this allows for running this spec as a single file with:
-    // `gulp test --file "test/spec/modules/teadsBidAdapter_spec.js"`.
-    window.$$PREBID_GLOBAL$$.processQueue();
+  beforeEach(function () {
+    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+    getCookieStub = sinon.stub(storage, 'getCookie');
+  });
+
+  afterEach(function () {
+    cookiesAreEnabledStub.restore();
+    getCookieStub.restore();
   });
 
   describe('inherited functions', () => {
@@ -549,14 +551,19 @@ describe('teadsBidAdapter', () => {
       });
 
       describe('First-party cookie Teads ID', function () {
-        const storage = getStorageManager(132, 'teads');
+        it('should not add firstPartyCookieTeadsId param to payload if cookies are not enabled', function () {
+          cookiesAreEnabledStub.returns(false);
 
-        afterEach(function () {
-          // drop cookie
-          storage.setCookie('_tfpvi', '', new Date(0));
+          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          expect(payload).not.to.have.property('firstPartyCookieTeadsId');
         });
 
         it('should not add firstPartyCookieTeadsId param to payload if first-party cookie is not available', function () {
+          cookiesAreEnabledStub.returns(true);
+          getCookieStub.withArgs('_tfpvi').returns(undefined);
+
           const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
           const payload = JSON.parse(request.data);
 
@@ -564,7 +571,8 @@ describe('teadsBidAdapter', () => {
         });
 
         it('should add firstPartyCookieTeadsId param to payload if first-party cookie is available', function () {
-          storage.setCookie('_tfpvi', 'my-teads-id');
+          cookiesAreEnabledStub.returns(true);
+          getCookieStub.withArgs('_tfpvi').returns('my-teads-id');
 
           const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
           const payload = JSON.parse(request.data);
