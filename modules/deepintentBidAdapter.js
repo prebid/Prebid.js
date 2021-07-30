@@ -137,6 +137,7 @@ function injectEids(openRtbBidRequest, validBidRequests) {
   const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
   if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     utils.deepSetValue(openRtbBidRequest, 'user.eids', bidUserIdAsEids);
+    utils.deepSetValue(openRtbBidRequest, 'user.ext.eids', bidUserIdAsEids);
   }
 }
 

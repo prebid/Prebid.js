@@ -47,7 +47,7 @@ export const spec = {
     const sizes = getSize(getSizeArray(bid));
     const sizeValid = sizes.width > 0 && sizes.height > 0;
 
-    // allows no size fornative only
+    // allows no size for native only
     return (bid.params && bid.params.placement &&
             (sizeValid || (bid.mediaTypes && bid.mediaTypes.native)));
   },
@@ -86,6 +86,11 @@ export const spec = {
         }
         if (mediatype === VIDEO) {
           accumulator[bidReq.bidId].Video = bidReq.mediaTypes.video;
+
+          const size = bidReq.mediaTypes.video.playerSize;
+          if (Array.isArray(size) && !Array.isArray(size[0])) {
+            accumulator[bidReq.bidId].Video.playerSize = [size];
+          }
         }
         return accumulator;
       }, {}),
@@ -242,8 +247,17 @@ function createEndpointQS(bidderRequest) {
 
 function getSizeArray(bid) {
   let inputSize = bid.sizes || [];
+
   if (bid.mediaTypes && bid.mediaTypes.banner) {
     inputSize = bid.mediaTypes.banner.sizes || [];
+  }
+
+  // handle size in bid.params in formats: [w, h] and [[w,h]].
+  if (bid.params && Array.isArray(bid.params.size)) {
+    inputSize = bid.params.size;
+    if (!Array.isArray(inputSize[0])) {
+      inputSize = [inputSize]
+    }
   }
 
   return utils.parseSizesInput(inputSize);
@@ -432,7 +446,7 @@ function getNativeAssets(response, nativeConfig) {
 
 /* Create bid from response */
 function createBid(response, bidRequests) {
-  if (!response || (!response.Ad && !response.Native)) {
+  if (!response || (!response.Ad && !response.Native && !response.Vast)) {
     return
   }
 

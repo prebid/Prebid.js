@@ -35,6 +35,36 @@ var adUnits = [
                    }
                }
            ]
-       }
+       },
+       // Native adUnit
+       {
+          code: 'native-div',
+          sizes: [[1, 1]],
+          mediaTypes: {
+              native: {
+                  title: {
+                      required: true
+                  },
+                  body: {
+                      required: true
+                  },
+                  image: {
+                      required: true
+                  },
+                  sponsoredBy: {
+                      required: true
+                  },
+              }
+          },
+          bids: [
+              {
+                  bidder: 'growads',
+                  params: {
+                      zoneId: 'YpQobqT-vEybhHx-1qaNMFx-Wj3Kwc2',
+                      domain: 'native-test.growadvertising.com'
+                  }
+              }
+          ]
+       },
    ];
 ```
