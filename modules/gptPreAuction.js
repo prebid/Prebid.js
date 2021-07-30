@@ -40,7 +40,7 @@ export const appendGptSlots = adUnits => {
 
 const sanitizeSlotPath = (path) => {
   const gptConfig = config.getConfig('gptPreAuction');
-  
+
   if (gptConfig && gptConfig.mcmEnabled) {
     return path.replace(/(^\/\d*),\d*\//, '$1/');
   }
