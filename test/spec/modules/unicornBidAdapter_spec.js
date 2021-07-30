@@ -383,7 +383,6 @@ const serverResponse = {
           {
             adid: 'uqgbp4y0_OoqM1QOt',
             adm: '<div>test</div>',
-            adomain: ['test1.co.jp'],
             attr: [],
             bundle: 'com.test1.android',
             cat: ['IAB9'],
@@ -401,7 +400,6 @@ const serverResponse = {
           }, {
             adid: 'uqgbp4y0_uqjrNT7h_25512',
             adm: '<div>test</div>',
-            adomain: ['test1.co.jp'],
             attr: ['6'],
             bundle: 'com.test1.android',
             cat: ['IAB9'],
@@ -425,7 +423,6 @@ const serverResponse = {
           {
             adid: 'uoNYC6II_eoySuXNi',
             adm: '<div>test</div>',
-            adomain: ['test2.co.jp'],
             attr: [],
             bundle: 'jp.co.test2',
             cat: ['IAB9'],
