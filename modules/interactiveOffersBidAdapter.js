@@ -4,7 +4,7 @@ import {config} from '../src/config.js';
 import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'interactiveOffers';
-const ENDPOINT = 'https://rtb.ioadx.com/bidRequest/?partnerId=4a3bab187a74ac4862920cca864d6eff195ff5e4';
+const ENDPOINT = 'https://prebid.ioadx.com/bidRequest/?partnerId=4a3bab187a74ac4862920cca864d6eff195ff5e4';
 
 const DEFAULT = {
   'OpenRTBBidRequest': {},
