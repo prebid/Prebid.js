@@ -2,6 +2,14 @@ import { expect } from 'chai';
 import { spec } from 'modules/bridgewellBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
+const userId = {
+  'criteoId': 'vYlICF9oREZlTHBGRVdrJTJCUUJnc3U2ckNVaXhrV1JWVUZVSUxzZmJlcnJZR0ZxbVhFRnU5bDAlMkJaUWwxWTlNcmdEeHFrJTJGajBWVlV4T3lFQ0FyRVcxNyUyQlIxa0lLSlFhcWJpTm9PSkdPVkx0JTJCbzlQRTQlM0Q',
+  'pubcid': '074864cb-3705-430e-9ff7-48ccf3c21b94',
+  'sharedid': {'id': '01F61MX53D786DSB2WYD38ZVM7', 'third': '01F61MX53D786DSB2WYD38ZVM7'},
+  'uid2': {'id': 'eb33b0cb-8d35-1234-b9c0-1a31d4064777'},
+  'flocId': {'id': '12345', 'version': 'chrome.1.1'},
+}
+
 describe('bridgewellBidAdapter', function () {
   const adapter = newBidder(spec);
 
@@ -17,6 +25,16 @@ describe('bridgewellBidAdapter', function () {
         'bidder': 'bridgewell',
         'params': {
           'ChannelID': 'CLJgEAYYvxUiBXBlbm55KgkIrAIQ-gEaATk'
+        },
+      };
+      expect(spec.isBidRequestValid(validTag)).to.equal(true);
+    });
+
+    it('should return true when required params found', function () {
+      const validTag = {
+        'bidder': 'bridgewell',
+        'params': {
+          'cid': 1234
         },
       };
       expect(spec.isBidRequestValid(validTag)).to.equal(true);
@@ -39,6 +57,26 @@ describe('bridgewellBidAdapter', function () {
       };
       expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
     });
+
+    it('should return false when required params are empty', function () {
+      const invalidTag = {
+        'bidder': 'bridgewell',
+        'params': {
+          'cid': '',
+        },
+      };
+      expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
+    });
+
+    it('should return false when required param cid is not a number', function () {
+      const invalidTag = {
+        'bidder': 'bridgewell',
+        'params': {
+          'cid': 'bad_cid',
+        },
+      };
+      expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -57,6 +95,7 @@ describe('bridgewellBidAdapter', function () {
         'bidId': '3150ccb55da321',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
+        'userId': userId,
       },
       {
         'bidder': 'bridgewell',
@@ -96,6 +135,7 @@ describe('bridgewellBidAdapter', function () {
         'bidId': '3150ccb55da321',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
+        'userId': userId,
       }
     ];
 
@@ -112,13 +152,66 @@ describe('bridgewellBidAdapter', function () {
       expect(payload.adUnits).to.be.an('array');
       expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/');
       for (let i = 0, max_i = payload.adUnits.length; i < max_i; i++) {
-        expect(payload.adUnits[i]).to.have.property('ChannelID').that.is.a('string');
-        expect(payload.adUnits[i]).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
+        let u = payload.adUnits[i];
+        expect(u).to.have.property('ChannelID').that.is.a('string');
+        expect(u).to.not.have.property('cid');
+        expect(u).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
+        expect(u).to.have.property('requestId').and.to.equal('3150ccb55da321');
+        expect(u).to.have.property('userIds');
+        expect(u.userIds).to.deep.equal(userId);
+      }
+    });
+
+    it('should attach valid params to the tag, part2', function() {
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'https://www.bridgewell.com/'
+        }
+      }
+      const bidRequests2 = [
+        {
+          'bidder': 'bridgewell',
+          'params': {
+            'cid': 1234,
+          },
+          'adUnitCode': 'adunit-code-2',
+          'mediaTypes': {
+            'banner': {
+              'sizes': [728, 90]
+            }
+          },
+          'bidId': '3150ccb55da321',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+          'userId': userId
+        },
+      ];
+
+      const request = spec.buildRequests(bidRequests2, bidderRequest);
+      const payload = request.data;
+
+      expect(payload).to.be.an('object');
+      expect(payload.adUnits).to.be.an('array');
+      expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/');
+      for (let i = 0, max_i = payload.adUnits.length; i < max_i; i++) {
+        let u = payload.adUnits[i];
+        expect(u).to.have.property('cid').that.is.a('number');
+        expect(u).to.not.have.property('ChannelID');
+        expect(u).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
+        expect(u).to.have.property('requestId').and.to.equal('3150ccb55da321');
+        expect(u).to.have.property('userIds');
+        expect(u.userIds).to.deep.equal(userId);
       }
     });
 
     it('should attach validBidRequests to the tag', function () {
-      const request = spec.buildRequests(bidRequests);
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'https://www.bridgewell.com/'
+        }
+      }
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const validBidRequests = request.validBidRequests;
       expect(validBidRequests).to.deep.equal(bidRequests);
     });
@@ -168,6 +261,7 @@ describe('bridgewellBidAdapter', function () {
         },
       ]
     };
+
     const nativeServerResponses = [
       {
         'id': '0e4048d3-5c74-4380-a21a-00ba35629f7d',
@@ -175,6 +269,7 @@ describe('bridgewellBidAdapter', function () {
         'cpm': 7.0,
         'width': 1,
         'height': 1,
+        'adomain': ['response.com'],
         'mediaType': 'native',
         'native': {
           'image': {
@@ -199,6 +294,7 @@ describe('bridgewellBidAdapter', function () {
         'currency': 'NTD'
       },
     ];
+
     const bannerBidRequests = {
       validBidRequests: [
         {
@@ -211,6 +307,7 @@ describe('bridgewellBidAdapter', function () {
         },
       ]
     };
+
     const bannerServerResponses = [
       {
         'id': 'e5b10774-32bf-4931-85ee-05095e8cff21',
@@ -218,6 +315,7 @@ describe('bridgewellBidAdapter', function () {
         'cpm': 5.0,
         'width': 300,
         'height': 250,
+        'adomain': ['response.com'],
         'mediaType': 'banner',
         'ad': '<div>test 300x250</div>',
         'ttl': 360,
@@ -239,6 +337,7 @@ describe('bridgewellBidAdapter', function () {
       expect(result[0].currency).to.equal('NTD');
       expect(result[0].mediaType).to.equal('native');
       expect(result[0].native.image.url).to.equal('https://img.scupio.com/test/test-image.jpg');
+      expect(String(result[0].meta.advertiserDomains)).to.equal('response.com');
     });
 
     it('should return all required parameters banner', function () {
@@ -254,6 +353,7 @@ describe('bridgewellBidAdapter', function () {
       expect(result[0].currency).to.equal('NTD');
       expect(result[0].mediaType).to.equal('banner');
       expect(result[0].ad).to.equal('<div>test 300x250</div>');
+      expect(String(result[0].meta.advertiserDomains)).to.equal('response.com');
     });
 
     it('should give up bid if server response is undefiend', function () {

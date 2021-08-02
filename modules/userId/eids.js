@@ -30,20 +30,48 @@ const USER_IDS_CONFIG = {
 
   // id5Id
   'id5id': {
+    getValue: function(data) {
+      return data.uid
+    },
     source: 'id5-sync.com',
-    atype: 1
+    atype: 1,
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
   },
 
   // parrableId
-  'parrableid': {
+  'parrableId': {
     source: 'parrable.com',
-    atype: 1
+    atype: 1,
+    getValue: function(parrableId) {
+      if (parrableId.eid) {
+        return parrableId.eid;
+      }
+      if (parrableId.ccpaOptout) {
+        // If the EID was suppressed due to a non consenting ccpa optout then
+        // we still wish to provide this as a reason to the adapters
+        return '';
+      }
+      return null;
+    },
+    getUidExt: function(parrableId) {
+      const extendedData = utils.pick(parrableId, [
+        'ibaOptout',
+        'ccpaOptout'
+      ]);
+      if (Object.keys(extendedData).length) {
+        return extendedData;
+      }
+    }
   },
 
   // identityLink
   'idl_env': {
     source: 'liveramp.com',
-    atype: 1
+    atype: 3
   },
 
   // liveIntentId
@@ -52,7 +80,7 @@ const USER_IDS_CONFIG = {
       return data.lipbid;
     },
     source: 'liveintent.com',
-    atype: 1,
+    atype: 3,
     getEidExt: function(data) {
       if (Array.isArray(data.segments) && data.segments.length) {
         return {
@@ -65,7 +93,13 @@ const USER_IDS_CONFIG = {
   // britepoolId
   'britepoolid': {
     source: 'britepool.com',
-    atype: 1
+    atype: 3
+  },
+
+  // dmdId
+  'dmdId': {
+    source: 'hcn.health',
+    atype: 3
   },
 
   // lotamePanoramaId
@@ -74,23 +108,24 @@ const USER_IDS_CONFIG = {
     atype: 1,
   },
 
-  // DigiTrust
-  'digitrustid': {
-    getValue: function (data) {
-      var id = null;
-      if (data && data.data && data.data.id != null) {
-        id = data.data.id;
-      }
-      return id;
-    },
-    source: 'digitru.st',
-    atype: 1
-  },
-
   // criteo
   'criteoId': {
     source: 'criteo.com',
     atype: 1
+  },
+
+  // merkleId
+  'merkleId': {
+    source: 'merkleinc.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      return (data && data.keyID) ? {
+        keyID: data.keyID
+      } : undefined;
+    }
   },
 
   // NetId
@@ -98,18 +133,94 @@ const USER_IDS_CONFIG = {
     source: 'netid.de',
     atype: 1
   },
-  // sharedid
-  'sharedid': {
-    source: 'sharedid.org',
-    atype: 1,
+
+  // zeotapIdPlus
+  'IDP': {
+    source: 'zeotap.com',
+    atype: 1
+  },
+
+  // haloId
+  'haloId': {
+    source: 'audigent.com',
+    atype: 1
+  },
+
+  // quantcastId
+  'quantcastId': {
+    source: 'quantcast.com',
+    atype: 1
+  },
+
+  // nextroll
+  'nextrollId': {
+    source: 'nextroll.com',
+    atype: 1
+  },
+
+  // IDx
+  'idx': {
+    source: 'idx.lat',
+    atype: 1
+  },
+
+  // Verizon Media ConnectID
+  'connectid': {
+    source: 'verizonmedia.com',
+    atype: 3
+  },
+
+  // Neustar Fabrick
+  'fabrickId': {
+    source: 'neustar.biz',
+    atype: 1
+  },
+  // MediaWallah OpenLink
+  'mwOpenLinkId': {
+    source: 'mediawallahscript.com',
+    atype: 1
+  },
+  'tapadId': {
+    source: 'tapad.com',
+    atype: 1
+  },
+  // Novatiq Snowflake
+  'novatiq': {
+    getValue: function(data) {
+      return data.snowflake
+    },
+    source: 'novatiq.com',
+    atype: 1
+  },
+  'uid2': {
+    source: 'uidapi.com',
+    atype: 3,
     getValue: function(data) {
       return data.id;
-    },
-    getUidExt: function(data) {
-      return (data && data.third) ? {
-        third: data.third
-      } : undefined;
     }
+  },
+  'deepintentId': {
+    source: 'deepintent.com',
+    atype: 3
+  },
+  // Akamai Data Activation Platform (DAP)
+  'dapId': {
+    source: 'akamai.com',
+    atype: 1
+  },
+  // Admixer Id
+  'admixerId': {
+    source: 'admixer.net',
+    atype: 3
+  },
+  // Adtelligent Id
+  'adtelligentId': {
+    source: 'adtelligent.com',
+    atype: 3
+  },
+  amxId: {
+    source: 'amxrtb.com',
+    atype: 1,
   }
 };
 
@@ -150,11 +261,37 @@ export function createEidsArray(bidRequestUserId) {
   let eids = [];
   for (const subModuleKey in bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
-      const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
-      if (eid) {
-        eids.push(eid);
+      if (subModuleKey === 'pubProvidedId') {
+        eids = eids.concat(bidRequestUserId['pubProvidedId']);
+      } else {
+        const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
+        if (eid) {
+          eids.push(eid);
+        }
       }
     }
   }
   return eids;
+}
+
+/**
+ * @param {SubmoduleContainer[]} submodules
+ */
+export function buildEidPermissions(submodules) {
+  let eidPermissions = [];
+  submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
+    .forEach(i => {
+      Object.keys(i.idObj).forEach(key => {
+        if (utils.deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
+          utils.deepAccess(USER_IDS_CONFIG, key + '.source')) {
+          eidPermissions.push(
+            {
+              source: USER_IDS_CONFIG[key].source,
+              bidders: i.config.bidders
+            }
+          );
+        }
+      });
+    });
+  return eidPermissions;
 }

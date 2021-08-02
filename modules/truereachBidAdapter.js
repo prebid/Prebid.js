@@ -79,6 +79,26 @@ export const spec = {
 
     return bidResponses;
   },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = []
+
+    var gdprParams = '';
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `?gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'http://ads.momagic.com/jsp/usersync.jsp' + gdprParams
+      });
+    }
+    return syncs;
+  }
 
 };
 
@@ -95,7 +115,7 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
     adH = adSizes[0][1];
   }
 
-  let bidFloor = Number(utils.deepAccess(validBidRequests[0], 'params.bidfloor'));
+  let bidFloor = Number(0);
 
   let domain = window.location.host;
   let page = window.location.host + window.location.pathname + location.search + location.hash;

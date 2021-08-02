@@ -250,7 +250,7 @@ describe('InSkin BidAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.keywords).to.be.an('array').that.is.empty;
-      expect(payload.placements[0].properties).to.be.undefined;
+      expect(payload.placements[0].properties.restrictions).to.be.undefined;
     });
 
     it('should add keywords if TCF v2 purposes are not granted', function () {
@@ -328,6 +328,7 @@ describe('InSkin BidAdapter', function () {
         expect(b).to.have.property('currency', 'USD');
         expect(b).to.have.property('creativeId');
         expect(b).to.have.property('ttl', 360);
+        expect(b.meta).to.have.property('advertiserDomains');
         expect(b).to.have.property('netRevenue', true);
       });
     });

@@ -1,13 +1,13 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 
 /**
  * Version of the FeedAd bid adapter
  * @type {string}
  */
-const VERSION = '1.0.0';
+const VERSION = '1.0.2';
 
 /**
  * @typedef {object} FeedAdApiBidRequest
@@ -62,6 +62,11 @@ const VERSION = '1.0.0';
  */
 
 /**
+ * The IAB TCF 2.0 vendor ID for the FeedAd GmbH
+ */
+const TCF_VENDOR_ID = 781;
+
+/**
  * Bidder network identity code
  * @type {string}
  */
@@ -71,7 +76,7 @@ const BIDDER_CODE = 'feedad';
  * The media types supported by FeedAd
  * @type {MediaType[]}
  */
-const MEDIA_TYPES = [VIDEO, BANNER];
+const MEDIA_TYPES = [BANNER];
 
 /**
  * Tag for logging
@@ -204,6 +209,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     referer: data.refererInfo.referer,
     transactionId: bid.transactionId
   });
+  if (bidderRequest.gdprConsent) {
+    data.consentIabTcf = bidderRequest.gdprConsent.consentString;
+    data.gdprApplies = bidderRequest.gdprConsent.gdprApplies;
+  }
   return {
     method: 'POST',
     url: `${API_ENDPOINT}${API_PATH_BID_REQUEST}`,
@@ -279,6 +288,7 @@ function trackingHandlerFactory(klass) {
  */
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: TCF_VENDOR_ID,
   supportedMediaTypes: MEDIA_TYPES,
   isBidRequestValid,
   buildRequests,

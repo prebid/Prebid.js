@@ -13,8 +13,10 @@ import {
   createEidsArray
 } from './userId/eids.js';
 const BIDDER_CODE = 'smartadserver';
+const GVL_ID = 45;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   aliases: ['smart'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
   /**
@@ -83,21 +85,44 @@ export const spec = {
           w: size[0],
           h: size[1]
         }));
-      } else if (videoMediaType && videoMediaType.context === 'instream') {
+      } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
+        // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
+        // Assign a default protocol, the highest value possible means we are retrocompatible with all older values.
+        var protocol = null;
+        if (bid.params.video && bid.params.video.protocol) {
+          protocol = bid.params.video.protocol;
+        } else if (Array.isArray(videoMediaType.protocols)) {
+          protocol = Math.max.apply(Math, videoMediaType.protocols);
+        }
+
+        // Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
+        var startDelay = 2;
+        if (bid.params.video && bid.params.video.startDelay) {
+          startDelay = bid.params.video.startDelay
+        } else if (videoMediaType.startdelay == 0) {
+          startDelay = 1;
+        } else if (videoMediaType.startdelay == -1) {
+          startDelay = 2;
+        } else if (videoMediaType.startdelay == -2) {
+          startDelay = 3;
+        }
+
         // Specific attributes for instream.
         let playerSize = videoMediaType.playerSize[0];
-        payload.isVideo = true;
+        payload.isVideo = videoMediaType.context === 'instream';
+        payload.mediaType = VIDEO;
         payload.videoData = {
-          videoProtocol: bid.params.video.protocol,
+          videoProtocol: protocol,
           playerWidth: playerSize[0],
           playerHeight: playerSize[1],
-          adBreak: bid.params.video.startDelay || 1
+          adBreak: startDelay
         };
       } else {
         return {};
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
+        payload.addtl_consent = bidderRequest.gdprConsent.addtlConsent;
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
       }
@@ -131,7 +156,7 @@ export const spec = {
     const bidResponses = [];
     let response = serverResponse.body;
     try {
-      if (response) {
+      if (response && !response.isNoAd) {
         const bidRequest = JSON.parse(bidRequestString.data);
 
         let bidResponse = {
@@ -143,13 +168,16 @@ export const spec = {
           dealId: response.dealId,
           currency: response.currency,
           netRevenue: response.isNetCpm,
-          ttl: response.ttl
+          ttl: response.ttl,
+          dspPixels: response.dspPixels,
+          meta: { advertiserDomains: response.adomain ? response.adomain : [] }
         };
 
-        if (bidRequest.isVideo) {
+        if (bidRequest.mediaType === VIDEO) {
           bidResponse.mediaType = VIDEO;
           bidResponse.vastUrl = response.adUrl;
           bidResponse.vastXml = response.ad;
+          bidResponse.content = response.ad;
         } else {
           bidResponse.adUrl = response.adUrl;
           bidResponse.ad = response.ad;
@@ -176,6 +204,13 @@ export const spec = {
       syncs.push({
         type: 'iframe',
         url: serverResponses[0].body.cSyncUrl
+      });
+    } else if (syncOptions.pixelEnabled && serverResponses.length > 0 && serverResponses[0].body.dspPixels !== undefined) {
+      serverResponses[0].body.dspPixels.forEach(function(pixel) {
+        syncs.push({
+          type: 'image',
+          url: pixel
+        });
       });
     }
     return syncs;
