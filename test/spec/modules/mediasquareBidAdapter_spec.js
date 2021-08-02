@@ -144,6 +144,7 @@ describe('MediaSquare bid adapter tests', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
     BID_RESPONSE.body.responses[0].match = true;
     const response = spec.interpretResponse(BID_RESPONSE, request);
+    const bid = response[0];
     expect(bid.mediasquare.match).to.exist;
     expect(bid.mediasquare.match).to.equal(true);
   });
