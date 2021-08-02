@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/vidoomyBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { INSTREAM } from '../../../src/video';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 
@@ -44,7 +45,7 @@ describe('vidoomyBidAdapter', function() {
     it('should return false when mediaType is video with INSTREAM context and lacks playerSize property', function () {
       bid.params.mediaTypes = {
         video: {
-          context: 'INSTREAM'
+          context: INSTREAM
         }
       }
       expect(spec.isBidRequestValid(bid)).to.equal(false);
