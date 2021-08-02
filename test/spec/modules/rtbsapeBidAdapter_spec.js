@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/rtbsapeBidAdapter.js';
+import 'src/prebid.js';
 import * as utils from 'src/utils.js';
 import {executeRenderer, Renderer} from 'src/Renderer.js';
 
@@ -46,7 +47,10 @@ describe('rtbsapeBidAdapterTests', function () {
             width: 240,
             height: 400,
             netRevenue: true,
-            ad: 'Ad html'
+            ad: 'Ad html',
+            meta: {
+              advertiserDomains: ['rtb.sape.ru']
+            }
           }]
         }
       };
@@ -78,6 +82,7 @@ describe('rtbsapeBidAdapterTests', function () {
               netRevenue: true,
               vastUrl: 'https://cdn-rtb.sape.ru/vast/4321.xml',
               meta: {
+                advertiserDomains: ['rtb.sape.ru'],
                 mediaType: 'video'
               }
             }]
@@ -125,6 +130,7 @@ describe('rtbsapeBidAdapterTests', function () {
         };
 
         executeRenderer(bid.renderer, bid);
+        bid.renderer.callback();
         expect(spy).to.not.equal(false);
         expect(spy.called).to.be.true;
 
@@ -135,6 +141,43 @@ describe('rtbsapeBidAdapterTests', function () {
         expect(spyCall.returnValue[2]).to.be.equal(340);
         expect(spyCall.returnValue[3]).to.be.equal(false);
       });
+    });
+
+    it('skip adomain', function () {
+      let serverResponse = {
+        body: {
+          bids: [{
+            requestId: 'bid1234',
+            cpm: 2.21,
+            currency: 'RUB',
+            width: 240,
+            height: 400,
+            netRevenue: true,
+            ad: 'Ad html 1'
+          }, {
+            requestId: 'bid1235',
+            cpm: 2.23,
+            currency: 'RUB',
+            width: 300,
+            height: 250,
+            netRevenue: true,
+            ad: 'Ad html 2',
+            meta: {
+              advertiserDomains: ['rtb.sape.ru']
+            }
+          }]
+        }
+      };
+      let bids = spec.interpretResponse(serverResponse, {data: {bids: [{mediaTypes: {banner: true}}]}});
+      expect(bids).to.have.lengthOf(1);
+      let bid = bids[0];
+      expect(bid.cpm).to.equal(2.23);
+      expect(bid.currency).to.equal('RUB');
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(250);
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.requestId).to.equal('bid1235');
+      expect(bid.ad).to.equal('Ad html 2');
     });
   });
 

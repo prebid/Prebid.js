@@ -4,7 +4,7 @@ import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'admixer';
 const ALIASES = ['go2net', 'adblender'];
-const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.1.aspx';
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
@@ -21,7 +21,7 @@ export const spec = {
   buildRequests: function (validRequest, bidderRequest) {
     const payload = {
       imps: [],
-      fpd: config.getConfig('fpd')
+      ortb2: config.getConfig('ortb2'),
     };
     let endpointUrl;
     if (bidderRequest) {
@@ -42,7 +42,9 @@ export const spec = {
       }
     }
     validRequest.forEach((bid) => {
-      payload.imps.push(bid);
+      let imp = {};
+      Object.keys(bid).forEach(key => imp[key] = bid[key]);
+      payload.imps.push(imp);
     });
     const payloadString = JSON.stringify(payload);
     return {
@@ -58,22 +60,7 @@ export const spec = {
     const bidResponses = [];
     try {
       const {body: {ads = []} = {}} = serverResponse;
-      ads.forEach((bidResponse) => {
-        const bidResp = {
-          requestId: bidResponse.bidId,
-          cpm: bidResponse.cpm,
-          width: bidResponse.width,
-          height: bidResponse.height,
-          ad: bidResponse.ad,
-          ttl: bidResponse.ttl,
-          creativeId: bidResponse.creativeId,
-          netRevenue: bidResponse.netRevenue,
-          currency: bidResponse.currency,
-          vastUrl: bidResponse.vastUrl,
-          dealId: bidResponse.dealId,
-        };
-        bidResponses.push(bidResp);
-      });
+      ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
       utils.logError(e);
     }

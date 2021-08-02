@@ -12,10 +12,11 @@ Module that connects to adWMG demand sources to fetch bids. Supports 'banner' ad
 
 # Bid Parameters
 
-| Key | Required | Example | Description |
-| --- | -------- | ------- | ----------- |
-| `publisherId` | yes | `'5cebea3c9eea646c7b623d5e'` | publisher ID from WMG Dashboard |
-| `IABCategories` | no | `['IAB1', 'IAB5']` | IAB ad categories for adUnit |
+| Key             | Required | Example                      | Description                     |
+| --------------- | -------- | -----------------------------| ------------------------------- |
+| `publisherId`   | yes      | `'5cebea3c9eea646c7b623d5e'` | publisher ID from WMG Dashboard |
+| `IABCategories` | no       | `['IAB1', 'IAB5']`           | IAB ad categories for adUnit    |
+| `floorCPM`      | no       | `0.5`                        | Floor price for adUnit          |
 
 
 # Test Parameters

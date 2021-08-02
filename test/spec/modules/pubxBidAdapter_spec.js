@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/pubxBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 describe('pubxAdapter', function () {
   const adapter = newBidder(spec);
@@ -134,6 +135,9 @@ describe('pubxAdapter', function () {
         currency: 'JPY',
         height: 250,
         width: 300,
+        adomains: [
+          'test.com'
+        ],
       }
     }
 
@@ -156,7 +160,12 @@ describe('pubxAdapter', function () {
         creativeId: 'TKmB',
         netRevenue: true,
         ttl: 300,
-        ad: '<div>some creative</div>'
+        ad: '<div>some creative</div>',
+        meta: {
+          advertiserDomains: [
+            'test.com'
+          ]
+        },
       }
     ];
     it('should return empty array when required param is empty', function () {
@@ -184,6 +193,7 @@ describe('pubxAdapter', function () {
       expect(result.netRevenue).to.equal(bidResponses[0].netRevenue);
       expect(result.ttl).to.equal(bidResponses[0].ttl);
       expect(result.ad).to.equal(bidResponses[0].ad);
+      expect(result.meta.advertiserDomains).deep.to.equal(bidResponses[0].meta.advertiserDomains);
     });
   });
 });

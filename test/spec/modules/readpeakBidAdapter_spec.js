@@ -189,6 +189,73 @@ describe('ReadPeakAdapter', function() {
         language: navigator.language
       });
       expect(data.cur).to.deep.equal(['EUR']);
+      expect(data.user).to.be.undefined;
+      expect(data.regs).to.be.undefined;
+    });
+
+    it('should get bid floor from module', function() {
+      const floorModuleData = {
+        currency: 'USD',
+        floor: 3.2,
+      }
+      bidRequest.getFloor = function () {
+        return floorModuleData
+      }
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      const data = JSON.parse(request.data);
+
+      expect(data.source.ext.prebid).to.equal('$prebid.version$');
+      expect(data.id).to.equal(bidRequest.bidderRequestId);
+      expect(data.imp[0].bidfloor).to.equal(floorModuleData.floor);
+      expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency);
+    });
+
+    it('should send gdpr data when gdpr does not apply', function() {
+      const gdprData = {
+        gdprConsent: {
+          gdprApplies: false,
+          consentString: undefined,
+        }
+      }
+      const request = spec.buildRequests([bidRequest], {...bidderRequest, ...gdprData});
+
+      const data = JSON.parse(request.data);
+
+      expect(data.user).to.deep.equal({
+        ext: {
+          consent: ''
+        }
+      });
+      expect(data.regs).to.deep.equal({
+        ext: {
+          gdpr: false
+        }
+      });
+    });
+
+    it('should send gdpr data when gdpr applies', function() {
+      const tcString = 'sometcstring';
+      const gdprData = {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: tcString
+        }
+      }
+      const request = spec.buildRequests([bidRequest], {...bidderRequest, ...gdprData});
+
+      const data = JSON.parse(request.data);
+
+      expect(data.user).to.deep.equal({
+        ext: {
+          consent: tcString
+        }
+      });
+      expect(data.regs).to.deep.equal({
+        ext: {
+          gdpr: true
+        }
+      });
     });
   });
 
@@ -213,6 +280,9 @@ describe('ReadPeakAdapter', function() {
         currency: serverResponse.cur
       });
 
+      expect(bidResponse.meta).to.deep.equal({
+        advertiserDomains: ['readpeak.com'],
+      })
       expect(bidResponse.native.title).to.equal('Title');
       expect(bidResponse.native.body).to.equal('Description');
       expect(bidResponse.native.image).to.deep.equal({

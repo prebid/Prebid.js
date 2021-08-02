@@ -7,7 +7,8 @@ import {
   expDaysStr,
   nbCacheName,
   getNbFromCache,
-  storeNbInCache
+  storeNbInCache,
+  isInControlGroup
 } from 'modules/id5IdSystem.js';
 import { init, requestBidsHook, setSubmoduleRegistry, coreStorage } from 'modules/userId/index.js';
 import { config } from 'src/config.js';
@@ -72,9 +73,6 @@ describe('ID5 ID System', function() {
         syncDelay: 0
       }
     }
-  }
-  function getFetchCookieConfig() {
-    return getUserSyncConfig([getId5FetchConfig(ID5_STORAGE_NAME, 'cookie')]);
   }
   function getFetchLocalStorageConfig() {
     return getUserSyncConfig([getId5FetchConfig(ID5_STORAGE_NAME, 'html5')]);
@@ -143,26 +141,26 @@ describe('ID5 ID System', function() {
       expect(request.withCredentials).to.be.true;
       expect(requestBody.partner).to.eq(ID5_TEST_PARTNER_ID);
       expect(requestBody.o).to.eq('pbjs');
-      expect(requestBody.pd).to.eq('');
-      expect(requestBody.s).to.eq('');
-      expect(requestBody.provider).to.eq('');
+      expect(requestBody.pd).to.be.undefined;
+      expect(requestBody.s).to.be.undefined;
+      expect(requestBody.provider).to.be.undefined
       expect(requestBody.v).to.eq('$prebid.version$');
       expect(requestBody.gdpr).to.exist;
-      expect(requestBody.gdpr_consent).to.exist
-      expect(requestBody.us_privacy).to.exist;
+      expect(requestBody.gdpr_consent).to.be.undefined;
+      expect(requestBody.us_privacy).to.be.undefined;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
       expect(callbackSpy.calledOnce).to.be.true;
       expect(callbackSpy.lastCall.lastArg).to.deep.equal(ID5_JSON_RESPONSE);
     });
 
-    it('should call the ID5 server with empty signature field when no stored object', function () {
+    it('should call the ID5 server with no signature field when no stored object', function () {
       let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, undefined).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
       let requestBody = JSON.parse(request.requestBody);
-      expect(requestBody.s).to.eq('');
+      expect(requestBody.s).to.be.undefined;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
@@ -194,7 +192,7 @@ describe('ID5 ID System', function() {
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
 
-    it('should call the ID5 server with empty pd field when pd config is not set', function () {
+    it('should call the ID5 server with no pd field when pd config is not set', function () {
       let id5Config = getId5FetchConfig();
       id5Config.params.pd = undefined;
 
@@ -203,7 +201,7 @@ describe('ID5 ID System', function() {
 
       let request = server.requests[0];
       let requestBody = JSON.parse(request.requestBody);
-      expect(requestBody.pd).to.eq('');
+      expect(requestBody.pd).to.be.undefined;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
@@ -236,6 +234,48 @@ describe('ID5 ID System', function() {
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(0);
+    });
+
+    it('should call the ID5 server with ab_testing object when abTesting is turned on', function () {
+      let id5Config = getId5FetchConfig();
+      id5Config.params.abTesting = { enabled: true, controlGroupPct: 0.234 }
+
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+      let requestBody = JSON.parse(request.requestBody);
+      expect(requestBody.ab_testing.enabled).to.eq(true);
+      expect(requestBody.ab_testing.control_group_pct).to.eq(0.234);
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+    });
+
+    it('should call the ID5 server without ab_testing object when abTesting is turned off', function () {
+      let id5Config = getId5FetchConfig();
+      id5Config.params.abTesting = { enabled: false, controlGroupPct: 0.55 }
+
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+      let requestBody = JSON.parse(request.requestBody);
+      expect(requestBody.ab_testing).to.be.undefined;
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+    });
+
+    it('should call the ID5 server without ab_testing when when abTesting is not set', function () {
+      let id5Config = getId5FetchConfig();
+
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+      let requestBody = JSON.parse(request.requestBody);
+      expect(requestBody.ab_testing).to.be.undefined;
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
     });
 
     it('should store the privacy object from the ID5 server response', function () {
@@ -407,99 +447,12 @@ describe('ID5 ID System', function() {
   describe('A/B Testing', function() {
     const expectedDecodedObjectWithIdAbOff = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE } } };
     const expectedDecodedObjectWithIdAbOn = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE, abTestingControlGroup: false } } };
-    const expectedDecodedObjectWithoutIdAbOn = { id5id: { uid: 0, ext: { linkType: 0, abTestingControlGroup: true } } };
-    let testConfig;
+    const expectedDecodedObjectWithoutIdAbOn = { id5id: { uid: '', ext: { linkType: 0, abTestingControlGroup: true } } };
+    let testConfig, storedObject;
 
     beforeEach(function() {
       testConfig = getId5FetchConfig();
-    });
-
-    describe('Configuration Validation', function() {
-      let logErrorSpy;
-      let logInfoSpy;
-
-      beforeEach(function() {
-        logErrorSpy = sinon.spy(utils, 'logError');
-        logInfoSpy = sinon.spy(utils, 'logInfo');
-      });
-      afterEach(function() {
-        logErrorSpy.restore();
-        logInfoSpy.restore();
-      });
-
-      // A/B Testing ON, but invalid config
-      let testInvalidAbTestingConfigsWithError = [
-        { enabled: true },
-        { enabled: true, controlGroupPct: 2 },
-        { enabled: true, controlGroupPct: -1 },
-        { enabled: true, controlGroupPct: 'a' },
-        { enabled: true, controlGroupPct: true }
-      ];
-      testInvalidAbTestingConfigsWithError.forEach((testAbTestingConfig) => {
-        it('should error if config is invalid, and always return an ID', function () {
-          testConfig.params.abTesting = testAbTestingConfig;
-          let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
-          expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOn);
-          sinon.assert.calledOnce(logErrorSpy);
-        });
-      });
-
-      // A/B Testing OFF, with invalid config (ignore)
-      let testInvalidAbTestingConfigsWithoutError = [
-        { enabled: false, controlGroupPct: -1 },
-        { enabled: false, controlGroupPct: 2 },
-        { enabled: false, controlGroupPct: 'a' },
-        { enabled: false, controlGroupPct: true }
-      ];
-      testInvalidAbTestingConfigsWithoutError.forEach((testAbTestingConfig) => {
-        it('should not error if config is invalid but A/B testing is off, and always return an ID', function () {
-          testConfig.params.abTesting = testAbTestingConfig;
-          let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
-          expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
-          sinon.assert.notCalled(logErrorSpy);
-          sinon.assert.notCalled(logInfoSpy);
-        });
-      });
-
-      // A/B Testing ON, with valid config
-      let testValidConfigs = [
-        { enabled: true, controlGroupPct: 0 },
-        { enabled: true, controlGroupPct: 0.5 },
-        { enabled: true, controlGroupPct: 1 }
-      ];
-      testValidConfigs.forEach((testAbTestingConfig) => {
-        it('should not error if config is valid', function () {
-          testConfig.params.abTesting = testAbTestingConfig;
-          id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
-          sinon.assert.notCalled(logErrorSpy);
-          sinon.assert.calledOnce(logInfoSpy);
-        });
-      });
-    });
-
-    describe('A/B Testing Config is not Set', function() {
-      let randStub;
-
-      beforeEach(function() {
-        randStub = sinon.stub(Math, 'random').callsFake(function() {
-          return 0;
-        });
-      });
-      afterEach(function () {
-        randStub.restore();
-      });
-
-      it('should expose ID when A/B config is not set', function () {
-        let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
-        expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
-      });
-
-      it('should expose ID when A/B config is empty', function () {
-        testConfig.params.abTesting = { };
-
-        let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
-        expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
-      });
+      storedObject = utils.deepClone(ID5_STORED_OBJ);
     });
 
     describe('A/B Testing Config is Set', function() {
@@ -514,34 +467,41 @@ describe('ID5 ID System', function() {
         randStub.restore();
       });
 
-      it('should expose ID when A/B testing is off', function () {
-        testConfig.params.abTesting = {
-          enabled: false,
-          controlGroupPct: 0.5
-        };
+      describe('Decode', function() {
+        let logErrorSpy;
 
-        let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
-        expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
-      });
+        beforeEach(function() {
+          logErrorSpy = sinon.spy(utils, 'logError');
+        });
+        afterEach(function() {
+          logErrorSpy.restore();
+        });
 
-      it('should expose ID when not in control group', function () {
-        testConfig.params.abTesting = {
-          enabled: true,
-          controlGroupPct: 0.1
-        };
+        it('should not set abTestingControlGroup extension when A/B testing is off', function () {
+          let decoded = id5IdSubmodule.decode(storedObject, testConfig);
+          expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
+        });
 
-        let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
-        expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOn);
-      });
+        it('should set abTestingControlGroup to false when A/B testing is on but in normal group', function () {
+          storedObject.ab_testing = { result: 'normal' };
+          let decoded = id5IdSubmodule.decode(storedObject, testConfig);
+          expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOn);
+        });
 
-      it('should not expose ID when in control group', function () {
-        testConfig.params.abTesting = {
-          enabled: true,
-          controlGroupPct: 0.5
-        };
+        it('should not expose ID when everyone is in control group', function () {
+          storedObject.ab_testing = { result: 'control' };
+          storedObject.universal_uid = '';
+          storedObject.link_type = 0;
+          let decoded = id5IdSubmodule.decode(storedObject, testConfig);
+          expect(decoded).to.deep.equal(expectedDecodedObjectWithoutIdAbOn);
+        });
 
-        let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
-        expect(decoded).to.deep.equal(expectedDecodedObjectWithoutIdAbOn);
+        it('should log A/B testing errors', function () {
+          storedObject.ab_testing = { result: 'error' };
+          let decoded = id5IdSubmodule.decode(storedObject, testConfig);
+          expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
+          sinon.assert.calledOnce(logErrorSpy);
+        });
       });
     });
   });

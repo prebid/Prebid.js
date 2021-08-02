@@ -494,6 +494,9 @@ describe('teadsBidAdapter', () => {
           'height': 250,
           'currency': 'USD',
           'netRevenue': true,
+          'meta': {
+            advertiserDomains: []
+          },
           'ttl': 360,
           'ad': AD_SCRIPT,
           'requestId': '3ede2a3fa0db94',
@@ -505,6 +508,9 @@ describe('teadsBidAdapter', () => {
           'height': 200,
           'currency': 'USD',
           'netRevenue': true,
+          'meta': {
+            advertiserDomains: []
+          },
           'ttl': 360,
           'ad': AD_SCRIPT,
           'requestId': '4fef3b4gb1ec15',

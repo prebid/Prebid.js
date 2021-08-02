@@ -157,6 +157,7 @@ describe('rhythmone adapter tests', function () {
       expect(bid.width).to.equal(800);
       expect(bid.height).to.equal(600);
       expect(bid.vastUrl).to.equal('https://testdomain/rmp/placementid/0/path?reqId=1636037');
+      expect(bid.meta.advertiserDomains).to.deep.equal(['test.com']);
       expect(bid.mediaType).to.equal('video');
       expect(bid.creativeId).to.equal('cr-vid');
       expect(bid.currency).to.equal('USD');
@@ -443,7 +444,7 @@ describe('rhythmone adapter tests', function () {
       expect(openrtbRequest.device.dnt).to.equal(1);
     });
 
-    it('sets floor', function () {
+    it('sets floor to zero', function () {
       var bidRequestList = [
         {
           'bidder': 'rhythmone',
@@ -468,7 +469,7 @@ describe('rhythmone adapter tests', function () {
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.imp[0].bidfloor).to.equal(100.0);
+      expect(openrtbRequest.imp[0].bidfloor).to.equal(0);
     });
 
     it('supports string video sizes', function () {
