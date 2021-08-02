@@ -95,7 +95,7 @@ describe('GPT pre-auction module', () => {
       expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: 'slotCode2' });
     });
 
-    it('will trim child id if mcmEnabled is not set to true', () => {
+    it('will trim child id if mcmEnabled is set to true', () => {
       config.setConfig({ gptPreAuction: { enabled: true, mcmEnabled: true } });
       window.googletag.pubads().setSlots([
         makeSlot({ code: '/12345,21212/slotCode1', divId: 'div1' }),
