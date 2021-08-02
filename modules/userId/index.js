@@ -613,6 +613,11 @@ function refreshUserIds(options, callback) {
 
       utils.logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
       populateSubmoduleId(submodule, consentData, storedConsentData, true);
+      updateInitializedSubmodules(submodule);
+
+      if (initializedSubmodules.length) {
+        setPrebidServerEidPermissions(initializedSubmodules);
+      }
 
       if (utils.isFn(submodule.callback)) {
         callbackSubmodules.push(submodule);
@@ -711,6 +716,21 @@ function initSubmodules(submodules, consentData) {
   }, []);
 }
 
+function updateInitializedSubmodules(submodule) {
+  let updated = false;
+  for (let i = 0; i < initializedSubmodules.length; i++) {
+    if (submodule.config.name.toLowerCase() === initializedSubmodules[i].config.name.toLowerCase()) {
+      updated = true;
+      initializedSubmodules[i] = submodule;
+      break;
+    }
+  }
+
+  if (!updated) {
+    initializedSubmodules.push(submodule);
+  }
+}
+
 /**
  * list of submodule configurations with valid 'storage' or 'value' obj definitions
  * * storage config: contains values for storing/retrieving User ID data in browser storage
@@ -758,7 +778,8 @@ function updateSubmodules() {
 
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   submodules = addedSubmodules.map(i => {
-    const submoduleConfig = find(configs, j => j.name && j.name.toLowerCase() === i.name.toLowerCase());
+    const submoduleConfig = find(configs, j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
+      (i.aliasName && j.name.toLowerCase() === i.aliasName.toLowerCase())));
     if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
     i.findRootDomain = findRootDomain;
     return submoduleConfig ? {

@@ -597,13 +597,19 @@ export function newTargeting(auctionManager) {
     const standardKeys = TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
     const adUnitBidLimit = config.getConfig('sendBidsControl.bidLimit');
     const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, adUnitBidLimit);
+    const allowSendAllBidsTargetingKeys = config.getConfig('targetingControls.allowSendAllBidsTargetingKeys');
+
+    const allowedSendAllBidTargeting = allowSendAllBidsTargetingKeys
+      ? allowSendAllBidsTargetingKeys.map((key) => CONSTANTS.TARGETING_KEYS[key])
+      : standardKeys;
 
     // populate targeting keys for the remaining bids
     return bids.map(bid => {
       if (bidShouldBeAddedToTargeting(bid, adUnitCodes)) {
         return {
           [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
-            key => typeof bid.adserverTargeting[key] !== 'undefined')
+            key => typeof bid.adserverTargeting[key] !== 'undefined' &&
+            allowedSendAllBidTargeting.indexOf(key) !== -1)
           )
         };
       }

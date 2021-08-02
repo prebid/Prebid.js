@@ -19,7 +19,7 @@ OpenWeb header bidding adapter provides solution for accessing both Video and Di
         bids: [{
           bidder: 'openweb',
           params: {
-            aid: 650342
+            aid: 529814
           }
         }]
       }
