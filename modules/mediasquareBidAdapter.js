@@ -106,6 +106,9 @@ export const spec = {
             'advertiserDomains': value['adomain']
           }
         };
+        if ('match' in value) {
+          bidResponse['mediasquare']['match'] = value['match'];
+        }
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
