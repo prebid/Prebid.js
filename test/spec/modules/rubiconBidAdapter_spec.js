@@ -1378,7 +1378,7 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.pbadslot');
           });
 
-          it('should send \"tg_i.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" value is a valid string', function () {
+          it('should NOT send \"tg_i.pbadslot\" even if \"ortb2Imp.ext.data.pbadslot\" value is a valid string', function () {
             bidderRequest.bids[0].ortb2Imp = {
               ext: {
                 data: {
@@ -1391,25 +1391,7 @@ describe('the rubicon adapter', function () {
             const data = parseQuery(request.data);
 
             expect(data).to.be.an('Object');
-            expect(data).to.have.property('tg_i.pbadslot');
-            expect(data['tg_i.pbadslot']).to.equal('abc');
-          });
-
-          it('should send \"tg_i.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" value is a valid string, but all leading slash characters should be removed', function () {
-            bidderRequest.bids[0].ortb2Imp = {
-              ext: {
-                data: {
-                  pbadslot: '/a/b/c'
-                }
-              }
-            }
-
-            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            const data = parseQuery(request.data);
-
-            expect(data).to.be.an('Object');
-            expect(data).to.have.property('tg_i.pbadslot');
-            expect(data['tg_i.pbadslot']).to.equal('a/b/c');
+            expect(data).to.not.have.property('tg_i.pbadslot');
           });
         });
 
@@ -1457,11 +1439,12 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
           });
 
-          it('should send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string', function () {
+          it('should NOT send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string but not from GAM', function () {
             bidderRequest.bids[0].ortb2Imp = {
               ext: {
                 data: {
                   adserver: {
+                    name: 'notGam',
                     adslot: 'abc'
                   }
                 }
@@ -1472,16 +1455,36 @@ describe('the rubicon adapter', function () {
             const data = parseQuery(request.data);
 
             expect(data).to.be.an('Object');
-            expect(data).to.have.property('tg_i.dfp_ad_unit_code');
-            expect(data['tg_i.dfp_ad_unit_code']).to.equal('abc');
+            expect(data).to.not.have.property('p_gpid');
           });
 
-          it('should send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string, but all leading slash characters should be removed', function () {
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string', function () {
             bidderRequest.bids[0].ortb2Imp = {
               ext: {
                 data: {
                   adserver: {
-                    adslot: 'a/b/c'
+                    name: 'gam',
+                    adslot: 'abc'
+                  }
+                }
+              }
+            }
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.have.property('p_gpid');
+            expect(data['p_gpid']).to.equal('abc');
+          });
+
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string, but all leading slash characters should NOT be removed', function () {
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                data: {
+                  adserver: {
+                    name: 'gam',
+                    adslot: '/a/b/c'
                   }
                 }
               }
@@ -1491,8 +1494,8 @@ describe('the rubicon adapter', function () {
             const data = parseQuery(request.data);
 
             expect(data).to.be.an('Object');
-            expect(data).to.have.property('tg_i.dfp_ad_unit_code');
-            expect(data['tg_i.dfp_ad_unit_code']).to.equal('a/b/c');
+            expect(data).to.have.property('p_gpid');
+            expect(data['p_gpid']).to.equal('/a/b/c');
           });
         });
       });

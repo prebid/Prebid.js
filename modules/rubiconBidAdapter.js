@@ -979,7 +979,7 @@ function applyFPD(bidRequest, mediaType, data) {
   let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
   let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
   const SEGTAX = {user: [4], site: [1, 2]};
-  const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
+  const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'p_gpid', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
     if (key === 'data' && Array.isArray(prop)) {
       return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.segtax') && SEGTAX[parentName] &&
@@ -1009,10 +1009,10 @@ function applyFPD(bidRequest, mediaType, data) {
   Object.keys(impData).forEach((key) => {
     if (key === 'adserver') {
       ['name', 'adslot'].forEach(prop => {
-        if (impData[key][prop]) impData[key][prop] = impData[key][prop].toString().replace(/^\/+/, '');
+        if (impData[key][prop]) impData[key][prop] = impData[key][prop].toString();
       });
     } else if (key === 'pbadslot') {
-      impData[key] = impData[key].toString().replace(/^\/+/, '');
+      impData[key] = impData[key].toString();
     }
   });
 
@@ -1031,7 +1031,11 @@ function applyFPD(bidRequest, mediaType, data) {
       });
     });
     Object.keys(impData).forEach((key) => {
-      (key === 'adserver') ? addBannerData(impData[key].adslot, name, key) : addBannerData(impData[key], 'site', key);
+      if (key === 'adserver' && impData[key].name === 'gam') {
+        addBannerData(impData[key].adslot, name, key);
+      } else if (key !== 'adserver' && key !== 'pbadslot') {
+        addBannerData(impData[key], 'site', key);
+      }
     });
   } else {
     if (Object.keys(impData).length) {
