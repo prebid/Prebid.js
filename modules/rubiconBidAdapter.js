@@ -1006,16 +1006,6 @@ function applyFPD(bidRequest, mediaType, data) {
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
   }
 
-  Object.keys(impData).forEach((key) => {
-    if (key === 'adserver') {
-      ['name', 'adslot'].forEach(prop => {
-        if (impData[key][prop]) impData[key][prop] = impData[key][prop].toString();
-      });
-    } else if (key === 'pbadslot') {
-      impData[key] = impData[key].toString();
-    }
-  });
-
   if (mediaType === BANNER) {
     ['site', 'user'].forEach(name => {
       Object.keys(fpd[name]).forEach((key) => {
