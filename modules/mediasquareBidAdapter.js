@@ -165,7 +165,7 @@ export const spec = {
       if (bid.hasOwnProperty(paramsToSearchFor[i])) { params.push(paramsToSearchFor[i] + '=' + bid[paramsToSearchFor[i]]); }
     }
     if (params.length > 0) { params = '?' + params.join('&'); }
-    ajax(endpoint + BIDDER_ENDPOINT_WINNING + params, null);
+    ajax(endpoint + BIDDER_ENDPOINT_WINNING + params, null, undefined, {method: 'GET', withCredentials: true});
     return true;
   }
 
