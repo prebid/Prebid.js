@@ -156,6 +156,7 @@ export const spec = {
     if (bid.hasOwnProperty('mediasquare')) {
       if (bid['mediasquare'].hasOwnProperty('bidder')) { params.push('bidder=' + bid['mediasquare']['bidder']); }
       if (bid['mediasquare'].hasOwnProperty('code')) { params.push('code=' + bid['mediasquare']['code']); }
+      if (bid['mediasquare'].hasOwnProperty('match')) { params.push('match=' + bid['mediasquare']['match']); }
     };
     for (let i = 0; i < paramsToSearchFor.length; i++) {
       if (bid.hasOwnProperty(paramsToSearchFor[i])) { params.push(paramsToSearchFor[i] + '=' + bid[paramsToSearchFor[i]]); }
