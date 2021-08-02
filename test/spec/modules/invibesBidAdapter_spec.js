@@ -22,6 +22,39 @@ describe('invibesBidAdapter:', function () {
         [400, 300],
         [125, 125]
       ],
+      transactionId: 't1'
+    }, {
+      bidId: 'b2',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r2',
+      params: {
+        placementId: 'abcde'
+      },
+      adUnitCode: 'test-div',
+      auctionId: 'a2',
+      sizes: [
+        [300, 250],
+        [400, 300]
+      ],
+      transactionId: 't2'
+    }
+  ];
+
+  let bidRequestsWithUserId = [
+    {
+      bidId: 'b1',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r1',
+      params: {
+        placementId: PLACEMENT_ID
+      },
+      adUnitCode: 'test-div',
+      auctionId: 'a1',
+      sizes: [
+        [300, 250],
+        [400, 300],
+        [125, 125]
+      ],
       transactionId: 't1',
       userId: {
         pubcid: 'pub-cid-code',
@@ -104,7 +137,7 @@ describe('invibesBidAdapter:', function () {
         expect(spec.isBidRequestValid(invalidBid)).to.be.false;
       });
 
-      it('returns false when bid response was previously received', function () {
+      it('returns true when bid response was previously received', function () {
         const validBid = {
           bidder: BIDDER_CODE,
           params: {
@@ -113,7 +146,7 @@ describe('invibesBidAdapter:', function () {
         }
 
         top.window.invibes.bidResponse = {prop: 'prop'};
-        expect(spec.isBidRequestValid(validBid)).to.be.false;
+        expect(spec.isBidRequestValid(validBid)).to.be.true;
       });
     });
   });
@@ -190,9 +223,20 @@ describe('invibesBidAdapter:', function () {
       expect(JSON.parse(request.data.bidParamsJson).placementIds).to.contain(bidRequests[1].params.placementId);
     });
 
+    it('sends all Placement Ids and userId', function () {
+      const request = spec.buildRequests(bidRequestsWithUserId);
+      expect(JSON.parse(request.data.bidParamsJson).userId).to.exist;
+    });
+
     it('sends undefined lid when no cookie', function () {
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.be.undefined;
+    });
+
+    it('sends rendered cids if they exist', function () {
+      top.window.invibes.renderedCids = [981];
+      let request = spec.buildRequests(bidRequests);
+      expect(request.data.rcids).to.contain(981);
     });
 
     it('sends lid when comes on cookie', function () {
@@ -738,6 +782,7 @@ describe('invibesBidAdapter:', function () {
     }];
 
     let multiResponse = {
+      MultipositionEnabled: true,
       AdPlacements: [{
         Ads: [{
           BidPrice: 0.5,
