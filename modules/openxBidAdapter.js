@@ -263,10 +263,8 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
         acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
         return acc;
       }, {})
-    const sm = Object.entries(fpd)
-      .map(
-        ([name, segs], _) => name + ':' + segs.join('|')
-      )
+    const sm = Object.keys(fpd)
+      .map((name, _) => name + ':' + fpd[name].join('|'))
       .join(',')
     if (sm.length > 0) {
       defaultParams.sm = encodeURIComponent(sm);
