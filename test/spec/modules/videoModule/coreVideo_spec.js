@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import {
-  videoSubmoduleBuilder,
-  videoCore
+  VideoSubmoduleBuilder,
+  VideoCore
 } from 'modules/videoModule/coreVideo';
 
 describe('Video Submodule Builder', function () {
@@ -9,7 +9,7 @@ describe('Video Submodule Builder', function () {
   const vendorDirectory = {
     1: playerSpecificSubmoduleFactory
   };
-  const submoduleBuilder = videoSubmoduleBuilder(vendorDirectory);
+  const submoduleBuilder = VideoSubmoduleBuilder(vendorDirectory);
 
   it('should call submodule factory when vendor code is supported', function () {
     submoduleBuilder.build({ vendorCode: 1 });
@@ -46,23 +46,23 @@ describe('Video Core', function () {
     }
   };
 
-  const coreVideo = videoCore(mockSubmoduleBuilder);
+  const videoCore = VideoCore(mockSubmoduleBuilder);
   const testId = 'test_id';
   const otherId = 'other_id';
 
-  coreVideo.registerProvider({
+  videoCore.registerProvider({
     vendorCode: 0,
     divId: testId
   });
 
-  coreVideo.registerProvider({
+  videoCore.registerProvider({
     vendorCode: 1,
     divId: otherId
   });
 
   describe('registerProvider', function () {
     it('should throw when the builder fails to build', function () {
-      const flawedVideoCore = videoCore({
+      const flawedVideoCore = VideoCore({
         build: () => {
           throw new Error('flawed');
         }
@@ -73,32 +73,32 @@ describe('Video Core', function () {
 
   describe('getOrtbParams', function () {
     it('delegates to the submodule of the right divId', function () {
-      coreVideo.getOrtbParams(testId);
-      coreVideo.getOrtbParams(otherId);
+      videoCore.getOrtbParams(testId);
+      videoCore.getOrtbParams(otherId);
       expect(mockSubmodule.getOrtbParams.calledOnce).to.be.true;
     });
   });
 
   describe('setAdTagUrl', function () {
     it('delegates to the submodule of the right divId', function () {
-      coreVideo.setAdTagUrl('', testId);
-      coreVideo.setAdTagUrl('', otherId);
+      videoCore.setAdTagUrl('', testId);
+      videoCore.setAdTagUrl('', otherId);
       expect(mockSubmodule.setAdTagUrl.calledOnce).to.be.true;
     });
   });
 
   describe('onEvents', function () {
     it('delegates to the submodule of the right divId', function () {
-      coreVideo.onEvents([], () => {}, testId);
-      coreVideo.onEvents([], () => {}, otherId);
+      videoCore.onEvents([], () => {}, testId);
+      videoCore.onEvents([], () => {}, otherId);
       expect(mockSubmodule.onEvents.calledOnce).to.be.true;
     });
   });
 
   describe('offEvents', function () {
     it('delegates to the submodule of the right divId', function () {
-      coreVideo.offEvents([], () => {}, testId);
-      coreVideo.offEvents([], () => {}, otherId);
+      videoCore.offEvents([], () => {}, testId);
+      videoCore.offEvents([], () => {}, otherId);
       expect(mockSubmodule.offEvents.calledOnce).to.be.true;
     });
   });
