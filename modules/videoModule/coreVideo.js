@@ -1,9 +1,15 @@
-export function videoCore(videoSubmoduleFactory_) {
+export function videoCore(submoduleBuilder_) {
   const submodules = {};
-  const videoSubmoduleFactory = videoSubmoduleFactory_;
+  const submoduleBuilder = submoduleBuilder_;
 
-  function registerProvider(divId, vendorCode) {
-    submodules[divId] = videoSubmoduleFactory.createSubmodule(divId, vendorCode);
+  function registerProvider(providerConfig) {
+    let submodule;
+    try {
+      submodule = submoduleBuilder.build(providerConfig);
+    } catch (e) {
+      throw e;
+    }
+    submodules[providerConfig.divId] = submodule;
   }
 
   function getOrtbParams(divId) {
@@ -32,5 +38,32 @@ export function videoCore(videoSubmoduleFactory_) {
     setAdTagUrl,
     onEvents,
     offEvents
+  };
+}
+
+const vendorDirectory = {
+  1: 'jwplayerFunction',
+  2: 'videoJsFunction'
+};
+
+export function videoCoreFactory() {
+  const submoduleBuilder = videoSubmoduleBuilder(vendorDirectory);
+  return videoCore(submoduleBuilder);
+}
+
+export function videoSubmoduleBuilder(vendorDirectory_) {
+  const vendorDirectory = vendorDirectory_;
+
+  function build(providerConfig) {
+    const submoduleFactory = vendorDirectory[providerConfig.vendorCode];
+    if (!submoduleFactory) {
+      throw new Error('Unrecognized vendor code');
+    }
+
+    return submoduleFactory(providerConfig);
+  }
+
+  return {
+    build
   };
 }
