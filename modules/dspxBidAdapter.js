@@ -152,17 +152,19 @@ export const spec = {
       }
     }
 
-    if (syncOptions.iframeEnabled) {
-      serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
-        type: 'iframe',
-        url: appendToUrl(url, gdprParams)
-      }));
-    }
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      serverResponses[0].body.userSync.imageUrl.forEach((url) => syncs.push({
-        type: 'image',
-        url: appendToUrl(url, gdprParams)
-      }));
+    if (serverResponses.length > 0 && serverResponses[0].body.userSync) {
+      if (syncOptions.iframeEnabled) {
+        serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
+          type: 'iframe',
+          url: appendToUrl(url, gdprParams)
+        }));
+      }
+      if (syncOptions.pixelEnabled) {
+        serverResponses[0].body.userSync.imageUrl.forEach((url) => syncs.push({
+          type: 'image',
+          url: appendToUrl(url, gdprParams)
+        }));
+      }
     }
     return syncs;
   }

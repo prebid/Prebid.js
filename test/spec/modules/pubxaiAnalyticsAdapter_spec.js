@@ -521,6 +521,7 @@ describe('pubxai analytics adapter', function() {
         'bidderCode': 'appnexus',
         'bidId': '248f9a4489835e',
         'adUnitCode': '/19968336/header-bid-tag-1',
+        'gptSlotCode': utils.getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         'sizes': '300x250',
         'renderStatus': 2,
@@ -582,6 +583,7 @@ describe('pubxai analytics adapter', function() {
     let expectedAfterBidWon = {
       'winningBid': {
         'adUnitCode': '/19968336/header-bid-tag-1',
+        'gptSlotCode': utils.getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         'bidderCode': 'appnexus',
         'bidId': '248f9a4489835e',

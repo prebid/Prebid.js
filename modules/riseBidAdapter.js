@@ -239,6 +239,10 @@ function generateParameters(bid, bidderRequest) {
     bidder_version: BIDDER_VERSION
   };
 
+  if (params.placementId) {
+    requestParams.placement_id = params.placementId;
+  }
+
   if (syncEnabled) {
     const allowedSyncMethod = getAllowedSyncMethod(filterSettings, bidderCode);
     if (allowedSyncMethod) {
