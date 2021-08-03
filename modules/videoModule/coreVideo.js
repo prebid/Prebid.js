@@ -1,4 +1,4 @@
-export function videoCore(submoduleBuilder_) {
+export function VideoCore(submoduleBuilder_) {
   const submodules = {};
   const submoduleBuilder = submoduleBuilder_;
 
@@ -14,22 +14,22 @@ export function videoCore(submoduleBuilder_) {
 
   function getOrtbParams(divId) {
     const submodule = submodules[divId];
-    return submodule.getOrtbParams();
+    return submodule && submodule.getOrtbParams();
   }
 
   function setAdTagUrl(adTagUrl, divId) {
     const submodule = submodules[divId];
-    return submodule.setAdTagUrl(adTagUrl);
+    return submodule && submodule.setAdTagUrl(adTagUrl);
   }
 
   function onEvents(events, callback, divId) {
     const submodule = submodules[divId];
-    return submodule.onEvents(events, callback);
+    return submodule && submodule.onEvents(events, callback);
   }
 
   function offEvents(events, callback, divId) {
     const submodule = submodules[divId];
-    return submodule.offEvents(events, callback);
+    return submodule && submodule.offEvents(events, callback);
   }
 
   return {
@@ -47,11 +47,11 @@ const vendorDirectory = {
 };
 
 export function videoCoreFactory() {
-  const submoduleBuilder = videoSubmoduleBuilder(vendorDirectory);
-  return videoCore(submoduleBuilder);
+  const submoduleBuilder = VideoSubmoduleBuilder(vendorDirectory);
+  return VideoCore(submoduleBuilder);
 }
 
-export function videoSubmoduleBuilder(vendorDirectory_) {
+export function VideoSubmoduleBuilder(vendorDirectory_) {
   const vendorDirectory = vendorDirectory_;
 
   function build(providerConfig) {
