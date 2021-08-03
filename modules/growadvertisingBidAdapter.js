@@ -2,11 +2,14 @@
 
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {triggerPixel} from '../src/utils.js';
 
 const BIDDER_CODE = 'growads';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
     return bid.params && !!bid.params.zoneId;
@@ -59,6 +62,7 @@ export const spec = {
     let isCorrectCPM = true;
     let minCPM;
     let maxCPM;
+    let bid = {};
 
     let body = serverResponse.body;
 
@@ -86,32 +90,74 @@ export const spec = {
         isCorrectCPM = false;
       }
 
-      // Ensure that response ad matches one of the placement sizes.
-      utils._each(utils.deepAccess(request, 'mediaTypes.banner.sizes', []), function (size) {
-        if (width === size[0] && height === size[1]) {
-          isCorrectSize = true;
-        }
-      });
-
-      if (isCorrectCPM && isCorrectSize) {
-        bidResponses.push({
+      if (isCorrectCPM) {
+        bid = {
           requestId: request.bidId,
           bidderCode: request.bidder,
           creativeId: response.creativeId,
           cpm: CPM,
           width: width,
           height: height,
-          ad: response.ad,
           currency: response.currency,
           netRevenue: true,
           ttl: response.ttl,
+          adUnitCode: request.adUnitCode,
           referrer: utils.deepAccess(request, 'refererInfo.referer')
-        });
+        };
+
+        if (response.hasOwnProperty(NATIVE)) {
+          bid[NATIVE] = {
+            title: response[NATIVE].title,
+            body: response[NATIVE].body,
+            body2: response[NATIVE].body2,
+            cta: response[NATIVE].cta,
+            sponsoredBy: response[NATIVE].sponsoredBy,
+            clickUrl: response[NATIVE].clickUrl,
+            impressionTrackers: response[NATIVE].impressionTrackers,
+          };
+
+          if (response[NATIVE].image) {
+            bid[NATIVE].image = {
+              url: response[NATIVE].image.url,
+              height: response[NATIVE].image.height,
+              width: response[NATIVE].image.width
+            };
+          }
+
+          if (response[NATIVE].icon) {
+            bid[NATIVE].icon = {
+              url: response[NATIVE].icon.url,
+              height: response[NATIVE].icon.height,
+              width: response[NATIVE].icon.width
+            };
+          }
+          bid.mediaType = NATIVE;
+          isCorrectSize = true;
+        } else {
+          bid.ad = response.ad;
+          bid.mediaType = BANNER;
+          // Ensure that response ad matches one of the placement sizes.
+          utils._each(utils.deepAccess(request, 'mediaTypes.banner.sizes', []), function (size) {
+            if (width === size[0] && height === size[1]) {
+              isCorrectSize = true;
+            }
+          });
+        }
+
+        if (isCorrectSize) {
+          bidResponses.push(bid);
+        }
       }
     }
 
     return bidResponses;
-  }
+  },
+
+  onBidWon: function (bid) {
+    if (bid.vurl) {
+      triggerPixel(bid.vurl);
+    }
+  },
 };
 
 registerBidder(spec);

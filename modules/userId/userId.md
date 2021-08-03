@@ -101,7 +101,8 @@ pbjs.setConfig({
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv'
+                sv_domain:'zxv',
+                refreshInSeconds: 10 // Refreshes the id based on this configuration, else by default every 7 days
             },
             storage: {
                 type: "cookie",
@@ -128,6 +129,12 @@ pbjs.setConfig({
                params: {
                     token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
            }
+        },{
+            name: 'quantcastId',
+            storage: {
+                type: 'cookie',
+                expires : 30
+            }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -218,7 +225,8 @@ pbjs.setConfig({
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv'
+                sv_domain:'zxv',
+                refreshInSeconds: 10 // Refreshes the id based on this configuration, else by default every 7 days
             },
             storage: {
                 type: "html5",
