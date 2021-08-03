@@ -113,19 +113,15 @@
           googletag.pubads().disableInitialLoad();
         });
 
-        _tcfapi('addEventListener', 2, function(tcData, success) {
-          if (tcData.eventStatus === 'useractioncomplete') {
-              var slotCodes = tagSlots
-                  .map( function(slot) { return slot.getSlotElementId() || ''; } )
-                  .filter( function(id) { return id; } );
-              
+        window.__cmp('addEventListener', 'onSubmit', function(tcData, success) {
+          if (tcData.event === 'onSubmit') {
               pbjs.que.push(function() {
+                  pbjs.addAdUnits(adUnits);
                   pbjs.requestBids({
                       timeout: PREBID_TIMEOUT,
-                      adUnitCodes: slotCodes,
                       bidsBackHandler: function() {
-                          pbjs.setTargetingForGPTAsync(slotCodes);
-                          googletag.pubads().refresh(tagSlots);
+                          pbjs.setTargetingForGPTAsync();
+                          googletag.pubads().refresh();
                       }
                   });
               });
