@@ -16,10 +16,10 @@ module.exports = {
       {
         "targets": {
           "browsers": [
-            "chrome >= 67",
-            "safari >=11.1",
+            "chrome >= 70",
+            "safari >=10",
             "edge >= 14",
-            "ff >= 60",
+            "ff >= 70",
             "ie >= 11",
             "ios >= 9"
           ]
