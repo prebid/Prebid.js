@@ -24,7 +24,11 @@ Module that connects to Concert demand sources
         {
           bidder: "concert",
           params: {
-            partnerId: 'test_partner'
+            partnerId: 'test_partner',
+            site: 'site_name',
+            placementId: 1234567,
+            slot: 'slot_name',
+            sizes: [[1030, 590]]
           }
         }
       ]

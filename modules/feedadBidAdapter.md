@@ -18,9 +18,6 @@ Prebid.JS adapter that connects to the FeedAd demand sources.
             mediaTypes: {
                 banner: { // supports all banner sizes
                     sizes: [[300, 250]],
-                },
-                video: { // supports only outstream video
-                    context: 'outstream'
                 }
             },
             bids: [
