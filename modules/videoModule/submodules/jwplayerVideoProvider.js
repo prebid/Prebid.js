@@ -20,7 +20,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   let adState = adState_;
   let timeState = timeState_;
   let callbackStorage = callbackStorage_;
-  let pendingSeek = null;
+  let pendingSeek = {};
   let supportedMediaTypes = null;
   let minimumSupportedPlayerVersion = '8.20.1';
   let setupCompleteCallback = null;
@@ -53,7 +53,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       const payload = getSetupCompletePayload();
       setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, payload);
     }
-    pendingSeek = {};
   }
 
   function getId() {
@@ -83,13 +82,13 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       startdelay: getStartDelay(),
       placement: getPlacement(adConfig),
       // linearity is omitted because both forms are supported.
-      // sequence
-      // battr
+      // sequence - TODO not yet supported
+      battr: adConfig.battr,
       maxextended: -1,
       boxingallowed: 1,
       playbackmethod: [ getPlaybackMethod(config) ],
       playbackend: 1,
-      // companionad - todo add in future version
+      // companionad - TODO add in future version
       api: [
         API_FRAMEWORKS.VPAID_2_0
       ],
@@ -114,8 +113,8 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       id: item.mediaid,
       url: item.file,
       title: item.title,
-      // cat?
-      // keywords?
+      cat: item.iabCategories,
+      keywords: item.tags,
       len: duration,
       livestream: Math.min(playbackMode, 1)
     };
@@ -126,7 +125,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
   }
 
-  function renderAd(adTagUrl) {
+  function setAdTagUrl(adTagUrl) {
     player.playAd(adTagUrl);
   }
 
@@ -159,61 +158,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     });
   }
 
-  function getJWPlayerEvent(eventName) {
-    switch(eventName) {
-      case SETUP_COMPLETE:
-        return 'ready';
-        break;
-
-      case SETUP_FAILED:
-        return 'setupError';
-        break;
-
-      case DESTROYED:
-        return 'remove';
-        break;
-
-      case AD_STARTED:
-        return AD_IMPRESSION;
-        break;
-
-      case AD_IMPRESSION:
-        return 'adViewableImpression';
-        break;
-
-      case PLAYBACK_REQUEST:
-        return 'playAttempt';
-        break;
-
-      case AUTOSTART_BLOCKED:
-        return 'autostartNotAllowed';
-        break;
-
-      case CONTENT_LOADED:
-        return 'playlistItem';
-        break;
-
-      case SEEK_START:
-        return 'seek';
-        break;
-
-      case SEEK_END:
-        return 'seeked';
-        break;
-
-      case RENDITION_UPDATE:
-        return 'visualQuality';
-        break;
-
-      case PLAYER_RESIZE:
-        return 'resize';
-        break;
-
-      default:
-        return eventName;
-    }
-  }
-
   function destroy() {
     if (!player) {
       return;
@@ -226,7 +170,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     init,
     getId,
     getOrtbParams,
-    renderAd,
+    setAdTagUrl,
     onEvents,
     offEvents,
     destroy
@@ -260,7 +204,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       divId,
       playerVersion,
       type: SETUP_FAILED,
-      errorCode, // come up with code
+      errorCode,
       errorMessage: '',
       sourceError: null
     };
@@ -493,7 +437,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             title: item.title,
             description: item.description,
             playlistIndex: index,
-            // Content Tags (Required - nullable)
+            contentTags: item.tags
           });
           callback(type, payload);
         };
@@ -589,7 +533,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             audioReportedBitrate: bitrate,
             encodedVideoWidth: level.width,
             encodedVideoHeight: level.height,
-            // videoFramerate (Required)
+            videoFramerate: e.frameRate
           });
           callback(type, payload);
         };
@@ -662,7 +606,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
         break;
 
       default:
-        console.log('early exit');
         return;
     }
     callbackStorage.storeCallback(type, eventHandler, callback);
@@ -695,6 +638,61 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
     jwConfig.advertising = advertising;
     return jwConfig;
+  }
+
+  function getJWPlayerEvent(eventName) {
+    switch(eventName) {
+      case SETUP_COMPLETE:
+        return 'ready';
+        break;
+
+      case SETUP_FAILED:
+        return 'setupError';
+        break;
+
+      case DESTROYED:
+        return 'remove';
+        break;
+
+      case AD_STARTED:
+        return AD_IMPRESSION;
+        break;
+
+      case AD_IMPRESSION:
+        return 'adViewableImpression';
+        break;
+
+      case PLAYBACK_REQUEST:
+        return 'playAttempt';
+        break;
+
+      case AUTOSTART_BLOCKED:
+        return 'autostartNotAllowed';
+        break;
+
+      case CONTENT_LOADED:
+        return 'playlistItem';
+        break;
+
+      case SEEK_START:
+        return 'seek';
+        break;
+
+      case SEEK_END:
+        return 'seeked';
+        break;
+
+      case RENDITION_UPDATE:
+        return 'visualQuality';
+        break;
+
+      case PLAYER_RESIZE:
+        return 'resize';
+        break;
+
+      default:
+        return eventName;
+    }
   }
 
   function getSkipParams(adConfig) {
