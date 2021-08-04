@@ -1085,6 +1085,5 @@ describe('Smart bid adapter tests', function () {
       expect(bannerRequest).to.have.property('pageid').and.to.equal('5678');
       expect(bannerRequest).to.have.property('formatid').and.to.equal('90');
     });
-    
   });
 });
