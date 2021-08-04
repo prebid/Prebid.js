@@ -59,7 +59,9 @@ export function VideoSubmoduleBuilder(vendorDirectory_) {
       throw new Error('Unrecognized vendor code');
     }
 
-    return submoduleFactory(providerConfig);
+    const submodule = submoduleFactory(providerConfig);
+    submodule.init && submodule.init();
+    return submodule;
   }
 
   return {
