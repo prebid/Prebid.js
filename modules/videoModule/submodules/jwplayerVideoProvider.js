@@ -11,7 +11,7 @@ import stateFactory from "../shared/state";
 import { JWPLAYER_VENDOR } from "../constants/vendorCodes";
 import { submodule } from '../../../src/hook.js';
 
-export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_) {
+export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils) {
   const jwplayer = jwplayer_;
   let player = null;
   let playerVersion = null;
@@ -65,7 +65,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
     const config = player.getConfig();
     const adConfig = config.advertising || {};
-    supportedMediaTypes = supportedMediaTypes || filterCanPlay(MEDIA_TYPES);
+    supportedMediaTypes = supportedMediaTypes || utils.getSupportedMediaTypes(MEDIA_TYPES);
 
     const video = {
       mimes: supportedMediaTypes,
@@ -79,14 +79,14 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       ],
       h: player.getHeight(), // TODO does player call need optimization ?
       w: player.getWidth(), // TODO does player call need optimization ?
-      startdelay: getStartDelay(),
-      placement: getPlacement(adConfig),
+      startdelay: utils.getStartDelay(),
+      placement: utils.getPlacement(adConfig),
       // linearity is omitted because both forms are supported.
       // sequence - TODO not yet supported
       battr: adConfig.battr,
       maxextended: -1,
       boxingallowed: 1,
-      playbackmethod: [ getPlaybackMethod(config) ],
+      playbackmethod: [ utils.getPlaybackMethod(config) ],
       playbackend: 1,
       // companionad - TODO add in future version
       api: [
@@ -94,11 +94,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       ],
     };
 
-    if (isOmidSupported(adConfig.adClient)) {
+    if (utils.isOmidSupported(adConfig.adClient)) {
       video.api.push(API_FRAMEWORKS.OMID_1_0);
     }
 
-    Object.assign(video, getSkipParams(adConfig));
+    Object.assign(video, utils.getSkipParams(adConfig));
 
     if (player.getFullscreen()) { // TODO does player call needs optimization ?
       // only specify ad position when in Fullscreen since computational cost is low
@@ -153,7 +153,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   function offEvents(events, callback) {
     events.forEach(event => {
       const eventHandler = callbackStorage.getCallback(event, callback);
-      const jwEvent = getJWPlayerEvent(event);
+      const jwEvent = utils.getJwEvent(event);
       player.off(jwEvent, eventHandler);
     });
   }
@@ -180,7 +180,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     if (!config) {
       return;
     }
-    player.setup(getJwConfig(config));
+    player.setup(utils.getJwConfig(config));
   }
 
   function getSetupCompletePayload() {
@@ -278,7 +278,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
         eventHandler = e => {
           adState.updateForEvent(e);
           const adConfig = player.getConfig().advertising;
-          adState.updateState(getSkipParams(adConfig));
+          adState.updateState(utils.getSkipParams(adConfig));
           Object.assign(payload, adState.getState());
           callback(type, payload);
         };
@@ -610,37 +610,50 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
     callbackStorage.storeCallback(type, eventHandler, callback);
   }
+}
 
-  // UTILS
+const jwplayerSubmoduleFactory = function (config) {
+  const adState = adStateFactory();
+  const timeState = timeStateFactory();
+  const callbackStorage = callbackStorageFactory();
+  return JWPlayerProvider(config, window.jwplayer, adState, timeState, callbackStorage, utils);
+}
 
-  function getJwConfig(config) {
-    if (!config || !config.params) {
-      return;
-    }
-    const jwConfig = config.params.vendorConfig || {};
-    if (jwConfig.autostart === undefined) {
-      jwConfig.autostart = config.autostart;
-    }
+jwplayerSubmoduleFactory.vendorCode = JWPLAYER_VENDOR;
+export default jwplayerSubmoduleFactory;
+submodule('video', jwplayerSubmoduleFactory);
 
-    if (jwConfig.mute === undefined) {
-      jwConfig.mute = config.mute;
-    }
+// HELPERS
 
-    if (!jwConfig.key) {
-      jwConfig.key = config.licenseKey;
-    }
-
-    const advertising = jwConfig.advertising || {};
-    if (!jwConfig.file && !jwConfig.playlist && !jwConfig.source) {
-      advertising.outstream = true;
-      advertising.client = advertising.client || 'vast';
-    }
-
-    jwConfig.advertising = advertising;
-    return jwConfig;
+export const utils = {
+  getJwConfig: function(config) {
+  if (!config || !config.params) {
+    return;
+  }
+  const jwConfig = config.params.vendorConfig || {};
+  if (jwConfig.autostart === undefined) {
+    jwConfig.autostart = config.autostart;
   }
 
-  function getJWPlayerEvent(eventName) {
+  if (jwConfig.mute === undefined) {
+    jwConfig.mute = config.mute;
+  }
+
+  if (!jwConfig.key) {
+    jwConfig.key = config.licenseKey;
+  }
+
+  const advertising = jwConfig.advertising || {};
+  if (!jwConfig.file && !jwConfig.playlist && !jwConfig.source) {
+    advertising.outstream = true;
+    advertising.client = advertising.client || 'vast';
+  }
+
+  jwConfig.advertising = advertising;
+  return jwConfig;
+},
+
+  getJwEvent: function(eventName) {
     switch(eventName) {
       case SETUP_COMPLETE:
         return 'ready';
@@ -693,9 +706,9 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       default:
         return eventName;
     }
-  }
+  },
 
-  function getSkipParams(adConfig) {
+  getSkipParams: function(adConfig) {
     const skipParams = {};
     const skipoffset = adConfig.skipoffset;
     if (skipoffset !== undefined) {
@@ -707,37 +720,37 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       }
     }
     return skipParams;
-  }
+  },
 
-  function filterCanPlay(mediaTypes = []) {
-    const el = document.createElement('video');
-    return mediaTypes
-        .filter(mediaType => el.canPlayType(mediaType))
-        .concat('application/javascript'); // Always allow VPAIDs.
-  }
+  getSupportedMediaTypes: function(mediaTypes = []) {
+  const el = document.createElement('video');
+  return mediaTypes
+      .filter(mediaType => el.canPlayType(mediaType))
+      .concat('application/javascript'); // Always allow VPAIDs.
+},
 
-  function getStartDelay() {
+  getStartDelay: function() {
     // todo calculate
     // need to know which ad we are bidding on
     // Might have to implement and set in Pb-video ; would required ad unit as param.
-  }
+  },
 
-  function getPlacement(adConfig) {
+  getPlacement: function(adConfig) {
     // TODO might be able to use getPlacement from ad utils!
     if (!adConfig.outstream) {
       // https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player for more info on outstream
       return 1;
     }
-  }
+  },
 
-  function getPlaybackMethod({ autoplay, mute, autoplayAdsMuted }) {
+  getPlaybackMethod: function({ autoplay, mute, autoplayAdsMuted }) {
     if (autoplay) {
       // Determine whether player is going to start muted.
       const isMuted = mute || autoplayAdsMuted; // todo autoplayAdsMuted only applies to preRoll
       return isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     return PLAYBACK_METHODS.CLICK_TO_PLAY;
-  }
+  },
 
   /**
    * Indicates if Omid is supported
@@ -745,24 +758,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
    * @param {string=} adClient - The identifier of the ad plugin requesting the bid
    * @returns {boolean} - support of omid
    */
-  function isOmidSupported(adClient) {
+  isOmidSupported: function(adClient) {
     const omidIsLoaded = window.OmidSessionClient !== undefined;
     return omidIsLoaded && adClient === 'vast';
   }
 }
-
-const jwplayerSubmoduleFactory = function (config) {
-  const adState = adStateFactory();
-  const timeState = timeStateFactory();
-  const callbackStorage = callbackStorageFactory();
-  return JWPlayerProvider(config, window.jwplayer, adState, timeState, callbackStorage);
-}
-
-jwplayerSubmoduleFactory.vendorCode = JWPLAYER_VENDOR;
-export default jwplayerSubmoduleFactory;
-submodule('video', jwplayerSubmoduleFactory);
-
-// HELPERS
 
 export function callbackStorageFactory() {
   let storage = {};
