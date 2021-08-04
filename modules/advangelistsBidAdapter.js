@@ -311,7 +311,7 @@ function createVideoRequestData(bid, bidderRequest) {
 
 function getTopWindowLocation(bidderRequest) {
   let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+  return utils.parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
 }
 
 function createBannerRequestData(bid, bidderRequest) {
