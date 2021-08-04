@@ -605,6 +605,23 @@ function _addDealCustomTargetings(imp, bid) {
   }
 }
 
+function _addJWPlayerSegmentData(imp, bid) {
+  var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
+  var jwPlayerData = '';
+  if (jwSegData === undefined || jwSegData === '' || !jwPlayerData.hasOwnProperty("segments")) return;
+
+  var maxLength = jwSegData.segments.length;
+
+  jwPlayerData += 'jw-id=' + jwSegData.content.id + '|'; // add the content id first
+
+  for (var i = 0; i < maxLength; i++) {
+    jwPlayerData += 'jw-' + jwSegData.segments[i] + '=1|';
+  }
+  (imp.ext && imp.ext.key_val == undefined)
+    ? imp.ext.key_val = jwPlayerData.substring(0, jwPlayerData.length - 1)
+    : imp.ext.key_val += '|' + jwPlayerData.substring(0, jwPlayerData.length - 1);
+}
+
 function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj;
@@ -627,6 +644,7 @@ function _createImpressionObject(bid, conf) {
 
   _addPMPDealsInImpression(impObj, bid);
   _addDealCustomTargetings(impObj, bid);
+  _addJWPlayerSegmentData(impObj, bid);
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
       switch (mediaTypes) {
