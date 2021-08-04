@@ -34,7 +34,15 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   tapadId: 'tapadid', // Tapad Id
   tdid: 'ttduuid', // The Trade Desk Unified ID
   uid2: 'uid2', // Unified ID 2.0
-  flocId: 'floc', // Chrome FLoC
+  flocId: 'floc', // Chrome FLoC,
+  admixerId: 'admixerid', // AdMixer ID
+  deepintentId: 'deepintentid', // DeepIntent ID
+  dmdId: 'dmdid', // DMD Marketing Corp ID
+  nextrollId: 'nextrollid', // NextRoll ID
+  novatiq: 'novatiqid', // Novatiq ID
+  mwOpenLinkId: 'mwopenlinkid', // MediaWallah OpenLink ID
+  dapId: 'dapid', // Akamai DAP ID
+  amxId: 'amxid' // AMX RTB ID
 };
 
 export const spec = {
@@ -306,6 +314,9 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
           break;
         case 'id5id':
           queryParams[key] = userIdObjectOrValue.uid;
+          break;
+        case 'novatiq':
+          queryParams[key] = userIdObjectOrValue.snowflake;
           break;
         default:
           queryParams[key] = userIdObjectOrValue;
