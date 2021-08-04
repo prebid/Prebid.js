@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 
-const VERSION = '3.4.0';
+const VERSION = '3.4.1';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
@@ -29,8 +29,13 @@ export const sharethroughAdapterSpec = {
         instant_play_capable: canAutoPlayHTML5Video(),
         hbSource: 'prebid',
         hbVersion: '$prebid.version$',
-        strVersion: VERSION
+        strVersion: VERSION,
       };
+
+      const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        query.gpid = gpid;
+      }
 
       Object.assign(query, handleUniversalIds(bidRequest));
 

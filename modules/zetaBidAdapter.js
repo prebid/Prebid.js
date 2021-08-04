@@ -150,20 +150,24 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @param gdprConsent The GDPR consent parameters
-     * @param uspConsent The USP consent parameters
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @param definerId The calling entity's definer id
+   * @param gdprConsent The GDPR consent parameters
+   * @param uspConsent The USP consent parameters
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs: function(syncOptions, serverResponses, definerId, gdprConsent, uspConsent) {
     const syncs = [];
+    if (definerId === '' || definerId === null) {
+      definerId = PREBID_DEFINER_ID;
+    }
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL.concat(PREBID_DEFINER_ID)
+        url: USER_SYNC_URL.concat(definerId)
       });
     }
     return syncs;
