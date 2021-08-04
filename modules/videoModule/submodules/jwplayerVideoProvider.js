@@ -9,8 +9,9 @@ import {
 } from "../constants/events";
 import stateFactory from "../shared/state";
 import { JWPLAYER_VENDOR } from "../constants/vendorCodes";
+import { submodule } from '../../../src/hook.js';
 
-export function jwplayerProviderFactory(config, jwplayer_, adState_, timeState_, callbackStorage_) {
+export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_) {
   const jwplayer = jwplayer_;
   let player = null;
   let playerVersion = null;
@@ -754,9 +755,14 @@ const jwplayerSubmoduleFactory = function (config) {
   const adState = adStateFactory();
   const timeState = timeStateFactory();
   const callbackStorage = callbackStorageFactory();
-  return jwplayerProviderFactory(config, window.jwplayer, adState, timeState, callbackStorage);
+  return JWPlayerProvider(config, window.jwplayer, adState, timeState, callbackStorage);
 }
+
 jwplayerSubmoduleFactory.vendorCode = JWPLAYER_VENDOR;
+export default jwplayerSubmoduleFactory;
+submodule('video', jwplayerSubmoduleFactory);
+
+// HELPERS
 
 export function callbackStorageFactory() {
   let storage = {};
@@ -813,7 +819,7 @@ export function adStateFactory() {
       linear: event.linear,
       vastVersion: event.vastversion,
       // campaignId:
-      creativeUrl: event.mediaFile, // TODO: per analytics plugin, mediafile might be object w/ file property. verify
+      creativeUrl: event.mediaFile, // TODO: per AP, mediafile might be object w/ file property. verify
       adId: event.adId,
       universalAdId: event.universalAdId,
       creativeId: event.creativeAdId,
@@ -886,6 +892,3 @@ export function timeStateFactory() {
 
   return timeState;
 }
-
-window.jwplayerVideoFactory = jwplayerSubmoduleFactory;
-export default jwplayerSubmoduleFactory;
