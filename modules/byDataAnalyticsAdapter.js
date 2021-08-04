@@ -1,6 +1,6 @@
 import Base64 from 'crypto-js/enc-base64';
 import hmacSHA512 from 'crypto-js/hmac-sha512';
-import utf8 from 'crypto-js/enc-Utf8';
+import enc from 'crypto-js/enc-utf8';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
@@ -164,9 +164,9 @@ ascAdapter.getVisitorData = function(data = {}) {
       'alg': 'HS256',
       'typ': 'JWT'
     };
-    var stringifiedHeader = utf8.parse(JSON.stringify(header));
+    var stringifiedHeader = enc.parse(JSON.stringify(header));
     var encodedHeader = base64url(stringifiedHeader);
-    var stringifiedData = utf8.parse(JSON.stringify(data));
+    var stringifiedData = enc.parse(JSON.stringify(data));
     var encodedData = base64url(stringifiedData);
     var token = encodedHeader + '.' + encodedData;
     var signature = hmacSHA512(token, secretKey);
