@@ -15,12 +15,12 @@ Module that connects to BeOp's demand sources
             code: 'in-article',
             mediaTypes: {
                 banner: {
-                    sizes: [[300, 250]],  // a display size
+                    sizes: [[1,1]], 
                 }
             },
             bids: [
                 {
-                    bidder: "example",
+                    bidder: "beop",
                     params: {
                         accountId: '123456123456123456123456',
                         currency: 'EUR'
@@ -31,12 +31,12 @@ Module that connects to BeOp's demand sources
             code: 'bellow-article',
             mediaTypes: {
                 banner: {
-                    sizes: [[320, 50]],   // a mobile size
+                    sizes: [[1,1]], 
                 }
             },
             bids: [
                 {
-                    bidder: "example",
+                    bidder: "beop",
                     params: {
                         networkId: 'abcdefabcdefabcdefabcdef',
                         networkPartnerId: 'whatever',
