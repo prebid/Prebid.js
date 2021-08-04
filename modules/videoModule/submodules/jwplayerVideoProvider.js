@@ -388,7 +388,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
           const playlistItemCount = e.playlist.length;
           Object.assign(payload, {
             playlistItemCount,
-            autostart: playerConfig.autostart // TODO: autostart could be defined in specific player config
+            autostart: player.getConfig().autostart
           });
           callback(type, payload);
         };
@@ -718,6 +718,8 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
   function getStartDelay() {
     // todo calculate
+    // need to know which ad we are bidding on
+    // Might have to implement and set in Pb-video ; would required ad unit as param.
   }
 
   function getPlacement(adConfig) {
