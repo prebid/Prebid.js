@@ -24,10 +24,8 @@ Module that connects to adprime demand sources
                         {
                             bidder: 'adprime',
                             params: {
-                                placementId: 0,
-                                traffic: 'banner',
+                                placementId: 'testBanner',
                                 keywords: ['cat_1', 'cat_2']
-
                             }
                         }
                     ]
@@ -45,10 +43,8 @@ Module that connects to adprime demand sources
                         {
                             bidder: 'adprime',
                             params: {
-                                placementId: 0,
-                                traffic: 'video',
+                                placementId: 'testVideo',
                                 keywords: ['cat_1', 'cat_2']
-
                             }
                         }
                     ]
