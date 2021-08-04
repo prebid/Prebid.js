@@ -9,7 +9,23 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.7.0';
+const SUBLIME_VERSION = '0.7.3';
+
+/**
+ * Identify the current device type
+ * @returns {string}
+ */
+function detectDevice() {
+  const isMobile = /(?:phone|windowss+phone|ipod|blackberry|Galaxy Nexus|SM-G892A|(?:android|bbd+|meego|silk|googlebot) .+?mobile|palm|windowss+ce|opera mini|avantgo|docomo)/i;
+
+  const isTablet = /(?:ipad|playbook|Tablet|(?:android|bb\\d+|meego|silk)(?! .+? mobile))/i;
+
+  return (
+    (isMobile.test(navigator.userAgent) && 'm') || // mobile
+    (isTablet.test(navigator.userAgent) && 't') || // tablet
+    'd' // desktop
+  );
+}
 
 /**
  * Debug log message
@@ -24,7 +40,8 @@ export function log(msg, obj) {
 export const state = {
   zoneId: '',
   transactionId: '',
-  notifyId: ''
+  notifyId: '',
+  timeout: config.getConfig('bidderTimeout'),
 };
 
 /**
@@ -39,8 +56,9 @@ export function setState(value) {
 /**
  * Send pixel to our debug endpoint
  * @param {string} eventName - Event name that will be send in the e= query string
+ * @param {string} [sspName] - The optionnal name of the AD provider
  */
-export function sendEvent(eventName) {
+export function sendEvent(eventName, sspName) {
   const ts = Date.now();
   const eventObject = {
     t: ts,
@@ -49,9 +67,16 @@ export function sendEvent(eventName) {
     e: eventName,
     src: 'pa',
     puid: state.transactionId || state.notifyId,
-    trId: state.transactionId || state.notifyId,
+    notid: state.notifyId || '',
     pbav: SUBLIME_VERSION,
+    pubtimeout: state.timeout,
+    pubpbv: '$prebid.version$',
+    device: detectDevice(),
   };
+
+  if (eventName === 'bidwon') {
+    eventObject.sspname = sspName || '';
+  }
 
   log('Sending pixel for event: ' + eventName, eventObject);
 
@@ -84,6 +109,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     currencyCode: config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY,
     timeout: (typeof bidderRequest === 'object' && !!bidderRequest) ? bidderRequest.timeout : config.getConfig('bidderTimeout'),
   };
+
+  setState({ timeout: commonPayload.timeout });
 
   // RefererInfo
   if (bidderRequest && bidderRequest.refererInfo) {
@@ -179,8 +206,15 @@ function interpretResponse(serverResponse, bidRequest) {
       netRevenue: response.netRevenue || true,
       ttl: response.ttl || DEFAULT_TTL,
       ad: response.ad,
-      pbav: SUBLIME_VERSION
+      pbav: SUBLIME_VERSION,
+      sspname: response.sspname || null
     };
+
+    // We don't support advertiserDomains atm
+    if (response.advertiserDomains) {
+      // Creating a stub for Prebid.js 5.0 compliance
+      bidResponse.meta = Object.assign({}, bidResponse.meta, { advertiserDomains: [] });
+    }
 
     bidResponses.push(bidResponse);
   }
@@ -190,19 +224,25 @@ function interpretResponse(serverResponse, bidRequest) {
 
 /**
  * Send pixel when bidWon event is triggered
- * @param {Object} timeoutData
+ * @param {Object} bid
  */
 function onBidWon(bid) {
   log('Bid won', bid);
-  sendEvent('bidwon');
+  sendEvent('bidwon', bid.sspname);
 }
 
 /**
  * Send debug when we timeout
- * @param {Object} timeoutData
+ * @param {Array[{}]} timeoutData
  */
 function onTimeout(timeoutData) {
   log('Timeout from adapter', timeoutData);
+
+  const timeout = utils.deepAccess(timeoutData, '0.timeout');
+  if (timeout) {
+    // Set timeout to the one we got from the bid
+    setState({ timeout });
+  }
   sendEvent('bidtimeout');
 }
 
@@ -210,12 +250,15 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: BIDDER_GVLID,
   aliases: [],
-  sendEvent: sendEvent,
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
   onBidWon: onBidWon,
   onTimeout: onTimeout,
+  // Exposed for test purpose
+  sendEvent: sendEvent,
+  setState: setState,
+  state: state,
 };
 
 registerBidder(spec);

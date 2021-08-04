@@ -8,6 +8,7 @@ const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
 const GVLID = 607;
+const CURRENCY = 'USD';
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
@@ -69,7 +70,7 @@ export const spec = {
       cpm: ad.cpm || 0,
       creativeId: ad.crid || ad.ad_id || bidRequest.params.adid,
       dealId: ad.deal || null,
-      currency: 'USD',
+      currency: ad.currency || 'USD',
       netRevenue: true,
       ttl: 1800,
       meta: {}
@@ -210,12 +211,41 @@ function getSupplyChain(schain) {
   return supplyChain;
 }
 
+function getMediaType(mediaTypes) {
+  if (mediaTypes != null && mediaTypes.banner) {
+    return 'banner';
+  } else if (mediaTypes != null && mediaTypes.video) {
+    return 'video';
+  } else if (mediaTypes != null && mediaTypes.native) {
+    return 'native'
+  }
+  return 'banner';
+}
+
+function getFloor(bid, size, mediaTypes) {
+  if (bid.params.bidfloor) {
+    return bid.params.bidfloor;
+  }
+  if (typeof bid.getFloor === 'function') {
+    var bidFloor = bid.getFloor({
+      currency: CURRENCY,
+      mediaType: getMediaType(mediaTypes),
+      size: (size) ? [ size[0], size[1] ] : '*',
+    });
+    if (bidFloor.currency === CURRENCY) {
+      return bidFloor.floor;
+    }
+  }
+  return undefined;
+}
+
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
   const language = navigator.language;
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   const supplyChain = getSupplyChain(bid.schain);
+  const bidFloor = getFloor(bid, size, bid.mediaTypes);
   // general bid data
   let bidData = {
     ver: VER,
@@ -225,9 +255,13 @@ function getRequestData(bid, bidderRequest) {
     dnt: dnt,
     adid: bid.params.adid,
     tdid: userIdTdid,
-    schain: supplyChain,
-    fp: bid.params.bidfloor
+    schain: supplyChain
   };
+
+  if (bidFloor) {
+    bidData.fp = bidFloor;
+  }
+
   addUserId(bidData, bid.userId);
   try {
     bidData.host = window.top.location.hostname;
@@ -300,16 +334,9 @@ function getRequestData(bid, bidderRequest) {
 }
 
 function addUserId(bidData, userId) {
+  bidData['eids'] = '';
   utils._each(userId, (userIdObjectOrValue, userIdProviderKey) => {
     switch (userIdProviderKey) {
-      case 'sharedid':
-        if (userIdObjectOrValue.id) {
-          bidData[userIdProviderKey + '_id'] = userIdObjectOrValue.id;
-        }
-        if (userIdObjectOrValue.third) {
-          bidData[userIdProviderKey + '_third'] = userIdObjectOrValue.third;
-        }
-        break;
       case 'haloId':
         if (userIdObjectOrValue.haloId) {
           bidData[userIdProviderKey + 'haloId'] = userIdObjectOrValue.haloId;
@@ -329,6 +356,25 @@ function addUserId(bidData, userId) {
         }
         if (userIdObjectOrValue.ext && userIdObjectOrValue.ext.linkType) {
           bidData[userIdProviderKey + '_linkType'] = userIdObjectOrValue.ext.linkType;
+        }
+        break;
+      case 'uid2':
+        if (userIdObjectOrValue.id) {
+          bidData['eids'] = (bidData['eids'].length > 0)
+            ? (bidData['eids'] + '!' + userIdProviderKey + ',' + userIdObjectOrValue.id)
+            : (userIdProviderKey + ',' + userIdObjectOrValue.id);
+        }
+        break;
+      case 'connectid':
+        if (userIdObjectOrValue) {
+          bidData['eids'] = (bidData['eids'].length > 0)
+            ? (bidData['eids'] + '!verizonMediaId,' + userIdObjectOrValue)
+            : ('verizonMediaId,' + userIdObjectOrValue);
+        }
+        break;
+      case 'flocId':
+        if (userIdObjectOrValue.id) {
+          bidData['cid'] = userIdObjectOrValue.id;
         }
         break;
       default:

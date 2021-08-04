@@ -81,6 +81,8 @@ export const spec = {
       version: VERSION,
       gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
       gdprConsent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined,
+      coppa: getCoppa(),
+      usPrivacy: bidderRequest.uspConsent,
       cookieSupport: !utils.isSafariBrowser() && storage.cookiesAreEnabled(),
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
@@ -259,34 +261,10 @@ function getAdblockerRecovered() {
   } catch (e) {}
 }
 
-function AddExternalUserId(eids, value, source, atype, rtiPartner) {
-  if (utils.isStr(value)) {
-    var eid = {
-      source,
-      uids: [{
-        id: value,
-        atype
-      }]
-    };
-
-    if (rtiPartner) {
-      eid.uids[0] = {ext: {rtiPartner}};
-    }
-
-    eids.push(eid);
-  }
-}
-
 function handleEids(bidRequests) {
-  let eids = [];
   const bidRequest = bidRequests[0];
-  if (bidRequest && bidRequest.userId) {
-    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid.org', 1); // Also add this to eids
-    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 1);
-    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteoId`), 'criteo.com', 1);
-  }
-  if (eids.length > 0) {
-    return {user: {ext: {eids}}};
+  if (bidRequest && bidRequest.userIdAsEids) {
+    return {user: {ext: {eids: bidRequest.userIdAsEids}}};
   }
 
   return undefined;
@@ -333,4 +311,9 @@ function getDeviceHeight() {
   return window.innerHeight;
 }
 
+function getCoppa() {
+  if (typeof config.getConfig('coppa') === 'boolean') {
+    return config.getConfig('coppa');
+  }
+}
 registerBidder(spec);

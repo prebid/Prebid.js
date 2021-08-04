@@ -88,6 +88,9 @@ export const spec = {
               impressionTrackers: response.tag.iu,
             },
             mediaType: 'native',
+            meta: {
+              advertiserDomains: response.adomain || []
+            },
           });
         } else {
           // display ad
@@ -102,6 +105,9 @@ export const spec = {
             ttl: response.ttl,
             ad: response.tag,
             mediaType: 'banner',
+            meta: {
+              advertiserDomains: response.adomain || []
+            },
           });
         }
       }

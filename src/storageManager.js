@@ -1,4 +1,4 @@
-import { hook } from './hook.js';
+import {hook} from './hook.js';
 import * as utils from './utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
@@ -110,7 +110,12 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
         try {
           localStorage.setItem('prebid.cookieTest', '1');
           return localStorage.getItem('prebid.cookieTest') === '1';
-        } catch (error) {}
+        } catch (error) {
+        } finally {
+          try {
+            localStorage.removeItem('prebid.cookieTest');
+          } catch (error) {}
+        }
       }
       return false;
     }

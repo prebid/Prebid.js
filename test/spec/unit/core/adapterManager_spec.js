@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import adapterManager, { allS2SBidders, clientTestAdapters, gdprDataHandler } from 'src/adapterManager.js';
+import adapterManager, { allS2SBidders, clientTestAdapters, gdprDataHandler, coppaDataHandler } from 'src/adapterManager.js';
 import {
   getAdUnits,
   getServerTestingConfig,
@@ -403,6 +403,38 @@ describe('adapterManager tests', function () {
       sinon.assert.called(criteoSpec.onSetTargeting);
     });
   }); // end onSetTargeting
+
+  describe('onBidViewable', function () {
+    var criteoSpec = { onBidViewable: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      adapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete adapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onBidViewable callback when callBidViewableBidder is called', function () {
+      const bids = [
+        {bidder: 'criteo', params: {placementId: 'id'}},
+      ];
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids
+      }];
+      adapterManager.callBidViewableBidder(bids[0].bidder, bids[0]);
+      sinon.assert.called(criteoSpec.onBidViewable);
+    });
+  }); // end onBidViewable
 
   describe('S2S tests', function () {
     beforeEach(function () {
@@ -1872,7 +1904,25 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].gdprConsent).to.be.undefined;
       });
     });
-
+    describe('coppa consent module', function () {
+      afterEach(() => {
+        config.resetConfig();
+      });
+      it('test coppa configuration with value false', function () {
+        config.setConfig({ coppa: 0 });
+        const coppa = coppaDataHandler.getCoppa();
+        expect(coppa).to.be.false;
+      });
+      it('test coppa configuration with value true', function () {
+        config.setConfig({ coppa: 1 });
+        const coppa = coppaDataHandler.getCoppa();
+        expect(coppa).to.be.true;
+      });
+      it('test coppa configuration', function () {
+        const coppa = coppaDataHandler.getCoppa();
+        expect(coppa).to.be.false;
+      });
+    });
     describe('s2sTesting - testServerOnly', () => {
       beforeEach(() => {
         config.setConfig({ s2sConfig: getServerTestingConfig(CONFIG) });
