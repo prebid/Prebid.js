@@ -1067,7 +1067,15 @@ describe('OpenxAdapter', function () {
         tapadId: '111-tapadid',
         tdid: '1111-tdid',
         uid2: {id: '1111-uid2'},
-        flocId: {id: '12144', version: 'chrome.1.1'}
+        flocId: {id: '12144', version: 'chrome.1.1'},
+        novatiq: {snowflake: '1111-novatiqid'},
+        admixerId: '1111-admixerid',
+        deepintentId: '1111-deepintentid',
+        dmdId: '111-dmdid',
+        nextrollId: '1111-nextrollid',
+        mwOpenLinkId: '1111-mwopenlinkid',
+        dapId: '1111-dapId',
+        amxId: '1111-amxid',
       };
 
       // generates the same set of tests for each id provider
@@ -1119,6 +1127,9 @@ describe('OpenxAdapter', function () {
                 break;
               case 'id5id':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.id5id.uid;
+                break;
+              case 'novatiq':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.novatiq.snowflake;
                 break;
               default:
                 userIdValue = EXAMPLE_DATA_BY_ATTR[userIdProviderKey];

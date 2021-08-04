@@ -83,10 +83,9 @@ export const akamaiDAPIdSubmodule = {
         tokenName = 'PubToken';
       }
     } else {
-      url = `https://${configParams.apiHostname}/data-activation/x1/identity/tokenize?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
+      url = `https://${configParams.apiHostname}/data-activation/x1/domain/${configParams.domain}/identity/tokenize?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
       postData = {
         'version': configParams.apiVersion,
-        'domain': configParams.domain,
         'identity': configParams.identity,
         'type': configParams.type,
         'attributes': configParams.attributes
