@@ -256,6 +256,29 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     nocache: new Date().getTime()
   };
 
+  const firstPartyData = config.getConfig('ortb2.user.data')
+  if (Array.isArray(firstPartyData) && firstPartyData.length > 0) {
+    // extract and merge valid segments by provider/taxonomy
+    const fpd = firstPartyData
+      .filter(
+        data => (Array.isArray(data.segment) &&
+                data.segment.length > 0 &&
+                data.name !== undefined &&
+                data.name.length > 0)
+      )
+      .reduce((acc, data) => {
+        const name = typeof data.ext === 'object' && data.ext.segtax ? `${data.name}/${data.ext.segtax}` : data.name;
+        acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
+        return acc;
+      }, {})
+    const sm = Object.keys(fpd)
+      .map((name, _) => name + ':' + fpd[name].join('|'))
+      .join(',')
+    if (sm.length > 0) {
+      defaultParams.sm = encodeURIComponent(sm);
+    }
+  }
+
   if (bids[0].params.platform) {
     defaultParams.ph = bids[0].params.platform;
   }
@@ -308,6 +331,10 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
           break;
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
+          if (Array.isArray(userIdObjectOrValue.segments) && userIdObjectOrValue.segments.length > 0) {
+            const liveIntentSegments = 'liveintent:' + userIdObjectOrValue.segments.join('|')
+            queryParams.sm = `${queryParams.sm ? queryParams.sm + encodeURIComponent(',') : ''}${encodeURIComponent(liveIntentSegments)}`;
+          }
           break;
         case 'parrableId':
           queryParams[key] = userIdObjectOrValue.eid;
