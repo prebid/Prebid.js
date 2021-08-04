@@ -142,6 +142,22 @@ describe('Smart bid adapter tests', function () {
     }
   };
 
+  var BID_RESPONSE_IFRAME_SYNC_MISSING_CSYNC = {
+    body: {
+      cpm: 12,
+      width: 300,
+      height: 250,
+      creativeId: 'zioeufg',
+      currency: 'GBP',
+      isNetCpm: true,
+      ttl: 300,
+      adUrl: 'http://awesome.fake.url',
+      ad: '< --- awesome script --- >',
+      cSyncUrl: null,
+      isNoAd: false
+    }
+  };
+
   it('Verify build request', function () {
     config.setConfig({
       'currency': {
@@ -290,6 +306,11 @@ describe('Smart bid adapter tests', function () {
     syncs = spec.getUserSyncs({
       iframeEnabled: true
     }, []);
+    expect(syncs).to.have.lengthOf(0);
+
+    syncs = spec.getUserSyncs({
+      iframeEnabled: true
+    }, [BID_RESPONSE_IFRAME_SYNC_MISSING_CSYNC]);
     expect(syncs).to.have.lengthOf(0);
   });
 
@@ -993,5 +1014,77 @@ describe('Smart bid adapter tests', function () {
       const floor = spec.getBidFloor(bidRequest, null);
       expect(floor).to.deep.equal(0);
     });
+  });
+
+  describe('Verify bid requests with multiple mediaTypes', function () {
+    afterEach(function () {
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+    });
+
+    var DEFAULT_PARAMS_MULTIPLE_MEDIA_TYPES = [{
+      adUnitCode: 'sas_42',
+      bidId: 'abcd1234',
+      mediaTypes: {
+        banner: {
+          sizes: [
+            [300, 250],
+            [300, 200]
+          ]
+        },
+        video: {
+          context: 'outstream',
+          playerSize: [[640, 480]] // It seems prebid.js transforms the player size array into an array of array...
+        }
+      },
+      bidder: 'smartadserver',
+      params: {
+        domain: 'https://prg.smartadserver.com',
+        siteId: '1234',
+        pageId: '5678',
+        formatId: '90',
+        target: 'test=prebid',
+        bidfloor: 0.420,
+        buId: '7569',
+        appName: 'Mozilla',
+        ckId: 42,
+        video: {
+          protocol: 6,
+          startDelay: 1
+        }
+      },
+      requestId: 'efgh5678',
+      transactionId: 'zsfgzzg'
+    }];
+
+    it('Verify build request with banner and outstream', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        }
+      });
+      const requests = spec.buildRequests(DEFAULT_PARAMS_MULTIPLE_MEDIA_TYPES);
+      expect(requests).to.have.lengthOf(2);
+
+      const requestContents = requests.map(r => JSON.parse(r.data));
+      const videoRequest = requestContents.filter(r => r.videoData)[0];
+      expect(videoRequest).to.not.equal(null).and.to.not.be.undefined;
+
+      const bannerRequest = requestContents.filter(r => !r.videoData)[0];
+      expect(bannerRequest).to.not.equal(null).and.to.not.be.undefined;
+
+      expect(videoRequest).to.not.equal(bannerRequest);
+      expect(videoRequest.videoData).to.have.property('videoProtocol').and.to.equal(6);
+      expect(videoRequest.videoData).to.have.property('playerWidth').and.to.equal(640);
+      expect(videoRequest.videoData).to.have.property('playerHeight').and.to.equal(480);
+      expect(videoRequest).to.have.property('siteid').and.to.equal('1234');
+      expect(videoRequest).to.have.property('pageid').and.to.equal('5678');
+      expect(videoRequest).to.have.property('formatid').and.to.equal('90');
+
+      expect(bannerRequest).to.have.property('siteid').and.to.equal('1234');
+      expect(bannerRequest).to.have.property('pageid').and.to.equal('5678');
+      expect(bannerRequest).to.have.property('formatid').and.to.equal('90');
+    });
+    
   });
 });

@@ -39,7 +39,91 @@ export const spec = {
   },
 
   /**
-   * Make a server request from the list of BidRequests.
+   * Transforms the banner ad unit sizes into an object array.
+   *
+   * @param {*} bannerSizes Array of size array (ex. [[300, 250]]).
+   * @returns
+   */
+  adaptBannerSizes: function(bannerSizes) {
+    return bannerSizes.map(size => ({
+      w: size[0],
+      h: size[1]
+    }));
+  },
+
+  /**
+   * Fills the payload with specific video attributes.
+   *
+   * @param {*} payload Payload that will be sent in the ServerRequest
+   * @param {*} videoMediaType Video media type.
+   */
+  fillPayloadForVideoBidRequest: function(payload, videoMediaType, videoParams) {
+    const playerSize = videoMediaType.playerSize[0];
+    payload.isVideo = videoMediaType.context === 'instream';
+    payload.mediaType = VIDEO;
+    payload.videoData = {
+      videoProtocol: this.getProtocolForVideoBidRequest(videoMediaType, videoParams),
+      playerWidth: playerSize[0],
+      playerHeight: playerSize[1],
+      adBreak: this.getStartDelayForVideoBidRequest(videoMediaType, videoParams)
+    };
+  },
+
+  /**
+   * Gets the protocols from either videoParams or VideoMediaType
+   * @param {*} videoMediaType
+   * @param {*} videoParams
+   * @returns protocol from either videoMediaType or videoParams
+   */
+  getProtocolForVideoBidRequest: function(videoMediaType, videoParams) {
+    if (videoParams !== undefined && videoParams.protocol) {
+      return videoParams.protocol;
+    } else if (videoMediaType !== undefined) {
+      if (Array.isArray(videoMediaType.protocols)) {
+        return Math.max.apply(Math, videoMediaType.protocols);
+      }
+    }
+    return null;
+  },
+
+  /**
+   * Gets the startDelay from either videoParams or VideoMediaType
+   * @param {*} videoMediaType
+   * @param {*} videoParams
+   * @returns positive integer value of startdelay
+   */
+  getStartDelayForVideoBidRequest: function(videoMediaType, videoParams) {
+    if (videoParams !== undefined && videoParams.startDelay) {
+      return videoParams.startDelay;
+    } else if (videoMediaType !== undefined) {
+      if (videoMediaType.startdelay == 0) {
+        return 1;
+      } else if (videoMediaType.startdelay == -1) {
+        return 2;
+      } else if (videoMediaType.startdelay == -2) {
+        return 3;
+      }
+    }
+    return 2;// Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
+  },
+
+  /**
+   * Creates the server request.
+   *
+   * @param {*} payload Body of the request.
+   * @param {string} domain Endpoint domain .
+   * @returns {ServerRequest} Info describing the request to the server.
+   */
+  createServerRequest: function(payload, domain) {
+    return {
+      method: 'POST',
+      url: (domain !== undefined ? domain : 'https://prg.smartadserver.com') + '/prebid/v1',
+      data: JSON.stringify(payload),
+    };
+  },
+
+  /**
+   * Makes server requests from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests an array of bids
    * @param {BidderRequest} bidderRequest bidder request object
@@ -51,7 +135,7 @@ export const spec = {
     const adServerCurrency = config.getConfig('currency.adServerCurrency');
 
     // pull requested transaction ID from bidderRequest.bids[].transactionId
-    return validBidRequests.map(bid => {
+    return validBidRequests.reduce((bidRequests, bid) => {
       // Common bid request attributes for banner, outstream and instream.
       let payload = {
         siteid: bid.params.siteId,
@@ -72,49 +156,6 @@ export const spec = {
         schain: spec.serializeSupplyChain(bid.schain)
       };
 
-      const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-      if (!videoMediaType) {
-        const bannerMediaType = utils.deepAccess(bid, 'mediaTypes.banner');
-        payload.sizes = bannerMediaType.sizes.map(size => ({
-          w: size[0],
-          h: size[1]
-        }));
-      } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
-        // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
-        // Assign a default protocol, the highest value possible means we are retrocompatible with all older values.
-        var protocol = null;
-        if (bid.params.video && bid.params.video.protocol) {
-          protocol = bid.params.video.protocol;
-        } else if (Array.isArray(videoMediaType.protocols)) {
-          protocol = Math.max.apply(Math, videoMediaType.protocols);
-        }
-
-        // Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
-        var startDelay = 2;
-        if (bid.params.video && bid.params.video.startDelay) {
-          startDelay = bid.params.video.startDelay
-        } else if (videoMediaType.startdelay == 0) {
-          startDelay = 1;
-        } else if (videoMediaType.startdelay == -1) {
-          startDelay = 2;
-        } else if (videoMediaType.startdelay == -2) {
-          startDelay = 3;
-        }
-
-        // Specific attributes for instream.
-        let playerSize = videoMediaType.playerSize[0];
-        payload.isVideo = videoMediaType.context === 'instream';
-        payload.mediaType = VIDEO;
-        payload.videoData = {
-          videoProtocol: protocol,
-          playerWidth: playerSize[0],
-          playerHeight: playerSize[1],
-          adBreak: startDelay
-        };
-      } else {
-        return {};
-      }
-
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.addtl_consent = bidderRequest.gdprConsent.addtlConsent;
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -129,14 +170,31 @@ export const spec = {
         payload.us_privacy = bidderRequest.uspConsent;
       }
 
-      var payloadString = JSON.stringify(payload);
+      const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+      const bannerMediaType = utils.deepAccess(bid, 'mediaTypes.banner');
+      const isAdUnitContainingVideo = videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream');
+      if (!isAdUnitContainingVideo && bannerMediaType) {
+        payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
+        bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
+      } else if (isAdUnitContainingVideo && !bannerMediaType) {
+        spec.fillPayloadForVideoBidRequest(payload, videoMediaType, bid.params.video);
+        bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
+      } else if (isAdUnitContainingVideo && bannerMediaType) {
+        // If there are video and banner media types in the ad unit, we clone the payload
+        // to create a specific one for video.
+        let videoPayload = utils.deepClone(payload);
 
-      return {
-        method: 'POST',
-        url: (bid.params.domain !== undefined ? bid.params.domain : 'https://prg.smartadserver.com') + '/prebid/v1',
-        data: payloadString,
-      };
-    });
+        spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
+        bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
+
+        payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
+        bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
+      } else {
+        bidRequests.push({});
+      }
+
+      return bidRequests;
+    }, []);
   },
 
   /**
@@ -219,7 +277,7 @@ export const spec = {
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
-    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
+    if (syncOptions.iframeEnabled && serverResponses.length > 0 && serverResponses[0].body.cSyncUrl != null) {
       syncs.push({
         type: 'iframe',
         url: serverResponses[0].body.cSyncUrl

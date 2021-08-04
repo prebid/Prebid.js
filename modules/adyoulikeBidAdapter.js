@@ -86,6 +86,11 @@ export const spec = {
         }
         if (mediatype === VIDEO) {
           accumulator[bidReq.bidId].Video = bidReq.mediaTypes.video;
+
+          const size = bidReq.mediaTypes.video.playerSize;
+          if (Array.isArray(size) && !Array.isArray(size[0])) {
+            accumulator[bidReq.bidId].Video.playerSize = [size];
+          }
         }
         return accumulator;
       }, {}),
@@ -441,7 +446,7 @@ function getNativeAssets(response, nativeConfig) {
 
 /* Create bid from response */
 function createBid(response, bidRequests) {
-  if (!response || (!response.Ad && !response.Native)) {
+  if (!response || (!response.Ad && !response.Native && !response.Vast)) {
     return
   }
 

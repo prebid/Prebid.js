@@ -23,6 +23,7 @@ The adapter supports Video(instream). For the integration, Rise returns content 
 | `org` | required | String |  Rise publisher Id provided by your Rise representative  | "56f91cd4d3e3660002000033"
 | `floorPrice` | optional | Number |  Minimum price in USD. Misuse of this parameter can impact revenue | 2.00
 | `ifa` | optional | String |  The ID for advertisers (also referred to as "IDFA")  | "XXX-XXX"
+| `placementId` | optional | String |  A unique placement identifier  | "12345678"
 | `testMode` | optional | Boolean |  This activates the test mode  | false
 
 # Test Parameters
@@ -43,6 +44,7 @@ var adUnits = [
             org: '56f91cd4d3e3660002000033', // Required
             floorPrice: 2.00, // Optional
             ifa: 'XXX-XXX', // Optional
+            placementId: '12345678', // Optional
             testMode: false // Optional
           }
         }]
