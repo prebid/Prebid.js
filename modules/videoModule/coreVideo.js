@@ -1,3 +1,5 @@
+import { module } from '../../src/hook.js';
+
 export function VideoCore(submoduleBuilder_) {
   const submodules = {};
   const submoduleBuilder = submoduleBuilder_;
@@ -41,10 +43,7 @@ export function VideoCore(submoduleBuilder_) {
   };
 }
 
-const vendorDirectory = {
-  1: 'jwplayerFunction',
-  2: 'videoJsFunction'
-};
+const vendorDirectory = {};
 
 export function videoCoreFactory() {
   const submoduleBuilder = VideoSubmoduleBuilder(vendorDirectory);
@@ -67,3 +66,7 @@ export function VideoSubmoduleBuilder(vendorDirectory_) {
     build
   };
 }
+
+module('video', (submoduleFactory) => {
+  vendorDirectory[submoduleFactory.vendorCode] = submoduleFactory;
+});
