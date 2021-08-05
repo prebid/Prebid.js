@@ -30,7 +30,8 @@ function onNoBidData(t) {
 function onAuctionEnd(t) {
   logInfo('onAuctionEnd', t);
   const {isCorrectOption, logFrequency} = initOptions;
-  var value = Math.random();
+  let random = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+  var value = random();
   // logInfo(' value - frequency ', (value + '-' + logFrequency));
   setTimeout(() => {
     if (isCorrectOption && value < logFrequency) {
@@ -150,7 +151,8 @@ ascAdapter.getVisitorData = function(data = {}) {
     }
   };
   function chr(num) {
-    return Math.random().toString(16).slice(-num);
+    let random = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+    return random().toString(16).slice(-num);
   }
   function base64url(source) {
     var encodedSource = Base64.stringify(source);
@@ -223,7 +225,7 @@ ascAdapter.dataProcess = function(t) {
     const {requestId, bidder, width, height, cpm, currency, timeToRespond, adUnitCode} = bid;
     bidsReceivedData.push({requestId, bidder, width, height, cpm, currency, timeToRespond, adUnitCode});
   });
-  bidderRequestsData && bidderRequestsData.forEach(bdObj => {
+  bidderRequestsData.length > 0 && bidderRequestsData.forEach(bdObj => {
     var bdsArray = bdObj['bids'];
     bdsArray.forEach(bid => {
       const {adUnitCode, sizes, bidder, bidId, mediaTypes} = bid;
@@ -233,7 +235,7 @@ ascAdapter.dataProcess = function(t) {
       });
     });
   });
-  bidsReceivedData && bidsReceivedData.forEach(bdRecived => {
+  bidsReceivedData.length > 0 && bidsReceivedData.forEach(bdRecived => {
     const {requestId, bidder, width, height, cpm, currency, timeToRespond} = bdRecived;
     payload['auctionData'].forEach(rwData => {
       if (rwData['bids_bid_id'] === requestId && rwData['size'] === width + 'x' + height) {
