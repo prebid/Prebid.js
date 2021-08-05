@@ -635,7 +635,8 @@ function _buildDeviceORTB() {
     ...getScreenDimensions()
   }, {
     ttx: {
-      viewport: getViewportDimensions()
+      viewport: getViewportDimensions(),
+      availheight: utils.getWindowSelf().screen.availHeight
     }
   });
 }
