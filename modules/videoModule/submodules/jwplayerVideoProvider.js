@@ -627,31 +627,36 @@ submodule('video', jwplayerSubmoduleFactory);
 
 export const utils = {
   getJwConfig: function(config) {
-  if (!config || !config.params) {
-    return;
-  }
-  const jwConfig = config.params.vendorConfig || {};
-  if (jwConfig.autostart === undefined) {
-    jwConfig.autostart = config.autostart;
-  }
+    if (!config) {
+      return;
+    }
 
-  if (jwConfig.mute === undefined) {
-    jwConfig.mute = config.mute;
-  }
+    const params = config.params;
+    const jwConfig = params.vendorConfig || {};
+    if (jwConfig.autostart === undefined && config.autoStart !== undefined) {
+      jwConfig.autostart = config.autoStart;
+    }
 
-  if (!jwConfig.key) {
-    jwConfig.key = config.licenseKey;
-  }
+    if (jwConfig.mute === undefined && config.mute !== undefined) {
+      jwConfig.mute = config.mute;
+    }
 
-  const advertising = jwConfig.advertising || {};
-  if (!jwConfig.file && !jwConfig.playlist && !jwConfig.source) {
-    advertising.outstream = true;
-    advertising.client = advertising.client || 'vast';
-  }
+    if (!jwConfig.key && config.licenseKey !== undefined) {
+      jwConfig.key = config.licenseKey;
+    }
 
-  jwConfig.advertising = advertising;
-  return jwConfig;
-},
+    if (params.adOptimization === false) {
+      return jwConfig;
+    }
+
+    const advertising = jwConfig.advertising || { client: 'vast' };
+    if (!jwConfig.file && !jwConfig.playlist && !jwConfig.source) {
+      advertising.outstream = true;
+    }
+
+    jwConfig.advertising = advertising;
+    return jwConfig;
+  },
 
   getJwEvent: function(eventName) {
     switch(eventName) {
