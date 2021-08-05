@@ -608,7 +608,7 @@ function _addDealCustomTargetings(imp, bid) {
 function _addJWPlayerSegmentData(imp, bid) {
   var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
   var jwPlayerData = '';
-  if (jwSegData === undefined || jwSegData === '' || !jwPlayerData.hasOwnProperty("segments")) return;
+  if (jwSegData === undefined || jwSegData === '' || !jwSegData.hasOwnProperty('segments')) return;
 
   var maxLength = jwSegData.segments.length;
 
