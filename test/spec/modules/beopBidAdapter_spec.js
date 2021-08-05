@@ -3,7 +3,7 @@ import { spec } from 'modules/beopBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 const utils = require('src/utils');
 
-const ENDPOINT = 'https://s.beop.io/bid';
+const ENDPOINT = 'https://hb.beop.io/bid';
 
 let validBid = {
   'bidder': 'beop',
