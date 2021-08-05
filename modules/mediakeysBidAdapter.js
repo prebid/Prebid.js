@@ -225,7 +225,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const payload = createOrtbTemplate(bidderRequest);
+    const payload = createOrtbTemplate();
 
     // Pass the auctionId as ortb2 id
     // See https://github.com/prebid/Prebid.js/issues/6563
