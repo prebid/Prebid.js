@@ -4,6 +4,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 
 import { spec } from 'modules/33acrossBidAdapter.js';
+import { merge } from 'lodash';
 
 function validateBuiltServerRequest(builtReq, expectedReq) {
   expect(builtReq.url).to.equal(expectedReq.url);
@@ -161,10 +162,7 @@ describe('33acrossBidAdapter:', function () {
     };
 
     this.withDevice = (device) => {
-      ttxRequest.device = {
-        ...ttxRequest.device,
-        ...device
-      };
+      merge(ttxRequest, { device });
 
       return this;
     };
