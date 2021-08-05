@@ -22,6 +22,8 @@
   "sonobiBidAdapter",
   "sovrnBidAdapter",
   "synacormediaBidAdapter",
+  "teadsBidAdapter",
+  "tripleliftBidAdapter",
   "ucfunnelBidAdapter",
   "unrulyBidAdapter",
   "aolBidAdapter"
