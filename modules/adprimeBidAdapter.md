@@ -25,7 +25,8 @@ Module that connects to adprime demand sources
                             bidder: 'adprime',
                             params: {
                                 placementId: 'testBanner',
-                                keywords: ['cat_1', 'cat_2']
+                                keywords: ['cat_1', 'cat_2'],
+                                audiences: ['aud_1', 'aud_2']
                             }
                         }
                     ]
@@ -44,7 +45,8 @@ Module that connects to adprime demand sources
                             bidder: 'adprime',
                             params: {
                                 placementId: 'testVideo',
-                                keywords: ['cat_1', 'cat_2']
+                                keywords: ['cat_1', 'cat_2'],
+                                audiences: ['aud_1', 'aud_2']
                             }
                         }
                     ]

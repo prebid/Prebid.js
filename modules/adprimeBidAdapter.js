@@ -123,6 +123,7 @@ export const spec = {
         hPlayer: sizes ? sizes[1] : 0,
         schain: bid.schain || {},
         keywords: bid.params.keywords || [],
+        audiences: bid.params.audiences || [],
         identeties,
         bidFloor: getBidFloor(bid)
       });
