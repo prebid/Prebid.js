@@ -77,6 +77,11 @@ describe('sharethrough adapter spec', function() {
             bcat: ['cat1', 'cat2'],
             badv: ['adv1', 'adv2'],
           },
+          mediaTypes: {
+            banner: {
+              pos: 1,
+            },
+          },
           ortb2Imp: {
             ext: {
               data: {
@@ -139,6 +144,7 @@ describe('sharethrough adapter spec', function() {
           },
           mediaTypes: {
             video: {
+              pos: 3,
               skip: 1,
               linearity: 0,
               minduration: 10,
@@ -147,7 +153,14 @@ describe('sharethrough adapter spec', function() {
               api: [3],
               mimes: ['video/3gpp'],
               protocols: [2, 3],
-              playerSize: [[640, 480]],
+              playerSize: [640, 480],
+              startdelay: 42,
+              skipmin: 10,
+              skipafter: 20,
+              placement: 1,
+              delivery: 1,
+              companiontype: 'companion type',
+              companionad: 'companion ad',
             },
           },
           getFloor: () => ({ currency: 'USD', floor: 42 }),
@@ -168,11 +181,7 @@ describe('sharethrough adapter spec', function() {
 
           expect(builtRequest.method).to.equal('POST');
           expect(builtRequest.url).not.to.be.undefined;
-          expect(builtRequest.options).to.deep.equal({
-            contentType: 'application/json',
-            withCredentials: false,
-            crossOrigin: true,
-          });
+          expect(builtRequest.options).to.be.undefined;
           expect(builtRequest.bidderRequest).to.deep.equal(bidderRequest);
 
           const openRtbReq = builtRequest.data;
@@ -330,8 +339,17 @@ describe('sharethrough adapter spec', function() {
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
 
           const bannerImp = builtRequest.data.imp[0].banner;
+          expect(bannerImp.pos).to.equal(1);
           expect(bannerImp.topframe).to.equal(1);
           expect(bannerImp.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
+        });
+
+        it('should default to pos 0 if not provided', () => {
+          delete bidRequests[0].mediaTypes;
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
+
+          const bannerImp = builtRequest.data.imp[0].banner;
+          expect(bannerImp.pos).to.equal(0);
         });
       });
 
@@ -340,6 +358,7 @@ describe('sharethrough adapter spec', function() {
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
 
           const videoImp = builtRequest.data.imp[1].video;
+          expect(videoImp.pos).to.equal(3);
           expect(videoImp.topframe).to.equal(1);
           expect(videoImp.skip).to.equal(1);
           expect(videoImp.linearity).to.equal(0);
@@ -351,9 +370,17 @@ describe('sharethrough adapter spec', function() {
           expect(videoImp.protocols).to.deep.equal([2, 3]);
           expect(videoImp.w).to.equal(640);
           expect(videoImp.h).to.equal(480);
+          expect(videoImp.startdelay).to.equal(42);
+          expect(videoImp.skipmin).to.equal(10);
+          expect(videoImp.skipafter).to.equal(20);
+          expect(videoImp.placement).to.equal(1);
+          expect(videoImp.delivery).to.equal(1);
+          expect(videoImp.companiontype).to.equal('companion type');
+          expect(videoImp.companionad).to.equal('companion ad');
         });
 
         it('should set defaults if no value provided', () => {
+          delete bidRequests[1].mediaTypes.video.pos;
           delete bidRequests[1].mediaTypes.video.skip;
           delete bidRequests[1].mediaTypes.video.linearity;
           delete bidRequests[1].mediaTypes.video.minduration;
@@ -362,10 +389,18 @@ describe('sharethrough adapter spec', function() {
           delete bidRequests[1].mediaTypes.video.api;
           delete bidRequests[1].mediaTypes.video.mimes;
           delete bidRequests[1].mediaTypes.video.protocols;
+          delete bidRequests[1].mediaTypes.video.startdelay;
+          delete bidRequests[1].mediaTypes.video.skipmin;
+          delete bidRequests[1].mediaTypes.video.skipafter;
+          delete bidRequests[1].mediaTypes.video.placement;
+          delete bidRequests[1].mediaTypes.video.delivery;
+          delete bidRequests[1].mediaTypes.video.companiontype;
+          delete bidRequests[1].mediaTypes.video.companionad;
 
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
 
           const videoImp = builtRequest.data.imp[1].video;
+          expect(videoImp.pos).to.equal(0);
           expect(videoImp.skip).to.equal(0);
           expect(videoImp.linearity).to.equal(1);
           expect(videoImp.minduration).to.equal(5);
@@ -374,6 +409,13 @@ describe('sharethrough adapter spec', function() {
           expect(videoImp.api).to.deep.equal([2]);
           expect(videoImp.mimes).to.deep.equal(['video/mp4']);
           expect(videoImp.protocols).to.deep.equal([2, 3, 5, 6, 7, 8]);
+          expect(videoImp.startdelay).to.equal(0);
+          expect(videoImp.skipmin).to.equal(0);
+          expect(videoImp.skipafter).to.equal(0);
+          expect(videoImp.placement).to.be.undefined;
+          expect(videoImp.delivery).to.be.undefined;
+          expect(videoImp.companiontype).to.be.undefined;
+          expect(videoImp.companionad).to.be.undefined;
         });
       });
     });

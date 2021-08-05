@@ -8,8 +8,7 @@ const VERSION = '4.0.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
-// Todo: Update URL to new open RTB endpoint
-const STR_ENDPOINT = `http://localhost:3030/universal/v1?supplyId=${SUPPLY_ID}`;
+const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
 
 // this allows stubbing of utility function that is used internally by the sharethrough adapter
 export const sharethroughInternal = {
@@ -90,6 +89,7 @@ export const sharethroughAdapterSpec = {
 
       if (bidReq.mediaTypes && bidReq.mediaTypes.video) {
         impression.video = {
+          pos: bidReq.mediaTypes.video.pos ?? 0,
           topframe: utils.inIframe() ? 0 : 1,
           skip: bidReq.mediaTypes.video.skip ?? 0,
           linearity: bidReq.mediaTypes.video.linearity ?? 1,
@@ -99,12 +99,20 @@ export const sharethroughAdapterSpec = {
           api: getVideoApi(bidReq.mediaTypes.video),
           mimes: bidReq.mediaTypes.video.mimes || ['video/mp4'],
           protocols: getVideoProtocols(bidReq.mediaTypes.video),
-          w: bidReq.mediaTypes.video.playerSize[0][0],
-          h: bidReq.mediaTypes.video.playerSize[0][1],
+          w: bidReq.mediaTypes.video.playerSize[0],
+          h: bidReq.mediaTypes.video.playerSize[1],
+          startdelay: bidReq.mediaTypes.video.startdelay ?? 0,
+          skipmin: bidReq.mediaTypes.video.skipmin ?? 0,
+          skipafter: bidReq.mediaTypes.video.skipafter ?? 0,
         };
+
+        if (bidReq.mediaTypes.video.placement) impression.video.placement = bidReq.mediaTypes.video.placement;
+        if (bidReq.mediaTypes.video.delivery) impression.video.delivery = bidReq.mediaTypes.video.delivery;
+        if (bidReq.mediaTypes.video.companiontype) impression.video.companiontype = bidReq.mediaTypes.video.companiontype;
+        if (bidReq.mediaTypes.video.companionad) impression.video.companionad = bidReq.mediaTypes.video.companionad;
       } else {
         impression.banner = {
-          pos: 0,
+          pos: bidReq.mediaTypes?.banner.pos ?? 0,
           topframe: utils.inIframe() ? 0 : 1,
           format: bidReq.sizes.map(size => ({ w: +size[0], h: +size[1] })),
         };
@@ -122,11 +130,6 @@ export const sharethroughAdapterSpec = {
     return {
       method: 'POST',
       url: STR_ENDPOINT,
-      options: {
-        contentType: 'application/json',
-        withCredentials: false,
-        crossOrigin: true,
-      },
       data: {
         ...req,
         imp: imps,
