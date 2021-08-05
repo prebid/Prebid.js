@@ -30,9 +30,8 @@ function onNoBidData(t) {
 function onAuctionEnd(t) {
   logInfo('onAuctionEnd', t);
   const {isCorrectOption, logFrequency} = initOptions;
-  let random = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
-  var value = random();
-  // logInfo(' value - frequency ', (value + '-' + logFrequency));
+  var value = Math.random();
+  logInfo(' value - frequency ', (value + '-' + logFrequency));
   setTimeout(() => {
     if (isCorrectOption && value < logFrequency) {
       ascAdapter.dataProcess(t);
@@ -150,9 +149,19 @@ ascAdapter.getVisitorData = function(data = {}) {
       return { name: 'unknown', version: 0 };
     }
   };
-  function chr(num) {
-    let random = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
-    return random().toString(16).slice(-num);
+  function generateUid() {
+    try {
+      var buffer = new Uint8Array(16);
+      crypto.getRandomValues(buffer);
+      buffer[6] = (buffer[6] & ~176) | 64;
+      buffer[8] = (buffer[8] & ~64) | 128;
+      var hex = Array.prototype.map.call(new Uint8Array(buffer), function(x) {
+        return ('00' + x.toString(16)).slice(-2);
+      }).join('');
+      return hex.slice(0, 5) + '-' + hex.slice(5, 9) + '-' + hex.slice(9, 13) + '-' + hex.slice(13, 18);
+    } catch (e) {
+      return '';
+    }
   }
   function base64url(source) {
     var encodedSource = Base64.stringify(source);
@@ -179,7 +188,7 @@ ascAdapter.getVisitorData = function(data = {}) {
   const {clientId} = initOptions;
   var userId = window.localStorage.getItem('userId');
   if (!userId) {
-    userId = chr(5) + '-' + chr(4) + '-' + chr(4) + '-' + chr(5);
+    userId = generateUid();
     window.localStorage.setItem('userId', userId);
   }
   var screenSize = {width: window.screen.width, height: window.screen.height};
