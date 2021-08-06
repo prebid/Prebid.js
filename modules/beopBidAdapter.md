@@ -22,25 +22,8 @@ Module that connects to BeOp's demand sources
                 {
                     bidder: "beop",
                     params: {
-                        accountId: '123456123456123456123456',
+                        accountId: '5a8af500c9e77c00017e4cad',
                         currency: 'EUR'
-                    }
-                }
-            ]
-        },{
-            code: 'bellow-article',
-            mediaTypes: {
-                banner: {
-                    sizes: [[1,1]], 
-                }
-            },
-            bids: [
-                {
-                    bidder: "beop",
-                    params: {
-                        networkId: 'abcdefabcdefabcdefabcdef',
-                        networkPartnerId: 'whatever',
-                        currency: 'USD'
                     }
                 }
             ]
