@@ -1,5 +1,5 @@
-import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nextMillennium';
@@ -16,26 +16,38 @@ export const spec = {
     );
   },
 
-  buildRequests: function(validBidRequests) {
-    let requests = [];
+  buildRequests: function(validBidRequests, bidderRequest) {
+    const requests = [];
 
     utils._each(validBidRequests, function(bid) {
+      const postBody = {
+        'ext': {
+          'prebid': {
+            'storedrequest': {
+              'id': utils.getBidIdParameter('placement_id', bid.params)
+            }
+          }
+        }
+      }
+      const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+
+      if (gdprConsent) {
+        if (typeof gdprConsent.gdprApplies !== 'undefined') {
+          postBody.gdprApplies = !!gdprConsent.gdprApplies;
+        }
+        if (typeof gdprConsent.consentString !== 'undefined') {
+          postBody.consentString = gdprConsent.consentString;
+        }
+      }
+
       requests.push({
         method: 'POST',
         url: ENDPOINT,
+        data: JSON.stringify(postBody),
         options: {
           contentType: 'application/json',
           withCredentials: true
         },
-        data: JSON.stringify({
-          'ext': {
-            'prebid': {
-              'storedrequest': {
-                'id': utils.getBidIdParameter('placement_id', bid.params)
-              }
-            }
-          }
-        }),
         bidId: bid.bidId
       });
     });
@@ -47,29 +59,27 @@ export const spec = {
     const response = serverResponse.body;
     const bidResponses = [];
 
-    try {
-      utils._each(response.seatbid, (resp) => {
-        utils._each(resp.bid, (bid) => {
-          bidResponses.push({
-            requestId: bidRequest.bidId,
-            cpm: bid.price,
-            width: bid.w,
-            height: bid.h,
-            creativeId: bid.adid,
-            currency: response.cur,
-            netRevenue: false,
-            ttl: TIME_TO_LIVE,
-            meta: {
-              advertiserDomains: bid.adomain || []
-            },
-            ad: bid.adm
-          });
+    utils._each(response.seatbid, (resp) => {
+      utils._each(resp.bid, (bid) => {
+        bidResponses.push({
+          requestId: bidRequest.bidId,
+          cpm: bid.price,
+          width: bid.w,
+          height: bid.h,
+          creativeId: bid.adid,
+          currency: response.cur,
+          netRevenue: false,
+          ttl: TIME_TO_LIVE,
+          meta: {
+            advertiserDomains: bid.adomain || []
+          },
+          ad: bid.adm
         });
-      })
-    } catch (err) {
-      utils.logError(err);
-    }
+      });
+    });
+
     return bidResponses;
   }
 };
+
 registerBidder(spec);

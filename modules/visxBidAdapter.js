@@ -5,6 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM as VIDEO_INSTREAM } from '../src/video.js';
 const { parseSizesInput, getKeys, logError, deepAccess } = utils;
 const BIDDER_CODE = 'visx';
+const GVLID = 154;
 const BASE_URL = 'https://t.visx.net';
 const ENDPOINT_URL = BASE_URL + '/hb';
 const TIME_TO_LIVE = 360;
@@ -30,6 +31,7 @@ const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
 const RE_EMPTY_OR_ONLY_COMMAS = /^,*$/;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     if (_isVideoBid(bid)) {
@@ -256,7 +258,7 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
             bidResponse.ext = serverBid.ext.prebid;
           }
 
-          if (!_isVideoBid(bid)) {
+          if (!_isVideoInstreamBid(bid)) {
             bidResponse.ad = serverBid.adm;
           } else {
             bidResponse.vastXml = serverBid.adm;
@@ -296,6 +298,10 @@ function _isVideoBid(bid) {
   return bid.mediaType === VIDEO || deepAccess(bid, 'mediaTypes.video');
 }
 
+function _isVideoInstreamBid(bid) {
+  return _isVideoBid(bid) && deepAccess(bid, 'mediaTypes.video', {}).context === VIDEO_INSTREAM;
+}
+
 function _isBannerBid(bid) {
   return bid.mediaType === BANNER || deepAccess(bid, 'mediaTypes.banner');
 }
@@ -303,7 +309,7 @@ function _isBannerBid(bid) {
 function _isValidVideoBid(bid, logErrors = false) {
   let result = true;
   const videoMediaType = deepAccess(bid, 'mediaTypes.video');
-  if (videoMediaType.context !== VIDEO_INSTREAM) {
+  if (!_isVideoInstreamBid(bid)) {
     if (logErrors) {
       logError(LOG_ERROR_MESS.onlyVideoInstream);
     }

@@ -10,7 +10,7 @@ import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import {isFn, isStr, isPlainObject, mergeDeep, logError} from '../src/utils.js';
+import {isFn, isStr, isArray, deepEqual, isPlainObject, logError} from '../src/utils.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'halo';
@@ -26,25 +26,67 @@ export const storage = getStorageManager(AU_GVLID, SUBMODULE_NAME);
  * @param {String} path
  * @param {Object} val
  */
-const set = (obj, path, val) => {
+function set(obj, path, val) {
   const keys = path.split('.');
   const lastKey = keys.pop();
   const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, obj);
   lastObj[lastKey] = lastObj[lastKey] || val;
-};
+}
+
+/**
+ * Deep object merging with array deduplication.
+ * @param {Object} target
+ * @param {Object} sources
+ */
+function mergeDeep(target, ...sources) {
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isPlainObject(target) && isPlainObject(source)) {
+    for (const key in source) {
+      if (isPlainObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key], source[key]);
+      } else if (isArray(source[key])) {
+        if (!target[key]) {
+          Object.assign(target, { [key]: source[key] });
+        } else if (isArray(target[key])) {
+          source[key].forEach(obj => {
+            let e = 1;
+            for (let i = 0; i < target[key].length; i++) {
+              if (deepEqual(target[key][i], obj)) {
+                e = 0;
+                break;
+              }
+            }
+            if (e) {
+              target[key].push(obj);
+            }
+          });
+        }
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return mergeDeep(target, ...sources);
+}
 
 /**
  * Lazy merge objects.
- * @param {String} target
- * @param {String} source
+ * @param {Object} target
+ * @param {Object} source
  */
 function mergeLazy(target, source) {
   if (!isPlainObject(target)) {
     target = {};
   }
+
   if (!isPlainObject(source)) {
     source = {};
   }
+
   return mergeDeep(target, source);
 }
 
@@ -69,12 +111,31 @@ function paramOrDefault(param, defaultVal, arg) {
  * @param {Object} rtdConfig
  */
 export function addRealTimeData(bidConfig, rtd, rtdConfig) {
-  let ortb2 = config.getConfig('ortb2') || {};
-
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
-  } else if (rtd.ortb2) {
-    config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+  } else {
+    if (isPlainObject(rtd.ortb2)) {
+      let ortb2 = config.getConfig('ortb2') || {};
+      config.setConfig({ortb2: mergeLazy(ortb2, rtd.ortb2)});
+    }
+
+    if (isPlainObject(rtd.ortb2b)) {
+      let bidderConfig = config.getBidderConfig();
+
+      Object.keys(rtd.ortb2b).forEach(bidder => {
+        let rtdOptions = rtd.ortb2b[bidder] || {};
+
+        let bidderOptions = {};
+        if (isPlainObject(bidderConfig[bidder])) {
+          bidderOptions = bidderConfig[bidder];
+        }
+
+        config.setBidderConfig({
+          bidders: [bidder],
+          config: mergeLazy(bidderOptions, rtdOptions)
+        });
+      });
+    }
   }
 }
 
@@ -104,6 +165,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
 
   let haloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
   if (isStr(haloId)) {
+    (getGlobal()).refreshUserIds({submoduleNames: 'haloId'});
     userIds.haloId = haloId;
     getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {

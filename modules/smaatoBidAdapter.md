@@ -62,3 +62,34 @@ var adUnits = [{
     }]
 }];
 ```
+
+For adpod adunits:
+
+```
+var adUnits = [{
+    "code": "adpod unit",
+    "mediaTypes": {
+        "video": {
+            "context": "adpod",
+            "playerSize": [640, 480],
+            "adPodDurationSec": 300,
+            "durationRangeSec": [15, 30],
+            "requireExactDuration": false,
+            "mimes": ["video/mp4"],
+            "startdelay": 0,
+            "linearity": 1,
+            "protocols": [7],
+            "skip": 1,
+            "skipmin": 5,
+            "api": [7],
+        }
+    },
+    "bids": [{
+        "bidder": "smaato",
+        "params": {
+            "publisherId": "1100042525",
+            "adbreakId": "330563103"
+        }
+    }]
+}];
+```

@@ -20,6 +20,22 @@ const DISPLAY_REQUEST = [{
   transactionId: 'trans_abcd1234'
 }];
 
+const DISPLAY_REQUEST_WITH_POSITION_TYPE = [{
+  adUnitCode: 'sw_300x250',
+  bidId: '12345',
+  sizes: [
+    [300, 250],
+    [300, 200]
+  ],
+  bidder: 'smilewanted',
+  params: {
+    zoneId: 1,
+    positionType: 'infeed'
+  },
+  requestId: 'request_abcd1234',
+  transactionId: 'trans_abcd1234'
+}];
+
 const BID_RESPONSE_DISPLAY = {
   body: {
     cpm: 3,
@@ -298,6 +314,18 @@ describe('smilewantedBidAdapterTests', function () {
     expect(spec.isBidRequestValid({
       params: {}
     })).to.equal(false);
+  });
+
+  it('SmileWanted - Verify if payload(positionType) is default value when nothing is passed on the param', function () {
+    const request = spec.buildRequests(DISPLAY_REQUEST, {});
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('positionType').and.to.equal('');
+  });
+
+  it('SmileWanted - Verify if payload(positionType) is well passed', function () {
+    const request = spec.buildRequests(DISPLAY_REQUEST_WITH_POSITION_TYPE, {});
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('positionType').and.to.equal('infeed');
   });
 
   it('SmileWanted - Verify user sync', function () {
