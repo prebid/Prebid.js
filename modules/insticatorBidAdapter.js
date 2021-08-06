@@ -6,9 +6,9 @@ import {
   generateUUID,
   logError,
 } from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager';
+import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
+export const storage = getStorageManager();
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb'; // production endpoint
 const USER_ID_KEY = 'hb_insticator_uid';
