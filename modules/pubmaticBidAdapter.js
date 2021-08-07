@@ -975,8 +975,20 @@ export const spec = {
           !utils.isStr(bid.params.outstreamAU) &&
           !bid.hasOwnProperty('renderer') &&
           !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
-          utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
-          return false;
+          
+          // we are here since outstream ad-unit is provided without outstreamAU and renderer
+          // so it is not a valid video ad-unit
+          // but it may be valid banner or native ad-unit
+          // so if mediaType banner or Native is present then  we will remove media-type video and return true
+
+          if (bid.mediaTypes.hasOwnProperty(BANNER) || bid.mediaTypes.hasOwnProperty(NATIVE)) {
+            delete bid.mediaTypes[VIDEO];
+            utils.logWarn(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting mediatype Video of bid: `, bid);
+            return true;
+          } else {
+            utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
+            return false;
+          }
         }
       }
       return true;
