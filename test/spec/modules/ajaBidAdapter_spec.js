@@ -78,11 +78,11 @@ describe('AjaAdapter', function () {
             'tag': '<div></div>',
             'imps': [
               'https://as.amanad.adtdp.com/v1/imp'
+            ],
+            'adomain': [
+              'www.example.com'
             ]
           },
-          'adomain': [
-            'www.example.com'
-          ]
         },
         'syncs': [
           'https://example.com'
@@ -131,7 +131,10 @@ describe('AjaAdapter', function () {
             'purl': 'https://cdn/player',
             'progress': true,
             'loop': false,
-            'inread': false
+            'inread': false,
+            'adomain': [
+              'www.example.com'
+            ]
           }
         },
         'syncs': [
@@ -186,7 +189,10 @@ describe('AjaAdapter', function () {
                     'https://example.com/inview'
                   ],
                   'jstracker': '',
-                  'disable_trimming': false
+                  'disable_trimming': false,
+                  'adomain': [
+                    'www.example.com'
+                  ]
                 }
               ]
             }
@@ -229,7 +235,9 @@ describe('AjaAdapter', function () {
             'privacyLink': 'https://aja-kk.co.jp/optout'
           },
           'meta': {
-            'advertiserDomains': []
+            'advertiserDomains': [
+              'www.example.com'
+            ]
           }
         }
       ];
