@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, resetUserSync, getSyncUrl } from 'modules/gridBidAdapter.js';
+import { spec, resetUserSync, getSyncUrl, storage } from 'modules/gridBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 
@@ -119,6 +119,10 @@ describe('TheMediaGrid Adapter', function () {
     ];
 
     it('should attach valid params to the tag', function () {
+      const fpdCookieVal = '0b0f84a1-1596-4165-9742-2e1a7dfac57f';
+      const getStorageCookieStub = sinon.stub(storage, 'getCookie').callsFake(
+        arg => arg === 'tmguid' ? fpdCookieVal : null);
+
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
@@ -132,6 +136,9 @@ describe('TheMediaGrid Adapter', function () {
           'tid': bidderRequest.auctionId,
           'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
         },
+        'user': {
+          'id': fpdCookieVal
+        },
         'imp': [{
           'id': bidRequests[0].bidId,
           'tagid': bidRequests[0].params.uid,
@@ -144,9 +151,15 @@ describe('TheMediaGrid Adapter', function () {
           }
         }]
       });
+
+      getStorageCookieStub.restore();
     });
 
     it('make possible to process request without mediaTypes', function () {
+      const fpdCookieVal = '0b0f84a1-1596-4165-9742-2e1a7dfac57f';
+      const getStorageCookieStub = sinon.stub(storage, 'getCookie').callsFake(
+        arg => arg === 'tmguid' ? fpdCookieVal : null);
+
       const request = spec.buildRequests([bidRequests[0], bidRequests[1]], bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
@@ -159,6 +172,9 @@ describe('TheMediaGrid Adapter', function () {
         'source': {
           'tid': bidderRequest.auctionId,
           'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
+        },
+        'user': {
+          'id': fpdCookieVal
         },
         'imp': [{
           'id': bidRequests[0].bidId,
@@ -181,9 +197,15 @@ describe('TheMediaGrid Adapter', function () {
           }
         }]
       });
+
+      getStorageCookieStub.restore();
     });
 
     it('should attach valid params to the video tag', function () {
+      const fpdCookieVal = '0b0f84a1-1596-4165-9742-2e1a7dfac57f';
+      const getStorageCookieStub = sinon.stub(storage, 'getCookie').callsFake(
+        arg => arg === 'tmguid' ? fpdCookieVal : null);
+
       const request = spec.buildRequests(bidRequests.slice(0, 3), bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
@@ -196,6 +218,9 @@ describe('TheMediaGrid Adapter', function () {
         'source': {
           'tid': bidderRequest.auctionId,
           'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
+        },
+        'user': {
+          'id': fpdCookieVal
         },
         'imp': [{
           'id': bidRequests[0].bidId,
@@ -227,9 +252,15 @@ describe('TheMediaGrid Adapter', function () {
           }
         }]
       });
+
+      getStorageCookieStub.restore();
     });
 
     it('should support mixed mediaTypes', function () {
+      const fpdCookieVal = '0b0f84a1-1596-4165-9742-2e1a7dfac57f';
+      const getStorageCookieStub = sinon.stub(storage, 'getCookie').callsFake(
+        arg => arg === 'tmguid' ? fpdCookieVal : null);
+
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
@@ -242,6 +273,9 @@ describe('TheMediaGrid Adapter', function () {
         'source': {
           'tid': bidderRequest.auctionId,
           'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
+        },
+        'user': {
+          'id': fpdCookieVal
         },
         'imp': [{
           'id': bidRequests[0].bidId,
@@ -287,6 +321,8 @@ describe('TheMediaGrid Adapter', function () {
           }
         }]
       });
+
+      getStorageCookieStub.restore();
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
@@ -544,6 +580,7 @@ describe('TheMediaGrid Adapter', function () {
         divid: bidRequests[2].adUnitCode
       });
     });
+
     describe('floorModule', function () {
       const floorTestData = {
         'currency': 'USD',

@@ -3,15 +3,17 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
 const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
+const USER_ID_COOKIE_EXP = 60 * 60 * 24 * 30 * 12 * 1000; // 1 year
+const USER_ID_KEY = 'tmguid';
+const GVLID = 686;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-
-let hasSynced = false;
-
+export const storage = getStorageManager(GVLID, BIDDER_CODE);
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -23,6 +25,9 @@ const LOG_ERROR_MESS = {
   hasEmptySeatbidArray: 'Response has empty seatbid array',
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
+
+let hasSynced = false;
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -50,7 +55,6 @@ export const spec = {
     let jwpseg = null;
     let content = null;
     let schain = null;
-    let userId = null;
     let userIdAsEids = null;
     let user = null;
     let userExt = null;
@@ -69,9 +73,6 @@ export const spec = {
       }
       if (!schain) {
         schain = bid.schain;
-      }
-      if (!userId) {
-        userId = bid.userId;
       }
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
@@ -99,6 +100,8 @@ export const spec = {
         impObj.ext.data = ortb2Imp.ext.data;
         if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
           impObj.ext.gpid = impObj.ext.data.adserver.adslot;
+        } else {
+          impObj.ext.gpid = ortb2Imp.ext.data.pbadslot;
         }
       }
       if (!utils.isEmpty(keywords)) {
@@ -182,6 +185,13 @@ export const spec = {
     if (userExt && Object.keys(userExt).length) {
       user = user || {};
       user.ext = userExt;
+    }
+
+    const fpdUserId = getUserIdFromFPDCookie();
+
+    if (fpdUserId) {
+      user = user || {};
+      user.id = fpdUserId;
     }
 
     if (user) {
@@ -425,6 +435,18 @@ function createBannerRequest(bid, mediaType) {
     result.format = format
   }
   return result;
+}
+
+function makeNewUserIdInFPDCookie() {
+  const value = utils.generateUUID().replace(/-/g, '');
+  const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toISOString();
+
+  storage.setCookie(USER_ID_KEY, value, expires);
+  return value;
+}
+
+function getUserIdFromFPDCookie() {
+  return storage.getCookie(USER_ID_KEY) || makeNewUserIdInFPDCookie();
 }
 
 function reformatKeywords(pageKeywords) {
