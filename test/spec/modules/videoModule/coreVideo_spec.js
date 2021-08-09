@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import {
   VideoSubmoduleBuilder,
   VideoCore
-} from 'modules/videoModule/coreVideo';
+} from 'modules/videoModule/coreVideo.js';
 
 describe('Video Submodule Builder', function () {
   const playerSpecificSubmoduleFactory = sinon.spy();

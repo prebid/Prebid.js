@@ -1,14 +1,14 @@
 import {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS,
-} from "../constants/ortb";
+} from '../constants/ortb.js';
 import {
   SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
   AD_TIME, AD_PAUSE, AD_CLICK, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END, PLAYLIST, PLAYBACK_REQUEST,
   AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
   RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST
-} from "../constants/events";
-import stateFactory from "../shared/state";
-import { JWPLAYER_VENDOR } from "../constants/vendorCodes";
+} from '../constants/events.js';
+import stateFactory from '../shared/state.js';
+import { JWPLAYER_VENDOR } from '../constants/vendorCodes.js';
 import { submodule } from '../../../src/hook.js';
 
 export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils) {
@@ -240,8 +240,8 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
         player && player.on('setupError', eventHandler);
         break;
 
-        default:
-          return;
+      default:
+        return;
     }
     callbackStorage.storeCallback(type, eventHandler, callback);
   }
@@ -296,9 +296,9 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
       case AD_IMPRESSION:
         eventHandler = () => {
-        Object.assign(payload, adState.getState(), timeState.getState());
-        callback(type, payload);
-      };
+          Object.assign(payload, adState.getState(), timeState.getState());
+          callback(type, payload);
+        };
         player.on('adViewableImpression', eventHandler);
         break;
 
@@ -353,7 +353,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
       case AD_ERROR:
         eventHandler = e => {
-          Object.assign( payload, {
+          Object.assign(payload, {
             playerErrorCode: e.adErrorCode,
             vastErrorCode: e.code,
             errorMessage: e.message,
@@ -631,7 +631,7 @@ export const utils = {
       return;
     }
 
-    const params = config.params;
+    const params = config.params || {};
     const jwConfig = params.vendorConfig || {};
     if (jwConfig.autostart === undefined && config.autoStart !== undefined) {
       jwConfig.autostart = config.autoStart;
@@ -659,54 +659,42 @@ export const utils = {
   },
 
   getJwEvent: function(eventName) {
-    switch(eventName) {
+    switch (eventName) {
       case SETUP_COMPLETE:
         return 'ready';
-        break;
 
       case SETUP_FAILED:
         return 'setupError';
-        break;
 
       case DESTROYED:
         return 'remove';
-        break;
 
       case AD_STARTED:
         return AD_IMPRESSION;
-        break;
 
       case AD_IMPRESSION:
         return 'adViewableImpression';
-        break;
 
       case PLAYBACK_REQUEST:
         return 'playAttempt';
-        break;
 
       case AUTOSTART_BLOCKED:
         return 'autostartNotAllowed';
-        break;
 
       case CONTENT_LOADED:
         return 'playlistItem';
-        break;
 
       case SEEK_START:
         return 'seek';
-        break;
 
       case SEEK_END:
         return 'seeked';
-        break;
 
       case RENDITION_UPDATE:
         return 'visualQuality';
-        break;
 
       case PLAYER_RESIZE:
         return 'resize';
-        break;
 
       default:
         return eventName;
@@ -728,11 +716,11 @@ export const utils = {
   },
 
   getSupportedMediaTypes: function(mediaTypes = []) {
-  const el = document.createElement('video');
-  return mediaTypes
+    const el = document.createElement('video');
+    return mediaTypes
       .filter(mediaType => el.canPlayType(mediaType))
       .concat('application/javascript'); // Always allow VPAIDs.
-},
+  },
 
   getStartDelay: function() {
     // todo calculate
@@ -845,19 +833,15 @@ export function adStateFactory() {
     switch (placement) {
       case 'instream':
         return 1;
-        break;
 
       case 'banner':
         return 2;
-        break;
 
       case 'article':
         return 3;
-        break;
 
       case 'feed':
         return 4;
-        break;
 
       case 'interstitial':
       case 'slider':
@@ -886,11 +870,11 @@ export function timeStateFactory() {
   function getPlaybackMode(duration) {
     let playbackMode;
     if (duration > 0) {
-      playbackMode = 0; //vod
+      playbackMode = 0; // vod
     } else if (duration < 0) {
-      playbackMode = 2; //dvr
+      playbackMode = 2; // dvr
     } else {
-      playbackMode = 1; //live
+      playbackMode = 1; // live
     }
     return playbackMode;
   }
