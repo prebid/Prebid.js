@@ -9,7 +9,7 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.7.3';
+const SUBLIME_VERSION = '0.8.0';
 
 /**
  * Identify the current device type
@@ -54,6 +54,26 @@ export function setState(value) {
 }
 
 /**
+ * Get a notifyId from bid params or from sublime global
+ * @param {Object} params - The bid params
+ * @return {string}
+ */
+function getNotifyId(params) {
+  const sublime = window.sublime = window.sublime || {};
+
+  let notifyId = params.notifyId || sublime.notifyId;
+  if (!notifyId) {
+    notifyId = utils.generateUUID();
+    log('generating a notifyId', notifyId);
+  }
+  if (!sublime.notifyId) {
+    sublime.notifyId = notifyId;
+  }
+
+  return notifyId;
+}
+
+/**
  * Send pixel to our debug endpoint
  * @param {string} eventName - Event name that will be send in the e= query string
  * @param {string} [sspName] - The optionnal name of the AD provider
@@ -91,6 +111,12 @@ export function sendEvent(eventName, sspName) {
  * @return {Boolean} True if this is a valid bid, and false otherwise.
  */
 function isBidRequestValid(bid) {
+  const notifyId = getNotifyId(bid.params);
+  if (notifyId !== window.sublime.notifyId) {
+    log(`notifyId mismatch: params [${bid.params.notifyId}] / sublime [${window.sublime.notifyId}]`);
+    return false;
+  }
+
   return !!Number(bid.params.zoneId);
 }
 
@@ -127,9 +153,11 @@ function buildRequests(validBidRequests, bidderRequest) {
     const bidHost = bid.params.bidHost || DEFAULT_BID_HOST;
     const protocol = bid.params.protocol || DEFAULT_PROTOCOL;
 
+    const notifyId = getNotifyId(bid.params);
+
     setState({
       transactionId: bid.transactionId,
-      notifyId: bid.params.notifyId,
+      notifyId,
       zoneId: bid.params.zoneId,
       debug: bid.params.debug || false,
     });
@@ -146,7 +174,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         h: size[1],
       })),
       transactionId: bid.transactionId,
-      notifyId: bid.params.notifyId,
+      notifyId,
       zoneId: bid.params.zoneId,
     };
 
@@ -250,15 +278,17 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: BIDDER_GVLID,
   aliases: [],
-  isBidRequestValid: isBidRequestValid,
-  buildRequests: buildRequests,
-  interpretResponse: interpretResponse,
-  onBidWon: onBidWon,
-  onTimeout: onTimeout,
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse,
+  onBidWon,
+  onTimeout,
   // Exposed for test purpose
-  sendEvent: sendEvent,
-  setState: setState,
-  state: state,
+  sendEvent,
+  setState,
+  state,
+  detectDevice,
+  getNotifyId,
 };
 
 registerBidder(spec);
