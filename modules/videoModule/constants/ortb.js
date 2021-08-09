@@ -13,6 +13,16 @@ export const VIDEO_MIME_TYPE = {
   HLS: 'application/vnd.apple.mpegurl'
 };
 
+export const JS_APP_MIME_TYPE = 'application/javascript';
+export const VPAID_MIME_TYPE = JS_APP_MIME_TYPE;
+
+/*
+ORTB 2.5 section 5.9 - Video Placement Types
+ */
+export const PLACEMENT = {
+  IN_STREAM: 1
+};
+
 /*
 ORTB 2.5 section 5.10 - Playback Methods
  */
