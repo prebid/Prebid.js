@@ -26,6 +26,107 @@ describe('callbackStorageFactory', function () {
 
 });
 describe('utils', function () {
+  describe('getJwConfig', function () {
+    const getJwConfig = utils.getJwConfig;
+    it('should return undefined when no config is provided', function () {
+      let jwConfig = getJwConfig();
+      expect(jwConfig).to.be.undefined;
+
+      jwConfig = getJwConfig(null);
+      expect(jwConfig).to.be.undefined;
+    });
+
+    it('should set vendor config params to top level', function () {
+      let jwConfig = getJwConfig({
+        params: {
+          vendorConfig: {
+            'test': 'a',
+            'test_2': 'b'
+          }
+        }
+      });
+      expect(jwConfig.test).to.be.equal('a');
+      expect(jwConfig.test_2).to.be.equal('b');
+    });
+
+    it('should convert video module params', function () {
+      let jwConfig = getJwConfig({
+        mute: true,
+        autoStart: true,
+        licenseKey: 'key'
+      });
+
+      expect(jwConfig.mute).to.be.true;
+      expect(jwConfig.autostart).to.be.true;
+      expect(jwConfig.key).to.be.equal('key');
+    });
+
+    it('should apply video module params only when absent from vendor config', function () {
+      let jwConfig = getJwConfig({
+        mute: true,
+        autoStart: true,
+        licenseKey: 'key',
+        params: {
+          vendorConfig: {
+            mute: false,
+            autostart: false,
+            key: 'other_key'
+          }
+        }
+      });
+
+      expect(jwConfig.mute).to.be.false;
+      expect(jwConfig.autostart).to.be.false;
+      expect(jwConfig.key).to.be.equal('other_key');
+    });
+
+    it('should not convert undefined properties', function () {
+      let jwConfig = getJwConfig({
+        params: {
+          vendorConfig: {
+            test: 'a'
+          }
+        }
+      });
+
+      expect(jwConfig).to.not.have.property('mute');
+      expect(jwConfig).to.not.have.property('autostart');
+      expect(jwConfig).to.not.have.property('key');
+    });
+
+    it('should exclude fallback ad block when adOptimization is explicitly disabled', function () {
+      let jwConfig = getJwConfig({
+        params: {
+          adOptimization: false,
+          vendorConfig: {}
+        }
+      });
+
+      expect(jwConfig).to.not.have.property('advertising');
+    });
+
+    it('should set advertising block when adOptimization is allowed', function () {
+      let jwConfig = getJwConfig({
+        params: {
+          vendorConfig: {
+            advertising: {
+              tag: 'test_tag'
+            }
+          }
+        }
+      });
+
+      expect(jwConfig).to.have.property('advertising');
+      expect(jwConfig.advertising).to.have.property('tag', 'test_tag');
+    });
+
+    it('should fallback to vast plugin', function () {
+      let jwConfig = getJwConfig({});
+
+      expect(jwConfig).to.have.property('advertising');
+      expect(jwConfig.advertising).to.have.property('client', 'vast');
+    });
+  });
   describe('getSkipParams', function () {
     const getSkipParams = utils.getSkipParams;
 

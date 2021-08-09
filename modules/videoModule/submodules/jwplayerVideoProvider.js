@@ -651,6 +651,7 @@ export const utils = {
 
     const advertising = jwConfig.advertising || { client: 'vast' };
     if (!jwConfig.file && !jwConfig.playlist && !jwConfig.source) {
+      // TODO verify accuracy
       advertising.outstream = true;
     }
 
