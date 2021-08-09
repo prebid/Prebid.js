@@ -23,7 +23,45 @@ describe('timeStateFactory', function () {
 });
 
 describe('callbackStorageFactory', function () {
+  let callbackStorage = callbackStorageFactory();
 
+  beforeEach(function () {
+    callbackStorage.clearStorage();
+  });
+
+  it('should store callbacks', function () {
+    const callback1 = () => 'callback1';
+    const eventHandler1 = () => 'eventHandler1';
+    callbackStorage.storeCallback('event', eventHandler1, callback1);
+
+    const callback2 = () => 'callback2';
+    const eventHandler2 = () => 'eventHandler2';
+    callbackStorage.storeCallback('event', eventHandler2, callback2);
+
+    const callback3 = () => 'callback3';
+
+    expect(callbackStorage.getCallback('event', callback1)).to.be.equal(eventHandler1);
+    expect(callbackStorage.getCallback('event', callback2)).to.be.equal(eventHandler2);
+    expect(callbackStorage.getCallback('event', callback3)).to.be.undefined;
+  });
+
+  it('should remove callbacks after retrieval', function () {
+    const callback1 = () => 'callback1';
+    const eventHandler1 = () => 'eventHandler1';
+    callbackStorage.storeCallback('event', eventHandler1, callback1);
+
+    expect(callbackStorage.getCallback('event', callback1)).to.be.equal(eventHandler1);
+    expect(callbackStorage.getCallback('event', callback1)).to.be.undefined;
+  });
+
+  it('should clear callbacks', function () {
+    const callback1 = () => 'callback1';
+    const eventHandler1 = () => 'eventHandler1';
+    callbackStorage.storeCallback('event', eventHandler1, callback1);
+
+    callbackStorage.clearStorage();
+    expect(callbackStorage.getCallback('event', callback1)).to.be.undefined;
+  });
 });
 describe('utils', function () {
   describe('getJwConfig', function () {
