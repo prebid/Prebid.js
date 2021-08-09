@@ -1,5 +1,5 @@
 import {
-  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS,
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE
 } from '../constants/ortb.js';
 import {
   SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
@@ -719,7 +719,7 @@ export const utils = {
     const el = document.createElement('video');
     return mediaTypes
       .filter(mediaType => el.canPlayType(mediaType))
-      .concat('application/javascript'); // Always allow VPAIDs.
+      .concat(VPAID_MIME_TYPE); // Always allow VPAIDs.
   },
 
   getStartDelay: function() {
@@ -732,7 +732,7 @@ export const utils = {
     // TODO might be able to use getPlacement from ad utils!
     if (!adConfig.outstream) {
       // https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player for more info on outstream
-      return 1;
+      return PLACEMENT.IN_STREAM;
     }
   },
 
