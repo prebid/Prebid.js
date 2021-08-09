@@ -33,6 +33,7 @@ describe('33acrossBidAdapter:', function () {
       device: {
         w: 1024,
         h: 728,
+        pxratio: 2,
         ext: {
           ttx: {
             viewport: {
@@ -336,6 +337,7 @@ describe('33acrossBidAdapter:', function () {
     };
     win = {
       parent: null,
+      devicePixelRatio: 2,
       screen: {
         width: 1024,
         height: 728,
