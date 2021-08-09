@@ -34,9 +34,7 @@ describe('malltvAdapterTest', () => {
     it('bidRequest without propertyId or placementId', () => {
       expect(spec.isBidRequestValid({
         bidder: 'malltv',
-        params: {
-          propertyId: '{propertyId}',
-        }
+        params: {}
       })).to.equal(false);
     });
   });
@@ -46,7 +44,17 @@ describe('malltvAdapterTest', () => {
       'bidder': 'malltv',
       'params': {
         'propertyId': '{propertyId}',
-        'placementId': '{placementId}'
+        'placementId': '{placementId}',
+        'data': {
+          'catalogs': [{
+            'catalogId': 1,
+            'items': ['1', '2', '3']
+          }],
+          'inventory': {
+            'category': ['category1', 'category2'],
+            'query': ['query']
+          }
+        }
       },
       'adUnitCode': 'hb-leaderboard',
       'transactionId': 'b6b889bb-776c-48fd-bc7b-d11a1cf0425e',
@@ -86,6 +94,20 @@ describe('malltvAdapterTest', () => {
         expect(requestItem.data.placements[0].sizes).to.equal('300x250');
       });
     });
+
+    it('bidRequest data param', () => {
+      const requests = spec.buildRequests(bidRequests);
+      requests.forEach((requestItem) => {
+        expect(requestItem.data.data).to.exist;
+        expect(requestItem.data.data.catalogs).to.exist;
+        expect(requestItem.data.data.inventory).to.exist;
+        expect(requestItem.data.data.catalogs.length).to.equal(1);
+        expect(requestItem.data.data.catalogs[0].items.length).to.equal(3);
+        expect(Object.keys(requestItem.data.data.inventory).length).to.equal(2);
+        expect(requestItem.data.data.inventory.category.length).to.equal(2);
+        expect(requestItem.data.data.inventory.query.length).to.equal(1);
+      });
+    });
   });
 
   describe('interpretResponse', () => {
@@ -114,7 +136,8 @@ describe('malltvAdapterTest', () => {
         'CreativeId': '123abc',
         'NetRevenue': false,
         'Currency': 'EUR',
-        'TTL': 360
+        'TTL': 360,
+        'ADomain': ['somedomain.com']
       }],
       headers: {}
     };
@@ -134,13 +157,29 @@ describe('malltvAdapterTest', () => {
         'referrer',
         'ad',
         'vastUrl',
-        'mediaType'
+        'mediaType',
+        'meta'
       ];
 
       let resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function (key) {
         expect(keys.indexOf(key) !== -1).to.equal(true);
       });
+    })
+
+    it('all values correct', () => {
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+
+      expect(result[0].cpm).to.equal(1);
+      expect(result[0].width).to.equal(300);
+      expect(result[0].height).to.equal(250);
+      expect(result[0].creativeId).to.equal('123abc');
+      expect(result[0].currency).to.equal('EUR');
+      expect(result[0].netRevenue).to.equal(false);
+      expect(result[0].ttl).to.equal(360);
+      expect(result[0].referrer).to.equal('http://localhost:9999/integrationExamples/gpt/hello_world.html?pbjs_debug=true');
+      expect(result[0].ad).to.equal('<div>Test ad</div>');
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['somedomain.com']);
     })
   });
 });

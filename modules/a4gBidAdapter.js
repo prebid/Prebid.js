@@ -70,15 +70,17 @@ export const spec = {
       if (response.cpm > 0) {
         const bidResponse = {
           requestId: response.id,
-          creativeId: response.id,
-          adId: response.id,
+          creativeId: response.crid || response.id,
           cpm: response.cpm,
           width: response.width,
           height: response.height,
           currency: A4G_CURRENCY,
           netRevenue: true,
           ttl: A4G_TTL,
-          ad: response.ad
+          ad: response.ad,
+          meta: {
+            advertiserDomains: response.adomain && response.adomain.length > 0 ? response.adomain : []
+          }
         };
         bidResponses.push(bidResponse);
       }

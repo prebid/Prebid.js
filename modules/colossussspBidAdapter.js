@@ -114,6 +114,23 @@ export const spec = {
           rtiPartner: 'TDID'
         });
       }
+      if (traff === VIDEO) {
+        placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
+        placement.minduration = bid.mediaTypes[VIDEO].minduration;
+        placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
+        placement.mimes = bid.mediaTypes[VIDEO].mimes;
+        placement.protocols = bid.mediaTypes[VIDEO].protocols;
+        placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
+        placement.placement = bid.mediaTypes[VIDEO].placement;
+        placement.skip = bid.mediaTypes[VIDEO].skip;
+        placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
+        placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;
+        placement.maxbitrate = bid.mediaTypes[VIDEO].maxbitrate;
+        placement.delivery = bid.mediaTypes[VIDEO].delivery;
+        placement.playbackmethod = bid.mediaTypes[VIDEO].playbackmethod;
+        placement.api = bid.mediaTypes[VIDEO].api;
+        placement.linearity = bid.mediaTypes[VIDEO].linearity;
+      }
       placements.push(placement);
     }
     return {
@@ -136,6 +153,9 @@ export const spec = {
       for (let i = 0; i < serverResponse.length; i++) {
         let resItem = serverResponse[i];
         if (isBidResponseValid(resItem)) {
+          const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
+          resItem.meta = { ...resItem.meta, advertiserDomains };
+
           response.push(resItem);
         }
       }

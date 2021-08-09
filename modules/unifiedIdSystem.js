@@ -19,6 +19,10 @@ export const unifiedIdSubmodule = {
    */
   name: MODULE_NAME,
   /**
+   * required for the gdpr enforcement module
+   */
+  gvlid: 21,
+  /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param {{TDID:string}} value

@@ -78,8 +78,11 @@ describe('AjaAdapter', function () {
             'tag': '<div></div>',
             'imps': [
               'https://as.amanad.adtdp.com/v1/imp'
+            ],
+            'adomain': [
+              'www.example.com'
             ]
-          }
+          },
         },
         'syncs': [
           'https://example.com'
@@ -98,7 +101,12 @@ describe('AjaAdapter', function () {
           'mediaType': 'banner',
           'currency': 'USD',
           'ttl': 300,
-          'netRevenue': true
+          'netRevenue': true,
+          'meta': {
+            'advertiserDomains': [
+              'www.example.com'
+            ]
+          }
         }
       ];
 
@@ -123,7 +131,10 @@ describe('AjaAdapter', function () {
             'purl': 'https://cdn/player',
             'progress': true,
             'loop': false,
-            'inread': false
+            'inread': false,
+            'adomain': [
+              'www.example.com'
+            ]
           }
         },
         'syncs': [
@@ -178,7 +189,10 @@ describe('AjaAdapter', function () {
                     'https://example.com/inview'
                   ],
                   'jstracker': '',
-                  'disable_trimming': false
+                  'disable_trimming': false,
+                  'adomain': [
+                    'www.example.com'
+                  ]
                 }
               ]
             }
@@ -218,7 +232,12 @@ describe('AjaAdapter', function () {
             'impressionTrackers': [
               'https://example.com/imp'
             ],
-            'privacyLink': 'https://aja-kk.co.jp/optout',
+            'privacyLink': 'https://aja-kk.co.jp/optout'
+          },
+          'meta': {
+            'advertiserDomains': [
+              'www.example.com'
+            ]
           }
         }
       ];

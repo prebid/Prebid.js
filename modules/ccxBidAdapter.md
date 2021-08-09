@@ -32,64 +32,18 @@ Module that connects to Clickonometrics's demand sources
 	    mediaTypes: {
 		video: {
 		    playerSize: [1920, 1080]
-
+		    protocols: [2, 3, 5, 6], //default
+		    mimes: ["video/mp4", "video/x-flv"], //default 
+		    playbackmethod: [1, 2, 3, 4], //default
+		    skip: 1, //default 0
+		    skipafter: 5 //delete this key if skip = 0
 		}
 	    },
 	    bids: [
 		{
 		    bidder: "ccx",
 		    params: {
-			placementId: 3287742,
-			//following options are not required, default values will be used. Uncomment if you want to use custom values
-			/*video: {
-			    //check OpenRTB documentation for following options description
-			    protocols: [2, 3, 5, 6], //default
-			    mimes: ["video/mp4", "video/x-flv"], //default 
-			    playbackmethod: [1, 2, 3, 4], //default
-			    skip: 1, //default 0
-			    skipafter: 5 //delete this key if skip = 0
-			}*/
-		    }
-		}
-	    ]
-	}
-
-    ];
-
-# Pre 1.0 Support
-
-    var adUnits = [
-	{
-	    code: 'test-banner',
-	    mediaType: 'banner',
-	    sizes: [300, 250],
-	    bids: [
-		{
-		    bidder: "ccx",
-		    params: {
-			placementId: 3286844
-		    }
-		}
-	    ]
-	},
-	{
-	    code: 'test-video',
-	    mediaType: 'video',
-	    sizes: [1920, 1080]
-	    bids: [
-		{
-		    bidder: "ccx",
-		    params: {
-			placementId: 3287742,
-			//following options are not required, default values will be used. Uncomment if you want to use custom values
-			/*video: {
-			    //check OpenRTB documentation for following options description
-			    protocols: [2, 3, 5, 6], //default
-			    mimes: ["video/mp4", "video/x-flv"], //default 
-			    playbackmethod: [1, 2, 3, 4], //default
-			    skip: 1, //default 0
-			    skipafter: 5 //delete this key if skip = 0
-			}*/
+			placementId: 3287742
 		    }
 		}
 	    ]
