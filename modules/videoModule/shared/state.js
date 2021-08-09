@@ -1,21 +1,21 @@
 export default function stateFactory() {
-    let state = {};
+  let state = {};
 
-    function updateState(stateUpdate) {
-        Object.assign(state, stateUpdate);
-    }
+  function updateState(stateUpdate) {
+    Object.assign(state, stateUpdate);
+  }
 
-    function getState() {
-        return state;
-    }
+  function getState() {
+    return state;
+  }
 
-    function clearState() {
-        state = {};
-    }
+  function clearState() {
+    state = {};
+  }
 
-    return {
-        updateState,
-        getState,
-        clearState
-    };
+  return {
+    updateState,
+    getState,
+    clearState
+  };
 }
