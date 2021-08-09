@@ -16,9 +16,9 @@ const SUBLIME_VERSION = '0.8.0';
  * @returns {string}
  */
 function detectDevice() {
-  const isMobile = /(?:phone|windowss+phone|ipod|blackberry|Galaxy Nexus|SM-G892A|(?:android|bbd+|meego|silk|googlebot) .+?mobile|palm|windowss+ce|opera mini|avantgo|docomo)/i;
+  const isMobile = /(?:phone|windows\s+phone|ipod|blackberry|Galaxy Nexus|SM-G892A|(?:android|bbd+|meego|silk|googlebot) .+?mobile|palm|windows\s+ce|opera mini|avantgo|docomo)/i;
 
-  const isTablet = /(?:ipad|playbook|Tablet|(?:android|bb\\d+|meego|silk)(?! .+? mobile))/i;
+  const isTablet = /(?:ipad|playbook|Tablet|(?:android|bb\d+|meego|silk)(?! .+? mobile))/i;
 
   return (
     (isMobile.test(navigator.userAgent) && 'm') || // mobile
