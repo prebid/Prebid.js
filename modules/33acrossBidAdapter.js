@@ -639,7 +639,8 @@ function _buildDeviceORTB() {
   }, {
     ttx: {
       viewport: getViewportDimensions(),
-      availheight: utils.getWindowSelf().screen.availHeight
+      availheight: utils.getWindowSelf().screen.availHeight,
+      maxtouchpoints: win.navigator.maxTouchPoints
     }
   });
 }
