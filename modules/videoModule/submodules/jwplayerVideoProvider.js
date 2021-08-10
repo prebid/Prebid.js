@@ -5,7 +5,7 @@ import {
   SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
   AD_TIME, AD_PAUSE, AD_CLICK, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END, PLAYLIST, PLAYBACK_REQUEST,
   AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
-  RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST
+  RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST, PLAYBACK_MODE
 } from '../constants/events.js';
 import stateFactory from '../shared/state.js';
 import { JWPLAYER_VENDOR } from '../constants/vendorCodes.js';
@@ -833,21 +833,21 @@ export function adStateFactory() {
   function convertPlacementToOrtbCode(placement) {
     switch (placement) {
       case 'instream':
-        return 1;
+        return PLACEMENT.IN_STREAM;
 
       case 'banner':
-        return 2;
+        return PLACEMENT.BANNER;
 
       case 'article':
-        return 3;
+        return PLACEMENT.ARTICLE;
 
       case 'feed':
-        return 4;
+        return PLACEMENT.FEED;
 
       case 'interstitial':
       case 'slider':
       case 'floating':
-        return 5;
+        return PLACEMENT.INTERSTITIAL_SLIDER_FLOATING;
     }
   }
 
@@ -869,15 +869,13 @@ export function timeStateFactory() {
   timeState.updateForEvent = updateForEvent;
 
   function getPlaybackMode(duration) {
-    let playbackMode;
     if (duration > 0) {
-      playbackMode = 0; // vod
+      return PLAYBACK_MODE.VOD;
     } else if (duration < 0) {
-      playbackMode = 2; // dvr
-    } else {
-      playbackMode = 1; // live
+      return PLAYBACK_MODE.DVR;
     }
-    return playbackMode;
+
+    return PLAYBACK_MODE.LIVE;
   }
 
   return timeState;

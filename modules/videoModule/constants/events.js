@@ -42,3 +42,10 @@ export const FULLSCREEN = 'fullscreen';
 export const PLAYER_RESIZE = 'playerResize';
 export const VIEWABLE = 'viewable';
 export const CAST = 'cast';
+
+// Param options
+export const PLAYBACK_MODE = {
+  VOD: 0,
+  LIVE: 1,
+  DVR: 2
+};

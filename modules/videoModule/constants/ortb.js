@@ -20,7 +20,14 @@ export const VPAID_MIME_TYPE = JS_APP_MIME_TYPE;
 ORTB 2.5 section 5.9 - Video Placement Types
  */
 export const PLACEMENT = {
-  IN_STREAM: 1
+  IN_STREAM: 1,
+  BANNER: 2,
+  ARTICLE: 3,
+  FEED: 4,
+  INTERSTITIAL: 5,
+  SLIDER: 5,
+  FLOATING: 5,
+  INTERSTITIAL_SLIDER_FLOATING: 5
 };
 
 /*
