@@ -11,7 +11,7 @@ import {
 } from 'modules/videoModule/constants/ortb.js';
 
 import {
-  PLAYBACK_MODE, SETUP_FAILED
+  PLAYBACK_MODE, SETUP_COMPLETE, SETUP_FAILED
 } from 'modules/videoModule/constants/events.js'
 
 function getPlayerMock() {
@@ -60,7 +60,6 @@ describe('JWPlayerProvider', function () {
 
   describe('init', function () {
     let config;
-    let jwplayerMock;
     let adState;
     let timeState;
     let callbackStorage;
@@ -68,7 +67,6 @@ describe('JWPlayerProvider', function () {
 
     beforeEach(() => {
       config = {};
-      jwplayerMock = getPlayerMock();
       adState = adStateFactory();
       timeState = timeStateFactory();
       callbackStorage = callbackStorageFactory();
@@ -81,18 +79,48 @@ describe('JWPlayerProvider', function () {
       provider.onEvents([SETUP_FAILED], setupFailed);
       provider.init();
       expect(setupFailed.calledOnce).to.be.true;
+      const payload = setupFailed.args[0][1];
+      expect(payload.errorCode).to.be.equal(-1);
     });
 
     it('should trigger failure when jwplayer version is under min supported version', function () {
-
+      let jwplayerMock = () => {};
+      jwplayerMock.version = '8.20.0';
+      const provider = JWPlayerProvider(config, jwplayerMock, adState, timeState, callbackStorage, utilsMock);
+      const setupFailed = sinon.spy();
+      provider.onEvents([SETUP_FAILED], setupFailed);
+      provider.init();
+      expect(setupFailed.calledOnce).to.be.true;
+      const payload = setupFailed.args[0][1];
+      expect(payload.errorCode).to.be.equal(-2);
     });
 
     it('should instantiate the player when uninstantied', function () {
-
+      const player = getPlayerMock();
+      config.playerConfig = {};
+      const setupSpy = player.setup = sinon.spy();
+      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock);
+      provider.init();
+      expect(setupSpy.calledOnce).to.be.true;
     });
 
     it('should trigger setup complete when player is already instantied', function () {
+      const player = getPlayerMock();
+      player.getState = () => 'idle';
+      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock);
+      const setupComplete = sinon.spy();
+      provider.onEvents([SETUP_COMPLETE], setupComplete);
+      provider.init();
+      expect(setupComplete.calledOnce).to.be.true;
+    });
 
+    it('should not reinstantiate player', function () {
+      const player = getPlayerMock();
+      player.getState = () => 'idle';
+      const setupSpy = player.setup = sinon.spy();
+      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock);
+      provider.init();
+      expect(setupSpy.called).to.be.false;
     });
   });
 
