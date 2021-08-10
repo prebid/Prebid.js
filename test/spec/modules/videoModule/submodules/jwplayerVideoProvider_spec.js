@@ -11,11 +11,122 @@ import {
 } from 'modules/videoModule/constants/ortb.js';
 
 import {
-  PLAYBACK_MODE
+  PLAYBACK_MODE, SETUP_FAILED
 } from 'modules/videoModule/constants/events.js'
 
-describe('JWPlayerProvider', function () {
+function getPlayerMock() {
+  return makePlayerFactoryMock({
+    getState: function () {},
+    setup: function () {},
+    getViewable: function () {},
+    getPercentViewable: function () {},
+    getMute: function () {},
+    getVolume: function () {},
+    getConfig: function () {},
+    getHeight: function () {},
+    getWidth: function () {},
+    getFullscreen: function () {},
+    getPlaylistItem: function () {},
+    playAd: function () {},
+    on: function () {},
+    off: function () {},
+    remove: function () {},
+  })();
+}
 
+function makePlayerFactoryMock(playerMock_) {
+  const playerFactory = function () {
+    return playerMock_;
+  }
+  playerFactory.version = '8.21.0';
+  return playerFactory;
+}
+
+function getUtilsMock() {
+  return {
+    getJwConfig: function () {},
+    getSupportedMediaTypes: function () {},
+    getStartDelay: function () {},
+    getPlacement: function () {},
+    getPlaybackMethod: function () {},
+    isOmidSupported: function () {},
+    getSkipParams: function () {},
+    getJwEvent: function () {},
+  };
+}
+
+describe('JWPlayerProvider', function () {
+  // JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils)
+
+  describe('init', function () {
+    let config;
+    let jwplayerMock;
+    let adState;
+    let timeState;
+    let callbackStorage;
+    let utilsMock;
+
+    beforeEach(() => {
+      config = {};
+      jwplayerMock = getPlayerMock();
+      adState = adStateFactory();
+      timeState = timeStateFactory();
+      callbackStorage = callbackStorageFactory();
+      utilsMock = getUtilsMock();
+    });
+
+    it('should trigger failure when jwplayer is missing', function () {
+      const provider = JWPlayerProvider(config, null, adState, timeState, callbackStorage, utilsMock);
+      const setupFailed = sinon.spy();
+      provider.onEvents([SETUP_FAILED], setupFailed);
+      provider.init();
+      expect(setupFailed.calledOnce).to.be.true;
+    });
+
+    it('should trigger failure when jwplayer version is under min supported version', function () {
+
+    });
+
+    it('should instantiate the player when uninstantied', function () {
+
+    });
+
+    it('should trigger setup complete when player is already instantied', function () {
+
+    });
+  });
+
+  describe('getId', function () {
+    it('should return configured div id', function () {
+      const provider = JWPlayerProvider({ divId: 'test_id' });
+      expect(provider.getId()).to.be.equal('test_id');
+    });
+  });
+
+  describe('getOrtbParams', function () {
+
+  });
+
+  describe('setAdTagUrl', function () {
+
+  });
+
+  describe('events', function () {
+
+  });
+
+  describe('destroy', function () {
+    it('should remove and null the player', function () {
+      const player = getPlayerMock();
+      const removeSpy = player.remove = sinon.spy();
+      player.remove = removeSpy;
+      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock());
+      provider.init();
+      provider.destroy();
+      provider.destroy();
+      expect(removeSpy.calledOnce).to.be.true;
+    });
+  });
 });
 
 describe('adStateFactory', function () {
