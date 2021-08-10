@@ -114,6 +114,7 @@ describe('fluctAdapter', function () {
               adm: '<!-- test creative -->',
               burl: 'https://i.adingo.jp/?test=1&et=hb&bidid=237f4d1a293f99',
               crid: 'test_creative',
+              adomain: ['test_adomain']
             }]
           }]
         }
@@ -131,6 +132,9 @@ describe('fluctAdapter', function () {
           creativeId: 'test_creative',
           ttl: 300,
           ad: '<!-- test creative -->' + callBeaconSnippet,
+          meta: {
+            advertiserDomains: ['test_adomain'],
+          },
         }
       ];
 
@@ -186,6 +190,9 @@ describe('fluctAdapter', function () {
           ttl: 300,
           ad: '<!-- test creative -->' + callBeaconSnippet,
           dealId: 'test_deal',
+          meta: {
+            advertiserDomains: [],
+          },
         }
       ];
 
