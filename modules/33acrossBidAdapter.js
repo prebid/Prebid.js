@@ -405,16 +405,6 @@ function _buildVideoORTB(bidRequest) {
   return video;
 }
 
-function _buildDeviceORTB() {
-  return {
-    ext: {
-      ttx: {
-        viewport: getViewportDimensions()
-      }
-    }
-  }
-}
-
 // BUILD REQUESTS: BIDFLOORS
 function _getBidFloors(bidRequest, size, mediaType) {
   const bidFloors = bidRequest.getFloor({
@@ -649,6 +639,17 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
   }
 
   return sync;
+}
+
+// BUILD REQUESTS: DEVICE
+function _buildDeviceORTB() {
+  return {
+    ext: {
+      ttx: {
+        viewport: getViewportDimensions()
+      }
+    }
+  }
 }
 
 function getTopMostAccessibleFrame() {
