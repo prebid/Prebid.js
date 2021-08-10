@@ -50,8 +50,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     if (player.getState() === undefined) {
       setupPlayer(playerConfig);
     } else {
-      const payload = getSetupCompletePayload();
-      setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, payload);
+      setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, getSetupCompletePayload());
     }
   }
 
@@ -104,7 +103,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       // only specify ad position when in Fullscreen since computational cost is low
       // ad position options are listed in oRTB 2.5 section 5.4
       // https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
-      video.pos = 7;
+      video.pos = 7; // TODO make constant in oRTB
     }
 
     const item = player.getPlaylistItem() || {}; // TODO does player call need optimization ?
@@ -126,6 +125,9 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 
   function setAdTagUrl(adTagUrl) {
+    if (!player) {
+      return;
+    }
     player.playAd(adTagUrl);
   }
 
