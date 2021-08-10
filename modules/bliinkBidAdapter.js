@@ -6,53 +6,62 @@ import { registerBidder } from 'src/adapters/bidderFactory'
 export const BIDDER_CODE = 'bliink'
 export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/delivery'
 
+const VIDEO = 'video'
+const NATIVE = 'native'
+const BANNER = 'banner'
+
+const supportedMediaTypes = [BANNER, VIDEO, NATIVE]
+const aliasBidderCode = ['bk']
+
 /**
  * @param bidRequest
  * @param bliinkCreative
- * @return {
- *  {
- *    cpm: number,
- *    netRevenue: boolean,
- *    ad, requestId,
- *    meta: {mediaType},
- *    width,
- *    currency: string,
- *    ttl: number,
- *    creativeId,
- *    height
- *    } |null
- *   }
+ * @param isNative
+ * @param isVideo
+ * @return {{cpm, netRevenue: boolean, ad: string, requestId, width: number, currency: string, mediaType: string, vastXml, ttl: number, creativeId, height: number}|null}
  */
-export const buildBid = (bidRequest, bliinkCreative) => {
+export const buildBid = (bidRequest, bliinkCreative, isNative = false, isVideo = false) => {
   if (!bidRequest && !bliinkCreative) return null
-  if (
+
+  if (isVideo) {
+    return {
+      requestId: bidRequest.bidId,
+      cpm: bliinkCreative.price,
+      currency: 'EUR',
+      creativeId: bliinkCreative.id,
+      netRevenue: false,
+      mediaType: VIDEO,
+      width: 1,
+      height: 1,
+      ad: '<html lang="en"></html>',
+      vastXml: bliinkCreative.content,
+      ttl: 3600,
+    }
+  }
+
+  // eslint-disable-next-line no-mixed-operators
+  if ((!isNative && bliinkCreative) && bidRequest && bliinkCreative &&
+    // eslint-disable-next-line no-mixed-operators
     !bidRequest.bidId ||
     !bidRequest.sizes ||
-    !bliinkCreative.id ||
+    !bliinkCreative.content ||
+    (!bliinkCreative.id || bliinkCreative.id.length === 0) ||
     !bliinkCreative.adm ||
     !bidRequest.params ||
     !(bidRequest.params.placement)
   ) return null
 
   delete bidRequest['bids']
-
-  const width = 300
-  const height = 250
-  const mediaType = (bidRequest.params && bidRequest.params.placement) || 'banner'
-
   return {
     requestId: bidRequest.bidId,
-    cpm: 1,
+    cpm: bliinkCreative.price || 1,
     currency: 'EUR',
-    width,
-    height,
+    width: 1,
+    height: 1,
     creativeId: bliinkCreative.id,
-    netRevenue: true,
+    netRevenue: false,
     ad: bliinkCreative.adm,
-    ttl: 360,
-    meta: {
-      mediaType
-    }
+    ttl: 3600,
   };
 }
 
@@ -76,15 +85,30 @@ export const isBidRequestValid = (bid) => {
 export const buildRequests = (_, bidderRequest) => {
   if (!bidderRequest) return null
 
+  let data = {
+    test: true,
+  }
+
+  if (bidderRequest.gdprConsent && bidderRequest.gdprConsent) {
+    data = {
+      ...data,
+      gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies,
+      gdpr_consent: bidderRequest.gdprConsent.consentString
+    }
+  }
+
+  if (bidderRequest.bids[0].sizes && bidderRequest.bids[0].sizes[0]) {
+    data = {
+      ...data,
+      width: bidderRequest.bids[0].sizes[0][0],
+      height: bidderRequest.bids[0].sizes[0][1]
+    }
+  }
+
   return {
     method: 'GET',
     url: `${BLIINK_ENDPOINT_ENGINE}/${bidderRequest.bids[0].params.tagId}`,
-    data: {
-      gdpr: bidderRequest.gdprConsent.gdprApplies,
-      gdpr_consent: bidderRequest.gdprConsent.consentString,
-      width: bidderRequest.bids[0].sizes[0][0],
-      height: bidderRequest.bids[0].sizes[0][1]
-    },
+    data: data,
     params: {
       bidderRequestId: bidderRequest.bidderRequestId,
       bidderCode: bidderRequest.bidderCode,
@@ -106,7 +130,21 @@ const interpretResponse = (serverResponse, request) => {
     return []
   }
 
+  const body = serverResponse.body
   const serverBody = request.params;
+
+  if (body && body.mode === 'rtb') {
+    return utils._map(serverBody.bids, (bid) => {
+      const creative = {
+        content: body.ad[body.ad.media_type].content,
+        price: body.price || 0,
+        id: '',
+        media_type: body.ad.media_type,
+      }
+
+      return buildBid(bid, creative, body.ad.media_type === NATIVE, body.ad.media_type === VIDEO);
+    })
+  }
 
   if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
     return utils._map(serverBody.bids, (bid) => {
@@ -126,25 +164,27 @@ const interpretResponse = (serverResponse, request) => {
  */
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent) => {
   const syncs = []
+  let gdprParams = ''
 
-  let gdprParams;
-  if (typeof gdprConsent.gdprApplies === 'boolean') {
-    gdprParams = `hasConsent=${Number(gdprConsent.gdprApplies)}&consentString=${gdprConsent.consentString}`;
-  } else {
-    gdprParams = `consentString=${gdprConsent.consentString}`;
+  if (gdprConsent) {
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      gdprParams = `hasConsent=${Number(gdprConsent.gdprApplies)}&consentString=${gdprConsent.consentString}`
+    } else {
+      gdprParams = `consentString=${gdprConsent.consentString}`
+    }
   }
 
   if (syncOptions.iframeEnabled) {
     syncs.push({
       type: 'iframe',
       url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html?' + gdprParams
-    });
+    })
   }
   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
     syncs.push({
       type: 'image',
       url: `${BLIINK_ENDPOINT_ENGINE}/14f30eca-85d2-11e8-9eed-0242ac120007?${gdprParams}`
-    });
+    })
   }
 
   return syncs;
@@ -170,7 +210,8 @@ const onBidWon = (bid) => {
  */
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['bk'],
+  aliases: aliasBidderCode,
+  supportedMediaTypes: supportedMediaTypes,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
