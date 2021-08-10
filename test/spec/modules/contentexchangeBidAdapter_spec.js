@@ -22,7 +22,7 @@ describe('ContentexchangeBidAdapter', function () {
     },
     {
       bidId: getUniqueIdentifierStr(),
-      bidder,
+      bidder: bidder,
       mediaTypes: {
         [VIDEO]: {
           playerSize: [[300, 300]],
@@ -37,7 +37,7 @@ describe('ContentexchangeBidAdapter', function () {
     },
     {
       bidId: getUniqueIdentifierStr(),
-      bidder,
+      bidder: bidder,
       mediaTypes: {
         [NATIVE]: {
           native: {
