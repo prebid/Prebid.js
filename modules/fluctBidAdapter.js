@@ -96,6 +96,9 @@ export const spec = {
         creativeId: bid.crid,
         ttl: TTL,
         ad: bid.adm + callImpBeacon,
+        meta: {
+          advertiserDomains: bid.adomain || [],
+        },
       };
       if (!utils.isEmpty(dealId)) {
         data.dealId = dealId;
