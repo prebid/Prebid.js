@@ -221,6 +221,10 @@ const USER_IDS_CONFIG = {
   amxId: {
     source: 'amxrtb.com',
     atype: 1,
+  },
+  'kpuid': {
+    source: 'kpuid.com',
+    atype: 3
   }
 };
 
