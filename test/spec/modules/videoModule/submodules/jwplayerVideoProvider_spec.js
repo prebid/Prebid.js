@@ -11,7 +11,7 @@ import {
 } from 'modules/videoModule/constants/ortb.js';
 
 import {
-  PLAYBACK_MODE, SETUP_COMPLETE, SETUP_FAILED
+  PLAYBACK_MODE, SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION
 } from 'modules/videoModule/constants/events.js'
 
 function getPlayerMock() {
@@ -56,8 +56,6 @@ function getUtilsMock() {
 }
 
 describe('JWPlayerProvider', function () {
-  // JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils)
-
   describe('init', function () {
     let config;
     let adState;
@@ -253,7 +251,30 @@ describe('JWPlayerProvider', function () {
   });
 
   describe('events', function () {
+    it('should register event listener on player', function () {
+      const player = getPlayerMock();
+      const onSpy = player.on = sinon.spy();
+      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock());
+      provider.init();
+      const callback = () => {};
+      provider.onEvents([PLAY], callback);
+      expect(onSpy.calledOnce).to.be.true;
+      const eventName = onSpy.args[0][0];
+      expect(eventName).to.be.equal('play');
+    });
 
+    it('should remove event listener on player', function () {
+      const player = getPlayerMock();
+      const offSpy = player.off = sinon.spy();
+      const provider = JWPlayerProvider({}, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), utils);
+      provider.init();
+      const callback = () => {};
+      provider.onEvents([AD_IMPRESSION], callback);
+      provider.offEvents([AD_IMPRESSION], callback);
+      expect(offSpy.calledOnce).to.be.true;
+      const eventName = offSpy.args[0][0];
+      expect(eventName).to.be.equal('adViewableImpression');
+    });
   });
 
   describe('destroy', function () {
