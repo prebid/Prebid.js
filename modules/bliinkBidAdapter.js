@@ -24,19 +24,23 @@ const aliasBidderCode = ['bk']
 export const buildBid = (bidRequest, bliinkCreative, isNative = false, isVideo = false) => {
   if (!bidRequest && !bliinkCreative) return null
 
+  const body = {
+    requestId: bidRequest.bidId,
+    cpm: bliinkCreative.price,
+    creativeId: bliinkCreative.id,
+    currency: 'EUR',
+    netRevenue: false,
+    width: 1,
+    height: 1,
+    ttl: 3600,
+  }
+
   if (isVideo) {
     return {
-      requestId: bidRequest.bidId,
-      cpm: bliinkCreative.price,
-      currency: 'EUR',
-      creativeId: bliinkCreative.id,
-      netRevenue: false,
+      ...body,
       mediaType: VIDEO,
-      width: 1,
-      height: 1,
       ad: '<html lang="en"></html>',
       vastXml: bliinkCreative.content,
-      ttl: 3600,
     }
   }
 
@@ -54,15 +58,8 @@ export const buildBid = (bidRequest, bliinkCreative, isNative = false, isVideo =
 
   delete bidRequest['bids']
   return {
-    requestId: bidRequest.bidId,
-    cpm: bliinkCreative.price || 1,
-    currency: 'EUR',
-    width: 1,
-    height: 1,
-    creativeId: bliinkCreative.id,
-    netRevenue: false,
+    ...body,
     ad: bliinkCreative.adm,
-    ttl: 3600,
   };
 }
 
@@ -90,6 +87,13 @@ export const buildRequests = (_, bidderRequest) => {
     test: true,
   }
 
+  const params = {
+    bidderRequestId: bidderRequest.bidderRequestId,
+    bidderCode: bidderRequest.bidderCode,
+    bids: bidderRequest.bids,
+    refererInfo: bidderRequest.refererInfo,
+  }
+
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent) {
     data = {
       ...data,
@@ -110,12 +114,7 @@ export const buildRequests = (_, bidderRequest) => {
     method: 'GET',
     url: `${BLIINK_ENDPOINT_ENGINE}/${bidderRequest.bids[0].params.tagId}`,
     data: data,
-    params: {
-      bidderRequestId: bidderRequest.bidderRequestId,
-      bidderCode: bidderRequest.bidderCode,
-      bids: bidderRequest.bids,
-      refererInfo: bidderRequest.refererInfo,
-    }
+    params: params,
   }
 }
 
