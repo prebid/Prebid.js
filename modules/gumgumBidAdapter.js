@@ -83,14 +83,6 @@ function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
 }
 
-function _getTradeDeskIDParam(userId) {
-  const unifiedIdObj = {};
-  if (userId.tdid) {
-    unifiedIdObj.tdid = userId.tdid;
-  }
-  return unifiedIdObj;
-}
-
 function _getDigiTrustQueryParams(userId) {
   let digiTrustId = userId.digitrustid && userId.digitrustid.data;
   // Verify there is an ID and this user has not opted out
@@ -230,6 +222,29 @@ function _getFloor (mediaTypes, staticBidFloor, bid) {
   return bidFloor;
 }
 
+function getEids (userId) {
+  const idProperties = [
+    'uid',
+    'eid',
+    'lipbid'
+  ];
+
+  return Object.keys(userId).reduce(function (eids, provider) {
+    const eid = userId[provider];
+    switch (typeof eid) {
+      case 'string':
+        eids[provider] = eid;
+        break;
+
+      case 'object':
+        const idProp = idProperties.filter(prop => eid.hasOwnProperty(prop));
+        idProp.length && (eids[provider] = eid[idProp[0]]);
+        break;
+    }
+    return eids;
+  }, {});
+}
+
 /**
  * Make a server request from the list of BidRequests.
  *
@@ -253,9 +268,13 @@ function buildRequests (validBidRequests, bidderRequest) {
       ortb2Imp
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
+    const eids = getEids(userId);
     let sizes = [1, 1];
     let data = {};
     let gpid = '';
+
+    // ADTS-134 Retrieve ID envelopes
+    for (const eid in eids) data[eid] = eids[eid];
 
     // ADJS-1024
     if (utils.deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
@@ -328,7 +347,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       url: BID_ENDPOINT,
       method: 'GET',
       gpid: gpid,
-      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId))
     })
   });
   return bids;

@@ -978,7 +978,7 @@ function applyFPD(bidRequest, mediaType, data) {
 
   let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
   let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
-  const SEGTAX = {user: [3], site: [1, 2]};
+  const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
     if (key === 'data' && Array.isArray(prop)) {

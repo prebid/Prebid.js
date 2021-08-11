@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/oguryBidAdapter';
 import { deepClone } from 'src/utils.js';
 
-const BID_HOST = 'https://webmobile.presage.io/api/header-bidding-request';
+const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 
 describe('OguryBidAdapter', function () {
   let bidRequests;
@@ -17,6 +17,9 @@ describe('OguryBidAdapter', function () {
       params: {
         assetKey: 'OGY-assetkey',
         adUnitId: 'adunitId',
+        xMargin: 20,
+        yMarging: 20,
+        gravity: 'TOP_LEFT',
       },
       mediaTypes: {
         banner: {
@@ -101,6 +104,41 @@ describe('OguryBidAdapter', function () {
 
       let isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.equal(true);
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    let syncOptions, gdprConsent;
+
+    beforeEach(() => {
+      syncOptions = {pixelEnabled: true};
+      gdprConsent = {
+        gdprApplies: true,
+        consentString: 'CPJl4C8PJl4C8OoAAAENAwCMAP_AAH_AAAAAAPgAAAAIAPgAAAAIAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g'
+      };
+    });
+
+    it('should return syncs array with an element of type image', () => {
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+
+      expect(userSyncs).to.have.lengthOf(1);
+      expect(userSyncs[0].type).to.equal('image');
+      expect(userSyncs[0].url).to.contain('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch');
+    });
+
+    it('should set the source as query param', () => {
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+      expect(userSyncs[0].url).to.contain('source=prebid');
+    });
+
+    it('should set the tcString as query param', () => {
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+      expect(userSyncs[0].url).to.contain(`iab_string=${gdprConsent.consentString}`);
+    });
+
+    it('should return an empty array when pixel is disable', () => {
+      syncOptions.pixelEnabled = false;
+      expect(spec.getUserSyncs(syncOptions, [], gdprConsent)).to.have.lengthOf(0);
     });
   });
 
@@ -249,8 +287,18 @@ describe('OguryBidAdapter', function () {
             nurl: 'url',
             adm: `<html><head><title>test creative</title></head><body style="margin: 0;"><div><img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div></body></html>`,
             adomain: ['renault.fr'],
-            w: 300,
-            h: 250
+            ext: {
+              adcontent: 'sample_creative',
+              advertid: '1a278c48-b79a-4bbf-b69f-3824803e7d87',
+              campaignid: '31724',
+              mediatype: 'image',
+              userid: 'ab4aabed-5230-49d9-9f1a-f06280d28366',
+              usersync: true,
+              advertiserid: '1',
+              isomidcompliant: false
+            },
+            w: 180,
+            h: 101
           }, {
             id: 'advertId2',
             impid: 'bidId2',
@@ -258,6 +306,17 @@ describe('OguryBidAdapter', function () {
             nurl: 'url2',
             adm: `<html><head><title>test creative</title></head><body style="margin: 0;"><div><img style="width: 600px; height: 500px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div></body></html>`,
             adomain: ['peugeot.fr'],
+            ext: {
+              adcontent: 'sample_creative',
+              advertid: '2a278c48-b79a-4bbf-b69f-3824803e7d87',
+              campaignid: '41724',
+              userid: 'bb4aabed-5230-49d9-9f1a-f06280d28366',
+              usersync: false,
+              advertiserid: '2',
+              isomidcompliant: true,
+              mediatype: 'image',
+              landingpageurl: 'https://ogury.com'
+            },
             w: 600,
             h: 500
           }],
@@ -274,6 +333,7 @@ describe('OguryBidAdapter', function () {
         height: openRtbBidResponse.body.seatbid[0].bid[0].h,
         ad: openRtbBidResponse.body.seatbid[0].bid[0].adm,
         ttl: 60,
+        ext: openRtbBidResponse.body.seatbid[0].bid[0].ext,
         creativeId: openRtbBidResponse.body.seatbid[0].bid[0].id,
         netRevenue: true,
         meta: {
@@ -287,6 +347,7 @@ describe('OguryBidAdapter', function () {
         height: openRtbBidResponse.body.seatbid[0].bid[1].h,
         ad: openRtbBidResponse.body.seatbid[0].bid[1].adm,
         ttl: 60,
+        ext: openRtbBidResponse.body.seatbid[0].bid[1].ext,
         creativeId: openRtbBidResponse.body.seatbid[0].bid[1].id,
         netRevenue: true,
         meta: {
