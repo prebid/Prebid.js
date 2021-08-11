@@ -137,7 +137,7 @@ export const spec = {
         ttl: rawBid.ttl ? rawBid.ttl : DEFAULT_TTL,
         creativeId: rawBid.creativeid || 0,
         meta: {
-            advertiserDomains: rawBid.adomain ? rawBid.adomain : []
+          advertiserDomains: rawBid.adomain ? rawBid.adomain : []
         }
       };
 
