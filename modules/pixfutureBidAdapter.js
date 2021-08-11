@@ -112,7 +112,7 @@ export const spec = {
       }
 
       const ret = {
-        url: `${hostname}/auc/auc.php`,
+        url: `${hostname}/`,
         method: 'POST',
         options: {withCredentials: false},
         data: {
