@@ -171,14 +171,14 @@ describe('ImpactifyAdapter', function () {
                 price: 3.40,
                 adm: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
                 adid: '97517771',
-                adomain: [
-                  ''
-                ],
                 iurl: 'https://fra1-ib.adnxs.com/cr?id=97517771',
                 cid: '9325',
                 crid: '97517771',
                 w: 1,
                 h: 1,
+                hash: 'test',
+                expiry: 166192938,
+                meta: {'advertiserDomains': ['testdomain.com']},
                 ext: {
                   prebid: {
                     'type': 'video'
@@ -254,6 +254,7 @@ describe('ImpactifyAdapter', function () {
           height: 1,
           hash: 'test',
           expiry: 166192938,
+          meta: {'advertiserDomains': ['testdomain.com']},
           ttl: 300,
           creativeId: '97517771'
         }
@@ -308,14 +309,14 @@ describe('ImpactifyAdapter', function () {
               price: 3.40,
               adm: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
               adid: '97517771',
-              adomain: [
-                ''
-              ],
               iurl: 'https://fra1-ib.adnxs.com/cr?id=97517771',
               cid: '9325',
               crid: '97517771',
               w: 1,
               h: 1,
+              hash: 'test',
+              expiry: 166192938,
+              meta: {'advertiserDomains': ['testdomain.com']},
               ext: {
                 prebid: {
                   'type': 'video'

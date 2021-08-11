@@ -114,8 +114,8 @@ function getSize(size) {
 
 function getWindowSize() {
   return {
-    w: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || -1,
-    h: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || -1
+    w: window.screen.width || -1,
+    h: window.screen.height || -1
   }
 }
 

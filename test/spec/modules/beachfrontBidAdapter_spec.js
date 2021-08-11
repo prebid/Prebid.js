@@ -316,58 +316,54 @@ describe('BeachfrontAdapter', function () {
         expect(data.source.ext.schain).to.deep.equal(schain);
       });
 
-      it('must add the Trade Desk User ID to the request', () => {
-        const tdid = '4321';
+      it('must add supported user IDs to the request', () => {
+        const userId = {
+          tdid: '54017816',
+          idl_env: '13024996',
+          uid2: { id: '45843401' },
+          haloId: { haloId: '60314917', auSeg: ['segment1', 'segment2'] }
+        };
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
-        bidRequest.userId = { tdid };
+        bidRequest.userId = userId;
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.user.ext.eids[0]).to.deep.equal({
-          source: 'adserver.org',
-          uids: [{
-            id: tdid,
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }]
-        });
-      });
-
-      it('must add the IdentityLink ID to the request', () => {
-        const idl_env = '4321';
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { video: {} };
-        bidRequest.userId = { idl_env };
-        const requests = spec.buildRequests([ bidRequest ]);
-        const data = requests[0].data;
-        expect(data.user.ext.eids[0]).to.deep.equal({
-          source: 'liveramp.com',
-          uids: [{
-            id: idl_env,
-            ext: {
-              rtiPartner: 'idl'
-            }
-          }]
-        });
-      });
-
-      it('must add the Unified ID 2.0 to the request', () => {
-        const uid2 = { id: '4321' };
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { video: {} };
-        bidRequest.userId = { uid2 };
-        const requests = spec.buildRequests([ bidRequest ]);
-        const data = requests[0].data;
-        expect(data.user.ext.eids[0]).to.deep.equal({
-          source: 'uidapi.com',
-          uids: [{
-            id: uid2.id,
-            ext: {
-              rtiPartner: 'UID2'
-            }
-          }]
-        });
+        expect(data.user.ext.eids).to.deep.equal([
+          {
+            source: 'adserver.org',
+            uids: [{
+              id: userId.tdid,
+              ext: {
+                rtiPartner: 'TDID'
+              }
+            }]
+          },
+          {
+            source: 'liveramp.com',
+            uids: [{
+              id: userId.idl_env,
+              ext: {
+                rtiPartner: 'idl'
+              }
+            }]
+          },
+          {
+            source: 'uidapi.com',
+            uids: [{
+              id: userId.uid2.id,
+              ext: {
+                rtiPartner: 'UID2'
+              }
+            }]
+          },
+          {
+            source: 'audigent.com',
+            uids: [{
+              id: userId.haloId,
+              atype: 1,
+            }]
+          }
+        ]);
       });
     });
 
@@ -541,34 +537,22 @@ describe('BeachfrontAdapter', function () {
         expect(data.schain).to.deep.equal(schain);
       });
 
-      it('must add the Trade Desk User ID to the request', () => {
-        const tdid = '4321';
+      it('must add supported user IDs to the request', () => {
+        const userId = {
+          tdid: '54017816',
+          idl_env: '13024996',
+          uid2: { id: '45843401' },
+          haloId: { haloId: '60314917', auSeg: ['segment1', 'segment2'] }
+        };
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
-        bidRequest.userId = { tdid };
+        bidRequest.userId = userId;
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.tdid).to.equal(tdid);
-      });
-
-      it('must add the IdentityLink ID to the request', () => {
-        const idl_env = '4321';
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { banner: {} };
-        bidRequest.userId = { idl_env };
-        const requests = spec.buildRequests([ bidRequest ]);
-        const data = requests[0].data;
-        expect(data.idl).to.equal(idl_env);
-      });
-
-      it('must add the Unified ID 2.0 to the request', () => {
-        const uid2 = { id: '4321' };
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { banner: {} };
-        bidRequest.userId = { uid2 };
-        const requests = spec.buildRequests([ bidRequest ]);
-        const data = requests[0].data;
-        expect(data.uid2).to.equal(uid2.id);
+        expect(data.tdid).to.equal(userId.tdid);
+        expect(data.idl).to.equal(userId.idl_env);
+        expect(data.uid2).to.equal(userId.uid2.id);
+        expect(data.haloid).to.equal(userId.haloId);
       });
     });
 
@@ -673,30 +657,11 @@ describe('BeachfrontAdapter', function () {
           width: width,
           height: height,
           renderer: null,
+          meta: { mediaType: 'video', advertiserDomains: [] },
           mediaType: 'video',
           currency: 'USD',
           netRevenue: true,
           ttl: 300
-        });
-      });
-
-      it('should default to the legacy "cmpId" value for the creative ID', () => {
-        const width = 640;
-        const height = 480;
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = {
-          video: {
-            playerSize: [ width, height ]
-          }
-        };
-        const serverResponse = {
-          bidPrice: 5.00,
-          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
-          cmpId: '123abc'
-        };
-        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-        expect(bidResponse).to.deep.contain({
-          creativeId: serverResponse.cmpId
         });
       });
 
@@ -761,6 +726,31 @@ describe('BeachfrontAdapter', function () {
         });
         expect(bidResponse.renderer.render).to.be.a('function');
       });
+
+      it('should return meta data for the bid response', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ width, height ]
+          }
+        };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          meta: {
+            advertiserDomains: ['example.com'],
+            advertiserId: '123'
+          }
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        expect(bidResponse.meta).to.deep.equal({
+          mediaType: 'video',
+          advertiserDomains: ['example.com'],
+          advertiserId: '123'
+        });
+      });
     });
 
     describe('for banner bids', function () {
@@ -815,12 +805,39 @@ describe('BeachfrontAdapter', function () {
             cpm: serverResponse[ i ].price,
             width: serverResponse[ i ].w,
             height: serverResponse[ i ].h,
+            meta: { mediaType: 'banner', advertiserDomains: [] },
             mediaType: 'banner',
             currency: 'USD',
             netRevenue: true,
             ttl: 300
           });
         }
+      });
+
+      it('should return meta data for the bid response', () => {
+        bidRequests[0].mediaTypes = {
+          banner: {
+            sizes: [[ 300, 250 ], [ 728, 90 ]]
+          }
+        };
+        const serverResponse = [{
+          slot: bidRequests[0].adUnitCode,
+          adm: '<div id="44851937"></div>',
+          crid: 'crid_1',
+          price: 3.02,
+          w: 728,
+          h: 90,
+          meta: {
+            advertiserDomains: ['example.com'],
+            advertiserId: '123'
+          }
+        }];
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest: bidRequests });
+        expect(bidResponse[0].meta).to.deep.equal({
+          mediaType: 'banner',
+          advertiserDomains: ['example.com'],
+          advertiserId: '123'
+        });
       });
     });
   });
