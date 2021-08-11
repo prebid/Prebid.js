@@ -5,6 +5,7 @@ import { registerBidder } from 'src/adapters/bidderFactory'
 
 export const BIDDER_CODE = 'bliink'
 export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/delivery'
+export const BLIINK_ENDPOINT_COOKIE_SYNC = 'https://cookiesync.api.bliink.io'
 
 const VIDEO = 'video'
 const NATIVE = 'native'
@@ -163,9 +164,8 @@ const interpretResponse = (serverResponse, request) => {
  * @return {[{type: string, url: string}]|*[]}
  */
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent) => {
-  const syncs = []
+  let syncs = []
   let gdprParams = ''
-
   if (gdprConsent) {
     if (typeof gdprConsent.gdprApplies === 'boolean') {
       gdprParams = `hasConsent=${Number(gdprConsent.gdprApplies)}&consentString=${gdprConsent.consentString}`
@@ -181,10 +181,29 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent) => {
     })
   }
   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-    syncs.push({
-      type: 'image',
-      url: `${BLIINK_ENDPOINT_ENGINE}/14f30eca-85d2-11e8-9eed-0242ac120007?${gdprParams}`
+    const UrlBliink = [
+      `${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=smart&uid=[sas_uid]`,
+      `${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=azerion&uid={PUB_USER_ID}`,
+      `${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=appnexus&uid=$UID`,
+      `https://ad.360yield.com/server_match?partner_id=1531&r=${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=azerion&uid={PUB_USER_ID}}`,
+      `https://ads.stickyadstv.com/auto-user-sync`,
+      `https://cookiesync.api.bliink.io/getuid?url=https%3A%2F%2Fvisitor.omnitagjs.com%2Fvisitor%2Fsync%3Fuid%3D1625272249969090bb9d544bd6d8d645%26name%3DBLIINK%26visitor%3D%24UID%26external%3Dtrue`,
+      `https://pixel.advertising.com/ups/58444/sync?&gdpr=1&gdpr_consent=${gdprConsent.consentString}&redir=true&uid=sampleUserId`,
+      `https://ups.analytics.yahoo.com/ups/58499/occ?gdpr=1&gdpr_consent=${gdprConsent.consentString}`,
+      `https://secure.adnxs.com/getuid?${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=appnexus&uid=$UID}`
+    ]
+
+    UrlBliink.forEach(item => {
+      syncs = [
+        ...syncs,
+        {
+          type: 'image',
+          url: item + `&${gdprParams}`,
+        },
+      ]
     })
+
+    return syncs
   }
 
   return syncs;
