@@ -923,6 +923,7 @@ describe('The Criteo bidding adapter', function () {
             impid: 'test-requestId',
             cpm: 1.23,
             creative: 'test-ad',
+            creativecode: 'test-crId',
             width: 728,
             height: 90,
             dealCode: 'myDealCode',
@@ -944,6 +945,7 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].requestId).to.equal('test-bidId');
       expect(bids[0].cpm).to.equal(1.23);
       expect(bids[0].ad).to.equal('test-ad');
+      expect(bids[0].creativeId).to.equal('test-crId');
       expect(bids[0].width).to.equal(728);
       expect(bids[0].height).to.equal(90);
       expect(bids[0].dealId).to.equal('myDealCode');

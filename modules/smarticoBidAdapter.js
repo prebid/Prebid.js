@@ -106,7 +106,11 @@ export const spec = {
           netRevenue: !!ad.netRevenue,
           currency: ad.currency,
           ttl: ad.ttl,
-          ad: html
+          ad: html,
+          meta: {
+            advertiserDomains: ad.domains,
+            advertiserName: ad.title
+          }
         }
         bidResponses.push(bidObject);
       }

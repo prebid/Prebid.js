@@ -6,7 +6,7 @@
 import events from './events.js';
 import { fireNativeTrackers, getAssetMessage, getAllAssetsMessage } from './native.js';
 import constants from './constants.json';
-import { logWarn, replaceAuctionPrice, deepAccess } from './utils.js';
+import { logWarn, replaceAuctionPrice, deepAccess, isGptPubadsDefined, isApnGetTagDefined } from './utils.js';
 import { auctionManager } from './auctionManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
@@ -118,9 +118,9 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   }
 
   function getElementIdBasedOnAdServer(adId, adUnitCode) {
-    if (window.googletag) {
+    if (isGptPubadsDefined()) {
       return getDfpElementId(adId)
-    } else if (window.apntag) {
+    } else if (isApnGetTagDefined()) {
       return getAstElementId(adUnitCode)
     } else {
       return adUnitCode;
