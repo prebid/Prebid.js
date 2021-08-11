@@ -15,7 +15,7 @@ describe('Interactive Offers Prebbid.js Adapter', function() {
     });
 
     it('returns false if any if the required params is not properly formatted', function() {
-      bid.params = {partnerId: 35, tmax: 250};
+      bid.params = {partnerid: '100', tmax: 250};
       expect(spec.isBidRequestValid(bid)).to.be.false;
       bid.params = {partnerId: '100', tmax: '+250'};
       expect(spec.isBidRequestValid(bid)).to.be.false;
