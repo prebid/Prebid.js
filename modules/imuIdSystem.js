@@ -12,17 +12,18 @@ import { getStorageManager } from '../src/storageManager.js';
 
 export const storage = getStorageManager();
 
-const storageKey = '__im_uid';
-const cookieKey = '_im_vid';
+export const storageKey = '__im_uid';
+export const cookieKey = '_im_vid';
+export const apiUrl = 'https://audiencedata.im-apps.net/imuid/get';
 const storageMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
 const cookiesMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
 
-function setImDataInLocalStorage(value) {
+export function setImDataInLocalStorage(value) {
   storage.setDataInLocalStorage(storageKey, value);
   storage.setDataInLocalStorage(`${storageKey}_mt`, new Date(utils.timestamp()).toUTCString());
 }
 
-function removeImDataFromLocalStorage() {
+export function removeImDataFromLocalStorage() {
   storage.removeDataFromLocalStorage(storageKey);
   storage.removeDataFromLocalStorage(`${storageKey}_mt`);
 }
@@ -36,7 +37,7 @@ function setImDataInCookie(value) {
   );
 }
 
-function getLocalData() {
+export function getLocalData() {
   const mt = storage.getDataFromLocalStorage(`${storageKey}_mt`);
   let expired = true;
   if (Date.parse(mt) && Date.now() - (new Date(mt)).getTime() < storageMaxAge) {
@@ -49,7 +50,7 @@ function getLocalData() {
   };
 }
 
-function syncSuccessProcess(jsonResponse) {
+export function apiSuccessProcess(jsonResponse) {
   if (!jsonResponse) {
     return;
   }
@@ -63,32 +64,42 @@ function syncSuccessProcess(jsonResponse) {
   }
 }
 
-function callImuidSync(syncUrl) {
-  return function (callback) {
-    const callbacks = {
-      success: response => {
-        let responseObj;
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-            syncSuccessProcess(responseObj);
-          } catch (error) {
-            utils.logError('User ID - imuid submodule: ' + error);
-          }
-        }
-        if (callback) {
-          callback(responseObj.uid);
-        }
-      },
-      error: error => {
-        utils.logError('User ID - imuid submodule was unable to get data from api: ' + error);
-        if (callback) {
-          callback();
+export function getApiCallback(callback) {
+  return {
+    success: response => {
+      let responseObj = {};
+      if (response) {
+        try {
+          responseObj = JSON.parse(response);
+          apiSuccessProcess(responseObj);
+        } catch (error) {
+          utils.logError('User ID - imuid submodule: ' + error);
         }
       }
-    };
-    ajax(syncUrl, callbacks, undefined, {method: 'GET', withCredentials: true});
+      if (callback && responseObj.uid) {
+        callback(responseObj.uid);
+      }
+    },
+    error: error => {
+      utils.logError('User ID - imuid submodule was unable to get data from api: ' + error);
+      if (callback) {
+        callback();
+      }
+    }
   };
+}
+
+export function callImuidApi(apiUrl) {
+  return function (callback) {
+    ajax(apiUrl, getApiCallback(callback), undefined, {method: 'GET', withCredentials: true});
+  };
+}
+
+export function getApiUrl(cid, url) {
+  if (url) {
+    return `${url}?cid=${cid}`;
+  }
+  return `${apiUrl}?cid=${cid}`;
 }
 
 /** @type {Submodule} */
@@ -112,7 +123,7 @@ export const imuIdSubmodule = {
   /**
    * @function
    * @param {SubmoduleConfig} [config]
-   * @returns {{id: string} | undefined}}}
+   * @returns {{id: string} | undefined | {callback:function}}}
    */
   getId(config) {
     const configParams = (config && config.params) || {};
@@ -120,21 +131,18 @@ export const imuIdSubmodule = {
       utils.logError('User ID - imuid submodule requires a valid cid to be defined');
       return undefined;
     }
+    let apiUrl = getApiUrl(configParams.cid, configParams.url);
     const localData = getLocalData();
-    let syncUrl = `https://audiencedata.im-apps.net/imuid/get?cid=${configParams.cid}`;
-    if (configParams.url) {
-      syncUrl = `${configParams.url}?cid=${configParams.cid}`;
-    }
     if (localData.vid) {
-      syncUrl += `&vid=${localData.vid}`;
+      apiUrl += `&vid=${localData.vid}`;
       setImDataInCookie(localData.vid);
     }
 
     if (!localData.id) {
-      return {callback: callImuidSync(syncUrl)}
+      return {callback: callImuidApi(apiUrl)}
     }
     if (localData.expired) {
-      callImuidSync(syncUrl)();
+      callImuidApi(apiUrl)();
     }
     return {id: localData.id};
   }
