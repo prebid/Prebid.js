@@ -166,6 +166,9 @@ function createBids(bidRes, reqData) {
     bidUnit.netRevenue = true;
     bidUnit.width = bid.size.width;
     bidUnit.height = bid.size.height;
+    bidUnit.meta = {
+      advertiserDomains: bid.adomain || []
+    };
     if (bid.vastXml) {
       bidUnit.vastXml = bid.vastXml;
       bidUnit.adResponse = {

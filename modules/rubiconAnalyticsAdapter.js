@@ -293,6 +293,10 @@ function sendMessage(auctionId, bidWonId, trigger) {
       auction.serverTimeoutMillis = serverConfig.timeout;
     }
 
+    if (auctionCache.userIds.length) {
+      auction.user = {ids: auctionCache.userIds};
+    }
+
     message.auctions = [auction];
 
     let bidsWon = Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
@@ -585,6 +589,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }
         cacheEntry.gdprConsent = utils.deepAccess(args, 'bidderRequests.0.gdprConsent');
         cacheEntry.session = storage.localStorageIsEnabled() && updateRpaCookie();
+        cacheEntry.userIds = Object.keys(utils.deepAccess(args, 'bidderRequests.0.bids.0.userId', {})).map(id => {
+          return {provider: id, hasId: true}
+        });
         cache.auctions[args.auctionId] = cacheEntry;
         // register to listen to gpt events if not done yet
         if (!cache.gpt.registered && utils.isGptPubadsDefined()) {

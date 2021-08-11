@@ -1,19 +1,46 @@
 import { expect } from 'chai';
 import { spec } from 'modules/growadvertisingBidAdapter.js';
 import * as utils from '../../../src/utils.js';
+import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
 
 describe('GrowAdvertising Adapter', function() {
   const ZONE_ID = 'unique-zone-id';
-  const serverResponse = {
+  const serverResponseBanner = {
     body: {
       status: 'success',
       width: 300,
       height: 250,
       creativeId: 'ULqaukILu0RnMa0FyidOtkji4Po3qbgQ9ceRVGlhjLLKnrrLAATmGNCwtE99Ems8',
-      ad: '<img src="http://image.source.com/img" alt="" title="" width="300" height="250" />',
+      ad: '<img src="https://image.source.com/img" alt="" title="" width="300" height="250" />',
       cpm: 1,
       ttl: 180,
       currency: 'USD',
+      type: BANNER,
+    }
+  };
+  const serverResponseNative = {
+    body: {
+      status: 'success',
+      width: 400,
+      height: 300,
+      creativeId: 'ULqaukILu0RnMa0FyidOtkji4Po3qbgQ9ceRVGlhjLLKnrrLAATmGNCwtE99Ems9',
+      cpm: 2,
+      ttl: 180,
+      currency: 'USD',
+      native: {
+        title: 'Test title',
+        body: 'Test body',
+        body2: null,
+        sponsoredBy: 'Sponsored by',
+        cta: null,
+        clickUrl: 'https://example.org',
+        image: {
+          width: 400,
+          height: 300,
+          url: 'https://image.source.com/img',
+        }
+      },
+      type: NATIVE
     }
   };
   let bidRequests = [];
@@ -30,6 +57,25 @@ describe('GrowAdvertising Adapter', function() {
         mediaTypes: {
           banner: {
             sizes: [[300, 250], [300, 600]],
+          },
+        },
+      },
+      {
+        bidder: 'growads',
+        params: {
+          zoneId: ZONE_ID,
+        },
+        mediaTypes: {
+          native: {
+            title: {
+              required: true
+            },
+            image: {
+              required: true
+            },
+            sponsoredBy: {
+              required: true
+            }
           },
         },
       }
@@ -122,39 +168,60 @@ describe('GrowAdvertising Adapter', function() {
     });
 
     describe('bid responses', function () {
-      it('should return complete bid response', function () {
-        let bids = spec.interpretResponse(serverResponse, {bidRequest: bidRequests[0]});
+      describe(BANNER, function () {
+        it('should return complete bid response banner', function () {
+          let bids = spec.interpretResponse(serverResponseBanner, {bidRequest: bidRequests[0]});
 
-        expect(bids).to.be.lengthOf(1);
-        expect(bids[0].bidderCode).to.equal('growads');
-        expect(bids[0].cpm).to.equal(1);
-        expect(bids[0].width).to.equal(300);
-        expect(bids[0].height).to.equal(250);
-        expect(bids[0].creativeId).to.have.length.above(1);
-        expect(bids[0].ad).to.have.length.above(1);
-      });
-
-      it('should return empty bid on incorrect size', function () {
-        let response = utils.mergeDeep(serverResponse, {
-          body: {
-            width: 150,
-            height: 150
-          }
+          expect(bids).to.be.lengthOf(1);
+          expect(bids[0].bidderCode).to.equal('growads');
+          expect(bids[0].cpm).to.equal(1);
+          expect(bids[0].width).to.equal(300);
+          expect(bids[0].height).to.equal(250);
+          expect(bids[0].creativeId).to.have.length.above(1);
+          expect(bids[0].ad).to.have.length.above(1);
+          expect(bids[0].mediaType).to.equal(BANNER);
         });
 
-        let bids = spec.interpretResponse(response, {bidRequest: bidRequests[0]});
-        expect([]).to.be.lengthOf(0);
-      });
+        it('should return empty bid on incorrect size', function () {
+          let response = utils.mergeDeep(serverResponseBanner, {
+            body: {
+              width: 150,
+              height: 150
+            }
+          });
 
-      it('should return empty bid on incorrect CPM', function () {
-        let response = utils.mergeDeep(serverResponse, {
-          body: {
-            cpm: 10
-          }
+          let bids = spec.interpretResponse(response, {bidRequest: bidRequests[0]});
+          expect([]).to.be.lengthOf(0);
         });
 
-        let bids = spec.interpretResponse(response, {bidRequest: bidRequests[0]});
-        expect([]).to.be.lengthOf(0);
+        it('should return empty bid on incorrect CPM', function () {
+          let response = utils.mergeDeep(serverResponseBanner, {
+            body: {
+              cpm: 10
+            }
+          });
+
+          let bids = spec.interpretResponse(response, {bidRequest: bidRequests[0]});
+          expect([]).to.be.lengthOf(0);
+        });
+      });
+
+      describe(NATIVE, function () {
+        it('should return complete bid response banner', function () {
+          let bids = spec.interpretResponse(serverResponseNative, {bidRequest: bidRequests[1]});
+
+          expect(bids).to.be.lengthOf(1);
+          expect(bids[0].bidderCode).to.equal('growads');
+          expect(bids[0].cpm).to.equal(2);
+          expect(bids[0].width).to.equal(400);
+          expect(bids[0].height).to.equal(300);
+          expect(bids[0].creativeId).to.have.length.above(1);
+          expect(bids[0]).property('native');
+          expect(bids[0].native.title).to.have.length.above(1);
+          expect(bids[0].native.body).to.have.length.above(1);
+          expect(bids[0].native).property('image');
+          expect(bids[0].mediaType).to.equal(NATIVE);
+        });
       });
     });
   });

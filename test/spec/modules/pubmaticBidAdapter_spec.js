@@ -930,6 +930,89 @@ describe('PubMatic adapter', function () {
         delete bid.params.video.mimes; // Undefined
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
+
+      it('checks on bid.params.outstreamAU & bid.renderer & bid.mediaTypes.video.renderer', function() {
+        const getThebid = function() {
+          let bid = utils.deepClone(validOutstreamBidRequest.bids[0]);
+          bid.params.outstreamAU = 'pubmatic-test';
+          bid.renderer = ' '; // we are only checking if this key is set or not
+          bid.mediaTypes.video.renderer = ' '; // we are only checking if this key is set or not
+          return bid;
+        }
+
+        // true: when all are present
+        // mdiatype: outstream
+        // bid.params.outstreamAU : Y
+        // bid.renderer : Y
+        // bid.mediaTypes.video.renderer : Y
+        let bid = getThebid();
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: atleast one is present; 3 cases
+        // mdiatype: outstream
+        // bid.params.outstreamAU : Y
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: atleast one is present; 3 cases
+        // mdiatype: outstream
+        // bid.params.outstreamAU : N
+        // bid.renderer : Y
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.mediaTypes.video.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: atleast one is present; 3 cases
+        // mdiatype: outstream
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : Y
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // false: none present; only outstream
+        // mdiatype: outstream
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        // true: none present; outstream + Banner
+        // mdiatype: outstream, banner
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        bid.mediaTypes.banner = {sizes: [ [300, 250], [300, 600] ]};
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: none present; outstream + Native
+        // mdiatype: outstream, native
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        bid.mediaTypes.native = {}
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
     });
 
   	describe('Request formation', function () {

@@ -31,6 +31,7 @@
     "flocIdSystem",
     "amxIdSystem",
     "naveggId"
+    "imuIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",

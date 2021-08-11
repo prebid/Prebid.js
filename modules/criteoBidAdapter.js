@@ -134,7 +134,7 @@ export const spec = {
           currency: slot.currency,
           netRevenue: true,
           ttl: slot.ttl || 60,
-          creativeId: bidId,
+          creativeId: slot.creativecode,
           width: slot.width,
           height: slot.height,
           dealId: slot.dealCode,
