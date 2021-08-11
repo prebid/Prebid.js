@@ -24,13 +24,11 @@ export const BIDDER_STATUS = {
 }
 
 export const getCpmInEur = function (bid) {
-  if (bid.currency === 'EUR') {
-    return bid.cpm
-  } else if (typeof bid.getCpmInNewCurrency === 'function') {
-    return bid.getCpmInNewCurrency('EUR')
+  if (bid.currency !== 'EUR' && typeof bid.getCpmInNewCurrency === 'function') {
+    return bid.getCpmInNewCurrency('EUR');
   }
 
-  return bid.cpm
+  return bid.cpm;
 }
 
 const analyticsOptions = {}
