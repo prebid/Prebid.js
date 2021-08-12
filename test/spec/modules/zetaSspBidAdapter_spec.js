@@ -1,4 +1,5 @@
 import {spec} from '../../../modules/zetaSspBidAdapter.js'
+import {expect} from "chai";
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
@@ -52,6 +53,36 @@ describe('Zeta Ssp Bid Adapter', function () {
       test: 1
     },
     userIdAsEids: eids
+  }];
+
+  const videoRequest = [{
+    bidId: 112233,
+    auctionId: 667788,
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [[720, 340]],
+        mimes: ['video/mp4'],
+        minDuration: 5,
+        maxDuration: 30,
+        protocols: [2, 3]
+      }
+    },
+    refererInfo: {
+      referer: 'http://www.zetaglobal.com/page?param=video'
+    },
+    params: {
+      placement: 111,
+      user: {
+        uid: 222,
+        buyeruid: 333
+      },
+      tags: {
+        someTag: 444,
+        sid: 'publisherId'
+      },
+      test: 1
+    },
   }];
 
   it('Test the bid validation function', function () {
@@ -175,5 +206,19 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.user.uid).to.eql(222);
     expect(payload.user.buyeruid).to.eql(333);
     expect(payload.user.ext.consent).to.eql('consentString');
+  });
+
+  it('Test video object', function () {
+    const request = spec.buildRequests(videoRequest, videoRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.imp[0].video.minDuration).to.eql(videoRequest.mediaTypes.video.minDuration);
+    expect(payload.imp[0].video.maxDuration).to.eql(videoRequest.mediaTypes.video.maxDuration);
+    expect(payload.imp[0].video.protocols).to.eql(videoRequest.mediaTypes.video.protocols);
+    expect(payload.imp[0].video.mimes).to.eql(videoRequest.mediaTypes.video.mimes);
+    expect(payload.imp[0].video.w).to.eql(720);
+    expect(payload.imp[0].video.h).to.eql(340);
+
+    expect(payload.imp[0].banner).to.be.empty;
   });
 });
