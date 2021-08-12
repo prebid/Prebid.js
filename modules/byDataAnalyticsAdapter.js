@@ -30,13 +30,12 @@ function onNoBidData(t) {
 function onAuctionEnd(t) {
   logInfo('onAuctionEnd', t);
   const {isCorrectOption, logFrequency} = initOptions;
-  var value = Math.random();
+  var value = Math.floor(Math.random() * 10000 + 1);
   logInfo(' value - frequency ', (value + '-' + logFrequency));
   setTimeout(() => {
     if (isCorrectOption && value < logFrequency) {
       ascAdapter.dataProcess(t);
-      addPbjsAndWinningsBids()
-      addPbjsAndWinningsBids(false);
+      addKeyForPrebidWinningAndWinningsBids();
       ascAdapter.sendPayload();
     }
   }, 500);
@@ -114,10 +113,7 @@ ascAdapter.getVisitorData = function(data = {}) {
       { name: 'BlackBerry', value: 'CLDC', version: 'CLDC' },
       { name: 'Mozilla', value: 'Mozilla', version: 'Mozilla' }
     ],
-    init: function () {
-      var agent = this.header.join(' '); var os = this.matchItem(agent, this.dataos); var browser = this.matchItem(agent, this.databrowser);
-      return { os: os, browser: browser };
-    },
+    init: function () { var agent = this.header.join(' '); var os = this.matchItem(agent, this.dataos); var browser = this.matchItem(agent, this.databrowser); return { os: os, browser: browser }; },
     matchItem: function (string, data) {
       var i = 0; var j = 0; var regex; var regexv; var match; var matches; var version;
       for (i = 0; i < data.length; i += 1) {
@@ -149,6 +145,7 @@ ascAdapter.getVisitorData = function(data = {}) {
       return { name: 'unknown', version: 0 };
     }
   };
+
   function generateUid() {
     try {
       var buffer = new Uint8Array(16);
@@ -275,18 +272,23 @@ ascAdapter.sendPayload = function () {
   });
 }
 
-function addPbjsAndWinningsBids(isPbjs = true) {
-  var winningBids = isPbjs ? $$PREBID_GLOBAL$$.getAllPrebidWinningBids() : $$PREBID_GLOBAL$$.getAllWinningBids();
-  var wBids = winningBids.map((wBid) => { const {size, requestId} = wBid; return {size, requestId}; });
-  logInfo(isPbjs + '-winningBids-', wBids);
-  wBids && wBids.length > 0 && wBids.forEach(wBid => {
-    const {requestId, size} = wBid;
+function addKeyForPrebidWinningAndWinningsBids() {
+  var prebidWinningBids = $$PREBID_GLOBAL$$.getAllPrebidWinningBids();
+  var winningBids = $$PREBID_GLOBAL$$.getAllWinningBids();
+  prebidWinningBids && prebidWinningBids.length > 0 && prebidWinningBids.forEach(pbbid => {
     payload['auctionData'] && payload['auctionData'].forEach(rwData => {
-      if (rwData['bids_bid_id'] === requestId && rwData['br_size'] === size) {
-        isPbjs ? rwData['is_prebid_winning_bid'] = 1 : rwData['is_winning_bid'] = 1;
+      if (rwData['bids_bid_id'] === pbbid.requestId && rwData['br_size'] === pbbid.size) {
+        rwData['is_prebid_winning_bid'] = 1;
       }
     });
-  });
+  })
+  winningBids && winningBids.length > 0 && winningBids.forEach(wBid => {
+    payload['auctionData'] && payload['auctionData'].forEach(rwData => {
+      if (rwData['bids_bid_id'] === wBid.requestId && rwData['br_size'] === wBid.size) {
+        rwData['is_winning_bid'] = 1;
+      }
+    });
+  })
 }
 
 adapterManager.registerAnalyticsAdapter({

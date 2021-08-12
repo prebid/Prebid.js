@@ -26,7 +26,7 @@ Analytics adapter for https://ascendeum.com/. Contact engineering@ascendeum.com 
   provider: 'bydata',
     options : {
         clientId: "ASCENDEUM_PROVIDED_CLIENT_ID",   
-        logFrequency : 0.01, // Sample Rate Default - 1%  
+        logFrequency : 100, // Sample Rate Default - 1%   
     }
 }
 ```
