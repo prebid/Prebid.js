@@ -254,7 +254,7 @@ export const spec = {
    * Register User Sync.
    */
   getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
-    let params = {}
+    let params = {};
     const syncs = [];
 
     // Attaching GDPR Consent Params in UserSync url
@@ -275,16 +275,18 @@ export const spec = {
             ((entry.type === 'iframe' && syncOptions.iframeEnabled) ||
             (entry.type === 'image' && syncOptions.pixelEnabled));
         })
-        .flatMap((entry) => {
-          return entry.urls.flatMap((endpoint) => {
+        .map((entry) => {
+          return entry.urls.map((endpoint) => {
             let urlInfo = utils.parseUrl(endpoint);
             utils.mergeDeep(urlInfo.search, params);
             if (Object.keys(urlInfo.search).length === 0) {
               delete urlInfo.search; // empty search object causes buildUrl to add a trailing ? to the url
             }
             return {type: entry.type, url: utils.buildUrl(urlInfo)};
-          });
-        });
+          })
+            .reduce((x, y) => x.concat(y), []);
+        })
+        .reduce((x, y) => x.concat(y), []);
       syncs.push(...pixels);
     }
     return syncs;

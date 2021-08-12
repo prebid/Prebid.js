@@ -663,8 +663,8 @@ describe('Conversant adapter tests', function() {
   });
 
   describe('getUserSyncs', function() {
-    const syncurl_iframe = 'https://sync.dotomi.com/iframe';
-    const syncurl_image = 'https://sync.dotomi.com/pixel';
+    const syncurl_iframe = 'https://sync.dotomi.com:8080/iframe';
+    const syncurl_image = 'https://sync.dotomi.com:8080/pixel';
     const cnvrResponse = {ext: {psyncs: [syncurl_image], fsyncs: [syncurl_iframe]}};
     let sandbox;
     beforeEach(function () {
