@@ -72,8 +72,8 @@ export const spec = {
       id: request.bidId,
       secure: secure
     };
-    if (request.hasOwnProperty('mediaTypes')) {
-      for (mediaType in request.mediaTypes) {
+    if (request.mediaTypes) {
+      for (const mediaType in request.mediaTypes) {
         switch (mediaType) {
           case BANNER:
             impData.banner = buildBanner(request);
