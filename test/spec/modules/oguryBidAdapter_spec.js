@@ -391,7 +391,7 @@ describe('OguryBidAdapter', function () {
     })
 
     it('Should not create nurl request if bid is undefined', function() {
-      spec.onBidWon()
+      spec.onBidWon();
       expect(requests.length).to.equal(0);
     })
 
