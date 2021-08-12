@@ -230,6 +230,7 @@ export function newBidder(spec) {
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
       const onResponse = delayExecution(configEnabledCallback(afterAllResponses), requests.length)
+      requests.forEach(_ => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_REQUEST, bidderRequest));
       requests.forEach(processRequest);
 
       function formatGetParameters(data) {
