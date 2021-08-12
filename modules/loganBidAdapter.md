@@ -24,7 +24,7 @@ Module that connects to logan demand sources
                         {
                             bidder: 'logan',
                             params: {
-                                placementId: 0
+                                placementId: 'testBanner'
                             }
                         }
                     ]
@@ -41,7 +41,7 @@ Module that connects to logan demand sources
                         {
                             bidder: 'logan',
                             params: {
-                                placementId: 0
+                                placementId: 'testVideo'
                             }
                         }
                     ]
@@ -63,7 +63,7 @@ Module that connects to logan demand sources
                         {
                             bidder: 'logan',
                             params: {
-                                placementId: 0
+                                placementId: 'testNative'
                             }
                         }
                     ]
