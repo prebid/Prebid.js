@@ -7,7 +7,7 @@ export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/delivery'
 export const BLIINK_ENDPOINT_ENGINE_VAST = 'https://engine-stg.bliink.io/vast'
 export const BLIINK_ENDPOINT_COOKIE_SYNC = 'https://cookiesync.api.bliink.io'
 export const META_KEYWORDS = 'keywords'
-export const META_TAG = 'tag'
+export const META_DESCRIPTION = 'description'
 
 const VIDEO = 'video'
 const NATIVE = 'native'
@@ -193,7 +193,9 @@ export const buildRequests = (_, bidderRequest) => {
 
   let data = {
     pageUrl: bidderRequest.refererInfo.referer,
-    keywords: getKeywords().join(',')
+    pageDescription: getMetaValue(META_DESCRIPTION),
+    keywords: getKeywords().join(','),
+    pageTitle: document.title,
   }
 
   const endPoint = bidderRequest.bids[0].params.placement === VIDEO ? BLIINK_ENDPOINT_ENGINE_VAST : BLIINK_ENDPOINT_ENGINE

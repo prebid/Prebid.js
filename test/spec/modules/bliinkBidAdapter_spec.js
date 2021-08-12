@@ -458,6 +458,8 @@ const testsBuildRequests = [
         height: 250,
         width: 300,
         keywords: '',
+        pageDescription: '',
+        pageTitle: '',
         pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
       }
     }
@@ -485,6 +487,8 @@ const testsBuildRequests = [
       data: {
         gdpr: true,
         gdpr_consent: 'XXXX',
+        pageDescription: '',
+        pageTitle: '',
         keywords: '',
         pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
         height: 250,
