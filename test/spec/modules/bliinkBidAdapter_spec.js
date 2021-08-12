@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import {spec, buildBid, BLIINK_ENDPOINT_ENGINE} from 'modules/bliinkBidAdapter.js'
+import {spec, buildBid, BLIINK_ENDPOINT_ENGINE, isXMLFormat, parseXML, getMetaList} from 'modules/bliinkBidAdapter.js'
 
 /**
  * @description Mockup bidRequest
@@ -76,12 +76,25 @@ const getConfigBid = () => {
 const getConfigCreative = () => {
   return {
     ad_id: 5648,
-    adm: '<div>BLIINK Creative Mock</div>',
+    adm: '<html lang="en"></html>',
+    price: 1,
+    currency: 'EUR',
     category: 1,
     id: 2825,
     type: 1,
     viewability_duration: 1,
     viewability_percent_in_view: 30,
+  }
+}
+
+const getConfigCreativeVideo = () => {
+  return {
+    ad_id: 5648,
+    price: 1,
+    currency: 'EUR',
+    category: 1,
+    id: 2825,
+    content: '<VAST></VAST>'
   }
 }
 
@@ -94,6 +107,9 @@ const getConfigBuildRequest = () => {
     bidderRequestId: '164ddfd207e94d',
     bidderCode: 'bliink',
     bids: [getConfigBid()],
+    params: {
+      bids: [getConfigBid()],
+    },
     refererInfo: {
       canonicalUrl: null,
       isAmp: false,
@@ -126,6 +142,155 @@ const getConfigInterpretResponse = (noAd = false) => {
     headers: {},
   }
 }
+
+/**
+ * @description Mockup response from API for RTB creative
+ * @param noAd
+ * @return {{body: string} | {mode: string, message: string}}
+ */
+const getConfigInterpretResponseRTB = (noAd = false) => {
+  if (noAd) {
+    return {
+      message: 'invalid tag',
+      mode: 'no-ad'
+    }
+  }
+
+  return {
+    body: '<VAST version="3.0"/>'
+  }
+}
+
+/**
+ *
+ *
+ *
+ * @description Below start tests for utils fonctions
+ *
+ *
+ *
+ */
+
+const testsGetMetaList = [
+  {
+    title: 'Should return empty array if there are no parameters',
+    args: {
+      fn: getMetaList()
+    },
+    want: null
+  },
+  {
+    title: 'Should return list of metas with name associated',
+    args: {
+      fn: getMetaList('test'),
+    },
+    want: [
+      {
+        key: 'name',
+        value: 'test',
+      },
+      {
+        key: 'name*',
+        value: 'test',
+      },
+      {
+        key: 'itemprop*',
+        value: 'test',
+      },
+      {
+        key: 'property',
+        value: `'og:${'test'}'`,
+      },
+      {
+        key: 'property',
+        value: `'twitter:${'test'}'`,
+      },
+      {
+        key: 'property',
+        value: `'article:${'test'}'`,
+      },
+    ]
+  }
+]
+
+describe('BLIINK Adapter getMetaList', function() {
+  for (const test of testsGetMetaList) {
+    it(test.title, () => {
+      const res = test.args.fn
+      expect(res).to.eql(test.want)
+    })
+  }
+})
+
+/**
+ * @description Array of tests used in describe function below
+ * @type {[{args: {fn: (string|Document)}, want: string, title: string}, {args: {fn: (string|Document)}, want: string, title: string}]}
+ */
+const testsParseXML = [
+  {
+    title: 'Should return empty string, if content length equal to 0',
+    args: {
+      fn: parseXML('')
+    },
+    want: '',
+  },
+  {
+    title: 'Should return empty string, if content isnt string',
+    args: {
+      fn: parseXML({})
+    },
+    want: '',
+  },
+]
+
+describe('BLIINK Adapter parseXML', function() {
+  for (const test of testsParseXML) {
+    it(test.title, () => {
+      const res = test.args.fn
+      expect(res).to.eql(test.want)
+    })
+  }
+})
+
+/**
+ * @description Array of tests used in describe function below
+ * @type {[{args: {fn: (boolean|*)}, want: boolean, title: string}, {args: {fn: (boolean|*)}, want: boolean, title: string}]}
+ */
+const testsIsXMLFormat = [
+  {
+    title: 'Should return false, if XML is not valid format',
+    args: {
+      fn: isXMLFormat('')
+    },
+    want: false,
+  },
+  {
+    title: 'Should return true, if XML is valid format',
+    args: {
+      fn: isXMLFormat('<VAST></VAST>')
+    },
+    want: true,
+  }
+]
+
+describe('BLIINK Adapter isXMLFormat', function() {
+  for (const test of testsIsXMLFormat) {
+    it(test.title, () => {
+      const res = test.args.fn
+      expect(res).to.eql(test.want)
+    })
+  }
+})
+
+/**
+ *
+ *
+ *
+ * @description End tests for utils fonctions
+ *
+ *
+ *
+ */
 
 /**
  * @description Array of tests used in describe function below
@@ -164,6 +329,44 @@ describe('BLIINK Adapter isBidRequestValid', function() {
   }
 })
 
+const testsInterpretResponse = [
+  {
+    title: 'Should construct bid for video instream',
+    args: {
+      fn: spec.interpretResponse(getConfigInterpretResponseRTB(false), getConfigBuildRequest())
+    },
+    want: {
+      ad: '<html lang=\"en\"></html>',
+      cpm: 0,
+      creativeId: '',
+      currency: 'EUR',
+      height: 1,
+      width: 1,
+      mediaType: 'video',
+      netRevenue: false,
+      requestId: '2def0c5b2a7f6e',
+      ttl: 3600,
+      vastXml: getConfigInterpretResponseRTB().body,
+    }
+  },
+  {
+    title: 'ServerResponse with message: invalid tag, return empty array',
+    args: {
+      fn: spec.interpretResponse(getConfigInterpretResponse(true), getConfigBuildRequest())
+    },
+    want: []
+  },
+]
+
+describe('BLIINK Adapter interpretResponse', function() {
+  for (const test of testsInterpretResponse) {
+    it(test.title, () => {
+      const res = test.args.fn
+      expect(res).to.eql(test.want)
+    })
+  }
+})
+
 /**
  * @description Array of tests used in describe function below
  * @type {[
@@ -191,28 +394,27 @@ const testsBuildBid = [
   {
     title: 'Input data must respect the output model',
     args: {
-      fn: buildBid({ id: 1, test: '123' }, { id: 2, test: '345' })
+      fn: buildBid({ id: 1, test: '123' }, { id: 2, test: '345' }, false, false)
     },
     want: null
   },
   {
-    title: 'input data respect the output model',
+    title: 'input data respect the output model for video',
     args: {
-      fn: buildBid(getConfigBid(), getConfigCreative())
+      fn: buildBid(getConfigBid(), getConfigCreativeVideo())
     },
     want: {
       requestId: getConfigBid().bidId,
       cpm: 1,
       currency: 'EUR',
-      width: 300,
-      height: 250,
-      creativeId: getConfigCreative().id,
-      netRevenue: true,
+      mediaType: 'video',
+      width: 1,
+      height: 1,
+      creativeId: getConfigCreativeVideo().id,
+      netRevenue: false,
+      vastXml: getConfigCreativeVideo().content,
       ad: getConfigCreative().adm,
-      ttl: 360,
-      meta: {
-        mediaType: getConfigBid().params.placement
-      }
+      ttl: 3600,
     }
   }
 ]
@@ -246,11 +448,47 @@ const testsBuildRequests = [
     want: {
       method: 'GET',
       url: `${BLIINK_ENDPOINT_ENGINE}/${getConfigBuildRequest().bids[0].params.tagId}`,
-      data: {
+      params: {
         bidderRequestId: getConfigBuildRequest().bidderRequestId,
         bidderCode: getConfigBuildRequest().bidderCode,
         bids: getConfigBuildRequest().bids,
         refererInfo: getConfigBuildRequest().refererInfo
+      },
+      data: {
+        height: 250,
+        width: 300,
+        keywords: '',
+        pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+      }
+    }
+  },
+  {
+    title: 'Should build request width GDPR configuration',
+    args: {
+      fn: spec.buildRequests([], {
+        ...getConfigBuildRequest(),
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'XXXX'
+        },
+      })
+    },
+    want: {
+      method: 'GET',
+      url: `${BLIINK_ENDPOINT_ENGINE}/${getConfigBuildRequest().bids[0].params.tagId}`,
+      params: {
+        bidderRequestId: getConfigBuildRequest().bidderRequestId,
+        bidderCode: getConfigBuildRequest().bidderCode,
+        bids: getConfigBuildRequest().bids,
+        refererInfo: getConfigBuildRequest().refererInfo
+      },
+      data: {
+        gdpr: true,
+        gdpr_consent: 'XXXX',
+        keywords: '',
+        pageUrl: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+        height: 250,
+        width: 300,
       }
     }
   }
@@ -265,44 +503,84 @@ describe('BLIINK Adapter buildRequests', function() {
   }
 })
 
-const testsInterpretResponse = [
+const getSyncOptions = (pixelEnabled = true, iframeEnabled = 'false') => {
+  return {
+    pixelEnabled,
+    iframeEnabled
+  }
+}
+
+const getServerResponses = () => {
+  return [
+    {
+      body: '<VAST></VAST>',
+    }
+  ]
+}
+
+const getGdprConsent = () => {
+  return {
+    gdprApplies: 1,
+    consentString: 'XXX'
+  }
+}
+
+const testsGetUserSyncs = [
   {
-    title: 'ServerResponse with message: invalid tag, return empty array',
+    title: 'Should not have gdprConsent exist',
     args: {
-      fn: spec.interpretResponse(getConfigInterpretResponse(true), getConfigBuildRequest())
-    },
-    want: []
-  },
-  {
-    title: 'Should server respond without invalid tag and bids array',
-    args: {
-      fn: spec.interpretResponse(getConfigInterpretResponse(), {
-        data: {
-          ...getConfigBuildRequest()
-        }
-      })
+      fn: spec.getUserSyncs(getSyncOptions(), getServerResponses(), getGdprConsent())
     },
     want: [
       {
-        requestId: getConfigBid().bidId,
-        cpm: 1,
-        currency: 'EUR',
-        width: 300,
-        height: 250,
-        creativeId: getConfigCreative().id,
-        netRevenue: true,
-        ad: getConfigCreative().adm,
-        ttl: 360,
-        meta: {
-          mediaType: getConfigBid().params.placement
-        }
-      }
+        type: 'image',
+        url: 'https://cookiesync.api.bliink.io/cookiesync?partner=smart&uid=[sas_uid]&consentString=XXX'
+      },
+      {
+        type: 'image',
+        url: 'https://cookiesync.api.bliink.io/cookiesync?partner=azerion&uid={PUB_USER_ID}&consentString=XXX',
+      },
+      {
+        type: 'image',
+        url: 'https://cookiesync.api.bliink.io/cookiesync?partner=appnexus&uid=$UID&consentString=XXX',
+      },
+      {
+        type: 'image',
+        url: 'https://ad.360yield.com/server_match?partner_id=1531&r=https://cookiesync.api.bliink.io/cookiesync?partner=azerion&uid={PUB_USER_ID}}&consentString=XXX',
+      },
+      {
+        type: 'image',
+        url: 'https://ads.stickyadstv.com/auto-user-sync&consentString=XXX',
+      },
+      {
+        type: 'image',
+        url: 'https://cookiesync.api.bliink.io/getuid?url=https%3A%2F%2Fvisitor.omnitagjs.com%2Fvisitor%2Fsync%3Fuid%3D1625272249969090bb9d544bd6d8d645%26name%3DBLIINK%26visitor%3D%24UID%26external%3Dtrue&consentString=XXX',
+      },
+      {
+        type: 'image',
+        url: 'https://pixel.advertising.com/ups/58444/sync?&gdpr=1&gdpr_consent=XXX&redir=true&uid=sampleUserId&consentString=XXX',
+      },
+      {
+        type: 'image',
+        url: 'https://ups.analytics.yahoo.com/ups/58499/occ?gdpr=1&gdpr_consent=XXX&consentString=XXX',
+      },
+      {
+        type: 'image',
+        url: 'https://secure.adnxs.com/getuid?https://cookiesync.api.bliink.io/cookiesync?partner=appnexus&uid=$UID}&consentString=XXX',
+      },
     ]
+  },
+  {
+    title: 'Should not have gdpr consent',
+    args: {
+      fn: spec.getUserSyncs(getSyncOptions(), getServerResponses())
+    },
+    want: []
   }
 ]
 
-describe('BLIINK Adapter interpretResponse', function() {
-  for (const test of testsInterpretResponse) {
+describe('BLIINK Adapter getUserSyncs', function() {
+  for (const test of testsGetUserSyncs) {
     it(test.title, () => {
       const res = test.args.fn
       expect(res).to.eql(test.want)
