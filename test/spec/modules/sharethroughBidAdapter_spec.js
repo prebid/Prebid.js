@@ -301,7 +301,7 @@ describe('sharethrough adapter spec', function() {
           const openRtbReq = builtRequest.data;
 
           expect(openRtbReq.imp[0].ext.gpid).to.equal('universal-id');
-          expect(openRtbReq.imp[1].ext?.gpid).to.be.undefined;
+          expect(openRtbReq.imp[1].ext).to.be.undefined;
         });
       });
 

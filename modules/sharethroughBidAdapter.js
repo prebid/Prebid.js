@@ -1,8 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { createEidsArray } from './userId/eids';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { createEidsArray } from './userId/eids.js';
 
 const VERSION = '4.0.0';
 const BIDDER_CODE = 'sharethrough';
@@ -88,31 +88,32 @@ export const sharethroughAdapterSpec = {
       }
 
       if (bidReq.mediaTypes && bidReq.mediaTypes.video) {
+        const videoRequest = bidReq.mediaTypes.video;
         impression.video = {
-          pos: bidReq.mediaTypes.video.pos ?? 0,
+          pos: nullish(videoRequest.pos, 0),
           topframe: utils.inIframe() ? 0 : 1,
-          skip: bidReq.mediaTypes.video.skip ?? 0,
-          linearity: bidReq.mediaTypes.video.linearity ?? 1,
-          minduration: bidReq.mediaTypes.video.minduration ?? 5,
-          maxduration: bidReq.mediaTypes.video.maxduration ?? 60,
-          playbackmethod: bidReq.mediaTypes.video.playbackmethod || [2],
-          api: getVideoApi(bidReq.mediaTypes.video),
-          mimes: bidReq.mediaTypes.video.mimes || ['video/mp4'],
-          protocols: getVideoProtocols(bidReq.mediaTypes.video),
-          w: bidReq.mediaTypes.video.playerSize[0],
-          h: bidReq.mediaTypes.video.playerSize[1],
-          startdelay: bidReq.mediaTypes.video.startdelay ?? 0,
-          skipmin: bidReq.mediaTypes.video.skipmin ?? 0,
-          skipafter: bidReq.mediaTypes.video.skipafter ?? 0,
+          skip: nullish(videoRequest.skip, 0),
+          linearity: nullish(videoRequest.linearity, 1),
+          minduration: nullish(videoRequest.minduration, 5),
+          maxduration: nullish(videoRequest.maxduration, 60),
+          playbackmethod: videoRequest.playbackmethod || [2],
+          api: getVideoApi(videoRequest),
+          mimes: videoRequest.mimes || ['video/mp4'],
+          protocols: getVideoProtocols(videoRequest),
+          w: videoRequest.playerSize[0],
+          h: videoRequest.playerSize[1],
+          startdelay: nullish(videoRequest.startdelay, 0),
+          skipmin: nullish(videoRequest.skipmin, 0),
+          skipafter: nullish(videoRequest.skipafter, 0),
         };
 
-        if (bidReq.mediaTypes.video.placement) impression.video.placement = bidReq.mediaTypes.video.placement;
-        if (bidReq.mediaTypes.video.delivery) impression.video.delivery = bidReq.mediaTypes.video.delivery;
-        if (bidReq.mediaTypes.video.companiontype) impression.video.companiontype = bidReq.mediaTypes.video.companiontype;
-        if (bidReq.mediaTypes.video.companionad) impression.video.companionad = bidReq.mediaTypes.video.companionad;
+        if (videoRequest.placement) impression.video.placement = videoRequest.placement;
+        if (videoRequest.delivery) impression.video.delivery = videoRequest.delivery;
+        if (videoRequest.companiontype) impression.video.companiontype = videoRequest.companiontype;
+        if (videoRequest.companionad) impression.video.companionad = videoRequest.companionad;
       } else {
         impression.banner = {
-          pos: bidReq.mediaTypes?.banner.pos ?? 0,
+          pos: utils.deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
           topframe: utils.inIframe() ? 0 : 1,
           format: bidReq.sizes.map(size => ({ w: +size[0], h: +size[1] })),
         };
@@ -237,7 +238,6 @@ function getFloor(bid) {
   return floor !== null ? floor : bid.params.floor;
 }
 
-
 function userIdAsEids(bidRequest) {
   const eids = createEidsArray(utils.deepAccess(bidRequest, 'userId')) || [];
 
@@ -259,6 +259,11 @@ function getProtocol() {
 
 function matchRequest(id, request) {
   return request.bidRequests.find(bid => bid.bidId === id);
+}
+
+// stub for ?? operator
+function nullish(input, def) {
+  return input === null || input === undefined ? def : input;
 }
 
 registerBidder(sharethroughAdapterSpec);
