@@ -1,19 +1,13 @@
 import * as utils from '../src/utils.js';
-import {
-  BANNER,
-  VIDEO
-} from '../src/mediaTypes.js';
-import {
-  config
-} from '../src/config.js';
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
-import {
-  createEidsArray
-} from './userId/eids.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { createEidsArray } from './userId/eids.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+
 const BIDDER_CODE = 'smartadserver';
 const GVL_ID = 45;
+const DEFAULT_FLOOR = 0.0;
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
@@ -137,8 +131,8 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // use bidderRequest.bids[] to get bidder-dependent request info
-    // if your bidder supports multiple currencies, use config.getConfig(currency)
-    // to find which one the ad server needs
+
+    const adServerCurrency = config.getConfig('currency.adServerCurrency');
 
     // pull requested transaction ID from bidderRequest.bids[].transactionId
     return validBidRequests.reduce((bidRequests, bid) => {
@@ -147,8 +141,8 @@ export const spec = {
         siteid: bid.params.siteId,
         pageid: bid.params.pageId,
         formatid: bid.params.formatId,
-        currencyCode: config.getConfig('currency.adServerCurrency'),
-        bidfloor: bid.params.bidfloor || 0.0,
+        currencyCode: adServerCurrency,
+        bidfloor: bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency),
         targeting: bid.params.target && bid.params.target !== '' ? bid.params.target : undefined,
         buid: bid.params.buId && bid.params.buId !== '' ? bid.params.buId : undefined,
         appname: bid.params.appName && bid.params.appName !== '' ? bid.params.appName : undefined,
@@ -247,6 +241,31 @@ export const spec = {
       utils.logError('Error while parsing smart server response', error);
     }
     return bidResponses;
+  },
+
+  /**
+   * Get floors from Prebid Price Floors module
+   *
+   * @param {object} bid Bid request object
+   * @param {string} currency Ad server currency
+   * @return {number} Floor price
+   */
+  getBidFloor: function (bid, currency) {
+    if (!utils.isFn(bid.getFloor)) {
+      return DEFAULT_FLOOR;
+    }
+
+    const floor = bid.getFloor({
+      currency: currency || 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (utils.isPlainObject(floor) && !isNaN(floor.floor)) {
+      return floor.floor;
+    }
+
+    return DEFAULT_FLOOR;
   },
 
   /**
