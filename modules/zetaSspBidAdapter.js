@@ -72,7 +72,7 @@ export const spec = {
       id: request.bidId,
       secure: secure
     };
-    if (request.mediaTypes) {
+    if (request.hasOwnProperty('mediaTypes')) {
       for (mediaType in request.mediaTypes) {
         switch (mediaType) {
           case BANNER:
