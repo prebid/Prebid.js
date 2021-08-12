@@ -387,7 +387,7 @@ describe('OguryBidAdapter', function () {
     })
 
     afterEach(function() {
-      xhr.restore()
+      xhr.restore();
     })
 
     it('Should not create nurl request if bid is undefined', function() {
