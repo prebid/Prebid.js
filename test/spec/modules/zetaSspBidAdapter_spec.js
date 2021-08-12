@@ -1,5 +1,5 @@
 import {spec} from '../../../modules/zetaSspBidAdapter.js'
-import {expect} from "chai";
+import {expect} from 'chai';
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
@@ -63,8 +63,8 @@ describe('Zeta Ssp Bid Adapter', function () {
         context: 'instream',
         playerSize: [[720, 340]],
         mimes: ['video/mp4'],
-        minDuration: 5,
-        maxDuration: 30,
+        minduration: 5,
+        maxduration: 30,
         protocols: [2, 3]
       }
     },
@@ -212,13 +212,13 @@ describe('Zeta Ssp Bid Adapter', function () {
     const request = spec.buildRequests(videoRequest, videoRequest[0]);
     const payload = JSON.parse(request.data);
 
-    expect(payload.imp[0].video.minDuration).to.eql(videoRequest.mediaTypes.video.minDuration);
-    expect(payload.imp[0].video.maxDuration).to.eql(videoRequest.mediaTypes.video.maxDuration);
-    expect(payload.imp[0].video.protocols).to.eql(videoRequest.mediaTypes.video.protocols);
-    expect(payload.imp[0].video.mimes).to.eql(videoRequest.mediaTypes.video.mimes);
+    expect(payload.imp[0].video.minduration).to.eql(videoRequest[0].mediaTypes.video.minduration);
+    expect(payload.imp[0].video.maxduration).to.eql(videoRequest[0].mediaTypes.video.maxduration);
+    expect(payload.imp[0].video.protocols).to.eql(videoRequest[0].mediaTypes.video.protocols);
+    expect(payload.imp[0].video.mimes).to.eql(videoRequest[0].mediaTypes.video.mimes);
     expect(payload.imp[0].video.w).to.eql(720);
     expect(payload.imp[0].video.h).to.eql(340);
 
-    expect(payload.imp[0].banner).to.be.empty;
+    expect(payload.imp[0].banner).to.be.undefined;
   });
 });
