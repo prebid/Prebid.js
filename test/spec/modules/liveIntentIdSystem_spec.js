@@ -184,7 +184,6 @@ describe('LiveIntentId', function() {
     submoduleCallback(callBackSpy);
     let request = server.requests[1];
     expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899');
-    // expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899');
     request.respond(
       503,
       responseHeader,
