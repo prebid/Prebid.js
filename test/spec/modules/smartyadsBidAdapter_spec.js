@@ -104,7 +104,8 @@ describe('SmartyadsAdapter', function () {
       expect(dataItem.width).to.equal(300);
       expect(dataItem.height).to.equal(250);
       expect(dataItem.ad).to.equal('Test');
-      expect(dataItem.meta).to.have.property('advertiserDomains', ['example.com']);
+      expect(dataItem.meta).to.have.property('advertiserDomains')
+      expect(dataItem.meta.advertiserDomains).to.deep.equal(['example.com']);
       expect(dataItem.ttl).to.equal(120);
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
@@ -191,7 +192,7 @@ describe('SmartyadsAdapter', function () {
 
       let serverResponses = spec.interpretResponse(invBanner);
       expect(serverResponses).to.be.an('array').that.is.empty;
-    });
+    });  , 
     it('Should return an empty array if invalid video response is passed', function () {
       const invVideo = {
         body: [{
