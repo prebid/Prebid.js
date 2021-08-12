@@ -150,7 +150,7 @@ export const buildBid = (bidRequest, bliinkCreative) => {
   }
 
   // eslint-disable-next-line no-mixed-operators
-  if ((bliinkCreative) && bidRequest && bliinkCreative &&
+  if ((bliinkCreative) && bidRequest &&
     // eslint-disable-next-line no-mixed-operators
     !bidRequest.bidId ||
     !bidRequest.sizes ||
@@ -205,7 +205,7 @@ export const buildRequests = (_, bidderRequest) => {
     refererInfo: bidderRequest.refererInfo,
   }
 
-  if (bidderRequest.gdprConsent && bidderRequest.gdprConsent) {
+  if (bidderRequest.gdprConsent) {
     data = {
       ...data,
       gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies,
