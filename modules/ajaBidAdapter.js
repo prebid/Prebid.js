@@ -16,23 +16,48 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER, NATIVE],
 
-  isBidRequestValid: function(bid) {
-    return !!(bid.params.asi);
+  /**
+   * Determines whether or not the given bid has all the params needed to make a valid request.
+   *
+   * @param {BidRequest} bidRequest
+   * @returns {boolean}
+   */
+  isBidRequestValid: function(bidRequest) {
+    return !!(bidRequest.params.asi);
   },
 
+  /**
+   * Build the request to the Server which requests Bids for the given array of Requests.
+   * Each BidRequest in the argument array is guaranteed to have passed the isBidRequestValid() test.
+   *
+   * @param {BidRequest[]} validBidRequests
+   * @param {*} bidderRequest
+   * @returns {ServerRequest|ServerRequest[]}
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bidRequests = [];
+    const pageUrl = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || undefined;
+
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
-      const bid = validBidRequests[i];
+      const bidRequest = validBidRequests[i];
       let queryString = '';
-      const asi = utils.getBidIdParameter('asi', bid.params);
+
+      const asi = utils.getBidIdParameter('asi', bidRequest.params);
       queryString = utils.tryAppendQueryString(queryString, 'asi', asi);
       queryString = utils.tryAppendQueryString(queryString, 'skt', SDK_TYPE);
-      queryString = utils.tryAppendQueryString(queryString, 'prebid_id', bid.bidId);
+      queryString = utils.tryAppendQueryString(queryString, 'tid', bidRequest.transactionId)
+      queryString = utils.tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
       queryString = utils.tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
 
-      if (bidderRequest && bidderRequest.refererInfo) {
-        queryString = utils.tryAppendQueryString(queryString, 'page_url', bidderRequest.refererInfo.referer);
+      if (pageUrl) {
+        queryString = utils.tryAppendQueryString(queryString, 'page_url', pageUrl);
+      }
+
+      const eids = bidRequest.userIdAsEids;
+      if (eids && eids.length) {
+        queryString = utils.tryAppendQueryString(queryString, 'eids', JSON.stringify({
+          'eids': eids,
+        }))
       }
 
       bidRequests.push({
