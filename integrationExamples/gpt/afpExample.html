@@ -41,7 +41,7 @@
       }]
     },
     {
-      code: 'asb-target',
+      code: 'as-target',
       mediaTypes: {
         banner: {
           sizes: [500, 500],
@@ -52,7 +52,7 @@
         params: {
           placeType: "Action Scroller",
           placeId: "60f15a8515770d5ab7c7f885",
-          placeContainer: '#asb-container',
+          placeContainer: '#as-container',
         }
       }]
     }];
@@ -80,8 +80,8 @@
             pbjs.renderAd(iframe.contentDocument, params['hb_adid']);
           }
           
-          params = pbjs.getAdserverTargetingForAdUnitCode("asb-target");
-          iframe = document.getElementById("asb-target");
+          params = pbjs.getAdserverTargetingForAdUnitCode("as-target");
+          iframe = document.getElementById("as-target");
  
           if (params && params['hb_adid']) {
             pbjs.renderAd(iframe.contentDocument, params['hb_adid']);
@@ -108,8 +108,8 @@
   
   <h2>Action Scroller</h2>
   <div class="container-wrapper">
-    <div id="asb-container"></div>
-    <iframe id="asb-target" style="display: none;"></iframe>
+    <div id="as-container"></div>
+    <iframe id="as-target" style="display: none;"></iframe>
   </div>
 </body>
 </html>
