@@ -1,17 +1,17 @@
 # Overview
 
 
-**Module Name**: AstraLab Bidder Adapter
+**Module Name**: AFP Bidder Adapter
 **Module Type**: Bidder Adapter
 **Maintainer**: devops@astraone.io
 
 # Description
 
-You can use this adapter to get a bid from AstraLab.
-Please reach out to your AstraLab account team before using this plugin to get placeId.
+You can use this adapter to get a bid from AFP.
+Please reach out to your AFP account team before using this plugin to get placeId.
 The code below returns a demo ad.
 
-About us: https://astralab.ai, https://afp.ai
+About us: https://afp.ai
 
 # Test Parameters
 ```js
