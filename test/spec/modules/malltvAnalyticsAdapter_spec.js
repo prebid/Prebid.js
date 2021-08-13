@@ -16,6 +16,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
     beforeEach(function () {
       const configOptions = { propertyId }
 
+      sinon.stub(events, 'getEvents').returns([])
       malltvAnalyticsAdapter.enableAnalytics({
         provider: 'malltvAnalytics',
         options: configOptions
@@ -24,6 +25,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
 
     afterEach(function () {
       malltvAnalyticsAdapter.disableAnalytics()
+      events.getEvents.restore()
     })
 
     describe('#getCpmInEur()', function() {
