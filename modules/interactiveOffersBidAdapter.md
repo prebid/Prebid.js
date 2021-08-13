@@ -3,12 +3,12 @@
 ```
 Module Name: interactiveOffers Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: faria@interactiveoffers.com
+Maintainer: dev@interactiveoffers.com
 ```
 
 # Description
 
-Module that connects to interactiveOffers demand sources. Param pubid is required.
+Module that connects to interactiveOffers demand sources. Param partnerId is required.
 
 # Test Parameters
 ```
@@ -24,7 +24,7 @@ Module that connects to interactiveOffers demand sources. Param pubid is require
                    {
                        bidder: "interactiveOffers",
                        params: {
-                           pubid: 10,
+                           partnerId: "abcd1234",
                            tmax: 250
                        }
                    }

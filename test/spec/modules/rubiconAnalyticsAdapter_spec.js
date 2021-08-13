@@ -274,7 +274,12 @@ const MOCK = {
             }
           }
         },
-        'mediaType': 'video',
+        'mediaTypes': {
+          'video': {
+            'context': 'instream',
+            'playerSize': [640, 480]
+          }
+        },
         'adUnitCode': '/19968336/header-bid-tag-0',
         'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
         'sizes': [[640, 480]],
@@ -362,7 +367,6 @@ const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
 
 const ANALYTICS_MESSAGE = {
   'channel': 'web',
-  'eventTimeMillis': 1519767013781,
   'integration': 'pbjs',
   'version': '$prebid.version$',
   'referrerUri': 'http://www.test.com/page.html',
@@ -371,9 +375,16 @@ const ANALYTICS_MESSAGE = {
     'id': STUBBED_UUID,
     'start': 1519767013781
   },
+  'timestamps': {
+    'auctionEnded': 1519767013781,
+    'eventTime': 1519767013781,
+    'prebidLoaded': rubiconAnalyticsAdapter.MODULE_INITIALIZED_TIME
+  },
+  'trigger': 'allBidWons',
   'referrerHostname': 'www.test.com',
   'auctions': [
     {
+      'requestId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
       'clientTimeoutMillis': 3000,
       'serverTimeoutMillis': 1000,
       'accountId': 1001,
@@ -840,6 +851,42 @@ describe('rubicon analytics adapter', function () {
       validate(message);
 
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
+    });
+
+    it('should pass along user ids', function () {
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.bidderRequests[0].bids[0].userId = {
+        criteoId: 'sadfe4334',
+        lotamePanoramaId: 'asdf3gf4eg',
+        pubcid: 'dsfa4545-svgdfs5',
+        sharedId: {id1: 'asdf', id2: 'sadf4344'}
+      };
+
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+
+      let message = JSON.parse(request.requestBody);
+      validate(message);
+
+      expect(message.auctions[0].user).to.deep.equal({
+        ids: [
+          {provider: 'criteoId', 'hasId': true},
+          {provider: 'lotamePanoramaId', 'hasId': true},
+          {provider: 'pubcid', 'hasId': true},
+          {provider: 'sharedId', 'hasId': true},
+        ]
+      });
     });
 
     it('should handle bidResponse dimensions correctly', function () {
@@ -1657,6 +1704,7 @@ describe('rubicon analytics adapter', function () {
           lineItemId: 6666,
           adSlot: '/19968336/header-bid-tag1'
         };
+        expectedMessage.trigger = 'gam';
         expect(message).to.deep.equal(expectedMessage);
       });
 
@@ -1906,14 +1954,18 @@ describe('rubicon analytics adapter', function () {
 
     it('should pass aupName as pattern', function () {
       let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
-      bidRequest.bids[0].fpd = {
-        context: {
-          aupName: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile'
+      bidRequest.bids[0].ortb2Imp = {
+        ext: {
+          data: {
+            aupname: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile'
+          }
         }
       };
-      bidRequest.bids[1].fpd = {
-        context: {
-          aupName: '1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile'
+      bidRequest.bids[1].ortb2Imp = {
+        ext: {
+          data: {
+            aupname: '1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile'
+          }
         }
       };
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);

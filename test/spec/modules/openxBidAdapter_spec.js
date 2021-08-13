@@ -122,6 +122,84 @@ describe('OpenxAdapter', function () {
     }
   };
 
+  // Sample bid requests
+
+  const BANNER_BID_REQUESTS_WITH_MEDIA_TYPES = [{
+    bidder: 'openx',
+    params: {
+      unit: '11',
+      delDomain: 'test-del-domain'
+    },
+    adUnitCode: '/adunit-code/test-path',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [300, 600]]
+      }
+    },
+    bidId: 'test-bid-id-1',
+    bidderRequestId: 'test-bid-request-1',
+    auctionId: 'test-auction-1',
+    ortb2Imp: { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } },
+  }, {
+    bidder: 'openx',
+    params: {
+      unit: '22',
+      delDomain: 'test-del-domain'
+    },
+    adUnitCode: 'adunit-code',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
+      }
+    },
+    bidId: 'test-bid-id-2',
+    bidderRequestId: 'test-bid-request-2',
+    auctionId: 'test-auction-2',
+    ortb2Imp: { ext: { data: { pbadslot: '/12345/my-gpt-tag-1' } } },
+  }];
+
+  const VIDEO_BID_REQUESTS_WITH_MEDIA_TYPES = [{
+    bidder: 'openx',
+    mediaTypes: {
+      video: {
+        playerSize: [640, 480]
+      }
+    },
+    params: {
+      unit: '12345678',
+      delDomain: 'test-del-domain'
+    },
+    adUnitCode: 'adunit-code',
+
+    bidId: '30b31c1838de1e',
+    bidderRequestId: '22edbae2733bf6',
+    auctionId: '1d1a030790a475',
+    transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e',
+    ortb2Imp: { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } },
+  }];
+
+  const MULTI_FORMAT_BID_REQUESTS = [{
+    bidder: 'openx',
+    params: {
+      unit: '12345678',
+      delDomain: 'test-del-domain'
+    },
+    adUnitCode: 'adunit-code',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]]
+      },
+      video: {
+        playerSize: [300, 250]
+      }
+    },
+    bidId: '30b31c1838de1e',
+    bidderRequestId: '22edbae2733bf6',
+    auctionId: '1d1a030790a475',
+    transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e',
+    ortb2Imp: { ext: { data: { pbadslot: '/12345/my-gpt-tag-0' } } },
+  }];
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
@@ -181,28 +259,8 @@ describe('OpenxAdapter', function () {
 
     describe('when request is for a multiformat ad', function () {
       describe('and request config uses mediaTypes video and banner', () => {
-        const multiformatBid = {
-          bidder: 'openx',
-          params: {
-            unit: '12345678',
-            delDomain: 'test-del-domain'
-          },
-          adUnitCode: 'adunit-code',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250]]
-            },
-            video: {
-              playerSize: [300, 250]
-            }
-          },
-          bidId: '30b31c1838de1e',
-          bidderRequestId: '22edbae2733bf6',
-          auctionId: '1d1a030790a475',
-          transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
-        };
         it('should return true multisize when required params found', function () {
-          expect(spec.isBidRequestValid(multiformatBid)).to.equal(true);
+          expect(spec.isBidRequestValid(MULTI_FORMAT_BID_REQUESTS[0])).to.equal(true);
         });
       });
     });
@@ -327,37 +385,7 @@ describe('OpenxAdapter', function () {
   });
 
   describe('buildRequests for banner ads', function () {
-    const bidRequestsWithMediaTypes = [{
-      'bidder': 'openx',
-      'params': {
-        'unit': '11',
-        'delDomain': 'test-del-domain'
-      },
-      'adUnitCode': '/adunit-code/test-path',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250], [300, 600]]
-        }
-      },
-      'bidId': 'test-bid-id-1',
-      'bidderRequestId': 'test-bid-request-1',
-      'auctionId': 'test-auction-1'
-    }, {
-      'bidder': 'openx',
-      'params': {
-        'unit': '22',
-        'delDomain': 'test-del-domain'
-      },
-      'adUnitCode': 'adunit-code',
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90]]
-        }
-      },
-      'bidId': 'test-bid-id-2',
-      'bidderRequestId': 'test-bid-request-2',
-      'auctionId': 'test-auction-2'
-    }];
+    const bidRequestsWithMediaTypes = BANNER_BID_REQUESTS_WITH_MEDIA_TYPES;
 
     const bidRequestsWithPlatform = [{
       'bidder': 'openx',
@@ -450,7 +478,12 @@ describe('OpenxAdapter', function () {
 
     it('should send the adunit codes', function () {
       const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-      expect(request[0].data.divIds).to.equal(`${encodeURIComponent(bidRequestsWithMediaTypes[0].adUnitCode)},${encodeURIComponent(bidRequestsWithMediaTypes[1].adUnitCode)}`);
+      expect(request[0].data.divids).to.equal(`${encodeURIComponent(bidRequestsWithMediaTypes[0].adUnitCode)},${encodeURIComponent(bidRequestsWithMediaTypes[1].adUnitCode)}`);
+    });
+
+    it('should send the gpids', function () {
+      const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+      expect(request[0].data.aucs).to.equal(`${encodeURIComponent('/12345/my-gpt-tag-0')},${encodeURIComponent('/12345/my-gpt-tag-1')}`);
     });
 
     it('should send ad unit ids when any are defined', function () {
@@ -1043,7 +1076,6 @@ describe('OpenxAdapter', function () {
       const EXAMPLE_DATA_BY_ATTR = {
         britepoolid: '1111-britepoolid',
         criteoId: '1111-criteoId',
-        digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
         fabrickId: '1111-fabrickid',
         haloId: '1111-haloid',
         id5id: {uid: '1111-id5id'},
@@ -1058,10 +1090,18 @@ describe('OpenxAdapter', function () {
         parrableId: { eid: 'eidVersion.encryptionKeyReference.encryptedValue' },
         pubcid: '1111-pubcid',
         quantcastId: '1111-quantcastid',
-        sharedId: '1111-sharedid',
         tapadId: '111-tapadid',
         tdid: '1111-tdid',
-        verizonMediaId: '1111-verizonmediaid',
+        uid2: {id: '1111-uid2'},
+        flocId: {id: '12144', version: 'chrome.1.1'},
+        novatiq: {snowflake: '1111-novatiqid'},
+        admixerId: '1111-admixerid',
+        deepintentId: '1111-deepintentid',
+        dmdId: '111-dmdid',
+        nextrollId: '1111-nextrollid',
+        mwOpenLinkId: '1111-mwopenlinkid',
+        dapId: '1111-dapId',
+        amxId: '1111-amxid',
       };
 
       // generates the same set of tests for each id provider
@@ -1099,8 +1139,11 @@ describe('OpenxAdapter', function () {
             let userIdValue;
             // handle cases where userId key refers to an object
             switch (userIdProviderKey) {
-              case 'digitrustid':
-                userIdValue = EXAMPLE_DATA_BY_ATTR.digitrustid.data.id;
+              case 'flocId':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.flocId.id;
+                break;
+              case 'uid2':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.uid2.id;
                 break;
               case 'lipb':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.lipb.lipbid;
@@ -1110,6 +1153,9 @@ describe('OpenxAdapter', function () {
                 break;
               case 'id5id':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.id5id.uid;
+                break;
+              case 'novatiq':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.novatiq.snowflake;
                 break;
               default:
                 userIdValue = EXAMPLE_DATA_BY_ATTR[userIdProviderKey];
@@ -1226,24 +1272,7 @@ describe('OpenxAdapter', function () {
   });
 
   describe('buildRequests for video', function () {
-    const bidRequestsWithMediaTypes = [{
-      'bidder': 'openx',
-      'mediaTypes': {
-        video: {
-          playerSize: [640, 480]
-        }
-      },
-      'params': {
-        'unit': '12345678',
-        'delDomain': 'test-del-domain'
-      },
-      'adUnitCode': 'adunit-code',
-
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
-      'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
-    }];
+    const bidRequestsWithMediaTypes = VIDEO_BID_REQUESTS_WITH_MEDIA_TYPES;
     const mockBidderRequest = {refererInfo: {}};
 
     it('should send bid request to openx url via GET, with mediaTypes having video parameter', function () {
@@ -1258,6 +1287,7 @@ describe('OpenxAdapter', function () {
       expect(dataParams.auid).to.equal('12345678');
       expect(dataParams.vht).to.equal(480);
       expect(dataParams.vwd).to.equal(640);
+      expect(dataParams.aucs).to.equal(encodeURIComponent('/12345/my-gpt-tag-0'));
     });
 
     it('shouldn\'t have the test parameter', function () {
@@ -1317,18 +1347,86 @@ describe('OpenxAdapter', function () {
         expect(request[0].data.ju).to.not.equal(myUrl);
       });
 
-      describe('when using the openRtb param', function () {
-        it('should covert the param to a JSON string', function () {
-          let myOpenRTBObject = {};
+      describe('when using the openrtb video params', function () {
+        it('should parse legacy params.video.openrtb', function () {
+          let myOpenRTBObject = {mimes: ['application/javascript']};
           videoBidRequest.params.video = {
             openrtb: myOpenRTBObject
           };
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
           const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
 
-          expect(request[0].data.openrtb).to.equal(JSON.stringify(myOpenRTBObject));
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
         });
 
-        it("should use the bidRequest's playerSize when it is available", function () {
+        it('should parse legacy params.openrtb', function () {
+          let myOpenRTBObject = {mimes: ['application/javascript']};
+          videoBidRequest.params.openrtb = myOpenRTBObject;
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
+        });
+
+        it('should parse legacy params.video', function () {
+          let myOpenRTBObject = {mimes: ['application/javascript']};
+          videoBidRequest.params.video = myOpenRTBObject;
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
+        });
+
+        it('should parse legacy params.video as full openrtb', function () {
+          let myOpenRTBObject = {imp: [{video: {mimes: ['application/javascript']}}]};
+          videoBidRequest.params.video = myOpenRTBObject;
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
+        });
+
+        it('should parse legacy video.openrtb', function () {
+          let myOpenRTBObject = {mimes: ['application/javascript']};
+          videoBidRequest.params.video = {
+            openrtb: myOpenRTBObject
+          };
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
+        });
+
+        it('should omit filtered values for legacy', function () {
+          let myOpenRTBObject = {mimes: ['application/javascript'], dont: 'use'};
+          videoBidRequest.params.video = {
+            openrtb: myOpenRTBObject
+          };
+          const expected = {imp: [{video: {w: 640, h: 480, mimes: ['application/javascript']}}]}
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+
+          expect(request[0].data.openrtb).to.equal(JSON.stringify(expected));
+        });
+
+        it('should parse mediatypes.video', function () {
+          videoBidRequest.mediaTypes.video.mimes = ['application/javascript']
+          videoBidRequest.mediaTypes.video.minduration = 15
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+          const openRtbRequestParams = JSON.parse(request[0].data.openrtb);
+          expect(openRtbRequestParams.imp[0].video.mimes).to.eql(['application/javascript']);
+          expect(openRtbRequestParams.imp[0].video.minduration).to.equal(15);
+        });
+
+        it('should filter mediatypes.video', function () {
+          videoBidRequest.mediaTypes.video.mimes = ['application/javascript']
+          videoBidRequest.mediaTypes.video.minnothing = 15
+          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
+          const openRtbRequestParams = JSON.parse(request[0].data.openrtb);
+          expect(openRtbRequestParams.imp[0].video.mimes).to.eql(['application/javascript']);
+          expect(openRtbRequestParams.imp[0].video.minnothing).to.equal(undefined);
+        });
+
+        it("should use the bidRequest's playerSize", function () {
           const width = 200;
           const height = 100;
           const myOpenRTBObject = {v: height, w: width};
@@ -1338,24 +1436,8 @@ describe('OpenxAdapter', function () {
           const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
           const openRtbRequestParams = JSON.parse(request[0].data.openrtb);
 
-          expect(openRtbRequestParams.w).to.not.equal(width);
-          expect(openRtbRequestParams.v).to.not.equal(height);
-        });
-
-        it('should use the the openRTB\'s sizing when the bidRequest\'s playerSize is not available', function () {
-          const width = 200;
-          const height = 100;
-          const myOpenRTBObject = {v: height, w: width};
-          videoBidRequest.params.video = {
-            openrtb: myOpenRTBObject
-          };
-          videoBidRequest.mediaTypes.video.playerSize = undefined;
-
-          const request = spec.buildRequests([videoBidRequest], mockBidderRequest);
-          const openRtbRequestParams = JSON.parse(request[0].data.openrtb);
-
-          expect(openRtbRequestParams.w).to.equal(width);
-          expect(openRtbRequestParams.v).to.equal(height);
+          expect(openRtbRequestParams.imp[0].video.w).to.equal(640);
+          expect(openRtbRequestParams.imp[0].video.h).to.equal(480);
         });
       });
     });
@@ -1443,35 +1525,150 @@ describe('OpenxAdapter', function () {
   });
 
   describe('buildRequest for multi-format ad', function () {
-    const multiformatBid = {
-      bidder: 'openx',
-      params: {
-        unit: '12345678',
-        delDomain: 'test-del-domain'
-      },
-      adUnitCode: 'adunit-code',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250]]
-        },
-        video: {
-          playerSize: [300, 250]
-        }
-      },
-      bidId: '30b31c1838de1e',
-      bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475',
-      transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
-    };
+    const multiformatBid = MULTI_FORMAT_BID_REQUESTS[0];
     let mockBidderRequest = {refererInfo: {}};
 
     it('should default to a banner request', function () {
       const request = spec.buildRequests([multiformatBid], mockBidderRequest);
       const dataParams = request[0].data;
 
-      expect(dataParams.divIds).to.have.string(multiformatBid.adUnitCode);
+      expect(dataParams.divids).to.have.string(multiformatBid.adUnitCode);
     });
   });
+
+  describe('buildRequests for all kinds of ads', function () {
+    utils._each({
+      banner: BANNER_BID_REQUESTS_WITH_MEDIA_TYPES[0],
+      video: VIDEO_BID_REQUESTS_WITH_MEDIA_TYPES[0],
+      multi: MULTI_FORMAT_BID_REQUESTS[0]
+    }, (bidRequest, name) => {
+      describe('with segments', function () {
+        const TESTS = [
+          {
+            name: 'should send proprietary segment data from first party config',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
+                    {name: 'dmp2', segment: [{id: 'baz'}]},
+                  ]
+                }
+              }
+            },
+            expect: 'dmp1/4:foo|bar,dmp2:baz',
+          },
+          {
+            name: 'should combine same provider segment data from first party config',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
+                    {name: 'dmp1', ext: {}, segment: [{id: 'baz'}]},
+                  ]
+                }
+              }
+            },
+            expect: 'dmp1/4:foo|bar,dmp1:baz',
+          },
+          {
+            name: 'should not send any segment data if first party config is incomplete',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'provider-with-no-segments'},
+                    {segment: [{id: 'segments-with-no-provider'}]},
+                    {},
+                  ]
+                }
+              }
+            }
+          },
+          {
+            name: 'should send first party data segments and liveintent segments from request',
+            config: {
+              ortb2: {
+                user: {
+                  data: [
+                    {name: 'dmp1', segment: [{id: 'foo'}, {id: 'bar'}]},
+                    {name: 'dmp2', segment: [{id: 'baz'}]},
+                  ]
+                }
+              }
+            },
+            request: {
+              userId: {
+                lipb: {
+                  lipbid: 'aaa',
+                  segments: ['l1', 'l2']
+                },
+              },
+            },
+            expect: 'dmp1:foo|bar,dmp2:baz,liveintent:l1|l2',
+          },
+          {
+            name: 'should send just liveintent segment from request if no first party config',
+            config: {},
+            request: {
+              userId: {
+                lipb: {
+                  lipbid: 'aaa',
+                  segments: ['l1', 'l2']
+                },
+              },
+            },
+            expect: 'liveintent:l1|l2',
+          },
+          {
+            name: 'should send nothing if lipb section does not contain segments',
+            config: {},
+            request: {
+              userId: {
+                lipb: {
+                  lipbid: 'aaa',
+                },
+              },
+            },
+          },
+        ];
+        utils._each(TESTS, (t) => {
+          context('in ortb2.user.data', function () {
+            let bidRequests;
+            let configStub;
+
+            beforeEach(function () {
+              let fpdConfig = t.config
+              configStub = sinon
+                .stub(config, 'getConfig')
+                .withArgs('ortb2.user.data')
+                .callsFake((key) => {
+                  return utils.deepAccess(fpdConfig, key);
+                });
+              bidRequests = [{...bidRequest, ...t.request}];
+            });
+
+            afterEach(function () {
+              config.getConfig.restore();
+            });
+
+            const mockBidderRequest = {refererInfo: {}};
+            it(`${t.name} for type ${name}`, function () {
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              expect(request.length).to.equal(1);
+              if (t.expect) {
+                expect(request[0].data.sm).to.exist;
+                expect(request[0].data.sm).to.equal(encodeURIComponent(t.expect));
+              } else {
+                expect(request[0].data.sm).to.not.exist;
+              }
+            });
+          });
+        });
+      });
+    });
+  })
 
   describe('interpretResponse for banner ads', function () {
     beforeEach(function () {
@@ -1574,7 +1771,11 @@ describe('OpenxAdapter', function () {
         expect(bid.meta.brandId).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.brand_id);
       });
 
-      it('should return a brand ID', function () {
+      it('should return an adomain', function () {
+        expect(bid.meta.advertiserDomains).to.deep.equal([]);
+      });
+
+      it('should return a dsp ID', function () {
         expect(bid.meta.dspid).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.adv_id);
       });
     });

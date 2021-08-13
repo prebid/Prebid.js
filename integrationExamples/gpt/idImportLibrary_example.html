@@ -47,23 +47,14 @@
                 params: {
                   pid: '14', // Set your real identityLink placement ID here
                   // notUse3P: true // true/false - If you do not want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will be fired. By default this propertt is undefined and 3p request will be fired.},
+                },
                 storage: {
                   type: 'html5',
                   name: 'idl_env',
                   expires: 30
                 }
               },
-              {
-                name: "sharedId",
-                params: {
-                  syncTime: 60 // in seconds, default is 24 hours
-                },
-                storage: {
-                  type: "html5",
-                  name: "sharedid",
-                  expires: 28
-                }
-              } ,  {
+               {
                 name: "liveIntentId",
                 params: {
                   publisherId: "9896876"

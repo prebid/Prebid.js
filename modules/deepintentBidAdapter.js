@@ -88,6 +88,9 @@ function formatResponse(bid) {
     width: bid && bid.w ? bid.w : 0,
     height: bid && bid.h ? bid.h : 0,
     ad: bid && bid.adm ? bid.adm : '',
+    meta: {
+      advertiserDomains: bid && bid.adomain ? bid.adomain : []
+    },
     creativeId: bid && bid.crid ? bid.crid : undefined,
     netRevenue: false,
     currency: bid && bid.cur ? bid.cur : 'USD',
@@ -134,6 +137,7 @@ function injectEids(openRtbBidRequest, validBidRequests) {
   const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
   if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     utils.deepSetValue(openRtbBidRequest, 'user.eids', bidUserIdAsEids);
+    utils.deepSetValue(openRtbBidRequest, 'user.ext.eids', bidUserIdAsEids);
   }
 }
 
