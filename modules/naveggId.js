@@ -24,11 +24,11 @@ function readoldnaveggIDFromCookie() {
 }
 
 function readnvgIDFromCookie() {
-  return storage.cookiesAreEnabled ? storage.findSimilarCookies('nvg')[0] : null;
+  return storage.cookiesAreEnabled ? (storage.findSimilarCookies('nvg') ? storage.findSimilarCookies('nvg')[0] : null) : null;
 }
 
 function readnavIDFromCookie() {
-  return storage.cookiesAreEnabled ? storage.findSimilarCookies('nav')[0] : null;
+  return storage.cookiesAreEnabled ? (storage.findSimilarCookies('nav') ? storage.findSimilarCookies('nav')[0] : null) : null;
 }
 
 function readnvgnavFromLocalStorage() {
@@ -44,16 +44,16 @@ function readnvgnavFromLocalStorage() {
 /** @type {Submodule} */
 export const naveggIdSubmodule = {
   /**
-   * used to link submodule with config
-   * @type {string}
-   */
+    * used to link submodule with config
+    * @type {string}
+    */
   name: MODULE_NAME,
   /**
-   * decode the stored id value for passing to bid requests
-   * @function
-   * @param { Object | string | undefined } value
-   * @return { Object | string | undefined }
-   */
+    * decode the stored id value for passing to bid requests
+    * @function
+    * @param { Object | string | undefined } value
+    * @return { Object | string | undefined }
+    */
   decode(value) {
     const naveggIdVal = value ? utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined : undefined;
     return naveggIdVal ? {
@@ -61,11 +61,11 @@ export const naveggIdSubmodule = {
     } : undefined;
   },
   /**
-   * performs action to obtain id and return a value in the callback's response argument
-   * @function
-   * @param {SubmoduleConfig} config
-   * @return {{id: string | undefined } | undefined}
-   */
+    * performs action to obtain id and return a value in the callback's response argument
+    * @function
+    * @param {SubmoduleConfig} config
+    * @return {{id: string | undefined } | undefined}
+    */
   getId() {
     const naveggIdString = readnaveggIdFromLocalStorage() || readnaveggIDFromCookie() || readoldnaveggIDFromCookie() || readnvgIDFromCookie() || readnavIDFromCookie() || readnvgnavFromLocalStorage();
 
