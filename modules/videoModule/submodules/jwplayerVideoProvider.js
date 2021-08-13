@@ -154,13 +154,18 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
   function offEvents(events, callback) {
     events.forEach(event => {
-      const eventHandler = callback && callbackStorage.getCallback(event, callback);
-      if (!eventHandler && callback) {
-        // skip this iteration when event handler not found.
-        // support scenario where callback is undefined, as it means turn off all listeners.
+      const jwEvent = utils.getJwEvent(event);
+      if (!callback) {
+        player.off(jwEvent);
         return;
       }
-      const jwEvent = utils.getJwEvent(event);
+
+      const eventHandler = callbackStorage.getCallback(event, callback);
+      if (!eventHandler) {
+        // skip this iteration when event handler not found.
+        return;
+      }
+
       player.off(jwEvent, eventHandler);
     });
   }
