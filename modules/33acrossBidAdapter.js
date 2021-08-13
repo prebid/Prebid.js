@@ -631,13 +631,11 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
 
 // BUILD REQUESTS: DEVICE
 function _buildDeviceORTB() {
-  return {
-    ext: {
-      ttx: {
-        viewport: getViewportDimensions()
-      }
+  return setExtensions({}, {
+    ttx: {
+      viewport: getViewportDimensions()
     }
-  }
+  });
 }
 
 function getTopMostAccessibleFrame() {
