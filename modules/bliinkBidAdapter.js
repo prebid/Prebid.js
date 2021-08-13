@@ -160,15 +160,14 @@ export const buildBid = (bidRequest, bliinkCreative) => {
 
   delete bidRequest['bids']
 
-  return {
-    ...body,
+  return Object.assign(body, {
     currency: bliinkCreative.currency,
     width: 1,
     height: 1,
     mediaType: VIDEO,
     ad: '<html lang="en"></html>',
     vastXml: bliinkCreative.content,
-  }
+  })
 }
 
 /**
@@ -208,19 +207,17 @@ export const buildRequests = (_, bidderRequest) => {
   }
 
   if (bidderRequest.gdprConsent) {
-    data = {
-      ...data,
+    data = Object.assign(data, {
       gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies,
       gdpr_consent: bidderRequest.gdprConsent.consentString
-    }
+    })
   }
 
   if (bidderRequest.bids && bidderRequest.bids.length > 0 && bidderRequest.bids[0].sizes && bidderRequest.bids[0].sizes[0]) {
-    data = {
-      ...data,
+    data = Object.assign(data, {
       width: bidderRequest.bids[0].sizes[0][0],
       height: bidderRequest.bids[0].sizes[0][1]
-    }
+    })
 
     return {
       method: 'GET',
@@ -241,21 +238,14 @@ export const buildRequests = (_, bidderRequest) => {
  * @return
  */
 const interpretResponse = (serverResponse, request) => {
-  // eslint-disable-next-line no-console
-  console.log('interpretResponse 1')
   if ((serverResponse && serverResponse.mode === 'no-ad') && (!request.params)) {
     return []
   }
-
-  // eslint-disable-next-line no-console
-  console.log('interpretResponse 2')
 
   const body = serverResponse.body
   const serverBody = request.params
 
   if (body && typeof body === 'string' && isXMLFormat(serverResponse.body)) {
-    // eslint-disable-next-line no-console
-    console.log('interpretResponse 3')
     const xml = parseXML(serverResponse.body)
 
     const price = xml.getElementsByTagName('Price') && xml.getElementsByTagName('Price')[0]
