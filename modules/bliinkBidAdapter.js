@@ -1,6 +1,6 @@
 // eslint-disable-next-line prebid/validate-imports
 // eslint-disable-next-line prebid/validate-imports
-import {registerBidder} from 'src/adapters/bidderFactory'
+import {registerBidder} from 'src/adapters/bidderFactory.js'
 
 export const BIDDER_CODE = 'bliink'
 export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/delivery'
@@ -241,14 +241,21 @@ export const buildRequests = (_, bidderRequest) => {
  * @return
  */
 const interpretResponse = (serverResponse, request) => {
+  // eslint-disable-next-line no-console
+  console.log('interpretResponse 1')
   if ((serverResponse && serverResponse.mode === 'no-ad') && (!request.params)) {
     return []
   }
+
+  // eslint-disable-next-line no-console
+  console.log('interpretResponse 2')
 
   const body = serverResponse.body
   const serverBody = request.params
 
   if (body && typeof body === 'string' && isXMLFormat(serverResponse.body)) {
+    // eslint-disable-next-line no-console
+    console.log('interpretResponse 3')
     const xml = parseXML(serverResponse.body)
 
     const price = xml.getElementsByTagName('Price') && xml.getElementsByTagName('Price')[0]
