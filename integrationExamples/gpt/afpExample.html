@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Prebid.js Banner Example</title>
+  <script src="../../../build/dev/prebid.js"></script>
+  <script>
+    var adUnits = [{
+      code: 'iib-target',
+      mediaTypes: {
+        banner: {
+          sizes: [0, 0],
+        }
+      },
+      bids: [{
+        bidder: "afp",
+        params: {
+          placeType: "In-image",
+          placeId: "60e7039918047b3fae304850",
+          placeContainer: '#iib-container',
+          imageUrl: "https://rtbinsight.ru/content/images/size/w1000/2021/05/ximage-30.png.pagespeed.ic.IfuX4zAEPP.png",
+          imageWidth: 1000,
+          imageHeight: 524,
+        }
+      }]
+    },
+    {
+      code: 'icv-target',
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480]
+        }
+      },
+      bids: [{
+        bidder: "afp",
+        params: {
+          placeType: "In-content Video",
+          placeId: "60e5684718047b3fae304617",
+          placeContainer: '#icv-container',
+        }
+      }]
+    },
+    {
+      code: 'asb-target',
+      mediaTypes: {
+        banner: {
+          sizes: [500, 500],
+        }
+      },
+      bids: [{
+        bidder: "afp",
+        params: {
+          placeType: "Action Scroller",
+          placeId: "60f15a8515770d5ab7c7f885",
+          placeContainer: '#asb-container',
+        }
+      }]
+    }];
+    
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+    
+    pbjs.que.push(function() {
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids({
+        bidsBackHandler: function (e) {
+          if (pbjs.adserverRequestSent) return;
+          pbjs.adserverRequestSent = true;
+          var params = pbjs.getAdserverTargetingForAdUnitCode("iib-target");
+          var iframe = document.getElementById("iib-target");
+ 
+          if (params && params['hb_adid']) {
+            pbjs.renderAd(iframe.contentDocument, params['hb_adid']);
+          }
+          
+          params = pbjs.getAdserverTargetingForAdUnitCode("icv-target");
+          iframe = document.getElementById("icv-target");
+ 
+          if (params && params['hb_adid']) {
+            pbjs.renderAd(iframe.contentDocument, params['hb_adid']);
+          }
+          
+          params = pbjs.getAdserverTargetingForAdUnitCode("asb-target");
+          iframe = document.getElementById("asb-target");
+ 
+          if (params && params['hb_adid']) {
+            pbjs.renderAd(iframe.contentDocument, params['hb_adid']);
+          }
+        }
+      });
+    });
+  </script>
+</head>
+<body>
+  <h2>In-image</h2>
+  <div class="container-wrapper">
+    <div id="iib-container" style="width: 600px;">
+      <img src="https://creative.astraone.io/files/default_image-1-600x400.jpg" width="100%" />
+    </div>
+    <iframe id="iib-target" style="display: none;"></iframe>
+  </div>
+  
+  <h2>In-content Video</h2>
+  <div class="container-wrapper">
+    <div id="icv-container"></div>
+    <iframe id="icv-target" style="display: none;"></iframe>
+  </div>
+  
+  <h2>Action Scroller</h2>
+  <div class="container-wrapper">
+    <div id="asb-container"></div>
+    <iframe id="asb-target" style="display: none;"></iframe>
+  </div>
+</body>
+</html>
