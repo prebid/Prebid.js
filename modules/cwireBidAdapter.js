@@ -1,10 +1,12 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 const utils = require('../src/utils.js');
+// ------------------------------------
 const BIDDER_CODE = 'cwire';
 const ENDPOINT_URL = 'http://localhost:3002/api/prebid';
-
+// ------------------------------------
 const _PAGE_VIEW_ID = utils.generateUUID();
+const LS_CWID_KEY = 'cw_cwid';
 
 /**
  * ------------------------------------
@@ -97,7 +99,7 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function(validBidRequests) {
     let slots = [];
     let referer;
     try {
@@ -109,6 +111,7 @@ export const spec = {
     }
 
     const payload = {
+      cwid: localStorage.getItem(LS_CWID_KEY),
       slots: slots,
       httpRef: referer || '',
       pageViewId: _PAGE_VIEW_ID,
@@ -121,7 +124,7 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT_URL,
-      data: payloadString,
+      data: payloadString
     };
   },
 
@@ -131,7 +134,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function(serverResponse) {
     const bidResponses = [];
     try {
       // eslint-disable-next-line no-console
