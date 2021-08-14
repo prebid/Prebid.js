@@ -192,7 +192,7 @@ describe('SmartyadsAdapter', function () {
 
       let serverResponses = spec.interpretResponse(invBanner);
       expect(serverResponses).to.be.an('array').that.is.empty;
-    });  , 
+    });
     it('Should return an empty array if invalid video response is passed', function () {
       const invVideo = {
         body: [{
