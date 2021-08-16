@@ -312,7 +312,27 @@ export function newConfig() {
         return memo;
       }, {});
     }
-    return deepClone(config);
+    return Object.assign({}, config);
+  }
+
+  /*
+   * Returns a clone of the configuration object if called without parameters,
+   * or single configuration property if given a string matching a configuration
+   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
+   *
+   * If called with callback parameter, or a string and a callback parameter,
+   * subscribes to configuration updates. See `subscribe` function for usage.
+   *
+   * The object returned is a deepClone of the `config` property.
+   */
+  function readConfig(...args) {
+    if (args.length <= 1 && typeof args[0] !== 'function') {
+      const option = args[0];
+      const configClone = deepClone(_getConfig());
+      return option ? utils.deepAccess(configClone, option) : configClone;
+    }
+
+    return subscribe(...args);
   }
 
   /*
@@ -629,6 +649,7 @@ export function newConfig() {
     getCurrentBidder,
     resetBidder,
     getConfig,
+    readConfig,
     setConfig,
     setDefaults,
     resetConfig,

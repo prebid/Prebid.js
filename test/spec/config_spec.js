@@ -6,6 +6,7 @@ const utils = require('src/utils');
 
 let getConfig;
 let setConfig;
+let readConfig;
 let getBidderConfig;
 let setBidderConfig;
 let setDefaults;
@@ -17,6 +18,7 @@ describe('config API', function () {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
+    readConfig = config.readConfig;
     getBidderConfig = config.getBidderConfig;
     setBidderConfig = config.setBidderConfig;
     setDefaults = config.setDefaults;
@@ -35,6 +37,15 @@ describe('config API', function () {
 
   it('getConfig returns an object', function () {
     expect(getConfig()).to.be.a('object');
+  });
+
+  it('readConfig returns deepCopy of the internal config object', function () {
+    setConfig({ foo: {biz: 'bar'} });
+    const config1 = readConfig('foo');
+    config1.biz = 'buz';
+    const config2 = readConfig('foo');
+    expect(readConfig()).to.be.a('object');
+    expect(config1.biz).to.not.equal(config2.biz);
   });
 
   it('sets and gets arbitrary configuration properties', function () {
