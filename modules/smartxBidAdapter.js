@@ -55,10 +55,6 @@ export const spec = {
         utils.logError(BIDDER_CODE + ': slot parameter is not defined in outstream_options object in the configuration');
         return false;
       }
-      if (!utils.getBidIdParameter('outstream_function', bid.params)) {
-        utils.logMessage(BIDDER_CODE + ': outstream_function parameter is not defined. The default outstream renderer will be injected in the header.');
-        return true;
-      }
     }
 
     return true;
@@ -81,7 +77,7 @@ export const spec = {
       const bidfloorcur = utils.getBidIdParameter('bidfloorcur', bid.params) || 'EUR';
       const siteId = utils.getBidIdParameter('siteId', bid.params);
       const domain = utils.getBidIdParameter('domain', bid.params);
-      const cat = utils.getBidIdParameter('cat', bid.params);
+      const cat = utils.getBidIdParameter('cat', bid.params) || [''];
       let pubcid = null;
       const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
       const contentWidth = playerSize[0][0];
@@ -108,7 +104,7 @@ export const spec = {
         placement = 3;
       }
 
-      let smartxReq = {
+      let smartxReq = [{
         id: bid.bidId,
         secure: secure,
         bidfloor: bidfloor,
@@ -134,7 +130,7 @@ export const spec = {
         ext: {
           'smart.bidpricetype': 1
         }
-      };
+      }];
 
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
@@ -153,7 +149,7 @@ export const spec = {
 
       const at = utils.getBidIdParameter('at', bid.params) || 2;
 
-      const cur = utils.getBidIdParameter('cur', bid.params) || 'EUR';
+      const cur = utils.getBidIdParameter('cur', bid.params) || ['EUR'];
 
       const requestPayload = {
         id: utils.generateUUID(),
@@ -162,7 +158,6 @@ export const spec = {
           id: siteId,
           page: page,
           cat: cat,
-          content: 'content',
           domain: domain,
           publisher: {
             id: publisherId
@@ -296,7 +291,7 @@ export const spec = {
             const playersize = utils.deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
               id: 0,
-              url: '/',
+              url: 'https://dco.smartclip.net/?plc=7777778',
               config: {
                 adText: 'SmartX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],
@@ -304,12 +299,11 @@ export const spec = {
                 content_page_url: utils.deepAccess(bidderRequest, 'data.site.page'),
                 ad_mute: +!!utils.deepAccess(currentBidRequest, 'params.ad_mute'),
                 hide_skin: +!!utils.deepAccess(currentBidRequest, 'params.hide_skin'),
-                outstream_options: utils.deepAccess(currentBidRequest, 'params.outstream_options'),
-                outstream_function: utils.deepAccess(currentBidRequest, 'params.outstream_function')
+                outstream_options: utils.deepAccess(currentBidRequest, 'params.outstream_options')
               }
             });
             try {
-              renderer.setRender(outstreamRender);
+              renderer.setRender(createOutstreamConfig);
               renderer.setEventHandlers({
                 impression: function impression() {
                   return utils.logMessage('SmartX outstream video impression event');
@@ -334,7 +328,7 @@ export const spec = {
   }
 }
 
-function createOutstreamScript(bid) {
+function createOutstreamConfig(bid) {
   const confMinAdWidth = utils.getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
   const confMaxAdWidth = utils.getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
   const confStartOpen = utils.getBidIdParameter('startOpen', bid.renderer.config.outstream_options);
@@ -374,37 +368,14 @@ function createOutstreamScript(bid) {
   smartPlayObj.adResponse = bid.vastContent;
 
   const divID = '[id="' + elementId + '"]';
-  var script = document.createElement('script');
-  script.src = 'https://dco.smartclip.net/?plc=7777778';
-  script.type = 'text/javascript';
-  script.async = 'true';
-  script.onload = script.onreadystatechange = function () {
-    try {
-      // eslint-disable-next-line
-      let _outstreamPlayer = new OutstreamPlayer(divID, smartPlayObj);
-    } catch (e) {
-      utils.logError('[SmartPlay][renderer] Error caught: ' + e);
-    }
-  };
-  return script;
-}
 
-function outstreamRender(bid) {
-  const script = createOutstreamScript(bid);
-  if (bid.renderer.config.outstream_function != null && typeof bid.renderer.config.outstream_function === 'function') {
-    bid.renderer.config.outstream_function(bid, script);
-  } else {
-    try {
-      const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
-      if (slot && window.document.getElementById(slot)) {
-        window.document.getElementById(slot).appendChild(script);
-      } else {
-        window.document.getElementsByTagName('head')[0].appendChild(script);
-      }
-    } catch (err) {
-      utils.logError('[SMARTX][renderer] Error:' + err.message)
-    }
+  try {
+    // eslint-disable-next-line
+      let _outstreamPlayer = new OutstreamPlayer(divID, smartPlayObj);
+  } catch (e) {
+    utils.logError('[SMARTX][renderer] Error caught: ' + e);
   }
+  return smartPlayObj;
 }
 
 /**

@@ -49,6 +49,14 @@ const REQUEST = {
   }
 }
 
+const VIDEO_REQUEST = Object.assign({}, REQUEST, {
+  'mediaTypes': {
+    'video': {
+      'context': 'instream'
+    }
+  }
+})
+
 const RESPONSE = {
   advertiser: 'yieldlab',
   curl: 'https://www.yieldlab.de',
@@ -62,6 +70,10 @@ const RESPONSE = {
 
 const VIDEO_RESPONSE = Object.assign({}, RESPONSE, {
   'adtype': 'VIDEO'
+})
+
+const PVID_RESPONSE = Object.assign({}, VIDEO_RESPONSE, {
+  'pvid': '43513f11-55a0-4a83-94e5-0ebc08f54a2c'
 })
 
 const REQPARAMS = {
@@ -179,6 +191,7 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(false)
       expect(result[0].ttl).to.equal(300)
       expect(result[0].referrer).to.equal('')
+      expect(result[0].meta.advertiserDomains).to.equal('yieldlab')
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=')
       expect(result[0].ad).to.include('&id=abc')
     })
@@ -210,18 +223,12 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(false)
       expect(result[0].ttl).to.equal(300)
       expect(result[0].referrer).to.equal('')
+      expect(result[0].meta.advertiserDomains).to.equal('yieldlab')
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=')
       expect(result[0].ad).to.include('&id=abc')
     })
 
     it('should add vastUrl when type is video', function () {
-      const VIDEO_REQUEST = Object.assign({}, REQUEST, {
-        'mediaTypes': {
-          'video': {
-            'context': 'instream'
-          }
-        }
-      })
       const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST], queryParams: REQPARAMS})
 
       expect(result[0].requestId).to.equal('2d925f27f5079f')
@@ -232,13 +239,6 @@ describe('yieldlabBidAdapter', function () {
     })
 
     it('should append gdpr parameters to vastUrl', function () {
-      const VIDEO_REQUEST = Object.assign({}, REQUEST, {
-        'mediaTypes': {
-          'video': {
-            'context': 'instream'
-          }
-        }
-      })
       const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST], queryParams: REQPARAMS_GDPR})
 
       expect(result[0].vastUrl).to.include('&gdpr=true')
@@ -260,6 +260,13 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].renderer.url).to.equal('https://ad.adition.com/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event')
       expect(result[0].width).to.equal(640)
       expect(result[0].height).to.equal(480)
+    })
+
+    it('should add pvid to adtag urls when present', function () {
+      const result = spec.interpretResponse({body: [PVID_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST], queryParams: REQPARAMS})
+
+      expect(result[0].ad).to.include('&pvid=43513f11-55a0-4a83-94e5-0ebc08f54a2c')
+      expect(result[0].vastUrl).to.include('&pvid=43513f11-55a0-4a83-94e5-0ebc08f54a2c')
     })
   })
 })

@@ -46,9 +46,9 @@ const UTM_TO_CAMPAIGN_PROPERTIES = {
  * @property {string} orgId
  * @property {string} publisherPlatformId
  * @property {number} publisherAccountId
+ * @property {string} configId
+ * @property {string} optimizerConfig
  * @property {number} sampling
- * @property {boolean} enableV2
- * @property {boolean} testPipeline
  * @property {Object} campaign
  * @property {number} payloadWaitTime
  * @property {number} payloadWaitTimePadding
@@ -141,9 +141,9 @@ function isValidConfig({options: analyticsOptions}) {
     ['orgId', 'string', hasOrgId],
     ['publisherPlatformId', 'string', !hasOrgId],
     ['publisherAccountId', 'number', !hasOrgId],
+    ['configId', 'string', false],
+    ['optimizerConfig', 'string', false],
     ['sampling', 'number', false],
-    ['enableV2', 'boolean', false],
-    ['testPipeline', 'boolean', false],
     ['adIdKey', 'string', false],
     ['payloadWaitTime', 'number', false],
     ['payloadWaitTimePadding', 'number', false],
@@ -271,7 +271,7 @@ function prebidAnalyticsEventHandler({eventType, args}) {
  * @property {Array<BidResponse>} bidsReceived //: []
  * @property {Array<BidResponse>} winningBids //: []
  * @property {number} timeout //: 3000
- * @property {Object} config //: {publisherPlatformId: "a3aece0c-9e80-4316-8deb-faf804779bd1", publisherAccountId: 537143056, sampling: 1, enableV2: true}/*
+ * @property {Object} config //: {publisherPlatformId: "a3aece0c-9e80-4316-8deb-faf804779bd1", publisherAccountId: 537143056, sampling: 1}/*
  */
 
 function onAuctionInit({auctionId, timestamp: startTime, timeout, adUnitCodes}) {
@@ -437,7 +437,18 @@ function onBidWon(bidResponse) {
     `${auctionId}.adUnitCodeToAdUnitMap.${adUnitCode}.bidRequestsMap.${requestId}.bids.${adId}`);
 
   if (winningBid) {
-    winningBid.winner = true
+    winningBid.winner = true;
+    const auction = auctionMap[auctionId];
+    if (auction.sent) {
+      const endpoint = (analyticsConfig.endpoint || ENDPOINT) + 'event';
+      const bidder = auction.adUnitCodeToAdUnitMap[adUnitCode].bidRequestsMap[requestId].bidder;
+      ajax(`${endpoint}?t=win&b=${adId}&a=${analyticsConfig.orgId}&bidder=${bidder}&ts=${auction.startTime}`,
+        () => {
+          utils.logInfo(`Openx Analytics - Sending complete impression event for ${adId} at ${Date.now()}`)
+        });
+    } else {
+      utils.logInfo(`Openx Analytics - impression event for ${adId} will be sent with auction data`)
+    }
   }
 }
 
@@ -529,17 +540,20 @@ function getPageOffset() {
 }
 
 function delayedSend(auction) {
+  if (auction.sent) {
+    return;
+  }
   const delayTime = auction.adunitCodesRenderedCount === auction.adUnitCodesCount
     ? analyticsConfig.payloadWaitTime
     : analyticsConfig.payloadWaitTime + analyticsConfig.payloadWaitTimePadding;
 
   auction.auctionSendDelayTimer = setTimeout(() => {
+    auction.sent = true; // any BidWon emitted after this will be recorded separately
     let payload = JSON.stringify([buildAuctionPayload(auction)]);
-    ajax(ENDPOINT, deleteAuctionMap, payload, { contentType: 'application/json' });
 
-    function deleteAuctionMap() {
-      delete auctionMap[auction.id];
-    }
+    ajax(analyticsConfig.endpoint || ENDPOINT, () => {
+      utils.logInfo(`OpenX Analytics - Sending complete auction at ${Date.now()}`);
+    }, payload, { contentType: 'application/json' });
   }, delayTime);
 }
 
@@ -606,15 +620,19 @@ function getAuctionByGoogleTagSLot(slot) {
 }
 
 function buildAuctionPayload(auction) {
-  let {startTime, endTime, state, timeout, auctionOrder, userIds, adUnitCodeToAdUnitMap} = auction;
-  let {orgId, publisherPlatformId, publisherAccountId, campaign} = analyticsConfig;
+  let {startTime, endTime, state, timeout, auctionOrder, userIds, adUnitCodeToAdUnitMap, id} = auction;
+  const auctionId = id;
+  let {orgId, publisherPlatformId, publisherAccountId, campaign, testCode, configId, optimizerConfig} = analyticsConfig;
 
   return {
+    auctionId,
     adapterVersion: ADAPTER_VERSION,
     schemaVersion: SCHEMA_VERSION,
     orgId,
     publisherPlatformId,
     publisherAccountId,
+    configId,
+    optimizerConfig,
     campaign,
     state,
     startTime,
@@ -624,7 +642,7 @@ function buildAuctionPayload(auction) {
     deviceType: detectMob() ? 'Mobile' : 'Desktop',
     deviceOSType: detectOS(),
     browser: detectBrowser(),
-    testCode: analyticsConfig.testCode,
+    testCode: testCode,
     // return an array of module name that have user data
     userIdProviders: buildUserIdProviders(userIds),
     adUnits: buildAdUnitsPayload(adUnitCodeToAdUnitMap),
@@ -653,6 +671,7 @@ function buildAuctionPayload(auction) {
             timedOut,
             bidResponses: utils._map(bidRequest.bids, (bidderBidResponse) => {
               let {
+                adId,
                 cpm,
                 creativeId,
                 ts,
@@ -671,6 +690,7 @@ function buildAuctionPayload(auction) {
               } = bidderBidResponse;
 
               return {
+                bidId: adId,
                 microCpm: cpm * 1000000,
                 netRevenue,
                 currency,

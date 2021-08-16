@@ -245,6 +245,7 @@ describe('betweenBidAdapterTests', function () {
     const shid3 = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid3;
     expect(shid).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT') && expect(shid3).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT');
   });
+
   it('check sharedId with only id', function() {
     const bidRequestData = [{
       bidId: 'bid123',
@@ -267,6 +268,7 @@ describe('betweenBidAdapterTests', function () {
     const shid3 = JSON.parse(spec.buildRequests(bidRequestData).data)[0].data.shid3;
     expect(shid).to.equal('01EXQE7JKNDRDDVATB0S2GX1NT') && expect(shid3).to.equal('');
   });
+
   it('check adomain', function() {
     const serverResponse = {
       body: [{

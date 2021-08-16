@@ -27,6 +27,20 @@ var validBidRequests = [
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
+var validBidRequestsNoCustomData = [
+  {
+    adUnitCode: 'div-gpt-ad-1460505748561-0',
+    auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
+    bidId: '2899ec066a91ff8',
+    bidRequestsCount: 1,
+    bidder: 'ozone',
+    bidderRequestId: '1c1586b27a1b5c8',
+    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
+    params: { publisherId: '9876abcd12-3', placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    sizes: [[300, 250], [300, 600]],
+    transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
+  }
+];
 var validBidRequestsMulti = [
   {
     testId: 1,
@@ -55,8 +69,7 @@ var validBidRequestsMulti = [
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
-// use 'pubcid', 'tdid', 'id5id', 'parrableId', 'idl_env', 'criteoId', 'criteortus'
-// NOTE THAT criteortus is no longer referenced anywhere - should be removed asap
+// use 'pubcid', 'tdid', 'id5id', 'parrableId', 'idl_env', 'criteoId'
 // see http://prebid.org/dev-docs/modules/userId.html
 var validBidRequestsWithUserIdData = [
   {
@@ -73,12 +86,12 @@ var validBidRequestsWithUserIdData = [
     userId: {
       'pubcid': '12345678',
       'tdid': '1111tdid',
-      'id5id': 'ID5-someId',
-      'criteortus': {'ozone': {'userid': 'critId123'}},
+      'id5id': { uid: '1111', ext: { linkType: 2, abTestingControlGroup: false } },
       'criteoId': '1111criteoId',
       'idl_env': 'liverampId',
       'lipb': {'lipbid': 'lipbidId123'},
-      'parrableId': {'eid': '01.5678.parrableid'}
+      'parrableId': {'eid': '01.5678.parrableid'},
+      'sharedid': {'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22'}
     },
     userIdAsEids: [
       {
@@ -104,13 +117,6 @@ var validBidRequestsWithUserIdData = [
         'source': 'id5-sync.com',
         'uids': [{
           'id': 'ID5-someId',
-          'atype': 1,
-        }]
-      },
-      {
-        'source': 'criteortus',
-        'uids': [{
-          'id': {'ozone': {'userid': 'critId123'}},
           'atype': 1,
         }]
       },
@@ -330,7 +336,7 @@ var validBidderRequest1OutstreamVideo2020 = {
           ]
         },
         'userId': {
-          'id5id': 'ID5-ZHMOpSv9CkZNiNd1oR4zc62AzCgSS73fPjmQ6Od7OA',
+          'id5id': { uid: '1111', ext: { linkType: 2, abTestingControlGroup: false } },
           'pubcid': '2ada6ae6-aeca-4e07-8922-a99b3aaf8a56'
         },
         'userIdAsEids': [
@@ -2014,14 +2020,13 @@ describe('ozone Adapter', function () {
       let bidRequests = validBidRequests;
       // values from http://prebid.org/dev-docs/modules/userId.html#pubcommon-id
       bidRequests[0]['userId'] = {
-        'criteortus': '1111',
         'digitrustid': {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
-        'id5id': '2222',
+        'id5id': { uid: '1111', ext: { linkType: 2, abTestingControlGroup: false } },
         'idl_env': '3333',
-        'lipb': {'lipbid': '4444'},
         'parrableid': 'eidVersion.encryptionKeyReference.encryptedValue',
         'pubcid': '5555',
-        'tdid': '6666'
+        'tdid': '6666',
+        'sharedid': {'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22'}
       };
       bidRequests[0]['userIdAsEids'] = validBidRequestsWithUserIdData[0]['userIdAsEids'];
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -2035,14 +2040,13 @@ describe('ozone Adapter', function () {
       let bidRequests = validBidRequests;
       // values from http://prebid.org/dev-docs/modules/userId.html#pubcommon-id
       bidRequests[0]['userId'] = {
-        'criteortus': '1111',
         'digitrustid': {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
-        'id5id': '2222',
+        'id5id': { uid: '1111', ext: { linkType: 2, abTestingControlGroup: false } },
         'idl_env': '3333',
-        'lipb': {'lipbid': '4444'},
         'parrableid': 'eidVersion.encryptionKeyReference.encryptedValue',
         // 'pubcid': '5555', // remove pubcid from here to emulate the OLD module & cause the failover code to kick in
-        'tdid': '6666'
+        'tdid': '6666',
+        'sharedid': {'id': '01EAJWWNEPN3CYMM5N8M5VXY22', 'third': '01EAJWWNEPN3CYMM5N8M5VXY22'}
       };
       bidRequests[0]['userIdAsEids'] = validBidRequestsWithUserIdData[0]['userIdAsEids'];
       const request = spec.buildRequests(bidRequests, validBidderRequest.bidderRequest);
@@ -2056,11 +2060,9 @@ describe('ozone Adapter', function () {
       /*
       'pubcid': '12345678',
       'tdid': '1111tdid',
-      'id5id': 'ID5-someId',
-      'criteortus': {'ozone': {'userid': 'critId123'}},
+      'id5id': { uid: '1111', ext: { linkType: 2, abTestingControlGroup: false } },
       'criteoId': '1111criteoId',
       'idl_env': 'liverampId',
-      'lipb': {'lipbid': 'lipbidId123'},
       'parrableId': {'eid': '01.5678.parrableid'}
        */
 
@@ -2074,16 +2076,14 @@ describe('ozone Adapter', function () {
       expect(payload.user.ext.eids[1]['uids'][0]['id']).to.equal('1111tdid');
       expect(payload.user.ext.eids[2]['source']).to.equal('id5-sync.com');
       expect(payload.user.ext.eids[2]['uids'][0]['id']).to.equal('ID5-someId');
-      expect(payload.user.ext.eids[3]['source']).to.equal('criteortus'); // this is deprecated
-      expect(payload.user.ext.eids[3]['uids'][0]['id']['ozone']['userid']).to.equal('critId123');
-      expect(payload.user.ext.eids[4]['source']).to.equal('criteoId');
-      expect(payload.user.ext.eids[4]['uids'][0]['id']).to.equal('1111criteoId');
-      expect(payload.user.ext.eids[5]['source']).to.equal('idl_env');
-      expect(payload.user.ext.eids[5]['uids'][0]['id']).to.equal('liverampId');
-      expect(payload.user.ext.eids[6]['source']).to.equal('lipb');
-      expect(payload.user.ext.eids[6]['uids'][0]['id']['lipbid']).to.equal('lipbidId123');
-      expect(payload.user.ext.eids[7]['source']).to.equal('parrableId');
-      expect(payload.user.ext.eids[7]['uids'][0]['id']['eid']).to.equal('01.5678.parrableid');
+      expect(payload.user.ext.eids[3]['source']).to.equal('criteoId');
+      expect(payload.user.ext.eids[3]['uids'][0]['id']).to.equal('1111criteoId');
+      expect(payload.user.ext.eids[4]['source']).to.equal('idl_env');
+      expect(payload.user.ext.eids[4]['uids'][0]['id']).to.equal('liverampId');
+      expect(payload.user.ext.eids[5]['source']).to.equal('lipb');
+      expect(payload.user.ext.eids[5]['uids'][0]['id']['lipbid']).to.equal('lipbidId123');
+      expect(payload.user.ext.eids[6]['source']).to.equal('parrableId');
+      expect(payload.user.ext.eids[6]['uids'][0]['id']['eid']).to.equal('01.5678.parrableid');
     });
 
     it('replaces the auction url for a config override', function () {
@@ -2093,6 +2093,21 @@ describe('ozone Adapter', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       expect(request.url).to.equal(fakeOrigin + '/openrtb2/auction');
       expect(request.method).to.equal('POST');
+      const data = JSON.parse(request.data);
+      expect(data.ext.ozone.origin).to.equal(fakeOrigin);
+      config.setConfig({'ozone': {'kvpPrefix': null, 'endpointOverride': null}});
+      spec.propertyBag.whitelabel = null;
+    });
+
+    it('replaces the FULL auction url for a config override', function () {
+      spec.propertyBag.whitelabel = null;
+      let fakeurl = 'http://sometestendpoint/myfullurl';
+      config.setConfig({'ozone': {'endpointOverride': {'auctionUrl': fakeurl}}});
+      const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      expect(request.url).to.equal(fakeurl);
+      expect(request.method).to.equal('POST');
+      const data = JSON.parse(request.data);
+      expect(data.ext.ozone.origin).to.equal(fakeurl);
       config.setConfig({'ozone': {'kvpPrefix': null, 'endpointOverride': null}});
       spec.propertyBag.whitelabel = null;
     });
@@ -2108,6 +2123,28 @@ describe('ozone Adapter', function () {
       expect(bid.renderer.url).to.equal(fakeUrl);
       config.setConfig({'ozone': {'kvpPrefix': null, 'endpointOverride': null}});
       spec.propertyBag.whitelabel = null;
+    });
+    it('should generate all the adservertargeting keys correctly named', function () {
+      var specMock = utils.deepClone(spec);
+      config.setConfig({'ozone': {'kvpPrefix': 'xx'}});
+      const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      const result = spec.interpretResponse(validResponse, request);
+      expect(result[0].adserverTargeting).to.have.own.property('xx_appnexus_crid');
+      expect(utils.deepAccess(result[0].adserverTargeting, 'xx_appnexus_crid')).to.equal('98493581');
+      expect(utils.deepAccess(result[0].adserverTargeting, 'xx_pb')).to.equal(0.5);
+      expect(utils.deepAccess(result[0].adserverTargeting, 'xx_adId')).to.equal('2899ec066a91ff8-0-xx-0');
+      expect(utils.deepAccess(result[0].adserverTargeting, 'xx_size')).to.equal('300x600');
+      expect(utils.deepAccess(result[0].adserverTargeting, 'xx_pb_r')).to.equal('0.50');
+      expect(utils.deepAccess(result[0].adserverTargeting, 'xx_bid')).to.equal('true');
+      config.resetConfig();
+    });
+    it('should create a meta object on each bid returned', function () {
+      var specMock = utils.deepClone(spec);
+      const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      const result = spec.interpretResponse(validResponse, request);
+      expect(result[0]).to.have.own.property('meta');
+      expect(result[0].meta.advertiserDomains[0]).to.equal('http://prebid.org');
+      config.resetConfig();
     });
 
     it('replaces the kvp prefix ', function () {
@@ -2131,8 +2168,8 @@ describe('ozone Adapter', function () {
       config.setConfig({'lmc': {'kvpPrefix': null}}); // I cant remove the key so set the value to null
       spec.propertyBag.whitelabel = null;
     });
-    var specMock = utils.deepClone(spec);
     it('should use oztestmode GET value if set', function() {
+      var specMock = utils.deepClone(spec);
       // mock the getGetParametersAsObject function to simulate GET parameters for oztestmode:
       specMock.getGetParametersAsObject = function() {
         return {'oztestmode': 'mytestvalue_123'};
@@ -2142,7 +2179,34 @@ describe('ozone Adapter', function () {
       expect(data.imp[0].ext.ozone.customData).to.be.an('array');
       expect(data.imp[0].ext.ozone.customData[0].targeting.oztestmode).to.equal('mytestvalue_123');
     });
+    it('should pass through GET params if present: ozf, ozpf, ozrp, ozip', function() {
+      var specMock = utils.deepClone(spec);
+      // mock the getGetParametersAsObject function to simulate GET parameters :
+      specMock.getGetParametersAsObject = function() {
+        return {ozf: '1', ozpf: '0', ozrp: '2', ozip: '123'};
+      };
+      const request = specMock.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.ext.ozone.ozf).to.equal(1);
+      expect(data.ext.ozone.ozpf).to.equal(0);
+      expect(data.ext.ozone.ozrp).to.equal(2);
+      expect(data.ext.ozone.ozip).to.equal(123);
+    });
+    it('should pass through GET params if present: ozf, ozpf, ozrp, ozip with alternative values', function() {
+      var specMock = utils.deepClone(spec);
+      // mock the getGetParametersAsObject function to simulate GET parameters :
+      specMock.getGetParametersAsObject = function() {
+        return {ozf: 'false', ozpf: 'true', ozrp: 'xyz', ozip: 'hello'};
+      };
+      const request = specMock.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.ext.ozone.ozf).to.equal(0);
+      expect(data.ext.ozone.ozpf).to.equal(1);
+      expect(data.ext.ozone).to.not.haveOwnProperty('ozrp');
+      expect(data.ext.ozone).to.not.haveOwnProperty('ozip');
+    });
     it('should use oztestmode GET value if set, even if there is no customdata in config', function() {
+      var specMock = utils.deepClone(spec);
       // mock the getGetParametersAsObject function to simulate GET parameters for oztestmode:
       specMock.getGetParametersAsObject = function() {
         return {'oztestmode': 'mytestvalue_123'};
@@ -2152,8 +2216,33 @@ describe('ozone Adapter', function () {
       expect(data.imp[0].ext.ozone.customData).to.be.an('array');
       expect(data.imp[0].ext.ozone.customData[0].targeting.oztestmode).to.equal('mytestvalue_123');
     });
+    it('should use GET values auction=dev & cookiesync=dev if set', function() {
+      // mock the getGetParametersAsObject function to simulate GET parameters for oztestmode:
+      var specMock = utils.deepClone(spec);
+      specMock.getGetParametersAsObject = function() {
+        return {};
+      };
+      let request = specMock.buildRequests(validBidRequestsMinimal, validBidderRequest.bidderRequest);
+      let url = request.url;
+      expect(url).to.equal('https://elb.the-ozone-project.com/openrtb2/auction');
+      let cookieUrl = specMock.getCookieSyncUrl();
+      expect(cookieUrl).to.equal('https://elb.the-ozone-project.com/static/load-cookie.html');
+
+      // now mock the response from getGetParametersAsObject & do the request again
+
+      specMock = utils.deepClone(spec);
+      specMock.getGetParametersAsObject = function() {
+        return {'auction': 'dev', 'cookiesync': 'dev'};
+      };
+      request = specMock.buildRequests(validBidRequestsMinimal, validBidderRequest.bidderRequest);
+      url = request.url;
+      expect(url).to.equal('https://test.ozpr.net/openrtb2/auction');
+      cookieUrl = specMock.getCookieSyncUrl();
+      expect(cookieUrl).to.equal('https://test.ozpr.net/static/load-cookie.html');
+    });
     it('should use a valid ozstoredrequest GET value if set to override the placementId values, and set oz_rw if we find it', function() {
       // mock the getGetParametersAsObject function to simulate GET parameters for ozstoredrequest:
+      var specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
         return {'ozstoredrequest': '1122334455'}; // 10 digits are valid
       };
@@ -2164,6 +2253,7 @@ describe('ozone Adapter', function () {
     });
     it('should NOT use an invalid ozstoredrequest GET value if set to override the placementId values, and set oz_rw to 0', function() {
       // mock the getGetParametersAsObject function to simulate GET parameters for ozstoredrequest:
+      var specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
         return {'ozstoredrequest': 'BADVAL'}; // 10 digits are valid
       };
@@ -2230,6 +2320,72 @@ describe('ozone Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.ext.ozone.oz_kvp_rw).to.equal(0);
     });
+    it('should handle ortb2 site data', function () {
+      config.setConfig({'ortb2': {
+        'site': {
+          'name': 'example_ortb2_name',
+          'domain': 'page.example.com',
+          'cat': ['IAB2'],
+          'sectioncat': ['IAB2-2'],
+          'pagecat': ['IAB2-2'],
+          'page': 'https://page.example.com/here.html',
+          'ref': 'https://ref.example.com',
+          'keywords': 'power tools, drills',
+          'search': 'drill'
+        }
+      }});
+      const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.ozone.customData[0].targeting.name).to.equal('example_ortb2_name');
+      expect(payload.user.ext).to.not.have.property('gender');
+      config.resetConfig();
+    });
+    it('should add ortb2 site data when there is no customData already created', function () {
+      config.setConfig({'ortb2': {
+        'site': {
+          'name': 'example_ortb2_name',
+          'domain': 'page.example.com',
+          'cat': ['IAB2'],
+          'sectioncat': ['IAB2-2'],
+          'pagecat': ['IAB2-2'],
+          'page': 'https://page.example.com/here.html',
+          'ref': 'https://ref.example.com',
+          'keywords': 'power tools, drills',
+          'search': 'drill'
+        }
+      }});
+      const request = spec.buildRequests(validBidRequestsNoCustomData, validBidderRequest.bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.ozone.customData[0].targeting.name).to.equal('example_ortb2_name');
+      expect(payload.imp[0].ext.ozone.customData[0].targeting).to.not.have.property('gender')
+      config.resetConfig();
+    });
+    it('should add ortb2 user data to the user object', function () {
+      config.setConfig({'ortb2': {
+        'user': {
+          'gender': 'who knows these days'
+        }
+      }});
+      const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.user.gender).to.equal('who knows these days');
+      config.resetConfig();
+    });
+    it('should not override the user.ext.consent string even if this is set in config ortb2', function () {
+      config.setConfig({'ortb2': {
+        'user': {
+          'ext': {
+            'consent': 'this is the consent override that shouldnt work',
+            'consent2': 'this should be set'
+          }
+        }
+      }});
+      const request = spec.buildRequests(validBidRequests, bidderRequestWithFullGdpr.bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.user.ext.consent2).to.equal('this should be set');
+      expect(payload.user.ext.consent).to.equal('BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA');
+      config.resetConfig();
+    });
     it('should have openrtb video params', function() {
       let allowed = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'linearity', 'skip', 'skipmin', 'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad', 'api', 'companiontype', 'ext'];
       const request = spec.buildRequests(validBidRequests1OutstreamVideo2020, validBidderRequest.bidderRequest);
@@ -2240,6 +2396,33 @@ describe('ozone Adapter', function () {
         expect(allowed).to.include(keys[i]);
       }
       expect(payload.imp[0].video.ext).to.include({'context': 'outstream'});
+    });
+    it('should handle standard floor config correctly', function () {
+      config.setConfig({
+        floors: {
+          enforcement: {
+            floorDeals: false,
+            bidAdjustment: true
+          },
+          data: {
+            currency: 'USD',
+            schema: {
+              fields: ['mediaType']
+            },
+            values: {
+              'video': 1.20,
+              'banner': 0.8
+            }
+          }
+        }
+      });
+      let localBidRequest = JSON.parse(JSON.stringify(validBidRequestsWithBannerMediaType));
+      localBidRequest[0].getFloor = function(x) { return {'currency': 'USD', 'floor': 0.8} };
+      const request = spec.buildRequests(localBidRequest, validBidderRequest.bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(utils.deepAccess(payload, 'imp.0.floor.banner.currency')).to.equal('USD');
+      expect(utils.deepAccess(payload, 'imp.0.floor.banner.floor')).to.equal(0.8);
+      config.resetConfig();
     });
   });
 
@@ -2266,11 +2449,20 @@ describe('ozone Adapter', function () {
       const result = spec.interpretResponse(validResponse, request);
       expect(result.length).to.equal(1);
     });
+    it('should build bid array with usp/CCPA', function () {
+      let validBR = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr.bidderRequest));
+      validBR.uspConsent = '1YNY';
+      const request = spec.buildRequests(validBidRequests, validBR);
+      const payload = JSON.parse(request.data);
+      expect(payload.user.ext.uspConsent).to.equal('1YNY');
+    });
 
     it('should build bid array with only partial gdpr', function () {
       var validBidderRequestWithGdpr = bidderRequestWithPartialGdpr.bidderRequest;
       validBidderRequestWithGdpr.gdprConsent = {'gdprApplies': 1, 'consentString': 'This is the gdpr consent string'};
       const request = spec.buildRequests(validBidRequests, validBidderRequestWithGdpr);
+      const payload = JSON.parse(request.data);
+      expect(payload.user.ext.consent).to.be.a('string');
     });
 
     it('should fail ok if no seatbid in server response', function () {
@@ -2374,7 +2566,7 @@ describe('ozone Adapter', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
       const result = spec.interpretResponse(validResponse, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_adv')).to.be.undefined;
-      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_adId')).to.equal('2899ec066a91ff8-0-0');
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_adId')).to.equal('2899ec066a91ff8-0-oz-0');
       config.resetConfig();
     });
     it('should ignore a whitelist if enhancedAdserverTargeting is false', function () {
@@ -2421,7 +2613,7 @@ describe('ozone Adapter', function () {
       const result = spec.interpretResponse(validres, request);
       expect(result.length).to.equal(1);
       expect(result[0]['price']).to.equal(0.9);
-      expect(result[0]['adserverTargeting']['oz_ozappnexus_adId']).to.equal('2899ec066a91ff8-0-1');
+      expect(result[0]['adserverTargeting']['oz_ozappnexus_adId']).to.equal('2899ec066a91ff8-0-oz-1');
     });
     it('should correctly process an auction with 2 adunits & multiple bidders one of which bids for both adslots', function() {
       let validres = JSON.parse(JSON.stringify(multiResponse1));
@@ -2431,7 +2623,7 @@ describe('ozone Adapter', function () {
       expect(result[1]['price']).to.equal(0.521);
       expect(result[1]['impid']).to.equal('3025f169863b7f8');
       expect(result[1]['id']).to.equal('18552976939844999');
-      expect(result[1]['adserverTargeting']['oz_ozappnexus_adId']).to.equal('3025f169863b7f8-0-2');
+      expect(result[1]['adserverTargeting']['oz_ozappnexus_adId']).to.equal('3025f169863b7f8-0-oz-2');
       // change the bid values so a different second bid for an impid by the same bidder gets dropped
       validres = JSON.parse(JSON.stringify(multiResponse1));
       validres.body.seatbid[0].bid[1].price = 1.1;
@@ -2441,7 +2633,7 @@ describe('ozone Adapter', function () {
       expect(result[1]['price']).to.equal(1.1);
       expect(result[1]['impid']).to.equal('3025f169863b7f8');
       expect(result[1]['id']).to.equal('18552976939844681');
-      expect(result[1]['adserverTargeting']['oz_ozappnexus_adId']).to.equal('3025f169863b7f8-0-1');
+      expect(result[1]['adserverTargeting']['oz_ozappnexus_adId']).to.equal('3025f169863b7f8-0-oz-1');
     });
   });
 
@@ -2463,6 +2655,20 @@ describe('ozone Adapter', function () {
       expect(result[0].url).to.include('siteId=1234567890');
       expect(result[0].url).to.include('gdpr=1');
       expect(result[0].url).to.include('gdpr_consent=BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA');
+    });
+    it('should append ccpa (usp data)', function() {
+      // get the cookie bag populated
+      spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      const result = spec.getUserSyncs({iframeEnabled: true}, 'good server response', gdpr1, '1YYN');
+      expect(result).to.be.an('array');
+      expect(result[0].url).to.include('usp_consent=1YYN');
+    });
+    it('should use "" if no usp is sent to cookieSync', function() {
+      // get the cookie bag populated
+      spec.buildRequests(validBidRequests, validBidderRequest.bidderRequest);
+      const result = spec.getUserSyncs({iframeEnabled: true}, 'good server response', gdpr1);
+      expect(result).to.be.an('array');
+      expect(result[0].url).to.include('usp_consent=&');
     });
   });
 

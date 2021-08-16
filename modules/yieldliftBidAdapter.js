@@ -96,6 +96,9 @@ export const spec = {
           creativeId: bid.crid,
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
+          meta: {
+            adomain: bid.adomain
+          }
         })
       })
     } else {
