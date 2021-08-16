@@ -36,6 +36,7 @@ export const spec = {
       }
       reqParams = bid.params;
       reqParams.transactionId = bid.transactionId;
+      reqParams.floor = getBidFloor(bid);
       request.push(formRequestUrl(reqParams));
     }
 
@@ -139,7 +140,6 @@ export const spec = {
           bidObject.gdpr = bidRequest.gdpr.gdpr;
           bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
         }
-
         if (bid.adomain) {
           utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
         }
@@ -160,4 +160,18 @@ export const spec = {
     }
   }
 };
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return null;
+  }
+  let floor = bid.getFloor({
+    currency: 'EUR',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor)) {
+    return floor.floor;
+  }
+  return null;
+}
 registerBidder(spec);
