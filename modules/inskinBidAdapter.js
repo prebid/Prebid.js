@@ -4,9 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'inskin';
 
 const CONFIG = {
-  'inskin': {
-    'BASE_URI': 'https://mfad.inskinad.com/api/v2'
-  }
+  BASE_URI: 'https://mfad.inskinad.com/api/v2'
 };
 
 export const spec = {
@@ -97,8 +95,7 @@ export const spec = {
     }
 
     validBidRequests.map(bid => {
-      let config = CONFIG[bid.bidder];
-      ENDPOINT_URL = config.BASE_URI;
+      ENDPOINT_URL = CONFIG.BASE_URI;
 
       const placement = Object.assign({
         divName: bid.bidId,
@@ -108,8 +105,12 @@ export const spec = {
 
       placement.adTypes.push(5, 9, 163, 2163, 3006);
 
+      placement.properties = placement.properties || {};
+
+      placement.properties.screenWidth = screen.width;
+      placement.properties.screenHeight = screen.height;
+
       if (restrictions.length) {
-        placement.properties = placement.properties || {};
         placement.properties.restrictions = restrictions;
       }
 
@@ -168,6 +169,7 @@ export const spec = {
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 360;
+          bid.meta = { advertiserDomains: decision.adomain ? decision.adomain : [] }
           bid.netRevenue = true;
 
           bidResponses.push(bid);
@@ -188,7 +190,7 @@ export const spec = {
 
         const id = 'ism_tag_' + Math.floor((Math.random() * 10e16));
         window[id] = {
-          plr_AdSlot: e.source.frameElement,
+          plr_AdSlot: e.source && e.source.frameElement,
           bidId: e.data.bidId,
           bidPrice: bidsMap[e.data.bidId].price,
           serverResponse

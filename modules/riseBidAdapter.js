@@ -5,8 +5,9 @@ import {config} from '../src/config.js';
 
 const SUPPORTED_AD_TYPES = [VIDEO];
 const BIDDER_CODE = 'rise';
-const BIDDER_VERSION = '4.0.0';
+const BIDDER_VERSION = '4.0.1';
 const TTL = 360;
+const CURRENCY = 'USD';
 const SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
 const MODES = {
   PRODUCTION: 'hb',
@@ -53,6 +54,10 @@ export const spec = {
       mediaType: VIDEO
     };
 
+    if (body.adomain && body.adomain.length) {
+      bidResponse.meta = {};
+      bidResponse.meta.advertiserDomains = body.adomain
+    }
     bidResponses.push(bidResponse);
 
     return bidResponses;
@@ -81,6 +86,23 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+/**
+ * Get floor price
+ * @param bid {bid}
+ * @returns {Number}
+ */
+function getFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return 0;
+  }
+  let floorResult = bid.getFloor({
+    currency: CURRENCY,
+    mediaType: VIDEO,
+    size: '*'
+  });
+  return floorResult.currency === CURRENCY ? floorResult.floor : 0;
+}
 
 /**
  * Build the video request
@@ -206,7 +228,7 @@ function generateParameters(bid, bidderRequest) {
     width: width,
     height: height,
     publisher_id: params.org,
-    floor_price: params.floorPrice,
+    floor_price: Math.max(getFloor(bid), params.floorPrice),
     ua: navigator.userAgent,
     bid_id: utils.getBidIdParameter('bidId', bid),
     bidder_request_id: utils.getBidIdParameter('bidderRequestId', bid),
@@ -216,6 +238,10 @@ function generateParameters(bid, bidderRequest) {
     site_domain: domain,
     bidder_version: BIDDER_VERSION
   };
+
+  if (params.placementId) {
+    requestParams.placement_id = params.placementId;
+  }
 
   if (syncEnabled) {
     const allowedSyncMethod = getAllowedSyncMethod(filterSettings, bidderCode);

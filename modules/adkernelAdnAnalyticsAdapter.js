@@ -3,12 +3,14 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {config} from '../src/config.js';
 
-const ANALYTICS_VERSION = '1.0.1';
+const GVLID = 14;
+const ANALYTICS_VERSION = '1.0.2';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 const DEFAULT_HOST = 'tag.adkernel.com';
-const storageObj = getStorageManager();
+const storageObj = getStorageManager(GVLID);
 
 const ADK_HB_EVENTS = {
   AUCTION_INIT: 'auctionInit',
@@ -34,6 +36,7 @@ function buildRequestTemplate(pubId) {
       },
       lang: navigator.language
     },
+    user: {},
     src: getUmtSource(loc.href, ref)
   }
 }
@@ -50,6 +53,7 @@ let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
           if (analyticsAdapter.context.queue) {
             analyticsAdapter.context.queue.init();
           }
+          initPrivacy(analyticsAdapter.context.requestTemplate, args.bidderRequests);
           handler = trackAuctionInit;
           break;
         case CONSTANTS.EVENTS.BID_REQUESTED:
@@ -100,7 +104,8 @@ analyticsAdapter.enableAnalytics = (config) => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
-  code: 'adkernelAdn'
+  code: 'adkernelAdn',
+  gvlid: GVLID
 });
 
 export default analyticsAdapter;
@@ -389,4 +394,20 @@ function getLocationAndReferrer(win) {
     ref: win.document.referrer,
     loc: win.location
   };
+}
+
+function initPrivacy(template, requests) {
+  let consent = requests[0].gdprConsent;
+  if (consent && consent.gdprApplies) {
+    template.user.gdpr = ~~consent.gdprApplies;
+  }
+  if (consent && consent.consentString) {
+    template.user.gdpr_consent = consent.consentString;
+  }
+  if (requests[0].uspConsent) {
+    template.user.us_privacy = requests[0].uspConsent;
+  }
+  if (config.getConfig('coppa')) {
+    template.user.coppa = 1;
+  }
 }

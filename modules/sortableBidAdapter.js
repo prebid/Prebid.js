@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'sortable';
 const SERVER_URL = 'https://c.deployads.com';
@@ -128,6 +129,24 @@ function transformSyncs(responses, type, syncs) {
   });
 }
 
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return bid.params.floor ? bid.params.floor : null;
+  }
+
+  // MediaType and Size will automatically get set for us if the bid only has
+  // one media type or one size.
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
@@ -135,13 +154,8 @@ export const spec = {
   isBidRequestValid: function(bid) {
     const sortableConfig = config.getConfig('sortable');
     const haveSiteId = (sortableConfig && !!sortableConfig.siteId) || bid.params.siteId;
-    const validFloor = !bid.params.floor || utils.isNumber(bid.params.floor);
-    const validSize = /\d+x\d+/;
-    const validFloorSizeMap = !bid.params.floorSizeMap ||
-      (utils.isPlainObject(bid.params.floorSizeMap) &&
-        Object.keys(bid.params.floorSizeMap).every(size =>
-          size.match(validSize) && utils.isNumber(bid.params.floorSizeMap[size])
-        ))
+    const floor = getBidFloor(bid);
+    const validFloor = !floor || utils.isNumber(floor);
     const validKeywords = !bid.params.keywords ||
       (utils.isPlainObject(bid.params.keywords) &&
         Object.keys(bid.params.keywords).every(key =>
@@ -149,7 +163,7 @@ export const spec = {
         ))
     const isBanner = !bid.mediaTypes || bid.mediaTypes[BANNER] || !(bid.mediaTypes[NATIVE] || bid.mediaTypes[VIDEO]);
     const bannerSizes = isBanner ? utils.deepAccess(bid, `mediaType.${BANNER}.sizes`) || bid.sizes : null;
-    return !!(bid.params.tagId && haveSiteId && validFloor && validFloorSizeMap && validKeywords && (!isBanner ||
+    return !!(bid.params.tagId && haveSiteId && validFloor && validKeywords && (!isBanner ||
       (bannerSizes && bannerSizes.length > 0 && bannerSizes.every(sizeArr => sizeArr.length == 2 && sizeArr.every(num => utils.isNumber(num))))));
   },
 
@@ -201,8 +215,9 @@ export const spec = {
         }
         rv.video = video;
       }
-      if (bid.params.floor) {
-        rv.bidfloor = bid.params.floor;
+      const floor = getBidFloor(bid);
+      if (floor) {
+        rv.floor = floor;
       }
       if (bid.params.keywords) {
         rv.ext.keywords = bid.params.keywords;
@@ -212,12 +227,11 @@ export const spec = {
           rv.ext[partner] = params;
         });
       }
-      if (bid.params.floorSizeMap) {
-        rv.ext.floorSizeMap = bid.params.floorSizeMap;
-      }
       return rv;
     });
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+    const bidUserId = validBidReqs[0].userId;
+    const eids = createEidsArray(bidUserId);
     const sortableBidReq = {
       id: utils.getUniqueIdentifierStr(),
       imp: sortableImps,
@@ -241,6 +255,9 @@ export const spec = {
           h: screen.height
         },
       },
+      user: {
+        ext: {}
+      }
     };
     if (bidderRequest && bidderRequest.timeout > 0) {
       sortableBidReq.tmax = bidderRequest.timeout;
@@ -254,6 +271,9 @@ export const spec = {
       if (typeof gdprConsent.gdprApplies == 'boolean') {
         sortableBidReq.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0
       }
+    }
+    if (eids.length) {
+      sortableBidReq.user.ext.eids = eids;
     }
     if (bidderRequest.uspConsent) {
       sortableBidReq.regs.ext.us_privacy = bidderRequest.uspConsent;
@@ -282,7 +302,10 @@ export const spec = {
             currency: 'USD',
             netRevenue: true,
             mediaType: BANNER,
-            ttl: 60
+            ttl: 60,
+            meta: {
+              advertiserDomains: bid.adomain || []
+            }
           };
           if (bid.adm) {
             const adFormat = utils.deepAccess(bid, 'ext.ad_format')

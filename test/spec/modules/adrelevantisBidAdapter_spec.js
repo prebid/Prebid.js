@@ -224,13 +224,11 @@ describe('AdrelevantisAdapter', function () {
       let bidRequest = Object.assign({}, bidRequests[0]);
       sinon
         .stub(config, 'getConfig')
-        .withArgs('fpd')
+        .withArgs('ortb2')
         .returns({
-          context: {
+          site: {
             keywords: 'US Open',
-            data: {
-              category: 'sports/tennis'
-            }
+            category: 'sports/tennis'
           }
         });
 
