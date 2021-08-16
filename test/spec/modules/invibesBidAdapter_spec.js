@@ -233,10 +233,10 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.lId).to.be.undefined;
     });
 
-    it('sends rendered cids if they exist', function () {
-      top.window.invibes.renderedCids = [981];
+    it('sends pushed cids if they exist', function () {
+      top.window.invibes.pushedCids = { 981: [] };
       let request = spec.buildRequests(bidRequests);
-      expect(request.data.rcids).to.contain(981);
+      expect(request.data.pcids).to.contain(981);
     });
 
     it('sends lid when comes on cookie', function () {
@@ -823,6 +823,26 @@ describe('invibesBidAdapter:', function () {
       }
     };
 
+    var buildResponse = function(placementId, cid, blcids, creativeId) {
+      return {
+        MultipositionEnabled: true,
+        AdPlacements: [{
+          Ads: [{
+            BidPrice: 0.5,
+            VideoExposedId: creativeId,
+            Cid: cid,
+            Blcids: blcids
+          }],
+          BidModel: {
+            BidVersion: 1,
+            PlacementId: placementId,
+            AuctionStartTime: Date.now(),
+            CreativeHtml: '<!-- Creative -->'
+          }
+        }]
+      };
+    };
+
     context('when the response is not valid', function () {
       it('handles response with no bids requested', function () {
         let emptyResult = spec.interpretResponse({body: response});
@@ -899,6 +919,53 @@ describe('invibesBidAdapter:', function () {
         expect(result[0].meta.advertiserName).to.equal('theadvertiser');
         expect(result[0].meta.advertiserDomains).to.contain('theadvertiser.com');
         expect(result[0].meta.advertiserDomains).to.contain('theadvertiser_2.com');
+      });
+    });
+
+    context('in multiposition context, with conflicting ads', function() {
+      it('registers the second ad when no conflict', function() {
+        var firstResponse = buildResponse('12345', 1, [1], 123);
+        var secondResponse = buildResponse('abcde', 2, [2], 456);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        expect(secondResult[0].creativeId).to.equal(456);
+      });
+
+      it('registers the second ad when no conflict - empty arrays', function() {
+        var firstResponse = buildResponse('12345', 1, [], 123);
+        var secondResponse = buildResponse('abcde', 2, [], 456);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        expect(secondResult[0].creativeId).to.equal(456);
+      });
+
+      it('doesnt register the second ad when it is blacklisted by the first', function() {
+        var firstResponse = buildResponse('12345', 1, [2], 123);
+        var secondResponse = buildResponse('abcde', 2, [], 456);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        expect(secondResult).to.be.empty;
+      });
+
+      it('doesnt register the second ad when it is blacklisting the first', function() {
+        var firstResponse = buildResponse('12345', 1, [], 123);
+        var secondResponse = buildResponse('abcde', 2, [1], 456);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        expect(secondResult).to.be.empty;
+      });
+
+      it('doesnt register the second ad when it has same ids as the first', function() {
+        var firstResponse = buildResponse('12345', 1, [1], 123);
+        var secondResponse = buildResponse('abcde', 1, [1], 456);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        expect(secondResult).to.be.empty;
       });
     });
   });
