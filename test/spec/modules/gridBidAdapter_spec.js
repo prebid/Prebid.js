@@ -402,11 +402,75 @@ describe('TheMediaGrid Adapter', function () {
 
     it('should contain the keyword values if it present in ortb2.(site/user)', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'ortb2.user' ? {'keywords': 'foo'} : (arg === 'ortb2.site' ? {'keywords': 'bar'} : null));
-      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+        arg => arg === 'ortb2.user' ? {'keywords': 'foo,any'} : (arg === 'ortb2.site' ? {'keywords': 'bar'} : null));
+      const keywords = {
+        'site': {
+          'somePublisher': [
+            {
+              'name': 'someName',
+              'brandsafety': ['disaster'],
+              'topic': ['stress', 'fear']
+            }
+          ]
+        },
+        'user': {
+          'formatedPublisher': [
+            {
+              'name': 'fomatedName',
+              'segments': [
+                { 'name': 'segName1', 'value': 'segVal1' },
+                { 'name': 'segName2', 'value': 'segVal2' }
+              ]
+            }
+          ]
+        }
+      };
+      const bidRequestWithKW = { ...bidRequests[0], params: { ...bidRequests[0].params, keywords } }
+      const request = spec.buildRequests([bidRequestWithKW], bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload.ext.keywords).to.deep.equal([{'key': 'user', 'value': ['foo']}, {'key': 'context', 'value': ['bar']}]);
+      expect(payload.ext.keywords).to.deep.equal({
+        'site': {
+          'somePublisher': [
+            {
+              'name': 'someName',
+              'segments': [
+                { 'name': 'brandsafety', 'value': 'disaster' },
+                { 'name': 'topic', 'value': 'stress' },
+                { 'name': 'topic', 'value': 'fear' }
+              ]
+            }
+          ],
+          'ortb2': [
+            {
+              'name': 'keywords',
+              'segments': [
+                { 'name': 'keywords', 'value': 'bar' }
+              ]
+            }
+          ]
+        },
+        'user': {
+          'formatedPublisher': [
+            {
+              'name': 'fomatedName',
+              'segments': [
+                { 'name': 'segName1', 'value': 'segVal1' },
+                { 'name': 'segName2', 'value': 'segVal2' }
+              ]
+            }
+          ],
+          'ortb2': [
+            {
+              'name': 'keywords',
+              'segments': [
+                { 'name': 'keywords', 'value': 'foo' },
+                { 'name': 'keywords', 'value': 'any' }
+              ]
+            }
+          ]
+        }
+      });
       getConfigStub.restore();
     });
 
@@ -555,8 +619,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         }
       ];
 
@@ -612,8 +679,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '4dff80cc4ee346',
@@ -625,8 +695,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 2</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '5703af74d0472a',
@@ -638,8 +711,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 3</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         }
       ];
 
@@ -697,8 +773,11 @@ describe('TheMediaGrid Adapter', function () {
           'height': 600,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
@@ -713,8 +792,11 @@ describe('TheMediaGrid Adapter', function () {
           'height': undefined,
           'currency': 'USD',
           'mediaType': 'video',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>',
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>'
@@ -844,8 +926,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '4e111f1b66e4',
@@ -857,8 +942,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 2</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '26d6f897b516',
@@ -870,8 +958,11 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 3</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         },
         {
           'requestId': '326bde7fbf69',
@@ -883,12 +974,78 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 4</div>',
           'currency': 'USD',
           'mediaType': 'banner',
-          'netRevenue': false,
+          'netRevenue': true,
           'ttl': 360,
+          'meta': {
+            advertiserDomains: []
+          },
         }
       ];
 
       const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
+      expect(result).to.deep.equal(expectedResponse);
+    });
+
+    it('response with ext.bidder.grid.demandSource', function () {
+      const bidRequests = [
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '1'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '26d6f897b516',
+          'bidderRequestId': '5f2009617a7c0a',
+          'auctionId': '1cbd2feafe5e8b',
+        }
+      ];
+      const serverResponse = {
+        'bid': [
+          {
+            'impid': '26d6f897b516',
+            'price': 1.15,
+            'adm': '<div>test content 1</div>',
+            'auid': 1,
+            'h': 250,
+            'w': 300,
+            'dealid': 11,
+            'ext': {
+              'bidder': {
+                'grid': {
+                  'demandSource': 'someValue'
+                }
+              }
+            }
+          }
+        ],
+        'seat': '1'
+      };
+      const request = spec.buildRequests(bidRequests);
+      const expectedResponse = [
+        {
+          'requestId': '26d6f897b516',
+          'cpm': 1.15,
+          'creativeId': 1,
+          'dealId': 11,
+          'width': 300,
+          'height': 250,
+          'ad': '<div>test content 1</div>',
+          'currency': 'USD',
+          'mediaType': 'banner',
+          'netRevenue': true,
+          'ttl': 360,
+          'meta': {
+            advertiserDomains: [],
+            demandSource: 'someValue'
+          },
+          'adserverTargeting': {
+            'hb_ds': 'someValue'
+          }
+        }
+      ];
+
+      const result = spec.interpretResponse({'body': {'seatbid': [serverResponse]}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });
   });

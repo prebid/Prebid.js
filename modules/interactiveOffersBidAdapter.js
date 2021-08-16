@@ -4,7 +4,7 @@ import {config} from '../src/config.js';
 import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'interactiveOffers';
-const ENDPOINT = 'https://rtb.ioadx.com/bidRequest/?partnerId=4a3bab187a74ac4862920cca864d6eff195ff5e4';
+const ENDPOINT = 'https://prebid.ioadx.com/bidRequest/?partnerId=';
 
 const DEFAULT = {
   'OpenRTBBidRequest': {},
@@ -35,8 +35,8 @@ export const spec = {
   isBidRequestValid: function(bid) {
     let ret = true;
     if (bid && bid.params) {
-      if (!utils.isNumber(bid.params.pubid)) {
-        utils.logWarn('pubid must be a valid numeric ID');
+      if (!bid.params.partnerId) {
+        utils.logWarn('partnerId must be a valid ID');
         ret = false;
       }
       if (bid.params.tmax && !utils.isNumber(bid.params.tmax)) {
@@ -50,10 +50,11 @@ export const spec = {
     return ret;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    let payload = parseRequestPrebidjsToOpenRTB(bidderRequest);
+    let aux = parseRequestPrebidjsToOpenRTB(bidderRequest);
+    let payload = aux.payload;
     return {
       method: 'POST',
-      url: ENDPOINT,
+      url: ENDPOINT + aux.partnerId,
       data: JSON.stringify(payload),
       bidderRequest: bidderRequest
     };
@@ -61,7 +62,10 @@ export const spec = {
 
   interpretResponse: function(response, request) {
     let bidResponses = [];
-    if (response.body && response.body.length) {
+    if (response.body) {
+      if (!response.body.length) {
+        response.body = [response.body];
+      }
       bidResponses = parseResponseOpenRTBToPrebidjs(response.body);
     }
     return bidResponses;
@@ -69,6 +73,10 @@ export const spec = {
 };
 
 function parseRequestPrebidjsToOpenRTB(prebidRequest) {
+  let ret = {
+    payload: {},
+    partnerId: null
+  };
   let pageURL = window.location.href;
   let domain = window.location.hostname;
   let secure = (window.location.protocol == 'https:' ? 1 : 0);
@@ -105,12 +113,15 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest) {
   openRTBRequest.imp = [];
   prebidRequest.bids.forEach(function(bid, impId) {
     impId++;
+    if (!ret.partnerId) {
+      ret.partnerId = bid.params.partnerId;
+    }
     let imp = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestImp']));
     imp.id = impId;
     imp.secure = secure;
     imp.tagid = bid.bidId;
 
-    openRTBRequest.site.publisher.id = openRTBRequest.site.publisher.id || bid.params.pubid;
+    openRTBRequest.site.publisher.id = openRTBRequest.site.publisher.id || 0;
     openRTBRequest.tmax = openRTBRequest.tmax || bid.params.tmax || 0;
 
     Object.keys(bid.mediaTypes).forEach(function(mediaType) {
@@ -130,31 +141,36 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest) {
     });
     openRTBRequest.imp.push(imp);
   });
-  return openRTBRequest;
+  ret.payload = openRTBRequest;
+  return ret;
 }
 function parseResponseOpenRTBToPrebidjs(openRTBResponse) {
   let prebidResponse = [];
   openRTBResponse.forEach(function(response) {
-    response.seatbid.forEach(function(seatbid) {
-      seatbid.bid.forEach(function(bid) {
-        let prebid = JSON.parse(JSON.stringify(DEFAULT['PrebidBid']));
-        prebid.requestId = bid.ext.tagid;
-        prebid.ad = bid.adm;
-        prebid.creativeId = bid.crid;
-        prebid.cpm = bid.price;
-        prebid.width = bid.w;
-        prebid.height = bid.h;
-        prebid.mediaType = 'banner';
-        prebid.meta = {
-          advertiserDomains: bid.adomain,
-          advertiserId: bid.adid,
-          mediaType: 'banner',
-          primaryCatId: bid.cat[0] || '',
-          secondaryCatIds: bid.cat
+    if (response.seatbid && response.seatbid.forEach) {
+      response.seatbid.forEach(function(seatbid) {
+        if (seatbid.bid && seatbid.bid.forEach) {
+          seatbid.bid.forEach(function(bid) {
+            let prebid = JSON.parse(JSON.stringify(DEFAULT['PrebidBid']));
+            prebid.requestId = bid.ext.tagid;
+            prebid.ad = bid.adm;
+            prebid.creativeId = bid.crid;
+            prebid.cpm = bid.price;
+            prebid.width = bid.w;
+            prebid.height = bid.h;
+            prebid.mediaType = 'banner';
+            prebid.meta = {
+              advertiserDomains: bid.adomain,
+              advertiserId: bid.adid,
+              mediaType: 'banner',
+              primaryCatId: bid.cat[0] || '',
+              secondaryCatIds: bid.cat
+            }
+            prebidResponse.push(prebid);
+          });
         }
-        prebidResponse.push(prebid);
       });
-    });
+    }
   });
   return prebidResponse;
 }
