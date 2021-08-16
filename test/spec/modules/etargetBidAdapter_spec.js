@@ -41,6 +41,24 @@ describe('etarget adapter', function () {
       assert.equal(request.method, 'POST');
     });
 
+    it('should attach floor param when either bid param or getFloor function exists', function () {
+      let getFloorResponse = { currency: 'EUR', floor: 5 };
+      let request, floors = null;
+      let bidRequest = deepClone(bids[0]);
+
+      // floor param has to be NULL
+      request = spec.buildRequests([bidRequest]);
+      floors = JSON.parse(request.floors);
+      expect(floors[0]).to.equal(null);
+
+      // floor param has to be == getFloorResponse
+      bidRequest.getFloor = () => getFloorResponse;
+
+      request = spec.buildRequests([bidRequest]);
+      floors = JSON.parse(request.floors);
+      expect(floors[0]).to.exist.and.to.equal(5);
+    });
+
     it('should correctly form bid items', function () {
       let bidList = bids;
       let request = spec.buildRequests(bidList);
