@@ -29,6 +29,7 @@ export const spec = {
     var request = [];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     var lastCountry = 'sk';
+    var floors = [];
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
       if (countryMap[bid.params.country]) {
@@ -36,8 +37,8 @@ export const spec = {
       }
       reqParams = bid.params;
       reqParams.transactionId = bid.transactionId;
-      reqParams.floor = getBidFloor(bid);
       request.push(formRequestUrl(reqParams));
+      floors[i] = getBidFloor(bid);
     }
 
     request.unshift('https://' + lastCountry + '.search.etargetnet.com/hb/?hbget=1');
@@ -53,6 +54,7 @@ export const spec = {
         request.push('gdpr_consent=' + gdprObject.gdpr_consent);
       }
       bidderRequest.metaData = getMetaData();
+      bidderRequest.floors = floors;
     }
 
     return {
