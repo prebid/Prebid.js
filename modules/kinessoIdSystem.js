@@ -113,7 +113,7 @@ function encodeTime(now, len) {
 function createError(message) {
   utils.logError(message);
   const err = new Error(message);
-  err.source = 'sharedId';
+  err.source = 'kinessoId';
   return err;
 }
 
