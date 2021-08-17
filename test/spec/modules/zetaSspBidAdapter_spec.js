@@ -1,5 +1,4 @@
 import {spec} from '../../../modules/zetaSspBidAdapter.js'
-import {expect} from 'chai';
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
