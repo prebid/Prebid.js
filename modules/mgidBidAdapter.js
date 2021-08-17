@@ -601,7 +601,10 @@ function getBidFloor(bid, cur) {
       size: '*'
     });
     if (utils.isPlainObject(floorObj) && utils.isNumber(floorObj.floor)) {
-      if (cur !== floorObj.currency) {
+      if (!floorObj.currency && reqCur !== DEFAULT_CUR) {
+        floorObj.currency = DEFAULT_CUR
+      }
+      if (floorObj.currency && reqCur !== floorObj.currency) {
         cur = floorObj.currency
       }
       bidFloor = floorObj.floor;

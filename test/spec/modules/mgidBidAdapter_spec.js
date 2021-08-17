@@ -754,7 +754,19 @@ describe('Mgid bid adapter', function () {
       expect(payload.imp[0]).to.not.have.property('bidfloorcur');
     });
 
-    it('unsupported currency', function() {
+    it('undefined currency -> USD', function() {
+      bidRequest[0].params.currency = 'EUR'
+      bidRequest[0].getFloor = () => {
+        return {
+          floor: 1.23
+        };
+      };
+
+      const payload = JSON.parse(spec.buildRequests(bidRequest).data);
+      expect(payload.imp[0]).to.have.property('bidfloor', 1.23);
+      expect(payload.imp[0]).to.have.property('bidfloorcur', 'USD');
+    });
+    it('altered currency', function() {
       bidRequest[0].getFloor = () => {
         return {
           currency: 'EUR',
@@ -765,6 +777,19 @@ describe('Mgid bid adapter', function () {
       const payload = JSON.parse(spec.buildRequests(bidRequest).data);
       expect(payload.imp[0]).to.have.property('bidfloor', 1.23);
       expect(payload.imp[0]).to.have.property('bidfloorcur', 'EUR');
+    });
+    it('altered currency, same as in request', function() {
+      bidRequest[0].params.cur = 'EUR'
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'EUR',
+          floor: 1.23
+        };
+      };
+
+      const payload = JSON.parse(spec.buildRequests(bidRequest).data);
+      expect(payload.imp[0]).to.have.property('bidfloor', 1.23);
+      expect(payload.imp[0]).to.not.have.property('bidfloorcur');
     });
 
     it('bad floor value', function() {
