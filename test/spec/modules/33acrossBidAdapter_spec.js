@@ -692,50 +692,94 @@ describe('33acrossBidAdapter:', function () {
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
 
-      it('returns the viewport dimensions of the top most accessible frame', function() {
-        const ttxRequest = new TtxRequestBuilder()
-          .withBanner()
-          .withDevice({
-            ext: {
-              ttx: {
-                viewport: {
-                  w: 9876,
-                  h: 5432
+      context('when all the wrapping windows are accessible', function() {
+        it('returns the viewport dimensions of the top most accessible window', function() {
+          const ttxRequest = new TtxRequestBuilder()
+            .withBanner()
+            .withDevice({
+              ext: {
+                ttx: {
+                  viewport: {
+                    w: 6789,
+                    h: 2345
+                  }
                 }
               }
-            }
-          })
-          .withProduct()
-          .build();
-        const serverRequest = new ServerRequestBuilder()
-          .withData(ttxRequest)
-          .build();
-        const notAccessibleParentWindow = {};
+            })
+            .withProduct()
+            .build();
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
 
-        Object.defineProperty(notAccessibleParentWindow, 'document', {
-          get() { throw new Error('fakeError'); }
-        });
-
-        sandbox.stub(win, 'parent').value({
-          document: {
-            documentElement: {
-              clientWidth: 1234,
-              clientHeight: 4567
-            }
-          },
-          parent: {
-            parent: notAccessibleParentWindow,
+          sandbox.stub(win, 'parent').value({
             document: {
               documentElement: {
-                clientWidth: 9876,
-                clientHeight: 5432
+                clientWidth: 1234,
+                clientHeight: 4567
               }
             },
-          }
-        });
+            parent: {
+              document: {
+                documentElement: {
+                  clientWidth: 6789,
+                  clientHeight: 2345
+                }
+              },
+            }
+          });
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests);
-        validateBuiltServerRequest(buildRequest, serverRequest);
+          const [ buildRequest ] = spec.buildRequests(bidRequests);
+          validateBuiltServerRequest(buildRequest, serverRequest);
+        });
+      });
+
+      context('when one of the wrapping windows cannot be accessed', function() {
+        it('returns the viewport dimensions of the top most accessible window', function() {
+          const ttxRequest = new TtxRequestBuilder()
+            .withBanner()
+            .withDevice({
+              ext: {
+                ttx: {
+                  viewport: {
+                    w: 9876,
+                    h: 5432
+                  }
+                }
+              }
+            })
+            .withProduct()
+            .build();
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+          const notAccessibleParentWindow = {};
+
+          Object.defineProperty(notAccessibleParentWindow, 'document', {
+            get() { throw new Error('fakeError'); }
+          });
+
+          sandbox.stub(win, 'parent').value({
+            document: {
+              documentElement: {
+                clientWidth: 1234,
+                clientHeight: 4567
+              }
+            },
+            parent: {
+              parent: notAccessibleParentWindow,
+              document: {
+                documentElement: {
+                  clientWidth: 9876,
+                  clientHeight: 5432
+                }
+              },
+            }
+          });
+
+          const [ buildRequest ] = spec.buildRequests(bidRequests);
+          validateBuiltServerRequest(buildRequest, serverRequest);
+        });
       });
     });
 
