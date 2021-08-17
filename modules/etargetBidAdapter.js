@@ -54,7 +54,9 @@ export const spec = {
         request.push('gdpr_consent=' + gdprObject.gdpr_consent);
       }
       bidderRequest.metaData = getMetaData();
-      bidderRequest.floors = floors;
+      if (floors.length > 0) {
+        bidderRequest.floors = floors;
+      }
     }
 
     return {
