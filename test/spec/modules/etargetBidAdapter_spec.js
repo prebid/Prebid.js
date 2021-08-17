@@ -43,8 +43,8 @@ describe('etarget adapter', function () {
     });
 
     it('should attach floor param when either bid param or getFloor function exists', function () {
-      let getFloorResponse = { currency: 'EUR', floor: 5 };
-      let request, floors = null;
+      // let getFloorResponse = { currency: 'EUR', floor: 5 };
+      let request = null;
       let bidRequest = deepClone(bids[0]);
 
       // floor param has to be NULL
