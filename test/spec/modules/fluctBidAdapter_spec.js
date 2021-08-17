@@ -78,6 +78,11 @@ describe('fluctAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('POST');
     });
+
+    it('sends bid request to ENDPOINT with query parameter', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.url).to.equal('https://hb.adingo.jp/prebid?dfpUnitCode=%2F100000%2Funit_code&tagId=10000%3A100000001&groupId=1000000002');
+    });
   });
 
   describe('interpretResponse', function() {

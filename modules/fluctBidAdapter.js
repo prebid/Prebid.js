@@ -48,10 +48,11 @@ export const spec = {
       });
 
       data.params = request.params;
+      const searchParams = new URLSearchParams(request.params);
 
       serverRequests.push({
         method: 'POST',
-        url: END_POINT,
+        url: END_POINT + '?' + searchParams.toString(),
         options: {
           contentType: 'application/json',
           withCredentials: true,
