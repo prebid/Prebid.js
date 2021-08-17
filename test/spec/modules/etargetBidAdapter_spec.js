@@ -52,10 +52,10 @@ describe('etarget adapter', function () {
       assert.equal(typeof request.floors, 'undefined');
 
       // floor param has to be == getFloorResponse
-      //bidRequest.getFloor = () => getFloorResponse;
+      // bidRequest.getFloor = () => getFloorResponse;
 
-      //request = spec.buildRequests([bidRequest]);
-      //assert.ok(request.floors);
+      // request = spec.buildRequests([bidRequest]);
+      // assert.ok(request.floors);
     });
 
     it('should correctly form bid items', function () {
