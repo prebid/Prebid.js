@@ -50,12 +50,6 @@ describe('etarget adapter', function () {
       // floor param has to be NULL
       request = spec.buildRequests([bidRequest]);
       assert.equal(typeof request.floors, 'undefined');
-
-      // floor param has to be == getFloorResponse
-      // bidRequest.getFloor = () => getFloorResponse;
-
-      // request = spec.buildRequests([bidRequest]);
-      // assert.ok(request.floors);
     });
 
     it('should correctly form bid items', function () {
