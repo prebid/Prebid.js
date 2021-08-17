@@ -225,6 +225,10 @@ const USER_IDS_CONFIG = {
   'kpuid': {
     source: 'kpuid.com',
     atype: 3
+  },
+  'imuid': {
+    source: 'intimatemerger.com',
+    atype: 1
   }
 };
 

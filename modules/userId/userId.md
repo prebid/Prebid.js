@@ -279,6 +279,13 @@ pbjs.setConfig({
                  expires: 30
                   },
         }   
+        },
+        {
+            name: 'imuid',
+            params: {
+                cid: 5126 // Set your Intimate Merger Customer ID here for production
+            }
+        }],
         syncDelay: 5000
     }
 });

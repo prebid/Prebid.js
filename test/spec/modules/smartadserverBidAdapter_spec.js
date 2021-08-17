@@ -1,17 +1,6 @@
-import {
-  expect
-} from 'chai';
-import {
-  spec
-} from 'modules/smartadserverBidAdapter.js';
-import {
-  newBidder
-} from 'src/adapters/bidderFactory.js';
-import {
-  config
-} from 'src/config.js';
-import * as utils from 'src/utils.js';
-import { requestBidsHook } from 'modules/consentManagement.js';
+import { expect } from 'chai';
+import { config } from 'src/config.js';
+import { spec } from 'modules/smartadserverBidAdapter.js';
 
 // Default params with optional ones
 describe('Smart bid adapter tests', function () {
@@ -982,6 +971,48 @@ describe('Smart bid adapter tests', function () {
       };
       let actual = spec.serializeSupplyChain(null);
       expect(null, actual);
+    });
+  });
+
+  describe('Floors module', function () {
+    it('should include floor from bid params', function() {
+      const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS))[0].data);
+      expect(bidRequest.bidfloor).to.deep.equal(DEFAULT_PARAMS[0].params.bidfloor);
+    });
+
+    it('should return floor from module', function() {
+      const moduleFloor = 1.5;
+      const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
+      bidRequest.getFloor = function () {
+        return { floor: moduleFloor };
+      };
+
+      const floor = spec.getBidFloor(bidRequest, 'EUR');
+      expect(floor).to.deep.equal(moduleFloor);
+    });
+
+    it('should return default floor when module not activated', function() {
+      const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
+
+      const floor = spec.getBidFloor(bidRequest, 'EUR');
+      expect(floor).to.deep.equal(0);
+    });
+
+    it('should return default floor when getFloor returns not proper object', function() {
+      const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
+      bidRequest.getFloor = function () {
+        return { floor: 'one' };
+      };
+
+      const floor = spec.getBidFloor(bidRequest, 'EUR');
+      expect(floor).to.deep.equal(0.0);
+    });
+
+    it('should return default floor when currency unknown', function() {
+      const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
+
+      const floor = spec.getBidFloor(bidRequest, null);
+      expect(floor).to.deep.equal(0);
     });
   });
 
