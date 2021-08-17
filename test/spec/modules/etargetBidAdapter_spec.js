@@ -49,7 +49,7 @@ describe('etarget adapter', function () {
 
       // floor param has to be NULL
       request = spec.buildRequests([bidRequest]);
-      expect(request.floors[0]).to.equal(null);
+      expect(request.floors).to.not.exist.or.to.equal(null);
 
       // floor param has to be == getFloorResponse
       bidRequest.getFloor = () => getFloorResponse;
