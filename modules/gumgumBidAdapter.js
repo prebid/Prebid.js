@@ -346,8 +346,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      gpid: gpid,
-      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId))
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), { gpid })
     })
   });
   return bids;

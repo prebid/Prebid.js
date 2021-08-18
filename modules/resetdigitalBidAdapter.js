@@ -56,7 +56,7 @@ export const spec = {
     }
 
     let params = validBidRequests[0].params
-    let url = params.endpoint ? params.endpoint : '//hb.vhsrv.com'
+    let url = params.endpoint ? params.endpoint : '//ads.resetsrv.com'
     return {
       method: 'POST',
       url: url,

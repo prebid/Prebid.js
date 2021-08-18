@@ -192,8 +192,8 @@ describe('gumgumAdapter', function () {
     it('should set the global placement id (gpid)', function () {
       const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
       const bidRequest = spec.buildRequests([req])[0];
-      expect(bidRequest).to.have.property('gpid');
-      expect(bidRequest.gpid).to.equal(123456);
+      expect(bidRequest.data).to.have.property('gpid');
+      expect(bidRequest.data.gpid).to.equal(123456);
     });
 
     it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {
