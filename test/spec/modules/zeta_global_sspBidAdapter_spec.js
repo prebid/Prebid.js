@@ -1,4 +1,4 @@
-import {spec} from '../../../modules/zetaSspBidAdapter.js'
+import {spec} from '../../../modules/zeta_global_sspBidAdapter.js'
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
