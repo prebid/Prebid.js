@@ -229,8 +229,8 @@ describe('jwplayerRtdProvider', function() {
 
           const bid = {};
           const adUnit = {
-            fpd: {
-              context: {
+            ortb2Imp: {
+              ext: {
                 data: {
                   jwTargeting: {
                     mediaID: mediaIdWithSegment,
@@ -298,8 +298,8 @@ describe('jwplayerRtdProvider', function() {
         }
       ];
       const adUnit = {
-        fpd: {
-          context: {
+        ortb2Imp: {
+          ext: {
             data: {
               jwTargeting: {
                 mediaID: testIdForSuccess
@@ -345,8 +345,8 @@ describe('jwplayerRtdProvider', function() {
         }
       ];
       const adUnit = {
-        fpd: {
-          context: {
+        ortb2Imp: {
+          ext: {
             data: {
               jwTargeting: {
                 mediaID: testIdForSuccess
@@ -392,8 +392,8 @@ describe('jwplayerRtdProvider', function() {
         }
       ];
       const adUnit = {
-        fpd: {
-          context: {
+        ortb2Imp: {
+          ext: {
             data: {
               jwTargeting: {
                 mediaID: testIdForFailure
@@ -435,19 +435,19 @@ describe('jwplayerRtdProvider', function() {
     });
 
     it('should include banner ad units that specify jwTargeting', function() {
-      const adUnit = { mediaTypes: { banner: {} }, fpd: { context: { data: { jwTargeting: {} } } } };
+      const adUnit = { mediaTypes: { banner: {} }, ortb2Imp: { ext: { data: { jwTargeting: {} } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.deep.equal(config);
     });
 
     it('should include outstream ad units that specify jwTargeting', function() {
-      const adUnit = { mediaTypes: { video: { context: 'outstream' } }, fpd: { context: { data: { jwTargeting: {} } } } };
+      const adUnit = { mediaTypes: { video: { context: 'outstream' } }, ortb2Imp: { ext: { data: { jwTargeting: {} } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.deep.equal(config);
     });
 
     it('should fallback to config when empty jwTargeting is defined in ad unit', function () {
-      const adUnit = { fpd: { context: { data: { jwTargeting: {} } } } };
+      const adUnit = { ortb2Imp: { ext: { data: { jwTargeting: {} } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.deep.equal(config);
     });
@@ -457,7 +457,7 @@ describe('jwplayerRtdProvider', function() {
       const expectedPlayerID = 'test_player_id';
       const config = { playerID: 'bad_id', mediaID: 'bad_id' };
 
-      const adUnit = { fpd: { context: { data: { jwTargeting: { mediaID: expectedMediaID, playerID: expectedPlayerID } } } } };
+      const adUnit = { ortb2Imp: { ext: { data: { jwTargeting: { mediaID: expectedMediaID, playerID: expectedPlayerID } } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.have.property('mediaID', expectedMediaID);
       expect(targeting).to.have.property('playerID', expectedPlayerID);
@@ -468,7 +468,7 @@ describe('jwplayerRtdProvider', function() {
       const expectedPlayerID = 'test_player_id';
       const config = { playerID: expectedPlayerID, mediaID: 'bad_id' };
 
-      const adUnit = { fpd: { context: { data: { jwTargeting: { mediaID: expectedMediaID } } } } };
+      const adUnit = { ortb2Imp: { ext: { data: { jwTargeting: { mediaID: expectedMediaID } } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.have.property('mediaID', expectedMediaID);
       expect(targeting).to.have.property('playerID', expectedPlayerID);
@@ -577,8 +577,8 @@ describe('jwplayerRtdProvider', function() {
         bidReqConfig = {
           adUnits: [
             {
-              fpd: {
-                context: {
+              ortb2Imp: {
+                ext: {
                   data: {
                     jwTargeting: {
                       mediaID: validMediaIDs[0]
@@ -591,8 +591,8 @@ describe('jwplayerRtdProvider', function() {
               ]
             },
             {
-              fpd: {
-                context: {
+              ortb2Imp: {
+                ext: {
                   data: {
                     jwTargeting: {
                       mediaID: validMediaIDs[1]
@@ -658,8 +658,8 @@ describe('jwplayerRtdProvider', function() {
       it('sets targeting data in proper structure', function () {
         const bid = {};
         const adUnitWithMediaId = {
-          fpd: {
-            context: {
+          ortb2Imp: {
+            ext: {
               data: {
                 jwTargeting: {
                   mediaID: testIdForSuccess
@@ -690,8 +690,8 @@ describe('jwplayerRtdProvider', function() {
         const adUnitCode = 'test_ad_unit';
         const bid = {};
         const adUnit = {
-          fpd: {
-            context: {
+          ortb2Imp: {
+            ext: {
               data: {
                 jwTargeting: {
                   mediaID: testIdForFailure
@@ -701,7 +701,7 @@ describe('jwplayerRtdProvider', function() {
           },
           bids: [ bid ]
         };
-        const expectedContentId = 'jw_' + adUnit.fpd.context.data.jwTargeting.mediaID;
+        const expectedContentId = 'jw_' + adUnit.ortb2Imp.ext.data.jwTargeting.mediaID;
         const expectedTargeting = {
           content: {
             id: expectedContentId
@@ -732,8 +732,8 @@ describe('jwplayerRtdProvider', function() {
 
         const adUnitEmptyfpd = {
           code: 'test_ad_unit_empty_fpd',
-          fpd: {
-            context: {
+          ortb2Imp: {
+            ext: {
               id: 'sthg'
             }
           },

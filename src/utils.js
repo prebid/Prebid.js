@@ -43,6 +43,14 @@ export const internal = {
   deepEqual
 };
 
+let prebidInternal = {}
+/**
+ * Returns object that is used as internal prebid namespace
+ */
+export function getPrebidInternal() {
+  return prebidInternal;
+}
+
 var uniqueRef = {};
 export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === uniqueRef
   ? Function.prototype.bind
@@ -256,6 +264,7 @@ export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
+  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
 }
 
 export function logError() {
@@ -280,11 +289,20 @@ if (window.performance && window.performance.now) {
 
 function decorateLog(args, prefix) {
   args = [].slice.call(args);
+  let bidder = config.getCurrentBidder();
+
   prefix && args.unshift(prefix);
   args.unshift(getTimestamp())
-  args.unshift('display: inline-block; color: #fff; background: #3b88c3; padding: 1px 4px; border-radius: 3px;');
-  args.unshift('%cPrebid');
+  if (bidder) {
+    args.unshift(label('#aaa'));
+  }
+  args.unshift(label('#3b88c3'));
+  args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
   return args;
+
+  function label(color) {
+    return `display: inline-block; color: #fff; background: ${color}; padding: 1px 4px; border-radius: 3px;`
+  }
 }
 
 export function hasConsoleLogger() {

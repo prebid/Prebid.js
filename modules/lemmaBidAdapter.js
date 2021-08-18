@@ -62,18 +62,6 @@ export var spec = {
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     let syncurl = USER_SYNC + 'pid=' + pubId;
-
-    // Attaching GDPR Consent Params in UserSync url
-    if (gdprConsent) {
-      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
-    }
-
-    // CCPA
-    if (uspConsent) {
-      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
-    }
-
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
@@ -94,6 +82,30 @@ function _initConf(refererInfo) {
     conf.refURL = '';
   }
   return conf;
+}
+
+function _setFloor(impObj, bid) {
+  let bidFloor = -1;
+  // get lowest floor from floorModule
+  if (typeof bid.getFloor === 'function') {
+    [BANNER, VIDEO].forEach(mediaType => {
+      if (impObj.hasOwnProperty(mediaType)) {
+        let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
+        if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+          let mediaTypeFloor = parseFloat(floorInfo.floor);
+          bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+        }
+      }
+    });
+  }
+  // get highest from impObj.bidfllor and floor from floor module
+  // as we are using Math.max, it is ok if we have not got any floor from floorModule, then value of bidFloor will be -1
+  if (impObj.bidfloor) {
+    bidFloor = Math.max(bidFloor, impObj.bidfloor)
+  }
+
+  // assign value only if bidFloor is > 0
+  impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : undefined);
 }
 
 function parseRTBResponse(request, response) {
@@ -122,9 +134,9 @@ function parseRTBResponse(request, response) {
             newBid.dealId = bid.dealid;
           }
           if (req.imp && req.imp.length > 0) {
-            newBid.mediaType = req.mediaType;
             req.imp.forEach(robj => {
               if (bid.impid === robj.id) {
+                _checkMediaType(bid.adm, newBid);
                 switch (newBid.mediaType) {
                   case BANNER:
                     break;
@@ -277,10 +289,6 @@ function _getDeviceObject(request) {
 
 function setOtherParams(request, ortbRequest) {
   var params = request && request.params ? request.params : null;
-  if (request && request.gdprConsent) {
-    ortbRequest.regs = { ext: { gdpr: request.gdprConsent.gdprApplies ? 1 : 0 } };
-    ortbRequest.user = { ext: { consent: request.gdprConsent.consentString } };
-  }
   if (params) {
     ortbRequest.tmax = params.tmax;
     ortbRequest.bcat = params.bcat;
@@ -368,11 +376,9 @@ function _getImpressionObject(bid) {
     secure: window.location.protocol === 'https:' ? 1 : 0,
     bidfloorcur: params.currency ? params.currency : DEFAULT_CURRENCY
   };
-
   if (params.bidFloor) {
     impression.bidfloor = params.bidFloor;
   }
-
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
       switch (mediaTypes) {
@@ -408,7 +414,7 @@ function _getImpressionObject(bid) {
     }
     impression.banner = bObj;
   }
-
+  _setFloor(impression, bid);
   return impression.hasOwnProperty(BANNER) ||
         impression.hasOwnProperty(VIDEO) ? impression : undefined;
 }
@@ -424,4 +430,13 @@ function parse(rawResp) {
   return null;
 }
 
+function _checkMediaType(adm, newBid) {
+  // Create a regex here to check the strings
+  var videoRegex = new RegExp(/VAST.*version/);
+  if (videoRegex.test(adm)) {
+    newBid.mediaType = VIDEO;
+  } else {
+    newBid.mediaType = BANNER;
+  }
+}
 registerBidder(spec);

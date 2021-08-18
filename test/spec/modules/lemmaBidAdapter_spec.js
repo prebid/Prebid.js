@@ -23,6 +23,7 @@ describe('lemmaBidAdapter', function() {
         pubId: 1001,
         adunitId: 1,
         currency: 'AUD',
+        bidFloor: 1.3,
         geo: {
           lat: '12.3',
           lon: '23.7',
@@ -46,6 +47,7 @@ describe('lemmaBidAdapter', function() {
       params: {
         pubId: 1001,
         adunitId: 1,
+        bidFloor: 1.3,
         video: {
           mimes: ['video/mp4', 'video/x-flv'],
           skippable: true,
@@ -161,6 +163,7 @@ describe('lemmaBidAdapter', function() {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.pubId.toString()); // publisher Id
         expect(data.imp[0].tagid).to.equal('1'); // tagid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
+        expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.bidFloor);
       });
       it('Request params check without mediaTypes object', function() {
         var bidRequests = [{
@@ -192,6 +195,7 @@ describe('lemmaBidAdapter', function() {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.pubId.toString()); // publisher Id
         expect(data.imp[0].tagid).to.equal(undefined); // tagid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
+        expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.bidFloor);
       });
       it('Request params multi size format object check', function() {
         var bidRequests = [{
@@ -309,6 +313,77 @@ describe('lemmaBidAdapter', function() {
         expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
         expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
       });
+      describe('setting imp.floor using floorModule', function() {
+        /*
+        Use the minimum value among floor from floorModule per mediaType
+        If params.bidFloor is set then take max(floor, min(floors from floorModule))
+        set imp.bidfloor only if it is more than 0
+        */
+
+        let newRequest;
+        let floorModuleTestData;
+        let getFloor = function(req) {
+          return floorModuleTestData[req.mediaType];
+        };
+
+        beforeEach(() => {
+          floorModuleTestData = {
+            'banner': {
+              'currency': 'AUD',
+              'floor': 1.50
+            },
+            'video': {
+              'currency': 'AUD',
+              'floor': 2.00
+            }
+          };
+          newRequest = utils.deepClone(bidRequests);
+          newRequest[0].getFloor = getFloor;
+        });
+
+        it('bidfloor should be undefined if calculation is <= 0', function() {
+          floorModuleTestData.banner.floor = 0; // lowest of them all
+          newRequest[0].params.bidFloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(undefined);
+        });
+
+        it('ignore floormodule o/p if floor is not number', function() {
+          floorModuleTestData.banner.floor = 'INR';
+          newRequest[0].params.bidFloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(undefined); // video will be lowest now
+        });
+
+        it('ignore floormodule o/p if currency is not matched', function() {
+          floorModuleTestData.banner.currency = 'INR';
+          newRequest[0].params.bidFloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(undefined); // video will be lowest now
+        });
+
+        it('bidFloor is not passed, use minimum from floorModule', function() {
+          newRequest[0].params.bidFloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(1.5);
+        });
+
+        it('bidFloor is passed as 1, use min of floorModule as it is highest', function() {
+          newRequest[0].params.bidFloor = '1.0';// yes, we want it as a string
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(1.5);
+        });
+      });
       describe('Response checking', function() {
         it('should check for valid response values', function() {
           var request = spec.buildRequests(bidRequests);
@@ -344,24 +419,6 @@ describe('lemmaBidAdapter', function() {
       it('execute as per config', function() {
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
           type: 'iframe', url: syncurl_iframe
-        }]);
-      });
-
-      it('CCPA/USP', function() {
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
-          type: 'iframe', url: `${syncurl_iframe}&us_privacy=1NYN`
-        }]);
-      });
-
-      it('GDPR', function() {
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo`
-        }]);
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl_iframe}&gdpr=0&gdpr_consent=foo`
-        }]);
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=`
         }]);
       });
     });

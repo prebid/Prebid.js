@@ -211,7 +211,8 @@ function generateParameters(bid, bidderRequest) {
     bid_id: utils.getBidIdParameter('bidId', bid),
     bidder_request_id: utils.getBidIdParameter('bidderRequestId', bid),
     transaction_id: utils.getBidIdParameter('transactionId', bid),
-    session_id: utils.getBidIdParameter('auctionId', bid),
+    session_id: params.sessionId || utils.getBidIdParameter('auctionId', bid),
+    is_wrapper: !!params.isWrapper,
     publisher_name: domain,
     site_domain: domain,
     bidder_version: BIDDER_VERSION

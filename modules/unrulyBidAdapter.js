@@ -31,6 +31,7 @@ const serverResponseToBid = (bid, rendererInstance) => ({
   netRevenue: true,
   creativeId: bid.bidId,
   ttl: 360,
+  meta: { advertiserDomains: bid && bid.adomain ? bid.adomain : [] },
   currency: 'USD',
   renderer: rendererInstance,
   mediaType: VIDEO

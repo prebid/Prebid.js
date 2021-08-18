@@ -6,7 +6,7 @@ Adot Bidder Adapter is a module that enables the communication between the Prebi
 
 - Module name: Adot Bidder Adapter
 - Module type: Bidder Adapter
-- Maintainer: `maxime.lequain@we-are-adot.com`
+- Maintainer: `aurelien.giudici@adotmob.com`
 - Supported media types: `banner`, `video`, `native`
 
 ## Example ad units
@@ -47,23 +47,22 @@ const adUnit = {
             context: 'outstream',
             // Video dimensions supported by the video ad unit.
             // Each ad unit size is formatted as follows: [width, height].
-            playerSize: [[300, 250]]
+            playerSize: [[300, 250]],
+            // Content MIME types supported by the ad unit.
+            mimes: ['video/mp4'],
+            // Minimum accepted video ad duration (in seconds).
+            minDuration: 5,
+            // Maximum accepted video ad duration (in seconds).
+            maxDuration: 35,
+            // Video protocols supported by the ad unit (see the OpenRTB 2.5 specifications,
+            // section 5.8).
+            protocols: [2, 3]
         }
     },
     bids: [{
         bidder: 'adot',
         params: {
-            video: {
-                // Content MIME types supported by the ad unit.
-                mimes: ['video/mp4'],
-                // Minimum accepted video ad duration (in seconds).
-                minDuration: 5,
-                // Maximum accepted video ad duration (in seconds).
-                maxDuration: 35,
-                // Video protocols supported by the ad unit (see the OpenRTB 2.5 specifications,
-                // section 5.8).
-                protocols: [2, 3]
-            }
+            video: {}
         }
     }]
 }
@@ -82,23 +81,22 @@ const adUnit = {
             context: 'instream',
             // Video dimensions supported by the video ad unit.
             // Each ad unit size is formatted as follows: [width, height].
-            playerSize: [[300, 250]]
+            playerSize: [[300, 250]],
+            // Content MIME types supported by the ad unit.
+            mimes: ['video/mp4'],
+            // Minimum accepted video ad duration (in seconds).
+            minDuration: 5,
+            // Maximum accepted video ad duration (in seconds).
+            maxDuration: 35,
+            // Video protocols supported by the ad unit (see the OpenRTB 2.5 specifications,
+            // section 5.8).
+            protocols: [2, 3]
         }
     },
     bids: [{
         bidder: 'adot',
         params: {
             video: {
-                // Content MIME types supported by the ad unit.
-                mimes: ['video/mp4'],
-                // Minimum accepted video ad duration (in seconds).
-                minDuration: 5,
-                // Maximum accepted video ad duration (in seconds).
-                maxDuration: 35,
-                // Video protocols supported by the ad unit (see the OpenRTB 2.5 specifications,
-                // section 5.8).
-                protocols: [2, 3],
-                // Instream video context. Must be either 'pre-roll', 'mid-roll' or 'post-roll'.
                 instreamContext: 'pre-roll'
             }
         }
@@ -227,6 +225,24 @@ pbjs.setBidderConfig({
     config: {
         adot: {
             publisherId: '__MY_PUBLISHER_ID__'
+        }
+    }
+});
+```
+
+### Specific publisher path
+
+You can set a specific publisher path using `pbjs.setBidderConfig` for the bidder `adot`
+The bidrequest will add this path to the bidder endpoint
+
+#### Example
+
+```javascript
+pbjs.setBidderConfig({
+    bidders: ['adot'],
+    config: {
+        adot: {
+            publisherPath: '__MY_PUBLISHER_PATH__'
         }
     }
 });
