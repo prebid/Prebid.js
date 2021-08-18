@@ -9,18 +9,21 @@ import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'naveggId';
+const OLD_NAVEGG_ID = 'nid';
+const NAVEGG_ID = 'nvggid'
+
 export const storage = getStorageManager();
 
 function readnaveggIdFromLocalStorage() {
-  return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage('nvggid') : null;
+  return storage.getDataFromLocalStorage(NAVEGG_ID);
 }
 
 function readnaveggIDFromCookie() {
-  return storage.cookiesAreEnabled ? storage.getCookie('nvggid') : null;
+  return storage.cookiesAreEnabled ? storage.getCookie(NAVEGG_ID) : null;
 }
 
 function readoldnaveggIDFromCookie() {
-  return storage.cookiesAreEnabled ? storage.getCookie('nid') : null;
+  return storage.cookiesAreEnabled ? storage.getCookie(OLD_NAVEGG_ID) : null;
 }
 
 function readnvgIDFromCookie() {
@@ -36,7 +39,7 @@ function readnvgnavFromLocalStorage() {
   const query = '^nvg|^nav';
   for (i in window.localStorage) {
     if (i.match(query) || (!query && typeof i === 'string')) {
-      return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage(i.match(query).input) : null;
+      return storage.getDataFromLocalStorage(i.match(query).input);
     }
   }
 }
@@ -44,16 +47,16 @@ function readnvgnavFromLocalStorage() {
 /** @type {Submodule} */
 export const naveggIdSubmodule = {
   /**
-    * used to link submodule with config
-    * @type {string}
-    */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
   /**
-    * decode the stored id value for passing to bid requests
-    * @function
-    * @param { Object | string | undefined } value
-    * @return { Object | string | undefined }
-    */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param { Object | string | undefined } value
+   * @return { Object | string | undefined }
+   */
   decode(value) {
     const naveggIdVal = value ? utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined : undefined;
     return naveggIdVal ? {
@@ -61,18 +64,22 @@ export const naveggIdSubmodule = {
     } : undefined;
   },
   /**
-    * performs action to obtain id and return a value in the callback's response argument
-    * @function
-    * @param {SubmoduleConfig} config
-    * @return {{id: string | undefined } | undefined}
-    */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} config
+   * @return {{id: string | undefined } | undefined}
+   */
   getId() {
-    const naveggIdString = readnaveggIdFromLocalStorage() || readnaveggIDFromCookie() || readoldnaveggIDFromCookie() || readnvgIDFromCookie() || readnavIDFromCookie() || readnvgnavFromLocalStorage();
+    let naveggIdStringFromLocalStorage = null;
+    if (storage.localStorageIsEnabled) {
+      naveggIdStringFromLocalStorage = readnaveggIdFromLocalStorage() || readnvgnavFromLocalStorage();
+    }
+
+    const naveggIdString = naveggIdStringFromLocalStorage || readnaveggIDFromCookie() || readoldnaveggIDFromCookie() || readnvgIDFromCookie() || readnavIDFromCookie();
 
     if (typeof naveggIdString == 'string' && naveggIdString) {
       try {
         return { id: naveggIdString };
-        //        return { id: naveggIdString ? { naveggId: naveggIdString } : undefined }
       } catch (error) {
         utils.logError(error);
       }

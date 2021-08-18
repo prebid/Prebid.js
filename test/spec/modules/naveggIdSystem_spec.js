@@ -1,4 +1,4 @@
-import { naveggIdSubmodule } from 'modules/naveggId.js';
+import { naveggIdSubmodule } from 'modules/naveggIdSystem.js';
 
 describe('naveggId', function () {
   describe('should NOT find navegg id', function () {

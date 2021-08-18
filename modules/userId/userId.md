@@ -301,6 +301,9 @@ pbjs.setConfig({
         {
             name: "novatiq",
             value: { "snowflake": "81b001ec-8914-488c-a96e-8c220d4ee08895ef" }
+        },
+        {
+            name: 'naveggId',
         }],
         syncDelay: 5000
     }
