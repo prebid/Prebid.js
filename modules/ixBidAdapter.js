@@ -26,6 +26,15 @@ const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
 // determines which eids we send and the rtiPartner field in ext
+
+const FIRST_PARTY_DATA = {
+  SITE: [
+    'id', 'name', 'domain', 'cat', 'sectioncat', 'pagecat', 'page', 'ref', 'search', 'mobile',
+    'privacypolicy', 'publisher', 'content', 'keywords', 'ext'
+  ],
+  USER: ['id', 'buyeruid', 'yob', 'gender', 'keywords', 'customdata', 'geo', 'data', 'ext']
+};
+
 const SOURCE_RTI_MAPPING = {
   'liveramp.com': 'idl',
   'netid.de': 'NETID',
@@ -566,6 +575,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   }
 
   let currentRequestSize = baseRequestSize;
+  let fpdRequestSize = 0;
+  let isFpdAdded = false;
 
   if (otherIxConfig) {
     // Append firstPartyData to r.site.page if firstPartyData exists.
@@ -579,7 +590,18 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       }
       firstPartyString = firstPartyString.slice(0, -1);
 
-      r.site.page += firstPartyString;
+      fpdRequestSize = encodeURIComponent(firstPartyString).length;
+
+      if (fpdRequestSize < MAX_REQUEST_SIZE) {
+        if ('page' in r.site) {
+          r.site.page += firstPartyString;
+        } else {
+          r.site.page = firstPartyString;
+        }
+        currentRequestSize += fpdRequestSize;
+      } else {
+        utils.logError('ix bidder: IX config FPD request size has exceeded maximum request size.');
+      }
     }
 
     // Create t in payload if timeout is configured.
@@ -617,7 +639,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
     }
 
-    if (BANNER in impressionObjects[0]) {
+    if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
         id,
@@ -642,6 +664,47 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       r.imp.push(...impressionObjects);
     }
 
+    currentRequestSize += currentImpressionSize;
+
+    const fpd = config.getConfig('ortb2') || {};
+
+    if (!utils.isEmpty(fpd) && !isFpdAdded) {
+      r.ext.ixdiag.fpd = true;
+
+      const site = { ...(fpd.site || fpd.context) };
+
+      Object.keys(site).forEach(key => {
+        if (FIRST_PARTY_DATA.SITE.indexOf(key) === -1) {
+          delete site[key];
+        }
+      });
+
+      const user = { ...fpd.user };
+
+      Object.keys(user).forEach(key => {
+        if (FIRST_PARTY_DATA.USER.indexOf(key) === -1) {
+          delete user[key];
+        }
+      });
+
+      const clonedRObject = utils.deepClone(r);
+
+      clonedRObject.site = utils.mergeDeep({}, clonedRObject.site, site);
+      clonedRObject.user = utils.mergeDeep({}, clonedRObject.user, user);
+
+      const requestSize = `${baseUrl}${utils.parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
+
+      if (requestSize < MAX_REQUEST_SIZE) {
+        r.site = utils.mergeDeep({}, r.site, site);
+        r.user = utils.mergeDeep({}, r.user, user);
+        isFpdAdded = true;
+        const fpdRequestSize = encodeURIComponent(JSON.stringify({ ...site, ...user })).length;
+        currentRequestSize += fpdRequestSize;
+      } else {
+        utils.logError('ix bidder: FPD request size has exceeded maximum request size.');
+      }
+    }
+
     const isLastAdUnit = adUnitIndex === transactionIds.length - 1;
 
     if (wasAdUnitImpressionsTrimmed || isLastAdUnit) {
@@ -664,6 +727,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       r.imp = [];
       r.ext.ixdiag.msd = 0;
       r.ext.ixdiag.msi = 0;
+      isFpdAdded = false;
     }
   }
 
