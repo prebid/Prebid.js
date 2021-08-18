@@ -18,17 +18,23 @@ The adapter adds an HTML `<script>` tag to load Adloox's post-buy verification J
 
 ## Video
 
-When tracking video you will need to enable the [Instream Video Ads Tracking](https://docs.prebid.org/dev-docs/modules/instreamTracking.html) module but be aware that it is:
+When tracking video you have two options:
 
- * only suitable for instream video bids
- * VAST events are not collected by Adloox
- * viewability metrics are *not* [MRC accredited](http://mediaratingcouncil.org/)
+ * [Instream Video Ads Tracking](https://docs.prebid.org/dev-docs/modules/instreamTracking.html)
+     * only suitable for instream video bids
+     * VAST events are not collected by Adloox
+     * viewability metrics are *not* [MRC accredited](http://mediaratingcouncil.org/)
+ * [Adloox Ad Server Video](./adlooxAdServerVideo.md)
+     * works by by wrapping the Ad Server VAST URL
+     * viewability metrics are MRC accredited for [IAB](https://www.iab.com/) [VPAID](https://iabtechlab.com/standards/video-player-ad-interface-definition-vpaid/) and [OM SDK](https://iabtechlab.com/standards/open-measurement-sdk/) enable inventory
+     * compatible for use alongside the Instream Video Ads Tracking module though not required in order to function
+     * slightly more complicated though straight forward to implement
 
 ## Example
 
 To view an [example of an Adloox integration](../integrationExamples/gpt/adloox.html):
 
-    gulp serve --nolint --notest --modules=gptPreAuction,categoryTranslation,dfpAdServerVideo,instreamTracking,rubiconBidAdapter,spotxBidAdapter,adlooxAnalyticsAdapter
+    gulp serve --nolint --notest --modules=gptPreAuction,categoryTranslation,dfpAdServerVideo,instreamTracking,rubiconBidAdapter,spotxBidAdapter,adlooxAnalyticsAdapter,adlooxAdServerVideo
 
 **N.B.** `categoryTranslation` is required by `dfpAdServerVideo` that otherwise causes a JavaScript console warning
 
@@ -55,7 +61,7 @@ You should be able to use this during the QA process of your own internal testin
 The main Prebid.js documentation is a bit opaque on this but you can use the following to test only Adloox's modules:
 
     gulp lint
-    gulp test-coverage --file test/spec/modules/adlooxAnalyticsAdapter_spec.js
+    gulp test-coverage --file 'test/spec/modules/adloox{AnalyticsAdapter,AdServerVideo}_spec.js'
     gulp view-coverage
 
 # Integration
