@@ -11,7 +11,7 @@ const CUR = 'USD';
 const TAPPX_BIDDER_VERSION = '0.1.100818';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
-const VIDEO_SUPPORT = ['instream'];
+const VIDEO_SUPPORT = ['instream', 'outstream'];
 
 const DATA_TYPES = {
   'NUMBER': 'number',
@@ -163,7 +163,7 @@ function validMediaType(bid) {
   // Video validations
   if (typeof video != 'undefined') {
     if (VIDEO_SUPPORT.indexOf(video.context) === -1) {
-      utils.logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Only "instream" is suported.');
+      utils.logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Video context not supported.');
       return false;
     }
     if (typeof video.mimes == 'undefined') {
