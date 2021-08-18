@@ -371,6 +371,12 @@ function addBidderFirstPartyDataToRequest(request) {
       if (currBidderConfig.ortb2.user) {
         ortb2.user = currBidderConfig.ortb2.user;
       }
+      if (currBidderConfig.ortb2.bcat) {
+        ortb2.bcat = currBidderConfig.ortb2.bcat;
+      }
+      if (currBidderConfig.ortb2.badv) {
+        ortb2.badv = currBidderConfig.ortb2.badv;
+      }
 
       acc.push({
         bidders: [ bidder ],
@@ -853,6 +859,12 @@ const OPEN_RTB_PROTOCOL = {
     }
     if (commonFpd.user) {
       utils.mergeDeep(request, {user: commonFpd.user});
+    }
+    if (commonFpd.bcat) {
+      utils.mergeDeep(request, {bcat: commonFpd.bcat});
+    }
+    if (commonFpd.badv) {
+      utils.mergeDeep(request, {badv: commonFpd.badv});
     }
     addBidderFirstPartyDataToRequest(request);
 

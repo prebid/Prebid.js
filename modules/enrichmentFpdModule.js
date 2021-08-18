@@ -37,7 +37,10 @@ function setDomain() {
 
   let domain = parseDomain(getRefererInfo().canonicalUrl)
 
-  if (domain) utils.mergeDeep(ortb2, { site: { domain: domain } });
+  if (domain) {
+    utils.mergeDeep(ortb2, { site: { domain: domain } });
+    utils.mergeDeep(ortb2, { site: { publisher: { domain: domain } } });
+  };
 }
 
 /**

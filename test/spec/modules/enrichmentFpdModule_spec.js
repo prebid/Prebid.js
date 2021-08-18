@@ -54,7 +54,7 @@ describe('the first party data enrichment module', function() {
     expect(validated.site.keywords).to.be.undefined;
   });
 
-  it('adds page and domain values if canonical url exists', function() {
+  it('adds page, domain, and publisher.domain values if canonical url exists', function() {
     width = 800;
     height = 500;
     canonical.href = 'https://www.domain.com/path?query=12345';
@@ -64,6 +64,7 @@ describe('the first party data enrichment module', function() {
     expect(validated.site.ref).to.equal(getRefererInfo().referer);
     expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
     expect(validated.site.domain).to.equal('domain.com');
+    expect(validated.site.publisher.domain).to.equal('domain.com');
     expect(validated.device).to.deep.equal({ w: 800, h: 500 });
     expect(validated.site.keywords).to.be.undefined;
   });
