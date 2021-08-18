@@ -51,7 +51,7 @@ export const spec = {
       dbg: false,
       slts: slots,
       is_amp: utils.deepAccess(bidderRequest, 'referrerInfo.isAmp'),
-      tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : '',
+      tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
     };
     const payloadString = JSON.stringify(payloadObject);
     return {
