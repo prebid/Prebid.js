@@ -18,10 +18,11 @@ const NB_EXP_DAYS = 30;
 export const ID5_STORAGE_NAME = 'id5id';
 export const ID5_PRIVACY_STORAGE_NAME = `${ID5_STORAGE_NAME}_privacy`;
 const LOCAL_STORAGE = 'html5';
+const LOG_PREFIX = 'User ID - ID5 submodule: ';
 
 // order the legacy cookie names in reverse priority order so the last
 // cookie in the array is the most preferred to use
-const LEGACY_COOKIE_NAMES = [ 'pbjs-id5id', 'id5id.1st' ];
+const LEGACY_COOKIE_NAMES = [ 'pbjs-id5id', 'id5id.1st', 'id5id' ];
 
 const storage = getStorageManager(GVLID, MODULE_NAME);
 
@@ -57,30 +58,6 @@ export const id5IdSubmodule = {
       return undefined;
     }
 
-    // check for A/B testing configuration and hide ID if in Control Group
-    let abConfig = getAbTestingConfig(config);
-    let controlGroup = false;
-    if (
-      abConfig.enabled === true &&
-      (!utils.isNumber(abConfig.controlGroupPct) ||
-        abConfig.controlGroupPct < 0 ||
-        abConfig.controlGroupPct > 1)
-    ) {
-      // A/B Testing is enabled, but configured improperly, so skip A/B testing
-      utils.logError('User ID - ID5 submodule: A/B Testing controlGroupPct must be a number >= 0 and <= 1! Skipping A/B Testing');
-    } else if (
-      abConfig.enabled === true &&
-      Math.random() < abConfig.controlGroupPct
-    ) {
-      // A/B Testing is enabled and user is in the Control Group, so do not share the ID5 ID
-      utils.logInfo('User ID - ID5 submodule: A/B Testing Enabled - request is in the Control Group, so the ID5 ID is NOT exposed');
-      universalUid = linkType = 0;
-      controlGroup = true;
-    } else if (abConfig.enabled === true) {
-      // A/B Testing is enabled but user is not in the Control Group, so ID5 ID is shared
-      utils.logInfo('User ID - ID5 submodule: A/B Testing Enabled - request is NOT in the Control Group, so the ID5 ID is exposed');
-    }
-
     let responseObj = {
       id5id: {
         uid: universalUid,
@@ -90,9 +67,25 @@ export const id5IdSubmodule = {
       }
     };
 
-    if (abConfig.enabled === true) {
-      utils.deepSetValue(responseObj, 'id5id.ext.abTestingControlGroup', controlGroup);
+    const abTestingResult = utils.deepAccess(value, 'ab_testing.result');
+    switch (abTestingResult) {
+      case 'control':
+        // A/B Testing is enabled and user is in the Control Group
+        utils.logInfo(LOG_PREFIX + 'A/B Testing - user is in the Control Group: ID5 ID is NOT exposed');
+        utils.deepSetValue(responseObj, 'id5id.ext.abTestingControlGroup', true);
+        break;
+      case 'error':
+        // A/B Testing is enabled, but configured improperly, so skip A/B testing
+        utils.logError(LOG_PREFIX + 'A/B Testing ERROR! controlGroupPct must be a number >= 0 and <= 1');
+        break;
+      case 'normal':
+        // A/B Testing is enabled but user is not in the Control Group, so ID5 ID is shared
+        utils.logInfo(LOG_PREFIX + 'A/B Testing - user is NOT in the Control Group');
+        utils.deepSetValue(responseObj, 'id5id.ext.abTestingControlGroup', false);
+        break;
     }
+
+    utils.logInfo(LOG_PREFIX + 'Decoded ID', responseObj);
 
     return responseObj;
   },
@@ -112,26 +105,43 @@ export const id5IdSubmodule = {
 
     const url = `https://id5-sync.com/g/v2/${config.params.partner}.json`;
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+    const usp = uspDataHandler.getConsentData();
     const referer = getRefererInfo();
     const signature = (cacheIdObj && cacheIdObj.signature) ? cacheIdObj.signature : getLegacyCookieSignature();
     const data = {
-      'gdpr': hasGdpr,
-      'gdpr_consent': hasGdpr ? consentData.consentString : '',
       'partner': config.params.partner,
+      'gdpr': hasGdpr,
       'nbPage': incrementNb(config.params.partner),
       'o': 'pbjs',
-      'pd': config.params.pd || '',
-      'provider': config.params.provider || '',
       'rf': referer.referer,
-      's': signature,
       'top': referer.reachedTop ? 1 : 0,
       'u': referer.stack[0] || window.location.href,
-      'us_privacy': uspDataHandler.getConsentData() || '',
       'v': '$prebid.version$'
     };
 
-    if (getAbTestingConfig(config).enabled === true) {
-      utils.deepSetValue(data, 'features.ab', 1);
+    // pass in optional data, but only if populated
+    if (hasGdpr && typeof consentData.consentString !== 'undefined' && !utils.isEmpty(consentData.consentString) && !utils.isEmptyStr(consentData.consentString)) {
+      data.gdpr_consent = consentData.consentString;
+    }
+    if (typeof usp !== 'undefined' && !utils.isEmpty(usp) && !utils.isEmptyStr(usp)) {
+      data.us_privacy = usp;
+    }
+    if (typeof signature !== 'undefined' && !utils.isEmptyStr(signature)) {
+      data.s = signature;
+    }
+    if (typeof config.params.pd !== 'undefined' && !utils.isEmptyStr(config.params.pd)) {
+      data.pd = config.params.pd;
+    }
+    if (typeof config.params.provider !== 'undefined' && !utils.isEmptyStr(config.params.provider)) {
+      data.provider = config.params.provider;
+    }
+
+    const abTestingConfig = getAbTestingConfig(config);
+    if (abTestingConfig.enabled === true) {
+      data.ab_testing = {
+        enabled: true,
+        control_group_pct: abTestingConfig.controlGroupPct // The server validates
+      };
     }
 
     const resp = function (callback) {
@@ -141,7 +151,10 @@ export const id5IdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
+              utils.logInfo(LOG_PREFIX + 'response received from the server', responseObj);
+
               resetNb(config.params.partner);
+
               if (responseObj.privacy) {
                 storeInLocalStorage(ID5_PRIVACY_STORAGE_NAME, JSON.stringify(responseObj.privacy), NB_EXP_DAYS);
               }
@@ -152,19 +165,20 @@ export const id5IdSubmodule = {
                 removeLegacyCookies(config.params.partner);
               }
             } catch (error) {
-              utils.logError(error);
+              utils.logError(LOG_PREFIX + error);
             }
           }
           callback(responseObj);
         },
         error: error => {
-          utils.logError(`User ID - ID5 submodule getId fetch encountered an error`, error);
+          utils.logError(LOG_PREFIX + 'getId fetch encountered an error', error);
           callback();
         }
       };
+      utils.logInfo(LOG_PREFIX + 'requesting an ID from the server', data);
       ajax(url, callbacks, JSON.stringify(data), { method: 'POST', withCredentials: true });
     };
-    return {callback: resp};
+    return { callback: resp };
   },
 
   /**
@@ -174,34 +188,39 @@ export const id5IdSubmodule = {
    *  It's permissible to return neither, one, or both fields.
    * @function extendId
    * @param {SubmoduleConfig} config
+   * @param {ConsentData|undefined} consentData
    * @param {Object} cacheIdObj - existing id, if any
    * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */
-  extendId(config, cacheIdObj) {
+  extendId(config, consentData, cacheIdObj) {
+    hasRequiredConfig(config);
+
     const partnerId = (config && config.params && config.params.partner) || 0;
     incrementNb(partnerId);
+
+    utils.logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
     return cacheIdObj;
   }
 };
 
 function hasRequiredConfig(config) {
   if (!config || !config.params || !config.params.partner || typeof config.params.partner !== 'number') {
-    utils.logError(`User ID - ID5 submodule requires partner to be defined as a number`);
+    utils.logError(LOG_PREFIX + 'partner required to be defined as a number');
     return false;
   }
 
   if (!config.storage || !config.storage.type || !config.storage.name) {
-    utils.logError(`User ID - ID5 submodule requires storage to be set`);
+    utils.logError(LOG_PREFIX + 'storage required to be set');
     return false;
   }
 
-  // TODO: in a future release, return false if storage type or name are not set as required
+  // in a future release, we may return false if storage type or name are not set as required
   if (config.storage.type !== LOCAL_STORAGE) {
-    utils.logWarn(`User ID - ID5 submodule recommends storage type to be '${LOCAL_STORAGE}'. In a future release this will become a strict requirement`);
+    utils.logWarn(LOG_PREFIX + `storage type recommended to be '${LOCAL_STORAGE}'. In a future release this may become a strict requirement`);
   }
-  // TODO: in a future release, return false if storage type or name are not set as required
+  // in a future release, we may return false if storage type or name are not set as required
   if (config.storage.name !== ID5_STORAGE_NAME) {
-    utils.logWarn(`User ID - ID5 submodule recommends storage name to be '${ID5_STORAGE_NAME}'. In a future release this will become a strict requirement`);
+    utils.logWarn(LOG_PREFIX + `storage name recommended to be '${ID5_STORAGE_NAME}'. In a future release this may become a strict requirement`);
   }
 
   return true;
@@ -246,11 +265,12 @@ function getLegacyCookieSignature() {
  * @param {integer} partnerId
  */
 function removeLegacyCookies(partnerId) {
+  utils.logInfo(LOG_PREFIX + 'removing legacy cookies');
   LEGACY_COOKIE_NAMES.forEach(function(cookie) {
-    storage.setCookie(`${cookie}`, '', expDaysStr(-1));
-    storage.setCookie(`${cookie}_nb`, '', expDaysStr(-1));
-    storage.setCookie(`${cookie}_${partnerId}_nb`, '', expDaysStr(-1));
-    storage.setCookie(`${cookie}_last`, '', expDaysStr(-1));
+    storage.setCookie(`${cookie}`, ' ', expDaysStr(-1));
+    storage.setCookie(`${cookie}_nb`, ' ', expDaysStr(-1));
+    storage.setCookie(`${cookie}_${partnerId}_nb`, ' ', expDaysStr(-1));
+    storage.setCookie(`${cookie}_last`, ' ', expDaysStr(-1));
   });
 }
 
@@ -290,10 +310,10 @@ export function storeInLocalStorage(key, value, expDays) {
  * gets the existing abTesting config or generates a default config with abTesting off
  *
  * @param {SubmoduleConfig|undefined} config
- * @returns {(Object|undefined)}
+ * @returns {Object} an object which always contains at least the property "enabled"
  */
 function getAbTestingConfig(config) {
-  return (config && config.params && config.params.abTesting) || { enabled: false };
+  return utils.deepAccess(config, 'params.abTesting', { enabled: false });
 }
 
 submodule('userId', id5IdSubmodule);

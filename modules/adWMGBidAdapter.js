@@ -6,8 +6,8 @@ import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adWMG';
-const ENDPOINT = 'https://rtb.adwmg.com/prebid';
-let SYNC_ENDPOINT = 'https://rtb.adwmg.com/cphb.html?';
+const ENDPOINT = 'https://hb.adwmg.com/hb';
+let SYNC_ENDPOINT = 'https://hb.adwmg.com/cphb.html?';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -34,11 +34,21 @@ export const spec = {
     const additional = spec.parseUserAgent(ua);
 
     return validBidRequests.map(bidRequest => {
+      const checkFloorValue = (value) => {
+        if (isNaN(parseFloat(value))) {
+          return 0;
+        } else return parseFloat(value);
+      }
+
       const adUnit = {
         code: bidRequest.adUnitCode,
         bids: {
           bidder: bidRequest.bidder,
-          params: bidRequest.params
+          params: {
+            publisherId: bidRequest.params.publisherId,
+            IABCategories: bidRequest.params.IABCategories || [],
+            floorCPM: bidRequest.params.floorCPM ? checkFloorValue(bidRequest.params.floorCPM) : 0
+          }
         },
         mediaTypes: bidRequest.mediaTypes
       };
@@ -106,6 +116,10 @@ export const spec = {
         netRevenue: response.netRevenue,
         ttl: response.ttl,
         ad: response.ad,
+        meta: {
+          advertiserDomains: response.adomain && response.adomain.length ? response.adomain : [],
+          mediaType: 'banner'
+        }
       };
       bidResponses.push(bidResponse);
     }
@@ -113,12 +127,16 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    if (gdprConsent) {
+    if (gdprConsent && SYNC_ENDPOINT.indexOf('gdpr') === -1) {
       SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
     }
 
-    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+    if (gdprConsent && typeof gdprConsent.consentString === 'string' && SYNC_ENDPOINT.indexOf('gdpr_consent') === -1) {
       SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'gdpr_consent', gdprConsent.consentString);
+    }
+
+    if (SYNC_ENDPOINT.slice(-1) === '&') {
+      SYNC_ENDPOINT = SYNC_ENDPOINT.slice(0, -1);
     }
 
     /*     if (uspConsent) {
@@ -291,7 +309,11 @@ export const spec = {
       }
     }
 
-    return {devicetype: detectDevice(), os: detectOs().os, osv: detectOs().osv}
+    return {
+      devicetype: detectDevice(),
+      os: detectOs().os,
+      osv: detectOs().osv
+    }
   }
-}
+};
 registerBidder(spec);

@@ -26,6 +26,11 @@ describe('etarget adapter', function () {
       assert.lengthOf(parsedUrl.items, 7);
     });
 
+    it('should be an object', function () {
+      let request = spec.buildRequests(bids);
+      assert.isNotNull(request.metaData);
+    });
+
     it('should handle global request parameters', function () {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       assert.equal(parsedUrl.path, 'https://sk.search.etargetnet.com/hb');

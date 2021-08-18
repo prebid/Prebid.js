@@ -281,7 +281,8 @@ describe('jixie Adapter', function () {
         },
         'vastUrl': 'https://ad.jixie.io/v1/video?creativeid=522'
       },
-      // display ad returned here:
+      // display ad returned here: This one there is advertiserDomains
+      // in the response . Will be checked in the unit tests below
       {
         'trackingUrlBase': 'https://tr.jixie.io/sync/ad?',
         'jxBidId': '600c9ae6fda1acb-028d5dee-2c83-44e3-bed1-b75002475cdf',
@@ -411,6 +412,9 @@ describe('jixie Adapter', function () {
       expect(result[0].ttl).to.equal(300)
       expect(result[0].vastUrl).to.include('https://ad.jixie.io/v1/video?creativeid=')
       expect(result[0].trackingUrlBase).to.include('sync')
+      // We will always make sure the meta->advertiserDomains property is there
+      // If no info it is an empty array.
+      expect(result[0].meta.advertiserDomains.length).to.equal(0)
 
       // display ad
       expect(result[1].requestId).to.equal('600c9ae6fda1acb')
@@ -422,6 +426,7 @@ describe('jixie Adapter', function () {
       expect(result[1].netRevenue).to.equal(true)
       expect(result[1].ttl).to.equal(300)
       expect(result[1].ad).to.include('jxoutstream')
+      expect(result[1].meta.advertiserDomains.length).to.equal(3)
       expect(result[1].trackingUrlBase).to.include('sync')
 
       // should pick up about using alternative outstream renderer
@@ -436,6 +441,7 @@ describe('jixie Adapter', function () {
       expect(result[2].vastXml).to.include('<?xml version="1.0" encoding="UTF-8"?>')
       expect(result[2].trackingUrlBase).to.include('sync');
       expect(result[2].renderer.id).to.equal('demoslot4-div')
+      expect(result[2].meta.advertiserDomains.length).to.equal(0)
       expect(result[2].renderer.url).to.equal(JX_OTHER_OUTSTREAM_RENDERER_URL);
 
       // should know to use default outstream renderer
@@ -450,6 +456,7 @@ describe('jixie Adapter', function () {
       expect(result[3].vastXml).to.include('<?xml version="1.0" encoding="UTF-8"?>')
       expect(result[3].trackingUrlBase).to.include('sync');
       expect(result[3].renderer.id).to.equal('demoslot2-div')
+      expect(result[3].meta.advertiserDomains.length).to.equal(0)
       expect(result[3].renderer.url).to.equal(JX_OUTSTREAM_RENDERER_URL)
 
       setLocalStorageSpy.restore();

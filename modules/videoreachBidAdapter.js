@@ -2,9 +2,11 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 const utils = require('../src/utils.js');
 const BIDDER_CODE = 'videoreach';
 const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
+const GVLID = 547;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner'],
 
   isBidRequestValid: function(bid) {
@@ -58,7 +60,10 @@ export const spec = {
           ttl: bid.ttl,
           ad: bid.ad,
           requestId: bid.bidId,
-          creativeId: bid.creativeId
+          creativeId: bid.creativeId,
+          meta: {
+            advertiserDomains: bid && bid.adomain ? bid.adomain : []
+          }
         };
         bidResponses.push(bidResponse);
       });
