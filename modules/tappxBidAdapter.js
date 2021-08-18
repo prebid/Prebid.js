@@ -13,7 +13,6 @@ const TAPPX_BIDDER_VERSION = '0.1.100818';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
-const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const DATA_TYPES = {
   'NUMBER': 'number',
@@ -206,7 +205,12 @@ function interpretBid(serverBid, request) {
     bidReturned.height = serverBid.h;
 
     if (request.bids.mediaTypes.video.context === 'outstream') {
-      bidReturned.renderer = createRenderer(bidReturned, request);
+      const url = (serverBid.ext.purl) ? serverBid.ext.purl : false;
+      if (!url) {
+        utils.logWarn(LOG_PREFIX, 'Error getting player');
+        return false;
+      }
+      bidReturned.renderer = createRenderer(bidReturned, request, url);
     }
   } else {
     bidReturned.ad = serverBid.adm;
@@ -238,7 +242,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.banner');
   const videoMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.video');
-  // const { refererInfo } = bidderRequest;
 
   // let requests = [];
   let payload = {};
@@ -419,6 +422,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payloadExt.bidder.mktag = MKTAG;
   payloadExt.bidder.bcid = utils.deepAccess(validBidRequests, 'params.bcid');
   payloadExt.bidder.bcrid = utils.deepAccess(validBidRequests, 'params.bcrid');
+  payloadExt.bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : {};
+  if (videoMediaType.context) {
+    payloadExt.bidder.ext.pbvidtype = videoMediaType.context
+  }
   // < Payload Ext
 
   // > Payload
@@ -480,7 +487,7 @@ export function _getHostInfo(validBidRequests) {
 
 function outstreamRender(bid, request) {
   bid.renderer.push(() => {
-    window.ANOutstreamVideo.renderAd({
+    window.tappxOutstream.renderAd({
       sizes: [bid.width, bid.height],
       targetId: bid.adUnitCode,
       adResponse: bid.adResponse,
@@ -491,10 +498,10 @@ function outstreamRender(bid, request) {
   });
 }
 
-function createRenderer(bid, request) {
+function createRenderer(bid, request, url) {
   const rendererInst = Renderer.install({
-    id: request.bids.adUnitCode,
-    url: RENDERER_URL,
+    id: request.id,
+    url: url,
     loaded: false
   });
 
