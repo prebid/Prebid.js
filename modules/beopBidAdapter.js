@@ -37,10 +37,9 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
     let pageUrl = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
-    let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {site: {keywords: []}};
+    let fpd = config.getLegacyFpd(config.getConfig('ortb2'));
     let gdpr = bidderRequest.gdprConsent;
     let firstSlot = slots[0];
-
     let payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
@@ -48,7 +47,7 @@ export const spec = {
       pid: firstSlot.pid,
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
-      kwds: fpd.site.keywords,
+      kwds: (fpd && fpd.site && fpd.site.keywords) || [],
       dbg: false,
       slts: slots,
       is_amp: utils.deepAccess(bidderRequest, 'referrerInfo.isAmp'),
