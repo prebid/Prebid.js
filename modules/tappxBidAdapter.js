@@ -206,8 +206,8 @@ function interpretBid(serverBid, request) {
 
     if (request.bids.mediaTypes.video.context === 'outstream') {
       const url = (serverBid.ext.purl) ? serverBid.ext.purl : false;
-      if (typeof url !== 'undefined') {
-        utils.logWarn(LOG_PREFIX, 'Error getting the tappx outstream player');
+      if (typeof url === 'undefined') {
+        utils.logWarn(LOG_PREFIX, 'Error getting player outstream from tappx');
         return false;
       }
       bidReturned.renderer = createRenderer(bidReturned, request, url);
