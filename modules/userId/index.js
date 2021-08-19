@@ -613,6 +613,11 @@ function refreshUserIds(options, callback) {
 
       utils.logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
       populateSubmoduleId(submodule, consentData, storedConsentData, true);
+      updateInitializedSubmodules(submodule);
+
+      if (initializedSubmodules.length) {
+        setPrebidServerEidPermissions(initializedSubmodules);
+      }
 
       if (utils.isFn(submodule.callback)) {
         callbackSubmodules.push(submodule);
@@ -709,6 +714,21 @@ function initSubmodules(submodules, consentData) {
     carry.push(submodule);
     return carry;
   }, []);
+}
+
+function updateInitializedSubmodules(submodule) {
+  let updated = false;
+  for (let i = 0; i < initializedSubmodules.length; i++) {
+    if (submodule.config.name.toLowerCase() === initializedSubmodules[i].config.name.toLowerCase()) {
+      updated = true;
+      initializedSubmodules[i] = submodule;
+      break;
+    }
+  }
+
+  if (!updated) {
+    initializedSubmodules.push(submodule);
+  }
 }
 
 /**

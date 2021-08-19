@@ -30,3 +30,6 @@ The below parameters apply only to the HaloID User ID Module integration.
 | storage.name | Required | String | The name of the cookie or html5 local storage where the user ID will be stored. | `"haloid"` |
 | storage.expires | Optional | Integer | How long (in days) the user ID information will be stored. | `365` |
 | value | Optional | Object | Used only if the page has a separate mechanism for storing the Halo ID. The value is an object containing the values to be sent to the adapters. In this scenario, no URL is called and nothing is added to local storage | `{"haloId": "eb33b0cb-8d35-4722-b9c0-1a31d4064888"}` |
+| params | Optional | Object | Used to store params for the id system |
+| params.url | Optional | String | Set an alternate GET url for HaloId with this parameter |
+| params.urlArg | Optional | Object | Optional url parameter for params.url |

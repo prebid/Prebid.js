@@ -3,10 +3,12 @@
 import { BANNER } from '../src/mediaTypes.js';
 import { getAdUnitSizes, logWarn, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js'
 
 const BIDDER_CODE = 'ogury';
 const DEFAULT_TIMEOUT = 1000;
-const BID_HOST = 'https://webmobile.presage.io/api/header-bidding-request';
+const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
+const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
@@ -16,6 +18,15 @@ function isBidRequestValid(bid) {
   const isValidAssetKey = !!bid.params.assetKey;
 
   return (isValidSizes && isValidAdUnitId && isValidAssetKey);
+}
+
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  if (!syncOptions.pixelEnabled) return [];
+
+  return [{
+    type: 'image',
+    url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${gdprConsent.consentString}&source=prebid`
+  }]
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
@@ -72,7 +83,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   return {
     method: 'POST',
     url: BID_HOST,
-    data: openRtbBidRequestBanner
+    data: openRtbBidRequestBanner,
+    options: {contentType: 'application/json'},
   };
 }
 
@@ -98,9 +110,11 @@ function interpretResponse(openRtbBidResponse) {
         creativeId: bid.id,
         netRevenue: true,
         ttl: 60,
+        ext: bid.ext,
         meta: {
           advertiserDomains: bid.adomain
-        }
+        },
+        nurl: bid.nurl
       };
 
       bidResponse.ad = bid.adm;
@@ -123,13 +137,19 @@ function getFloor(bid) {
   return floorResult.currency === 'USD' ? floorResult.floor : 0;
 }
 
+function onBidWon(bid) {
+  if (bid && bid.hasOwnProperty('nurl') && bid.nurl.length > 0) ajax(bid['nurl'], null);
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
+  getUserSyncs,
   buildRequests,
   interpretResponse,
-  getFloor
+  getFloor,
+  onBidWon
 }
 
 registerBidder(spec);
