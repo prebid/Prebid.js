@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
+// import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'codefuel';
@@ -36,14 +36,18 @@ export const spec = {
          * @return ServerRequest Info describing the request to the server.
          */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const page = bidderRequest.refererInfo.referer;
+    // TODO: have to use real page and domain
+    // const page = bidderRequest.refererInfo.referer;
+    const page = 'https://www.smartreadz.com/best-and-worst-foods-for-diabetes/'
+    const domain = 'www.smartreadz.com'
     const ua = navigator.userAgent;
-    const test = setOnAny(validBidRequests, 'params.test');
+    // const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
-    const bcat = setOnAny(validBidRequests, 'params.bcat');
-    const badv = setOnAny(validBidRequests, 'params.badv');
+    // const bcat = setOnAny(validBidRequests, 'params.bcat');
+    // const badv = setOnAny(validBidRequests, 'params.badv');
     const cur = CURRENCY;
-    const endpointUrl = 'https://ai-i-codefuel-ds-rtb-us-east-1-k8s-internal.seccint.com/bid'
+    const endpointUrl = 'http://localhost:5000/prebid'
+    // const endpointUrl = 'https://ai-i-codefuel-ds-rtb-us-east-1-k8s-internal.seccint.com/prebid'
     const timeout = bidderRequest.timeout;
 
     const imps = validBidRequests.map((bid, id) => {
@@ -58,6 +62,9 @@ export const spec = {
 
       if (bid.sizes) {
         imp.banner = {
+          // TODO: have to find real w and h
+          // w: 300,
+          // h: 250,
           format: transformSizes(bid.sizes)
         }
       }
@@ -67,44 +74,49 @@ export const spec = {
 
     const request = {
       id: bidderRequest.auctionId,
-      site: { page, publisher },
-      device: { ua },
+      site: { page, domain, publisher },
+      // TODO: have to find real device type
+      device: { ua, devicetype: 6 },
       source: { fd: 1 },
       cur: [cur],
       tmax: timeout,
       imp: imps,
-      bcat: bcat,
-      badv: badv,
-      ext: {
-        prebid: {
-          channel: {
-            name: 'pbjs',
-            version: '$prebid.version$'
-          }
-        }
-      }
+      // bcat: bcat,
+      // badv: badv,
+      // ext: {
+      //   prebid: {
+      //     channel: {
+      //       name: 'pbjs',
+      //       version: '$prebid.version$'
+      //     }
+      //   }
+      // }
     };
 
-    if (test) {
-      request.is_debug = !!test;
-      request.test = 1;
-    }
+    // if (test) {
+    //   request.is_debug = !!test;
+    //   request.test = 1;
+    // }
+    //
+    // if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
+    //   utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+    //   utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
+    // }
+    // if (bidderRequest.uspConsent) {
+    //   utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+    // }
+    // if (config.getConfig('coppa') === true) {
+    //   utils.deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
+    // }
 
-    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
-      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
-      utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
-    }
-    if (bidderRequest.uspConsent) {
-      utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
-    }
-    if (config.getConfig('coppa') === true) {
-      utils.deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
-    }
+    utils.logError('***** REQUEST *****');
+    utils.logError(JSON.stringify(request));
 
     return {
       method: 'POST',
       url: endpointUrl,
-      data: JSON.stringify(request),
+      data: request,
+      // data: JSON.stringify(request),
       bids: validBidRequests,
       options: {
         withCredentials: false
@@ -117,37 +129,43 @@ export const spec = {
          * @param {ServerResponse} serverResponse A successful response from the server.
          * @return {Bid[]} An array of bids which were nested inside the server.
          */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: (serverResponse, { bids }) => {
     if (!serverResponse.body) {
       return [];
     }
     const { seatbid, cur } = serverResponse.body;
 
     const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
-      result[bid.impid - 1] = bid;
+      // result[bid.impid - 1] = bid;
+      result[0] = bid;
       return result;
     }, []);
-    // bids
-    return [].map((bid, id) => {
-      const bidResponse = bidResponses[id];
+
+    return bids.map((bid, id) => {
+      // const bidResponse = bidResponses[id];
+      const bidResponse = bidResponses[0];
       if (bidResponse) {
         const bidObject = {
           requestId: bid.bidId,
           cpm: bidResponse.price,
-          creativeId: bidResponse.crid,
+          // TODO: need creativeId
+          // creativeId: bidResponse.crid,
+          creativeId: '12345',
           ttl: 360,
-          netRevenue: bid.netRevenue === 'net',
+          netRevenue: true,
           currency: cur,
           mediaType: BANNER,
-          nurl: bidResponse.nurl,
+          // TODO: need nurl
+          // nurl: bidResponse.nurl,
+          nurl: 'http://nym1.ib.adnxs.com/cr?id=12345',
           ad: bidResponse.adm,
           width: bidResponse.w,
           height: bidResponse.h
         };
-        bidObject.meta = {};
-        if (bidResponse.adomain && bidResponse.adomain.length > 0) {
-          bidObject.meta.advertiserDomains = bidResponse.adomain;
-        }
+        // bidObject.meta = {};
+        // if (bidResponse.adomain && bidResponse.adomain.length > 0) {
+        //   bidObject.meta.advertiserDomains = bidResponse.adomain;
+        // }
         return bidObject;
       }
     }).filter(Boolean);
