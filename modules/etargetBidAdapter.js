@@ -29,6 +29,7 @@ export const spec = {
     var request = [];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     var lastCountry = 'sk';
+    var floors = [];
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
       if (countryMap[bid.params.country]) {
@@ -37,6 +38,7 @@ export const spec = {
       reqParams = bid.params;
       reqParams.transactionId = bid.transactionId;
       request.push(formRequestUrl(reqParams));
+      floors[i] = getBidFloor(bid);
     }
 
     request.unshift('https://' + lastCountry + '.search.etargetnet.com/hb/?hbget=1');
@@ -52,6 +54,9 @@ export const spec = {
         request.push('gdpr_consent=' + gdprObject.gdpr_consent);
       }
       bidderRequest.metaData = getMetaData();
+      if (floors.length > 0) {
+        bidderRequest.floors = floors;
+      }
     }
 
     return {
@@ -139,7 +144,6 @@ export const spec = {
           bidObject.gdpr = bidRequest.gdpr.gdpr;
           bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
         }
-
         if (bid.adomain) {
           utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
         }
@@ -160,4 +164,18 @@ export const spec = {
     }
   }
 };
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return null;
+  }
+  let floor = bid.getFloor({
+    currency: 'EUR',
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor)) {
+    return floor.floor;
+  }
+  return null;
+}
 registerBidder(spec);
