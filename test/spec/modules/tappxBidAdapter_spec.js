@@ -167,11 +167,11 @@ describe('Tappx bid adapter', function () {
       assert.isFalse(spec.isBidRequestValid(badBidRequest_mimes.bids), badBidRequest_mimes);
     });
 
-    it('should return false for not instream requests', function () {
+    it('should return false for not instream/outstream requests', function () {
       let badBidRequest_v = c_BIDDERREQUEST_V;
       delete badBidRequest_v.bids.mediaTypes.banner;
       badBidRequest_v.bids.mediaTypes.video = {};
-      badBidRequest_v.bids.mediaTypes.video.context = 'outstream';
+      badBidRequest_v.bids.mediaTypes.video.context = '';
       badBidRequest_v.bids.mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
       badBidRequest_v.bids.mediaTypes.video.playerSize = [320, 250];
       assert.isFalse(spec.isBidRequestValid(badBidRequest_v.bids));
