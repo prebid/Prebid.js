@@ -73,19 +73,18 @@ export const spec = {
     if (params.test) {
       payload.test = params.test;
     }
-    if (request.gdprConsent) {
-      payload.regs = {
-        ext: {
-          gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0
-        }
-      };
-      if (request.gdprConsent.gdprApplies && request.gdprConsent.consentString) {
-        payload.user.ext = {
-          ...payload.user.ext,
-          consent: request.gdprConsent.consentString
-        }
-      }
+
+    // Attaching GDPR Consent Params
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
+
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
     provideEids(request, payload);
     return {
       method: 'POST',
