@@ -4,14 +4,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'codefuel';
 const CURRENCY = 'USD';
-// const NATIVE_PARAMS = {
-//   title: { id: 0, name: 'title' },
-//   icon: { id: 2, type: 1, name: 'img' },
-//   image: { id: 3, type: 3, name: 'img' },
-//   sponsoredBy: { id: 5, name: 'data', type: 1 },
-//   body: { id: 4, name: 'data', type: 2 },
-//   cta: { id: 1, type: 12, name: 'data' }
-// };
 
 export const spec = {
   code: BIDDER_CODE,
@@ -36,18 +28,15 @@ export const spec = {
          * @return ServerRequest Info describing the request to the server.
          */
   buildRequests: function(validBidRequests, bidderRequest) {
-    // TODO: have to use real page and domain
-    // const page = bidderRequest.refererInfo.referer;
-    const page = 'https://www.smartreadz.com/best-and-worst-foods-for-diabetes/'
-    const domain = 'www.smartreadz.com'
+    const page = bidderRequest.refererInfo.referer;
+    // const page = 'https://www.smartreadz.com/best-and-worst-foods-for-diabetes/'
+    const domain = getDomainFromURL(page)
     const ua = navigator.userAgent;
-    // const test = setOnAny(validBidRequests, 'params.test');
+    const devicetype = getDeviceType()
     const publisher = setOnAny(validBidRequests, 'params.publisher');
-    // const bcat = setOnAny(validBidRequests, 'params.bcat');
-    // const badv = setOnAny(validBidRequests, 'params.badv');
     const cur = CURRENCY;
-    const endpointUrl = 'http://localhost:5000/prebid'
-    // const endpointUrl = 'https://ai-i-codefuel-ds-rtb-us-east-1-k8s-internal.seccint.com/prebid'
+    // const endpointUrl = 'http://localhost:5000/prebid'
+    const endpointUrl = 'https://ai-i-codefuel-ds-rtb-us-east-1-k8s-internal.seccint.com/prebid'
     const timeout = bidderRequest.timeout;
 
     const imps = validBidRequests.map((bid, id) => {
@@ -62,9 +51,6 @@ export const spec = {
 
       if (bid.sizes) {
         imp.banner = {
-          // TODO: have to find real w and h
-          // w: 300,
-          // h: 250,
           format: transformSizes(bid.sizes)
         }
       }
@@ -76,47 +62,17 @@ export const spec = {
       id: bidderRequest.auctionId,
       site: { page, domain, publisher },
       // TODO: have to find real device type
-      device: { ua, devicetype: 6 },
+      device: { ua, devicetype },
       source: { fd: 1 },
       cur: [cur],
       tmax: timeout,
       imp: imps,
-      // bcat: bcat,
-      // badv: badv,
-      // ext: {
-      //   prebid: {
-      //     channel: {
-      //       name: 'pbjs',
-      //       version: '$prebid.version$'
-      //     }
-      //   }
-      // }
     };
-
-    // if (test) {
-    //   request.is_debug = !!test;
-    //   request.test = 1;
-    // }
-    //
-    // if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
-    //   utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
-    //   utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
-    // }
-    // if (bidderRequest.uspConsent) {
-    //   utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
-    // }
-    // if (config.getConfig('coppa') === true) {
-    //   utils.deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
-    // }
-
-    utils.logError('***** REQUEST *****');
-    utils.logError(JSON.stringify(request));
 
     return {
       method: 'POST',
       url: endpointUrl,
       data: request,
-      // data: JSON.stringify(request),
       bids: validBidRequests,
       options: {
         withCredentials: false
@@ -162,10 +118,6 @@ export const spec = {
           width: bidResponse.w,
           height: bidResponse.h
         };
-        // bidObject.meta = {};
-        // if (bidResponse.adomain && bidResponse.adomain.length > 0) {
-        //   bidObject.meta.advertiserDomains = bidResponse.adomain;
-        // }
         return bidObject;
       }
     }).filter(Boolean);
@@ -179,12 +131,27 @@ export const spec = {
      * @return {UserSync[]} The user syncs which should be dropped.
      */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
-    return syncs;
+    return [];
   }
 
 }
 registerBidder(spec);
+
+function getDomainFromURL(url) {
+  let anchor = document.createElement('a');
+  anchor.href = url;
+  return anchor.hostname;
+}
+
+function getDeviceType() {
+  if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
+    return 5; // 'tablet'
+  }
+  if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()))) {
+    return 4; // 'mobile'
+  }
+  return 2; // 'desktop'
+}
 
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
