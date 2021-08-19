@@ -5,8 +5,6 @@ const sinon = require('sinon');
 
 const utils = require('src/utils');
 
-const uuidV4Regexp = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
-
 const USER_AGENT = {
   // UNKOWN
   'Opera/9.80 (S60; SymbOS; Opera Mobi/1209; U; sk) Presto/2.5.28 Version/10.1': {
@@ -215,29 +213,44 @@ describe('Sublime Adapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    const bid = {
-      bidder: 'sublime',
-      params: {
-        zoneId: 24549,
-        endpoint: '',
-      },
-    };
+    let bid;
+    beforeEach(function () {
+      bid = {
+        bidder: 'sublime',
+        params: {
+          zoneId: 24549,
+          endpoint: '',
+        },
+      };
+    })
+
+    afterEach(function () {
+      delete window.sublime;
+    })
 
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
+    it('should return true when a valid notifyId is provided', function () {
+      bid.params.notifyId = 'f1514724-0922-4b45-a297-27531aeb829a';
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return false when an invalid notifyId is provided', function () {
+      bid.params.notifyId = 'some_invalid_notify_id';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
     it('should return false when required params are not passed', function () {
-      const bid = Object.assign({}, bid);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when the notifyId does not match sublime one', function () {
-      const bid = Object.assign({}, bid);
-      bid.params = Object.freeze({ notifyId: 'f1514724-0922-4b45-a297-27531aeb829a' });
+      bid.params.notifyId = 'f1514724-0922-4b45-a297-27531aeb829a';
       window.sublime = { notifyId: '5c444a48-7713-4333-a895-44b1ae793417' };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false); // FIX THIS
       delete window.sublime;
     });
   });
@@ -251,7 +264,7 @@ describe('Sublime Adapter', function () {
       const params = Object.freeze({});
       window.sublime = {};
       const notifyId = spec.getNotifyId(params);
-      expect(notifyId).to.match(uuidV4Regexp);
+      expect(spec.isValidNotifyId(notifyId)).to.be.true;
       expect(window.sublime.notifyId).to.equal(notifyId);
     });
 
@@ -346,7 +359,8 @@ describe('Sublime Adapter', function () {
     it('should contains a request notifyId', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       for (let i = 0; i < request.length; i = i + 1) {
-        expect(JSON.parse(request[i].data).notifyId).to.match(uuidV4Regexp);
+        const { notifyId } = JSON.parse(request[i].data);
+        expect(spec.isValidNotifyId(notifyId)).to.be.true;
       }
     });
   });
@@ -363,9 +377,8 @@ describe('Sublime Adapter', function () {
       }
     }];
 
-    const request = spec.buildRequests(bidRequests);
-
     it('should have an url that match the default endpoint', function () {
+      const request = spec.buildRequests(bidRequests);
       expect(request[0].url).to.equal('https://pbjs.sskzlabs.com/bid');
     });
   });

@@ -27,6 +27,16 @@ function detectDevice() {
   );
 }
 
+const UUID_V4_RE = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
+/**
+ * Checks whether a notifyId is well-formed
+ * @param {*} value
+ * @returns {boolean}
+ */
+function isValidNotifyId(value) {
+  return UUID_V4_RE.test(value);
+}
+
 /**
  * Debug log message
  * @param {String} msg
@@ -112,6 +122,10 @@ export function sendEvent(eventName, sspName) {
  */
 function isBidRequestValid(bid) {
   const notifyId = getNotifyId(bid.params);
+  if (!isValidNotifyId(notifyId)) {
+    log(`invalid notifyId format, got "${notifyId}"`);
+    return false;
+  }
   if (notifyId !== window.sublime.notifyId) {
     log(`notifyId mismatch: params [${bid.params.notifyId}] / sublime [${window.sublime.notifyId}]`);
     return false;
@@ -289,6 +303,7 @@ export const spec = {
   state,
   detectDevice,
   getNotifyId,
+  isValidNotifyId,
 };
 
 registerBidder(spec);
