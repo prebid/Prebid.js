@@ -151,7 +151,7 @@ function makeDevpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
-    .pipe(replace(v\$prebid\.modulesList\$/g, makeModuleList(externalModules)))
+    .pipe(replace('v$prebid.modulesList$', makeModuleList(externalModules)))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 }
@@ -169,7 +169,7 @@ function makeWebpackPkg() {
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(terser())
-    .pipe(replace(v\$prebid\.modulesList\$/g, makeModuleList(externalModules)))
+    .pipe(replace('v$prebid.modulesList$', makeModuleList(externalModules)))
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));
 }
