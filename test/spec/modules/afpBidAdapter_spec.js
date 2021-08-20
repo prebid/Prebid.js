@@ -1,3 +1,4 @@
+import includes from 'core-js-pure/features/array/includes.js'
 import cloneDeep from 'lodash/cloneDeep'
 import unset from 'lodash/unset'
 import { expect } from 'chai'
@@ -206,7 +207,7 @@ describe('AFP Adapter', function() {
             expect(bid.sizes).to.equal(sizes)
           })
 
-          if ([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE].includes(validBidRequests[index].params.placeType)) {
+          if (includes([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE], validBidRequests[index].params.placeType)) {
             it('imageUrl should be correct', function() {
               expect(bid.imageUrl).to.equal(imageUrl)
             })
@@ -282,16 +283,16 @@ describe('AFP Adapter', function() {
           expect(bids[0].currency).to.equal(currency)
           expect(bids[0].netRevenue).to.equal(netRevenue)
 
-          if ([
+          if (includes([
             IN_IMAGE_BANNER_TYPE,
             IN_IMAGE_MAX_BANNER_TYPE,
             IN_CONTENT_BANNER_TYPE,
             IN_CONTENT_STORY_TYPE,
             ACTION_SCROLLER_TYPE,
             ACTION_SCROLLER_LIGHT_TYPE,
-          ].includes(placeSettings.placeType)) {
+          ], placeSettings.placeType)) {
             expect(typeof bids[0].ad).to.equal('string')
-          } else if ([IN_CONTENT_VIDEO_TYPE, OUT_CONTENT_VIDEO_TYPE].includes(placeSettings.placeType)) {
+          } else if (includes([IN_CONTENT_VIDEO_TYPE, OUT_CONTENT_VIDEO_TYPE], placeSettings.placeType)) {
             expect(typeof bids[0].vastXml).to.equal('string')
             expect(typeof bids[0].renderer).to.equal('object')
           }
