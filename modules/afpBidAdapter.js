@@ -1,3 +1,4 @@
+import includes from 'core-js-pure/features/array/includes.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { Renderer } from '../src/Renderer.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js'
@@ -81,7 +82,7 @@ export const spec = {
           return false
         }
       }
-      if ([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE].includes(placeType)) {
+      if (includes([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE], placeType)) {
         if (imageUrl && imageWidth && imageHeight) {
           return true
         }
@@ -106,7 +107,7 @@ export const spec = {
           sizes,
           placeId,
         }
-        if ([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE].includes(placeType)) {
+        if (includes([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE], placeType)) {
           Object.assign(bidRequest, {
             imageUrl,
             imageWidth: Math.floor(imageWidth),
@@ -149,16 +150,16 @@ export const spec = {
       const placeContainer = bidRequest.params.placeContainer
       const dataToCreatePlace = { adSettings, placeSettings, placeContainer, isPrebid: true }
 
-      if ([
+      if (includes([
         IN_IMAGE_BANNER_TYPE,
         IN_IMAGE_MAX_BANNER_TYPE,
         IN_CONTENT_BANNER_TYPE,
         IN_CONTENT_STORY_TYPE,
         ACTION_SCROLLER_TYPE,
         ACTION_SCROLLER_LIGHT_TYPE,
-      ].includes(placeSettings.placeType)) {
+      ], placeSettings.placeType)) {
         bid.ad = wrapAd(dataToCreatePlace)
-      } else if ([IN_CONTENT_VIDEO_TYPE, OUT_CONTENT_VIDEO_TYPE].includes(placeSettings.placeType)) {
+      } else if (includes([IN_CONTENT_VIDEO_TYPE, OUT_CONTENT_VIDEO_TYPE], placeSettings.placeType)) {
         bid.vastXml = adSettings.content
         bid.renderer = createRenderer(bid, dataToCreatePlace)
       }
