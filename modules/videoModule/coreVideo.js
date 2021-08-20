@@ -1,4 +1,3 @@
-// import { module } from '../../src/hook.js';
 import { vendorDirectory } from './vendorDirectory';
 
 export function VideoCore(submoduleBuilder_) {
@@ -44,8 +43,6 @@ export function VideoCore(submoduleBuilder_) {
   };
 }
 
-// const vendorDirectory = {};
-
 export function videoCoreFactory() {
   const submoduleBuilder = VideoSubmoduleBuilder(vendorDirectory);
   return VideoCore(submoduleBuilder);
@@ -69,7 +66,3 @@ export function VideoSubmoduleBuilder(vendorDirectory_) {
     build
   };
 }
-
-// module('video', (submoduleFactory) => {
-//   vendorDirectory[submoduleFactory.vendorCode] = submoduleFactory;
-// });
