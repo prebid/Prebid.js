@@ -124,9 +124,9 @@ describe('AFP Adapter', function() {
   describe('isBidRequestValid method', function() {
     describe('returns true', function() {
       describe('when config has all mandatory params', () => {
-        Object.keys(configByPlaceType).forEach(placeType => {
+        Object.entries(configByPlaceType).forEach(([placeType, config]) => {
           it(`and ${placeType} config has the correct value`, function() {
-            const isBidRequestValid = spec.isBidRequestValid(configByPlaceType[placeType])
+            const isBidRequestValid = spec.isBidRequestValid(config)
             expect(isBidRequestValid).to.equal(true)
           })
         })
