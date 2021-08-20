@@ -316,7 +316,7 @@ export function newConfig() {
   }
 
   /*
-   * Returns a clone of the configuration object if called without parameters,
+   * Returns the configuration object if called without parameters,
    * or single configuration property if given a string matching a configuration
    * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
    *
