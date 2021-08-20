@@ -1,4 +1,4 @@
-import {spec} from '../../../modules/zetaSspBidAdapter.js'
+import {spec} from '../../../modules/zeta_global_sspBidAdapter.js'
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
@@ -39,6 +39,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       gdprApplies: 1,
       consentString: 'consentString'
     },
+    uspConsent: 'someCCPAString',
     params: {
       placement: 111,
       user: {
@@ -167,6 +168,15 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(sync4.url).to.include(USER_SYNC_URL_IFRAME);
     expect(sync4.url).to.include('&gdpr=');
     expect(sync4.url).to.include('&us_privacy=');
+  });
+
+  it('Test provide gdpr and ccpa values in payload', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.user.ext.consent).to.eql('consentString');
+    expect(payload.regs.ext.gdpr).to.eql(1);
+    expect(payload.regs.ext.us_privacy).to.eql('someCCPAString');
   });
 
   it('Test do not override user object', function () {
