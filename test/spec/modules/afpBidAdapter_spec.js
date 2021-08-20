@@ -118,7 +118,7 @@ const getTransformedConfig = ({mediaTypes, params}) => {
     transactionId,
   }
 }
-const validBidRequests = Object.values(configByPlaceType).map(config => getTransformedConfig(config))
+const validBidRequests = Object.keys(configByPlaceType).map(key => getTransformedConfig(configByPlaceType[key]))
 
 describe('AFP Adapter', function() {
   describe('isBidRequestValid method', function() {
