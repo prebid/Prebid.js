@@ -12,8 +12,6 @@ export const spec = {
     const requests = bidRequests.map(function (bid) {
       let floor = 0;
 
-      if (typeof bid.params !== 'undefined' && typeof bid.params.bidFloor !== 'undefined') { floor = bid.params.bidFloor; }
-
       if (typeof bid.getFloor === 'function') {
         const floorInfo = bid.getFloor({ currency: 'USD', mediaType: 'banner', size: bid.sizes.map(([w, h]) => ({w, h})) });
 
