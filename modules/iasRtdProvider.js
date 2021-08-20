@@ -7,6 +7,8 @@ import { ajaxBuilder } from '../src/ajax.js';
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'ias';
 
+let bidResponses = {};
+
 /**
  * Module init
  * @param {Object} provider
@@ -30,8 +32,16 @@ function stringifySlotSizes(sizes) {
 }
 
 function stringifySlot(bidRequest) {
+  var sizes = [];
+  if ('mediaTypes' in bidRequest) {
+    for (const type in bidRequest.mediaTypes) {
+      if (bidRequest.mediaTypes.hasOwnProperty(type) && type == 'banner') {
+        sizes = bidRequest.mediaTypes[type].sizes;
+      }
+    }
+  }
   const id = bidRequest.code;
-  const ss = stringifySlotSizes(bidRequest.sizes);
+  const ss = stringifySlotSizes(sizes);
   const p = bidRequest.bids[0].params.adUnitPath;
   const slot = { id, ss, p };
   const keyValues = utils.getKeys(slot).map(function (key) {
@@ -94,11 +104,15 @@ function getBidRequestData(reqBidsConfigObj, callback, config) {
       if (!isFinish) {
         if (request.status === 200) {
           const iasResponse = JSON.parse(response);
+          const commonBidResponse = {};
+          shallowMerge(commonBidResponse, getPageLevelKeywords(iasResponse));
+          // commonBidResponse.slots = iasResponse.slots;
+          bidResponses = commonBidResponse;
           adUnits.forEach(adUnit => {
             adUnit.bids.forEach(bid => {
               const rtd = bid.rtd || {};
               const iasRtd = {};
-              iasRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], getPageLevelKeywords(iasResponse));
+              iasRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME]);
               bid.rtd = Object.assign({}, rtd, iasRtd);
             });
           });
@@ -114,11 +128,25 @@ function getBidRequestData(reqBidsConfigObj, callback, config) {
   });
 }
 
+function getTargetingData(adUnits, config, userConsent) {
+  const targeting = {};
+  Object.keys(bidResponses).forEach(key => bidResponses[key] === undefined ? delete bidResponses[key] : {});
+  try {
+    adUnits.forEach(function(adUnit) {
+      targeting[adUnit] = bidResponses;
+    });
+  } catch (err) {
+    utils.logError('error', err);
+  }
+  return targeting;
+}
+
 /** @type {RtdSubmodule} */
 export const iasSubModule = {
   name: SUBMODULE_NAME,
   init: init,
-  getBidRequestData: getBidRequestData
+  getBidRequestData: getBidRequestData,
+  getTargetingData: getTargetingData
 };
 
 submodule(MODULE_NAME, iasSubModule);
