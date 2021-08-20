@@ -338,7 +338,8 @@ describe('OguryBidAdapter', function () {
         netRevenue: true,
         meta: {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
-        }
+        },
+        nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
         cpm: openRtbBidResponse.body.seatbid[0].bid[1].price,
@@ -352,7 +353,8 @@ describe('OguryBidAdapter', function () {
         netRevenue: true,
         meta: {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
-        }
+        },
+        nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl
       }]
 
       let request = spec.buildRequests(bidRequests, bidderRequest);
@@ -370,4 +372,39 @@ describe('OguryBidAdapter', function () {
       expect(result.length).to.equal(0)
     })
   });
+
+  describe('onBidWon', function() {
+    const nurl = 'https://fakewinurl.test';
+    let xhr;
+    let requests;
+
+    beforeEach(function() {
+      xhr = sinon.useFakeXMLHttpRequest();
+      requests = [];
+      xhr.onCreate = (xhr) => {
+        requests.push(xhr);
+      };
+    })
+
+    afterEach(function() {
+      xhr.restore();
+    })
+
+    it('Should not create nurl request if bid is undefined', function() {
+      spec.onBidWon();
+      expect(requests.length).to.equal(0);
+    })
+
+    it('Should not create nurl request if bid does not contains nurl', function() {
+      spec.onBidWon({})
+      expect(requests.length).to.equal(0);
+    })
+
+    it('Should create nurl request if bid nurl', function() {
+      spec.onBidWon({ nurl })
+      expect(requests.length).to.equal(1);
+      expect(requests[0].url).to.equal(nurl);
+      expect(requests[0].method).to.equal('GET')
+    })
+  })
 });

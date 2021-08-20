@@ -1232,6 +1232,135 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
+  describe('First party data', function () {
+    afterEach(function() {
+      config.setConfig({
+        ortb2: {}
+      })
+    });
+
+    it('should not set ixdiag.fpd value if not defined', function () {
+      config.setConfig({
+        ortb2: {}
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.fpd).to.be.undefined;
+    });
+
+    it('should set ixdiag.fpd value if it exists using fpd', function () {
+      config.setConfig({
+        fpd: {
+          site: {
+            data: {
+              pageType: 'article'
+            }
+          }
+        }
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.fpd).to.exist;
+    });
+
+    it('should set ixdiag.fpd value if it exists using ortb2', function () {
+      config.setConfig({
+        ortb2: {
+          site: {
+            ext: {
+              data: {
+                pageType: 'article'
+              }
+            }
+          }
+        }
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.fpd).to.exist;
+    });
+
+    it('should not send information that is not part of openRTB spec v2.5 using fpd', function () {
+      config.setConfig({
+        fpd: {
+          site: {
+            keywords: 'power tools, drills',
+            search: 'drill',
+            testProperty: 'test_string'
+          },
+          user: {
+            keywords: ['a'],
+            testProperty: 'test_string'
+          }
+        }
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.site.keywords).to.exist;
+      expect(r.site.search).to.exist;
+      expect(r.site.testProperty).to.be.undefined;
+      expect(r.user.keywords).to.exist;
+      expect(r.user.testProperty).to.be.undefined;
+    });
+
+    it('should not send information that is not part of openRTB spec v2.5 using ortb2', function () {
+      config.setConfig({
+        ortb2: {
+          site: {
+            keywords: 'power tools, drills',
+            search: 'drill',
+            testProperty: 'test_string'
+          },
+          user: {
+            keywords: ['a'],
+            testProperty: 'test_string'
+          }
+        }
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.site.keywords).to.exist;
+      expect(r.site.search).to.exist;
+      expect(r.site.testProperty).to.be.undefined;
+      expect(r.user.keywords).to.exist;
+      expect(r.user.testProperty).to.be.undefined;
+    });
+
+    it('should not add fpd data to r object if it exceeds maximum request', function () {
+      config.setConfig({
+        ortb2: {
+          site: {
+            keywords: 'power tools, drills',
+            search: 'drill',
+          },
+          user: {
+            keywords: Array(1000).join('#'),
+          }
+        }
+      });
+
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
+
+      const request = spec.buildRequests([bid])[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.site.ref).to.exist;
+      expect(r.site.keywords).to.be.undefined;
+      expect(r.user).to.be.undefined;
+    });
+  });
+
   describe('buildRequests', function () {
     let request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
     const requestUrl = request.url;
