@@ -165,6 +165,9 @@ function buildBid(bid, bidderRequest) {
     mediaType: 'banner',
     ad: bid.adm,
     adUnitCode: originalBid.adUnitCode,
+    meta: {
+      advertiserDomains: bid.bidADomain && bid.bidADomain.length ? bid.bidADomain : []
+    },
   };
 }
 

@@ -281,6 +281,7 @@ describe('InsticatorBidAdapter', function () {
                 h: 200,
                 adm: 'adm1',
                 exp: 60,
+                bidADomain: ['test1.com'],
               },
               {
                 impid: 'bid2',
@@ -288,7 +289,8 @@ describe('InsticatorBidAdapter', function () {
                 price: 1.5,
                 w: 600,
                 h: 200,
-                adm: 'adm2'
+                adm: 'adm2',
+                bidADomain: ['test2.com'],
               },
               {
                 impid: 'bid3',
@@ -296,7 +298,8 @@ describe('InsticatorBidAdapter', function () {
                 price: 5.0,
                 w: 300,
                 h: 200,
-                adm: 'adm3'
+                adm: 'adm3',
+                bidADomain: ['test3.com'],
               }
             ],
           },
@@ -315,6 +318,11 @@ describe('InsticatorBidAdapter', function () {
         width: 300,
         height: 200,
         mediaType: 'banner',
+        meta: {
+          advertiserDomains: [
+            'test1.com'
+          ]
+        },
         ad: 'adm1',
         adUnitCode: 'adunit-code-1',
       },
@@ -328,6 +336,11 @@ describe('InsticatorBidAdapter', function () {
         width: 600,
         height: 200,
         mediaType: 'banner',
+        meta: {
+          advertiserDomains: [
+            'test2.com'
+          ]
+        },
         ad: 'adm2',
         adUnitCode: 'adunit-code-2',
       },
@@ -341,6 +354,11 @@ describe('InsticatorBidAdapter', function () {
         width: 300,
         height: 200,
         mediaType: 'banner',
+        meta: {
+          advertiserDomains: [
+            'test3.com'
+          ]
+        },
         ad: 'adm3',
         adUnitCode: 'adunit-code-3',
       },
