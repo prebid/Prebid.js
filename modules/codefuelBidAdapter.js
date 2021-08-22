@@ -61,7 +61,6 @@ export const spec = {
     const request = {
       id: bidderRequest.auctionId,
       site: { page, domain, publisher },
-      // TODO: have to find real device type
       device: { ua, devicetype },
       source: { fd: 1 },
       cur: [cur],
@@ -111,9 +110,6 @@ export const spec = {
           netRevenue: true,
           currency: cur,
           mediaType: BANNER,
-          // TODO: need nurl
-          // nurl: bidResponse.nurl,
-          nurl: 'http://nym1.ib.adnxs.com/cr?id=12345',
           ad: bidResponse.adm,
           width: bidResponse.w,
           height: bidResponse.h
