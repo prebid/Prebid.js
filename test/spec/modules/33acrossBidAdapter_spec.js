@@ -747,8 +747,29 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
+    it('returns the screen dimensions', function() {
+      const ttxRequest = new TtxRequestBuilder()
+        .withBanner()
+        .withDevice({
+          w: 1024,
+          h: 728
+        })
+        .withProduct()
+        .build();
+      const serverRequest = new ServerRequestBuilder()
+        .withData(ttxRequest)
+        .build();
+
+      win.screen.width = 1024;
+      win.screen.height = 728;
+
+      const [ buildRequest ] = spec.buildRequests(bidRequests);
+
+      validateBuiltServerRequest(buildRequest, serverRequest);
+    });
+
     describe('when the window height is greater than the width', function() {
-      it('returns the smaller dimension as the width', function() {
+      it('returns the smaller screen dimension as the width', function() {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withDevice({
