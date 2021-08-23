@@ -30,7 +30,8 @@
     "dmdIdSystem",
     "akamaiDAPId",
     "flocIdSystem",
-    "amxIdSystem"
+    "amxIdSystem",
+    "imuIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
