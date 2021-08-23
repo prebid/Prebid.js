@@ -123,7 +123,7 @@ export const sharethroughAdapterSpec = {
         id: bidReq.bidId,
         tagid: String(bidReq.params.pkey),
         secure: secure ? 1 : 0,
-        bidfloor: getFloor(bidReq),
+        bidfloor: getBidRequestFloor(bidReq),
         ...impression,
       };
     });
@@ -223,7 +223,7 @@ function getVideoProtocols({ protocols }) {
   }
 }
 
-function getFloor(bid) {
+function getBidRequestFloor(bid) {
   let floor = null;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
