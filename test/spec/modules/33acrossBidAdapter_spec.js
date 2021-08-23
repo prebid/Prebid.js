@@ -767,7 +767,7 @@ describe('33acrossBidAdapter:', function () {
       validateBuiltServerRequest(buildRequest, serverRequest);
     });
 
-    describe('when the window height is greater than the width', function() {
+    context('when the window height is greater than the width', function() {
       it('returns the smaller screen dimension as the width', function() {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
