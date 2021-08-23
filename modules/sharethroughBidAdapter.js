@@ -17,7 +17,6 @@ export const sharethroughInternal = {
 
 export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
-  supportedFormat: [BANNER, VIDEO],
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
