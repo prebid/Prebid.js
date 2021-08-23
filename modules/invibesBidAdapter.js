@@ -234,7 +234,7 @@ function createBid(bidRequest, requestPlacement, multipositionEnabled) {
   let size = getBiggerSize(bidRequest.sizes);
 
   if (multipositionEnabled === true) {
-    if (invibes.pushedCids.length > 0) {
+    if (Object.keys(invibes.pushedCids).length > 0) {
       if (ad.Blcids != null && ad.Blcids.length > 0) {
         let blacklistsPushedCids = Object.keys(invibes.pushedCids).some(function(pushedCid) {
           return ad.Blcids.indexOf(parseInt(pushedCid)) > -1;
@@ -693,7 +693,7 @@ export function resetInvibes() {
   invibes.bidResponse = undefined;
   invibes.domainOptions = undefined;
   invibes.placementBids = [];
-  invibes.pushedCids = [];
+  invibes.pushedCids = {};
 }
 
 export function stubDomainOptions(persistence) {
