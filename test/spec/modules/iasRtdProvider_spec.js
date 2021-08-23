@@ -37,6 +37,11 @@ describe('iasRtdProvider is a RTD provider that', function () {
       expect(callback.calledOnce).to.be.false;
     });
   });
+  describe('has a method `getTargetingData` that', function () {
+    it('exists', function () {
+      expect(iasSubModule.getTargetingData).to.be.a('function');
+    });
+  });
 });
 
 const adUnits = [
