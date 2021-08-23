@@ -31,18 +31,18 @@ function stringifySlotSizes(sizes) {
   return result;
 }
 
-function stringifySlot(bidRequest) {
+function stringifySlot(bidRequest, adUnitPath) {
   var sizes = [];
   if ('mediaTypes' in bidRequest) {
     for (const type in bidRequest.mediaTypes) {
       if (bidRequest.mediaTypes.hasOwnProperty(type) && type == 'banner') {
-        sizes = bidRequest.mediaTypes[type].sizes;
+        sizes.push(bidRequest.mediaTypes[type].sizes)
       }
     }
   }
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
-  const p = bidRequest.bids[0].params.adUnitPath;
+  const p = adUnitPath;
   const slot = { id, ss, p };
   const keyValues = utils.getKeys(slot).map(function (key) {
     return [key, slot[key]].join(':');
@@ -77,17 +77,16 @@ function shallowMerge(dest, src) {
 
 function getBidRequestData(reqBidsConfigObj, callback, config) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
-
   let isFinish = false;
 
   const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
-  const { pubId } = config.params;
+  const { pubId, adUnitPath } = config.params;
   const anId = pubId;
   let queries = [];
   queries.push(['anId', anId]);
 
   queries = queries.concat(adUnits.reduce(function (acc, request) {
-    acc.push(['slot', stringifySlot(request)]);
+    acc.push(['slot', stringifySlot(request, adUnitPath)]);
     return acc;
   }, []));
 
@@ -106,13 +105,13 @@ function getBidRequestData(reqBidsConfigObj, callback, config) {
           const iasResponse = JSON.parse(response);
           const commonBidResponse = {};
           shallowMerge(commonBidResponse, getPageLevelKeywords(iasResponse));
-          // commonBidResponse.slots = iasResponse.slots;
+          commonBidResponse.slots = iasResponse.slots;
           bidResponses = commonBidResponse;
           adUnits.forEach(adUnit => {
             adUnit.bids.forEach(bid => {
               const rtd = bid.rtd || {};
               const iasRtd = {};
-              iasRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME]);
+              iasRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], bidResponses);
               bid.rtd = Object.assign({}, rtd, iasRtd);
             });
           });
