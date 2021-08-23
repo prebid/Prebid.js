@@ -64,6 +64,13 @@ describe('consentManagement', function () {
         sinon.assert.calledOnce(utils.logWarn);
         sinon.assert.notCalled(utils.logInfo);
       });
+
+      it('should exit consentManagementUsp module if config is "undefined"', function() {
+        setConsentConfig(undefined);
+        expect(consentAPI).to.be.undefined;
+        sinon.assert.calledOnce(utils.logWarn);
+        sinon.assert.notCalled(utils.logInfo);
+      });
     });
 
     describe('valid setConsentConfig value', function () {

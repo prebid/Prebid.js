@@ -9,7 +9,7 @@ import { Renderer } from '../src/Renderer.js';
 export const storage = getStorageManager();
 
 const BIDDER_CODE = 'jixie';
-const EVENTS_URL = 'https://jxhbtrackers.azurewebsites.net/sync/evt?';
+const EVENTS_URL = 'https://hbtra.jixie.io/sync/hb?';
 const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.io/jxhboutstream.js';
 const REQUESTS_URL = 'https://hb.jixie.io/v2/hbpost';
 const sidTTLMins_ = 30;
@@ -239,6 +239,16 @@ export const spec = {
           };
           let rendererScript = (oneBid.osparams.script ? oneBid.osparams.script : JX_OUTSTREAM_RENDERER_URL);
           bnd.renderer = createRenderer_(oneBid, rendererScript, jxOutstreamRender_);
+        }
+        // a note on advertiserDomains: our adserver is not responding in
+        // openRTB-type json. so there is no need to copy from 'adomain' over
+        // to meta: advertiserDomains
+        // However, we will just make sure the property is there.
+        if (!bnd.meta) {
+          bnd.meta = {};
+        }
+        if (!bnd.meta.advertiserDomains) {
+          bnd.meta.advertiserDomains = [];
         }
         bidResponses.push(bnd);
       });

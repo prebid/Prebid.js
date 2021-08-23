@@ -136,6 +136,9 @@ export const spec = {
         netRevenue: rawBid.netRevenue ? rawBid.netRevenue : true,
         ttl: rawBid.ttl ? rawBid.ttl : DEFAULT_TTL,
         creativeId: rawBid.creativeid || 0,
+        meta: {
+          advertiserDomains: rawBid.adomain ? rawBid.adomain : []
+        }
       };
 
       if (rawBid.hasOwnProperty('dealId')) {

@@ -88,12 +88,13 @@ describe('ColossussspAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain');
+        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
         expect(placement.traffic).to.be.a('string');
         expect(placement.sizes).to.be.an('array');
+        expect(placement.floor).to.be.an('object');
       }
     });
     it('Returns empty data if no valid requests are passed', function () {
@@ -108,7 +109,7 @@ describe('ColossussspAdapter', function () {
     bid.userId.britepoolid = 'britepoolid123';
     bid.userId.idl_env = 'idl_env123';
     bid.userId.tdid = 'tdid123';
-    bid.userId.id5id = 'id5id123'
+    bid.userId.id5id = { uid: 'id5id123' };
     let serverRequest = spec.buildRequests([bid], bidderRequest);
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -126,7 +127,6 @@ describe('ColossussspAdapter', function () {
           expect(v.uids).to.be.an('array');
           expect(v.uids.length).to.be.equal(1)
           expect(v.uids[0]).to.have.property('id')
-          expect(v.uids[0].id).to.be.oneOf(['britepoolid123', 'idl_env123', 'tdid123', 'id5id123'])
         }
       }
     });
@@ -144,7 +144,11 @@ describe('ColossussspAdapter', function () {
         ttl: 1000,
         creativeId: '123asd',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: {
+          advertiserDomains: ['google.com'],
+          advertiserId: 1234
+        }
       } ]
     };
     let serverResponses = spec.interpretResponse(resObject);
@@ -153,7 +157,7 @@ describe('ColossussspAdapter', function () {
       for (let i = 0; i < serverResponses.length; i++) {
         let dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-          'netRevenue', 'currency', 'mediaType');
+          'netRevenue', 'currency', 'mediaType', 'meta');
         expect(dataItem.requestId).to.be.a('string');
         expect(dataItem.cpm).to.be.a('number');
         expect(dataItem.width).to.be.a('number');
@@ -164,6 +168,7 @@ describe('ColossussspAdapter', function () {
         expect(dataItem.netRevenue).to.be.a('boolean');
         expect(dataItem.currency).to.be.a('string');
         expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
       }
       it('Returns an empty array if invalid response is passed', function () {
         serverResponses = spec.interpretResponse('invalid_response');

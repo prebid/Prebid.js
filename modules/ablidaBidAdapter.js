@@ -1,14 +1,14 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'ablida';
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -35,6 +35,8 @@ export const spec = {
       let sizes = []
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER] && bidRequest.mediaTypes[BANNER].sizes) {
         sizes = bidRequest.mediaTypes[BANNER].sizes;
+      } else if (bidRequest.mediaTypes[VIDEO] && bidRequest.mediaTypes[VIDEO].playerSize) {
+        sizes = bidRequest.mediaTypes[VIDEO].playerSize
       }
       const jaySupported = 'atob' in window && 'currentScript' in document;
       const device = getDevice();
@@ -46,7 +48,7 @@ export const spec = {
         referer: bidderRequest.refererInfo.referer,
         jaySupported: jaySupported,
         device: device,
-        adapterVersion: 4,
+        adapterVersion: 5,
         mediaTypes: bidRequest.mediaTypes,
         gdprConsent: bidderRequest.gdprConsent
       };

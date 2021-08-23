@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
@@ -24,7 +25,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const ADGENE_PREBID_VERSION = '1.0.1';
+    const ADGENE_PREBID_VERSION = '1.1.0';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -86,6 +87,11 @@ export const spec = {
       netRevenue: true,
       ttl: body.ttl || 10,
     };
+    if (body.adomain && Array.isArray(body.adomain) && body.adomain.length) {
+      bidResponse.meta = {
+        advertiserDomains: body.adomain
+      }
+    }
     if (isNative(body)) {
       bidResponse.native = createNativeAd(body);
       bidResponse.mediaType = NATIVE;

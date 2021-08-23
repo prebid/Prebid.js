@@ -29,15 +29,42 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('id5Id', function() {
-    const userId = {
-      id5id: 'some-random-id-value'
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'id5-sync.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+  describe('id5Id', function() {
+    it('does not include an ext if not provided', function() {
+      const userId = {
+        id5id: {
+          uid: 'some-random-id-value'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'id5-sync.com',
+        uids: [{ id: 'some-random-id-value', atype: 1 }]
+      });
+    });
+
+    it('includes ext if provided', function() {
+      const userId = {
+        id5id: {
+          uid: 'some-random-id-value',
+          ext: {
+            linkType: 0
+          }
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'id5-sync.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1,
+          ext: {
+            linkType: 0
+          }
+        }]
+      });
     });
   });
 
@@ -57,13 +84,18 @@ describe('eids array generation for known sub-modules', function() {
 
   it('merkleId', function() {
     const userId = {
-      merkleId: 'some-random-id-value'
+      merkleId: {
+        id: 'some-random-id-value', keyID: 1
+      }
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'merkleinc.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value',
+        atype: 3,
+        ext: { keyID: 1
+        }}]
     });
   });
 
@@ -75,7 +107,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveramp.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -90,7 +122,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
-      uids: [{id: 'some-random-id-value', atype: 1}],
+      uids: [{id: 'some-random-id-value', atype: 3}],
       ext: {segments: ['s1', 's2']}
     });
   });
@@ -105,7 +137,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -117,7 +149,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'britepool.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -145,6 +177,30 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('tapadId', function() {
+    const userId = {
+      tapadId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'tapad.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('deepintentId', function() {
+    const userId = {
+      deepintentId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'deepintent.com',
+      uids: [{id: 'some-random-id-value', atype: 3}]
+    });
+  });
+
   it('NetId', function() {
     const userId = {
       netId: 'some-random-id-value'
@@ -156,40 +212,16 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
-  it('Sharedid', function() {
+
+  it('NextRollId', function() {
     const userId = {
-      sharedid: {
-        id: 'test_sharedId',
-        third: 'test_sharedId'
-      }
+      nextrollId: 'some-random-id-value'
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
-      source: 'sharedid.org',
-      uids: [{
-        id: 'test_sharedId',
-        atype: 1,
-        ext: {
-          third: 'test_sharedId'
-        }
-      }]
-    });
-  });
-  it('Sharedid: Not Synched', function() {
-    const userId = {
-      sharedid: {
-        id: 'test_sharedId'
-      }
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'sharedid.org',
-      uids: [{
-        id: 'test_sharedId',
-        atype: 1
-      }]
+      source: 'nextroll.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
 
@@ -237,8 +269,72 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
-});
+  it('uid2', function() {
+    const userId = {
+      uid2: {'id': 'Sample_AD_Token'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'uidapi.com',
+      uids: [{
+        id: 'Sample_AD_Token',
+        atype: 3
+      }]
+    });
+  });
+  it('pubProvidedId', function() {
+    const userId = {
+      pubProvidedId: [{
+        source: 'example.com',
+        uids: [{
+          id: 'value read from cookie or local storage',
+          ext: {
+            stype: 'ppuid'
+          }
+        }]
+      }, {
+        source: 'id-partner.com',
+        uids: [{
+          id: 'value read from cookie or local storage'
+        }]
+      }]
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(2);
+    expect(newEids[0]).to.deep.equal({
+      source: 'example.com',
+      uids: [{
+        id: 'value read from cookie or local storage',
+        ext: {
+          stype: 'ppuid'
+        }
+      }]
+    });
+    expect(newEids[1]).to.deep.equal({
+      source: 'id-partner.com',
+      uids: [{
+        id: 'value read from cookie or local storage'
+      }]
+    });
+  });
 
+  it('amxId', () => {
+    const id = 'c4bcadb0-124f-4468-a91a-d3d44cf311c5'
+    const userId = {
+      amxId: id
+    };
+
+    const [eid] = createEidsArray(userId);
+    expect(eid).to.deep.equal({
+      source: 'amxrtb.com',
+      uids: [{
+        atype: 1,
+        id,
+      }]
+    });
+  });
+});
 describe('Negative case', function() {
   it('eids array generation for UN-known sub-module', function() {
     // UnknownCommonId

@@ -205,6 +205,18 @@ describe('sizeMappingV2', function () {
       expect(adUnits[0].code).to.equal('div-gpt-ad-1460505748561-1');
     });
 
+    it('should filter out adUnit if it does not contain the required property "bids"', function() {
+      let adUnits = utils.deepClone(AD_UNITS);
+      delete adUnits[0].mediaTypes;
+      // before checkAdUnitSetupHook is called, the length of the adUnits should equal '2'
+      expect(adUnits.length).to.equal(2);
+      adUnits = checkAdUnitSetupHook(adUnits);
+
+      // after checkAdUnitSetupHook is called, the length of the adUnits should be '1'
+      expect(adUnits.length).to.equal(1);
+      expect(adUnits[0].code).to.equal('div-gpt-ad-1460505748561-1');
+    });
+
     it('should filter out adUnit if it has declared property mediaTypes with an empty object', function () {
       let adUnits = utils.deepClone(AD_UNITS);
       adUnits[0].mediaTypes = {};
@@ -657,7 +669,7 @@ describe('sizeMappingV2', function () {
             },
             native: {}
           },
-          bids: []
+          bids: [{bidder: 'appnexus', params: 1234}]
         }];
 
         checkAdUnitSetupHook(adUnit);
@@ -679,7 +691,7 @@ describe('sizeMappingV2', function () {
             },
             native: {}
           },
-          bids: []
+          bids: [{bidder: 'appnexus', params: 1234}]
         }];
 
         checkAdUnitSetupHook(adUnit);
@@ -698,7 +710,7 @@ describe('sizeMappingV2', function () {
           mediaTypes: {
             native: {}
           },
-          bids: []
+          bids: [{bidder: 'appnexus', params: 1234}]
         }];
 
         checkAdUnitSetupHook(adUnit);
