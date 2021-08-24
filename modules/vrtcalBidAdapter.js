@@ -10,8 +10,17 @@ export const spec = {
   },
   buildRequests: function (bidRequests) {
     const requests = bidRequests.map(function (bid) {
-      const params = {
+      let floor = 0;
 
+      if (typeof bid.getFloor === 'function') {
+        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: 'banner', size: bid.sizes.map(([w, h]) => ({w, h})) });
+
+        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+          floor = Math.max(floor, parseFloat(floorInfo.floor));
+        }
+      }
+
+      const params = {
         prebidJS: 1,
         prebidAdUnitCode: bid.adUnitCode,
         id: bid.bidId,
@@ -19,7 +28,7 @@ export const spec = {
           id: '1',
           banner: {
           },
-          bidfloor: 0.75
+          bidfloor: floor
         }],
         site: {
           id: 'VRTCAL_FILLED',
