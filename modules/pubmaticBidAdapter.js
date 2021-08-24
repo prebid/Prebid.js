@@ -608,7 +608,7 @@ function _addDealCustomTargetings(imp, bid) {
 function _addJWPlayerSegmentData(imp, bid) {
   var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
   var jwPlayerData = '';
-  const jwMark = "jw-";
+  const jwMark = 'jw-';
 
   if (jwSegData === undefined || jwSegData === '' || !jwSegData.hasOwnProperty('segments')) return;
 
@@ -617,7 +617,7 @@ function _addJWPlayerSegmentData(imp, bid) {
   jwPlayerData += jwMark + 'id=' + jwSegData.content.id; // add the content id first
 
   for (var i = 0; i < maxLength; i++) {
-    jwPlayerData += "|" + jwMark + jwSegData.segments[i] + '=1';
+    jwPlayerData += '|' + jwMark + jwSegData.segments[i] + '=1';
   }
   const ext = imp.ext;
   (ext && ext.key_val === undefined)
