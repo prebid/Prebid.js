@@ -42,7 +42,7 @@ function stringifySlot(bidRequest, adUnitPath) {
   }
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
-  const p = adUnitPath;
+  const p = bidRequest.code;
   const slot = { id, ss, p };
   const keyValues = utils.getKeys(slot).map(function (key) {
     return [key, slot[key]].join(':');
