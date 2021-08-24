@@ -16,7 +16,7 @@ describe('InsticatorBidAdapter', function () {
     bidder: 'insticator',
     adUnitCode: 'adunit-code',
     params: {
-      adUnitId: '1a2b3c4d5e6f1a2b3c4d'
+      adUnitId: '1a2b3c4d5e6f1a2b3c4d',
     },
     sizes: [[300, 250], [300, 600]],
     mediaTypes: {
