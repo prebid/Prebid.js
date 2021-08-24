@@ -27,6 +27,34 @@ describe('sharethrough adapter spec', function() {
   });
 
   describe('isBidRequestValid', function() {
+    describe('when request is for video', () => {
+      it('should return false if req is for outstream video', () => {
+        const invalidBidRequest = {
+          bidder: 'sharethrough',
+          params: {
+            pkey: 'abc123',
+          },
+          mediaTypes: {
+            video: { context: 'outstream' }
+          },
+        };
+        expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
+      });
+
+      it('should return true if req is not for outstream video', () => {
+        const invalidBidRequest = {
+          bidder: 'sharethrough',
+          params: {
+            pkey: 'abc123',
+          },
+          mediaTypes: {
+            video: { context: 'instream' }
+          },
+        };
+        expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(true);
+      });
+    });
+
     it('should return false if req has no pkey', function() {
       const invalidBidRequest = {
         bidder: 'sharethrough',
@@ -474,7 +502,7 @@ describe('sharethrough adapter spec', function() {
       });
 
       describe('video', () => {
-        it('should return a banner bid', () => {
+        it('should return a video bid', () => {
           const resp = spec.interpretResponse(response, request);
 
           const bannerBid = resp[1];
