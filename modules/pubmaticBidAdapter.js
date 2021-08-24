@@ -608,18 +608,21 @@ function _addDealCustomTargetings(imp, bid) {
 function _addJWPlayerSegmentData(imp, bid) {
   var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
   var jwPlayerData = '';
+  const jwMark = "jw-";
+
   if (jwSegData === undefined || jwSegData === '' || !jwSegData.hasOwnProperty('segments')) return;
 
   var maxLength = jwSegData.segments.length;
 
-  jwPlayerData += 'jw-id=' + jwSegData.content.id + '|'; // add the content id first
+  jwPlayerData += jwMark + 'id=' + jwSegData.content.id; // add the content id first
 
   for (var i = 0; i < maxLength; i++) {
-    jwPlayerData += 'jw-' + jwSegData.segments[i] + '=1|';
+    jwPlayerData += "|" + jwMark + jwSegData.segments[i] + '=1';
   }
-  (imp.ext && imp.ext.key_val == undefined)
-    ? imp.ext.key_val = jwPlayerData.substring(0, jwPlayerData.length - 1)
-    : imp.ext.key_val += '|' + jwPlayerData.substring(0, jwPlayerData.length - 1);
+  const ext = imp.ext;
+  (ext && ext.key_val === undefined)
+    ? ext.key_val = jwPlayerData
+    : ext.key_val += '|' + jwPlayerData;
 }
 
 function _createImpressionObject(bid, conf) {
