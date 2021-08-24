@@ -91,21 +91,17 @@ export const spec = {
     const { seatbid, cur } = serverResponse.body;
 
     const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
-      // result[bid.impid - 1] = bid;
-      result[0] = bid;
+      result[bid.impid - 1] = bid;
       return result;
     }, []);
 
     return bids.map((bid, id) => {
-      // const bidResponse = bidResponses[id];
-      const bidResponse = bidResponses[0];
+      const bidResponse = bidResponses[id];
       if (bidResponse) {
         const bidObject = {
           requestId: bid.bidId,
           cpm: bidResponse.price,
-          // TODO: need creativeId
-          // creativeId: bidResponse.crid,
-          creativeId: '12345',
+          creativeId: bidResponse.crid,
           ttl: 360,
           netRevenue: true,
           currency: cur,
