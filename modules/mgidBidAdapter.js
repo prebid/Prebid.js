@@ -380,7 +380,7 @@ function createBannerRequest(bid) {
   if (format.length) {
     r.format = format
   }
-  const pos = utils.getBidIdParameter('position', bid.params) || 0
+  const pos = utils.deepAccess(bid, 'mediaTypes.banner.pos') || 0
   if (pos) {
     r.pos = pos
   }

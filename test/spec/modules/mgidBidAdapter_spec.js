@@ -512,9 +512,9 @@ describe('Mgid bid adapter', function () {
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 600], [300, 250]],
+          pos: 1,
         },
       };
-      bid.params.position = 1;
       let bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
 
