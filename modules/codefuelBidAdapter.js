@@ -29,7 +29,6 @@ export const spec = {
          */
   buildRequests: function(validBidRequests, bidderRequest) {
     const page = bidderRequest.refererInfo.referer;
-    // const page = 'https://www.smartreadz.com/best-and-worst-foods-for-diabetes/'
     const domain = getDomainFromURL(page)
     const ua = navigator.userAgent;
     const devicetype = getDeviceType()
