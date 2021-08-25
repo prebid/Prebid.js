@@ -23,7 +23,7 @@ About us : https://adpartner.pro
                 {
                     bidder: "adpartner",
                     params: {
-                        unitId: 6139
+                        unitId: 6698
                     }
                 }
             ]
