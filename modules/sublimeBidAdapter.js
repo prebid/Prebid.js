@@ -1,7 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
-import 'core-js/es7/object';
 
 const BIDDER_CODE = 'sublime';
 const BIDDER_GVLID = 114;
