@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
+import {isFn, isPlainObject} from '../src/utils.js';
 
 export const spec = {
   code: 'vrtcal',
@@ -12,10 +13,10 @@ export const spec = {
     const requests = bidRequests.map(function (bid) {
       let floor = 0;
 
-      if (typeof bid.getFloor === 'function') {
+      if (isFn(bid.getFloor)) {
         const floorInfo = bid.getFloor({ currency: 'USD', mediaType: 'banner', size: bid.sizes.map(([w, h]) => ({w, h})) });
 
-        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+        if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
           floor = Math.max(floor, parseFloat(floorInfo.floor));
         }
       }
