@@ -211,3 +211,4 @@ describe('fluctAdapter', function () {
     });
   });
 });
+
