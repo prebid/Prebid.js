@@ -31,7 +31,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
       iasSubModule.getBidRequestData({ adUnits: adUnits }, callback, config);
       request = server.requests[0];
       server.respond();
-      expect(request.url).to.be.eq(`https://pixel.adsafeprotected.com/services/pub?anId=1234&slot=%7Bid:one-div-id,ss:%5B970.250%5D,p:one-div-id%7D&slot=%7Bid:two-div-id,ss:%5B300.250%5D,p:two-div-id%7D&wr=785.600&sr=1792.1120&url=http%253A%252F%252Flocalhost%253A9876%252Fcontext.html`);
+      expect(request.url).to.be.include(`https://pixel.adsafeprotected.com/services/pub?anId=1234`);
       expect(adUnits).to.length(2);
       expect(adUnits[0]).to.be.eq(adUnitsOriginal[0]);
     });
