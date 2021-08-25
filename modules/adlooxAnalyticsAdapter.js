@@ -211,6 +211,11 @@ analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
 }
 
 analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
+  if (utils.deepAccess(bid, 'ext.adloox.video.adserver')) {
+    utils.logMessage(MODULE, `measuring '${bid.mediaType}' ad unit code '${bid.adUnitCode}' via Ad Server module`);
+    return;
+  }
+
   const sl = analyticsAdapter.context.toselector(bid);
   let el;
   try {

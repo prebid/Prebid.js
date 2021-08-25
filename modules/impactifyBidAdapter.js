@@ -36,8 +36,8 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   };
 
   // Force impactify debugging parameter
-  if (window.localStorage.getItem('_im_db_bidder') == 3) {
-    request.test = 3;
+  if (window.localStorage.getItem('_im_db_bidder') != null) {
+    request.test = window.localStorage.getItem('_im_db_bidder');
   }
 
   // Set device/user/site
