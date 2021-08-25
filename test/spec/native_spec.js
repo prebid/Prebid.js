@@ -433,11 +433,7 @@ describe('validate native', function () {
     native: {
       body: 'This is a Prebid Native Creative. There are many like it, but this one is mine.',
       clickTrackers: ['http://my.click.tracker/url'],
-      icon: {
-        url: 'http://my.image.file/ad_image.jpg',
-        height: 0,
-        width: 0
-      },
+      icon: 'http://my.image.file/ad_image.jpg',
       image: {
         url: 'http://my.icon.file/ad_icon.jpg',
         height: 2250,
@@ -463,11 +459,7 @@ describe('validate native', function () {
         height: 75,
         width: 75
       },
-      image: {
-        url: 'http://my.icon.file/ad_icon.jpg',
-        height: 0,
-        width: 0
-      },
+      image: 'http://my.icon.file/ad_icon.jpg',
       clickUrl: 'http://prebid.org/dev-docs/show-native-ads.html',
       impressionTrackers: ['http://my.imp.tracker/url'],
       javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
@@ -479,12 +471,12 @@ describe('validate native', function () {
 
   afterEach(function () {});
 
-  it('should reject bid if no image sizes are defined', function () {
+  it('should accept bid if no image sizes are defined', function () {
     let result = nativeBidIsValid(validBid, bidReq);
     expect(result).to.be.true;
     result = nativeBidIsValid(noIconDimBid, bidReq);
-    expect(result).to.be.false;
+    expect(result).to.be.true;
     result = nativeBidIsValid(noImgDimBid, bidReq);
-    expect(result).to.be.false;
+    expect(result).to.be.true;
   });
 });

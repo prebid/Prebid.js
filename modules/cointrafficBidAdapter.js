@@ -85,7 +85,11 @@ export const spec = {
       height: response.height,
       creativeId: response.creativeId,
       ttl: response.ttl,
-      ad: response.ad
+      ad: response.ad,
+      meta: {
+        advertiserDomains: response.adomain && response.adomain.length ? response.adomain : [],
+        mediaType: response.mediaType
+      }
     };
 
     bidResponses.push(bidResponse);

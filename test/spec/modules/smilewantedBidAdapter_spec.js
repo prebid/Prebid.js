@@ -14,8 +14,7 @@ const DISPLAY_REQUEST = [{
   ],
   bidder: 'smilewanted',
   params: {
-    zoneId: 1,
-    bidfloor: 2.50
+    zoneId: 1
   },
   requestId: 'request_abcd1234',
   transactionId: 'trans_abcd1234'
@@ -115,7 +114,6 @@ describe('smilewantedBidAdapterTests', function () {
     const requestDisplayContent = JSON.parse(requestDisplay[0].data);
     expect(requestDisplayContent).to.have.property('zoneId').and.to.equal(1);
     expect(requestDisplayContent).to.have.property('currencyCode').and.to.equal('EUR');
-    expect(requestDisplayContent).to.have.property('bidfloor').and.to.equal(2.50);
     expect(requestDisplayContent).to.have.property('sizes');
     expect(requestDisplayContent.sizes[0]).to.have.property('w').and.to.equal(300);
     expect(requestDisplayContent.sizes[0]).to.have.property('h').and.to.equal(250);
@@ -129,7 +127,6 @@ describe('smilewantedBidAdapterTests', function () {
     const requestVideoInstreamContent = JSON.parse(requestVideoInstream[0].data);
     expect(requestVideoInstreamContent).to.have.property('zoneId').and.to.equal(2);
     expect(requestVideoInstreamContent).to.have.property('currencyCode').and.to.equal('EUR');
-    expect(requestVideoInstreamContent).to.have.property('bidfloor').and.to.equal(2.50);
     expect(requestVideoInstreamContent).to.have.property('sizes');
     expect(requestVideoInstreamContent.sizes[0]).to.have.property('w').and.to.equal(640);
     expect(requestVideoInstreamContent.sizes[0]).to.have.property('h').and.to.equal(480);
@@ -141,7 +138,6 @@ describe('smilewantedBidAdapterTests', function () {
     const requestVideoOutstreamContent = JSON.parse(requestVideoOutstream[0].data);
     expect(requestVideoOutstreamContent).to.have.property('zoneId').and.to.equal(3);
     expect(requestVideoOutstreamContent).to.have.property('currencyCode').and.to.equal('EUR');
-    expect(requestVideoOutstreamContent).to.have.property('bidfloor').and.to.equal(2.50);
     expect(requestVideoOutstreamContent).to.have.property('sizes');
     expect(requestVideoOutstreamContent.sizes[0]).to.have.property('w').and.to.equal(640);
     expect(requestVideoOutstreamContent.sizes[0]).to.have.property('h').and.to.equal(480);
@@ -305,12 +301,12 @@ describe('smilewantedBidAdapterTests', function () {
   });
 
   it('SmileWanted - Verify user sync', function () {
-    var syncs = spec.getUserSyncs({
-      iframeEnabled: true
-    }, [BID_RESPONSE_DISPLAY]);
+    var syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {
+      consentString: 'foo'
+    }, '1NYN');
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
-    expect(syncs[0].url).to.equal('https://csync.smilewanted.com');
+    expect(syncs[0].url).to.equal('https://csync.smilewanted.com?gdpr_consent=foo&us_privacy=1NYN');
 
     syncs = spec.getUserSyncs({
       iframeEnabled: false
@@ -320,6 +316,6 @@ describe('smilewantedBidAdapterTests', function () {
     syncs = spec.getUserSyncs({
       iframeEnabled: true
     }, []);
-    expect(syncs).to.have.lengthOf(0);
+    expect(syncs).to.have.lengthOf(1);
   });
 });

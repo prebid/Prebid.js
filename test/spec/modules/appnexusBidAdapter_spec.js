@@ -282,6 +282,36 @@ describe('AppNexusAdapter', function () {
       });
     });
 
+    it('should attach reserve param when either bid param or getFloor function exists', function () {
+      let getFloorResponse = { currency: 'USD', floor: 3 };
+      let request, payload = null;
+      let bidRequest = deepClone(bidRequests[0]);
+
+      // 1 -> reserve not defined, getFloor not defined > empty
+      request = spec.buildRequests([bidRequest]);
+      payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].reserve).to.not.exist;
+
+      // 2 -> reserve is defined, getFloor not defined > reserve is used
+      bidRequest.params = {
+        'placementId': '10433394',
+        'reserve': 0.5
+      };
+      request = spec.buildRequests([bidRequest]);
+      payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].reserve).to.exist.and.to.equal(0.5);
+
+      // 3 -> reserve is defined, getFloor is defined > getFloor is used
+      bidRequest.getFloor = () => getFloorResponse;
+
+      request = spec.buildRequests([bidRequest]);
+      payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].reserve).to.exist.and.to.equal(3);
+    });
+
     it('should duplicate adpod placements into batches and set correct maxduration', function() {
       let bidRequest = Object.assign({},
         bidRequests[0],
@@ -629,6 +659,17 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
     });
 
+    it('should add gpid to the request', function () {
+      let testGpid = '/12345/my-gpt-tag-0';
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
+    });
+
     it('should add gdpr consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
@@ -638,18 +679,20 @@ describe('AppNexusAdapter', function () {
         'timeout': 3000,
         'gdprConsent': {
           consentString: consentString,
-          gdprApplies: true
+          gdprApplies: true,
+          addtlConsent: '1~7.12.35.62.66.70.89.93.108'
         }
       };
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.options).to.be.empty;
+      expect(request.options).to.deep.equal({withCredentials: true});
       const payload = JSON.parse(request.data);
 
       expect(payload.gdpr_consent).to.exist;
       expect(payload.gdpr_consent.consent_string).to.exist.and.to.equal(consentString);
       expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
+      expect(payload.gdpr_consent.addtl_consent).to.exist.and.to.deep.equal([7, 12, 35, 62, 66, 70, 89, 93, 108]);
     });
 
     it('should add us privacy string to payload', function() {
@@ -796,7 +839,13 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
-    it('should set withCredentials to false if purpose 1 consent is not given', function () {
+    it('should always set withCredentials: true on the request.options', function () {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      const request = spec.buildRequests([bidRequest]);
+      expect(request.options.withCredentials).to.equal(true);
+    });
+
+    it('should set simple domain variant if purpose 1 consent is not given', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
         'bidderCode': 'appnexus',
@@ -819,16 +868,21 @@ describe('AppNexusAdapter', function () {
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.options).to.deep.equal({withCredentials: false});
+      expect(request.url).to.equal('https://ib.adnxs-simple.com/ut/v3/prebid');
     });
 
     it('should populate eids when supported userIds are available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
           tdid: 'sample-userid',
+          uid2: { id: 'sample-uid2-value' },
           criteoId: 'sample-criteo-userid',
           netId: 'sample-netId-userid',
-          idl_env: 'sample-idl-userid'
+          idl_env: 'sample-idl-userid',
+          flocId: {
+            id: 'sample-flocid-value',
+            version: 'chrome.1.0'
+          }
         }
       });
 
@@ -846,6 +900,11 @@ describe('AppNexusAdapter', function () {
       });
 
       expect(payload.eids).to.deep.include({
+        source: 'chrome.com',
+        id: 'sample-flocid-value'
+      });
+
+      expect(payload.eids).to.deep.include({
         source: 'netid.de',
         id: 'sample-netId-userid',
       });
@@ -853,7 +912,13 @@ describe('AppNexusAdapter', function () {
       expect(payload.eids).to.deep.include({
         source: 'liveramp.com',
         id: 'sample-idl-userid'
-      })
+      });
+
+      expect(payload.eids).to.deep.include({
+        source: 'uidapi.com',
+        id: 'sample-uid2-value',
+        rti_partner: 'UID2'
+      });
     });
 
     it('should populate iab_support object at the root level if omid support is detected', function () {
@@ -1233,6 +1298,21 @@ describe('AppNexusAdapter', function () {
       }
       let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
-    })
+    });
+
+    it('should add advertiserDomains', function() {
+      let responseAdvertiserId = deepClone(response);
+      responseAdvertiserId.tags[0].ads[0].adomain = ['123'];
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      }
+      let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
+      expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
+    });
   });
 });

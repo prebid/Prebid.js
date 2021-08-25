@@ -84,6 +84,30 @@ function _initConf(refererInfo) {
   return conf;
 }
 
+function _setFloor(impObj, bid) {
+  let bidFloor = -1;
+  // get lowest floor from floorModule
+  if (typeof bid.getFloor === 'function') {
+    [BANNER, VIDEO].forEach(mediaType => {
+      if (impObj.hasOwnProperty(mediaType)) {
+        let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
+        if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+          let mediaTypeFloor = parseFloat(floorInfo.floor);
+          bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+        }
+      }
+    });
+  }
+  // get highest from impObj.bidfllor and floor from floor module
+  // as we are using Math.max, it is ok if we have not got any floor from floorModule, then value of bidFloor will be -1
+  if (impObj.bidfloor) {
+    bidFloor = Math.max(bidFloor, impObj.bidfloor)
+  }
+
+  // assign value only if bidFloor is > 0
+  impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : undefined);
+}
+
 function parseRTBResponse(request, response) {
   var bidResponses = [];
   try {
@@ -352,11 +376,9 @@ function _getImpressionObject(bid) {
     secure: window.location.protocol === 'https:' ? 1 : 0,
     bidfloorcur: params.currency ? params.currency : DEFAULT_CURRENCY
   };
-
   if (params.bidFloor) {
     impression.bidfloor = params.bidFloor;
   }
-
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
       switch (mediaTypes) {
@@ -392,7 +414,7 @@ function _getImpressionObject(bid) {
     }
     impression.banner = bObj;
   }
-
+  _setFloor(impression, bid);
   return impression.hasOwnProperty(BANNER) ||
         impression.hasOwnProperty(VIDEO) ? impression : undefined;
 }

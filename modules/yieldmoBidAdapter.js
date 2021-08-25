@@ -1,6 +1,7 @@
 import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
 import includes from 'core-js-pure/features/array/includes';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -10,10 +11,16 @@ const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
 const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
-const OPENRTB_VIDEO_BIDPARAMS = ['placement', 'startdelay', 'skipafter',
-  'protocols', 'api', 'playbackmethod', 'maxduration', 'minduration', 'pos'];
+const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
+const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
+  'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
 const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
-const localWindow = utils.getWindowTop();
+const LOCAL_WINDOW = utils.getWindowTop();
+const DEFAULT_PLAYBACK_METHOD = 2;
+const DEFAULT_START_DELAY = 0;
+const VAST_TIMEOUT = 15000;
+const MAX_BANNER_REQUEST_URL_LENGTH = 8000;
+const BANNER_REQUEST_PROPERTIES_TO_REDUCE = ['description', 'title', 'pr', 'page_url'];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -47,13 +54,13 @@ export const spec = {
         p: [],
         page_url: bidderRequest.refererInfo.referer,
         bust: new Date().getTime().toString(),
-        pr: bidderRequest.refererInfo.referer,
-        scrd: localWindow.devicePixelRatio || 0,
+        pr: (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '',
+        scrd: LOCAL_WINDOW.devicePixelRatio || 0,
         dnt: getDNT(),
         description: getPageDescription(),
-        title: localWindow.document.title || '',
-        w: localWindow.innerWidth,
-        h: localWindow.innerHeight,
+        title: LOCAL_WINDOW.document.title || '',
+        w: LOCAL_WINDOW.innerWidth,
+        h: LOCAL_WINDOW.innerHeight,
         userConsent: JSON.stringify({
           // case of undefined, stringify will remove param
           gdprApplies: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
@@ -88,6 +95,20 @@ export const spec = {
         }
       });
       serverRequest.p = '[' + serverRequest.p.toString() + ']';
+
+      // check if url exceeded max length
+      const url = `${BANNER_SERVER_ENDPOINT}?${utils.parseQueryStringParameters(serverRequest)}`;
+      let extraCharacters = url.length - MAX_BANNER_REQUEST_URL_LENGTH;
+      if (extraCharacters > 0) {
+        for (let i = 0; i < BANNER_REQUEST_PROPERTIES_TO_REDUCE.length; i++) {
+          extraCharacters = shortcutProperty(extraCharacters, serverRequest, BANNER_REQUEST_PROPERTIES_TO_REDUCE[i]);
+
+          if (extraCharacters <= 0) {
+            break;
+          }
+        }
+      }
+
       serverRequests.push({
         method: 'GET',
         url: BANNER_SERVER_ENDPOINT,
@@ -167,8 +188,9 @@ function addPlacement(request) {
     if (request.params.placementId) {
       placementInfo.ym_placement_id = request.params.placementId;
     }
-    if (request.params.bidFloor) {
-      placementInfo.bidFloor = request.params.bidFloor;
+    const bidfloor = getBidFloor(request, BANNER);
+    if (bidfloor) {
+      placementInfo.bidFloor = bidfloor;
     }
   }
   return JSON.stringify(placementInfo);
@@ -189,6 +211,10 @@ function createNewBannerBid(response) {
     netRevenue: NET_REVENUE,
     ttl: TIME_TO_LIVE,
     ad: response.ad,
+    meta: {
+      advertiserDomains: response.adomain || [],
+      mediaType: BANNER,
+    },
   };
 }
 
@@ -199,7 +225,8 @@ function createNewBannerBid(response) {
  */
 function createNewVideoBid(response, bidRequest) {
   const imp = find((utils.deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
-  return {
+
+  let result = {
     requestId: imp.id,
     cpm: response.price,
     width: imp.video.w,
@@ -209,8 +236,41 @@ function createNewVideoBid(response, bidRequest) {
     netRevenue: NET_REVENUE,
     mediaType: VIDEO,
     ttl: TIME_TO_LIVE,
-    vastXml: response.adm
+    vastXml: response.adm,
+    meta: {
+      advertiserDomains: response.adomain || [],
+      mediaType: VIDEO,
+    },
   };
+
+  if (imp.video.placement && imp.video.placement !== 1) {
+    const renderer = Renderer.install({
+      url: OUTSTREAM_VIDEO_PLAYER_URL,
+      config: {
+        width: result.width,
+        height: result.height,
+        vastTimeout: VAST_TIMEOUT,
+        maxAllowedVastTagRedirects: 5,
+        allowVpaid: true,
+        autoPlay: true,
+        preload: true,
+        mute: true
+      },
+      id: imp.tagid,
+      loaded: false,
+    });
+
+    renderer.setRender(function (bid) {
+      bid.renderer.push(() => {
+        const { id, config } = bid.renderer;
+        window.YMoutstreamPlayer(bid, id, config);
+      });
+    });
+
+    result.renderer = renderer;
+  }
+
+  return result;
 }
 
 /**
@@ -230,7 +290,7 @@ function getPageDescription() {
   if (document.querySelector('meta[name="description"]')) {
     return document
       .querySelector('meta[name="description"]')
-      .getAttribute('content'); // Value of the description metadata from the publisher's page.
+      .getAttribute('content') || ''; // Value of the description metadata from the publisher's page.
   } else {
     return '';
   }
@@ -275,33 +335,50 @@ function openRtbRequest(bidRequests, bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
-  const videoReq = utils.deepAccess(bidRequest, 'mediaTypes.video');
   const size = extractPlayerSize(bidRequest);
   const imp = {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode,
-    bidfloor: bidRequest.params.bidfloor || 0,
+    bidfloor: getBidFloor(bidRequest, VIDEO),
     ext: {
       placement_id: bidRequest.params.placementId
     },
     video: {
       w: size[0],
       h: size[1],
-      mimes: videoReq.mimes,
       linearity: 1
     }
   };
+
+  const mediaTypesParams = utils.deepAccess(bidRequest, 'mediaTypes.video');
+  Object.keys(mediaTypesParams)
+    .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
+    .forEach(param => imp.video[param] = mediaTypesParams[param]);
 
   const videoParams = utils.deepAccess(bidRequest, 'params.video');
   Object.keys(videoParams)
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
     .forEach(param => imp.video[param] = videoParams[param]);
 
-  if (videoParams.skippable) {
+  if (imp.video.skippable) {
     imp.video.skip = 1;
+    delete imp.video.skippable;
+  }
+  if (imp.video.placement !== 1) {
+    imp.video.startdelay = DEFAULT_START_DELAY;
+    imp.video.playbackmethod = [ DEFAULT_PLAYBACK_METHOD ];
+  }
+  return imp;
+}
+
+function getBidFloor(bidRequest, mediaType) {
+  let floorInfo = {};
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({ currency: CURRENCY, mediaType, size: '*' });
   }
 
-  return imp;
+  return floorInfo.floor || bidRequest.params.bidfloor || bidRequest.params.bidFloor || 0;
 }
 
 /**
@@ -402,51 +479,68 @@ function validateVideoParams(bid) {
 
   const isDefined = val => typeof val !== 'undefined';
   const validate = (fieldPath, validateCb, errorCb, errorCbParam) => {
-    const value = utils.deepAccess(bid, fieldPath);
-    if (!validateCb(value)) {
-      errorCb(fieldPath, value, errorCbParam);
+    if (fieldPath.indexOf('video') === 0) {
+      const valueFieldPath = 'params.' + fieldPath;
+      const mediaFieldPath = 'mediaTypes.' + fieldPath;
+      const valueParams = utils.deepAccess(bid, valueFieldPath);
+      const mediaTypesParams = utils.deepAccess(bid, mediaFieldPath);
+      const hasValidValueParams = validateCb(valueParams);
+      const hasValidMediaTypesParams = validateCb(mediaTypesParams);
+
+      if (hasValidValueParams) return valueParams;
+      else if (hasValidMediaTypesParams) return hasValidMediaTypesParams;
+      else {
+        if (!hasValidValueParams) errorCb(valueFieldPath, valueParams, errorCbParam);
+        else if (!hasValidMediaTypesParams) errorCb(mediaFieldPath, mediaTypesParams, errorCbParam);
+      }
+      return valueParams || mediaTypesParams;
+    } else {
+      const value = utils.deepAccess(bid, fieldPath);
+      if (!validateCb(value)) {
+        errorCb(fieldPath, value, errorCbParam);
+      }
+      return value;
     }
-    return value;
   }
 
   try {
+    validate('video.context', val => !utils.isEmpty(val), paramRequired);
+
     validate('params.placementId', val => !utils.isEmpty(val), paramRequired);
 
-    validate('mediaTypes.video.playerSize', val => utils.isArrayOfNums(val, 2) ||
+    validate('video.playerSize', val => utils.isArrayOfNums(val, 2) ||
       (utils.isArray(val) && val.every(v => utils.isArrayOfNums(v, 2))),
     paramInvalid, 'array of 2 integers, ex: [640,480] or [[640,480]]');
 
-    validate('mediaTypes.video.mimes', val => isDefined(val), paramRequired);
-    validate('mediaTypes.video.mimes', val => utils.isArray(val) && val.every(v => utils.isStr(v)), paramInvalid,
+    validate('video.mimes', val => isDefined(val), paramRequired);
+    validate('video.mimes', val => utils.isArray(val) && val.every(v => utils.isStr(v)), paramInvalid,
       'array of strings, ex: ["video/mp4"]');
 
-    validate('params.video', val => !utils.isEmpty(val), paramRequired);
-
-    const placement = validate('params.video.placement', val => isDefined(val), paramRequired);
-    validate('params.video.placement', val => val >= 1 && val <= 5, paramInvalid);
+    const placement = validate('video.placement', val => isDefined(val), paramRequired);
+    validate('video.placement', val => val >= 1 && val <= 5, paramInvalid);
     if (placement === 1) {
-      validate('params.video.startdelay', val => isDefined(val),
+      validate('video.startdelay', val => isDefined(val),
         (field, v) => paramRequired(field, v, 'placement == 1'));
-      validate('params.video.startdelay', val => utils.isNumber(val), paramInvalid, 'number, ex: 5');
+      validate('video.startdelay', val => utils.isNumber(val), paramInvalid, 'number, ex: 5');
     }
 
-    validate('params.video.protocols', val => isDefined(val), paramRequired);
-    validate('params.video.protocols', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+    validate('video.protocols', val => isDefined(val), paramRequired);
+    validate('video.protocols', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
       paramInvalid, 'array of numbers, ex: [2,3]');
 
-    validate('params.video.api', val => isDefined(val), paramRequired);
-    validate('params.video.api', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+    validate('video.api', val => isDefined(val), paramRequired);
+    validate('video.api', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
       paramInvalid, 'array of numbers, ex: [2,3]');
 
-    validate('params.video.playbackmethod', val => !isDefined(val) || utils.isArrayOfNums(val), paramInvalid,
+    validate('video.playbackmethod', val => !isDefined(val) || utils.isArrayOfNums(val), paramInvalid,
       'array of integers, ex: [2,6]');
 
-    validate('params.video.maxduration', val => isDefined(val), paramRequired);
-    validate('params.video.maxduration', val => utils.isInteger(val), paramInvalid);
-    validate('params.video.minduration', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
-    validate('params.video.skippable', val => !isDefined(val) || utils.isBoolean(val), paramInvalid);
-    validate('params.video.skipafter', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
-    validate('params.video.pos', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validate('video.maxduration', val => isDefined(val), paramRequired);
+    validate('video.maxduration', val => utils.isInteger(val), paramInvalid);
+    validate('video.minduration', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validate('video.skippable', val => !isDefined(val) || utils.isBoolean(val), paramInvalid);
+    validate('video.skipafter', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validate('video.pos', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
     validate('params.badv', val => !isDefined(val) || utils.isArray(val), paramInvalid,
       'array of strings, ex: ["ford.com","pepsi.com"]');
     validate('params.bcat', val => !isDefined(val) || utils.isArray(val), paramInvalid,
@@ -456,4 +550,26 @@ function validateVideoParams(bid) {
     utils.logError(e.message);
     return false;
   }
+}
+
+/**
+ * Shortcut object property and check if required characters count was deleted
+ *
+ * @param {number} extraCharacters, count of characters to remove
+ * @param {object} target, object on which string property length should be reduced
+ * @param {string} propertyName, name of property to reduce
+ * @return {number} 0 if required characters count was removed otherwise count of how many left
+ */
+function shortcutProperty(extraCharacters, target, propertyName) {
+  if (target[propertyName].length > extraCharacters) {
+    target[propertyName] = target[propertyName].substring(0, target[propertyName].length - extraCharacters);
+
+    return 0
+  }
+
+  const charactersLeft = extraCharacters - target[propertyName].length;
+
+  target[propertyName] = '';
+
+  return charactersLeft;
 }
