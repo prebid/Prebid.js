@@ -46,6 +46,7 @@ module.exports = {
   resolve: {
     modules: [
       path.resolve('.'),
+      path.resolve('./maven_modules/'),
       'node_modules'
     ],
   },
