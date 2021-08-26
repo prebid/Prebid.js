@@ -317,7 +317,7 @@ describe('bidders created by newBidder', function () {
       expect(addBidResponseStub.callCount).to.equal(0);
     });
 
-    it('should emit BEFORE_BIDDER_REQUEST events before network requests', function () {
+    it('should emit BEFORE_BIDDER_HTTP events before network requests', function () {
       const bidder = newBidder(spec);
       const req = {
         method: 'POST',
@@ -333,7 +333,7 @@ describe('bidders created by newBidder', function () {
 
       expect(ajaxStub.calledTwice).to.equal(true);
       expect(eventEmitterSpy.getCalls()
-        .filter(call => call.args[0] === CONSTANTS.EVENTS.BEFORE_BIDDER_REQUEST)
+        .filter(call => call.args[0] === CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP)
       ).to.length(2);
 
       eventEmitterSpy.restore();
