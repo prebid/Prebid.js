@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-// import { config } from '../src/config.js';
+import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'codefuel';
@@ -35,7 +35,7 @@ export const spec = {
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const cur = CURRENCY;
     // const endpointUrl = 'http://localhost:5000/prebid'
-    const endpointUrl = 'https://ai-i-codefuel-ds-rtb-us-east-1-k8s-internal.seccint.com/prebid'
+    const endpointUrl = config.getConfig('codefuel.bidderUrl');
     const timeout = bidderRequest.timeout;
 
     const imps = validBidRequests.map((bid, id) => {
