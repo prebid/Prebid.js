@@ -4,14 +4,15 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.10714';
+const TAPPX_BIDDER_VERSION = '0.1.0818';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
-const VIDEO_SUPPORT = ['instream'];
+const VIDEO_SUPPORT = ['instream', 'outstream'];
 
 const DATA_TYPES = {
   'NUMBER': 'number',
@@ -161,9 +162,9 @@ function validMediaType(bid) {
   const video = utils.deepAccess(bid, 'mediaTypes.video');
 
   // Video validations
-  if (typeof video != 'undefined') {
+  if (typeof video !== 'undefined') {
     if (VIDEO_SUPPORT.indexOf(video.context) === -1) {
-      utils.logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Only "instream" is suported.');
+      utils.logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Video context not supported.');
       return false;
     }
     if (typeof video.mimes == 'undefined') {
@@ -193,19 +194,30 @@ function interpretBid(serverBid, request) {
     netRevenue: true,
   }
 
-  if (typeof serverBid.dealId != 'undefined') { bidReturned.dealId = serverBid.dealId }
+  if (typeof serverBid.dealId !== 'undefined') { bidReturned.dealId = serverBid.dealId }
 
-  if (typeof request.bids.mediaTypes != 'undefined' && typeof request.bids.mediaTypes.video != 'undefined') {
+  if (typeof request.bids.mediaTypes !== 'undefined' && typeof request.bids.mediaTypes.video !== 'undefined') {
     bidReturned.vastXml = serverBid.adm;
     bidReturned.vastUrl = serverBid.lurl;
     bidReturned.ad = serverBid.adm;
     bidReturned.mediaType = VIDEO;
+    bidReturned.width = serverBid.w;
+    bidReturned.height = serverBid.h;
+
+    if (request.bids.mediaTypes.video.context === 'outstream') {
+      const url = (serverBid.ext.purl) ? serverBid.ext.purl : false;
+      if (typeof url === 'undefined') {
+        utils.logWarn(LOG_PREFIX, 'Error getting player outstream from tappx');
+        return false;
+      }
+      bidReturned.renderer = createRenderer(bidReturned, request, url);
+    }
   } else {
     bidReturned.ad = serverBid.adm;
     bidReturned.mediaType = BANNER;
   }
 
-  if (typeof bidReturned.adomain != 'undefined' || bidReturned.adomain != null) {
+  if (typeof bidReturned.adomain !== 'undefined' || bidReturned.adomain !== null) {
     bidReturned.meta = { advertiserDomains: request.bids.adomain };
   }
 
@@ -290,7 +302,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     imp.banner = banner;
   }
 
-  if (videoMediaType) {
+  if (typeof videoMediaType !== 'undefined') {
     let video = {};
 
     let videoParams = utils.deepAccess(validBidRequests, 'params.video');
@@ -410,6 +422,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payloadExt.bidder.mktag = MKTAG;
   payloadExt.bidder.bcid = utils.deepAccess(validBidRequests, 'params.bcid');
   payloadExt.bidder.bcrid = utils.deepAccess(validBidRequests, 'params.bcrid');
+  payloadExt.bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : {};
+  if (typeof videoMediaType !== 'undefined') {
+    payloadExt.bidder.ext.pbvidtype = videoMediaType.context;
+  }
   // < Payload Ext
 
   // > Payload
@@ -426,7 +442,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  let pbjsv = ($$PREBID_GLOBAL$$.version != null) ? encodeURIComponent($$PREBID_GLOBAL$$.version) : -1;
+  let pbjsv = ($$PREBID_GLOBAL$$.version !== null) ? encodeURIComponent($$PREBID_GLOBAL$$.version) : -1;
 
   return {
     method: 'POST',
@@ -467,6 +483,35 @@ export function _getHostInfo(validBidRequests) {
   }
 
   return domainInfo;
+}
+
+function outstreamRender(bid, request) {
+  bid.renderer.push(() => {
+    window.tappxOutstream.renderAd({
+      sizes: [bid.width, bid.height],
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse,
+      rendererOptions: {
+        content: bid.vastXml
+      }
+    });
+  });
+}
+
+function createRenderer(bid, request, url) {
+  const rendererInst = Renderer.install({
+    id: request.id,
+    url: url,
+    loaded: false
+  });
+
+  try {
+    rendererInst.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn(LOG_PREFIX, 'Prebid Error calling setRender on renderer');
+  }
+
+  return rendererInst;
 }
 
 export function _checkParamDataType(key, value, datatype) {
