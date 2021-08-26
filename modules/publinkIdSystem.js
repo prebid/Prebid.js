@@ -1,7 +1,7 @@
 /**
  * This module adds the PublinkId to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/conversantIdSystem
+ * @module modules/publinkIdSystem
  * @requires module:modules/userId
  */
 
@@ -11,7 +11,7 @@ import {ajax} from '../src/ajax.js';
 import * as utils from '../src/utils.js';
 import {uspDataHandler} from '../src/adapterManager.js';
 
-const MODULE_NAME = 'publink';
+const MODULE_NAME = 'publinkId';
 const GVLID = 24;
 
 export const storage = getStorageManager(GVLID);
