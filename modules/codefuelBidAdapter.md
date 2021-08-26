@@ -3,19 +3,19 @@
 ```
 Module Name: Codefuel Adapter
 Module Type: Bidder Adapter
-Maintainer: prog-ops-team@codefuel.com
+Maintainer: hayimm@codefuel.com
 ```
 
 # Description
 
 Module that connects to Codefuel bidder to fetch bids.
-Both native and display formats are supported but not at the same time. Using OpenRTB standard.
+Display format is supported but not native format. Using OpenRTB standard.
 
 # Configuration
 
 ## Bidder and usersync URLs
 
-The Codefuel adapter does not work without setting the correct bidder and usersync URLs.
+The Codefuel adapter does not work without setting the correct bidder.
 You will receive the URLs when contacting us.
 
 ```
