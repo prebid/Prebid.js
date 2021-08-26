@@ -305,5 +305,4 @@ describe('Codefuel Adapter', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.be.an('array').that.is.empty
     });
   })
-
 })

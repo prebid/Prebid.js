@@ -38,10 +38,11 @@ export const spec = {
     const endpointUrl = config.getConfig('codefuel.bidderUrl');
     const timeout = bidderRequest.timeout;
 
-    const imps = validBidRequests.map((bid, id) => {
-      bid.netRevenue = 'net';
+    validBidRequests.forEach(bid => bid.netRevenue = 'net');
+
+    const imps = validBidRequests.map((bid, idx) => {
       const imp = {
-        id: id + 1 + ''
+        id: idx + 1 + ''
       }
 
       if (bid.params.tagid) {
