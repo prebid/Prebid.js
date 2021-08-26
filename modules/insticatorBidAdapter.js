@@ -145,6 +145,15 @@ function buildRequest(validBidRequests, bidderRequest) {
     };
   }
 
+  if (bidderRequest.schain) {
+    req.source = {
+      ...req.source,
+      ext: {
+        schain: bidderRequest.schain,
+      }
+    }
+  }
+
   return req;
 }
 
