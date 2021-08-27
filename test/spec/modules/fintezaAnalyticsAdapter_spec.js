@@ -21,6 +21,7 @@ describe('finteza analytics adapter', function () {
 
   beforeEach(function () {
     setCookie('_fz_uniq', uniqCookie);
+    events.getEvents.restore();
     sinon.stub(events, 'getEvents').returns([]);
     sinon.spy(fntzAnalyticsAdapter, 'track');
 
