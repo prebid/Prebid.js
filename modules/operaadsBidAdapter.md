@@ -19,7 +19,6 @@ Module that connects to OperaAds's demand sources
 | `placementId` | required | String | The Placement Id provided by Opera Ads. | `s5340077725248`
 | `endpointId` | required | String | The Endpoint Id provided by Opera Ads. | `ep3425464070464`
 | `publisherId` | required | String | The Publisher Id provided by Opera Ads. | `pub3054952966336`
-| `currency` | optional | String or String[] | Currency. | `USD`
 | `bcat` | optional | String or String[] | The bcat value. | `IAB9-31`
 
 ### Bid Video Parameters
