@@ -23,6 +23,7 @@ describe('finteza analytics adapter', function () {
     setCookie('_fz_uniq', uniqCookie);
     sinon.stub(events, 'getEvents').returns([]);
     sinon.spy(fntzAnalyticsAdapter, 'track');
+    this.clock = sinon.useFakeTimers();
 
     adapterManager.registerAnalyticsAdapter({
       code: 'finteza',
@@ -47,6 +48,7 @@ describe('finteza analytics adapter', function () {
     events.getEvents.restore();
     fntzAnalyticsAdapter.track.restore();
     fntzAnalyticsAdapter.disableAnalytics();
+    this.clock.restore();
   });
 
   describe('track', () => {
