@@ -21,7 +21,6 @@ describe('finteza analytics adapter', function () {
 
   beforeEach(function () {
     setCookie('_fz_uniq', uniqCookie);
-    events.getEvents.restore();
     sinon.stub(events, 'getEvents').returns([]);
     sinon.spy(fntzAnalyticsAdapter, 'track');
 
@@ -213,7 +212,7 @@ describe('finteza analytics adapter', function () {
         // Emit the events with the "real" arguments
         events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
 
-        expect(server.requests.length).to.equal(1);
+        expect(server.requests.length).to.equal(2);
 
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
