@@ -309,7 +309,7 @@ function generateParameters(bid, bidderRequest) {
     requestParams.playback_method = playbackMethod;
   }
   const placement = utils.deepAccess(bid, 'mediaTypes.video.placement');
-  if (playbackMethod) {
+  if (placement) {
     requestParams.placement = placement;
   }
   const pos = utils.deepAccess(bid, 'mediaTypes.video.pos');
