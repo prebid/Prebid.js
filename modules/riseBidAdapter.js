@@ -5,7 +5,7 @@ import {config} from '../src/config.js';
 
 const SUPPORTED_AD_TYPES = [VIDEO];
 const BIDDER_CODE = 'rise';
-const BIDDER_VERSION = '4.0.1';
+const ADAPTER_VERSION = '5.0.0';
 const TTL = 360;
 const CURRENCY = 'USD';
 const SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
@@ -20,10 +20,21 @@ const SUPPORTED_SYNC_METHODS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  version: BIDDER_VERSION,
+  gvlid: 1043,
+  version: ADAPTER_VERSION,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bidRequest) {
-    return !!(bidRequest.params.org);
+    if (!bidRequest.params) {
+      utils.logWarn('no params have been set to Rise adapter');
+      return false;
+    }
+
+    if (!bidRequest.params.org) {
+      utils.logWarn('org is a mandatory param for Rise adapter');
+      return false;
+    }
+
+    return true;
   },
   buildRequests: function (bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
@@ -101,7 +112,7 @@ function getFloor(bid) {
     mediaType: VIDEO,
     size: '*'
   });
-  return floorResult.currency === CURRENCY ? floorResult.floor : 0;
+  return floorResult.currency === CURRENCY && floorResult.floor ? floorResult.floor : 0;
 }
 
 /**
@@ -214,14 +225,23 @@ function getEndpoint(testMode) {
  * @returns {Object}
  */
 function generateParameters(bid, bidderRequest) {
+  let {params} = bid;
   const timeout = config.getConfig('bidderTimeout');
-  const { syncEnabled, filterSettings } = config.getConfig('userSync') || {};
-  const [ width, height ] = getSizes(bid);
-  const { params } = bid;
-  const { bidderCode } = bidderRequest;
+  const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
+  const [width, height] = getSizes(bid);
+  const {bidderCode} = bidderRequest;
   const domain = window.location.hostname;
 
-  const requestParams = {
+  // fix floor price in case of NAN
+  if (isNaN(params.floorPrice)) {
+    params.floorPrice = 0;
+  }
+
+  let requestParams = {
+    wrapper_type: 'prebidjs',
+    wrapper_vendor: '$$PREBID_GLOBAL$$',
+    wrapper_version: '$prebid.version$',
+    adapter_version: ADAPTER_VERSION,
     auction_start: utils.timestamp(),
     ad_unit_code: utils.getBidIdParameter('adUnitCode', bid),
     tmax: timeout,
@@ -236,8 +256,21 @@ function generateParameters(bid, bidderRequest) {
     session_id: utils.getBidIdParameter('auctionId', bid),
     publisher_name: domain,
     site_domain: domain,
-    bidder_version: BIDDER_VERSION
+    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0
   };
+
+  const userIdsParam = utils.getBidIdParameter('userId', bid);
+  if (userIdsParam) {
+    requestParams.userIds = JSON.stringify(userIdsParam);
+  }
+
+  const ortb2Metadata = config.getConfig('ortb2') || {};
+  if (ortb2Metadata.site) {
+    requestParams.site_metadata = JSON.stringify(ortb2Metadata.site);
+  }
+  if (ortb2Metadata.user) {
+    requestParams.user_metadata = JSON.stringify(ortb2Metadata.user);
+  }
 
   if (params.placementId) {
     requestParams.placement_id = params.placementId;
