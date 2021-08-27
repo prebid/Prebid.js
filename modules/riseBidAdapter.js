@@ -137,12 +137,22 @@ function buildVideoRequest(bid, bidderRequest) {
  * @returns {Array}
  */
 function getSizes(bid) {
-  if (utils.deepAccess(bid, 'mediaTypes.video.sizes')) {
-    return bid.mediaTypes.video.sizes[0];
-  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    return bid.sizes[0];
+  let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+  let width;
+  let height;
+
+  if (utils.isArray(bid.sizes) && bid.sizes.length === 2 && !utils.isArray(bid.sizes[0])) {
+    width = parseInt(bid.sizes[0], 10);
+    height = parseInt(bid.sizes[1], 10);
+  } else if (utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0]) && bid.sizes[0].length === 2) {
+    width = parseInt(bid.sizes[0][0], 10);
+    height = parseInt(bid.sizes[0][1], 10);
+  } else if (utils.isArray(playerSize) && playerSize.length === 1) {
+    width = parseInt(playerSize[0][0], 10);
+    height = parseInt(playerSize[0][1], 10);
   }
-  return [];
+
+  return [width, height];
 }
 
 /**
@@ -219,13 +229,34 @@ function getEndpoint(testMode) {
 }
 
 /**
+ * get device type
+ * @param uad {ua}
+ * @returns {string}
+ */
+function getDeviceType(ua) {
+  if (/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i
+    .test(ua.toLowerCase())) {
+    return '5';
+  }
+  if (/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i
+    .test(ua.toLowerCase())) {
+    return '4';
+  }
+  if (/smart[-_\s]?tv|hbbtv|appletv|googletv|hdmi|netcast|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b/i
+    .test(ua.toLowerCase())) {
+    return '3';
+  }
+  return '1';
+}
+
+/**
  * Generate query parameters for the request
  * @param bid {bid}
  * @param bidderRequest {bidderRequest}
  * @returns {Object}
  */
 function generateParameters(bid, bidderRequest) {
-  let {params} = bid;
+  const {params} = bid;
   const timeout = config.getConfig('bidderTimeout');
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const [width, height] = getSizes(bid);
@@ -237,7 +268,7 @@ function generateParameters(bid, bidderRequest) {
     params.floorPrice = 0;
   }
 
-  let requestParams = {
+  const requestParams = {
     wrapper_type: 'prebidjs',
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$',
@@ -256,7 +287,8 @@ function generateParameters(bid, bidderRequest) {
     session_id: utils.getBidIdParameter('auctionId', bid),
     publisher_name: domain,
     site_domain: domain,
-    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0
+    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+    device_type: getDeviceType(navigator.userAgent)
   };
 
   const userIdsParam = utils.getBidIdParameter('userId', bid);
@@ -270,6 +302,35 @@ function generateParameters(bid, bidderRequest) {
   }
   if (ortb2Metadata.user) {
     requestParams.user_metadata = JSON.stringify(ortb2Metadata.user);
+  }
+
+  const playbackMethod = utils.deepAccess(bid, 'mediaTypes.video.playbackmethod');
+  if (playbackMethod) {
+    requestParams.playback_method = playbackMethod;
+  }
+  const placement = utils.deepAccess(bid, 'mediaTypes.video.placement');
+  if (playbackMethod) {
+    requestParams.placement = placement;
+  }
+  const pos = utils.deepAccess(bid, 'mediaTypes.video.pos');
+  if (pos) {
+    requestParams.pos = pos;
+  }
+  const minduration = utils.deepAccess(bid, 'mediaTypes.video.minduration');
+  if (minduration) {
+    requestParams.min_duration = minduration;
+  }
+  const maxduration = utils.deepAccess(bid, 'mediaTypes.video.maxduration');
+  if (maxduration) {
+    requestParams.max_duration = maxduration;
+  }
+  const skip = utils.deepAccess(bid, 'mediaTypes.video.skip');
+  if (skip) {
+    requestParams.skip = skip;
+  }
+  const linearity = utils.deepAccess(bid, 'mediaTypes.video.linearity');
+  if (linearity) {
+    requestParams.linearity = linearity;
   }
 
   if (params.placementId) {
