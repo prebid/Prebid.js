@@ -214,7 +214,7 @@ describe('finteza analytics adapter', function () {
 
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
-        
+
         expect(server.requests.length).to.equal(1);
 
         const url = parseUrl(server.requests[0].url);
