@@ -278,8 +278,8 @@ export function newBidder(spec) {
         }
 
         // If the server responds successfully, use the adapter code to unpack the Bids from it.
-        // If the adapter code fails, no bids should be added. After all the bids have been added, make
-        // sure to call the `onResponse` function so that we're one step closer to calling done().
+        // If the adapter code fails, no bids should be added. After all the bids have been added,
+        // make sure to call the `onResponse` function so that we're one step closer to calling done().
         function onSuccess(response, responseObj) {
           onTimelyResponse(spec.code);
 
