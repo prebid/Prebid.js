@@ -7,7 +7,7 @@ const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
-const DEFAULT_VIDEO_HEIGHT = 480;
+const DEFAULT_VIDEO_HEIGHT = 360;
 const ORIGIN = 'https://sonic.impactify.media';
 const LOGGER_URI = 'https://logger.impactify.media';
 const AUCTIONURI = '/bidder';
@@ -36,8 +36,8 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   };
 
   // Force impactify debugging parameter
-  if (window.localStorage.getItem('_im_db_bidder') == 3) {
-    request.test = 3;
+  if (window.localStorage.getItem('_im_db_bidder') != null) {
+    request.test = Number(window.localStorage.getItem('_im_db_bidder'));
   }
 
   // Set device/user/site
