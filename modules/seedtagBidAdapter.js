@@ -81,6 +81,7 @@ function buildBidRequest(validBidRequest) {
     sizes: validBidRequest.sizes,
     supplyTypes: mediaTypes,
     adUnitId: params.adUnitId,
+    adUnitCode: validBidRequest.adUnitCode,
     placement: params.placement,
     requestCount: validBidRequest.bidderRequestsCount || 1 // FIXME : in unit test the parameter bidderRequestsCount is undefined
   };

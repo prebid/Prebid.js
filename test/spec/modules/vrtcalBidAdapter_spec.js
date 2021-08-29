@@ -29,7 +29,7 @@ describe('vrtcalBidAdapter', function () {
       }
     ];
 
-    const request = spec.buildRequests(bidRequests);
+    let request = spec.buildRequests(bidRequests);
 
     it('sends bid request to our endpoint via POST', function () {
       expect(request[0].method).to.equal('POST');
@@ -37,6 +37,18 @@ describe('vrtcalBidAdapter', function () {
 
     it('adUnitCode should be sent as prebidAdUnitCode parameters on any requests', function () {
       expect(request[0].data).to.match(/"prebidAdUnitCode":"adunit0001"/);
+    });
+
+    it('if the publisher has NOT set a floor via the floors module, zero should be sent as  bidfloor parameter on any requests', function () {
+      expect(request[0].data).to.match(/"bidfloor":0/);
+    });
+
+    it('if the publisher has set a floor via the floors module, it should be sent as  bidfloor parameter on any requests', function () {
+      let floorInfo;
+      bidRequests[0].getFloor = () => floorInfo;
+      floorInfo = {currency: 'USD', floor: 0.55};
+      request = spec.buildRequests(bidRequests);
+      expect(request[0].data).to.match(/"bidfloor":0.55/);
     });
   });
 
