@@ -88,13 +88,14 @@ describe('ColossussspAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor');
+        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'bidfloor');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
         expect(placement.traffic).to.be.a('string');
         expect(placement.sizes).to.be.an('array');
         expect(placement.floor).to.be.an('object');
+        expect(placement.bidfloor).to.be.an('number');
       }
     });
     it('Returns empty data if no valid requests are passed', function () {
@@ -110,6 +111,7 @@ describe('ColossussspAdapter', function () {
     bid.userId.idl_env = 'idl_env123';
     bid.userId.tdid = 'tdid123';
     bid.userId.id5id = { uid: 'id5id123' };
+    bid.userId.uid2 = { id: 'uid2id123' };
     let serverRequest = spec.buildRequests([bid], bidderRequest);
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -119,11 +121,11 @@ describe('ColossussspAdapter', function () {
         let placement = placements[i];
         expect(placement).to.have.property('eids')
         expect(placement.eids).to.be.an('array')
-        expect(placement.eids.length).to.be.equal(4)
+        expect(placement.eids.length).to.be.equal(5)
         for (let index in placement.eids) {
           let v = placement.eids[index];
           expect(v).to.have.all.keys('source', 'uids')
-          expect(v.source).to.be.oneOf(['britepool.com', 'identityLink', 'adserver.org', 'id5-sync.com'])
+          expect(v.source).to.be.oneOf(['britepool.com', 'identityLink', 'adserver.org', 'id5-sync.com', 'uidapi.com'])
           expect(v.uids).to.be.an('array');
           expect(v.uids.length).to.be.equal(1)
           expect(v.uids[0]).to.have.property('id')

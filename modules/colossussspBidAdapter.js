@@ -36,6 +36,23 @@ function getUserId(eids, id, source, uidExt) {
   }
 }
 
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -88,7 +105,8 @@ export const spec = {
         sizes: bid.mediaTypes[traff].sizes,
         traffic: traff,
         eids: [],
-        floor: {}
+        floor: {},
+        bidfloor: getBidFloor(bid)
       };
       if (typeof bid.getFloor === 'function') {
         let tmpFloor = {};
@@ -109,7 +127,8 @@ export const spec = {
       if (bid.userId) {
         getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
         getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
-        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com')
+        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
+        getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
         getUserId(placement.eids, bid.userId.tdid, 'adserver.org', {
           rtiPartner: 'TDID'
         });
