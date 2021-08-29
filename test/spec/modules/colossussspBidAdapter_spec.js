@@ -88,14 +88,13 @@ describe('ColossussspAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'bidfloor');
+        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
         expect(placement.traffic).to.be.a('string');
         expect(placement.sizes).to.be.an('array');
         expect(placement.floor).to.be.an('object');
-        expect(placement.bidfloor).to.be.an('number');
       }
     });
     it('Returns empty data if no valid requests are passed', function () {

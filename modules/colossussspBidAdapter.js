@@ -36,23 +36,6 @@ function getUserId(eids, id, source, uidExt) {
   }
 }
 
-function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.bidfloor', 0);
-  }
-
-  try {
-    const bidFloor = bid.getFloor({
-      currency: 'USD',
-      mediaType: '*',
-      size: '*',
-    });
-    return bidFloor.floor;
-  } catch (_) {
-    return 0
-  }
-}
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -105,8 +88,7 @@ export const spec = {
         sizes: bid.mediaTypes[traff].sizes,
         traffic: traff,
         eids: [],
-        floor: {},
-        bidfloor: getBidFloor(bid)
+        floor: {}
       };
       if (typeof bid.getFloor === 'function') {
         let tmpFloor = {};
