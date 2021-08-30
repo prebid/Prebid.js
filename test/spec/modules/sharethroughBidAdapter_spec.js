@@ -27,34 +27,6 @@ describe('sharethrough adapter spec', function() {
   });
 
   describe('isBidRequestValid', function() {
-    describe('when request is for video', () => {
-      it('should return false if req is for outstream video', () => {
-        const invalidBidRequest = {
-          bidder: 'sharethrough',
-          params: {
-            pkey: 'abc123',
-          },
-          mediaTypes: {
-            video: { context: 'outstream' }
-          },
-        };
-        expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
-      });
-
-      it('should return true if req is not for outstream video', () => {
-        const invalidBidRequest = {
-          bidder: 'sharethrough',
-          params: {
-            pkey: 'abc123',
-          },
-          mediaTypes: {
-            video: { context: 'instream' }
-          },
-        };
-        expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(true);
-      });
-    });
-
     it('should return false if req has no pkey', function() {
       const invalidBidRequest = {
         bidder: 'sharethrough',
@@ -189,6 +161,7 @@ describe('sharethrough adapter spec', function() {
               delivery: 1,
               companiontype: 'companion type',
               companionad: 'companion ad',
+              context: 'instream',
             },
           },
           getFloor: () => ({ currency: 'USD', floor: 42 }),
@@ -444,6 +417,14 @@ describe('sharethrough adapter spec', function() {
           expect(videoImp.delivery).to.be.undefined;
           expect(videoImp.companiontype).to.be.undefined;
           expect(videoImp.companionad).to.be.undefined;
+        });
+
+        it('should not return a video impression if context is outstream', () => {
+          bidRequests[1].mediaTypes.video.context = 'outstream';
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
+
+          const videoImp = builtRequest.data.imp[1];
+          expect(videoImp).to.be.undefined;
         });
       });
     });

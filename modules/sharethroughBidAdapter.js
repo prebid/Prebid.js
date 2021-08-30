@@ -19,14 +19,7 @@ export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
 
-  isBidRequestValid: bid => {
-    // if request is for video, we only support instream
-    if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream') {
-      return false;
-    }
-
-    return !!bid.params.pkey && bid.bidder === BIDDER_CODE
-  },
+  isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
 
   buildRequests: (bidRequests, bidderRequest) => {
     const timeout = config.getConfig('bidderTimeout');
@@ -93,6 +86,12 @@ export const sharethroughAdapterSpec = {
         impression.ext = { gpid: gpid };
       }
 
+      // if request is for video, we only support instream
+      if (bidReq.mediaTypes && bidReq.mediaTypes.video && bidReq.mediaTypes.video.context === 'outstream') {
+        // return null so we can easily remove this imp from the array of imps that we send to adserver
+        return null;
+      }
+
       if (bidReq.mediaTypes && bidReq.mediaTypes.video) {
         const videoRequest = bidReq.mediaTypes.video;
         impression.video = {
@@ -132,7 +131,7 @@ export const sharethroughAdapterSpec = {
         bidfloor: getBidRequestFloor(bidReq),
         ...impression,
       };
-    });
+    }).filter(imp => !!imp);
 
     return {
       method: 'POST',
