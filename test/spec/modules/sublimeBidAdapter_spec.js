@@ -163,7 +163,8 @@ describe('Sublime Adapter', function () {
     it('should correctly detect device', function () {
       const uaStub = sinon.stub(window.navigator, 'userAgent');
 
-      Object.entries(USER_AGENT).forEach(([userAgent, value]) => {
+      Object.keys(USER_AGENT).forEach(userAgent => {
+        const value = USER_AGENT[userAgent];
         uaStub.value(userAgent);
         expect(spec.detectDevice()).to.equal(value.type.charAt(0));
       });

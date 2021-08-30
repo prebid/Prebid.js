@@ -6,6 +6,8 @@ import { userSync } from 'src/userSync.js'
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
+import CONSTANTS from 'src/constants.json';
+import events from 'src/events.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -313,6 +315,28 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(addBidResponseStub.callCount).to.equal(0);
+    });
+
+    it('should emit BEFORE_BIDDER_HTTP events before network requests', function () {
+      const bidder = newBidder(spec);
+      const req = {
+        method: 'POST',
+        url: 'test.url.com',
+        data: { arg: 2 }
+      };
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns([req, req]);
+
+      const eventEmitterSpy = sinon.spy(events, 'emit');
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(ajaxStub.calledTwice).to.equal(true);
+      expect(eventEmitterSpy.getCalls()
+        .filter(call => call.args[0] === CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP)
+      ).to.length(2);
+
+      eventEmitterSpy.restore();
     });
   });
 
