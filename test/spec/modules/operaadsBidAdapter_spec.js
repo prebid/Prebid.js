@@ -266,7 +266,7 @@ describe('Opera Ads Bid Adapter', function () {
       }
     });
 
-    it('currency in params should be used', function () {
+    it('test getBidFloor', function() {
       const bidRequests = [
         {
           adUnitCode: 'test-div',
@@ -276,8 +276,13 @@ describe('Opera Ads Bid Adapter', function () {
           params: {
             placementId: 's12345678',
             publisherId: 'pub12345678',
-            endpointId: 'ep12345678',
-            currency: 'RMB'
+            endpointId: 'ep12345678'
+          },
+          getFloor: function() {
+            return {
+              currency: 'USD',
+              floor: 0.1
+            }
           }
         }
       ];
@@ -292,7 +297,9 @@ describe('Opera Ads Bid Adapter', function () {
           requestData = JSON.parse(req.data);
         }).to.not.throw();
 
-        expect(requestData.cur).to.be.an('array').that.includes('RMB');
+        expect(requestData.imp).to.be.an('array').that.have.lengthOf(1);
+        expect(requestData.imp[0].bidfloor).to.be.equal(0.1);
+        expect(requestData.imp[0].bidfloorcur).to.be.equal('USD');
       }
     });
 
