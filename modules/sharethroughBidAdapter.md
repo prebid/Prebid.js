@@ -23,19 +23,14 @@ Module that connects to Sharethrough's demand sources
             // REQUIRED - The placement key
             pkey: 'LuB3vxGGFrBZJa6tifXW4xgK',
 
-            // OPTIONAL - Render Sharethrough creative in an iframe, defaults to false
-            iframe: true,
-
-            // OPTIONAL - If iframeSize is provided, we'll use this size for the iframe
-            // otherwise we'll grab the largest size from the sizes array
-            // This is ignored if iframe: false
-            iframeSize: [250, 250],
-
             // OPTIONAL - Blocked Advertiser Domains
             badv: ['domain1.com', 'domain2.com'],
 
             // OPTIONAL - Blocked Categories (IAB codes)
             bcat: ['IAB1-1', 'IAB1-2'],
+
+            // OPTIONAL - default bid floor, if not specified in bid request (USD)
+            floor: 0.1,
           }
         }
       ]
