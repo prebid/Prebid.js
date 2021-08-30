@@ -309,7 +309,7 @@ describe('targeting tests', function () {
         ['string', '2.3', '2.3'],
         ['number', 2.3, '2.3'],
         ['boolean', true, 'true'],
-        ['string-separated', '2.3,4.5', '2.3,4.5'],
+        ['string-separated', '2.3, 4.5', '2.3, 4.5'],
         ['array-of-string', ['2.3', '4.5'], '2.3,4.5'],
         ['array-of-number', [2.3, 4.5], '2.3,4.5'],
         ['array-of-boolean', [true, false], 'true,false']
