@@ -4,7 +4,7 @@ import {registerBidder} from 'src/adapters/bidderFactory.js'
 
 export const BIDDER_CODE = 'bliink'
 export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/delivery'
-export const BLIINK_ENDPOINT_ENGINE_VAST = 'https://engine-stg.bliink.io/vast'
+export const BLIINK_ENDPOINT_ENGINE_VAST = 'https://engine.bliink.io/vast'
 export const BLIINK_ENDPOINT_COOKIE_SYNC = 'https://cookiesync.api.bliink.io'
 export const META_KEYWORDS = 'keywords'
 export const META_DESCRIPTION = 'description'
@@ -17,7 +17,7 @@ const supportedMediaTypes = [BANNER, VIDEO, NATIVE]
 const aliasBidderCode = ['bk']
 
 export function getMetaList(name) {
-  if (!name || name.length === 0) return null
+  if (!name || name.length === 0) return []
 
   return [
     {
@@ -57,51 +57,26 @@ export function getOneMetaValue(query) {
   return null
 }
 
-export function getMultipleMetaValue(query) {
-  const metaEls = document.querySelectorAll(query)
-
-  if (metaEls.length !== 0) {
-    const values = []
-
-    metaEls.forEach((metaEl) => {
-      if (metaEl.content) {
-        values.push(metaEl.content)
-      }
-    })
-
-    return values
-      .map((value) => value.trim())
-      .join(',')
-  }
-
-  return null
-}
-
 export function getMetaValue(name, type = 1) {
   const metaList = getMetaList(name)
-
-  let metaContent = ''
-
-  metaList.forEach((meta) => {
-    const method = type === 1 ? getOneMetaValue : getMultipleMetaValue
-    const metaValue = method(`meta[${meta.key}=${meta.value}]`)
+  const value = metaList.some((meta) => {
+    const metaValue = getOneMetaValue(`meta[${meta.key}=${meta.value}]`)
 
     if (metaValue) {
-      metaContent = metaValue
-
-      return null
+      return metaValue
     }
   })
-
-  return metaContent
+  if (value) {
+    return value
+  }
+  return ''
 }
 
 export function getKeywords() {
-  if (
-    getMetaValue(META_KEYWORDS)
-  ) {
+  const metaKeywords = getMetaValue(META_KEYWORDS)
+  if (metaKeywords) {
     const keywords = [
-      ...getMetaValue(META_KEYWORDS).split(','),
+      ...metaKeywords.split(','),
     ]
 
     if (keywords && keywords.length > 0) {
@@ -115,25 +90,24 @@ export function getKeywords() {
 }
 
 export const parseXML = (content) => {
-  if (typeof content !== 'string' || content.length === 0) return ''
+  if (typeof content !== 'string' || content.length === 0) return null
 
   const parser = new DOMParser()
-  return parser.parseFromString(content, 'text/xml')
-}
+  const xml = parser.parseFromString(content, 'text/xml')
 
-export const isXMLFormat = (content) => {
-  if (typeof content !== 'string' || content.length === 0) return false
+  if (xml &&
+    xml.getElementsByTagName('VAST')[0] &&
+    xml.getElementsByTagName('VAST')[0].tagName === 'VAST') {
+    return xml
+  }
 
-  const xml = parseXML(content)
-
-  return xml.getElementsByTagName('VAST')[0] &&
-    xml.getElementsByTagName('VAST')[0].tagName === 'VAST'
+  return null
 }
 
 /**
  * @param bidRequest
  * @param bliinkCreative
- * @return {{cpm, netRevenue: boolean, ad: string, requestId, width: number, currency: string, mediaType: string, vastXml, ttl: number, creativeId, height: number}|null}
+ * @return {{cpm, netRevenue: boolean, ad: string, requestId, width: number, currency: string, mediaType: string, vastXml, ttl: number, height: number}|null}
  */
 export const buildBid = (bidRequest, bliinkCreative) => {
   if (!bidRequest && !bliinkCreative) return null
@@ -141,7 +115,7 @@ export const buildBid = (bidRequest, bliinkCreative) => {
   const body = {
     requestId: bidRequest.bidId,
     cpm: bliinkCreative.price,
-    creativeId: bliinkCreative.id,
+    creativeId: bliinkCreative.creativeId,
     currency: 'EUR',
     netRevenue: false,
     width: 1,
@@ -245,17 +219,18 @@ const interpretResponse = (serverResponse, request) => {
   const body = serverResponse.body
   const serverBody = request.params
 
-  if (body && typeof body === 'string' && isXMLFormat(serverResponse.body)) {
-    const xml = parseXML(serverResponse.body)
+  const xml = parseXML(body)
 
+  if (xml) {
     const price = xml.getElementsByTagName('Price') && xml.getElementsByTagName('Price')[0]
     const currency = xml.getElementsByTagName('Currency') && xml.getElementsByTagName('Currency')[0]
+    const creativeId = xml.getElementsByTagName('CreativeId') && xml.getElementsByTagName('CreativeId')[0]
 
     const creative = {
-      content: serverResponse.body,
+      content: body,
       price: (price && price.textContent) || 0,
       currency: (currency && currency.textContent) || 'EUR',
-      id: '',
+      creativeId: creativeId || 0,
       media_type: 'video',
     }
 
@@ -274,41 +249,47 @@ const interpretResponse = (serverResponse, request) => {
  */
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent) => {
   let syncs = []
-  let gdprParams = ''
-
-  if (gdprConsent) {
-    if (typeof gdprConsent.gdprApplies === 'boolean') {
-      gdprParams = `hasConsent=${Number(gdprConsent.gdprApplies)}&consentString=${gdprConsent.consentString}`
-    } else {
-      gdprParams = `consentString=${gdprConsent.consentString}`
-    }
-  }
 
   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
     if (gdprConsent) {
-      const UrlBliink = [
-        `${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=smart&uid=[sas_uid]`,
-        `${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=azerion&uid={PUB_USER_ID}`,
-        `${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=appnexus&uid=$UID`,
-        `https://ad.360yield.com/server_match?partner_id=1531&r=${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=azerion&uid={PUB_USER_ID}}`,
-        `https://ads.stickyadstv.com/auto-user-sync`,
-        `https://cookiesync.api.bliink.io/getuid?url=https%3A%2F%2Fvisitor.omnitagjs.com%2Fvisitor%2Fsync%3Fuid%3D1625272249969090bb9d544bd6d8d645%26name%3DBLIINK%26visitor%3D%24UID%26external%3Dtrue`,
-        `https://pixel.advertising.com/ups/58444/sync?&gdpr=1&gdpr_consent=${gdprConsent.consentString}&redir=true&uid=sampleUserId`,
-        `https://ups.analytics.yahoo.com/ups/58499/occ?gdpr=1&gdpr_consent=${gdprConsent.consentString}`,
-        `https://secure.adnxs.com/getuid?${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=appnexus&uid=$UID}`
+      const gdprParams = `consentString=${gdprConsent.consentString}`
+      const smartCallbackURL = encodeURIComponent(`${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=smart&uid=[sas_uid]`)
+      const azerionCallbackURL = encodeURIComponent(`${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=azerion&uid={PUB_USER_ID}`)
+      const appnexusCallbackURL = encodeURIComponent(`${BLIINK_ENDPOINT_COOKIE_SYNC}/cookiesync?partner=azerion&uid=$UID`)
+      return [
+        {
+          type: 'script',
+          url: 'https://prg.smartadserver.com/ac?out=js&nwid=3392&siteid=305791&pgname=rg&fmtid=81127&tgt=[sas_target]&visit=m&tmstp=[timestamp]&clcturl=[countgo]'
+        },
+        {
+          type: 'image',
+          url: `https://sync.smartadserver.com/getuid?nwid=3392&${gdprParams}&url=${smartCallbackURL}`,
+        },
+        {
+          type: 'image',
+          url: `https://ad.360yield.com/server_match?partner_id=1531&${gdprParams}&r=${azerionCallbackURL}`,
+        },
+        {
+          type: 'image',
+          url: `https://ads.stickyadstv.com/auto-user-sync?${gdprParams}`,
+        },
+        {
+          type: 'image',
+          url: `https://cookiesync.api.bliink.io/getuid?url=https%3A%2F%2Fvisitor.omnitagjs.com%2Fvisitor%2Fsync%3Fuid%3D1625272249969090bb9d544bd6d8d645%26name%3DBLIINK%26visitor%3D%24UID%26external%3Dtrue&${gdprParams}`,
+        },
+        {
+          type: 'image',
+          url: `https://cookiesync.api.bliink.io/getuid?url=https://pixel.advertising.com/ups/58444/sync?&gdpr=1&gdpr_consent=${gdprConsent.consentString}&redir=true&uid=$UID`,
+        },
+        {
+          type: 'image',
+          url: `https://ups.analytics.yahoo.com/ups/58499/occ?gdpr=1&gdpr_consent=${gdprConsent.consentString}`,
+        },
+        {
+          type: 'image',
+          url: `https://secure.adnxs.com/getuid?${appnexusCallbackURL}`,
+        },
       ]
-
-      UrlBliink.forEach(item => {
-        syncs = [
-          ...syncs,
-          {
-            type: 'image',
-            url: item + `&${gdprParams}`,
-          },
-        ]
-      })
-
-      return syncs
     }
   }
 

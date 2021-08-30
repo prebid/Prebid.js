@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import {spec, buildBid, BLIINK_ENDPOINT_ENGINE, isXMLFormat, parseXML, getMetaList} from 'modules/bliinkBidAdapter.js'
+import { spec, buildBid, BLIINK_ENDPOINT_ENGINE, parseXML, getMetaList } from 'modules/bliinkBidAdapter.js'
 
 /**
  * @description Mockup bidRequest
@@ -93,7 +93,7 @@ const getConfigCreativeVideo = () => {
     price: 1,
     currency: 'EUR',
     category: 1,
-    id: 2825,
+    creativeId: 2825,
     content: '<VAST></VAST>'
   }
 }
@@ -177,7 +177,7 @@ const testsGetMetaList = [
     args: {
       fn: getMetaList()
     },
-    want: null
+    want: []
   },
   {
     title: 'Should return list of metas with name associated',
@@ -228,53 +228,23 @@ describe('BLIINK Adapter getMetaList', function() {
  */
 const testsParseXML = [
   {
-    title: 'Should return empty string, if content length equal to 0',
+    title: 'Should return null, if content length equal to 0',
     args: {
       fn: parseXML('')
     },
-    want: '',
+    want: null,
   },
   {
-    title: 'Should return empty string, if content isnt string',
+    title: 'Should return null, if content isnt string',
     args: {
       fn: parseXML({})
     },
-    want: '',
+    want: null,
   },
 ]
 
 describe('BLIINK Adapter parseXML', function() {
   for (const test of testsParseXML) {
-    it(test.title, () => {
-      const res = test.args.fn
-      expect(res).to.eql(test.want)
-    })
-  }
-})
-
-/**
- * @description Array of tests used in describe function below
- * @type {[{args: {fn: (boolean|*)}, want: boolean, title: string}, {args: {fn: (boolean|*)}, want: boolean, title: string}]}
- */
-const testsIsXMLFormat = [
-  {
-    title: 'Should return false, if XML is not valid format',
-    args: {
-      fn: isXMLFormat('')
-    },
-    want: false,
-  },
-  {
-    title: 'Should return true, if XML is valid format',
-    args: {
-      fn: isXMLFormat('<VAST></VAST>')
-    },
-    want: true,
-  }
-]
-
-describe('BLIINK Adapter isXMLFormat', function() {
-  for (const test of testsIsXMLFormat) {
     it(test.title, () => {
       const res = test.args.fn
       expect(res).to.eql(test.want)
@@ -338,10 +308,10 @@ const testsInterpretResponse = [
     want: {
       ad: '<html lang=\"en\"></html>',
       cpm: 0,
-      creativeId: '',
       currency: 'EUR',
       height: 1,
       width: 1,
+      creativeId: 0,
       mediaType: 'video',
       netRevenue: false,
       requestId: '2def0c5b2a7f6e',
@@ -376,10 +346,11 @@ describe('BLIINK Adapter interpretResponse', function() {
      *    netRevenue: boolean,
      *    ad, requestId,
      *    meta: {mediaType},
-     *    width,
+     *    width: number,
      *    currency: string,
      *    ttl: number,
-     *    creativeId, height
+     *    creativeId: number,
+     *    height: number
  *      }
  *    }, want, title: string}]}
  */
@@ -410,7 +381,7 @@ const testsBuildBid = [
       mediaType: 'video',
       width: 1,
       height: 1,
-      creativeId: getConfigCreativeVideo().id,
+      creativeId: getConfigCreativeVideo().creativeId,
       netRevenue: false,
       vastXml: getConfigCreativeVideo().content,
       ad: getConfigCreative().adm,
@@ -536,24 +507,20 @@ const testsGetUserSyncs = [
     },
     want: [
       {
-        type: 'image',
-        url: 'https://cookiesync.api.bliink.io/cookiesync?partner=smart&uid=[sas_uid]&consentString=XXX'
+        type: 'script',
+        url: 'https://prg.smartadserver.com/ac?out=js&nwid=3392&siteid=305791&pgname=rg&fmtid=81127&tgt=[sas_target]&visit=m&tmstp=[timestamp]&clcturl=[countgo]'
       },
       {
         type: 'image',
-        url: 'https://cookiesync.api.bliink.io/cookiesync?partner=azerion&uid={PUB_USER_ID}&consentString=XXX',
+        url: 'https://sync.smartadserver.com/getuid?nwid=3392&consentString=XXX&url=https%3A%2F%2Fcookiesync.api.bliink.io%2Fcookiesync%3Fpartner%3Dsmart%26uid%3D%5Bsas_uid%5D'
       },
       {
         type: 'image',
-        url: 'https://cookiesync.api.bliink.io/cookiesync?partner=appnexus&uid=$UID&consentString=XXX',
+        url: 'https://ad.360yield.com/server_match?partner_id=1531&consentString=XXX&r=https%3A%2F%2Fcookiesync.api.bliink.io%2Fcookiesync%3Fpartner%3Dazerion%26uid%3D%7BPUB_USER_ID%7D',
       },
       {
         type: 'image',
-        url: 'https://ad.360yield.com/server_match?partner_id=1531&r=https://cookiesync.api.bliink.io/cookiesync?partner=azerion&uid={PUB_USER_ID}}&consentString=XXX',
-      },
-      {
-        type: 'image',
-        url: 'https://ads.stickyadstv.com/auto-user-sync&consentString=XXX',
+        url: 'https://ads.stickyadstv.com/auto-user-sync?consentString=XXX',
       },
       {
         type: 'image',
@@ -561,15 +528,15 @@ const testsGetUserSyncs = [
       },
       {
         type: 'image',
-        url: 'https://pixel.advertising.com/ups/58444/sync?&gdpr=1&gdpr_consent=XXX&redir=true&uid=sampleUserId&consentString=XXX',
+        url: 'https://cookiesync.api.bliink.io/getuid?url=https://pixel.advertising.com/ups/58444/sync?&gdpr=1&gdpr_consent=XXX&redir=true&uid=$UID',
       },
       {
         type: 'image',
-        url: 'https://ups.analytics.yahoo.com/ups/58499/occ?gdpr=1&gdpr_consent=XXX&consentString=XXX',
+        url: 'https://ups.analytics.yahoo.com/ups/58499/occ?gdpr=1&gdpr_consent=XXX',
       },
       {
         type: 'image',
-        url: 'https://secure.adnxs.com/getuid?https://cookiesync.api.bliink.io/cookiesync?partner=appnexus&uid=$UID}&consentString=XXX',
+        url: 'https://secure.adnxs.com/getuid?https%3A%2F%2Fcookiesync.api.bliink.io%2Fcookiesync%3Fpartner%3Dazerion%26uid%3D%24UID',
       },
     ]
   },
