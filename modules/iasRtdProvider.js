@@ -32,14 +32,7 @@ function stringifySlotSizes(sizes) {
 }
 
 function stringifySlot(bidRequest, adUnitPath) {
-  var sizes = [];
-  if ('mediaTypes' in bidRequest) {
-    for (const type in bidRequest.mediaTypes) {
-      if (bidRequest.mediaTypes.hasOwnProperty(type) && type == 'banner') {
-        sizes.push(bidRequest.mediaTypes[type].sizes)
-      }
-    }
-  }
+  const sizes = utils.getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
   const p = bidRequest.code;
