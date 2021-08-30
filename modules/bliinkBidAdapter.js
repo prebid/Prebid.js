@@ -57,17 +57,14 @@ export function getOneMetaValue(query) {
   return null
 }
 
-export function getMetaValue(name, type = 1) {
+export function getMetaValue(name) {
   const metaList = getMetaList(name)
-  const value = metaList.some((meta) => {
-    const metaValue = getOneMetaValue(`meta[${meta.key}=${meta.value}]`)
-
+  for (let i = 0; i < metaList.length; i++) {
+    const meta = metaList[i];
+    const metaValue = getOneMetaValue(`meta[${meta.key}=${meta.value}]`);
     if (metaValue) {
       return metaValue
     }
-  })
-  if (value) {
-    return value
   }
   return ''
 }
