@@ -205,6 +205,11 @@ const USER_IDS_CONFIG = {
       return data.id;
     }
   },
+  // Akamai Data Activation Platform (DAP)
+  'dapId': {
+    source: 'akamai.com',
+    atype: 1
+  },
   'deepintentId': {
     source: 'deepintent.com',
     atype: 3
