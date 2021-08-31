@@ -185,6 +185,7 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
   };
 
   ttxRequest.site = { id: params.siteId };
+  ttxRequest.device = _buildDeviceORTB();
 
   if (pageUrl) {
     ttxRequest.site.page = pageUrl;
@@ -195,33 +196,25 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
   ttxRequest.id = bidRequest.bidId;
 
   if (gdprConsent.consentString) {
-    ttxRequest.user = setExtension(
-      ttxRequest.user,
-      'consent',
-      gdprConsent.consentString
-    )
+    ttxRequest.user = setExtensions(ttxRequest.user, {
+      'consent': gdprConsent.consentString
+    });
   }
 
   if (Array.isArray(bidRequest.userIdAsEids) && bidRequest.userIdAsEids.length > 0) {
-    ttxRequest.user = setExtension(
-      ttxRequest.user,
-      'eids',
-      bidRequest.userIdAsEids
-    )
+    ttxRequest.user = setExtensions(ttxRequest.user, {
+      'eids': bidRequest.userIdAsEids
+    });
   }
 
-  ttxRequest.regs = setExtension(
-    ttxRequest.regs,
-    'gdpr',
-    Number(gdprConsent.gdprApplies)
-  );
+  ttxRequest.regs = setExtensions(ttxRequest.regs, {
+    'gdpr': Number(gdprConsent.gdprApplies)
+  });
 
   if (uspConsent) {
-    ttxRequest.regs = setExtension(
-      ttxRequest.regs,
-      'us_privacy',
-      uspConsent
-    )
+    ttxRequest.regs = setExtensions(ttxRequest.regs, {
+      'us_privacy': uspConsent
+    });
   }
 
   ttxRequest.ext = {
@@ -235,11 +228,9 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
   };
 
   if (bidRequest.schain) {
-    ttxRequest.source = setExtension(
-      ttxRequest.source,
-      'schain',
-      bidRequest.schain
-    )
+    ttxRequest.source = setExtensions(ttxRequest.source, {
+      'schain': bidRequest.schain
+    });
   }
 
   // Finally, set the openRTB 'test' param if this is to be a test bid
@@ -269,11 +260,9 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
 }
 
 // BUILD REQUESTS: SET EXTENSIONS
-function setExtension(obj = {}, key, value) {
+function setExtensions(obj = {}, extFields) {
   return Object.assign({}, obj, {
-    ext: Object.assign({}, obj.ext, {
-      [key]: value
-    })
+    ext: Object.assign({}, obj.ext, extFields)
   });
 }
 
@@ -638,6 +627,40 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
   }
 
   return sync;
+}
+
+// BUILD REQUESTS: DEVICE
+function _buildDeviceORTB() {
+  return setExtensions({}, {
+    ttx: {
+      viewport: getViewportDimensions()
+    }
+  });
+}
+
+function getTopMostAccessibleWindow() {
+  let mostAccessibleWindow = utils.getWindowSelf();
+
+  try {
+    while (mostAccessibleWindow.parent !== mostAccessibleWindow &&
+      mostAccessibleWindow.parent.document) {
+      mostAccessibleWindow = mostAccessibleWindow.parent;
+    }
+  } catch (err) {
+    // Do not throw an exception if we can't access the topmost frame.
+  }
+
+  return mostAccessibleWindow;
+}
+
+function getViewportDimensions() {
+  const topWin = getTopMostAccessibleWindow();
+  const documentElement = topWin.document.documentElement;
+
+  return {
+    w: documentElement.clientWidth,
+    h: documentElement.clientHeight,
+  };
 }
 
 export const spec = {

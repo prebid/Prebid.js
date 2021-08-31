@@ -29,6 +29,16 @@ describe('33acrossBidAdapter:', function () {
       site: {
         id: SITE_ID
       },
+      device: {
+        ext: {
+          ttx: {
+            viewport: {
+              h: 600,
+              w: 800
+            }
+          }
+        }
+      },
       id: 'b1',
       regs: {
         ext: {
@@ -145,6 +155,11 @@ describe('33acrossBidAdapter:', function () {
 
     this.withSite = site => {
       Object.assign(ttxRequest, { site });
+      return this;
+    };
+
+    this.withDevice = (device = {}) => {
+      Object.assign(ttxRequest, { device });
       return this;
     };
 
@@ -315,8 +330,13 @@ describe('33acrossBidAdapter:', function () {
       }
     };
     win = {
+      parent: null,
       document: {
-        visibilityState: 'visible'
+        visibilityState: 'visible',
+        documentElement: {
+          clientWidth: 800,
+          clientHeight: 600
+        }
       },
 
       innerWidth: 800,
@@ -670,6 +690,96 @@ describe('33acrossBidAdapter:', function () {
 
         const [ buildRequest ] = spec.buildRequests(bidRequests);
         validateBuiltServerRequest(buildRequest, serverRequest);
+      });
+
+      context('when all the wrapping windows are accessible', function() {
+        it('returns the viewport dimensions of the top most accessible window', function() {
+          const ttxRequest = new TtxRequestBuilder()
+            .withBanner()
+            .withDevice({
+              ext: {
+                ttx: {
+                  viewport: {
+                    w: 6789,
+                    h: 2345
+                  }
+                }
+              }
+            })
+            .withProduct()
+            .build();
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+
+          sandbox.stub(win, 'parent').value({
+            document: {
+              documentElement: {
+                clientWidth: 1234,
+                clientHeight: 4567
+              }
+            },
+            parent: {
+              document: {
+                documentElement: {
+                  clientWidth: 6789,
+                  clientHeight: 2345
+                }
+              },
+            }
+          });
+
+          const [ buildRequest ] = spec.buildRequests(bidRequests);
+          validateBuiltServerRequest(buildRequest, serverRequest);
+        });
+      });
+
+      context('when one of the wrapping windows cannot be accessed', function() {
+        it('returns the viewport dimensions of the top most accessible window', function() {
+          const ttxRequest = new TtxRequestBuilder()
+            .withBanner()
+            .withDevice({
+              ext: {
+                ttx: {
+                  viewport: {
+                    w: 9876,
+                    h: 5432
+                  }
+                }
+              }
+            })
+            .withProduct()
+            .build();
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+          const notAccessibleParentWindow = {};
+
+          Object.defineProperty(notAccessibleParentWindow, 'document', {
+            get() { throw new Error('fakeError'); }
+          });
+
+          sandbox.stub(win, 'parent').value({
+            document: {
+              documentElement: {
+                clientWidth: 1234,
+                clientHeight: 4567
+              }
+            },
+            parent: {
+              parent: notAccessibleParentWindow,
+              document: {
+                documentElement: {
+                  clientWidth: 9876,
+                  clientHeight: 5432
+                }
+              },
+            }
+          });
+
+          const [ buildRequest ] = spec.buildRequests(bidRequests);
+          validateBuiltServerRequest(buildRequest, serverRequest);
+        });
       });
     });
 
