@@ -39,7 +39,8 @@ describe('33acrossBidAdapter:', function () {
               h: 600,
               w: 800
             },
-            availheight: 500
+            availheight: 500,
+            maxtouchpoints: 0
           }
         }
       },
@@ -341,6 +342,9 @@ describe('33acrossBidAdapter:', function () {
         width: 1024,
         height: 728,
         availHeight: 500
+      },
+      navigator: {
+        maxTouchPoints: 0
       },
       document: {
         visibilityState: 'visible',
