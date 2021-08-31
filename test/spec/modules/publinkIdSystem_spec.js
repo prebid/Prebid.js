@@ -14,6 +14,54 @@ describe('PublinkIdSystem', () => {
     });
   });
 
+  describe('Fetch Local Cookies', () => {
+    const PUBLINK_COOKIE = '_publink';
+    const PUBLINK_SRV_COOKIE = '_publink_srv';
+    const EXP = Date.now() + 60 * 60 * 24 * 7 * 1000;
+    const COOKIE_VALUE = {publink: 'publinkCookieValue', exp: EXP};
+    const LOCAL_VALUE = {publink: 'publinkLocalStorageValue', exp: EXP};
+    const COOKIE_EXPIRATION = (new Date(Date.now() + 60 * 60 * 24 * 1000)).toUTCString();
+    const DELETE_COOKIE = 'Thu, 01 Jan 1970 00:00:01 GMT';
+    it('publink srv cookie', () => {
+      storage.setCookie(PUBLINK_SRV_COOKIE, JSON.stringify(COOKIE_VALUE), COOKIE_EXPIRATION);
+      const result = publinkIdSubmodule.getId();
+      expect(result.id).to.equal(COOKIE_VALUE.publink);
+      storage.setCookie(PUBLINK_SRV_COOKIE, '', DELETE_COOKIE);
+    });
+    it('publink srv local storage', () => {
+      storage.setDataInLocalStorage(PUBLINK_SRV_COOKIE, JSON.stringify(LOCAL_VALUE));
+      const result = publinkIdSubmodule.getId();
+      expect(result.id).to.equal(LOCAL_VALUE.publink);
+      storage.removeDataFromLocalStorage(PUBLINK_SRV_COOKIE);
+    });
+    it('publink cookie', () => {
+      storage.setCookie(PUBLINK_COOKIE, JSON.stringify(COOKIE_VALUE), COOKIE_EXPIRATION);
+      const result = publinkIdSubmodule.getId();
+      expect(result.id).to.equal(COOKIE_VALUE.publink);
+      storage.setCookie(PUBLINK_COOKIE, '', DELETE_COOKIE);
+    });
+    it('publink local storage', () => {
+      storage.setDataInLocalStorage(PUBLINK_COOKIE, JSON.stringify(LOCAL_VALUE));
+      const result = publinkIdSubmodule.getId();
+      expect(result.id).to.equal(LOCAL_VALUE.publink);
+      storage.removeDataFromLocalStorage(PUBLINK_COOKIE);
+    });
+    it('ignore expired cookie', () => {
+      storage.setDataInLocalStorage(PUBLINK_COOKIE, JSON.stringify({publink: 'value', exp: Date.now() - 60 * 60 * 24 * 1000}));
+      const result = publinkIdSubmodule.getId();
+      expect(result.id).to.be.undefined;
+      storage.removeDataFromLocalStorage(PUBLINK_COOKIE);
+    });
+    it('priority goes to publink_srv cookie', () => {
+      storage.setCookie(PUBLINK_SRV_COOKIE, JSON.stringify(COOKIE_VALUE), COOKIE_EXPIRATION);
+      storage.setDataInLocalStorage(PUBLINK_COOKIE, JSON.stringify(LOCAL_VALUE));
+      const result = publinkIdSubmodule.getId();
+      expect(result.id).to.equal(COOKIE_VALUE.publink);
+      storage.setCookie(PUBLINK_SRV_COOKIE, '', DELETE_COOKIE);
+      storage.removeDataFromLocalStorage(PUBLINK_COOKIE);
+    });
+  });
+
   describe('getId', () => {
     const serverResponse = {publink: 'ec0xHT3yfAOnykP64Qf0ORSi7LjNT1wju04ZSCsoPBekOJdBwK-0Zl_lXKDNnzhauC4iszBc-PvA1Be6IMlh1QocA'};
     it('no config', () => {
@@ -84,41 +132,6 @@ describe('PublinkIdSystem', () => {
         request.respond(200, {}, JSON.stringify(serverResponse));
         expect(callbackSpy.calledOnce).to.be.true;
         expect(callbackSpy.lastCall.lastArg).to.equal(serverResponse.publink);
-      });
-    });
-    describe('fetch from coreid', () => {
-      let callbackSpy = sinon.spy();
-      afterEach(() => {
-        callbackSpy.resetHistory();
-        delete window.coreid;
-      });
-      it('get id', () => {
-        window.coreid = {};
-        window.coreid.getPublinkId = (cb) => { cb(TEST_COOKIE_VALUE) };
-        const submoduleCallback = publinkIdSubmodule.getId({}).callback;
-        submoduleCallback(callbackSpy);
-        expect(callbackSpy.calledOnce).to.be.true;
-        expect(callbackSpy.lastCall.lastArg).to.equal(TEST_COOKIE_VALUE);
-      });
-      it('coreid fails', () => {
-        window.coreid = {};
-        window.coreid.getPublinkId = (cb) => { cb() };
-        const submoduleCallback = publinkIdSubmodule.getId({params: {e: 'hashedemailvalue'}}).callback;
-        submoduleCallback(callbackSpy);
-        let request = server.requests[0];
-        expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=hashedemailvalue&mpn=Prebid.js&mpv=$prebid.version$');
-        request.respond(200, {}, JSON.stringify(serverResponse));
-        expect(callbackSpy.calledOnce).to.be.true;
-        expect(callbackSpy.lastCall.lastArg).to.equal(serverResponse.publink);
-      });
-      it('no hashed email param', () => {
-        window.coreid = {};
-        window.coreid.getPublinkId = (cb) => { cb() };
-        const submoduleCallback = publinkIdSubmodule.getId({params: {}}).callback;
-        submoduleCallback(callbackSpy);
-        let request = server.requests[0];
-        expect(request).to.be.undefined;
-        expect(callbackSpy.calledOnce).to.be.false;
       });
     });
   });

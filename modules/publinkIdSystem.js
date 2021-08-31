@@ -13,6 +13,8 @@ import {uspDataHandler} from '../src/adapterManager.js';
 
 const MODULE_NAME = 'publinkId';
 const GVLID = 24;
+const PUBLINK_COOKIE = '_publink';
+const PUBLINK_S2S_COOKIE = '_publink_srv';
 
 export const storage = getStorageManager(GVLID);
 
@@ -47,22 +49,35 @@ function makeCallback(config = {}, consentData) {
         }
       }
     };
-    if (window.coreid && typeof window.coreid.getPublinkId === 'function') {
-      window.coreid.getPublinkId((newId) => {
-        if (newId) {
-          prebidCallback(newId);
-        } else {
-          if (config.params && config.params.e) {
-            ajax(publinkIdUrl(config.params, consentData), handleResponse, undefined, options);
-          }
-        }
-      });
-    } else {
-      if (config.params && config.params.e) {
-        ajax(publinkIdUrl(config.params, consentData), handleResponse, undefined, options);
-      }
+    if (config.params && config.params.e) {
+      ajax(publinkIdUrl(config.params, consentData), handleResponse, undefined, options);
     }
   };
+}
+
+function getlocalValue() {
+  let result;
+  function getData(key) {
+    let value;
+    if (storage.hasLocalStorage()) {
+      value = storage.getDataFromLocalStorage(key);
+    }
+    if (!value) {
+      value = storage.getCookie(key);
+    }
+
+    if (typeof value === 'string') {
+      const obj = JSON.parse(value);
+      if (obj && obj.exp > Date.now()) {
+        return obj.publink;
+      }
+    }
+  }
+  result = getData(PUBLINK_S2S_COOKIE);
+  if (!result) {
+    result = getData(PUBLINK_COOKIE);
+  }
+  return result;
 }
 
 /** @type {Submodule} */
@@ -92,6 +107,10 @@ export const publinkIdSubmodule = {
    */
   getId: function(config, consentData, storedId) {
     let result = {};
+    const storedValue = getlocalValue();
+    if (storedValue) {
+      result.id = storedValue;
+    }
     if (storedId) {
       result.id = storedId;
     }
