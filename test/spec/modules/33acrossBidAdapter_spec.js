@@ -30,6 +30,8 @@ describe('33acrossBidAdapter:', function () {
         id: SITE_ID
       },
       device: {
+        w: 1024,
+        h: 728,
         ext: {
           ttx: {
             viewport: {
@@ -158,8 +160,9 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.withDevice = (device = {}) => {
-      Object.assign(ttxRequest, { device });
+    this.withDevice = (device) => {
+      utils.mergeDeep(ttxRequest, { device });
+
       return this;
     };
 
@@ -331,6 +334,10 @@ describe('33acrossBidAdapter:', function () {
     };
     win = {
       parent: null,
+      screen: {
+        width: 1024,
+        height: 728
+      },
       document: {
         visibilityState: 'visible',
         documentElement: {
@@ -780,6 +787,53 @@ describe('33acrossBidAdapter:', function () {
           const [ buildRequest ] = spec.buildRequests(bidRequests);
           validateBuiltServerRequest(buildRequest, serverRequest);
         });
+      });
+    });
+
+    it('returns the screen dimensions', function() {
+      const ttxRequest = new TtxRequestBuilder()
+        .withBanner()
+        .withDevice({
+          w: 1024,
+          h: 728
+        })
+        .withProduct()
+        .build();
+      const serverRequest = new ServerRequestBuilder()
+        .withData(ttxRequest)
+        .build();
+
+      win.screen.width = 1024;
+      win.screen.height = 728;
+
+      const [ buildRequest ] = spec.buildRequests(bidRequests);
+
+      validateBuiltServerRequest(buildRequest, serverRequest);
+    });
+
+    context('when the window height is greater than the width', function() {
+      it('returns the smaller screen dimension as the width', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withDevice({
+            w: 728,
+            h: 1024
+          })
+          .withProduct()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+
+        win.screen.width = 1024;
+        win.screen.height = 728;
+
+        win.innerHeight = 728;
+        win.innerWidth = 727;
+
+        const [ buildRequest ] = spec.buildRequests(bidRequests);
+
+        validateBuiltServerRequest(buildRequest, serverRequest);
       });
     });
 
