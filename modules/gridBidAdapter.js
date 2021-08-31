@@ -438,11 +438,14 @@ function createBannerRequest(bid, mediaType) {
 }
 
 function makeNewUserIdInFPDCookie() {
-  const value = utils.generateUUID().replace(/-/g, '');
-  const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toISOString();
+  if (config.getConfig('cookieSettingAllowed')) {
+    const value = utils.generateUUID().replace(/-/g, '');
+    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toISOString();
 
-  storage.setCookie(USER_ID_KEY, value, expires);
-  return value;
+    storage.setCookie(USER_ID_KEY, value, expires);
+    return value;
+  }
+  return null;
 }
 
 function getUserIdFromFPDCookie() {
