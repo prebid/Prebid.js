@@ -179,6 +179,13 @@ function bidToTag(bidRequests, adapterRequest) {
   if (utils.deepAccess(bidRequests[0], 'userId')) {
     tag.UserIds = utils.deepAccess(bidRequests[0], 'userId');
   }
+  if (utils.deepAccess(bidRequests[0], 'userIdAsEids')) {
+    tag.UserEids = utils.deepAccess(bidRequests[0], 'userIdAsEids');
+  }
+  if (window.adtDmp && window.adtDmp.ready) {
+    tag.DMPId = window.adtDmp.getUID();
+  }
+
   // end publisher env
   const bids = []
 

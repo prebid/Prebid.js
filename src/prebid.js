@@ -446,10 +446,10 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
           const {height, width, ad, mediaType, adUrl, renderer} = bid;
 
           const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
-          utils.insertElement(creativeComment, doc, 'body');
 
           if (isRendererRequired(renderer)) {
             executeRenderer(renderer, bid);
+            utils.insertElement(creativeComment, doc, 'html');
             emitAdRenderSucceeded({ doc, bid, id });
           } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
@@ -468,6 +468,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
             doc.write(ad);
             doc.close();
             setRenderSize(doc, width, height);
+            utils.insertElement(creativeComment, doc, 'html');
             utils.callBurl(bid);
             emitAdRenderSucceeded({ doc, bid, id });
           } else if (adUrl) {
@@ -480,6 +481,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
 
             utils.insertElement(iframe, doc, 'body');
             setRenderSize(doc, width, height);
+            utils.insertElement(creativeComment, doc, 'html');
             utils.callBurl(bid);
             emitAdRenderSucceeded({ doc, bid, id });
           } else {

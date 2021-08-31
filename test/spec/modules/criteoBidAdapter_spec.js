@@ -772,6 +772,44 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.slots[0].video.placement).to.equal(2);
     });
 
+    it('should properly build a video request when mediaTypes.video.skip=0', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          mediaTypes: {
+            video: {
+              playerSize: [ [300, 250] ],
+              mimes: ['video/mp4', 'video/MPV', 'video/H264', 'video/webm', 'video/ogg'],
+              minduration: 1,
+              maxduration: 30,
+              playbackmethod: [2, 3, 4, 5, 6],
+              api: [1, 2, 3, 4, 5, 6],
+              protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+              skip: 0
+            }
+          },
+          params: {
+            networkId: 123
+          }
+        }
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
+      expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].video.playersizes).to.deep.equal(['300x250']);
+      expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/MPV', 'video/H264', 'video/webm', 'video/ogg']);
+      expect(ortbRequest.slots[0].video.minduration).to.equal(1);
+      expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
+      expect(ortbRequest.slots[0].video.playbackmethod).to.deep.equal([2, 3, 4, 5, 6]);
+      expect(ortbRequest.slots[0].video.api).to.deep.equal([1, 2, 3, 4, 5, 6]);
+      expect(ortbRequest.slots[0].video.protocols).to.deep.equal([1, 2, 3, 4, 5, 6, 7, 8]);
+      expect(ortbRequest.slots[0].video.skip).to.equal(0);
+    });
+
     it('should properly build a request with ceh', function () {
       const bidRequests = [
         {
@@ -923,6 +961,7 @@ describe('The Criteo bidding adapter', function () {
             impid: 'test-requestId',
             cpm: 1.23,
             creative: 'test-ad',
+            creativecode: 'test-crId',
             width: 728,
             height: 90,
             dealCode: 'myDealCode',
@@ -944,6 +983,7 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].requestId).to.equal('test-bidId');
       expect(bids[0].cpm).to.equal(1.23);
       expect(bids[0].ad).to.equal('test-ad');
+      expect(bids[0].creativeId).to.equal('test-crId');
       expect(bids[0].width).to.equal(728);
       expect(bids[0].height).to.equal(90);
       expect(bids[0].dealId).to.equal('myDealCode');

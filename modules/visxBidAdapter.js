@@ -258,7 +258,7 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
             bidResponse.ext = serverBid.ext.prebid;
           }
 
-          if (!_isVideoBid(bid)) {
+          if (!_isVideoInstreamBid(bid)) {
             bidResponse.ad = serverBid.adm;
           } else {
             bidResponse.vastXml = serverBid.adm;
@@ -298,6 +298,10 @@ function _isVideoBid(bid) {
   return bid.mediaType === VIDEO || deepAccess(bid, 'mediaTypes.video');
 }
 
+function _isVideoInstreamBid(bid) {
+  return _isVideoBid(bid) && deepAccess(bid, 'mediaTypes.video', {}).context === VIDEO_INSTREAM;
+}
+
 function _isBannerBid(bid) {
   return bid.mediaType === BANNER || deepAccess(bid, 'mediaTypes.banner');
 }
@@ -305,7 +309,7 @@ function _isBannerBid(bid) {
 function _isValidVideoBid(bid, logErrors = false) {
   let result = true;
   const videoMediaType = deepAccess(bid, 'mediaTypes.video');
-  if (videoMediaType.context !== VIDEO_INSTREAM) {
+  if (!_isVideoInstreamBid(bid)) {
     if (logErrors) {
       logError(LOG_ERROR_MESS.onlyVideoInstream);
     }

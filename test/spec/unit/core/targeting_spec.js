@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { targeting as targetingInstance, filters, getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm } from 'src/targeting.js';
 import { config } from 'src/config.js';
-import { getAdUnits, createBidReceived } from 'test/fixtures/fixtures.js';
+import { createBidReceived } from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
@@ -278,6 +278,51 @@ describe('targeting tests', function () {
       amBidsReceivedStub.restore();
       amGetAdUnitsStub.restore();
       bidExpiryStub.restore();
+    });
+
+    describe('when handling different adunit targeting value types', function () {
+      const adUnitCode = '/123456/header-bid-tag-0';
+      const adServerTargeting = {};
+
+      let getAdUnitsStub;
+
+      before(function() {
+        getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(function() {
+          return [
+            {
+              'code': adUnitCode,
+              [CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]: adServerTargeting
+            }
+          ];
+        });
+      });
+
+      after(function() {
+        getAdUnitsStub.restore();
+      });
+
+      afterEach(function() {
+        delete adServerTargeting.test_type;
+      });
+
+      const pairs = [
+        ['string', '2.3', '2.3'],
+        ['number', 2.3, '2.3'],
+        ['boolean', true, 'true'],
+        ['string-separated', '2.3,4.5', '2.3, 4.5'],
+        ['array-of-string', ['2.3', '4.5'], '2.3, 4.5'],
+        ['array-of-number', [2.3, 4.5], '2.3, 4.5'],
+        ['array-of-boolean', [true, false], 'true, false']
+      ];
+      pairs.forEach(([type, value, result]) => {
+        it(`accepts ${type}`, function() {
+          adServerTargeting.test_type = value;
+
+          const targeting = targetingInstance.getAllTargeting([adUnitCode]);
+
+          expect(targeting[adUnitCode].test_type).is.equal(result);
+        });
+      });
     });
 
     describe('when hb_deal is present in bid.adserverTargeting', function () {

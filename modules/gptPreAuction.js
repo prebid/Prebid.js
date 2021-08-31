@@ -33,10 +33,20 @@ export const appendGptSlots = adUnits => {
       const context = adUnit.ortb2Imp.ext.data;
       context.adserver = context.adserver || {};
       context.adserver.name = 'gam';
-      context.adserver.adslot = slot.getAdUnitPath();
+      context.adserver.adslot = sanitizeSlotPath(slot.getAdUnitPath());
     }
   });
 };
+
+const sanitizeSlotPath = (path) => {
+  const gptConfig = config.getConfig('gptPreAuction') || {};
+
+  if (gptConfig.mcmEnabled) {
+    return path.replace(/(^\/\d*),\d*\//, '$1/');
+  }
+
+  return path;
+}
 
 export const appendPbAdSlot = adUnit => {
   adUnit.ortb2Imp = adUnit.ortb2Imp || {};

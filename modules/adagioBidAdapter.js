@@ -340,6 +340,16 @@ function isNewSession(adagioStorage) {
   )
 }
 
+function setPlayerName(bidRequest) {
+  const playerName = (internal.isRendererPreferredFromPublisher(bidRequest)) ? 'other' : 'adagio';
+
+  if (playerName === 'other') {
+    utils.logWarn(`${LOG_PREFIX} renderer.backupOnly has not been set. Adagio recommends to use its own player to get expected behavior.`);
+  }
+
+  return playerName;
+}
+
 export const internal = {
   enqueue,
   getPageviewId,
@@ -414,11 +424,7 @@ function _buildVideoBidRequest(bidRequest) {
   };
 
   if (videoParams.context && videoParams.context === OUTSTREAM) {
-    bidRequest.mediaTypes.video.playerName = (internal.isRendererPreferredFromPublisher(bidRequest)) ? 'other' : 'adagio';
-
-    if (bidRequest.mediaTypes.video.playerName === 'other') {
-      utils.logWarn(`${LOG_PREFIX} renderer.backupOnly has not been set. Adagio recommends to use its own player to get expected behavior.`);
-    }
+    bidRequest.mediaTypes.video.playerName = setPlayerName(bidRequest);
   }
 
   // Only whitelisted OpenRTB options need to be validated.
@@ -504,8 +510,8 @@ function _parseNativeBidResponse(bid) {
     if (bid.admNative.link.url) {
       native.clickUrl = bid.admNative.link.url;
     }
-    if (Array.isArray(bid.admNative.link.clickTrackers)) {
-      native.clickTrackers = bid.admNative.link.clickTrackers
+    if (Array.isArray(bid.admNative.link.clicktrackers)) {
+      native.clickTrackers = bid.admNative.link.clicktrackers
     }
   }
 
@@ -1071,6 +1077,8 @@ export const spec = {
     if (isOrtb) {
       autoFillParams(adagioBid);
 
+      adagioBid.params.auctionId = utils.deepAccess(adagioBidderRequest, 'auctionId');
+
       const globalFeatures = GlobalExchange.getOrSetGlobalFeatures();
       adagioBid.params.features = {
         ...globalFeatures,
@@ -1081,6 +1089,10 @@ export const spec = {
       adagioBid.params.pageviewId = internal.getPageviewId();
       adagioBid.params.prebidVersion = '$prebid.version$';
       adagioBid.params.data = GlobalExchange.getExchangeData();
+
+      if (utils.deepAccess(adagioBid, 'mediaTypes.video.context') === OUTSTREAM) {
+        adagioBid.params.playerName = setPlayerName(adagioBid);
+      }
 
       storeRequestInAdagioNS(adagioBid);
     }
