@@ -69,11 +69,9 @@ describe('PublinkIdSystem', () => {
       expect(result).to.exist;
       expect(result.callback).to.be.a('function');
     });
-    it('Use local id', () => {
+    it('Use local copy', () => {
       const result = publinkIdSubmodule.getId({}, undefined, TEST_COOKIE_VALUE);
-      expect(result).to.exist;
-      expect(result.id).to.equal(TEST_COOKIE_VALUE);
-      expect(result.callback).to.be.a('function');
+      expect(result).to.be.undefined;
     });
 
     describe('callout for id', () => {

@@ -67,9 +67,13 @@ function getlocalValue() {
     }
 
     if (typeof value === 'string') {
-      const obj = JSON.parse(value);
-      if (obj && obj.exp > Date.now()) {
-        return obj.publink;
+      try {
+        const obj = JSON.parse(value);
+        if (obj && obj.exp && obj.exp > Date.now()) {
+          return obj.publink;
+        }
+      } catch (e) {
+        utils.logError(e);
       }
     }
   }
@@ -101,21 +105,19 @@ export const publinkIdSubmodule = {
 
   /**
    * performs action to obtain id
+   * Use a publink cookie first if it is present, otherwise use prebids copy, if neither are available callout to get a new id
    * @function
    * @param {SubmoduleConfig} [config] Config object with params and storage properties
    * @returns {IdResponse}
    */
   getId: function(config, consentData, storedId) {
-    let result = {};
-    const storedValue = getlocalValue();
-    if (storedValue) {
-      result.id = storedValue;
+    const localValue = getlocalValue();
+    if (localValue) {
+      return {id: localValue};
     }
-    if (storedId) {
-      result.id = storedId;
+    if (!storedId) {
+      return {callback: makeCallback(config, consentData)};
     }
-    result.callback = makeCallback(config, consentData);
-    return result;
   }
 };
 submodule('userId', publinkIdSubmodule);
