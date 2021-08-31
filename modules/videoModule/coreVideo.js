@@ -1,17 +1,22 @@
-import { vendorDirectory } from './vendorDirectory';
+import { vendorDirectory } from './vendorDirectory.js';
 
 export function VideoCore(submoduleBuilder_) {
   const submodules = {};
   const submoduleBuilder = submoduleBuilder_;
 
   function registerProvider(providerConfig) {
+    const divId = providerConfig.divId;
+    if (submodules[divId]) {
+      return;
+    }
+
     let submodule;
     try {
       submodule = submoduleBuilder.build(providerConfig);
     } catch (e) {
       throw e;
     }
-    submodules[providerConfig.divId] = submodule;
+    submodules[divId] = submodule;
   }
 
   function getOrtbParams(divId) {
