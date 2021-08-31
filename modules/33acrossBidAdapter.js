@@ -631,8 +631,11 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
 
 // BUILD REQUESTS: DEVICE
 function _buildDeviceORTB() {
+  const win = utils.getWindowSelf();
+
   return setExtensions({
-    ...getScreenDimensions()
+    ...getScreenDimensions(),
+    pxratio: win.devicePixelRatio
   }, {
     ttx: {
       viewport: getViewportDimensions(),
