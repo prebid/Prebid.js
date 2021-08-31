@@ -641,7 +641,7 @@ function _buildDeviceORTB() {
   });
 }
 
-function getTopMostAccessibleFrame() {
+function getTopMostAccessibleWindow() {
   let mostAccessibleWindow = utils.getWindowSelf();
 
   try {
@@ -657,7 +657,7 @@ function getTopMostAccessibleFrame() {
 }
 
 function getViewportDimensions() {
-  const topWin = getTopMostAccessibleFrame();
+  const topWin = getTopMostAccessibleWindow();
   const documentElement = topWin.document.documentElement;
 
   return {
