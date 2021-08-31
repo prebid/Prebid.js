@@ -21,6 +21,7 @@ export const spec = {
 
     utils._each(validBidRequests, function(bid) {
       const postBody = {
+        'id': bid.auctionId,
         'ext': {
           'prebid': {
             'storedrequest': {

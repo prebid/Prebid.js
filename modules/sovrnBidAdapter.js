@@ -83,7 +83,7 @@ export const spec = {
         sovrnImps.push(imp)
       })
 
-      const fpd = config.getConfig('ortb2') || {}
+      const fpd = utils.deepClone(config.getConfig('ortb2'))
 
       const site = fpd.site || {}
       site.page = bidderRequest.refererInfo.referer
