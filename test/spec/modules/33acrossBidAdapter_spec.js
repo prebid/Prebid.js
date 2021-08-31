@@ -37,7 +37,8 @@ describe('33acrossBidAdapter:', function () {
             viewport: {
               h: 600,
               w: 800
-            }
+            },
+            availheight: 500
           }
         }
       },
@@ -336,7 +337,8 @@ describe('33acrossBidAdapter:', function () {
       parent: null,
       screen: {
         width: 1024,
-        height: 728
+        height: 728,
+        availHeight: 500
       },
       document: {
         visibilityState: 'visible',
