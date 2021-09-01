@@ -94,6 +94,13 @@ export const sharethroughAdapterSpec = {
 
       if (bidReq.mediaTypes && bidReq.mediaTypes.video) {
         const videoRequest = bidReq.mediaTypes.video;
+
+        // default playerSize, only change this if we know width and height are properly defined in the request
+        let [w, h] = [640, 360];
+        if (videoRequest.playerSize && videoRequest.playerSize[0] && videoRequest.playerSize[1]) {
+          [w, h] = videoRequest.playerSize;
+        }
+
         impression.video = {
           pos: nullish(videoRequest.pos, 0),
           topframe: utils.inIframe() ? 0 : 1,
@@ -105,8 +112,8 @@ export const sharethroughAdapterSpec = {
           api: getVideoApi(videoRequest),
           mimes: videoRequest.mimes || ['video/mp4'],
           protocols: getVideoProtocols(videoRequest),
-          w: videoRequest.playerSize[0] || 640,
-          h: videoRequest.playerSize[1] || 360,
+          w,
+          h,
           startdelay: nullish(videoRequest.startdelay, 0),
           skipmin: nullish(videoRequest.skipmin, 0),
           skipafter: nullish(videoRequest.skipafter, 0),

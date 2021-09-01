@@ -390,6 +390,7 @@ describe('sharethrough adapter spec', function() {
           delete bidRequests[1].mediaTypes.video.api;
           delete bidRequests[1].mediaTypes.video.mimes;
           delete bidRequests[1].mediaTypes.video.protocols;
+          delete bidRequests[1].mediaTypes.video.playerSize;
           delete bidRequests[1].mediaTypes.video.startdelay;
           delete bidRequests[1].mediaTypes.video.skipmin;
           delete bidRequests[1].mediaTypes.video.skipafter;
@@ -410,6 +411,8 @@ describe('sharethrough adapter spec', function() {
           expect(videoImp.api).to.deep.equal([2]);
           expect(videoImp.mimes).to.deep.equal(['video/mp4']);
           expect(videoImp.protocols).to.deep.equal([2, 3, 5, 6, 7, 8]);
+          expect(videoImp.w).to.equal(640);
+          expect(videoImp.h).to.equal(360);
           expect(videoImp.startdelay).to.equal(0);
           expect(videoImp.skipmin).to.equal(0);
           expect(videoImp.skipafter).to.equal(0);
