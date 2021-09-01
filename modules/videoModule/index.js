@@ -21,7 +21,6 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, onPbEvents_) {
 
     requestBids.before(enrichAdUnits, 40);
 
-    // bidsBackHandler -> setAdTagUrl
     onPbEvents(CONSTANTS.EVENTS.AUCTION_END, function(auctionResult) {
       // get ad tag from adServer - auctionResult.winningBids
       // coreVideo.setAdTagUrl(adTag, divId);
