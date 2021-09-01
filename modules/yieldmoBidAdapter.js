@@ -182,6 +182,7 @@ function hasVideoMediaType(bidRequest) {
  * @param request bid request
  */
 function addPlacement(request) {
+  const gpid = utils.deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
@@ -195,6 +196,9 @@ function addPlacement(request) {
     if (bidfloor) {
       placementInfo.bidFloor = bidfloor;
     }
+  }
+  if (gpid) {
+    placementInfo.gpid = gpid;
   }
   return JSON.stringify(placementInfo);
 }
@@ -315,12 +319,13 @@ function getId(request, idType) {
  * @return Object OpenRTB request object
  */
 function openRtbRequest(bidRequests, bidderRequest) {
+  const schain = bidRequests[0].schain;
   let openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
     at: 1,
     imp: bidRequests.map(bidRequest => openRtbImpression(bidRequest)),
     site: openRtbSite(bidRequests[0], bidderRequest),
-    device: openRtbDevice(),
+    device: openRtbDevice(bidRequests[0]),
     badv: bidRequests[0].params.badv || [],
     bcat: bidRequests[0].params.bcat || [],
     ext: {
@@ -328,6 +333,10 @@ function openRtbRequest(bidRequests, bidderRequest) {
     },
     ats_envelope: bidRequests[0].params.lr_env,
   };
+
+  if (schain) {
+    openRtbRequest.schain = schain;
+  }
 
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
 
@@ -339,6 +348,7 @@ function openRtbRequest(bidRequests, bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
+  const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   const size = extractPlayerSize(bidRequest);
   const imp = {
     id: bidRequest.bidId,
@@ -371,6 +381,9 @@ function openRtbImpression(bidRequest) {
   if (imp.video.placement !== 1) {
     imp.video.startdelay = DEFAULT_START_DELAY;
     imp.video.playbackmethod = [ DEFAULT_PLAYBACK_METHOD ];
+  }
+  if (gpid) {
+    imp.ext.gpid = gpid;
   }
   return imp;
 }
@@ -433,11 +446,16 @@ function openRtbSite(bidRequest, bidderRequest) {
 /**
  * @return Object OpenRTB's 'device' object
  */
-function openRtbDevice() {
-  return {
+function openRtbDevice(bidRequest) {
+  const ip = utils.deepAccess(bidRequest, 'params.device.ip');
+  const deviceObj = {
     ua: navigator.userAgent,
     language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
   };
+  if (ip) {
+    deviceObj.ip = ip;
+  }
+  return deviceObj;
 }
 
 /**
