@@ -9,7 +9,7 @@ import {
 } from '../constants/events.js';
 import stateFactory from '../shared/state.js';
 import { JWPLAYER_VENDOR } from '../constants/vendorCodes.js';
-import { vendorDirectory } from '../vendorDirectory';
+import { vendorDirectory } from '../vendorDirectory.js';
 
 export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils) {
   const jwplayer = jwplayer_;

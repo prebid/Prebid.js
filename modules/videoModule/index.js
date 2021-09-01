@@ -11,8 +11,8 @@ export function PbVideo(videoCore_, getConfig_, requestBids_, onPbEvents_) {
   const onPbEvents = onPbEvents_;
 
   function init() {
-    getConfig('video.providers', providers => {
-      providers.forEach(provider => {
+    getConfig('video', ({ video }) => {
+      video.providers.forEach(provider => {
         videoCore.registerProvider(provider);
       });
       // maybe video.providers to get changes on providers
@@ -22,7 +22,6 @@ export function PbVideo(videoCore_, getConfig_, requestBids_, onPbEvents_) {
 
     // before bids are requested , getOrtbParams and write to the ad units.
     requestBids.before(enrichAdUnits, 40);
-
 
     // bidsBackHandler -> setAdTagUrl
     onPbEvents(CONSTANTS.EVENTS.AUCTION_END, function(auctionResult) {
