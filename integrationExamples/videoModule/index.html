@@ -9,18 +9,33 @@
     <script>
       var adUnits = [{
         code: 'div-gpt-ad-51545-0',
-        sizes: [[300, 250], [600, 500]],
+        sizes: [[600, 500]],
         mediaTypes: {
-          banner: {
-            sizes: [[300, 250], [600, 500]]
+          video: {
+            sizes: [[600, 500]]
           }
         },
+        video: {
+          divId: 'vid-div-1',
+          adServer: {
+            vendorCode: "gam",
+            params: {
+              iu: '/19968336/prebid_cache_video_adunit',
+              cust_params: {
+                section: 'blog',
+                anotherKey: 'anotherValue'
+              },
+              output: 'vast'
+            }
+          },
+        },
+
         // Replace this object to test a new Adapter!
         bids: [{
           bidder: 'ix',
           params: {
             siteId: '300',
-            size: [300, 250]
+            size: [600, 500]
           }
         }]
       }];
@@ -80,7 +95,6 @@
         });
         pbjs.requestBids({
           bidsBackHandler: sendAdserverRequest,
-          timeout: PREBID_TIMEOUT
         });
       });
 
