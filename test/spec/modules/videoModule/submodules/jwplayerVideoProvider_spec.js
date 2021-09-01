@@ -4,7 +4,7 @@ import {
   timeStateFactory,
   callbackStorageFactory,
   utils
-} from 'modules/videoModule/submodules/jwplayerVideoProvider';
+} from 'modules/jwplayerVideoProvider';
 
 import {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE
