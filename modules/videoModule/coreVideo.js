@@ -63,7 +63,7 @@ export function VideoSubmoduleBuilder(vendorDirectory_) {
     }
 
     const submodule = submoduleFactory(providerConfig);
-    submodule.init && submodule.init();
+    submodule && submodule.init && submodule.init();
     return submodule;
   }
 
