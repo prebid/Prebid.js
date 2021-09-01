@@ -64,9 +64,11 @@
                         playerSize: [ 640, 480 ]
                     }
                 },
-                fpd: {
-                    context: {
-                        pbAdSlot: '/19968336/prebid_cache_video_adunit'
+                ortb2Imp: {
+                    ext: {
+                        data: {
+                            pbadslot: '/19968336/prebid_cache_video_adunit'
+                        }
                     }
                 },
                 bids: [
@@ -106,7 +108,8 @@
                 pbjs.initAdserverSet = true;
 
                 googletag.cmd.push(function() {
-                    pbjs.setTargetingForGPTAsync && pbjs.setTargetingForGPTAsync(adUnits);
+                    const adUnitCodes = adUnits.map(adUnit => adUnit.code);
+                    pbjs.setTargetingForGPTAsync(adUnitCodes);
                     googletag.pubads().refresh();
                 });
 
@@ -135,12 +138,24 @@
             }
 
             // optionally wrap with googletag to have gpt-pre-auction
-            // automatically populate Prebid Ad Slot (pbAdSlot)
+            // automatically populate Prebid Ad Slot (pbadslot)
             // https://docs.prebid.org/dev-docs/modules/gpt-pre-auction.html
-            // alternatively remove wrapping and set AdUnit.fpd.context.pbAdSlot
+            // alternatively remove wrapping and set AdUnit.ortb2Imp.ext.data.pbadslot
             googletag.cmd.push(function() {
                 pbjs.que.push(function() {
                     pbjs.setConfig({
+                        realTimeData: {
+                            auctionDelay: AUCTION_DELAY,
+                            dataProviders: [
+                                {
+                                    name: 'adloox',
+                                    params: {             // optional, defaults shown
+                                        thresholds: [ 50, 60, 70, 80, 90 ],
+                                        slotinpath: false
+                                    }
+                                }
+                            ]
+                        },
                         instreamTracking: {
                             enabled: true
                         },
