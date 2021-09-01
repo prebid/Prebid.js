@@ -329,25 +329,20 @@ export const spec = {
 }
 
 function createOutstreamConfig(bid) {
-  const confMinAdWidth = utils.getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
-  const confMaxAdWidth = utils.getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
-  const confStartOpen = utils.getBidIdParameter('startOpen', bid.renderer.config.outstream_options);
-  const confEndingScreen = utils.getBidIdParameter('endingScreen', bid.renderer.config.outstream_options);
-  const confTitle = utils.getBidIdParameter('title', bid.renderer.config.outstream_options);
-  const confSkipOffset = utils.getBidIdParameter('skipOffset', bid.renderer.config.outstream_options);
-  const confDesiredBitrate = utils.getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options);
-  const elementId = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options) || bid.adUnitCode;
+  let confMinAdWidth = utils.getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
+  let confMaxAdWidth = utils.getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
+  let confStartOpen = utils.getBidIdParameter('startOpen', bid.renderer.config.outstream_options)
+  let confEndingScreen = utils.getBidIdParameter('endingScreen', bid.renderer.config.outstream_options)
+  let confTitle = utils.getBidIdParameter('title', bid.renderer.config.outstream_options);
+  let confSkipOffset = utils.getBidIdParameter('skipOffset', bid.renderer.config.outstream_options);
+  let confDesiredBitrate = utils.getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options);
+  let elementId = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options) || bid.adUnitCode;
 
   utils.logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
 
   var smartPlayObj = {
     minAdWidth: confMinAdWidth,
     maxAdWidth: confMaxAdWidth,
-    title: confTitle,
-    skipOffset: confSkipOffset,
-    startOpen: confStartOpen,
-    endingScreen: confEndingScreen,
-    desiredBitrate: confDesiredBitrate,
     onStartCallback: function (m, n) {
       try {
         window.sc_smartIntxtStart(n);
@@ -365,13 +360,37 @@ function createOutstreamConfig(bid) {
     },
   };
 
+  if (confStartOpen == 'true') {
+    smartPlayObj.startOpen = true;
+  } else if (confStartOpen == 'false') {
+    smartPlayObj.startOpen = false;
+  }
+
+  if (confEndingScreen == 'true') {
+    smartPlayObj.endingScreen = true;
+  } else if (confEndingScreen == 'false') {
+    smartPlayObj.endingScreen = false;
+  }
+
+  if (confTitle) {
+    smartPlayObj.title = confTitle;
+  }
+
+  if (confSkipOffset) {
+    smartPlayObj.skipOffset = confSkipOffset;
+  }
+
+  if (confDesiredBitrate) {
+    smartPlayObj.desiredBitrate = confDesiredBitrate;
+  }
+
   smartPlayObj.adResponse = bid.vastContent;
 
   const divID = '[id="' + elementId + '"]';
 
   try {
     // eslint-disable-next-line
-      let _outstreamPlayer = new OutstreamPlayer(divID, smartPlayObj);
+    let _outstreamPlayer = new OutstreamPlayer(divID, smartPlayObj);
   } catch (e) {
     utils.logError('[SMARTX][renderer] Error caught: ' + e);
   }
