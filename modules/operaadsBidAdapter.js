@@ -189,8 +189,6 @@ export const spec = {
  * @returns {Request}
  */
 function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
-  const currencies = getCurrencies(bidRequest);
-
   const pageReferrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
 
   // build OpenRTB request body
@@ -198,7 +196,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
     id: bidderRequest.auctionId,
     tmax: bidderRequest.timeout || config.getConfig('bidderTimeout'),
     test: config.getConfig('debug') ? 1 : 0,
-    imp: createImp(bidRequest, currencies[0]),
+    imp: createImp(bidRequest),
     device: getDevice(),
     site: {
       id: String(utils.deepAccess(bidRequest, 'params.publisherId')),
@@ -208,7 +206,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
     },
     at: 1,
     bcat: getBcat(bidRequest),
-    cur: currencies,
+    cur: [DEFAULT_CURRENCY],
     regs: {
       coppa: config.getConfig('coppa') ? 1 : 0,
       ext: {}
@@ -456,22 +454,19 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
  * @param {Currency} cur
  * @returns {Imp[]}
  */
-function createImp(bidRequest, cur) {
+function createImp(bidRequest) {
   const imp = [];
-
-  const floor = getBidFloor(bidRequest, cur);
 
   const impItem = {
     id: bidRequest.bidId,
     tagid: String(utils.deepAccess(bidRequest, 'params.placementId')),
-    bidfloor: floor,
   };
 
-  let mediaType;
+  let mediaType, size;
   let bannerReq, videoReq, nativeReq;
 
   if ((bannerReq = utils.deepAccess(bidRequest, 'mediaTypes.banner'))) {
-    const size = canonicalizeSizesArray(bannerReq.sizes || BANNER_DEFAULTS.SIZE)[0];
+    size = canonicalizeSizesArray(bannerReq.sizes || BANNER_DEFAULTS.SIZE)[0];
 
     impItem.banner = {
       w: size[0],
@@ -481,7 +476,7 @@ function createImp(bidRequest, cur) {
 
     mediaType = BANNER;
   } else if ((videoReq = utils.deepAccess(bidRequest, 'mediaTypes.video'))) {
-    const size = canonicalizeSizesArray(videoReq.playerSize || VIDEO_DEFAULTS.SIZE)[0];
+    size = canonicalizeSizesArray(videoReq.playerSize || VIDEO_DEFAULTS.SIZE)[0];
 
     impItem.video = {
       w: size[0],
@@ -515,6 +510,14 @@ function createImp(bidRequest, cur) {
 
     mediaType = NATIVE;
   }
+
+  const floorDetail = getBidFloor(bidRequest, {
+    mediaType: mediaType || '*',
+    size: size || '*'
+  })
+
+  impItem.bidfloor = floorDetail.floor;
+  impItem.bidfloorcur = floorDetail.currency;
 
   if (mediaType) {
     imp.push(impItem);
@@ -678,47 +681,29 @@ function getDomain(referer) {
  * Get bid floor price
  *
  * @param {BidRequest} bid
- * @param {String} cur
- * @returns {Number} floor price
+ * @param {Params} params
+ * @returns {Floor} floor price
  */
-function getBidFloor(bid, cur) {
-  let floorInfo = {};
-
-  if (typeof bid.getFloor === 'function') {
-    floorInfo = bid.getFloor({
-      currency: cur,
-      mediaType: '*',
-      size: '*'
+function getBidFloor(bid, {mediaType = '*', size = '*'}) {
+  if (utils.isFn(bid.getFloor)) {
+    const floorInfo = bid.getFloor({
+      currency: DEFAULT_CURRENCY,
+      mediaType,
+      size
     });
-  }
 
-  return floorInfo.floor || 0.0;
-}
-
-/**
- * Get currencies from bid request
- *
- * @param {BidRequest} bidRequest
- * @returns {String[]} currencies
- */
-function getCurrencies(bidRequest) {
-  let currencies = [];
-
-  const pCur = utils.deepAccess(bidRequest, 'params.currency');
-  if (pCur) {
-    currencies = currencies.concat(pCur);
-  }
-
-  if (!currencies.length) {
-    let currency;
-    if ((currency = config.getConfig('currency')) && currency.adServerCurrency) {
-      currencies.push(currency.adServerCurrency);
-    } else {
-      currencies.push(DEFAULT_CURRENCY);
+    if (utils.isPlainObject(floorInfo) && !isNaN(floorInfo.floor)) {
+      return {
+        currency: floorInfo.currency || DEFAULT_CURRENCY,
+        floor: floorInfo.floor
+      };
     }
   }
 
-  return currencies;
+  return {
+    currency: DEFAULT_CURRENCY,
+    floor: 0.0
+  }
 }
 
 /**
