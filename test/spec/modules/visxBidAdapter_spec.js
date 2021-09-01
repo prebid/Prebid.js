@@ -44,7 +44,7 @@ describe('VisxAdapter', function () {
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
-          playerSize: [400, 300]
+          playerSize: [[400, 300]]
         }
       };
       expect(spec.isBidRequestValid(videoBid)).to.equal(false);
@@ -55,7 +55,7 @@ describe('VisxAdapter', function () {
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
-          playerSize: [400, 300],
+          playerSize: [[400, 300]],
           mimes: ['video/mp4'],
           protocols: [3, 6]
         }
@@ -87,7 +87,6 @@ describe('VisxAdapter', function () {
         {asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com'}
       ]
     };
-    const schainString = JSON.stringify(schainObject);
     let bidRequests = [
       {
         'bidder': 'visx',
@@ -131,7 +130,7 @@ describe('VisxAdapter', function () {
         'mediaTypes': {
           'video': {
             'context': 'instream',
-            'playerSize': [400, 300],
+            'playerSize': [[400, 300]],
             'mimes': ['video/mp4', 'video/mpeg'],
             'protocols': [3, 6],
             'minduration': 5,
@@ -160,7 +159,7 @@ describe('VisxAdapter', function () {
       'ext': {'bidder': {'uid': 903536}}
     },
     {
-      'id': '42dbe3a7168a6a',
+      'id': '39a4e3a7168a6a',
       'video': {
         'w': 400,
         'h': 300,
@@ -376,8 +375,7 @@ describe('VisxAdapter', function () {
         'source': {
           'ext': {
             'wrapperType': 'Prebid_js',
-            'wrapperVersion': '$prebid.version$',
-            'schain': schainObject
+            'wrapperVersion': '$prebid.version$'
           }
         },
         'site': {'page': referrer},
@@ -433,11 +431,11 @@ describe('VisxAdapter', function () {
         'mediaTypes': {
           'video': {
             'context': 'outstream',
-            'playerSize': [400, 300]
+            'playerSize': [[400, 300]]
           }
         },
         'bidId': '39aff3a7169a6a',
-        'bidderRequestId': '22edffe2733bf6',
+        'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a476',
       }
     ];
@@ -942,7 +940,7 @@ describe('VisxAdapter', function () {
           'mediaTypes': {
             'video': {
               'context': 'instream',
-              'playerSize': [400, 300],
+              'playerSize': [[400, 300]],
               'mimes': ['video/mp4'],
               'protocols': [3, 6]
             }
@@ -979,7 +977,7 @@ describe('VisxAdapter', function () {
 
     it('handles multiformat bid response with outstream+banner as banner', function () {
       const fullResponse = [
-        {'bid': [{'price': 0.5, 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -991,7 +989,7 @@ describe('VisxAdapter', function () {
           'mediaTypes': {
             'video': {
               'context': 'outstream',
-              'playerSize': [400, 300],
+              'playerSize': [[400, 300]],
               'mimes': ['video/mp4'],
               'protocols': [3, 6]
             }
