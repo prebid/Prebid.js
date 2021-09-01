@@ -1,15 +1,15 @@
 import {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE
-} from '../constants/ortb.js';
+} from './videoModule/constants/ortb.js';
 import {
   SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
   AD_TIME, AD_PAUSE, AD_CLICK, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END, PLAYLIST, PLAYBACK_REQUEST,
   AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
   RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST, PLAYBACK_MODE
-} from '../constants/events.js';
-import stateFactory from '../shared/state.js';
-import { JWPLAYER_VENDOR } from '../constants/vendorCodes.js';
-import { vendorDirectory } from '../vendorDirectory.js';
+} from './videoModule/constants/events.js';
+import stateFactory from './videoModule/shared/state.js';
+import { JWPLAYER_VENDOR } from './videoModule/constants/vendorCodes.js';
+import { vendorDirectory } from './videoModule/vendorDirectory.js';
 
 export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils) {
   const jwplayer = jwplayer_;
