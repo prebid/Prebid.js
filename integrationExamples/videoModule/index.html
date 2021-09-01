@@ -1,0 +1,102 @@
+<!--
+
+-->
+
+<html>
+
+<head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script>
+      var adUnits = [{
+        code: 'div-gpt-ad-51545-0',
+        sizes: [[300, 250], [600, 500]],
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [600, 500]]
+          }
+        },
+        // Replace this object to test a new Adapter!
+        bids: [{
+          bidder: 'ix',
+          params: {
+            siteId: '300',
+            size: [300, 250]
+          }
+        }]
+      }];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+    </script>
+    <script>
+      pbjs.que.push(function () {
+        pbjs.addAdUnits(adUnits);
+        pbjs.setConfig({
+          video: {
+            providers: [{
+              divId: 'vid-div-1',
+              vendorCode: 1,
+              playerConfig: {
+                licenseKey: "INSERT LICENSE KEY HERE",
+                params: {
+                  vendorConfig: {
+                    "file": "http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4",
+                    mediaid: 'd9J2zcaA',
+                    "advertising": {
+                      "adscheduleid": "00000000",
+                      client: 'vast',
+                      "offset": "10",
+                      "tag": [
+                        "http://playertest.longtailvideo.com/pre-bad.xml",
+                        "http://playertest.longtailvideo.com/mid.xml"
+                      ],
+                    }
+                  }
+                }
+              }
+            }, {
+              divId: 'vid-div-2',
+              vendorCode: 1,
+              playerConfig: {
+                licenseKey: "INSERT LICENSE KEY HERE",
+                params: {
+                  vendorConfig: {
+                    "file": "http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4",
+                    mediaid: 'd9J2zcaA',
+                    "advertising": {
+                      "adscheduleid": "00000000",
+                      client: 'vast',
+                      "offset": "10",
+                      "tag": [
+                        "http://playertest.longtailvideo.com/pre-bad.xml",
+                        "http://playertest.longtailvideo.com/mid.xml"
+                      ],
+                    }
+                  }
+                }
+              }
+            }]
+          }
+        });
+        pbjs.requestBids({
+          bidsBackHandler: sendAdserverRequest,
+          timeout: PREBID_TIMEOUT
+        });
+      });
+
+      function sendAdserverRequest() {
+
+      }
+    </script>
+</head>
+
+<body>
+    <h2>Prebid.js Test</h2>
+    <h5>Div-1</h5>
+    <div id='vid-div-1'></div>
+    <h5>Div-2</h5>
+    <div id='vid-div-2'></div>
+</body>
+
+</html>
+
