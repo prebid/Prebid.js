@@ -1,0 +1,22 @@
+[
+  "adlooxAnalyticsAdapter",
+  "adlooxRtdProvider",
+  "currency",
+  "consentManagement",
+  "rtdModule",
+  "schain",
+  "adagioBidAdapter",
+  "adotBidAdapter",
+  "appnexusBidAdapter",
+  "digitekaBidAdapter",
+  "freewheel-sspBidAdapter",
+  "invibesBidAdapter",
+  "ixBidAdapter",
+  "mediasquareBidAdapter",
+  "proxistoreBidAdapter",
+  "rubiconBidAdapter",
+  "smartadserverBidAdapter",
+  "smilewantedBidAdapter",
+  "teadsBidAdapter",
+  "tripleliftBidAdapter"
+]
