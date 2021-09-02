@@ -49,7 +49,6 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   // Set eids
   let bidUserId = utils.deepAccess(validBidRequests, '0.userId');
   let eids = createEidsArray(bidUserId);
-  // eslint-disable-next-line no-console
   if (eids.length) {
     utils.deepSetValue(request, 'user.ext.eids', eids);
   }
