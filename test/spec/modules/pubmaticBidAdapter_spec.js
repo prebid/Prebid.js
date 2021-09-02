@@ -1565,6 +1565,69 @@ describe('PubMatic adapter', function () {
         expect(data2.regs).to.equal(undefined);// USP/CCPAs
       });
 
+      it('Request params check with JW player params', function() {
+        let bidRequests = [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              dctr: 'key1=val1|key2=val2,val3'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+            rtd: {
+              jwplayer: {
+                targeting: {
+                  content: { id: 'jw_d9J2zcaA' },
+                  segments: ['80011026', '80011035']
+                }
+              }
+            }
+          }];
+        let key_val_output = 'key1=val1|key2=val2,val3|jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1'
+        let request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].ext).to.exist.and.to.be.an('object');
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(key_val_output);
+
+        // jw player data not available. Only dctr sent.
+        delete bidRequests[0].rtd;
+        request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        data = JSON.parse(request.data);
+
+        expect(data.imp[0].ext).to.exist.and.to.be.an('object'); // dctr parameter
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+
+        // jw player data is available, but dctr is not present
+        bidRequests[0].rtd = {
+          jwplayer: {
+            targeting: {
+              content: { id: 'jw_d9J2zcaA' },
+              segments: ['80011026', '80011035']
+            }
+          }
+        };
+
+        delete bidRequests[0].params.dctr;
+        key_val_output = 'jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1';
+        request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        data = JSON.parse(request.data);
+
+        expect(data.imp[0].ext).to.exist.and.to.be.an('object');
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(key_val_output);
+      });
+
       describe('FPD', function() {
         let newRequest;
 
