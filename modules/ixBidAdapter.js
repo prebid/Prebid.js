@@ -4,6 +4,7 @@ import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -1030,7 +1031,7 @@ export const spec = {
           break;
       }
 
-      if (adUnitMediaTypes.includes(BANNER) && adUnitMediaTypes.includes(VIDEO)) {
+      if (includes(adUnitMediaTypes, BANNER) && includes(adUnitMediaTypes, VIDEO)) {
         multiFormatAdUnits[validBidRequest.transactionId] = validBidRequest;
       }
     });
