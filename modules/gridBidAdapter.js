@@ -9,7 +9,6 @@ const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
 const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
-const USER_ID_COOKIE_EXP = 60 * 60 * 24 * 30 * 12 * 1000; // 1 year
 const USER_ID_KEY = 'tmguid';
 const GVLID = 686;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
@@ -187,7 +186,7 @@ export const spec = {
       user.ext = userExt;
     }
 
-    const fpdUserId = getUserIdFromFPDCookie();
+    const fpdUserId = getUserIdFromFPDStorage();
 
     if (fpdUserId) {
       user = user || {};
@@ -437,19 +436,18 @@ function createBannerRequest(bid, mediaType) {
   return result;
 }
 
-function makeNewUserIdInFPDCookie() {
-  if (config.getConfig('cookieSettingAllowed')) {
+function makeNewUserIdInFPDStorage() {
+  if (config.getConfig('localStorageWriteAllowed')) {
     const value = utils.generateUUID().replace(/-/g, '');
-    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toISOString();
 
-    storage.setCookie(USER_ID_KEY, value, expires);
+    storage.setDataInLocalStorage(USER_ID_KEY, value);
     return value;
   }
   return null;
 }
 
-function getUserIdFromFPDCookie() {
-  return storage.getCookie(USER_ID_KEY) || makeNewUserIdInFPDCookie();
+function getUserIdFromFPDStorage() {
+  return storage.getDataFromLocalStorage(USER_ID_KEY) || makeNewUserIdInFPDStorage();
 }
 
 function reformatKeywords(pageKeywords) {
