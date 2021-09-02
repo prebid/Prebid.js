@@ -55,7 +55,7 @@ export const netIdSubmodule = {
     if (!hasRequiredConfig(config)) {
       return undefined;
     }
-    if (config && config.hasOwnProperty("value") && config.value.hasOwnProperty("netId")) {
+    if (config && config.hasOwnProperty('value') && config.value.hasOwnProperty('netId')) {
       utils.logInfo(LOG_PREFIX + 'id already in config', config.value);
       return { id: config.value };
     }
@@ -73,7 +73,7 @@ export const netIdSubmodule = {
             try {
               responseRaw = JSON.parse(response);
               utils.logInfo(LOG_PREFIX + 'response received from the server', responseRaw);
-              if(responseRaw.hasOwnProperty("tpid") && responseRaw.hasOwnProperty("status_code") && responseRaw.status_code == "OK"){
+              if (responseRaw.hasOwnProperty('tpid') && responseRaw.hasOwnProperty('status_code') && responseRaw.status_code == 'OK') {
                 responseObj = { 'netId': responseRaw.tpid };
                 utils.logInfo(LOG_PREFIX + 'used tpid', responseObj);
               }
@@ -84,8 +84,10 @@ export const netIdSubmodule = {
           callback(responseObj);
         },
         error: error => {
+          let responseObj;
           utils.logError(LOG_PREFIX + 'getId fetch encountered an error', error);
-          callback({ 'netId': null });
+          responseObj = { 'netId': null };
+          callback(responseObj);
         }
       };
       utils.logInfo(LOG_PREFIX + 'requesting an ID from the server');
@@ -107,7 +109,7 @@ function hasRequiredConfig(config) {
 
   return true;
 };
-function checkAbTestingConfig(config,userId) {
+function checkAbTestingConfig(config, userId) {
   if (config && config.params && config.params.abTesting && config.params.abTesting.enabled && config.params.abTesting.controlGroupPct) {
     if (!utils.isNumber(config.params.abTesting.controlGroupPct) || config.params.abTesting.controlGroupPct < 0 || config.params.abTesting.controlGroupPct > 1) {
       utils.logError(LOG_PREFIX + 'A/B Testing controlGroupPct must be a number >= 0 and <= 1! Skipping A/B Testing');
