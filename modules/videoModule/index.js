@@ -1,8 +1,8 @@
-import {config} from '../../src/config.js';
+// import {config} from '../../src/config.js';
 import events from '../../src/events.js';
 import { allVideoEvents } from './constants/events.js';
 import CONSTANTS from '../../src/constants.json';
-import { videoCoreFactory } from './coreVideo.js';
+// import { videoCoreFactory } from './coreVideo.js';
 
 events.addEvents(allVideoEvents);
 
@@ -41,17 +41,17 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
       adUnit.mediaTypes.video = Object.assign({}, adUnit.mediaTypes.video, oRtbParams);
     });
-    return nextFn.call(this, config);
+    return nextFn.call(this, bidRequest);
   }
 
   return { init };
 }
 
-function pbVideoFactory() {
-  const videoCore = videoCoreFactory();
-  const pbVideo = PbVideo(videoCore, config.getConfig, $$PREBID_GLOBAL$$, events, allVideoEvents);
-  pbVideo.init();
-  return pbVideo;
-}
-
-pbVideoFactory();
+// function pbVideoFactory() {
+//   const videoCore = videoCoreFactory();
+//   const pbVideo = PbVideo(videoCore, config.getConfig, $$PREBID_GLOBAL$$, events, allVideoEvents);
+//   pbVideo.init();
+//   return pbVideo;
+// }
+//
+// pbVideoFactory();

@@ -45,6 +45,9 @@
     </script>
     <script>
       pbjs.que.push(function () {
+        pbjs.onEvent('adImpression', event => {
+          console.log('adImpression: ', event);
+        });
         pbjs.addAdUnits(adUnits);
         pbjs.setConfig({
           video: {
@@ -93,14 +96,8 @@
             }]
           }
         });
-        pbjs.requestBids({
-          bidsBackHandler: sendAdserverRequest,
-        });
+        pbjs.requestBids();
       });
-
-      function sendAdserverRequest() {
-
-      }
     </script>
 </head>
 
