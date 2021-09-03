@@ -141,7 +141,7 @@ function getSizes(bid) {
     return bid.mediaTypes.video.sizes[0];
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     return bid.sizes[0];
-
+  }
   return [];
 }
 
