@@ -20,7 +20,7 @@ import {
   IS_DEV, mediaTypeByPlaceType
 } from 'modules/afpBidAdapter.js'
 
-const placeId = '60e7039918047b3fae304850'
+const placeId = '613221112871613d1517d181'
 const bidId = '2a67c5577ff6a5'
 const transactionId = '7e8515a2-2ed9-4733-b976-6c2596a03287'
 const imageUrl = 'https://rtbinsight.ru/content/images/size/w1000/2021/05/ximage-30.png.pagespeed.ic.IfuX4zAEPP.png'

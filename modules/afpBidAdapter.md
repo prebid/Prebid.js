@@ -26,7 +26,7 @@ var adUnits = [{
     bidder: "afp",
     params: {
       placeType: "In-image", // or "In-image Max"
-      placeId: "60e7039918047b3fae304850",
+      placeId: "613221112871613d1517d181",
       placeContainer: '#iib-container',
       imageUrl: "https://rtbinsight.ru/content/images/size/w1000/2021/05/ximage-30.png.pagespeed.ic.IfuX4zAEPP.png",
       imageWidth: 1000,
@@ -46,7 +46,7 @@ var adUnits = [{
     bidder: "afp",
     params: {
       placeType: "In-content Banner", // or "In-content Stories" or "Action Scroller" or "Action Scroller Light"
-      placeId: "60e7039918047b3fae304850",
+      placeId: "{{id from personal account}}",
       placeContainer: '#iib-container',
     }
   }]
@@ -63,7 +63,7 @@ var adUnits = [{
     bidder: "afp",
     params: {
       placeType: "In-content Video", // or "Out-content Video"
-      placeId: "60e7039918047b3fae304850",
+      placeId: "{{id from personal account}}",
       placeContainer: '#iib-container',
     }
   }]
@@ -91,7 +91,7 @@ var adUnits = [{
 				bidder: "afp",
 				params: {
 					placeType: "In-image",
-					placeId: "60e7039918047b3fae304850",
+					placeId: "613221112871613d1517d181",
 					placeContainer: '#iib-container',
 					imageUrl: "https://rtbinsight.ru/content/images/size/w1000/2021/05/ximage-30.png.pagespeed.ic.IfuX4zAEPP.png",
 					imageWidth: 1000,
@@ -154,7 +154,7 @@ var adUnits = [{
 				bidder: "afp",
 				params: {
 					placeType: "In-image",
-					placeId: "60e7039918047b3fae304850",
+					placeId: "613221112871613d1517d181",
 					placeContainer: '#iib-container',
 					imageUrl: "https://rtbinsight.ru/content/images/size/w1000/2021/05/ximage-30.png.pagespeed.ic.IfuX4zAEPP.png",
 					imageWidth: 600,
