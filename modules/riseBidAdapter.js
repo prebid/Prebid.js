@@ -137,22 +137,12 @@ function buildVideoRequest(bid, bidderRequest) {
  * @returns {Array}
  */
 function getSizes(bid) {
-  let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-  let width;
-  let height;
+  if (utils.deepAccess(bid, 'mediaTypes.video.sizes')) {
+    return bid.mediaTypes.video.sizes[0];
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+    return bid.sizes[0];
 
-  if (utils.isArray(bid.sizes) && bid.sizes.length === 2 && !utils.isArray(bid.sizes[0])) {
-    width = parseInt(bid.sizes[0], 10);
-    height = parseInt(bid.sizes[1], 10);
-  } else if (utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0]) && bid.sizes[0].length === 2) {
-    width = parseInt(bid.sizes[0][0], 10);
-    height = parseInt(bid.sizes[0][1], 10);
-  } else if (utils.isArray(playerSize) && playerSize.length === 1) {
-    width = parseInt(playerSize[0][0], 10);
-    height = parseInt(playerSize[0][1], 10);
-  }
-
-  return [width, height];
+  return [];
 }
 
 /**
