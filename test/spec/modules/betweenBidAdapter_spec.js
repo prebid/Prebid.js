@@ -79,6 +79,15 @@ describe('betweenBidAdapterTests', function () {
   });
 
   it('validate eids parameter', function() {
+    const USER_ID_DATA = [
+      {
+        source: 'admixer.net',
+        uids: [
+          { id: '5706411dc1c54268ac2ed668b27f92a3', atype: 3 }
+        ]
+      }
+    ];
+
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -88,20 +97,13 @@ describe('betweenBidAdapterTests', function () {
         s: 1112,
       },
       sizes: [[240, 400]],
-      userIdAsEids: [
-        {
-          source: 'admixer.net',
-          uids: [
-            { id: '5706411dc1c54268ac2ed668b27f92a3', atype: 3 }
-          ]
-        }
-      ]
+      userIdAsEids: USER_ID_DATA,
     }];
 
     let request = spec.buildRequests(bidRequestData);
     let req_data = JSON.parse(request.data)[0].data;
 
-    expect(req_data.eids).to.equal('W3siaSI6IjU3MDY0MTFkYzFjNTQyNjhhYzJlZDY2OGIyN2Y5MmEzIiwiYSI6MywicyI6ImFkbWl4ZXIubmV0In1d');
+    expect(req_data.eids).to.have.deep.members(USER_ID_DATA);
   });
 
   it('validate eids parameter, if userIdAsEids = undefined', function() {
@@ -120,7 +122,7 @@ describe('betweenBidAdapterTests', function () {
     let request = spec.buildRequests(bidRequestData);
     let req_data = JSON.parse(request.data)[0].data;
 
-    expect(req_data.eids).to.equal('');
+    expect(req_data.eids).to.have.deep.members([]);
   });
 
   it('validate click3rd param', function() {

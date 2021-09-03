@@ -149,13 +149,8 @@ export const spec = {
   }
 }
 
-function getUsersIds({ userIdAsEids = [] }) {
-  return userIdAsEids.length !== 0 ? btoa(JSON.stringify(
-    userIdAsEids.map(({ source, uids }) => {
-      const { id, atype } = uids[0];
-      return { i: id, a: atype, s: source };
-    })
-  )) : '';
+function getUsersIds({ userIdAsEids }) {
+  return (userIdAsEids && userIdAsEids.length !== 0) ? userIdAsEids : [];
 }
 
 function getRr() {
