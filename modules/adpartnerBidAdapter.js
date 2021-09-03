@@ -86,7 +86,7 @@ export const spec = {
   },
 
   adResponse: function(bid, ad) {
-    return {
+    const bidObject = {
       requestId: bid.bidId,
       ad: ad.ad,
       cpm: ad.cpm,
@@ -97,7 +97,14 @@ export const spec = {
       netRevenue: ad.netRevenue,
       currency: ad.currency,
       winNotification: ad.winNotification
-    };
+    }
+
+    bidObject.meta = {};
+    if (ad.adomain && ad.adomain.length > 0) {
+      bidObject.meta.advertiserDomains = ad.adomain;
+    }
+
+    return bidObject;
   },
 
   onBidWon: function(data) {

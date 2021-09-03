@@ -133,6 +133,7 @@ export const spec = {
 }
 
 function newBid(bid, currency) {
+  const { adomain } = bid;
   return {
     requestId: bid.impid,
     mediaType: BANNER,
@@ -144,6 +145,9 @@ function newBid(bid, currency) {
     ttl: 300,
     netRevenue: true,
     currency: currency,
+    meta: {
+      ...(adomain && adomain.length > 0 ? { advertiserDomains: adomain } : {})
+    }
   };
 }
 

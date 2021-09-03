@@ -14,6 +14,13 @@ const bidRequests = [
     params: {
       pkey: 'aaaa1111'
     },
+    ortb2Imp: {
+      ext: {
+        data: {
+          pbadslot: 'adslot-id-1'
+        }
+      }
+    },
     userId: {
       tdid: 'fake-tdid',
       pubcid: 'fake-pubcid',
@@ -23,10 +30,6 @@ const bidRequests = [
         ext: {
           linkType: 2
         }
-      },
-      sharedid: {
-        id: 'fake-sharedid',
-        third: 'fake-sharedthird'
       },
       lipb: {
         lipbid: 'fake-lipbid'
@@ -375,12 +378,6 @@ describe('sharethrough adapter spec', function() {
       expect(bidRequest.data.id5uid.linkType).to.eq(2);
     });
 
-    it('should add the shduid parameter if a bid request contains a value for Shared ID', function() {
-      const bidRequest = spec.buildRequests(bidRequests)[0];
-      expect(bidRequest.data.shduid.id).to.eq('fake-sharedid');
-      expect(bidRequest.data.shduid.third).to.eq('fake-sharedthird');
-    });
-
     it('should add the liuid parameter if a bid request contains a value for LiveIntent ID', function() {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       expect(bidRequest.data.liuid).to.eq('fake-lipbid');
@@ -417,6 +414,18 @@ describe('sharethrough adapter spec', function() {
       expect(builtBidRequest.data.schain).to.eq(JSON.stringify(bidRequest.schain));
     });
 
+    describe('gpid', () => {
+      it('should include the gpid param if pbadslot is found in ortb2Imp in the bid request', () => {
+        const bidRequest = spec.buildRequests(bidRequests)[0];
+        expect(bidRequest.data.gpid).to.eq('adslot-id-1')
+      });
+
+      it('should not include the gpid param if pbadslot is not found in ortb2Imp in the bid request', () => {
+        const bidRequest = spec.buildRequests(bidRequests)[1];
+        expect(bidRequest.data).to.not.include.any.keys('gpid');
+      });
+    });
+
     it('should add badv if provided', () => {
       const builtBidRequest = spec.buildRequests([bidRequests[3]])[0];
 
@@ -436,7 +445,7 @@ describe('sharethrough adapter spec', function() {
 
     it('should include the bidfloor parameter if it is present in the bid request', function() {
       const bidRequest = Object.assign({}, bidRequests[0]);
-      bidRequest['bidfloor'] = 0.50;
+      bidRequest['getFloor'] = () => ({ currency: 'USD', floor: 0.5 });
       const builtBidRequest = spec.buildRequests([bidRequest])[0];
       expect(builtBidRequest.data.bidfloor).to.eq(0.5);
     });

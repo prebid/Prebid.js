@@ -328,6 +328,7 @@ describe('InSkin BidAdapter', function () {
         expect(b).to.have.property('currency', 'USD');
         expect(b).to.have.property('creativeId');
         expect(b).to.have.property('ttl', 360);
+        expect(b.meta).to.have.property('advertiserDomains');
         expect(b).to.have.property('netRevenue', true);
       });
     });

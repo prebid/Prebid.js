@@ -4,11 +4,11 @@ import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
-import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
+import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 91;
-export const ADAPTER_VERSION = 33;
+export const ADAPTER_VERSION = 34;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
@@ -16,9 +16,18 @@ export const PROFILE_ID_PUBLISHERTAG = 185;
 const storage = getStorageManager(GVLID);
 const LOG_PREFIX = 'Criteo: ';
 
-// Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
-const PUBLISHER_TAG_URL = 'https://static.criteo.net/js/ld/publishertag.prebid.js';
+/*
+  If you don't want to use the FastBid adapter feature, you can lighten criteoBidAdapter size by :
+  1. commenting the tryGetCriteoFastBid function inner content (see ref#1)
+  2. removing the line 'verify' function import line (see ref#2)
 
+  Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
+*/
+const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
+export const FAST_BID_VERSION_CURRENT = 105;
+const FAST_BID_VERSION_LATEST = 'latest';
+const FAST_BID_VERSION_NONE = 'none';
+const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
 const FAST_BID_PUBKEY_E = 65537;
 const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
 
@@ -65,15 +74,18 @@ export const spec = {
     });
 
     // If publisher tag not already loaded try to get it from fast bid
-    if (!publisherTagAvailable()) {
+    const fastBidVersion = config.getConfig('criteo.fastBidVersion');
+    const canLoadPublisherTag = canFastBid(fastBidVersion);
+    if (!publisherTagAvailable() && canLoadPublisherTag) {
       window.Criteo = window.Criteo || {};
       window.Criteo.usePrebidEvents = false;
 
       tryGetCriteoFastBid();
 
+      const fastBidUrl = getFastBidUrl(fastBidVersion);
       // Reload the PublisherTag after the timeout to ensure FastBid is up-to-date and tracking done properly
       setTimeout(() => {
-        loadExternalScript(PUBLISHER_TAG_URL, BIDDER_CODE);
+        loadExternalScript(fastBidUrl, BIDDER_CODE);
       }, bidderRequest.timeout);
     }
 
@@ -122,11 +134,14 @@ export const spec = {
           currency: slot.currency,
           netRevenue: true,
           ttl: slot.ttl || 60,
-          creativeId: bidId,
+          creativeId: slot.creativecode,
           width: slot.width,
           height: slot.height,
           dealId: slot.dealCode,
         };
+        if (slot.adomain) {
+          bid.meta = Object.assign({}, bid.meta, { advertiserDomains: slot.adomain });
+        }
         if (slot.native) {
           if (bidRequest.params.nativeCallback) {
             bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
@@ -305,14 +320,21 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           mimes: bidRequest.mediaTypes.video.mimes,
           protocols: bidRequest.mediaTypes.video.protocols,
           maxduration: bidRequest.mediaTypes.video.maxduration,
-          api: bidRequest.mediaTypes.video.api
+          api: bidRequest.mediaTypes.video.api,
+          skip: bidRequest.mediaTypes.video.skip,
+          placement: bidRequest.mediaTypes.video.placement,
+          minduration: bidRequest.mediaTypes.video.minduration,
+          playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
+          startdelay: bidRequest.mediaTypes.video.startdelay
         };
-
-        video.skip = bidRequest.params.video.skip;
-        video.placement = bidRequest.params.video.placement;
-        video.minduration = bidRequest.params.video.minduration;
-        video.playbackmethod = bidRequest.params.video.playbackmethod;
-        video.startdelay = bidRequest.params.video.startdelay;
+        const paramsVideo = bidRequest.params.video;
+        if (paramsVideo !== undefined) {
+          video.skip = video.skip || paramsVideo.skip || 0;
+          video.placement = video.placement || paramsVideo.placement;
+          video.minduration = video.minduration || paramsVideo.minduration;
+          video.playbackmethod = video.playbackmethod || paramsVideo.playbackmethod;
+          video.startdelay = video.startdelay || paramsVideo.startdelay || 0;
+        }
 
         slot.video = video;
       }
@@ -367,38 +389,27 @@ function parseNativeSize(size) {
 }
 
 function hasVideoMediaType(bidRequest) {
-  if (utils.deepAccess(bidRequest, 'params.video') === undefined) {
-    return false;
-  }
   return utils.deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
 }
 
 function hasValidVideoMediaType(bidRequest) {
   let isValid = true;
 
-  var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api'];
+  var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
 
   requiredMediaTypesParams.forEach(function(param) {
-    if (utils.deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined) {
+    if (utils.deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && utils.deepAccess(bidRequest, 'params.video.' + param) === undefined) {
       isValid = false;
       utils.logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
     }
   });
 
-  var requiredParams = ['skip', 'placement', 'playbackmethod'];
-
-  requiredParams.forEach(function(param) {
-    if (utils.deepAccess(bidRequest, 'params.video.' + param) === undefined) {
-      isValid = false;
-      utils.logError('Criteo Bid Adapter: params.video.' + param + ' is required');
-    }
-  });
-
   if (isValid) {
+    const videoPlacement = bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement;
     // We do not support long form for now, also we have to check that context & placement are consistent
-    if (bidRequest.mediaTypes.video.context == 'instream' && bidRequest.params.video.placement === 1) {
+    if (bidRequest.mediaTypes.video.context == 'instream' && videoPlacement === 1) {
       return true;
-    } else if (bidRequest.mediaTypes.video.context == 'outstream' && bidRequest.params.video.placement !== 1) {
+    } else if (bidRequest.mediaTypes.video.context == 'outstream' && videoPlacement !== 1) {
       return true;
     }
   }
@@ -454,7 +465,29 @@ for (var i = 0; i < 10; ++i) {
 </script>`;
 }
 
+export function canFastBid(fastBidVersion) {
+  return fastBidVersion !== FAST_BID_VERSION_NONE;
+}
+
+export function getFastBidUrl(fastBidVersion) {
+  let version;
+  if (fastBidVersion === FAST_BID_VERSION_LATEST) {
+    version = '';
+  } else if (fastBidVersion) {
+    let majorVersion = String(fastBidVersion).split('.')[0];
+    if (majorVersion < 102) {
+      utils.logWarn('Specifying a Fastbid version which is not supporting version selection.')
+    }
+    version = '.' + fastBidVersion;
+  } else {
+    version = '.' + FAST_BID_VERSION_CURRENT;
+  }
+
+  return PUBLISHER_TAG_URL_TEMPLATE.replace(FAST_BID_VERSION_PLACEHOLDER, version);
+}
+
 export function tryGetCriteoFastBid() {
+  // begin ref#1
   try {
     const fastBidStorageKey = 'criteo_fast_bid';
     const hashPrefix = '// Hash: ';
@@ -485,6 +518,7 @@ export function tryGetCriteoFastBid() {
   } catch (e) {
     // Unable to get fast bid
   }
+  // end ref#1
 }
 
 registerBidder(spec);

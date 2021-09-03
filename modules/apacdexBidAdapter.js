@@ -29,7 +29,7 @@ export const spec = {
     if (!bid.params) {
       return false;
     }
-    if (!bid.params.siteId) {
+    if (!bid.params.siteId && !bid.params.placementId) {
       return false;
     }
     if (!utils.deepAccess(bid, 'mediaTypes.banner') && !utils.deepAccess(bid, 'mediaTypes.video')) {
@@ -50,7 +50,6 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let siteId;
     let schain;
     let eids;
     let geo;
@@ -62,8 +61,6 @@ export const spec = {
     test = config.getConfig('debug');
 
     validBidRequests.forEach(bidReq => {
-      siteId = siteId || bidReq.params.siteId;
-
       if (bidReq.schain) {
         schain = schain || bidReq.schain
       }
@@ -119,7 +116,6 @@ export const spec = {
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};
-    payload.site.id = siteId;
     payload.site.page = pageUrl
     payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
     payload.site.hostname = getDomain(pageUrl);
@@ -153,7 +149,16 @@ export const spec = {
       payload.geo = geo;
     }
 
-    payload.bids = bids;
+    payload.bids = bids.map(function (bid) {
+      return {
+        params: bid.params,
+        mediaTypes: bid.mediaTypes,
+        transactionId: bid.transactionId,
+        sizes: bid.sizes,
+        bidId: bid.bidId,
+        bidFloor: bid.bidFloor
+      }
+    });
 
     return {
       method: 'POST',

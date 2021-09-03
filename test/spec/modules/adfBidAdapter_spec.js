@@ -1,18 +1,21 @@
 // jshint esversion: 6, es3: false, node: true
-import {assert, expect} from 'chai';
-import {spec} from 'modules/adfBidAdapter.js';
-import { NATIVE } from 'src/mediaTypes.js';
+import { assert } from 'chai';
+import { spec } from 'modules/adfBidAdapter.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Adf adapter', function () {
-  let serverResponse, bidRequest, bidResponses;
   let bids = [];
 
   describe('backwards-compatibility', function () {
     it('should have adformOpenRTB alias defined', function () {
       assert.equal(spec.aliases[0].code, 'adformOpenRTB');
       assert.equal(spec.aliases[0].gvlid, 50);
+    });
+
+    it('should have adform alias defined', function () {
+      assert.equal(spec.aliases[1].code, 'adform');
+      assert.equal(spec.aliases[1].gvlid, 50);
     });
   });
 
@@ -240,6 +243,27 @@ describe('Adf adapter', function () {
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
 
       assert.deepEqual(request.cur, [ 'EUR' ]);
+    });
+
+    it('should pass supply chain object', function () {
+      let validBidRequests = [{
+        bidId: 'bidId',
+        params: {},
+        schain: {
+          validation: 'strict',
+          config: {
+            ver: '1.0'
+          }
+        }
+      }];
+
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      assert.deepEqual(request.source.ext.schain, {
+        validation: 'strict',
+        config: {
+          ver: '1.0'
+        }
+      });
     });
 
     describe('priceType', function () {
