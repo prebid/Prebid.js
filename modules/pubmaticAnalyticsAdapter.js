@@ -102,6 +102,7 @@ function copyRequiredBidDetails(bid) {
     'status', () => NO_BID, // default a bid to NO_BID until response is recieved or bid is timed out
     'finalSource as source',
     'params',
+    'floorData',
     'adUnit', () => utils.pick(bid, [
       'adUnitCode',
       'transactionId',
@@ -166,6 +167,7 @@ function parseBidResponse(bid) {
     'bidId',
     'mediaType',
     'params',
+    'floorData',
     'mi',
     'regexPattern', () => bid.regexPattern || undefined,
     'partnerImpId', // partner impression ID
@@ -229,7 +231,7 @@ function getUpdatedKGPVForVideo(kgpv, bidResponse) {
   return kgpv;
 }
 
-function getAdapterNameForAlias(aliasName){
+function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
 }
 
@@ -258,7 +260,11 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
       'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
       'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
-      'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING
+      'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
+      'fskp': bid.floorData ? (bid.floorData.skipped == false ? 0 : 1) : undefined,
+      'fmv': bid.floorData ? bid.floorData.modelVersion || EMPTY_STRING : undefined,
+      'frv': bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined,
+      'ft': bid.bidResponse ? (bid.bidResponse.floorData ? (bid.bidResponse.floorData.enforcements.enforceJS == false ? 0 : 1) : undefined) : undefined,
     });
     return partnerBids;
   }, [])
