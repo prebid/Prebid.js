@@ -1,9 +1,14 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { OUTSTREAM } from '../src/video.js';
+import { Renderer } from '../src/Renderer.js';
+import find from 'core-js-pure/features/array/find.js';
 const utils = require('../src/utils.js');
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
 const ENDPOINT_URL = 'http://localhost:3002/api/prebid';
+const RENDERER_URL = 'http://localhost:3002/static/fif/out.js';
 // ------------------------------------
 const _PAGE_VIEW_ID = utils.generateUUID();
 const LS_CWID_KEY = 'cw_cwid';
@@ -18,6 +23,13 @@ function getSlotSizes(bid) {
   return utils.parseSizesInput(getAllMediaSizes(bid));
 }
 
+function _renderer(bid) {
+  bid.renderer.push(() => {
+    console.log('SIMPLE INSTALL');
+    console.log(bid);
+  });
+}
+
 /**
  * ------------------------------------
  * ------------------------------------
@@ -26,11 +38,17 @@ function getSlotSizes(bid) {
  */
 function getAllMediaSizes(bid) {
   // eslint-disable-next-line no-debugger
-  debugger;
+  let playerSizes = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
   let videoSizes = utils.deepAccess(bid, 'mediaTypes.video.sizes');
   let bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
 
   const sizes = [];
+
+  if (utils.isArray(playerSizes)) {
+    playerSizes.forEach((s) => {
+      sizes.push(s);
+    })
+  }
 
   if (utils.isArray(videoSizes)) {
     videoSizes.forEach((s) => {
@@ -69,6 +87,7 @@ const mapSlotsData = function(validBidRequests) {
     bidObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
     bidObj.placementId = parseInt(placementId, 10);
     bidObj.pageId = parseInt(pageId, 10);
+    bidObj.mediaTypes = utils.getBidIdParameter('mediaTypes', bid);
     bidObj.transactionId = utils.getBidIdParameter('transactionId', bid);
     bidObj.sizes = getSlotSizes(bid);
     slots.push(bidObj);
@@ -79,7 +98,7 @@ const mapSlotsData = function(validBidRequests) {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['video', 'banner'],
+  supportedMediaTypes: [VIDEO, BANNER],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -124,7 +143,7 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT_URL,
-      data: payloadString
+      data: payload
     };
   },
 
@@ -134,27 +153,63 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
+
     try {
+      if (typeof bidRequest.data === 'string') {
+        bidRequest.data = JSON.parse(bidRequest.data);
+        console.log(JSON.stringify(bidRequest));
+      }
       // eslint-disable-next-line no-console
       console.log(serverResponse);
       const serverBody = serverResponse.body;
       // const headerValue = serverResponse.headers.get('some-response-header');
       serverBody.bids.forEach((br) => {
+        const bidReq = find(bidRequest.data.slots, bid => bid.bidId === br.requestId);
+
+        let mediaType = BANNER;
+
         const bidResponse = {
           requestId: br.requestId,
           cpm: br.cpm,
+          bidderCode: BIDDER_CODE,
           width: br.dimensions[0],
           height: br.dimensions[1],
           creativeId: br.creativeId,
-          // dealId: br.DEAL_ID,
           currency: br.currency,
           netRevenue: br.netRevenue,
           ttl: br.ttl,
-          // referrer: serverResponse.REFERER,
+          meta: {
+            advertiserDomains: br.adomains ? br.advertiserDomains : [],
+          },
           ad: br.html,
         };
+
+        // ------------------------------------
+        // IF VIDEO
+        // ------------------------------------
+        if (utils.deepAccess(bidReq, 'mediaTypes.video')) {
+          mediaType = VIDEO;
+          bidResponse.vastXml = br.vastXml;
+
+          const mediaTypeContext = utils.deepAccess(bidReq, 'mediaTypes.video.context');
+          if (mediaTypeContext === OUTSTREAM) {
+            const r = Renderer.install({
+              id: br.requestId,
+              adUnitCode: br.adUnitCode,
+              url: RENDERER_URL,
+            });
+            // eslint-disable-next-line no-console
+            console.log('OUTSTREAM RENDERER INSTALL', r);
+
+            br.renderer = r;
+            br.renderer.setRender(_renderer);
+          }
+        }
+
+        // bidResponse.mediaType = mediaType;
+
         bidResponses.push(bidResponse);
       });
     } catch (e) {
@@ -174,6 +229,8 @@ export const spec = {
    */
   onTimeout: function(data) {
     // Bidder specifc code
+    // eslint-disable-next-line no-console
+    console.log('TIMEOUT', data);
   },
 
   /**
@@ -181,6 +238,8 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function(bid) {
+    // eslint-disable-next-line no-console
+    console.log('BID WON!!!', bid);
     // Bidder specific code
   },
 
