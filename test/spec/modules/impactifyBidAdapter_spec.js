@@ -135,7 +135,21 @@ describe('ImpactifyAdapter', function () {
         bidId: '123456789',
         bidderRequestId: '987654321',
         auctionId: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
-        transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002'
+        transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002',
+        userId: {
+          pubcid: '87a0327b-851c-4bb3-a925-0c7be94548f5'
+        },
+        userIdAsEids: [
+          {
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: '87a0327b-851c-4bb3-a925-0c7be94548f5',
+                atype: 1
+              }
+            ]
+          }
+        ]
       }
     ];
     let videoBidderRequest = {

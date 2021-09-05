@@ -1372,12 +1372,6 @@ describe('IndexexchangeAdapter', function () {
     const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
     const queryWithoutSchain = requestWithoutSchain.data;
 
-    const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-    delete bidWithoutMediaType[0].mediaTypes;
-    bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
-    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType, DEFAULT_OPTION)[0];
-    const queryWithoutMediaType = requestWithoutMediaType.data;
-
     it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
       expect(requestUrl).to.equal(IX_SECURE_ENDPOINT);
@@ -1596,27 +1590,6 @@ describe('IndexexchangeAdapter', function () {
         expect(impression.bidfloor).to.equal(expectedFloor);
         expect(impression.bidfloorcur).to.equal(currency);
       });
-    });
-
-    it('payload without mediaType should have correct format and value', function () {
-      const payload = JSON.parse(queryWithoutMediaType.r);
-
-      expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
-      expect(payload.site.page).to.equal(DEFAULT_OPTION.refererInfo.referer);
-      expect(payload.site.ref).to.equal(document.referrer);
-      expect(payload.ext.source).to.equal('prebid');
-      expect(payload.imp).to.be.an('array');
-      expect(payload.imp).to.have.lengthOf(1);
-    });
-
-    it('impression without mediaType should have correct format and value', function () {
-      const impression = JSON.parse(queryWithoutMediaType.r).imp[0];
-
-      expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
-      expect(impression.banner.format).to.be.length(1);
-      expect(impression.banner.format[0].w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
-      expect(impression.banner.format[0].h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
-      expect(impression.banner.topframe).to.be.oneOf([0, 1]);
     });
 
     it('impression should have sid if id is configured as number', function () {
@@ -2005,7 +1978,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('should handle unexpected context', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
-      bid.mediaTypes.video.context = 'VaccineJanssen';
+      bid.mediaTypes.video.context = 'not-valid';
       const request = spec.buildRequests([bid])[0];
       const impression = JSON.parse(request.data.r).imp[0];
       expect(impression.video.placement).to.be.undefined;
