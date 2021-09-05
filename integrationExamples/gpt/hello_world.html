@@ -9,17 +9,25 @@
 
 <html>
 <head>
-    <script async src="../../build/dist/prebid.js"></script>
+    <script async src="../../build/dev/prebid.js"></script>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <script>
-        var FAILSAFE_TIMEOUT = 3300;
+        var FAILSAFE_TIMEOUT = 1000;
         var PREBID_TIMEOUT = 1000;
 
         var adUnits = [{
             code: 'div-gpt-ad-1460505748561-0',
             mediaTypes: {
-                video: {
-                    sizes: [[400, 400]],
+                // video: {
+                //     context: 'outstream',
+                //     playerSize: [1, 1],
+                //     mimes: ['video/mp4'],
+                //     protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+                //     playbackmethod: [2],
+                //     skip: 1
+                // }
+                banner: {
+                    sizes: [[400,400]],
                 }
             },
             // Replace this object to test a new Adapter!
@@ -28,9 +36,8 @@
                 params: {
                     placementId: 13144370,
                     pageId: 8765,
-                }
+                },
             }]
-
         }];
 
         var pbjs = pbjs || {};
@@ -53,6 +60,20 @@
             });
         });
 
+        // ------------------------------------
+        // pbjs.que.push(function() {
+        //     pbjs.addAdUnits(adUnits);
+        //     pbjs.requestBids({
+        //         timeout: 1000,
+        //         bidsBackHandler: function(bids) {
+        //             var highestCpmBids = pbjs.getHighestCpmBids('div-gpt-ad-1460505748561-0');
+        //             // console.log(JSON.stringify(highestCpmBids, null, 2));
+        //             pbjs.renderAd(document, highestCpmBids[0].adUnitCode);
+        //         }
+        //     });
+        // });
+
+
         function sendAdserverRequest() {
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
@@ -72,8 +93,8 @@
 
     <script>
         googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[400, 400], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[400, 400]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            // googletag.pubads().disableInitialLoad();    
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
         });
