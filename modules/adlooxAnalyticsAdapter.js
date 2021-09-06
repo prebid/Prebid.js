@@ -43,14 +43,15 @@ MACRO['targetelt'] = function(b, c) {
 MACRO['creatype'] = function(b, c) {
   return b.mediaType == 'video' ? ADLOOX_MEDIATYPE.VIDEO : ADLOOX_MEDIATYPE.DISPLAY;
 };
-MACRO['pbAdSlot'] = function(b, c) {
+MACRO['pbadslot'] = function(b, c) {
   const adUnit = find(auctionManager.getAdUnits(), a => b.adUnitCode === a.code);
-  return utils.deepAccess(adUnit, 'fpd.context.pbAdSlot') || utils.getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
+  return utils.deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || utils.getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
 };
+MACRO['pbAdSlot'] = MACRO['pbadslot']; // legacy
 
 const PARAMS_DEFAULT = {
   'id1': function(b) { return b.adUnitCode },
-  'id2': '%%pbAdSlot%%',
+  'id2': '%%pbadslot%%',
   'id3': function(b) { return b.bidder },
   'id4': function(b) { return b.adId },
   'id5': function(b) { return b.dealId },
@@ -211,6 +212,11 @@ analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
 }
 
 analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
+  if (utils.deepAccess(bid, 'ext.adloox.video.adserver')) {
+    utils.logMessage(MODULE, `measuring '${bid.mediaType}' ad unit code '${bid.adUnitCode}' via Ad Server module`);
+    return;
+  }
+
   const sl = analyticsAdapter.context.toselector(bid);
   let el;
   try {
@@ -246,6 +252,7 @@ export default analyticsAdapter;
 const COMMAND_QUEUE = {};
 export const COMMAND = {
   CONFIG: 'config',
+  TOSELECTOR: 'toselector',
   URL: 'url',
   TRACK: 'track'
 };
@@ -272,6 +279,9 @@ function commandProcess(cid) {
         platformid: analyticsAdapter.context.platformid
       };
       callback(response);
+      break;
+    case COMMAND.TOSELECTOR:
+      callback(analyticsAdapter.context.toselector(data.bid));
       break;
     case COMMAND.URL:
       if (data.ids) data.args = data.args.concat(analyticsAdapter.context.params.filter(p => /^id([1-9]|10)$/.test(p[0]))); // not >10
