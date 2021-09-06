@@ -17,7 +17,7 @@ export const spec = {
    * @returns {boolean} True if this is a valid bid, and false otherwise
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.partnerId && bid.params.adnetId);
+    return !!(bid.params && bid.params.partnerId);
   },
 
   /**
@@ -40,7 +40,7 @@ export const spec = {
       uspConsent: bidderRequest.uspConsent,
       currencyCode: config.getConfig('currency.adServerCurrency'),
       coppa: config.getConfig('coppa'),
-      firstPartyData: config.getConfig('fpd'),
+      firstPartyData: config.getLegacyFpd(config.getConfig('ortb2')),
       prebidVersion: '$prebid.version$'
     };
 
@@ -49,9 +49,6 @@ export const spec = {
     return {
       method: 'POST',
       url: 'https://prebid.owneriq.net:8443/bidder/pb/bid',
-      options: {
-        withCredentials: false
-      },
       data: payloadString,
     };
   },

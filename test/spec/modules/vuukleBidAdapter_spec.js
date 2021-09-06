@@ -41,7 +41,8 @@ describe('vuukleBidAdapterTests', function() {
         'width': 300,
         'height': 250,
         'creative_id': '12345',
-        'ad': 'test ad'
+        'ad': 'test ad',
+        'adomain': ['example.com']
       }
     };
 
@@ -55,5 +56,6 @@ describe('vuukleBidAdapterTests', function() {
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.creativeId).to.equal('12345');
+    expect(bid.meta.advertiserDomains).to.deep.equal(['example.com']);
   });
 });

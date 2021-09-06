@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
@@ -51,6 +51,7 @@ export const spec = {
     let content = null;
     let schain = null;
     let userId = null;
+    let userIdAsEids = null;
     let user = null;
     let userExt = null;
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
@@ -72,11 +73,12 @@ export const spec = {
       if (!userId) {
         userId = bid.userId;
       }
-      const {params: {uid, keywords, bidFloor}, mediaTypes, bidId, adUnitCode, rtd} = bid;
-      bidsMap[bidId] = bid;
-      if (!pageKeywords && !utils.isEmpty(keywords)) {
-        pageKeywords = utils.transformBidderParamKeywords(keywords);
+      if (!userIdAsEids) {
+        userIdAsEids = bid.userIdAsEids;
       }
+      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
+      bidsMap[bidId] = bid;
+      const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
       if (jwTargeting) {
         if (!jwpseg && jwTargeting.segments) {
@@ -91,9 +93,24 @@ export const spec = {
         tagid: uid.toString(),
         ext: {
           divid: adUnitCode
-        },
-        bidfloor: _getFloor(mediaTypes || {}, bidFloor, bid)
+        }
       };
+      if (ortb2Imp && ortb2Imp.ext && ortb2Imp.ext.data) {
+        impObj.ext.data = ortb2Imp.ext.data;
+        if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
+          impObj.ext.gpid = impObj.ext.data.adserver.adslot;
+        }
+      }
+      if (!utils.isEmpty(keywords)) {
+        if (!pageKeywords) {
+          pageKeywords = keywords;
+        }
+        impObj.ext.bidder = { keywords };
+      }
+
+      if (bidFloor) {
+        impObj.bidfloor = bidFloor;
+      }
 
       if (!mediaTypes || mediaTypes[BANNER]) {
         const banner = createBannerRequest(bid, mediaTypes ? mediaTypes[BANNER] : {});
@@ -157,66 +174,9 @@ export const spec = {
       userExt = {consent: gdprConsent.consentString};
     }
 
-    if (userId) {
-      if (userId.tdid) {
-        userExt = userExt || {};
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push({
-          source: 'adserver.org', // Unified ID
-          uids: [{
-            id: userId.tdid,
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }]
-        });
-      }
-      if (userId.id5id && userId.id5id.uid) {
-        userExt = userExt || {};
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push({
-          source: 'id5-sync.com',
-          uids: [{
-            id: userId.id5id.uid
-          }],
-          ext: userId.id5id.ext
-        });
-      }
-      if (userId.lipb && userId.lipb.lipbid) {
-        userExt = userExt || {};
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push({
-          source: 'liveintent.com',
-          uids: [{
-            id: userId.lipb.lipbid
-          }]
-        });
-      }
-      if (userId.idl_env) {
-        userExt = userExt || {};
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push({
-          source: 'identityLink',
-          uids: [{
-            id: userId.idl_env
-          }]
-        });
-      }
-      if (userId.criteoId) {
-        userExt = userExt || {};
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push({
-          source: 'criteo.com',
-          uids: [{
-            id: userId.criteoId
-          }]
-        });
-      }
-
-      if (userId.digitrustid && userId.digitrustid.data && userId.digitrustid.data.id) {
-        userExt = userExt || {};
-        userExt.digitrust = Object.assign({}, userId.digitrustid.data);
-      }
+    if (userIdAsEids && userIdAsEids.length) {
+      userExt = userExt || {};
+      userExt.eids = [...userIdAsEids];
     }
 
     if (userExt && Object.keys(userExt).length) {
@@ -228,23 +188,37 @@ export const spec = {
       request.user = user;
     }
 
-    const configKeywords = utils.transformBidderParamKeywords({
-      'user': utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || null,
-      'context': utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || null
-    });
+    const userKeywords = utils.deepAccess(config.getConfig('ortb2.user'), 'keywords') || null;
+    const siteKeywords = utils.deepAccess(config.getConfig('ortb2.site'), 'keywords') || null;
 
-    if (configKeywords.length) {
-      pageKeywords = (pageKeywords || []).concat(configKeywords);
+    if (userKeywords) {
+      pageKeywords = pageKeywords || {};
+      pageKeywords.user = pageKeywords.user || {};
+      pageKeywords.user.ortb2 = [
+        {
+          name: 'keywords',
+          keywords: userKeywords.split(','),
+        }
+      ];
     }
-
-    if (pageKeywords && pageKeywords.length > 0) {
-      pageKeywords.forEach(deleteValues);
+    if (siteKeywords) {
+      pageKeywords = pageKeywords || {};
+      pageKeywords.site = pageKeywords.site || {};
+      pageKeywords.site.ortb2 = [
+        {
+          name: 'keywords',
+          keywords: siteKeywords.split(','),
+        }
+      ];
     }
 
     if (pageKeywords) {
-      request.ext = {
-        keywords: pageKeywords
-      };
+      pageKeywords = reformatKeywords(pageKeywords);
+      if (pageKeywords) {
+        request.ext = {
+          keywords: pageKeywords
+        };
+      }
     }
 
     if (gdprConsent && gdprConsent.gdprApplies) {
@@ -260,6 +234,13 @@ export const spec = {
         request.regs = {ext: {}};
       }
       request.regs.ext.us_privacy = uspConsent;
+    }
+
+    if (config.getConfig('coppa') === true) {
+      if (!request.regs) {
+        request.regs = {};
+      }
+      request.regs.coppa = 1;
     }
 
     return {
@@ -323,13 +304,12 @@ export const spec = {
 /**
  * Gets bidfloor
  * @param {Object} mediaTypes
- * @param {Number} bidfloor
  * @param {Object} bid
  * @returns {Number} floor
  */
-function _getFloor (mediaTypes, bidfloor, bid) {
+function _getFloor (mediaTypes, bid) {
   const curMediaType = mediaTypes.video ? 'video' : 'banner';
-  let floor = bidfloor || 0;
+  let floor = bid.params.bidFloor || 0;
 
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
@@ -346,16 +326,6 @@ function _getFloor (mediaTypes, bidfloor, bid) {
   }
 
   return floor;
-}
-
-function isPopulatedArray(arr) {
-  return !!(utils.isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
 }
 
 function _getBidFromResponse(respItem) {
@@ -378,17 +348,24 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
     const bid = bidRequest.bidsMap[serverBid.impid];
     if (bid) {
       const bidResponse = {
-        requestId: bid.bidId, // bid.bidderRequestId,
-        bidderCode: spec.code,
+        requestId: bid.bidId, // bid.bidderRequestId
         cpm: serverBid.price,
         width: serverBid.w,
         height: serverBid.h,
-        creativeId: serverBid.auid, // bid.bidId,
+        creativeId: serverBid.auid, // bid.bidId
         currency: 'USD',
-        netRevenue: false,
+        netRevenue: true,
         ttl: TIME_TO_LIVE,
+        meta: {
+          advertiserDomains: serverBid.adomain ? serverBid.adomain : []
+        },
         dealId: serverBid.dealid
       };
+
+      if (serverBid.ext && serverBid.ext.bidder && serverBid.ext.bidder.grid && serverBid.ext.bidder.grid.demandSource) {
+        bidResponse.adserverTargeting = { 'hb_ds': serverBid.ext.bidder.grid.demandSource };
+        bidResponse.meta.demandSource = serverBid.ext.bidder.grid.demandSource;
+      }
 
       if (serverBid.content_type === 'video') {
         bidResponse.vastXml = serverBid.adm;
@@ -415,7 +392,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
 }
 
 function createVideoRequest(bid, mediaType) {
-  const {playerSize, mimes, durationRangeSec} = mediaType;
+  const {playerSize, mimes, durationRangeSec, protocols} = mediaType;
   const size = (playerSize || bid.sizes || [])[0];
   if (!size) return;
 
@@ -428,6 +405,10 @@ function createVideoRequest(bid, mediaType) {
   if (durationRangeSec && durationRangeSec.length === 2) {
     result.minduration = durationRangeSec[0];
     result.maxduration = durationRangeSec[1];
+  }
+
+  if (protocols && protocols.length) {
+    result.protocols = protocols;
   }
 
   return result;
@@ -444,6 +425,51 @@ function createBannerRequest(bid, mediaType) {
     result.format = format
   }
   return result;
+}
+
+function reformatKeywords(pageKeywords) {
+  const formatedPageKeywords = {};
+  Object.keys(pageKeywords).forEach((name) => {
+    const keywords = pageKeywords[name];
+    if (keywords) {
+      if (name === 'site' || name === 'user') {
+        const formatedKeywords = {};
+        Object.keys(keywords).forEach((pubName) => {
+          if (Array.isArray(keywords[pubName])) {
+            const formatedPublisher = [];
+            keywords[pubName].forEach((pubItem) => {
+              if (typeof pubItem === 'object' && pubItem.name) {
+                const formatedPubItem = { name: pubItem.name, segments: [] };
+                Object.keys(pubItem).forEach((key) => {
+                  if (Array.isArray(pubItem[key])) {
+                    pubItem[key].forEach((keyword) => {
+                      if (keyword) {
+                        if (typeof keyword === 'string') {
+                          formatedPubItem.segments.push({ name: key, value: keyword });
+                        } else if (key === 'segments' && typeof keyword.name === 'string' && typeof keyword.value === 'string') {
+                          formatedPubItem.segments.push(keyword);
+                        }
+                      }
+                    });
+                  }
+                });
+                if (formatedPubItem.segments.length) {
+                  formatedPublisher.push(formatedPubItem);
+                }
+              }
+            });
+            if (formatedPublisher.length) {
+              formatedKeywords[pubName] = formatedPublisher;
+            }
+          }
+        });
+        formatedPageKeywords[name] = formatedKeywords;
+      } else {
+        formatedPageKeywords[name] = keywords;
+      }
+    }
+  });
+  return Object.keys(formatedPageKeywords).length && formatedPageKeywords;
 }
 
 function outstreamRender (bid) {

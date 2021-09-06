@@ -1,9 +1,10 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'admixer';
-const ALIASES = ['go2net'];
-const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.0.aspx';
+const ALIASES = ['go2net', 'adblender', 'adsyield'];
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
@@ -20,8 +21,12 @@ export const spec = {
   buildRequests: function (validRequest, bidderRequest) {
     const payload = {
       imps: [],
+      ortb2: config.getConfig('ortb2'),
     };
+    let endpointUrl;
     if (bidderRequest) {
+      const {bidderCode} = bidderRequest;
+      endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
       }
@@ -37,13 +42,14 @@ export const spec = {
       }
     }
     validRequest.forEach((bid) => {
-      payload.imps.push(bid);
+      let imp = {};
+      Object.keys(bid).forEach(key => imp[key] = bid[key]);
+      payload.imps.push(imp);
     });
-    const payloadString = JSON.stringify(payload);
     return {
-      method: 'GET',
-      url: ENDPOINT_URL,
-      data: `data=${payloadString}`,
+      method: 'POST',
+      url: endpointUrl || ENDPOINT_URL,
+      data: payload,
     };
   },
   /**
@@ -51,28 +57,26 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    // loop through serverResponses {
     try {
-      serverResponse = serverResponse.body;
-      serverResponse.forEach((bidResponse) => {
-        const bidResp = {
-          requestId: bidResponse.bidId,
-          cpm: bidResponse.cpm,
-          width: bidResponse.width,
-          height: bidResponse.height,
-          ad: bidResponse.ad,
-          ttl: bidResponse.ttl,
-          creativeId: bidResponse.creativeId,
-          netRevenue: bidResponse.netRevenue,
-          currency: bidResponse.currency,
-          vastUrl: bidResponse.vastUrl,
-        };
-        bidResponses.push(bidResp);
-      });
+      const {body: {ads = []} = {}} = serverResponse;
+      ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
       utils.logError(e);
     }
     return bidResponses;
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const pixels = [];
+    serverResponses.forEach(({body: {cm = {}} = {}}) => {
+      const {pixels: img = [], iframes: frm = []} = cm;
+      if (syncOptions.pixelEnabled) {
+        img.forEach((url) => pixels.push({type: 'image', url}));
+      }
+      if (syncOptions.iframeEnabled) {
+        frm.forEach((url) => pixels.push({type: 'iframe', url}));
+      }
+    });
+    return pixels;
   }
 };
 registerBidder(spec);

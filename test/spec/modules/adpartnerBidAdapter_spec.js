@@ -120,33 +120,36 @@ describe('AdpartnerAdapter', function () {
     const bidResponse = {
       body: {
         'div-gpt-ad-1460505748561-0':
-        {
-          'ad': '<div>ad</div>',
-          'width': 300,
-          'height': 250,
-          'creativeId': '8:123456',
-          'syncs': [
-            {'type': 'image', 'url': 'https://test.domain/tracker_1.gif'},
-            {'type': 'image', 'url': 'https://test.domain/tracker_2.gif'},
-            {'type': 'image', 'url': 'https://test.domain/tracker_3.gif'}
-          ],
-          'winNotification': [
-            {
-              'method': 'POST',
-              'path': '/hb/bid_won?test=1',
-              'data': {
-                'ad': [
-                  {'dsp': 8, 'id': 800008, 'cost': 1.0e-5, 'nurl': 'https://test.domain/'}
-                ],
-                'unit_id': 1234,
-                'site_id': 123
+          {
+            'ad': '<div>ad</div>',
+            'width': 300,
+            'height': 250,
+            'creativeId': '8:123456',
+            'adomain': [
+              'test.domain'
+            ],
+            'syncs': [
+              {'type': 'image', 'url': 'https://test.domain/tracker_1.gif'},
+              {'type': 'image', 'url': 'https://test.domain/tracker_2.gif'},
+              {'type': 'image', 'url': 'https://test.domain/tracker_3.gif'}
+            ],
+            'winNotification': [
+              {
+                'method': 'POST',
+                'path': '/hb/bid_won?test=1',
+                'data': {
+                  'ad': [
+                    {'dsp': 8, 'id': 800008, 'cost': 1.0e-5, 'nurl': 'https://test.domain/'}
+                  ],
+                  'unit_id': 1234,
+                  'site_id': 123
+                }
               }
-            }
-          ],
-          'cpm': 0.01,
-          'currency': 'USD',
-          'netRevenue': true
-        }
+            ],
+            'cpm': 0.01,
+            'currency': 'USD',
+            'netRevenue': true
+          }
       },
       headers: {}
     };
@@ -160,6 +163,7 @@ describe('AdpartnerAdapter', function () {
       expect(result[0].creativeId).to.equal('8:123456');
       expect(result[0].currency).to.equal('USD');
       expect(result[0].ttl).to.equal(60);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['test.domain']);
       expect(result[0].winNotification[0]).to.deep.equal({'method': 'POST', 'path': '/hb/bid_won?test=1', 'data': {'ad': [{'dsp': 8, 'id': 800008, 'cost': 1.0e-5, 'nurl': 'https://test.domain/'}], 'unit_id': 1234, 'site_id': 123}});
     });
   });
@@ -181,7 +185,10 @@ describe('AdpartnerAdapter', function () {
       'winNotification': [],
       'cpm': 0.01,
       'currency': 'USD',
-      'netRevenue': true
+      'netRevenue': true,
+      'adomain': [
+        'test.domain'
+      ],
     };
 
     it('fill ad for response', function () {
@@ -193,6 +200,7 @@ describe('AdpartnerAdapter', function () {
       expect(result.creativeId).to.equal('8:123456');
       expect(result.currency).to.equal('USD');
       expect(result.ttl).to.equal(60);
+      expect(result.meta.advertiserDomains).to.deep.equal(['test.domain']);
     });
   });
 

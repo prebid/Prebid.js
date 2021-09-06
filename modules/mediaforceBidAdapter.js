@@ -123,12 +123,12 @@ export const spec = {
     validBidRequests.forEach(bid => {
       isTest = isTest || bid.params.is_test;
       let tagid = bid.params.placement_id;
-      let bidfloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : 0;
+      let bidfloor = 0;
       let validImp = false;
       let impObj = {
         id: bid.bidId,
         tagid: tagid,
-        secure: window.location.protocol === 'https' ? 1 : 0,
+        secure: window.location.protocol === 'https:' ? 1 : 0,
         bidfloor: bidfloor,
         ext: {
           mediaforce: {
@@ -219,6 +219,9 @@ export const spec = {
           currency: cur,
           netRevenue: true,
           ttl: serverBid.ttl || 300,
+          meta: {
+            advertiserDomains: serverBid.adomain ? serverBid.adomain : []
+          },
           burl: serverBid.burl,
         };
         if (serverBid.dealid) {

@@ -4,6 +4,7 @@ import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'krushmedia';
 const AD_URL = 'https://ads4.krushmedia.com/?c=rtb&m=hb';
+const SYNC_URL = 'https://cs.krushmedia.com/html?src=pbjs'
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -19,6 +20,23 @@ function isBidResponseValid(bid) {
       return Boolean(bid.native && bid.native.impressionTrackers);
     default:
       return false;
+  }
+}
+
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0
   }
 }
 
@@ -43,13 +61,13 @@ export const spec = {
 
     const placements = [];
     const request = {
-      'deviceWidth': winTop.screen.width,
-      'deviceHeight': winTop.screen.height,
-      'language': (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
-      'secure': 1,
-      'host': location.host,
-      'page': location.pathname,
-      'placements': placements
+      deviceWidth: winTop.screen.width,
+      deviceHeight: winTop.screen.height,
+      language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
+      secure: 1,
+      host: location.host,
+      page: location.pathname,
+      placements: placements
     };
 
     if (bidderRequest) {
@@ -69,6 +87,7 @@ export const spec = {
         bidId: bid.bidId,
         traffic: bid.params.traffic || BANNER,
         schain: bid.schain || {},
+        bidFloor: getBidFloor(bid)
       };
 
       if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
@@ -76,6 +95,20 @@ export const spec = {
       } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
         placement.wPlayer = bid.mediaTypes[VIDEO].playerSize[0];
         placement.hPlayer = bid.mediaTypes[VIDEO].playerSize[1];
+        placement.minduration = bid.mediaTypes[VIDEO].minduration;
+        placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
+        placement.mimes = bid.mediaTypes[VIDEO].mimes;
+        placement.protocols = bid.mediaTypes[VIDEO].protocols;
+        placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
+        placement.placement = bid.mediaTypes[VIDEO].placement;
+        placement.skip = bid.mediaTypes[VIDEO].skip;
+        placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
+        placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;
+        placement.maxbitrate = bid.mediaTypes[VIDEO].maxbitrate;
+        placement.delivery = bid.mediaTypes[VIDEO].delivery;
+        placement.playbackmethod = bid.mediaTypes[VIDEO].playbackmethod;
+        placement.api = bid.mediaTypes[VIDEO].api;
+        placement.linearity = bid.mediaTypes[VIDEO].linearity;
       } else if (bid.mediaTypes && bid.mediaTypes[NATIVE]) {
         placement.native = bid.mediaTypes[NATIVE];
       }
@@ -94,11 +127,32 @@ export const spec = {
     for (let i = 0; i < serverResponse.body.length; i++) {
       let resItem = serverResponse.body[i];
       if (isBidResponseValid(resItem)) {
+        const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
+        resItem.meta = { ...resItem.meta, advertiserDomains };
+
         response.push(resItem);
       }
     }
     return response;
   },
+
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    let syncUrl = SYNC_URL
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+    return [{
+      type: 'iframe',
+      url: syncUrl
+    }];
+  }
 };
 
 registerBidder(spec);

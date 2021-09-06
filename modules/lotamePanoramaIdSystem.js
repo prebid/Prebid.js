@@ -16,8 +16,11 @@ const MODULE_NAME = 'lotamePanoramaId';
 const NINE_MONTHS_MS = 23328000 * 1000;
 const DAYS_TO_CACHE = 7;
 const DAY_MS = 60 * 60 * 24 * 1000;
+const MISSING_CORE_CONSENT = 111;
+const GVLID = 95;
 
-export const storage = getStorageManager(null, MODULE_NAME);
+export const storage = getStorageManager(GVLID, MODULE_NAME);
+let cookieDomain;
 
 /**
  * Set the Lotame First Party Profile ID in the first party namespace
@@ -26,7 +29,14 @@ export const storage = getStorageManager(null, MODULE_NAME);
 function setProfileId(profileId) {
   if (storage.cookiesAreEnabled()) {
     let expirationDate = new Date(utils.timestamp() + NINE_MONTHS_MS).toUTCString();
-    storage.setCookie(KEY_PROFILE, profileId, expirationDate, 'Lax', undefined, undefined);
+    storage.setCookie(
+      KEY_PROFILE,
+      profileId,
+      expirationDate,
+      'Lax',
+      cookieDomain,
+      undefined
+    );
   }
   if (storage.hasLocalStorage()) {
     storage.setDataInLocalStorage(KEY_PROFILE, profileId, undefined);
@@ -88,7 +98,7 @@ function saveLotameCache(
         value,
         expirationDate,
         'Lax',
-        undefined,
+        cookieDomain,
         undefined
       );
     }
@@ -115,7 +125,7 @@ function getLotameLocalCache() {
   try {
     const rawExpiry = getFromStorage(KEY_EXPIRY);
     if (utils.isStr(rawExpiry)) {
-      cache.expiryTimestampMs = parseInt(rawExpiry, 0);
+      cache.expiryTimestampMs = parseInt(rawExpiry, 10);
     }
   } catch (error) {
     utils.logError(error);
@@ -132,7 +142,14 @@ function clearLotameCache(key) {
   if (key) {
     if (storage.cookiesAreEnabled()) {
       let expirationDate = new Date(0).toUTCString();
-      storage.setCookie(key, '', expirationDate, 'Lax', undefined, undefined);
+      storage.setCookie(
+        key,
+        '',
+        expirationDate,
+        'Lax',
+        cookieDomain,
+        undefined
+      );
     }
     if (storage.hasLocalStorage()) {
       storage.removeDataFromLocalStorage(key, undefined);
@@ -141,12 +158,17 @@ function clearLotameCache(key) {
 }
 /** @type {Submodule} */
 export const lotamePanoramaIdSubmodule = {
-
   /**
    * used to link submodule with config
    * @type {string}
    */
   name: MODULE_NAME,
+
+  /**
+   * Vendor id of Lotame
+   * @type {Number}
+   */
+  gvlid: GVLID,
 
   /**
    * Decode the stored id value for passing to bid requests
@@ -156,7 +178,7 @@ export const lotamePanoramaIdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
-    return utils.isStr(value) ? { 'lotamePanoramaId': value } : undefined;
+    return utils.isStr(value) ? { lotamePanoramaId: value } : undefined;
   },
 
   /**
@@ -168,13 +190,14 @@ export const lotamePanoramaIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
+    cookieDomain = lotamePanoramaIdSubmodule.findRootDomain();
     let localCache = getLotameLocalCache();
 
     let refreshNeeded = Date.now() > localCache.expiryTimestampMs;
 
     if (!refreshNeeded) {
       return {
-        id: localCache.data
+        id: localCache.data,
       };
     }
 
@@ -183,14 +206,25 @@ export const lotamePanoramaIdSubmodule = {
     const resolveIdFunction = function (callback) {
       let queryParams = {};
       if (storedUserId) {
-        queryParams.fp = storedUserId
+        queryParams.fp = storedUserId;
       }
 
-      if (consentData && utils.isBoolean(consentData.gdprApplies)) {
-        queryParams.gdpr_applies = consentData.gdprApplies;
-        if (consentData.gdprApplies) {
-          queryParams.gdpr_consent = consentData.consentString;
+      let consentString;
+      if (consentData) {
+        if (utils.isBoolean(consentData.gdprApplies)) {
+          queryParams.gdpr_applies = consentData.gdprApplies;
         }
+        consentString = consentData.consentString;
+      }
+      // If no consent string, try to read it from 1st party cookies
+      if (!consentString) {
+        consentString = getFromStorage('eupubconsent-v2');
+      }
+      if (!consentString) {
+        consentString = getFromStorage('euconsent-v2');
+      }
+      if (consentString) {
+        queryParams.gdpr_consent = consentString;
       }
       const url = utils.buildUrl({
         protocol: 'https',
@@ -205,10 +239,17 @@ export const lotamePanoramaIdSubmodule = {
           if (response) {
             try {
               let responseObj = JSON.parse(response);
-              saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts);
+              const shouldUpdateProfileId = !(
+                utils.isArray(responseObj.errors) &&
+                responseObj.errors.indexOf(MISSING_CORE_CONSENT) !== -1
+              );
+
+              saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts, responseObj.expiry_ts);
 
               if (utils.isStr(responseObj.profile_id)) {
-                setProfileId(responseObj.profile_id);
+                if (shouldUpdateProfileId) {
+                  setProfileId(responseObj.profile_id);
+                }
 
                 if (utils.isStr(responseObj.core_id)) {
                   saveLotameCache(
@@ -221,7 +262,9 @@ export const lotamePanoramaIdSubmodule = {
                   clearLotameCache(KEY_ID);
                 }
               } else {
-                clearLotameCache(KEY_PROFILE);
+                if (shouldUpdateProfileId) {
+                  clearLotameCache(KEY_PROFILE);
+                }
                 clearLotameCache(KEY_ID);
               }
             } catch (error) {
@@ -233,7 +276,7 @@ export const lotamePanoramaIdSubmodule = {
         undefined,
         {
           method: 'GET',
-          withCredentials: true
+          withCredentials: true,
         }
       );
     };

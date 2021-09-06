@@ -10,32 +10,30 @@
       var PREBID_TIMEOUT = 1000;
 
       var adUnits = [{
-        code: 'div-gpt-ad-1460505748561-0',
-        fpd: {
-          context: {
-            data: {
-              jwTargeting: {
-                // Note: the following Ids are placeholders and should be replaced with your Ids.
-                playerID: '123',
-                mediaID: 'abc'
+          code: 'div-gpt-ad-1460505748561-0',
+          ortb2Imp: {
+              ext: {
+                  data: {
+                      jwTargeting: {
+                          // Note: the following Ids are placeholders and should be replaced with your Ids.
+                          playerID: '123',
+                          mediaID: 'abc'
+                      }
+                  }
               }
-            },
-          }
-        },
-
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250], [300,600]],
-          }
-        },
-        // Replace this object to test a new Adapter!
-        bids: [{
-          bidder: 'appnexus',
-          params: {
-            placementId: 13144370
-          }
-        }]
-
+          },
+          mediaTypes: {
+              banner: {
+                  sizes: [[300, 250], [300,600]],
+              }
+          },
+          // Replace this object to test a new Adapter!
+          bids: [{
+              bidder: 'appnexus',
+              params: {
+                  placementId: 13144370
+              }
+          }]
       }];
 
       var pbjs = pbjs || {};
