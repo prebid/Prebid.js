@@ -1,6 +1,7 @@
 import {assert, expect} from 'chai';
 import {spec} from 'modules/etargetBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { deepClone } from 'src/utils.js';
 
 describe('etarget adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -39,6 +40,16 @@ describe('etarget adapter', function () {
     it('should set correct request method', function () {
       let request = spec.buildRequests([bids[0]]);
       assert.equal(request.method, 'POST');
+    });
+
+    it('should attach floor param when either bid param or getFloor function exists', function () {
+      // let getFloorResponse = { currency: 'EUR', floor: 5 };
+      let request = null;
+      let bidRequest = deepClone(bids[0]);
+
+      // floor param has to be NULL
+      request = spec.buildRequests([bidRequest]);
+      assert.equal(typeof request.floors, 'undefined');
     });
 
     it('should correctly form bid items', function () {
