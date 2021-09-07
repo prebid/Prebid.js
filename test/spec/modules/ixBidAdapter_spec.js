@@ -1233,7 +1233,7 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('First party data', function () {
-    afterEach(function() {
+    afterEach(function () {
       config.setConfig({
         ortb2: {}
       })
@@ -2129,7 +2129,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -2153,7 +2153,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -2180,7 +2180,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
     });
 
     it('should set Japanese price correctly', function () {
@@ -2206,7 +2206,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -2235,7 +2235,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
 
       expect(result[0].dealId).to.equal(expectedParse[0].dealId);
     });
@@ -2262,7 +2262,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -2290,7 +2290,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
       expect(result[0].dealId).to.deep.equal(expectedParse[0].dealId);
     });
 
@@ -2301,6 +2301,17 @@ describe('IndexexchangeAdapter', function () {
           cpm: 1.1,
           creativeId: '12346',
           mediaType: 'video',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [
+                [
+                  400,
+                  100
+                ]
+              ]
+            }
+          },
           width: 640,
           height: 480,
           currency: 'USD',
@@ -2315,7 +2326,10 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: ONE_VIDEO
+      });
+
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -2357,16 +2371,16 @@ describe('IndexexchangeAdapter', function () {
       const VIDEO_RESPONSE_WITH_EXP = utils.deepClone(DEFAULT_VIDEO_BID_RESPONSE);
       VIDEO_RESPONSE_WITH_EXP.seatbid[0].bid[0].exp = 200;
       BANNER_RESPONSE_WITH_EXP.seatbid[0].bid[0].exp = 100;
-      const bannerResult = spec.interpretResponse({ body: BANNER_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA });
-      const videoResult = spec.interpretResponse({ body: VIDEO_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const bannerResult = spec.interpretResponse({ body: BANNER_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
+      const videoResult = spec.interpretResponse({ body: VIDEO_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
 
       expect(bannerResult[0].ttl).to.equal(100);
       expect(videoResult[0].ttl).to.equal(200);
     });
 
     it('should default bid[].ttl if seat[].bid[].exp is not in the resposne', function () {
-      const bannerResult = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
-      const videoResult = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const bannerResult = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
+      const videoResult = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
 
       expect(bannerResult[0].ttl).to.equal(300);
       expect(videoResult[0].ttl).to.equal(3600);

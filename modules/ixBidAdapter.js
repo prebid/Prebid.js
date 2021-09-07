@@ -1,11 +1,11 @@
 import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import includes from 'core-js-pure/features/array/includes.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -387,13 +387,13 @@ function isValidBidFloorParams(bidFloor, bidFloorCur) {
 }
 
 /**
- * Create bid request object with the associated id.
+ * Get bid request object with the associated id.
  *
  * @param  {*}      id          Id of the impression.
  * @param  {array}  impressions List of impressions sent in the request.
  * @return {object}             The impression with the associated id.
  */
- function getBidRequest(id, impressions, validBidRequests) {
+function getBidRequest(id, impressions, validBidRequests) {
   if (!id) {
     return;
   }
@@ -942,7 +942,7 @@ function createMissingBannerImp(bid, imp, newSize) {
  * Initialize Outstream Renderer
  * @param {Object} bid
  */
- function outstreamRenderer (bid) {
+function outstreamRenderer (bid) {
   bid.renderer.push(() => {
     var config = {
       width: bid.width,
@@ -1134,6 +1134,7 @@ export const spec = {
    * @return {array}                 An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidderRequest) {
+
     const bids = [];
     let bid = null;
 
@@ -1156,7 +1157,7 @@ export const spec = {
         const bidRequest = getBidRequest(innerBids[j].impid, requestBid.imp, bidderRequest.validBidRequests);
         bid = parseBid(innerBids[j], responseBody.cur, bidRequest);
 
-        if (!utils.deepAccess(bid, 'mediaTypes.video.renderer') && bid.mediaType === 'video' && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
+        if (!utils.deepAccess(bid, 'mediaTypes.video.renderer') && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
           bid.mediaTypes.video.renderer = createRenderer(innerBids[j].bidId);
         }
 
