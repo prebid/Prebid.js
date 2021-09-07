@@ -1232,6 +1232,135 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
+  describe('First party data', function () {
+    afterEach(function() {
+      config.setConfig({
+        ortb2: {}
+      })
+    });
+
+    it('should not set ixdiag.fpd value if not defined', function () {
+      config.setConfig({
+        ortb2: {}
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.fpd).to.be.undefined;
+    });
+
+    it('should set ixdiag.fpd value if it exists using fpd', function () {
+      config.setConfig({
+        fpd: {
+          site: {
+            data: {
+              pageType: 'article'
+            }
+          }
+        }
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.fpd).to.exist;
+    });
+
+    it('should set ixdiag.fpd value if it exists using ortb2', function () {
+      config.setConfig({
+        ortb2: {
+          site: {
+            ext: {
+              data: {
+                pageType: 'article'
+              }
+            }
+          }
+        }
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.ext.ixdiag.fpd).to.exist;
+    });
+
+    it('should not send information that is not part of openRTB spec v2.5 using fpd', function () {
+      config.setConfig({
+        fpd: {
+          site: {
+            keywords: 'power tools, drills',
+            search: 'drill',
+            testProperty: 'test_string'
+          },
+          user: {
+            keywords: ['a'],
+            testProperty: 'test_string'
+          }
+        }
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.site.keywords).to.exist;
+      expect(r.site.search).to.exist;
+      expect(r.site.testProperty).to.be.undefined;
+      expect(r.user.keywords).to.exist;
+      expect(r.user.testProperty).to.be.undefined;
+    });
+
+    it('should not send information that is not part of openRTB spec v2.5 using ortb2', function () {
+      config.setConfig({
+        ortb2: {
+          site: {
+            keywords: 'power tools, drills',
+            search: 'drill',
+            testProperty: 'test_string'
+          },
+          user: {
+            keywords: ['a'],
+            testProperty: 'test_string'
+          }
+        }
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.site.keywords).to.exist;
+      expect(r.site.search).to.exist;
+      expect(r.site.testProperty).to.be.undefined;
+      expect(r.user.keywords).to.exist;
+      expect(r.user.testProperty).to.be.undefined;
+    });
+
+    it('should not add fpd data to r object if it exceeds maximum request', function () {
+      config.setConfig({
+        ortb2: {
+          site: {
+            keywords: 'power tools, drills',
+            search: 'drill',
+          },
+          user: {
+            keywords: Array(1000).join('#'),
+          }
+        }
+      });
+
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
+
+      const request = spec.buildRequests([bid])[0];
+      const r = JSON.parse(request.data.r);
+
+      expect(r.site.ref).to.exist;
+      expect(r.site.keywords).to.be.undefined;
+      expect(r.user).to.be.undefined;
+    });
+  });
+
   describe('buildRequests', function () {
     let request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
     const requestUrl = request.url;
@@ -1242,12 +1371,6 @@ describe('IndexexchangeAdapter', function () {
     delete bidWithoutSchain[0].schain;
     const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
     const queryWithoutSchain = requestWithoutSchain.data;
-
-    const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-    delete bidWithoutMediaType[0].mediaTypes;
-    bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
-    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType, DEFAULT_OPTION)[0];
-    const queryWithoutMediaType = requestWithoutMediaType.data;
 
     it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
@@ -1467,27 +1590,6 @@ describe('IndexexchangeAdapter', function () {
         expect(impression.bidfloor).to.equal(expectedFloor);
         expect(impression.bidfloorcur).to.equal(currency);
       });
-    });
-
-    it('payload without mediaType should have correct format and value', function () {
-      const payload = JSON.parse(queryWithoutMediaType.r);
-
-      expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
-      expect(payload.site.page).to.equal(DEFAULT_OPTION.refererInfo.referer);
-      expect(payload.site.ref).to.equal(document.referrer);
-      expect(payload.ext.source).to.equal('prebid');
-      expect(payload.imp).to.be.an('array');
-      expect(payload.imp).to.have.lengthOf(1);
-    });
-
-    it('impression without mediaType should have correct format and value', function () {
-      const impression = JSON.parse(queryWithoutMediaType.r).imp[0];
-
-      expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
-      expect(impression.banner.format).to.be.length(1);
-      expect(impression.banner.format[0].w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
-      expect(impression.banner.format[0].h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
-      expect(impression.banner.topframe).to.be.oneOf([0, 1]);
     });
 
     it('impression should have sid if id is configured as number', function () {
@@ -1876,7 +1978,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('should handle unexpected context', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
-      bid.mediaTypes.video.context = 'VaccineJanssen';
+      bid.mediaTypes.video.context = 'not-valid';
       const request = spec.buildRequests([bid])[0];
       const impression = JSON.parse(request.data.r).imp[0];
       expect(impression.video.placement).to.be.undefined;
