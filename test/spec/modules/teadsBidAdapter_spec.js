@@ -1,12 +1,24 @@
 import {expect} from 'chai';
-import {spec} from 'modules/teadsBidAdapter.js';
+import {spec, storage} from 'modules/teadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import {getStorageManager} from 'src/storageManager';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
 
 describe('teadsBidAdapter', () => {
   const adapter = newBidder(spec);
+  let cookiesAreEnabledStub, getCookieStub;
+
+  beforeEach(function () {
+    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+    getCookieStub = sinon.stub(storage, 'getCookie');
+  });
+
+  afterEach(function () {
+    cookiesAreEnabledStub.restore();
+    getCookieStub.restore();
+  });
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
@@ -102,7 +114,7 @@ describe('teadsBidAdapter', () => {
       'timeout': 3000
     };
 
-    it('sends bid request to ENDPOINT via POST', function() {
+    it('should send bid request to ENDPOINT via POST', function() {
       const request = spec.buildRequests(bidRequests, bidderResquestDefault);
 
       expect(request.url).to.equal(ENDPOINT);
@@ -274,7 +286,6 @@ describe('teadsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 22 status', function() {
-      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -322,7 +333,6 @@ describe('teadsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 0 status when gdprApplies = false (vendorData = undefined)', function() {
-      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -377,7 +387,7 @@ describe('teadsBidAdapter', () => {
           }
         }
       };
-      checkMediaTypesSizes(mediaTypesPlayerSize, '32x34')
+      checkMediaTypesSizes(mediaTypesPlayerSize, '32x34');
     });
 
     it('should add schain info to payload if available', function () {
@@ -416,7 +426,7 @@ describe('teadsBidAdapter', () => {
           }
         }
       };
-      checkMediaTypesSizes(mediaTypesVideoSizes, '12x14')
+      checkMediaTypesSizes(mediaTypesVideoSizes, '12x14');
     });
 
     it('should use good mediaTypes banner sizes', function() {
@@ -427,7 +437,7 @@ describe('teadsBidAdapter', () => {
           }
         }
       };
-      checkMediaTypesSizes(mediaTypesBannerSize, '46x48')
+      checkMediaTypesSizes(mediaTypesBannerSize, '46x48');
     });
 
     it('should use good mediaTypes for both video and banner sizes', function() {
@@ -441,7 +451,135 @@ describe('teadsBidAdapter', () => {
           }
         }
       };
-      checkMediaTypesSizes(hybridMediaTypes, ['46x48', '50x34', '45x45'])
+      checkMediaTypesSizes(hybridMediaTypes, ['46x48', '50x34', '45x45']);
+    });
+
+    describe('User IDs', function () {
+      const baseBidRequest = {
+        'bidder': 'teads',
+        'params': {
+          'placementId': 10433394,
+          'pageId': 1234
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+        'creativeId': 'er2ee',
+        'deviceWidth': 1680
+      };
+
+      describe('FLoC ID', function () {
+        it('should not add cohortId and cohortVersion params to payload if FLoC ID system is not enabled', function () {
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {} // no "flocId" property -> assumption that the FLoC ID system is disabled
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          expect(payload).not.to.have.property('cohortId');
+          expect(payload).not.to.have.property('cohortVersion');
+        });
+
+        it('should add cohortId param to payload if FLoC ID system is enabled and ID available, but not version', function () {
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              flocId: {
+                id: 'my-floc-id'
+              }
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          expect(payload.cohortId).to.equal('my-floc-id');
+          expect(payload).not.to.have.property('cohortVersion');
+        });
+
+        it('should add cohortId and cohortVersion params to payload if FLoC ID system is enabled', function () {
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              flocId: {
+                id: 'my-floc-id',
+                version: 'chrome.1.1'
+              }
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          expect(payload.cohortId).to.equal('my-floc-id');
+          expect(payload.cohortVersion).to.equal('chrome.1.1');
+        });
+      });
+
+      describe('Unified ID v2', function () {
+        it('should not add unifiedId2 param to payload if uid2 system is not enabled', function () {
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {} // no "uid2" property -> assumption that the Unified ID v2 system is disabled
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          expect(payload).not.to.have.property('unifiedId2');
+        });
+
+        it('should add unifiedId2 param to payload if uid2 system is enabled', function () {
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              uid2: {
+                id: 'my-unified-id-2'
+              }
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          expect(payload.unifiedId2).to.equal('my-unified-id-2');
+        })
+      });
+
+      describe('First-party cookie Teads ID', function () {
+        it('should not add firstPartyCookieTeadsId param to payload if cookies are not enabled', function () {
+          cookiesAreEnabledStub.returns(false);
+
+          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          expect(payload).not.to.have.property('firstPartyCookieTeadsId');
+        });
+
+        it('should not add firstPartyCookieTeadsId param to payload if first-party cookie is not available', function () {
+          cookiesAreEnabledStub.returns(true);
+          getCookieStub.withArgs('_tfpvi').returns(undefined);
+
+          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          expect(payload).not.to.have.property('firstPartyCookieTeadsId');
+        });
+
+        it('should add firstPartyCookieTeadsId param to payload if first-party cookie is available', function () {
+          cookiesAreEnabledStub.returns(true);
+          getCookieStub.withArgs('_tfpvi').returns('my-teads-id');
+
+          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          expect(payload.firstPartyCookieTeadsId).to.equal('my-teads-id');
+        });
+      });
     });
 
     function checkMediaTypesSizes(mediaTypes, expectedSizes) {

@@ -634,7 +634,9 @@ export function newTargeting(auctionManager) {
 
       return Object.keys(aut)
         .map(function(key) {
-          return {[key]: utils.isArray(aut[key]) ? aut[key] : aut[key].split(',')};
+          if (utils.isStr(aut[key])) aut[key] = aut[key].split(',');
+          if (!utils.isArray(aut[key])) aut[key] = [ aut[key] ];
+          return { [key]: aut[key] };
         });
     }
 

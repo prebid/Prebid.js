@@ -930,6 +930,89 @@ describe('PubMatic adapter', function () {
         delete bid.params.video.mimes; // Undefined
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
+
+      it('checks on bid.params.outstreamAU & bid.renderer & bid.mediaTypes.video.renderer', function() {
+        const getThebid = function() {
+          let bid = utils.deepClone(validOutstreamBidRequest.bids[0]);
+          bid.params.outstreamAU = 'pubmatic-test';
+          bid.renderer = ' '; // we are only checking if this key is set or not
+          bid.mediaTypes.video.renderer = ' '; // we are only checking if this key is set or not
+          return bid;
+        }
+
+        // true: when all are present
+        // mdiatype: outstream
+        // bid.params.outstreamAU : Y
+        // bid.renderer : Y
+        // bid.mediaTypes.video.renderer : Y
+        let bid = getThebid();
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: atleast one is present; 3 cases
+        // mdiatype: outstream
+        // bid.params.outstreamAU : Y
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: atleast one is present; 3 cases
+        // mdiatype: outstream
+        // bid.params.outstreamAU : N
+        // bid.renderer : Y
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.mediaTypes.video.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: atleast one is present; 3 cases
+        // mdiatype: outstream
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : Y
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // false: none present; only outstream
+        // mdiatype: outstream
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        // true: none present; outstream + Banner
+        // mdiatype: outstream, banner
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        bid.mediaTypes.banner = {sizes: [ [300, 250], [300, 600] ]};
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: none present; outstream + Native
+        // mdiatype: outstream, native
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        bid.mediaTypes.native = {}
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
     });
 
   	describe('Request formation', function () {
@@ -1480,6 +1563,69 @@ describe('PubMatic adapter', function () {
         let request2 = spec.buildRequests(bidRequests, {});
         let data2 = JSON.parse(request2.data);
         expect(data2.regs).to.equal(undefined);// USP/CCPAs
+      });
+
+      it('Request params check with JW player params', function() {
+        let bidRequests = [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              dctr: 'key1=val1|key2=val2,val3'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+            rtd: {
+              jwplayer: {
+                targeting: {
+                  content: { id: 'jw_d9J2zcaA' },
+                  segments: ['80011026', '80011035']
+                }
+              }
+            }
+          }];
+        let key_val_output = 'key1=val1|key2=val2,val3|jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1'
+        let request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].ext).to.exist.and.to.be.an('object');
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(key_val_output);
+
+        // jw player data not available. Only dctr sent.
+        delete bidRequests[0].rtd;
+        request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        data = JSON.parse(request.data);
+
+        expect(data.imp[0].ext).to.exist.and.to.be.an('object'); // dctr parameter
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+
+        // jw player data is available, but dctr is not present
+        bidRequests[0].rtd = {
+          jwplayer: {
+            targeting: {
+              content: { id: 'jw_d9J2zcaA' },
+              segments: ['80011026', '80011035']
+            }
+          }
+        };
+
+        delete bidRequests[0].params.dctr;
+        key_val_output = 'jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1';
+        request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        data = JSON.parse(request.data);
+
+        expect(data.imp[0].ext).to.exist.and.to.be.an('object');
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(key_val_output);
       });
 
       describe('FPD', function() {

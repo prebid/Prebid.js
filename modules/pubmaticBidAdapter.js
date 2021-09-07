@@ -605,6 +605,26 @@ function _addDealCustomTargetings(imp, bid) {
   }
 }
 
+function _addJWPlayerSegmentData(imp, bid) {
+  var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
+  var jwPlayerData = '';
+  const jwMark = 'jw-';
+
+  if (jwSegData === undefined || jwSegData === '' || !jwSegData.hasOwnProperty('segments')) return;
+
+  var maxLength = jwSegData.segments.length;
+
+  jwPlayerData += jwMark + 'id=' + jwSegData.content.id; // add the content id first
+
+  for (var i = 0; i < maxLength; i++) {
+    jwPlayerData += '|' + jwMark + jwSegData.segments[i] + '=1';
+  }
+  const ext = imp.ext;
+  (ext && ext.key_val === undefined)
+    ? ext.key_val = jwPlayerData
+    : ext.key_val += '|' + jwPlayerData;
+}
+
 function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj;
@@ -627,6 +647,7 @@ function _createImpressionObject(bid, conf) {
 
   _addPMPDealsInImpression(impObj, bid);
   _addDealCustomTargetings(impObj, bid);
+  _addJWPlayerSegmentData(impObj, bid);
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
       switch (mediaTypes) {
@@ -975,8 +996,19 @@ export const spec = {
           !utils.isStr(bid.params.outstreamAU) &&
           !bid.hasOwnProperty('renderer') &&
           !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
-          utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
-          return false;
+          // we are here since outstream ad-unit is provided without outstreamAU and renderer
+          // so it is not a valid video ad-unit
+          // but it may be valid banner or native ad-unit
+          // so if mediaType banner or Native is present then  we will remove media-type video and return true
+
+          if (bid.mediaTypes.hasOwnProperty(BANNER) || bid.mediaTypes.hasOwnProperty(NATIVE)) {
+            delete bid.mediaTypes[VIDEO];
+            utils.logWarn(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting mediatype Video of bid: `, bid);
+            return true;
+          } else {
+            utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
+            return false;
+          }
         }
       }
       return true;

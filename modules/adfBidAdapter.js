@@ -94,6 +94,7 @@ export const spec = {
     const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
+    const schain = setOnAny(validBidRequests, 'schain');
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
@@ -204,6 +205,10 @@ export const spec = {
 
     if (eids) {
       utils.deepSetValue(request, 'user.ext.eids', eids);
+    }
+
+    if (schain) {
+      utils.deepSetValue(request, 'source.ext.schain', schain);
     }
 
     return {
