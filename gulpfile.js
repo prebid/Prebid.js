@@ -11,10 +11,10 @@ var webpackStream = require('webpack-stream');
 var terser = require('gulp-terser');
 var gulpClean = require('gulp-clean');
 var KarmaServer = require('karma').Server;
-var karmaConfMaker = require('./karma.conf.maker');
+var karmaConfMaker = require('./karma.conf.maker.js');
 var opens = require('opn');
-var webpackConfig = require('./webpack.conf');
-var helpers = require('./gulpHelpers');
+var webpackConfig = require('./webpack.conf.js');
+var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
 var footer = require('gulp-footer');
@@ -71,7 +71,13 @@ function lint(done) {
   const isFixed = function (file) {
     return file.eslint != null && file.eslint.fixed;
   }
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], { base: './' })
+  return gulp.src([
+    'src/**/*.js',
+    'modules/**/*.js',
+    'test/**/*.js',
+    'plugins/**/*.js',
+    './*.js'
+  ], { base: './' })
     .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())

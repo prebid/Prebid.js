@@ -321,12 +321,20 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           protocols: bidRequest.mediaTypes.video.protocols,
           maxduration: bidRequest.mediaTypes.video.maxduration,
           api: bidRequest.mediaTypes.video.api,
-          skip: bidRequest.mediaTypes.video.skip || bidRequest.params.video.skip,
-          placement: bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement,
-          minduration: bidRequest.mediaTypes.video.minduration || bidRequest.params.video.minduration,
-          playbackmethod: bidRequest.mediaTypes.video.playbackmethod || bidRequest.params.video.playbackmethod,
-          startdelay: bidRequest.mediaTypes.video.startdelay || bidRequest.params.video.startdelay
+          skip: bidRequest.mediaTypes.video.skip,
+          placement: bidRequest.mediaTypes.video.placement,
+          minduration: bidRequest.mediaTypes.video.minduration,
+          playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
+          startdelay: bidRequest.mediaTypes.video.startdelay
         };
+        const paramsVideo = bidRequest.params.video;
+        if (paramsVideo !== undefined) {
+          video.skip = video.skip || paramsVideo.skip || 0;
+          video.placement = video.placement || paramsVideo.placement;
+          video.minduration = video.minduration || paramsVideo.minduration;
+          video.playbackmethod = video.playbackmethod || paramsVideo.playbackmethod;
+          video.startdelay = video.startdelay || paramsVideo.startdelay || 0;
+        }
 
         slot.video = video;
       }
