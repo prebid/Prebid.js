@@ -70,10 +70,27 @@ describe('Prebid Video', function () {
       expect(onEventsSpy.getCall(0).args[2]).to.be.equal('div1');
       expect(onEventsSpy.getCall(1).args[2]).to.be.equal('div2');
     });
+
+    it('Should emit events off of Prebid\'s Events', function () {
+      let eventHandler;
+      const customVideoCore = Object.assign({}, videoCoreMock, {
+        onEvents: (events, eventHandler_) => eventHandler = eventHandler_
+      });
+      const pbVideo = pbVideoFactory(customVideoCore, customGetConfig, null, null, null);
+      getConfigCallback({ video: { providers } });
+      const expectedType = 'test_event';
+      const expectedPayload = {'test': 'data'};
+      eventHandler(expectedType, expectedPayload);
+      expect(pbEventsMock.emit.calledOnce).to.be.true;
+      expect(pbEventsMock.emit.getCall(0).args[0]).to.be.equal(expectedType);
+      expect(pbEventsMock.emit.getCall(0).args[1]).to.be.equal(expectedPayload);
+    });
   });
 
-  describe('Event Registration', function () {
+  describe('Event triggering', function () {
+    it('Should emit events off of Prebid\'s Events', function () {
 
+    });
   });
 
   describe('Ad unit Enrichment', function () {
