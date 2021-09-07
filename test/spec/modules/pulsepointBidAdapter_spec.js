@@ -660,7 +660,9 @@ describe('PulsePoint Adapter Tests', function () {
       lipb: {
         lipbid: 'liveintent_id123'
       },
-      haloId: 'halo_user1',
+      haloId: {
+        haloId: 'halo_user1'
+      },
       lotamePanoramaId: 'lotame_user2',
       merkleId: 'merkle_user3',
       fabrickId: 'fabrick_user4',

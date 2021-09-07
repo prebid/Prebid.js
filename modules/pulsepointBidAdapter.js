@@ -428,7 +428,7 @@ function user(bidRequest, bidderRequest) {
       addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.id5id.uid'), 'id5-sync.com', utils.deepAccess(bidRequest, 'userId.id5id.ext'));
       addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.parrableId.eid'), 'parrable.com');
       addExternalUserId(ext.eids, bidRequest.userId.fabrickId, 'neustar.biz');
-      addExternalUserId(ext.eids, bidRequest.userId.haloId, 'audigent.com');
+      addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.haloId.haloId'), 'audigent.com');
       addExternalUserId(ext.eids, bidRequest.userId.merkleId, 'merkleinc.com');
       addExternalUserId(ext.eids, bidRequest.userId.lotamePanoramaId, 'crwdcntrl.net');
       addExternalUserId(ext.eids, bidRequest.userId.connectid, 'verizonmedia.com');
