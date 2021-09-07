@@ -1,26 +1,37 @@
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule/index.js';
 
-let ortbParamsMock = {
-  'video': {},
-  'content': {}
+let ortbParamsMock;
+let videoCoreMock;
+let getConfigMock;
+let requestBidsMock;
+let pbGlobalMock;
+let pbEventsMock;
+let videoEventsMock;
+
+function resetTestVars() {
+  ortbParamsMock = {
+    'video': {},
+    'content': {}
+  }
+  videoCoreMock = {
+    registerProvider: sinon.spy(),
+    onEvents: sinon.spy(),
+    getOrtbParams: () => ortbParamsMock
+  };
+  getConfigMock = () => {};
+  requestBidsMock = {
+    before: sinon.spy()
+  };
+  pbGlobalMock = {
+    requestBids: requestBidsMock
+  };
+  pbEventsMock = {
+    emit: sinon.spy(),
+    on: sinon.spy()
+  };
+  videoEventsMock = [];
 }
-let videoCoreMock = {
-  registerProvider: sinon.spy(),
-  getOrtbParams: () => ortbParamsMock
-};
-let getConfigMock = () => {};
-let requestBidsMock = {
-  before: sinon.spy()
-};
-let pbGlobalMock = {
-  requestBids: requestBidsMock
-};
-let pbEventsMock = {
-  emit: sinon.spy(),
-  on: sinon.spy()
-};
-let videoEventsMock = [];
 
 let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents) => {
   const pbVideo = PbVideo(
@@ -35,8 +46,30 @@ let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents) => 
 }
 
 describe('Prebid Video', function () {
-  describe('Provider Registration', function () {
+  beforeEach(() => resetTestVars());
 
+  describe('Setting video to config', function () {
+    let providers = [{ divId: 'div1' }, { divId: 'div2' }];
+    let getConfigCallback;
+    let customGetConfig = (video, callback) => {
+      getConfigCallback = callback;
+    };
+
+    beforeEach(() => {
+      const pbVideo = pbVideoFactory(null, customGetConfig, null, null, null);
+      getConfigCallback({ video: { providers } });
+    });
+
+    it('Should register providers', function () {
+      expect(videoCoreMock.registerProvider.calledTwice).to.be.true;
+    });
+
+    it('Should register events', function () {
+      expect(videoCoreMock.onEvents.calledTwice).to.be.true;
+      const onEventsSpy = videoCoreMock.onEvents;
+      expect(onEventsSpy.getCall(0).args[2]).to.be.equal('div1');
+      expect(onEventsSpy.getCall(1).args[2]).to.be.equal('div2');
+    });
   });
 
   describe('Event Registration', function () {
