@@ -1134,7 +1134,6 @@ export const spec = {
    * @return {array}                 An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidderRequest) {
-
     const bids = [];
     let bid = null;
 
