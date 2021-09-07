@@ -3,6 +3,7 @@
 import { BANNER } from '../src/mediaTypes.js';
 import { getAdUnitSizes, logWarn, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js'
 
 const BIDDER_CODE = 'ogury';
 const DEFAULT_TIMEOUT = 1000;
@@ -112,7 +113,8 @@ function interpretResponse(openRtbBidResponse) {
         ext: bid.ext,
         meta: {
           advertiserDomains: bid.adomain
-        }
+        },
+        nurl: bid.nurl
       };
 
       bidResponse.ad = bid.adm;
@@ -135,6 +137,10 @@ function getFloor(bid) {
   return floorResult.currency === 'USD' ? floorResult.floor : 0;
 }
 
+function onBidWon(bid) {
+  if (bid && bid.hasOwnProperty('nurl') && bid.nurl.length > 0) ajax(bid['nurl'], null);
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -142,7 +148,8 @@ export const spec = {
   getUserSyncs,
   buildRequests,
   interpretResponse,
-  getFloor
+  getFloor,
+  onBidWon
 }
 
 registerBidder(spec);

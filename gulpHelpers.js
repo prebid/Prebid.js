@@ -34,7 +34,6 @@ module.exports = {
   },
 
   jsonifyHTML: function (str) {
-    console.log(arguments);
     return str.replace(/\n/g, '')
       .replace(/<\//g, '<\\/')
       .replace(/\/>/g, '\\/>');

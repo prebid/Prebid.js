@@ -245,6 +245,27 @@ describe('Adf adapter', function () {
       assert.deepEqual(request.cur, [ 'EUR' ]);
     });
 
+    it('should pass supply chain object', function () {
+      let validBidRequests = [{
+        bidId: 'bidId',
+        params: {},
+        schain: {
+          validation: 'strict',
+          config: {
+            ver: '1.0'
+          }
+        }
+      }];
+
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      assert.deepEqual(request.source.ext.schain, {
+        validation: 'strict',
+        config: {
+          ver: '1.0'
+        }
+      });
+    });
+
     describe('priceType', function () {
       it('should send default priceType', function () {
         let validBidRequests = [{

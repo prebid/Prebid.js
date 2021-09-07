@@ -38,6 +38,7 @@ function isBidResponseValid(bidResponse) {
 
 export const spec = {
   code: 'orbidder',
+  gvlid: 559,
   hostname: 'https://orbidder.otto.de',
   supportedMediaTypes: [BANNER, NATIVE],
 
