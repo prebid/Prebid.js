@@ -36,7 +36,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 
   function enrichAdUnits(nextFn, bidRequest) {
-    const adUnits = bidRequest.adUnits || pbGlobal.adUnits;
+    const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
     adUnits.forEach(adUnit => {
       const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
       adUnit.mediaTypes.video = Object.assign({}, adUnit.mediaTypes.video, oRtbParams);
