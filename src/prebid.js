@@ -897,6 +897,7 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
  * @alias module:pbjs.getConfig
  */
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
+$$PREBID_GLOBAL$$.readConfig = config.readConfig;
 
 /**
  * Set Prebid config options.
