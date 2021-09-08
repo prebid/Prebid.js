@@ -1,12 +1,13 @@
-import * as utils from '../src/utils'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { BANNER } from '../src/mediaTypes'
-const errorUrl = 'https://pcb.aws.lijit.com/c'
-let errorpxls = []
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { createEidsArray } from './userId/eids.js';
+import {config} from '../src/config.js';
 
 export const spec = {
   code: 'sovrn',
   supportedMediaTypes: [BANNER],
+  gvlid: 13,
 
   /**
    * Check if the bid is a valid zone ID in either number or string form
@@ -14,7 +15,7 @@ export const spec = {
    * @return boolean for whether or not a bid is valid
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.tagid && !isNaN(parseFloat(bid.params.tagid)) && isFinite(bid.params.tagid));
+    return !!(bid.params.tagid && !isNaN(parseFloat(bid.params.tagid)) && isFinite(bid.params.tagid))
   },
 
   /**
@@ -24,15 +25,44 @@ export const spec = {
    */
   buildRequests: function(bidReqs, bidderRequest) {
     try {
-      const loc = utils.getTopWindowLocation();
       let sovrnImps = [];
       let iv;
+      let schain;
+      let eids;
+      let tpid = []
+      let criteoId;
+
       utils._each(bidReqs, function (bid) {
-        iv = iv || utils.getBidIdParameter('iv', bid.params);
-        bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes])
-        bid.sizes = bid.sizes.filter(size => utils.isArray(size))
-        const processedSizes = bid.sizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
-        sovrnImps.push({
+        if (!eids && bid.userId) {
+          eids = createEidsArray(bid.userId)
+          eids.forEach(function (id) {
+            if (id.uids && id.uids[0]) {
+              if (id.source === 'criteo.com') {
+                criteoId = id.uids[0].id
+              }
+              tpid.push({source: id.source, uid: id.uids[0].id})
+            }
+          })
+        }
+
+        if (bid.schain) {
+          schain = schain || bid.schain
+        }
+        iv = iv || utils.getBidIdParameter('iv', bid.params)
+
+        let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes
+        bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
+        bidSizes = bidSizes.filter(size => utils.isArray(size))
+        const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
+        const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
+          currency: 'USD',
+          mediaType: 'banner',
+          size: '*'
+        }) : {}
+        floorInfo.floor = floorInfo.floor || utils.getBidIdParameter('bidfloor', bid.params)
+
+        const imp = {
+          adunitcode: bid.adUnitCode,
           id: bid.bidId,
           banner: {
             format: processedSizes,
@@ -40,31 +70,58 @@ export const spec = {
             h: 1,
           },
           tagid: String(utils.getBidIdParameter('tagid', bid.params)),
-          bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
-        });
-      });
+          bidfloor: floorInfo.floor
+        }
+
+        imp.ext = utils.getBidIdParameter('ext', bid.ortb2Imp) || undefined
+
+        const segmentsString = utils.getBidIdParameter('segments', bid.params)
+        if (segmentsString) {
+          imp.ext = imp.ext || {}
+          imp.ext.deals = segmentsString.split(',').map(deal => deal.trim())
+        }
+        sovrnImps.push(imp)
+      })
+
+      const fpd = utils.deepClone(config.getConfig('ortb2'))
+
+      const site = fpd.site || {}
+      site.page = bidderRequest.refererInfo.referer
+      // clever trick to get the domain
+      site.domain = utils.parseUrl(site.page).hostname
+
       const sovrnBidReq = {
         id: utils.getUniqueIdentifierStr(),
         imp: sovrnImps,
-        site: {
-          domain: loc.host,
-          page: loc.host + loc.pathname + loc.search + loc.hash
-        }
-      };
-
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        sovrnBidReq.regs = {
-          ext: {
-            gdpr: +bidderRequest.gdprConsent.gdprApplies
-          }};
-        sovrnBidReq.user = {
-          ext: {
-            consent: bidderRequest.gdprConsent.consentString
-          }};
+        site: site,
+        user: fpd.user || {}
       }
 
-      let url = `//ap.lijit.com/rtb/bid?` +
-        `src=$$REPO_AND_VERSION$$`;
+      if (schain) {
+        sovrnBidReq.source = {
+          ext: {
+            schain
+          }
+        };
+      }
+
+      if (bidderRequest.gdprConsent) {
+        utils.deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
+        utils.deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      }
+      if (bidderRequest.uspConsent) {
+        utils.deepSetValue(sovrnBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+
+      if (eids) {
+        utils.deepSetValue(sovrnBidReq, 'user.ext.eids', eids)
+        utils.deepSetValue(sovrnBidReq, 'user.ext.tpid', tpid)
+        if (criteoId) {
+          utils.deepSetValue(sovrnBidReq, 'user.ext.prebid_criteoid', criteoId)
+        }
+      }
+
+      let url = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
       if (iv) url += `&iv=${iv}`;
 
       return {
@@ -74,7 +131,7 @@ export const spec = {
         options: {contentType: 'text/plain'}
       }
     } catch (e) {
-      new LogError(e, {bidReqs, bidderRequest}).append()
+      utils.logError('Could not build bidrequest, error deatils:', e);
     }
   },
 
@@ -103,80 +160,53 @@ export const spec = {
             netRevenue: true,
             mediaType: BANNER,
             ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
-            ttl: 60
+            ttl: sovrnBid.ext ? (sovrnBid.ext.ttl || 90) : 90,
+            meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           });
         });
       }
       return sovrnBidResponses
     } catch (e) {
-      new LogError(e, {id, seatbid}).append()
+      utils.logError('Could not intrepret bidresponse, error deatils:', e);
     }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     try {
-      let tracks = []
-      if (serverResponses && serverResponses.length !== 0 && syncOptions.iframeEnabled) {
-        let iidArr = serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.iid)
-          .map(rsp => { return rsp.body.ext.iid });
-        let consentString = '';
-        if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
-          consentString = gdprConsent.consentString
+      const tracks = []
+      if (serverResponses && serverResponses.length !== 0) {
+        if (syncOptions.iframeEnabled) {
+          const iidArr = serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.iid'))
+            .map(resp => resp.body.ext.iid);
+          const params = [];
+          if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
+            params.push(['gdpr_consent', gdprConsent.consentString]);
+          }
+          if (uspConsent) {
+            params.push(['us_privacy', uspConsent]);
+          }
+
+          if (iidArr[0]) {
+            params.push(['informer', iidArr[0]]);
+            tracks.push({
+              type: 'iframe',
+              url: 'https://ap.lijit.com/beacon?' + params.map(p => p.join('=')).join('&')
+            });
+          }
         }
-        if (iidArr[0]) {
-          tracks.push({
-            type: 'iframe',
-            url: '//ap.lijit.com/beacon?informer=' + iidArr[0] + '&gdpr_consent=' + consentString,
-          });
+
+        if (syncOptions.pixelEnabled) {
+          serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.sync.pixels'))
+            .reduce((acc, resp) => acc.concat(resp.body.ext.sync.pixels), [])
+            .map(pixel => pixel.url)
+            .forEach(url => tracks.push({ type: 'image', url }))
         }
-      }
-      if (errorpxls.length && syncOptions.pixelEnabled) {
-        tracks = tracks.concat(errorpxls)
       }
       return tracks
     } catch (e) {
-      if (syncOptions.pixelEnabled) {
-        return errorpxls
-      }
       return []
     }
   },
-}
-
-export class LogError {
-  constructor(e, data) {
-    utils.logError(e)
-    this.error = {}
-    this.error.t = utils.timestamp()
-    this.error.m = e.message
-    this.error.s = e.stack
-    this.error.d = data
-    this.error.v = $$REPO_AND_VERSION$$
-    this.error.u = utils.getTopWindowLocation().href
-    this.error.ua = navigator.userAgent
-  }
-  buildErrorString(obj) {
-    return errorUrl + '?b=' + btoa(JSON.stringify(obj))
-  }
-  append() {
-    let errstr = this.buildErrorString(this.error)
-    if (errstr.length > 2083) {
-      delete this.error.d
-      errstr = this.buildErrorString(this.error)
-      if (errstr.length > 2083) {
-        delete this.error.s
-        errstr = this.buildErrorString(this.error)
-        if (errstr.length > 2083) {
-          errstr = this.buildErrorString({m: 'unknown error message', t: this.error.t, u: this.error.u})
-        }
-      }
-    }
-    let obj = {type: 'image', url: errstr}
-    errorpxls.push(obj)
-  }
-  static getErrPxls() {
-    return errorpxls
-  }
 }
 
 registerBidder(spec);

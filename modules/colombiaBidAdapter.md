@@ -10,13 +10,17 @@ Maintainer: colombiaonline@timesinteret.in
 
 Connect to COLOMBIA for bids.
 
-THE COLOMBIA adapter requires setup and approval from the COLOMBIA team. Please reach out to your account team or colombiaonline@timesinteret.in for more information.
+COLOMBIA adapter requires setup and approval from the COLOMBIA team. Please reach out to your account team or colombiaonline@timesinteret.in for more information.
 
 # Test Parameters
 ```
   var adUnits = [{
     code: 'test-ad-div',
-    sizes: [[300, 250]],
+    mediaTypes: {
+       banner: {
+         sizes: [[300, 250],[728,90],[320,50]]
+       }
+    },
     bids: [{
     bidder: 'colombia',
       params: { 

@@ -1,74 +1,82 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'admixer';
-const ENDPOINT_URL = '//inv-nets.admixer.net/prebid.1.0.aspx';
+const ALIASES = ['go2net', 'adblender', 'adsyield'];
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [],
+  aliases: ALIASES,
   supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
-   *
-   * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
     return !!bid.params.zone;
   },
   /**
    * Make a server request from the list of BidRequests.
-   *
-   * @param {bidderRequest} - bidderRequest.bids[] is an array of AdUnits and bids
-   * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (bidderRequest) {
+  buildRequests: function (validRequest, bidderRequest) {
     const payload = {
       imps: [],
-      referrer: encodeURIComponent(utils.getTopWindowUrl()),
+      ortb2: config.getConfig('ortb2'),
     };
-    bidderRequest.forEach((bid) => {
-      if (bid.bidder === BIDDER_CODE) {
-        payload.imps.push(bid);
+    let endpointUrl;
+    if (bidderRequest) {
+      const {bidderCode} = bidderRequest;
+      endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
       }
+      if (bidderRequest.gdprConsent) {
+        payload.gdprConsent = {
+          consentString: bidderRequest.gdprConsent.consentString,
+          // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
+          gdprApplies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        }
+      }
+      if (bidderRequest.uspConsent) {
+        payload.uspConsent = bidderRequest.uspConsent;
+      }
+    }
+    validRequest.forEach((bid) => {
+      let imp = {};
+      Object.keys(bid).forEach(key => imp[key] = bid[key]);
+      payload.imps.push(imp);
     });
-    const payloadString = JSON.stringify(payload);
     return {
-      method: 'GET',
-      url: ENDPOINT_URL,
-      data: `data=${payloadString}`,
+      method: 'POST',
+      url: endpointUrl || ENDPOINT_URL,
+      data: payload,
     };
   },
   /**
    * Unpack the response from the server into a list of bids.
-   *
-   * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    // loop through serverResponses {
     try {
-      serverResponse = serverResponse.body;
-      serverResponse.forEach((bidResponse) => {
-        const bidResp = {
-          requestId: bidResponse.bidId,
-          cpm: bidResponse.cpm,
-          width: bidResponse.width,
-          height: bidResponse.height,
-          ad: bidResponse.ad,
-          ttl: bidResponse.ttl,
-          creativeId: bidResponse.creativeId,
-          netRevenue: bidResponse.netRevenue,
-          currency: bidResponse.currency,
-          vastUrl: bidResponse.vastUrl,
-        };
-        bidResponses.push(bidResp);
-      });
+      const {body: {ads = []} = {}} = serverResponse;
+      ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
       utils.logError(e);
     }
     return bidResponses;
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const pixels = [];
+    serverResponses.forEach(({body: {cm = {}} = {}}) => {
+      const {pixels: img = [], iframes: frm = []} = cm;
+      if (syncOptions.pixelEnabled) {
+        img.forEach((url) => pixels.push({type: 'image', url}));
+      }
+      if (syncOptions.iframeEnabled) {
+        frm.forEach((url) => pixels.push({type: 'iframe', url}));
+      }
+    });
+    return pixels;
   }
 };
 registerBidder(spec);

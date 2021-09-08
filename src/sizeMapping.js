@@ -1,6 +1,6 @@
-import { config } from './config';
-import {logWarn, isPlainObject, deepAccess, deepClone} from './utils';
-import includes from 'core-js/library/fn/array/includes';
+import { config } from './config.js';
+import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 let sizeConfig = [];
 
@@ -88,9 +88,9 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
 
   let results = {
     active: (
-      allMediaTypes.length > 1 || (allMediaTypes.length === 1 && allMediaTypes[0] !== 'banner')
+      allMediaTypes.every(type => type !== 'banner')
     ) || (
-      allMediaTypes[0] === 'banner' && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
+      allMediaTypes.some(type => type === 'banner') && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
         labels.length === 0 || (
           (!labelAll && (
             labels.some(label => maps.labels[label]) ||
@@ -121,9 +121,20 @@ function evaluateSizeConfig(configs) {
   return configs.reduce((results, config) => {
     if (
       typeof config === 'object' &&
-      typeof config.mediaQuery === 'string'
+      typeof config.mediaQuery === 'string' &&
+      config.mediaQuery.length > 0
     ) {
-      if (matchMedia(config.mediaQuery).matches) {
+      let ruleMatch = false;
+
+      try {
+        ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
+      } catch (e) {
+        logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated');
+
+        ruleMatch = matchMedia(config.mediaQuery).matches;
+      }
+
+      if (ruleMatch) {
         if (Array.isArray(config.sizesSupported)) {
           results.shouldFilter = true;
         }

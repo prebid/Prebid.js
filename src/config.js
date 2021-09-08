@@ -1,24 +1,35 @@
 /*
  * Module for getting and setting Prebid configuration.
- *
- * Prebid previously defined these properties directly on the global object:
- * pbjs.logging = true;
- *
- * Defining and access properties in this way is now deprecated, but these will
- * continue to work during a deprecation window.
  */
-import { isValidPriceConfig } from './cpmBucketManager';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import { hook } from './hook';
-const utils = require('./utils');
 
-const DEFAULT_DEBUG = false;
+/**
+ * @typedef {Object} MediaTypePriceGranularity
+ *
+ * @property {(string|Object)} [banner]
+ * @property {(string|Object)} [native]
+ * @property {(string|Object)} [video]
+ * @property {(string|Object)} [video-instream]
+ * @property {(string|Object)} [video-outstream]
+ */
+
+import { isValidPriceConfig } from './cpmBucketManager.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import Set from 'core-js-pure/features/set';
+import { mergeDeep } from './utils.js';
+
+const from = require('core-js-pure/features/array/from.js');
+const utils = require('./utils.js');
+const CONSTANTS = require('./constants.json');
+
+const DEFAULT_DEBUG = utils.getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
+const DEFAULT_DEVICE_ACCESS = true;
+const DEFAULT_MAX_NESTED_IFRAMES = 10;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -53,6 +64,8 @@ export function newConfig() {
   let listeners = [];
   let defaults;
   let config;
+  let bidderConfig;
+  let currBidder = null;
 
   function resetConfig() {
     defaults = {};
@@ -90,7 +103,7 @@ export function newConfig() {
         if (validatePriceGranularity(val)) {
           if (typeof val === 'string') {
             this._priceGranularity = (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM;
-          } else if (typeof val === 'object') {
+          } else if (utils.isPlainObject(val)) {
             this._customPriceBucket = val;
             this._priceGranularity = GRANULARITY_OPTIONS.CUSTOM;
             utils.logMessage('Using custom price granularity');
@@ -106,7 +119,12 @@ export function newConfig() {
         return this._customPriceBucket;
       },
 
+      /**
+       * mediaTypePriceGranularity
+       * @type {MediaTypePriceGranularity}
+       */
       _mediaTypePriceGranularity: {},
+
       get mediaTypePriceGranularity() {
         return this._mediaTypePriceGranularity;
       },
@@ -115,7 +133,7 @@ export function newConfig() {
           if (validatePriceGranularity(val[item])) {
             if (typeof val === 'string') {
               aggregate[item] = (hasGranularity(val[item])) ? val[item] : this._priceGranularity;
-            } else if (typeof val === 'object') {
+            } else if (utils.isPlainObject(val)) {
               aggregate[item] = val[item];
               utils.logMessage(`Using custom price granularity for ${item}`);
             }
@@ -140,6 +158,18 @@ export function newConfig() {
       },
       set useBidCache(val) {
         this._useBidCache = val;
+      },
+
+      /**
+       * deviceAccess set to false will disable setCookie, getCookie, hasLocalStorage
+       * @type {boolean}
+       */
+      _deviceAccess: DEFAULT_DEVICE_ACCESS,
+      get deviceAccess() {
+        return this._deviceAccess;
+      },
+      set deviceAccess(val) {
+        this._deviceAccess = val;
       },
 
       _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
@@ -171,6 +201,24 @@ export function newConfig() {
         this._disableAjaxTimeout = val;
       },
 
+      // default max nested iframes for referer detection
+      _maxNestedIframes: DEFAULT_MAX_NESTED_IFRAMES,
+      get maxNestedIframes() {
+        return this._maxNestedIframes;
+      },
+      set maxNestedIframes(val) {
+        this._maxNestedIframes = val;
+      },
+
+      _auctionOptions: {},
+      get auctionOptions() {
+        return this._auctionOptions;
+      },
+      set auctionOptions(val) {
+        if (validateauctionOptions(val)) {
+          this._auctionOptions = val;
+        }
+      },
     };
 
     if (config) {
@@ -186,6 +234,7 @@ export function newConfig() {
     }
 
     config = newConfig;
+    bidderConfig = {};
 
     function hasGranularity(val) {
       return find(Object.keys(GRANULARITY_OPTIONS), option => val === GRANULARITY_OPTIONS[option]);
@@ -200,7 +249,7 @@ export function newConfig() {
         if (!hasGranularity(val)) {
           utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
         }
-      } else if (typeof val === 'object') {
+      } else if (utils.isPlainObject(val)) {
         if (!isValidPriceConfig(val)) {
           utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
           return false;
@@ -208,6 +257,62 @@ export function newConfig() {
       }
       return true;
     }
+
+    function validateauctionOptions(val) {
+      if (!utils.isPlainObject(val)) {
+        utils.logWarn('Auction Options must be an object')
+        return false
+      }
+
+      for (let k of Object.keys(val)) {
+        if (k !== 'secondaryBidders' && k !== 'suppressStaleRender') {
+          utils.logWarn(`Auction Options given an incorrect param: ${k}`)
+          return false
+        }
+        if (k === 'secondaryBidders') {
+          if (!utils.isArray(val[k])) {
+            utils.logWarn(`Auction Options ${k} must be of type Array`);
+            return false
+          } else if (!val[k].every(utils.isStr)) {
+            utils.logWarn(`Auction Options ${k} must be only string`);
+            return false
+          }
+        } else if (k === 'suppressStaleRender') {
+          if (!utils.isBoolean(val[k])) {
+            utils.logWarn(`Auction Options ${k} must be of type boolean`);
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+  }
+
+  /**
+   * Returns base config with bidder overrides (if there is currently a bidder)
+   * @private
+   */
+  function _getConfig() {
+    if (currBidder && bidderConfig && utils.isPlainObject(bidderConfig[currBidder])) {
+      let currBidderConfig = bidderConfig[currBidder];
+      const configTopicSet = new Set(Object.keys(config).concat(Object.keys(currBidderConfig)));
+
+      return from(configTopicSet).reduce((memo, topic) => {
+        if (typeof currBidderConfig[topic] === 'undefined') {
+          memo[topic] = config[topic];
+        } else if (typeof config[topic] === 'undefined') {
+          memo[topic] = currBidderConfig[topic];
+        } else {
+          if (utils.isPlainObject(currBidderConfig[topic])) {
+            memo[topic] = mergeDeep({}, config[topic], currBidderConfig[topic]);
+          } else {
+            memo[topic] = currBidderConfig[topic];
+          }
+        }
+        return memo;
+      }, {});
+    }
+    return Object.assign({}, config);
   }
 
   /*
@@ -221,18 +326,138 @@ export function newConfig() {
   function getConfig(...args) {
     if (args.length <= 1 && typeof args[0] !== 'function') {
       const option = args[0];
-      return option ? utils.deepAccess(config, option) : config;
+      return option ? utils.deepAccess(_getConfig(), option) : _getConfig();
     }
 
     return subscribe(...args);
+  }
+
+  /**
+   * Internal API for modules (such as prebid-server) that might need access to all bidder config
+   */
+  function getBidderConfig() {
+    return bidderConfig;
+  }
+
+  /**
+   * Returns backwards compatible FPD data for modules
+   */
+  function getLegacyFpd(obj) {
+    if (typeof obj !== 'object') return;
+
+    let duplicate = {};
+
+    Object.keys(obj).forEach((type) => {
+      let prop = (type === 'site') ? 'context' : type;
+      duplicate[prop] = (prop === 'context' || prop === 'user') ? Object.keys(obj[type]).filter(key => key !== 'data').reduce((result, key) => {
+        if (key === 'ext') {
+          utils.mergeDeep(result, obj[type][key]);
+        } else {
+          utils.mergeDeep(result, {[key]: obj[type][key]});
+        }
+
+        return result;
+      }, {}) : obj[type];
+    });
+
+    return duplicate;
+  }
+
+  /**
+   * Returns backwards compatible FPD data for modules
+   */
+  function getLegacyImpFpd(obj) {
+    if (typeof obj !== 'object') return;
+
+    let duplicate = {};
+
+    if (utils.deepAccess(obj, 'ext.data')) {
+      Object.keys(obj.ext.data).forEach((key) => {
+        if (key === 'pbadslot') {
+          utils.mergeDeep(duplicate, {context: {pbAdSlot: obj.ext.data[key]}});
+        } else if (key === 'adserver') {
+          utils.mergeDeep(duplicate, {context: {adServer: obj.ext.data[key]}});
+        } else {
+          utils.mergeDeep(duplicate, {context: {data: {[key]: obj.ext.data[key]}}});
+        }
+      });
+    }
+
+    return duplicate;
+  }
+
+  /**
+   * Copy FPD over to OpenRTB standard format in config
+   */
+  function convertFpd(opt) {
+    let duplicate = {};
+
+    Object.keys(opt).forEach((type) => {
+      let prop = (type === 'context') ? 'site' : type;
+      duplicate[prop] = (prop === 'site' || prop === 'user') ? Object.keys(opt[type]).reduce((result, key) => {
+        if (key === 'data') {
+          utils.mergeDeep(result, {ext: {data: opt[type][key]}});
+        } else {
+          utils.mergeDeep(result, {[key]: opt[type][key]});
+        }
+
+        return result;
+      }, {}) : opt[type];
+    });
+
+    return duplicate;
+  }
+
+  /**
+   * Copy Impression FPD over to OpenRTB standard format in config
+   * Only accepts bid level context.data values with pbAdSlot and adServer exceptions
+   */
+  function convertImpFpd(opt) {
+    let duplicate = {};
+
+    Object.keys(opt).filter(prop => prop === 'context').forEach((type) => {
+      Object.keys(opt[type]).forEach((key) => {
+        if (key === 'data') {
+          utils.mergeDeep(duplicate, {ext: {data: opt[type][key]}});
+        } else {
+          if (typeof opt[type][key] === 'object' && !Array.isArray(opt[type][key])) {
+            Object.keys(opt[type][key]).forEach(data => {
+              utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: {[data.toLowerCase()]: opt[type][key][data]}}}});
+            });
+          } else {
+            utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
+          }
+        }
+      });
+    });
+
+    return duplicate;
+  }
+
+  /**
+   * Copy FPD over to OpenRTB standard format in each adunit
+   */
+  function convertAdUnitFpd(arr) {
+    let convert = [];
+
+    arr.forEach((adunit) => {
+      if (adunit.fpd) {
+        (adunit['ortb2Imp']) ? utils.mergeDeep(adunit['ortb2Imp'], convertImpFpd(adunit.fpd)) : adunit['ortb2Imp'] = convertImpFpd(adunit.fpd);
+        convert.push((({ fpd, ...duplicate }) => duplicate)(adunit));
+      } else {
+        convert.push(adunit);
+      }
+    });
+
+    return convert;
   }
 
   /*
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
    */
-  let setConfig = hook('async', function setConfig(options) {
-    if (typeof options !== 'object') {
+  function setConfig(options) {
+    if (!utils.isPlainObject(options)) {
       utils.logError('setConfig options must be an object');
       return;
     }
@@ -241,24 +466,25 @@ export function newConfig() {
     let topicalConfig = {};
 
     topics.forEach(topic => {
-      let option = options[topic];
+      let prop = (topic === 'fpd') ? 'ortb2' : topic;
+      let option = (topic === 'fpd') ? convertFpd(options[topic]) : options[topic];
 
-      if (typeof defaults[topic] === 'object' && typeof option === 'object') {
-        option = Object.assign({}, defaults[topic], option);
+      if (utils.isPlainObject(defaults[prop]) && utils.isPlainObject(option)) {
+        option = Object.assign({}, defaults[prop], option);
       }
 
-      topicalConfig[topic] = config[topic] = option;
+      topicalConfig[prop] = config[prop] = option;
     });
 
     callSubscribers(topicalConfig);
-  });
+  }
 
   /**
    * Sets configuration defaults which setConfig values can be applied on top of
    * @param {object} options
    */
   function setDefaults(options) {
-    if (typeof defaults !== 'object') {
+    if (!utils.isPlainObject(defaults)) {
       utils.logError('defaults must be an object');
       return;
     }
@@ -304,11 +530,12 @@ export function newConfig() {
       return;
     }
 
-    listeners.push({ topic, callback });
+    const nl = { topic, callback };
+    listeners.push(nl);
 
     // save and call this function to remove the listener
     return function unsubscribe() {
-      listeners.splice(listeners.indexOf(listener), 1);
+      listeners.splice(listeners.indexOf(nl), 1);
     };
   }
 
@@ -331,13 +558,87 @@ export function newConfig() {
       .forEach(listener => listener.callback(options));
   }
 
+  function setBidderConfig(config) {
+    try {
+      check(config);
+      config.bidders.forEach(bidder => {
+        if (!bidderConfig[bidder]) {
+          bidderConfig[bidder] = {};
+        }
+        Object.keys(config.config).forEach(topic => {
+          let prop = (topic === 'fpd') ? 'ortb2' : topic;
+          let option = (topic === 'fpd') ? convertFpd(config.config[topic]) : config.config[topic];
+
+          if (utils.isPlainObject(option)) {
+            bidderConfig[bidder][prop] = Object.assign({}, bidderConfig[bidder][prop] || {}, option);
+          } else {
+            bidderConfig[bidder][prop] = option;
+          }
+        });
+      });
+    } catch (e) {
+      utils.logError(e);
+    }
+    function check(obj) {
+      if (!utils.isPlainObject(obj)) {
+        throw 'setBidderConfig bidder options must be an object';
+      }
+      if (!(Array.isArray(obj.bidders) && obj.bidders.length)) {
+        throw 'setBidderConfig bidder options must contain a bidders list with at least 1 bidder';
+      }
+      if (!utils.isPlainObject(obj.config)) {
+        throw 'setBidderConfig bidder options must contain a config object';
+      }
+    }
+  }
+
+  /**
+   * Internal functions for core to execute some synchronous code while having an active bidder set.
+   */
+  function runWithBidder(bidder, fn) {
+    currBidder = bidder;
+    try {
+      return fn();
+    } finally {
+      resetBidder();
+    }
+  }
+  function callbackWithBidder(bidder) {
+    return function(cb) {
+      return function(...args) {
+        if (typeof cb === 'function') {
+          return runWithBidder(bidder, utils.bind.call(cb, this, ...args))
+        } else {
+          utils.logWarn('config.callbackWithBidder callback is not a function');
+        }
+      }
+    }
+  }
+
+  function getCurrentBidder() {
+    return currBidder;
+  }
+
+  function resetBidder() {
+    currBidder = null;
+  }
+
   resetConfig();
 
   return {
+    getCurrentBidder,
+    resetBidder,
     getConfig,
     setConfig,
     setDefaults,
-    resetConfig
+    resetConfig,
+    runWithBidder,
+    callbackWithBidder,
+    setBidderConfig,
+    getBidderConfig,
+    convertAdUnitFpd,
+    getLegacyFpd,
+    getLegacyImpFpd
   };
 }
 

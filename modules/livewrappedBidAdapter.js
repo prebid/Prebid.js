@@ -1,14 +1,20 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import find from 'core-js/library/fn/array/find';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import find from 'core-js-pure/features/array/find.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 const BIDDER_CODE = 'livewrapped';
-export const URL = '//lwadm.com/ad';
-const VERSION = '1.1';
+export const URL = 'https://lwadm.com/ad';
+const VERSION = '1.4';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
+  gvlid: 919,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -24,6 +30,8 @@ export const spec = {
    * seats:       List of bidders and seats           Optional. {"bidder name": ["seat 1", "seat 2"], ...}
    * deviceId:    Device id if available              Optional.
    * ifa:         Advertising ID                      Optional.
+   * bundle:      App bundle                          Optional. Read from config if exists.
+   * options      Dynamic data                        Optional. Optional data to send into adapter.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
@@ -49,9 +57,11 @@ export const spec = {
     const seats = find(bidRequests, hasSeatsParam);
     const deviceId = find(bidRequests, hasDeviceIdParam);
     const ifa = find(bidRequests, hasIfaParam);
+    const bundle = find(bidRequests, hasBundleParam);
     const tid = find(bidRequests, hasTidParam);
+    const schain = bidRequests[0].schain;
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
-    url = url ? url.params.url : (config.getConfig('pageUrl') || utils.getTopWindowUrl());
+    url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
     var adRequests = bidRequests.map(bidToAdRequest);
 
@@ -63,14 +73,27 @@ export const spec = {
       test: test,
       seats: seats ? seats.params.seats : undefined,
       deviceId: deviceId ? deviceId.params.deviceId : undefined,
-      ifa: ifa ? ifa.params.ifa : undefined,
+      ifa: ifa ? ifa.params.ifa : getDeviceIfa(),
+      bundle: bundle ? bundle.params.bundle : getAppBundle(),
+      width: getDeviceWidth(),
+      height: getDeviceHeight(),
       tid: tid ? tid.params.tid : undefined,
       version: VERSION,
       gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
       gdprConsent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined,
-      cookieSupport: !utils.isSafariBrowser() && utils.cookiesAreEnabled(),
-      adRequests: [...adRequests]
+      coppa: getCoppa(),
+      usPrivacy: bidderRequest.uspConsent,
+      cookieSupport: !utils.isSafariBrowser() && storage.cookiesAreEnabled(),
+      rcv: getAdblockerRecovered(),
+      adRequests: [...adRequests],
+      rtbData: handleEids(bidRequests),
+      schain: schain
     };
+
+    if (config.getConfig().debug) {
+      payload.dbg = true;
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -88,8 +111,12 @@ export const spec = {
   interpretResponse: function(serverResponse) {
     const bidResponses = [];
 
+    if (serverResponse.body.dbg && window.livewrapped && window.livewrapped.s2sDebug) {
+      window.livewrapped.s2sDebug(serverResponse.body.dbg);
+    }
+
     serverResponse.body.ads.forEach(function(ad) {
-      let bidResponse = {
+      var bidResponse = {
         requestId: ad.bidId,
         bidderCode: BIDDER_CODE,
         cpm: ad.cpmBid,
@@ -99,8 +126,19 @@ export const spec = {
         ttl: ad.ttl,
         creativeId: ad.creativeId,
         netRevenue: true,
-        currency: serverResponse.body.currency
+        currency: serverResponse.body.currency,
+        meta: ad.meta
       };
+
+      if (ad.native) {
+        bidResponse.native = ad.native;
+        bidResponse.mediaType = NATIVE;
+      }
+
+      if (ad.video) {
+        bidResponse.mediaType = VIDEO;
+        bidResponse.vastXml = ad.tag;
+      }
 
       bidResponses.push(bidResponse);
     });
@@ -164,6 +202,10 @@ function hasIfaParam(bid) {
   return !!bid.params.ifa;
 }
 
+function hasBundleParam(bid) {
+  return !!bid.params.bundle;
+}
+
 function hasTidParam(bid) {
   return !!bid.params.tid;
 }
@@ -173,13 +215,37 @@ function hasPubcid(bid) {
 }
 
 function bidToAdRequest(bid) {
-  return {
+  var adRequest = {
     adUnitId: bid.params.adUnitId,
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
     bidId: bid.bidId,
     transactionId: bid.transactionId,
-    formats: bid.sizes.map(sizeToFormat)
+    formats: getSizes(bid).map(sizeToFormat),
+    options: bid.params.options
   };
+
+  if (bid.auc !== undefined) {
+    adRequest.auc = bid.auc;
+  }
+
+  adRequest.native = utils.deepAccess(bid, 'mediaTypes.native');
+
+  adRequest.video = utils.deepAccess(bid, 'mediaTypes.video');
+
+  if ((adRequest.native || adRequest.video) && utils.deepAccess(bid, 'mediaTypes.banner')) {
+    adRequest.banner = true;
+  }
+
+  return adRequest;
+}
+
+function getSizes(bid) {
+  if (utils.deepAccess(bid, 'mediaTypes.banner.sizes')) {
+    return bid.mediaTypes.banner.sizes;
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+    return bid.sizes;
+  }
+  return [];
 }
 
 function sizeToFormat(size) {
@@ -189,4 +255,65 @@ function sizeToFormat(size) {
   }
 }
 
+function getAdblockerRecovered() {
+  try {
+    return utils.getWindowTop().I12C && utils.getWindowTop().I12C.Morph === 1;
+  } catch (e) {}
+}
+
+function handleEids(bidRequests) {
+  const bidRequest = bidRequests[0];
+  if (bidRequest && bidRequest.userIdAsEids) {
+    return {user: {ext: {eids: bidRequest.userIdAsEids}}};
+  }
+
+  return undefined;
+}
+
+function getTopWindowLocation(bidderRequest) {
+  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+  return config.getConfig('pageUrl') || url;
+}
+
+function getAppBundle() {
+  if (typeof config.getConfig('app') === 'object') {
+    return config.getConfig('app').bundle;
+  }
+}
+
+function getAppDomain() {
+  if (typeof config.getConfig('app') === 'object') {
+    return config.getConfig('app').domain;
+  }
+}
+
+function getDeviceIfa() {
+  if (typeof config.getConfig('device') === 'object') {
+    return config.getConfig('device').ifa;
+  }
+}
+
+function getDeviceWidth() {
+  let device = config.getConfig('device');
+  if (typeof device === 'object' && device.width) {
+    return device.width;
+  }
+
+  return window.innerWidth;
+}
+
+function getDeviceHeight() {
+  let device = config.getConfig('device');
+  if (typeof device === 'object' && device.height) {
+    return device.height;
+  }
+
+  return window.innerHeight;
+}
+
+function getCoppa() {
+  if (typeof config.getConfig('coppa') === 'boolean') {
+    return config.getConfig('coppa');
+  }
+}
 registerBidder(spec);

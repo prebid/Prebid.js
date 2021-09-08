@@ -1,12 +1,13 @@
-import * as utils from '../src/utils';
-import { BANNER, NATIVE } from '../src/mediaTypes';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import includes from 'core-js/library/fn/array/includes';
+import * as utils from '../src/utils.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
 const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
 const DEFAULT_CURRENCY_ARR = ['USD']; // NOTE - USD is the only supported currency right now; Hardcoded for bids
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const TTL = 55;
 
 // Codes defined by OpenRTB Native Ads 1.1 specification
@@ -34,7 +35,7 @@ export const OPENRTB = {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function (bid) {
     return !!(includes(REGIONS, bid.params.region) && bid.params.publisherId);
@@ -46,9 +47,7 @@ export const spec = {
       site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,
       test: validBidRequests[0].params.test || 0,
-      source: {
-        tid: validBidRequests[0].transactionId
-      }
+      source: mapSource(validBidRequests[0]),
     };
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
@@ -56,6 +55,23 @@ export const spec = {
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       request.regs = {ext: {gdpr: gdpr}};
       request.user = {ext: {consent: consentStr}};
+    }
+    if (validBidRequests[0].schain) {
+      const schain = mapSchain(validBidRequests[0].schain);
+      if (schain) {
+        request.ext = {
+          schain: schain,
+        }
+      }
+    }
+
+    if (validBidRequests[0].userIdAsEids) {
+      const eids = { eids: validBidRequests[0].userIdAsEids };
+      if (request.user && request.user.ext) {
+        request.user.ext = { ...request.user.ext, ...eids };
+      } else {
+        request.user = {ext: eids};
+      }
     }
 
     return {
@@ -89,6 +105,22 @@ registerBidder(spec);
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
+ * @returns {int} floor by imp type
+ */
+function applyFloor(slot) {
+  const floors = [];
+  if (typeof slot.getFloor === 'function') {
+    Object.keys(slot.mediaTypes).forEach(type => {
+      if (includes(SUPPORTED_MEDIA_TYPES, type)) {
+        floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' }).floor);
+      }
+    });
+  }
+  return floors.length > 0 ? Math.max(...floors) : parseFloat(slot.params.bidfloor);
+}
+
+/**
+ * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Imp by OpenRTB 2.5 §3.2.4
  */
 function mapImpression(slot) {
@@ -99,9 +131,9 @@ function mapImpression(slot) {
     tagid: slot.adUnitCode.toString()
   };
 
-  const bidfloor = parseFloat(slot.params.bidfloor);
+  const bidfloor = applyFloor(slot);
   if (bidfloor) {
-    imp.bidfloor = bidfloor
+    imp.bidfloor = bidfloor;
   }
 
   return imp;
@@ -115,10 +147,11 @@ function mapBanner(slot) {
   if (slot.mediaType === 'banner' ||
     utils.deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
+    var sizes = slot.sizes || slot.mediaTypes.banner.sizes;
     return {
-      w: slot.sizes[0][0],
-      h: slot.sizes[0][1],
-      format: slot.sizes.map(size => ({
+      w: sizes[0][0],
+      h: sizes[0][1],
+      format: sizes.map(size => ({
         w: size[0],
         h: size[1]
       }))
@@ -142,6 +175,47 @@ function mapSite(slot, bidderRequest) {
     page: bidderRequest.refererInfo.referer,
     name: utils.getOrigin()
   }
+}
+
+/**
+ * @param {object} slot Ad Unit Params by Prebid
+ * @returns {object} Source by OpenRTB 2.5 §3.2.2
+ */
+function mapSource(slot) {
+  const source = {
+    tid: slot.transactionId,
+  };
+
+  return source;
+}
+
+/**
+ * @param {object} schain object set by Publisher
+ * @returns {object} OpenRTB SupplyChain object
+ */
+function mapSchain(schain) {
+  if (!schain) {
+    return null;
+  }
+  if (!validateSchain(schain)) {
+    utils.logError('RTB House: required schain params missing');
+    return null;
+  }
+  return schain;
+}
+
+/**
+ * @param {object} schain object set by Publisher
+ * @returns {object} bool
+ */
+function validateSchain(schain) {
+  if (!schain.nodes) {
+    return false;
+  }
+  const requiredFields = ['asi', 'sid', 'hp'];
+  return schain.nodes.every(node => {
+    return requiredFields.every(field => node[field]);
+  });
 }
 
 /**
@@ -257,6 +331,9 @@ function interpretBannerBid(serverBid) {
     width: serverBid.w,
     height: serverBid.h,
     ttl: TTL,
+    meta: {
+      advertiserDomains: serverBid.adomain
+    },
     netRevenue: true,
     currency: 'USD'
   }
@@ -275,6 +352,9 @@ function interpretNativeBid(serverBid) {
     width: 1,
     height: 1,
     ttl: TTL,
+    meta: {
+      advertiserDomains: serverBid.adomain
+    },
     netRevenue: true,
     currency: 'USD',
     native: interpretNativeAd(serverBid.adm),

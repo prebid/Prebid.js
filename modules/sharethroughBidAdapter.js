@@ -1,151 +1,281 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { createEidsArray } from './userId/eids.js';
 
-const VERSION = '3.0.1';
+const VERSION = '4.0.0';
 const BIDDER_CODE = 'sharethrough';
-const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/header-bid/v1';
+const SUPPLY_ID = 'WYu2BXv1';
+
+const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
+
+// this allows stubbing of utility function that is used internally by the sharethrough adapter
+export const sharethroughInternal = {
+  getProtocol,
+};
 
 export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
 
   buildRequests: (bidRequests, bidderRequest) => {
-    return bidRequests.map(bid => {
-      let query = {
-        bidId: bid.bidId,
-        placement_key: bid.params.pkey,
-        hbVersion: '$prebid.version$',
-        strVersion: VERSION,
-        hbSource: 'prebid',
-        consent_required: false
-      };
+    const timeout = config.getConfig('bidderTimeout');
 
-      if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
-        query.consent_string = bidderRequest.gdprConsent.consentString;
+    const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
+    const secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
+
+    const req = {
+      id: utils.generateUUID(),
+      at: 1,
+      cur: ['USD'],
+      tmax: timeout,
+      site: {
+        domain: window.location.hostname,
+        page: window.location.href,
+        ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null,
+      },
+      user: {
+        ext: {
+          eids: userIdAsEids(bidRequests[0]),
+        },
+      },
+      device: {
+        ua: navigator.userAgent,
+        language: navigator.language,
+        js: 1,
+        dnt: navigator.doNotTrack === '1' ? 1 : 0,
+        h: window.screen.height,
+        w: window.screen.width,
+      },
+      regs: {
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        ext: {},
+      },
+      source: {
+        ext: {
+          version: '$prebid.version$',
+          str: VERSION,
+          schain: bidRequests[0].schain,
+        },
+      },
+      bcat: bidRequests[0].params.bcat || [],
+      badv: bidRequests[0].params.badv || [],
+      test: 0,
+    };
+
+    if (bidderRequest.gdprConsent) {
+      const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
+      req.regs.ext.gdpr = gdprApplies ? 1 : 0;
+      if (gdprApplies) {
+        req.user.ext.consent = bidderRequest.gdprConsent.consentString;
+      }
+    }
+
+    if (bidderRequest.uspConsent) {
+      req.regs.ext.us_privacy = bidderRequest.uspConsent;
+    }
+
+    const imps = bidRequests.map(bidReq => {
+      const impression = {};
+
+      const gpid = utils.deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        impression.ext = { gpid: gpid };
       }
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        query.consent_required = !!bidderRequest.gdprConsent.gdprApplies;
+      // if request is for video, we only support instream
+      if (bidReq.mediaTypes && bidReq.mediaTypes.video && bidReq.mediaTypes.video.context === 'outstream') {
+        // return null so we can easily remove this imp from the array of imps that we send to adserver
+        return null;
       }
 
-      // Data that does not need to go to the server,
-      // but we need as part of interpretResponse()
-      const strData = {
-        stayInIframe: bid.params.iframe,
-        iframeSize: bid.params.iframeSize,
-        sizes: bid.sizes
+      if (bidReq.mediaTypes && bidReq.mediaTypes.video) {
+        const videoRequest = bidReq.mediaTypes.video;
+
+        // default playerSize, only change this if we know width and height are properly defined in the request
+        let [w, h] = [640, 360];
+        if (videoRequest.playerSize && videoRequest.playerSize[0] && videoRequest.playerSize[1]) {
+          [w, h] = videoRequest.playerSize;
+        }
+
+        impression.video = {
+          pos: nullish(videoRequest.pos, 0),
+          topframe: utils.inIframe() ? 0 : 1,
+          skip: nullish(videoRequest.skip, 0),
+          linearity: nullish(videoRequest.linearity, 1),
+          minduration: nullish(videoRequest.minduration, 5),
+          maxduration: nullish(videoRequest.maxduration, 60),
+          playbackmethod: videoRequest.playbackmethod || [2],
+          api: getVideoApi(videoRequest),
+          mimes: videoRequest.mimes || ['video/mp4'],
+          protocols: getVideoProtocols(videoRequest),
+          w,
+          h,
+          startdelay: nullish(videoRequest.startdelay, 0),
+          skipmin: nullish(videoRequest.skipmin, 0),
+          skipafter: nullish(videoRequest.skipafter, 0),
+        };
+
+        if (videoRequest.placement) impression.video.placement = videoRequest.placement;
+        if (videoRequest.delivery) impression.video.delivery = videoRequest.delivery;
+        if (videoRequest.companiontype) impression.video.companiontype = videoRequest.companiontype;
+        if (videoRequest.companionad) impression.video.companionad = videoRequest.companionad;
+      } else {
+        impression.banner = {
+          pos: utils.deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
+          topframe: utils.inIframe() ? 0 : 1,
+          format: bidReq.sizes.map(size => ({ w: +size[0], h: +size[1] })),
+        };
       }
 
       return {
-        method: 'GET',
-        url: STR_ENDPOINT,
-        data: query,
-        strData: strData
+        id: bidReq.bidId,
+        tagid: String(bidReq.params.pkey),
+        secure: secure ? 1 : 0,
+        bidfloor: getBidRequestFloor(bidReq),
+        ...impression,
       };
-    })
+    }).filter(imp => !!imp);
+
+    return {
+      method: 'POST',
+      url: STR_ENDPOINT,
+      data: {
+        ...req,
+        imp: imps,
+      },
+      bidRequests,
+      bidderRequest,
+    };
   },
 
   interpretResponse: ({ body }, req) => {
-    if (!body || !body.creatives || !body.creatives.length) {
+    if (!body || !body.seatbid || body.seatbid.length === 0 || !body.seatbid[0].bid || body.seatbid[0].bid.length === 0) {
       return [];
     }
 
-    const creative = body.creatives[0];
-    let size = [0, 0];
-    if (req.strData.stayInIframe) {
-      size = req.strData.iframeSize != undefined
-        ? req.strData.iframeSize
-        : getLargestSize(req.strData.sizes);
-    }
+    return body.seatbid[0].bid.map(bid => {
+      const request = matchRequest(bid.impid, req);
 
-    return [{
-      requestId: req.data.bidId,
-      width: size[0],
-      height: size[1],
-      cpm: creative.cpm,
-      creativeId: creative.creative.creative_key,
-      dealId: creative.creative.deal_id,
-      currency: 'USD',
-      netRevenue: true,
-      ttl: 360,
-      ad: generateAd(body, req)
-    }];
+      const response = {
+        requestId: bid.impid,
+        width: +bid.w,
+        height: +bid.h,
+        cpm: +bid.price,
+        creativeId: bid.crid,
+        dealId: bid.dealid || null,
+        mediaType: request.mediaTypes && request.mediaTypes.video ? VIDEO : BANNER,
+        currency: body.cur || 'USD',
+        netRevenue: true,
+        ttl: 360,
+        ad: bid.adm,
+        nurl: bid.nurl,
+        meta: {
+          advertiserDomains: bid.adomain || [],
+        },
+      };
+
+      if (response.mediaType === VIDEO) {
+        response.ttl = 3600;
+        response.vastXml = bid.adm;
+      }
+
+      return response;
+    });
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const syncParams = uspConsent ? `&us_privacy=${uspConsent}` : '';
     const syncs = [];
     const shouldCookieSync = syncOptions.pixelEnabled &&
-                             serverResponses.length > 0 &&
-                             serverResponses[0].body &&
-                             serverResponses[0].body.cookieSyncUrls;
+      serverResponses.length > 0 &&
+      serverResponses[0].body &&
+      serverResponses[0].body.cookieSyncUrls;
 
     if (shouldCookieSync) {
       serverResponses[0].body.cookieSyncUrls.forEach(url => {
-        syncs.push({ type: 'image', url: url });
+        syncs.push({ type: 'image', url: url + syncParams });
       });
     }
 
     return syncs;
-  }
-}
+  },
 
-function getLargestSize(sizes) {
-  function area(size) {
-    return size[0] * size[1];
-  }
+  // Empty implementation for prebid core to be able to find it
+  onTimeout: (data) => {
+  },
 
-  return sizes.reduce((prev, current) => {
-    if (area(current) > area(prev)) {
-      return current
-    } else {
-      return prev
-    }
-  }, [0, 0]);
-}
+  // Empty implementation for prebid core to be able to find it
+  onBidWon: (bid) => {
+  },
 
-function generateAd(body, req) {
-  const strRespId = `str_response_${req.data.bidId}`;
+  // Empty implementation for prebid core to be able to find it
+  onSetTargeting: (bid) => {
+  },
+};
 
-  let adMarkup = `
-    <div data-str-native-key="${req.data.placement_key}" data-stx-response-name="${strRespId}">
-    </div>
-    <script>var ${strRespId} = "${b64EncodeUnicode(JSON.stringify(body))}"</script>
-  `
-
-  if (req.strData.stayInIframe) {
-    // Don't break out of iframe
-    adMarkup = adMarkup + `<script src="//native.sharethrough.com/assets/sfp.js"></script>`
+function getVideoApi({ api }) {
+  let defaultValue = [2];
+  if (api && Array.isArray(api) && api.length > 0) {
+    return api;
   } else {
-    // Break out of iframe
-    adMarkup = adMarkup + `
-      <script src="//native.sharethrough.com/assets/sfp-set-targeting.js"></script>
-      <script>
-        (function() {
-          if (!(window.STR && window.STR.Tag) && !(window.top.STR && window.top.STR.Tag)) {
-            var sfp_js = document.createElement('script');
-            sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
-            sfp_js.type = 'text/javascript';
-            sfp_js.charset = 'utf-8';
-            try {
-                window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
-            } catch (e) {
-              console.log(e);
-            }
-          }
-        })()
-    </script>`
+    return defaultValue;
   }
-
-  return adMarkup;
 }
 
-// See https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding#The_Unicode_Problem
-function b64EncodeUnicode(str) {
-  return btoa(
-    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-      function toSolidBytes(match, p1) {
-        return String.fromCharCode('0x' + p1);
-      }));
+function getVideoProtocols({ protocols }) {
+  let defaultValue = [2, 3, 5, 6, 7, 8];
+  if (protocols && Array.isArray(protocols) && protocols.length > 0) {
+    return protocols;
+  } else {
+    return defaultValue;
+  }
+}
+
+function getBidRequestFloor(bid) {
+  let floor = null;
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner',
+      size: bid.sizes.map(size => ({ w: size[0], h: size[1] })),
+    });
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor !== null ? floor : bid.params.floor;
+}
+
+function userIdAsEids(bidRequest) {
+  const eids = createEidsArray(utils.deepAccess(bidRequest, 'userId')) || [];
+
+  const flocData = utils.deepAccess(bidRequest, 'userId.flocId');
+  const isFlocIdValid = flocData && flocData.id && flocData.version;
+  if (isFlocIdValid) {
+    eids.push({
+      source: 'chrome.com',
+      uids: [{ id: flocData.id, atype: 1, ext: { ver: flocData.version } }],
+    });
+  }
+
+  return eids;
+}
+
+function getProtocol() {
+  return window.location.protocol;
+}
+
+function matchRequest(id, request) {
+  return request.bidRequests.find(bid => bid.bidId === id);
+}
+
+// stub for ?? operator
+function nullish(input, def) {
+  return input === null || input === undefined ? def : input;
 }
 
 registerBidder(sharethroughAdapterSpec);
