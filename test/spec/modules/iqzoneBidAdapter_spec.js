@@ -1,80 +1,194 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/smartyadsBidAdapter.js';
-import { config } from '../../../src/config.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/iqzoneBidAdapter.js';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
+import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-describe('SmartyadsAdapter', function () {
-  let bid = {
-    bidId: '23fhj33i987f',
-    bidder: 'smartyads',
+const bidder = 'iqzone'
+
+describe('IQZoneBidAdapter', function () {
+  const bids = [
+    {
+      bidId: getUniqueIdentifierStr(),
+      bidder: bidder,
+      mediaTypes: {
+        [BANNER]: {
+          sizes: [[300, 250]]
+        }
+      },
+      params: {
+        placementId: 'testBanner',
+      }
+    },
+    {
+      bidId: getUniqueIdentifierStr(),
+      bidder: bidder,
+      mediaTypes: {
+        [VIDEO]: {
+          playerSize: [[300, 300]],
+          minduration: 5,
+          maxduration: 60
+        }
+      },
+      params: {
+        placementId: 'testVideo',
+      }
+    },
+    {
+      bidId: getUniqueIdentifierStr(),
+      bidder: bidder,
+      mediaTypes: {
+        [NATIVE]: {
+          native: {
+            title: {
+              required: true
+            },
+            body: {
+              required: true
+            },
+            icon: {
+              required: true,
+              size: [64, 64]
+            }
+          }
+        }
+      },
+      params: {
+        placementId: 'testNative',
+      }
+    }
+  ];
+
+  const invalidBid = {
+    bidId: getUniqueIdentifierStr(),
+    bidder: bidder,
+    mediaTypes: {
+      [BANNER]: {
+        sizes: [[300, 250]]
+      }
+    },
     params: {
-      host: 'prebid',
-      sourceid: '0',
-      accountid: '0',
-      traffic: 'banner'
+
+    }
+  }
+
+  const bidderRequest = {
+    uspConsent: '1---',
+    gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+    refererInfo: {
+      referer: 'https://test.com'
     }
   };
 
   describe('isBidRequestValid', function () {
-    it('Should return true if there are bidId, params and sourceid parameters present', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
+    it('Should return true if there are bidId, params and key parameters present', function () {
+      expect(spec.isBidRequestValid(bids[0])).to.be.true;
     });
     it('Should return false if at least one of parameters is not present', function () {
-      delete bid.params.sourceid;
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
   });
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests([bid]);
+    let serverRequest = spec.buildRequests(bids, bidderRequest);
+
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
       expect(serverRequest.url).to.exist;
       expect(serverRequest.data).to.exist;
     });
+
     it('Returns POST method', function () {
       expect(serverRequest.method).to.equal('POST');
     });
+
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js');
+      expect(serverRequest.url).to.equal('https://smartssp-us-east.iqzone.com/pbjs');
     });
-    it('Returns valid data if array of bids is valid', function () {
+
+    it('Returns general data valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'coppa');
+      expect(data).to.have.all.keys('deviceWidth',
+        'deviceHeight',
+        'language',
+        'secure',
+        'host',
+        'page',
+        'placements',
+        'coppa',
+        'ccpa',
+        'gdpr',
+        'tmax'
+      );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
-      expect(data.coppa).to.be.a('number');
       expect(data.language).to.be.a('string');
       expect(data.secure).to.be.within(0, 1);
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
-      let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'publisherId');
-      expect(placement.placementId).to.equal('0');
-      expect(placement.bidId).to.equal('23fhj33i987f');
-      expect(placement.traffic).to.equal('banner');
+      expect(data.coppa).to.be.a('number');
+      expect(data.gdpr).to.be.a('string');
+      expect(data.ccpa).to.be.a('string');
+      expect(data.tmax).to.be.a('number');
+      expect(data.placements).to.have.lengthOf(3);
     });
+
+    it('Returns valid placements', function () {
+      const { placements } = serverRequest.data;
+      for (let i = 0, len = placements.length; i < len; i++) {
+        const placement = placements[i];
+        expect(placement.placementId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
+        expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE]);
+        expect(placement.bidId).to.be.a('string');
+        expect(placement.schain).to.be.an('object');
+        expect(placement.bidfloor).to.exist.and.to.equal(0);
+
+        if (placement.adFormat === BANNER) {
+          expect(placement.sizes).to.be.an('array');
+        }
+        switch (placement.adFormat) {
+          case BANNER:
+            expect(placement.sizes).to.be.an('array');
+            break;
+          case VIDEO:
+            expect(placement.playerSize).to.be.an('array');
+            expect(placement.minduration).to.be.an('number');
+            expect(placement.maxduration).to.be.an('number');
+            break;
+          case NATIVE:
+            expect(placement.native).to.be.an('object');
+            break;
+        }
+      }
+    });
+
+    it('Returns data with gdprConsent and without uspConsent', function () {
+      delete bidderRequest.uspConsent;
+      serverRequest = spec.buildRequests(bids, bidderRequest);
+      let data = serverRequest.data;
+      expect(data.gdpr).to.exist;
+      expect(data.gdpr).to.be.a('string');
+      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
+      expect(data.ccpa).to.not.exist;
+      delete bidderRequest.gdprConsent;
+    });
+
+    it('Returns data with uspConsent and without gdprConsent', function () {
+      bidderRequest.uspConsent = '1---';
+      delete bidderRequest.gdprConsent;
+      serverRequest = spec.buildRequests(bids, bidderRequest);
+      let data = serverRequest.data;
+      expect(data.ccpa).to.exist;
+      expect(data.ccpa).to.be.a('string');
+      expect(data.ccpa).to.equal(bidderRequest.uspConsent);
+      expect(data.gdpr).to.not.exist;
+    });
+
     it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([]);
+      serverRequest = spec.buildRequests([], bidderRequest);
       let data = serverRequest.data;
       expect(data.placements).to.be.an('array').that.is.empty;
-    });
-  });
-
-  describe('with COPPA', function() {
-    beforeEach(function() {
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-    });
-    afterEach(function() {
-      config.getConfig.restore();
-    });
-
-    it('should send the Coppa "required" flag set to "1" in the request', function () {
-      let serverRequest = spec.buildRequests([bid]);
-      expect(serverRequest.data.coppa).to.equal(1);
     });
   });
 
@@ -93,7 +207,10 @@ describe('SmartyadsAdapter', function () {
           netRevenue: true,
           currency: 'USD',
           dealId: '1',
-          meta: {advertiserDomains: ['example.com']}
+          meta: {
+            advertiserDomains: ['google.com'],
+            advertiserId: 1234
+          }
         }]
       };
       let bannerResponses = spec.interpretResponse(banner);
@@ -101,17 +218,16 @@ describe('SmartyadsAdapter', function () {
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
-      expect(dataItem.requestId).to.equal('23fhj33i987f');
-      expect(dataItem.cpm).to.equal(0.4);
-      expect(dataItem.width).to.equal(300);
-      expect(dataItem.height).to.equal(250);
-      expect(dataItem.ad).to.equal('Test');
-      expect(dataItem.meta).to.have.property('advertiserDomains')
-      expect(dataItem.meta.advertiserDomains).to.deep.equal(['example.com']);
-      expect(dataItem.ttl).to.equal(120);
-      expect(dataItem.creativeId).to.equal('2');
+      expect(dataItem.requestId).to.equal(banner.body[0].requestId);
+      expect(dataItem.cpm).to.equal(banner.body[0].cpm);
+      expect(dataItem.width).to.equal(banner.body[0].width);
+      expect(dataItem.height).to.equal(banner.body[0].height);
+      expect(dataItem.ad).to.equal(banner.body[0].ad);
+      expect(dataItem.ttl).to.equal(banner.body[0].ttl);
+      expect(dataItem.creativeId).to.equal(banner.body[0].creativeId);
       expect(dataItem.netRevenue).to.be.true;
-      expect(dataItem.currency).to.equal('USD');
+      expect(dataItem.currency).to.equal(banner.body[0].currency);
+      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
     });
     it('Should interpret video response', function () {
       const video = {
@@ -124,7 +240,11 @@ describe('SmartyadsAdapter', function () {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
-          dealId: '1'
+          dealId: '1',
+          meta: {
+            advertiserDomains: ['google.com'],
+            advertiserId: 1234
+          }
         }]
       };
       let videoResponses = spec.interpretResponse(video);
@@ -132,7 +252,7 @@ describe('SmartyadsAdapter', function () {
 
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');
@@ -140,6 +260,7 @@ describe('SmartyadsAdapter', function () {
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
+      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
     });
     it('Should interpret native response', function () {
       const native = {
@@ -157,13 +278,17 @@ describe('SmartyadsAdapter', function () {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
+          meta: {
+            advertiserDomains: ['google.com'],
+            advertiserId: 1234
+          }
         }]
       };
       let nativeResponses = spec.interpretResponse(native);
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
       let dataItem = nativeResponses[0];
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native');
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
@@ -176,6 +301,7 @@ describe('SmartyadsAdapter', function () {
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
+      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
     });
     it('Should return an empty array if invalid banner response is passed', function () {
       const invBanner = {
@@ -240,21 +366,6 @@ describe('SmartyadsAdapter', function () {
       };
       let serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
-    });
-  });
-  describe('getUserSyncs', function () {
-    const syncUrl = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a&gdpr=0&gdpr_consent=&type=iframe&us_privacy=';
-    const syncOptions = {
-      iframeEnabled: true
-    };
-    let userSync = spec.getUserSyncs(syncOptions);
-    it('Returns valid URL and type', function () {
-      expect(userSync).to.be.an('array').with.lengthOf(1);
-      expect(userSync[0].type).to.exist;
-      expect(userSync[0].url).to.exist;
-      expect(userSync).to.deep.equal([
-        { type: 'iframe', url: syncUrl }
-      ]);
     });
   });
 });
