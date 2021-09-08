@@ -298,6 +298,11 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
           bidResponse.ext = serverBid.ext.prebid;
         }
 
+        const visxTargeting = deepAccess(serverBid, 'ext.prebid.targeting');
+        if (visxTargeting) {
+          bidResponse.adserverTargeting = visxTargeting;
+        }
+
         if (!_isVideoInstreamBid(bid)) {
           bidResponse.ad = serverBid.adm;
         } else {
