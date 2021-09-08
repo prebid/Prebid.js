@@ -89,18 +89,18 @@ export const spec = {
         }
       }
       let impObj = {
-        id: bidId,
+        id: bidId.toString(),
         tagid: uid.toString(),
         ext: {
-          divid: adUnitCode
+          divid: adUnitCode.toString()
         }
       };
       if (ortb2Imp && ortb2Imp.ext && ortb2Imp.ext.data) {
         impObj.ext.data = ortb2Imp.ext.data;
         if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
-          impObj.ext.gpid = impObj.ext.data.adserver.adslot;
+          impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
         } else {
-          impObj.ext.gpid = ortb2Imp.ext.data.pbadslot;
+          impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
         }
       }
       if (!utils.isEmpty(keywords)) {
@@ -133,7 +133,7 @@ export const spec = {
     });
 
     const source = {
-      tid: auctionId,
+      tid: auctionId && auctionId.toString(),
       ext: {
         wrapper: 'Prebid_js',
         wrapper_version: '$prebid.version$'
@@ -148,7 +148,7 @@ export const spec = {
     const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
 
     let request = {
-      id: bidderRequestId,
+      id: bidderRequestId && bidderRequestId.toString(),
       site: {
         page: referer
       },
@@ -190,7 +190,7 @@ export const spec = {
 
     if (fpdUserId) {
       user = user || {};
-      user.id = fpdUserId;
+      user.id = fpdUserId.toString();
     }
 
     if (user) {
