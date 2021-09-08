@@ -90,7 +90,7 @@ function stringProperties(obj) {
     } else if (typeof value !== 'string') {
       value = String(value);
     }
-    newObj[prop] = value;
+    newObj[prop] = value || undefined;
     return newObj;
   }, {});
 }

@@ -3,15 +3,16 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
 const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
+const USER_ID_KEY = 'tmguid';
+const GVLID = 686;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-
-let hasSynced = false;
-
+export const storage = getStorageManager(GVLID, BIDDER_CODE);
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -23,6 +24,9 @@ const LOG_ERROR_MESS = {
   hasEmptySeatbidArray: 'Response has empty seatbid array',
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
+
+let hasSynced = false;
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -50,7 +54,6 @@ export const spec = {
     let jwpseg = null;
     let content = null;
     let schain = null;
-    let userId = null;
     let userIdAsEids = null;
     let user = null;
     let userExt = null;
@@ -69,9 +72,6 @@ export const spec = {
       }
       if (!schain) {
         schain = bid.schain;
-      }
-      if (!userId) {
-        userId = bid.userId;
       }
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
@@ -184,6 +184,13 @@ export const spec = {
     if (userExt && Object.keys(userExt).length) {
       user = user || {};
       user.ext = userExt;
+    }
+
+    const fpdUserId = getUserIdFromFPDStorage();
+
+    if (fpdUserId) {
+      user = user || {};
+      user.id = fpdUserId.toString();
     }
 
     if (user) {
@@ -345,7 +352,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
-  if (!serverBid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
+  if (!errorMessage && !serverBid.adm && !serverBid.nurl) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
   else {
     const bid = bidRequest.bidsMap[serverBid.impid];
     if (bid) {
@@ -370,11 +377,16 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
       }
 
       if (serverBid.content_type === 'video') {
-        bidResponse.vastXml = serverBid.adm;
+        if (serverBid.adm) {
+          bidResponse.vastXml = serverBid.adm;
+          bidResponse.adResponse = {
+            content: bidResponse.vastXml
+          };
+        }
+        if (serverBid.nurl) {
+          bidResponse.vastUrl = serverBid.nurl;
+        }
         bidResponse.mediaType = VIDEO;
-        bidResponse.adResponse = {
-          content: bidResponse.vastXml
-        };
         if (!bid.renderer && (!bid.mediaTypes || !bid.mediaTypes.video || bid.mediaTypes.video.context === 'outstream')) {
           bidResponse.renderer = createRenderer(bidResponse, {
             id: bid.bidId,
@@ -427,6 +439,20 @@ function createBannerRequest(bid, mediaType) {
     result.format = format
   }
   return result;
+}
+
+function makeNewUserIdInFPDStorage() {
+  if (config.getConfig('localStorageWriteAllowed')) {
+    const value = utils.generateUUID().replace(/-/g, '');
+
+    storage.setDataInLocalStorage(USER_ID_KEY, value);
+    return value;
+  }
+  return null;
+}
+
+function getUserIdFromFPDStorage() {
+  return storage.getDataFromLocalStorage(USER_ID_KEY) || makeNewUserIdInFPDStorage();
 }
 
 function reformatKeywords(pageKeywords) {
