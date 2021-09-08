@@ -262,7 +262,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
       'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
       'fskp': bid.floorData ? (bid.floorData.skipped == false ? 0 : 1) : undefined,
-      'fmv': bid.floorData ? bid.floorData.modelVersion || EMPTY_STRING : undefined,
+      'fmv': bid.floorData ? bid.floorData.modelVersion || undefined : undefined,
       'frv': bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined,
       'ft': bid.bidResponse ? (bid.bidResponse.floorData ? (bid.bidResponse.floorData.enforcements.enforceJS == false ? 0 : 1) : undefined) : undefined,
     });
