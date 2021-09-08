@@ -57,7 +57,7 @@ function getPageLevelKeywords(response) {
     shallowMerge(result, response.brandSafety);
   }
   result.fr = response.fr;
-  result.custom = response.custom;
+  result['ias-kw'] = response.custom['ias-kw'];
   return result;
 }
 
@@ -124,8 +124,9 @@ function getTargetingData(adUnits, config, userConsent) {
   const targeting = {};
   Object.keys(bidResponses).forEach(key => bidResponses[key] === undefined ? delete bidResponses[key] : {});
   try {
-    adUnits.forEach(function(adUnit) {
-      targeting[adUnit] = bidResponses;
+    adUnits.forEach(function (adUnit) {
+      targeting[adUnit] = {};
+      shallowMerge(targeting[adUnit], bidResponses);
     });
   } catch (err) {
     utils.logError('error', err);
