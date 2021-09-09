@@ -4,6 +4,11 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 
+const LEGACY_BIDDER_CODES = {
+  AOL: 'aol',
+  ONEMOBILE: 'onemobile',
+  ONEDISPLAY: 'onedisplay'
+};
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
 const ADAPTER_VERSION = '1.0.0';
@@ -411,7 +416,12 @@ function newRenderer(bidderRequest, bidResponse) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [],
+  aliases: [
+    LEGACY_BIDDER_CODES.AOL,
+    LEGACY_BIDDER_CODES.ONEDISPLAY,
+    LEGACY_BIDDER_CODES.ONEMOBILE,
+    LEGACY_BIDDER_CODES.VERIZON
+  ],
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
