@@ -91,4 +91,9 @@ export function disable() {
   window.googletag = undefined;
 }
 
+export function reset() {
+  disable();
+  enable();
+}
+
 enable();

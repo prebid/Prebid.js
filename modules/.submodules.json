@@ -31,7 +31,9 @@
     "akamaiDAPId",
     "flocIdSystem",
     "amxIdSystem",
-    "imuIdSystem"
+    "naveggId",
+    "imuIdSystem",
+    "publinkIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
