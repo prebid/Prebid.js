@@ -16,7 +16,7 @@ import { isValidPriceConfig } from './cpmBucketManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import Set from 'core-js-pure/features/set';
-import { mergeDeep, deepClone } from './utils.js';
+import { mergeDeep } from './utils.js';
 
 const from = require('core-js-pure/features/array/from.js');
 const utils = require('./utils.js');
@@ -316,26 +316,6 @@ export function newConfig() {
   }
 
   /*
-   * Returns the configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuration
-   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
-   *
-   * If called with callback parameter, or a string and a callback parameter,
-   * subscribes to configuration updates. See `subscribe` function for usage.
-   *
-   * The object returned is a deepClone of the `config` property.
-   */
-  function readConfig(...args) {
-    if (args.length <= 1 && typeof args[0] !== 'function') {
-      const option = args[0];
-      const configClone = deepClone(_getConfig());
-      return option ? utils.deepAccess(configClone, option) : configClone;
-    }
-
-    return subscribe(...args);
-  }
-
-  /*
    * Returns configuration object if called without parameters,
    * or single configuration property if given a string matching a configuration
    * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
@@ -578,7 +558,7 @@ export function newConfig() {
       .forEach(listener => listener.callback(options));
   }
 
-  function setBidderConfig(config) {
+  function setBidderConfig(config, flag = false) {
     try {
       check(config);
       config.bidders.forEach(bidder => {
@@ -590,7 +570,8 @@ export function newConfig() {
           let option = (topic === 'fpd') ? convertFpd(config.config[topic]) : config.config[topic];
 
           if (utils.isPlainObject(option)) {
-            bidderConfig[bidder][prop] = Object.assign({}, bidderConfig[bidder][prop] || {}, option);
+            const func = flag ? utils.mergeDeep : Object.assign;
+            bidderConfig[bidder][prop] = func({}, bidderConfig[bidder][prop] || {}, option);
           } else {
             bidderConfig[bidder][prop] = option;
           }
@@ -599,6 +580,7 @@ export function newConfig() {
     } catch (e) {
       utils.logError(e);
     }
+
     function check(obj) {
       if (!utils.isPlainObject(obj)) {
         throw 'setBidderConfig bidder options must be an object';
@@ -610,6 +592,26 @@ export function newConfig() {
         throw 'setBidderConfig bidder options must contain a config object';
       }
     }
+  }
+
+  function mergeConfig(obj) {
+    if (!utils.isPlainObject(obj)) {
+      utils.logError('mergeConfig input must be an object');
+      return;
+    }
+
+    const mergedConfig = Object.keys(obj).reduce((accum, data) => {
+      const prevConf = _getConfig(data)[data] || {};
+      accum[data] = utils.mergeDeep(prevConf, obj[data]);
+      return accum;
+    }, {});
+
+    setConfig({ ...mergedConfig });
+    return mergedConfig;
+  }
+
+  function mergeBidderConfig(obj) {
+    return setBidderConfig(obj, true);
   }
 
   /**
@@ -649,14 +651,15 @@ export function newConfig() {
     getCurrentBidder,
     resetBidder,
     getConfig,
-    readConfig,
     setConfig,
+    mergeConfig,
     setDefaults,
     resetConfig,
     runWithBidder,
     callbackWithBidder,
     setBidderConfig,
     getBidderConfig,
+    mergeBidderConfig,
     convertAdUnitFpd,
     getLegacyFpd,
     getLegacyImpFpd

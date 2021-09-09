@@ -6,9 +6,10 @@ const utils = require('src/utils');
 
 let getConfig;
 let setConfig;
-let readConfig;
+let mergeConfig;
 let getBidderConfig;
 let setBidderConfig;
+let mergeBidderConfig;
 let setDefaults;
 
 describe('config API', function () {
@@ -18,9 +19,10 @@ describe('config API', function () {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
-    readConfig = config.readConfig;
+    mergeConfig = config.mergeConfig;
     getBidderConfig = config.getBidderConfig;
     setBidderConfig = config.setBidderConfig;
+    mergeBidderConfig = config.mergeBidderConfig;
     setDefaults = config.setDefaults;
     logErrorSpy = sinon.spy(utils, 'logError');
     logWarnSpy = sinon.spy(utils, 'logWarn');
@@ -37,67 +39,6 @@ describe('config API', function () {
 
   it('getConfig returns an object', function () {
     expect(getConfig()).to.be.a('object');
-  });
-
-  it('readConfig returns deepCopy of the internal config object', function () {
-    setConfig({ foo: {biz: 'bar'} });
-    const config1 = readConfig('foo');
-    config1.biz = 'buz';
-    const config2 = readConfig('foo');
-    expect(readConfig()).to.be.a('object');
-    expect(config1.biz).to.not.equal(config2.biz);
-  });
-
-  it('readConfig retrieves arbitrary configuration properties', function () {
-    setConfig({ baz: 'qux' });
-    expect(readConfig('baz')).to.equal('qux');
-  });
-
-  it('readConfig has subscribe functionality for adding listeners to config updates', function () {
-    const listener = sinon.spy();
-
-    readConfig(listener);
-
-    setConfig({ foo: 'bar' });
-
-    sinon.assert.calledOnce(listener);
-    sinon.assert.calledWith(listener, { foo: 'bar' });
-  });
-
-  it('readConfig subscribers can unsubscribe', function () {
-    const listener = sinon.spy();
-
-    const unsubscribe = getConfig(listener);
-
-    unsubscribe();
-
-    readConfig({ logging: true });
-
-    sinon.assert.notCalled(listener);
-  });
-
-  it('readConfig subscribers can subscribe to topics', function () {
-    const listener = sinon.spy();
-
-    readConfig('logging', listener);
-
-    setConfig({ logging: true, foo: 'bar' });
-
-    sinon.assert.calledOnce(listener);
-    sinon.assert.calledWithExactly(listener, { logging: true });
-  });
-
-  it('readConfig topic subscribers are only called when that topic is changed', function () {
-    const listener = sinon.spy();
-    const wildcard = sinon.spy();
-
-    readConfig('subject', listener);
-    readConfig(wildcard);
-
-    setConfig({ foo: 'bar' });
-
-    sinon.assert.notCalled(listener);
-    sinon.assert.calledOnce(wildcard);
   });
 
   it('sets and gets arbitrary configuration properties', function () {
@@ -344,5 +285,213 @@ describe('config API', function () {
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options given an incorrect param: testing';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should merge input with existing global config', function () {
+    const obj = {
+      ortb2: {
+        site: {
+          name: 'example',
+          domain: 'page.example.com',
+          cat: ['IAB2'],
+          sectioncat: ['IAB2-2'],
+          pagecat: ['IAB2-2']
+        }
+      }
+    };
+    setConfig({ ortb2: {
+      user: {
+        ext: {
+          data: {
+            registered: true,
+            interests: ['cars']
+          }
+        }
+      }
+    }
+    });
+    mergeConfig(obj);
+    const expected = {
+      site: {
+        name: 'example',
+        domain: 'page.example.com',
+        cat: ['IAB2'],
+        sectioncat: ['IAB2-2'],
+        pagecat: ['IAB2-2']
+      },
+      user: {
+        ext: {
+          data: {
+            registered: true,
+            interests: ['cars']
+          }
+        }
+      }
+    }
+    expect(getConfig('ortb2')).to.deep.equal(expected);
+  });
+
+  it('input should take precedence over existing config if keys are the same', function() {
+    const input = {
+      ortb2: {
+        user: {
+          ext: {
+            data: {
+              registered: true,
+              interests: ['cars']
+            }
+          }
+        }
+      }
+    }
+    setConfig({ ortb2: {
+      user: {
+        ext: {
+          data: {
+            registered: false
+          }
+        }
+      }
+    }});
+    mergeConfig(input);
+    const expected = {
+      user: {
+        ext: {
+          data: {
+            registered: true,
+            interests: ['cars']
+          }
+        }
+      }
+    }
+    expect(getConfig('ortb2')).to.deep.equal(expected);
+  });
+
+  it('should log error for a non-object value passed in', function () {
+    mergeConfig('invalid object');
+    expect(logErrorSpy.calledOnce).to.equal(true);
+    const error = 'mergeConfig input must be an object';
+    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+  });
+
+  it('should merge input with existing bidder config', function () {
+    const input = {
+      bidders: ['rubicon', 'appnexus'],
+      config: {
+        ortb2: {
+          site: {
+            name: 'example',
+            domain: 'page.example.com',
+            cat: ['IAB2'],
+            sectioncat: ['IAB2-2'],
+            pagecat: ['IAB2-2']
+          },
+          user: {
+            ext: {
+              ssp: 'magnite',
+              data: {
+                registered: false,
+                interests: ['sports']
+              }
+            }
+          }
+        }
+      }
+    };
+    setBidderConfig({
+      bidders: ['rubicon'],
+      config: {
+        ortb2: {
+          user: {
+            ext: {
+              data: {
+                registered: true,
+                interests: ['cars']
+              }
+            }
+          }
+        }
+      }
+    });
+    mergeBidderConfig(input);
+    const expected = {
+      rubicon: {
+        ortb2: {
+          site: {
+            name: 'example',
+            domain: 'page.example.com',
+            cat: ['IAB2'],
+            sectioncat: ['IAB2-2'],
+            pagecat: ['IAB2-2']
+          },
+          user: {
+            ext: {
+              ssp: 'magnite',
+              data: {
+                registered: false,
+                interests: ['cars', 'sports']
+              }
+            }
+          }
+        }
+      },
+      appnexus: {
+        ortb2: {
+          site: {
+            name: 'example',
+            domain: 'page.example.com',
+            cat: ['IAB2'],
+            sectioncat: ['IAB2-2'],
+            pagecat: ['IAB2-2']
+          },
+          user: {
+            ext: {
+              ssp: 'magnite',
+              data: {
+                registered: false,
+                interests: ['sports']
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(getBidderConfig()).to.deep.equal(expected);
+  });
+
+  it('should log error for a non-object value passed in', function () {
+    mergeBidderConfig('invalid object');
+    expect(logErrorSpy.calledOnce).to.equal(true);
+    const error = 'setBidderConfig bidder options must be an object';
+    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+  });
+
+  it('should log error for empty bidders array', function () {
+    mergeBidderConfig({
+      bidders: [],
+      config: {
+        ortb2: {
+          site: {
+            name: 'example',
+            domain: 'page.example.com',
+            cat: ['IAB2'],
+            sectioncat: ['IAB2-2'],
+            pagecat: ['IAB2-2']
+          }
+        }
+      }
+    });
+    expect(logErrorSpy.calledOnce).to.equal(true);
+    const error = 'setBidderConfig bidder options must contain a bidders list with at least 1 bidder';
+    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+  });
+
+  it('should log error for nonexistent config object', function () {
+    mergeBidderConfig({
+      bidders: ['appnexus']
+    });
+    expect(logErrorSpy.calledOnce).to.equal(true);
+    const error = 'setBidderConfig bidder options must contain a config object';
+    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
   });
 });
