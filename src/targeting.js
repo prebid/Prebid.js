@@ -337,7 +337,7 @@ export function newTargeting(auctionManager) {
    *      "div-gpt-ad-1460505748561-0": [{"hb_bidder": ["appnexusAst"]}]
    *    },
    *    {
-   *      "div-gpt-ad-1460505748561-0": [{"hb_bidder_appnexusAs": ["appnexusAst"]}]
+   *      "div-gpt-ad-1460505748561-0": [{"hb_bidder_appnexusAs": ["appnexusAst", "other"]}]
    *    }
    * ]
    * ```
@@ -346,7 +346,7 @@ export function newTargeting(auctionManager) {
    * {
    *  "div-gpt-ad-1460505748561-0": {
    *    "hb_bidder": "appnexusAst",
-   *    "hb_bidder_appnexusAs": "appnexusAst"
+   *    "hb_bidder_appnexusAs": "appnexusAst,other"
    *  }
    * }
    * ```
@@ -360,7 +360,7 @@ export function newTargeting(auctionManager) {
         [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
           .map(target => {
             return {
-              [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(', ')
+              [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(',')
             };
           }).reduce((p, c) => Object.assign(c, p), {})
       };
@@ -634,7 +634,7 @@ export function newTargeting(auctionManager) {
 
       return Object.keys(aut)
         .map(function(key) {
-          if (utils.isStr(aut[key])) aut[key] = aut[key].split(',');
+          if (utils.isStr(aut[key])) aut[key] = aut[key].split(',').map(s => s.trim());
           if (!utils.isArray(aut[key])) aut[key] = [ aut[key] ];
           return { [key]: aut[key] };
         });
