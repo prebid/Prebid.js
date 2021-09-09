@@ -1,5 +1,5 @@
 # Overview
-**Module Name:** yssp Bid Adapter
+**Module Name:** yahoossp Bid Adapter
 **Module Type:** Bidder Adapter
 **Maintainer:** hb-fe-tech@oath.com
 
@@ -27,7 +27,7 @@ The YSSP Bid Adapter is an OpenRTB interface that consolidates all previous "Oat
         * ext
 
 # Mandaotory Bidder Parameters
-The minimal requirements for the 'yssp' bid adapter to generate an outbound bid-request to our SSP are:
+The minimal requirements for the 'yahoossp' bid adapter to generate an outbound bid-request to our SSP are:
 1. At least 1 adUnit including mediaTypes: banner or video
 2. **bidder.params** object must include
     A. **dcn:** SSP Site/App inventory parameter.
@@ -44,7 +44,7 @@ const adUnits = [{
         },
     bids: [
         {
-            bidder: 'yssp',
+            bidder: 'yahoossp',
             params: {
                 dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from SSP
                 pos: '8a969978017a7aaabab4ab0bc01a0009' // Placement ID provided from SSP
@@ -54,10 +54,10 @@ const adUnits = [{
 }];
 ```
 # Adapter Request mode
-Since the yssp adapter now supports both Banner and Video adUnits a controller was needed to allow you to define when the adapter should generate a bid-requests to our SSP.
+Since the yahoossp adapter now supports both Banner and Video adUnits a controller was needed to allow you to define when the adapter should generate a bid-requests to our SSP.
 
 **Important!** By default the adapter mode is set to "banner" only.
-This means that you do not need to explicitly declare the yssp.mode in the Global config to initiate banner adUnit requests.
+This means that you do not need to explicitly declare the yahoossp.mode in the Global config to initiate banner adUnit requests.
 
 ## Request modes:
 * **undefined** - (Default) Will generate bid-requests for "Banner" formats only.
@@ -65,12 +65,12 @@ This means that you do not need to explicitly declare the yssp.mode in the Globa
 * **video** - Will generate bid-requests for "Video" formats only (Explicit declaration).
 * **all** - Will generate bid-requests for both "Banner" & "Video" formats
 
-**Important!** When setting yssp.mode = 'all' Make sure your SSP Placement (pos id) supports both Banner & Video placements.
+**Important!** When setting yahoossp.mode = 'all' Make sure your SSP Placement (pos id) supports both Banner & Video placements.
 If it does not, the SSP will respond only in the format it is set too.
 
 ```javascript
 pbjs.setConfig({
-    yssp: {
+    yahoossp: {
         mode: 'banner' // 'all', 'video', 'banner' (default)
     }
 });
@@ -90,7 +90,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yssp',
+        bidder: 'yahoossp',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from SSP
             pos: '8a969978017a7aaabab4ab0bc01a0009', // Placement ID provided from SSP
@@ -103,7 +103,7 @@ const adUnits = [{
 **Note:** Make sure to set the adapter mode to allow video requests by setting it to mode: 'video' OR mode: 'all'
 ```javascript
 pbjs.setConfig({
-    yssp: {
+    yahoossp: {
         mode: 'video'
     }
 });
@@ -121,7 +121,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yssp',
+        bidder: 'yahoossp',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from SSP
             pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided from SSP
@@ -133,7 +133,7 @@ const adUnits = [{
 **Note:** Make sure to set the adapter mode to allow video requests by setting it to mode: 'video' OR mode: 'all'
 ```javascript
 pbjs.setConfig({
-    yssp: {
+    yahoossp: {
         mode: 'video'
     }
 });
@@ -151,7 +151,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yssp',
+        bidder: 'yahoossp',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from SSP
             pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided from SSP
@@ -160,7 +160,7 @@ const adUnits = [{
 }];
 ```
 ## Multi-Format
-**Important!** If you intend to use the yssp bidder for both Banner and Video formats please make sure:
+**Important!** If you intend to use the yahoossp bidder for both Banner and Video formats please make sure:
 1. Set the adapter as mode: 'all' - to call the SSP for both banner & video formats.
 2. Make sure the SSP placement (pos id) supports both banner & video format requests.
 
@@ -181,7 +181,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yssp',
+        bidder: 'yahoossp',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from SSP
             pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided from SSP
@@ -191,7 +191,7 @@ const adUnits = [{
 ```
 
 # Optional: Schain module support
-The yssp adapter supports the Prebid.org Schain module and will pass it through to our SSP
+The yahoossp adapter supports the Prebid.org Schain module and will pass it through to our SSP
 For further details please see, https://docs.prebid.org/dev-docs/modules/schain.html
 
 ## Global Schain Example:
@@ -214,7 +214,7 @@ For further details please see, https://docs.prebid.org/dev-docs/modules/schain.
 ## Bidder Specific Schain Example:
 ```javascript
         pbjs.setBidderConfig({
-            "bidders": ['yssp'], // can list more bidders here if they share the same config
+            "bidders": ['yahoossp'], // can list more bidders here if they share the same config
             "config": {
             "schain": {
                 "validation": "strict",
@@ -233,7 +233,7 @@ For further details please see, https://docs.prebid.org/dev-docs/modules/schain.
 ```
 
 # Optional: Price floors module & bidfloor
-The yssp adapter supports the Prebid.org Price Floors module and will use it to define the outbound bidfloor and currency.
+The yahoossp adapter supports the Prebid.org Price Floors module and will use it to define the outbound bidfloor and currency.
 By default the adapter will always check the existance of Module price floor.
 If a module price floor does not exist you can set a custom bid floor for your impression using "params.bidOverride.imp.bidfloor".
 
@@ -250,7 +250,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yssp',
+        bidder: 'yahoossp',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from SSP
             pos: '8a969978017a7aaabab4ab0bc01a0009', // Placement ID provided from SSP
@@ -268,11 +268,11 @@ const adUnits = [{
 For further details please see, https://docs.prebid.org/dev-docs/modules/floors.html
 
 # Optional: Self-served E2E testing mode
-If you want to see how the yssp adapter works and loads you are invited to try it out using our testing mode.
+If you want to see how the yahoossp adapter works and loads you are invited to try it out using our testing mode.
 This is useful for intergration testing and response parsing when checking banner vs video capabilities.
 
 ## How to use E2E test mode:
-1. Set the yssp global config mode to either 'banner' or 'video' - depending on the adUnit you want to test.
+1. Set the yahoossp global config mode to either 'banner' or 'video' - depending on the adUnit you want to test.
 2. Add params.testing.e2etest: true to your adUnit bidder config - See examples below.
 
 **Note:** When using E2E Test Mode you do not need to pass mandatory bidder params dcn or pos.
@@ -282,7 +282,7 @@ This is useful for intergration testing and response parsing when checking banne
 ## Activating E2E Test for"Banner"
  ```javascript
 pbjs.setConfig({
-    yssp: {
+    yahoossp: {
         mode: 'banner'
     }
 });
@@ -296,7 +296,7 @@ const adUnits = [{
         },
     bids: [
         {
-            bidder: 'yssp',
+            bidder: 'yahoossp',
             params: {
                 testing: {
                     e2etest: true // Activate E2E Test mode
@@ -311,7 +311,7 @@ const adUnits = [{
 **Note:** We recommend using Video Outstream as it would load the video response using our Outstream Renderer feature
  ```javascript
 pbjs.setConfig({
-    yssp: {
+    yahoossp: {
         mode: 'video'
     }
 });
@@ -329,7 +329,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yssp',
+        bidder: 'yahoossp',
         params: {
             testing: {
                 e2etest: true // Activate E2E Test mode
@@ -340,7 +340,7 @@ const adUnits = [{
 ```
 
 # Optional: First Party Data
-The yssp adapter now supports first party data passed via the global ortb2 object.
+The yahoossp adapter now supports first party data passed via the global ortb2 object.
 **Note:** We currently do not support data being passed on the adUnit level via ortb2Imp.
 For further details please see, https://docs.prebid.org/features/firstPartyData.html
 ```javascript
@@ -398,7 +398,7 @@ pbjs.setConfig({
 ```
 
 # Optional: Bidder bidOverride Parameters
-The yssp adapter allows passing override data to the outbound bid-request in certain senarios.
+The yahoossp adapter allows passing override data to the outbound bid-request in certain senarios.
 Currently the bidOverride object only accepts the following:
 * imp
   * video
@@ -434,7 +434,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yssp',
+        bidder: 'yahoossp',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -458,7 +458,7 @@ const adUnits = [{
                     }
                 },
                 site: {
-                    page: 'https://yssp-bid-adapter.com',
+                    page: 'https://yahoossp-bid-adapter.com',
                 },
                 device: {
                     ip: "1.2.3.4"
@@ -485,7 +485,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yssp',
+        bidder: 'yahoossp',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',

@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import { config } from 'src/config.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import {spec} from 'modules/ysspBidAdapter.js';
+import {spec} from 'modules/yahoosspBidAdapter.js';
 
 const DEFAULT_BID_ID = '84ab500420319d';
 const DEFAULT_BID_DCN = '2093845709823475';
@@ -20,7 +20,7 @@ const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObje
     auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
     bidId,
     bidderRequestsCount: 1,
-    bidder: 'yssp',
+    bidder: 'yahoossp',
     bidderRequestId: '7101db09af0db2',
     bidderWinsCount: 0,
     mediaTypes: {},
@@ -69,7 +69,7 @@ let generateBidderRequest = (bidRequestArray, adUnitCode) => {
     adUnitCode: adUnitCode || 'default-adUnitCode',
     auctionId: 'd4c83a3b-18e4-4208-b98b-63848449c7aa',
     auctionStart: new Date().getTime(),
-    bidderCode: 'yssp',
+    bidderCode: 'yahoossp',
     bidderRequestId: '112f1c7c5d399a',
     bids: bidRequestArray,
     refererInfo: {
@@ -530,7 +530,7 @@ describe.only('YSSP Bid Adapter', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const testOverrideEndpoint = 'http://foo.bar.baz.com/bidderRequest';
       config.setConfig({
-        yssp: {
+        yahoossp: {
           endpoint: testOverrideEndpoint
         }
       });
@@ -552,7 +552,7 @@ describe.only('YSSP Bid Adapter', () => {
       bidderRequest.bids = validBidRequests;
 
       config.setConfig({
-        yssp: {
+        yahoossp: {
           singleRequestMode: true
         }
       });
@@ -673,10 +673,10 @@ describe.only('YSSP Bid Adapter', () => {
   });
 
   describe('Request Payload oRTB bid.imp validation:', () => {
-    // Validate Banner imp imp when yssp.mode=undefined
+    // Validate Banner imp imp when yahoossp.mode=undefined
     it('should generate a valid "Banner" imp object', () => {
       config.setConfig({
-        yssp: {}
+        yahoossp: {}
       });
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
@@ -687,10 +687,10 @@ describe.only('YSSP Bid Adapter', () => {
       });
     });
 
-    // Validate Banner imp when yssp.mode="banner"
+    // Validate Banner imp when yahoossp.mode="banner"
     it('should generate a valid "Banner" imp object', () => {
       config.setConfig({
-        yssp: { mode: 'banner' }
+        yahoossp: { mode: 'banner' }
       });
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
@@ -704,7 +704,7 @@ describe.only('YSSP Bid Adapter', () => {
     // Validate Video imp
     it('should generate a valid "Video" only imp object', () => {
       config.setConfig({
-        yssp: { mode: 'video' }
+        yahoossp: { mode: 'video' }
       });
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({adUnitType: 'video'});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
@@ -730,7 +730,7 @@ describe.only('YSSP Bid Adapter', () => {
     // Validate multi-format Video+banner imp
     it('should generate a valid multi-format "Video + Banner" imp object', () => {
       config.setConfig({
-        yssp: { mode: 'all' }
+        yahoossp: { mode: 'all' }
       });
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({adUnitType: 'multi-format'});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
@@ -761,7 +761,7 @@ describe.only('YSSP Bid Adapter', () => {
     // Multiple banner adUnits
     it('should generate multiple bid-requests for each adUnit - 2 banner only', () => {
       config.setConfig({
-        yssp: { mode: 'banner' }
+        yahoossp: { mode: 'banner' }
       });
 
       const BID_ID_2 = '84ab50xxxxx';
@@ -792,7 +792,7 @@ describe.only('YSSP Bid Adapter', () => {
     // Multiple video adUnits
     it('should generate multiple bid-requests for each adUnit - 2 video only', () => {
       config.setConfig({
-        yssp: { mode: 'video' }
+        yahoossp: { mode: 'video' }
       });
       const BID_ID_2 = '84ab50xxxxx';
       const BID_POS_2 = 'footer';
@@ -833,7 +833,7 @@ describe.only('YSSP Bid Adapter', () => {
     // Mixed adUnits 1-banner, 1-video, 1-native (should filter out native)
     it('should generate multiple bid-requests for both "video & banner" adUnits', () => {
       config.setConfig({
-        yssp: { mode: 'all' }
+        yahoossp: { mode: 'all' }
       });
       const BID_ID_2 = '84ab50xxxxx';
       const BID_POS_2 = 'footer';
@@ -886,7 +886,7 @@ describe.only('YSSP Bid Adapter', () => {
   describe('Video params firstlook & bidOverride validations:', () => {
     it('should first look at params.bidOverride for video placement data', () => {
       config.setConfig({
-        yssp: { mode: 'video' }
+        yahoossp: { mode: 'video' }
       });
       const bidOverride = {
         imp: {
@@ -915,7 +915,7 @@ describe.only('YSSP Bid Adapter', () => {
     // TODO read adUnit.mediaTypes.video as default
     it('should second look at bid.mediaTypes.video for video placement data', () => {
       config.setConfig({
-        yssp: { mode: 'video' }
+        yahoossp: { mode: 'video' }
       });
       let { bidRequest, bidderRequest } = generateBuildRequestMock({adUnitType: 'video'});
       bidRequest.mediaTypes.video = {
@@ -955,7 +955,7 @@ describe.only('YSSP Bid Adapter', () => {
 
     it('should use params.bidOverride.device.ip override', () => {
       config.setConfig({
-        yssp: { mode: 'all' }
+        yahoossp: { mode: 'all' }
       });
       const bidOverride = {
         device: {

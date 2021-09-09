@@ -5,7 +5,7 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
-const BIDDER_CODE = 'yssp';
+const BIDDER_CODE = 'yahoossp';
 const ADAPTER_VERSION = '1.0.0';
 const PREBID_VERSION = '$prebid.version$';
 const BID_RESPONSE_TTL = 3600;
@@ -120,7 +120,7 @@ function isSecure(bid) {
 };
 
 function getAdapterMode() {
-  let adapterMode = config.getConfig('yssp.mode');
+  let adapterMode = config.getConfig('yahoossp.mode');
   adapterMode = adapterMode ? adapterMode.toLowerCase() : undefined;
   if (typeof adapterMode === 'undefined' || adapterMode === 'banner') {
     return 'banner';
@@ -355,7 +355,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
 function generateServerRequest({payload, requestOptions, bidderRequest}) {
   if (utils.deepAccess(bidderRequest, 'params.testing.e2etest') === true) {
-    utils.logInfo('yssp adapter e2etest mode is active');
+    utils.logInfo('yahoossp adapter e2etest mode is active');
     // Allows testing mode to override SSP ad-server issue
     requestOptions.withCredentials = false;
     // https://jira.vzbuilders.com/browse/CLS-8239
@@ -370,15 +370,15 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
       } else if (mediaTypeMode === 'video') {
         impObject.tagid = TEST_MODE_VIDEO_POS; // video passback
       } else {
-        utils.logWarn('yssp adapter e2etest mode does not support yssp.mode="all". \n Please specify either "banner" or "video"');
-        utils.logWarn('yssp adapter e2etest mode: Please make sure your adUnit matches the yssp.mode video or banner');
+        utils.logWarn('yahoossp adapter e2etest mode does not support yahoossp.mode="all". \n Please specify either "banner" or "video"');
+        utils.logWarn('yahoossp adapter e2etest mode: Please make sure your adUnit matches the yahoossp.mode video or banner');
       }
     });
     payload.site.id = TEST_MODE_DCN;
   };
 
   return {
-    url: config.getConfig('yssp.endpoint') || SSP_ENDPOINT,
+    url: config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT,
     method: 'POST',
     data: payload,
     options: requestOptions,
@@ -402,7 +402,7 @@ function newRenderer(bidderRequest, bidResponse) {
         }, utils.deepAccess(bidderRequest, 'params.testing.renderer.setTimeout') || DEFAULT_RENDERER_TIMEOUT);
       });
     } catch (error) {
-      utils.logWarn('yssp renderer error: setRender() failed', error);
+      utils.logWarn('yahoossp renderer error: setRender() failed', error);
     }
     return renderer;
   }
@@ -426,14 +426,14 @@ export const spec = {
     ) {
       return true
     } else {
-      utils.logWarn('yssp bidder params missing or incorrect, please pass object with dcn & pos');
+      utils.logWarn('yahoossp bidder params missing or incorrect, please pass object with dcn & pos');
       return false
     }
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
     if (utils.isEmpty(validBidRequests) || utils.isEmpty(bidderRequest)) {
-      utils.logWarn('yssp Adapter: buildRequests called with either empty "validBidRequests" or "bidderRequest"');
+      utils.logWarn('yahoossp Adapter: buildRequests called with either empty "validBidRequests" or "bidderRequest"');
       return undefined;
     };
 
@@ -448,7 +448,7 @@ export const spec = {
 
     const filteredBidRequests = filterBidRequestByMode(validBidRequests);
 
-    if (config.getConfig('yssp.singleRequestMode') === true) {
+    if (config.getConfig('yahoossp.singleRequestMode') === true) {
       const payload = generateOpenRtbObject(bidderRequest, filteredBidRequests[0]);
       filteredBidRequests.forEach(bid => {
         appendImpObject(bid, payload);
