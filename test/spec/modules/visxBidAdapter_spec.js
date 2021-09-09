@@ -44,7 +44,7 @@ describe('VisxAdapter', function () {
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
-          playerSize: [400, 300]
+          playerSize: [[400, 300]]
         }
       };
       expect(spec.isBidRequestValid(videoBid)).to.equal(false);
@@ -55,7 +55,7 @@ describe('VisxAdapter', function () {
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
-          playerSize: [400, 300],
+          playerSize: [[400, 300]],
           mimes: ['video/mp4'],
           protocols: [3, 6]
         }
@@ -65,7 +65,16 @@ describe('VisxAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    function parseRequest(url) {
+      const res = {};
+      (url.split('?')[1] || '').split('&').forEach((it) => {
+        const couple = it.split('=');
+        res[couple[0]] = decodeURIComponent(couple[1]);
+      });
+      return res;
+    }
     const bidderRequest = {
+      timeout: 3000,
       refererInfo: {
         referer: 'https://example.com'
       }
@@ -78,12 +87,11 @@ describe('VisxAdapter', function () {
         {asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com'}
       ]
     };
-    const schainString = JSON.stringify(schainObject);
     let bidRequests = [
       {
         'bidder': 'visx',
         'params': {
-          'uid': '903535'
+          'uid': 903535
         },
         'adUnitCode': 'adunit-code-1',
         'sizes': [[300, 250], [300, 600]],
@@ -94,7 +102,7 @@ describe('VisxAdapter', function () {
       {
         'bidder': 'visx',
         'params': {
-          'uid': '903535'
+          'uid': 903535
         },
         'adUnitCode': 'adunit-code-2',
         'sizes': [[728, 90], [300, 250]],
@@ -105,7 +113,7 @@ describe('VisxAdapter', function () {
       {
         'bidder': 'visx',
         'params': {
-          'uid': '903536'
+          'uid': 903536
         },
         'adUnitCode': 'adunit-code-1',
         'sizes': [[300, 250], [300, 600]],
@@ -116,13 +124,13 @@ describe('VisxAdapter', function () {
       {
         'bidder': 'visx',
         'params': {
-          'uid': '903537'
+          'uid': 903537
         },
         'adUnitCode': 'adunit-code-video-3',
         'mediaTypes': {
           'video': {
             'context': 'instream',
-            'playerSize': [400, 300],
+            'playerSize': [[400, 300]],
             'mimes': ['video/mp4', 'video/mpeg'],
             'protocols': [3, 6],
             'minduration': 5,
@@ -135,83 +143,91 @@ describe('VisxAdapter', function () {
       }
     ];
 
+    const expectedFullImps = [{
+      'id': '30b31c1838de1e',
+      'banner': {'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]},
+      'ext': {'bidder': {'uid': 903535}}
+    },
+    {
+      'id': '3150ccb55da321',
+      'banner': {'format': [{'w': 728, 'h': 90}, {'w': 300, 'h': 250}]},
+      'ext': {'bidder': {'uid': 903535}}
+    },
+    {
+      'id': '42dbe3a7168a6a',
+      'banner': {'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]},
+      'ext': {'bidder': {'uid': 903536}}
+    },
+    {
+      'id': '39a4e3a7168a6a',
+      'video': {
+        'w': 400,
+        'h': 300,
+        'mimes': ['video/mp4', 'video/mpeg'],
+        'protocols': [3, 6],
+        'minduration': 5,
+        'maxduration': 30
+      },
+      'ext': {'bidder': {'uid': 903537}}
+    }];
+
     it('should attach valid params to the tag', function () {
-      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('pt', 'net');
+      const firstBid = bidRequests[0];
+      const bids = [firstBid];
+      const request = spec.buildRequests(bids, bidderRequest);
+      const payload = parseRequest(request.url);
+      expect(request.url).to.be.an('string');
       expect(payload).to.have.property('auids', '903535');
-      expect(payload).to.have.property('sizes', '300x250,300x600');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('cur', 'EUR');
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': [expectedFullImps[0]],
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
+        'site': {'page': referrer}
+      });
     });
 
-    it('sizes must not be duplicated', function () {
+    it('should attach valid params to the tag with multiformat request', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536,903537');
-      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('cur', 'EUR');
-    });
 
-    it('pt parameter must be "net" if params.priceType === "gross"', function () {
-      bidRequests[1].params.priceType = 'gross';
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
-      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('cur', 'EUR');
-      delete bidRequests[1].params.priceType;
-    });
-    it('pt parameter must be "net" if params.priceType === "net"', function () {
-      bidRequests[1].params.priceType = 'net';
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
-      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('cur', 'EUR');
-      delete bidRequests[1].params.priceType;
-    });
-
-    it('pt parameter must be "net" if params.priceType === "undefined"', function () {
-      bidRequests[1].params.priceType = 'undefined';
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
-      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('cur', 'EUR');
-      delete bidRequests[1].params.priceType;
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': expectedFullImps,
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
+        'site': {'page': referrer}
+      });
     });
 
     it('should add currency from currency.bidderCurrencyDefault', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'currency.bidderCurrencyDefault.visx' ? 'GBP' : 'USD');
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536,903537');
-      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('cur', 'GBP');
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': expectedFullImps,
+        'tmax': 3000,
+        'cur': ['GBP'],
+        'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
+        'site': {'page': referrer}
+      });
+
       getConfigStub.restore();
     });
 
@@ -219,39 +235,73 @@ describe('VisxAdapter', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'currency.bidderCurrencyDefault.visx' ? '' : 'USD');
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536,903537');
-      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('cur', 'USD');
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': expectedFullImps,
+        'tmax': 3000,
+        'cur': ['USD'],
+        'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
+        'site': {'page': referrer}
+      });
+
       getConfigStub.restore();
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}});
-      const payload = request.data;
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('gdpr_consent', 'AAA');
-      expect(payload).to.have.property('gdpr_applies', 1);
+      const request = spec.buildRequests(bidRequests, Object.assign({gdprConsent: {consentString: 'AAA', gdprApplies: true}}, bidderRequest));
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': expectedFullImps,
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
+        'site': {'page': referrer},
+        'user': {'ext': {'consent': 'AAA'}},
+        'regs': {'ext': {'gdpr': 1}}
+      });
     });
 
     it('if gdprApplies is false gdpr_applies must be 0', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: false}});
-      const payload = request.data;
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('gdpr_consent', 'AAA');
-      expect(payload).to.have.property('gdpr_applies', 0);
+      const request = spec.buildRequests(bidRequests, Object.assign({gdprConsent: {consentString: 'AAA', gdprApplies: false}}, bidderRequest));
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': expectedFullImps,
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
+        'site': {'page': referrer},
+        'user': {'ext': {'consent': 'AAA'}},
+        'regs': {'ext': {'gdpr': 0}}
+      });
     });
 
     it('if gdprApplies is undefined gdpr_applies must be 1', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA'}});
-      const payload = request.data;
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('gdpr_consent', 'AAA');
-      expect(payload).to.have.property('gdpr_applies', 1);
+      const request = spec.buildRequests(bidRequests, Object.assign({gdprConsent: {consentString: 'AAA'}}, bidderRequest));
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': expectedFullImps,
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
+        'site': {'page': referrer},
+        'user': {'ext': {'consent': 'AAA'}},
+        'regs': {'ext': {'gdpr': 1}}
+      });
     });
 
     it('if schain is present payload must have schain param', function () {
@@ -261,49 +311,110 @@ describe('VisxAdapter', function () {
         bidRequests[2]
       ];
       const request = spec.buildRequests(schainBidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('schain', schainString);
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
-      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('cur', 'EUR');
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': expectedFullImps.slice(0, -1),
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {
+          'ext': {
+            'wrapperType': 'Prebid_js',
+            'wrapperVersion': '$prebid.version$',
+            'schain': schainObject
+          }
+        },
+        'site': {'page': referrer},
+      });
     });
 
     it('if userId is available payload must have appropriate params', function () {
-      const schainBidRequests = [
+      const eids = [
+        {
+          source: 'pubcid.org',
+          uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+          }]
+        },
+        {
+          source: 'adserver.org',
+          uids: [{
+            id: 'some-random-id-value',
+            atype: 1,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        }
+      ];
+      const userIdBidRequests = [
         Object.assign({userId: {
           tdid: '111',
           id5id: { uid: '222' },
           digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}}
-        }}, bidRequests[0]),
+        },
+        userIdAsEids: eids}, bidRequests[0]),
         bidRequests[1],
         bidRequests[2]
       ];
-      const request = spec.buildRequests(schainBidRequests, bidderRequest);
-      const payload = request.data;
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('tdid', '111');
-      expect(payload).to.have.property('id5', '222');
-      expect(payload).to.have.property('dtid', 'DTID');
+      const request = spec.buildRequests(userIdBidRequests, bidderRequest);
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': expectedFullImps.slice(0, -1),
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {
+          'ext': {
+            'wrapperType': 'Prebid_js',
+            'wrapperVersion': '$prebid.version$'
+          }
+        },
+        'site': {'page': referrer},
+        'user': {'ext': {'eids': eids}}
+      });
     });
 
     it('should pass grouped video bid\'s params in payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
-      expect(payload).to.have.property('protocols', ',,,3|6');
-      expect(payload).to.have.property('mimes', ',,,video/mp4|video/mpeg');
-      expect(payload).to.have.property('playerSize', ',,,400x300');
-      expect(payload).to.have.property('minduration', ',,,5');
-      expect(payload).to.have.property('maxduration', ',,,30');
-      expect(payload).to.not.have.property('skip');
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': expectedFullImps,
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {
+          'ext': {
+            'wrapperType': 'Prebid_js',
+            'wrapperVersion': '$prebid.version$'
+          }
+        },
+        'site': {'page': referrer}
+      });
     });
   });
 
   describe('buildRequests (multiple media types w/ unsupported video+outstream)', function () {
+    function parseRequest(url) {
+      const res = {};
+      (url.split('?')[1] || '').split('&').forEach((it) => {
+        const couple = it.split('=');
+        res[couple[0]] = decodeURIComponent(couple[1]);
+      });
+      return res;
+    }
     const bidderRequest = {
+      timeout: 3000,
       refererInfo: {
         referer: 'https://example.com'
       }
@@ -320,33 +431,49 @@ describe('VisxAdapter', function () {
         'mediaTypes': {
           'video': {
             'context': 'outstream',
-            'playerSize': [400, 300]
+            'playerSize': [[400, 300]]
           }
         },
         'bidId': '39aff3a7169a6a',
-        'bidderRequestId': '22edffe2733bf6',
+        'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a476',
       }
     ];
 
     it('should send requst for banner bid', function () {
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
-      const payload = request.data;
+      const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903538');
-      expect(payload).to.have.property('sizes', '300x250,300x600');
-      expect(payload).to.not.have.property('playerSize');
+
+      const postData = request.data;
+      expect(postData).to.be.an('object');
+      expect(postData).to.deep.equal({
+        'id': '22edbae2733bf6',
+        'imp': [{
+          'id': '39aff3a7169a6a',
+          'banner': {'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]},
+          'ext': {'bidder': {'uid': 903538}}
+        }],
+        'tmax': 3000,
+        'cur': ['EUR'],
+        'source': {
+          'ext': {
+            'wrapperType': 'Prebid_js',
+            'wrapperVersion': '$prebid.version$'
+          }
+        },
+        'site': {'page': referrer}
+      });
     });
   });
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'},
-      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-      {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-      {'bid': [{'price': 0, 'auid': 903537, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
+      {'bid': [{'price': 1.15, 'impid': '300bfeb0d71a5b', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com'], 'ext': {'prebid': {'targeting': {'hb_visx_product': 'understitial', 'hb_visx_width': 300, 'hb_visx_height': 250}}}}], 'seat': '1'},
+      {'bid': [{'price': 0.5, 'impid': '4dff80cc4ee346', 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+      {'bid': [{'price': 0.15, 'impid': '5703af74d0472a', 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+      {'bid': [{'price': 0, 'impid': '300bfeb0d7190gf', 'auid': 903537, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
       {'bid': [{'price': 0, 'adm': '<div>test content 5</div>', 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
       undefined,
       {'bid': [], 'seat': '1'},
@@ -362,7 +489,7 @@ describe('VisxAdapter', function () {
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
-          'bidId': '659423fff799cb',
+          'bidId': '300bfeb0d71a5b',
           'bidderRequestId': '5f2009617a7c0a',
           'auctionId': '1cbd2feafe5e8b',
         }
@@ -370,7 +497,7 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests(bidRequests);
       const expectedResponse = [
         {
-          'requestId': '659423fff799cb',
+          'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
           'creativeId': 903535,
           'dealId': undefined,
@@ -384,6 +511,18 @@ describe('VisxAdapter', function () {
             'advertiserDomains': ['some_domain.com'],
             'mediaType': 'banner',
           },
+          'adserverTargeting': {
+            'hb_visx_product': 'understitial',
+            'hb_visx_width': 300,
+            'hb_visx_height': 250,
+          },
+          'ext': {
+            'targeting': {
+              'hb_visx_product': 'understitial',
+              'hb_visx_width': 300,
+              'hb_visx_height': 250,
+            }
+          }
         }
       ];
 
@@ -444,6 +583,18 @@ describe('VisxAdapter', function () {
             'advertiserDomains': ['some_domain.com'],
             'mediaType': 'banner',
           },
+          'adserverTargeting': {
+            'hb_visx_product': 'understitial',
+            'hb_visx_width': 300,
+            'hb_visx_height': 250,
+          },
+          'ext': {
+            'targeting': {
+              'hb_visx_product': 'understitial',
+              'hb_visx_width': 300,
+              'hb_visx_height': 250,
+            }
+          }
         },
         {
           'requestId': '4dff80cc4ee346',
@@ -492,7 +643,7 @@ describe('VisxAdapter', function () {
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
-          'bidId': '659423fff799cb',
+          'bidId': '300bfeb0d71a5b',
           'bidderRequestId': '5f2009617a7c0a',
           'auctionId': '1cbd2feafe5e8b',
         }
@@ -501,7 +652,7 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests(bidRequests);
       const expectedResponse = [
         {
-          'requestId': '659423fff799cb',
+          'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
           'creativeId': 903535,
           'dealId': undefined,
@@ -515,6 +666,18 @@ describe('VisxAdapter', function () {
             'advertiserDomains': ['some_domain.com'],
             'mediaType': 'banner',
           },
+          'adserverTargeting': {
+            'hb_visx_product': 'understitial',
+            'hb_visx_width': 300,
+            'hb_visx_height': 250,
+          },
+          'ext': {
+            'targeting': {
+              'hb_visx_product': 'understitial',
+              'hb_visx_width': 300,
+              'hb_visx_height': 250,
+            }
+          }
         }
       ];
 
@@ -568,11 +731,11 @@ describe('VisxAdapter', function () {
 
     it('complicated case', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 903535, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 5</div>', 'auid': 903536, 'h': 600, 'w': 350, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 1.15, 'impid': '2164be6358b9', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '4e111f1b66e4', 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'impid': '26d6f897b516', 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'impid': '326bde7fbf69', 'adm': '<div>test content 4</div>', 'auid': 903535, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '1751cd90161', 'adm': '<div>test content 5</div>', 'auid': 903536, 'h': 600, 'w': 350, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -721,8 +884,8 @@ describe('VisxAdapter', function () {
 
     it('dublicate uids and sizes in one slot', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 1.15, 'impid': '5126e301f4be', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '57b2ebe70e16', 'adm': '<div>test content 2</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -801,7 +964,7 @@ describe('VisxAdapter', function () {
 
     it('handles video bid', function () {
       const fullResponse = [
-        {'bid': [{'price': 0.5, 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -813,7 +976,7 @@ describe('VisxAdapter', function () {
           'mediaTypes': {
             'video': {
               'context': 'instream',
-              'playerSize': [400, 300],
+              'playerSize': [[400, 300]],
               'mimes': ['video/mp4'],
               'protocols': [3, 6]
             }
@@ -850,7 +1013,7 @@ describe('VisxAdapter', function () {
 
     it('handles multiformat bid response with outstream+banner as banner', function () {
       const fullResponse = [
-        {'bid': [{'price': 0.5, 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -862,7 +1025,7 @@ describe('VisxAdapter', function () {
           'mediaTypes': {
             'video': {
               'context': 'outstream',
-              'playerSize': [400, 300],
+              'playerSize': [[400, 300]],
               'mimes': ['video/mp4'],
               'protocols': [3, 6]
             }
@@ -908,7 +1071,7 @@ describe('VisxAdapter', function () {
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
-          'bidId': '659423fff799cb',
+          'bidId': '300bfeb0d71a5b',
           'bidderRequestId': '5f2009617a7c0a',
           'auctionId': '1cbd2feafe5e8b',
         }
@@ -918,7 +1081,7 @@ describe('VisxAdapter', function () {
       const winUrl = 'https://t.visx.net/track/win/53245341';
       const expectedResponse = [
         {
-          'requestId': '659423fff799cb',
+          'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
           'creativeId': 903535,
           'dealId': undefined,
@@ -932,23 +1095,31 @@ describe('VisxAdapter', function () {
             'advertiserDomains': ['some_domain.com'],
             'mediaType': 'banner',
           },
+          'adserverTargeting': {
+            'hb_visx_product': 'understitial',
+            'hb_visx_width': 300,
+            'hb_visx_height': 250,
+          },
           'ext': {
             'events': {
               'pending': pendingUrl,
               'win': winUrl
+            },
+            'targeting': {
+              'hb_visx_product': 'understitial',
+              'hb_visx_width': 300,
+              'hb_visx_height': 250,
             }
           }
         }
       ];
       const serverResponse = Object.assign({}, responses[0]);
-      serverResponse.bid = [Object.assign({}, {ext: {
-        prebid: {
-          events: {
-            'pending': pendingUrl,
-            'win': winUrl
-          }
-        }
-      }}, serverResponse.bid[0])];
+      serverResponse.bid = [Object.assign({}, serverResponse.bid[0])];
+      serverResponse.bid[0].ext.prebid = Object.assign({}, serverResponse.bid[0].ext.prebid);
+      utils.deepSetValue(serverResponse.bid[0], 'ext.prebid.events', {
+        pending: pendingUrl,
+        win: winUrl,
+      });
       const result = spec.interpretResponse({'body': {'seatbid': [serverResponse]}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });

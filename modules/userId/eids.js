@@ -228,6 +228,10 @@ const USER_IDS_CONFIG = {
     source: 'amxrtb.com',
     atype: 1,
   },
+  'publinkId': {
+    source: 'epsilon.com',
+    atype: 3
+  },
   'kpuid': {
     source: 'kpuid.com',
     atype: 3
