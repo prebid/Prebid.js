@@ -1,3 +1,14 @@
+ ---
+ layout: page_v2
+ title: Timeout Rtd Module
+ description: Module for managing timeouts in real time
+ page_type: module
+ module_type: rtd
+ module_code : example
+ enable_download : true
+ sidebarType : 1
+ ---
+
 ## Overview
 The timeout RTD module enables publishers to dynamically retrieve 
 timeout rules from a timeout provider that determine the timeout based 
