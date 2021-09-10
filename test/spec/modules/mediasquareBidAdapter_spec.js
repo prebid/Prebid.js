@@ -76,6 +76,7 @@ describe('MediaSquare bid adapter tests', function () {
       'bidder': 'msqClassic',
       'code': 'test/publishername_atf_desktop_rg_pave',
       'bid_id': 'aaaa1234',
+      'adomain': ['test.com'],
     }],
   }};
 
@@ -135,8 +136,18 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.mediasquare).to.exist;
     expect(bid.mediasquare.bidder).to.equal('msqClassic');
     expect(bid.mediasquare.code).to.equal([DEFAULT_PARAMS[0].params.owner, DEFAULT_PARAMS[0].params.code].join('/'));
+    expect(bid.meta).to.exist;
+    expect(bid.meta.advertiserDomains).to.exist;
+    expect(bid.meta.advertiserDomains).to.have.lengthOf(1);
   });
-
+  it('Verifies match', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
+    BID_RESPONSE.body.responses[0].match = true;
+    const response = spec.interpretResponse(BID_RESPONSE, request);
+    const bid = response[0];
+    expect(bid.mediasquare.match).to.exist;
+    expect(bid.mediasquare.match).to.equal(true);
+  });
   it('Verifies bidder code', function () {
     expect(spec.code).to.equal('mediasquare');
   });

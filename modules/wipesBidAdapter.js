@@ -54,6 +54,9 @@ function interpretResponse(serverResponse, bidRequest) {
       referrer: bidRequest.data.r || '',
       mediaType: BANNER,
       ad: response.ad_tag,
+      meta: {
+        advertiserDomains: response.advertiser_domain ? [response.advertiser_domain] : []
+      }
     };
     bidResponses.push(bidResponse);
   }

@@ -11,6 +11,7 @@ const TIME_TO_LIVE = 360
 const SUPPORTED_AD_TYPES = [BANNER]
 
 const bidRequestMap = {}
+const adUnitsRequested = {}
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
@@ -54,13 +55,34 @@ export const spec = {
 
     if (!pageUrl) pageUrl = bidderRequest.refererInfo.referer
 
+    // Build adUnit data
+    const adUnitData = {
+      adUnits: validBidRequests.map((adUnit) => {
+        // Track if we've already requested for this ad unit code
+        adUnitsRequested[adUnit.adUnitCode] = adUnitsRequested[adUnit.adUnitCode] !== undefined ? adUnitsRequested[adUnit.adUnitCode]++ : 0
+        return {
+          adUnitCode: adUnit.adUnitCode,
+          mediaTypes: adUnit.mediaTypes,
+        }
+      }),
+    }
+
+    // Build QS Params
     let params = [
       { key: 'ntv_ptd', value: placementIds.toString() },
       { key: 'ntv_pb_rid', value: bidderRequest.bidderRequestId },
       {
+        key: 'ntv_ppc',
+        value: btoa(JSON.stringify(adUnitData)), // Convert to Base 64
+      },
+      {
+        key: 'ntv_dbr',
+        value: btoa(JSON.stringify(adUnitsRequested))
+      },
+      {
         key: 'ntv_url',
         value: encodeURIComponent(pageUrl),
-      },
+      }
     ]
 
     if (bidderRequest.gdprConsent) {

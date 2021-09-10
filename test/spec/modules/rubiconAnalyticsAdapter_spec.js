@@ -274,7 +274,12 @@ const MOCK = {
             }
           }
         },
-        'mediaType': 'video',
+        'mediaTypes': {
+          'video': {
+            'context': 'instream',
+            'playerSize': [640, 480]
+          }
+        },
         'adUnitCode': '/19968336/header-bid-tag-0',
         'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
         'sizes': [[640, 480]],
@@ -362,7 +367,6 @@ const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
 
 const ANALYTICS_MESSAGE = {
   'channel': 'web',
-  'eventTimeMillis': 1519767013781,
   'integration': 'pbjs',
   'version': '$prebid.version$',
   'referrerUri': 'http://www.test.com/page.html',
@@ -371,6 +375,12 @@ const ANALYTICS_MESSAGE = {
     'id': STUBBED_UUID,
     'start': 1519767013781
   },
+  'timestamps': {
+    'auctionEnded': 1519767013781,
+    'eventTime': 1519767013781,
+    'prebidLoaded': rubiconAnalyticsAdapter.MODULE_INITIALIZED_TIME
+  },
+  'trigger': 'allBidWons',
   'referrerHostname': 'www.test.com',
   'auctions': [
     {
@@ -843,6 +853,42 @@ describe('rubicon analytics adapter', function () {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
+    it('should pass along user ids', function () {
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.bidderRequests[0].bids[0].userId = {
+        criteoId: 'sadfe4334',
+        lotamePanoramaId: 'asdf3gf4eg',
+        pubcid: 'dsfa4545-svgdfs5',
+        sharedId: {id1: 'asdf', id2: 'sadf4344'}
+      };
+
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+
+      let message = JSON.parse(request.requestBody);
+      validate(message);
+
+      expect(message.auctions[0].user).to.deep.equal({
+        ids: [
+          {provider: 'criteoId', 'hasId': true},
+          {provider: 'lotamePanoramaId', 'hasId': true},
+          {provider: 'pubcid', 'hasId': true},
+          {provider: 'sharedId', 'hasId': true},
+        ]
+      });
+    });
+
     it('should handle bidResponse dimensions correctly', function () {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
@@ -939,6 +985,28 @@ describe('rubicon analytics adapter', function () {
       validate(message);
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.be.undefined;
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.be.undefined;
+    });
+
+    it('should not pass empty adServerTargeting values', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      const mockTargeting = utils.deepClone(MOCK.SET_TARGETING);
+      mockTargeting['/19968336/header-bid-tag-0'].hb_test = '';
+      mockTargeting['/19968336/header-bid-tag1'].hb_test = 'NOT_EMPTY';
+      events.emit(SET_TARGETING, mockTargeting);
+
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].adserverTargeting.hb_test).to.be.undefined;
+      expect(message.auctions[0].adUnits[1].adserverTargeting.hb_test).to.equal('NOT_EMPTY');
     });
 
     function performFloorAuction(provider) {
@@ -1658,6 +1726,7 @@ describe('rubicon analytics adapter', function () {
           lineItemId: 6666,
           adSlot: '/19968336/header-bid-tag1'
         };
+        expectedMessage.trigger = 'gam';
         expect(message).to.deep.equal(expectedMessage);
       });
 

@@ -98,7 +98,11 @@ export const spec = {
         height: ebdrBid.h,
         currency: 'USD',
         netRevenue: true,
-        ttl: 3600 }
+        ttl: 3600,
+        meta: {
+          advertiserDomains: ebdrBid.adomain || []
+        }
+      };
       if (vastURL) {
         response.vastUrl = vastURL;
       }
