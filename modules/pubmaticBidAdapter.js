@@ -740,11 +740,37 @@ function _addFloorFromFloorModule(impObj, bid) {
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (impObj.hasOwnProperty(mediaType)) {
-        let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
-        if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
-          let mediaTypeFloor = parseFloat(floorInfo.floor);
-          bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+        let sizesArray = [];
+
+        if (utils.isArray(bid.mediaTypes[mediaType].sizes)) {
+          // Banner
+          if (utils.isArray(bid.mediaTypes[mediaType].sizes[0])) {
+            // [ [], [] ]
+            sizesArray = bid.mediaTypes[mediaType].sizes;
+          } else {
+            // [n, n]
+            sizesArray[0] = [ bid.mediaTypes[mediaType].sizes[0], bid.mediaTypes[mediaType].sizes[1] ];
+          }
+        } else if (utils.isArray(bid.mediaTypes[mediaType].playerSize)) {
+          // Video
+          if (utils.isArray(bid.mediaTypes[mediaType].playerSize[0])) {
+            sizesArray = bid.mediaTypes[mediaType].playerSize;
+          } else {
+            sizesArray[0] = [ bid.mediaTypes[mediaType].playerSize[0], bid.mediaTypes[mediaType].playerSize[1] ];
+          }
         }
+
+        if (sizesArray.length === 0) {
+          sizesArray.push('*')
+        }
+
+        sizesArray.forEach(size => {
+          let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: size });
+          if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+            let mediaTypeFloor = parseFloat(floorInfo.floor);
+            bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+          }
+        });
       }
     });
   }
