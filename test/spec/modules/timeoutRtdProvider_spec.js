@@ -12,17 +12,17 @@ const MOBILE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS
 const TABLET_USER_AGENT = 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
 
 function resetUserAgent() {
-   window.navigator.__defineGetter__('userAgent', () => DEFAULT_USER_AGENT);
+  window.navigator.__defineGetter__('userAgent', () => DEFAULT_USER_AGENT);
 };
 
-function setUserAgent(userAgent){
+function setUserAgent(userAgent) {
   window.navigator.__defineGetter__('userAgent', () => userAgent);
 }
 
-function resetConnection(){
+function resetConnection() {
   window.navigator.__defineGetter__('connection', () => DEFAULT_CONNECTION);
 }
-function setConnectionType(connectionType){
+function setConnectionType(connectionType) {
   window.navigator.__defineGetter__('connection', () => { return {'type': connectionType} });
 }
 
@@ -36,7 +36,7 @@ describe('getDeviceType', () => {
     ['pc', PC_USER_AGENT, 2],
     ['mobile', MOBILE_USER_AGENT, 4],
     ['tablet', TABLET_USER_AGENT, 5],
-  ].forEach(function(args){
+  ].forEach(function(args) {
     const [deviceType, userAgent, deviceTypeNum] = args;
     it(`should be able to recognize ${deviceType} devices`, () => {
       setUserAgent(userAgent);
@@ -63,7 +63,7 @@ describe('getConnectionSpeed', () => {
     ['4g', 'fast'],
     ['not known', 'unknown'],
     [undefined, 'unknown'],
-  ].forEach(function(args){
+  ].forEach(function(args) {
     const [connectionType, connectionSpeed] = args;
     it(`should be able to categorize connection speed when the connection type is ${connectionType}`, () => {
       setConnectionType(connectionType);
