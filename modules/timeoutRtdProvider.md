@@ -69,7 +69,8 @@ Sample Endpoint Response:
         "connectionSpeed": {
             "slow": 200,
             "medium": 100,
-            "fast": 50
+            "fast": 50,
+            "unknown": 10
         },
 }
 ```
@@ -88,7 +89,6 @@ format:
 ```
 See bottom of page for examples.
 
-The currently handled features are as follows:
 Currently supported features:
 
 |Name |Description | Keys | Example
@@ -96,8 +96,7 @@ Currently supported features:
 | includesVideo | Adds time to the timeout based on whether there is a video ad unit in the auction or not | 'true'/'false'| { "true": 200, "false": 50 } | 
 | numAdUnits | Adds time based on the number of ad units. Ranges in the format `'lowerbound-upperbound` are accepted. This range is inclusive | numbers or number ranges | {"1": 50, "2-5": 100, "6-10": 200} |  
 | deviceType | Adds time based on device type| 2, 4, or 5| {"2": 50, "4": 100} |
-| connectionSpeed | Adds time based on connection speed | slow, medium, or fast | { "slow": 200} |
-
+| connectionSpeed | Adds time based on connection speed. `connectionSpeed` defaults to 'unknown' if connection speed cannot be determined | slow, medium, fast, or unknown | { "slow": 200} |
 
 Full example:  
 ```
@@ -125,7 +124,8 @@ pbjs.setConfig({
                 "connectionSpeed": {
                     "slow": 200,
                     "medium": 100,
-                    "fast": 50
+                    "fast": 50,
+                    "unknown": 10
                 },
             }
         }
