@@ -987,6 +987,28 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.be.undefined;
     });
 
+    it('should not pass empty adServerTargeting values', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      const mockTargeting = utils.deepClone(MOCK.SET_TARGETING);
+      mockTargeting['/19968336/header-bid-tag-0'].hb_test = '';
+      mockTargeting['/19968336/header-bid-tag1'].hb_test = 'NOT_EMPTY';
+      events.emit(SET_TARGETING, mockTargeting);
+
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].adserverTargeting.hb_test).to.be.undefined;
+      expect(message.auctions[0].adUnits[1].adserverTargeting.hb_test).to.equal('NOT_EMPTY');
+    });
+
     function performFloorAuction(provider) {
       let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
       auctionInit.bidderRequests[0].bids[0].floorData = {

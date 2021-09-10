@@ -95,10 +95,10 @@ export const spec = {
         }
       }
       let impObj = {
-        id: bidId,
+        id: bidId && bidId.toString(),
         tagid: uid.toString(),
         ext: {
-          divid: adUnitCode
+          divid: adUnitCode && adUnitCode.toString()
         }
       };
 
@@ -132,7 +132,7 @@ export const spec = {
     });
 
     const source = {
-      tid: auctionId,
+      tid: auctionId && auctionId.toString(),
       ext: {
         wrapper: 'Prebid_js',
         wrapper_version: '$prebid.version$'
@@ -147,7 +147,7 @@ export const spec = {
     const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
 
     let request = {
-      id: bidderRequestId,
+      id: bidderRequestId && bidderRequestId.toString(),
       site: {
         page: referer
       },
