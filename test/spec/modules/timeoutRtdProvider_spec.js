@@ -313,4 +313,27 @@ describe('Timeout RTD submodule', () => {
     timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules)
     expect(reqBidsConfigObj.timeout).to.be.equal(baseTimeout + addedTimeout);
   });
+
+  it('should be able to increment the timeout with the calculated timeout modifier when there are multiple matching rules', () => {
+    const baseTimeout = 100;
+    const getConfigStub = sandbox.stub().returns(baseTimeout);
+    sandbox.stub(prebidGlobal, 'getGlobal').callsFake(() => {
+      return {
+        getConfig: getConfigStub
+      }
+    });
+
+    const reqBidsConfigObj = {adUnits: [1, 2, 3]}
+    const addedTimeout = 400;
+    const rules = {
+      numAdUnits: {
+        '3-5': addedTimeout / 2,
+      },
+      includesVideo: {
+        'false': addedTimeout / 2,
+      }
+    }
+    timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules)
+    expect(reqBidsConfigObj.timeout).to.be.equal(baseTimeout + addedTimeout);
+  });
 });

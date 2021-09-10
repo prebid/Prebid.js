@@ -10,9 +10,9 @@
  ---
 
 ## Overview
-The timeout RTD module enables publishers to dynamically retrieve 
-timeout rules from a timeout provider that determine the timeout based 
-on certain features, or set those rules statically on the page. 
+The timeout RTD module enables publishers to set rules that determine the timeout based on 
+certain features. It supports rule sets dynamically retrieved from a timeout provider as well as rules 
+set directly via configuration.
 Build the timeout RTD module into the Prebid.js package with: 
 ```
 gulp build --modules=timeoutRtdProvider,rtdModule...
@@ -98,6 +98,21 @@ Currently supported features:
 | deviceType | Adds time based on device type| 2, 4, or 5| {"2": 50, "4": 100} |
 | connectionSpeed | Adds time based on connection speed. `connectionSpeed` defaults to 'unknown' if connection speed cannot be determined | slow, medium, fast, or unknown | { "slow": 200} |
 
+If there are multiple rules set, all of them would be used and any that apply will be added to the base timeout. For example, if the rules object contains:
+```
+{
+  "includesVideo": {
+      "true": 200,
+      "false": 50
+    },
+  "numAdUnits" : {
+      "1-3": 100,
+      "4-5": 200
+  }
+}
+```
+and there are 3 ad units in the auction, all of which are banner, then the timeout to be added will be 150 milliseconds (50 for `includesVideo[false]` + 100 for `numAdUnits['1-3']`).
+
 Full example:  
 ```
 pbjs.setConfig({
@@ -131,7 +146,6 @@ pbjs.setConfig({
         }
     ]}
     ...
-    // The timeout RTD module will add time to `bidderTimeout` if it successfully 
-    // fetches the timeout data.  
+    // The timeout RTD module will add time to `bidderTimeout` based on the rules set above.  
     "bidderTimeout": 1500, 
 ```
