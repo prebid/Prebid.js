@@ -752,6 +752,7 @@ describe('SonobiBidAdapter', function () {
           expect(resp.width).to.equal(prebidResponse[i].width);
           expect(resp.height).to.equal(prebidResponse[i].height);
           expect(resp.renderer).to.be.ok;
+          expect(resp.ad).to.equal(undefined);
         } else if (resp.mediaType === 'video') {
           expect(resp.vastUrl.indexOf('vast.xml')).to.be.greaterThan(0);
           expect(resp.ad).to.be.undefined;
