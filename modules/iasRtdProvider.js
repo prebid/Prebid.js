@@ -31,7 +31,7 @@ function stringifySlotSizes(sizes) {
   return result;
 }
 
-function stringifySlot(bidRequest, adUnitPath) {
+function stringifySlot(bidRequest) {
   const sizes = utils.getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
@@ -68,18 +68,12 @@ function shallowMerge(dest, src) {
   }, dest);
 }
 
-function getBidRequestData(reqBidsConfigObj, callback, config) {
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
-  let isFinish = false;
-
-  const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
-  const { pubId, adUnitPath } = config.params;
-  const anId = pubId;
+function constructQueryString(anId, adUnits) {
   let queries = [];
   queries.push(['anId', anId]);
 
   queries = queries.concat(adUnits.reduce(function (acc, request) {
-    acc.push(['slot', stringifySlot(request, adUnitPath)]);
+    acc.push(['slot', stringifySlot(request)]);
     return acc;
   }, []));
 
@@ -87,7 +81,17 @@ function getBidRequestData(reqBidsConfigObj, callback, config) {
   queries.push(['sr', stringifyScreenSize()]);
   queries.push(['url', encodeURIComponent(window.location.href)]);
 
-  const queryString = encodeURI(queries.map(qs => qs.join('=')).join('&'));
+  return encodeURI(queries.map(qs => qs.join('=')).join('&'));
+}
+
+function getBidRequestData(reqBidsConfigObj, callback, config) {
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+  let isFinish = false;
+
+  const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
+  const { pubId } = config.params;
+
+  const queryString = constructQueryString(pubId, adUnits);
 
   const ajax = ajaxBuilder();
 
