@@ -11,7 +11,7 @@ const BIDDER_CODE = 'advangelists';
 export const VIDEO_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
 export const BANNER_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
 export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
-export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip'];
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip', 'playerSize', 'context'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 let pubid = '';
@@ -66,6 +66,7 @@ export const spec = {
           height: response.seatbid[0].bid[0].h,
           ttl: response.seatbid[0].bid[0].ttl || 60,
           creativeId: response.seatbid[0].bid[0].crid,
+          meta: { 'advertiserDomains': response.seatbid[0].bid[0].adomain },
           currency: response.cur,
           mediaType: VIDEO,
           netRevenue: true
@@ -92,6 +93,7 @@ export const spec = {
           ttl: response.seatbid[0].bid[0].ttl || 60,
           creativeId: response.seatbid[0].bid[0].crid,
           currency: response.cur,
+          meta: { 'advertiserDomains': response.seatbid[0].bid[0].adomain },
           mediaType: BANNER,
           netRevenue: true
         }
@@ -106,6 +108,16 @@ function isBannerBid(bid) {
 
 function isVideoBid(bid) {
   return utils.deepAccess(bid, 'mediaTypes.video');
+}
+
+function getBannerBidFloor(bid) {
+  let floorInfo = utils.isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }) : {};
+  return floorInfo.floor || getBannerBidParam(bid, 'bidfloor');
+}
+
+function getVideoBidFloor(bid) {
+  let floorInfo = utils.isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'video', size: '*' }) : {};
+  return floorInfo.floor || getVideoBidParam(bid, 'bidfloor');
 }
 
 function isVideoBidValid(bid) {
@@ -198,12 +210,19 @@ function getTopWindowReferrer() {
 }
 
 function getVideoTargetingParams(bid) {
-  return Object.keys(Object(bid.params.video))
-    .filter(param => includes(VIDEO_TARGETING, param))
-    .reduce((obj, param) => {
-      obj[ param ] = bid.params.video[ param ];
-      return obj;
-    }, {});
+  const result = {};
+  const excludeProps = ['playerSize', 'context', 'w', 'h'];
+  Object.keys(Object(bid.mediaTypes.video))
+    .filter(key => !includes(excludeProps, key))
+    .forEach(key => {
+      result[ key ] = bid.mediaTypes.video[ key ];
+    });
+  Object.keys(Object(bid.params.video))
+    .filter(key => includes(VIDEO_TARGETING, key))
+    .forEach(key => {
+      result[ key ] = bid.params.video[ key ];
+    });
+  return result;
 }
 
 function createVideoRequestData(bid, bidderRequest) {
@@ -212,7 +231,7 @@ function createVideoRequestData(bid, bidderRequest) {
 
   let sizes = getVideoSizes(bid);
   let firstSize = getFirstSize(sizes);
-
+  let bidfloor = (getVideoBidFloor(bid) == null || typeof getVideoBidFloor(bid) == 'undefined') ? 2 : getVideoBidFloor(bid);
   let video = getVideoTargetingParams(bid);
   const o = {
     'device': {
@@ -267,7 +286,7 @@ function createVideoRequestData(bid, bidderRequest) {
       'displaymanager': '' + BIDDER_CODE,
       'displaymanagerver': '' + ADAPTER_VERSION,
       'tagId': placement,
-      'bidfloor': 2.0,
+      'bidfloor': bidfloor,
       'bidfloorcur': 'USD',
       'secure': secure,
       'video': Object.assign({
@@ -300,6 +319,7 @@ function createBannerRequestData(bid, bidderRequest) {
   let topReferrer = getTopWindowReferrer();
 
   let sizes = getBannerSizes(bid);
+  let bidfloor = (getBannerBidFloor(bid) == null || typeof getBannerBidFloor(bid) == 'undefined') ? 2 : getBannerBidFloor(bid);
 
   const o = {
     'device': {
@@ -354,7 +374,7 @@ function createBannerRequestData(bid, bidderRequest) {
       'displaymanager': '' + BIDDER_CODE,
       'displaymanagerver': '' + ADAPTER_VERSION,
       'tagId': placement,
-      'bidfloor': 2.0,
+      'bidfloor': bidfloor,
       'bidfloorcur': 'USD',
       'secure': secure,
       'banner': {

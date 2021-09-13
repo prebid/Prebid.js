@@ -77,6 +77,54 @@ describe('betweenBidAdapterTests', function () {
 
     expect(req_data.subid).to.equal(1138);
   });
+
+  it('validate eids parameter', function() {
+    const USER_ID_DATA = [
+      {
+        source: 'admixer.net',
+        uids: [
+          { id: '5706411dc1c54268ac2ed668b27f92a3', atype: 3 }
+        ]
+      }
+    ];
+
+    let bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'between',
+      params: {
+        w: 240,
+        h: 400,
+        s: 1112,
+      },
+      sizes: [[240, 400]],
+      userIdAsEids: USER_ID_DATA,
+    }];
+
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
+
+    expect(req_data.eids).to.have.deep.members(USER_ID_DATA);
+  });
+
+  it('validate eids parameter, if userIdAsEids = undefined', function() {
+    let bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'between',
+      params: {
+        w: 240,
+        h: 400,
+        s: 1112,
+      },
+      sizes: [[240, 400]],
+      userIdAsEids: undefined
+    }];
+
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
+
+    expect(req_data.eids).to.have.deep.members([]);
+  });
+
   it('validate click3rd param', function() {
     let bidRequestData = [{
       bidId: 'bid1234',
@@ -220,5 +268,39 @@ describe('betweenBidAdapterTests', function () {
     let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.sizes).to.deep.equal(['970x250', '240x400', '728x90'])
+  });
+
+  it('check adomain', function() {
+    const serverResponse = {
+      body: [{
+        bidid: 'bid1234',
+        cpm: 1.12,
+        w: 240,
+        h: 400,
+        currency: 'USD',
+        ad: 'Ad html',
+        adomain: ['domain1.com', 'domain2.com']
+      }]
+    };
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.meta.advertiserDomains).to.deep.equal(['domain1.com', 'domain2.com']);
+  });
+  it('check server response without adomain', function() {
+    const serverResponse = {
+      body: [{
+        bidid: 'bid1234',
+        cpm: 1.12,
+        w: 240,
+        h: 400,
+        currency: 'USD',
+        ad: 'Ad html',
+      }]
+    };
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.meta.advertiserDomains).to.deep.equal([]);
   });
 });

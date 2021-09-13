@@ -1,6 +1,5 @@
 [![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
 [![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
 [![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
 [![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
@@ -93,12 +92,12 @@ Or for Babel 6:
 Then you can use Prebid.js as any other npm depedendency
 
 ```javascript
-import prebid from 'prebid.js';
+import pbjs from 'prebid.js';
 import 'prebid.js/modules/rubiconBidAdapter'; // imported modules will register themselves automatically with prebid
 import 'prebid.js/modules/appnexusBidAdapter';
-prebid.processQueue();  // required to process existing pbjs.queue blocks and setup any further pbjs.queue execution
+pbjs.processQueue();  // required to process existing pbjs.queue blocks and setup any further pbjs.queue execution
 
-prebid.requestBids({
+pbjs.requestBids({
   ...
 })
 
@@ -112,11 +111,11 @@ prebid.requestBids({
 
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
-    $ npm install
+    $ npm ci
 
 *Note:* You need to have `NodeJS` 12.16.1 or greater installed.
 
-*Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To comply with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in its setup.
+*Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To comply with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm ci`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in its setup.
 
 If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  You can check if this is installed by running `gulp -v` and seeing the version that's listed in the `CLI` field of the output.  If you have the `gulp` package installed globally, it's likely the same version that you'll see in the `Local` field.  If you already have `gulp-cli` installed, it should be a lower major version (it's at version `2.0.1` at the time of the transition).
 
@@ -152,7 +151,7 @@ Building with just these adapters will result in a smaller bundle which should a
 
 **Build standalone prebid.js**
 
-- Clone the repo, run `npm install`
+- Clone the repo, run `npm ci`
 - Then run the build:
 
         $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
@@ -200,6 +199,11 @@ To run the unit tests:
 
 ```bash
 gulp test
+```
+
+To run the unit tests for a particular file (example for pubmaticBidAdapter_spec.js):
+```bash
+gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js"
 ```
 
 To generate and view the code coverage reports:
@@ -260,7 +264,7 @@ directory you will have sourcemaps available in your browser's developer tools.
 
 To run the example file, go to:
 
-+ `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html`
++ `http://localhost:9999/integrationExamples/gpt/hello_world.html`
 
 As you make code changes, the bundles will be rebuilt and the page reloaded automatically.
 
