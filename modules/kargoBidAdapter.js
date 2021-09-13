@@ -2,6 +2,8 @@ import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import {VIDEO} from '../src/mediaTypes.js';
+import {INSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
@@ -9,6 +11,20 @@ const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={I
 const SYNC_COUNT = 5;
 const GVLID = 972;
 const storage = getStorageManager(GVLID, BIDDER_CODE);
+const VIDEO_OPENRTB_PARAMS = [
+  'mimes',
+  'minduration',
+  'maxduration',
+  'placement',
+  'protocols',
+  'startdelay',
+  'skip',
+  'skipafter',
+  'delivery',
+  'playbackmethod',
+  'api',
+  'linearity'
+];
 
 let sessionId,
   lastPageUrl,
@@ -21,7 +37,7 @@ export const spec = {
     if (!bid || !bid.params) {
       return false;
     }
-    return !!bid.params.placementId;
+    return !!bid.params.placementId && _validateVideo(bid);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const currencyObj = config.getConfig('currency');
@@ -29,12 +45,17 @@ export const spec = {
     const bidIds = {};
     const bidSizes = {};
     utils._each(validBidRequests, bid => {
+      // should there be scope for video params addition here?
+      // video params must be included in the validBidRequests bid?
       bidIds[bid.bidId] = bid.params.placementId;
       bidSizes[bid.bidId] = bid.sizes;
     });
     let tdid;
     if (validBidRequests.length > 0 && validBidRequests[0].userId && validBidRequests[0].userId.tdid) {
       tdid = validBidRequests[0].userId.tdid;
+    }
+    if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+      validBidRequests[0].video = _buildVideoORTB(bidRequest);
     }
     const transformedParams = Object.assign({}, {
       sessionId: spec._getSessionId(),
@@ -264,6 +285,64 @@ export const spec = {
     } catch (e) {
       return '';
     }
-  }
-};
+  },
+
+  _validateVideo(bid) {
+      if (!bid.params) {
+        return false;
+      }
+      const videoAdUnit = utils.deepAccess(bid, `mediaTypes.${VIDEO}`, {});
+      const videoParams = {
+        ...videoAdUnit
+      };
+
+      if (videoParams.context !== 'instream') {
+        utils.logError('failed validation: only context instream is supported ');
+        return false;
+      }
+    
+      if (typeof videoParams.playerSize === 'undefined' || !Array.isArray(videoParams.playerSize) || !Array.isArray(videoParams.playerSize[0])) {
+        utils.logError('failed validation: player size not declared or is not in format [[w,h]]');
+        return false;
+      }
+
+      if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
+        return false;
+      }
+    
+      if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
+        return false;
+      }
+
+      return true;
+    },
+    _buildVideoORTB(bidRequest) {
+      const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
+      const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
+    
+      const videoParams = {
+        ...videoAdUnit,
+        ...videoBidderParams // Bidder Specific overrides
+      };
+    
+      const video = {}
+    
+      const {w, h} = _getSize(videoParams.playerSize[0]);
+      video.w = w;
+      video.h = h;
+
+      VIDEO_OPENRTB_PARAMS.forEach((param) => {
+        if (videoParams.hasOwnProperty(param)) {
+          video[param] = videoParams[param];
+        }
+      });
+
+      video.placement = video.placement || 2;
+
+      video.startdelay = video.startdelay || 0;
+      video.context = INSTREAM;
+
+      return video
+    }
+}
 registerBidder(spec);
