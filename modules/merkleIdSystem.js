@@ -11,6 +11,7 @@ import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
 
 const MODULE_NAME = 'merkleId';
+const ID_URL = 'https://id2.sv.rkdms.com/identity/';
 const DEFAULT_REFRESH = 7 * 3600;
 const SESSION_COOKIE_NAME = '_svsid';
 
@@ -126,13 +127,13 @@ export const merkleIdSubmodule = {
       return;
     }
 
-    if (typeof configParams.endpoint !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid endpoint string to be defined');
-      return;
-    }
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
       utils.logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
+    }
+    if (typeof configParams.endpoint !== 'string') {
+      utils.logWarn('User ID - merkleId submodule endpoint string is not defined');
+      configParams.endpoint = ID_URL
     }
 
     if (typeof configParams.sv_domain !== 'string') {
