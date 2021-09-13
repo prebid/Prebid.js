@@ -539,28 +539,16 @@ export function _checkParamDataType(key, value, datatype) {
 }
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
-  let domainUrl = utils.deepAccess(validBidRequests, 'params.domainUrl');
+  let referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
+  let page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || utils.deepAccess(window, 'location.href');
+  let paramUrl = utils.deepAccess(validBidRequests, 'params.domainUrl') || config.getConfig('pageUrl');
 
-  if (typeof domainUrl == 'undefined' || domainUrl == null) {
-    domainUrl = config.getConfig('pageUrl') || utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
-  }
-
-  if (typeof domainUrl == 'undefined' || domainUrl == null) {
-    try {
-      domainUrl = window.top.document.head.querySelector('link[rel="canonical"][href]').getAttribute('href');
-    } catch (error) {
-      domainUrl = undefined;
-    }
-  }
+  let domainUrl = referrer || page || paramUrl;
 
   try {
     domainUrl = domainUrl.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img)[0].replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?/img, '');
   } catch (error) {
     domainUrl = undefined;
-  }
-
-  if (typeof domainUrl == 'undefined' || domainUrl == null) {
-    domainUrl = window.location.hostname;
   }
 
   return domainUrl;
