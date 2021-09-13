@@ -15,6 +15,7 @@ import { ajaxBuilder } from '../src/ajax.js';
 import { logError } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import * as utils from '../src/utils'
 
 const SUBMODULE_NAME = 'jwplayer';
 const segCache = {};
@@ -264,6 +265,47 @@ export function addTargetingToBid(bid, targeting) {
   const jwRtd = {};
   jwRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], { targeting });
   bid.rtd = Object.assign({}, rtd, jwRtd);
+}
+
+/*
+{
+  ...,
+  "user": {
+    "data": [
+      {
+        "name": "a-data-provider.com",
+        "ext": {
+          "segtax": 3
+        },
+        "segment": [
+          { "id": "1001" },
+          { "id": "1002" }
+        ]
+      }
+    }
+  }
+}
+ */
+
+export function setGlobalOrtb2(segments, categories) {
+  try {
+    let oRtb = {};
+    let testGlobal = getGlobal().getConfig('ortb2') || {};
+    if (!utils.deepAccess(testGlobal, 'site.content.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.user.ext.data.sd_rtd, segments)) {
+      utils.deepSetValue(oRtb, 'user.ext.data.sd_rtd', segments || {});
+    }
+    if (!utils.deepAccess(testGlobal, 'site.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.site.ext.data.sd_rtd, categories)) {
+      utils.deepSetValue(oRtb, 'site.ext.data.sd_rtd', categories || {});
+    }
+    if (!utils.isEmpty(oRtb)) {
+      let ortb2 = {ortb2: utils.mergeDeep({}, testGlobal, oRtb)};
+      getGlobal().setConfig(ortb2);
+    }
+  } catch (e) {
+    utils.logError(e)
+  }
+
+  return true;
 }
 
 function getPlayer(playerID) {
