@@ -751,15 +751,6 @@ function _addFloorFromFloorModule(impObj, bid) {
             // [n, n]
             sizesArray[0] = [ bid.mediaTypes[mediaType].sizes[0], bid.mediaTypes[mediaType].sizes[1] ];
           }
-        } else if (utils.isArray(bid.mediaTypes[mediaType].playerSize)) {
-          // Video
-          if (utils.isArray(bid.mediaTypes[mediaType].playerSize[0])) {
-            // [ [], [] ]
-            sizesArray = bid.mediaTypes[mediaType].playerSize;
-          } else {
-            // [n, n]
-            sizesArray[0] = [ bid.mediaTypes[mediaType].playerSize[0], bid.mediaTypes[mediaType].playerSize[1] ];
-          }
         }
 
         if (sizesArray.length === 0) {
