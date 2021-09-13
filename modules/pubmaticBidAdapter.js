@@ -759,9 +759,16 @@ function _addFloorFromFloorModule(impObj, bid) {
 
         sizesArray.forEach(size => {
           let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: size });
+          utils.logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, ' and size:', size,' is: currency', floorInfo.currency, 'floor', floorInfo.floor);
           if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
             let mediaTypeFloor = parseFloat(floorInfo.floor);
-            bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+            utils.logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
+            if(bidFloor === -1){
+              bidFloor = mediaTypeFloor;
+            } else {
+              bidFloor = Math.min(mediaTypeFloor, bidFloor)
+            }
+            utils.logInfo(LOG_WARN_PREFIX, 'new floor value:', bidFloor);
           }
         });
       }
@@ -770,11 +777,13 @@ function _addFloorFromFloorModule(impObj, bid) {
   // get highest from impObj.bidfllor and floor from floor module
   // as we are using Math.max, it is ok if we have not got any floor from floorModule, then value of bidFloor will be -1
   if (impObj.bidfloor) {
-    bidFloor = Math.max(bidFloor, impObj.bidfloor)
+    utils.logInfo(LOG_WARN_PREFIX, 'floor from floor module:', bidFloor, 'impObj.bidfloor', impObj.bidfloor, 'Max:', Math.max(bidFloor, impObj.bidfloor));
+    bidFloor = Math.max(bidFloor, impObj.bidfloor)    
   }
 
   // assign value only if bidFloor is > 0
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
+  utils.logInfo(LOG_WARN_PREFIX, 'new impObj.bidfloor value:', impObj.bidfloor);
 }
 
 function _getFlocId(validBidRequests, flocFormat) {
