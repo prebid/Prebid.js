@@ -195,6 +195,9 @@ function interpretBid(serverBid, request) {
   }
 
   if (typeof serverBid.dealId !== 'undefined') { bidReturned.dealId = serverBid.dealId }
+  if (typeof serverBid.lurl != 'undefined') { bidReturned.lurl = serverBid.lurl }
+  if (typeof serverBid.nurl != 'undefined') { bidReturned.nurl = serverBid.nurl }
+  if (typeof serverBid.burl != 'undefined') { bidReturned.burl = serverBid.burl }
 
   if (typeof request.bids.mediaTypes !== 'undefined' && typeof request.bids.mediaTypes.video !== 'undefined') {
     bidReturned.vastXml = serverBid.adm;
