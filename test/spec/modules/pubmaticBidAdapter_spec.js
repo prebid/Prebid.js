@@ -1880,7 +1880,7 @@ describe('PubMatic adapter', function () {
         });
 
         it('ignore floormodule o/p if floor is not number', function() {
-          floorModuleTestData.banner.floor = 'INR';
+          floorModuleTestData.banner.floor = 'Not-a-Number';
           newRequest[0].params.kadfloor = undefined;
           let request = spec.buildRequests(newRequest, {
             auctionId: 'new-auction-id'
