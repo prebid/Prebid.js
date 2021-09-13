@@ -4,6 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import includes from 'core-js-pure/features/array/includes';
 import find from 'core-js-pure/features/array/find.js';
+import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
@@ -46,8 +47,8 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     const bannerBidRequests = bidRequests.filter(request => hasBannerMediaType(request));
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
-
     let serverRequests = [];
+    const eids = getEids(bidRequests[0]) || [];
     if (bannerBidRequests.length > 0) {
       let serverRequest = {
         pbav: '$prebid.version$',
@@ -99,6 +100,9 @@ export const spec = {
       });
       serverRequest.p = '[' + serverRequest.p.toString() + ']';
 
+      if (eids.length) {
+        serverRequest.eids = JSON.stringify(eids);
+      };
       // check if url exceeded max length
       const url = `${BANNER_SERVER_ENDPOINT}?${parseQueryStringParameters(serverRequest)}`;
       let extraCharacters = url.length - MAX_BANNER_REQUEST_URL_LENGTH;
@@ -121,6 +125,9 @@ export const spec = {
 
     if (videoBidRequests.length > 0) {
       const serverRequest = openRtbRequest(videoBidRequests, bidderRequest);
+      if (eids.length) {
+        serverRequest.user = { eids };
+      };
       serverRequests.push({
         method: 'POST',
         url: VIDEO_SERVER_ENDPOINT,
@@ -595,3 +602,14 @@ function shortcutProperty(extraCharacters, target, propertyName) {
 
   return charactersLeft;
 }
+
+/**
+ * Creates and returnes eids arr using createEidsArray from './userId/eids.js' module;
+ * @param {Object} openRtbRequest OpenRTB's request as a cource of userId.
+ * @return array of eids objects
+ */
+function getEids(bidRequest) {
+  if (utils.deepAccess(bidRequest, 'userId')) {
+    return createEidsArray(bidRequest.userId) || [];
+  }
+};
