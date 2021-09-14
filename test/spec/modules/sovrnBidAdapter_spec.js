@@ -397,10 +397,14 @@ describe('sovrnBidAdapter', function() {
 
     it('should get correct bid response when dealId is passed', function () {
       response.body.seatbid[0].bid[0].dealid = 'baking';
+      const expectedResponse = {
+        ...baseResponse,
+        'dealId': 'baking',
+      }
 
       const result = spec.interpretResponse(response)
 
-      expect(result[0]).to.deep.equal(baseResponse);
+      expect(result[0]).to.deep.equal(expectedResponse);
     });
 
     it('should get correct bid response when ttl is set', function () {
