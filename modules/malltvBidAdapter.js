@@ -40,6 +40,7 @@ export const spec = {
     let url = '';
     let contents = [];
     let data = {};
+    let auctionId = bidderRequest ? bidderRequest.auctionId : '';
 
     let placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
@@ -64,6 +65,7 @@ export const spec = {
     });
 
     let body = {
+      auctionId: auctionId,
       propertyId: propertyId,
       pageViewGuid: pageViewGuid,
       storageId: storageId,
