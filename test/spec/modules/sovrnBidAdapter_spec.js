@@ -335,6 +335,20 @@ describe('sovrnBidAdapter', function() {
 
   describe('interpretResponse', function () {
     let response;
+    const baseResponse = {
+      'requestId': '263c448586f5a1',
+      'cpm': 0.45882675,
+      'width': 728,
+      'height': 90,
+      'creativeId': 'creativelycreatedcreativecreative',
+      'dealId': null,
+      'currency': 'USD',
+      'netRevenue': true,
+      'mediaType': 'banner',
+      'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+      'ttl': 90,
+      'meta': { advertiserDomains: [] }
+    }
     beforeEach(function () {
       response = {
         body: {
@@ -357,18 +371,9 @@ describe('sovrnBidAdapter', function() {
 
     it('should get the correct bid response', function () {
       const expectedResponse = {
-        'requestId': '263c448586f5a1',
-        'cpm': 0.45882675,
-        'width': 728,
-        'height': 90,
-        'creativeId': 'creativelycreatedcreativecreative',
-        'dealId': null,
-        'currency': 'USD',
-        'netRevenue': true,
-        'mediaType': 'banner',
+        ...baseResponse,
         'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
         'ttl': 60000,
-        'meta': { advertiserDomains: [] }
       };
 
       const result = spec.interpretResponse(response);
@@ -380,18 +385,9 @@ describe('sovrnBidAdapter', function() {
       delete response.body.seatbid[0].bid[0].crid;
 
       const expectedResponse = {
-        'requestId': '263c448586f5a1',
-        'cpm': 0.45882675,
-        'width': 728,
-        'height': 90,
+        ...baseResponse,
         'creativeId': response.body.seatbid[0].bid[0].id,
-        'dealId': null,
-        'currency': 'USD',
-        'netRevenue': true,
-        'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
-        'ttl': 90,
-        'meta': { advertiserDomains: [] }
       }
 
       const result = spec.interpretResponse(response);
@@ -402,42 +398,17 @@ describe('sovrnBidAdapter', function() {
     it('should get correct bid response when dealId is passed', function () {
       response.body.seatbid[0].bid[0].dealid = 'baking';
 
-      const expectedResponse = {
-        'requestId': '263c448586f5a1',
-        'cpm': 0.45882675,
-        'width': 728,
-        'height': 90,
-        'creativeId': 'creativelycreatedcreativecreative',
-        'dealId': 'baking',
-        'currency': 'USD',
-        'netRevenue': true,
-        'mediaType': 'banner',
-        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
-        'ttl': 90,
-        'meta': { advertiserDomains: [] }
-      }
-
       const result = spec.interpretResponse(response)
 
-      expect(result[0]).to.deep.equal(expectedResponse);
+      expect(result[0]).to.deep.equal(baseResponse);
     });
 
     it('should get correct bid response when ttl is set', function () {
       response.body.seatbid[0].bid[0].ext = { 'ttl': 480 }
 
       const expectedResponse = {
-        'requestId': '263c448586f5a1',
-        'cpm': 0.45882675,
-        'width': 728,
-        'height': 90,
-        'creativeId': 'creativelycreatedcreativecreative',
-        'dealId': null,
-        'currency': 'USD',
-        'netRevenue': true,
-        'mediaType': 'banner',
-        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+        ...baseResponse,
         'ttl': 480,
-        'meta': { advertiserDomains: [] }
       }
 
       const result = spec.interpretResponse(response)
