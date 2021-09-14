@@ -281,6 +281,6 @@ export const spec = {
     } catch (e) {
       return '';
     }
-  },
-}
+  }
+};
 registerBidder(spec);
