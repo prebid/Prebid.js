@@ -185,6 +185,8 @@ export let syncDelay;
 /** @type {(number|undefined)} */
 export let auctionDelay;
 
+/** @type {(Object|undefined)} */
+let userIdentity;
 /** @param {Submodule[]} submodules */
 export function setSubmoduleRegistry(submodules) {
   submoduleRegistry = submodules;
@@ -644,6 +646,14 @@ function refreshUserIds(options, callback, moduleUpdated) {
   });
 }
 
+function setUserIdentities(userIdentityData) {
+  userIdentity = userIdentityData;
+};
+
+function getUserIdentities() {
+  return userIdentity;
+}
+
 /**
  * This hook returns updated list of submodules which are allowed to do get user id based on TCF 2 enforcement rules configured
  */
@@ -846,6 +856,9 @@ export function init(config) {
   (getGlobal()).getUserIds = getUserIds;
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
   (getGlobal()).refreshUserIds = refreshUserIds;
+  (getGlobal()).setUserIdentities = setUserIdentities;
+  (getGlobal()).getUserIdentities = getUserIdentities;
+
 }
 
 // init config update listener to start the application
