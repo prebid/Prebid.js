@@ -24,14 +24,6 @@ export const spec = {
       return false;
     }
 
-    // If video, verify it's instream
-    if (bid.mediaTypes.video) {
-      const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-      if (context !== 'instream') {
-        return false;
-      }
-    }
-
     return !!bid.params.placementId;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
