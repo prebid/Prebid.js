@@ -742,14 +742,12 @@ function _addFloorFromFloorModule(impObj, bid) {
       if (impObj.hasOwnProperty(mediaType)) {
         let sizesArray = [];
 
-        if (utils.isArray(bid.mediaTypes[mediaType].sizes)) {
-          // Banner
-          if (utils.isArray(bid.mediaTypes[mediaType].sizes[0])) {
-            // [ [], [] ]
-            sizesArray = bid.mediaTypes[mediaType].sizes;
-          } else {
-            // [n, n]
-            sizesArray[0] = [ bid.mediaTypes[mediaType].sizes[0], bid.mediaTypes[mediaType].sizes[1] ];
+        if (mediaType === 'banner') {
+          if (impObj[mediaType].w && impObj[mediaType].h) {
+            sizesArray.push([impObj[mediaType].w, impObj[mediaType].h]);
+          }
+          if (utils.isArray(impObj[mediaType].format)) {
+            impObj[mediaType].format.forEach(size => sizesArray.push([size.w, size.h]));
           }
         }
 
