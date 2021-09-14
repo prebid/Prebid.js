@@ -1,30 +1,16 @@
 import * as utils from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {VIDEO} from '../src/mediaTypes.js';
-import {INSTREAM} from '../src/video.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}';
 const SYNC_COUNT = 5;
 const GVLID = 972;
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const storage = getStorageManager(GVLID, BIDDER_CODE);
-const VIDEO_OPENRTB_PARAMS = [
-  'mimes',
-  'minduration',
-  'maxduration',
-  'placement',
-  'protocols',
-  'startdelay',
-  'skip',
-  'skipafter',
-  'delivery',
-  'playbackmethod',
-  'api',
-  'linearity'
-];
 
 let sessionId,
   lastPageUrl,
@@ -37,39 +23,48 @@ export const spec = {
     if (!bid || !bid.params) {
       return false;
     }
-    return !!bid.params.placementId && _validateVideo(bid);
+
+    // If video, verify it's instream
+    if (bid.mediaTypes.video) {
+      const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+      if (context !== 'instream') {
+        return false;
+      }
+    }
+
+    return !!bid.params.placementId;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const currencyObj = config.getConfig('currency');
     const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
-    const bidIds = {};
+    const bidIDs = {};
     const bidSizes = {};
-    utils._each(validBidRequests, bid => {
-      // should there be scope for video params addition here?
-      // video params must be included in the validBidRequests bid?
-      bidIds[bid.bidId] = bid.params.placementId;
+
+    utils._each(validBidRequests, (bid) => {
+      bidIDs[bid.bidId] = bid.params.placementId;
+
+      // For video, this will be player size
       bidSizes[bid.bidId] = bid.sizes;
     });
+
     let tdid;
     if (validBidRequests.length > 0 && validBidRequests[0].userId && validBidRequests[0].userId.tdid) {
       tdid = validBidRequests[0].userId.tdid;
     }
-    if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
-      validBidRequests[0].video = _buildVideoORTB(bidRequest);
-    }
+
     const transformedParams = Object.assign({}, {
       sessionId: spec._getSessionId(),
       requestCount: spec._getRequestCount(),
       timeout: bidderRequest.timeout,
-      currency: currency,
+      currency,
       cpmGranularity: 1,
       timestamp: (new Date()).getTime(),
       cpmRange: {
         floor: 0,
         ceil: 20
       },
-      bidIDs: bidIds,
-      bidSizes: bidSizes,
+      bidIDs,
+      bidSizes,
       prebidRawBidRequests: validBidRequests
     }, spec._getAllMetadata(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent));
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
@@ -132,6 +127,7 @@ export const spec = {
     }
     return syncs;
   },
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   // PRIVATE
   _readCookie(name) {
@@ -286,63 +282,5 @@ export const spec = {
       return '';
     }
   },
-
-  _validateVideo(bid) {
-      if (!bid.params) {
-        return false;
-      }
-      const videoAdUnit = utils.deepAccess(bid, `mediaTypes.${VIDEO}`, {});
-      const videoParams = {
-        ...videoAdUnit
-      };
-
-      if (videoParams.context !== 'instream') {
-        utils.logError('failed validation: only context instream is supported ');
-        return false;
-      }
-    
-      if (typeof videoParams.playerSize === 'undefined' || !Array.isArray(videoParams.playerSize) || !Array.isArray(videoParams.playerSize[0])) {
-        utils.logError('failed validation: player size not declared or is not in format [[w,h]]');
-        return false;
-      }
-
-      if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
-        return false;
-      }
-    
-      if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
-        return false;
-      }
-
-      return true;
-    },
-    _buildVideoORTB(bidRequest) {
-      const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
-      const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
-    
-      const videoParams = {
-        ...videoAdUnit,
-        ...videoBidderParams // Bidder Specific overrides
-      };
-    
-      const video = {}
-    
-      const {w, h} = _getSize(videoParams.playerSize[0]);
-      video.w = w;
-      video.h = h;
-
-      VIDEO_OPENRTB_PARAMS.forEach((param) => {
-        if (videoParams.hasOwnProperty(param)) {
-          video[param] = videoParams[param];
-        }
-      });
-
-      video.placement = video.placement || 2;
-
-      video.startdelay = video.startdelay || 0;
-      video.context = INSTREAM;
-
-      return video
-    }
 }
 registerBidder(spec);
