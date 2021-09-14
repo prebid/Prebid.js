@@ -52,6 +52,9 @@ export const spec = {
       if (bid.schain && utils.isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
         query.schain = createSchainString(bid.schain)
       }
+      if (bid.params.iabContent && utils.isPlainObject(bid.params.iabContent)) {
+        query.iab_content = createIabContentString(bid.params.iabContent);
+      }
     })
 
     if (bidderRequest) {
@@ -105,6 +108,7 @@ export const spec = {
         const gdprApplies = reqParams.gdpr ? '&gdpr=' + reqParams.gdpr : ''
         const gdprConsent = reqParams.consent ? '&consent=' + reqParams.consent : ''
         const pvId = matchedBid.pvid !== undefined ? '&pvid=' + matchedBid.pvid : ''
+        const iabContent = reqParams.iab_content ? '&iab_content=' + reqParams.iab_content : ''
 
         const bidResponse = {
           requestId: bidRequest.bidId,
@@ -117,7 +121,7 @@ export const spec = {
           netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}"></script>`,
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,
           meta: {
             advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a'
           }
@@ -130,7 +134,7 @@ export const spec = {
             bidResponse.height = playersize[1]
           }
           bidResponse.mediaType = VIDEO
-          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
+          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}`
           if (isOutstream(bidRequest)) {
             const renderer = Renderer.install({
               id: bidRequest.bidId,
@@ -211,7 +215,7 @@ function createQueryString (obj) {
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
       let val = obj[p]
-      if (p !== 'schain') {
+      if (p !== 'schain' && p !== 'iab_content') {
         str.push(encodeURIComponent(p) + '=' + encodeURIComponent(val))
       } else {
         str.push(p + '=' + val)
@@ -251,6 +255,24 @@ function createSchainString (schain) {
     return acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`
   }, '')
   return `${ver},${complete}${nodesString}`
+}
+
+/**
+ * Creates a string for iab_content object
+ * @param {Object} iabContent
+ * @returns {String}
+ */
+function createIabContentString(iabContent) {
+  const arrKeys = ['keywords', 'cat']
+  let str = []
+  for (let key in iabContent) {
+    if (iabContent.hasOwnProperty(key)) {
+      const value = (arrKeys.includes(key) && Array.isArray(iabContent[key]))
+        ? iabContent[key].map(node => encodeURIComponent(node)).join('|') : encodeURIComponent(iabContent[key])
+      str.push(''.concat(key, ':', value))
+    }
+  }
+  return encodeURIComponent(str.join(','))
 }
 
 /**

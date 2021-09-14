@@ -16,7 +16,22 @@ const REQUEST = {
       'extraParam': true,
       'foo': 'bar'
     },
-    'extId': 'abc'
+    'extId': 'abc',
+    'iabContent': {
+      'id': 'foo_id',
+      'episode': '99',
+      'title': 'foo_title,bar_title',
+      'series': 'foo_series',
+      'season': 's1',
+      'artist': 'foo bar',
+      'genre': 'baz',
+      'isrc': 'CC-XXX-YY-NNNNN',
+      'url': 'http://foo_url.de',
+      'cat': ['cat1', 'cat2,ppp', 'cat3|||//'],
+      'context': '7',
+      'keywords': ['k1,', 'k2..'],
+      'live': '0'
+    }
   },
   'bidderRequestId': '143346cf0f1731',
   'auctionId': '2e41f65424c87c',
@@ -86,6 +101,10 @@ const REQPARAMS_GDPR = Object.assign({}, REQPARAMS, {
   consent: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA'
 })
 
+const REQPARAMS_IAB_CONTENT = Object.assign({}, REQPARAMS, {
+  iab_content: 'id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0'
+})
+
 describe('yieldlabBidAdapter', function () {
   const adapter = newBidder(spec)
 
@@ -137,6 +156,10 @@ describe('yieldlabBidAdapter', function () {
 
     it('passes unencoded schain string to bid request', function () {
       expect(request.url).to.include('schain=1.0,1!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,')
+    })
+
+    it('passes iab_content string to bid request', function () {
+      expect(request.url).to.include('iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
     })
 
     const refererRequest = spec.buildRequests(bidRequests, {
@@ -203,6 +226,11 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].ad).to.include('&consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA')
     })
 
+    it('should append iab_content to adtag', function () {
+      const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [REQUEST], queryParams: REQPARAMS_IAB_CONTENT})
+      expect(result[0].ad).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
+    })
+
     it('should get correct bid response when passing more than one size', function () {
       const REQUEST2 = Object.assign({}, REQUEST, {
         'sizes': [
@@ -267,6 +295,11 @@ describe('yieldlabBidAdapter', function () {
 
       expect(result[0].ad).to.include('&pvid=43513f11-55a0-4a83-94e5-0ebc08f54a2c')
       expect(result[0].vastUrl).to.include('&pvid=43513f11-55a0-4a83-94e5-0ebc08f54a2c')
+    })
+
+    it('should append iab_content to vastUrl', function () {
+      const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST], queryParams: REQPARAMS_IAB_CONTENT})
+      expect(result[0].vastUrl).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
     })
   })
 })
