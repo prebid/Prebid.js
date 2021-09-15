@@ -1,5 +1,11 @@
 import { expect } from 'chai';
-import { tryGetCriteoFastBid, spec, PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION } from 'modules/criteoBidAdapter.js';
+import {
+  tryGetCriteoFastBid,
+  spec,
+  PROFILE_ID_PUBLISHERTAG,
+  ADAPTER_VERSION,
+  canFastBid, getFastBidUrl, FAST_BID_VERSION_CURRENT
+} from 'modules/criteoBidAdapter.js';
 import { createBid } from 'src/bidfactory.js';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
@@ -66,7 +72,7 @@ describe('The Criteo bidding adapter', function () {
       expect(isValid).to.equal(true);
     });
 
-    it('should return true when given a valid video bid request', function () {
+    it('should return true when given a valid video bid request using mix custom bidder video parameters', function () {
       expect(spec.isBidRequestValid({
         bidder: 'criteo',
         mediaTypes: {
@@ -108,6 +114,30 @@ describe('The Criteo bidding adapter', function () {
             placement: 2,
             playbackmethod: 1
           }
+        },
+      })).to.equal(true);
+    });
+
+    it('should return true when given a valid video bid request using only mediaTypes.video parameters', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2],
+            skip: 1,
+            placement: 1,
+            minduration: 0,
+            playbackmethod: 1,
+            startdelay: 0
+          }
+        },
+        params: {
+          networkId: 456
         },
       })).to.equal(true);
     });
@@ -742,6 +772,44 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.slots[0].video.placement).to.equal(2);
     });
 
+    it('should properly build a video request when mediaTypes.video.skip=0', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          mediaTypes: {
+            video: {
+              playerSize: [ [300, 250] ],
+              mimes: ['video/mp4', 'video/MPV', 'video/H264', 'video/webm', 'video/ogg'],
+              minduration: 1,
+              maxduration: 30,
+              playbackmethod: [2, 3, 4, 5, 6],
+              api: [1, 2, 3, 4, 5, 6],
+              protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+              skip: 0
+            }
+          },
+          params: {
+            networkId: 123
+          }
+        }
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
+      expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].video.playersizes).to.deep.equal(['300x250']);
+      expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/MPV', 'video/H264', 'video/webm', 'video/ogg']);
+      expect(ortbRequest.slots[0].video.minduration).to.equal(1);
+      expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
+      expect(ortbRequest.slots[0].video.playbackmethod).to.deep.equal([2, 3, 4, 5, 6]);
+      expect(ortbRequest.slots[0].video.api).to.deep.equal([1, 2, 3, 4, 5, 6]);
+      expect(ortbRequest.slots[0].video.protocols).to.deep.equal([1, 2, 3, 4, 5, 6, 7, 8]);
+      expect(ortbRequest.slots[0].video.skip).to.equal(0);
+    });
+
     it('should properly build a request with ceh', function () {
       const bidRequests = [
         {
@@ -820,14 +888,18 @@ describe('The Criteo bidding adapter', function () {
     it('should properly build a request with first party data', function () {
       const contextData = {
         keywords: ['power tools'],
-        data: {
-          pageType: 'article'
+        ext: {
+          data: {
+            pageType: 'article'
+          }
         }
       };
       const userData = {
         gender: 'M',
-        data: {
-          registered: true
+        ext: {
+          data: {
+            registered: true
+          }
         }
       };
       const bidRequests = [
@@ -842,8 +914,8 @@ describe('The Criteo bidding adapter', function () {
               bidfloor: 0.75
             }
           },
-          fpd: {
-            context: {
+          ortb2Imp: {
+            ext: {
               data: {
                 someContextAttribute: 'abc'
               }
@@ -854,8 +926,8 @@ describe('The Criteo bidding adapter', function () {
 
       sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
-          fpd: {
-            context: contextData,
+          ortb2: {
+            site: contextData,
             user: userData
           }
         };
@@ -863,8 +935,8 @@ describe('The Criteo bidding adapter', function () {
       });
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.publisher.ext).to.deep.equal(contextData);
-      expect(request.data.user.ext).to.deep.equal(userData);
+      expect(request.data.publisher.ext).to.deep.equal({keywords: ['power tools'], data: {pageType: 'article'}});
+      expect(request.data.user.ext).to.deep.equal({gender: 'M', data: {registered: true}});
       expect(request.data.slots[0].ext).to.deep.equal({
         bidfloor: 0.75,
         data: {
@@ -889,9 +961,11 @@ describe('The Criteo bidding adapter', function () {
             impid: 'test-requestId',
             cpm: 1.23,
             creative: 'test-ad',
+            creativecode: 'test-crId',
             width: 728,
             height: 90,
             dealCode: 'myDealCode',
+            adomain: ['criteo.com'],
           }],
         },
       };
@@ -909,9 +983,11 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].requestId).to.equal('test-bidId');
       expect(bids[0].cpm).to.equal(1.23);
       expect(bids[0].ad).to.equal('test-ad');
+      expect(bids[0].creativeId).to.equal('test-crId');
       expect(bids[0].width).to.equal(728);
       expect(bids[0].height).to.equal(90);
       expect(bids[0].dealId).to.equal('myDealCode');
+      expect(bids[0].meta.advertiserDomains[0]).to.equal('criteo.com');
     });
 
     it('should properly parse a bid response with a zoneId', function () {
@@ -992,6 +1068,7 @@ describe('The Criteo bidding adapter', function () {
             zoneid: 123,
             native: {
               'products': [{
+                'sendTargetingKeys': false,
                 'title': 'Product title',
                 'description': 'Product desc',
                 'price': '100',
@@ -1027,7 +1104,6 @@ describe('The Criteo bidding adapter', function () {
           native: true,
         }]
       };
-      config.setConfig({'enableSendAllBids': false});
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].requestId).to.equal('test-bidId');
@@ -1036,61 +1112,87 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].mediaType).to.equal(NATIVE);
     });
 
-    it('should not parse bid response with native when enableSendAllBids is true', function () {
-      const response = {
-        body: {
-          slots: [{
-            impid: 'test-requestId',
-            bidId: 'abc123',
-            cpm: 1.23,
-            width: 728,
-            height: 90,
-            zoneid: 123,
-            native: {}
-          }],
-        },
-      };
-      const request = {
-        bidRequests: [{
-          adUnitCode: 'test-requestId',
-          bidId: 'test-bidId',
+    it('should warn only once if sendTargetingKeys set to true on required fields for native bidRequest', () => {
+      const bidderRequest = { };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
           params: {
             zoneId: 123,
+            publisherSubId: '123',
+            nativeCallback: function() {}
           },
-          native: true,
-        }]
-      };
-      config.setConfig({'enableSendAllBids': true});
-      const bids = spec.interpretResponse(response, request);
-      expect(bids).to.have.lengthOf(0);
-    });
+        },
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-456',
+          transactionId: 'transaction-456',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 456,
+            publisherSubId: '456',
+            nativeCallback: function() {}
+          },
+        },
+      ];
 
-    it('should not parse bid response with native when enableSendAllBids is not set', function () {
-      const response = {
-        body: {
-          slots: [{
-            impid: 'test-requestId',
-            bidId: 'abc123',
-            cpm: 1.23,
-            width: 728,
-            height: 90,
-            zoneid: 123,
-            native: {}
-          }],
+      const nativeParamsWithSendTargetingKeys = [
+        {
+          nativeParams: {
+            image: {
+              sendTargetingKeys: true
+            },
+          }
         },
-      };
-      const request = {
-        bidRequests: [{
-          adUnitCode: 'test-requestId',
-          bidId: 'test-bidId',
-          params: {
-            zoneId: 123,
-          },
-          native: true,
-        }]
-      };
-      const bids = spec.interpretResponse(response, request);
-      expect(bids).to.have.lengthOf(0);
+        {
+          nativeParams: {
+            icon: {
+              sendTargetingKeys: true
+            },
+          }
+        },
+        {
+          nativeParams: {
+            clickUrl: {
+              sendTargetingKeys: true
+            },
+          }
+        },
+        {
+          nativeParams: {
+            displayUrl: {
+              sendTargetingKeys: true
+            },
+          }
+        },
+        {
+          nativeParams: {
+            privacyLink: {
+              sendTargetingKeys: true
+            },
+          }
+        },
+        {
+          nativeParams: {
+            privacyIcon: {
+              sendTargetingKeys: true
+            },
+          }
+        }
+      ];
+
+      utilsMock.expects('logWarn')
+        .withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)')
+        .exactly(nativeParamsWithSendTargetingKeys.length * bidRequests.length);
+      nativeParamsWithSendTargetingKeys.forEach(nativeParams => {
+        let transformedBidRequests = {...bidRequests};
+        transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
+        spec.buildRequests(transformedBidRequests, bidderRequest);
+      });
+      utilsMock.verify();
     });
 
     it('should properly parse a bid response with a zoneId passed as a string', function () {
@@ -1156,6 +1258,34 @@ describe('The Criteo bidding adapter', function () {
       expect(bids).to.have.lengthOf(2);
       const prebidBids = bids.map(bid => Object.assign(createBid(CONSTANTS.STATUS.GOOD, request.bidRequests[0]), bid));
       expect(prebidBids[0].adId).to.not.equal(prebidBids[1].adId);
+    });
+  });
+
+  describe('canFastBid', function () {
+    it('should properly detect if can do fastbid', function () {
+      const testCasesAndExpectedResult = [['none', false], ['', true], [undefined, true], [123, true]];
+      testCasesAndExpectedResult.forEach(testCase => {
+        const result = canFastBid(testCase[0]);
+        expect(result).to.equal(testCase[1]);
+      })
+    });
+  });
+
+  describe('getFastBidUrl', function () {
+    it('should properly detect the version of fastbid', function () {
+      const testCasesAndExpectedResult = [
+        ['', 'https://static.criteo.net/js/ld/publishertag.prebid.' + FAST_BID_VERSION_CURRENT + '.js'],
+        [undefined, 'https://static.criteo.net/js/ld/publishertag.prebid.' + FAST_BID_VERSION_CURRENT + '.js'],
+        [null, 'https://static.criteo.net/js/ld/publishertag.prebid.' + FAST_BID_VERSION_CURRENT + '.js'],
+        [NaN, 'https://static.criteo.net/js/ld/publishertag.prebid.' + FAST_BID_VERSION_CURRENT + '.js'],
+        [123, 'https://static.criteo.net/js/ld/publishertag.prebid.123.js'],
+        ['123', 'https://static.criteo.net/js/ld/publishertag.prebid.123.js'],
+        ['latest', 'https://static.criteo.net/js/ld/publishertag.prebid.js']
+      ];
+      testCasesAndExpectedResult.forEach(testCase => {
+        const result = getFastBidUrl(testCase[0]);
+        expect(result).to.equal(testCase[1]);
+      })
     });
   });
 

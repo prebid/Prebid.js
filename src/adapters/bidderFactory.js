@@ -9,7 +9,7 @@ import CONSTANTS from '../constants.json';
 import events from '../events.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray } from '../utils.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
@@ -153,8 +153,16 @@ export function registerBidder(spec) {
   putBidder(spec);
   if (Array.isArray(spec.aliases)) {
     spec.aliases.forEach(alias => {
-      adapterManager.aliasRegistry[alias] = spec.code;
-      putBidder(Object.assign({}, spec, { code: alias }));
+      let aliasCode = alias;
+      let gvlid;
+      let skipPbsAliasing;
+      if (isPlainObject(alias)) {
+        aliasCode = alias.code;
+        gvlid = alias.gvlid;
+        skipPbsAliasing = alias.skipPbsAliasing
+      }
+      adapterManager.aliasRegistry[aliasCode] = spec.code;
+      putBidder(Object.assign({}, spec, { code: aliasCode, gvlid, skipPbsAliasing }));
     });
   }
 }
@@ -189,8 +197,10 @@ export function newBidder(spec) {
       const responses = [];
       function afterAllResponses() {
         done();
-        events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-        registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
+        config.runWithBidder(spec.code, () => {
+          events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
+          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
+        });
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
@@ -220,6 +230,7 @@ export function newBidder(spec) {
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
       const onResponse = delayExecution(configEnabledCallback(afterAllResponses), requests.length)
+      requests.forEach(_ => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest));
       requests.forEach(processRequest);
 
       function formatGetParameters(data) {
@@ -267,8 +278,8 @@ export function newBidder(spec) {
         }
 
         // If the server responds successfully, use the adapter code to unpack the Bids from it.
-        // If the adapter code fails, no bids should be added. After all the bids have been added, make
-        // sure to call the `onResponse` function so that we're one step closer to calling done().
+        // If the adapter code fails, no bids should be added. After all the bids have been added,
+        // make sure to call the `onResponse` function so that we're one step closer to calling done().
         function onSuccess(response, responseObj) {
           onTimelyResponse(spec.code);
 
@@ -307,6 +318,7 @@ export function newBidder(spec) {
               // creating a copy of original values as cpm and currency are modified later
               bid.originalCpm = bid.cpm;
               bid.originalCurrency = bid.currency;
+              bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
               const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {

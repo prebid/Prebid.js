@@ -1,14 +1,27 @@
 import {Renderer} from '../src/Renderer.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {isStr, isArray, isNumber, isPlainObject, isBoolean, logError} from '../src/utils.js';
+import {isStr, isArray, isNumber, isPlainObject, isBoolean, logError, replaceAuctionPrice} from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
+import { config } from '../src/config.js';
 
 const ADAPTER_VERSION = 'v1.0.0';
 const BID_METHOD = 'POST';
-const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding/bidrequest';
+const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding{PUBLISHER_PATH}/bidrequest';
+const FIRST_PRICE = 1;
+const NET_REVENUE = true;
+// eslint-disable-next-line no-template-curly-in-string
+const AUCTION_PRICE = '${AUCTION_PRICE}';
+const TTL = 10;
+
 const SUPPORTED_VIDEO_CONTEXTS = ['instream', 'outstream'];
 const SUPPORTED_INSTREAM_CONTEXTS = ['pre-roll', 'mid-roll', 'post-roll'];
+const SUPPORTED_VIDEO_MIMES = ['video/mp4'];
+const BID_SUPPORTED_MEDIA_TYPES = ['banner', 'video', 'native'];
+
+const DOMAIN_REGEX = new RegExp('//([^/]*)');
+const OUTSTREAM_VIDEO_PLAYER_URL = 'https://adserver.adotmob.com/video/player.min.js';
+
 const NATIVE_PLACEMENTS = {
   title: {id: 1, name: 'title'},
   icon: {id: 2, type: 1, name: 'img'},
@@ -18,15 +31,9 @@ const NATIVE_PLACEMENTS = {
   cta: {id: 6, type: 12, name: 'data'}
 };
 const NATIVE_ID_MAPPING = {1: 'title', 2: 'icon', 3: 'image', 4: 'sponsoredBy', 5: 'body', 6: 'cta'};
-const SUPPORTED_VIDEO_MIMES = ['video/mp4'];
-const DOMAIN_REGEX = new RegExp('//([^/]*)');
-const FIRST_PRICE = 1;
-const BID_SUPPORTED_MEDIA_TYPES = ['banner', 'video', 'native'];
-const TTL = 10;
-const NET_REVENUE = true;
-// eslint-disable-next-line no-template-curly-in-string
-const AUCTION_PRICE = '${AUCTION_PRICE}';
-const OUTSTREAM_VIDEO_PLAYER_URL = 'https://adserver.adotmob.com/video/player.min.js';
+const NATIVE_PRESET_FORMATTERS = {
+  image: formatNativePresetImage
+}
 
 function isNone(value) {
   return (value === null) || (value === undefined);
@@ -67,7 +74,7 @@ function isBanner(mediaTypes) {
 }
 
 function isVideo(mediaTypes) {
-  return isPlainObject(mediaTypes) && isPlainObject(mediaTypes.video);
+  return isPlainObject(mediaTypes) && 'video' in mediaTypes;
 }
 
 function validateBanner(banner) {
@@ -97,13 +104,16 @@ function validateMediaSizes(mediaSize) {
 function validateParameters(parameters, adUnit) {
   if (isVideo(adUnit.mediaTypes)) {
     if (!isPlainObject(parameters)) return false;
+    if (!isPlainObject(adUnit.mediaTypes.video)) return false;
     if (!validateVideoParameters(parameters.video, adUnit)) return false;
   }
 
   return true;
 }
 
-function validateVideoParameters(video, adUnit) {
+function validateVideoParameters(videoParams, adUnit) {
+  const video = adUnit.mediaTypes.video;
+
   if (!video) return false;
 
   if (!isArray(video.mimes)) return false;
@@ -117,9 +127,9 @@ function validateVideoParameters(video, adUnit) {
   if (video.protocols.length === 0) return false;
   if (!video.protocols.every(isNumber)) return false;
 
-  if (isInstream(adUnit.mediaTypes.video)) {
-    if (!video.instreamContext) return false;
-    if (SUPPORTED_INSTREAM_CONTEXTS.indexOf(video.instreamContext) === -1) return false;
+  if (isInstream(video)) {
+    if (!videoParams.instreamContext) return false;
+    if (SUPPORTED_INSTREAM_CONTEXTS.indexOf(videoParams.instreamContext) === -1) return false;
   }
 
   return true;
@@ -134,9 +144,10 @@ function validateServerRequest(serverRequest) {
 }
 
 function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
+  const publisherPath = config.getConfig('adot.publisherPath') === undefined ? '' : '/' + config.getConfig('adot.publisherPath');
   return {
     method: BID_METHOD,
-    url: BIDDER_URL,
+    url: BIDDER_URL.replace('{PUBLISHER_PATH}', publisherPath),
     data: generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext),
     _adot_internal: generateAdotInternal(adUnits)
   }
@@ -183,6 +194,7 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
   const {bidId, mediaTypes, params} = adUnit;
   const {placementId} = params;
   const pmp = {};
+  const ext = {placementId};
 
   if (placementId) pmp.deals = [{id: placementId}]
 
@@ -193,8 +205,8 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
       const impId = `${bidId}_${index}`;
 
       if (mediaType === 'banner') return acc.concat(generateBannerFromAdUnit(impId, data, params));
-      if (mediaType === 'video') return acc.concat({id: impId, video: generateVideoFromAdUnit(data, params), pmp});
-      if (mediaType === 'native') return acc.concat({id: impId, native: generateNativeFromAdUnit(data, params), pmp});
+      if (mediaType === 'video') return acc.concat({id: impId, video: generateVideoFromAdUnit(data, params), pmp, ext});
+      if (mediaType === 'native') return acc.concat({id: impId, native: generateNativeFromAdUnit(data), pmp, ext});
     }, []);
 
   return acc.concat(imps);
@@ -208,31 +220,59 @@ function generateBannerFromAdUnit(impId, data, params) {
   const {position, placementId} = params;
   const pos = position || 0;
   const pmp = {};
+  const ext = {placementId};
 
   if (placementId) pmp.deals = [{id: placementId}]
 
-  return data.sizes.map(([w, h], index) => ({id: `${impId}_${index}`, banner: {format: [{w, h}], w, h, pos}, pmp}));
+  return data.sizes.map(([w, h], index) => ({id: `${impId}_${index}`, banner: {format: [{w, h}], w, h, pos}, pmp, ext}));
 }
 
 function generateVideoFromAdUnit(data, params) {
   const {playerSize} = data;
+  const video = data
+
   const hasPlayerSize = isArray(playerSize) && playerSize.length > 0;
-  const {position, video = {}} = params;
   const {minDuration, maxDuration, protocols} = video;
 
   const size = {width: hasPlayerSize ? playerSize[0][0] : null, height: hasPlayerSize ? playerSize[0][1] : null};
   const duration = {min: isNumber(minDuration) ? minDuration : null, max: isNumber(maxDuration) ? maxDuration : null};
+  const startdelay = computeStartDelay(data, params);
 
   return {
     mimes: SUPPORTED_VIDEO_MIMES,
+    skip: video.skippable || 0,
     w: size.width,
     h: size.height,
-    startdelay: computeStartDelay(data, params),
+    startdelay: startdelay,
+    linearity: video.linearity || null,
     minduration: duration.min,
     maxduration: duration.max,
     protocols,
-    pos: position || 0
+    api: getApi(protocols),
+    format: hasPlayerSize ? playerSize.map(s => {
+      return {w: s[0], h: s[1]};
+    }) : null,
+    pos: video.position || 0
   };
+}
+
+function getApi(protocols) {
+  let defaultValue = [2];
+  let listProtocols = [
+    {key: 'VPAID_1_0', value: 1},
+    {key: 'VPAID_2_0', value: 2},
+    {key: 'MRAID_1', value: 3},
+    {key: 'ORMMA', value: 4},
+    {key: 'MRAID_2', value: 5},
+    {key: 'MRAID_3', value: 6},
+  ];
+  if (protocols) {
+    return listProtocols.filter(p => {
+      return protocols.indexOf(p.key) !== -1;
+    }).map(p => p.value)
+  } else {
+    return defaultValue;
+  }
 }
 
 function isInstream(video) {
@@ -253,20 +293,32 @@ function computeStartDelay(data, params) {
   return null;
 }
 
-function generateNativeFromAdUnit(data, params) {
-  const placements = NATIVE_PLACEMENTS;
+function generateNativeFromAdUnit(data) {
+  const {type} = data;
+  const presetFormatter = type && NATIVE_PRESET_FORMATTERS[data.type];
+  const nativeFields = presetFormatter ? presetFormatter(data) : data;
+
   const assets = Object
-    .keys(data)
+    .keys(nativeFields)
     .reduce((acc, placement) => {
-      const placementData = data[placement];
-      const assetInfo = placements[placement];
+      const placementData = nativeFields[placement];
+      const assetInfo = NATIVE_PLACEMENTS[placement];
 
       if (!assetInfo) return acc;
 
       const {id, name, type} = assetInfo;
-      const {required, len, sizes} = placementData;
-      const wmin = sizes && sizes[0];
-      const hmin = sizes && sizes[1];
+      const {required, len, sizes = []} = placementData;
+      let wmin;
+      let hmin;
+
+      if (isArray(sizes[0])) {
+        wmin = sizes[0][0];
+        hmin = sizes[0][1];
+      } else {
+        wmin = sizes[0];
+        hmin = sizes[1];
+      }
+
       const content = {};
 
       if (type) content.type = type;
@@ -284,17 +336,47 @@ function generateNativeFromAdUnit(data, params) {
   };
 }
 
+function formatNativePresetImage(data) {
+  const sizes = data.sizes;
+
+  return {
+    image: {
+      required: true,
+      sizes
+    },
+    title: {
+      required: true
+    },
+    sponsoredBy: {
+      required: true
+    },
+    body: {
+      required: false
+    },
+    cta: {
+      required: false
+    },
+    icon: {
+      required: false
+    }
+  };
+}
+
 function generateSiteFromAdUnitContext(adUnitContext) {
   if (!adUnitContext || !adUnitContext.refererInfo) return null;
 
   const domain = extractSiteDomainFromURL(adUnitContext.refererInfo.referer);
+  const publisherId = config.getConfig('adot.publisherId');
 
   if (!domain) return null;
 
   return {
     page: adUnitContext.refererInfo.referer,
     domain: domain,
-    name: domain
+    name: domain,
+    publisher: {
+      id: publisherId
+    }
   };
 }
 
@@ -448,7 +530,11 @@ function generateAdFromBid(bid, bidResponse, serverRequest) {
     mediaType: bid.ext.adot.media_type,
   };
 
-  if (isBidANative(bid)) return {...base, native: formatNativeData(bid.adm)};
+  if (bid.adomain) {
+    base.meta = { advertiserDomains: bid.adomain };
+  }
+
+  if (isBidANative(bid)) return {...base, native: formatNativeData(bid)};
 
   const size = getSizeFromBid(bid, impressionData);
   const creative = getCreativeFromBid(bid, impressionData);
@@ -465,7 +551,7 @@ function generateAdFromBid(bid, bidResponse, serverRequest) {
   };
 }
 
-function formatNativeData(adm) {
+function formatNativeData({adm, price}) {
   const parsedAdm = tryParse(adm);
   const {assets, link: {url, clicktrackers}, imptrackers, jstracker} = parsedAdm.native;
   const placements = NATIVE_PLACEMENTS;
@@ -480,7 +566,7 @@ function formatNativeData(adm) {
   }, {
     clickUrl: url,
     clickTrackers: clicktrackers,
-    impressionTrackers: imptrackers,
+    impressionTrackers: imptrackers && imptrackers.map(impTracker => replaceAuctionPrice(impTracker, price)),
     javascriptTrackers: jstracker && [jstracker]
   });
 }
@@ -503,10 +589,11 @@ function getSizeFromBid(bid, impressionData) {
 
 function getCreativeFromBid(bid, impressionData) {
   const shouldUseAdMarkup = !!bid.adm;
+  const price = bid.price;
 
   return {
-    markup: shouldUseAdMarkup ? bid.adm : null,
-    markupUrl: !shouldUseAdMarkup ? bid.nurl : null,
+    markup: shouldUseAdMarkup ? replaceAuctionPrice(bid.adm, price) : null,
+    markupUrl: !shouldUseAdMarkup ? replaceAuctionPrice(bid.nurl, price) : null,
     renderer: getRendererFromBid(bid, impressionData)
   };
 }

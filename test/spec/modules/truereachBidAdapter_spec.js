@@ -40,7 +40,7 @@ describe('truereachBidAdapterTests', function () {
     expect(req_data.imp[0].id).to.equal('34ce3f3b15190a');
     expect(req_data.imp[0].banner.w).to.equal(300);
     expect(req_data.imp[0].banner.h).to.equal(250);
-    expect(req_data.imp[0].bidfloor).to.equal(0.1);
+    expect(req_data.imp[0].bidfloor).to.equal(0);
   });
 
   it('validate_response_params', function () {
@@ -80,5 +80,26 @@ describe('truereachBidAdapterTests', function () {
     expect(bid.creativeId).to.equal('0142010a-8400-1b01-72cb-afb296000012');
     expect(bid.netRevenue).to.equal(false);
     expect(bid.meta.advertiserDomains[0]).to.equal('https://www.momagic.com/');
+  });
+
+  describe('user_sync', function() {
+    const user_sync_url = 'http://ads.momagic.com/jsp/usersync.jsp';
+    it('register_iframe_pixel_if_iframeEnabled_is_true', function() {
+      let syncs = spec.getUserSyncs(
+        {iframeEnabled: true}
+      );
+      expect(syncs).to.be.an('array');
+      expect(syncs.length).to.equal(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal(user_sync_url);
+    });
+
+    it('if_pixelEnabled_is_true', function() {
+      let syncs = spec.getUserSyncs(
+        {pixelEnabled: true}
+      );
+      expect(syncs).to.be.an('array');
+      expect(syncs.length).to.equal(0);
+    });
   });
 });

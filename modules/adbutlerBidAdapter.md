@@ -23,6 +23,9 @@ Module that connects to an AdButler zone to fetch bids.
                            keyword: 'red', //optional
                            minCPM: '1.00', //optional
                            maxCPM: '5.00' //optional
+                           extra: { // optional
+                                foo: "bar" 
+                           }
                        }
                    }
                ]

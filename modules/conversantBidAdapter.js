@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const GVLID = 24;
 export const storage = getStorageManager(GVLID);
@@ -33,10 +33,11 @@ export const spec = {
     }
 
     if (isVideoRequest(bid)) {
-      if (!bid.params.mimes) {
+      const mimes = bid.params.mimes || utils.deepAccess(bid, 'mediaTypes.video.mimes');
+      if (!mimes) {
         // Give a warning but let it pass
         utils.logWarn(BIDDER_CODE + ': mimes should be specified for videos');
-      } else if (!utils.isArray(bid.params.mimes) || !bid.params.mimes.every(s => utils.isStr(s))) {
+      } else if (!utils.isArray(mimes) || !mimes.every(s => utils.isStr(s))) {
         utils.logWarn(BIDDER_CODE + ': mimes must be an array of strings');
         return false;
       }
@@ -61,7 +62,7 @@ export const spec = {
     let bidurl = URL;
 
     const conversantImps = validBidRequests.map(function(bid) {
-      const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      const bidfloor = getBidFloor(bid);
 
       siteId = utils.getBidIdParameter('site_id', bid.params) || siteId;
       pubcidName = utils.getBidIdParameter('pubcid_name', bid.params) || pubcidName;
@@ -90,7 +91,7 @@ export const spec = {
 
         copyOptProperty(bid.params.position, video, 'pos');
         copyOptProperty(bid.params.mimes || videoData.mimes, video, 'mimes');
-        copyOptProperty(bid.params.maxduration, video, 'maxduration');
+        copyOptProperty(bid.params.maxduration || videoData.maxduration, video, 'maxduration');
         copyOptProperty(bid.params.protocols || videoData.protocols, video, 'protocols');
         copyOptProperty(bid.params.api || videoData.api, video, 'api');
 
@@ -205,6 +206,10 @@ export const spec = {
               ttl: 300,
               netRevenue: true
             };
+            bid.meta = {};
+            if (conversantBid.adomain && conversantBid.adomain.length > 0) {
+              bid.meta.advertiserDomains = conversantBid.adomain;
+            }
 
             if (request.video) {
               if (responseAd.charAt(0) === '<') {
@@ -243,6 +248,48 @@ export const spec = {
       'secure': 'number',
       'mobile': 'number'
     }, params);
+  },
+
+  /**
+   * Register User Sync.
+   */
+  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
+    let params = {};
+    const syncs = [];
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      params.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
+      params.gdpr_consent = encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // CCPA
+    if (uspConsent) {
+      params.us_privacy = encodeURIComponent(uspConsent);
+    }
+
+    if (responses && responses.ext) {
+      const pixels = [{urls: responses.ext.fsyncs, type: 'iframe'}, {urls: responses.ext.psyncs, type: 'image'}]
+        .filter((entry) => {
+          return entry.urls &&
+            ((entry.type === 'iframe' && syncOptions.iframeEnabled) ||
+            (entry.type === 'image' && syncOptions.pixelEnabled));
+        })
+        .map((entry) => {
+          return entry.urls.map((endpoint) => {
+            let urlInfo = utils.parseUrl(endpoint);
+            utils.mergeDeep(urlInfo.search, params);
+            if (Object.keys(urlInfo.search).length === 0) {
+              delete urlInfo.search; // empty search object causes buildUrl to add a trailing ? to the url
+            }
+            return {type: entry.type, url: utils.buildUrl(urlInfo)};
+          })
+            .reduce((x, y) => x.concat(y), []);
+        })
+        .reduce((x, y) => x.concat(y), []);
+      syncs.push(...pixels);
+    }
+    return syncs;
   }
 };
 
@@ -331,7 +378,6 @@ function collectEids(bidRequests) {
       'criteo.com': 1,
       'id5-sync.com': 1,
       'parrable.com': 1,
-      'digitru.st': 1,
       'liveintent.com': 1
     };
     request.userIdAsEids.forEach(function(eid) {
@@ -372,6 +418,30 @@ function readStoredValue(key) {
   }
 
   return storedValue;
+}
+
+/**
+ * Get the floor price from bid.params for backward compatibility.
+ * If not found, then check floor module.
+ * @param bid A valid bid object
+ * @returns {*|number} floor price
+ */
+function getBidFloor(bid) {
+  let floor = utils.getBidIdParameter('bidfloor', bid.params);
+
+  if (!floor && utils.isFn(bid.getFloor)) {
+    const floorObj = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (utils.isPlainObject(floorObj) && !isNaN(floorObj.floor) && floorObj.currency === 'USD') {
+      floor = floorObj.floor;
+    }
+  }
+
+  return floor
 }
 
 registerBidder(spec);

@@ -7,7 +7,7 @@ import includes from 'core-js-pure/features/array/includes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'craft';
-const URL = 'https://gacraft.jp/prebid-v3';
+const URL_BASE = 'https://gacraft.jp/prebid-v3';
 const TTL = 360;
 const storage = getStorageManager();
 
@@ -143,10 +143,11 @@ function formatRequest(payload, bidderRequest) {
       withCredentials: false
     };
   }
+
   const payloadString = JSON.stringify(payload);
   return {
     method: 'POST',
-    url: URL,
+    url: `${URL_BASE}/${payload.tags[0].sitekey}`,
     data: payloadString,
     bidderRequest,
     options

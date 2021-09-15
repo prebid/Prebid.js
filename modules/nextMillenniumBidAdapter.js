@@ -1,10 +1,9 @@
-import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nextMillennium';
-const HOST = 'https://brainlyads.com';
-const CURRENCY = 'USD';
+const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TIME_TO_LIVE = 360;
 
 export const spec = {
@@ -13,24 +12,43 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     return !!(
-      bid.params.placement_id && utils.isNumber(bid.params.placement_id)
+      bid.params.placement_id && utils.isStr(bid.params.placement_id)
     );
   },
 
-  buildRequests: function(validBidRequests) {
-    let requests = [];
+  buildRequests: function(validBidRequests, bidderRequest) {
+    const requests = [];
 
     utils._each(validBidRequests, function(bid) {
+      const postBody = {
+        'id': bid.auctionId,
+        'ext': {
+          'prebid': {
+            'storedrequest': {
+              'id': utils.getBidIdParameter('placement_id', bid.params)
+            }
+          }
+        }
+      }
+      const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+
+      if (gdprConsent) {
+        if (typeof gdprConsent.gdprApplies !== 'undefined') {
+          postBody.gdprApplies = !!gdprConsent.gdprApplies;
+        }
+        if (typeof gdprConsent.consentString !== 'undefined') {
+          postBody.consentString = gdprConsent.consentString;
+        }
+      }
+
       requests.push({
         method: 'POST',
-        url: HOST + '/hb/s2s',
+        url: ENDPOINT,
+        data: JSON.stringify(postBody),
         options: {
           contentType: 'application/json',
           withCredentials: true
         },
-        data: JSON.stringify({
-          placement_id: utils.getBidIdParameter('placement_id', bid.params)
-        }),
         bidId: bid.bidId
       });
     });
@@ -39,47 +57,30 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, bidRequest) {
-    try {
-      const bidResponse = serverResponse.body;
-      const bidResponses = [];
+    const response = serverResponse.body;
+    const bidResponses = [];
 
-      if (Number(bidResponse.cpm) > 0) {
+    utils._each(response.seatbid, (resp) => {
+      utils._each(resp.bid, (bid) => {
         bidResponses.push({
           requestId: bidRequest.bidId,
-          cpm: bidResponse.cpm,
-          width: bidResponse.width,
-          height: bidResponse.height,
-          creativeId: bidResponse.creativeId,
-          currency: CURRENCY,
+          cpm: bid.price,
+          width: bid.w,
+          height: bid.h,
+          creativeId: bid.adid,
+          currency: response.cur,
           netRevenue: false,
           ttl: TIME_TO_LIVE,
-          ad: bidResponse.ad
+          meta: {
+            advertiserDomains: bid.adomain || []
+          },
+          ad: bid.adm
         });
-      }
-
-      return bidResponses;
-    } catch (err) {
-      utils.logError(err);
-      return [];
-    }
-  },
-
-  getUserSyncs: function(syncOptions) {
-    const syncs = []
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: HOST + '/hb/s2s/matching'
       });
-    }
+    });
 
-    if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: HOST + '/hb/s2s/matching'
-      });
-    }
-    return syncs;
+    return bidResponses;
   }
 };
+
 registerBidder(spec);

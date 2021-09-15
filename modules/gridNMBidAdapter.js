@@ -24,6 +24,8 @@ const LOG_ERROR_MESS = {
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
 
+const VIDEO_KEYS = ['mimes', 'protocols', 'startdelay', 'placement', 'linearity', 'skip', 'skipmin', 'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad', 'api', 'companiontype'];
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ VIDEO ],
@@ -39,11 +41,12 @@ export const spec = {
       !bid.params.secid || !utils.isStr(bid.params.secid) ||
       !bid.params.pubid || !utils.isStr(bid.params.pubid);
 
+    const video = utils.deepAccess(bid, 'mediaTypes.video') || {};
+    const { protocols = video.protocols, mimes = video.mimes } = utils.deepAccess(bid, 'params.video') || {};
     if (!invalid) {
-      invalid = !bid.params.video || !bid.params.video.protocols || !bid.params.video.mimes;
+      invalid = !protocols || !mimes;
     }
     if (!invalid) {
-      const {protocols, mimes} = bid.params.video;
       invalid = !utils.isArray(mimes) || !mimes.length || mimes.filter((it) => !(it && utils.isStr(it))).length;
       if (!invalid) {
         invalid = !utils.isArray(protocols) || !protocols.length || protocols.filter((it) => !(utils.isNumber(it) && it > 0 && !(it % 1))).length;
@@ -63,7 +66,7 @@ export const spec = {
     const requests = [];
 
     bids.forEach(bid => {
-      const {params, bidderRequestId, sizes} = bid;
+      const { params, bidderRequestId, sizes } = bid;
       const payload = {
         sizes: utils.parseSizesInput(sizes).join(','),
         r: bidderRequestId,
@@ -91,11 +94,32 @@ export const spec = {
         }
       }
 
+      const video = utils.deepAccess(bid, 'mediaTypes.video') || {};
+      const paramsVideo = Object.assign({}, params.video);
+      VIDEO_KEYS.forEach((key) => {
+        if (!(key in paramsVideo) && key in video) {
+          paramsVideo[key] = video[key];
+        }
+      });
+
+      if (!paramsVideo.size && video.playerSize && video.playerSize.length === 2) {
+        paramsVideo.size = video.playerSize.join('x');
+      }
+
+      if (!('mind' in paramsVideo) && 'minduration' in video) {
+        paramsVideo.mind = video.minduration;
+      }
+      if (!('maxd' in paramsVideo) && 'maxduration' in video) {
+        paramsVideo.maxd = video.maxduration;
+      }
+
+      const paramsToSend = Object.assign({}, params, {video: paramsVideo});
+
       requests.push({
         method: 'POST',
         url: ENDPOINT_URL + '?' + utils.parseQueryStringParameters(payload).replace(/\&$/, ''),
         bid: bid,
-        data: params // content
+        data: paramsToSend // content
       });
     });
 
@@ -134,17 +158,19 @@ export const spec = {
           }
           const bidResponse = {
             requestId: bid.bidId,
-            bidderCode: spec.code,
             cpm: serverBid.price,
             width: serverBid.w,
             height: serverBid.h,
             creativeId: serverBid.auid || bid.bidderRequestId,
             currency: 'USD',
-            netRevenue: false,
+            netRevenue: true,
             ttl: TIME_TO_LIVE,
             dealId: serverBid.dealid,
             vastXml: serverBid.adm,
             mediaType: VIDEO,
+            meta: {
+              advertiserDomains: serverBid.adomain ? serverBid.adomain : []
+            },
             adResponse: {
               content: serverBid.adm
             }
