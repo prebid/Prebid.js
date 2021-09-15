@@ -585,4 +585,34 @@ describe('sovrnBidAdapter', function() {
       ]);
     })
   })
+
+  describe('prebid 3 upgrade', function() {
+    const bidRequest = {
+      ...baseBidRequest,
+      'params': {
+        'tagid': '403370'
+      },
+      'mediaTypes': {
+        'banner': {
+          'sizes': [
+            [300, 250],
+            [300, 600]
+          ]
+        }
+      },
+    };
+    const request = spec.buildRequests([bidRequest], baseBidderRequest);
+    const payload = JSON.parse(request.data);
+
+    it('gets sizes from mediaTypes.banner', function() {
+      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
+      expect(payload.imp[0].banner.w).to.equal(1)
+      expect(payload.imp[0].banner.h).to.equal(1)
+    })
+
+    it('gets correct site info', function() {
+      expect(payload.site.page).to.equal('http://example.com/page.html');
+      expect(payload.site.domain).to.equal('example.com');
+    })
+  })
 })
