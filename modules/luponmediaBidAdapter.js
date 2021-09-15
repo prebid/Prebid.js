@@ -181,7 +181,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   }
 
     let bidFloor;
-    if (typeof bidRequest.getFloor === 'function') {
+    if (typeof bidRequest.getFloor === 'function' && !config.getConfig('disableFloors')) {
         let floorInfo;
         try {
             floorInfo = bidRequest.getFloor({
