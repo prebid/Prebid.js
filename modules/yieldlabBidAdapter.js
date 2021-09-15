@@ -267,7 +267,7 @@ function createIabContentString(iabContent) {
   let str = []
   for (let key in iabContent) {
     if (iabContent.hasOwnProperty(key)) {
-      const value = (arrKeys.includes(key) && Array.isArray(iabContent[key]))
+      const value = (arrKeys.indexOf(key) !== -1 && Array.isArray(iabContent[key]))
         ? iabContent[key].map(node => encodeURIComponent(node)).join('|') : encodeURIComponent(iabContent[key])
       str.push(''.concat(key, ':', value))
     }
