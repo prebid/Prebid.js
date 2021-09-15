@@ -180,10 +180,26 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     }
   }
 
-  const bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
-  if (!isNaN(bidFloor)) {
-    data.imp[0].bidfloor = bidFloor;
-  }
+    let bidFloor;
+    if (typeof bidRequest.getFloor === 'function') {
+        let floorInfo;
+        try {
+            floorInfo = bidRequest.getFloor({
+                currency: 'USD',
+                mediaType: 'video',
+                size: parseSizes(bidRequest, 'video')
+            });
+        } catch (e) {
+            utils.logError('LuponMedia: getFloor threw an error: ', e);
+        }
+        bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
+    } else {
+        bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+    }
+    if (!isNaN(bidFloor)) {
+        data.imp[0].bidfloor = bidFloor;
+    }
+
   appendSiteAppDevice(data, bidRequest, bidderRequest);
 
   const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
