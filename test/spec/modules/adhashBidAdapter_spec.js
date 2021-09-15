@@ -137,7 +137,7 @@ describe('adhashBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(true);
       expect(result[0].currency).to.equal('EUR');
       expect(result[0].ttl).to.equal(60);
-      expect(result[0].meta.advertiserDomains).to.equal(['adhash.org']);
+      expect(result[0].meta.advertiserDomains).to.eql(['adhash.org']);
     });
 
     it('should return empty array when there are no creatives returned', function () {
