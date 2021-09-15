@@ -470,7 +470,7 @@ describe('VisxAdapter', function () {
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'impid': '300bfeb0d71a5b', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'},
+      {'bid': [{'price': 1.15, 'impid': '300bfeb0d71a5b', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com'], 'ext': {'prebid': {'targeting': {'hb_visx_product': 'understitial', 'hb_visx_width': 300, 'hb_visx_height': 250}}}}], 'seat': '1'},
       {'bid': [{'price': 0.5, 'impid': '4dff80cc4ee346', 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       {'bid': [{'price': 0.15, 'impid': '5703af74d0472a', 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       {'bid': [{'price': 0, 'impid': '300bfeb0d7190gf', 'auid': 903537, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
@@ -511,6 +511,18 @@ describe('VisxAdapter', function () {
             'advertiserDomains': ['some_domain.com'],
             'mediaType': 'banner',
           },
+          'adserverTargeting': {
+            'hb_visx_product': 'understitial',
+            'hb_visx_width': 300,
+            'hb_visx_height': 250,
+          },
+          'ext': {
+            'targeting': {
+              'hb_visx_product': 'understitial',
+              'hb_visx_width': 300,
+              'hb_visx_height': 250,
+            }
+          }
         }
       ];
 
@@ -571,6 +583,18 @@ describe('VisxAdapter', function () {
             'advertiserDomains': ['some_domain.com'],
             'mediaType': 'banner',
           },
+          'adserverTargeting': {
+            'hb_visx_product': 'understitial',
+            'hb_visx_width': 300,
+            'hb_visx_height': 250,
+          },
+          'ext': {
+            'targeting': {
+              'hb_visx_product': 'understitial',
+              'hb_visx_width': 300,
+              'hb_visx_height': 250,
+            }
+          }
         },
         {
           'requestId': '4dff80cc4ee346',
@@ -642,6 +666,18 @@ describe('VisxAdapter', function () {
             'advertiserDomains': ['some_domain.com'],
             'mediaType': 'banner',
           },
+          'adserverTargeting': {
+            'hb_visx_product': 'understitial',
+            'hb_visx_width': 300,
+            'hb_visx_height': 250,
+          },
+          'ext': {
+            'targeting': {
+              'hb_visx_product': 'understitial',
+              'hb_visx_width': 300,
+              'hb_visx_height': 250,
+            }
+          }
         }
       ];
 
@@ -1059,23 +1095,31 @@ describe('VisxAdapter', function () {
             'advertiserDomains': ['some_domain.com'],
             'mediaType': 'banner',
           },
+          'adserverTargeting': {
+            'hb_visx_product': 'understitial',
+            'hb_visx_width': 300,
+            'hb_visx_height': 250,
+          },
           'ext': {
             'events': {
               'pending': pendingUrl,
               'win': winUrl
+            },
+            'targeting': {
+              'hb_visx_product': 'understitial',
+              'hb_visx_width': 300,
+              'hb_visx_height': 250,
             }
           }
         }
       ];
       const serverResponse = Object.assign({}, responses[0]);
-      serverResponse.bid = [Object.assign({}, {ext: {
-        prebid: {
-          events: {
-            'pending': pendingUrl,
-            'win': winUrl
-          }
-        }
-      }}, serverResponse.bid[0])];
+      serverResponse.bid = [Object.assign({}, serverResponse.bid[0])];
+      serverResponse.bid[0].ext.prebid = Object.assign({}, serverResponse.bid[0].ext.prebid);
+      utils.deepSetValue(serverResponse.bid[0], 'ext.prebid.events', {
+        pending: pendingUrl,
+        win: winUrl,
+      });
       const result = spec.interpretResponse({'body': {'seatbid': [serverResponse]}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });

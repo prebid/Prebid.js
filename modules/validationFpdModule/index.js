@@ -106,6 +106,7 @@ export function filterArrayData(arr, child, path, parent) {
     switch (child.type) {
       case 'string':
         result.push(value);
+        typeBool = true;
         break;
       case 'object':
         if (mapping && mapping.children) {
