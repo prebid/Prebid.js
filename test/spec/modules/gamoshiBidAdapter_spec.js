@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec, helper} from 'modules/gamoshiBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {newBidder} from '../../../src/adapters/bidderFactory.js';
+import {deepClone} from 'src/utils';
 
 const supplyPartnerId = '123';
 const adapter = newBidder(spec);
@@ -240,6 +241,40 @@ describe('GamoshiAdapter', () => {
       expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true); // bidfloor has a default
       expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: '123'}})).to.equal(false);
       expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: 0.1}})).to.equal(true);
+
+      const getFloorResponse = {currency: 'USD', floor: 5};
+      let testBidRequest = deepClone(bidRequest);
+      let request = spec.buildRequests([testBidRequest], bidRequest)[0];
+
+      // 1. getBidFloor not exist AND bidfloor not exist - return 0
+      let payload = request.data;
+      expect(payload.imp[0].bidfloor).to.exist.and.equal(0);
+
+      // 2. getBidFloor not exist AND bidfloor exist - use bidfloor property
+      testBidRequest = deepClone(bidRequest);
+      testBidRequest.params = {
+        'bidfloor': 0.3
+      };
+      request = spec.buildRequests([testBidRequest], bidRequest)[0];
+      payload = request.data;
+      expect(payload.imp[0].bidfloor).to.exist.and.to.equal(0.3)
+
+      // 3. getBidFloor exist AND bidfloor not exist - use getFloor method
+      testBidRequest = deepClone(bidRequest);
+      testBidRequest.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([testBidRequest], bidRequest)[0];
+      payload = request.data;
+      expect(payload.imp[0].bidfloor).to.exist.and.to.equal(5)
+
+      // 4. getBidFloor exist AND bidfloor exist -> use getFloor method
+      testBidRequest = deepClone(bidRequest);
+      testBidRequest.getFloor = () => getFloorResponse;
+      testBidRequest.params = {
+        'bidfloor': 0.3
+      };
+      request = spec.buildRequests([testBidRequest], bidRequest)[0];
+      payload = request.data;
+      expect(payload.imp[0].bidfloor).to.exist.and.to.equal(5)
     });
 
     it('should validate adpos', () => {
@@ -339,19 +374,42 @@ describe('GamoshiAdapter', () => {
     it('builds request video object correctly', () => {
       let response;
       const bidRequestWithVideo = utils.deepClone(bidRequest);
+
+      bidRequestWithVideo.params.video = {
+        placement: 1,
+        minduration: 1,
+      }
+
       bidRequestWithVideo.mediaTypes = {
         video: {
-          playerSize: [[302, 252]]
+          playerSize: [[302, 252]],
+          mimes: ['video/mpeg'],
+          playbackmethod: 1,
+          startdelay: 1,
         }
       };
       response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
       expect(response.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][0]);
       expect(response.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][1]);
       expect(response.data.imp[0].video.pos).to.equal(0);
+
+      expect(response.data.imp[0].video.mimes).to.equal(bidRequestWithVideo.mediaTypes.video.mimes);
+      expect(response.data.imp[0].video.skip).to.not.exist;
+      expect(response.data.imp[0].video.placement).to.equal(1);
+      expect(response.data.imp[0].video.minduration).to.equal(1);
+      expect(response.data.imp[0].video.playbackmethod).to.equal(1);
+      expect(response.data.imp[0].video.startdelay).to.equal(1);
+
       bidRequestWithVideo.mediaTypes = {
         video: {
-          playerSize: [302, 252]
-        }
+          playerSize: [302, 252],
+          mimes: ['video/mpeg'],
+          skip: 1,
+          placement: 1,
+          minduration: 1,
+          playbackmethod: 1,
+          startdelay: 1,
+        },
       };
 
       const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
@@ -367,7 +425,13 @@ describe('GamoshiAdapter', () => {
       const bidRequestWithVideo = utils.deepClone(bidRequest);
       bidRequestWithVideo.mediaTypes = {
         video: {
-          context: 'instream'
+          context: 'instream',
+          mimes: ['video/mpeg'],
+          skip: 1,
+          placement: 1,
+          minduration: 1,
+          playbackmethod: 1,
+          startdelay: 1,
         }
       };
       let response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
@@ -390,7 +454,13 @@ describe('GamoshiAdapter', () => {
       const bidRequestWithVideo = utils.deepClone(bidRequest);
       bidRequestWithVideo.mediaTypes.video = {
         playerSize: [[304, 254], [305, 255]],
-        context: 'instream'
+        context: 'instream',
+        mimes: ['video/mpeg'],
+        skip: 1,
+        placement: 1,
+        minduration: 1,
+        playbackmethod: 1,
+        startdelay: 1,
       };
 
       response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
@@ -423,7 +493,7 @@ describe('GamoshiAdapter', () => {
     it('build request with ID5 Id', () => {
       const bidRequestClone = utils.deepClone(bidRequest);
       bidRequestClone.userId = {};
-      bidRequestClone.userId.id5id = 'id5-user-id';
+      bidRequestClone.userId.id5id = { uid: 'id5-user-id' };
       let request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
       expect(request.data.user.ext.eids).to.deep.equal([{
         'source': 'id5-sync.com',
@@ -480,6 +550,7 @@ describe('GamoshiAdapter', () => {
       expect(ad0.ad).to.equal(rtbResponse.seatbid[1].bid[0].adm);
       expect(ad0.vastXml).to.be.an('undefined');
       expect(ad0.vastUrl).to.be.an('undefined');
+      expect(ad0.meta.advertiserDomains).to.be.equal(rtbResponse.seatbid[1].bid[0].adomain);
     });
 
     it('aggregates video bids from all seat bids', () => {

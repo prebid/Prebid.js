@@ -160,6 +160,7 @@ describe('ANIVIEW Bid Adapter Test', function () {
       expect(bidResponse.currency).to.equal('USD');
       expect(bidResponse.netRevenue).to.equal(true);
       expect(bidResponse.mediaType).to.equal('video');
+      expect(bidResponse.meta.advertiserDomains).to.be.an('array').that.is.empty;
     });
 
     it('safely handles XML parsing failure from invalid bid response', function () {
@@ -177,15 +178,69 @@ describe('ANIVIEW Bid Adapter Test', function () {
       let result = spec.interpretResponse(nobidResponse, bidRequest);
       expect(result.length).to.equal(0);
     });
+
+    it('should add renderer if outstream context', function () {
+      const bidRequest = spec.buildRequests([
+        {
+          bidId: '253dcb69fb2577',
+          params: {
+            playerDomain: 'example.com',
+            AV_PUBLISHERID: '55b78633181f4603178b4568',
+            AV_CHANNELID: '55b7904d181f46410f8b4568'
+          },
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 480]],
+              context: 'outstream'
+            }
+          }
+        }
+      ])[0]
+      const bidResponse = spec.interpretResponse(serverResponse, bidRequest)[0]
+
+      expect(bidResponse.renderer.url).to.equal('https://example.com/script/6.1/prebidRenderer.js')
+      expect(bidResponse.renderer.config.AV_PUBLISHERID).to.equal('55b78633181f4603178b4568')
+      expect(bidResponse.renderer.config.AV_CHANNELID).to.equal('55b7904d181f46410f8b4568')
+      expect(bidResponse.renderer.loaded).to.equal(false)
+      expect(bidResponse.width).to.equal(640)
+      expect(bidResponse.height).to.equal(480)
+    });
+
+    it('Support banner format', function () {
+      const bidRequest = spec.buildRequests([
+        {
+          bidId: '253dcb69fb2577',
+          params: {
+            playerDomain: 'example.com',
+            AV_PUBLISHERID: '55b78633181f4603178b4568',
+            AV_CHANNELID: '55b7904d181f46410f8b4568'
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[640, 480]],
+            }
+          }
+        }
+      ])[0]
+      const bidResponse = spec.interpretResponse(serverResponse, bidRequest)[0]
+
+      expect(bidResponse.ad).to.have.string('https://example.com/script/6.1/prebidRenderer.js');
+      expect(bidResponse.width).to.equal(640)
+      expect(bidResponse.height).to.equal(480)
+    })
   });
 
   describe('getUserSyncs', function () {
-    it('Check get sync pixels from response', function () {
-      let pixelUrl = 'https://sync.pixel.url/sync';
+    let pixelUrl = 'https://sync.pixel.url/sync';
+    function createBidResponse (pixelEvent, pixelType) {
+      let pixelStr = '{"url":"' + pixelUrl + '", "e":"' + pixelEvent + '", "t":' + pixelType + '}';
+      return '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0"><Ad id="FORD"><InLine><AdSystem>FORD</AdSystem><AdTitle>FORD</AdTitle><Impression><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=impression]]></Impression><Creatives><Creative><Linear><Duration>00:00:15</Duration><TrackingEvents><Tracking event="start"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=start]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=firstQuartile]]></Tracking><Tracking event="midpoint"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=midpoint]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=thirdQuartile]]></Tracking><Tracking event="complete"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=complete]]></Tracking><Tracking event="mute"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=mute]]></Tracking><Tracking event="unmute"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=unmute]]></Tracking><Tracking event="pause"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=pause]]></Tracking><Tracking event="resume"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=resume]]></Tracking><Tracking event="fullscreen"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=fullscreen]]></Tracking></TrackingEvents><VideoClicks><ClickTracking><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=click]]></ClickTracking><ClickThrough id="VideoHub"><![CDATA[http://www.ford.com/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile height="360" width="480" bitrate="527" type="video/mp4" delivery="progressive"><![CDATA[https://play.aniview.com/clients/ford2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Extensions><Extension type="ANIVIEW"><AdServingSync><![CDATA[{"trackers":[' + pixelStr + ']}]]></AdServingSync><AdServingData><Asid><![CDATA[55b78d94181f46290f8b456a]]></Asid><Nasid><![CDATA[55b78d94181f46290f8b456a]]></Nasid><Cpm><![CDATA[2]]></Cpm><PlayerSettings><![CDATA[{"vpp":1,"fp":0,"maxRPM":0,"vit":3,"nc":"1","mips":0,"mrqs":0,"vpm":0,"vi":0,"t": 1,"res": 5}]]></PlayerSettings></AdServingData></Extension></Extensions></InLine></Ad></VAST>';
+    }
+
+    it('Check get iframe sync pixels from response on inventory', function () {
       let pixelEvent = 'inventory';
       let pixelType = '3';
-      let pixelStr = '{"url":"' + pixelUrl + '", "e":"' + pixelEvent + '", "t":' + pixelType + '}';
-      let bidResponse = '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0"><Ad id="FORD"><InLine><AdSystem>FORD</AdSystem><AdTitle>FORD</AdTitle><Impression><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=impression]]></Impression><Creatives><Creative><Linear><Duration>00:00:15</Duration><TrackingEvents><Tracking event="start"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=start]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=firstQuartile]]></Tracking><Tracking event="midpoint"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=midpoint]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=thirdQuartile]]></Tracking><Tracking event="complete"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=complete]]></Tracking><Tracking event="mute"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=mute]]></Tracking><Tracking event="unmute"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=unmute]]></Tracking><Tracking event="pause"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=pause]]></Tracking><Tracking event="resume"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=resume]]></Tracking><Tracking event="fullscreen"><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=fullscreen]]></Tracking></TrackingEvents><VideoClicks><ClickTracking><![CDATA[http://manage.newmanage.aniview.com/track?d=&cou=IL&cos=Android&r=play.aniview.com&rs=play.aniview.com&sid=71720&t=1549448635&cip=46.116.196.171&sn=&tgt=0&osv=6&bv=&brn=Chrome&wi=640&he=480&app=&AV_PUBLISHERID=55b78633181f4603178b4568&test=&aafaid=&cb=4293171175&asid=55b78d94181f46290f8b456a&pid=55b78633181f4603178b4568&cid=55b7904d181f46410f8b4568&h=b304444f9f8c28b12421555fef487f08e954c587&e=click]]></ClickTracking><ClickThrough id="VideoHub"><![CDATA[http://www.ford.com/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile height="360" width="480" bitrate="527" type="video/mp4" delivery="progressive"><![CDATA[https://play.aniview.com/clients/ford2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Extensions><Extension type="ANIVIEW"><AdServingSync><![CDATA[{"trackers":[' + pixelStr + ']}]]></AdServingSync><AdServingData><Asid><![CDATA[55b78d94181f46290f8b456a]]></Asid><Nasid><![CDATA[55b78d94181f46290f8b456a]]></Nasid><Cpm><![CDATA[2]]></Cpm><PlayerSettings><![CDATA[{"vpp":1,"fp":0,"maxRPM":0,"vit":3,"nc":"1","mips":0,"mrqs":0,"vpm":0,"vi":0,"t": 1,"res": 5}]]></PlayerSettings></AdServingData></Extension></Extensions></InLine></Ad></VAST>';
+      let bidResponse = createBidResponse(pixelEvent, pixelType);
       let serverResponse = [
         {body: bidResponse}
       ];
@@ -194,6 +249,20 @@ describe('ANIVIEW Bid Adapter Test', function () {
       let pixel = syncPixels[0];
       expect(pixel.url).to.equal(pixelUrl);
       expect(pixel.type).to.equal('iframe');
+    });
+
+    it('Check get image sync pixels from response on sync', function () {
+      let pixelEvent = 'sync';
+      let pixelType = '1';
+      let bidResponse = createBidResponse(pixelEvent, pixelType);
+      let serverResponse = [
+        {body: bidResponse}
+      ];
+      let syncPixels = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse);
+      expect(syncPixels.length).to.equal(1);
+      let pixel = syncPixels[0];
+      expect(pixel.url).to.equal(pixelUrl);
+      expect(pixel.type).to.equal('image');
     });
   });
 });

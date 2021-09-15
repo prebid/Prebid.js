@@ -10,7 +10,7 @@ Maintainer: support@aniview.com
 
 Connects to ANIVIEW Ad server for bids.
 
-ANIVIEW bid adapter supports Video ads currently.
+ANIVIEW bid adapter supports Banner and Video currently.
 
 For more information about [Aniview](http://www.aniview.com), please contact [support@aniview.com](support@aniview.com).
 
