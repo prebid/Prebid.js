@@ -6,7 +6,7 @@
  */
 
 import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
+import * as ajaxLib from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -54,8 +54,9 @@ function generateId(configParams, configStorage) {
   const url = constructUrl(configParams);
 
   const resp = function (callback) {
-    const callbacks = {
-      success: response => {
+    ajaxLib.ajaxBuilder()(
+      url,
+      response => {
         let responseObj;
         if (response) {
           try {
@@ -72,12 +73,12 @@ function generateId(configParams, configStorage) {
         utils.logInfo('Merkle responseObj with date ' + JSON.stringify(responseObj));
         callback(responseObj);
       },
-      error: error => {
+      error => {
         utils.logError(`${MODULE_NAME}: merkleId fetch encountered an error`, error);
         callback();
-      }
-    };
-    ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+      },
+      {method: 'GET', withCredentials: true}
+    );
   };
   return resp;
 }
