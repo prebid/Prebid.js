@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import find from 'core-js-pure/features/array/find.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
 import { Renderer } from '../src/Renderer.js'
+import { config } from '../src/config.js';
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -52,8 +53,10 @@ export const spec = {
       if (bid.schain && utils.isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
         query.schain = createSchainString(bid.schain)
       }
-      if (bid.params.iabContent && utils.isPlainObject(bid.params.iabContent)) {
-        query.iab_content = createIabContentString(bid.params.iabContent);
+
+      const iabContent = getContentObject(bid)
+      if (iabContent) {
+        query.iab_content = createIabContentString(iabContent)
       }
     })
 
@@ -255,6 +258,26 @@ function createSchainString (schain) {
     return acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`
   }, '')
   return `${ver},${complete}${nodesString}`
+}
+
+/**
+ * Get content object from bid request
+ * First get content from bidder params;
+ * If not provided in bidder params, get from first party data under 'ortb2.site.content' or 'ortb2.app.content'
+ * @param {Object} bid
+ * @returns {Object}
+ */
+function getContentObject(bid) {
+  if (bid.params.iabContent && utils.isPlainObject(bid.params.iabContent)) {
+    return bid.params.iabContent
+  }
+
+  const globalContent = config.getConfig('ortb2.site') ? config.getConfig('ortb2.site.content')
+    : config.getConfig('ortb2.app.content')
+  if (globalContent && utils.isPlainObject(globalContent)) {
+    return globalContent
+  }
+  return undefined
 }
 
 /**

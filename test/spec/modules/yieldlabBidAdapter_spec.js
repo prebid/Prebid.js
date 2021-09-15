@@ -1,3 +1,4 @@
+import { config } from 'src/config.js';
 import { expect } from 'chai'
 import { spec } from 'modules/yieldlabBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
@@ -160,6 +161,36 @@ describe('yieldlabBidAdapter', function () {
 
     it('passes iab_content string to bid request', function () {
       expect(request.url).to.include('iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
+    })
+
+    const siteConfig = {
+      'ortb2': {
+        'site': {
+          'content': {
+            'id': 'id_from_config'
+          }
+        }
+      }
+    }
+
+    it('generates iab_content string from bidder params', function () {
+      config.setConfig(siteConfig);
+      const request = spec.buildRequests([REQUEST])
+      expect(request.url).to.include('iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
+      config.resetConfig();
+    })
+
+    it('generates iab_content string from first party data if not provided in bidder params', function () {
+      const requestWithoutIabContent = {
+        'params': {
+          'adslotId': '1111',
+          'supplyId': '2222'
+        }
+      }
+      config.setConfig(siteConfig);
+      const request = spec.buildRequests([requestWithoutIabContent])
+      expect(request.url).to.include('iab_content=id%3Aid_from_config')
+      config.resetConfig();
     })
 
     const refererRequest = spec.buildRequests(bidRequests, {
