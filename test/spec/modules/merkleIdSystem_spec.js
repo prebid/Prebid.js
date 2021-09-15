@@ -184,6 +184,7 @@ describe('Merkle System', function () {
         storage: STORAGE_PARAMS
       };
 
+      let yesterday = new Date(Date.now() - 86400000).toUTCString();
       let storedId = {value: 'Merkle_Stored_ID', date: yesterday};
 
       let id = merkleIdSubmodule.extendId(config, undefined,
