@@ -132,8 +132,7 @@ function formatBigseaContextualProfile(data, weboCtxConf) {
  */
 function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
   const targetURL = weboCtxConf.targetURL || document.URL;
-
-  const token = encodeURIComponent(weboCtxConf.token);
+  const token = weboCtxConf.token;
 
   let queryString = '';
   queryString = utils.tryAppendQueryString(queryString, 'token', token);
