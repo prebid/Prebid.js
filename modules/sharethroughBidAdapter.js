@@ -3,6 +3,7 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const VERSION = '4.0.0';
 const BIDDER_CODE = 'sharethrough';
@@ -270,7 +271,7 @@ function getProtocol() {
 }
 
 function matchRequest(id, request) {
-  return request.bidRequests.find(bid => bid.bidId === id);
+  return find(request.bidRequests, bid => bid.bidId === id);
 }
 
 // stub for ?? operator
