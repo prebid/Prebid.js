@@ -336,11 +336,11 @@ function buildRequests(validBidRequests, bidderRequest) {
         const [maxw, maxh] = getGreatestDimensions(sizes);
         data.maxw = maxw;
         data.maxh = maxh;
-        data.si = parseInt(params.slot, 10);
+        data.si = params.slot;
         data.pi = 3;
         data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
       } else if (params.native) {
-        data.ni = parseInt(params.native, 10);
+        data.ni = params.native;
         data.pi = 5;
       } else if (mediaTypes.video) {
         data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
@@ -391,12 +391,12 @@ function handleLegacyParams(params, sizes) {
     const [maxw, maxh] = getGreatestDimensions(sizes);
     data.maxw = maxw;
     data.maxh = maxh;
-    data.si = parseInt(params.inSlot, 10);
+    data.si = params.inSlot;
     data.pi = 3;
     data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
   }
   if (params.ICV) {
-    data.ni = parseInt(params.ICV, 10);
+    data.ni = params.ICV;
     data.pi = 5;
   }
   if (params.videoPubID) {
