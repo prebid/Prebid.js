@@ -581,6 +581,63 @@ describe('TheMediaGrid Adapter', function () {
       });
     });
 
+    it('all id must be a string', function() {
+      const fpdUserIdNumVal = 2345543345;
+      const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(
+        arg => arg === 'tmguid' ? fpdUserIdNumVal : null);
+      let bidRequestWithNumId = {
+        'bidder': 'grid',
+        'params': {
+          'uid': 1,
+        },
+        'adUnitCode': 1233,
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250], [300, 600]]
+          }
+        },
+        'bidId': 123123123,
+        'bidderRequestId': 345345345,
+        'auctionId': 654645,
+      };
+      const bidderRequestWithNumId = {
+        refererInfo: {referer: 'https://example.com'},
+        bidderRequestId: 345345345,
+        auctionId: 654645,
+        timeout: 3000
+      };
+      const parsedReferrer = encodeURIComponent(bidderRequestWithNumId.refererInfo.referer);
+      const request = spec.buildRequests([bidRequestWithNumId], bidderRequestWithNumId);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.deep.equal({
+        'id': '345345345',
+        'site': {
+          'page': parsedReferrer
+        },
+        'tmax': bidderRequestWithNumId.timeout,
+        'source': {
+          'tid': '654645',
+          'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
+        },
+        'user': {
+          'id': '2345543345'
+        },
+        'imp': [{
+          'id': '123123123',
+          'tagid': '1',
+          'ext': {'divid': '1233'},
+          'banner': {
+            'w': 300,
+            'h': 250,
+            'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]
+          }
+        }]
+      });
+
+      getDataFromLocalStorageStub.restore();
+    })
+
     describe('floorModule', function () {
       const floorTestData = {
         'currency': 'USD',
