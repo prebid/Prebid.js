@@ -271,7 +271,7 @@ function getProtocol() {
 }
 
 function matchRequest(id, request) {
-  return find(request.bidRequests,(bid => bid.bidId === id));
+  return find(request.bidRequests, bid => bid.bidId === id);
 }
 
 // stub for ?? operator
