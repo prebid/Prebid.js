@@ -86,7 +86,7 @@ function calculateTimeoutModifier(adUnits, rules) {
     if (rules.numAdUnits[numAdUnits]) {
       timeoutModifier += rules.numAdUnits[numAdUnits];
     } else {
-      for (const [rangeStr, timeoutVal] of Object.entries(rules.numAdUnits)) {
+      for (const [rangeStr, timeoutVal] of entries(rules.numAdUnits)) {
         const [lowerBound, upperBound] = rangeStr.split('-');
         if (parseInt(lowerBound) <= numAdUnits && numAdUnits <= parseInt(upperBound)) {
           utils.logInfo(`Adding ${timeoutVal} to timeout for numAdUnits ${numAdUnits}`)
