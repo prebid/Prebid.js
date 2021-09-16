@@ -43,7 +43,7 @@ let _bigseaContextualProfile = null;
 * @param {Object} moduleConfig
 * @returns {Object} target data
  */
-export function getTargetingData(adUnitsCodes, moduleConfig) {
+function getTargetingData(adUnitsCodes, moduleConfig) {
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
@@ -51,8 +51,12 @@ export function getTargetingData(adUnitsCodes, moduleConfig) {
   const profile = _bigseaContextualProfile || defaultContextualProfiles;
 
   const ortb2 = config.getConfig('ortb2') || {};
-  utils.deepSetValue(ortb2, 'site.ext.data.webo_ctx', profile[WEBO_CTX]);
-  utils.deepSetValue(ortb2, 'site.ext.data.webo_ds', profile[WEBO_DS]);
+  if (profile[WEBO_CTX]) {
+    utils.deepSetValue(ortb2, 'site.ext.data.webo_ctx', profile[WEBO_CTX]);
+  }
+  if (profile[WEBO_DS]) {
+    utils.deepSetValue(ortb2, 'site.ext.data.webo_ds', profile[WEBO_DS]);
+  }
   config.setConfig({ortb2: ortb2});
 
   if (weboCtxConf.setTargeting === false) {
@@ -79,7 +83,7 @@ export function getTargetingData(adUnitsCodes, moduleConfig) {
  * @param {null|Object} data
  * @returns {void}
  */
-function setBigseaContextualProfile(data) {
+export function setBigseaContextualProfile(data) {
   if (data && Object.keys(data).length > 0) {
     _bigseaContextualProfile = data;
   }
@@ -172,6 +176,8 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
  * @return {boolean} true if module was initialized with success
  */
 function init(moduleConfig) {
+  _bigseaContextualProfile = null;
+
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
@@ -181,6 +187,7 @@ function init(moduleConfig) {
       () => utils.logMessage('fetchContextualProfile on init is done'));
   } else {
     utils.logError('missing param "token" for weborama rtd module initialization');
+    return false;
   }
 
   return true;
