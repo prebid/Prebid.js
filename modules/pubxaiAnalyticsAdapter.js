@@ -57,6 +57,7 @@ function mapBidResponse(bidResponse, status) {
   if (typeof bidResponse !== 'undefined') {
     let bid = {
       adUnitCode: bidResponse.adUnitCode,
+      gptSlotCode: utils.getGptSlotInfoForAdUnitCode(bidResponse.adUnitCode).gptSlot || null,
       auctionId: bidResponse.auctionId,
       bidderCode: bidResponse.bidder,
       cpm: bidResponse.cpm,

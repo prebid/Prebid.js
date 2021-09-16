@@ -133,6 +133,13 @@ function formatUrlParams(option) {
       let temp = option[prop];
       option[prop] = { p1Consent: temp, noP1Consent: temp };
     }
+    if (utils.isPlainObject(option[prop]) && (!option[prop].p1Consent || !option[prop].noP1Consent)) {
+      ['p1Consent', 'noP1Consent'].forEach((conUrl) => {
+        if (!option[prop][conUrl]) {
+          utils.logWarn(`s2sConfig.${prop}.${conUrl} not defined.  PBS request will be skipped in some P1 scenarios.`);
+        }
+      });
+    }
   });
 }
 
@@ -357,13 +364,7 @@ function addBidderFirstPartyDataToRequest(request) {
   const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
     const currBidderConfig = bidderConfig[bidder];
     if (currBidderConfig.ortb2) {
-      const ortb2 = {};
-      if (currBidderConfig.ortb2.site) {
-        ortb2.site = currBidderConfig.ortb2.site;
-      }
-      if (currBidderConfig.ortb2.user) {
-        ortb2.user = currBidderConfig.ortb2.user;
-      }
+      const ortb2 = utils.mergeDeep({}, currBidderConfig.ortb2);
 
       acc.push({
         bidders: [ bidder ],
@@ -607,7 +608,7 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       if (!utils.isEmpty(videoParams)) {
-        if (videoParams.context === 'outstream' && (!videoParams.renderer || !adUnit.renderer)) {
+        if (videoParams.context === 'outstream' && !videoParams.renderer && !adUnit.renderer) {
           // Don't push oustream w/o renderer to request object.
           utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
         } else {
@@ -841,12 +842,8 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     const commonFpd = getConfig('ortb2') || {};
-    if (commonFpd.site) {
-      utils.mergeDeep(request, {site: commonFpd.site});
-    }
-    if (commonFpd.user) {
-      utils.mergeDeep(request, {user: commonFpd.user});
-    }
+    utils.mergeDeep(request, commonFpd);
+
     addBidderFirstPartyDataToRequest(request);
 
     return request;
@@ -1097,9 +1094,10 @@ export function PrebidServer() {
       const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits, s2sBidRequest.s2sConfig, requestedBidders);
       const requestJson = request && JSON.stringify(request);
       utils.logInfo('BidRequest: ' + requestJson);
-      if (request && requestJson) {
+      const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
+      if (request && requestJson && endpointUrl) {
         ajax(
-          getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
+          endpointUrl,
           {
             success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done, s2sBidRequest.s2sConfig),
             error: done
@@ -1107,6 +1105,8 @@ export function PrebidServer() {
           requestJson,
           { contentType: 'text/plain', withCredentials: true }
         );
+      } else {
+        utils.logError('PBS request not made.  Check endpoints.');
       }
     }
   };

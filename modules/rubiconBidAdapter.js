@@ -110,7 +110,17 @@ var sizeMap = {
   548: '500x1000',
   550: '980x480',
   552: '300x200',
-  558: '640x640'
+  558: '640x640',
+  562: '300x431',
+  564: '320x431',
+  566: '320x300',
+  568: '300x150',
+  570: '300x125',
+  572: '250x350',
+  574: '620x891',
+  576: '610x877',
+  578: '980x552',
+  580: '505x656'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -978,7 +988,7 @@ function applyFPD(bidRequest, mediaType, data) {
 
   let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
   let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
-  const SEGTAX = {user: [4], site: [1, 2]};
+  const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
     if (key === 'data' && Array.isArray(prop)) {
