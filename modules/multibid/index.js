@@ -129,9 +129,9 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
         utils.logWarn(`Filtering multibid received from bidder ${bid.bidderCode}: ` + ((multibidUnits[adUnitCode][bid.bidderCode].maxReached) ? `Maximum bid limit reached for ad unit code ${adUnitCode}` : 'Bid cpm under floors value.'));
       }
     } else {
-      if (utils.deepAccess(bid, 'floorData.floorValue')) utils.deepSetValue(multibidUnits, `${adUnitCode}.${bid.bidderCode}`, {floor: utils.deepAccess(bid, 'floorData.floorValue')});
+      if (utils.deepAccess(bid, 'floorData.floorValue')) utils.deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], {floor: utils.deepAccess(bid, 'floorData.floorValue')});
 
-      utils.deepSetValue(multibidUnits, `${adUnitCode}.${bid.bidderCode}`, {ads: [bid]});
+      utils.deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], {ads: [bid]});
       if (multibidUnits[adUnitCode][bid.bidderCode].ads.length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
 
       fn.call(this, adUnitCode, bid);
