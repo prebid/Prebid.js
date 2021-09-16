@@ -171,7 +171,10 @@ export const spec = {
             currency: cur,
             mediaType: NATIVE,
             bidderCode: BIDDER_CODE,
-            native: parseNative(bidResponse)
+            native: parseNative(bidResponse),
+            meta: {
+              advertiserDomains: bidResponse.adomain && bidResponse.adomain.length > 0 ? bidResponse.adomain : []
+            }
           };
         }
       })
@@ -184,13 +187,16 @@ registerBidder(spec);
 function parseNative(bid) {
   const {assets, link, imptrackers} = bid.adm.native;
 
-  link.clicktrackers.forEach(function (clicktracker, index) {
-    link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
-  });
-
-  imptrackers.forEach(function (imptracker, index) {
-    imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
-  });
+  if (link.clicktrackers) {
+    link.clicktrackers.forEach(function (clicktracker, index) {
+      link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
+    });
+  }
+  if (imptrackers) {
+    imptrackers.forEach(function (imptracker, index) {
+      imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
+    });
+  }
 
   const result = {
     url: link.url,
