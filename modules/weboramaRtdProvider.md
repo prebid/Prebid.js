@@ -14,7 +14,7 @@ Page-level automatic contextual categories will be attached to bid request objec
 
 ORTB2 compliant and FPD support for Prebid versions < 4.29
 
-Contact prebid@weborama.com for information.
+Contact prebid-support@weborama.com for information.
 
 ### Publisher Usage
 
