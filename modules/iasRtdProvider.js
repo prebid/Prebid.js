@@ -7,6 +7,11 @@ const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'ias';
 const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
 export let iasTargeting = {};
+const BRAND_SAFETY_OBJECT_FIELD_NAME = 'brandSafety';
+const FRAUD_FIELD_NAME = 'fr';
+const SLOTS_OBJECT_FIELD_NAME = 'slots';
+const CUSTOM_FIELD_NAME = 'custom';
+const IAS_KW = 'ias-kw';
 
 /**
  * Module init
@@ -63,25 +68,30 @@ function stringifyScreenSize() {
   return [(window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1].join('.');
 }
 
-function getPageLevelKeywords(response) {
+function formatTargetingData(adUnit) {
   let result = {};
-  if (response.brandSafety) {
-    shallowMerge(result, response.brandSafety);
+  if (iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]) {
+    extend(result, iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]);
   }
-  if (response.fr) {
-    result.fr = response.fr;
+  if (iasTargeting[FRAUD_FIELD_NAME]) {
+    result[FRAUD_FIELD_NAME] = iasTargeting[FRAUD_FIELD_NAME];
   }
-  if (response.custom) {
-    result['ias-kw'] = response.custom['ias-kw'];
+  if (iasTargeting[CUSTOM_FIELD_NAME]) {
+    result[IAS_KW] = iasTargeting[CUSTOM_FIELD_NAME][IAS_KW];
+  }
+  if (iasTargeting[SLOTS_OBJECT_FIELD_NAME] && adUnit in iasTargeting[SLOTS_OBJECT_FIELD_NAME]) {
+    extend(result, iasTargeting[SLOTS_OBJECT_FIELD_NAME][adUnit]);
   }
   return result;
 }
 
-function shallowMerge(dest, src) {
-  utils.getKeys(src).reduce((dest, srcKey) => {
-    dest[srcKey] = src[srcKey];
-    return dest;
-  }, dest);
+function extend(dest, src) {
+  if (src) {
+    utils.getKeys(src).forEach(key => {
+      dest[key] = src[key];
+    });
+  }
+  return dest;
 }
 
 function constructQueryString(anId, adUnits) {
@@ -113,17 +123,13 @@ function parseResponse(result) {
 function getTargetingData(adUnits, config, userConsent) {
   const targeting = {};
   try {
-    const commonBidResponse = {};
-    shallowMerge(commonBidResponse, getPageLevelKeywords(iasTargeting));
-    commonBidResponse.slots = iasTargeting.slots;
-    Object.keys(commonBidResponse).forEach(key => commonBidResponse[key] === undefined ? delete commonBidResponse[key] : {});
     adUnits.forEach(function (adUnit) {
-      targeting[adUnit] = {};
-      shallowMerge(targeting[adUnit], commonBidResponse);
+      targeting[adUnit] = formatTargetingData(adUnit);
     });
   } catch (err) {
     utils.logError('error', err);
   }
+  utils.logInfo('IAS targeting', targeting);
   return targeting;
 }
 
