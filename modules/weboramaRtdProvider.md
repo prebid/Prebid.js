@@ -2,13 +2,12 @@
 
 Module Name: Weborama Rtd Provider
 Module Type: Rtd Provider
-Maintainer: prebid@weborama.com
+Maintainer: prebid-support@weborama.com
 
 # Description
 
-Weborama provides a disruptive API that allows its partners to leverage its
-cutting-edge contextualization technology and its audience segments based on
-cookies and consent or without cookies nor consent!
+Weborama provides a Semantic AI Contextual API that allows its partners to leverage its
+cutting-edge contextualization technology!
 
 Page-level automatic contextual categories will be attached to bid request objects sent to different SSPs in order to optimize targeting.
 
