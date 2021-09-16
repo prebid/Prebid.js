@@ -6,7 +6,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const ADAPTER_VERSION = '1.17';
+const ADAPTER_VERSION = '1.18';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 const CURRENCY = 'USD';
@@ -32,7 +32,27 @@ export const spec = {
   supportedMediaTypes: [ VIDEO, BANNER ],
 
   isBidRequestValid(bid) {
-    return !!(isVideoBidValid(bid) || isBannerBidValid(bid));
+    if (isVideoBid(bid)) {
+      if (!getVideoBidParam(bid, 'appId')) {
+        utils.logWarn('Beachfront: appId param is required for video bids.');
+        return false;
+      }
+      if (!getVideoBidParam(bid, 'bidfloor')) {
+        utils.logWarn('Beachfront: bidfloor param is required for video bids.');
+        return false;
+      }
+    }
+    if (isBannerBid(bid)) {
+      if (!getBannerBidParam(bid, 'appId')) {
+        utils.logWarn('Beachfront: appId param is required for banner bids.');
+        return false;
+      }
+      if (!getBannerBidParam(bid, 'bidfloor')) {
+        utils.logWarn('Beachfront: bidfloor param is required for banner bids.');
+        return false;
+      }
+    }
+    return true;
   },
 
   buildRequests(bids, bidderRequest) {

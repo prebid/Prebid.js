@@ -7,6 +7,7 @@ import {
   logError,
 } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb'; // production endpoint
@@ -151,7 +152,7 @@ function buildRequest(validBidRequests, bidderRequest) {
 }
 
 function buildBid(bid, bidderRequest) {
-  const originalBid = bidderRequest.bids.find((b) => b.bidId === bid.impid);
+  const originalBid = find(bidderRequest.bids, (b) => b.bidId === bid.impid);
 
   return {
     requestId: bid.impid,
