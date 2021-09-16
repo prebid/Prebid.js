@@ -22,8 +22,8 @@ const BID_DEFAULTS = {
     code: 'original-div',
   },
   params: {
-    placementId: '123456',
-    pageId: '777',
+    placementId: 123456,
+    pageId: 777,
     adUnitElementId: 'target-div'
   },
   sizes: [[300, 250], [1, 1]],
@@ -108,11 +108,26 @@ describe('C-WIRE bid adapter', () => {
       expect(spec.isBidRequestValid(bid01)).to.equal(false);
     });
 
+    it('should fail if invalid placementId type', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+      delete bid01.params.placementId;
+      bid01.placementId = '322';
+      expect(spec.isBidRequestValid(bid01)).to.equal(false);
+    });
+
     it('should fail if there is no pageId', function () {
       const bid01 = new BidRequestBuilder().withParams().build();
       delete bid01.params.pageId
       expect(spec.isBidRequestValid(bid01)).to.equal(false);
     });
+
+    it('should fail if invalid pageId type', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+      delete bid01.params.pageId;
+      bid01.params.pageId = '3320';
+      expect(spec.isBidRequestValid(bid01)).to.equal(false);
+    });
+
 
     it('should use params.adUnitElementId if provided', function () {
       const bid01 = new BidRequestBuilder().withParams().build();

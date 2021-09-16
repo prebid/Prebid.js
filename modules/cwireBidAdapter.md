@@ -15,8 +15,8 @@ Below, the list of C-WIRE params and where they can be set.
 
 | Param name | Global config | AdUnit config | Type |
 | ---------- | ------------- | ------------- | ---- |
-| pageId |  | x | string |
-| placementId |  | x | string |
+| pageId |  | x | number |
+| placementId |  | x | number |
 
 ### adUnit configuration
 
@@ -32,8 +32,8 @@ var adUnits = [
         }
       },
       params: {
-        pageid: '1422',          // required - string
-        placementid: '2211521',  // required - string
+        pageid: 1422,          // required - number
+        placementid: 2211521,  // required - number
       }
     }]
   }
