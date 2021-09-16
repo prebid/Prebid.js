@@ -332,14 +332,14 @@ const openRTBRequest = {
       tagid: 'rectangle-ad-2'
     }
   ],
-  cur: 'JPY',
+  cur: ['JPY'],
   ext: {
     accountId: 12345
   },
   site: {
     id: 'example',
     publisher: {
-      id: 99999
+      id: '99999'
     },
     domain: 'uni-corn.net',
     page: 'https://uni-corn.net/',

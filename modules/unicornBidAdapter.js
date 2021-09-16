@@ -58,11 +58,11 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     id: bidderRequest.auctionId,
     at: 1,
     imp,
-    cur: UNICORN_DEFAULT_CURRENCY,
+    cur: [UNICORN_DEFAULT_CURRENCY],
     site: {
       id: deepAccess(validBidRequests[0], 'params.mediaId') || '',
       publisher: {
-        id: deepAccess(validBidRequests[0], 'params.publisherId') || 0
+        id: String(deepAccess(validBidRequests[0], 'params.publisherId') || 0)
       },
       domain: window.location.hostname,
       page: window.location.href,
