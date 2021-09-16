@@ -3,6 +3,7 @@ import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js';
 import * as utils from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import entries from 'core-js-pure/features/object/entries.js';
 
 const SUBMODULE_NAME = 'timeout';
 
