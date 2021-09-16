@@ -3,6 +3,7 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const VERSION = '4.0.0';
 const BIDDER_CODE = 'sharethrough';
