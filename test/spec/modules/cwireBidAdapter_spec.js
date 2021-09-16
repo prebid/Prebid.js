@@ -128,17 +128,6 @@ describe('C-WIRE bid adapter', () => {
       expect(bid01.params.adUnitElementId).to.exist;
       expect(bid01.params.adUnitElementId).to.equal('original-div');
     });
-
-    it('should use GPT div id', function () {
-      sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').withArgs(BID_DEFAULTS.request.adUnitCode).returns({ divId: 'gpt-banner' });
-
-      // creaate bid, but force GPT elemetn id to be used
-      const bid01 = new BidRequestBuilder().withParams({ useGPTElementId: true }).build();
-
-      expect(spec.isBidRequestValid(bid01)).to.equal(true);
-      expect(bid01.params.adUnitElementId).to.exist;
-      expect(bid01.params.adUnitElementId).to.equal('gpt-banner');
-    });
   });
 
   describe('C-WIRE - buildRequests()', function () {
