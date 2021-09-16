@@ -15,6 +15,14 @@ export const timeoutRtdFunctions = {
   handleTimeoutIncrement
 };
 
+const entries = Object.entries || function(obj) {
+  const ownProps = Object.keys(obj);
+  let i = ownProps.length;
+  let resArray = new Array(i);
+  while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]]; }
+  return resArray;
+};
+
 function getDeviceType() {
   const userAgent = window.navigator.userAgent.toLowerCase();
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(userAgent))) {
@@ -78,7 +86,7 @@ function calculateTimeoutModifier(adUnits, rules) {
     if (rules.numAdUnits[numAdUnits]) {
       timeoutModifier += rules.numAdUnits[numAdUnits];
     } else {
-      for (const [rangeStr, timeoutVal] of Object.entries(rules.numAdUnits)) {
+      for (const [rangeStr, timeoutVal] of entries(rules.numAdUnits)) {
         const [lowerBound, upperBound] = rangeStr.split('-');
         if (parseInt(lowerBound) <= numAdUnits && numAdUnits <= parseInt(upperBound)) {
           utils.logInfo(`Adding ${timeoutVal} to timeout for numAdUnits ${numAdUnits}`)

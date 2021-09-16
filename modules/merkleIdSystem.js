@@ -6,7 +6,7 @@
  */
 
 import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
+import * as ajaxLib from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -42,7 +42,7 @@ function setSession(storage, response) {
 
 function constructUrl(configParams) {
   const session = getSession(configParams);
-  let url = ID_URL + `?vendor=${configParams.vendor}&sv_cid=${configParams.sv_cid}&sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}`;
+  let url = configParams.endpoint + `?vendor=${configParams.vendor}&sv_cid=${configParams.sv_cid}&sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}`;
   if (session) {
     url = `${url}&sv_session=${session}`;
   }
@@ -54,8 +54,9 @@ function generateId(configParams, configStorage) {
   const url = constructUrl(configParams);
 
   const resp = function (callback) {
-    const callbacks = {
-      success: response => {
+    ajaxLib.ajaxBuilder()(
+      url,
+      response => {
         let responseObj;
         if (response) {
           try {
@@ -72,12 +73,12 @@ function generateId(configParams, configStorage) {
         utils.logInfo('Merkle responseObj with date ' + JSON.stringify(responseObj));
         callback(responseObj);
       },
-      error: error => {
+      error => {
         utils.logError(`${MODULE_NAME}: merkleId fetch encountered an error`, error);
         callback();
-      }
-    };
-    ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+      },
+      {method: 'GET', withCredentials: true}
+    );
   };
   return resp;
 }
@@ -126,9 +127,14 @@ export const merkleIdSubmodule = {
       utils.logError('User ID - merkleId submodule requires a valid sv_pubid string to be defined');
       return;
     }
+
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
       utils.logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
+    }
+    if (typeof configParams.endpoint !== 'string') {
+      utils.logWarn('User ID - merkleId submodule endpoint string is not defined');
+      configParams.endpoint = ID_URL
     }
 
     if (typeof configParams.sv_domain !== 'string') {
