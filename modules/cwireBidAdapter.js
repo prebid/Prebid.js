@@ -5,6 +5,7 @@ import { OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
 const utils = require('../src/utils.js');
+
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
 export const ENDPOINT_URL = 'https://embed.cwi.re/delivery/prebid';
@@ -12,6 +13,7 @@ export const RENDERER_URL = 'https://cdn.cwi.re/prebid/renderer/LATEST/renderer.
 // ------------------------------------
 export const CW_PAGE_VIEW_ID = utils.generateUUID();
 const LS_CWID_KEY = 'cw_cwid';
+const CW_GROUPS_QUERY = 'cwgroups';
 
 /**
  * ------------------------------------
@@ -56,6 +58,18 @@ export function getAllMediaSizes(bid) {
   }
   return sizes;
 }
+
+const getQueryVariable = (variable) => {
+  const query = window.top.location.search.substring(1);
+  const vars = query.split('&');
+  for (let i = 0; i < vars.length; i += 1) {
+    const pair = vars[i].split('=');
+    if (decodeURIComponent(pair[0]) === variable) {
+      return decodeURIComponent(pair[1]);
+    }
+  }
+  return null;
+};
 
 /**
  * ------------------------------------
@@ -105,12 +119,12 @@ export const spec = {
       bid.params.adUnitElementId = bid.code;
     }
 
-    if (!bid.params.placementId || !utils.isStr(bid.params.placementId)) {
+    if (!bid.params.placementId || !utils.isNumber(bid.params.placementId)) {
       utils.logError('[CWIRE] placementId not provided or invalid');
       return false;
     }
 
-    if (!bid.params.pageId || !utils.isStr(bid.params.pageId)) {
+    if (!bid.params.pageId || !utils.isNumber(bid.params.pageId)) {
       utils.logError('[CWIRE] pageId not provided');
       return false;
     }
@@ -137,8 +151,16 @@ export const spec = {
       utils.logWarn(e);
     }
 
+    let refgroups = [];
+
+    const rgQuery = getQueryVariable(CW_GROUPS_QUERY);
+    if (rgQuery !== null) {
+      refgroups = rgQuery.split(',');
+    }
+
     const payload = {
       cwid: localStorage.getItem(LS_CWID_KEY),
+      refgroups,
       slots: slots,
       httpRef: referer || '',
       pageViewId: CW_PAGE_VIEW_ID,
