@@ -19,6 +19,7 @@ const adUnitsRequested = {};
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['ntv'], // short code
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
