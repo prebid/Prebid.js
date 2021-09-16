@@ -1,21 +1,18 @@
-import {loadExternalScript} from '../src/adloader.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {triggerPixel} from '../src/utils.js';
-import {BIDDER_CODE} from "./aduptechBidAdapter";
 export const ADAPTER_VERSION = 1;
 
 const ADQUERY_GVLID = 902;
 const ADQUERY_BIDDER_CODE = 'adquery';
 const ADQUERY_BIDDER_DOMAIN = 'https://bidder.adquery.io';
-const storage = getStorageManager(ADQUERY_GVLID);
+const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN + '/userSync?1=1';
 const ADQUERY_LOG_PREFIX = 'Adquery: ';
 const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
-const ADQUERY_TTL = 60;
+const ADQUERY_TTL = 360;
+const storage = getStorageManager(ADQUERY_GVLID);
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -28,11 +25,9 @@ export const spec = {
    * @return {boolean}
    */
   isBidRequestValid: (bid) => {
-    // either one of placeId should be set
-    if (!(bid && bid.params && (bid.params.placeId))) {
+    if (!(bid && bid.params && (bid.params.placementId))) {
       return false;
     }
-
     return true;
   },
 
@@ -42,23 +37,35 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
+    const ua = navigator.userAgent;
+    let qid = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    if (storage.getDataFromLocalStorage('qid')) {
+      qid = storage.getDataFromLocalStorage('qid');
+    } else {
+      storage.setDataInLocalStorage('qid', qid);
+    }
 
     let request = {
       placementCode: bidRequests.placementId,
-      auction: bidRequests.auctionId,
-      qid: 234234,
-      ipAddress: 1,
-      userAgent: 1,
-      cpm: 1
+      auctionId: bidRequests.auctionId,
+      qid: qid,
+      userAgent: ua,
+      type: bidRequests.type,
+      adUnitCode: bidRequests.adUnitCode,
+      bidId: bidRequests.bidId,
+      bidder: bidRequests.bidder,
+      bidderRequestId: bidRequests.bidder,
+      bidRequestsCount: bidRequests.bidRequestsCount,
+      bidderRequestsCount: bidRequests.bidderRequestsCount,
     };
+
     return {
       method: 'POST',
       url: ADQUERY_BIDDER_DOMAIN + '/prebid/bid',
       data: JSON.stringify(request),
       options: {
         contentType: 'application/json'
-      },
-      bids: validBidRequests
+      }
     };
   },
 
@@ -68,20 +75,25 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
-    const res = response.body;
+    const res = response && response.data;
+
+    if (!response) {
+      return [];
+    }
+
     const bidResponse = {
-      requestId: res.callback_uid,
-      cpm: parseFloat(res.cpm) / 100,
-      width: res.width,
-      height: res.height,
-      creativeId: res.creationId,
+      requestId: res.emission_id,
+      cpm: res.cpm,
+      width: res.mediaType.width,
+      height: res.mediaType.height,
+      creativeId: res.creation_id,
       currency: res.currency || ADQUERY_DEFAULT_CURRENCY,
       netRevenue: ADQUERY_NET_REVENUE,
       ttl: ADQUERY_TTL,
-      ad: '<script src="https://cdn.innity.net/frame_util.js"></script>' + res.tag,//TODO jak renderowac
+      ad: '<script src="' + res.lib + '"></script>' + res.tag,
       meta: {
-        advertiserDomains: res.adomain && res.adomain.length ? res.adomain : [],
-        mediaType: res.mediaType,
+        advertiserDomains: res.adDomains && res.adDomains.length ? res.adDomains : [],
+        mediaType: res.mediaType.name,
       }
     };
     return [bidResponse];
@@ -91,33 +103,32 @@ export const spec = {
    * @param {TimedOutBid} timeoutData
    */
   onTimeout: (timeoutData) => {
-      if (timeoutData == null) {
-        return;
-      }
-
-      let params = {
-        bidder: timeoutData.bidder,
-        bId: timeoutData.bidId,
-        adUnitCode: timeoutData.adUnitCode,
-        timeout: timeoutData.timeout,
-        auctionId: timeoutData.auctionId,
-      };
-
-      let adqueryRequestUrl = utils.buildUrl({
-        protocol: 'https',
-        hostname: ADQUERY_BIDDER_DOMAIN,
-        pathname: '/eventTimeout',
-        search: params
-      });
-      utils.logWarn(BIDDER_CODE + ': onTimeout called');
-      utils.triggerPixel(adqueryRequestUrl);
+    if (timeoutData == null) {
+      return;
+    }
+    utils.logInfo(ADQUERY_LOG_PREFIX + 'onTimeout', timeoutData);
+    let params = {
+      bidder: timeoutData.bidder,
+      bId: timeoutData.bidId,
+      adUnitCode: timeoutData.adUnitCode,
+      timeout: timeoutData.timeout,
+      auctionId: timeoutData.auctionId,
+    };
+    let adqueryRequestUrl = utils.buildUrl({
+      protocol: 'https',
+      hostname: ADQUERY_BIDDER_DOMAIN,
+      pathname: '/eventTimeout',
+      search: params
+    });
+    utils.logWarn(ADQUERY_LOG_PREFIX + ': onTimeout called');
+    utils.triggerPixel(adqueryRequestUrl);
   },
 
   /**
    * @param {Bid} bid
    */
   onBidWon: (bid) => {
-    utils.logInfo('onBidWon', bid);
+    utils.logInfo(ADQUERY_LOG_PREFIX + 'onBidWon', bid);
     const bidString = JSON.stringify(bid);
     const encodedBuf = window.btoa(bidString);
 
@@ -127,10 +138,10 @@ export const spec = {
     let adqueryRequestUrl = utils.buildUrl({
       protocol: 'https',
       hostname: ADQUERY_BIDDER_DOMAIN,
-      pathname: '/eventBitWon',
+      pathname: '/eventBidWon',
       search: params
     });
-    utils.logWarn(BIDDER_CODE + ': onTimeout called');
+    utils.logWarn(ADQUERY_LOG_PREFIX + ' onBidWon called');
     utils.triggerPixel(adqueryRequestUrl);
   },
 
@@ -138,12 +149,56 @@ export const spec = {
    * @param {Bid} bid
    */
   onSetTargeting: (bid) => {
-    if (publisherTagAvailable()) {
-      // eslint-disable-next-line no-undef
-      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
-      adapter.handleSetTargeting(bid);
-    }
+    utils.logInfo(ADQUERY_LOG_PREFIX + 'onSetTargeting', bid);
+
+    let params = {
+      bidder: bid.bidder,
+      width: bid.width,
+      height: bid.height,
+      bid: bid.adId,
+      mediaType: bid.mediaType,
+      cpm: bid.cpm,
+      requestId: bid.requestId,
+      adUnitCode: bid.adUnitCode,
+      adserverTargeting: getNestedParam(bid.adserverTargeting),
+    };
+
+    let adqueryRequestUrl = utils.buildUrl({
+      protocol: 'https',
+      hostname: ADQUERY_BIDDER_DOMAIN,
+      pathname: '/eventSetTargeting',
+      search: params
+    });
+    utils.logWarn(ADQUERY_LOG_PREFIX + ' eventSetTargeting called');
+    utils.triggerPixel(adqueryRequestUrl);
   },
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    let syncUrl = ADQUERY_USER_SYNC_DOMAIN;
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+    return [{
+      type: 'image',
+      url: syncUrl
+    }];
+  }
+
 };
 
 registerBidder(spec);
+
+function getNestedParam (qsData) {
+  const out = [];
+  Object.keys(qsData || {}).forEach((key) => {
+    out.push(encodeURIComponent(key) + '=' + encodeURIComponent(String(qsData[key])));
+  });
+
+  return encodeURIComponent(out.join('&'));
+}
