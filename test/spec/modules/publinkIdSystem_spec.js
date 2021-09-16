@@ -88,7 +88,7 @@ describe('PublinkIdSystem', () => {
         submoduleCallback(callbackSpy);
 
         let request = server.requests[0];
-        request.url = request.url.replace(':443','');
+        request.url = request.url.replace(':443', '');
         expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=hashedemailvalue&mpn=Prebid.js&mpv=$prebid.version$&gdpr=1&gdpr_consent=myconsentstring');
 
         request.respond(200, {}, JSON.stringify(serverResponse));
@@ -102,7 +102,7 @@ describe('PublinkIdSystem', () => {
         submoduleCallback(callbackSpy);
 
         let request = server.requests[0];
-        request.url = request.url.replace(':443','');
+        request.url = request.url.replace(':443', '');
         expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=hashedemailvalue&mpn=Prebid.js&mpv=$prebid.version$');
 
         request.respond(204, {}, JSON.stringify(serverResponse));
@@ -127,7 +127,7 @@ describe('PublinkIdSystem', () => {
         submoduleCallback(callbackSpy);
 
         let request = server.requests[0];
-        request.url = request.url.replace(':443','');
+        request.url = request.url.replace(':443', '');
         expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=hashedemailvalue&mpn=Prebid.js&mpv=$prebid.version$&us_privacy=1YNN');
 
         request.respond(200, {}, JSON.stringify(serverResponse));
