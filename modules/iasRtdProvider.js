@@ -1,6 +1,7 @@
 import { submodule } from '../src/hook.js';
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -133,18 +134,6 @@ function getTargetingData(adUnits, config, userConsent) {
   return targeting;
 }
 
-export function onAuctionInit(auctionDetails, config, userConsent) {
-  const { pubId } = config.params;
-  const anId = pubId;
-  const queryString = constructQueryString(anId, auctionDetails.adUnits);
-  ajax(
-    `${IAS_HOST}?${queryString}`,
-    getApiCallback(),
-    undefined,
-    { method: 'GET' }
-  );
-}
-
 export function getApiCallback() {
   return {
     success: function (response, req) {
@@ -162,12 +151,25 @@ export function getApiCallback() {
   }
 }
 
+function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+  const { pubId } = config.params;
+  const anId = pubId;
+  const queryString = constructQueryString(anId, adUnits);
+  ajax(
+    `${IAS_HOST}?${queryString}`,
+    getApiCallback(),
+    undefined,
+    { method: 'GET' }
+  );
+}
+
 /** @type {RtdSubmodule} */
 export const iasSubModule = {
   name: SUBMODULE_NAME,
   init: init,
-  onAuctionInitEvent: onAuctionInit,
-  getTargetingData: getTargetingData
+  getTargetingData: getTargetingData,
+  getBidRequestData: getBidRequestData
 };
 
 submodule(MODULE_NAME, iasSubModule);

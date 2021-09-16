@@ -14,9 +14,9 @@ describe('iasRtdProvider is a RTD provider that', function () {
       expect(iasSubModule.init()).to.equal(true);
     });
   });
-  describe('has a method `onAuctionInitEvent` that', function () {
+  describe('has a method `getBidRequestData` that', function () {
     it('exists', function () {
-      expect(iasSubModule.onAuctionInitEvent).to.be.a('function');
+      expect(iasSubModule.getBidRequestData).to.be.a('function');
     });
     it('verify config params', function () {
       expect(config.name).to.not.be.undefined;
@@ -25,11 +25,10 @@ describe('iasRtdProvider is a RTD provider that', function () {
       expect(config.params).to.have.property('pubId');
     });
     it('invoke method', function () {
+      const callback = sinon.spy();
       let request;
       const adUnitsOriginal = adUnits;
-      const auctionDetails = {adUnits: adUnits};
-      const userConsent = true;
-      iasSubModule.onAuctionInitEvent(auctionDetails, config, userConsent);
+      iasSubModule.getBidRequestData({ adUnits: adUnits }, callback, config);
       request = server.requests[0];
       server.respond();
       expect(request.url).to.be.include(`https://pixel.adsafeprotected.com/services/pub?anId=1234`);
