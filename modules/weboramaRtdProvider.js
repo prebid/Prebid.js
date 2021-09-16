@@ -1,7 +1,7 @@
 /**
  * This module adds Weborama provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
- * The module will fetch contextual data (page-centric) from Weborama srver
+ * The module will fetch contextual data (page-centric) from Weborama server
  * @module modules/weboramaRtdProvider
  * @requires module:modules/realTimeData
  */
@@ -24,6 +24,7 @@
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -45,7 +46,7 @@ let _bigseaContextualProfile = null;
 export function getTargetingData(adUnitsCodes, moduleConfig) {
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
-  const weboCtxConf = moduleParams.weboCtxConf || {};
+  const weboCtxConf = moduleParams.weboCtxConf || {};
   const defaultContextualProfiles = weboCtxConf.defaultProfile || {}
   const profile = _bigseaContextualProfile || defaultContextualProfiles;
 
@@ -136,7 +137,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
 
   let queryString = '';
   queryString = utils.tryAppendQueryString(queryString, 'token', token);
-  queryString = utils.tryAppendQueryString(queryString, 'url',  targetURL);
+  queryString = utils.tryAppendQueryString(queryString, 'url', targetURL);
 
   const url = 'https://ctx.weborama.com/api/profile?' + queryString;
 
@@ -174,7 +175,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
 function init(moduleConfig) {
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
-  const weboCtxConf = moduleParams.weboCtxConf || {};
+  const weboCtxConf = moduleParams.weboCtxConf || {};
 
   if (weboCtxConf.token) {
     fetchContextualProfile(weboCtxConf, setBigseaContextualProfile,
