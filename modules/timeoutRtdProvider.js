@@ -3,7 +3,6 @@ import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js';
 import * as utils from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import entries from 'core-js-pure/features/object/entries.js';
 
 const SUBMODULE_NAME = 'timeout';
 
@@ -14,6 +13,14 @@ export const timeoutRtdFunctions = {
   checkVideo,
   calculateTimeoutModifier,
   handleTimeoutIncrement
+};
+
+const entries = Object.entries || function(obj) {
+  const ownProps = Object.keys(obj);
+  let i = ownProps.length;
+  let resArray = new Array(i);
+  while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]]; }
+  return resArray;
 };
 
 function getDeviceType() {
