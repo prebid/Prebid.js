@@ -16,11 +16,10 @@
         var PREBID_TIMEOUT = 1000;
 
         var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
+            code: 'div-2',
             mediaTypes: {
-
                 banner: {
-                     sizes: [[1, 1], [300,600]],
+                     sizes: [[1, 1]],
                 }
             },
             // Replace this object to test a new Adapter!
@@ -28,9 +27,7 @@
                 bidder: 'cwire',
                 params: {
                     placementId: '13144370',
-                    pageId: '8765',
-                    useGPTElementId: true,
-                },
+                    pageId: '8765',                },
             }]
         }];
 
@@ -46,7 +43,16 @@
             googletag.pubads().disableInitialLoad();
         });
 
+
+
         pbjs.que.push(function() {
+            pbjs.setConfig({
+                userSync: {
+                iframeEnabled: true,
+                syncEnabled: true,
+                syncDelay: 1
+            }});
+
             pbjs.addAdUnits(adUnits);
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
@@ -91,7 +97,7 @@
 
     <script>
         googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[1,1], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            window.cwSlot1 = googletag.defineSlot('/19968336/puc_test_outstream_nonsf', [1,1], 'div-2').addService(googletag.pubads());
             googletag.pubads().disableInitialLoad();    
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
@@ -102,10 +108,11 @@
 <body>
 <h2>Prebid.js Test</h2>
 <h5>Div-1</h5>
-<div id='div-gpt-ad-1460505748561-0'>
-      <script type='text/javascript'>
-        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
-      </script>
+<div id='some-other-div'>
+    <script type='text/javascript'>
+            googletag.cmd.push(function() { googletag.display(window.cwSlot1); });
+        </script>
+        <div id="div-2"></div>
 </div>
 </body>
 </html>

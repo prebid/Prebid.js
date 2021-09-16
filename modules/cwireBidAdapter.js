@@ -7,8 +7,8 @@ import find from 'core-js-pure/features/array/find.js';
 const utils = require('../src/utils.js');
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
-export const ENDPOINT_URL = 'http://localhost:3002/api/prebid';
-export const RENDERER_URL = 'http://localhost:3002/static/fif/outstreamRender.out.js';
+export const ENDPOINT_URL = 'https://embed.cwi.re/delivery/prebid';
+export const RENDERER_URL = 'https://cdn.cwi.re/prebid/renderer/LATEST/renderer.min.js';
 // ------------------------------------
 export const CW_PAGE_VIEW_ID = utils.generateUUID();
 const LS_CWID_KEY = 'cw_cwid';
@@ -22,17 +22,6 @@ const LS_CWID_KEY = 'cw_cwid';
 export function getSlotSizes(bid) {
   return utils.parseSizesInput(getAllMediaSizes(bid));
 }
-
-// ------------------------------------
-// Extract GPT div id
-// ------------------------------------
-function autoDetectAdUnitElementIdFromGpt(adUnitCode) {
-  const autoDetectedAdUnit = utils.getGptSlotInfoForAdUnitCode(adUnitCode);
-
-  if (autoDetectedAdUnit && autoDetectedAdUnit.divId) {
-    return autoDetectedAdUnit.divId;
-  }
-};
 
 /**
  * ------------------------------------
@@ -116,10 +105,6 @@ export const spec = {
       bid.params.adUnitElementId = bid.code;
     }
 
-    if (bid.params.useGPTElementId) {
-      bid.params.adUnitElementId = autoDetectAdUnitElementIdFromGpt(bid.adUnitCode);
-    }
-
     if (!bid.params.placementId || !utils.isStr(bid.params.placementId)) {
       utils.logError('[CWIRE] placementId not provided or invalid');
       return false;
@@ -130,7 +115,6 @@ export const spec = {
       return false;
     }
 
-    console.log('VALID REQUEST');
     return true;
   },
 
