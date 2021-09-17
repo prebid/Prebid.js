@@ -9,9 +9,10 @@ const DEFAULT_BID_POS = 'header';
 const DEFAULT_AD_UNIT_CODE = '/19968336/header-bid-tag-1';
 const DEFAULT_AD_UNIT_TYPE = 'banner';
 const DEFAULT_PARAMS_BID_OVERRIDE = {};
-const DEFAULT_VIDEO_CONTEXT = 'instream'
+const DEFAULT_VIDEO_CONTEXT = 'instream';
 const ADAPTER_VERSION = '1.0.0';
 const PREBID_VERSION = '$prebid.version$';
+const INTEGRATION_METHOD = 'prebid.js';
 
 // Utility functions
 const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObject, videoContext}) => {
@@ -163,7 +164,7 @@ const generateResponseMock = (admPayloadType, vastVersion, videoContext) => {
 }
 
 // Unit tests
-describe.only('YSSP Bid Adapter', () => {
+describe('YSSP Bid Adapter', () => {
   it('PLACEHOLDER TO PASS GULP', () => {
     const obj = {};
     expect(obj).to.be.an('object');
@@ -642,18 +643,18 @@ describe.only('YSSP Bid Adapter', () => {
         ext: {
           hb: 1,
           adapterver: ADAPTER_VERSION,
-          prebidver: PREBID_VERSION
+          prebidver: PREBID_VERSION,
+          integration: {
+            name: INTEGRATION_METHOD,
+            ver: PREBID_VERSION
+          }
         },
         fd: 1
       });
 
       expect(data.user).to.deep.equal({
-        regs: {
-          gdpr: {
-            euconsent: bidderRequest.gdprConsent.consentString
-          }
-        },
         ext: {
+          consent: bidderRequest.gdprConsent.consentString,
           eids: []
         }
       });

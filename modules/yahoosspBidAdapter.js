@@ -236,13 +236,9 @@ function generateOpenRtbObject(bidderRequest, bid) {
         fd: 1
       },
       user: {
-        regs: {
-          gdpr: {
-            euconsent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies
-              ? bidderRequest.gdprConsent.consentString : ''
-          }
-        },
         ext: {
+          consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies
+            ? bidderRequest.gdprConsent.consentString : '',
           eids: getSupportedEids(bid)
         }
       }
