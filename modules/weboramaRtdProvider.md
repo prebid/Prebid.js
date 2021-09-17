@@ -66,6 +66,7 @@ pbjs.setConfig(
 | params.weboCtxConf.gamTargetingWeboCtxKey | String | allow rename the key `webo_ctx`  in gam targeting| Optional. Default is `webo_ctx`|
 | params.weboCtxConf.gamTargetingWeboDSKey | String | allow rename the key `webo_ds` in gam targeting | Optional. Default is `webo_ds`|
 | params.weboCtxConf.setTargeting|Boolean|If true, will use the contextual profile to set the gam targeting of all adunits managed by prebid.js| Optional. Default is *true*.|
+| params.weboCtxConf.setOrtb2|Boolean|If true, will use the contextual profile to set the ortb2 configuration on `site.ext.data`| Optional. Default is *true*.|
 
 ### Testing
 

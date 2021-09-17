@@ -153,6 +153,40 @@ describe('weboramaRtdProvider', function() {
       expect(ortb2.site.ext.data.webo_ctx).to.deep.equal(data.webo_ctx);
       expect(ortb2.site.ext.data).to.not.have.property('webo_ds');
     });
+    it('should set only targeting and not ortb2 with setTargeting=true and setOrtb2=false', function() {
+      const moduleConfig = {
+        params: {
+          weboCtxConf: {
+            token: 'foo',
+            targetURL: 'https://prebid.org',
+            setTargeting: true,
+            setOrtb2: false,
+          }
+        }
+      };
+      const data = {
+        webo_ctx: ['foo', 'bar'],
+      };
+
+      const adUnitsCodes = ['adunit1', 'adunit2'];
+      weboramaSubmodule.init(moduleConfig);
+
+      let request = server.requests[0];
+      request.respond(200, responseHeader, JSON.stringify(data));
+
+      const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+
+      expect(targeting).to.deep.equal({
+        'adunit1': data,
+        'adunit2': data,
+      });
+
+      const ortb2 = config.getConfig('ortb2');
+
+      expect(ortb2.site.ext.data).to.not.have.property('webo_ctx');
+      expect(ortb2.site.ext.data).to.not.have.property('webo_ds');
+    });
+
     it('should rename targeting', function() {
       const moduleConfig = {
         params: {

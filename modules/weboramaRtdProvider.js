@@ -50,14 +50,16 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   const defaultContextualProfiles = weboCtxConf.defaultProfile || {}
   const profile = _bigseaContextualProfile || defaultContextualProfiles;
 
-  const ortb2 = config.getConfig('ortb2') || {};
-  if (profile[WEBO_CTX]) {
-    utils.deepSetValue(ortb2, 'site.ext.data.webo_ctx', profile[WEBO_CTX]);
+  if (weboCtxConf.setOrtb2 !== false) {
+    const ortb2 = config.getConfig('ortb2') || {};
+    if (profile[WEBO_CTX]) {
+      utils.deepSetValue(ortb2, 'site.ext.data.webo_ctx', profile[WEBO_CTX]);
+    }
+    if (profile[WEBO_DS]) {
+      utils.deepSetValue(ortb2, 'site.ext.data.webo_ds', profile[WEBO_DS]);
+    }
+    config.setConfig({ortb2: ortb2});
   }
-  if (profile[WEBO_DS]) {
-    utils.deepSetValue(ortb2, 'site.ext.data.webo_ds', profile[WEBO_DS]);
-  }
-  config.setConfig({ortb2: ortb2});
 
   if (weboCtxConf.setTargeting === false) {
     return {};
