@@ -114,7 +114,7 @@ function buildTrackingParams(data, info, value) {
 
 function beOpRequestSlotsMaker(bid) {
   const bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
-  const publisherCurrency = utils.getValue(bid.params, 'currency') || 'EUR';
+  const publisherCurrency = config.getConfig('currency.adServerCurrency') || utils.getValue(bid.params, 'currency') || 'EUR';
   let floor;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({currency: publisherCurrency, mediaType: 'banner', size: [1, 1]});

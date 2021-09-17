@@ -372,7 +372,7 @@ function createOutstreamConfig(bid) {
     smartPlayObj.endingScreen = false;
   }
 
-  if (confTitle) {
+  if (confTitle || (typeof bid.renderer.config.outstream_options.title == 'string' && bid.renderer.config.outstream_options.title == '')) {
     smartPlayObj.title = confTitle;
   }
 
