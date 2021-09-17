@@ -6,10 +6,7 @@ Maintainer: prebid-support@weborama.com
 
 # Description
 
-Weborama provides a Semantic AI Contextual API that allows its partners to leverage its
-cutting-edge contextualization technology!
-
-Page-level automatic contextual categories will be attached to bid request objects sent to different SSPs in order to optimize targeting.
+Weborama provides a Semantic AI Contextual API that classify in Real-time a web page seen by a web user within generic and custom topics. It enables publishers to better monetize their inventory and unlock it to programmatic.
 
 ORTB2 compliant and FPD support for Prebid versions < 4.29
 
@@ -22,12 +19,6 @@ Compile the Weborama RTD module into your Prebid build:
 `gulp build --modules=rtdModule,weboramaRtdProvider`
 
 Add the Weborama RTD provider to your Prebid config.
-
-Segments ids (user-centric) and category ids (page-centric) will be provided
-salted and hashed : you can use them with a dedicated and private matching table.
-Should you want to allow a SSP or a partner to curate your media and operate
-cross-publishers campaigns with our data, please ask Weborama (prebid@weborama.com) to
-open it for you account.
 
 ```javascript
 pbjs.setConfig(
