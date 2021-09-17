@@ -6,14 +6,14 @@ export const ADAPTER_VERSION = 1;
 
 const ADQUERY_GVLID = 902;
 const ADQUERY_BIDDER_CODE = 'adquery';
-const ADQUERY_BIDDER_DOMAIN = 'https://bidder.adquery.io';
-const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN + '/userSync?1=1';
+const ADQUERY_BIDDER_DOMAIN_PROTOCOL = 'https';
+const ADQUERY_BIDDER_DOMAIN = 'bidder.adquery.io';
+const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUERY_BIDDER_DOMAIN + '/prebid/userSync?1=1';
 const ADQUERY_LOG_PREFIX = 'Adquery: ';
 const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
 const ADQUERY_TTL = 360;
 const storage = getStorageManager(ADQUERY_GVLID);
-
 /** @type {BidderSpec} */
 export const spec = {
   code: ADQUERY_BIDDER_CODE,
@@ -44,27 +44,28 @@ export const spec = {
     } else {
       storage.setDataInLocalStorage('qid', qid);
     }
-
+    let bid = bidRequests[0];
     let request = {
-      placementCode: bidRequests.placementId,
-      auctionId: bidRequests.auctionId,
+      placementCode: bid.placementId,
+      auctionId: bid.auctionId,
       qid: qid,
       userAgent: ua,
-      type: bidRequests.type,
-      adUnitCode: bidRequests.adUnitCode,
-      bidId: bidRequests.bidId,
-      bidder: bidRequests.bidder,
-      bidderRequestId: bidRequests.bidder,
-      bidRequestsCount: bidRequests.bidRequestsCount,
-      bidderRequestsCount: bidRequests.bidderRequestsCount,
+      type: bid.type,
+      adUnitCode: bid.adUnitCode,
+      bidId: bid.bidId,
+      bidder: bid.bidder,
+      bidderRequestId: bid.bidderRequestId,
+      bidRequestsCount: bid.bidRequestsCount,
+      bidderRequestsCount: bid.bidderRequestsCount,
     };
 
     return {
       method: 'POST',
-      url: ADQUERY_BIDDER_DOMAIN + '/prebid/bid',
+      url: ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUERY_BIDDER_DOMAIN + '/prebid/bid',
       data: JSON.stringify(request),
       options: {
-        contentType: 'application/json'
+        withCredentials: false,
+        crossOrigin: true
       }
     };
   },
@@ -75,28 +76,38 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
-    const res = response && response.data;
+    utils.logInfo(response);
+    utils.logInfo(request);
+    const res = response && response.body && response.body.data;
 
-    if (!response) {
+    if (!res) {
       return [];
     }
 
-    const bidResponse = {
-      requestId: res.emission_id,
+    let bidResponses = [];
+    let bidResponse = {
+      requestId: res.requestId,
       cpm: res.cpm,
       width: res.mediaType.width,
       height: res.mediaType.height,
-      creativeId: res.creation_id,
+      creativeId: res.creationId,
+      dealId: res.dealid || '',
       currency: res.currency || ADQUERY_DEFAULT_CURRENCY,
       netRevenue: ADQUERY_NET_REVENUE,
       ttl: ADQUERY_TTL,
-      ad: '<script src="' + res.lib + '"></script>' + res.tag,
+      referrer: '',
+      ad: '<script src="' + res.adqLib + '"></script>' + res.tag,
+      mediaType: res.mediaType.name || 'banner',
       meta: {
         advertiserDomains: res.adDomains && res.adDomains.length ? res.adDomains : [],
-        mediaType: res.mediaType.name,
+        mediaType: res.mediaType.name || 'banner',
       }
+
     };
-    return [bidResponse];
+    bidResponses.push(bidResponse);
+
+    utils.logInfo(ADQUERY_LOG_PREFIX + 'bidResponses', bidResponses);
+    return bidResponses;
   },
 
   /**
@@ -117,10 +128,10 @@ export const spec = {
     let adqueryRequestUrl = utils.buildUrl({
       protocol: 'https',
       hostname: ADQUERY_BIDDER_DOMAIN,
-      pathname: '/eventTimeout',
+      pathname: '/prebid/eventTimeout',
       search: params
     });
-    utils.logWarn(ADQUERY_LOG_PREFIX + ': onTimeout called');
+    utils.logInfo(ADQUERY_LOG_PREFIX + ': onTimeout called');
     utils.triggerPixel(adqueryRequestUrl);
   },
 
@@ -138,10 +149,10 @@ export const spec = {
     let adqueryRequestUrl = utils.buildUrl({
       protocol: 'https',
       hostname: ADQUERY_BIDDER_DOMAIN,
-      pathname: '/eventBidWon',
+      pathname: '/prebid/eventBidWon',
       search: params
     });
-    utils.logWarn(ADQUERY_LOG_PREFIX + ' onBidWon called');
+    utils.logInfo(ADQUERY_LOG_PREFIX + ' onBidWon called');
     utils.triggerPixel(adqueryRequestUrl);
   },
 
@@ -166,10 +177,10 @@ export const spec = {
     let adqueryRequestUrl = utils.buildUrl({
       protocol: 'https',
       hostname: ADQUERY_BIDDER_DOMAIN,
-      pathname: '/eventSetTargeting',
+      pathname: '/prebid/eventSetTargeting',
       search: params
     });
-    utils.logWarn(ADQUERY_LOG_PREFIX + ' eventSetTargeting called');
+    utils.logInfo(ADQUERY_LOG_PREFIX + ' eventSetTargeting called');
     utils.triggerPixel(adqueryRequestUrl);
   },
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {

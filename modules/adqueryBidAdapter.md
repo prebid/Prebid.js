@@ -12,8 +12,12 @@ Module that connects to Adquery's demand sources.
 ```
     var adUnits = [
         {
-            code: 'banner-ad-div',
-            sizes: [[300, 250]],
+            code: 'banner-adquery-div',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]],
+                }
+            },
             bids: [
                 {
                     bidder: 'adquery',

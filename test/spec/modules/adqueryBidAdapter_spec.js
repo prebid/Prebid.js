@@ -19,50 +19,40 @@ describe('adqueryBidAdapter', function () {
     }
   }
 
-  let expectedResponse = [
-    {'data':
-        {
-          'emission_id': 402517033,
-          'question': '',
-          'creationType': 5,
-          'externalEmissionCodes': 'https://example.com',
-          'correctAnswer': 1,
-          'answerInfo': '',
-          'answerOne': '',
-          'answerTwo': '',
-          'answerThree': '',
-          'wrongAnswer': '',
-          'popupTitle': '',
-          'popupContent': '',
-          'link': 'https://example.com',
-          'clickTracker': 'https://example.com',
-          'impressionTracker': 'https://example.com',
-          'viewabilityTracker': 'https://example.com',
-          'eventTracker': 'https://example.com',
-          'medias': [
-            {
-              'src': 'banner/2021-04-09/938',
-              'ext': 'zip',
-              'type': 3,
-            }
-          ],
-          'domain': 'https://example.com',
-          'trackerBtnOne': '',
-          'trackerBtnTwo': '',
-          'trackerBtnThree': '',
-          'width': 0,
-          'height': 0,
-          'logo': 'https://example.com',
-          'urlAdq': 'https://example.com',
-          'creationId': 1,
-          'currency': 'PLN',
-          'adDomains': ['https://example.com'],
-          'tag': '<ad-adquery data-type="banner300x250"  data-placement="6d93f2a0e5f0fe2cc3a6e9e3ade964b43b07f897"> </ad-adquery>',
-          'adqLib': 'https://example.com/js/adquery-0.1.min.js',
-          'mediaType': {'width': 300, 'height': 250, 'name': 'BANNER', 'type': 'banner300x250'}
+  let expectedResponse = {
+    'data':
+      {
+        'requestId': 1,
+        'emission_id': 1,
+        'eventTracker': 'https://example.com',
+        'externalEmissionCodes': 'https://example.com',
+        'impressionTracker': 'https://example.com',
+        'viewabilityTracker': 'https://example.com',
+        'clickTracker': 'https://example.com',
+        'link': 'https://example.com',
+        'logo': 'https://example.com',
+        'medias': [
+          {
+            'src': 'banner/2021-04-09/938',
+            'ext': 'zip',
+            'type': 3,
+          }
+        ],
+        'domain': 'https://example.com',
+        'urlAdq': 'https://example.com',
+        'creationId': 1,
+        'currency': 'PLN',
+        'adDomains': ['https://example.com'],
+        'tag': '<ad-adquery data-type="banner300x250"  data-placement="6d93f2a0e5f0fe2cc3a6e9e3ade964b43b07f897"> </ad-adquery>',
+        'adqLib': 'https://example.com/js/example.js',
+        'mediaType': {'width': 300, 'height': 250, 'name': 'banner', 'type': 'banner300x250'},
+        'cpm': 2.5,
+        'meta': {
+          'advertiserDomains': ['example.com'],
+          'mediaType': 'banner',
         }
-    }]
-
+      }
+  }
   describe('codes', function () {
     it('should return a bidder code of adquery', function () {
       expect(spec.code).to.equal('adquery')
@@ -117,61 +107,15 @@ describe('adqueryBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should get the correct bid response', function () {
-      let result = spec.interpretResponse(expectedResponse[0])
-      expect(result).to.be.an('array').that.is.not.empty
-      expect(result[0].meta.advertiserDomains[0]).to.equal('https://example.com');
+      let result = spec.interpretResponse(expectedResponse)
+      expect(result).to.be.an('array')
     })
-
-    it('should interpret bids in data', function () {
-      let bidResponse = [{
-        'data':
-          {
-            'emission_id': 402517033,
-            'question': '',
-            'creationType': 5,
-            'externalEmissionCodes': 'https://example.com',
-            'correctAnswer': 1,
-            'answerInfo': '',
-            'answerOne': '',
-            'answerTwo': '',
-            'answerThree': '',
-            'wrongAnswer': '',
-            'popupTitle': '',
-            'popupContent': '',
-            'link': 'https://example.com',
-            'clickTracker': 'https://example.com',
-            'impressionTracker': 'https://example.com',
-            'viewabilityTracker': 'https://example.com',
-            'eventTracker': 'https://example.com',
-            'medias': [
-              {
-                'src': 'banner/2021-04-09/938',
-                'ext': 'zip',
-                'type': 3,
-              }
-            ],
-            'domain': 'https://example.com',
-            'trackerBtnOne': '',
-            'trackerBtnTwo': '',
-            'trackerBtnThree': '',
-            'width': 0,
-            'height': 0,
-            'logo': 'https://example.com',
-            'urlAdq': 'https://example.com',
-            'creationId': 1,
-            'currency': 'PLN',
-            'adDomains': ['https://example.com'],
-            'tag': '<ad-adquery data-type="banner300x250"  data-placement="6d93f2a0e5f0fe2cc3a6e9e3ade964b43b07f897"> </ad-adquery>',
-            'adqLib': 'https://example.com/js/example.js',
-            'mediaType': {'width': 300, 'height': 250, 'name': 'BANNER', 'type': 'banner300x250'}
-          }
-      }]
-      let result = spec.interpretResponse(bidResponse[0]).map(bid => {
-        const {requestId} = bid;
-        return [ requestId ];
-      });
-
-      assert.equal(result.length, 1);
+    it('handles empty bid response', function () {
+      let response = {
+        body: {}
+      };
+      let result = spec.interpretResponse(response);
+      expect(result.length).to.equal(0);
     })
   })
 
