@@ -13,6 +13,7 @@ import {
   IN_CONTENT_STORY_TYPE,
   ACTION_SCROLLER_TYPE,
   ACTION_SCROLLER_LIGHT_TYPE,
+  JUST_BANNER_TYPE,
   BIDDER_CODE,
   SSP_ENDPOINT,
   REQUEST_METHOD,
@@ -108,6 +109,14 @@ const configByPlaceType = {
       }),
     })
   },
+  get [JUST_BANNER_TYPE]() {
+    return cloneDeep({
+      mediaTypes: mediaTypeBanner,
+      params: Object.assign({}, commonParams, {
+        placeType: JUST_BANNER_TYPE
+      }),
+    })
+  },
 }
 const getTransformedConfig = ({mediaTypes, params}) => {
   return {
@@ -167,7 +176,8 @@ describe('AFP Adapter', function() {
           IN_CONTENT_BANNER_TYPE,
           IN_CONTENT_STORY_TYPE,
           ACTION_SCROLLER_TYPE,
-          ACTION_SCROLLER_LIGHT_TYPE
+          ACTION_SCROLLER_LIGHT_TYPE,
+          JUST_BANNER_TYPE
         ], [`mediaTypes.${BANNER}.sizes`, `mediaTypes.${BANNER}`])
       })
     })
@@ -283,16 +293,9 @@ describe('AFP Adapter', function() {
           expect(bids[0].currency).to.equal(currency)
           expect(bids[0].netRevenue).to.equal(netRevenue)
 
-          if (includes([
-            IN_IMAGE_BANNER_TYPE,
-            IN_IMAGE_MAX_BANNER_TYPE,
-            IN_CONTENT_BANNER_TYPE,
-            IN_CONTENT_STORY_TYPE,
-            ACTION_SCROLLER_TYPE,
-            ACTION_SCROLLER_LIGHT_TYPE,
-          ], placeSettings.placeType)) {
+          if (mediaTypeByPlaceType[placeSettings.placeType] === BANNER) {
             expect(typeof bids[0].ad).to.equal('string')
-          } else if (includes([IN_CONTENT_VIDEO_TYPE, OUT_CONTENT_VIDEO_TYPE], placeSettings.placeType)) {
+          } else if (mediaTypeByPlaceType[placeSettings.placeType] === VIDEO) {
             expect(typeof bids[0].vastXml).to.equal('string')
             expect(typeof bids[0].renderer).to.equal('object')
           }

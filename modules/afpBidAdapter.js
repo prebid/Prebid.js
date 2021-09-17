@@ -18,6 +18,7 @@ export const OUT_CONTENT_VIDEO_TYPE = 'Out-content Video'
 export const IN_CONTENT_STORY_TYPE = 'In-content Stories'
 export const ACTION_SCROLLER_TYPE = 'Action Scroller'
 export const ACTION_SCROLLER_LIGHT_TYPE = 'Action Scroller Light'
+export const JUST_BANNER_TYPE = 'Just Banner'
 
 export const mediaTypeByPlaceType = {
   [IN_IMAGE_BANNER_TYPE]: BANNER,
@@ -26,6 +27,7 @@ export const mediaTypeByPlaceType = {
   [IN_CONTENT_STORY_TYPE]: BANNER,
   [ACTION_SCROLLER_TYPE]: BANNER,
   [ACTION_SCROLLER_LIGHT_TYPE]: BANNER,
+  [JUST_BANNER_TYPE]: BANNER,
   [IN_CONTENT_VIDEO_TYPE]: VIDEO,
   [OUT_CONTENT_VIDEO_TYPE]: VIDEO,
 }
@@ -150,16 +152,9 @@ export const spec = {
       const placeContainer = bidRequest.params.placeContainer
       const dataToCreatePlace = { adSettings, placeSettings, placeContainer, isPrebid: true }
 
-      if (includes([
-        IN_IMAGE_BANNER_TYPE,
-        IN_IMAGE_MAX_BANNER_TYPE,
-        IN_CONTENT_BANNER_TYPE,
-        IN_CONTENT_STORY_TYPE,
-        ACTION_SCROLLER_TYPE,
-        ACTION_SCROLLER_LIGHT_TYPE,
-      ], placeSettings.placeType)) {
+      if (mediaTypeByPlaceType[placeSettings.placeType] === BANNER) {
         bid.ad = wrapAd(dataToCreatePlace)
-      } else if (includes([IN_CONTENT_VIDEO_TYPE, OUT_CONTENT_VIDEO_TYPE], placeSettings.placeType)) {
+      } else if (mediaTypeByPlaceType[placeSettings.placeType] === VIDEO) {
         bid.vastXml = adSettings.content
         bid.renderer = createRenderer(bid, dataToCreatePlace)
       }
