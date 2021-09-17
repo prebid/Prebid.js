@@ -312,6 +312,12 @@ export const spec = {
         requestParams._fw_us_privacy = bidderRequest.uspConsent;
       }
 
+      // Add schain object
+      var schain = currentBidRequest.schain;
+      if (schain) {
+        requestParams.schain = schain;
+      }
+
       var vastParams = currentBidRequest.params.vastUrlParams;
       if (typeof vastParams === 'object') {
         for (var key in vastParams) {

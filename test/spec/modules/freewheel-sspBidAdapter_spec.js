@@ -17,7 +17,8 @@ describe('freewheelSSP BidAdapter Test', () => {
     let bid = {
       'bidder': 'freewheel-ssp',
       'params': {
-        'zoneId': '277225'
+        'zoneId': '277225',
+        'schain'
       },
       'adUnitCode': 'adunit-code',
       'mediaTypes': {
@@ -31,6 +32,19 @@ describe('freewheelSSP BidAdapter Test', () => {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
+      'schain': {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'example.com',
+            'sid': '0',
+            'hp': 1,
+            'rid': 'bidrequestid',
+            'domain': 'example.com'
+          }
+        ]
+      }
     };
 
     it('should return true when required params found', () => {
@@ -44,6 +58,11 @@ describe('freewheelSSP BidAdapter Test', () => {
         wrong: 'missing zone id'
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return a properly formatted request with schain defined', function () {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.schain).to.deep.equal(bidRequest[0].schain)
     });
   });
 
