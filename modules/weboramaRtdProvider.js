@@ -50,7 +50,7 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   const defaultContextualProfiles = weboCtxConf.defaultProfile || {}
   const profile = _bigseaContextualProfile || defaultContextualProfiles;
 
-  if (weboCtxConf.setOrtb2 !== false) {
+  if (weboCtxConf.setOrtb2) {
     const ortb2 = config.getConfig('ortb2') || {};
     if (profile[WEBO_CTX]) {
       utils.deepSetValue(ortb2, 'site.ext.data.webo_ctx', profile[WEBO_CTX]);
