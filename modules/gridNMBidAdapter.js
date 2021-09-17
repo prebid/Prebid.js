@@ -71,22 +71,16 @@ export const spec = {
 
     bids.forEach(bid => {
       let user;
-      let schain;
       let userExt;
-      let siteContent;
-      let userIdAsEids;
+
+      const schain = bid.schain;
+      const userIdAsEids = bid.userIdAsEids;
 
       if (!bidderRequestId) {
         bidderRequestId = bid.bidderRequestId;
       }
       if (!auctionId) {
         auctionId = bid.auctionId;
-      }
-      if (!schain) {
-        schain = bid.schain;
-      }
-      if (!userIdAsEids) {
-        userIdAsEids = bid.userIdAsEids;
       }
       const {
         params: { floorcpm, pubdata, source, secid, pubid, content, video },
@@ -97,9 +91,7 @@ export const spec = {
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
       const jwpseg = (pubdata && pubdata.jwpseg) || (jwTargeting && jwTargeting.segments);
 
-      if (!siteContent) {
-        siteContent = content || (jwTargeting && jwTargeting.content);
-      }
+      const siteContent = content || (jwTargeting && jwTargeting.content);
 
       const impObj = {
         id: bidId.toString(),
