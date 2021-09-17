@@ -29,7 +29,7 @@ import {config} from '../src/config.js';
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 /** @type {string} */
-const SUBMODULE_NAME = 'Weborama';
+const SUBMODULE_NAME = 'weborama';
 /** @type {string} */
 const WEBO_CTX = 'webo_ctx';
 /** @type {string} */
@@ -155,7 +155,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
           onDone();
         } catch (e) {
           onDone();
-          utils.logError('unable to parse Weborama data', e);
+          utils.logError('unable to parse weborama data', e);
         }
       } else if (req.status === 204) {
         onDone();
@@ -163,7 +163,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
     },
     error: function () {
       onDone();
-      utils.logError('unable to get Weborama data');
+      utils.logError('unable to get weborama data');
     }
   },
   null,

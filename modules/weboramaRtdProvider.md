@@ -29,13 +29,13 @@ pbjs.setConfig(
         auctionDelay: 1000,
         dataProviders: [
             {
-                name: "Weborama",
+                name: "weborama",
                 waitForIt: true,
                 params: {
                   weboCtxConf: {
                       setTargeting: true,
                       token: "<<token provided by weborama>>",
-                      targetURL: "..."
+                      targetURL: "..." // default is document.URL
                     }
                 }
             }
