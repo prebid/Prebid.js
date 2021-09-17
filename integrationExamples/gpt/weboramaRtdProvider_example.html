@@ -25,7 +25,10 @@
                             weboCtxConf: {
                                 setTargeting: true,
                                 token: "to-be-defined",
-                                targetURL: "https://prebid.org/"
+                                targetURL: "https://prebid.org/",
+                                defaultProfile: {
+                                  webo_ctx: ['moon']
+                                }
                             }
                         }
                     }
@@ -44,12 +47,16 @@
 
     var adUnits = [
         {
-            code: '/1056029/test-webo-contextual',
+            code: '/1056029/webo-ctx-prebid',
             mediaTypes: {
                 banner: {
                     sizes: div_1_sizes
                 }
-            }
+            },
+            bids: [{
+              bidder: 'appnexus',
+              params: {},
+            }]
         }
         ];
 
@@ -89,7 +96,7 @@
     }, FAILSAFE_TIMEOUT);
 
     googletag.cmd.push(function() {
-        googletag.defineSlot('/1056029/test-webo-contextual', div_1_sizes, 'div-gpt-ad-1620653642627-0').addService(googletag.pubads());
+        googletag.defineSlot('/1056029/webo-ctx-prebid', div_1_sizes, 'div-gpt-ad-1620653642627-0').addService(googletag.pubads());
         googletag.pubads().disableInitialLoad();
         googletag.enableServices();
     });
