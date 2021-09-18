@@ -1745,6 +1745,8 @@ describe('S2S Adapter', function () {
           interests: ['cars']
         }
       };
+      const bcat = ['IAB25', 'IAB7-39'];
+      const badv = ['blockedAdv-1.com', 'blockedAdv-2.com'];
       const allowedBidders = [ 'rubicon', 'appnexus' ];
 
       const expected = allowedBidders.map(bidder => ({
@@ -1769,19 +1771,23 @@ describe('S2S Adapter', function () {
                   interests: ['cars']
                 }
               }
-            }
+            },
+            bcat: ['IAB25', 'IAB7-39'],
+            badv: ['blockedAdv-1.com', 'blockedAdv-2.com']
           }
         }
       }));
       const commonContextExpected = utils.mergeDeep({'page': 'http://mytestpage.com', 'publisher': {'id': '1'}}, commonContext);
 
-      config.setConfig({ fpd: { context: commonContext, user: commonUser } });
-      config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
+      config.setConfig({ fpd: { context: commonContext, user: commonUser, badv, bcat } });
+      config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user, bcat, badv } } });
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
       expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
       expect(parsedRequestBody.user).to.deep.equal(commonUser);
+      expect(parsedRequestBody.badv).to.deep.equal(badv);
+      expect(parsedRequestBody.bcat).to.deep.equal(bcat);
     });
 
     describe('pbAdSlot config', function () {
@@ -2577,6 +2583,27 @@ describe('S2S Adapter', function () {
       expect(vendorConfig.enabled).to.be.true;
       expect(vendorConfig.endpoint).to.deep.equal({p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction', noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/openrtb2/auction'});
       expect(vendorConfig.syncEndpoint).to.deep.equal({p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync', noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync'});
+      expect(vendorConfig).to.have.property('timeout', 750);
+    });
+
+    it('should configure the s2sConfig object with appnexuspsp vendor defaults unless specified by user', function () {
+      const options = {
+        accountId: '123',
+        bidders: ['appnexus'],
+        defaultVendor: 'appnexuspsp',
+        timeout: 750
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.notCalled(logErrorSpy);
+
+      let vendorConfig = config.getConfig('s2sConfig');
+      expect(vendorConfig).to.have.property('accountId', '123');
+      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+      expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
+      expect(vendorConfig.enabled).to.be.true;
+      expect(vendorConfig.endpoint).to.deep.equal({p1Consent: 'https://ib.adnxs.com/openrtb2/prebid', noP1Consent: 'https://ib.adnxs-simple.com/openrtb2/prebid'});
+      expect(vendorConfig.syncEndpoint).to.be.undefined;
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 

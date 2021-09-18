@@ -69,7 +69,9 @@ export const spec = {
     {code: 'engageadx'},
     {code: 'converge', gvlid: 248},
     {code: 'adomega'},
-    {code: 'denakop'}
+    {code: 'denakop'},
+    {code: 'rtbanalytica'},
+    {code: 'unibots'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
