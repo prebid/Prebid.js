@@ -56,8 +56,6 @@ pbjs.setConfig(
 | params.weboCtxConf.token | String | Security Token provided by Weborama, unique per client | Mandatory |
 | params.weboCtxConf.targetURL | String | Url to be profiled in the contextual api | Optional. Defaults to `document.URL` |
 | params.weboCtxConf.defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
-| params.weboCtxConf.gamTargetingWeboCtxKey | String | allow rename the key `webo_ctx`  in gam targeting| Optional. Default is `webo_ctx`|
-| params.weboCtxConf.gamTargetingWeboDSKey | String | allow rename the key `webo_ds` in gam targeting | Optional. Default is `webo_ds`|
 | params.weboCtxConf.setTargeting|Boolean|If true, will use the contextual profile to set the gam targeting of all adunits managed by prebid.js| Optional. Default is *true*.|
 | params.weboCtxConf.setOrtb2|Boolean|If true, will use the contextual profile to set the ortb2 configuration on `site.ext.data`| Optional. Default is *false*.|
 

@@ -222,46 +222,6 @@ describe('weboramaRtdProvider', function() {
       expect(ortb2.site.ext.data).to.not.have.property('webo_ds');
     });
 
-    it('should rename targeting', function() {
-      const moduleConfig = {
-        params: {
-          weboCtxConf: {
-            token: 'foo',
-            targetURL: 'https://prebid.org',
-            setTargeting: true,
-            setOrtb2: true,
-            gamTargetingWeboCtxKey: 'other_ctx',
-            gamTargetingWeboDSKey: 'other_ds',
-          }
-        }
-      };
-      const data = {
-        webo_ctx: ['foo', 'bar'],
-        webo_ds: ['baz'],
-      };
-      const adUnitsCodes = ['adunit1', 'adunit2'];
-      weboramaSubmodule.init(moduleConfig);
-
-      let request = server.requests[0];
-      request.respond(200, responseHeader, JSON.stringify(data));
-
-      const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
-
-      var formattedData = {
-        other_ctx: ['foo', 'bar'],
-        other_ds: ['baz'],
-      };
-
-      expect(targeting).to.deep.equal({
-        'adunit1': formattedData,
-        'adunit2': formattedData,
-      });
-
-      const ortb2 = config.getConfig('ortb2');
-
-      expect(ortb2.site.ext.data.webo_ctx).to.deep.equal(data.webo_ctx);
-      expect(ortb2.site.ext.data.webo_ds).to.deep.equal(data.webo_ds);
-    });
     it('should set only ortb2 with setTargeting=false', function() {
       const moduleConfig = {
         params: {

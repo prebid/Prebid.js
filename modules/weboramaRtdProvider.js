@@ -16,8 +16,6 @@
 * @property {string} token required token to be used on bigsea contextual API requests
 * @property {?string} targetURL specify the target url instead use the referer
 * @property {?boolean} setTargeting if true will set the GAM targeting
-* @property {?string} gamTargetingWeboCtxKey allow rename the webo_ctx key
-* @property {?string} gamTargetingWeboDSKey allow rename the webo_ds key
 * @property {?object} defaultProfile to be used if the profile is not found
 */
 
@@ -66,7 +64,7 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   }
 
   try {
-    const formattedProfile = formatBigseaContextualProfile(profile, weboCtxConf);
+    const formattedProfile = profile;
     const r = adUnitsCodes.reduce((rp, adUnitCode) => {
       if (adUnitCode) {
         rp[adUnitCode] = formattedProfile;
@@ -89,33 +87,6 @@ export function setBigseaContextualProfile(data) {
   if (data && Object.keys(data).length > 0) {
     _bigseaContextualProfile = data;
   }
-}
-
-/** format bigsea contextual profile based on module configuration
- * @param {Object} data
- * @param {WeboCtxConf} weboCtxConf
- * @returns {Object}
- */
-function formatBigseaContextualProfile(data, weboCtxConf) {
-  const bigseaContextualProfile = {};
-  const gamTargetingWeboCtxKey = weboCtxConf.gamTargetingWeboCtxKey || WEBO_CTX;
-  const gamTargetingWeboDSKey = weboCtxConf.gamTargetingWeboDSKey || WEBO_DS;
-
-  if (data.hasOwnProperty(WEBO_CTX)) {
-    bigseaContextualProfile[gamTargetingWeboCtxKey] = data[WEBO_CTX];
-  }
-
-  if (data.hasOwnProperty(WEBO_DS)) {
-    const weboDS = data[WEBO_DS];
-    if (bigseaContextualProfile.hasOwnProperty(gamTargetingWeboDSKey) &&
-      bigseaContextualProfile[gamTargetingWeboDSKey].length > 0) {
-      bigseaContextualProfile[gamTargetingWeboDSKey] = bigseaContextualProfile[gamTargetingWeboDSKey].concat(weboDS)
-    } else {
-      bigseaContextualProfile[gamTargetingWeboDSKey] = weboDS;
-    }
-  }
-
-  return bigseaContextualProfile;
 }
 
 /** onSucess callback type
