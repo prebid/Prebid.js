@@ -50,7 +50,8 @@
     "optimeraRtdProvider",
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
-    "sirdataRtdProvider"
+    "sirdataRtdProvider",
+    "timeoutRtdProvider"
   ],
   "fpdModule": [
     "enrichmentFpdModule",
