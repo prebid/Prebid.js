@@ -29,10 +29,33 @@ describe('Adf adapter', function () {
 
     it('should return true when required params found', function () {
       assert(spec.isBidRequestValid(bid));
+
+      bid.params = {
+        inv: 1234,
+        mname: 'some-placement'
+      };
+      assert(spec.isBidRequestValid(bid));
+
+      bid.params = {
+        mid: 4332,
+        inv: 1234,
+        mname: 'some-placement'
+      };
+      assert(spec.isBidRequestValid(bid));
     });
 
     it('should return false when required params are missing', function () {
       bid.params = { adxDomain: 'adx.adform.net' };
+      assert.isFalse(spec.isBidRequestValid(bid));
+
+      bid.params = {
+        mname: 'some-placement'
+      };
+      assert.isFalse(spec.isBidRequestValid(bid));
+
+      bid.params = {
+        inv: 1234
+      };
       assert.isFalse(spec.isBidRequestValid(bid));
     });
   });
@@ -331,6 +354,30 @@ describe('Adf adapter', function () {
         }
       });
 
+      describe('dynamic placement tag', function () {
+        it('should add imp parameters correctly', function () {
+          const validBidRequests = [
+            { bidId: 'bidId', params: { inv: 1000, mname: 'placement' }, mediaTypes: {video: {}} },
+            { bidId: 'bidId', params: { mid: 1234, inv: 1002, mname: 'placement2' }, mediaTypes: {video: {}} },
+            { bidId: 'bidId', params: { mid: 1234 }, mediaTypes: {video: {}} }
+          ];
+          const [ imp1, imp2, imp3 ] = getRequestImps(validBidRequests);
+
+          assert.equal(imp1.ext.bidder.inv, 1000);
+          assert.equal(imp1.ext.bidder.mname, 'placement');
+          assert.equal('tagid' in imp1, false);
+
+          assert.equal(imp2.ext.bidder.inv, 1002);
+          assert.equal(imp2.ext.bidder.mname, 'placement2');
+          assert.equal(imp2.tagid, 1234);
+
+          assert.ok(imp3.ext.bidder);
+          assert.equal('inv' in imp3.ext.bidder, false);
+          assert.equal('mname' in imp3.ext.bidder, false);
+          assert.equal(imp3.tagid, 1234);
+        });
+      });
+
       describe('price floors', function () {
         it('should not add if floors module not configured', function () {
           const validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} }];
@@ -376,13 +423,9 @@ describe('Adf adapter', function () {
               return {
                 currency: currency,
                 floor
-              }
+              };
             }
           };
-        }
-
-        function getRequestImps(validBidRequests) {
-          return JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
         }
       });
 
@@ -626,6 +669,10 @@ describe('Adf adapter', function () {
         });
       });
     });
+
+    function getRequestImps(validBidRequests) {
+      return JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
+    }
   });
 
   describe('interpretResponse', function () {

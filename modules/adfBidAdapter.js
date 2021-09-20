@@ -58,7 +58,11 @@ export const spec = {
   aliases: BIDDER_ALIAS,
   gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
-  isBidRequestValid: bid => !!bid.params.mid,
+  isBidRequestValid: (bid) => {
+    const params = bid.params || {};
+    const { mid, inv, mname } = params;
+    return !!(mid || (inv && mname));
+  },
   buildRequests: (validBidRequests, bidderRequest) => {
     let app, site;
 
@@ -104,12 +108,19 @@ export const spec = {
       }) : {};
       const bidfloor = floorInfo.floor;
       const bidfloorcur = floorInfo.currency;
+      const { mid, inv, mname } = bid.params;
 
       const imp = {
         id: id + 1,
-        tagid: bid.params.mid,
+        tagid: mid,
         bidfloor,
-        bidfloorcur
+        bidfloorcur,
+        ext: {
+          bidder: {
+            inv,
+            mname
+          }
+        }
       };
 
       const assets = _map(bid.nativeParams, (bidParams, key) => {
