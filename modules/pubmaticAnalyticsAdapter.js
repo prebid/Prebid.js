@@ -261,10 +261,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
       'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
       'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
-      'fskp': bid.floorData ? (bid.floorData.skipped == false ? 0 : 1) : undefined,
-      'fmv': bid.floorData ? bid.floorData.modelVersion || undefined : undefined,
       'frv': bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined,
-      'ft': bid.bidResponse ? (bid.bidResponse.floorData ? (bid.bidResponse.floorData.enforcements.enforceJS == false ? 0 : 1) : undefined) : undefined,
     });
     return partnerBids;
   }, [])
@@ -332,6 +329,9 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'au': origAdUnit.adUnitId || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
+      'fskp': origAdUnit.floorRequestData ? (origAdUnit.floorRequestData.skipped == false ? 0 : 1) : undefined,
+      'fmv': origAdUnit.floorRequestData ? origAdUnit.floorRequestData.modelVersion || undefined : undefined,
+      'ft': origAdUnit.floorResponseData ? (origAdUnit.floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined,
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId))
     };
     slotsArray.push(slotObject);
@@ -410,6 +410,9 @@ function bidRequestedHandler(args) {
       };
     }
     cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId] = copyRequiredBidDetails(bid);
+    if (bid.floorData) {
+      getAdUnit(cache.auctions[args.auctionId].origAdUnits, bid.adUnitCode)['floorRequestData'] = bid.floorData;
+    }
   })
 }
 
@@ -418,6 +421,10 @@ function bidResponseHandler(args) {
   if (!bid) {
     utils.logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
     return;
+  }
+
+  if (args.floorData) {
+    getAdUnit(cache.auctions[args.auctionId].origAdUnits, args.adUnitCode)['floorResponseData'] = args.floorData;
   }
   bid.bidId = args.adId;
   bid.source = formatSource(bid.source || args.source);
