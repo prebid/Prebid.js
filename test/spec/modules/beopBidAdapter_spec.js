@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/beopBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 const utils = require('src/utils');
 
 const ENDPOINT = 'https://hb.beop.io/bid';
@@ -16,6 +17,12 @@ let validBid = {
       'sizes': [[1, 1]]
     }
   },
+  'getFloor': () => {
+    return {
+      currency: 'USD',
+      floor: 10,
+    }
+  },
   'bidId': '30b31c1838de1e',
   'bidderRequestId': '22edbae2733bf6',
   'auctionId': '1d1a030790a475',
@@ -24,6 +31,10 @@ let validBid = {
 };
 
 describe('BeOp Bid Adapter tests', () => {
+  afterEach(function () {
+    config.setConfig({});
+  });
+
   const adapter = newBidder(spec);
 
   describe('inherited functions', () => {
@@ -81,6 +92,7 @@ describe('BeOp Bid Adapter tests', () => {
     bidRequests.push(validBid);
 
     it('should build the request', function () {
+      config.setConfig({'currency': {'adServerCurrency': 'USD'}});
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
       const url = request.url;
@@ -89,6 +101,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.pid).to.equal('5a8af500c9e77c00017e4cad');
       expect(payload.slts[0].name).to.exist;
       expect(payload.slts[0].name).to.equal('bellow-article');
+      expect(payload.slts[0].flr).to.equal(10);
     });
 
     it('should call the endpoint with GDPR consent and pageURL info if found', function () {

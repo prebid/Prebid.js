@@ -70,7 +70,8 @@ export const spec = {
     {code: 'converge', gvlid: 248},
     {code: 'adomega'},
     {code: 'denakop'},
-    {code: 'rtbanalytica'}
+    {code: 'rtbanalytica'},
+    {code: 'unibots'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
