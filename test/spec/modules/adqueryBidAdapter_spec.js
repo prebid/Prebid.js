@@ -5,7 +5,6 @@ import * as utils from '../../../src/utils';
 
 describe('adqueryBidAdapter', function () {
   const adapter = newBidder(spec)
-
   let bidRequest = {
     bidder: 'adquery',
     params: {
@@ -72,7 +71,7 @@ describe('adqueryBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let req = spec.buildRequests([ bidRequest ], { refererInfo: { } })
+    let req = spec.buildRequests([ bidRequest ], { refererInfo: { } })[0]
     let rdata
 
     it('should return request object', function () {
@@ -90,6 +89,10 @@ describe('adqueryBidAdapter', function () {
 
     it('should include placementCode', function () {
       expect(rdata.placementCode).not.be.null
+    })
+
+    it('should include qid', function () {
+      expect(rdata.qid).not.be.null
     })
 
     it('should include type', function () {
@@ -110,6 +113,16 @@ describe('adqueryBidAdapter', function () {
       let result = spec.interpretResponse(expectedResponse)
       expect(result).to.be.an('array')
     })
+
+    it('validate response params', function() {
+      const newResponse = spec.interpretResponse(expectedResponse, bidRequest);
+      expect(newResponse[0].requestId).to.be.equal(1)
+    });
+    it('handles empty bid response', function () {
+      let response = {
+        body: {}
+      };
+    })
     it('handles empty bid response', function () {
       let response = {
         body: {}
@@ -126,6 +139,17 @@ describe('adqueryBidAdapter', function () {
       expect(sync[0].type === 'iframe')
       expect(typeof sync[0].url === 'string')
     })
+
+    it('Should return array of objects with proper sync config , include GDPR', function() {
+      const syncData = spec.getUserSyncs({}, {}, {
+        consentString: 'ALL',
+        gdprApplies: true,
+      }, {});
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('image')
+    });
   })
 
   describe('test onBidWon function', function () {
@@ -144,4 +168,21 @@ describe('adqueryBidAdapter', function () {
       expect(utils.triggerPixel.called).to.equal(true);
     });
   })
+
+  describe('onTimeout', function () {
+    const timeoutData = [{
+      timeout: null
+    }];
+
+    it('should exists and be a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should include timeoutData', function () {
+      expect(spec.onTimeout(timeoutData)).to.be.undefined;
+    })
+  });
+
+  it(`onSetTargeting is present and type function`, function () {
+    expect(spec.onSetTargeting).to.exist.and.to.be.a('function')
+  });
 })
