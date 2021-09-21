@@ -379,21 +379,18 @@ export function newTargeting(auctionManager) {
   targeting.setTargetingForGPT = function(targetingConfig, customSlotMatching) {
     window.googletag.pubads().getSlots().forEach(slot => {
       Object.keys(targetingConfig).filter(customSlotMatching ? customSlotMatching(slot) : isAdUnitCodeMatchingSlot(slot))
-        .forEach(targetId =>
+        .forEach(targetId => {
           Object.keys(targetingConfig[targetId]).forEach(key => {
             let valueArr = targetingConfig[targetId][key];
             if (typeof valueArr === 'string') {
               valueArr = valueArr.split(',');
             }
             valueArr = (valueArr.length > 1) ? [valueArr] : valueArr;
-            valueArr.map((value) => {
-              utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${key} value: ${value}`);
-              return value;
-            }).forEach(value => {
-              slot.setTargeting(key, value);
-            });
-          })
-        )
+            targetingConfig[targetId][key] = valueArr;
+          });
+          utils.logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingConfig[targetId]);
+          slot.updateTargetingFromMap(targetingConfig[targetId])
+        })
     })
   };
 
