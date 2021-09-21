@@ -623,7 +623,7 @@ function _addJWPlayerSegmentData(imp, bid, isS2S) {
   var ext;
 
   if (isS2S) {
-    imp.dctr === undefined ? imp.dctr = jwPlayerData : imp.dctr += '|' + jwPlayerData;
+    (imp.dctr === undefined || imp.dctr.length == 0) ? imp.dctr = jwPlayerData : imp.dctr += '|' + jwPlayerData;
   } else {
     ext = imp.ext;
     ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
