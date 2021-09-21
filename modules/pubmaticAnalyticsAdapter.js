@@ -12,6 +12,8 @@ import {
   getGlobal
 } from '../src/prebidGlobal.js';
 
+import { _floorDataForAuction } from'../modules/priceFloors.js';
+
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
 const SEND_TIMEOUT = 2000;
@@ -286,7 +288,7 @@ function getAdUnitAdFormats(adUnit) {
 function getAdUnit(adUnits, adUnitId) {
   return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId))[0];
 }
-function executeBidsLoggerCall(e, highestCpmBids) {
+function executeBidsLoggerCall(e, highestCpmBids, floorData) {
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
@@ -321,6 +323,13 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     return 0;
   })();
 
+  if(!!floorData && !!floorData[auctionId]){
+    var _floorData = floorData[auctionId];
+    outputObj["fskp"] = _floorData.skipped == false ? 0 : 1;
+    outputObj["fmv"] = _floorData.data ? _floorData.data.modelVersion || undefined : undefined;
+    outputObj["ft"] = _floorData.skipped == false ? (_floorData.enforcement.enforceJS == false ? 0 : 1) : undefined;
+  }
+
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
     let origAdUnit = getAdUnit(auctionCache.origAdUnits, adUnitId);
@@ -329,9 +338,6 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'au': origAdUnit.adUnitId || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
-      'fskp': origAdUnit.floorRequestData ? (origAdUnit.floorRequestData.skipped == false ? 0 : 1) : undefined,
-      'fmv': origAdUnit.floorRequestData ? origAdUnit.floorRequestData.modelVersion || undefined : undefined,
-      'ft': origAdUnit.floorResponseData ? (origAdUnit.floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined,
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId))
     };
     slotsArray.push(slotObject);
@@ -459,8 +465,10 @@ function auctionEndHandler(args) {
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
   let highestCpmBids = getGlobal().getHighestCpmBids() || [];
   setTimeout(() => {
-    executeBidsLoggerCall.call(this, args, highestCpmBids);
+    executeBidsLoggerCall.call(this, args, highestCpmBids, _floorDataForAuction);
   }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
+  //console.log({priceFloor});
+  //console.log(_floorDataForAuction);
 }
 
 function bidTimeoutHandler(args) {
