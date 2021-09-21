@@ -7,6 +7,9 @@
 
 import * as utils from '../src/utils.js';
 import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+
+const MODULE_NAME = 'dmdId';
 
 /** @type {Submodule} */
 export const dmdIdSubmodule = {
@@ -14,7 +17,7 @@ export const dmdIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'dmdId',
+  name: MODULE_NAME,
 
   /**
    * decode the stored id value for passing to bid requests
@@ -37,22 +40,52 @@ export const dmdIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
-    try {
-      const configParams = (config && config.params) || {};
-      if (
-        !configParams ||
-        !configParams.api_key ||
-        typeof configParams.api_key !== 'string'
-      ) {
-        utils.logError('dmd submodule requires an api_key.');
-        return;
-      } else {
-        return cacheIdObj;
-      }
-    } catch (e) {
-      utils.logError(`dmdIdSystem encountered an error`, e);
+    const configParams = (config && config.params) || {};
+    if (
+      !configParams ||
+      !configParams.api_key ||
+      typeof configParams.api_key !== 'string'
+    ) {
+      utils.logError('dmd submodule requires an api_key.');
+      return;
     }
-  },
+    // If cahceIdObj is null or undefined - calling AIX-API
+    if (cacheIdObj) {
+      return cacheIdObj;
+    } else {
+      const url = configParams && configParams.api_url
+        ? configParams.api_url
+        : `https://aix.hcn.health/api/v1/auths`;
+      // Setting headers
+      const headers = {};
+      headers['x-api-key'] = configParams.api_key;
+      headers['x-domain'] = utils.getWindowLocation();
+      // Response callbacks
+      const resp = function (callback) {
+        const callbacks = {
+          success: response => {
+            let responseObj;
+            let responseId;
+            try {
+              responseObj = JSON.parse(response);
+              if (responseObj && responseObj.dgid) {
+                responseId = responseObj.dgid;
+              }
+            } catch (error) {
+              utils.logError(error);
+            }
+            callback(responseId);
+          },
+          error: error => {
+            utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+            callback();
+          }
+        };
+        ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true, customHeaders: headers });
+      };
+      return { callback: resp };
+    }
+  }
 };
 
 submodule('userId', dmdIdSubmodule);

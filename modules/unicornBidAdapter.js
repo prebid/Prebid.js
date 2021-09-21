@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const storage = getStorageManager();
 const BIDDER_CODE = 'unicorn';
@@ -39,25 +39,19 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
  * @returns {string}
  */
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
-  utils.logInfo(
-    '[UNICORN] buildOpenRtbBidRequestPayload.validBidRequests:',
-    validBidRequests
-  );
-  utils.logInfo(
-    '[UNICORN] buildOpenRtbBidRequestPayload.bidderRequest:',
-    bidderRequest
-  );
+  utils.logInfo('[UNICORN] buildOpenRtbBidRequestPayload.validBidRequests:', validBidRequests);
+  utils.logInfo('[UNICORN] buildOpenRtbBidRequestPayload.bidderRequest:', bidderRequest);
   const imp = validBidRequests.map(br => {
     return {
       id: br.bidId,
       banner: {
         format: makeFormat(br.sizes),
         w: br.sizes[0][0],
-        h: br.sizes[0][1],
+        h: br.sizes[0][1]
       },
       tagid: utils.deepAccess(br, 'params.placementId') || br.adUnitCode,
       secure: 1,
-      bidfloor: parseFloat(utils.deepAccess(br, 'params.bidfloorCpm') || 0)
+      bidfloor: parseFloat(0)
     };
   });
   const request = {
@@ -105,7 +99,7 @@ const interpretResponse = (serverResponse, request) => {
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
-        bids.push({
+        var bid = {
           requestId: b.impid,
           cpm: b.price || 0,
           width: b.w,
@@ -115,7 +109,13 @@ const interpretResponse = (serverResponse, request) => {
           creativeId: b.crid,
           netRevenue: false,
           currency: res.cur
-        })
+        }
+
+        if (b.adomain != undefined || b.adomain != null) {
+          bid.meta = { advertiserDomains: b.adomain };
+        }
+
+        bids.push(bid)
       })
     });
   }
@@ -145,7 +145,7 @@ const getUid = () => {
  * @param {Array<Number>} arr
  */
 const makeFormat = arr => arr.map((s) => {
-  return { w: s[0], h: s[1] };
+  return {w: s[0], h: s[1]};
 });
 
 export const spec = {
@@ -154,7 +154,7 @@ export const spec = {
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
-  interpretResponse,
+  interpretResponse
 };
 
 registerBidder(spec);

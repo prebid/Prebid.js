@@ -16,7 +16,7 @@ import { isValidPriceConfig } from './cpmBucketManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import Set from 'core-js-pure/features/set';
-import { mergeDeep } from './utils.js';
+import { mergeDeep, deepClone } from './utils.js';
 
 const from = require('core-js-pure/features/array/from.js');
 const utils = require('./utils.js');
@@ -313,6 +313,26 @@ export function newConfig() {
       }, {});
     }
     return Object.assign({}, config);
+  }
+
+  /*
+   * Returns the configuration object if called without parameters,
+   * or single configuration property if given a string matching a configuration
+   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
+   *
+   * If called with callback parameter, or a string and a callback parameter,
+   * subscribes to configuration updates. See `subscribe` function for usage.
+   *
+   * The object returned is a deepClone of the `config` property.
+   */
+  function readConfig(...args) {
+    if (args.length <= 1 && typeof args[0] !== 'function') {
+      const option = args[0];
+      const configClone = deepClone(_getConfig());
+      return option ? utils.deepAccess(configClone, option) : configClone;
+    }
+
+    return subscribe(...args);
   }
 
   /*
@@ -629,6 +649,7 @@ export function newConfig() {
     getCurrentBidder,
     resetBidder,
     getConfig,
+    readConfig,
     setConfig,
     setDefaults,
     resetConfig,

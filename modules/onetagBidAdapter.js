@@ -7,6 +7,7 @@ import find from 'core-js-pure/features/array/find.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { createEidsArray } from './userId/eids.js';
+import { deepClone } from '../src/utils.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -109,7 +110,10 @@ function interpretResponse(serverResponse, bidderRequest) {
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
-      const {context, adUnitCode} = find(requestData.bids, (item) => item.bidId === bid.requestId);
+      const {context, adUnitCode} = find(requestData.bids, (item) =>
+        item.bidId === bid.requestId &&
+        item.type === VIDEO
+      );
       if (context === INSTREAM) {
         responseBid.vastUrl = bid.vastUrl;
         responseBid.videoCacheKey = bid.videoCacheKey;
@@ -201,6 +205,10 @@ function getPageInfo() {
       topmostFrame.document.referrer !== ''
         ? topmostFrame.document.referrer
         : null,
+    ancestorOrigin:
+      window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0
+        ? window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1]
+        : null,
     masked: currentFrameNesting,
     wWidth: topmostFrame.innerWidth,
     wHeight: topmostFrame.innerHeight,
@@ -232,14 +240,10 @@ function requestsToBids(bidRequests) {
     // Pass parameters
     // Context: instream - outstream - adpod
     videoObj['context'] = bidRequest.mediaTypes.video.context;
-    // MIME Video Types
-    videoObj['mimes'] = bidRequest.mediaTypes.video.mimes;
     // Sizes
     videoObj['playerSize'] = parseVideoSize(bidRequest);
     // Other params
-    videoObj['protocols'] = bidRequest.mediaTypes.video.protocols;
-    videoObj['maxDuration'] = bidRequest.mediaTypes.video.maxduration;
-    videoObj['api'] = bidRequest.mediaTypes.video.api;
+    videoObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.video);
     videoObj['type'] = VIDEO;
     return videoObj;
   });
@@ -248,6 +252,7 @@ function requestsToBids(bidRequests) {
     setGeneralInfo.call(bannerObj, bidRequest);
     bannerObj['sizes'] = parseSizes(bidRequest);
     bannerObj['type'] = BANNER;
+    bannerObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.banner);
     return bannerObj;
   });
   return videoBidRequests.concat(bannerBidRequests);
