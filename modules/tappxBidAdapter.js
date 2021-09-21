@@ -9,7 +9,7 @@ import { Renderer } from '../src/Renderer.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.0818';
+const TAPPX_BIDDER_VERSION = '0.1.0921';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
