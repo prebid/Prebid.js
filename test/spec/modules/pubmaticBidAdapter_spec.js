@@ -1846,14 +1846,25 @@ describe('PubMatic adapter', function () {
         let newRequest;
         let floorModuleTestData;
         let getFloor = function(req) {
-          return floorModuleTestData[req.mediaType];
+          // actual getFloor module does not work like this :)
+          // special treatment for banner since for other mediaTypes we pass *
+          if (req.mediaType === 'banner') {
+            return floorModuleTestData[req.mediaType][ req.size[0] + 'x' + req.size[1] ] || {};
+          }
+          return floorModuleTestData[req.mediaType] || {};
         };
 
         beforeEach(() => {
           floorModuleTestData = {
             'banner': {
-              'currency': 'USD',
-              'floor': 1.50
+              '300x250': {
+                'currency': 'USD',
+                'floor': 1.50
+              },
+              '300x600': {
+                'currency': 'USD',
+                'floor': 2.0
+              }
             },
             'video': {
               'currency': 'USD',
@@ -1869,7 +1880,7 @@ describe('PubMatic adapter', function () {
         });
 
         it('bidfloor should be undefined if calculation is <= 0', function() {
-          floorModuleTestData.banner.floor = 0; // lowest of them all
+          floorModuleTestData.banner['300x250'].floor = 0; // lowest of them all
           newRequest[0].params.kadfloor = undefined;
           let request = spec.buildRequests(newRequest, {
             auctionId: 'new-auction-id'
@@ -1880,7 +1891,8 @@ describe('PubMatic adapter', function () {
         });
 
         it('ignore floormodule o/p if floor is not number', function() {
-          floorModuleTestData.banner.floor = 'INR';
+          floorModuleTestData.banner['300x250'].floor = 'Not-a-Number';
+          floorModuleTestData.banner['300x600'].floor = 'Not-a-Number';
           newRequest[0].params.kadfloor = undefined;
           let request = spec.buildRequests(newRequest, {
             auctionId: 'new-auction-id'
@@ -1891,7 +1903,8 @@ describe('PubMatic adapter', function () {
         });
 
         it('ignore floormodule o/p if currency is not matched', function() {
-          floorModuleTestData.banner.currency = 'INR';
+          floorModuleTestData.banner['300x250'].currency = 'INR';
+          floorModuleTestData.banner['300x600'].currency = 'INR';
           newRequest[0].params.kadfloor = undefined;
           let request = spec.buildRequests(newRequest, {
             auctionId: 'new-auction-id'
@@ -1921,7 +1934,7 @@ describe('PubMatic adapter', function () {
           expect(data.bidfloor).to.equal(3);
         });
 
-        it('kadfloor is passed as 1, use min of fllorModule as it is highest', function() {
+        it('kadfloor is passed as 1, use min of floorModule as it is highest', function() {
           newRequest[0].params.kadfloor = '1.0';// yes, we want it as a string
           let request = spec.buildRequests(newRequest, {
             auctionId: 'new-auction-id'

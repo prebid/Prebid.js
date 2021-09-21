@@ -99,9 +99,17 @@ export const spec = {
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
 
+      const floorInfo = bid.getFloor ? bid.getFloor({
+        currency: currency || 'USD'
+      }) : {};
+      const bidfloor = floorInfo.floor;
+      const bidfloorcur = floorInfo.currency;
+
       const imp = {
         id: id + 1,
-        tagid: bid.params.mid
+        tagid: bid.params.mid,
+        bidfloor,
+        bidfloorcur
       };
 
       const assets = utils._map(bid.nativeParams, (bidParams, key) => {

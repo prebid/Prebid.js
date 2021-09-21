@@ -32,7 +32,8 @@
     "flocIdSystem",
     "amxIdSystem",
     "naveggId",
-    "imuIdSystem"
+    "imuIdSystem",
+    "publinkIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -49,7 +50,8 @@
     "optimeraRtdProvider",
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
-    "sirdataRtdProvider"
+    "sirdataRtdProvider",
+    "timeoutRtdProvider"
   ],
   "fpdModule": [
     "enrichmentFpdModule",
