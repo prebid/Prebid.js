@@ -501,7 +501,8 @@ function outstreamRender(bid, request) {
       targetId: bid.adUnitCode,
       adResponse: bid.adResponse,
       rendererOptions: {
-        content: bid.vastXml
+        content: bid.vastXml,
+        skip: (typeof bid.params[0].video.skip != 'undefined' && bid.params[0].video.skip > 0) ? bid.params[0].video.skip : 0
       }
     });
   });
