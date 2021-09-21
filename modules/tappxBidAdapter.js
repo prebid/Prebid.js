@@ -327,6 +327,12 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
     video.mimes = videoMediaType.mimes;
 
+    let videoExt = {};
+    if ((typeof videoMediaType.rewarded !== 'undefined') && videoMediaType.rewarded == 1) {
+      videoExt.rewarded = videoMediaType.rewarded;
+    }
+    video.ext = videoExt;
+
     imp.video = video;
   }
 
