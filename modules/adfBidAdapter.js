@@ -94,13 +94,22 @@ export const spec = {
     const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
+    const schain = setOnAny(validBidRequests, 'schain');
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
 
+      const floorInfo = bid.getFloor ? bid.getFloor({
+        currency: currency || 'USD'
+      }) : {};
+      const bidfloor = floorInfo.floor;
+      const bidfloorcur = floorInfo.currency;
+
       const imp = {
         id: id + 1,
-        tagid: bid.params.mid
+        tagid: bid.params.mid,
+        bidfloor,
+        bidfloorcur
       };
 
       const assets = utils._map(bid.nativeParams, (bidParams, key) => {
@@ -204,6 +213,10 @@ export const spec = {
 
     if (eids) {
       utils.deepSetValue(request, 'user.ext.eids', eids);
+    }
+
+    if (schain) {
+      utils.deepSetValue(request, 'source.ext.schain', schain);
     }
 
     return {

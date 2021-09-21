@@ -230,6 +230,7 @@ export function newBidder(spec) {
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
       const onResponse = delayExecution(configEnabledCallback(afterAllResponses), requests.length)
+      requests.forEach(_ => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest));
       requests.forEach(processRequest);
 
       function formatGetParameters(data) {
@@ -277,8 +278,8 @@ export function newBidder(spec) {
         }
 
         // If the server responds successfully, use the adapter code to unpack the Bids from it.
-        // If the adapter code fails, no bids should be added. After all the bids have been added, make
-        // sure to call the `onResponse` function so that we're one step closer to calling done().
+        // If the adapter code fails, no bids should be added. After all the bids have been added,
+        // make sure to call the `onResponse` function so that we're one step closer to calling done().
         function onSuccess(response, responseObj) {
           onTimelyResponse(spec.code);
 

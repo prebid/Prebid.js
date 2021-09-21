@@ -1,0 +1,152 @@
+<html>
+  <head>
+    <script>
+      var matchedAudiences = ["sport", "travel"];
+      window.localStorage.setItem(
+        "edkt_matched_audience_ids",
+        JSON.stringify(matchedAudiences)
+      );
+    </script>
+    <script>
+      var FAILSAFE_TIMEOUT = 2000;
+
+      var adUnits = [
+        {
+          code: "test-div",
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [300, 250],
+                [300, 600],
+                [728, 90],
+              ],
+            },
+          },
+          bids: [
+            {
+              bidder: "appnexus",
+              params: {
+                placementId: 13144370,
+              },
+            },
+          ],
+        },
+      ];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+    </script>
+    <script src="../../build/dev/prebid.js" async></script>
+
+    <script>
+      var googletag = googletag || {};
+      var AUCTION_DELAY = 2000;
+      googletag.cmd = googletag.cmd || [];
+      googletag.cmd.push(function () {
+        googletag.pubads().disableInitialLoad();
+      });
+
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          debug: true,
+          realTimeData: {
+            auctionDelay: AUCTION_DELAY,
+            dataProviders: [
+              {
+                name: "airgrid",
+                waitForIt: true,
+                params: {
+                  apiKey: "key123",
+                  accountId: "sdk",
+                  publisherId: "pub123",
+                },
+              },
+            ],
+          },
+        });
+        pbjs.setBidderConfig({
+          bidders: ["appnexus", "pubmatic"],
+          config: {
+            ortb2: {
+              user: {
+                ext: {
+                  data: {
+                    registered: true,
+                    interests: ["cars"],
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({ bidsBackHandler: sendAdserverRequest });
+      });
+
+      function sendAdserverRequest() {
+        document.getElementById("airgrid_audiences").innerHTML =
+          window.localStorage.getItem("edkt_matched_audience_ids");
+
+        if (pbjs.adserverRequestSent) return;
+        pbjs.adserverRequestSent = true;
+        googletag.cmd.push(function () {
+          pbjs.que.push(function () {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        });
+      }
+
+      setTimeout(function () {
+        sendAdserverRequest();
+      }, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+      (function () {
+        var gads = document.createElement("script");
+        gads.async = true;
+        gads.type = "text/javascript";
+        var useSSL = "https:" == document.location.protocol;
+        gads.src =
+          (useSSL ? "https:" : "http:") +
+          "//www.googletagservices.com/tag/js/gpt.js";
+        var node = document.getElementsByTagName("script")[0];
+        node.parentNode.insertBefore(gads, node);
+      })();
+    </script>
+
+    <script>
+      googletag.cmd.push(function () {
+        googletag
+          .defineSlot(
+            "/112115922/FL_PB_MedRect",
+            [
+              [300, 250],
+              [300, 600],
+            ],
+            "test-div"
+          )
+          .addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+    </script>
+  </head>
+
+  <body>
+    <h2>AirGrid RTD Prebid</h2>
+
+    <div id="test-div">
+      <script>
+        googletag.cmd.push(function () {
+          googletag.display("test-div");
+        });
+      </script>
+    </div>
+
+    AirGrid Audiences:
+    <div id="airgrid_audiences"></div>
+  </body>
+</html>

@@ -37,6 +37,7 @@ export const spec = {
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
+        positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$'
       };
 

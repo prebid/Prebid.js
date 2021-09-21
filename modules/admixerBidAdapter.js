@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'admixer';
-const ALIASES = ['go2net', 'adblender'];
+const ALIASES = ['go2net', 'adblender', 'adsyield'];
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 export const spec = {
   code: BIDDER_CODE,
@@ -46,11 +46,10 @@ export const spec = {
       Object.keys(bid).forEach(key => imp[key] = bid[key]);
       payload.imps.push(imp);
     });
-    const payloadString = JSON.stringify(payload);
     return {
-      method: 'GET',
+      method: 'POST',
       url: endpointUrl || ENDPOINT_URL,
-      data: `data=${payloadString}`,
+      data: payload,
     };
   },
   /**
