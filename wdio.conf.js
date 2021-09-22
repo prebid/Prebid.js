@@ -37,29 +37,29 @@ function getCapabilities() {
 }
 
 exports.config = {
-    specs: [
-        './test/spec/e2e/**/*.spec.js'
-    ],
-    services: [
-      ['browserstack', {
-        browserstackLocal: true
-      }]
-    ],
-    user: process.env.BROWSERSTACK_USERNAME,
-    key: process.env.BROWSERSTACK_ACCESS_KEY,
-    maxInstances: 5, // Do not increase this, since we have only 5 parallel tests in browserstack account
-    capabilities: getCapabilities(),
-    logLevel: 'silent', // put option here: info | trace | debug | warn| error | silent
-    bail: 0,
-    waitforTimeout: 60000, // Default timeout for all waitFor* commands.
-    connectionRetryTimeout: 60000, // Default timeout in milliseconds for request if Selenium Grid doesn't send response
-    connectionRetryCount: 3, // Default request retries count
-    framework: 'mocha',
-    mochaOpts: {
-        ui: 'bdd',
-        timeout: 60000,
-        compilers: ['js:babel-register'],
-    },
-    // if you see error, update this to spec reporter and logLevel above to get detailed report.
-    reporters: ['concise']
+  specs: [
+    './test/spec/e2e/**/*.spec.js'
+  ],
+  services: [
+    ['browserstack', {
+      browserstackLocal: true
+    }]
+  ],
+  user: process.env.BROWSERSTACK_USERNAME,
+  key: process.env.BROWSERSTACK_ACCESS_KEY,
+  maxInstances: 5, // Do not increase this, since we have only 5 parallel tests in browserstack account
+  capabilities: getCapabilities(),
+  logLevel: 'silent', // put option here: info | trace | debug | warn| error | silent
+  bail: 0,
+  waitforTimeout: 60000, // Default timeout for all waitFor* commands.
+  connectionRetryTimeout: 60000, // Default timeout in milliseconds for request if Selenium Grid doesn't send response
+  connectionRetryCount: 3, // Default request retries count
+  framework: 'mocha',
+  mochaOpts: {
+    ui: 'bdd',
+    timeout: 60000,
+    compilers: ['js:babel-register'],
+  },
+  // if you see error, update this to spec reporter and logLevel above to get detailed report.
+  reporters: ['concise']
 }

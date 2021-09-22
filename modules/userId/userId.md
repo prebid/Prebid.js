@@ -130,12 +130,16 @@ pbjs.setConfig({
                     token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
            }
         },{
-            name: 'quantcastId',
-            storage: {
-                type: 'cookie',
-                expires : 30
-            }
-        }],
+             name: "kpuid",
+             params:{
+                    accountid: 124 // example of account id
+                   },
+             storage: {
+                 type: "cookie",
+                 name: "knssoId",
+                 expires: 30
+                  },
+        ],
         syncDelay: 5000,
         auctionDelay: 1000
     }
@@ -264,6 +268,23 @@ pbjs.setConfig({
                 name: "_dpes_id",
                 expires: 90
             }
+        },{
+             name: "kpuid",
+                   params:{
+                     accountid: 124 // example of account id
+                   },
+             storage: {
+                 type: "html5",
+                 name: "knssoId",
+                 expires: 30
+                  },
+        }   
+        },
+        {
+            name: 'imuid',
+            params: {
+                cid: 5126 // Set your Intimate Merger Customer ID here for production
+            }
         }],
         syncDelay: 5000
     }
@@ -295,6 +316,9 @@ pbjs.setConfig({
         {
             name: "novatiq",
             value: { "snowflake": "81b001ec-8914-488c-a96e-8c220d4ee08895ef" }
+        },
+        {
+            name: 'naveggId',
         }],
         syncDelay: 5000
     }

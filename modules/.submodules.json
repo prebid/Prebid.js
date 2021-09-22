@@ -30,7 +30,10 @@
     "dmdIdSystem",
     "akamaiDAPId",
     "flocIdSystem",
-    "amxIdSystem"
+    "amxIdSystem",
+    "naveggId",
+    "imuIdSystem",
+    "publinkIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -47,7 +50,8 @@
     "optimeraRtdProvider",
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
-    "sirdataRtdProvider"
+    "sirdataRtdProvider",
+    "timeoutRtdProvider"
   ],
   "fpdModule": [
     "enrichmentFpdModule",

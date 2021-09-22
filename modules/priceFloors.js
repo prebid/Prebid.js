@@ -64,13 +64,19 @@ function getHostNameFromReferer(referer) {
   return referrerHostname;
 }
 
+// First look into bidRequest!
+function getGptSlotFromBidRequest(bidRequest) {
+  const isGam = utils.deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.name') === 'gam';
+  return isGam && bidRequest.ortb2Imp.ext.data.adserver.adslot;
+}
+
 /**
  * @summary floor field types with their matching functions to resolve the actual matched value
  */
 export let fieldMatchingFunctions = {
   'size': (bidRequest, bidResponse) => utils.parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
-  'gptSlot': (bidRequest, bidResponse) => utils.getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode).gptSlot,
+  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromBidRequest(bidRequest) || utils.getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode).gptSlot,
   'domain': (bidRequest, bidResponse) => referrerHostname || getHostNameFromReferer(getRefererInfo().referer),
   'adUnitCode': (bidRequest, bidResponse) => bidRequest.adUnitCode
 }

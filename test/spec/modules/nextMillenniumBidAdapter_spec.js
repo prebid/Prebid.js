@@ -5,6 +5,7 @@ describe('nextMillenniumBidAdapterTests', function() {
   const bidRequestData = [
     {
       bidId: 'bid1234',
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
       bidder: 'nextMillennium',
       params: { placement_id: '-1' },
       sizes: [[300, 250]]
@@ -14,6 +15,7 @@ describe('nextMillenniumBidAdapterTests', function() {
   it('validate_generated_params', function() {
     const request = spec.buildRequests(bidRequestData);
     expect(request[0].bidId).to.equal('bid1234');
+    expect(JSON.parse(request[0].data).id).to.equal('b06c5141-fe8f-4cdf-9d7d-54415490a917');
   });
 
   it('validate_response_params', function() {
