@@ -75,6 +75,10 @@ var Slot = function Slot(elementId, pathId) {
     clearTargeting: function clearTargeting() {
       this.targeting = {};
       return this;
+    },
+
+    updateTargetingFromMap: function(targetingMap) {
+      this.targeting = Object.assign(this.targeting, targetingMap);
     }
   };
   slot.spySetTargeting = sinon.spy(slot, 'setTargeting');
