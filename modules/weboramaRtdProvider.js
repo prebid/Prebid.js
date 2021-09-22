@@ -92,7 +92,6 @@ export function setBigseaContextualProfile(data) {
 /** onSuccess callback type
  * @callback successCallback
  * @param {null|Object} data
- * @param {ModuleParams} moduleParams
  * @returns {void}
  */
 
