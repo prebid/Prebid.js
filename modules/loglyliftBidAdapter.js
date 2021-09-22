@@ -29,9 +29,7 @@ export const spec = {
     serverResponse = serverResponse.body;
     const bids = [];
     // eslint-disable-next-line no-console
-    console.dir(bidderRequest);
-    // eslint-disable-next-line no-console
-    console.dir(serverResponse);
+    console.log(bidderRequest);
     if (!serverResponse || serverResponse.error) {
       return bids;
     }
@@ -46,13 +44,7 @@ export const spec = {
     // eslint-disable-next-line no-console
     console.dir(bids);
     return bids;
-  },
-  onBidWon: function (bid) {
-    // eslint-disable-next-line no-console
-    console.log('onBidWon');
-    // eslint-disable-next-line no-console
-    console.dir(bid);
-  },
+  }
 };
 
 function newBidRequest(bid, bidderRequest) {
@@ -70,7 +62,7 @@ function newBidRequest(bid, bidderRequest) {
     prebidJsVersion: '$prebid.version$',
     url: window.location.href,
     domain: config.getConfig('publisherDomain'),
-    referrer: bidderRequest.refererInfo.referer,
+    referer: bidderRequest.refererInfo.referer,
     auctionStartTime: bidderRequest.auctionStart,
     currency: currency,
     timeout: config.getConfig('bidderTimeout')
