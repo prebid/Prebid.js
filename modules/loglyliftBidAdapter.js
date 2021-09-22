@@ -25,25 +25,16 @@ export const spec = {
     }
     return requests;
   },
-  interpretResponse: function (serverResponse, {bidderRequest}) {
+  interpretResponse: function (serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
-    const bids = [];
-    // eslint-disable-next-line no-console
-    console.log(bidderRequest);
+    const bidResponses = [];
     if (!serverResponse || serverResponse.error) {
-      return bids;
+      return bidResponses;
     }
-    serverResponse.seatbid.forEach(function (bid) {
-      // const native = {};
-      // native.title = 'title';
-      // native.url = 'https://cdn.logly.co.jp/images/000/194/300/normal.jpg';
-      // bid.native = native;
-      // bid.dealId = undefined;
-      bids.push(bid);
+    serverResponse.bids.forEach(function (bid) {
+      bidResponses.push(bid);
     })
-    // eslint-disable-next-line no-console
-    console.dir(bids);
-    return bids;
+    return bidResponses;
   }
 };
 
