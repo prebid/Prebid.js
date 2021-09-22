@@ -1,5 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
@@ -14,6 +15,8 @@ export const RENDERER_URL = 'https://cdn.cwi.re/prebid/renderer/LATEST/renderer.
 export const CW_PAGE_VIEW_ID = utils.generateUUID();
 const LS_CWID_KEY = 'cw_cwid';
 const CW_GROUPS_QUERY = 'cwgroups';
+
+const storage = getStorageManager();
 
 /**
  * ------------------------------------
@@ -32,7 +35,6 @@ export function getSlotSizes(bid) {
  * @returns {*[]}
  */
 export function getAllMediaSizes(bid) {
-  // eslint-disable-next-line no-debugger
   let playerSizes = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
   let videoSizes = utils.deepAccess(bid, 'mediaTypes.video.sizes');
   let bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
@@ -60,15 +62,11 @@ export function getAllMediaSizes(bid) {
 }
 
 const getQueryVariable = (variable) => {
-  const query = window.top.location.search.substring(1);
-  const vars = query.split('&');
-  for (let i = 0; i < vars.length; i += 1) {
-    const pair = vars[i].split('=');
-    if (decodeURIComponent(pair[0]) === variable) {
-      return decodeURIComponent(pair[1]);
-    }
+  let value = utils.getParameterByName(variable);
+  if (value === '') {
+    value = null;
   }
-  return null;
+  return value;
 };
 
 /**
@@ -120,12 +118,12 @@ export const spec = {
     }
 
     if (!bid.params.placementId || !utils.isNumber(bid.params.placementId)) {
-      utils.logError('[CWIRE] placementId not provided or invalid');
+      utils.logError('placementId not provided or invalid');
       return false;
     }
 
     if (!bid.params.pageId || !utils.isNumber(bid.params.pageId)) {
-      utils.logError('[CWIRE] pageId not provided');
+      utils.logError('pageId not provided');
       return false;
     }
 
@@ -147,7 +145,6 @@ export const spec = {
       referer = getRefererInfo().referer;
       slots = mapSlotsData(validBidRequests);
     } catch (e) {
-      // eslint-disable-next-line no-console
       utils.logWarn(e);
     }
 
@@ -158,8 +155,10 @@ export const spec = {
       refgroups = rgQuery.split(',');
     }
 
+    const localStorageCWID = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(LS_CWID_KEY) : null;
+
     const payload = {
-      cwid: localStorage.getItem(LS_CWID_KEY),
+      cwid: localStorageCWID,
       refgroups,
       slots: slots,
       httpRef: referer || '',
@@ -187,7 +186,6 @@ export const spec = {
         bidRequest.data = JSON.parse(bidRequest.data);
       }
       const serverBody = serverResponse.body;
-      // const headerValue = serverResponse.headers.get('some-response-header');
       serverBody.bids.forEach((br) => {
         const bidReq = find(bidRequest.data.slots, bid => bid.bidId === br.requestId);
 
@@ -222,8 +220,6 @@ export const spec = {
         if (utils.deepAccess(bidReq, 'mediaTypes.video')) {
           mediaType = VIDEO;
           bidResponse.vastXml = br.vastXml;
-          // bidResponse.vastUrl = 'data:text/xml;charset=utf-8;base64,' + btoa(br.vastXml.replace(/\\"/g, '"'));
-          // bidResponse.adResponse =  serverBody;
           bidResponse.videoScript = br.html;
           const mediaTypeContext = utils.deepAccess(bidReq, 'mediaTypes.video.context');
           if (mediaTypeContext === OUTSTREAM) {
@@ -253,7 +249,6 @@ export const spec = {
         }
 
         bidResponse.mediaType = mediaType;
-
         bidResponses.push(bidResponse);
       });
     } catch (e) {
@@ -261,14 +256,6 @@ export const spec = {
     }
 
     return bidResponses;
-  },
-
-  /**
-   * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
-   * @param {Bid} The bid of which the targeting has been set
-   */
-  onSetTargeting: function(bid) {
-    // Bidder specific code
   },
 }
 registerBidder(spec);

@@ -13,10 +13,11 @@ Connects to C-WIRE demand source to fetch bids.
 
 Below, the list of C-WIRE params and where they can be set.
 
-| Param name | Global config | AdUnit config | Type |
-| ---------- | ------------- | ------------- | ---- |
-| pageId |  | x | number |
-| placementId |  | x | number |
+| Param name | Global config | AdUnit config | Type | Required |
+| ---------- | ------------- | ------------- | ---- | ---------|
+| pageId |  | x | number | YES |
+| placementId |  | x | number | YES |
+| adUnitElementId |  | x | string | NO |
 
 ### adUnit configuration
 
@@ -32,8 +33,9 @@ var adUnits = [
         }
       },
       params: {
-        pageid: 1422,          // required - number
-        placementid: 2211521,  // required - number
+        pageId: 1422,                 // required - number
+        placementId: 2211521,         // required - number
+        adUnitElementId: 'other_div', // optional, div id to write to, if not set it will default to ad unit code  
       }
     }]
   }
