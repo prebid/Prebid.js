@@ -385,7 +385,6 @@ export function newTargeting(auctionManager) {
             if (typeof valueArr === 'string') {
               valueArr = valueArr.split(',');
             }
-            valueArr = (valueArr.length > 1) ? [valueArr] : valueArr;
             targetingConfig[targetId][key] = valueArr;
           });
           utils.logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingConfig[targetId]);
