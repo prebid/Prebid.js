@@ -12,24 +12,24 @@
     <script async src="../../build/dev/prebid.js"></script>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <script>
-        var FAILSAFE_TIMEOUT = 1000;
+        var FAILSAFE_TIMEOUT = 3300;
         var PREBID_TIMEOUT = 1000;
 
         var adUnits = [{
-            code: 'div-2',
+            code: 'div-gpt-ad-1460505748561-0',
             mediaTypes: {
                 banner: {
-                     sizes: [[1, 1]],
+                    sizes: [[300, 250], [300,600]],
                 }
             },
             // Replace this object to test a new Adapter!
             bids: [{
-                bidder: 'cwire',
+                bidder: 'appnexus',
                 params: {
-                    placementId: 13144370,
-                    pageId: 8765,  
-                },
+                    placementId: 13144370
+                }
             }]
+
         }];
 
         var pbjs = pbjs || {};
@@ -44,40 +44,13 @@
             googletag.pubads().disableInitialLoad();
         });
 
-
-
         pbjs.que.push(function() {
-            pbjs.setConfig({
-                userSync: {
-                iframeEnabled: true,
-                syncEnabled: true,
-                syncDelay: 1
-            }});
-
             pbjs.addAdUnits(adUnits);
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
                 timeout: PREBID_TIMEOUT
             });
         });
-
-        // // ------------------------------------
-        // function sendAdserverRequest() {
-        //     pbjs.que.push(function() {
-        //         pbjs.addAdUnits(adUnits);
-        //         pbjs.requestBids({
-        //             timeout: 1000,
-        //             bidsBackHandler: function(bids) {
-        //                 console.log(bids);
-        //                 var highestCpmBids = pbjs.getHighestCpmBids('div-gpt-ad-1460505748561-0');
-        //                 console.log(JSON.stringify(highestCpmBids, null, 2));
-        //                 pbjs.renderAd(document, highestCpmBids[0].adId);
-        //             }
-        //         });
-        //     });
-
-        // }
-
 
         function sendAdserverRequest() {
             if (pbjs.adserverRequestSent) return;
@@ -98,8 +71,8 @@
 
     <script>
         googletag.cmd.push(function () {
-            window.cwSlot1 = googletag.defineSlot('/19968336/puc_test_outstream_nonsf', [1,1], 'div-2').addService(googletag.pubads());
-            googletag.pubads().disableInitialLoad();    
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
         });
@@ -109,11 +82,10 @@
 <body>
 <h2>Prebid.js Test</h2>
 <h5>Div-1</h5>
-<div id='some-other-div'>
+<div id='div-gpt-ad-1460505748561-0'>
     <script type='text/javascript'>
-            googletag.cmd.push(function() { googletag.display(window.cwSlot1); });
-        </script>
-        <div id="div-2"></div>
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+    </script>
 </div>
 </body>
 </html>
