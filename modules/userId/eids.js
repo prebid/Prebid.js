@@ -11,6 +11,12 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // naveggId
+  'naveggId': {
+    source: 'navegg.com',
+    atype: 1
+  },
+
   // pubCommonId
   'pubcid': {
     source: 'pubcid.org',
@@ -199,14 +205,14 @@ const USER_IDS_CONFIG = {
       return data.id;
     }
   },
-  'deepintentId': {
-    source: 'deepintent.com',
-    atype: 3
-  },
   // Akamai Data Activation Platform (DAP)
   'dapId': {
     source: 'akamai.com',
     atype: 1
+  },
+  'deepintentId': {
+    source: 'deepintent.com',
+    atype: 3
   },
   // Admixer Id
   'admixerId': {
@@ -221,6 +227,10 @@ const USER_IDS_CONFIG = {
   amxId: {
     source: 'amxrtb.com',
     atype: 1,
+  },
+  'publinkId': {
+    source: 'epsilon.com',
+    atype: 3
   },
   'kpuid': {
     source: 'kpuid.com',

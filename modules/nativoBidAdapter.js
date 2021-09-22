@@ -1,22 +1,25 @@
-import * as utils from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 // import { config } from 'src/config'
 
-const BIDDER_CODE = 'nativo'
-const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid'
+const BIDDER_CODE = 'nativo';
+const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid';
 
-const TIME_TO_LIVE = 360
+const GVLID = 263;
 
-const SUPPORTED_AD_TYPES = [BANNER]
+const TIME_TO_LIVE = 360;
 
-const bidRequestMap = {}
-const adUnitsRequested = {}
+const SUPPORTED_AD_TYPES = [BANNER];
+
+const bidRequestMap = {};
+const adUnitsRequested = {};
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['ntv'], // short code
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 

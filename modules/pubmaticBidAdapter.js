@@ -605,6 +605,26 @@ function _addDealCustomTargetings(imp, bid) {
   }
 }
 
+function _addJWPlayerSegmentData(imp, bid) {
+  var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
+  var jwPlayerData = '';
+  const jwMark = 'jw-';
+
+  if (jwSegData === undefined || jwSegData === '' || !jwSegData.hasOwnProperty('segments')) return;
+
+  var maxLength = jwSegData.segments.length;
+
+  jwPlayerData += jwMark + 'id=' + jwSegData.content.id; // add the content id first
+
+  for (var i = 0; i < maxLength; i++) {
+    jwPlayerData += '|' + jwMark + jwSegData.segments[i] + '=1';
+  }
+  const ext = imp.ext;
+  (ext && ext.key_val === undefined)
+    ? ext.key_val = jwPlayerData
+    : ext.key_val += '|' + jwPlayerData;
+}
+
 function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj;
@@ -627,6 +647,7 @@ function _createImpressionObject(bid, conf) {
 
   _addPMPDealsInImpression(impObj, bid);
   _addDealCustomTargetings(impObj, bid);
+  _addJWPlayerSegmentData(impObj, bid);
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
       switch (mediaTypes) {
@@ -719,22 +740,48 @@ function _addFloorFromFloorModule(impObj, bid) {
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (impObj.hasOwnProperty(mediaType)) {
-        let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
-        if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
-          let mediaTypeFloor = parseFloat(floorInfo.floor);
-          bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+        let sizesArray = [];
+
+        if (mediaType === 'banner') {
+          if (impObj[mediaType].w && impObj[mediaType].h) {
+            sizesArray.push([impObj[mediaType].w, impObj[mediaType].h]);
+          }
+          if (utils.isArray(impObj[mediaType].format)) {
+            impObj[mediaType].format.forEach(size => sizesArray.push([size.w, size.h]));
+          }
         }
+
+        if (sizesArray.length === 0) {
+          sizesArray.push('*')
+        }
+
+        sizesArray.forEach(size => {
+          let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: size });
+          utils.logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, ' and size:', size, ' is: currency', floorInfo.currency, 'floor', floorInfo.floor);
+          if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+            let mediaTypeFloor = parseFloat(floorInfo.floor);
+            utils.logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
+            if (bidFloor === -1) {
+              bidFloor = mediaTypeFloor;
+            } else {
+              bidFloor = Math.min(mediaTypeFloor, bidFloor)
+            }
+            utils.logInfo(LOG_WARN_PREFIX, 'new floor value:', bidFloor);
+          }
+        });
       }
     });
   }
   // get highest from impObj.bidfllor and floor from floor module
   // as we are using Math.max, it is ok if we have not got any floor from floorModule, then value of bidFloor will be -1
   if (impObj.bidfloor) {
+    utils.logInfo(LOG_WARN_PREFIX, 'floor from floor module:', bidFloor, 'impObj.bidfloor', impObj.bidfloor, 'Max:', Math.max(bidFloor, impObj.bidfloor));
     bidFloor = Math.max(bidFloor, impObj.bidfloor)
   }
 
   // assign value only if bidFloor is > 0
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
+  utils.logInfo(LOG_WARN_PREFIX, 'new impObj.bidfloor value:', impObj.bidfloor);
 }
 
 function _getFlocId(validBidRequests, flocFormat) {
