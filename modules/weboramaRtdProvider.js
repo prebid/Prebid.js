@@ -89,7 +89,7 @@ export function setBigseaContextualProfile(data) {
   }
 }
 
-/** onSucess callback type
+/** onSuccess callback type
  * @callback successCallback
  * @param {null|Object} data
  * @param {ModuleParams} moduleParams
