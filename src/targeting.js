@@ -382,7 +382,7 @@ export function newTargeting(auctionManager) {
         .forEach(targetId => {
           Object.keys(targetingConfig[targetId]).forEach(key => {
             let valueArr = targetingConfig[targetId][key];
-            if (typeof valueArr === 'string') {
+            if (typeof valueArr === 'string' && valueArr.indexOf(',') != -1) {
               valueArr = valueArr.split(',');
             }
             targetingConfig[targetId][key] = valueArr;
