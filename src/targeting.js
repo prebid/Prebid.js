@@ -381,11 +381,12 @@ export function newTargeting(auctionManager) {
       Object.keys(targetingConfig).filter(customSlotMatching ? customSlotMatching(slot) : isAdUnitCodeMatchingSlot(slot))
         .forEach(targetId => {
           Object.keys(targetingConfig[targetId]).forEach(key => {
-            let valueArr = targetingConfig[targetId][key];
-            if (typeof valueArr === 'string' && valueArr.indexOf(',') != -1) {
-              valueArr = valueArr.split(',');
+            let value = targetingConfig[targetId][key];
+            if (typeof value === 'string' && value.indexOf(',') != -1) {
+              // due to the check the array will be formed only if string has ',' else plain string will be assigned as value
+              value = value.split(',');
             }
-            targetingConfig[targetId][key] = valueArr;
+            targetingConfig[targetId][key] = value;
           });
           utils.logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingConfig[targetId]);
           slot.updateTargetingFromMap(targetingConfig[targetId])
