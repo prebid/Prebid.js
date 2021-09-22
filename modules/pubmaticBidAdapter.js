@@ -605,7 +605,7 @@ function _addDealCustomTargetings(imp, bid) {
   }
 }
 
-function _addJWPlayerSegmentData(imp, bid) {
+function _addJWPlayerSegmentData(imp, bid, isS2S) {
   var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
   var jwPlayerData = '';
   const jwMark = 'jw-';
@@ -619,10 +619,15 @@ function _addJWPlayerSegmentData(imp, bid) {
   for (var i = 0; i < maxLength; i++) {
     jwPlayerData += '|' + jwMark + jwSegData.segments[i] + '=1';
   }
-  const ext = imp.ext;
-  (ext && ext.key_val === undefined)
-    ? ext.key_val = jwPlayerData
-    : ext.key_val += '|' + jwPlayerData;
+
+  var ext;
+
+  if (isS2S) {
+    (imp.dctr === undefined || imp.dctr.length == 0) ? imp.dctr = jwPlayerData : imp.dctr += '|' + jwPlayerData;
+  } else {
+    ext = imp.ext;
+    ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
+  }
 }
 
 function _createImpressionObject(bid, conf) {
@@ -1322,7 +1327,8 @@ export const spec = {
    * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
    * @return {Object} params bid params
    */
-  transformBidParams: function (params, isOpenRtb) {
+  transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
+    _addJWPlayerSegmentData(params, adUnit.bids[0], true);
     return utils.convertTypes({
       'publisherId': 'string',
       'adSlot': 'string'
