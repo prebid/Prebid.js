@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'loglylift';
-const ENDPOINT_URL = 'https://bid.logly.co.jp/prebid';
+const ENDPOINT_URL = 'https://bid.logly.co.jp/prebid/client/v1';
 
 export const spec = {
   code: BIDDER_CODE,
