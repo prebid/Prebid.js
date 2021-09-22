@@ -36,6 +36,7 @@ describe('loglyliftBidAdapter', function () {
       }
     }
   }];
+
   const bidderRequest = {
     refererInfo: {
       referer: 'fakeReferer',
@@ -117,50 +118,25 @@ describe('loglyliftBidAdapter', function () {
     });
   });
 
-  // describe('interpretResponse', function () {
-  //   it('should return an empty array if an invalid response is passed', function () {
-  //     const interpretedResponse = spec.interpretResponse({}, {});
-  //     expect(interpretedResponse).to.be.an('array').that.is.empty;
-  //   });
+  describe('interpretResponse', function () {
+    it('should return an empty array if an invalid response is passed', function () {
+      const interpretedResponse = spec.interpretResponse({}, {});
+      expect(interpretedResponse).to.be.an('array').that.is.empty;
+    });
 
-  //   it('should return valid response when passed valid server response', function () {
-  //     const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-  //     const interpretedResponse = spec.interpretResponse(serverResponse, request);
+    it('should return valid response when passed valid server response', function () {
+      const request = spec.buildRequests(nativeBidRequests, bidderRequest)[0];
+      const interpretedResponse = spec.interpretResponse(nativeServerResponse, request);
 
-  //     expect(interpretedResponse).to.have.lengthOf(1);
-
-  //     expect(interpretedResponse[0].requestId).to.equal(serverResponse.body.seatbid[0].bid.requestId);
-  //     expect(interpretedResponse[0].cpm).to.equal(serverResponse.body.seatbid[0].bid.cpm);
-  //     expect(interpretedResponse[0].width).to.equal(serverResponse.body.seatbid[0].bid.width);
-  //     expect(interpretedResponse[0].height).to.equal(serverResponse.body.seatbid[0].bid.height);
-  //     expect(interpretedResponse[0].creativeId).to.equal(serverResponse.body.seatbid[0].bid.creativeId);
-  //     expect(interpretedResponse[0].currency).to.equal(serverResponse.body.seatbid[0].bid.currency);
-  //     expect(interpretedResponse[0].netRevenue).to.equal(serverResponse.body.seatbid[0].bid.netRevenue);
-  //     expect(interpretedResponse[0].ad).to.equal(serverResponse.body.seatbid[0].bid.ad);
-  //     expect(interpretedResponse[0].ttl).to.equal(serverResponse.body.seatbid[0].bid.ttl);
-  //     expect(interpretedResponse[0].meta.advertiserDomains).to.equal(serverResponse.body.seatbid[0].bid.meta.advertiserDomains);
-
-  //     // native
-  //     const nativeRequest = spec.buildRequests(nativeBidRequests, bidderRequest)[0];
-  //     const interpretedResponseForNative = spec.interpretResponse(nativeServerResponse, nativeRequest);
-
-  //     expect(interpretedResponseForNative).to.have.lengthOf(1);
-
-  //     expect(interpretedResponseForNative[0].requestId).to.equal(nativeServerResponse.body.seatbid[0].bid.requestId);
-  //     expect(interpretedResponseForNative[0].cpm).to.equal(nativeServerResponse.body.seatbid[0].bid.cpm);
-  //     expect(interpretedResponseForNative[0].width).to.equal(nativeServerResponse.body.seatbid[0].bid.width);
-  //     expect(interpretedResponseForNative[0].height).to.equal(nativeServerResponse.body.seatbid[0].bid.height);
-  //     expect(interpretedResponseForNative[0].creativeId).to.equal(nativeServerResponse.body.seatbid[0].bid.creativeId);
-  //     expect(interpretedResponseForNative[0].currency).to.equal(nativeServerResponse.body.seatbid[0].bid.currency);
-  //     expect(interpretedResponseForNative[0].netRevenue).to.equal(nativeServerResponse.body.seatbid[0].bid.netRevenue);
-  //     expect(interpretedResponseForNative[0].ttl).to.equal(nativeServerResponse.body.seatbid[0].bid.ttl);
-  //     expect(interpretedResponseForNative[0].native.clickUrl).to.equal(nativeServerResponse.body.seatbid[0].bid.native.clickUrl);
-  //     expect(interpretedResponseForNative[0].native.image.url).to.equal(nativeServerResponse.body.seatbid[0].bid.native.image.url);
-  //     expect(interpretedResponseForNative[0].native.image.width).to.equal(nativeServerResponse.body.seatbid[0].bid.native.image.width);
-  //     expect(interpretedResponseForNative[0].native.impressionTrackers).to.equal(nativeServerResponse.body.seatbid[0].bid.native.impressionTrackers);
-  //     expect(interpretedResponseForNative[0].native.sponsoredBy).to.equal(nativeServerResponse.body.seatbid[0].bid.native.sponsoredBy);
-  //     expect(interpretedResponseForNative[0].native.title).to.equal(nativeServerResponse.body.seatbid[0].bid.native.title);
-  //     expect(interpretedResponseForNative[0].meta.advertiserDomains[0]).to.equal(serverResponse.body.seatbid[0].bid.meta.advertiserDomains[0]);
-  //   });
-  // });
+      expect(interpretedResponse).to.have.lengthOf(1);
+      expect(interpretedResponse[0].cpm).to.equal(nativeServerResponse.body.bids[0].bid.cpm);
+      expect(interpretedResponse[0].width).to.equal(nativeServerResponse.body.bids[0].bid.width);
+      expect(interpretedResponse[0].height).to.equal(nativeServerResponse.body.bids[0].bid.height);
+      expect(interpretedResponse[0].creativeId).to.equal(nativeServerResponse.body.bids[0].bid.creativeId);
+      expect(interpretedResponse[0].currency).to.equal(nativeServerResponse.body.bids[0].bid.currency);
+      expect(interpretedResponse[0].netRevenue).to.equal(nativeServerResponse.body.bids[0].bid.netRevenue);
+      expect(interpretedResponse[0].ttl).to.equal(nativeServerResponse.body.bids[0].bid.ttl);
+      expect(interpretedResponse[0].native).to.deep.equal(nativeServerResponse.body.bids[0].bid.native);
+    });
+  });
 });
