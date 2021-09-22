@@ -156,11 +156,11 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, bid, gdprConsent) {
     var pixid = '';
-    if (typeof bid[0] === 'undefined' || bid[0] === null) {pixid = '0';} else {pixid = bid[0].body.pix_id;}
+    if (typeof bid[0] === 'undefined' || bid[0] === null) { pixid = '0'; } else { pixid = bid[0].body.pix_id; }
     if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
       return [{
         type: 'iframe',
-        url: 'https://gosrv.pixfuture.com/cookiesync?adsync=' + gdprConsent.consentString + '&pixid=' + pixid+'&gdprconcent=' + gdprConsent.gdprApplies
+        url: 'https://gosrv.pixfuture.com/cookiesync?adsync=' + gdprConsent.consentString + '&pixid=' + pixid + '&gdprconcent=' + gdprConsent.gdprApplies
       }];
     }
   }
