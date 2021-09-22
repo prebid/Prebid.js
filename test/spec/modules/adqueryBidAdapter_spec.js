@@ -19,38 +19,40 @@ describe('adqueryBidAdapter', function () {
   }
 
   let expectedResponse = {
-    'data':
-      {
-        'requestId': 1,
-        'emission_id': 1,
-        'eventTracker': 'https://example.com',
-        'externalEmissionCodes': 'https://example.com',
-        'impressionTracker': 'https://example.com',
-        'viewabilityTracker': 'https://example.com',
-        'clickTracker': 'https://example.com',
-        'link': 'https://example.com',
-        'logo': 'https://example.com',
-        'medias': [
-          {
-            'src': 'banner/2021-04-09/938',
-            'ext': 'zip',
-            'type': 3,
+    'body': {
+      'data':
+        {
+          'requestId': 1,
+          'emission_id': 1,
+          'eventTracker': 'https://example.com',
+          'externalEmissionCodes': 'https://example.com',
+          'impressionTracker': 'https://example.com',
+          'viewabilityTracker': 'https://example.com',
+          'clickTracker': 'https://example.com',
+          'link': 'https://example.com',
+          'logo': 'https://example.com',
+          'medias': [
+            {
+              'src': 'banner/2021-04-09/938',
+              'ext': 'zip',
+              'type': 3,
+            }
+          ],
+          'domain': 'https://example.com',
+          'urlAdq': 'https://example.com',
+          'creationId': 1,
+          'currency': 'PLN',
+          'adDomains': ['https://example.com'],
+          'tag': '<ad-adquery data-type="banner300x250"  data-placement="6d93f2a0e5f0fe2cc3a6e9e3ade964b43b07f897"> </ad-adquery>',
+          'adqLib': 'https://example.com/js/example.js',
+          'mediaType': {'width': 300, 'height': 250, 'name': 'banner', 'type': 'banner300x250'},
+          'cpm': 2.5,
+          'meta': {
+            'advertiserDomains': ['example.com'],
+            'mediaType': 'banner',
           }
-        ],
-        'domain': 'https://example.com',
-        'urlAdq': 'https://example.com',
-        'creationId': 1,
-        'currency': 'PLN',
-        'adDomains': ['https://example.com'],
-        'tag': '<ad-adquery data-type="banner300x250"  data-placement="6d93f2a0e5f0fe2cc3a6e9e3ade964b43b07f897"> </ad-adquery>',
-        'adqLib': 'https://example.com/js/example.js',
-        'mediaType': {'width': 300, 'height': 250, 'name': 'banner', 'type': 'banner300x250'},
-        'cpm': 2.5,
-        'meta': {
-          'advertiserDomains': ['example.com'],
-          'mediaType': 'banner',
         }
-      }
+    }
   }
   describe('codes', function () {
     it('should return a bidder code of adquery', function () {
@@ -83,7 +85,7 @@ describe('adqueryBidAdapter', function () {
     })
 
     it('should include one request', function () {
-      rdata = JSON.parse(req.data)
+      rdata = req.data;
       expect(rdata.data).to.not.be.null
     })
 
@@ -118,11 +120,6 @@ describe('adqueryBidAdapter', function () {
       const newResponse = spec.interpretResponse(expectedResponse, bidRequest);
       expect(newResponse[0].requestId).to.be.equal(1)
     });
-    it('handles empty bid response', function () {
-      let response = {
-        body: {}
-      };
-    })
     it('handles empty bid response', function () {
       let response = {
         body: {}

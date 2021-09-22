@@ -38,12 +38,11 @@ export const spec = {
       const request = {
         method: 'POST',
         url: ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUERY_BIDDER_DOMAIN + '/prebid/bid',
-        data: JSON.stringify(buildRequest(bidRequests, bidderRequest)),
+        data: buildRequest(bidRequests[i], bidderRequest),
         options: {
           withCredentials: false,
           crossOrigin: true
-        },
-        bidderRequest
+        }
       };
       requests.push(request);
     }
@@ -56,16 +55,17 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
-    utils.logInfo(response);
     utils.logInfo(request);
-    const res = response && response.data;
+    utils.logInfo(response);
+
+    const res = response && response.body && response.body.data;
+    let bidResponses = [];
 
     if (!res) {
       return [];
     }
 
-    let bidResponses = [];
-    let bidResponse = {
+    const bidResponse = {
       requestId: res.requestId,
       cpm: res.cpm,
       width: res.mediaType.width,
@@ -82,7 +82,6 @@ export const spec = {
         advertiserDomains: res.adDomains && res.adDomains.length ? res.adDomains : [],
         mediaType: res.mediaType.name || 'banner',
       }
-
     };
     bidResponses.push(bidResponse);
     utils.logInfo('bidResponses', bidResponses);
@@ -180,7 +179,7 @@ export const spec = {
 };
 function buildRequest(validBidRequests, bidderRequest) {
   let qid = Math.random().toString(36).substring(2) + Date.now().toString(36);
-  let bid = bidderRequest;
+  let bid = validBidRequests;
 
   if (storage.getDataFromLocalStorage('qid')) {
     qid = storage.getDataFromLocalStorage('qid');
@@ -189,10 +188,10 @@ function buildRequest(validBidRequests, bidderRequest) {
   }
 
   return {
-    placementCode: bid.placementId,
+    placementCode: bid.params.placementId,
     auctionId: bid.auctionId,
     qid: qid,
-    type: bid.type,
+    type: bid.params.type,
     adUnitCode: bid.adUnitCode,
     bidId: bid.bidId,
     bidder: bid.bidder,
