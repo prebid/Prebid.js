@@ -128,7 +128,6 @@ describe('C-WIRE bid adapter', () => {
       expect(spec.isBidRequestValid(bid01)).to.equal(false);
     });
 
-
     it('should use params.adUnitElementId if provided', function () {
       const bid01 = new BidRequestBuilder().withParams().build();
 
