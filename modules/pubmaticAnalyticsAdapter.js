@@ -12,8 +12,6 @@ import {
   getGlobal
 } from '../src/prebidGlobal.js';
 
-import { _floorDataForAuction } from'../modules/priceFloors.js';
-
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
 const SEND_TIMEOUT = 2000;
@@ -263,7 +261,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
       'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
       'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
-      'frv': bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined,
+      'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
     });
     return partnerBids;
   }, [])
@@ -288,10 +286,11 @@ function getAdUnitAdFormats(adUnit) {
 function getAdUnit(adUnits, adUnitId) {
   return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId))[0];
 }
-function executeBidsLoggerCall(e, highestCpmBids, floorData) {
+function executeBidsLoggerCall(e, highestCpmBids) {
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
+  let floorData = auctionCache.floorData;
   let outputObj = {
     s: []
   };
@@ -323,11 +322,9 @@ function executeBidsLoggerCall(e, highestCpmBids, floorData) {
     return 0;
   })();
 
-  if(!!floorData && !!floorData[auctionId]){
-    var _floorData = floorData[auctionId];
-    outputObj["fskp"] = _floorData.skipped == false ? 0 : 1;
-    outputObj["fmv"] = _floorData.data ? _floorData.data.modelVersion || undefined : undefined;
-    outputObj["ft"] = _floorData.skipped == false ? (_floorData.enforcement.enforceJS == false ? 0 : 1) : undefined;
+  if (!!floorData) {
+    outputObj['fmv'] = floorData.floorRequestData ? floorData.floorRequestData.modelVersion || undefined : undefined;
+    outputObj['ft'] = floorData.floorResponseData ? (floorData.floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined;
   }
 
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
@@ -338,6 +335,7 @@ function executeBidsLoggerCall(e, highestCpmBids, floorData) {
       'au': origAdUnit.adUnitId || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
+      'fskp': floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId))
     };
     slotsArray.push(slotObject);
@@ -402,6 +400,7 @@ function auctionInitHandler(args) {
   ]);
   cacheEntry.adUnitCodes = {};
   cacheEntry.origAdUnits = args.adUnits;
+  cacheEntry.floorData = {};
   cacheEntry.referer = args.bidderRequests[0].refererInfo.referer;
   cache.auctions[args.auctionId] = cacheEntry;
 }
@@ -417,7 +416,7 @@ function bidRequestedHandler(args) {
     }
     cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId] = copyRequiredBidDetails(bid);
     if (bid.floorData) {
-      getAdUnit(cache.auctions[args.auctionId].origAdUnits, bid.adUnitCode)['floorRequestData'] = bid.floorData;
+      cache.auctions[args.auctionId].floorData['floorRequestData'] = bid.floorData;
     }
   })
 }
@@ -430,8 +429,9 @@ function bidResponseHandler(args) {
   }
 
   if (args.floorData) {
-    getAdUnit(cache.auctions[args.auctionId].origAdUnits, args.adUnitCode)['floorResponseData'] = args.floorData;
+    cache.auctions[args.auctionId].floorData['floorResponseData'] = args.floorData;
   }
+
   bid.bidId = args.adId;
   bid.source = formatSource(bid.source || args.source);
   setBidStatus(bid, args);
@@ -465,10 +465,10 @@ function auctionEndHandler(args) {
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
   let highestCpmBids = getGlobal().getHighestCpmBids() || [];
   setTimeout(() => {
-    executeBidsLoggerCall.call(this, args, highestCpmBids, _floorDataForAuction);
+    executeBidsLoggerCall.call(this, args, highestCpmBids);
   }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
-  //console.log({priceFloor});
-  //console.log(_floorDataForAuction);
+  // console.log({priceFloor});
+  // console.log(_floorDataForAuction);
 }
 
 function bidTimeoutHandler(args) {
