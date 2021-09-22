@@ -42,16 +42,9 @@ const VALID_URL_KEY = ['canonical_url', 'og_url', 'twitter_url'];
 const DEFAULT_URL_KEY = 'page';
 
 const LOG_TYPE = {
-  AP: 'AP',
-  PR: 'PR',
   APPR: 'APPR',
   RA: 'RA'
 };
-
-const BATCHING = {
-  SINGLE: 'SINGLE',
-  MULTI: 'MULTI'
-}
 
 let auctions = {};
 let config;
@@ -66,7 +59,6 @@ class ErrorLogger {
     this.project = 'prebidanalytics';
     this.dn = pageDetails.domain || '';
     this.requrl = pageDetails.requrl || '';
-    this.event = this.event;
     this.pbversion = PREBID_VERSION;
     this.cid = config.cid || '';
     this.rd = additionalData;
@@ -89,16 +81,8 @@ class Configure {
     this.gdprConsent = undefined;
     this.gdprApplies = undefined;
     this.uspConsent = undefined;
-    this.pixelWaitTime = 0;
-    this.apLoggingPct = 0;
-    this.prLoggingPct = 0;
-    this.batching = BATCHING.SINGLE;
     this.shouldBeLogged = {};
     this.mnetDebugConfig = '';
-  }
-
-  set publisherLper(plper) {
-    this.pubLper = plper;
   }
 
   getLoggingData() {
@@ -138,20 +122,6 @@ class Configure {
   setDataFromResponse(response) {
     if (!isNaN(parseInt(response.percentage, 10))) {
       this.loggingPercent = response.percentage;
-    }
-
-    if (!isNaN(parseInt(response.pixelwaittime, 10))) {
-      this.pixelWaitTime = response.pixelwaittime;
-    }
-
-    if (!isNaN(parseInt(response.aplper, 10))) {
-      this.apLoggingPct = response.aplper;
-      this.batching = BATCHING.MULTI;
-    }
-
-    if (!isNaN(parseInt(response.prlper, 10))) {
-      this.prLoggingPct = response.prlper;
-      this.batching = BATCHING.MULTI;
     }
   }
 
@@ -268,18 +238,14 @@ class AdSlot {
     this.context = context;
     this.adext = adext;
     this.logged = {};
-    this.logged[LOG_TYPE.PR] = false;
-    this.logged[LOG_TYPE.AP] = false;
-    this.logged[LOG_TYPE.APPR] = false;
     this.targeting = undefined;
     this.medianetPresent = 0;
   }
 
   getShouldBeLogged(logType) {
     if (!config.shouldBeLogged.hasOwnProperty(logType)) {
-      config.shouldBeLogged[logType] = isSampled(logType);
+      config.shouldBeLogged[logType] = isSampled();
     }
-    config.shouldBeLogged[logType] = isSampled(logType);
     return config.shouldBeLogged[logType];
   }
 
@@ -343,7 +309,7 @@ class Bid {
       bdp: this.cpm,
       cbdp: this.dfpbd,
       dfpbd: this.dfpbd,
-      szs: this.allMediaTypeSizes.map(sz => sz.join('x')).join('|'),
+      szs: this.allMediaTypeSizes.join('|'),
       size: this.size,
       mtype: this.mediaType,
       dId: this.dealId,
@@ -475,10 +441,9 @@ function addAddSlots(auctionId, adUnits, tmax) {
     adext = utils.isEmpty(adext) ? undefined : adext;
     oSizes.banner = oSizes.banner.filter(utils.uniques);
     oSizes.video = oSizes.video.filter(utils.uniques);
-    oSizes.native = mediaTypeMap.native === 1 ? [[1, 1]] : [];
+    oSizes.native = mediaTypeMap.native === 1 ? [[1, 1].join('x')] : [];
     const allMediaTypeSizes = [].concat(oSizes.banner, oSizes.native, oSizes.video);
     const mediaTypes = Object.keys(mediaTypeMap).join('|');
-
     auctions[auctionId].addSlot({adUnitCode, supplyAdCode, mediaTypes, allMediaTypeSizes, context, tmax, adext});
   });
 }
@@ -518,7 +483,11 @@ function _getSizes(mediaTypes, sizes) {
   if (playerSize.length === 2) {
     video = [playerSize]
   }
-  return { banner, native, video }
+  return {
+    banner: banner.map(size => size.join('x')),
+    native: native.map(size => size.join('x')),
+    video: video.map(size => size.join('x'))
+  }
 }
 
 function bidResponseHandler(bid) {
@@ -593,18 +562,12 @@ function bidTimeoutHandler(timedOutBids) {
   })
 }
 
-function auctionEndHandler({auctionId, auctionEnd, adUnitCodes}) {
+function auctionEndHandler({auctionId, auctionEnd}) {
   if (!(auctions[auctionId] instanceof Auction)) {
     return;
   }
   auctions[auctionId].status = AUCTION_COMPLETED;
   auctions[auctionId].auctionEndTime = auctionEnd;
-
-  if (config.batching === BATCHING.MULTI) {
-    adUnitCodes.forEach(function (adUnitCode) {
-      sendEvent(auctionId, adUnitCode, LOG_TYPE.PR);
-    });
-  }
 }
 
 function setTargetingHandler(params) {
@@ -639,28 +602,9 @@ function setTargetingHandler(params) {
           bid.height = utils.deepAccess(winningBid, 'height');
         }
       });
-      sendEvent(auctionId, adunit, getLogType());
+      sendEvent(auctionId, adunit, LOG_TYPE.APPR);
     }
   }
-}
-
-function getLogType() {
-  if (config.batching === BATCHING.SINGLE) {
-    return LOG_TYPE.APPR;
-  }
-  return LOG_TYPE.AP;
-}
-
-function setBidderDone(params) {
-  if (config.pixelWaitTime != null && config.pixelWaitTime > 0) {
-    setTimeout(fireApAfterWait, config.pixelWaitTime, params)
-  }
-}
-
-function fireApAfterWait(params) {
-  params.bids.forEach(function (adUnit) {
-    sendEvent(params.auctionId, adUnit.adUnitCode, LOG_TYPE.AP);
-  });
 }
 
 function bidWonHandler(bid) {
@@ -677,20 +621,8 @@ function bidWonHandler(bid) {
   sendEvent(auctionId, adUnitCode, LOG_TYPE.RA);
 }
 
-function isSampled(logType) {
-  return Math.random() * 100 < parseFloat(getLogPercentage(logType));
-}
-
-function getLogPercentage(logType) {
-  let logPercentage = config.loggingPercent;
-  if (config.batching === BATCHING.MULTI) {
-    if (logType === LOG_TYPE.AP) {
-      logPercentage = config.apLoggingPct;
-    } else if (logType === LOG_TYPE.PR) {
-      logPercentage = config.prLoggingPct;
-    }
-  }
-  return logPercentage;
+function isSampled() {
+  return Math.random() * 100 < parseFloat(config.loggingPercent);
 }
 
 function isValidAuctionAdSlot(acid, adtag) {
@@ -711,13 +643,8 @@ function sendEvent(id, adunit, logType) {
 function fireApPrLog(auctionId, adUnitName, logType) {
   const adSlot = auctions[auctionId].adSlots[adUnitName];
   if (adSlot.getShouldBeLogged(logType) && !adSlot.logged[logType]) {
-    if (config.batching === BATCHING.SINGLE) {
-      adSlot.logged[LOG_TYPE.AP] = true;
-      adSlot.logged[LOG_TYPE.PR] = true;
-    } else {
-      adSlot.logged[logType] = true;
-    }
     fireAuctionLog(auctionId, adUnitName, logType);
+    adSlot.logged[logType] = true;
   }
 }
 
@@ -844,10 +771,6 @@ let medianetAnalytics = Object.assign(adapter({URL, analyticsType}), {
         setTargetingHandler(args);
         break;
       }
-      case CONSTANTS.EVENTS.BIDDER_DONE : {
-        setBidderDone(args);
-        break;
-      }
       case CONSTANTS.EVENTS.BID_WON: {
         bidWonHandler(args);
         break;
@@ -868,7 +791,7 @@ medianetAnalytics.enableAnalytics = function (configuration) {
   pageDetails = new PageDetail();
 
   config = new Configure(configuration.options.cid);
-  config.publisherLper = configuration.options.sampling || '';
+  config.pubLper = configuration.options.sampling || '';
   config.init();
   configuration.options.sampling = 1;
   medianetAnalytics.originEnableAnalytics(configuration);
