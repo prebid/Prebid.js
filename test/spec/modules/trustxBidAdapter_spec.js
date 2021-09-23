@@ -519,6 +519,51 @@ describe('TrustXAdapter', function () {
       expect(payload.tmax).to.equal(3000);
       getConfigStub.restore();
     });
+    it('all id like request fields must be a string', function () {
+      const bidderRequestWithNumId = Object.assign({}, bidderRequest, { bidderRequestId: 123123, auctionId: 345345543 });
+
+      let bidRequestWithNumId = {
+        'bidder': 'trustx',
+        'params': {
+          'uid': 43,
+        },
+        'adUnitCode': 111111,
+        'sizes': [[300, 250], [300, 600]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250], [300, 600]]
+          }
+        },
+        'bidId': 23423423,
+        'bidderRequestId': 123123,
+        'auctionId': 345345543,
+      };
+
+      const request = spec.buildRequests([bidRequestWithNumId], bidderRequestWithNumId);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.deep.equal({
+        'id': '123123',
+        'site': {
+          'page': referrer
+        },
+        'tmax': bidderRequest.timeout,
+        'source': {
+          'tid': '345345543',
+          'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
+        },
+        'imp': [{
+          'id': '23423423',
+          'tagid': '43',
+          'ext': {'divid': '111111'},
+          'banner': {
+            'w': 300,
+            'h': 250,
+            'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]
+          }
+        }]
+      });
+    });
 
     describe('floorModule', function () {
       const floorTestData = {
