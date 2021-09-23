@@ -110,7 +110,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
     bid.originalBidder = bid.bidderCode;
     // Check if stored bids for auction include adUnitCode.bidder and max limit not reach for ad unit
-    if (utils.deepAccess(multibidUnits, `${adUnitCode}.${bid.bidderCode}`)) {
+    if (utils.deepAccess(multibidUnits, [adUnitCode, bid.bidderCode])) {
       // Store request id under new property originalRequestId, create new unique bidId,
       // and push bid into multibid stored bids for auction if max not reached and bid cpm above floor
       if (!multibidUnits[adUnitCode][bid.bidderCode].maxReached && (!floor || floor <= bid.cpm)) {
