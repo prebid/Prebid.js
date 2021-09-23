@@ -180,13 +180,19 @@ describe('TheMediaGridNM Adapter', function () {
       });
       return res;
     }
-    const bidderRequest = {refererInfo: {referer: 'https://example.com'}};
-    const referrer = bidderRequest.refererInfo.referer;
+    const bidderRequest = {
+      bidderRequestId: '22edbae2733bf6',
+      auctionId: '1d1a030790a475',
+      timeout: 3000,
+      refererInfo: { referer: 'https://example.com' }
+    };
+    const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
     let bidRequests = [
       {
         'bidder': 'gridNM',
         'params': {
           'source': 'jwp',
+          'floorcpm': 2,
           'secid': '11',
           'pubid': '22',
           'video': {
@@ -226,12 +232,36 @@ describe('TheMediaGridNM Adapter', function () {
       requests.forEach((req, i) => {
         expect(req.url).to.be.an('string');
         const payload = parseRequestUrl(req.url);
-        expect(payload).to.have.property('u', referrer);
-        expect(payload).to.have.property('r', '22edbae2733bf6');
-        expect(payload).to.have.property('wrapperType', 'Prebid_js');
-        expect(payload).to.have.property('wrapperVersion', '$prebid.version$');
-        expect(payload).to.have.property('sizes', requestsSizes[i]);
-        expect(req.data).to.deep.equal(bidRequests[i].params);
+        expect(payload).to.have.property('no_mapping', '1');
+        expect(payload).to.have.property('sp', 'jwp');
+
+        const sizes = { w: bidRequests[i].sizes[0][0], h: bidRequests[i].sizes[0][1] };
+        const impObj = {
+          'id': bidRequests[i].bidId,
+          'tagid': bidRequests[i].params.secid,
+          'ext': {'divid': bidRequests[i].adUnitCode},
+          'video': Object.assign(sizes, bidRequests[i].params.video)
+        };
+
+        if (bidRequests[i].params.floorcpm) {
+          impObj.bidfloor = bidRequests[i].params.floorcpm;
+        }
+
+        expect(req.data).to.deep.equal({
+          'id': bidderRequest.bidderRequestId,
+          'site': {
+            'page': referrer,
+            'publisher': {
+              'id': bidRequests[i].params.pubid
+            }
+          },
+          'tmax': bidderRequest.timeout,
+          'source': {
+            'tid': bidderRequest.auctionId,
+            'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
+          },
+          'imp': [impObj]
+        });
       });
     });
 
@@ -242,63 +272,68 @@ describe('TheMediaGridNM Adapter', function () {
           minduration: 10,
           maxduration: 100,
           protocols: [1, 3, 4],
-          playerSize: [300, 250]
+          playerSize: [[300, 250]]
         }
       };
       const bidRequest = Object.assign({ mediaTypes }, bidRequests[0]);
       const req = spec.buildRequests([bidRequest], bidderRequest)[0];
       const expectedVideo = {
         'skipafter': 10,
-        'mind': 10,
-        'maxd': 100,
+        'minduration': 10,
+        'maxduration': 100,
         'mimes': ['video/mp4', 'video/x-ms-wmv'],
         'protocols': [1, 2, 3, 4, 5, 6],
-        'size': '300x250'
+        'w': 300,
+        'h': 250
       };
-      const expectedParams = Object.assign({}, bidRequest.params);
-      expectedParams.video = Object.assign(expectedParams.video, expectedVideo);
 
       expect(req.url).to.be.an('string');
       const payload = parseRequestUrl(req.url);
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('wrapperType', 'Prebid_js');
-      expect(payload).to.have.property('wrapperVersion', '$prebid.version$');
-      expect(payload).to.have.property('sizes', '300x250,300x600');
-      expect(req.data).to.deep.equal(expectedParams);
+      expect(payload).to.have.property('no_mapping', '1');
+      expect(payload).to.have.property('sp', 'jwp');
+      expect(req.data).to.deep.equal({
+        'id': bidderRequest.bidderRequestId,
+        'site': {
+          'page': referrer,
+          'publisher': {
+            'id': bidRequest.params.pubid
+          }
+        },
+        'tmax': bidderRequest.timeout,
+        'source': {
+          'tid': bidderRequest.auctionId,
+          'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
+        },
+        'imp': [{
+          'id': bidRequest.bidId,
+          'bidfloor': bidRequest.params.floorcpm,
+          'tagid': bidRequest.params.secid,
+          'ext': {'divid': bidRequest.adUnitCode},
+          'video': expectedVideo
+        }]
+      });
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
-      const [request] = spec.buildRequests([bidRequests[0]], {gdprConsent: {consentString: 'AAA', gdprApplies: true}, refererInfo: bidderRequest.refererInfo});
-      expect(request.url).to.be.an('string');
-      const payload = parseRequestUrl(request.url);
-      expect(payload).to.have.property('u', referrer);
-      expect(payload).to.have.property('gdpr_consent', 'AAA');
-      expect(payload).to.have.property('gdpr_applies', '1');
-    });
-
-    it('if gdprApplies is false gdpr_applies must be 0', function () {
-      const [request] = spec.buildRequests([bidRequests[0]], {gdprConsent: {consentString: 'AAA', gdprApplies: false}});
-      expect(request.url).to.be.an('string');
-      const payload = parseRequestUrl(request.url);
-      expect(payload).to.have.property('gdpr_consent', 'AAA');
-      expect(payload).to.have.property('gdpr_applies', '0');
-    });
-
-    it('if gdprApplies is undefined gdpr_applies must be 1', function () {
-      const [request] = spec.buildRequests([bidRequests[0]], {gdprConsent: {consentString: 'AAA'}});
-      expect(request.url).to.be.an('string');
-      const payload = parseRequestUrl(request.url);
-      expect(payload).to.have.property('gdpr_consent', 'AAA');
-      expect(payload).to.have.property('gdpr_applies', '1');
+      const gdprBidderRequest = Object.assign({gdprConsent: {consentString: 'AAA', gdprApplies: true}}, bidderRequest);
+      const request = spec.buildRequests([bidRequests[0]], gdprBidderRequest)[0];
+      const payload = request.data;
+      expect(request).to.have.property('data');
+      expect(payload).to.have.property('user');
+      expect(payload.user).to.have.property('ext');
+      expect(payload.user.ext).to.have.property('consent', 'AAA');
+      expect(payload).to.have.property('regs');
+      expect(payload.regs).to.have.property('ext');
+      expect(payload.regs.ext).to.have.property('gdpr', 1);
     });
 
     it('if usPrivacy is present payload must have us_privacy param', function () {
       const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
-      const [request] = spec.buildRequests([bidRequests[0]], bidderRequestWithUSP);
-      expect(request.url).to.be.an('string');
-      const payload = parseRequestUrl(request.url);
-      expect(payload).to.have.property('us_privacy', '1YNN');
+      const request = spec.buildRequests([bidRequests[0]], bidderRequestWithUSP)[0];
+      const payload = request.data;
+      expect(payload).to.have.property('regs');
+      expect(payload.regs).to.have.property('ext');
+      expect(payload.regs.ext).to.have.property('us_privacy', '1YNN');
     });
   });
 

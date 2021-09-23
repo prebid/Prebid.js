@@ -809,6 +809,8 @@ describe('triplelift adapter', function () {
       expect(result).to.have.length(2);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(Object.keys(result[1])).to.have.members(Object.keys(expectedResponse[1]));
+      expect(result[0].ttl).to.equal(300);
+      expect(result[1].ttl).to.equal(3600);
     });
 
     it('should return multiple responses to support SRA', function () {
