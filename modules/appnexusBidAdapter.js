@@ -598,6 +598,20 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
   }
 
+  // temporary function; may remove at later date if/when adsever fully supports dchain
+  function setupDChain(rtbBid) {
+    let dchain = {
+      ver: '1.0',
+      complete: 0,
+      nodes: [],
+    };
+    if (rtbBid.buyer_member_id) {
+      dchain.nodes.push({ bsid: rtbBid.buyer_member_id.toString(), name: 'xandr' });
+    }
+    return dchain;
+  }
+  bid.meta = Object.assign({}, bid.meta, {dchain: setupDChain(rtbBid)});
+
   if (rtbBid.rtb.video) {
     // shared video properties used for all 3 contexts
     Object.assign(bid, {
