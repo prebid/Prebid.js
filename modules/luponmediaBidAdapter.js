@@ -14,6 +14,100 @@ const DIGITRUST_PROP_NAMES = {
   }
 };
 
+var sizeMap = {
+  1: '468x60',
+  2: '728x90',
+  5: '120x90',
+  7: '125x125',
+  8: '120x600',
+  9: '160x600',
+  10: '300x600',
+  13: '200x200',
+  14: '250x250',
+  15: '300x250',
+  16: '336x280',
+  17: '240x400',
+  19: '300x100',
+  31: '980x120',
+  32: '250x360',
+  33: '180x500',
+  35: '980x150',
+  37: '468x400',
+  38: '930x180',
+  39: '750x100',
+  40: '750x200',
+  41: '750x300',
+  42: '2x4',
+  43: '320x50',
+  44: '300x50',
+  48: '300x300',
+  53: '1024x768',
+  54: '300x1050',
+  55: '970x90',
+  57: '970x250',
+  58: '1000x90',
+  59: '320x80',
+  60: '320x150',
+  61: '1000x1000',
+  64: '580x500',
+  65: '640x480',
+  66: '930x600',
+  67: '320x480',
+  68: '1800x1000',
+  72: '320x320',
+  73: '320x160',
+  78: '980x240',
+  79: '980x300',
+  80: '980x400',
+  83: '480x300',
+  85: '300x120',
+  90: '548x150',
+  94: '970x310',
+  95: '970x100',
+  96: '970x210',
+  101: '480x320',
+  102: '768x1024',
+  103: '480x280',
+  105: '250x800',
+  108: '320x240',
+  113: '1000x300',
+  117: '320x100',
+  125: '800x250',
+  126: '200x600',
+  144: '980x600',
+  145: '980x150',
+  152: '1000x250',
+  156: '640x320',
+  159: '320x250',
+  179: '250x600',
+  195: '600x300',
+  198: '640x360',
+  199: '640x200',
+  213: '1030x590',
+  214: '980x360',
+  221: '1x1',
+  229: '320x180',
+  230: '2000x1400',
+  232: '580x400',
+  234: '6x6',
+  251: '2x2',
+  256: '480x820',
+  257: '400x600',
+  258: '500x200',
+  259: '998x200',
+  264: '970x1000',
+  265: '1920x1080',
+  274: '1800x200',
+  278: '320x500',
+  282: '320x400',
+  288: '640x380',
+  548: '500x1000',
+  550: '980x480',
+  552: '300x200',
+  558: '640x640'
+};
+utils._each(sizeMap, (item, key) => sizeMap[item] = key);
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -129,6 +223,47 @@ export const spec = {
   }
 };
 
+export function hasValidSupplyChainParams(schain) {
+  let isValid = false;
+  const requiredFields = ['asi', 'sid', 'hp'];
+  if (!schain.nodes) return isValid;
+  isValid = schain.nodes.reduce((status, node) => {
+    if (!status) return status;
+    return requiredFields.every(field => node[field]);
+  }, true);
+  if (!isValid) utils.logError('LuponMedia: required schain params missing');
+  return isValid;
+}
+
+var hasSynced = false;
+
+export function resetUserSync() {
+  hasSynced = false;
+}
+
+export function masSizeOrdering(sizes) {
+  const MAS_SIZE_PRIORITY = [15, 2, 9];
+
+  return sizes.sort((first, second) => {
+    // sort by MAS_SIZE_PRIORITY priority order
+    const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+    const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+
+    if (firstPriority > -1 || secondPriority > -1) {
+      if (firstPriority === -1) {
+        return 1;
+      }
+      if (secondPriority === -1) {
+        return -1;
+      }
+      return firstPriority - secondPriority;
+    }
+
+    // and finally ascending order
+    return first - second;
+  });
+}
+
 function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   bidRequest.startTime = new Date().getTime();
 
@@ -180,10 +315,26 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     }
   }
 
-  const bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+  let bidFloor;
+  if (typeof bidRequest.getFloor === 'function' && !config.getConfig('disableFloors')) {
+    let floorInfo;
+    try {
+      floorInfo = bidRequest.getFloor({
+        currency: 'USD',
+        mediaType: 'video',
+        size: parseSizes(bidRequest, 'video')
+      });
+    } catch (e) {
+      utils.logError('LuponMedia: getFloor threw an error: ', e);
+    }
+    bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
+  } else {
+    bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+  }
   if (!isNaN(bidFloor)) {
     data.imp[0].bidfloor = bidFloor;
   }
+
   appendSiteAppDevice(data, bidRequest, bidderRequest);
 
   const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
@@ -309,18 +460,6 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   return data;
 }
 
-export function hasValidSupplyChainParams(schain) {
-  let isValid = false;
-  const requiredFields = ['asi', 'sid', 'hp'];
-  if (!schain.nodes) return isValid;
-  isValid = schain.nodes.reduce((status, node) => {
-    if (!status) return status;
-    return requiredFields.every(field => node[field]);
-  }, true);
-  if (!isValid) utils.logError('LuponMedia: required schain params missing');
-  return isValid;
-}
-
 function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
   if (!endpointName || !DIGITRUST_PROP_NAMES[endpointName]) {
     return null;
@@ -379,10 +518,52 @@ function appendSiteAppDevice(data, bidRequest, bidderRequest) {
   }
 }
 
-var hasSynced = false;
+/**
+ * @param sizes
+ * @returns {*}
+ */
+function mapSizes(sizes) {
+  return utils.parseSizesInput(sizes)
+    // map sizes while excluding non-matches
+    .reduce((result, size) => {
+      let mappedSize = parseInt(sizeMap[size], 10);
+      if (mappedSize) {
+        result.push(mappedSize);
+      }
+      return result;
+    }, []);
+}
 
-export function resetUserSync() {
-  hasSynced = false;
+function parseSizes(bid, mediaType) {
+  let params = bid.params;
+  if (mediaType === 'video') {
+    let size = [];
+    if (params.video && params.video.playerWidth && params.video.playerHeight) {
+      size = [
+        params.video.playerWidth,
+        params.video.playerHeight
+      ];
+    } else if (Array.isArray(utils.deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
+      size = bid.mediaTypes.video.playerSize[0];
+    } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
+      size = bid.sizes[0];
+    }
+    return size;
+  }
+
+  // deprecated: temp legacy support
+  let sizes = [];
+  if (Array.isArray(params.sizes)) {
+    sizes = params.sizes;
+  } else if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+    sizes = mapSizes(bid.mediaTypes.banner.sizes);
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+    sizes = mapSizes(bid.sizes)
+  } else {
+    utils.logWarn('LuponMedia: no sizes are setup or found');
+  }
+
+  return masSizeOrdering(sizes);
 }
 
 registerBidder(spec);
