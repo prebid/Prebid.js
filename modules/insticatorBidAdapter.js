@@ -157,10 +157,22 @@ function buildRequest(validBidRequests, bidderRequest) {
     };
   }
 
-  const schain = extractSchain(bidderRequest.bids);
+  if (Array.isArray(bidderRequest.userIdAsEids) && bidderRequest.userIdAsEids.length > 0) {
+    req.user = {
+      ...req.user,
+      ext: {
+        eids: bidderRequest.userIdAsEids,
+      }
+    }
+  }
 
-  if (schain) {
-    req.source.ext = { schain };
+  if (bidderRequest.schain) {
+    req.source = {
+      ...req.source,
+      ext: {
+        schain: bidderRequest.schain,
+      }
+    }
   }
 
   return req;
