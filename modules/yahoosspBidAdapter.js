@@ -10,6 +10,7 @@ const ADAPTER_VERSION = '1.0.0';
 const PREBID_VERSION = '$prebid.version$';
 const BID_RESPONSE_TTL = 3600;
 const TEST_MODE_DCN = '8a969516017a7a396ec539d97f540011';
+const TEST_MODE_PUBID_DCN = '';
 const TEST_MODE_BANNER_POS = '8a969978017a7aaabab4ab0bc01a0009';
 const TEST_MODE_VIDEO_POS = '8a96958a017a7a57ac375d50c0c700cc';
 const DEFAULT_RENDERER_TIMEOUT = 700;
@@ -381,20 +382,24 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
     // https://jira.vzbuilders.com/browse/CLS-8239
     // https://jira.vzbuilders.com/browse/SSP-18233
 
-    const mediaTypeMode = getAdapterMode();
-
-    payload.imp.forEach(impObject => {
-      impObject.ext.e2eTestMode = true;
-      if (mediaTypeMode === 'banner') {
-        impObject.tagid = TEST_MODE_BANNER_POS; // banner passback
-      } else if (mediaTypeMode === 'video') {
-        impObject.tagid = TEST_MODE_VIDEO_POS; // video passback
-      } else {
-        utils.logWarn('yahoossp adapter e2etest mode does not support yahoossp.mode="all". \n Please specify either "banner" or "video"');
-        utils.logWarn('yahoossp adapter e2etest mode: Please make sure your adUnit matches the yahoossp.mode video or banner');
-      }
-    });
-    payload.site.id = TEST_MODE_DCN;
+    const pubIdMode = getPubIdMode();
+    if (pubIdMode === true) {
+      payload.site.id = TEST_MODE_PUBID_DCN;
+    } else {
+      const mediaTypeMode = getAdapterMode();
+      payload.site.id = TEST_MODE_DCN;
+      payload.imp.forEach(impObject => {
+        impObject.ext.e2eTestMode = true;
+        if (mediaTypeMode === 'banner') {
+          impObject.tagid = TEST_MODE_BANNER_POS; // banner passback
+        } else if (mediaTypeMode === 'video') {
+          impObject.tagid = TEST_MODE_VIDEO_POS; // video passback
+        } else {
+          utils.logWarn('yahoossp adapter e2etest mode does not support yahoossp.mode="all". \n Please specify either "banner" or "video"');
+          utils.logWarn('yahoossp adapter e2etest mode: Please make sure your adUnit matches the yahoossp.mode video or banner');
+        }
+      });
+    }
   };
 
   return {
