@@ -42,7 +42,7 @@ export const spec = {
           id: bidRequest.bidId,
           imp: {
             id: bidRequest.bidId,
-            bidfloor: utils.getBidIdParameter('bidfloor', bidRequest.params),
+            bidfloor: _getFloor(bidRequest),
             banner: _getBanner(bidRequest),
             native: _getNative(utils.deepAccess(bidRequest, 'mediaTypes.native')),
             ext: {
@@ -192,6 +192,23 @@ function _getUser(requests) {
   };
 }
 
+function _getFloor(bidRequest) {
+  if (!utils.isFn(bidRequest.getFloor)) {
+    return (bidRequest.params.bidfloor) ? bidRequest.params.bidfloor : null;
+  }
+
+  let floor = bidRequest.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
+
 function _buildResponse(bidResponse, bid) {
   let response = {
     requestId: bidResponse.id,
@@ -202,7 +219,10 @@ function _buildResponse(bidResponse, bid) {
     dealId: bidResponse.dealId,
     currency: 'USD',
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    meta: {
+      advertiserDomains: bidResponse.adomain || []
+    }
   };
   if (utils.isStr(bid.adm)) {
     response.mediaType = BANNER;
