@@ -20,7 +20,7 @@ export const analyticsUrl = 'https://analytics.rlcdn.com';
 let handlerRequest = [];
 let handlerResponse = [];
 
-let atsAnalyticsAdapterVersion = 1;
+let atsAnalyticsAdapterVersion = 2;
 
 let browsersList = [
   /* Googlebot */

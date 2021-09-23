@@ -87,7 +87,7 @@ describe('ats analytics adapter', function () {
       let expectedAfterBid = {
         'Data': [{
           'has_envelope': true,
-          'adapter_version': 1,
+          'adapter_version': 2,
           'bidder': 'appnexus',
           'bid_id': '30c77d079cdf17',
           'auction_id': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
