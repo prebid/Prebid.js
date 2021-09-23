@@ -49,7 +49,8 @@ const SUPPORTED_USER_ID_SOURCES = [
   'intimatemerger.com'
 ];
 
-const SSP_ENDPOINT = 'https://c2shb.ssp.yahoo.com/bidRequest';
+const SSP_ENDPOINT_DCN_POS = 'https://c2shb.ssp.yahoo.com/bidRequest';
+const SSP_ENDPOINT_PUBID = 'https://c2shb.ssp.yahoo.com/admax/bid/partners/PBJS';
 
 /* Utility functions */
 function hasPurpose1Consent(bidderRequest) {
@@ -117,6 +118,16 @@ function getSupportedEids(bid) {
 
 function isSecure(bid) {
   return utils.deepAccess(bid, 'params.bidOverride.imp.secure') || (document.location.protocol === 'https:') ? 1 : 0;
+};
+
+function getPubIdMode (bid) {
+  let pubIdMode;
+  if (utils.deepAccess(bid, 'params.pubId')) {
+    pubIdMode = true;
+  } else if (utils.deepAccess(bid, 'params.dcn') && utils.deepAccess(bid, 'params.pos')) {
+    pubIdMode = false;
+  };
+  return pubIdMode
 };
 
 function getAdapterMode() {
@@ -209,7 +220,6 @@ function generateOpenRtbObject(bidderRequest, bid) {
       cur: [getFloorModuleData(bidderRequest).currency || utils.deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
       imp: [],
       site: {
-        id: utils.deepAccess(bid, 'params.dcn'),
         page: utils.deepAccess(bidderRequest, 'refererInfo.referer'),
       },
       device: {
@@ -244,6 +254,17 @@ function generateOpenRtbObject(bidderRequest, bid) {
       }
     };
 
+    if (getPubIdMode() === true) {
+      outBoundBidRequest.site.publisher = {
+        id: bid.params.pubId
+      }
+      if (utils.deepAccess(bid, 'params.bidOverride.site.publisher.id') || utils.deepAccess(bid, 'params.inventoryid')) {
+        outBoundBidRequest.site.id = utils.deepAccess(bid, 'params.bidOverride.site.publisher.id') || bid.params.inventoryid;
+      }
+    } else {
+      outBoundBidRequest.site.id = bid.params.dcn;
+    };
+
     if (config.getConfig('ortb2')) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
@@ -264,7 +285,6 @@ function appendImpObject(bid, openRtbObject) {
     const impObject = {
       id: bid.bidId,
       secure: isSecure(bid),
-      tagid: bid.params.pos,
       bidfloor: getFloorModuleData(bid).floor || utils.deepAccess(bid, 'params.bidOverride.imp.bidfloor')
     };
 
@@ -299,7 +319,6 @@ function appendImpObject(bid, openRtbObject) {
     }
 
     impObject.ext = {
-      pos: bid.params.pos,
       dfp_ad_unit_code: bid.adUnitCode
     };
 
@@ -307,6 +326,11 @@ function appendImpObject(bid, openRtbObject) {
       const ortb2ImpExt = utils.deepAccess(bid, 'params.ortb2Imp.ext.data');
       const allowedImpExtKeys = ['data']
       impObject.ext = validateAppendObject('object', allowedImpExtKeys, ortb2ImpExt, impObject.ext);
+    };
+
+    if (getPubIdMode() === false) {
+      impObject.tagid = bid.params.pos;
+      impObject.ext.pos = bid.params.pos;
     };
 
     openRtbObject.imp.push(impObject);
@@ -374,7 +398,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
   };
 
   return {
-    url: config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT,
+    url: config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_DCN_POS,
     method: 'POST',
     data: payload,
     options: requestOptions,
@@ -417,12 +441,13 @@ export const spec = {
       return true;
     } else if (
       utils.isPlainObject(params) &&
-      utils.isStr(params.dcn) && params.dcn.length > 0 &&
-      utils.isStr(params.pos) && params.pos.length > 0
+      ((utils.isStr(params.pubId) && params.pubId.length > 0) ||
+      (utils.isStr(params.dcn) && params.dcn.length > 0 &&
+      utils.isStr(params.pos) && params.pos.length > 0))
     ) {
       return true
     } else {
-      utils.logWarn('yahoossp bidder params missing or incorrect, please pass object with dcn & pos');
+      utils.logWarn('yahoossp bidder params missing or incorrect, please pass object with either: dcn & pos OR pubId');
       return false
     }
   },
