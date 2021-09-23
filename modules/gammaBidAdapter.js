@@ -1,8 +1,7 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import find from 'core-js/library/fn/array/find';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-const ENDPOINT = 'hb.gammaplatform.com';
+const ENDPOINT = 'https://hb.gammaplatform.com';
+const ENDPOINT_USERSYNC = 'https://cm-supply-web.gammaplatform.com';
 const BIDDER_CODE = 'gamma';
 
 export const spec = {
@@ -26,12 +25,17 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
-    const gaxObjParams = find(bidRequests, hasParamInfo);
-    return {
-      method: 'GET',
-      url: '//' + ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + utils.getTopWindowUrl()
-    };
+  buildRequests: function(bidRequests, bidderRequest) {
+    const serverRequests = [];
+    const bidderRequestReferer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || '';
+    for (var i = 0, len = bidRequests.length; i < len; i++) {
+      const gaxObjParams = bidRequests[i];
+      serverRequests.push({
+        method: 'GET',
+        url: ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + encodeURIComponent(bidderRequestReferer)
+      });
+    }
+    return serverRequests;
   },
 
   /**
@@ -57,7 +61,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//' + ENDPOINT + '/adx/usersync'
+        url: ENDPOINT_USERSYNC + '/adx/usersync'
       }];
     }
   }
@@ -80,7 +84,10 @@ function newBid(serverBid) {
     mediaType: serverBid.type,
     netRevenue: true,
     requestId: serverBid.id,
-    ttl: serverBid.seatbid[0].bid[0].ttl || 300
+    ttl: serverBid.seatbid[0].bid[0].ttl || 300,
+    meta: {
+      advertiserDomains: serverBid.seatbid[0].bid[0].adomain && serverBid.seatbid[0].bid[0].adomain.length ? serverBid.seatbid[0].bid[0].adomain : []
+    }
   };
 
   if (serverBid.type == 'video') {
@@ -92,10 +99,6 @@ function newBid(serverBid) {
   }
 
   return bid;
-}
-
-function hasParamInfo(bid) {
-  return !!bid.params;
 }
 
 registerBidder(spec);

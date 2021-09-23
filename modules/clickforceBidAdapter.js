@@ -1,12 +1,12 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'clickforce';
-const ENDPOINT_URL = '//ad.doublemax.net/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
+const ENDPOINT_URL = 'https://ad.holmesmind.com/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
 
 export const spec = {
   code: BIDDER_CODE,
-
+  supportedMediaTypes: [BANNER, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -34,7 +34,8 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT_URL,
-      data: bidParams
+      data: bidParams,
+      validBidRequests: validBidRequests
     };
   },
 
@@ -47,18 +48,69 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const cfResponses = [];
-    utils._each(serverResponse.body, function(response) {
-      cfResponses.push({
-        requestId: response.requestId,
-        cpm: response.cpm,
-        width: response.width,
-        height: response.height,
-        creativeId: response.creativeId,
-        currency: response.currency,
-        netRevenue: response.netRevenue,
-        ttl: response.ttl,
-        ad: response.tag
+    const bidRequestList = [];
+
+    if (typeof bidRequest != 'undefined') {
+      utils._each(bidRequest.validBidRequests, function(req) {
+        bidRequestList[req.bidId] = req;
       });
+    }
+
+    utils._each(serverResponse.body, function(response) {
+      if (response.requestId != null) {
+        // native ad size
+        if (response.width == 3) {
+          cfResponses.push({
+            requestId: response.requestId,
+            cpm: response.cpm,
+            width: response.width,
+            height: response.height,
+            creativeId: response.creativeId,
+            currency: response.currency,
+            netRevenue: response.netRevenue,
+            ttl: response.ttl,
+            native: {
+              title: response.tag.content.title,
+              body: response.tag.content.content,
+              image: {
+                url: response.tag.content.image,
+                height: 900,
+                width: 1600
+              },
+              icon: {
+                url: response.tag.content.icon,
+                height: 900,
+                width: 900
+              },
+              clickUrl: response.tag.cu,
+              cta: response.tag.content.button_text,
+              sponsoredBy: response.tag.content.advertiser,
+              impressionTrackers: response.tag.iu,
+            },
+            mediaType: 'native',
+            meta: {
+              advertiserDomains: response.adomain || []
+            },
+          });
+        } else {
+          // display ad
+          cfResponses.push({
+            requestId: response.requestId,
+            cpm: response.cpm,
+            width: response.width,
+            height: response.height,
+            creativeId: response.creativeId,
+            currency: response.currency,
+            netRevenue: response.netRevenue,
+            ttl: response.ttl,
+            ad: response.tag,
+            mediaType: 'banner',
+            meta: {
+              advertiserDomains: response.adomain || []
+            },
+          });
+        }
+      }
     });
     return cfResponses;
   },
@@ -66,14 +118,15 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: 'https://cdn.doublemax.net/js/capmapping.htm'
+        url: 'https://cdn.holmesmind.com/js/capmapping.htm'
       }]
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: 'https://c.doublemax.net/cm'
+        url: 'https://c.holmesmind.com/cm'
       }]
     }
   }
 };
+
 registerBidder(spec);

@@ -1,11 +1,13 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
-
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { userSync } from '../src/userSync.js';
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
+const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/sbi_outstream_renderer.js';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -16,25 +18,53 @@ export const spec = {
    * @param {BidRequest} bid - The bid params to validate.
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: bid => !!(bid.params && (bid.params.ad_unit || bid.params.placement_id) && (bid.params.sizes || bid.sizes)),
+  isBidRequestValid: (bid) => {
+    if (!bid.params) {
+      return false;
+    }
+    if (!bid.params.ad_unit && !bid.params.placement_id) {
+      return false;
+    }
 
+    if (!deepAccess(bid, 'mediaTypes.banner') && !deepAccess(bid, 'mediaTypes.video')) {
+      return false;
+    }
+
+    if (deepAccess(bid, 'mediaTypes.banner')) { // Sonobi does not support multi type bids, favor banner over video
+      if (!deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.sizes) {
+        // sizes at the banner or params level is required.
+        return false;
+      }
+    } else if (deepAccess(bid, 'mediaTypes.video')) {
+      if (deepAccess(bid, 'mediaTypes.video.context') === 'outstream' && !bid.params.sizes) {
+        // bids.params.sizes is required for outstream video adUnits
+        return false;
+      }
+      if (deepAccess(bid, 'mediaTypes.video.context') === 'instream' && !deepAccess(bid, 'mediaTypes.video.playerSize')) {
+        // playerSize is required for instream adUnits.
+        return false;
+      }
+    }
+
+    return true;
+  },
   /**
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @return {object} ServerRequest - Info describing the request to the server.
    */
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     const bids = validBidRequests.map(bid => {
       let slotIdentifier = _validateSlot(bid);
       if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
         slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
         return {
-          [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}${_validateFloor(bid)}`
+          [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}${_validateFloor(bid)}${_validateGPID(bid)}`
         }
       } else if (/^[0-9a-fA-F]{20}$/.test(slotIdentifier) && slotIdentifier.length === 20) {
         return {
-          [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}${_validateFloor(bid)}`
+          [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}${_validateFloor(bid)}${_validateGPID(bid)}`
         }
       } else {
         logError(`The ad unit code or Sonobi Placement id for slot ${bid.bidId} is invalid`);
@@ -46,29 +76,90 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
-      'ref': getTopWindowLocation().host,
+      'ref': bidderRequest.refererInfo.referer,
       's': generateUUID(),
       'pv': PAGEVIEW_ID,
       'vp': _getPlatform(),
       'lib_name': 'prebid',
-      'lib_v': '$prebid.version$'
+      'lib_v': '$prebid.version$',
+      'us': 0,
     };
 
-    if (validBidRequests[0].params.hfa) {
-      payload.hfa = validBidRequests[0].params.hfa;
+    if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
+      payload.us = config.getConfig('userSync').syncsPerBidder;
     }
+
+    // use userSync's internal function to determine if we can drop an iframe sync pixel
+    if (_iframeAllowed()) {
+      payload.ius = 1;
+    } else {
+      payload.ius = 0;
+    }
+
+    if (deepAccess(validBidRequests[0], 'params.hfa')) {
+      payload.hfa = deepAccess(validBidRequests[0], 'params.hfa');
+    }
+
     if (validBidRequests[0].params.referrer) {
       payload.ref = validBidRequests[0].params.referrer;
     }
 
-    // If there is no key_maker data, then dont make the request.
+    // Apply GDPR parameters to request.
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr = bidderRequest.gdprConsent.gdprApplies ? 'true' : 'false';
+      if (bidderRequest.gdprConsent.consentString) {
+        payload.consent_string = bidderRequest.gdprConsent.consentString;
+      }
+    }
+
+    if (validBidRequests[0].schain) {
+      payload.schain = JSON.stringify(validBidRequests[0].schain)
+    }
+    if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
+      const userIds = deepClone(validBidRequests[0].userId);
+
+      if (userIds.id5id) {
+        userIds.id5id = deepAccess(userIds, 'id5id.uid');
+      }
+
+      payload.userid = JSON.stringify(userIds);
+    }
+
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (Array.isArray(eids) && eids.length > 0) {
+      payload.eids = JSON.stringify(eids);
+    }
+
+    let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
+
+    if (keywords) {
+      payload.kw = keywords;
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent;
+    }
+
+    if (config.getConfig('coppa') === true) {
+      payload.coppa = 1;
+    } else {
+      payload.coppa = 0;
+    }
+
+    // If there is no key_maker data, then don't make the request.
     if (isEmpty(data)) {
       return null;
     }
 
+    let url = STR_ENDPOINT;
+
+    if (deepAccess(validBidRequests[0], 'params.bid_request_url')) {
+      url = deepAccess(validBidRequests[0], 'params.bid_request_url');
+    }
+
     return {
       method: 'GET',
-      url: STR_ENDPOINT,
+      url: url,
       withCredentials: true,
       data: payload,
       bidderRequests: validBidRequests
@@ -78,29 +169,40 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @param {*} bidderRequests - Info describing the request to the server.
+   * @param {*} bidderRequest - Info describing the request to the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: (serverResponse, { bidderRequests }) => {
+  interpretResponse: (serverResponse, bidderRequest) => {
     const bidResponse = serverResponse.body;
     const bidsReturned = [];
-
+    const referrer = bidderRequest.data.ref;
     if (Object.keys(bidResponse.slots).length === 0) {
       return bidsReturned;
     }
 
     Object.keys(bidResponse.slots).forEach(slot => {
-      const bidId = _getBidIdFromTrinityKey(slot);
-      const bidRequest = find(bidderRequests, bidReqest => bidReqest.bidId === bidId);
-      const videoMediaType = deepAccess(bidRequest, 'mediaTypes.video');
-      const mediaType = bidRequest.mediaType || (videoMediaType ? 'video' : null);
-      const createCreative = _creative(mediaType);
       const bid = bidResponse.slots[slot];
+      const bidId = _getBidIdFromTrinityKey(slot);
+      const bidRequest = _findBidderRequest(bidderRequest.bidderRequests, bidId);
+      let mediaType = null;
+      if (bid.sbi_ct === 'video') {
+        mediaType = 'video';
+        const context = deepAccess(bidRequest, 'mediaTypes.video.context');
+        if (context === 'outstream') {
+          mediaType = 'outstream';
+        }
+      }
+
+      const createCreative = _creative(mediaType, referrer);
       if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size) {
         const [
           width = 1,
           height = 1
         ] = bid.sbi_size.split('x');
+        let aDomains = [];
+        if (bid.sbi_adomain) {
+          aDomains = [bid.sbi_adomain]
+        }
         const bids = {
           requestId: bidId,
           cpm: Number(bid.sbi_mouse),
@@ -108,22 +210,41 @@ export const spec = {
           height: Number(height),
           ad: createCreative(bidResponse.sbi_dc, bid.sbi_aid),
           ttl: 500,
-          creativeId: bid.sbi_aid,
+          creativeId: bid.sbi_crid || bid.sbi_aid,
+          aid: bid.sbi_aid,
           netRevenue: true,
-          currency: 'USD'
+          currency: 'USD',
+          meta: {
+            advertiserDomains: aDomains
+          }
         };
 
         if (bid.sbi_dozer) {
           bids.dealId = bid.sbi_dozer;
         }
 
-        const creativeType = bid.sbi_ct;
-        if (creativeType && (creativeType === 'video' || creativeType === 'outstream')) {
+        if (mediaType === 'video') {
           bids.mediaType = 'video';
           bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
           delete bids.ad;
           delete bids.width;
           delete bids.height;
+        } else if (mediaType === 'outstream' && bidRequest) {
+          delete bids.ad; // Some pubs expect bids.ad to be a vast xml structure, we have a vatUrl so lets delete this.
+          bids.mediaType = 'video';
+          bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
+          bids.renderer = newRenderer(bidRequest.adUnitCode, bids, deepAccess(
+            bidRequest,
+            'renderer.options'
+          ));
+          let videoSize = deepAccess(bidRequest, 'params.sizes');
+          if (Array.isArray(videoSize) && Array.isArray(videoSize[0])) { // handle case of multiple sizes
+            videoSize = videoSize[0] // Only take the first size for outstream
+          }
+          if (videoSize) {
+            bids.width = videoSize[0];
+            bids.height = videoSize[1];
+          }
         }
         bidsReturned.push(bids);
       }
@@ -133,7 +254,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     const syncs = [];
     try {
       if (syncOptions.pixelEnabled) {
@@ -144,18 +265,35 @@ export const spec = {
           });
         });
       }
-    } catch (e) {
-      logError(e)
-    }
+    } catch (e) {}
     return syncs;
   }
 };
 
+function _findBidderRequest(bidderRequests, bidId) {
+  for (let i = 0; i < bidderRequests.length; i++) {
+    if (bidderRequests[i].bidId === bidId) {
+      return bidderRequests[i];
+    }
+  }
+}
+
 function _validateSize (bid) {
+  if (deepAccess(bid, 'mediaTypes.video')) {
+    return ''; // Video bids arent allowed to override sizes via the trinity request
+  }
+
   if (bid.params.sizes) {
     return parseSizesInput(bid.params.sizes).join(',');
   }
-  return parseSizesInput(bid.sizes).join(',');
+  if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
+    return parseSizesInput(deepAccess(bid, 'mediaTypes.banner.sizes')).join(',');
+  }
+
+  // Handle deprecated sizes definition
+  if (bid.sizes) {
+    return parseSizesInput(bid.sizes).join(',');
+  }
 }
 
 function _validateSlot (bid) {
@@ -166,22 +304,33 @@ function _validateSlot (bid) {
 }
 
 function _validateFloor (bid) {
-  if (bid.params.floor) {
-    return `|f=${bid.params.floor}`;
+  const floor = getBidFloor(bid);
+
+  if (floor) {
+    return `|f=${floor}`;
   }
   return '';
 }
 
-const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
-  if (mediaType === 'video') {
-    return _videoCreative(sbi_dc, sbi_aid)
+function _validateGPID(bid) {
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
+
+  if (gpid) {
+    return `|gpid=${gpid}`
   }
-  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
+  return ''
+}
+
+const _creative = (mediaType, referer) => (sbiDc, sbiAid) => {
+  if (mediaType === 'video' || mediaType === 'outstream') {
+    return _videoCreative(sbiDc, sbiAid, referer)
+  }
+  const src = `https://${sbiDc}apex.go.sonobi.com/sbi.js?aid=${sbiAid}&as=null&ref=${encodeURIComponent(referer)}`;
   return '<script type="text/javascript" src="' + src + '"></script>';
 };
 
-function _videoCreative(sbi_dc, sbi_aid) {
-  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().host}`
+function _videoCreative(sbiDc, sbiAid, referer) {
+  return `https://${sbiDc}apex.go.sonobi.com/vast.xml?vid=${sbiAid}&ref=${encodeURIComponent(referer)}`
 }
 
 function _getBidIdFromTrinityKey (key) {
@@ -212,6 +361,70 @@ export function _getPlatform(context = window) {
     return 'tablet'
   }
   return 'desktop';
+}
+
+function newRenderer(adUnitCode, bid, rendererOptions = {}) {
+  const renderer = Renderer.install({
+    id: bid.aid,
+    url: OUTSTREAM_REDNERER_URL,
+    config: rendererOptions,
+    loaded: false,
+    adUnitCode
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  renderer.setEventHandlers({
+    impression: () => logMessage('Sonobi outstream video impression event'),
+    loaded: () => logMessage('Sonobi outstream video loaded event'),
+    ended: () => {
+      logMessage('Sonobi outstream renderer video event');
+      // document.querySelector(`#${adUnitCode}`).style.display = 'none';
+    }
+  });
+  return renderer;
+}
+
+function outstreamRender(bid) {
+  // push to render queue because SbiOutstreamRenderer may not be loaded yet
+  bid.renderer.push(() => {
+    const [
+      width,
+      height
+    ] = bid.getSize().split('x');
+    const renderer = new window.SbiOutstreamRenderer();
+    renderer.init({
+      vastUrl: bid.vastUrl,
+      height,
+      width,
+    });
+    renderer.setRootElement(bid.adUnitCode);
+  });
+}
+
+function _iframeAllowed() {
+  return userSync.canBidderRegisterSync('iframe', BIDDER_CODE);
+}
+
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return (bid.params.floor) ? bid.params.floor : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return '';
 }
 
 registerBidder(spec);

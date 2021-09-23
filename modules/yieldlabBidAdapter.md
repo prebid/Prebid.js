@@ -21,7 +21,11 @@ Module that connects to Yieldlab's demand sources
                    params: {
                        adslotId: "5220336",
                        supplyId: "1381604",
-                       adSize: "728x90"
+                       targeting: {
+                           key1: "value1",
+                           key2: "value2"
+                       },
+                       extId: "abc"
                    }
                }]
            }, {
@@ -29,15 +33,14 @@ Module that connects to Yieldlab's demand sources
                sizes: [[640, 480]],
                mediaTypes: {
                    video: {
-                       context: "instream"
+                       context: "instream" // or "outstream"
                    }
                },
                bids: [{
                    bidder: "yieldlab",
                    params: {
                        adslotId: "5220339",
-                       supplyId: "1381604",
-                       adSize: "640x480"
+                       supplyId: "1381604"
                    }
                }]
            }

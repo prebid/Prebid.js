@@ -3,8 +3,7 @@
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
 
 var _ = require('lodash');
-var webpackConf = require('./webpack.conf');
-var path = require('path')
+var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
 
 function newWebpackConfig(codeCoverage) {
@@ -20,7 +19,10 @@ function newWebpackConfig(codeCoverage) {
     webpackConfig.module.rules.push({
       enforce: 'post',
       exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-      loader: 'istanbul-instrumenter-loader',
+      use: {
+        loader: '@jsdevtools/coverage-istanbul-loader',
+        options: { esModules: true }
+      },
       test: /\.js$/
     })
   }
@@ -30,11 +32,10 @@ function newWebpackConfig(codeCoverage) {
 function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
-    'karma-coverage-istanbul-reporter',
+    'karma-coverage',
     'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
-    'karma-requirejs',
     'karma-sinon',
     'karma-sourcemap-loader',
     'karma-spec-reporter',
@@ -43,12 +44,12 @@ function newPluginsArray(browserstack) {
   ];
   if (browserstack) {
     plugins.push('karma-browserstack-launcher');
-    plugins.push('karma-firefox-launcher');
-    plugins.push('karma-opera-launcher');
-    plugins.push('karma-safari-launcher');
-    plugins.push('karma-script-launcher');
-    plugins.push('karma-ie-launcher');
   }
+  plugins.push('karma-firefox-launcher');
+  plugins.push('karma-opera-launcher');
+  plugins.push('karma-safari-launcher');
+  plugins.push('karma-script-launcher');
+  plugins.push('karma-ie-launcher');
   return plugins;
 }
 
@@ -64,18 +65,15 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
       suppressPassed: true
     };
   }
+
   if (codeCoverage) {
-    karmaConf.reporters.push('coverage-istanbul');
-    karmaConf.coverageIstanbulReporter = {
-      reports: ['html', 'lcovonly', 'text-summary'],
-      dir: path.join(__dirname, 'build', 'coverage'),
-      'report-config': {
-        html: {
-          subdir: 'karma_html',
-          urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
-        }
-      }
-    }
+    karmaConf.reporters.push('coverage');
+    karmaConf.coverageReporter = {
+      dir: 'build/coverage',
+      reporters: [
+        { type: 'lcov', subdir: '.' }
+      ]
+    };
   }
 }
 
@@ -83,16 +81,29 @@ function setBrowsers(karmaConf, browserstack) {
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
-      accessKey: process.env.BROWSERSTACK_ACCESS_KEY
+      accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
+      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
-    karmaConf.customLaunchers = require('./browsers.json')
+    karmaConf.customLaunchers = require('./browsers.json');
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
-    karmaConf.browsers = ['ChromeHeadless'];
+    var isDocker = require('is-docker')();
+    if (isDocker) {
+      karmaConf.customLaunchers = karmaConf.customLaunchers || {};
+      karmaConf.customLaunchers.ChromeCustom = {
+        base: 'ChromeHeadless',
+        // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
+        // more permissions than Docker allows by default)
+        flags: ['--no-sandbox']
+      }
+      karmaConf.browsers = ['ChromeCustom'];
+    } else {
+      karmaConf.browsers = ['ChromeHeadless'];
+    }
   }
 }
 
@@ -113,6 +124,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     webpack: webpackConfig,
     webpackMiddleware: {
+      stats: 'errors-only',
       noInfo: true
     },
     // frameworks to use
@@ -141,20 +153,33 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     autoWatch: true,
 
     reporters: ['mocha'],
+
     mochaReporter: {
-      showDiff: true
+      showDiff: true,
+      output: 'minimal'
     },
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 10000, // default 2000
-    browserDisconnectTolerance: 1, // default 0
-    browserNoActivityTimeout: 4 * 60 * 1000, // default 10000
-    captureTimeout: 4 * 60 * 1000, // default 60000
+    browserDisconnectTimeout: 3e5, // default 2000
+    browserNoActivityTimeout: 3e5, // default 10000
+    captureTimeout: 3e5, // default 60000,
+    browserDisconnectTolerance: 3,
+    concurrency: 5,
 
     plugins: plugins
   }
+
+  // To ensure that, we are able to run single spec file
+  // here we are adding preprocessors, when file is passed
+  if (file) {
+    config.files.forEach((file) => {
+      config.preprocessors[file] = ['webpack', 'sourcemap'];
+    });
+    delete config.preprocessors['test/test_index.js'];
+  }
+
   setReporters(config, codeCoverage, browserstack);
   setBrowsers(config, browserstack);
   return config;

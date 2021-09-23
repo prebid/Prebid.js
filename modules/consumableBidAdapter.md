@@ -14,16 +14,32 @@ Module that connects to Consumable's demand sources
 ```javascript
     var adUnits = [
         {
-            code: 'test-ad-div',
+            code: 'test-ad-1',
             sizes: [[300, 250]],
             bids: [
                 {
                     bidder: 'consumable',
                     params: {
-                        placement: '1234567',
-                        unitId: '1234',
-                        unitName: 'cnsmbl-300x250',
-                        zoneId: '13136.52'
+                        networkId: '9969',
+                        siteId: '980639',
+                        unitId: '123456',
+                        unitName: 'cnsmbl-unit'
+                    }
+                }
+            ]
+        },
+        {
+            code: 'test-ad-2',
+            sizes: [[300, 250]],
+            bids: [
+                {
+                    bidder: 'consumable',
+                    params: {
+                        networkId: '9969',
+                        siteId: '980639',
+                        unitId: '123456',
+                        unitName: 'cnsmbl-unit',
+                        zoneIds: [178503]
                     }
                 }
             ]

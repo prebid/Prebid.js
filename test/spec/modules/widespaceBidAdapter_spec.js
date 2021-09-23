@@ -1,8 +1,8 @@
-import { expect } from 'chai';
-import { spec } from 'modules/widespaceBidAdapter';
-import includes from 'core-js/library/fn/array/includes';
+import {expect} from 'chai';
+import {spec, storage} from 'modules/widespaceBidAdapter.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
-describe('+widespaceAdatperTest', () => {
+describe('+widespaceAdatperTest', function () {
   // Dummy bid request
   const bidRequest = [{
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
@@ -45,6 +45,22 @@ describe('+widespaceAdatperTest', () => {
     'transactionId': '4f68b713-04ba-4d7f-8df9-643bcdab5efv'
   }];
 
+  // Dummy bidderRequest object
+  const bidderRequest = {
+    auctionId: 'bf1e57ee-fff2-4304-8143-91aaf423a944',
+    auctionStart: 1527418994278,
+    bidderCode: 'widespace',
+    bidderRequestId: '37a5f053efef34',
+    timeout: 3000,
+    gdprConsent: {
+      consentString: 'consentString',
+      gdprApplies: true,
+      vendorData: {
+        hasGlobalScope: false
+      }
+    }
+  };
+
   // Dummy bid response with ad code
   const bidResponse = {
     body: [{
@@ -59,7 +75,10 @@ describe('+widespaceAdatperTest', () => {
       'status': 'ad',
       'ttl': 30,
       'width': 300,
-      'syncPixels': ['https://url1.com/url', 'https://url2.com/url']
+      'syncPixels': ['https://url1.com/url', 'https://url2.com/url'],
+      'meta': {
+        advertiserDomains: ['advertiserdomain.com']
+      }
     }],
     headers: {}
   };
@@ -94,8 +113,8 @@ describe('+widespaceAdatperTest', () => {
     navigator.connection.type = 'wifi';
   }
 
-  describe('+bidRequestValidity', () => {
-    it('bidRequest with sid and currency params', () => {
+  describe('+bidRequestValidity', function () {
+    it('bidRequest with sid and currency params', function () {
       expect(spec.isBidRequestValid({
         bidder: 'widespace',
         params: {
@@ -105,7 +124,7 @@ describe('+widespaceAdatperTest', () => {
       })).to.equal(true);
     });
 
-    it('-bidRequest with missing sid', () => {
+    it('-bidRequest with missing sid', function () {
       expect(spec.isBidRequestValid({
         bidder: 'widespace',
         params: {
@@ -114,7 +133,7 @@ describe('+widespaceAdatperTest', () => {
       })).to.equal(false);
     });
 
-    it('-bidRequest with missing currency', () => {
+    it('-bidRequest with missing currency', function () {
       expect(spec.isBidRequestValid({
         bidder: 'widespace',
         params: {
@@ -124,37 +143,65 @@ describe('+widespaceAdatperTest', () => {
     });
   });
 
-  describe('+bidRequest', () => {
-    const request = spec.buildRequests(bidRequest);
+  describe('+bidRequest', function () {
+    let request;
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
+    before(function() {
+      request = spec.buildRequests(bidRequest, bidderRequest);
+    })
 
-    it('-bidRequest method is POST', () => {
+    let fakeLocalStorage = {};
+    let lsSetStub;
+    let lsGetStub;
+    let lsRemoveStub;
+
+    beforeEach(function () {
+      lsSetStub = sinon.stub(storage, 'setDataInLocalStorage').callsFake(function (name, value) {
+        fakeLocalStorage[name] = value;
+      });
+
+      lsGetStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(function (key) {
+        return fakeLocalStorage[key] || null;
+      });
+
+      lsRemoveStub = sinon.stub(storage, 'removeDataFromLocalStorage').callsFake(function (key) {
+        if (key && (fakeLocalStorage[key] !== null || fakeLocalStorage[key] !== undefined)) {
+          delete fakeLocalStorage[key];
+        }
+        return true;
+      });
+    });
+
+    afterEach(function () {
+      lsSetStub.restore();
+      lsGetStub.restore();
+      lsRemoveStub.restore();
+      fakeLocalStorage = {};
+    });
+
+    it('-bidRequest method is POST', function () {
       expect(request[0].method).to.equal('POST');
     });
 
-    it('-bidRequest url is valid', () => {
+    it('-bidRequest url is valid', function () {
       expect(UrlRegExp.test(request[0].url)).to.equal(true);
     });
 
-    it('-bidRequest data exist', () => {
-      expect(request[0].data).to.exists;
+    it('-bidRequest data exist', function () {
+      expect(request[0].data).to.exist;
     });
 
-    it('-bidRequest data is form data', () => {
+    it('-bidRequest data is form data', function () {
       expect(typeof request[0].data).to.equal('string');
     });
 
-    it('-bidRequest options have header type', () => {
-      expect(request[0].options.contentType).to.exists;
-    });
-
-    it('-cookie test for wsCustomData ', () => {
-      expect(request[0].data.indexOf('hb.cd') > -1).to.equal(true);
+    it('-bidRequest options have header type', function () {
+      expect(request[0].options.contentType).to.exist;
     });
   });
 
-  describe('+interpretResponse', () => {
-    it('-required params available in response', () => {
+  describe('+interpretResponse', function () {
+    it('-required params available in response', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
       let requiredKeys = [
         'requestId',
@@ -166,7 +213,8 @@ describe('+widespaceAdatperTest', () => {
         'netRevenue',
         'ttl',
         'referrer',
-        'ad'
+        'ad',
+        'meta'
       ];
       const resultKeys = Object.keys(result[0]);
       requiredKeys.forEach((key) => {
@@ -185,19 +233,19 @@ describe('+widespaceAdatperTest', () => {
       });
     });
 
-    it('-empty result if noad responded', () => {
+    it('-empty result if noad responded', function () {
       const noAdResult = spec.interpretResponse(bidResponseNoAd, bidRequest);
       expect(noAdResult.length).to.equal(0);
     });
 
-    it('-empty response should not breake anything in adapter', () => {
+    it('-empty response should not breake anything in adapter', function () {
       const noResponse = spec.interpretResponse({}, bidRequest);
       expect(noResponse.length).to.equal(0);
     });
   });
 
-  describe('+getUserSyncs', () => {
-    it('-always return an array', () => {
+  describe('+getUserSyncs', function () {
+    it('-always return an array', function () {
       const userSync_test1 = spec.getUserSyncs({}, [bidResponse]);
       expect(Array.isArray(userSync_test1)).to.equal(true);
 

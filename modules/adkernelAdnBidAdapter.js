@@ -1,16 +1,16 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER, VIDEO} from 'src/mediaTypes';
-import includes from 'core-js/library/fn/array/includes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
-const VIDEO_TARGETING = ['mimes', 'protocols', 'api'];
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
 const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
 const DEFAULT_APIS = [1, 2];
+const GVLID = 14;
 
-function isRtbDebugEnabled() {
-  return utils.getTopWindowLocation().href.indexOf('adk_debug=true') !== -1;
+function isRtbDebugEnabled(refInfo) {
+  return refInfo.referer.indexOf('adk_debug=true') !== -1;
 }
 
 function buildImp(bidRequest) {
@@ -18,26 +18,29 @@ function buildImp(bidRequest) {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode
   };
-  if (bidRequest.mediaType === BANNER || utils.deepAccess(bidRequest, `mediaTypes.banner`) ||
-    (bidRequest.mediaTypes === undefined && bidRequest.mediaType === undefined)) {
-    let sizes = canonicalizeSizesArray(utils.deepAccess(bidRequest, `mediaTypes.banner.sizes`) || bidRequest.sizes);
+  let mediaType;
+  let bannerReq = utils.deepAccess(bidRequest, `mediaTypes.banner`);
+  let videoReq = utils.deepAccess(bidRequest, `mediaTypes.video`);
+  if (bannerReq) {
+    let sizes = canonicalizeSizesArray(bannerReq.sizes);
     imp.banner = {
       format: utils.parseSizesInput(sizes)
-    }
-  } else if (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, `mediaTypes.video`)) {
-    let size = utils.deepAccess(bidRequest, `mediaTypes.video.playerSize`) || canonicalizeSizesArray(bidRequest.sizes)[0];
+    };
+    mediaType = BANNER;
+  } else if (videoReq) {
+    let size = canonicalizeSizesArray(videoReq.playerSize)[0];
     imp.video = {
       w: size[0],
       h: size[1],
-      mimes: DEFAULT_MIMES,
-      protocols: DEFAULT_PROTOCOLS,
-      api: DEFAULT_APIS
+      mimes: videoReq.mimes || DEFAULT_MIMES,
+      protocols: videoReq.protocols || DEFAULT_PROTOCOLS,
+      api: videoReq.api || DEFAULT_APIS
     };
-    if (bidRequest.params.video) {
-      Object.keys(bidRequest.params.video)
-        .filter(param => includes(VIDEO_TARGETING, param))
-        .forEach(param => imp.video[param] = bidRequest.params.video[param]);
-    }
+    mediaType = VIDEO;
+  }
+  let bidFloor = getBidFloor(bidRequest, mediaType, '*');
+  if (bidFloor) {
+    imp.bidfloor = bidFloor;
   }
   return imp;
 }
@@ -54,18 +57,45 @@ function canonicalizeSizesArray(sizes) {
   return sizes;
 }
 
-function buildRequestParams(auctionId, transactionId, tags) {
-  let loc = utils.getTopWindowLocation();
-  return {
+function buildRequestParams(tags, bidderRequest) {
+  let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
+  let req = {
     id: auctionId,
     tid: transactionId,
-    site: {
-      page: loc.href,
-      ref: utils.getTopWindowReferrer(),
-      secure: ~~(loc.protocol === 'https:')
-    },
+    site: buildSite(refererInfo),
     imp: tags
   };
+  if (gdprConsent) {
+    if (gdprConsent.gdprApplies !== undefined) {
+      utils.deepSetValue(req, 'user.gdpr', ~~gdprConsent.gdprApplies);
+    }
+    if (gdprConsent.consentString !== undefined) {
+      utils.deepSetValue(req, 'user.consent', gdprConsent.consentString);
+    }
+  }
+  if (uspConsent) {
+    utils.deepSetValue(req, 'user.us_privacy', uspConsent);
+  }
+  if (config.getConfig('coppa')) {
+    utils.deepSetValue(req, 'user.coppa', 1);
+  }
+  return req;
+}
+
+function buildSite(refInfo) {
+  let loc = utils.parseUrl(refInfo.referer);
+  let result = {
+    page: `${loc.protocol}://${loc.hostname}${loc.pathname}`,
+    secure: ~~(loc.protocol === 'https')
+  };
+  if (self === top && document.referrer) {
+    result.ref = document.referrer;
+  }
+  let keywords = document.getElementsByTagName('meta')['keywords'];
+  if (keywords && keywords.content) {
+    result.keywords = keywords.content;
+  }
+  return result;
 }
 
 function buildBid(tag) {
@@ -73,37 +103,76 @@ function buildBid(tag) {
     requestId: tag.impid,
     bidderCode: spec.code,
     cpm: tag.bid,
-    width: tag.w,
-    height: tag.h,
     creativeId: tag.crid,
     currency: 'USD',
     ttl: 720,
     netRevenue: true
   };
+  if (tag.w) {
+    bid.width = tag.w;
+  }
+  if (tag.h) {
+    bid.height = tag.h;
+  }
   if (tag.tag) {
-    bid.ad = `<!DOCTYPE html><html><head><title></title><body style='margin:0px;padding:0px;'>${tag.tag}</body></head>`;
+    bid.ad = tag.tag;
     bid.mediaType = BANNER;
   } else if (tag.vast_url) {
     bid.vastUrl = tag.vast_url;
     bid.mediaType = VIDEO;
   }
+  fillBidMeta(bid, tag);
   return bid;
 }
 
+function fillBidMeta(bid, tag) {
+  if (utils.isStr(tag.agencyName)) {
+    utils.deepSetValue(bid, 'meta.agencyName', tag.agencyName);
+  }
+  if (utils.isNumber(tag.advertiserId)) {
+    utils.deepSetValue(bid, 'meta.advertiserId', tag.advertiserId);
+  }
+  if (utils.isStr(tag.advertiserName)) {
+    utils.deepSetValue(bid, 'meta.advertiserName', tag.advertiserName);
+  }
+  if (utils.isArray(tag.advertiserDomains)) {
+    utils.deepSetValue(bid, 'meta.advertiserDomains', tag.advertiserDomains);
+  }
+  if (utils.isStr(tag.primaryCatId)) {
+    utils.deepSetValue(bid, 'meta.primaryCatId', tag.primaryCatId);
+  }
+  if (utils.isArray(tag.secondaryCatIds)) {
+    utils.deepSetValue(bid, 'meta.secondaryCatIds', tag.secondaryCatIds);
+  }
+}
+
+function getBidFloor(bid, mediaType, sizes) {
+  var floor;
+  var size = sizes.length === 1 ? sizes[0] : '*';
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor;
+}
+
 export const spec = {
-
   code: 'adkernelAdn',
-
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
+  aliases: ['engagesimply'],
 
   isBidRequestValid: function(bidRequest) {
-    return 'params' in bidRequest && (typeof bidRequest.params.host === 'undefined' || typeof bidRequest.params.host === 'string') &&
-      typeof bidRequest.params.pubId === 'number';
+    return 'params' in bidRequest &&
+      (typeof bidRequest.params.host === 'undefined' || typeof bidRequest.params.host === 'string') &&
+      typeof bidRequest.params.pubId === 'number' &&
+      'mediaTypes' in bidRequest &&
+      ('banner' in bidRequest.mediaTypes || 'video' in bidRequest.mediaTypes);
   },
 
-  buildRequests: function(bidRequests) {
-    let transactionId;
-    let auctionId;
+  buildRequests: function(bidRequests, bidderRequest) {
     let dispatch = bidRequests.map(buildImp)
       .reduce((acc, curr, index) => {
         let bidRequest = bidRequests[index];
@@ -112,17 +181,16 @@ export const spec = {
         acc[host] = acc[host] || {};
         acc[host][pubId] = acc[host][pubId] || [];
         acc[host][pubId].push(curr);
-        transactionId = bidRequest.transactionId;
-        auctionId = bidRequest.bidderRequestId;
         return acc;
       }, {});
+
     let requests = [];
     Object.keys(dispatch).forEach(host => {
       Object.keys(dispatch[host]).forEach(pubId => {
-        let request = buildRequestParams(auctionId, transactionId, dispatch[host][pubId]);
+        let request = buildRequestParams(dispatch[host][pubId], bidderRequest);
         requests.push({
           method: 'POST',
-          url: `//${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled() ? '&debug=1' : ''}`,
+          url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(bidderRequest.refererInfo) ? '&debug=1' : ''}`,
           data: JSON.stringify(request)
         })
       });
@@ -142,14 +210,24 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses) {
-    if (!syncOptions.iframeEnabled || !serverResponses || serverResponses.length === 0) {
+    if (!serverResponses || serverResponses.length === 0) {
       return [];
     }
-    return serverResponses.filter(rps => rps.body && rps.body.syncpages)
-      .map(rsp => rsp.body.syncpages)
-      .reduce((a, b) => a.concat(b), [])
-      .map(sync_url => ({type: 'iframe', url: sync_url}));
+    if (syncOptions.iframeEnabled) {
+      return buildSyncs(serverResponses, 'syncpages', 'iframe');
+    } else if (syncOptions.pixelEnabled) {
+      return buildSyncs(serverResponses, 'syncpixels', 'image');
+    } else {
+      return [];
+    }
   }
 };
+
+function buildSyncs(serverResponses, propName, type) {
+  return serverResponses.filter(rps => rps.body && rps.body[propName])
+    .map(rsp => rsp.body[propName])
+    .reduce((a, b) => a.concat(b), [])
+    .map(syncUrl => ({type: type, url: syncUrl}));
+}
 
 registerBidder(spec);
