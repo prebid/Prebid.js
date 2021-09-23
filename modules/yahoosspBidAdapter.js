@@ -398,7 +398,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
   };
 
   return {
-    url: config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_DCN_POS,
+    url: getPubIdMode() ? SSP_ENDPOINT_PUBID : config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_DCN_POS,
     method: 'POST',
     data: payload,
     options: requestOptions,
