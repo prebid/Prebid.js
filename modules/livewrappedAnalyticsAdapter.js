@@ -39,7 +39,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
           let lwFloor;
           let container = document.getElementById(bidRequest.adUnitCode);
           let adUnitId = container ? container.getAttribute('data-adunitid') : undefined;
-          adUnitId = adUnitId || undefined;
+          adUnitId = adUnitId != null ? adUnitId : undefined;
 
           if (bidRequest.lwflr) {
             lwFloor = bidRequest.lwflr.flr;
