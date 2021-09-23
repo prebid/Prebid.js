@@ -638,7 +638,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     let currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
 
-    while (currentImpressionSize > remainingRequestSize) {
+    while (impressionObjects.length && currentImpressionSize > remainingRequestSize) {
       wasAdUnitImpressionsTrimmed = true;
       impressionObjects.pop();
       currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;

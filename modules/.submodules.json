@@ -51,7 +51,8 @@
     "permutiveRtdProvider",
     "reconciliationRtdProvider",
     "sirdataRtdProvider",
-    "timeoutRtdProvider"
+    "timeoutRtdProvider",
+    "weboramaRtdProvider"
   ],
   "fpdModule": [
     "enrichmentFpdModule",
