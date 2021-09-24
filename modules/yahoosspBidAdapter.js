@@ -491,10 +491,6 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, { data, bidderRequest }) {
-    utils.logWarn('+++ serverResponse: ', serverResponse);
-    utils.logWarn('+++ data: ', data);
-    utils.logWarn('+++ bidderRequest: ', bidderRequest);
-
     const response = [];
     if (!serverResponse.body || !Array.isArray(serverResponse.body.seatbid)) {
       return response;

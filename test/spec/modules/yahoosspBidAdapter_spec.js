@@ -6,6 +6,7 @@ import {spec} from 'modules/yahoosspBidAdapter.js';
 const DEFAULT_BID_ID = '84ab500420319d';
 const DEFAULT_BID_DCN = '2093845709823475';
 const DEFAULT_BID_POS = 'header';
+const DEFAULT_PUBID = 'PubId';
 const DEFAULT_AD_UNIT_CODE = '/19968336/header-bid-tag-1';
 const DEFAULT_AD_UNIT_TYPE = 'banner';
 const DEFAULT_PARAMS_BID_OVERRIDE = {};
@@ -15,7 +16,7 @@ const PREBID_VERSION = '$prebid.version$';
 const INTEGRATION_METHOD = 'prebid.js';
 
 // Utility functions
-const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObject, videoContext}) => {
+const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObject, videoContext, pubIdMode}) => {
   const bidRequest = {
     adUnitCode,
     auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
@@ -26,8 +27,7 @@ const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObje
     bidderWinsCount: 0,
     mediaTypes: {},
     params: {
-      dcn: DEFAULT_BID_DCN,
-      pos: pos || DEFAULT_BID_POS,
+
       bidOverride: bidOverrideObject
     },
     src: 'client',
@@ -43,6 +43,13 @@ const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObje
     playerSize: [[300, 250]],
     mimes: ['video/mp4', 'application/javascript'],
     api: [2]
+  };
+
+  if (pubIdMode === true) {
+    bidRequest.params.pubId = DEFAULT_PUBID;
+  } else {
+    bidRequest.params.dcn = DEFAULT_BID_DCN;
+    bidRequest.params.pos = pos || DEFAULT_BID_POS;
   };
 
   if (videoContext === 'outstream') {
