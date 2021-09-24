@@ -89,15 +89,18 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 
     const rawQueryParams = queryParams.map(qp => qp.join('=')).join('&');
 
-    fetch(COOKIE_SYNC_JSON).then(res => res.json()).then(urls => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', COOKIE_SYNC_JSON)
+    xhr.addEventListener('load', function () {
       const macro = Macro({
         gpdr: bidderRequest.gdprConsent.gdprApplies,
         gpdr_consent: bidderRequest.gdprConsent.consentString
       });
-      urls.filter(Boolean).forEach(url => {
+      JSON.parse(this.responseText).filter(Boolean).forEach(url => {
         firePixel(macro.replace(url))
       })
     })
+    xhr.send()
 
     const url = `${ENDPOINT}?${rawQueryParams}`;
     return {
