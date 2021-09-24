@@ -163,6 +163,20 @@ export const spec = {
         }
       };
 
+      if (utils.isFn(bid.getFloor)) {
+        let floorInfo = bid.getFloor({
+          currency: 'USD',
+          mediaType: 'video',
+          size: '*'
+        });
+
+        if (floorInfo.currency === 'USD') {
+          spotxReq.bidfloor = floorInfo.floor;
+        }
+      } else if (utils.getBidIdParameter('price_floor', bid.params) != '') {
+        spotxReq.bidfloor = utils.getBidIdParameter('price_floor', bid.params);
+      }
+
       if (utils.getBidIdParameter('start_delay', bid.params) != '') {
         spotxReq.video.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params));
       }
