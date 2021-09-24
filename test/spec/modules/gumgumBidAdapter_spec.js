@@ -177,7 +177,27 @@ describe('gumgumAdapter', function () {
       expect(slotZoneBidRequest.data.maxh).to.equal(600);
       expect(slotPubIdBidRequest.data.maxw).to.equal(300);
       expect(slotPubIdBidRequest.data.maxh).to.equal(600);
-    })
+    });
+
+    // if slot ID is set up incorrectly by a pub, we should send the invalid ID to be
+    // invalidated by ad server instead of trying to force integer type. forcing
+    // integer type can result in incorrect slot IDs that correlate to the incorrect pub ID
+    it('should send params.slot or params.inSlot as string when configured incorrectly', function () {
+      const invalidSlotId = '9gkal1cn';
+      const slotRequest = { ...bidRequests[0] };
+      const legacySlotRequest = { ...bidRequests[0] };
+      let req;
+      let legReq;
+
+      slotRequest.params.slot = invalidSlotId;
+      legacySlotRequest.params.inSlot = invalidSlotId;
+
+      req = spec.buildRequests([ slotRequest ])[0];
+      legReq = spec.buildRequests([ legacySlotRequest ])[0];
+
+      expect(req.data.si).to.equal(invalidSlotId);
+      expect(legReq.data.si).to.equal(invalidSlotId);
+    });
 
     it('should set the iriscat param when found', function () {
       const request = { ...bidRequests[0], params: { iriscat: 'abc123' } }

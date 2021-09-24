@@ -179,6 +179,11 @@ function slotParams(bidRequest) {
     },
     all: bidRequest.params
   };
+
+  if (bidRequest.ortb2Imp) {
+    params.ortb2Imp = bidRequest.ortb2Imp;
+  }
+
   let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
 
   const videoInMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};

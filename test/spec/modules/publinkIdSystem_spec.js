@@ -10,7 +10,7 @@ describe('PublinkIdSystem', () => {
   describe('decode', () => {
     it('decode', () => {
       const result = publinkIdSubmodule.decode(TEST_COOKIE_VALUE);
-      expect(result).deep.equals({publink: TEST_COOKIE_VALUE});
+      expect(result).deep.equals({publinkId: TEST_COOKIE_VALUE});
     });
   });
 
@@ -69,6 +69,7 @@ describe('PublinkIdSystem', () => {
       expect(result).to.exist;
       expect(result.callback).to.be.a('function');
     });
+
     it('Use local copy', () => {
       const result = publinkIdSubmodule.getId({}, undefined, TEST_COOKIE_VALUE);
       expect(result).to.be.undefined;
@@ -82,13 +83,14 @@ describe('PublinkIdSystem', () => {
       });
 
       it('Fetch with consent data', () => {
-        const config = {storage: {type: 'cookie'}, params: {e: 'hashedemailvalue'}};
+        const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7'}};
         const consentData = {gdprApplies: 1, consentString: 'myconsentstring'};
         let submoduleCallback = publinkIdSubmodule.getId(config, consentData).callback;
         submoduleCallback(callbackSpy);
 
         let request = server.requests[0];
-        expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=hashedemailvalue&mpn=Prebid.js&mpv=$prebid.version$&gdpr=1&gdpr_consent=myconsentstring');
+        request.url = request.url.replace(':443', '');
+        expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=ca11c0ca7&mpn=Prebid.js&mpv=$prebid.version$&gdpr=1&gdpr_consent=myconsentstring');
 
         request.respond(200, {}, JSON.stringify(serverResponse));
         expect(callbackSpy.calledOnce).to.be.true;
@@ -96,15 +98,26 @@ describe('PublinkIdSystem', () => {
       });
 
       it('server doesnt respond', () => {
-        const config = {storage: {type: 'cookie'}, params: {e: 'hashedemailvalue'}};
+        const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7'}};
         let submoduleCallback = publinkIdSubmodule.getId(config).callback;
         submoduleCallback(callbackSpy);
 
         let request = server.requests[0];
-        expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=hashedemailvalue&mpn=Prebid.js&mpv=$prebid.version$');
+        request.url = request.url.replace(':443', '');
+        expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=ca11c0ca7&mpn=Prebid.js&mpv=$prebid.version$');
 
         request.respond(204, {}, JSON.stringify(serverResponse));
-        expect(callbackSpy.calledOnce).to.be.false;
+        expect(callbackSpy.called).to.be.false;
+      });
+
+      it('reject plain email address', () => {
+        const config = {storage: {type: 'cookie'}, params: {e: 'tester@test.com'}};
+        const consentData = {gdprApplies: 1, consentString: 'myconsentstring'};
+        let submoduleCallback = publinkIdSubmodule.getId(config, consentData).callback;
+        submoduleCallback(callbackSpy);
+
+        expect(server.requests).to.have.lengthOf(0);
+        expect(callbackSpy.called).to.be.false;
       });
     });
 
@@ -120,12 +133,13 @@ describe('PublinkIdSystem', () => {
       });
 
       it('Fetch with usprivacy data', () => {
-        const config = {storage: {type: 'cookie'}, params: {e: 'hashedemailvalue'}};
+        const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7'}};
         let submoduleCallback = publinkIdSubmodule.getId(config).callback;
         submoduleCallback(callbackSpy);
 
         let request = server.requests[0];
-        expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=hashedemailvalue&mpn=Prebid.js&mpv=$prebid.version$&us_privacy=1YNN');
+        request.url = request.url.replace(':443', '');
+        expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=ca11c0ca7&mpn=Prebid.js&mpv=$prebid.version$&us_privacy=1YNN');
 
         request.respond(200, {}, JSON.stringify(serverResponse));
         expect(callbackSpy.calledOnce).to.be.true;
