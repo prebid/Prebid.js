@@ -1,7 +1,18 @@
-import * as fluctAnalyticsAdapter from 'modules/fluctAnalyticsAdapter.js';
+import fluctAnalyticsAdapter, {
+  getAdUnitCodeBeforeReplication,
+  getBrowsiRefreshCount
+} from '../../../modules/fluctAnalyticsAdapter';
 import { expect } from 'chai';
-
-const { getAdUnitCodeBeforeReplication, getBrowsiRefreshCount } = fluctAnalyticsAdapter;
+import * as events from 'src/events.js';
+import * as utils from 'src/utils.js'
+import CONSTANTS from 'src/constants.json';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
+import * as mockGpt from '../integration/faker/googletag.js';
+import {
+  setConfig,
+  addBidResponseHook,
+} from 'modules/currency.js';
 
 describe('正規表現にマッチしている', () => {
   const slots = [
@@ -24,3 +35,24 @@ describe('正規表現にマッチしている', () => {
     expect(adUnitCode).to.equal(slots[0].code)
   })
 })
+
+describe('fluct analytics adapter', () => {
+  let sandbox;
+  beforeEach(() => {
+    mockGpt.disable();
+    sandbox = sinon.sandbox.create();
+    config.setConfig({
+    })
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    config.resetConfig();
+    mockGpt.enable();
+  });
+
+  it('enableAnalyticsの引数内にoptionsを必要としない', () => {
+    fluctAnalyticsAdapter.enableAnalytics({});
+    expect(fluctAnalyticsAdapter.initOptions).to.equal(undefined);
+  });
+});
