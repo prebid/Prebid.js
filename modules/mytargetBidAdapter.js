@@ -89,7 +89,10 @@ export const spec = {
           ttl: bid.ttl || DEFAULT_TTL,
           currency: bid.currency || DEFAULT_CURRENCY,
           creativeId: bid.creativeId || generateRandomId(),
-          netRevenue: true
+          netRevenue: true,
+          meta: {
+            advertiserDomains: bid.adomain && bid.adomain.length > 0 ? bid.adomain : [],
+          }
         }
 
         if (bid.adm) {
