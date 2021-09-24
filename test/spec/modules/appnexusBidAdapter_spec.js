@@ -1076,6 +1076,16 @@ describe('AppNexusAdapter', function () {
           'adUnitCode': 'code',
           'appnexus': {
             'buyerMemberId': 958
+          },
+          'meta': {
+            'dchain': {
+              'ver': '1.0',
+              'complete': 0,
+              'nodes': [{
+                'bsid': '958',
+                'name': 'xandr'
+              }]
+            }
           }
         }
       ];

@@ -6,6 +6,7 @@ import { _each, isStr, isArray, isPlainObject, hasOwn, deepClone, deepAccess, lo
 const shouldBeAString = ' should be a string';
 const shouldBeAnObject = ' should be an object';
 const shouldBeAnArray = ' should be an Array';
+const shouldBeValid = ' is not a valid dchain property';
 const MODE = {
   STRICT: 'strict',
   RELAXED: 'relaxed',
@@ -18,6 +19,7 @@ export function checkDchainSyntax(bid, mode) {
   let dchainObj = deepClone(bid.meta.dchain);
   let failPrefix = 'Detected something wrong in bid.meta.dchain object for bid:';
   let failMsg = '';
+  const dchainPropList = ['ver', 'complete', 'nodes', 'ext'];
 
   function appendFailMsg(msg) {
     failMsg += '\n' + msg;
@@ -30,6 +32,13 @@ export function checkDchainSyntax(bid, mode) {
       logWarn(failPrefix, bid, `\n`, dchainObj, failMsg);
     }
   }
+
+  let dchainProps = Object.keys(dchainObj);
+  dchainProps.forEach(prop => {
+    if (!includes(dchainPropList, prop)) {
+      appendFailMsg(`dchain.${prop}` + shouldBeValid);
+    }
+  });
 
   if (dchainObj.complete !== 0 && dchainObj.complete !== 1) {
     appendFailMsg(`dchain.complete should be 0 or 1`);
@@ -50,24 +59,24 @@ export function checkDchainSyntax(bid, mode) {
     printFailMsg();
     if (mode === MODE.STRICT) return false;
   } else {
-    const propList = ['asi', 'bsid', 'rid', 'name', 'domain', 'ext'];
+    const nodesPropList = ['asi', 'bsid', 'rid', 'name', 'domain', 'ext'];
     dchainObj.nodes.forEach((node, index) => {
       if (!isPlainObject(node)) {
         appendFailMsg(`dchain.nodes[${index}]` + shouldBeAnObject);
       } else {
         let nodeProps = Object.keys(node);
         nodeProps.forEach(prop => {
-          if (!includes(propList, prop)) {
-            appendFailMsg(`dchain.nodes[${index}].${prop} is not a valid dchain property.`);
+          if (!includes(nodesPropList, prop)) {
+            appendFailMsg(`dchain.nodes[${index}].${prop}` + shouldBeValid);
+          }
+
+          if (prop === 'ext') {
+            if (!isPlainObject(node.ext)) {
+              appendFailMsg(`dchain.nodes[${index}].ext` + shouldBeAnObject);
+            }
           } else {
-            if (prop === 'ext') {
-              if (!isPlainObject(node.ext)) {
-                appendFailMsg(`dchain.nodes[${index}].ext` + shouldBeAnObject);
-              }
-            } else {
-              if (!isStr(node[prop])) {
-                appendFailMsg(`dchain.nodes[${index}].${prop}` + shouldBeAString);
-              }
+            if (!isStr(node[prop])) {
+              appendFailMsg(`dchain.nodes[${index}].${prop}` + shouldBeAString);
             }
           }
         });
