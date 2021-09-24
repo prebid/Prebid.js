@@ -285,6 +285,15 @@ describe('YSSP Bid Adapter', () => {
       };
       expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
+
+    it('should mark bid ad VALID if pubId exists instead of dcn & pos', () => {
+      const validBid = {
+        params: {
+          pubId: DEFAULT_PUBID
+        }
+      };
+      expect(spec.isBidRequestValid(validBid)).to.be.true;
+    });
   });
 
   // #region buildRequests():
@@ -593,6 +602,8 @@ describe('YSSP Bid Adapter', () => {
         url: 'https://c2shb.ssp.yahoo.com/bidRequest'
       });
     });
+
+    // TODO Test endpoint route for dcn pos vs pubid
   });
 
   describe('Validate request filtering:', () => {
