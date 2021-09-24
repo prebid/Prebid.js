@@ -10,7 +10,7 @@ const rnd = Math.random();
 const DEFAULT_SV = 'pbjs.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
 const PARAMS = ['ci', 'sv', 't', 'ml', 'sn'];
-const DOLLARS = 'USD';
+const DOLLAR_CODE = 'USD';
 const NET_REVENUE = true;
 const TTL = 120;
 const NULL_SIZE = '1x1';
@@ -115,7 +115,7 @@ export const spec = {
               ttl: TTL,
               creativeId: ad.crid,
               netRevenue: NET_REVENUE,
-              currency: DOLLARS,
+              currency: DOLLAR_CODE,
             };
             if (ad.adom) {
               bidResponse.meta = {
