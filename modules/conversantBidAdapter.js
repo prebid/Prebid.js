@@ -373,6 +373,7 @@ function collectEids(bidRequests) {
   if (utils.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
     // later following white-list can be converted to block-list if needed
     const requiredSourceValues = {
+      'epsilon.com': 1,
       'adserver.org': 1,
       'liveramp.com': 1,
       'criteo.com': 1,
