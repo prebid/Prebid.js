@@ -255,7 +255,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       }
     };
 
-    if (getPubIdMode() === true) {
+    if (getPubIdMode(bid) === true) {
       outBoundBidRequest.site.publisher = {
         id: bid.params.pubId
       }
@@ -329,7 +329,7 @@ function appendImpObject(bid, openRtbObject) {
       impObject.ext = validateAppendObject('object', allowedImpExtKeys, ortb2ImpExt, impObject.ext);
     };
 
-    if (getPubIdMode() === false) {
+    if (getPubIdMode(bid) === false) {
       impObject.tagid = bid.params.pos;
       impObject.ext.pos = bid.params.pos;
     };
@@ -382,7 +382,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
     // https://jira.vzbuilders.com/browse/CLS-8239
     // https://jira.vzbuilders.com/browse/SSP-18233
 
-    const pubIdMode = getPubIdMode();
+    const pubIdMode = getPubIdMode(bidderRequest);
     if (pubIdMode === true) {
       payload.site.id = TEST_MODE_PUBID_DCN;
     } else {
@@ -403,7 +403,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
   };
 
   return {
-    url: getPubIdMode() ? SSP_ENDPOINT_PUBID : config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_DCN_POS,
+    url: getPubIdMode(bid) ? SSP_ENDPOINT_PUBID : config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_DCN_POS,
     method: 'POST',
     data: payload,
     options: requestOptions,
