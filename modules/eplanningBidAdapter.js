@@ -7,7 +7,7 @@ export const storage = getStorageManager();
 
 const BIDDER_CODE = 'eplanning';
 const rnd = Math.random();
-const DEFAULT_SV = 'ads.us.e-planning.net';
+const DEFAULT_SV = 'pbjs.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
 const PARAMS = ['ci', 'sv', 't', 'ml', 'sn'];
 const DOLLARS = 'USD';
