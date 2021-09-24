@@ -947,6 +947,11 @@ function appendSiteAppDevice(data, bidRequest, bidderRequest) {
     ['site', 'device'].forEach(function(param) {
       if (data[param]) {
         data[param].content = Object.assign({language: bidRequest.params.video.language}, data[param].content)
+        if (param === 'site') {
+          data[param].content = Object.assign({language: bidRequest.params.video.language}, data[param].content)
+        } else {
+          data[param] = Object.assign({language: bidRequest.params.video.language}, data[param])
+        }
       }
     });
   }
