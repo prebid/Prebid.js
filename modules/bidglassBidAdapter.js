@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { _each, isArray, getBidIdParameter, deepClone, getUniqueIdentifierStr } from '../src/utils.js';
 // import {config} from 'src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
@@ -69,12 +69,12 @@ export const spec = {
 
     let bidglass = window['bidglass'];
 
-    utils._each(validBidRequests, function(bid) {
-      bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
-      bid.sizes = bid.sizes.filter(size => utils.isArray(size));
+    _each(validBidRequests, function(bid) {
+      bid.sizes = ((isArray(bid.sizes) && isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
+      bid.sizes = bid.sizes.filter(size => isArray(size));
 
-      var adUnitId = utils.getBidIdParameter('adUnitId', bid.params);
-      var options = utils.deepClone(bid.params);
+      var adUnitId = getBidIdParameter('adUnitId', bid.params);
+      var options = deepClone(bid.params);
 
       delete options.adUnitId;
 
@@ -96,7 +96,7 @@ export const spec = {
 
     // Stuff to send: page URL
     const bidReq = {
-      reqId: utils.getUniqueIdentifierStr(),
+      reqId: getUniqueIdentifierStr(),
       imps: imps,
       ref: getReferer(),
       ori: getOrigins()
@@ -125,7 +125,7 @@ export const spec = {
   interpretResponse: function(serverResponse) {
     const bidResponses = [];
 
-    utils._each(serverResponse.body.bidResponses, function(serverBid) {
+    _each(serverResponse.body.bidResponses, function(serverBid) {
       const bidResponse = {
         requestId: serverBid.requestId,
         cpm: parseFloat(serverBid.cpm),
