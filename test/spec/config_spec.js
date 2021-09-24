@@ -494,4 +494,74 @@ describe('config API', function () {
     const error = 'setBidderConfig bidder options must contain a config object';
     assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
   });
+
+  it('should merge without array duplication', function() {
+    let rtdConfig = {};
+    let bidConfig = {};
+
+    const userObj1 = {
+      name: 'www.dataprovider1.com',
+      ext: { taxonomyname: 'iab_audience_taxonomy' },
+      segment: [{
+        id: '1776'
+      }]
+    };
+
+    const userObj2 = {
+      name: 'www.dataprovider2.com',
+      ext: { taxonomyname: 'iab_audience_taxonomy' },
+      segment: [{
+        id: '1914'
+      }]
+    };
+
+    const siteObj1 = {
+      name: 'www.dataprovider3.com',
+      ext: {
+        taxonomyname: 'iab_audience_taxonomy'
+      },
+      segment: [
+        {
+          id: '1812'
+        },
+        {
+          id: '1955'
+        }
+      ]
+    }
+
+    setConfig({
+      ortb2: {
+        user: {
+          data: [userObj1, userObj2]
+        },
+        site: {
+          content: {
+            data: [siteObj1]
+          }
+        }
+      }
+    });
+
+    const rtd = {
+      ortb2: {
+        user: {
+          data: [userObj1]
+        },
+        site: {
+          content: {
+            data: [siteObj1]
+          }
+        }
+      }
+    };
+    mergeConfig(rtd);
+
+    let ortb2Config = getConfig().ortb2;
+
+    expect(ortb2Config.user.data).to.deep.include.members([userObj1, userObj2]);
+    expect(ortb2Config.site.content.data).to.deep.include.members([siteObj1]);
+    expect(ortb2Config.user.data).to.have.lengthOf(2);
+    expect(ortb2Config.site.content.data).to.have.lengthOf(1);
+  });
 });

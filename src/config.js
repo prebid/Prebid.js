@@ -558,7 +558,7 @@ export function newConfig() {
       .forEach(listener => listener.callback(options));
   }
 
-  function setBidderConfig(config, flag = false) {
+  function setBidderConfig(config, mergeFlag = false) {
     try {
       check(config);
       config.bidders.forEach(bidder => {
@@ -570,7 +570,7 @@ export function newConfig() {
           let option = (topic === 'fpd') ? convertFpd(config.config[topic]) : config.config[topic];
 
           if (utils.isPlainObject(option)) {
-            const func = flag ? utils.mergeDeep : Object.assign;
+            const func = mergeFlag ? utils.mergeDeep : Object.assign;
             bidderConfig[bidder][prop] = func({}, bidderConfig[bidder][prop] || {}, option);
           } else {
             bidderConfig[bidder][prop] = option;
@@ -600,9 +600,9 @@ export function newConfig() {
       return;
     }
 
-    const mergedConfig = Object.keys(obj).reduce((accum, data) => {
-      const prevConf = _getConfig(data)[data] || {};
-      accum[data] = utils.mergeDeep(prevConf, obj[data]);
+    const mergedConfig = Object.keys(obj).reduce((accum, key) => {
+      const prevConf = _getConfig(key)[key] || {};
+      accum[key] = utils.mergeDeep(prevConf, obj[key]);
       return accum;
     }, {});
 
