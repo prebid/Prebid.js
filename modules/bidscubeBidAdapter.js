@@ -1,6 +1,6 @@
-import { logMessage, getWindowLocation } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import * as utils from '../src/utils.js'
 
 const BIDDER_CODE = 'bidscube'
 const URL = 'https://supply.bidscube.com/?c=o&m=multi'
@@ -20,9 +20,9 @@ export const spec = {
     try {
       window.top.location.toString()
       winTop = window.top
-    } catch (e) { logMessage(e) }
+    } catch (e) { utils.logMessage(e) }
 
-    const location = getWindowLocation()
+    const location = utils.getWindowLocation()
     const placements = []
 
     for (let i = 0; i < validBidRequests.length; i++) {
