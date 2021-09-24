@@ -403,7 +403,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
   };
 
   return {
-    url: getPubIdMode(bid) ? SSP_ENDPOINT_PUBID : config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_DCN_POS,
+    url: getPubIdMode(bidderRequest) ? SSP_ENDPOINT_PUBID : config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_DCN_POS,
     method: 'POST',
     data: payload,
     options: requestOptions,
