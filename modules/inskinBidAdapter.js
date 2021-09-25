@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { createTrackPixelHtml } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'inskin';
@@ -289,7 +289,7 @@ function getSize(sizes) {
 }
 
 function retrieveAd(bidId, decision) {
-  return "<script>window.top.postMessage({from: 'ism-bid', bidId: '" + bidId + "'}, '*');\x3c/script>" + utils.createTrackPixelHtml(decision.impressionUrl);
+  return "<script>window.top.postMessage({from: 'ism-bid', bidId: '" + bidId + "'}, '*');\x3c/script>" + createTrackPixelHtml(decision.impressionUrl);
 }
 
 function checkConsent(P, d) {
