@@ -15,7 +15,9 @@
 
 
 	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [],
+	"extensions": [
+		"nickdodd79.gulptasks"
+	],
 
 	// 9999 is web server, 9876 is karma
 	"forwardPorts": [9876, 9999],
