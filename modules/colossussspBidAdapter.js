@@ -106,6 +106,10 @@ export const spec = {
       if (bid.schain) {
         placement.schain = bid.schain;
       }
+      let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        placement.gpid = gpid;
+      }
       if (bid.userId) {
         getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
         getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
