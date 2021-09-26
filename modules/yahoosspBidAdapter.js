@@ -462,9 +462,6 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    utils.logWarn('+++ buildRequests: (validBidRequests)', validBidRequests);
-    utils.logWarn('+++ buildRequests: (bidderRequest)', bidderRequest);
-
     if (utils.isEmpty(validBidRequests) || utils.isEmpty(bidderRequest)) {
       utils.logWarn('yahoossp Adapter: buildRequests called with either empty "validBidRequests" or "bidderRequest"');
       return undefined;
@@ -491,10 +488,8 @@ export const spec = {
     }
 
     return filteredBidRequests.map(bid => {
-      utils.logWarn('+++ false request mode: ', bid);
       const payloadClone = generateOpenRtbObject(bidderRequest, bid);
       appendImpObject(bid, payloadClone);
-      utils.logWarn('+++ payloadClone: ', payloadClone);
       return generateServerRequest({payload: payloadClone, requestOptions, bidderRequest: bid});
     });
   },
