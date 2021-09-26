@@ -114,8 +114,8 @@ function getSize(size) {
 
 function getWindowSize() {
   return {
-    w: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || -1,
-    h: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || -1
+    w: window.screen.width || -1,
+    h: window.screen.height || -1
   }
 }
 
@@ -179,6 +179,11 @@ function slotParams(bidRequest) {
     },
     all: bidRequest.params
   };
+
+  if (bidRequest.ortb2Imp) {
+    params.ortb2Imp = bidRequest.ortb2Imp;
+  }
+
   let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
 
   const videoInMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};

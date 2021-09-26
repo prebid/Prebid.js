@@ -9,9 +9,11 @@ const BIDDER_CODE = 'yieldlab'
 const BID_RESPONSE_TTL_SEC = 300
 const CURRENCY_CODE = 'EUR'
 const OUTSTREAMPLAYER_URL = 'https://ad.adition.com/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event'
+const GVLID = 70
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: function (bid) {
@@ -102,6 +104,7 @@ export const spec = {
         const adType = matchedBid.adtype !== undefined ? matchedBid.adtype : ''
         const gdprApplies = reqParams.gdpr ? '&gdpr=' + reqParams.gdpr : ''
         const gdprConsent = reqParams.consent ? '&consent=' + reqParams.consent : ''
+        const pvId = matchedBid.pvid !== undefined ? '&pvid=' + matchedBid.pvid : ''
 
         const bidResponse = {
           requestId: bidRequest.bidId,
@@ -114,7 +117,10 @@ export const spec = {
           netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}"></script>`
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}"></script>`,
+          meta: {
+            advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a'
+          }
         }
 
         if (isVideo(bidRequest, adType)) {
@@ -124,7 +130,7 @@ export const spec = {
             bidResponse.height = playersize[1]
           }
           bidResponse.mediaType = VIDEO
-          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}`
+          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
           if (isOutstream(bidRequest)) {
             const renderer = Renderer.install({
               id: bidRequest.bidId,

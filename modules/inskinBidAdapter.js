@@ -55,6 +55,18 @@ export const spec = {
       parallel: true
     }, validBidRequests[0].params);
 
+    if (data.publisherId) {
+      data.rtb = {
+        schain: {
+          ext: {
+            sid: String(data.publisherId)
+          }
+        }
+      };
+
+      delete data.publisherId;
+    }
+
     data.keywords = data.keywords || [];
     const restrictions = [];
 
@@ -169,6 +181,7 @@ export const spec = {
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 360;
+          bid.meta = { advertiserDomains: decision.adomain ? decision.adomain : [] }
           bid.netRevenue = true;
 
           bidResponses.push(bid);

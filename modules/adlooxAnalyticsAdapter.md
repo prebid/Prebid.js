@@ -2,11 +2,11 @@
 
     Module Name: Adloox Analytics Adapter
     Module Type: Analytics Adapter
-    Maintainer: technique@adloox.com
+    Maintainer: contact@adloox.com
 
 # Description
 
-Analytics adapter for adloox.com. Contact adops@adloox.com for information.
+Analytics adapter for adloox.com. Contact contact@adloox.com for information.
 
 This module can be used to track:
 
@@ -18,17 +18,23 @@ The adapter adds an HTML `<script>` tag to load Adloox's post-buy verification J
 
 ## Video
 
-When tracking video you will need to enable the [Instream Video Ads Tracking](https://docs.prebid.org/dev-docs/modules/instreamTracking.html) module but be aware that it is:
+When tracking video you have two options:
 
- * only suitable for instream video bids
- * VAST events are not collected by Adloox
- * viewability metrics are *not* [MRC accredited](http://mediaratingcouncil.org/)
+ * [Instream Video Ads Tracking](https://docs.prebid.org/dev-docs/modules/instreamTracking.html)
+     * only suitable for instream video bids
+     * VAST events are not collected by Adloox
+     * viewability metrics are *not* [MRC accredited](http://mediaratingcouncil.org/)
+ * [Adloox Ad Server Video](./adlooxAdServerVideo.md)
+     * works by by wrapping the Ad Server VAST URL
+     * viewability metrics are MRC accredited for [IAB](https://www.iab.com/) [VPAID](https://iabtechlab.com/standards/video-player-ad-interface-definition-vpaid/) and [OM SDK](https://iabtechlab.com/standards/open-measurement-sdk/) enable inventory
+     * compatible for use alongside the Instream Video Ads Tracking module though not required in order to function
+     * slightly more complicated though straight forward to implement
 
 ## Example
 
 To view an [example of an Adloox integration](../integrationExamples/gpt/adloox.html):
 
-    gulp serve --nolint --notest --modules=gptPreAuction,categoryTranslation,dfpAdServerVideo,instreamTracking,rubiconBidAdapter,spotxBidAdapter,adlooxAnalyticsAdapter
+    gulp serve --nolint --notest --modules=gptPreAuction,categoryTranslation,dfpAdServerVideo,rtdModule,instreamTracking,rubiconBidAdapter,spotxBidAdapter,adlooxAnalyticsAdapter,adlooxAdServerVideo,adlooxRtdProvider
 
 **N.B.** `categoryTranslation` is required by `dfpAdServerVideo` that otherwise causes a JavaScript console warning
 
@@ -37,6 +43,8 @@ Now point your browser at: http://localhost:9999/integrationExamples/gpt/adloox.
 ### Public Example
 
 The example is published publically at: https://storage.googleapis.com/adloox-ads-js-test/prebid.html?pbjs_debug=true
+
+**N.B.** this will show a [CORS error](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors) for the request `https://p.adlooxtracking.com/q?...` that is safe to ignore on the public example page; it is related to the [RTD integration](./adlooxRtdProvider.md) which requires pre-registration of your sites
 
 It is recommended you use [Google Chrome's 'Local Overrides' located in the Developer Tools panel](https://www.trysmudford.com/blog/chrome-local-overrides/) to explore the example without the inconvience of having to run your own web server.
 
@@ -55,7 +63,7 @@ You should be able to use this during the QA process of your own internal testin
 The main Prebid.js documentation is a bit opaque on this but you can use the following to test only Adloox's modules:
 
     gulp lint
-    gulp test-coverage --file test/spec/modules/adlooxAnalyticsAdapter_spec.js
+    gulp test-coverage --file 'test/spec/modules/adloox{AnalyticsAdapter,AdServerVideo,RtdProvider}_spec.js'
     gulp view-coverage
 
 # Integration
@@ -97,8 +105,8 @@ For example, you have a number of reporting breakdown slots available in the for
         platformid: 0,
         tagid: 0,
         params: {
-          id1: function(b) { return b.adUnitCode },
-          id2: '%%pbAdSlot%%',
+          id1: function(b) { return b.adUnitCode },  // do not change when using the Adloox RTD Provider
+          id2: '%%pbadslot%%',                       // do not change when using the Adloox RTD Provider
           id3: function(b) { return b.bidder },
           id4: function(b) { return b.adId },
           id5: function(b) { return b.dealId },
@@ -117,7 +125,8 @@ For example, you have a number of reporting breakdown slots available in the for
 
 The following macros are available
 
- * `%%pbAdSlot%%`: [Prebid Ad Slot](https://docs.prebid.org/features/pbAdSlot.html) returns [`AdUnit.code`](https://docs.prebid.org/features/pbAdSlot.html) if set otherwise returns [`AdUnit.code`](https://docs.prebid.org/dev-docs/adunit-reference.html#adunit)
+ * `%%pbadslot%%`: [Prebid Ad Slot](https://docs.prebid.org/features/pbAdSlot.html) returns [`AdUnit.code`](https://docs.prebid.org/features/pbAdSlot.html) if set otherwise returns [`AdUnit.code`](https://docs.prebid.org/dev-docs/adunit-reference.html#adunit)
+     * it is recommended you read the [Prebid Ad Slot section in the Adloox RTD Provider documentation](./adlooxRtdProvider.md#prebid-ad-slot)
 
 ### Functions
 

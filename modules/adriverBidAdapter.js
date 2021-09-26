@@ -20,7 +20,7 @@ export const spec = {
     return !!bid.params.siteid;
   },
 
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     utils.logInfo('validBidRequests', validBidRequests);
 
     let win = utils.getWindowLocation();
@@ -29,9 +29,15 @@ export const spec = {
     let currency = utils.getBidIdParameter('currency', validBidRequests[0].params);
     currency = 'RUB';
 
+    let timeout = null;
+    if (bidderRequest) {
+      timeout = bidderRequest.timeout
+    }
+
     const payload = {
       'at': 1,
       'cur': [currency],
+      'tmax': timeout,
       'site': {
         'name': win.origin,
         'domain': win.hostname,
@@ -40,7 +46,10 @@ export const spec = {
       },
       'id': customID,
       'user': {
-        'buyerid': 0
+        'buyerid': 0,
+        'ext': {
+          'eids': getUserIdAsEids(validBidRequests)
+        }
       },
       'device': {
         'ip': '195.209.111.14',
@@ -132,9 +141,22 @@ export const spec = {
     });
     return bidResponses;
   }
-
 };
 registerBidder(spec);
+
+/**
+ * get first userId from validBidRequests
+ * @param validBidRequests
+ * @returns {Array|*} userIdAsEids
+ */
+function getUserIdAsEids(validBidRequests) {
+  if (validBidRequests && validBidRequests.length > 0 && validBidRequests[0].userIdAsEids &&
+    validBidRequests[0].userIdAsEids.length > 0) {
+    return validBidRequests[0].userIdAsEids;
+  } else {
+    return [];
+  }
+}
 
 /**
  * Gets bidfloor
