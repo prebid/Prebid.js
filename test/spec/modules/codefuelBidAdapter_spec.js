@@ -6,7 +6,7 @@ import {server} from 'test/mocks/xhr';
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/92.0.4515.159 Safari/537.36';
 const DEFAULT_USER_AGENT = window.navigator.userAgent;
 const setUADefault = () => { window.navigator.__defineGetter__('userAgent', function () { return DEFAULT_USER_AGENT }) };
-const setUA = () => { window.navigator.__defineGetter__('userAgent', function () { return USER_AGENT }) };
+const setUAMock = () => { window.navigator.__defineGetter__('userAgent', function () { return USER_AGENT }) };
 
 describe('Codefuel Adapter', function () {
   describe('Bid request and response', function () {
@@ -122,7 +122,7 @@ describe('Codefuel Adapter', function () {
 
     describe('buildRequests', function () {
       before(() => {
-        setUA()
+        setUAMock()
         config.setConfig({
           codefuel: {
             bidderUrl: 'https://bidder-url.com',
