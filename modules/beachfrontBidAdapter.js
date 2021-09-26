@@ -6,7 +6,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const ADAPTER_VERSION = '1.16';
+const ADAPTER_VERSION = '1.18';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 const CURRENCY = 'USD';
@@ -21,7 +21,8 @@ export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 export const SUPPORTED_USER_IDS = [
   { key: 'tdid', source: 'adserver.org', rtiPartner: 'TDID', queryParam: 'tdid' },
   { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
-  { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' }
+  { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' },
+  { key: 'haloId', source: 'audigent.com', atype: 1, queryParam: 'haloid' }
 ];
 
 let appId = '';
@@ -31,7 +32,27 @@ export const spec = {
   supportedMediaTypes: [ VIDEO, BANNER ],
 
   isBidRequestValid(bid) {
-    return !!(isVideoBidValid(bid) || isBannerBidValid(bid));
+    if (isVideoBid(bid)) {
+      if (!getVideoBidParam(bid, 'appId')) {
+        utils.logWarn('Beachfront: appId param is required for video bids.');
+        return false;
+      }
+      if (!getVideoBidParam(bid, 'bidfloor')) {
+        utils.logWarn('Beachfront: bidfloor param is required for video bids.');
+        return false;
+      }
+    }
+    if (isBannerBid(bid)) {
+      if (!getBannerBidParam(bid, 'appId')) {
+        utils.logWarn('Beachfront: appId param is required for banner bids.');
+        return false;
+      }
+      if (!getBannerBidParam(bid, 'bidfloor')) {
+        utils.logWarn('Beachfront: bidfloor param is required for banner bids.');
+        return false;
+      }
+    }
+    return true;
   },
 
   buildRequests(bids, bidderRequest) {
@@ -78,7 +99,7 @@ export const spec = {
         cpm: response.bidPrice,
         width: firstSize.w,
         height: firstSize.h,
-        creativeId: response.crid,
+        creativeId: response.crid || response.cmpId,
         meta: responseMeta,
         renderer: context === OUTSTREAM ? createRenderer(bidRequest) : null,
         mediaType: VIDEO,
@@ -294,19 +315,23 @@ function getEids(bid) {
 }
 
 function getUserId(bid) {
-  return ({ key, source, rtiPartner }) => {
+  return ({ key, source, rtiPartner, atype }) => {
     let id = utils.deepAccess(bid, `userId.${key}`);
-    return id ? formatEid(id, source, rtiPartner) : null;
+    return id ? formatEid(id, source, rtiPartner, atype) : null;
   };
 }
 
-function formatEid(id, source, rtiPartner) {
+function formatEid(id, source, rtiPartner, atype) {
+  let uid = { id };
+  if (rtiPartner) {
+    uid.ext = { rtiPartner };
+  }
+  if (atype) {
+    uid.atype = atype;
+  }
   return {
     source,
-    uids: [{
-      id,
-      ext: { rtiPartner }
-    }]
+    uids: [uid]
   };
 }
 

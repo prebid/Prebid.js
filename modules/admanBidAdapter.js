@@ -23,6 +23,36 @@ function isBidResponseValid(bid) {
   }
 }
 
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0
+  }
+}
+
+function getUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+    eids.push({
+      source,
+      uids: [ uid ]
+    });
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -65,16 +95,38 @@ export const spec = {
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
       let traff = bid.params.traffic || BANNER
-
-      placements.push({
+      const placement = {
         placementId: bid.params.placementId,
         bidId: bid.bidId,
         sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
-        traffic: traff
-      });
-      if (bid.schain) {
-        placements.schain = bid.schain;
+        traffic: traff,
+        eids: [],
+        bidFloor: getBidFloor(bid)
       }
+      if (bid.schain) {
+        placement.schain = bid.schain;
+      }
+      if (bid.userId) {
+        getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
+      }
+      if (traff === VIDEO) {
+        placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
+        placement.minduration = bid.mediaTypes[VIDEO].minduration;
+        placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
+        placement.mimes = bid.mediaTypes[VIDEO].mimes;
+        placement.protocols = bid.mediaTypes[VIDEO].protocols;
+        placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
+        placement.placement = bid.mediaTypes[VIDEO].placement;
+        placement.skip = bid.mediaTypes[VIDEO].skip;
+        placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
+        placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;
+        placement.maxbitrate = bid.mediaTypes[VIDEO].maxbitrate;
+        placement.delivery = bid.mediaTypes[VIDEO].delivery;
+        placement.playbackmethod = bid.mediaTypes[VIDEO].playbackmethod;
+        placement.api = bid.mediaTypes[VIDEO].api;
+        placement.linearity = bid.mediaTypes[VIDEO].linearity;
+      }
+      placements.push(placement);
     }
     return {
       method: 'POST',
@@ -89,6 +141,9 @@ export const spec = {
     for (let i = 0; i < serverResponse.length; i++) {
       let resItem = serverResponse[i];
       if (isBidResponseValid(resItem)) {
+        const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
+        resItem.meta = { ...resItem.meta, advertiserDomains };
+
         response.push(resItem);
       }
     }

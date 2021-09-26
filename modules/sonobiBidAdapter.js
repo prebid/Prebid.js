@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -230,6 +230,7 @@ export const spec = {
           delete bids.width;
           delete bids.height;
         } else if (mediaType === 'outstream' && bidRequest) {
+          delete bids.ad; // Some pubs expect bids.ad to be a vast xml structure, we have a vatUrl so lets delete this.
           bids.mediaType = 'video';
           bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
           bids.renderer = newRenderer(bidRequest.adUnitCode, bids, deepAccess(
@@ -303,8 +304,10 @@ function _validateSlot (bid) {
 }
 
 function _validateFloor (bid) {
-  if (bid.params.floor) {
-    return `|f=${bid.params.floor}`;
+  const floor = getBidFloor(bid);
+
+  if (floor) {
+    return `|f=${floor}`;
   }
   return '';
 }
@@ -405,6 +408,23 @@ function outstreamRender(bid) {
 
 function _iframeAllowed() {
   return userSync.canBidderRegisterSync('iframe', BIDDER_CODE);
+}
+
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return (bid.params.floor) ? bid.params.floor : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return '';
 }
 
 registerBidder(spec);

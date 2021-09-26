@@ -16,23 +16,48 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER, NATIVE],
 
-  isBidRequestValid: function(bid) {
-    return !!(bid.params.asi);
+  /**
+   * Determines whether or not the given bid has all the params needed to make a valid request.
+   *
+   * @param {BidRequest} bidRequest
+   * @returns {boolean}
+   */
+  isBidRequestValid: function(bidRequest) {
+    return !!(bidRequest.params.asi);
   },
 
+  /**
+   * Build the request to the Server which requests Bids for the given array of Requests.
+   * Each BidRequest in the argument array is guaranteed to have passed the isBidRequestValid() test.
+   *
+   * @param {BidRequest[]} validBidRequests
+   * @param {*} bidderRequest
+   * @returns {ServerRequest|ServerRequest[]}
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
-    var bidRequests = [];
-    for (var i = 0, len = validBidRequests.length; i < len; i++) {
-      var bid = validBidRequests[i];
-      var queryString = '';
-      const asi = utils.getBidIdParameter('asi', bid.params);
+    const bidRequests = [];
+    const pageUrl = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || undefined;
+
+    for (let i = 0, len = validBidRequests.length; i < len; i++) {
+      const bidRequest = validBidRequests[i];
+      let queryString = '';
+
+      const asi = utils.getBidIdParameter('asi', bidRequest.params);
       queryString = utils.tryAppendQueryString(queryString, 'asi', asi);
       queryString = utils.tryAppendQueryString(queryString, 'skt', SDK_TYPE);
-      queryString = utils.tryAppendQueryString(queryString, 'prebid_id', bid.bidId);
+      queryString = utils.tryAppendQueryString(queryString, 'tid', bidRequest.transactionId)
+      queryString = utils.tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
       queryString = utils.tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
 
-      if (bidderRequest && bidderRequest.refererInfo) {
-        queryString = utils.tryAppendQueryString(queryString, 'page_url', bidderRequest.refererInfo.referer);
+      if (pageUrl) {
+        queryString = utils.tryAppendQueryString(queryString, 'page_url', pageUrl);
+      }
+
+      const eids = bidRequest.userIdAsEids;
+      if (eids && eids.length) {
+        queryString = utils.tryAppendQueryString(queryString, 'eids', JSON.stringify({
+          'eids': eids,
+        }))
       }
 
       bidRequests.push({
@@ -45,7 +70,7 @@ export const spec = {
     return bidRequests;
   },
 
-  interpretResponse: function(bidderResponse, request) {
+  interpretResponse: function(bidderResponse) {
     const bidderResponseBody = bidderResponse.body;
 
     if (!bidderResponseBody.is_ad_return) {
@@ -62,6 +87,9 @@ export const spec = {
       currency: ad.currency || 'USD',
       netRevenue: true,
       ttl: 300, // 5 minutes
+      meta: {
+        advertiserDomains: []
+      },
     }
 
     if (AD_TYPE.VIDEO === ad.ad_type) {
@@ -74,6 +102,8 @@ export const spec = {
         adResponse: bidderResponseBody,
         mediaType: VIDEO
       });
+
+      Array.prototype.push.apply(bid.meta.advertiserDomains, videoAd.adomain)
     } else if (AD_TYPE.BANNER === ad.ad_type) {
       const bannerAd = bidderResponseBody.ad.banner;
       Object.assign(bid, {
@@ -90,42 +120,48 @@ export const spec = {
       } catch (error) {
         utils.logError('Error appending tracking pixel', error);
       }
+
+      Array.prototype.push.apply(bid.meta.advertiserDomains, bannerAd.adomain)
     } else if (AD_TYPE.NATIVE === ad.ad_type) {
       const nativeAds = ad.native.template_and_ads.ads;
+      if (nativeAds.length === 0) {
+        return [];
+      }
 
-      nativeAds.forEach(nativeAd => {
-        const assets = nativeAd.assets;
+      const nativeAd = nativeAds[0];
+      const assets = nativeAd.assets;
 
-        Object.assign(bid, {
-          mediaType: NATIVE
-        });
-
-        bid.native = {
-          title: assets.title,
-          body: assets.description,
-          cta: assets.cta_text,
-          sponsoredBy: assets.sponsor,
-          clickUrl: assets.lp_link,
-          impressionTrackers: nativeAd.imps,
-          privacyLink: assets.adchoice_url,
-        };
-
-        if (assets.img_main !== undefined) {
-          bid.native.image = {
-            url: assets.img_main,
-            width: parseInt(assets.img_main_width, 10),
-            height: parseInt(assets.img_main_height, 10)
-          };
-        }
-
-        if (assets.img_icon !== undefined) {
-          bid.native.icon = {
-            url: assets.img_icon,
-            width: parseInt(assets.img_icon_width, 10),
-            height: parseInt(assets.img_icon_height, 10)
-          };
-        }
+      Object.assign(bid, {
+        mediaType: NATIVE
       });
+
+      bid.native = {
+        title: assets.title,
+        body: assets.description,
+        cta: assets.cta_text,
+        sponsoredBy: assets.sponsor,
+        clickUrl: assets.lp_link,
+        impressionTrackers: nativeAd.imps,
+        privacyLink: assets.adchoice_url
+      };
+
+      if (assets.img_main !== undefined) {
+        bid.native.image = {
+          url: assets.img_main,
+          width: parseInt(assets.img_main_width, 10),
+          height: parseInt(assets.img_main_height, 10)
+        };
+      }
+
+      if (assets.img_icon !== undefined) {
+        bid.native.icon = {
+          url: assets.img_icon,
+          width: parseInt(assets.img_icon_width, 10),
+          height: parseInt(assets.img_icon_height, 10)
+        };
+      }
+
+      Array.prototype.push.apply(bid.meta.advertiserDomains, nativeAd.adomain)
     }
 
     return [bid];
@@ -179,7 +215,7 @@ function newRenderer(bidderResponse) {
 
 function outstreamRender(bid) {
   bid.renderer.push(() => {
-    window.aja_vast_player.init({
+    window['aja_vast_player'].init({
       vast_tag: bid.adResponse.ad.video.vtag,
       ad_unit_code: bid.adUnitCode, // target div id to render video
       width: bid.width,

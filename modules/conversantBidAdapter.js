@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const GVLID = 24;
 export const storage = getStorageManager(GVLID);
@@ -248,6 +248,48 @@ export const spec = {
       'secure': 'number',
       'mobile': 'number'
     }, params);
+  },
+
+  /**
+   * Register User Sync.
+   */
+  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
+    let params = {};
+    const syncs = [];
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      params.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
+      params.gdpr_consent = encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // CCPA
+    if (uspConsent) {
+      params.us_privacy = encodeURIComponent(uspConsent);
+    }
+
+    if (responses && responses.ext) {
+      const pixels = [{urls: responses.ext.fsyncs, type: 'iframe'}, {urls: responses.ext.psyncs, type: 'image'}]
+        .filter((entry) => {
+          return entry.urls &&
+            ((entry.type === 'iframe' && syncOptions.iframeEnabled) ||
+            (entry.type === 'image' && syncOptions.pixelEnabled));
+        })
+        .map((entry) => {
+          return entry.urls.map((endpoint) => {
+            let urlInfo = utils.parseUrl(endpoint);
+            utils.mergeDeep(urlInfo.search, params);
+            if (Object.keys(urlInfo.search).length === 0) {
+              delete urlInfo.search; // empty search object causes buildUrl to add a trailing ? to the url
+            }
+            return {type: entry.type, url: utils.buildUrl(urlInfo)};
+          })
+            .reduce((x, y) => x.concat(y), []);
+        })
+        .reduce((x, y) => x.concat(y), []);
+      syncs.push(...pixels);
+    }
+    return syncs;
   }
 };
 
@@ -331,6 +373,7 @@ function collectEids(bidRequests) {
   if (utils.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
     // later following white-list can be converted to block-list if needed
     const requiredSourceValues = {
+      'epsilon.com': 1,
       'adserver.org': 1,
       'liveramp.com': 1,
       'criteo.com': 1,

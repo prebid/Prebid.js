@@ -15,6 +15,7 @@ import {
   allowedFields
 } from 'modules/priceFloors.js';
 import events from 'src/events.js';
+import * as mockGpt from '../integration/faker/googletag.js';
 
 describe('the price floors module', function () {
   let logErrorSpy;
@@ -396,6 +397,84 @@ describe('the price floors module', function () {
       inputFloorData = { default: 5.0 };
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
         matchingFloor: 5.0
+      });
+    });
+    describe('with gpt enabled', function () {
+      let gptFloorData;
+      beforeEach(function () {
+        gptFloorData = {
+          currency: 'USD',
+          schema: {
+            fields: ['gptSlot']
+          },
+          values: {
+            '/12345/sports/soccer': 1.1,
+            '/12345/sports/basketball': 2.2,
+            '/12345/news/politics': 3.3,
+            '/12345/news/weather': 4.4,
+            '*': 5.5,
+          },
+          default: 0.5
+        };
+        // reset it so no lingering stuff from other test specs
+        mockGpt.reset();
+        mockGpt.makeSlot({
+          code: '/12345/sports/soccer',
+          divId: 'test_div_1'
+        });
+        mockGpt.makeSlot({
+          code: '/12345/sports/basketball',
+          divId: 'test_div_2'
+        });
+      });
+      afterEach(function () {
+        // reset it so no lingering stuff from other test specs
+        mockGpt.reset();
+      });
+      it('picks the right rule when looking for gptSlot', function () {
+        expect(getFirstMatchingFloor(gptFloorData, basicBidRequest)).to.deep.equal({
+          floorMin: 0,
+          floorRuleValue: 1.1,
+          matchingFloor: 1.1,
+          matchingData: '/12345/sports/soccer',
+          matchingRule: '/12345/sports/soccer'
+        });
+
+        let newBidRequest = { ...basicBidRequest, adUnitCode: 'test_div_2' }
+        expect(getFirstMatchingFloor(gptFloorData, newBidRequest)).to.deep.equal({
+          floorMin: 0,
+          floorRuleValue: 2.2,
+          matchingFloor: 2.2,
+          matchingData: '/12345/sports/basketball',
+          matchingRule: '/12345/sports/basketball'
+        });
+      });
+      it('picks the gptSlot from the bidRequest and does not call the slotMatching', function () {
+        const newBidRequest1 = { ...basicBidRequest };
+        utils.deepSetValue(newBidRequest1, 'ortb2Imp.ext.data.adserver', {
+          name: 'gam',
+          adslot: '/12345/news/politics'
+        })
+        expect(getFirstMatchingFloor(gptFloorData, newBidRequest1)).to.deep.equal({
+          floorMin: 0,
+          floorRuleValue: 3.3,
+          matchingFloor: 3.3,
+          matchingData: '/12345/news/politics',
+          matchingRule: '/12345/news/politics'
+        });
+
+        const newBidRequest2 = { ...basicBidRequest, adUnitCode: 'test_div_2' };
+        utils.deepSetValue(newBidRequest2, 'ortb2Imp.ext.data.adserver', {
+          name: 'gam',
+          adslot: '/12345/news/weather'
+        })
+        expect(getFirstMatchingFloor(gptFloorData, newBidRequest2)).to.deep.equal({
+          floorMin: 0,
+          floorRuleValue: 4.4,
+          matchingFloor: 4.4,
+          matchingData: '/12345/news/weather',
+          matchingRule: '/12345/news/weather'
+        });
       });
     });
   });

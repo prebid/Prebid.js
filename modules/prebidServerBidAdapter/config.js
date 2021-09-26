@@ -13,6 +13,15 @@ export const S2S_VENDORS = {
     },
     timeout: 1000
   },
+  'appnexuspsp': {
+    adapter: 'prebidServer',
+    enabled: true,
+    endpoint: {
+      p1Consent: 'https://ib.adnxs.com/openrtb2/prebid',
+      noP1Consent: 'https://ib.adnxs-simple.com/openrtb2/prebid'
+    },
+    timeout: 1000
+  },
   'rubicon': {
     adapter: 'prebidServer',
     enabled: true,

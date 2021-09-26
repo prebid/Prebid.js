@@ -1,5 +1,6 @@
 import { assert } from 'chai';
-import { spec } from 'modules/tappxBidAdapter';
+import { spec } from 'modules/tappxBidAdapter.js';
+import { _checkParamDataType, _getHostInfo } from '../../../modules/tappxBidAdapter.js';
 
 const c_BIDREQUEST = {
   data: {
@@ -115,7 +116,8 @@ const c_CONSENTSTRING = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
 const c_VALIDBIDREQUESTS = [{'bidder': 'tappx', 'params': {'host': 'testing.ssp.tappx.com\/rtb\/v2\/', 'tappxkey': 'pub-1234-android-1234', 'endpoint': 'ZZ1234PBJS', 'bidfloor': 0.005, 'test': 1}, 'userId': {'haloId': '0000x179MZAzMqUWsFonu7Drm3eDDBMYtj5SPoWQnl89Upk3WTlCvEnKI9SshX0p6eFJ7otPYix179MZAzMqUWsFonu7Drm3eDDBMYtj5SPoWQnl89Upk3WTlCvEnKI9SshX0p6e', 'id5id': {'uid': 'ID5@iu-PJX_OQ0d6FJjKS8kYfUpHriD_rEXbz6UYtYEJelYrDaZOLkh8WcF9J0ZHmEHFKZEBlLXsgP6xqXU3BCj4Ay0Z6fw_jSOaHxMHwd-voRHqFA4Q9NwAxFcVLyPWnNGZ9VbcSAPos1wupq7Xu3MIm-Bw_0vxjhZdWNy4chM9x3i', 'ext': {'linkType': 0}}, 'intentIqId': 'GIF89a\u0000\u0000\u0000\u0000�\u0000\u0000���\u0000\u0000\u0000?�\u0000\u0000\u0000\u0000\u0000\u0000,\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000A\u0000\u0000;', 'lotamePanoramaId': 'xTtLUY7GwqX2MMqSHo9RQ2YUOIBFhlASOR43I9KjvgtcrxIys3RxME96M02LTjWR', 'parrableId': {'eid': '02.YoqC9lWZh8.C8QTSiJTNgI6Pp0KCM5zZgEgwVMSsVP5W51X8cmiUHQESq9WRKB4nreqZJwsWIcNKlORhG4u25Wm6lmDOBmQ0B8hv0KP6uVQ97aouuH52zaz2ctVQTORUKkErPRPcaCJ7dKFcrNoF2i6WOR0S5Nk'}, 'pubcid': 'b1254-152f-12F5-5698-dI1eljK6C7WA', 'pubProvidedId': [{'source': 'domain.com', 'uids': [{'id': 'value read from cookie or local storage', 'atype': 1, 'ext': {'stype': 'ppuid'}}]}, {'source': '3rdpartyprovided.com', 'uids': [{'id': 'value read from cookie or local storage', 'atype': 3, 'ext': {'stype': 'sha256email'}}]}]}, 'userIdAsEids': [{'source': 'audigent.com', 'uids': [{'id': '0000fgclxw05ycn0608xiyi90bwpa0c0evvlif0hv1x0i0ku88il0ntek0o0qskvir0trr70u0wqxiix0zq3u1012pa5j315ogh1618nmsj91bmt41c1elzfjf1hl5r1i1kkc2jl', 'atype': 1}]}, {'source': 'id5-sync.com', 'uids': [{'id': 'ID5@iu-PJX_OQ0d6FJjKS8kYfUpHriD_qpoXJUngedfpNva812If1fHEqHHkamLC89txVxk1i9WGqeQrTX97HFCgv9QDa1M_bkHUBsAWFm-D5r1rYrsfMFFiyqwCAEzqNbvsUZXOYCAQSjPcLxR4of22w-U9_JDRThCGRDV3Fmvc38E', 'atype': 1, 'ext': {'linkType': 0}}]}], 'ortb2Imp': {'ext': {'data': {'adserver': {'name': 'gam', 'adslot': '/19968336/header-bid-tag-0'}, 'pbadslot': '/19968336/header-bid-tag-0'}}}, 'mediaTypes': {'banner': {'sizes': [[320, 480], [320, 50]]}}, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'transactionId': '71c0d86b-4b47-4aff-a6da-1af0b1712439', 'sizes': [[320, 480], [320, 50]], 'bidId': '264d7969b125a5', 'bidderRequestId': '1c674c14a3889c', 'auctionId': '13a8a3a9-ed3a-4101-9435-4699ee77bb62', 'src': 'client', 'bidRequestsCount': 1, 'bidderRequestsCount': 1, 'bidderWinsCount': 0}];
 const c_VALIDBIDAPPREQUESTS = [{'bidder': 'tappx', 'params': {'host': 'testing.ssp.tappx.com\/rtb\/v2\/', 'tappxkey': 'pub-1234-android-1234', 'endpoint': 'ZZ1234PBJS', 'bidfloor': 0.005, 'test': 1, 'app': {'name': 'Tappx Test', 'bundle': 'com.test.tappx', 'domain': 'tappx.com', 'publisher': { 'name': 'Tappx', 'domain': 'tappx.com' }}}, 'userId': {'haloId': '0000fgclxw05ycn0608xiyi90bwpa0c0evvlif0hv1x0i0ku88il0ntek0o0qskvir0trr70u0wqxiix0zq3u1012pa5j315ogh1618nmsj91bmt41c1elzfjf1hl5r1i1kkc2jl', 'id5id': {'uid': 'ID5@iu-PJX_OQ0d6FJjKS8kYfUpHriD_qpoXJUngedfpNva812If1fHEqHHkamLC89txVxk1i9WGqeQrTX97HFCgv9QDa1M_bkHUBsAWFm-D5r1rYrsfMFFiyqwCAEzqNbvsUZXOYCAQSjPcLxR4of22w-U9_JDRThCGRDV3Fmvc38E', 'ext': {'linkType': 0}}, 'intentIqId': 'GIF89a\u0001\u0000\u0001\u0000�\u0000\u0000���\u0000\u0000\u0000!�\u0004\u0001\u0000\u0000\u0000\u0000,\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000\u0000\u0002\u0002D\u0001\u0000;', 'lotamePanoramaId': '8003916b61a95b185690ec103bdf4945a70213e01818a5e5d8690b542730755a', 'parrableId': {'eid': '01.1617088921.7faa68d9570a50ea8e4f359e9b99ca4b7509e948a6175b3e5b0b8cbaf5b62424104ccfb0191ca79366de8368ed267b89a68e236df5f41f96f238e4301659e9023fec05e46399fb1ad0a0'}, 'pubcid': 'b7143795-852f-42f0-8864-5ecbea1ade4e', 'pubProvidedId': [{'source': 'domain.com', 'uids': [{'id': 'value read from cookie or local storage', 'atype': 1, 'ext': {'stype': 'ppuid'}}]}, {'source': '3rdpartyprovided.com', 'uids': [{'id': 'value read from cookie or local storage', 'atype': 3, 'ext': {'stype': 'sha256email'}}]}]}, 'userIdAsEids': [{'source': 'audigent.com', 'uids': [{'id': '0000fgclxw05ycn0608xiyi90bwpa0c0evvlif0hv1x0i0ku88il0ntek0o0qskvir0trr70u0wqxiix0zq3u1012pa5j315ogh1618nmsj91bmt41c1elzfjf1hl5r1i1kkc2jl', 'atype': 1}]}, {'source': 'id5-sync.com', 'uids': [{'id': 'ID5@iu-PJX_OQ0d6FJjKS8kYfUpHriD_qpoXJUngedfpNva812If1fHEqHHkamLC89txVxk1i9WGqeQrTX97HFCgv9QDa1M_bkHUBsAWFm-D5r1rYrsfMFFiyqwCAEzqNbvsUZXOYCAQSjPcLxR4of22w-U9_JDRThCGRDV3Fmvc38E', 'atype': 1, 'ext': {'linkType': 0}}]}, {'source': 'intentiq.com', 'uids': [{'id': 'GIF89a\u0001\u0000\u0001\u0000�\u0000\u0000���\u0000\u0000\u0000!�\u0004\u0001\u0000\u0000\u0000\u0000,\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000\u0000\u0002\u0002D\u0001\u0000;', 'atype': 1}]}, {'source': 'crwdcntrl.net', 'uids': [{'id': '8003916b61a95b185690ec103bdf4945a70213e01818a5e5d8690b542730755a', 'atype': 1}]}, {'source': 'parrable.com', 'uids': [{'id': '01.1617088921.7faa68d9570a50ea8e4f359e9b99ca4b7509e948a6175b3e5b0b8cbaf5b62424104ccfb0191ca79366de8368ed267b89a68e236df5f41f96f238e4301659e9023fec05e46399fb1ad0a0', 'atype': 1}]}, {'source': 'pubcid.org', 'uids': [{'id': 'b7143795-852f-42f0-8864-5ecbea1ade4e', 'atype': 1}]}, {'source': 'domain.com', 'uids': [{'id': 'value read from cookie or local storage', 'atype': 1, 'ext': {'stype': 'ppuid'}}]}, {'source': '3rdpartyprovided.com', 'uids': [{'id': 'value read from cookie or local storage', 'atype': 3, 'ext': {'stype': 'sha256email'}}]}], 'ortb2Imp': {'ext': {'data': {'adserver': {'name': 'gam', 'adslot': '/19968336/header-bid-tag-0'}, 'pbadslot': '/19968336/header-bid-tag-0'}}}, 'mediaTypes': {'banner': {'sizes': [[320, 480], [320, 50]]}}, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'transactionId': '71c0d86b-4b47-4aff-a6da-1af0b1712439', 'sizes': [[320, 480], [320, 50]], 'bidId': '264d7969b125a5', 'bidderRequestId': '1c674c14a3889c', 'auctionId': '13a8a3a9-ed3a-4101-9435-4699ee77bb62', 'src': 'client', 'bidRequestsCount': 1, 'bidderRequestsCount': 1, 'bidderWinsCount': 0}];
 const c_BIDDERREQUEST_B = {'bidderCode': 'tappx', 'auctionId': '13a8a3a9-ed3a-4101-9435-4699ee77bb62', 'bidderRequestId': '1c674c14a3889c', 'bids': [{'bidder': 'tappx', 'params': {'host': 'testing.ssp.tappx.com\/rtb\/v2\/', 'tappxkey': 'pub-1234-android-1234', 'endpoint': 'ZZ1234PBJS', 'bidfloor': 0.005, 'test': 1}, 'userId': {'haloId': '0000fgclxw05ycn0608xiyi90bwpa0c0evvlif0hv1x0i0ku88il0ntek0o0qskvir0trr70u0wqxiix0zq3u1012pa5j315ogh1618nmsj91bmt41c1elzfjf1hl5r1i1kkc2jl', 'id5id': {'uid': 'ID5@iu-PJX_OQ0d6FJjKS8kYfUpHriD_qpoXJUngedfpNva812If1fHEqHHkamLC89txVxk1i9WGqeQrTX97HFCgv9QDa1M_bkHUBsAWFm-D5r1rYrsfMFFiyqwCAEzqNbvsUZXOYCAQSjPcLxR4of22w-U9_JDRThCGRDV3Fmvc38E', 'ext': {'linkType': 0}}, 'intentIqId': 'GIF89a\u0000\u0000\u0000\u0000�\u0000\u0000���\u0000\u0000\u0000?�\u0000\u0000\u0000\u0000\u0000\u0000,\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000A\u0000\u0000;', 'lotamePanoramaId': '8003916b61a95b185690ec103bdf4945a70213e01818a5e5d8690b542730755a', 'parrableId': {'eid': '01.1617088921.7faa68d9570a50ea8e4f359e9b99ca4b7509e948a6175b3e5b0b8cbaf5b62424104ccfb0191ca79366de8368ed267b89a68e236df5f41f96f238e4301659e9023fec05e46399fb1ad0a0'}, 'pubcid': 'b7143795-852f-42f0-8864-5ecbea1ade4e', 'pubProvidedId': [{'source': 'domain.com', 'uids': [{'id': 'value read from cookie or local storage', 'atype': 1, 'ext': {'stype': 'ppuid'}}]}, {'source': '3rdpartyprovided.com', 'uids': [{'id': 'value read from cookie or local storage', 'atype': 3, 'ext': {'stype': 'sha256email'}}]}]}, 'userIdAsEids': [{'source': 'audigent.com', 'uids': [{'id': '0000fgclxw05ycn0608xiyi90bwpa0c0evvlif0hv1x0i0ku88il0ntek0o0qskvir0trr70u0wqxiix0zq3u1012pa5j315ogh1618nmsj91bmt41c1elzfjf1hl5r1i1kkc2jl', 'atype': 1}]}, {'source': 'id5-sync.com', 'uids': [{'id': 'ID5@iu-PJX_OQ0d6FJjKS8kYfUpHriD_qpoXJUngedfpNva812If1fHEqHHkamLC89txVxk1i9WGqeQrTX97HFCgv9QDa1M_bkHUBsAWFm-D5r1rYrsfMFFiyqwCAEzqNbvsUZXOYCAQSjPcLxR4of22w-U9_JDRThCGRDV3Fmvc38E', 'atype': 1, 'ext': {'linkType': 0}}]}], 'ortb2Imp': {'ext': {'data': {'adserver': {'name': 'gam', 'adslot': '/19968336/header-bid-tag-0'}, 'pbadslot': '/19968336/header-bid-tag-0'}}}, 'mediaTypes': {'banner': {'sizes': [[320, 480], [320, 50]]}}, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'transactionId': '71c0d86b-4b47-4aff-a6da-1af0b1712439', 'sizes': [[320, 480], [320, 50]], 'bidId': '264d7969b125a5', 'bidderRequestId': '1c674c14a3889c', 'auctionId': '13a8a3a9-ed3a-4101-9435-4699ee77bb62', 'src': 'client', 'bidRequestsCount': 1, 'bidderRequestsCount': 1, 'bidderWinsCount': 0}], 'auctionStart': 1617088922120, 'timeout': 700, 'refererInfo': {'referer': 'http://localhost:9999/integrationExamples/gpt/gdpr_hello_world.html?pbjs_debug=true', 'reachedTop': true, 'isAmp': false, 'numIframes': 0, 'stack': ['http://localhost:9999/integrationExamples/gpt/gdpr_hello_world.html?pbjs_debug=true'], 'canonicalUrl': null}, 'gdprConsent': {'consentString': c_CONSENTSTRING, 'vendorData': {'metadata': 'BO-JeiTPABAOkAAABAENABA', 'gdprApplies': true, 'hasGlobalScope': false, 'cookieVersion': 1, 'created': '2020-12-09T09:22:09.900Z', 'lastUpdated': '2021-01-14T15:44:03.600Z', 'cmpId': 0, 'cmpVersion': 1, 'consentScreen': 0, 'consentLanguage': 'EN', 'vendorListVersion': 1, 'maxVendorId': 0, 'purposeConsents': {}, 'vendorConsents': {}}, 'gdprApplies': true, 'apiVersion': 1}, 'uspConsent': '1YCC', 'start': 1611308859099};
-const c_BIDDERREQUEST_V = {'method': 'POST', 'url': 'https://testing.ssp.tappx.com/rtb/v2//VZ12TESTCTV?type_cnn=prebidjs&v=0.1.10329', 'data': '{"site":{"name":"localhost","bundle":"localhost","domain":"localhost"},"user":{"ext":{}},"id":"e807363f-3095-43a8-a4a6-f44196cb7318","test":1,"at":1,"tmax":1000,"bidder":"tappx","imp":[{"video":{"w":320,"h":250,"mimes":["video/mp4","application/javascript"]},"id":"28f49c71b13f2f","tagid":"localhost_typeAdBanVid_windows","secure":1,"bidfloor":0.005,"ext":{"bidder":{"tappxkey":"pub-1234-desktop-1234","endpoint":"VZ12TESTCTV","host":"testing.ssp.tappx.com/rtb/v2/"}}}],"device":{"os":"windows","ip":"peer","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36","h":864,"w":1536,"dnt":0,"language":"en","make":"Google Inc."},"params":{"host":"tappx.com","bidfloor":0.005},"regs":{"gdpr":0,"ext":{}}}', 'bids': {'bidder': 'tappx', 'params': {'host': 'testing.ssp.tappx.com/rtb/v2/', 'tappxkey': 'pub-1234-desktop-1234', 'endpoint': 'VZ12TESTCTV', 'bidfloor': 0.005, 'test': true}, 'crumbs': {'pubcid': 'dccfe922-3823-4676-b7b2-e5ed8743154e'}, 'ortb2Imp': {'ext': {'data': {'pbadslot': 'video-ad-div'}}}, 'renderer': {'options': {'text': 'Tappx Outstream Video'}}, 'mediaTypes': {'video': {'context': 'instream', 'mimes': ['video/mp4', 'application/javascript'], 'playerSize': [[320, 250]]}}, 'adUnitCode': 'video-ad-div', 'transactionId': 'ed41c805-d14c-49c3-954d-26b98b2aa2c2', 'sizes': [[320, 250]], 'bidId': '28f49c71b13f2f', 'bidderRequestId': '1401710496dc7', 'auctionId': 'e807363f-3095-43a8-a4a6-f44196cb7318', 'src': 'client', 'bidRequestsCount': 1, 'bidderRequestsCount': 1, 'bidderWinsCount': 0}}
+const c_BIDDERREQUEST_V = {'method': 'POST', 'url': 'https://testing.ssp.tappx.com/rtb/v2//VZ12TESTCTV?type_cnn=prebidjs&v=0.1.10329', 'data': '{"site":{"name":"localhost","bundle":"localhost","domain":"localhost"},"user":{"ext":{}},"id":"0fecfa84-c541-49f8-8c45-76b90fddc30e","test":1,"at":1,"tmax":1000,"bidder":"tappx","imp":[{"video":{"mimes":["video/mp4","application/javascript"],"minduration":3,"maxduration":30,"startdelay":5,"playbackmethod":[1,3],"api":[1,2],"protocols":[2,3],"battr":[13,14],"linearity":1,"placement":2,"minbitrate":10,"maxbitrate":10,"w":320,"h":250},"id":"2398241a5a860b","tagid":"localhost_typeAdBanVid_windows","secure":1,"bidfloor":0.005,"ext":{"bidder":{"tappxkey":"pub-1234-desktop-1234","endpoint":"vz34906po","host":"https://vz34906po.pub.tappx.com/rtb/","bidfloor":0.005}}}],"device":{"os":"windows","ip":"peer","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36","h":864,"w":1536,"dnt":0,"language":"en","make":"Google Inc."},"params":{"host":"tappx.com","bidfloor":0.005},"regs":{"gdpr":0,"ext":{}}}', 'bids': {'bidder': 'tappx', 'params': {'host': 'testing.ssp.tappx.com/rtb/v2/', 'tappxkey': 'pub-1234-desktop-1234', 'endpoint': 'VZ12TESTCTV', 'bidfloor': 0.005, 'test': true}, 'crumbs': {'pubcid': 'dccfe922-3823-4676-b7b2-e5ed8743154e'}, 'ortb2Imp': {'ext': {'data': {'pbadslot': 'video-ad-div'}}}, 'renderer': {'options': {'text': 'Tappx Outstream Video'}}, 'mediaTypes': {'video': {'mimes': ['video/mp4', 'application/javascript'], 'minduration': 3, 'maxduration': 30, 'startdelay': 5, 'playbackmethod': [1, 3], 'api': [1, 2], 'protocols': [2, 3], 'battr': [13, 14], 'linearity': 1, 'placement': 2, 'minbitrate': 10, 'maxbitrate': 10, 'w': 320, 'h': 250}}, 'adUnitCode': 'video-ad-div', 'transactionId': 'ed41c805-d14c-49c3-954d-26b98b2aa2c2', 'sizes': [[320, 250]], 'bidId': '28f49c71b13f2f', 'bidderRequestId': '1401710496dc7', 'auctionId': 'e807363f-3095-43a8-a4a6-f44196cb7318', 'src': 'client', 'bidRequestsCount': 1, 'bidderRequestsCount': 1, 'bidderWinsCount': 0}}
+const c_BIDDERREQUEST_VOutstream = {'method': 'POST', 'url': 'https://testing.ssp.tappx.com/rtb/v2//VZ12TESTCTV?type_cnn=prebidjs&v=0.1.10329', 'data': '{"site":{"name":"localhost","bundle":"localhost","domain":"localhost"},"user":{"ext":{}},"id":"0fecfa84-c541-49f8-8c45-76b90fddc30e","test":1,"at":1,"tmax":1000,"bidder":"tappx","imp":[{"video":{"context": "outstream","playerSize":[640, 480],"mimes":["video/mp4","application/javascript"],"minduration":3,"maxduration":30,"startdelay":5,"playbackmethod":[1,3],"api":[1,2],"protocols":[2,3],"battr":[13,14],"linearity":1,"placement":2,"minbitrate":10,"maxbitrate":10,"w":320,"h":250},"id":"2398241a5a860b","tagid":"localhost_typeAdBanVid_windows","secure":1,"bidfloor":0.005,"ext":{"bidder":{"tappxkey":"pub-1234-desktop-1234","endpoint":"vz34906po","host":"https://vz34906po.pub.tappx.com/rtb/","bidfloor":0.005}}}],"device":{"os":"windows","ip":"peer","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36","h":864,"w":1536,"dnt":0,"language":"en","make":"Google Inc."},"params":{"host":"tappx.com","bidfloor":0.005},"regs":{"gdpr":0,"ext":{}}}', 'bids': {'bidder': 'tappx', 'params': {'host': 'testing.ssp.tappx.com/rtb/v2/', 'tappxkey': 'pub-1234-desktop-1234', 'endpoint': 'VZ12TESTCTV', 'bidfloor': 0.005, 'test': true}, 'crumbs': {'pubcid': 'dccfe922-3823-4676-b7b2-e5ed8743154e'}, 'ortb2Imp': {'ext': {'data': {'pbadslot': 'video-ad-div'}}}, 'renderer': {'options': {'text': 'Tappx Outstream Video'}}, 'mediaTypes': {'video': {'mimes': ['video/mp4', 'application/javascript'], 'minduration': 3, 'maxduration': 30, 'startdelay': 5, 'playbackmethod': [1, 3], 'api': [1, 2], 'protocols': [2, 3], 'battr': [13, 14], 'linearity': 1, 'placement': 2, 'minbitrate': 10, 'maxbitrate': 10, 'w': 320, 'h': 250}}, 'adUnitCode': 'video-ad-div', 'transactionId': 'ed41c805-d14c-49c3-954d-26b98b2aa2c2', 'sizes': [[320, 250]], 'bidId': '28f49c71b13f2f', 'bidderRequestId': '1401710496dc7', 'auctionId': 'e807363f-3095-43a8-a4a6-f44196cb7318', 'src': 'client', 'bidRequestsCount': 1, 'bidderRequestsCount': 1, 'bidderWinsCount': 0}}
 
 describe('Tappx bid adapter', function () {
   /**
@@ -157,11 +159,20 @@ describe('Tappx bid adapter', function () {
       assert.isTrue(spec.isBidRequestValid(badBidRequestNwEp.bids[0]));
     });
 
-    it('should return false for not instream requests', function () {
+    it('should return false mimes param is missing', function () {
+      let badBidRequest_mimes = c_BIDDERREQUEST_V;
+      delete badBidRequest_mimes.bids.mediaTypes.video;
+      badBidRequest_mimes.bids.mediaTypes.video = {};
+      badBidRequest_mimes.bids.mediaTypes.video.context = 'instream';
+      badBidRequest_mimes.bids.mediaTypes.video.playerSize = [320, 250];
+      assert.isFalse(spec.isBidRequestValid(badBidRequest_mimes.bids), badBidRequest_mimes);
+    });
+
+    it('should return false for not instream/outstream requests', function () {
       let badBidRequest_v = c_BIDDERREQUEST_V;
       delete badBidRequest_v.bids.mediaTypes.banner;
       badBidRequest_v.bids.mediaTypes.video = {};
-      badBidRequest_v.bids.mediaTypes.video.context = 'outstream';
+      badBidRequest_v.bids.mediaTypes.video.context = '';
       badBidRequest_v.bids.mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
       badBidRequest_v.bids.mediaTypes.video.playerSize = [320, 250];
       assert.isFalse(spec.isBidRequestValid(badBidRequest_v.bids));
@@ -175,18 +186,20 @@ describe('Tappx bid adapter', function () {
     // Web Test
     let validBidRequests = c_VALIDBIDREQUESTS;
     let validBidRequests_V = c_VALIDBIDREQUESTS;
+    let validBidRequests_Voutstream = c_VALIDBIDREQUESTS;
     // App Test
     let validAppBidRequests = c_VALIDBIDAPPREQUESTS;
 
     let bidderRequest = c_BIDDERREQUEST_B;
     let bidderRequest_V = c_BIDDERREQUEST_V;
+    let bidderRequest_VOutstream = c_BIDDERREQUEST_VOutstream;
 
     it('should add gdpr/usp consent information to the request', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request[0].data);
 
       expect(payload.regs.gdpr).to.exist.and.to.be.true;
-      expect(payload.regs.consent).to.exist.and.to.equal(c_CONSENTSTRING);
+      expect(payload.user.ext.consent).to.exist.and.to.equal(c_CONSENTSTRING);
       expect(payload.regs.ext.us_privacy).to.exist;
     });
 
@@ -205,6 +218,14 @@ describe('Tappx bid adapter', function () {
     });
 
     it('should properly build a video request', function () {
+      delete validBidRequests_V[0].mediaTypes.banner
+      validBidRequests_V[0].mediaTypes.video = {};
+      validBidRequests_V[0].mediaTypes.video.playerSize = [640, 480];
+      validBidRequests_V[0].mediaTypes.video.context = 'instream';
+      validBidRequests_V[0].mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
+
+      bidderRequest_V.bids.mediaTypes.context = 'instream';
+
       const request = spec.buildRequests(validBidRequests_V, bidderRequest_V);
       expect(request[0].url).to.match(/^(http|https):\/\/(.*)\.tappx\.com\/.+/);
       expect(request[0].method).to.equal('POST');
@@ -213,9 +234,27 @@ describe('Tappx bid adapter', function () {
       expect(data.site).to.not.equal(null);
       expect(data.imp).to.have.lengthOf(1);
       expect(data.imp[0].bidfloor, data).to.not.be.null;
-      expect(data.imp[0].banner).to.not.equal(null);
-      expect(data.imp[0].banner.w).to.be.oneOf([320, 50, 250, 480]);
-      expect(data.imp[0].banner.h).to.be.oneOf([320, 50, 250, 480]);
+      expect(data.imp[0].video).to.not.equal(null);
+    });
+
+    it('should properly build a video outstream request', function () {
+      delete validBidRequests_Voutstream[0].mediaTypes.banner
+      validBidRequests_Voutstream[0].mediaTypes.video = {};
+      validBidRequests_Voutstream[0].mediaTypes.video.playerSize = [640, 480];
+      validBidRequests_Voutstream[0].mediaTypes.video.context = 'outstream';
+      validBidRequests_Voutstream[0].mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
+
+      bidderRequest_VOutstream.bids.mediaTypes.context = 'outstream';
+
+      const request = spec.buildRequests(validBidRequests_Voutstream, bidderRequest_VOutstream);
+      expect(request[0].url).to.match(/^(http|https):\/\/(.*)\.tappx\.com\/.+/);
+      expect(request[0].method).to.equal('POST');
+
+      const data = JSON.parse(request[0].data);
+      expect(data.site).to.not.equal(null);
+      expect(data.imp).to.have.lengthOf(1);
+      expect(data.imp[0].bidfloor, data).to.not.be.null;
+      expect(data.imp[0].video).to.not.equal(null);
     });
 
     it('should set user eids array', function () {
@@ -354,6 +393,54 @@ describe('Tappx bid adapter', function () {
       request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
       payload = JSON.parse(request[0].data);
       expect(payload.imp[0].bidfloor).to.equal(1.23);
+    });
+  })
+
+  describe('_getHostInfo tests', function() {
+    const HOST_VALIDBIDREQ = {};
+    HOST_VALIDBIDREQ.bidder = 'tappx';
+    HOST_VALIDBIDREQ.params = {};
+    HOST_VALIDBIDREQ.params.endpoint = 'ZZ1234PBJS';
+
+    it('Test testing endpoints', function() {
+      let testHostValidRequest = HOST_VALIDBIDREQ;
+      testHostValidRequest.params.host = 'testing.xxx.tappx.com\/rtb\/v2\/';
+      let testHostObject = _getHostInfo(testHostValidRequest);
+      assert.isObject(testHostObject);
+      expect(testHostObject.newEndpoint).to.be.false;
+      expect(testHostObject.endpoint).to.be.equal(testHostValidRequest.params.endpoint);
+    })
+    it('Test classic endpoints', function() {
+      let classicHostValidRequest = HOST_VALIDBIDREQ;
+      classicHostValidRequest.params.host = 'xxx.xxx.tappx.com\/rtb\/v2\/';
+      let classicHostObject = _getHostInfo(classicHostValidRequest);
+      assert.isObject(classicHostObject);
+      expect(classicHostObject.newEndpoint).to.be.false;
+      expect(classicHostObject.endpoint).to.be.equal(classicHostValidRequest.params.endpoint);
+    })
+    it('Test new endpoints', function() {
+      let newHostValidRequest = HOST_VALIDBIDREQ;
+      newHostValidRequest.params.host = 'zz1111xxx.xxx.tappx.com\/rtb\/v2\/';
+      let newHostObject = _getHostInfo(newHostValidRequest);
+      assert.isObject(newHostObject);
+      expect(newHostObject.newEndpoint).to.be.true;
+      expect(newHostObject.endpoint).to.be.equal('zz1111xxx');
+    })
+  })
+
+  describe('_checkParamDataType tests', function() {
+    it('should return the expected datatypes', function () {
+      assert.isString(_checkParamDataType('Right string', 'test', 'string'));
+      assert.isBoolean(_checkParamDataType('Right bool', true, 'boolean'));
+      assert.isNumber(_checkParamDataType('Right number', 10, 'number'));
+      assert.isArray(_checkParamDataType('Right array', [10, 11], 'array'));
+    });
+
+    it('should return undefined var for wrong datatypes', function () {
+      expect(_checkParamDataType('Wrong string', 10, 'string')).to.be.undefined;
+      expect(_checkParamDataType('Wrong bool', 10, 'boolean')).to.be.undefined;
+      expect(_checkParamDataType('Wrong number', 'one', 'number')).to.be.undefined;
+      expect(_checkParamDataType('Wrong array', false, 'array')).to.be.undefined;
     });
   })
 });

@@ -72,10 +72,11 @@
                   "131": true,    // id5Id
                   "929": true,    // parrableId
                   "97": true,     // identityLink
-                  "887": true,    // sharedId, uid2
+                  "887": true,    // uid2
                   "95": true,     // lotamePanoramaId
                   "301": true,    // zeotapIdPlus
                   "91": true,     // criteo
+                  "737": true,    // amxId
                 }
               }
             }
@@ -153,6 +154,7 @@
             {
               "name": "merkleId",
               "params": {
+                "endpoint":  "https://test_endpoint/",
                 "vendor": "sdfg",
                 "sv_cid": "dfg",
                 "sv_pubid": "xcv",
@@ -196,18 +198,6 @@
               }
             },
             {
-              "name": "sharedId",
-              // bidders: ["rubicon", "sampleBidders"], // to allow this ID for specific bidders
-              "params": {
-                "syncTime": 60 // in seconds, default is 24 hours
-              },
-              "storage": {
-                "type": "cookie",
-                "name": "sharedid",
-                "expires": 28
-              }
-            },
-            {
               "name": "lotamePanoramaId"
             },
             {
@@ -239,6 +229,14 @@
               "name": "criteo"
             },
             {
+              "name": "amxId",
+              "storage": {
+                "type": "html5",
+                "name": "amxId",
+                "expires": 14
+              }
+            },
+            {
               "name": "uid2"
             }
             ,{
@@ -248,7 +246,13 @@
                   // To get new token, register https://developer.chrome.com/origintrials/#/trials/active for Federated Learning of Cohorts
                   token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
                 }
+              },
+            {
+              "name": "imuid",
+              "params": {
+                "cid": 5126 // Set your Intimate Merger Customer ID here for production
               }
+            }
           ],
           "syncDelay": 5000,
           "auctionDelay": 1000

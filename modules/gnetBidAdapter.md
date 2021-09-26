@@ -8,7 +8,7 @@ Maintainer: roberto.wu@grumft.com
 
 # Description
 
-Module that connects to Example's demand sources
+Connect to Gnet Project exchange for bids.
 
 # Test Parameters
 ```
@@ -24,8 +24,7 @@ Module that connects to Example's demand sources
                 {
                     bidder: 'gnet',
                     params: {
-                        websiteId: '4',
-                        externalId: '4d52cccf30309282256012cf30309282'
+                        websiteId: '4'
                     }
                 }
             ]
