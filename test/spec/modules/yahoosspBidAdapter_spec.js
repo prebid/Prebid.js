@@ -543,7 +543,7 @@ describe('YSSP Bid Adapter', () => {
   });
 
   describe('Endpoint & Impression Request Mode:', () => {
-    it('should return request objects that make a POST request to the override endpoint', () => {
+    it('should route request to config override endpoint', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const testOverrideEndpoint = 'http://foo.bar.baz.com/bidderRequest';
       config.setConfig({
@@ -557,6 +557,27 @@ describe('YSSP Bid Adapter', () => {
           method: 'POST',
           url: testOverrideEndpoint
         });
+    });
+
+    it('should route request to /bidRequest endpoint when dcn & pos present', () => {
+      config.setConfig({
+        yahoossp: {}
+      });
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const response = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(response[0]).to.deep.include({
+        method: 'POST',
+        url: 'https://c2shb.ssp.yahoo.com/bidRequest'
+      });
+    });
+
+    it('should route request to /partners endpoint when pubId is present', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({pubIdMode: true});
+      const response = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(response[0]).to.deep.include({
+        method: 'POST',
+        url: 'https://c2shb.ssp.yahoo.com/admax/bid/partners/PBJS'
+      });
     });
 
     it('should return a single request object for single request mode', () => {
@@ -591,25 +612,6 @@ describe('YSSP Bid Adapter', () => {
           pos: BID_POS_2,
           dfp_ad_unit_code: AD_UNIT_CODE_2
         }
-      });
-    });
-
-    it('should route request to /bidRequest endpoint when dcn & pos present', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
-      const response = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(response).to.deep.include({
-        method: 'POST',
-        url: 'https://c2shb.ssp.yahoo.com/bidRequest'
-      });
-    });
-
-    it('should route request to /partners endpoint when pubId is present', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({pubIdMode: true});
-      const response = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(response).to.deep.equal({a: 1});
-      expect(response).to.deep.include({
-        method: 'POST',
-        url: 'https://c2shb.ssp.yahoo.com/admax/bid/partners/PBJS'
       });
     });
   });
