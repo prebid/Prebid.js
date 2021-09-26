@@ -18,6 +18,10 @@ const PUBLINK_S2S_COOKIE = '_publink_srv';
 
 export const storage = getStorageManager(GVLID);
 
+function isHex(s) {
+  return (typeof s === 'string' && /^[A-F0-9]+$/i.test(s));
+}
+
 function publinkIdUrl(params, consentData) {
   let url = utils.parseUrl('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink');
   url.search = {
@@ -49,8 +53,13 @@ function makeCallback(config = {}, consentData) {
         }
       }
     };
+
     if (config.params && config.params.e) {
-      ajax(publinkIdUrl(config.params, consentData), handleResponse, undefined, options);
+      if (isHex(config.params.e)) {
+        ajax(publinkIdUrl(config.params, consentData), handleResponse, undefined, options);
+      } else {
+        utils.logError('params.e must be a hex string');
+      }
     }
   };
 }
@@ -96,11 +105,11 @@ export const publinkIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {string} id encrypted userid
+   * @param {string} publinkId encrypted userid
    * @returns {{publinkId: string} | undefined}
    */
   decode(publinkId) {
-    return {publink: publinkId};
+    return {publinkId: publinkId};
   },
 
   /**
@@ -108,6 +117,8 @@ export const publinkIdSubmodule = {
    * Use a publink cookie first if it is present, otherwise use prebids copy, if neither are available callout to get a new id
    * @function
    * @param {SubmoduleConfig} [config] Config object with params and storage properties
+   * @param {ConsentData|undefined} consentData GDPR consent
+   * @param {(Object|undefined)} storedId Previously cached id
    * @returns {IdResponse}
    */
   getId: function(config, consentData, storedId) {
