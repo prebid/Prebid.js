@@ -121,14 +121,14 @@ function isSecure(bid) {
   return utils.deepAccess(bid, 'params.bidOverride.imp.secure') || (document.location.protocol === 'https:') ? 1 : 0;
 };
 
-function getPubIdMode (bid) {
+function getPubIdMode(bid) {
   let pubIdMode;
   if (utils.deepAccess(bid, 'params.pubId')) {
     pubIdMode = true;
   } else if (utils.deepAccess(bid, 'params.dcn') && utils.deepAccess(bid, 'params.pos')) {
     pubIdMode = false;
   };
-  return pubIdMode
+  return pubIdMode;
 };
 
 function getAdapterMode() {
@@ -375,14 +375,17 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 };
 
 function generateServerRequest({payload, requestOptions, bidderRequest}) {
+  const pubIdMode = getPubIdMode(bidderRequest);
+  let sspEndpoint = config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_DCN_POS;
+
+  if (pubIdMode === true) {
+    sspEndpoint = config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_PUBID;
+  };
+
   if (utils.deepAccess(bidderRequest, 'params.testing.e2etest') === true) {
     utils.logInfo('yahoossp adapter e2etest mode is active');
-    // Allows testing mode to override SSP ad-server issue
     requestOptions.withCredentials = false;
-    // https://jira.vzbuilders.com/browse/CLS-8239
-    // https://jira.vzbuilders.com/browse/SSP-18233
 
-    const pubIdMode = getPubIdMode(bidderRequest);
     if (pubIdMode === true) {
       payload.site.id = TEST_MODE_PUBID_DCN;
     } else {
@@ -403,7 +406,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
   };
 
   return {
-    url: getPubIdMode(bidderRequest) ? SSP_ENDPOINT_PUBID : config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_DCN_POS,
+    url: sspEndpoint,
     method: 'POST',
     data: payload,
     options: requestOptions,

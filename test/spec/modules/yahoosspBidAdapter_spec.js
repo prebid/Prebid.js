@@ -27,7 +27,6 @@ const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObje
     bidderWinsCount: 0,
     mediaTypes: {},
     params: {
-
       bidOverride: bidOverrideObject
     },
     src: 'client',
@@ -43,13 +42,6 @@ const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObje
     playerSize: [[300, 250]],
     mimes: ['video/mp4', 'application/javascript'],
     api: [2]
-  };
-
-  if (pubIdMode === true) {
-    bidRequest.params.pubId = DEFAULT_PUBID;
-  } else {
-    bidRequest.params.dcn = DEFAULT_BID_DCN;
-    bidRequest.params.pos = pos || DEFAULT_BID_POS;
   };
 
   if (videoContext === 'outstream') {
@@ -68,6 +60,13 @@ const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObje
   } else if (adUnitType === 'native') {
     bidRequest.mediaTypes.native = {a: 123, b: 456};
   }
+
+  if (pubIdMode === true) {
+    bidRequest.params.pubId = DEFAULT_PUBID;
+  } else {
+    bidRequest.params.dcn = DEFAULT_BID_DCN;
+    bidRequest.params.pos = pos || DEFAULT_BID_POS;
+  };
 
   return bidRequest;
 }
@@ -99,14 +98,15 @@ let generateBidderRequest = (bidRequestArray, adUnitCode) => {
   return bidderRequest;
 };
 
-const generateBuildRequestMock = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObject, videoContext}) => {
+const generateBuildRequestMock = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObject, videoContext, pubIdMode}) => {
   const bidRequestConfig = {
     bidId: bidId || DEFAULT_BID_ID,
     pos: pos || DEFAULT_BID_POS,
     adUnitCode: adUnitCode || DEFAULT_AD_UNIT_CODE,
     adUnitType: adUnitType || DEFAULT_AD_UNIT_TYPE,
     bidOverrideObject: bidOverrideObject || DEFAULT_PARAMS_BID_OVERRIDE,
-    videoContext: videoContext || DEFAULT_VIDEO_CONTEXT
+    videoContext: videoContext || DEFAULT_VIDEO_CONTEXT,
+    pubIdMode: pubIdMode || false
   };
   const bidRequest = generateBidRequest(bidRequestConfig);
   const validBidRequests = [bidRequest];
@@ -594,7 +594,7 @@ describe('YSSP Bid Adapter', () => {
       });
     });
 
-    it('should return request objects that make a POST request to the default endpoint', () => {
+    it('should route request to /bidRequest endpoint when dcn & pos present', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const response = spec.buildRequests(validBidRequests, bidderRequest);
       expect(response).to.deep.include({
@@ -603,7 +603,15 @@ describe('YSSP Bid Adapter', () => {
       });
     });
 
-    // TODO Test endpoint route for dcn pos vs pubid
+    it('should route request to /partners endpoint when pubId is present', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({pubIdMode: true});
+      const response = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(response).to.deep.equal({a: 1});
+      expect(response).to.deep.include({
+        method: 'POST',
+        url: 'https://c2shb.ssp.yahoo.com/admax/bid/partners/PBJS'
+      });
+    });
   });
 
   describe('Validate request filtering:', () => {
