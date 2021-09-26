@@ -3,8 +3,10 @@ import {spec} from 'modules/codefuelBidAdapter.js';
 import {config} from 'src/config.js';
 import {server} from 'test/mocks/xhr';
 
-const MOBILE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/92.0.4515.159 Safari/537.36';
-const setUA = () => { window.navigator.__defineGetter__('userAgent', function () { return MOBILE_USER_AGENT }) };
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/92.0.4515.159 Safari/537.36';
+const DEFAULT_USER_AGENT = window.navigator.userAgent;
+const setUADefault = () => { window.navigator.__defineGetter__('userAgent', function () { return DEFAULT_USER_AGENT }) };
+const setUA = () => { window.navigator.__defineGetter__('userAgent', function () { return USER_AGENT }) };
 
 describe('Codefuel Adapter', function () {
   describe('Bid request and response', function () {
@@ -120,6 +122,7 @@ describe('Codefuel Adapter', function () {
 
     describe('buildRequests', function () {
       before(() => {
+        setUA()
         config.setConfig({
           codefuel: {
             bidderUrl: 'https://bidder-url.com',
@@ -129,6 +132,7 @@ describe('Codefuel Adapter', function () {
       })
       after(() => {
         config.resetConfig()
+        setUADefault()
       })
 
       const commonBidderRequest = {
@@ -178,7 +182,6 @@ describe('Codefuel Adapter', function () {
           },
           tmax: 500
         }
-        setUA()
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         expect(res.url).to.equal('https://bidder-url.com')
         expect(res.data).to.deep.equal(expectedData)
