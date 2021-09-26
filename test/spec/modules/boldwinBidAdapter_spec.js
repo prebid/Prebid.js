@@ -6,9 +6,13 @@ describe('BoldwinBidAdapter', function () {
   const bid = {
     bidId: '23fhj33i987f',
     bidder: 'boldwin',
+    mediaTypes: {
+      banner: {
+        sizes: [ [300, 250], [320, 50] ],
+      }
+    },
     params: {
-      placementId: 0,
-      traffic: BANNER
+      placementId: 'testBanner',
     }
   };
 
@@ -40,7 +44,7 @@ describe('BoldwinBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://ssp.videowalldirect.com/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://ssp.videowalldirect.com/pbjs');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -55,17 +59,16 @@ describe('BoldwinBidAdapter', function () {
       expect(data.gdpr).to.not.exist;
       expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer', 'schain');
-      expect(placement.placementId).to.equal(0);
+      expect(placement).to.have.keys('placementId', 'bidId', 'adFormat', 'sizes', 'hPlayer', 'wPlayer', 'schain', 'bidFloor');
+      expect(placement.placementId).to.equal('testBanner');
       expect(placement.bidId).to.equal('23fhj33i987f');
-      expect(placement.traffic).to.equal(BANNER);
+      expect(placement.adFormat).to.equal(BANNER);
       expect(placement.schain).to.be.an('object');
     });
 
     it('Returns valid data for mediatype video', function () {
       const playerSize = [300, 300];
       bid.mediaTypes = {};
-      bid.params.traffic = VIDEO;
       bid.mediaTypes[VIDEO] = {
         playerSize
       };
@@ -74,7 +77,7 @@ describe('BoldwinBidAdapter', function () {
       expect(data).to.be.an('object');
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
-      expect(placement.traffic).to.equal(VIDEO);
+      expect(placement.adFormat).to.equal(VIDEO);
       expect(placement.wPlayer).to.equal(playerSize[0]);
       expect(placement.hPlayer).to.equal(playerSize[1]);
     });
@@ -127,7 +130,7 @@ describe('BoldwinBidAdapter', function () {
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.width).to.equal(300);
@@ -137,7 +140,9 @@ describe('BoldwinBidAdapter', function () {
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
+      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
     });
+
     it('Should interpret video response', function () {
       const video = {
         body: [{
@@ -157,7 +162,7 @@ describe('BoldwinBidAdapter', function () {
 
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');
@@ -165,6 +170,7 @@ describe('BoldwinBidAdapter', function () {
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
+      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
     });
     it('Should interpret native response', function () {
       const native = {
@@ -188,7 +194,7 @@ describe('BoldwinBidAdapter', function () {
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
       let dataItem = nativeResponses[0];
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native');
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
@@ -201,6 +207,7 @@ describe('BoldwinBidAdapter', function () {
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
+      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
     });
     it('Should return an empty array if invalid banner response is passed', function () {
       const invBanner = {
@@ -275,7 +282,7 @@ describe('BoldwinBidAdapter', function () {
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
       expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('https://cs.videowalldirect.com/?c=o&m=cookie');
+      expect(userSync[0].url).to.be.equal('https://cs.videowalldirect.com');
     });
   });
 });

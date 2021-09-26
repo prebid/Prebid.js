@@ -322,7 +322,7 @@ describe('RelaidoAdapter', function () {
       let userSyncs = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
-        url: serverResponse.body.syncUrl
+        url: serverResponse.body.syncUrl + '?uu=hogehoge'
       }]);
     });
 
@@ -330,7 +330,7 @@ describe('RelaidoAdapter', function () {
       let userSyncs = spec.getUserSyncs({iframeEnabled: true}, []);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
-        url: 'https://api.relaido.jp/tr/v1/prebid/sync.html'
+        url: 'https://api.relaido.jp/tr/v1/prebid/sync.html?uu=hogehoge'
       }]);
     });
 
@@ -339,7 +339,7 @@ describe('RelaidoAdapter', function () {
       let userSyncs = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
-        url: 'https://api.relaido.jp/tr/v1/prebid/sync.html'
+        url: 'https://api.relaido.jp/tr/v1/prebid/sync.html?uu=hogehoge'
       }]);
     });
 

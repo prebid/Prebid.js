@@ -1,5 +1,6 @@
 import {assert, expect} from 'chai';
-import {spec} from 'modules/mgidBidAdapter.js';
+import { spec, storage } from 'modules/mgidBidAdapter.js';
+import { version } from 'package.json';
 import * as utils from '../../../src/utils.js';
 
 describe('Mgid bid adapter', function () {
@@ -28,7 +29,6 @@ describe('Mgid bid adapter', function () {
   }
   const secure = window.location.protocol === 'https:' ? 1 : 0;
   const mgid_ver = spec.VERSION;
-  const prebid_ver = $$PREBID_GLOBAL$$.version;
   const utcOffset = (new Date()).getTimezoneOffset().toString();
 
   describe('isBidRequestValid', function () {
@@ -311,10 +311,6 @@ describe('Mgid bid adapter', function () {
   });
 
   describe('buildRequests', function () {
-    it('should return undefined if no validBidRequests passed', function () {
-      expect(spec.buildRequests([])).to.be.undefined;
-    });
-
     let abid = {
       adUnitCode: 'div',
       bidder: 'mgid',
@@ -352,58 +348,29 @@ describe('Mgid bid adapter', function () {
       expect(request).to.be.undefined;
     });
   });
-  describe('interpretResponse banner', function () {
-    it('should not push bid response', function () {
-      let bids = spec.interpretResponse();
-      expect(bids).to.be.undefined;
-    });
-    it('should push proper banner bid response', function () {
-      let resp = {
-        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': '', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': 'html: adm', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2']}], 'seat': '44082'}]}
-      };
-      let bids = spec.interpretResponse(resp);
-      expect(bids).to.deep.equal([
-        {
-          'ad': 'html: adm',
-          'cpm': 1.5,
-          'creativeId': '2898532/2419121/2592854/2499195',
-          'currency': 'USD',
-          'dealId': '',
-          'height': 600,
-          'isBurl': true,
-          'mediaType': 'banner',
-          'netRevenue': true,
-          'nurl': 'https nurl',
-          'burl': 'https burl',
-          'requestId': '61e40632c53fc2',
-          'ttl': 300,
-          'width': 300,
-        }
-      ]);
-    });
-  });
-  describe('interpretResponse native', function () {
+
+  describe('interpretResponse', function () {
     it('should not push proper native bid response if adm is missing', function () {
       let resp = {
-        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}]}
+        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}, 'adomain': ['test.com']}], 'seat': '44082'}]}
       };
       let bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([])
     });
     it('should not push proper native bid response if assets is empty', function () {
       let resp = {
-        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[],\"imptrackers\":[\"imptrackers1\"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}]}
+        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{"native":{"ver":"1.1","link":{"url":"link_url"},"assets":[],"imptrackers":["imptrackers1"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}, 'adomain': ['test.com']}], 'seat': '44082'}]}
       };
       let bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([])
     });
-    it('should push proper native bid response', function () {
+    it('should push proper native bid response, assets1', function () {
       let resp = {
-        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"title1\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"image_src\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"icon_src\"}},{\"id\":4,\"required\":0,\"data\":{\"type\":4,\"value\":\"sponsored\"}},{\"id\":5,\"required\":0,\"data\":{\"type\":6,\"value\":\"price1\"}},{\"id\":6,\"required\":0,\"data\":{\"type\":7,\"value\":\"price2\"}}],\"imptrackers\":[\"imptrackers1\"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}], ext: {'muidn': 'userid'}}
+        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{"native":{"ver":"1.1","link":{"url":"link_url"},"assets":[{"id":1,"required":0,"title":{"text":"title1"}},{"id":2,"required":0,"img":{"w":80,"h":80,"type":3,"url":"image_src"}},{"id":3,"required":0,"img":{"w":50,"h":50,"type":1,"url":"icon_src"}},{"id":4,"required":0,"data":{"type":4,"value":"sponsored"}},{"id":5,"required":0,"data":{"type":6,"value":"price1"}},{"id":6,"required":0,"data":{"type":7,"value":"price2"}}],"imptrackers":["imptrackers1"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}, 'adomain': ['test.com']}], 'seat': '44082'}], ext: {'muidn': 'userid'}}
       };
       let bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([{
-        'ad': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"title1\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"image_src\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"icon_src\"}},{\"id\":4,\"required\":0,\"data\":{\"type\":4,\"value\":\"sponsored\"}},{\"id\":5,\"required\":0,\"data\":{\"type\":6,\"value\":\"price1\"}},{\"id\":6,\"required\":0,\"data\":{\"type\":7,\"value\":\"price2\"}}],\"imptrackers\":[\"imptrackers1\"]}}',
+        'ad': '{"native":{"ver":"1.1","link":{"url":"link_url"},"assets":[{"id":1,"required":0,"title":{"text":"title1"}},{"id":2,"required":0,"img":{"w":80,"h":80,"type":3,"url":"image_src"}},{"id":3,"required":0,"img":{"w":50,"h":50,"type":1,"url":"icon_src"}},{"id":4,"required":0,"data":{"type":4,"value":"sponsored"}},{"id":5,"required":0,"data":{"type":6,"value":"price1"}},{"id":6,"required":0,"data":{"type":7,"value":"price2"}}],"imptrackers":["imptrackers1"]}}',
         'burl': 'https burl',
         'cpm': 1.5,
         'creativeId': '2898532/2419121/2592854/2499195',
@@ -412,6 +379,7 @@ describe('Mgid bid adapter', function () {
         'height': 0,
         'isBurl': true,
         'mediaType': 'native',
+        'meta': {'advertiserDomains': ['test.com']},
         'native': {
           'clickTrackers': [],
           'clickUrl': 'link_url',
@@ -440,14 +408,14 @@ describe('Mgid bid adapter', function () {
         'width': 0
       }])
     });
-    it('should push proper native bid response', function () {
+    it('should push proper native bid response, assets2', function () {
       let resp = {
-        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"title1\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"image_src\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"icon_src\"}}],\"imptrackers\":[\"imptrackers1\"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}]}
+        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{"native":{"ver":"1.1","link":{"url":"link_url"},"assets":[{"id":1,"required":0,"title":{"text":"title1"}},{"id":2,"required":0,"img":{"w":80,"h":80,"type":3,"url":"image_src"}},{"id":3,"required":0,"img":{"w":50,"h":50,"type":1,"url":"icon_src"}}],"imptrackers":["imptrackers1"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}, 'adomain': ['test.com']}], 'seat': '44082'}]}
       };
       let bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([
         {
-          'ad': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"title1\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"image_src\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"icon_src\"}}],\"imptrackers\":[\"imptrackers1\"]}}',
+          'ad': '{"native":{"ver":"1.1","link":{"url":"link_url"},"assets":[{"id":1,"required":0,"title":{"text":"title1"}},{"id":2,"required":0,"img":{"w":80,"h":80,"type":3,"url":"image_src"}},{"id":3,"required":0,"img":{"w":50,"h":50,"type":1,"url":"icon_src"}}],"imptrackers":["imptrackers1"]}}',
           'cpm': 1.5,
           'creativeId': '2898532/2419121/2592854/2499195',
           'currency': 'GBP',
@@ -455,6 +423,7 @@ describe('Mgid bid adapter', function () {
           'height': 0,
           'isBurl': true,
           'mediaType': 'native',
+          'meta': {'advertiserDomains': ['test.com']},
           'netRevenue': true,
           'nurl': 'https nurl',
           'burl': 'https burl',
@@ -481,6 +450,36 @@ describe('Mgid bid adapter', function () {
         }
       ]);
     });
+
+    it('should not push bid response', function () {
+      let bids = spec.interpretResponse();
+      expect(bids).to.be.undefined;
+    });
+    it('should push proper banner bid response', function () {
+      let resp = {
+        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': '', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': 'html: adm', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'adomain': ['test.com']}], 'seat': '44082'}]}
+      };
+      let bids = spec.interpretResponse(resp);
+      expect(bids).to.deep.equal([
+        {
+          'ad': 'html: adm',
+          'cpm': 1.5,
+          'creativeId': '2898532/2419121/2592854/2499195',
+          'currency': 'USD',
+          'dealId': '',
+          'height': 600,
+          'isBurl': true,
+          'mediaType': 'banner',
+          'meta': {'advertiserDomains': ['test.com']},
+          'netRevenue': true,
+          'nurl': 'https nurl',
+          'burl': 'https burl',
+          'requestId': '61e40632c53fc2',
+          'ttl': 300,
+          'width': 300,
+        }
+      ]);
+    });
   });
 
   describe('getUserSyncs', function () {
@@ -488,6 +487,7 @@ describe('Mgid bid adapter', function () {
       spec.getUserSyncs()
     });
   });
+
   describe('on bidWon', function () {
     beforeEach(function() {
       sinon.stub(utils, 'triggerPixel');
@@ -498,7 +498,7 @@ describe('Mgid bid adapter', function () {
     it('should replace nurl and burl for native', function () {
       const burl = 'burl&s=${' + 'AUCTION_PRICE}';
       const nurl = 'nurl&s=${' + 'AUCTION_PRICE}';
-      const bid = {'bidderCode': 'mgid', 'width': 0, 'height': 0, 'statusMessage': 'Bid available', 'adId': '3d0b6ff1dda89', 'requestId': '2a423489e058a1', 'mediaType': 'native', 'source': 'client', 'ad': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"LinkURL\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"TITLE\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"ImageURL\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"IconURL\"}},{\"id\":11,\"required\":0,\"data\":{\"type\":1,\"value\":\"sponsored\"}}],\"imptrackers\":[\"ImpTrackerURL\"]}}', 'cpm': 0.66, 'creativeId': '353538_591471', 'currency': 'USD', 'dealId': '', 'netRevenue': true, 'ttl': 300, 'nurl': nurl, 'burl': burl, 'isBurl': true, 'native': {'title': 'TITLE', 'image': {'url': 'ImageURL', 'height': 80, 'width': 80}, 'icon': {'url': 'IconURL', 'height': 50, 'width': 50}, 'sponsored': 'sponsored', 'clickUrl': 'LinkURL', 'clickTrackers': [], 'impressionTrackers': ['ImpTrackerURL'], 'jstracker': []}, 'auctionId': 'a92bffce-14d2-4f8f-a78a-7b9b5e4d28fa', 'responseTimestamp': 1556867386065, 'requestTimestamp': 1556867385916, 'bidder': 'mgid', 'adUnitCode': 'div-gpt-ad-1555415275793-0', 'timeToRespond': 149, 'pbLg': '0.50', 'pbMg': '0.60', 'pbHg': '0.66', 'pbAg': '0.65', 'pbDg': '0.66', 'pbCg': '', 'size': '0x0', 'adserverTargeting': {'hb_bidder': 'mgid', 'hb_adid': '3d0b6ff1dda89', 'hb_pb': '0.66', 'hb_size': '0x0', 'hb_source': 'client', 'hb_format': 'native', 'hb_native_title': 'TITLE', 'hb_native_image': 'hb_native_image:3d0b6ff1dda89', 'hb_native_icon': 'IconURL', 'hb_native_linkurl': 'hb_native_linkurl:3d0b6ff1dda89'}, 'status': 'targetingSet', 'params': [{'accountId': '184', 'placementId': '353538'}]};
+      const bid = {'bidderCode': 'mgid', 'width': 0, 'height': 0, 'statusMessage': 'Bid available', 'adId': '3d0b6ff1dda89', 'requestId': '2a423489e058a1', 'mediaType': 'native', 'source': 'client', 'ad': '{"native":{"ver":"1.1","link":{"url":"LinkURL"},"assets":[{"id":1,"required":0,"title":{"text":"TITLE"}},{"id":2,"required":0,"img":{"w":80,"h":80,"type":3,"url":"ImageURL"}},{"id":3,"required":0,"img":{"w":50,"h":50,"type":1,"url":"IconURL"}},{"id":11,"required":0,"data":{"type":1,"value":"sponsored"}}],"imptrackers":["ImpTrackerURL"]}}', 'cpm': 0.66, 'creativeId': '353538_591471', 'currency': 'USD', 'dealId': '', 'netRevenue': true, 'ttl': 300, 'nurl': nurl, 'burl': burl, 'isBurl': true, 'native': {'title': 'TITLE', 'image': {'url': 'ImageURL', 'height': 80, 'width': 80}, 'icon': {'url': 'IconURL', 'height': 50, 'width': 50}, 'sponsored': 'sponsored', 'clickUrl': 'LinkURL', 'clickTrackers': [], 'impressionTrackers': ['ImpTrackerURL'], 'jstracker': []}, 'auctionId': 'a92bffce-14d2-4f8f-a78a-7b9b5e4d28fa', 'responseTimestamp': 1556867386065, 'requestTimestamp': 1556867385916, 'bidder': 'mgid', 'adUnitCode': 'div-gpt-ad-1555415275793-0', 'timeToRespond': 149, 'pbLg': '0.50', 'pbMg': '0.60', 'pbHg': '0.66', 'pbAg': '0.65', 'pbDg': '0.66', 'pbCg': '', 'size': '0x0', 'adserverTargeting': {'hb_bidder': 'mgid', 'hb_adid': '3d0b6ff1dda89', 'hb_pb': '0.66', 'hb_size': '0x0', 'hb_source': 'client', 'hb_format': 'native', 'hb_native_title': 'TITLE', 'hb_native_image': 'hb_native_image:3d0b6ff1dda89', 'hb_native_icon': 'IconURL', 'hb_native_linkurl': 'hb_native_linkurl:3d0b6ff1dda89'}, 'status': 'targetingSet', 'params': [{'accountId': '184', 'placementId': '353538'}]};
       spec.onBidWon(bid);
       expect(bid.nurl).to.deep.equal('nurl&s=0.66');
       expect(bid.burl).to.deep.equal('burl&s=0.66');
@@ -511,6 +511,122 @@ describe('Mgid bid adapter', function () {
       expect(bid.nurl).to.deep.equal('nurl&s=0.66');
       expect(bid.burl).to.deep.equal(burl);
       expect(bid.ad).to.deep.equal('burl&s=0.66');
+    });
+  });
+
+  describe('price floor module', function() {
+    let bidRequest;
+    let bidRequests0 = {
+      adUnitCode: 'div',
+      bidder: 'mgid',
+      params: {
+        accountId: '1',
+        placementId: '2',
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      },
+      sizes: [[300, 250]],
+    }
+    beforeEach(function() {
+      bidRequest = [utils.deepClone(bidRequests0)];
+    });
+
+    it('obtain floor from getFloor', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 1.23
+        };
+      };
+
+      const payload = JSON.parse(spec.buildRequests(bidRequest).data);
+      expect(payload.imp[0]).to.have.property('bidfloor', 1.23);
+      expect(payload.imp[0]).to.not.have.property('bidfloorcur');
+    });
+    it('obtain floor from params', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 1.23
+        };
+      };
+      bidRequest[0].params.bidfloor = 0.1;
+
+      const payload = JSON.parse(spec.buildRequests(bidRequest).data);
+      expect(payload.imp[0]).to.have.property('bidfloor', 0.1);
+      expect(payload.imp[0]).to.not.have.property('bidfloorcur');
+    });
+
+    it('undefined currency -> USD', function() {
+      bidRequest[0].params.currency = 'EUR'
+      bidRequest[0].getFloor = () => {
+        return {
+          floor: 1.23
+        };
+      };
+
+      const payload = JSON.parse(spec.buildRequests(bidRequest).data);
+      expect(payload.imp[0]).to.have.property('bidfloor', 1.23);
+      expect(payload.imp[0]).to.have.property('bidfloorcur', 'USD');
+    });
+    it('altered currency', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'EUR',
+          floor: 1.23
+        };
+      };
+
+      const payload = JSON.parse(spec.buildRequests(bidRequest).data);
+      expect(payload.imp[0]).to.have.property('bidfloor', 1.23);
+      expect(payload.imp[0]).to.have.property('bidfloorcur', 'EUR');
+    });
+    it('altered currency, same as in request', function() {
+      bidRequest[0].params.cur = 'EUR'
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'EUR',
+          floor: 1.23
+        };
+      };
+
+      const payload = JSON.parse(spec.buildRequests(bidRequest).data);
+      expect(payload.imp[0]).to.have.property('bidfloor', 1.23);
+      expect(payload.imp[0]).to.not.have.property('bidfloorcur');
+    });
+
+    it('bad floor value', function() {
+      bidRequest[0].getFloor = () => {
+        return {
+          currency: 'USD',
+          floor: 'test'
+        };
+      };
+
+      const payload = JSON.parse(spec.buildRequests(bidRequest).data);
+      expect(payload.imp[0]).to.not.have.property('bidfloor');
+      expect(payload.imp[0]).to.not.have.property('bidfloorcur');
+    });
+
+    it('empty floor object', function() {
+      bidRequest[0].getFloor = () => {
+        return {};
+      };
+
+      const payload = JSON.parse(spec.buildRequests(bidRequest).data);
+      expect(payload.imp[0]).to.not.have.property('bidfloor');
+      expect(payload.imp[0]).to.not.have.property('bidfloorcur');
+    });
+
+    it('undefined floor result', function() {
+      bidRequest[0].getFloor = () => {};
+
+      const payload = JSON.parse(spec.buildRequests(bidRequest).data);
+      expect(payload.imp[0]).to.not.have.property('bidfloor');
+      expect(payload.imp[0]).to.not.have.property('bidfloorcur');
     });
   });
 });

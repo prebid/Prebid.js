@@ -421,12 +421,18 @@ function user(bidRequest, bidderRequest) {
   if (bidRequest) {
     if (bidRequest.userId) {
       ext.eids = [];
-      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcommon');
+      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcid.org');
       addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
-      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo');
-      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
+      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo.com');
+      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'liveramp.com');
       addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.id5id.uid'), 'id5-sync.com', utils.deepAccess(bidRequest, 'userId.id5id.ext'));
       addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.parrableId.eid'), 'parrable.com');
+      addExternalUserId(ext.eids, bidRequest.userId.fabrickId, 'neustar.biz');
+      addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.haloId.haloId'), 'audigent.com');
+      addExternalUserId(ext.eids, bidRequest.userId.merkleId, 'merkleinc.com');
+      addExternalUserId(ext.eids, bidRequest.userId.lotamePanoramaId, 'crwdcntrl.net');
+      addExternalUserId(ext.eids, bidRequest.userId.connectid, 'verizonmedia.com');
+      addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.uid2.id'), 'uidapi.com');
       // liveintent
       if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
         addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
