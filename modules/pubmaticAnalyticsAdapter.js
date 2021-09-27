@@ -467,8 +467,6 @@ function auctionEndHandler(args) {
   setTimeout(() => {
     executeBidsLoggerCall.call(this, args, highestCpmBids);
   }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
-  // console.log({priceFloor});
-  // console.log(_floorDataForAuction);
 }
 
 function bidTimeoutHandler(args) {
