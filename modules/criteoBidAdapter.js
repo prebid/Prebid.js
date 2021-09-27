@@ -24,7 +24,7 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 105;
+export const FAST_BID_VERSION_CURRENT = 113;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
@@ -134,7 +134,7 @@ export const spec = {
           currency: slot.currency,
           netRevenue: true,
           ttl: slot.ttl || 60,
-          creativeId: bidId,
+          creativeId: slot.creativecode,
           width: slot.width,
           height: slot.height,
           dealId: slot.dealCode,
@@ -321,12 +321,20 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           protocols: bidRequest.mediaTypes.video.protocols,
           maxduration: bidRequest.mediaTypes.video.maxduration,
           api: bidRequest.mediaTypes.video.api,
-          skip: bidRequest.mediaTypes.video.skip || bidRequest.params.video.skip,
-          placement: bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement,
-          minduration: bidRequest.mediaTypes.video.minduration || bidRequest.params.video.minduration,
-          playbackmethod: bidRequest.mediaTypes.video.playbackmethod || bidRequest.params.video.playbackmethod,
-          startdelay: bidRequest.mediaTypes.video.startdelay || bidRequest.params.video.startdelay
+          skip: bidRequest.mediaTypes.video.skip,
+          placement: bidRequest.mediaTypes.video.placement,
+          minduration: bidRequest.mediaTypes.video.minduration,
+          playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
+          startdelay: bidRequest.mediaTypes.video.startdelay
         };
+        const paramsVideo = bidRequest.params.video;
+        if (paramsVideo !== undefined) {
+          video.skip = video.skip || paramsVideo.skip || 0;
+          video.placement = video.placement || paramsVideo.placement;
+          video.minduration = video.minduration || paramsVideo.minduration;
+          video.playbackmethod = video.playbackmethod || paramsVideo.playbackmethod;
+          video.startdelay = video.startdelay || paramsVideo.startdelay || 0;
+        }
 
         slot.video = video;
       }

@@ -1,7 +1,7 @@
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
-import * as utils from '../src/utils.js';
+import { logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'aniview';
 const GVLID = 780;
@@ -224,7 +224,7 @@ function interpretResponse(serverResponse, bidRequest) {
                   });
                   bidResponse.vastUrl = window.URL.createObjectURL(blob);
                 } catch (ex) {
-                  utils.logError('Aniview Debug create vastXml error:\n\n' + ex);
+                  logError('Aniview Debug create vastXml error:\n\n' + ex);
                 }
                 bidResponse.vastXml = xmlStr;
                 if (bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === 'outstream') {
@@ -309,7 +309,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['avantisvideo', 'selectmediavideo', 'vidcrunch'],
+  aliases: ['avantisvideo', 'selectmediavideo', 'vidcrunch', 'openwebvideo'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid,
   buildRequests,

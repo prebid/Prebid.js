@@ -364,13 +364,7 @@ function addBidderFirstPartyDataToRequest(request) {
   const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
     const currBidderConfig = bidderConfig[bidder];
     if (currBidderConfig.ortb2) {
-      const ortb2 = {};
-      if (currBidderConfig.ortb2.site) {
-        ortb2.site = currBidderConfig.ortb2.site;
-      }
-      if (currBidderConfig.ortb2.user) {
-        ortb2.user = currBidderConfig.ortb2.user;
-      }
+      const ortb2 = utils.mergeDeep({}, currBidderConfig.ortb2);
 
       acc.push({
         bidders: [ bidder ],
@@ -614,7 +608,7 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       if (!utils.isEmpty(videoParams)) {
-        if (videoParams.context === 'outstream' && (!videoParams.renderer || !adUnit.renderer)) {
+        if (videoParams.context === 'outstream' && !videoParams.renderer && !adUnit.renderer) {
           // Don't push oustream w/o renderer to request object.
           utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
         } else {
@@ -848,12 +842,8 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     const commonFpd = getConfig('ortb2') || {};
-    if (commonFpd.site) {
-      utils.mergeDeep(request, {site: commonFpd.site});
-    }
-    if (commonFpd.user) {
-      utils.mergeDeep(request, {user: commonFpd.user});
-    }
+    utils.mergeDeep(request, commonFpd);
+
     addBidderFirstPartyDataToRequest(request);
 
     return request;

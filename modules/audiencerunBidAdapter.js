@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, isFn, logError, getValue, getBidIdParameter, _each, isArray, triggerPixel } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -20,7 +20,7 @@ let requestedBids = [];
 function getPageUrl(bidderRequest) {
   return (
     config.getConfig('pageUrl') ||
-    utils.deepAccess(bidderRequest, 'refererInfo.referer') ||
+    deepAccess(bidderRequest, 'refererInfo.referer') ||
     null
   );
 }
@@ -32,8 +32,8 @@ function getPageUrl(bidderRequest) {
  * @returns {number}
  */
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
   }
 
   try {
@@ -61,8 +61,8 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     let isValid = true;
-    if (!utils.deepAccess(bid, 'params.zoneId')) {
-      utils.logError('AudienceRun zoneId parameter is required. Bid aborted.');
+    if (!deepAccess(bid, 'params.zoneId')) {
+      logError('AudienceRun zoneId parameter is required. Bid aborted.');
       isValid = false;
     }
     return isValid;
@@ -77,19 +77,19 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const bids = bidRequests.map((bid) => {
-      const sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes', []);
+      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes', []);
       return {
-        zoneId: utils.getValue(bid.params, 'zoneId'),
+        zoneId: getValue(bid.params, 'zoneId'),
         sizes: sizes.map((size) => ({
           w: size[0],
           h: size[1],
         })),
         bidfloor: getBidFloor(bid),
         bidId: bid.bidId,
-        bidderRequestId: utils.getBidIdParameter('bidderRequestId', bid),
-        adUnitCode: utils.getBidIdParameter('adUnitCode', bid),
-        auctionId: utils.getBidIdParameter('auctionId', bid),
-        transactionId: utils.getBidIdParameter('transactionId', bid),
+        bidderRequestId: getBidIdParameter('bidderRequestId', bid),
+        adUnitCode: getBidIdParameter('adUnitCode', bid),
+        auctionId: getBidIdParameter('auctionId', bid),
+        transactionId: getBidIdParameter('transactionId', bid),
       };
     });
 
@@ -133,7 +133,7 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bids = [];
-    utils._each(serverResponse.body.bid, function (bidObject) {
+    _each(serverResponse.body.bid, function (bidObject) {
       if (!bidObject.cpm || bidObject.cpm === null || !bidObject.adm) {
         return;
       }
@@ -196,7 +196,7 @@ export const spec = {
    * @param {Array} timeoutData timeout specific data
    */
   onTimeout: function (timeoutData) {
-    if (!utils.isArray(timeoutData)) {
+    if (!isArray(timeoutData)) {
       return;
     }
 
@@ -204,7 +204,7 @@ export const spec = {
       const bidOnTimeout = requestedBids.find((requestedBid) => requestedBid.bidId === bid.bidId);
 
       if (bidOnTimeout) {
-        utils.triggerPixel(
+        triggerPixel(
           `${TIMEOUT_EVENT_URL}/${bidOnTimeout.zoneId}/${bidOnTimeout.bidId}`
         );
       }
