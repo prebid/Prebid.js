@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 import { spec } from 'modules/tappxBidAdapter.js';
-import { _checkParamDataType, _getHostInfo } from '../../../modules/tappxBidAdapter.js';
+import { _checkParamDataType, _getHostInfo, _extractPageUrl } from '../../../modules/tappxBidAdapter.js';
 
 const c_BIDREQUEST = {
   data: {
@@ -468,6 +468,15 @@ describe('Tappx bid adapter', function () {
       expect(_checkParamDataType('Wrong bool', 10, 'boolean')).to.be.undefined;
       expect(_checkParamDataType('Wrong number', 'one', 'number')).to.be.undefined;
       expect(_checkParamDataType('Wrong array', false, 'array')).to.be.undefined;
+    });
+  })
+
+  describe('_extractPageUrl tests', function() {
+    let validBidRequests = c_VALIDBIDREQUESTS;
+    let bidderRequest = c_BIDDERREQUEST_B;
+    it('should return the Domain of the site', function () {
+      validBidRequests[0].params.domainUrl = "testUrl.com";
+      assert.isString(_extractPageUrl(validBidRequests, bidderRequest));
     });
   })
 });
