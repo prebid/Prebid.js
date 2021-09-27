@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
 import find from 'core-js-pure/features/array/find.js';
 
-const VERSION = '4.0.0';
+const VERSION = '4.0.1';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
