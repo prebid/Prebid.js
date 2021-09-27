@@ -19,7 +19,7 @@
 * @property {?object} defaultProfile to be used if the profile is not found
 */
 
-import * as utils from '../src/utils.js';
+import { deepSetValue, logError, tryAppendQueryString, logMessage } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
@@ -51,10 +51,10 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   if (weboCtxConf.setOrtb2) {
     const ortb2 = config.getConfig('ortb2') || {};
     if (profile[WEBO_CTX]) {
-      utils.deepSetValue(ortb2, 'site.ext.data.webo_ctx', profile[WEBO_CTX]);
+      deepSetValue(ortb2, 'site.ext.data.webo_ctx', profile[WEBO_CTX]);
     }
     if (profile[WEBO_DS]) {
-      utils.deepSetValue(ortb2, 'site.ext.data.webo_ds', profile[WEBO_DS]);
+      deepSetValue(ortb2, 'site.ext.data.webo_ds', profile[WEBO_DS]);
     }
     config.setConfig({ortb2: ortb2});
   }
@@ -73,7 +73,7 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
     }, {});
     return r;
   } catch (e) {
-    utils.logError('unable to format weborama rtd targeting data', e);
+    logError('unable to format weborama rtd targeting data', e);
     return {};
   }
 }
@@ -111,8 +111,8 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
   const token = weboCtxConf.token;
 
   let queryString = '';
-  queryString = utils.tryAppendQueryString(queryString, 'token', token);
-  queryString = utils.tryAppendQueryString(queryString, 'url', targetURL);
+  queryString = tryAppendQueryString(queryString, 'token', token);
+  queryString = tryAppendQueryString(queryString, 'url', targetURL);
 
   const url = 'https://ctx.weborama.com/api/profile?' + queryString;
 
@@ -125,7 +125,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
           onDone();
         } catch (e) {
           onDone();
-          utils.logError('unable to parse weborama data', e);
+          logError('unable to parse weborama data', e);
         }
       } else if (req.status === 204) {
         onDone();
@@ -133,7 +133,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
     },
     error: function () {
       onDone();
-      utils.logError('unable to get weborama data');
+      logError('unable to get weborama data');
     }
   },
   null,
@@ -156,9 +156,9 @@ function init(moduleConfig) {
 
   if (weboCtxConf.token) {
     fetchContextualProfile(weboCtxConf, setBigseaContextualProfile,
-      () => utils.logMessage('fetchContextualProfile on init is done'));
+      () => logMessage('fetchContextualProfile on init is done'));
   } else {
-    utils.logError('missing param "token" for weborama rtd module initialization');
+    logError('missing param "token" for weborama rtd module initialization');
     return false;
   }
 
