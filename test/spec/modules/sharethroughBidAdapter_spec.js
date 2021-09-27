@@ -199,7 +199,6 @@ describe('sharethrough adapter spec', function() {
             expect(builtRequest.method).to.equal('POST');
             expect(builtRequest.url).not.to.be.undefined;
             expect(builtRequest.options).to.be.undefined;
-            expect(builtRequest.bidderRequest).to.deep.equal(bidderRequest);
 
             const openRtbReq = builtRequest.data;
             expect(openRtbReq.id).not.to.be.undefined;
@@ -243,15 +242,15 @@ describe('sharethrough adapter spec', function() {
 
             expect(openRtbReq.imp).to.have.length(1);
 
-            expect(openRtbReq.imp[rIndex].id).to.equal(expectedImpValues[rIndex].id);
-            expect(openRtbReq.imp[rIndex].tagid).to.equal(expectedImpValues[rIndex].tagid);
-            expect(openRtbReq.imp[rIndex].secure).to.equal(expectedImpValues[rIndex].secure);
-            expect(openRtbReq.imp[rIndex].bidfloor).to.equal(expectedImpValues[rIndex].bidfloor);
+            expect(openRtbReq.imp[0].id).to.equal(expectedImpValues[rIndex].id);
+            expect(openRtbReq.imp[0].tagid).to.equal(expectedImpValues[rIndex].tagid);
+            expect(openRtbReq.imp[0].secure).to.equal(expectedImpValues[rIndex].secure);
+            expect(openRtbReq.imp[0].bidfloor).to.equal(expectedImpValues[rIndex].bidfloor);
           });
         });
 
         it('should have empty eid array if no id is provided', () => {
-          const openRtbReq = spec.buildRequests([bidRequests[1]], bidderRequest).data;
+          const openRtbReq = spec.buildRequests([bidRequests[1]], bidderRequest)[0].data;
 
           expect(openRtbReq.user.ext.eids).to.deep.equal([]);
         });
@@ -265,8 +264,7 @@ describe('sharethrough adapter spec', function() {
               consentString: 'consent',
             };
 
-            const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
-            const openRtbReq = builtRequest.data;
+            const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
 
             expect(openRtbReq.regs.ext.gdpr).to.equal(1);
             expect(openRtbReq.user.ext.consent).to.equal('consent');
@@ -277,8 +275,7 @@ describe('sharethrough adapter spec', function() {
               gdprApplies: false,
             };
 
-            const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
-            const openRtbReq = builtRequest.data;
+            const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
 
             expect(openRtbReq.regs.ext.gdpr).to.equal(0);
             expect(openRtbReq.user.ext.consent).to.be.undefined;
@@ -289,8 +286,7 @@ describe('sharethrough adapter spec', function() {
           it('should populate request accordingly when us privacy applies', () => {
             bidderRequest.uspConsent = 'consent';
 
-            const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
-            const openRtbReq = builtRequest.data;
+            const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
 
             expect(openRtbReq.regs.ext.us_privacy).to.equal('consent');
           });
@@ -300,8 +296,7 @@ describe('sharethrough adapter spec', function() {
           it('should populate request accordingly when coppa does not apply', () => {
             config.setConfig({ coppa: false });
 
-            const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
-            const openRtbReq = builtRequest.data;
+            const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
 
             expect(openRtbReq.regs.coppa).to.equal(0);
           });
@@ -310,46 +305,42 @@ describe('sharethrough adapter spec', function() {
 
       describe('universal id', () => {
         it('should include gpid when universal id is provided', () => {
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
-          const openRtbReq = builtRequest.data;
+          const requests = spec.buildRequests(bidRequests, bidderRequest);
 
-          expect(openRtbReq.imp[0].ext.gpid).to.equal('universal-id');
-          expect(openRtbReq.imp[1].ext).to.be.undefined;
+          expect(requests[0].data.imp[0].ext.gpid).to.equal('universal-id');
+          expect(requests[1].data.imp[0].ext).to.be.undefined;
         });
       });
 
       describe('secure flag', () => {
         it('should be positive when protocol is https', () => {
           protocolStub.returns('https');
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
-          const openRtbReq = builtRequest.data;
+          const requests = spec.buildRequests(bidRequests, bidderRequest);
 
-          expect(openRtbReq.imp[0].secure).to.equal(1);
-          expect(openRtbReq.imp[1].secure).to.equal(1);
+          expect(requests[0].data.imp[0].secure).to.equal(1);
+          expect(requests[1].data.imp[0].secure).to.equal(1);
         });
 
         it('should be negative when protocol is http', () => {
           protocolStub.returns('http');
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
-          const openRtbReq = builtRequest.data;
+          const requests = spec.buildRequests(bidRequests, bidderRequest);
 
-          expect(openRtbReq.imp[0].secure).to.equal(0);
-          expect(openRtbReq.imp[1].secure).to.equal(0);
+          expect(requests[0].data.imp[0].secure).to.equal(0);
+          expect(requests[1].data.imp[0].secure).to.equal(0);
         });
 
         it('should be positive when protocol is neither http nor https', () => {
           protocolStub.returns('about');
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
-          const openRtbReq = builtRequest.data;
+          const requests = spec.buildRequests(bidRequests, bidderRequest);
 
-          expect(openRtbReq.imp[0].secure).to.equal(1);
-          expect(openRtbReq.imp[1].secure).to.equal(1);
+          expect(requests[0].data.imp[0].secure).to.equal(1);
+          expect(requests[1].data.imp[0].secure).to.equal(1);
         });
       });
 
       describe('banner imp', () => {
         it('should generate open rtb banner imp', () => {
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
 
           const bannerImp = builtRequest.data.imp[0].banner;
           expect(bannerImp.pos).to.equal(1);
@@ -359,7 +350,7 @@ describe('sharethrough adapter spec', function() {
 
         it('should default to pos 0 if not provided', () => {
           delete bidRequests[0].mediaTypes;
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
 
           const bannerImp = builtRequest.data.imp[0].banner;
           expect(bannerImp.pos).to.equal(0);
@@ -368,9 +359,9 @@ describe('sharethrough adapter spec', function() {
 
       describe('video imp', () => {
         it('should generate open rtb video imp', () => {
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
 
-          const videoImp = builtRequest.data.imp[1].video;
+          const videoImp = builtRequest.data.imp[0].video;
           expect(videoImp.pos).to.equal(3);
           expect(videoImp.topframe).to.equal(1);
           expect(videoImp.skip).to.equal(1);
@@ -411,9 +402,9 @@ describe('sharethrough adapter spec', function() {
           delete bidRequests[1].mediaTypes.video.companiontype;
           delete bidRequests[1].mediaTypes.video.companionad;
 
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
 
-          const videoImp = builtRequest.data.imp[1].video;
+          const videoImp = builtRequest.data.imp[0].video;
           expect(videoImp.pos).to.equal(0);
           expect(videoImp.skip).to.equal(0);
           expect(videoImp.linearity).to.equal(1);
@@ -436,10 +427,9 @@ describe('sharethrough adapter spec', function() {
 
         it('should not return a video impression if context is outstream', () => {
           bidRequests[1].mediaTypes.video.context = 'outstream';
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
 
-          const videoImp = builtRequest.data.imp[1];
-          expect(videoImp).to.be.undefined;
+          expect(builtRequest).to.be.undefined;
         });
       });
     });
@@ -448,35 +438,36 @@ describe('sharethrough adapter spec', function() {
       let request;
       let response;
 
-      beforeEach(() => {
-        request = spec.buildRequests(bidRequests, bidderRequest);
-        response = {
-          body: {
-            seatbid: [{
-              bid: [{
-                id: '123',
-                impid: 'bidId1',
-                w: 300,
-                h: 250,
-                price: 42,
-                crid: 'creative',
-                dealid: 'deal',
-                adomain: ['domain.com'],
-                adm: 'markup',
-              }, {
-                id: '456',
-                impid: 'bidId2',
-                w: 640,
-                h: 480,
-                price: 42,
-                adm: 'vastTag',
-              }],
-            }],
-          },
-        };
-      });
 
       describe('banner', () => {
+        beforeEach(() => {
+          request = spec.buildRequests(bidRequests, bidderRequest)[0];
+          response = {
+            body: {
+              seatbid: [{
+                bid: [{
+                  id: '123',
+                  impid: 'bidId1',
+                  w: 300,
+                  h: 250,
+                  price: 42,
+                  crid: 'creative',
+                  dealid: 'deal',
+                  adomain: ['domain.com'],
+                  adm: 'markup',
+                }, {
+                  id: '456',
+                  impid: 'bidId2',
+                  w: 640,
+                  h: 480,
+                  price: 42,
+                  adm: 'vastTag',
+                }],
+              }],
+            },
+          };
+        });
+
         it('should return a banner bid', () => {
           const resp = spec.interpretResponse(response, request);
 
@@ -498,10 +489,28 @@ describe('sharethrough adapter spec', function() {
       });
 
       describe('video', () => {
+        beforeEach(() => {
+          request = spec.buildRequests(bidRequests, bidderRequest)[1];
+          response = {
+            body: {
+              seatbid: [{
+                bid: [{
+                  id: '456',
+                  impid: 'bidId2',
+                  w: 640,
+                  h: 480,
+                  price: 42,
+                  adm: 'vastTag',
+                }],
+              }],
+            },
+          };
+        });
+
         it('should return a video bid', () => {
           const resp = spec.interpretResponse(response, request);
 
-          const bannerBid = resp[1];
+          const bannerBid = resp[0];
           expect(bannerBid.requestId).to.equal('bidId2');
           expect(bannerBid.width).to.equal(640);
           expect(bannerBid.height).to.equal(480);

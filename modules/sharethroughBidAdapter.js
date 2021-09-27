@@ -149,6 +149,9 @@ export const sharethroughAdapterSpec = {
           ...req,
           imp: [impression],
         },
+        strData: {
+          mediaType: impression.mediaType
+        }
       };
     });
   },
@@ -159,8 +162,6 @@ export const sharethroughAdapterSpec = {
     }
 
     return body.seatbid[0].bid.map(bid => {
-      const request = matchRequest(bid.impid, req);
-
       const response = {
         requestId: bid.impid,
         width: +bid.w,
@@ -168,7 +169,7 @@ export const sharethroughAdapterSpec = {
         cpm: +bid.price,
         creativeId: bid.crid,
         dealId: bid.dealid || null,
-        mediaType: request.mediaTypes && request.mediaTypes.video ? VIDEO : BANNER,
+        mediaType: req.data.imp[0].video ? VIDEO : BANNER,
         currency: body.cur || 'USD',
         netRevenue: true,
         ttl: 360,
