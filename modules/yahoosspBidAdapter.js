@@ -10,7 +10,7 @@ const ADAPTER_VERSION = '1.0.0';
 const PREBID_VERSION = '$prebid.version$';
 const BID_RESPONSE_TTL = 3600;
 const TEST_MODE_DCN = '8a969516017a7a396ec539d97f540011';
-const TEST_MODE_PUBID_DCN = '';
+const TEST_MODE_PUBID_DCN = '1234567';
 const TEST_MODE_BANNER_POS = '8a969978017a7aaabab4ab0bc01a0009';
 const TEST_MODE_VIDEO_POS = '8a96958a017a7a57ac375d50c0c700cc';
 const DEFAULT_RENDERER_TIMEOUT = 700;
@@ -259,8 +259,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.publisher = {
         id: bid.params.pubId
       }
-      if (utils.deepAccess(bid, 'params.bidOverride.site.publisher.id') || utils.deepAccess(bid, 'params.inventoryid')) {
-        outBoundBidRequest.site.id = utils.deepAccess(bid, 'params.bidOverride.site.publisher.id') || bid.params.inventoryid;
+      if (utils.deepAccess(bid, 'params.bidOverride.site.id') || utils.deepAccess(bid, 'params.inventoryid')) {
+        outBoundBidRequest.site.id = utils.deepAccess(bid, 'params.bidOverride.site.id') || bid.params.inventoryid;
       }
     } else {
       outBoundBidRequest.site.id = bid.params.dcn;
