@@ -454,14 +454,10 @@ function openRtbSite(bidRequest, bidderRequest) {
  * @return Object OpenRTB's 'device' object
  */
 function openRtbDevice(bidRequest) {
-  const ip = deepAccess(bidRequest, 'params.device.ip');
   const deviceObj = {
     ua: navigator.userAgent,
     language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
   };
-  if (ip) {
-    deviceObj.ip = ip;
-  }
   return deviceObj;
 }
 
@@ -609,7 +605,7 @@ function shortcutProperty(extraCharacters, target, propertyName) {
  * @return array of eids objects
  */
 function getEids(bidRequest) {
-  if (utils.deepAccess(bidRequest, 'userId')) {
+  if (deepAccess(bidRequest, 'userId')) {
     return createEidsArray(bidRequest.userId) || [];
   }
 };

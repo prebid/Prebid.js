@@ -483,13 +483,6 @@ describe('YieldmoAdapter', function () {
         expect(buildAndGetData([mockVideoBid({schain})]).schain).to.deep.equal(schain);
       });
 
-      it('should add ip to the video bidRequest', () => {
-        const device = {
-          ip: '111.222.333.444'
-        };
-        expect(buildAndGetData([mockVideoBid(null, {device})]).device.ip).to.be.equal(device.ip);
-      });
-
       it('should add gpid to the video request', function () {
         const ortb2Imp = {
           ext: { data: { pbadslot: '/6355419/Travel/Europe/France/Paris' } },
