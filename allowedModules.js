@@ -6,7 +6,7 @@ const sharedWhiteList = [
   'core-js-pure/features/string/includes', // no ie11
   'core-js-pure/features/number/is-integer', // no ie11,
   'core-js-pure/features/array/from' // no ie11
-  'core-js-pure/features/web/url-search-params' // no ie11
+  'core-js-pure/features/url-search-params' // no ie11
 ];
 
 module.exports = {
