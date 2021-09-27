@@ -263,6 +263,27 @@ describe('Tappx bid adapter', function () {
       expect(data.imp[0].video).to.not.equal(null);
     });
 
+    it('should properly create video rewarded request', function () {
+      delete validBidRequests_Voutstream[0].mediaTypes.banner
+      validBidRequests_Voutstream[0].mediaTypes.video = {};
+      validBidRequests_Voutstream[0].mediaTypes.video.rewarded = 1;
+      validBidRequests_Voutstream[0].mediaTypes.video.playerSize = [640, 480];
+      validBidRequests_Voutstream[0].mediaTypes.video.context = 'outstream';
+      validBidRequests_Voutstream[0].mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
+
+      bidderRequest_VOutstream.bids.mediaTypes.context = 'outstream';
+
+      const request = spec.buildRequests(validBidRequests_Voutstream, bidderRequest_VOutstream);
+      expect(request[0].url).to.match(/^(http|https):\/\/(.*)\.tappx\.com\/.+/);
+      expect(request[0].method).to.equal('POST');
+
+      const data = JSON.parse(request[0].data);
+      expect(data.site).to.not.equal(null);
+      expect(data.imp).to.have.lengthOf(1);
+      expect(data.imp[0].bidfloor, data).to.not.be.null;
+      expect(data.imp[0].video).to.not.equal(null);
+    });
+
     it('should set user eids array', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
 
