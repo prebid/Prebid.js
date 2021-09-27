@@ -34,7 +34,7 @@ Please note that a number of AdHash functionalities are not supported in the Pre
                     bidder: 'adhash',
                     params: {
                         publisherId: '0x1234567890123456789012345678901234567890',
-                        platformURL: 'https://adhash.org/p/struma/'
+                        platformURL: 'https://adhash.org/p/example/'
                     }
                 }
             ]
