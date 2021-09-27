@@ -4,7 +4,7 @@ import * as utils from '../../../src/utils.js';
 
 describe('Deepintent adapter', function () {
   let request, videoBidRequests;
-  let bannerResponse, videoBidResponse;
+  let bannerResponse, videoBidResponse, invalidResponse;
 
   beforeEach(function () {
     request = [
@@ -74,6 +74,28 @@ describe('Deepintent adapter', function () {
             'price': 0.6,
             'adid': '10001',
             'adm': "<span id='deepintent_wrapper_a7e92b9b-d9db-4de8-9c3f-f90737335445' onclick=DeepIntentExecuteClicks('%%CLICK_URL_UNESC%%')><span id='deepintent_wrapper_span_9-1bfd-4764-b4cf-0bb1a74e554e'><a href='https://test-beacon.deepintent.com/click?id=11447bb1-a266-470d-b0d7-8810f5b1b75f&ts=1565252378497&r=http%3A%2F%2Ftest.com' target='_blank'><img src='https://storage.googleapis.com/deepintent-test/adv/10001/asset/a640bcb5c0d5416096290d1c1097a1e9.jpg'></img></a></span><noscript class=\"MOAT-deepintentdisplay440800993657?moatClientLevel1=10001&amp;moatClientLevel2=103389&amp;moatClientLevel3=13665&amp;moatClientSlicer1=washingtonpost.com&amp;zMoatBID=11447bb1-a266-470d-b0d7-8810f5b1b75f&amp;zMoatTIME=1565252378495&amp;zMoatCGRP=530\"></noscript>\r\n<script src=\"https://z.moatads.com/deepintentdisplay440800993657/moatad.js#moatClientLevel1=10001&moatClientLevel2=103389&moatClientLevel3=13665&moatClientSlicer1=washingtonpost.com&zMoatBID=11447bb1-a266-470d-b0d7-8810f5b1b75f&zMoatTIME=1565252378495&zMoatCGRP=530\" type=\"text/javascript\"></script><img src='https://tracking.com' height='0px' width='0px' style='display:none'></img></span><script type='text/javascript'>window.DeepIntentExecuteClicks=window.DeepIntentExecuteClicks||function(e){if(e)for(var n=e.split(','),t=0;t<n.length;t++)(new Image).src=n[t]};</script><img src='https://test-beacon.deepintent.com/impression?id=11447bb1-a266-470d-b0d7-8810f5b1b75f&ts=1565252378497&wp=%%WINNING_PRICE%%' height='0px' width='0px' style='display:none'></img><iframe src='https://cdn.deepintent.com/sync/adx.html' width='0' height='0' style='display:none;'></iframe>",
+            'adomain': ['deepintent.com'],
+            'cid': '103389',
+            'crid': '13665',
+            'w': 300,
+            'h': 250,
+            'dealId': 'dee_12312stdszzsx'
+          }],
+          'seat': '10000'
+        }],
+        'bidid': '0b08b09f-aaa1-4c14-b1c8-7debb1a7c1cd'
+      }
+    };
+    invalidResponse = {
+      'body': {
+        'id': '303e1fae-9677-41e2-9a92-15a23445363f',
+        'seatbid': [{
+          'bid': [{
+            'id': '11447bb1-a266-470d-b0d7-8810f5b1b75f',
+            'impid': 'a7e92b9b-d9db-4de8-9c3f-f90737335445',
+            'price': 0.6,
+            'adid': '10001',
+            'adm': 'invalid response',
             'adomain': ['deepintent.com'],
             'cid': '103389',
             'crid': '13665',
@@ -157,6 +179,25 @@ describe('Deepintent adapter', function () {
         },
         isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(true);
+    });
+    it('should error out if context is not present and is Video', function() {
+      let bid = {
+          bidder: 'deepintent',
+          params: {
+            tagId: 12345,
+            video: {
+              mimes: ['video/mp4', 'video/x-flv'],
+              skippable: true,
+            }
+          },
+          mediaTypes: {
+            video: {
+              playerSize: [640, 480]
+            }
+          },
+        },
+        isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equal(false);
     })
   });
   describe('request check', function () {
@@ -294,6 +335,7 @@ describe('Deepintent adapter', function () {
       expect(bResponse[0].height).to.equal(bannerResponse.body.seatbid[0].bid[0].h);
       expect(bResponse[0].currency).to.equal('USD');
       expect(bResponse[0].netRevenue).to.equal(false);
+      expect(bResponse[0].mediaType).to.equal('banner');
       expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['deepintent.com']);
       expect(bResponse[0].ttl).to.equal(300);
       expect(bResponse[0].creativeId).to.equal(bannerResponse.body.seatbid[0].bid[0].crid);
@@ -303,6 +345,17 @@ describe('Deepintent adapter', function () {
       let request = spec.buildRequests(videoBidRequests);
       let response = spec.interpretResponse(videoBidResponse, request);
       expect(response[0].mediaType).to.equal('video');
+      expect(response[0].vastXml).to.not.equal(undefined);
+    });
+    it('invalid bid response check ', function() {
+      let bRequest = spec.buildRequests(request);
+      let response = spec.interpretResponse(invalidResponse, bRequest);
+      expect(response[0].mediaType).to.equal(undefined);
+    });
+    it('invalid bid response check ', function() {
+      let bRequest = spec.buildRequests(videoBidRequests);
+      let response = spec.interpretResponse(invalidResponse, bRequest);
+      expect(response[0].mediaType).to.equal(undefined);
     });
   })
 });

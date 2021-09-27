@@ -128,7 +128,6 @@ function _checkMediaType(bid) {
   } else if (videoRegex.test(bid.adm)) {
     mediaType = VIDEO;
   }
-  mediaType = VIDEO;
   return mediaType;
 }
 
