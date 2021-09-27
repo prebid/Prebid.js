@@ -544,8 +544,10 @@ const adUnits = [{
 ```
 
 ## Site/App Targeting for "pubId" Inventory Mapping
-To target your adUnit explicitly to a specific Site/App Object in Yahoo SSP, you can pass the following
-params.inventoryid = External Site ID || Video SSP RTBIS Id (Integer).
+To target your adUnit explicitly to a specific Site/App Object in Yahoo SSP, you can pass one of the following:
+1. params.inventoryid = External Site ID || Video SSP RTBIS Id (Integer).
+2. params.bidOverride.site.id = External Site ID || Video SSP RTBIS Id (Integer).
+**Important:** Site override is a only supported when using "pubId" mode.
 
 ```javascript
 const adUnits = [{
