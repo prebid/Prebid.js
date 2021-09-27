@@ -178,64 +178,76 @@ describe('sharethrough adapter spec', function() {
     describe('buildRequests', function() {
       describe('top level object', () => {
         it('should build openRTB request', () => {
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest);
+          const builtRequests = spec.buildRequests(bidRequests, bidderRequest);
 
-          expect(builtRequest.method).to.equal('POST');
-          expect(builtRequest.url).not.to.be.undefined;
-          expect(builtRequest.options).to.be.undefined;
-          expect(builtRequest.bidderRequest).to.deep.equal(bidderRequest);
+          const expectedImpValues = [
+            {
+              id: 'bidId1',
+              tagid: 'aaaa1111',
+              secure: 1,
+              bidfloor: 42,
+            },
+            {
+              id: 'bidId2',
+              tagid: 'bbbb2222',
+              secure: 1,
+              bidfloor: 42,
+            }
+          ]
 
-          const openRtbReq = builtRequest.data;
-          expect(openRtbReq.id).not.to.be.undefined;
-          expect(openRtbReq.cur).to.deep.equal(['USD']);
-          expect(openRtbReq.tmax).to.equal(242);
+          builtRequests.map((builtRequest, rIndex) => {
+            expect(builtRequest.method).to.equal('POST');
+            expect(builtRequest.url).not.to.be.undefined;
+            expect(builtRequest.options).to.be.undefined;
+            expect(builtRequest.bidderRequest).to.deep.equal(bidderRequest);
 
-          expect(openRtbReq.site.domain).not.to.be.undefined;
-          expect(openRtbReq.site.page).not.to.be.undefined;
-          expect(openRtbReq.site.ref).to.equal('https://referer.com');
+            const openRtbReq = builtRequest.data;
+            expect(openRtbReq.id).not.to.be.undefined;
+            expect(openRtbReq.cur).to.deep.equal(['USD']);
+            expect(openRtbReq.tmax).to.equal(242);
 
-          const expectedEids = {
-            'liveramp.com': { id: 'fake-identity-link' },
-            'id5-sync.com': { id: 'fake-id5id' },
-            'pubcid.org': { id: 'fake-pubcid' },
-            'adserver.org': { id: 'fake-tdid' },
-            'criteo.com': { id: 'fake-criteo' },
-            'britepool.com': { id: 'fake-britepool' },
-            'liveintent.com': { id: 'fake-lipbid' },
-            'intentiq.com': { id: 'fake-intentiq' },
-            'crwdcntrl.net': { id: 'fake-lotame' },
-            'parrable.com': { id: 'fake-parrable' },
-            'netid.de': { id: 'fake-netid' },
-            'chrome.com': { id: 'fake-flocid' },
-          };
-          expect(openRtbReq.user.ext.eids).to.be.an('array').that.have.length(Object.keys(expectedEids).length);
-          for (const eid of openRtbReq.user.ext.eids) {
-            expect(Object.keys(expectedEids)).to.include(eid.source);
-            expect(eid.uids[0].id).to.equal(expectedEids[eid.source].id);
-            expect(eid.uids[0].atype).to.be.ok;
-          }
+            expect(openRtbReq.site.domain).not.to.be.undefined;
+            expect(openRtbReq.site.page).not.to.be.undefined;
+            expect(openRtbReq.site.ref).to.equal('https://referer.com');
 
-          expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
-          expect(openRtbReq.regs.coppa).to.equal(1);
+            const expectedEids = {
+              'liveramp.com': { id: 'fake-identity-link' },
+              'id5-sync.com': { id: 'fake-id5id' },
+              'pubcid.org': { id: 'fake-pubcid' },
+              'adserver.org': { id: 'fake-tdid' },
+              'criteo.com': { id: 'fake-criteo' },
+              'britepool.com': { id: 'fake-britepool' },
+              'liveintent.com': { id: 'fake-lipbid' },
+              'intentiq.com': { id: 'fake-intentiq' },
+              'crwdcntrl.net': { id: 'fake-lotame' },
+              'parrable.com': { id: 'fake-parrable' },
+              'netid.de': { id: 'fake-netid' },
+              'chrome.com': { id: 'fake-flocid' },
+            };
+            expect(openRtbReq.user.ext.eids).to.be.an('array').that.have.length(Object.keys(expectedEids).length);
+            for (const eid of openRtbReq.user.ext.eids) {
+              expect(Object.keys(expectedEids)).to.include(eid.source);
+              expect(eid.uids[0].id).to.equal(expectedEids[eid.source].id);
+              expect(eid.uids[0].atype).to.be.ok;
+            }
 
-          expect(openRtbReq.source.ext.version).not.to.be.undefined;
-          expect(openRtbReq.source.ext.str).not.to.be.undefined;
-          expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+            expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
+            expect(openRtbReq.regs.coppa).to.equal(1);
 
-          expect(openRtbReq.bcat).to.deep.equal(bidRequests[0].params.bcat);
-          expect(openRtbReq.badv).to.deep.equal(bidRequests[0].params.badv);
+            expect(openRtbReq.source.ext.version).not.to.be.undefined;
+            expect(openRtbReq.source.ext.str).not.to.be.undefined;
+            expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].schain);
 
-          expect(openRtbReq.imp).to.have.length(2);
+            expect(openRtbReq.bcat).to.deep.equal(bidRequests[0].params.bcat);
+            expect(openRtbReq.badv).to.deep.equal(bidRequests[0].params.badv);
 
-          expect(openRtbReq.imp[0].id).to.equal('bidId1');
-          expect(openRtbReq.imp[0].tagid).to.equal('aaaa1111');
-          expect(openRtbReq.imp[0].secure).to.equal(1);
-          expect(openRtbReq.imp[0].bidfloor).to.equal(42);
+            expect(openRtbReq.imp).to.have.length(1);
 
-          expect(openRtbReq.imp[1].id).to.equal('bidId2');
-          expect(openRtbReq.imp[1].tagid).to.equal('bbbb2222');
-          expect(openRtbReq.imp[1].secure).to.equal(1);
-          expect(openRtbReq.imp[1].bidfloor).to.equal(42);
+            expect(openRtbReq.imp[rIndex].id).to.equal(expectedImpValues[rIndex].id);
+            expect(openRtbReq.imp[rIndex].tagid).to.equal(expectedImpValues[rIndex].tagid);
+            expect(openRtbReq.imp[rIndex].secure).to.equal(expectedImpValues[rIndex].secure);
+            expect(openRtbReq.imp[rIndex].bidfloor).to.equal(expectedImpValues[rIndex].bidfloor);
+          });
         });
 
         it('should have empty eid array if no id is provided', () => {

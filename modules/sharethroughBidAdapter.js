@@ -141,16 +141,16 @@ export const sharethroughAdapterSpec = {
       };
     }).filter(imp => !!imp);
 
-    return {
-      method: 'POST',
-      url: STR_ENDPOINT,
-      data: {
-        ...req,
-        imp: imps,
-      },
-      bidRequests,
-      bidderRequest,
-    };
+    return imps.map(impression => {
+      return {
+        method: 'POST',
+        url: STR_ENDPOINT,
+        data: {
+          ...req,
+          imp: [impression],
+        },
+      };
+    });
   },
 
   interpretResponse: ({ body }, req) => {
