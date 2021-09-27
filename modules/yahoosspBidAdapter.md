@@ -548,10 +548,11 @@ To target your adUnit explicitly to a specific Site/App Object in Yahoo SSP, you
 1. params.inventoryid = External Site ID || Video SSP RTBIS Id (Integer).
 2. params.bidOverride.site.id = External Site ID || Video SSP RTBIS Id (Integer).
 **Important:** Site override is a only supported when using "pubId" mode.
+**Important:** If you are switching from the oneVideo adapter, please make sure to pass inventoryid as a String instead of Integer.
 
 ```javascript
 const adUnits = [{
-    code: 'rewarded-video-adUnit',
+    code: 'pubId-site-targeting-adUnit',
     mediaTypes: {
         video: {
             context: 'outstream',
@@ -564,7 +565,7 @@ const adUnits = [{
         bidder: 'yahoossp',
         params: {
             pubId: 'DemoPublisher',
-            inventoryid: 1234567;
+            inventoryid: '1234567';
         }
     }]
 }]
