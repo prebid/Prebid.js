@@ -1,7 +1,7 @@
+import { logError, logInfo } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -253,7 +253,7 @@ export function parseBrowser() {
     let browserName = result && result.length ? result[0].name : '';
     return (listOfSupportedBrowsers.indexOf(browserName) >= 0) ? browserName : 'Unknown';
   } catch (err) {
-    utils.logError('ATS Analytics - Error while checking user browser!', err);
+    logError('ATS Analytics - Error while checking user browser!', err);
   }
 }
 
@@ -262,11 +262,11 @@ function sendDataToAnalytic () {
   try {
     let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
     let strJSON = JSON.stringify(dataToSend);
-    utils.logInfo('ATS Analytics - tried to send analytics data!');
+    logInfo('ATS Analytics - tried to send analytics data!');
     ajax(analyticsUrl, function () {
     }, strJSON, {method: 'POST', contentType: 'application/json'});
   } catch (err) {
-    utils.logError('ATS Analytics - request encounter an error: ', err);
+    logError('ATS Analytics - request encounter an error: ', err);
   }
 }
 
@@ -336,7 +336,7 @@ let atsAnalyticsAdapter = Object.assign(adapter(
           }
         }
       } catch (err) {
-        utils.logError('ATS Analytics - preflight request encounter an error: ', err);
+        logError('ATS Analytics - preflight request encounter an error: ', err);
       }
     }
   }
@@ -349,10 +349,10 @@ atsAnalyticsAdapter.originEnableAnalytics = atsAnalyticsAdapter.enableAnalytics;
 atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
   if (samplingRate !== 0) {
     let shouldFireRequestValue = (Math.floor((Math.random() * 100 + 1)) === 100);
-    utils.logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
+    logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
     return shouldFireRequestValue;
   } else {
-    utils.logInfo('ATS Analytics - Should Fire Request: ', false);
+    logInfo('ATS Analytics - Should Fire Request: ', false);
     return false;
   }
 };
@@ -363,7 +363,7 @@ atsAnalyticsAdapter.getUserAgent = function () {
 // override enableAnalytics so we can get access to the config passed in from the page
 atsAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.pid) {
-    utils.logError('ATS Analytics - Publisher ID (pid) option is not defined. Analytics won\'t work');
+    logError('ATS Analytics - Publisher ID (pid) option is not defined. Analytics won\'t work');
     return;
   }
   atsAnalyticsAdapter.context = {
@@ -371,7 +371,7 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
     pid: config.options.pid
   };
   let initOptions = config.options;
-  utils.logInfo('ATS Analytics - adapter enabled! ');
+  logInfo('ATS Analytics - adapter enabled! ');
   atsAnalyticsAdapter.originEnableAnalytics(initOptions); // call the base class function
 };
 
