@@ -693,6 +693,11 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   // ok we got the bid response cpm in our desired currency. Now we need to run the bidders CPMAdjustment function if it exists
   adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm, bid);
 
+  // The below condition is added to avoid floor on s2s calls
+  if (bid.bidderCode == 'pubmaticServer') {
+    return fn.call(this, adUnitCode, bid);
+  }
+
   // add necessary data information for analytics adapters / floor providers would possibly need
   addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm);
 

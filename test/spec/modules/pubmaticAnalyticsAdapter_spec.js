@@ -69,6 +69,14 @@ const BID = {
     'hb_size': '640x480',
     'hb_source': 'server'
   },
+  'floorData': {
+    'cpmAfterAdjustments': 6.3,
+    'enforcements': {'enforceJS': true, 'enforcePBS': false, 'floorDeals': false, 'bidAdjustment': true},
+    'floorCurrency': 'USD',
+    'floorRule': 'banner',
+    'floorRuleValue': 1.1,
+    'floorValue': 1.1
+  },
   getStatusCode() {
     return 1;
   }
@@ -199,7 +207,18 @@ const MOCK = {
         'sizes': [[640, 480]],
         'bidId': '2ecff0db240757',
         'bidderRequestId': '1be65d7958826a',
-        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'floorData': {
+          'fetchStatus': 'success',
+          'floorMin': undefined,
+          'floorProvider': 'pubmatic',
+          'location': 'fetch',
+          'modelTimestamp': undefined,
+          'modelVersion': 'floorModelTest',
+          'modelWeight': undefined,
+          'skipRate': 0,
+          'skipped': false
+        }
       },
       {
         'bidder': 'pubmatic',
@@ -218,7 +237,18 @@ const MOCK = {
         'bidId': '3bd4ebb1c900e2',
         'seatBidId': 'aaaa-bbbb-cccc-dddd',
         'bidderRequestId': '1be65d7958826a',
-        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'floorData': {
+          'fetchStatus': 'success',
+          'floorMin': undefined,
+          'floorProvider': 'pubmatic',
+          'location': 'fetch',
+          'modelTimestamp': undefined,
+          'modelVersion': 'floorModelTest',
+          'modelWeight': undefined,
+          'skipRate': 0,
+          'skipped': false
+        }
       }
     ],
     'auctionStart': 1519149536560,
@@ -359,11 +389,14 @@ describe('pubmatic analytics adapter', function () {
       expect(data.orig).to.equal('www.test.com');
       expect(data.tst).to.equal(1519767016);
       expect(data.tgid).to.equal(15);
+      expect(data.fmv).to.equal('floorModelTest');
+      expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1
       expect(data.s[0].sn).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].au).to.equal('/19968336/header-bid-tag-0');
+      expect(data.s[0].fskp).to.equal(0);
       expect(data.s[0].mt).to.be.an('array');
       expect(data.s[0].mt[0]).to.equal(0);
       expect(data.s[0].sz).to.deep.equal(['640x480']);
@@ -389,6 +422,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].af).to.equal('video');
       expect(data.s[0].ps[0].ocpm).to.equal(1.23);
       expect(data.s[0].ps[0].ocry).to.equal('USD');
+      expect(data.s[0].ps[0].frv).to.equal(undefined);
       // slot 2
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
       expect(data.s[1].au).to.equal('/19968336/header-bid-tag-1');
@@ -398,6 +432,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
+      expect(data.s[1].fskp).to.equal(0);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
       expect(data.s[1].ps[0].bc).to.equal('pubmatic');
       expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
@@ -419,6 +454,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
 
       // tracker slot1
       let firstTracker = requests[0].url;
@@ -467,6 +503,8 @@ describe('pubmatic analytics adapter', function () {
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
       expect(data.pid).to.equal('1111');
+      expect(data.fmv).to.equal('floorModelTest');
+      expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       expect(data.tgid).to.equal(0);
@@ -476,6 +514,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].mt).to.be.an('array');
       expect(data.s[0].mt[0]).to.equal(0);
       expect(data.s[0].sz).to.deep.equal(['640x480']);
+      expect(data.s[0].fskp).to.equal(0);
       expect(data.s[0].ps).to.be.an('array');
       expect(data.s[0].ps.length).to.equal(1);
       expect(data.s[0].ps[0].pn).to.equal('pubmatic');
@@ -488,6 +527,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].af).to.equal('video');
       expect(data.s[0].ps[0].ocpm).to.equal(1.23);
       expect(data.s[0].ps[0].ocry).to.equal('USD');
+      expect(data.s[0].ps[0].frv).to.equal(undefined);
+
       // tracker slot1
       let firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -595,6 +636,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fskp).to.equal(0);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -617,6 +659,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal(undefined);
       expect(data.s[1].ps[0].ocpm).to.equal(0);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
     });
 
     it('Logger: post-timeout check without bid response', function() {
@@ -636,6 +679,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fskp).to.equal(0);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -683,6 +727,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fskp).to.equal(0);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -705,6 +750,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
     });
 
     it('Logger: currency conversion check', function() {
@@ -794,6 +840,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fskp).to.equal(0);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -816,6 +863,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+
       expect(data.dvc).to.deep.equal({'plt': 2});
       // respective tracker slot
       let firstTracker = requests[1].url;
@@ -852,6 +900,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fskp).to.equal(0);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -874,6 +923,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
+
       expect(data.dvc).to.deep.equal({'plt': 1});
       // respective tracker slot
       let firstTracker = requests[1].url;
@@ -907,6 +958,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fskp).to.equal(0);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -929,6 +981,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
+
       // respective tracker slot
       let firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -964,6 +1018,9 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fmv).to.equal('floorModelTest');
+      expect(data.s[1].fskp).to.equal(0);
+      expect(data.s[1].ft).to.equal(1);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -986,6 +1043,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
+
       // respective tracker slot
       let firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -1018,6 +1077,9 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fmv).to.equal('floorModelTest');
+      expect(data.s[1].fskp).to.equal(0);
+      expect(data.s[1].ft).to.equal(1);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -1040,6 +1102,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
+
       // respective tracker slot
       let firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -1075,6 +1139,9 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fmv).to.equal('floorModelTest');
+      expect(data.s[1].fskp).to.equal(0);
+      expect(data.s[1].ft).to.equal(1);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -1097,6 +1164,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
+
       // respective tracker slot
       let firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -1130,6 +1199,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fskp).to.equal(0);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -1152,6 +1222,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
+
       // respective tracker slot
       let firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -1187,6 +1259,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fskp).to.equal(0);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -1209,6 +1282,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
+
       // respective tracker slot
       let firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -1253,6 +1328,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.orig).to.equal('www.test.com');
       expect(data.tst).to.equal(1519767016);
       expect(data.tgid).to.equal(15);
+      expect(data.fmv).to.equal('floorModelTest');
+      expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
 
@@ -1262,6 +1339,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].mt).to.be.an('array');
       expect(data.s[0].mt[0]).to.equal(0);
       expect(data.s[0].sz).to.deep.equal(['640x480']);
+      expect(data.s[0].fskp).to.equal(0);
       expect(data.s[0].ps).to.be.an('array');
       expect(data.s[0].ps.length).to.equal(1);
       expect(data.s[0].ps[0].pn).to.equal('pubmatic');
@@ -1284,6 +1362,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].af).to.equal('video');
       expect(data.s[0].ps[0].ocpm).to.equal(1.23);
       expect(data.s[0].ps[0].ocry).to.equal('USD');
+      expect(data.s[0].ps[0].frv).to.equal(1.1);
+
       // slot 2
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
       expect(data.s[1].au).to.equal('/19968336/header-bid-tag-1');
@@ -1291,6 +1371,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].mt[0]).to.equal(0);
       expect(data.s[1].mt[1]).to.equal(1);
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].fskp).to.equal(0);
       expect(data.s[1].ps).to.be.an('array');
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
@@ -1314,6 +1395,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+      expect(data.s[1].ps[0].frv).to.equal(undefined);
 
       // tracker slot1
       let firstTracker = requests[0].url;
