@@ -3,7 +3,6 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
-import find from 'core-js-pure/features/array/find.js';
 
 const VERSION = '4.0.1';
 const BIDDER_CODE = 'sharethrough';
@@ -149,9 +148,6 @@ export const sharethroughAdapterSpec = {
           ...req,
           imp: [impression],
         },
-        strData: {
-          mediaType: impression.mediaType
-        }
       };
     });
   },
@@ -269,10 +265,6 @@ function userIdAsEids(bidRequest) {
 
 function getProtocol() {
   return window.location.protocol;
-}
-
-function matchRequest(id, request) {
-  return find(request.bidRequests, bid => bid.bidId === id);
 }
 
 // stub for ?? operator
