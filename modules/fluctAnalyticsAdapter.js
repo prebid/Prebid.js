@@ -228,26 +228,20 @@ let fluctAnalyticsAdapter = Object.assign(
 });
 
 /**
- * @typedef {Object} Slot
- * @property {string} code
- * @property {string} path
- */
-
-/**
- * GPT slotから共通のpathを持つadUnitCodeを返す
- * @param {Array<Slot>} slots
+ * GPT slotから共通のpathを持つ、browsi_ad_ではないのadUnitCodeを返す
+ * @param {Object} slots
  * @param {string} adUnitCode
  * @returns {string}
  */
 export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
-  /** @type {Slot} */
-  const slot = find(slots, slot => {
+  /** @type {string} */
+  const path = slots[find(Object.keys(slots), slot => {
     /** @type {string|null} @example browsi_ad_0_ai_1_rc_ */
-    const browsiPrefix = adUnitCode.match(/^browsi_.*_(?=\d*$)/g)?.[0]
-    return slot.code === adUnitCode
-      || slot.code.match(new RegExp(`^${browsiPrefix}`, 'g'))?.[0]
-  })
-  return find(slots, _slot => _slot.path === slot.path && !isBrowsiDivId(_slot.code))?.code ?? adUnitCode
+    const browsiPrefix = adUnitCode.match(/^browsi_ad_.*_(?=\d*$)/g)?.[0]
+    return slot === adUnitCode
+      || slot.match(new RegExp(`^${browsiPrefix}`, 'g'))?.[0]
+  })]
+  return find(Object.keys(slots), slot => !isBrowsiDivId(slots[slot]) && slots[slot] === path) ?? adUnitCode
 }
 
 /**
@@ -257,11 +251,11 @@ export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
 const modifyBrowsiAdUnit = (adUnit) => {
   if (!isBrowsiDivId(adUnit.code)) return adUnit
   // e.g.
-  // [
-  //   [{ code: 'div-gpt-ad-1629864618640-0', path: '/62532913/p_fluctmagazine_320x50_surface_15377' }]
-  //   [{ code: 'browsi_ad_0_ai_1_rc_0', path: '/62532913/p_fluctmagazine_320x50_surface_15377' }]
-  // ]
-  const slots = window.googletag.pubads().getSlots().map(slot => ({ code: slot.getSlotElementId(), path: slot.getAdUnitPath() }))
+  // {
+  //   'div-gpt-ad-1629864618640-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
+  //   'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
+  // }
+  const slots = googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
   return {
     ...adUnit,
     adUnitCode: getAdUnitCodeBeforeReplication(slots, adUnit.code),
