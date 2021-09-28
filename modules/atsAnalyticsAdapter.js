@@ -272,12 +272,12 @@ function sendDataToAnalytic () {
 
 // preflight request, to check did publisher have permission to send data to analytics endpoint
 function preflightRequest (envelopeSourceCookieValue) {
-  utils.logInfo('ATS Analytics - preflight request!');
+  logInfo('ATS Analytics - preflight request!');
   ajax(preflightUrl + atsAnalyticsAdapter.context.pid,
     {
       success: function (data) {
         let samplingRateObject = JSON.parse(data);
-        utils.logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
+        logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
         let samplingRate = samplingRateObject['samplingRate'];
         setSamplingCookie(samplingRate);
         let samplingRateNumber = Number(samplingRate);
@@ -287,7 +287,7 @@ function preflightRequest (envelopeSourceCookieValue) {
       },
       error: function () {
         setSamplingCookie(0);
-        utils.logInfo('ATS Analytics - Sampling Rate Request Error!');
+        logInfo('ATS Analytics - Sampling Rate Request Error!');
       }
     }, undefined, {method: 'GET', crossOrigin: true});
 }
