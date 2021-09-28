@@ -401,6 +401,33 @@ describe('user sync', function () {
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
   });
 
+  it('should not fire image pixel for a bidder if iframe pixel is fired for same bidder', function() {
+    const userSync = newUserSync({
+      config: config.getConfig('userSync'),
+      browserSupportsCookies: true
+    });
+
+    config.setConfig({
+      userSync: {
+        filterSettings: {
+          iframe: {
+            bidders: ['bidderXYZ'],
+            filter: 'include'
+          }
+        }
+      }
+    });
+    // we are registering iframe and image sync for bidderXYZ and we expect image sync not to execute.
+    userSync.registerSync('image', 'testBidder', 'http://testBidder.example.com/image');
+    userSync.registerSync('iframe', 'bidderXYZ', 'http://bidderXYZ.example.com/iframe');
+    userSync.registerSync('image', 'bidderXYZ', 'http://bidderXYZ.example.com/image');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://testBidder.example.com/image');
+    expect(triggerPixelStub.callCount).to.equal(1); // should not be 2 for 2 registered image syncs
+    expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://bidderXYZ.example.com/iframe');
+  });
+
   it('should override default image syncs if setConfig used image filter', function () {
     const userSync = newUserSync({
       config: config.getConfig('userSync'),
@@ -448,8 +475,9 @@ describe('user sync', function () {
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
     userSync.registerSync('iframe', 'bidderXYZ', 'http://example.com/iframe-blocked');
     userSync.syncUsers();
-    expect(triggerPixelStub.getCall(0)).to.not.be.null;
-    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
+    // expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0)).to.be.null;// image sync will not execute as iframe sync has executed for same bidder
+    // expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
     expect(triggerPixelStub.getCall(1)).to.be.null;
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
     expect(insertUserSyncIframeStub.getCall(1)).to.be.null;
