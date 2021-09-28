@@ -21,6 +21,11 @@ const IAS_KW = 'ias-kw';
  * @return {boolean}
  */
 export function init(config, userConsent) {
+  const params = config.params;
+  if (!params || !params.pubId) {
+    utils.logError('missing pubId param for IAS provider');
+    return false;
+  }
   return true;
 }
 
@@ -36,24 +41,12 @@ function stringifySlotSizes(sizes) {
   return result;
 }
 
-function getAllSlots() {
-  return utils.isGptPubadsDefined() && window.googletag.pubads().getSlots();
-}
-
-function getSlotByCode(code) {
-  const slots = getAllSlots();
-  if (!slots || !slots.length) {
-    return null;
-  }
-  return utils.getGptSlotInfoForAdUnitCode(code);
-}
-
 function stringifySlot(bidRequest) {
   const sizes = utils.getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
-  const adSlot = getSlotByCode(bidRequest.code);
-  const p = adSlot ? adSlot.gptSlot : bidRequest.code;
+  const adSlot = utils.getGptSlotInfoForAdUnitCode(bidRequest.code);
+  const p = utils.isEmpty(adSlot) ? bidRequest.code : adSlot.gptSlot;
   const slot = { id, ss, p };
   const keyValues = utils.getKeys(slot).map(function (key) {
     return [key, slot[key]].join(':');
@@ -72,27 +65,18 @@ function stringifyScreenSize() {
 function formatTargetingData(adUnit) {
   let result = {};
   if (iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]) {
-    extend(result, iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]);
+    utils.mergeDeep(result, iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]);
   }
   if (iasTargeting[FRAUD_FIELD_NAME]) {
     result[FRAUD_FIELD_NAME] = iasTargeting[FRAUD_FIELD_NAME];
   }
-  if (iasTargeting[CUSTOM_FIELD_NAME]) {
+  if (iasTargeting[CUSTOM_FIELD_NAME] && iasTargeting[CUSTOM_FIELD_NAME][IAS_KW]) {
     result[IAS_KW] = iasTargeting[CUSTOM_FIELD_NAME][IAS_KW];
   }
   if (iasTargeting[SLOTS_OBJECT_FIELD_NAME] && adUnit in iasTargeting[SLOTS_OBJECT_FIELD_NAME]) {
-    extend(result, iasTargeting[SLOTS_OBJECT_FIELD_NAME][adUnit]);
+    utils.mergeDeep(result, iasTargeting[SLOTS_OBJECT_FIELD_NAME][adUnit]);
   }
   return result;
-}
-
-function extend(dest, src) {
-  if (src) {
-    utils.getKeys(src).forEach(key => {
-      dest[key] = src[key];
-    });
-  }
-  return dest;
 }
 
 function constructQueryString(anId, adUnits) {
@@ -124,9 +108,11 @@ function parseResponse(result) {
 function getTargetingData(adUnits, config, userConsent) {
   const targeting = {};
   try {
-    adUnits.forEach(function (adUnit) {
-      targeting[adUnit] = formatTargetingData(adUnit);
-    });
+    if (!utils.isEmpty(iasTargeting)) {
+      adUnits.forEach(function (adUnit) {
+        targeting[adUnit] = formatTargetingData(adUnit);
+      });
+    }
   } catch (err) {
     utils.logError('error', err);
   }
