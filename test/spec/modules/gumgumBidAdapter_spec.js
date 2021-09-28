@@ -229,11 +229,19 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.not.have.property('irisid');
     });
 
-    it('should set the global placement id (gpid)', function () {
+    it('should set the global placement id (gpid) if in adserver property', function () {
       const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
       expect(bidRequest.data.gpid).to.equal(123456);
+    });
+
+    it('should set the global placement id (gpid) if in pbadslot property', function () {
+      const pbadslot = 'abc123'
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { pbadslot } } } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest.data).to.have.property('gpid');
+      expect(bidRequest.data.gpid).to.equal(pbadslot);
     });
 
     it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {

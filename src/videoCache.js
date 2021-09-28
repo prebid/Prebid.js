@@ -11,7 +11,7 @@
 
 import { ajax } from './ajax.js';
 import { config } from './config.js';
-import * as utils from './utils.js';
+import { isPlainObject } from './utils.js';
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -73,7 +73,7 @@ function toStorageRequest(bid) {
     payload.bidid = bid.requestId;
     payload.aid = bid.auctionId;
     // function has a thisArg set to bidderRequest for accessing the auctionStart
-    if (utils.isPlainObject(this) && this.hasOwnProperty('auctionStart')) {
+    if (isPlainObject(this) && this.hasOwnProperty('auctionStart')) {
       payload.timestamp = this.auctionStart;
     }
   }

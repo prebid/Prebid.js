@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput, _each } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
@@ -15,7 +15,7 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    let sizes = utils.parseSizesInput(bid.sizes);
+    let sizes = parseSizesInput(bid.sizes);
     if (!sizes || sizes.length === 0) {
       return false;
     }
@@ -46,7 +46,7 @@ export const spec = {
         }
       }
 
-      utils._each(bidRequest.params, (item, key) => src = src + '&' + key + '=' + item);
+      _each(bidRequest.params, (item, key) => src = src + '&' + key + '=' + item);
 
       if (typeof bidRequest.params.u == 'undefined') {
         src = src + '&u=' + navigator.userAgent;

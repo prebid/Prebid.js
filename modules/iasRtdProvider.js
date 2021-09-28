@@ -1,6 +1,6 @@
+import { isArray, getAdUnitSizes, getKeys, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import * as utils from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 
 /** @type {string} */
@@ -21,7 +21,7 @@ export function init(config, userConsent) {
 
 function stringifySlotSizes(sizes) {
   let result = '';
-  if (utils.isArray(sizes)) {
+  if (isArray(sizes)) {
     result = sizes.reduce((acc, size) => {
       acc.push(size.join('.'));
       return acc;
@@ -32,12 +32,12 @@ function stringifySlotSizes(sizes) {
 }
 
 function stringifySlot(bidRequest, adUnitPath) {
-  const sizes = utils.getAdUnitSizes(bidRequest);
+  const sizes = getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
   const p = bidRequest.code;
   const slot = { id, ss, p };
-  const keyValues = utils.getKeys(slot).map(function (key) {
+  const keyValues = getKeys(slot).map(function (key) {
     return [key, slot[key]].join(':');
   });
   return '{' + keyValues.join(',') + '}';
@@ -62,7 +62,7 @@ function getPageLevelKeywords(response) {
 }
 
 function shallowMerge(dest, src) {
-  utils.getKeys(src).reduce((dest, srcKey) => {
+  getKeys(src).reduce((dest, srcKey) => {
     dest[srcKey] = src[srcKey];
     return dest;
   }, dest);
@@ -114,7 +114,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config) {
       callback();
     },
     error: function () {
-      utils.logError('failed to retrieve targeting information');
+      logError('failed to retrieve targeting information');
       callback();
     }
   });
@@ -128,7 +128,7 @@ function getTargetingData(adUnits, config, userConsent) {
       targeting[adUnit] = bidResponses;
     });
   } catch (err) {
-    utils.logError('error', err);
+    logError('error', err);
   }
   return targeting;
 }
