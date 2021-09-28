@@ -296,8 +296,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
 
-    // ADJS-1024
-    if (deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
+    // ADJS-1024 & ADSS-1297
+    if (udeepAccess(ortb2Imp, 'ext.data.pbadslot')) {
+      gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot')
+    } else if (deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
       gpid = ortb2Imp.ext.data.adserver.adslot
     }
 

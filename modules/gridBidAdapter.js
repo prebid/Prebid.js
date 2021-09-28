@@ -382,8 +382,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
           bidResponse.adResponse = {
             content: bidResponse.vastXml
           };
-        }
-        if (serverBid.nurl) {
+        } else if (serverBid.nurl) {
           bidResponse.vastUrl = serverBid.nurl;
         }
         bidResponse.mediaType = VIDEO;
