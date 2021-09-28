@@ -46,6 +46,7 @@ const SUPPORTED_USER_ID_SOURCES = [
   'tapad.com',
   'uidapi.com',
   'verizonmedia.com',
+  'yahoo.com',
   'zeotap.com'
 ];
 
