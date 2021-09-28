@@ -94,10 +94,10 @@ export function newUserSync(userSyncDependencies) {
     }
 
     try {
-      // Image pixels
-      fireImagePixels();
       // Iframe syncs
       loadIframes();
+      // Image pixels
+      fireImagePixels();
     } catch (e) {
       return logError('Error firing user syncs', e);
     }
@@ -141,11 +141,21 @@ export function newUserSync(userSyncDependencies) {
     if (!(permittedPixels.iframe)) {
       return;
     }
+
     forEachFire(queue.iframe, (sync) => {
       let [bidderName, iframeUrl] = sync;
       logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
       // Insert iframe into DOM
       insertUserSyncIframe(iframeUrl);
+      // for a bidder, if iframe sync is present then remove image pixel
+      removeImagePixelsForBidder(queue, bidderName);
+    });
+  }
+
+  function removeImagePixelsForBidder(queue, iframeSyncBidderName) {
+    queue.image = queue.image.filter(imageSync => {
+      let imageSyncBidderName = imageSync[0];
+      return imageSyncBidderName !== iframeSyncBidderName
     });
   }
 

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { timestamp, logInfo, getWindowTop } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
@@ -21,16 +21,16 @@ const cache = {
 
 let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE}), {
   track({eventType, args}) {
-    const time = utils.timestamp();
-    utils.logInfo('LIVEWRAPPED_EVENT:', [eventType, args]);
+    const time = timestamp();
+    logInfo('LIVEWRAPPED_EVENT:', [eventType, args]);
 
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
-        utils.logInfo('LIVEWRAPPED_AUCTION_INIT:', args);
+        logInfo('LIVEWRAPPED_AUCTION_INIT:', args);
         cache.auctions[args.auctionId] = {bids: {}, bidAdUnits: {}};
         break;
       case CONSTANTS.EVENTS.BID_REQUESTED:
-        utils.logInfo('LIVEWRAPPED_BID_REQUESTED:', args);
+        logInfo('LIVEWRAPPED_BID_REQUESTED:', args);
         cache.auctions[args.auctionId].timeStamp = args.start;
 
         args.bids.forEach(function(bidRequest) {
@@ -62,12 +62,12 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
             lw: bidRequest.lw
           }
 
-          utils.logInfo(bidRequest);
+          logInfo(bidRequest);
         })
-        utils.logInfo(livewrappedAnalyticsAdapter.requestEvents);
+        logInfo(livewrappedAnalyticsAdapter.requestEvents);
         break;
       case CONSTANTS.EVENTS.BID_RESPONSE:
-        utils.logInfo('LIVEWRAPPED_BID_RESPONSE:', args);
+        logInfo('LIVEWRAPPED_BID_RESPONSE:', args);
 
         let bidResponse = cache.auctions[args.auctionId].bids[args.requestId];
         bidResponse.isBid = args.getStatusCode() === CONSTANTS.STATUS.GOOD;
@@ -90,7 +90,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         }
         break;
       case CONSTANTS.EVENTS.BIDDER_DONE:
-        utils.logInfo('LIVEWRAPPED_BIDDER_DONE:', args);
+        logInfo('LIVEWRAPPED_BIDDER_DONE:', args);
         args.bids.forEach(doneBid => {
           let bid = cache.auctions[doneBid.auctionId].bids[doneBid.bidId || doneBid.requestId];
           if (!bid.ttr) {
@@ -100,7 +100,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         });
         break;
       case CONSTANTS.EVENTS.BID_WON:
-        utils.logInfo('LIVEWRAPPED_BID_WON:', args);
+        logInfo('LIVEWRAPPED_BID_WON:', args);
         let wonBid = cache.auctions[args.auctionId].bids[args.requestId];
         wonBid.won = true;
         if (wonBid.sendStatus != 0) {
@@ -108,13 +108,13 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         }
         break;
       case CONSTANTS.EVENTS.BID_TIMEOUT:
-        utils.logInfo('LIVEWRAPPED_BID_TIMEOUT:', args);
+        logInfo('LIVEWRAPPED_BID_TIMEOUT:', args);
         args.forEach(timeout => {
           cache.auctions[timeout.auctionId].bids[timeout.bidId].timeout = true;
         });
         break;
       case CONSTANTS.EVENTS.AUCTION_END:
-        utils.logInfo('LIVEWRAPPED_AUCTION_END:', args);
+        logInfo('LIVEWRAPPED_AUCTION_END:', args);
         setTimeout(() => {
           livewrappedAnalyticsAdapter.sendEvents();
         }, BID_WON_TIMEOUT);
@@ -159,7 +159,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
 
 function getAdblockerRecovered() {
   try {
-    return utils.getWindowTop().I12C && utils.getWindowTop().I12C.Morph === 1;
+    return getWindowTop().I12C && getWindowTop().I12C.Morph === 1;
   } catch (e) {}
 }
 
