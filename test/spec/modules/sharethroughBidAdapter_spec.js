@@ -6,7 +6,7 @@ import * as utils from 'src/utils';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 
-describe('sharethrough adapter spec', function() {
+describe('sharethrough adapter spec', function () {
   let protocolStub;
   let inIframeStub;
 
@@ -20,14 +20,14 @@ describe('sharethrough adapter spec', function() {
     inIframeStub.restore();
   });
 
-  describe('code', function() {
-    it('should return a bidder code of sharethrough', function() {
+  describe('code', function () {
+    it('should return a bidder code of sharethrough', function () {
       expect(spec.code).to.eql('sharethrough');
     });
   });
 
-  describe('isBidRequestValid', function() {
-    it('should return false if req has no pkey', function() {
+  describe('isBidRequestValid', function () {
+    it('should return false if req has no pkey', function () {
       const invalidBidRequest = {
         bidder: 'sharethrough',
         params: {
@@ -37,17 +37,17 @@ describe('sharethrough adapter spec', function() {
       expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
     });
 
-    it('should return false if req has wrong bidder code', function() {
+    it('should return false if req has wrong bidder code', function () {
       const invalidBidRequest = {
         bidder: 'notSharethrough',
         params: {
           pkey: 'abc123',
-        }
+        },
       };
       expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
     });
 
-    it('should return true if req is correct', function() {
+    it('should return true if req is correct', function () {
       const validBidRequest = {
         bidder: 'sharethrough',
         params: {
@@ -175,7 +175,7 @@ describe('sharethrough adapter spec', function() {
       };
     });
 
-    describe('buildRequests', function() {
+    describe('buildRequests', function () {
       describe('top level object', () => {
         it('should build openRTB request', () => {
           const builtRequests = spec.buildRequests(bidRequests, bidderRequest);
@@ -192,8 +192,8 @@ describe('sharethrough adapter spec', function() {
               tagid: 'bbbb2222',
               secure: 1,
               bidfloor: 42,
-            }
-          ]
+            },
+          ];
 
           builtRequests.map((builtRequest, rIndex) => {
             expect(builtRequest.method).to.equal('POST');
@@ -434,10 +434,9 @@ describe('sharethrough adapter spec', function() {
       });
     });
 
-    describe('interpretResponse', function() {
+    describe('interpretResponse', function () {
       let request;
       let response;
-
 
       describe('banner', () => {
         beforeEach(() => {
@@ -528,11 +527,11 @@ describe('sharethrough adapter spec', function() {
       });
     });
 
-    describe('getUserSyncs', function() {
+    describe('getUserSyncs', function () {
       const cookieSyncs = ['cookieUrl1', 'cookieUrl2', 'cookieUrl3'];
       const serverResponses = [{ body: { cookieSyncUrls: cookieSyncs } }];
 
-      it('returns an array of correctly formatted user syncs', function() {
+      it('returns an array of correctly formatted user syncs', function () {
         const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, null, 'fake-privacy-signal');
         expect(syncArray).to.deep.equal([
           { type: 'image', url: 'cookieUrl1&us_privacy=fake-privacy-signal' },
@@ -541,22 +540,22 @@ describe('sharethrough adapter spec', function() {
         );
       });
 
-      it('returns an empty array if serverResponses is empty', function() {
+      it('returns an empty array if serverResponses is empty', function () {
         const syncArray = spec.getUserSyncs({ pixelEnabled: true }, []);
         expect(syncArray).to.be.an('array').that.is.empty;
       });
 
-      it('returns an empty array if the body is null', function() {
+      it('returns an empty array if the body is null', function () {
         const syncArray = spec.getUserSyncs({ pixelEnabled: true }, [{ body: null }]);
         expect(syncArray).to.be.an('array').that.is.empty;
       });
 
-      it('returns an empty array if the body.cookieSyncUrls is missing', function() {
+      it('returns an empty array if the body.cookieSyncUrls is missing', function () {
         const syncArray = spec.getUserSyncs({ pixelEnabled: true }, [{ body: { creatives: ['creative'] } }]);
         expect(syncArray).to.be.an('array').that.is.empty;
       });
 
-      it('returns an empty array if pixels are not enabled', function() {
+      it('returns an empty array if pixels are not enabled', function () {
         const syncArray = spec.getUserSyncs({ pixelEnabled: false }, serverResponses);
         expect(syncArray).to.be.an('array').that.is.empty;
       });
