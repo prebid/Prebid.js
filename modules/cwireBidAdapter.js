@@ -3,16 +3,27 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { OUTSTREAM } from '../src/video.js';
+import {
+  isArray,
+  isNumber,
+  generateUUID,
+  parseSizesInput,
+  deepAccess,
+  getParameterByName,
+  getValue,
+  getBidIdParameter,
+  logError,
+  logWarn,
+} from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
-const utils = require('../src/utils.js');
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
 export const ENDPOINT_URL = 'https://embed.cwi.re/delivery/prebid';
 export const RENDERER_URL = 'https://cdn.cwi.re/prebid/renderer/LATEST/renderer.min.js';
 // ------------------------------------
-export const CW_PAGE_VIEW_ID = utils.generateUUID();
+export const CW_PAGE_VIEW_ID = generateUUID();
 const LS_CWID_KEY = 'cw_cwid';
 const CW_GROUPS_QUERY = 'cwgroups';
 
@@ -25,7 +36,7 @@ const storage = getStorageManager();
  * @returns {Array<string>}
  */
 export function getSlotSizes(bid) {
-  return utils.parseSizesInput(getAllMediaSizes(bid));
+  return parseSizesInput(getAllMediaSizes(bid));
 }
 
 /**
@@ -35,25 +46,25 @@ export function getSlotSizes(bid) {
  * @returns {*[]}
  */
 export function getAllMediaSizes(bid) {
-  let playerSizes = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-  let videoSizes = utils.deepAccess(bid, 'mediaTypes.video.sizes');
-  let bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
+  let playerSizes = deepAccess(bid, 'mediaTypes.video.playerSize');
+  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
+  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
 
   const sizes = [];
 
-  if (utils.isArray(playerSizes)) {
+  if (isArray(playerSizes)) {
     playerSizes.forEach((s) => {
       sizes.push(s);
     })
   }
 
-  if (utils.isArray(videoSizes)) {
+  if (isArray(videoSizes)) {
     videoSizes.forEach((s) => {
       sizes.push(s);
     })
   }
 
-  if (utils.isArray(bannerSizes)) {
+  if (isArray(bannerSizes)) {
     bannerSizes.forEach((s) => {
       sizes.push(s);
     })
@@ -62,7 +73,7 @@ export function getAllMediaSizes(bid) {
 }
 
 const getQueryVariable = (variable) => {
-  let value = utils.getParameterByName(variable);
+  let value = getParameterByName(variable);
   if (value === '') {
     value = null;
   }
@@ -80,19 +91,19 @@ export const mapSlotsData = function(validBidRequests) {
   validBidRequests.forEach(bid => {
     const bidObj = {};
     // get the pacement and page ids
-    let placementId = utils.getValue(bid.params, 'placementId');
-    let pageId = utils.getValue(bid.params, 'pageId');
-    let adUnitElementId = utils.getValue(bid.params, 'adUnitElementId');
+    let placementId = getValue(bid.params, 'placementId');
+    let pageId = getValue(bid.params, 'pageId');
+    let adUnitElementId = getValue(bid.params, 'adUnitElementId');
     // get the rest of the auction/bid/transaction info
-    bidObj.auctionId = utils.getBidIdParameter('auctionId', bid);
-    bidObj.adUnitCode = utils.getBidIdParameter('adUnitCode', bid);
+    bidObj.auctionId = getBidIdParameter('auctionId', bid);
+    bidObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
     bidObj.adUnitElementId = adUnitElementId;
-    bidObj.bidId = utils.getBidIdParameter('bidId', bid);
-    bidObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
+    bidObj.bidId = getBidIdParameter('bidId', bid);
+    bidObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
     bidObj.placementId = placementId;
     bidObj.pageId = pageId;
-    bidObj.mediaTypes = utils.getBidIdParameter('mediaTypes', bid);
-    bidObj.transactionId = utils.getBidIdParameter('transactionId', bid);
+    bidObj.mediaTypes = getBidIdParameter('mediaTypes', bid);
+    bidObj.transactionId = getBidIdParameter('transactionId', bid);
     bidObj.sizes = getSlotSizes(bid);
     slots.push(bidObj);
   });
@@ -117,13 +128,13 @@ export const spec = {
       bid.params.adUnitElementId = bid.code;
     }
 
-    if (!bid.params.placementId || !utils.isNumber(bid.params.placementId)) {
-      utils.logError('placementId not provided or invalid');
+    if (!bid.params.placementId || !isNumber(bid.params.placementId)) {
+      logError('placementId not provided or invalid');
       return false;
     }
 
-    if (!bid.params.pageId || !utils.isNumber(bid.params.pageId)) {
-      utils.logError('pageId not provided');
+    if (!bid.params.pageId || !isNumber(bid.params.pageId)) {
+      logError('pageId not provided');
       return false;
     }
 
@@ -145,7 +156,7 @@ export const spec = {
       referer = getRefererInfo().referer;
       slots = mapSlotsData(validBidRequests);
     } catch (e) {
-      utils.logWarn(e);
+      logWarn(e);
     }
 
     let refgroups = [];
@@ -211,17 +222,17 @@ export const spec = {
         // IF BANNER
         // ------------------------------------
 
-        if (utils.deepAccess(bidReq, 'mediaTypes.banner')) {
+        if (deepAccess(bidReq, 'mediaTypes.banner')) {
           bidResponse.ad = br.html;
         }
         // ------------------------------------
         // IF VIDEO
         // ------------------------------------
-        if (utils.deepAccess(bidReq, 'mediaTypes.video')) {
+        if (deepAccess(bidReq, 'mediaTypes.video')) {
           mediaType = VIDEO;
           bidResponse.vastXml = br.vastXml;
           bidResponse.videoScript = br.html;
-          const mediaTypeContext = utils.deepAccess(bidReq, 'mediaTypes.video.context');
+          const mediaTypeContext = deepAccess(bidReq, 'mediaTypes.video.context');
           if (mediaTypeContext === OUTSTREAM) {
             const r = Renderer.install({
               id: bidResponse.requestId,
@@ -229,8 +240,8 @@ export const spec = {
               url: RENDERER_URL,
               loaded: false,
               config: {
-                ...utils.deepAccess(bidReq, 'mediaTypes.video'),
-                ...utils.deepAccess(br, 'outstream', {})
+                ...deepAccess(bidReq, 'mediaTypes.video'),
+                ...deepAccess(br, 'outstream', {})
               }
             });
 
@@ -243,7 +254,7 @@ export const spec = {
                 }
               });
             } catch (err) {
-              utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+              logWarn('Prebid Error calling setRender on newRenderer', err);
             }
           }
         }
@@ -252,7 +263,7 @@ export const spec = {
         bidResponses.push(bidResponse);
       });
     } catch (e) {
-      utils.logWarn(e);
+      logWarn(e);
     }
 
     return bidResponses;
