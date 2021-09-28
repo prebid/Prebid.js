@@ -77,7 +77,7 @@ var Slot = function Slot(elementId, pathId) {
       return this;
     },
 
-    updateTargetingFromMap: function(targetingMap) {
+    updateTargetingFromMap: function updateTargetingFromMap(targetingMap) {
       Object.keys(targetingMap).forEach(key => this.setTargeting(key, targetingMap[key]))
     }
   };

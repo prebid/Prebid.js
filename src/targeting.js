@@ -382,7 +382,7 @@ export function newTargeting(auctionManager) {
         .forEach(targetId => {
           Object.keys(targetingConfig[targetId]).forEach(key => {
             let value = targetingConfig[targetId][key];
-            if (typeof value === 'string' && value.indexOf(',') != -1) {
+            if (typeof value === 'string' && value.indexOf(',') !== -1) {
               // due to the check the array will be formed only if string has ',' else plain string will be assigned as value
               value = value.split(',');
             }
