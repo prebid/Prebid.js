@@ -3,7 +3,7 @@
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
 
 var _ = require('lodash');
-var webpackConf = require('./webpack.conf');
+var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
 
 function newWebpackConfig(codeCoverage) {

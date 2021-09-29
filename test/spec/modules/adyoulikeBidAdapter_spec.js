@@ -158,6 +158,17 @@ describe('Adyoulike Adapter', function () {
     }
   };
 
+  const sentBidVideo = {
+    'bid_id_0': {
+      'PlacementID': 'e622af275681965d3095808561a1e510',
+      'TransactionID': 'e8355240-d976-4cd5-a493-640656fe08e8',
+      'AvailableSizes': '',
+      'Video': {
+        playerSize: [640, 480]
+      }
+    }
+  };
+
   const sentNativeImageType = {
     'additional': {
       'sent': [
@@ -382,6 +393,28 @@ describe('Adyoulike Adapter', function () {
     meta: testMetaObject
   }];
 
+  const responseWithSingleVideo = [{
+    'BidID': 'bid_id_0',
+    'Placement': 'placement_0',
+    'Vast': 'PFZBU1Q+RW1wdHkgc2FtcGxlPC92YXN0Pg==',
+    'Price': 0.5,
+    'Height': 600,
+  }];
+
+  const videoResult = [{
+    cpm: 0.5,
+    creativeId: undefined,
+    currency: 'USD',
+    netRevenue: true,
+    requestId: 'bid_id_0',
+    ttl: 3600,
+    mediaType: 'video',
+    meta: {
+      advertiserDomains: []
+    },
+    vastXml: '<VAST>Empty sample</vast>'
+  }];
+
   const responseWithMultiplePlacements = [
     {
       'BidID': 'bid_id_0',
@@ -422,6 +455,17 @@ describe('Adyoulike Adapter', function () {
       'transactionId': 'bid_id_1_transaction_id'
     };
 
+    let bidWSize = {
+      'bidId': 'bid_id_1',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-1',
+      'params': {
+        'placement': 'placement_1',
+        'size': [250, 300],
+      },
+      'transactionId': 'bid_id_1_transaction_id'
+    };
+
     let nativeBid = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
@@ -439,6 +483,10 @@ describe('Adyoulike Adapter', function () {
 
     it('should return true when required params found', function () {
       expect(!!spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true when required params found with size in bid params', function () {
+      expect(!!spec.isBidRequestValid(bidWSize)).to.equal(true);
     });
 
     it('should return true when required params found for native ad', function () {
@@ -673,6 +721,14 @@ describe('Adyoulike Adapter', function () {
       noMeta[0].meta = { advertiserDomains: [] };
 
       expect(result).to.deep.equal(noMeta);
+    });
+
+    it('receive Vast reponse with Video ad', function () {
+      serverResponse.body = responseWithSingleVideo;
+      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidVideo) + '}'});
+
+      expect(result.length).to.equal(1);
+      expect(result).to.deep.equal(videoResult);
     });
   });
 });

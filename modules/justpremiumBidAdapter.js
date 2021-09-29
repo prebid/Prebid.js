@@ -4,7 +4,7 @@ import { deepAccess } from '../src/utils.js';
 const BIDDER_CODE = 'justpremium'
 const GVLID = 62
 const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = '1.7'
+const JP_ADAPTER_VERSION = '1.8'
 const pixels = []
 
 export const spec = {
@@ -63,6 +63,10 @@ export const spec = {
     payload.version = {
       prebid: '$prebid.version$',
       jp_adapter: JP_ADAPTER_VERSION
+    }
+
+    if (validBidRequests[0].schain) {
+      payload.schain = validBidRequests[0].schain;
     }
 
     const payloadString = JSON.stringify(payload)
