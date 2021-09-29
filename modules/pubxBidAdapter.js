@@ -1,5 +1,5 @@
+import { deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'pubx';
 const BID_ENDPOINT = 'https://api.primecaster.net/adlogue/api/slot/bid';
@@ -43,7 +43,7 @@ export const spec = {
         ad: body.adm
       };
       if (body.adomains) {
-        utils.deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(body.adomains) ? body.adomains : [body.adomains]);
+        deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(body.adomains) ? body.adomains : [body.adomains]);
       }
       bidResponses.push(bidResponse);
     } else {};
