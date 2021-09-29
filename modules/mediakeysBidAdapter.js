@@ -42,22 +42,22 @@ const ORTB_NATIVE_PARAMS = {
 // https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
 const ORTB_VIDEO_PARAMS = {
   mimes: value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
-  minduration: value => utils.isInteger(value),
-  maxduration: value => utils.isInteger(value),
+  minduration: value => isInteger(value),
+  maxduration: value => isInteger(value),
   protocols: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].indexOf(v) !== -1),
-  w: value => utils.isInteger(value),
-  h: value => utils.isInteger(value),
-  startdelay: value => utils.isInteger(value),
+  w: value => isInteger(value),
+  h: value => isInteger(value),
+  startdelay: value => isInteger(value),
   placement: value => [1, 2, 3, 4, 5].indexOf(value) !== -1,
   linearity: value => [1, 2].indexOf(value) !== -1,
   skip: value => [0, 1].indexOf(value) !== -1,
-  skipmin: value => utils.isInteger(value),
-  skipafter: value => utils.isInteger(value),
-  sequence: value => utils.isInteger(value),
+  skipmin: value => isInteger(value),
+  skipafter: value => isInteger(value),
+  sequence: value => isInteger(value),
   battr: value => Array.isArray(value) && value.every(v => Array.from({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
-  maxextended: value => utils.isInteger(value),
-  minbitrate: value => utils.isInteger(value),
-  maxbitrate: value => utils.isInteger(value),
+  maxextended: value => isInteger(value),
+  minbitrate: value => isInteger(value),
+  maxbitrate: value => isInteger(value),
   boxingallowed: value => [0, 1].indexOf(value) !== -1,
   playbackmethod: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1),
   playbackend: value => [1, 2, 3].indexOf(value) !== -1,
@@ -150,7 +150,7 @@ function getHighestFloor(bid) {
   for (let mediaType in bid.mediaTypes) {
     const floor = getFloor(bid, mediaType);
 
-    if (utils.isNumber(floor)) {
+    if (isNumber(floor)) {
       floors.push(floor);
     }
   }
@@ -242,14 +242,14 @@ function createBannerImp(bid) {
  */
 function createNativeImp(bid) {
   if (!bid.nativeParams) {
-    utils.logWarn(`${BIDDER_CODE}: bid.nativeParams object has not been found.`);
+    logWarn(`${BIDDER_CODE}: bid.nativeParams object has not been found.`);
     return
   }
 
-  const nativeParams = utils.deepClone(bid.nativeParams);
+  const nativeParams = deepClone(bid.nativeParams);
 
-  const nativeAdUnitParams = utils.deepAccess(bid, 'mediaTypes.native', {});
-  const nativeBidderParams = utils.deepAccess(bid, 'params.native', {});
+  const nativeAdUnitParams = deepAccess(bid, 'mediaTypes.native', {});
+  const nativeBidderParams = deepAccess(bid, 'params.native', {});
 
   const extraParams = {
     ...nativeAdUnitParams,
@@ -291,7 +291,7 @@ function createNativeImp(bid) {
 
   // Prebid.js "image" type support.
   // Add some defaults to support special type provided by Prebid.js `mediaTypes.native.type: "image"`
-  const nativeImageType = utils.deepAccess(bid, 'mediaTypes.native.type');
+  const nativeImageType = deepAccess(bid, 'mediaTypes.native.type');
   if (nativeImageType === 'image') {
     // Default value is ones of the recommended by the spec: https://www.iab.com/wp-content/uploads/2018/03/OpenRTB-Native-Ads-Specification-Final-1.2.pdf
     nativeParams.title.len = 90;
@@ -301,7 +301,7 @@ function createNativeImp(bid) {
     if (nativeParams.hasOwnProperty(key)) {
       const internalNativeAsset = find(NATIVE_ASSETS_MAPPING, ref => ref.name === key);
       if (!internalNativeAsset) {
-        utils.logWarn(`${BIDDER_CODE}: the asset "${key}" has not been found in Prebid assets map. Skipped for request.`);
+        logWarn(`${BIDDER_CODE}: the asset "${key}" has not been found in Prebid assets map. Skipped for request.`);
         continue;
       }
 
@@ -320,7 +320,7 @@ function createNativeImp(bid) {
               ext: param.ext
             }
           } else {
-            utils.logWarn(`${BIDDER_CODE}: "title.length" property for native asset is required. Skipped for request.`)
+            logWarn(`${BIDDER_CODE}: "title.length" property for native asset is required. Skipped for request.`)
             continue;
           }
           break;
@@ -384,8 +384,8 @@ function createNativeImp(bid) {
  * @returns {object}
  */
 function createVideoImp(bid) {
-  const videoAdUnitParams = utils.deepAccess(bid, 'mediaTypes.video', {});
-  const videoBidderParams = utils.deepAccess(bid, 'params.video', {});
+  const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {});
+  const videoBidderParams = deepAccess(bid, 'params.video', {});
   const computedParams = {};
 
   // Special case for playerSize.
@@ -410,7 +410,7 @@ function createVideoImp(bid) {
       if (ORTB_VIDEO_PARAMS[name](videoParams[name])) {
         video[name] = videoParams[name];
       } else {
-        utils.logWarn(`${BIDDER_CODE}: the OpenRTB video param ${name} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
+        logWarn(`${BIDDER_CODE}: the OpenRTB video param ${name} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
       }
     }
   });
@@ -435,7 +435,7 @@ function createImp(bid) {
   // There is no default floor. bidfloor is set only
   // if the priceFloors module is activated and returns a valid floor.
   const floor = getHighestFloor(bid);
-  if (utils.isNumber(floor)) {
+  if (isNumber(floor)) {
     imp.bidfloor = floor;
   }
 
@@ -501,7 +501,7 @@ function getPrimaryCatFromResponse(cat) {
 function nativeBidResponseHandler(bid) {
   const nativeAdm = JSON.parse(bid.adm);
   if (!nativeAdm || !nativeAdm.assets.length) {
-    utils.logError(`${BIDDER_CODE}: invalid native response.`);
+    logError(`${BIDDER_CODE}: invalid native response.`);
     return;
   }
 
