@@ -3,7 +3,7 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { triggerPixel, isFn, deepAccess, getAdUnitSizes, parseGPTSingleSizeArrayToRtbSize, _map } from '../src/utils.js';
 
 const BIDDER_CODE = 'revcontent';
 const NATIVE_PARAMS = {
@@ -160,7 +160,7 @@ export const spec = {
   },
   onBidWon: function (bid) {
     if (bid.nurl) {
-      utils.triggerPixel(bid.nurl);
+      triggerPixel(bid.nurl);
     }
     return true;
   }
@@ -215,14 +215,14 @@ function extractHostname(url) {
 
 function buildImp(bid, id) {
   let bidfloor;
-  if (utils.isFn(bid.getFloor)) {
+  if (isFn(bid.getFloor)) {
     bidfloor = bid.getFloor({
       currency: 'USD',
       mediaType: '*',
       size: '*'
     }).floor;
   } else {
-    bidfloor = utils.deepAccess(bid, `params.bidfloor`) || 0.1;
+    bidfloor = deepAccess(bid, `params.bidfloor`) || 0.1;
   }
 
   let imp = {
@@ -236,17 +236,17 @@ function buildImp(bid, id) {
     secure: '1'
   };
 
-  let bannerReq = utils.deepAccess(bid, `mediaTypes.banner`);
-  let nativeReq = utils.deepAccess(bid, `mediaTypes.native`);
+  let bannerReq = deepAccess(bid, `mediaTypes.banner`);
+  let nativeReq = deepAccess(bid, `mediaTypes.native`);
   if (bannerReq) {
-    let sizes = utils.getAdUnitSizes(bid);
+    let sizes = getAdUnitSizes(bid);
     imp.banner = {
       w: sizes[0][0],
       h: sizes[0][1],
-      format: sizes.map(wh => utils.parseGPTSingleSizeArrayToRtbSize(wh)),
+      format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
     }
   } else if (nativeReq) {
-    const assets = utils._map(bid.nativeParams, (bidParams, key) => {
+    const assets = _map(bid.nativeParams, (bidParams, key) => {
       const props = NATIVE_PARAMS[key];
       const asset = {
         required: bidParams.required & 1

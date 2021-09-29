@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { tryAppendQueryString, getBidIdParameter } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -33,23 +33,23 @@ export const spec = {
       const URL = 'https://d.socdm.com/adsv/v1';
       const url = validReq.params.debug ? DEBUG_URL : URL;
       let data = ``;
-      data = utils.tryAppendQueryString(data, 'posall', 'SSPLOC');
-      const id = utils.getBidIdParameter('id', validReq.params);
-      data = utils.tryAppendQueryString(data, 'id', id);
-      data = utils.tryAppendQueryString(data, 'sdktype', '0');
-      data = utils.tryAppendQueryString(data, 'hb', 'true');
-      data = utils.tryAppendQueryString(data, 't', 'json3');
-      data = utils.tryAppendQueryString(data, 'transactionid', validReq.transactionId);
-      data = utils.tryAppendQueryString(data, 'sizes', getSizes(validReq));
-      data = utils.tryAppendQueryString(data, 'currency', getCurrencyType());
-      data = utils.tryAppendQueryString(data, 'pbver', '$prebid.version$');
-      data = utils.tryAppendQueryString(data, 'sdkname', 'prebidjs');
-      data = utils.tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
+      data = tryAppendQueryString(data, 'posall', 'SSPLOC');
+      const id = getBidIdParameter('id', validReq.params);
+      data = tryAppendQueryString(data, 'id', id);
+      data = tryAppendQueryString(data, 'sdktype', '0');
+      data = tryAppendQueryString(data, 'hb', 'true');
+      data = tryAppendQueryString(data, 't', 'json3');
+      data = tryAppendQueryString(data, 'transactionid', validReq.transactionId);
+      data = tryAppendQueryString(data, 'sizes', getSizes(validReq));
+      data = tryAppendQueryString(data, 'currency', getCurrencyType());
+      data = tryAppendQueryString(data, 'pbver', '$prebid.version$');
+      data = tryAppendQueryString(data, 'sdkname', 'prebidjs');
+      data = tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
-        data = utils.tryAppendQueryString(data, 'imark', '1');
+        data = tryAppendQueryString(data, 'imark', '1');
       }
-      data = utils.tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
+      data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);
