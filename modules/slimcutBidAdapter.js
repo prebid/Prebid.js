@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { getValue, parseSizesInput, getBidIdParameter } as utils from '../src/utils.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
@@ -19,7 +19,7 @@ export const spec = {
      */
   isBidRequestValid: function(bid) {
     let isValid = false;
-    if (typeof bid.params !== 'undefined' && !isNaN(parseInt(utils.getValue(bid.params, 'placementId'))) && parseInt(utils.getValue(bid.params, 'placementId')) > 0) {
+    if (typeof bid.params !== 'undefined' && !isNaN(parseInt(getValue(bid.params, 'placementId'))) && parseInt(getValue(bid.params, 'placementId')) > 0) {
       isValid = true;
     }
     return isValid;
@@ -100,14 +100,14 @@ export const spec = {
 }
 function buildRequestObject(bid) {
   const reqObj = {};
-  let placementId = utils.getValue(bid.params, 'placementId');
-  reqObj.sizes = utils.parseSizesInput(bid.sizes);
-  reqObj.bidId = utils.getBidIdParameter('bidId', bid);
-  reqObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
+  let placementId = getValue(bid.params, 'placementId');
+  reqObj.sizes = parseSizesInput(bid.sizes);
+  reqObj.bidId = getBidIdParameter('bidId', bid);
+  reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId);
-  reqObj.adUnitCode = utils.getBidIdParameter('adUnitCode', bid);
-  reqObj.auctionId = utils.getBidIdParameter('auctionId', bid);
-  reqObj.transactionId = utils.getBidIdParameter('transactionId', bid);
+  reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
+  reqObj.auctionId = getBidIdParameter('auctionId', bid);
+  reqObj.transactionId = getBidIdParameter('transactionId', bid);
   return reqObj;
 }
 function getReferrerInfo(bidderRequest) {
@@ -117,4 +117,5 @@ function getReferrerInfo(bidderRequest) {
   }
   return ref;
 }
+
 registerBidder(spec);
