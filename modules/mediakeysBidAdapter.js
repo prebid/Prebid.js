@@ -7,7 +7,7 @@ import { createEidsArray } from './userId/eids.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
-const ENDPOINT = 'https://prebid.eu-west-1.rtbd.inte.bidder-staging.mediakeys.io/bids';
+const ENDPOINT = 'https://prebid.eu-central-1.bidder.mediakeys.io/bids';
 const GVLID = 498;
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const DEFAULT_CURRENCY = 'USD';
