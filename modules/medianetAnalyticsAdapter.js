@@ -66,6 +66,7 @@ class ErrorLogger {
     this.project = 'prebidanalytics';
     this.dn = pageDetails.domain || '';
     this.requrl = pageDetails.requrl || '';
+    // eslint-disable-next-line no-self-assign
     this.event = this.event;
     this.pbversion = PREBID_VERSION;
     this.cid = config.cid || '';
@@ -199,7 +200,7 @@ class Configure {
 }
 
 class PageDetail {
-  constructor () {
+  constructor() {
     const canonicalUrl = this._getUrlFromSelector('link[rel="canonical"]', 'href');
     const ogUrl = this._getUrlFromSelector('meta[property="og:url"]', 'content');
     const twitterUrl = this._getUrlFromSelector('meta[name="twitter:url"]', 'content');
@@ -236,7 +237,7 @@ class PageDetail {
       if (element !== null && element[attribute]) {
         return element[attribute];
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   _getAbsoluteUrl(url) {
@@ -291,7 +292,7 @@ class AdSlot {
       ismn: this.medianetPresent,
       vplcmtt: this.context,
     },
-    this.adext && {'adext': JSON.stringify(this.adext)},
+    this.adext && { 'adext': JSON.stringify(this.adext) },
     );
   }
 }
@@ -439,7 +440,7 @@ class Auction {
   }
 }
 
-function auctionInitHandler({auctionId, adUnits, timeout, timestamp, bidderRequests}) {
+function auctionInitHandler({ auctionId, adUnits, timeout, timestamp, bidderRequests }) {
   if (auctionId && auctions[auctionId] === undefined) {
     auctions[auctionId] = new Auction(auctionId);
     auctions[auctionId].auctionInitTime = timestamp;
@@ -447,7 +448,7 @@ function auctionInitHandler({auctionId, adUnits, timeout, timestamp, bidderReque
   addAddSlots(auctionId, adUnits, timeout);
   const floorData = utils.deepAccess(bidderRequests, '0.bids.0.floorData');
   if (floorData) {
-    auctions[auctionId].floorData = {...floorData};
+    auctions[auctionId].floorData = { ...floorData };
   }
 }
 
@@ -461,8 +462,8 @@ function addAddSlots(auctionId, adUnits, tmax) {
     let adext = {};
 
     const mediaTypeMap = {};
-    const oSizes = {banner: [], video: []};
-    adUnits.forEach(({mediaTypes, sizes, ext}) => {
+    const oSizes = { banner: [], video: [] };
+    adUnits.forEach(({ mediaTypes, sizes, ext }) => {
       mediaTypes = mediaTypes || {};
       adext = Object.assign(adext, ext || utils.deepAccess(mediaTypes, 'banner.ext'));
       context = utils.deepAccess(mediaTypes, 'video.context') || context;
@@ -479,7 +480,7 @@ function addAddSlots(auctionId, adUnits, tmax) {
     const allMediaTypeSizes = [].concat(oSizes.banner, oSizes.native, oSizes.video);
     const mediaTypes = Object.keys(mediaTypeMap).join('|');
 
-    auctions[auctionId].addSlot({adUnitCode, supplyAdCode, mediaTypes, allMediaTypeSizes, context, tmax, adext});
+    auctions[auctionId].addSlot({ adUnitCode, supplyAdCode, mediaTypes, allMediaTypeSizes, context, tmax, adext });
   });
 }
 
@@ -523,7 +524,7 @@ function _getSizes(mediaTypes, sizes) {
 
 function bidResponseHandler(bid) {
   const { width, height, mediaType, cpm, requestId, timeToRespond, auctionId, dealId } = bid;
-  const {originalCpm, bidderCode, creativeId, adId, currency} = bid;
+  const { originalCpm, bidderCode, creativeId, adId, currency } = bid;
 
   if (!(auctions[auctionId] instanceof Auction)) {
     return;
@@ -581,7 +582,7 @@ function noBidResponseHandler({ auctionId, bidId }) {
 }
 
 function bidTimeoutHandler(timedOutBids) {
-  timedOutBids.map(({bidId, auctionId}) => {
+  timedOutBids.map(({ bidId, auctionId }) => {
     if (!(auctions[auctionId] instanceof Auction)) {
       return;
     }
@@ -593,7 +594,7 @@ function bidTimeoutHandler(timedOutBids) {
   })
 }
 
-function auctionEndHandler({auctionId, auctionEnd, adUnitCodes}) {
+function auctionEndHandler({ auctionId, auctionEnd, adUnitCodes }) {
   if (!(auctions[auctionId] instanceof Auction)) {
     return;
   }
@@ -626,7 +627,7 @@ function setTargetingHandler(params) {
       const winnerAdId = params[adunit][CONSTANTS.TARGETING_KEYS.AD_ID];
       let winningBid;
       let bidAdIds = Object.keys(targetingObj).map(k => targetingObj[k]);
-      auctionObj.bids.filter((bid) => bidAdIds.indexOf(bid.adId) !== -1).map(function(bid) {
+      auctionObj.bids.filter((bid) => bidAdIds.indexOf(bid.adId) !== -1).map(function (bid) {
         bid.iwb = 1;
         if (bid.adId === winnerAdId) {
           winningBid = bid;
@@ -742,19 +743,19 @@ function fireAuctionLog(acid, adtag, logType) {
     bidParams = auctions[acid].getWinnerAdslotBid(adtag);
     commonParams.lper = 1;
   } else {
-    bidParams = auctions[acid].getAdslotBids(adtag).map(({winner, ...restParams}) => restParams);
+    bidParams = auctions[acid].getAdslotBids(adtag).map(({ winner, ...restParams }) => restParams);
     delete commonParams.wts;
   }
   let mnetPresent = bidParams.filter(b => b.pvnm === MEDIANET_BIDDER_CODE).length > 0;
   if (!mnetPresent) {
-    bidParams = bidParams.map(({mpvid, crid, ext, pubcrid, ...restParams}) => restParams);
+    bidParams = bidParams.map(({ mpvid, crid, ext, pubcrid, ...restParams }) => restParams);
   }
 
   let url = formatQS(commonParams) + '&';
-  bidParams.forEach(function(bidParams) {
+  bidParams.forEach(function (bidParams) {
     url = url + formatQS(bidParams) + '&';
   });
-  url = url + formatQS({targ: targeting});
+  url = url + formatQS({ targ: targeting });
   firePixel(url);
 }
 
@@ -803,7 +804,7 @@ class URL {
   }
 }
 
-let medianetAnalytics = Object.assign(adapter({URL, analyticsType}), {
+let medianetAnalytics = Object.assign(adapter({ URL, analyticsType }), {
   getlogsQueue() {
     return logsQueue;
   },
@@ -840,11 +841,11 @@ let medianetAnalytics = Object.assign(adapter({URL, analyticsType}), {
         auctionEndHandler(args);
         break;
       }
-      case CONSTANTS.EVENTS.SET_TARGETING : {
+      case CONSTANTS.EVENTS.SET_TARGETING: {
         setTargetingHandler(args);
         break;
       }
-      case CONSTANTS.EVENTS.BIDDER_DONE : {
+      case CONSTANTS.EVENTS.BIDDER_DONE: {
         setBidderDone(args);
         break;
       }
@@ -853,7 +854,8 @@ let medianetAnalytics = Object.assign(adapter({URL, analyticsType}), {
         break;
       }
     }
-  }});
+  }
+});
 
 medianetAnalytics.originEnableAnalytics = medianetAnalytics.enableAnalytics;
 

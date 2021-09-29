@@ -2,9 +2,10 @@
 const allowedModules = require("./allowedModules");
 
 module.exports = {
-  "env": {
-    "browser": true,
-    "commonjs": true
+  parser: 'babel-eslint',
+  env: {
+    browser: true,
+    commonjs: true
   },
   "settings": {
     "import/resolver": {
@@ -21,8 +22,9 @@ module.exports = {
   "globals": {
     "$$PREBID_GLOBAL$$": false
   },
-  "parserOptions": {
-    "sourceType": "module"
+  parserOptions: {
+    sourceType: 'module',
+    ecmaVersion: 2020,
   },
   "rules": {
     "comma-dangle": "off",
