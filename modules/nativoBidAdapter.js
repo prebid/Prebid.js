@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 // import { config } from 'src/config'
@@ -120,7 +120,7 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     // If the bid response was empty, return []
-    if (!response || !response.body || utils.isEmpty(response.body)) return []
+    if (!response || !response.body || isEmpty(response.body)) return []
 
     try {
       const body =
@@ -216,7 +216,7 @@ export const spec = {
     let body
     serverResponses.forEach((response) => {
       // If the bid response was empty, return []
-      if (!response || !response.body || utils.isEmpty(response.body)) {
+      if (!response || !response.body || isEmpty(response.body)) {
         return syncs
       }
 
