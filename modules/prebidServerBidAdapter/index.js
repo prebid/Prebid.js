@@ -537,7 +537,7 @@ const OPEN_RTB_PROTOCOL = {
                 if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
                   throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
                 }
-                if (Array.isArray(params.aspect_ratios.ratio_width && params.aspect_ratios.ratio_height) {
+                if (Array.isArray(params.aspect_ratios.ratio_width && params.aspect_ratios.ratio_height)) {
                   // pass aspect_ratios as ext data I guess?
                   asset.ext = {
                     aspectratios: params.aspect_ratios.map(
