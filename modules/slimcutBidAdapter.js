@@ -1,4 +1,4 @@
-import { getValue, parseSizesInput, getBidIdParameter } as utils from '../src/utils.js';
+import { getValue, parseSizesInput, getBidIdParameter } from '../src/utils.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
