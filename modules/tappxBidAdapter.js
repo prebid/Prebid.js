@@ -9,7 +9,7 @@ import { Renderer } from '../src/Renderer.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.0818';
+const TAPPX_BIDDER_VERSION = '0.1.0921';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -195,6 +195,9 @@ function interpretBid(serverBid, request) {
   }
 
   if (typeof serverBid.dealId !== 'undefined') { bidReturned.dealId = serverBid.dealId }
+  if (typeof serverBid.lurl != 'undefined') { bidReturned.lurl = serverBid.lurl }
+  if (typeof serverBid.nurl != 'undefined') { bidReturned.nurl = serverBid.nurl }
+  if (typeof serverBid.burl != 'undefined') { bidReturned.burl = serverBid.burl }
 
   if (typeof request.bids.mediaTypes !== 'undefined' && typeof request.bids.mediaTypes.video !== 'undefined') {
     bidReturned.vastXml = serverBid.adm;
@@ -323,6 +326,12 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     }
 
     video.mimes = videoMediaType.mimes;
+
+    let videoExt = {};
+    if ((typeof videoMediaType.rewarded !== 'undefined') && videoMediaType.rewarded == 1) {
+      videoExt.rewarded = videoMediaType.rewarded;
+    }
+    video.ext = videoExt;
 
     imp.video = video;
   }
@@ -492,7 +501,8 @@ function outstreamRender(bid, request) {
       targetId: bid.adUnitCode,
       adResponse: bid.adResponse,
       rendererOptions: {
-        content: bid.vastXml
+        content: bid.vastXml,
+        skip: (typeof bid.params[0].video.skip != 'undefined' && bid.params[0].video.skip > 0) ? bid.params[0].video.skip : 0
       }
     });
   });
@@ -539,28 +549,16 @@ export function _checkParamDataType(key, value, datatype) {
 }
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
-  let domainUrl = deepAccess(validBidRequests, 'params.domainUrl');
+  let referrer = deepAccess(bidderRequest, 'refererInfo.referer');
+  let page = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || deepAccess(window, 'location.href');
+  let paramUrl = deepAccess(validBidRequests, 'params.domainUrl') || config.getConfig('pageUrl');
 
-  if (typeof domainUrl == 'undefined' || domainUrl == null) {
-    domainUrl = config.getConfig('pageUrl') || deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
-  }
-
-  if (typeof domainUrl == 'undefined' || domainUrl == null) {
-    try {
-      domainUrl = window.top.document.head.querySelector('link[rel="canonical"][href]').getAttribute('href');
-    } catch (error) {
-      domainUrl = undefined;
-    }
-  }
+  let domainUrl = referrer || page || paramUrl;
 
   try {
     domainUrl = domainUrl.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img)[0].replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?/img, '');
   } catch (error) {
     domainUrl = undefined;
-  }
-
-  if (typeof domainUrl == 'undefined' || domainUrl == null) {
-    domainUrl = window.location.hostname;
   }
 
   return domainUrl;
