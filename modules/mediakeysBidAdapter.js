@@ -7,7 +7,7 @@ import { createEidsArray } from './userId/eids.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
-const ENDPOINT = 'https://prebid.eu-central-1.bidder.mediakeys.io/bids';
+const ENDPOINT = 'https://prebid.eu-west-1.rtbd.inte.bidder-staging.mediakeys.io/bids';
 const GVLID = 498;
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const DEFAULT_CURRENCY = 'USD';
@@ -737,8 +737,12 @@ export const spec = {
               // Mediakeys bidder does not provide inline XML in the bid response
               // newBid.vastXml = bid.ext.vast_url;
 
+              // For instream video, disable server cache as vast is generated per bid request
+              newBid.videoCacheKey = 'no_cache';
+
               // The vast URL is server independently and must be fetched before video rendering in the renderer
-              newBid.vastUrl = bid.ext.vast_url;
+              // appending '&no_cache' is safe and fast as the vast url always have parameters
+              newBid.vastUrl = bid.ext.vast_url + '&no_cache';
             }
 
             bidResponses.push(newBid);

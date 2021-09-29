@@ -759,7 +759,7 @@ describe('mediakeysBidAdapter', function () {
     });
 
     it('interprets video bid response', function () {
-      const vastUrl = 'https://url.local';
+      const vastUrl = 'https://url.local?req=content';
       const bidRequests = [utils.deepClone(bidVideo)];
       const request = spec.buildRequests(bidRequests, bidderRequest);
 
@@ -773,7 +773,8 @@ describe('mediakeysBidAdapter', function () {
       expect(response[0].mediaType).to.equal('video');
       expect(response[0].meta.mediaType).to.equal('video');
       expect(response[0].vastXml).to.not.exist;
-      expect(response[0].vastUrl).to.equal(vastUrl);
+      expect(response[0].vastUrl).to.equal(vastUrl + '&no_cache');
+      expect(response[0].videoCacheKey).to.equal('no_cache');
     });
 
     describe('Native response', function () {
