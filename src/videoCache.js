@@ -66,7 +66,7 @@ function wrapURI(uri, impUrl) {
  * @return XML.
  */
 function wrapVastXml(vastXml) {
-  return vastXml.replace(/<AdSystem.*>.*<\/AdSystem>/, "<AdSystem>prebid.org wrapper</AdSystem>");
+  return vastXml.replace(/<AdSystem.*>.*<\/AdSystem>/, '<AdSystem>prebid.org wrapper</AdSystem>');
 }
 
 /**

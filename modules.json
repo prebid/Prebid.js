@@ -1,6 +1,7 @@
 [
   "adlooxAnalyticsAdapter",
   "adlooxRtdProvider",
+  "sirdataRtdProvider",
   "currency",
   "consentManagement",
   "consentManagementUsp",
