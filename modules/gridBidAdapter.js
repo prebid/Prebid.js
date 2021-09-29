@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isEmpty, deepAccess, logError, parseGPTSingleSizeArrayToRtbSize, generateUUID, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -103,7 +103,7 @@ export const spec = {
           impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
         }
       }
-      if (!utils.isEmpty(keywords)) {
+      if (!isEmpty(keywords)) {
         if (!pageKeywords) {
           pageKeywords = keywords;
         }
@@ -197,8 +197,8 @@ export const spec = {
       request.user = user;
     }
 
-    const userKeywords = utils.deepAccess(config.getConfig('ortb2.user'), 'keywords') || null;
-    const siteKeywords = utils.deepAccess(config.getConfig('ortb2.site'), 'keywords') || null;
+    const userKeywords = deepAccess(config.getConfig('ortb2.user'), 'keywords') || null;
+    const siteKeywords = deepAccess(config.getConfig('ortb2.site'), 'keywords') || null;
 
     if (userKeywords) {
       pageKeywords = pageKeywords || {};
@@ -283,7 +283,7 @@ export const spec = {
         _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses);
       });
     }
-    if (errorMessage) utils.logError(errorMessage);
+    if (errorMessage) logError(errorMessage);
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
@@ -339,11 +339,11 @@ function _getFloor (mediaTypes, bid) {
 
 function _getBidFromResponse(respItem) {
   if (!respItem) {
-    utils.logError(LOG_ERROR_MESS.emptySeatbid);
+    logError(LOG_ERROR_MESS.emptySeatbid);
   } else if (!respItem.bid) {
-    utils.logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
+    logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
   } else if (!respItem.bid[0]) {
-    utils.logError(LOG_ERROR_MESS.noBid);
+    logError(LOG_ERROR_MESS.noBid);
   }
   return respItem && respItem.bid && respItem.bid[0];
 }
@@ -382,8 +382,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
           bidResponse.adResponse = {
             content: bidResponse.vastXml
           };
-        }
-        if (serverBid.nurl) {
+        } else if (serverBid.nurl) {
           bidResponse.vastUrl = serverBid.nurl;
         }
         bidResponse.mediaType = VIDEO;
@@ -401,7 +400,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
     }
   }
   if (errorMessage) {
-    utils.logError(errorMessage);
+    logError(errorMessage);
   }
 }
 
@@ -410,7 +409,7 @@ function createVideoRequest(bid, mediaType) {
   const size = (playerSize || bid.sizes || [])[0];
   if (!size) return;
 
-  let result = utils.parseGPTSingleSizeArrayToRtbSize(size);
+  let result = parseGPTSingleSizeArrayToRtbSize(size);
 
   if (mimes) {
     result.mimes = mimes;
@@ -432,8 +431,8 @@ function createBannerRequest(bid, mediaType) {
   const sizes = mediaType.sizes || bid.sizes;
   if (!sizes || !sizes.length) return;
 
-  let format = sizes.map((size) => utils.parseGPTSingleSizeArrayToRtbSize(size));
-  let result = utils.parseGPTSingleSizeArrayToRtbSize(sizes[0]);
+  let format = sizes.map((size) => parseGPTSingleSizeArrayToRtbSize(size));
+  let result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
 
   if (format.length) {
     result.format = format
@@ -443,7 +442,7 @@ function createBannerRequest(bid, mediaType) {
 
 function makeNewUserIdInFPDStorage() {
   if (config.getConfig('localStorageWriteAllowed')) {
-    const value = utils.generateUUID().replace(/-/g, '');
+    const value = generateUUID().replace(/-/g, '');
 
     storage.setDataInLocalStorage(USER_ID_KEY, value);
     return value;
@@ -519,7 +518,7 @@ function createRenderer (bid, rendererParams) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
 
   return renderer;

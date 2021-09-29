@@ -1,3 +1,4 @@
+import { generateUUID, getParameterByName, logError, parseUrl, logInfo } from '../src/utils.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
@@ -11,13 +12,12 @@ const DEFAULT_EVENT_URL = 'https://endpoint.prebidmanager.com/endpoint'
 const analyticsType = 'endpoint';
 const analyticsName = 'Prebid Manager Analytics: ';
 
-var utils = require('../src/utils.js');
 var CONSTANTS = require('../src/constants.json');
 let ajax = ajaxBuilder(0);
 
 var _VERSION = 1;
 var initOptions = null;
-var _pageViewId = utils.generateUUID();
+var _pageViewId = generateUUID();
 var _startAuction = 0;
 var _bidRequestTimeout = 0;
 let flushInterval;
@@ -76,7 +76,7 @@ function collectUtmTagData() {
   let pmUtmTags = {};
   try {
     utmTags.forEach(function (utmKey) {
-      let utmValue = utils.getParameterByName(utmKey);
+      let utmValue = getParameterByName(utmKey);
       if (utmValue !== '') {
         newUtm = true;
       }
@@ -95,7 +95,7 @@ function collectUtmTagData() {
       });
     }
   } catch (e) {
-    utils.logError(`${analyticsName}Error`, e);
+    logError(`${analyticsName}Error`, e);
     pmUtmTags['error_utm'] = 1;
   }
   return pmUtmTags;
@@ -106,7 +106,7 @@ function collectPageInfo() {
     domain: window.location.hostname,
   }
   if (document.referrer) {
-    pageInfo.referrerDomain = utils.parseUrl(document.referrer).hostname;
+    pageInfo.referrerDomain = parseUrl(document.referrer).hostname;
   }
   return pageInfo;
 }
@@ -128,7 +128,7 @@ function flush() {
 
     ajax(
       initOptions.url,
-      () => utils.logInfo(`${analyticsName} sent events batch`),
+      () => logInfo(`${analyticsName} sent events batch`),
       _VERSION + ':' + JSON.stringify(data),
       {
         contentType: 'text/plain',
@@ -215,7 +215,7 @@ function handleEvent(eventType, eventArgs) {
 
 function sendEvent(event) {
   _eventQueue.push(event);
-  utils.logInfo(`${analyticsName}Event ${event.eventType}:`, event);
+  logInfo(`${analyticsName}Event ${event.eventType}:`, event);
 
   if (event.eventType === CONSTANTS.EVENTS.AUCTION_END) {
     flush();

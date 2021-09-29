@@ -350,7 +350,7 @@ describe('E-Planning Adapter', function () {
 
     it('should create the url correctly', function () {
       const url = spec.buildRequests(bidRequests, bidderRequest).url;
-      expect(url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
+      expect(url).to.equal('https://pbjs.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
     });
 
     it('should return GET method', function () {
@@ -740,7 +740,7 @@ describe('E-Planning Adapter', function () {
       hasLocalStorageStub.returns(false);
       const response = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(response.url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://pbjs.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
       expect(response.data.vs).to.equal('F');
 
       sinon.assert.notCalled(getLocalStorageSpy);
@@ -750,7 +750,7 @@ describe('E-Planning Adapter', function () {
     it('should create the url correctly with LocalStorage', function() {
       createElementVisible();
       const response = spec.buildRequests(bidRequests, bidderRequest);
-      expect(response.url).to.equal('https://ads.us.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://pbjs.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
 
       expect(response.data.vs).to.equal('F');
 
