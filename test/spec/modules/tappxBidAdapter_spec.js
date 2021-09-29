@@ -475,7 +475,7 @@ describe('Tappx bid adapter', function () {
     let validBidRequests = c_VALIDBIDREQUESTS;
     let bidderRequest = c_BIDDERREQUEST_B;
     it('should return the Domain of the site', function () {
-      validBidRequests[0].params.domainUrl = "testUrl.com";
+      validBidRequests[0].params.domainUrl = 'testUrl.com';
       assert.isString(_extractPageUrl(validBidRequests, bidderRequest));
     });
   })
