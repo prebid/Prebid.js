@@ -247,7 +247,8 @@ describe('brightcomBidAdapter', function() {
               'nurl': '<!-- NURL -->',
               'adm': '<!-- Creative -->',
               'w': 300,
-              'h': 250
+              'h': 250,
+              'adomain': ['example.com']
             }]
           }]
         }
@@ -265,7 +266,10 @@ describe('brightcomBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
-        'ttl': 60
+        'ttl': 60,
+        'meta': {
+          'advertiserDomains': ['example.com']
+        }
       }];
 
       let result = spec.interpretResponse(response);
@@ -283,7 +287,10 @@ describe('brightcomBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
-        'ttl': 60
+        'ttl': 60,
+        'meta': {
+          'advertiserDomains': ['example.com']
+        }
       }];
 
       let result = spec.interpretResponse(response);

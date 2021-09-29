@@ -22,6 +22,39 @@ describe('invibesBidAdapter:', function () {
         [400, 300],
         [125, 125]
       ],
+      transactionId: 't1'
+    }, {
+      bidId: 'b2',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r2',
+      params: {
+        placementId: 'abcde'
+      },
+      adUnitCode: 'test-div',
+      auctionId: 'a2',
+      sizes: [
+        [300, 250],
+        [400, 300]
+      ],
+      transactionId: 't2'
+    }
+  ];
+
+  let bidRequestsWithUserId = [
+    {
+      bidId: 'b1',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r1',
+      params: {
+        placementId: PLACEMENT_ID
+      },
+      adUnitCode: 'test-div',
+      auctionId: 'a1',
+      sizes: [
+        [300, 250],
+        [400, 300],
+        [125, 125]
+      ],
       transactionId: 't1',
       userId: {
         pubcid: 'pub-cid-code',
@@ -104,7 +137,7 @@ describe('invibesBidAdapter:', function () {
         expect(spec.isBidRequestValid(invalidBid)).to.be.false;
       });
 
-      it('returns false when bid response was previously received', function () {
+      it('returns true when bid response was previously received', function () {
         const validBid = {
           bidder: BIDDER_CODE,
           params: {
@@ -113,7 +146,7 @@ describe('invibesBidAdapter:', function () {
         }
 
         top.window.invibes.bidResponse = {prop: 'prop'};
-        expect(spec.isBidRequestValid(validBid)).to.be.false;
+        expect(spec.isBidRequestValid(validBid)).to.be.true;
       });
     });
   });
@@ -190,9 +223,20 @@ describe('invibesBidAdapter:', function () {
       expect(JSON.parse(request.data.bidParamsJson).placementIds).to.contain(bidRequests[1].params.placementId);
     });
 
+    it('sends all Placement Ids and userId', function () {
+      const request = spec.buildRequests(bidRequestsWithUserId);
+      expect(JSON.parse(request.data.bidParamsJson).userId).to.exist;
+    });
+
     it('sends undefined lid when no cookie', function () {
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.be.undefined;
+    });
+
+    it('sends pushed cids if they exist', function () {
+      top.window.invibes.pushedCids = { 981: [] };
+      let request = spec.buildRequests(bidRequests);
+      expect(request.data.pcids).to.contain(981);
     });
 
     it('sends lid when comes on cookie', function () {
@@ -733,8 +777,71 @@ describe('invibesBidAdapter:', function () {
           <body style='margin : 0; padding: 0;'>
           <!-- Creative -->
           </body>
-        </html>`
+        </html>`,
+      meta: {}
     }];
+
+    let multiResponse = {
+      MultipositionEnabled: true,
+      AdPlacements: [{
+        Ads: [{
+          BidPrice: 0.5,
+          VideoExposedId: 123
+        }],
+        BidModel: {
+          BidVersion: 1,
+          PlacementId: '12345',
+          AuctionStartTime: Date.now(),
+          CreativeHtml: '<!-- Creative -->'
+        }
+      }]
+    };
+
+    let invalidResponse = {
+      AdPlacements: [{
+        Ads: [{
+          BidPrice: 0.5,
+          VideoExposedId: 123
+        }]
+      }]
+    };
+
+    let responseWithMeta = {
+      Ads: [{
+        BidPrice: 0.5,
+        VideoExposedId: 123
+      }],
+      BidModel: {
+        BidVersion: 1,
+        PlacementId: '12345',
+        AuctionStartTime: Date.now(),
+        CreativeHtml: '<!-- Creative -->',
+        Meta: {
+          advertiserDomains: ['theadvertiser.com', 'theadvertiser_2.com'],
+          advertiserName: 'theadvertiser'
+        }
+      }
+    };
+
+    var buildResponse = function(placementId, cid, blcids, creativeId) {
+      return {
+        MultipositionEnabled: true,
+        AdPlacements: [{
+          Ads: [{
+            BidPrice: 0.5,
+            VideoExposedId: creativeId,
+            Cid: cid,
+            Blcids: blcids
+          }],
+          BidModel: {
+            BidVersion: 1,
+            PlacementId: placementId,
+            AuctionStartTime: Date.now(),
+            CreativeHtml: '<!-- Creative -->'
+          }
+        }]
+      };
+    };
 
     context('when the response is not valid', function () {
       it('handles response with no bids requested', function () {
@@ -781,26 +888,83 @@ describe('invibesBidAdapter:', function () {
         let emptyResult = spec.interpretResponse({BidModel: {}, Ads: [{BidPrice: 1}]}, {bidRequests});
         expect(emptyResult).to.be.empty;
       });
+
+      it('handles response when bid model is missing', function () {
+        let emptyResult = spec.interpretResponse(invalidResponse);
+        expect(emptyResult).to.be.empty;
+      });
     });
 
-    context('when the response is valid', function () {
-      it('responds with a valid bid', function () {
-        // top.window.invibes.setCookie('a', 'b', 370);
-        // top.window.invibes.setCookie('c', 'd', 0);
-        let result = spec.interpretResponse({body: response}, {bidRequests});
+    context('when the multiresponse is valid', function () {
+      it('responds with a valid multiresponse bid', function () {
+        let result = spec.interpretResponse({body: multiResponse}, {bidRequests});
         expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
 
-      it('responds with a valid bid and uses logger', function () {
-        localStorage.InvibesDEBUG = true;
+      it('responds with a valid singleresponse bid', function () {
         let result = spec.interpretResponse({body: response}, {bidRequests});
         expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
 
       it('does not make multiple bids', function () {
-        localStorage.InvibesDEBUG = false;
         let result = spec.interpretResponse({body: response}, {bidRequests});
         let secondResult = spec.interpretResponse({body: response}, {bidRequests});
+        expect(secondResult).to.be.empty;
+      });
+    });
+
+    context('when the response has meta', function () {
+      it('responds with a valid bid, with the meta info', function () {
+        let result = spec.interpretResponse({body: responseWithMeta}, {bidRequests});
+        expect(result[0].meta.advertiserName).to.equal('theadvertiser');
+        expect(result[0].meta.advertiserDomains).to.contain('theadvertiser.com');
+        expect(result[0].meta.advertiserDomains).to.contain('theadvertiser_2.com');
+      });
+    });
+
+    context('in multiposition context, with conflicting ads', function() {
+      it('registers the second ad when no conflict', function() {
+        var firstResponse = buildResponse('12345', 1, [1], 123);
+        var secondResponse = buildResponse('abcde', 2, [2], 456);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        expect(secondResult[0].creativeId).to.equal(456);
+      });
+
+      it('registers the second ad when no conflict - empty arrays', function() {
+        var firstResponse = buildResponse('12345', 1, [], 123);
+        var secondResponse = buildResponse('abcde', 2, [], 456);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        expect(secondResult[0].creativeId).to.equal(456);
+      });
+
+      it('doesnt register the second ad when it is blacklisted by the first', function() {
+        var firstResponse = buildResponse('12345', 1, [2], 123);
+        var secondResponse = buildResponse('abcde', 2, [], 456);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        expect(secondResult).to.be.empty;
+      });
+
+      it('doesnt register the second ad when it is blacklisting the first', function() {
+        var firstResponse = buildResponse('12345', 1, [], 123);
+        var secondResponse = buildResponse('abcde', 2, [1], 456);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        expect(secondResult).to.be.empty;
+      });
+
+      it('doesnt register the second ad when it has same ids as the first', function() {
+        var firstResponse = buildResponse('12345', 1, [1], 123);
+        var secondResponse = buildResponse('abcde', 1, [1], 456);
+
+        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
         expect(secondResult).to.be.empty;
       });
     });

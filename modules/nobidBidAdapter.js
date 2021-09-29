@@ -4,9 +4,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
+const GVLID = 816;
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.9';
+const storage = getStorageManager(GVLID, BIDDER_CODE);
+window.nobidVersion = '1.3.1';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -144,6 +145,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['ref'] = document.referrer;
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
+    state['pjbdr'] = (bidderRequest && bidderRequest.bidderCode) ? bidderRequest.bidderCode : 'nobid';
     const sch = schain(bids);
     if (sch) state['schain'] = sch;
     const cop = coppa();
@@ -298,6 +300,9 @@ function nobidInterpretResponse(response, bidRequest) {
     if (bid.videoCacheKey) {
       bidResponse.videoCacheKey = bid.videoCacheKey;
     }
+    if (bid.meta) {
+      bidResponse.meta = bid.meta;
+    }
 
     bidResponses.push(bidResponse);
   }
@@ -334,6 +339,10 @@ window.addEventListener('message', function (event) {
 }, false);
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
+  aliases: [
+    { code: 'duration', gvlid: 674 }
+  ],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
  * Determines whether or not the given bid request is valid.

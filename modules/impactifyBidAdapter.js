@@ -2,12 +2,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import {ajax} from '../src/ajax.js';
+import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
-const DEFAULT_VIDEO_HEIGHT = 480;
+const DEFAULT_VIDEO_HEIGHT = 360;
 const ORIGIN = 'https://sonic.impactify.media';
 const LOGGER_URI = 'https://logger.impactify.media';
 const AUCTIONURI = '/bidder';
@@ -32,12 +33,24 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     id: bidderRequest.auctionId,
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
-    imp: []
+    imp: [],
+    source: {tid: bidderRequest.auctionId}
   };
 
   // Force impactify debugging parameter
-  if (window.localStorage.getItem('_im_db_bidder') == 3) {
-    request.test = 3;
+  if (window.localStorage.getItem('_im_db_bidder') != null) {
+    request.test = Number(window.localStorage.getItem('_im_db_bidder'));
+  }
+
+  // Set Schain in request
+  let schain = utils.deepAccess(validBidRequests, '0.schain');
+  if (schain) request.source.ext = { schain: schain };
+
+  // Set eids
+  let bidUserId = utils.deepAccess(validBidRequests, '0.userId');
+  let eids = createEidsArray(bidUserId);
+  if (eids.length) {
+    utils.deepSetValue(request, 'user.ext.eids', eids);
   }
 
   // Set device/user/site
@@ -55,12 +68,12 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   request.site = {page: bidderRequest.refererInfo.referer};
 
   // Handle privacy settings for GDPR/CCPA/COPPA
+  let gdprApplies = 0;
   if (bidderRequest.gdprConsent) {
-    let gdprApplies = 0;
     if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-    utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
     utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
+  utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
 
   if (bidderRequest.uspConsent) {
     utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
@@ -106,8 +119,9 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['video', 'banner'],
   aliases: BIDDER_ALIAS,
+
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -127,6 +141,7 @@ export const spec = {
 
     return true;
   },
+
   /**
    * Make a server request from the list of BidRequests.
    *
@@ -144,6 +159,7 @@ export const spec = {
       data: JSON.stringify(request),
     };
   },
+
   /**
    * Unpack the response from the server into a list of bids.
    *
@@ -180,7 +196,10 @@ export const spec = {
               ttl: 300,
               creativeId: bid.crid || 0,
               hash: bid.hash,
-              expiry: bid.expiry
+              expiry: bid.expiry,
+              meta: {
+                advertiserDomains: bid.adomain && bid.adomain.length ? bid.adomain : []
+              }
             })),
         ];
       }

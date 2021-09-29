@@ -4,7 +4,6 @@
   "description": "A batched data object describing the lifecycle of an auction or multiple auction across a single page view.",
   "type": "object",
   "required": [
-    "eventTimeMillis",
     "integration",
     "version"
   ],
@@ -21,10 +20,6 @@
     }
   ],
   "properties": {
-    "eventTimeMillis": {
-      "type": "integer",
-      "description": "Unix timestamp of time of creation for this batched event in milliseconds."
-    },
     "integration": {
       "type": "string",
       "description": "Integration type that generated this event.",
@@ -268,7 +263,9 @@
         },
         "isSlotEmpty": {
           "type": "boolean",
-          "enum": [true]
+          "enum": [
+            true
+          ]
         }
       }
     },
@@ -374,6 +371,7 @@
         },
         "error": {
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "code"
           ],

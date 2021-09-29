@@ -42,7 +42,11 @@ var videoAdUnit = {
 	mediaTypes: {
 	  video: {
 	  	playerSize : [[320, 480]], 
-	  	context: 'instream'
+	  	context: 'instream',
+		  skip: 1,
+      mimes : ['video/mp4', 'application/javascript'],
+      playbackmethod : [2,6],
+      maxduration: 30
 	  }
 	},
     bids: [
@@ -50,14 +54,7 @@ var videoAdUnit = {
       	bidder: 'advangelists',
       	params: {
         	pubid: '8537f00948fc37cc03c5f0f88e198a76',
-        	placement: 1234,
-        	video: {
-            	id: 123,
-            	skip: 1,
-            	mimes : ['video/mp4', 'application/javascript'],
-            	playbackmethod : [2,6],
-            	maxduration: 30
-          	}
+        	placement: 1234
       	}
       }
     ]

@@ -11,6 +11,11 @@ const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 
+const EIDS_SUPPORTED = [
+  { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
+  { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' }
+];
+
 export const emxAdapter = {
   validateSizes: (sizes) => {
     if (!utils.isArray(sizes) || typeof sizes[0] === 'undefined') {
@@ -168,6 +173,27 @@ export const emxAdapter = {
     }
 
     return emxData;
+  },
+  // supporting eids
+  getEids(bidRequests) {
+    return EIDS_SUPPORTED
+      .map(emxAdapter.getUserId(bidRequests))
+      .filter(x => x);
+  },
+  getUserId(bidRequests) {
+    return ({ key, source, rtiPartner }) => {
+      let id = utils.deepAccess(bidRequests, `userId.${key}`);
+      return id ? emxAdapter.formatEid(id, source, rtiPartner) : null;
+    };
+  },
+  formatEid(id, source, rtiPartner) {
+    return {
+      source,
+      uids: [{
+        id,
+        ext: { rtiPartner }
+      }]
+    };
   }
 };
 
@@ -223,7 +249,7 @@ export const spec = {
 
     utils._each(validBidRequests, function (bid) {
       let tagid = utils.getBidIdParameter('tagid', bid.params);
-      let bidfloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
+      let bidfloor = parseFloat(getBidFloor(bid)) || 0;
       let isVideo = !!bid.mediaTypes.video;
       let data = {
         id: bid.bidId,
@@ -252,6 +278,21 @@ export const spec = {
     if (bidderRequest && bidderRequest.uspConsent) {
       emxData.us_privacy = bidderRequest.uspConsent
     }
+
+    // adding eid support
+    if (bidderRequest.userId) {
+      let eids = emxAdapter.getEids(bidderRequest);
+      if (eids.length > 0) {
+        if (emxData.user && emxData.user.ext) {
+          emxData.user.ext.eids = eids;
+        } else {
+          emxData.user = {
+            ext: {eids}
+          };
+        }
+      }
+    }
+
     return {
       method: 'POST',
       url,
@@ -287,6 +328,14 @@ export const spec = {
           bidResponse = emxAdapter.formatVideoResponse(bidResponse, Object.assign({}, emxBid), bidRequest);
         }
         bidResponse.mediaType = (isVideo ? VIDEO : BANNER);
+
+        // support for adomain in prebid 5.0
+        if (emxBid.adomain && emxBid.adomain.length) {
+          bidResponse.meta = {
+            advertiserDomains: emxBid.adomain
+          };
+        }
+
         emxBidResponses.push(bidResponse);
       });
     }
@@ -312,4 +361,22 @@ export const spec = {
     return syncs;
   }
 };
+
+// support floors module in prebid 5.0
+function getBidFloor(bid) {
+  if (!utils.isFn(bid.getFloor)) {
+    return parseFloat(utils.getBidIdParameter('bidfloor', bid.params));
+  }
+
+  let floor = bid.getFloor({
+    currency: DEFAULT_CUR,
+    mediaType: '*',
+    size: '*'
+  });
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
+
 registerBidder(spec);
