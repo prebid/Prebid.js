@@ -494,7 +494,7 @@ function interpretResponse(serverResponse, bidRequest) {
       if (responseWidth === width || responseHeight === height) result.push(current.join('x'));
       return result
     }, [])) || [];
-    sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : utils.parseSizesInput(bidRequest.sizes)
+    sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
   }
 
   let [width, height] = sizes[0].split('x');
