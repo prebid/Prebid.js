@@ -1,5 +1,5 @@
 import find from 'core-js-pure/features/array/find.js';
-import { getWindowTop, isFn, logWarn, getDNT, deepAccess, isArray, inIframe, mergeDeep, isStr, isEmpty, deepSetValue, deepClone, parseUrl, cleanObj, logError, triggerPixel } from '../src/utils.js';
+import { getWindowTop, isFn, logWarn, getDNT, deepAccess, isArray, inIframe, mergeDeep, isStr, isEmpty, deepSetValue, deepClone, parseUrl, cleanObj, logError, triggerPixel, isInteger, isNumbeer } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -268,7 +268,7 @@ function createNativeImp(bid) {
       if (ORTB_NATIVE_PARAMS[name](extraParams[name])) {
         nativeObject[name] = extraParams[name];
       } else {
-        utils.logWarn(`${BIDDER_CODE}: the OpenRTB native param ${name} has been skipped due to misformating. Please refer to OpenRTB Native spec.`);
+        logWarn(`${BIDDER_CODE}: the OpenRTB native param ${name} has been skipped due to misformating. Please refer to OpenRTB Native spec.`);
       }
     }
   });
