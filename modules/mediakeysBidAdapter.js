@@ -1,5 +1,5 @@
 import find from 'core-js-pure/features/array/find.js';
-import { getWindowTop, isFn, logWarn, getDNT, deepAccess, isArray, inIframe, mergeDeep, isStr, isEmpty, deepSetValue, deepClone, parseUrl, cleanObj, logError, triggerPixel, isInteger, isNumbeer } from '../src/utils.js';
+import { getWindowTop, isFn, logWarn, getDNT, deepAccess, isArray, inIframe, mergeDeep, isStr, isEmpty, deepSetValue, deepClone, parseUrl, cleanObj, logError, triggerPixel, isInteger, isNumber } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
