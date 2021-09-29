@@ -21,7 +21,8 @@ describe('orbidderBidAdapter', () => {
       banner: {
         sizes: [[300, 250], [300, 600]],
       }
-    }
+    },
+    visibilityScore: -2, // todo: no google publisher tag api for tests
   };
 
   const defaultBidRequestNative = {
@@ -176,6 +177,7 @@ describe('orbidderBidAdapter', () => {
       expect(request.data.pageUrl).to.equal('https://localhost:9876/');
       expect(request.data.v).to.equal($$PREBID_GLOBAL$$.version);
       expect(request.data.sizes).to.equal(defaultBidRequestBanner.sizes);
+      expect(request.data.visibilityScore).to.equal(defaultBidRequestBanner.visibilityScore);
 
       expect(_.isEqual(request.data.params, defaultBidRequestBanner.params)).to.be.true;
       expect(_.isEqual(request.data.mediaTypes, defaultBidRequestBanner.mediaTypes)).to.be.true;

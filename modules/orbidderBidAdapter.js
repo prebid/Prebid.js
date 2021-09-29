@@ -87,6 +87,17 @@ export const spec = {
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);
 
+      let bannerVisibilityScore;
+      if (bidRequest.mediaTypes.banner) {
+        try {
+          const maxAreaSize = bidRequest.sizes.reduce((p, v) => p[0] * p[1] < v[0] * v[1] ? v : p)
+          bannerVisibilityScore = estimateVisibility(bidRequest.adUnitCode, maxAreaSize[0], maxAreaSize[1]);
+        } catch (e) {
+          bannerVisibilityScore = -1;
+          utils.logWarn('error while estimating visibility, ', e);
+        }
+      }
+
       let httpReq = {
         url: `${hostname}/bid`,
         method: 'POST',
@@ -104,6 +115,10 @@ export const spec = {
           mediaTypes: bidRequest.mediaTypes
         }
       };
+
+      if (typeof bannerVisibilityScore !== 'undefined') {
+        httpReq.data.visibilityScore = bannerVisibilityScore
+      }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         httpReq.data.gdprConsent = {
@@ -162,3 +177,176 @@ function getBidFloor(bid) {
 }
 
 registerBidder(spec);
+
+/**
+ * Tries to measure the visibility of an adUnit.
+ *
+ * @param {string} adUnitCode the adUnit's unique code.
+ * @param {number} w the adUnit's with.
+ * @param {number} h the adUnit's height.
+ * @return {number} visibilityScore between 0 and 100. Higher values indicate a better visibility. Negative values indicate that
+ * the googletag is not ready (-2) or that the visibility is not measurable (-3).
+ */
+function estimateVisibility(adUnitCode, w, h) {
+  if (!window.googletag.apiReady && !utils.isGptPubadsDefined()) {
+    return -2
+  }
+
+  const adElementId = getGptSlotElementIdAdUnitCode(adUnitCode);
+  const adElement = document.getElementById(adElementId)
+
+  if (!isVisibilityMeasurable(adElement)) {
+    return -3
+  }
+
+  return estimatePercentInView(adElement, w, h)
+}
+
+/**
+ * Determines if the visibility is measureable.
+ *
+ * @param {object} element the adUnit element
+ * @return boolean True if the visibility is measurable.
+ */
+function isVisibilityMeasurable(element) {
+  return !windowIsNotVisible() && !inIframe() && (typeof element !== 'undefined');
+}
+
+/**
+ * Determines if the customers window is visible or not.
+ *
+ * @return boolean True if the window is not visible.
+ */
+function windowIsNotVisible() {
+  try {
+    if (typeof window.document.hidden !== 'undefined') {
+      return window.document.hidden;
+    } else if (typeof window.document['msHidden'] !== 'undefined') {
+      return window.document['msHidden'];
+    } else if (typeof window.document['webkitHidden'] !== 'undefined') {
+      return window.document['webkitHidden'];
+    } else {
+      return true;
+    }
+  } catch (e) {
+    return true;
+  }
+}
+
+/**
+ * Estimates how much percent of the adUnit's area are in the visible area of the screen.
+ *
+ * @param {object} element the adUnit element.
+ * @param {number} element the adUnit's width.
+ * @param {number} element the adUnit's height.
+ * @return {number} estimate how much percent of the element is in the visible area of the screen.
+ */
+function estimatePercentInView(element, w, h) {
+  if (w == 0 || h == 0) {
+    return 0
+  }
+
+  const elementRect = getRect(element, w, h);
+
+  const overlappingRect = elementOverlapWithViewport(elementRect);
+
+  let elementInViewArea, elementTotalArea;
+
+  if (overlappingRect !== null) {
+    // element is inside viewport
+    elementInViewArea = overlappingRect.width * overlappingRect.height;
+    elementTotalArea = elementRect.width * elementRect.height;
+
+    return (elementInViewArea / elementTotalArea) * 100;
+  }
+
+  // no overlap between rect and the viewport
+  return 0;
+}
+
+/**
+ * Returns the elements bounding rectangle.
+ *
+ * @param {object} element the adUnit element.
+ * @param {number} element the adUnit's width.
+ * @param {number} element the adUnit's height.
+ * @return {object} width, height, left, top, right, bottom of the elements bounding rectangle.
+ */
+function getRect(element, w, h) {
+  let { width, height, left, top, right, bottom } = element.getBoundingClientRect();
+
+  if ((width === 0 || height === 0) && w && h) {
+    width = w;
+    height = h;
+    right = left + w;
+    bottom = top + h;
+  }
+
+  return { width, height, left, top, right, bottom };
+}
+
+/**
+ * Returns the rectangle of the overlap between adUnit element and viewport.
+ *
+ * @param {object} elementRect the adUnit element bounding rectangle.
+ * @return {object} width, height, left, top, right, bottom of the overlapping rectangle.
+ */
+function elementOverlapWithViewport(elementRect) {
+  const viewport = {
+    left: 0,
+    top: 0,
+    right: Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0),
+    bottom: Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0),
+  };
+
+  let overlapingRect = {};
+
+  overlapingRect.left = Math.max(viewport.left, elementRect.left);
+  overlapingRect.right = Math.min(viewport.right, elementRect.right);
+
+  if (overlapingRect.left >= overlapingRect.right || overlapingRect.right < 0) {
+    return null;
+  }
+
+  overlapingRect.top = Math.max(viewport.top, elementRect.top);
+  overlapingRect.bottom = Math.min(viewport.bottom, elementRect.bottom);
+
+  if (
+    overlapingRect.top >= overlapingRect.bottom ||
+    overlapingRect.bottom < 0
+  ) {
+    return null;
+  }
+
+  overlapingRect.width = overlapingRect.right - overlapingRect.left;
+  overlapingRect.height = overlapingRect.bottom - overlapingRect.top;
+
+  return overlapingRect;
+}
+
+/**
+ * Returns the elements bounding rectangle.
+ *
+ * @return {boolean} True if view is inside an iframe.
+ */
+function inIframe() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
+}
+
+/**
+ * Returns the adUnit's element id.
+ *
+ * @param {string} element the adUnit's code.
+ * @return {string} id of the adUnit element.
+ */
+function getGptSlotElementIdAdUnitCode(adUnitCode) {
+  for (let slot of window.googletag.pubads().getSlots()) {
+    if (slot.getAdUnitPath().includes(adUnitCode) || slot.getSlotElementId().includes(adUnitCode)) {
+      return slot.getSlotElementId()
+    }
+  }
+}
