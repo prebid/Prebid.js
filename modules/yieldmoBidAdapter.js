@@ -1,4 +1,4 @@
-import { getWindowTop, deepAccess, parseQueryStringParameters, isArrayOfNums, isArray, parseUrl, isEmpty, deepSetValue, isStr, isNumber, isInteger, isBoolean, logError } from '../src/utils.js';
+import { isNumber, isStr, isInteger, isBoolean, isArray, isEmpty, isArrayOfNums, getWindowTop, parseQueryStringParameters, parseUrl, deepSetValue, deepAccess, logError } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
