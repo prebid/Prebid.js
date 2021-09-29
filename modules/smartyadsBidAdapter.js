@@ -1,7 +1,7 @@
+import { logMessage } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'smartyads';
 const AD_URL = 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js';
@@ -40,7 +40,7 @@ export const spec = {
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
-      utils.logMessage(e);
+      logMessage(e);
     };
     let placements = [];
     let request = {

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, isArray, isStr, triggerPixel, deepAccess, deepSetValue, isPlainObject, generateUUID, parseUrl, isFn, getDNT, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
@@ -70,27 +70,27 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (!bid) {
-      utils.logWarn(BIDDER_CODE, 'Invalid bid,', bid);
+      logWarn(BIDDER_CODE, 'Invalid bid,', bid);
       return false;
     }
 
     if (!bid.params) {
-      utils.logWarn(BIDDER_CODE, 'bid.params is required.')
+      logWarn(BIDDER_CODE, 'bid.params is required.')
       return false;
     }
 
     if (!bid.params.placementId) {
-      utils.logWarn(BIDDER_CODE, 'bid.params.placementId is required.')
+      logWarn(BIDDER_CODE, 'bid.params.placementId is required.')
       return false;
     }
 
     if (!bid.params.endpointId) {
-      utils.logWarn(BIDDER_CODE, 'bid.params.endpointId is required.')
+      logWarn(BIDDER_CODE, 'bid.params.endpointId is required.')
       return false;
     }
 
     if (!bid.params.publisherId) {
-      utils.logWarn(BIDDER_CODE, 'bid.params.publisherId is required.')
+      logWarn(BIDDER_CODE, 'bid.params.publisherId is required.')
       return false;
     }
 
@@ -118,9 +118,9 @@ export const spec = {
     let bidResponses = [];
 
     let serverBody;
-    if ((serverBody = serverResponse.body) && serverBody.seatbid && utils.isArray(serverBody.seatbid)) {
+    if ((serverBody = serverResponse.body) && serverBody.seatbid && isArray(serverBody.seatbid)) {
       serverBody.seatbid.forEach((seatbidder) => {
-        if (seatbidder.bid && utils.isArray(seatbidder.bid)) {
+        if (seatbidder.bid && isArray(seatbidder.bid)) {
           bidResponses = seatbidder.bid.map((bid) => buildBidResponse(bid, bidRequest.originalBidRequest, serverBody));
         }
       });
@@ -153,7 +153,7 @@ export const spec = {
    * @param {Bid} bid The bid that won the auction
    */
   onBidWon: function (bid) {
-    if (!bid || !utils.isStr(bid.nurl)) {
+    if (!bid || !isStr(bid.nurl)) {
       return;
     }
 
@@ -166,7 +166,7 @@ export const spec = {
       winCurr = bid.currency;
     }
 
-    utils.triggerPixel(
+    triggerPixel(
       bid.nurl
         .replace(/\$\{AUCTION_PRICE\}/g, winCpm)
         .replace(/\$\{AUCTION_CURRENCY\}/g, winCurr)
@@ -189,7 +189,7 @@ export const spec = {
  * @returns {Request}
  */
 function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
-  const pageReferrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
+  const pageReferrer = deepAccess(bidderRequest, 'refererInfo.referer');
 
   // build OpenRTB request body
   const payload = {
@@ -199,7 +199,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
     imp: createImp(bidRequest),
     device: getDevice(),
     site: {
-      id: String(utils.deepAccess(bidRequest, 'params.publisherId')),
+      id: String(deepAccess(bidRequest, 'params.publisherId')),
       domain: getDomain(pageReferrer),
       page: pageReferrer,
       ref: window.self === window.top ? document.referrer : '',
@@ -216,26 +216,26 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
     }
   }
 
-  const gdprConsent = utils.deepAccess(bidderRequest, 'gdprConsent');
+  const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (!!gdprConsent && gdprConsent.gdprApplies) {
-    utils.deepSetValue(payload, 'regs.ext.gdpr', 1);
-    utils.deepSetValue(payload, 'user.ext.consent', gdprConsent.consentString);
+    deepSetValue(payload, 'regs.ext.gdpr', 1);
+    deepSetValue(payload, 'user.ext.consent', gdprConsent.consentString);
   }
 
-  const uspConsent = utils.deepAccess(bidderRequest, 'uspConsent');
+  const uspConsent = deepAccess(bidderRequest, 'uspConsent');
   if (uspConsent) {
-    utils.deepSetValue(payload, 'regs.ext.us_privacy', uspConsent);
+    deepSetValue(payload, 'regs.ext.us_privacy', uspConsent);
   }
 
-  const eids = utils.deepAccess(bidRequest, 'userIdAsEids', []);
+  const eids = deepAccess(bidRequest, 'userIdAsEids', []);
   if (eids.length > 0) {
-    utils.deepSetValue(payload, 'user.eids', eids);
+    deepSetValue(payload, 'user.eids', eids);
   }
 
   return {
     method: 'POST',
-    url: ENDPOINT + String(utils.deepAccess(bidRequest, 'params.publisherId')) +
-      '?ep=' + String(utils.deepAccess(bidRequest, 'params.endpointId')),
+    url: ENDPOINT + String(deepAccess(bidRequest, 'params.publisherId')) +
+      '?ep=' + String(deepAccess(bidRequest, 'params.endpointId')),
     data: JSON.stringify(payload),
     options: {
       contentType: 'application/json',
@@ -272,7 +272,7 @@ function buildBidResponse(bid, bidRequest, responseBody) {
 
     // OpenRtb Markup Response Object
     // https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-Native-Ads-Specification-1-1_2016.pdf#5.1
-    if (markup && utils.isPlainObject(markup.native)) {
+    if (markup && isPlainObject(markup.native)) {
       mediaType = NATIVE;
       nativeResponse = markup.native;
     }
@@ -281,7 +281,7 @@ function buildBidResponse(bid, bidRequest, responseBody) {
   const currency = responseBody.cur || DEFAULT_CURRENCY;
   const cpm = (parseFloat(bid.price) || 0).toFixed(2);
 
-  const categories = utils.deepAccess(bid, 'cat', []);
+  const categories = deepAccess(bid, 'cat', []);
 
   const bidResponse = {
     requestId: bid.impid,
@@ -300,14 +300,14 @@ function buildBidResponse(bid, bidRequest, responseBody) {
     }
   };
 
-  if (bid.adomain && utils.isArray(bid.adomain) && bid.adomain.length > 0) {
+  if (bid.adomain && isArray(bid.adomain) && bid.adomain.length > 0) {
     bidResponse.meta.advertiserDomains = bid.adomain;
     bidResponse.meta.clickUrl = bid.adomain[0];
   }
 
   switch (mediaType) {
     case VIDEO: {
-      const playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize', VIDEO_DEFAULTS.SIZE);
+      const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize', VIDEO_DEFAULTS.SIZE);
       const size = canonicalizeSizesArray(playerSize)[0];
 
       bidResponse.vastXml = bid.adm;
@@ -315,7 +315,7 @@ function buildBidResponse(bid, bidRequest, responseBody) {
       bidResponse.width = bid.w || size[0];
       bidResponse.height = bid.h || size[1];
 
-      const context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+      const context = deepAccess(bidRequest, 'mediaTypes.video.context');
 
       // if outstream video, add a default render for it.
       if (context === OUTSTREAM) {
@@ -358,13 +358,13 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
 
   // OpenRtb Link Object
   // https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-Native-Ads-Specification-1-1_2016.pdf#5.7
-  const clickUrl = utils.deepAccess(nativeResponse, 'link.url');
-  if (clickUrl && utils.isStr(clickUrl)) {
+  const clickUrl = deepAccess(nativeResponse, 'link.url');
+  if (clickUrl && isStr(clickUrl)) {
     native.clickUrl = decodeURIComponent(clickUrl);
   }
 
-  const clickTrackers = utils.deepAccess(nativeResponse, 'link.clicktrackers');
-  if (clickTrackers && utils.isArray(clickTrackers)) {
+  const clickTrackers = deepAccess(nativeResponse, 'link.clicktrackers');
+  if (clickTrackers && isArray(clickTrackers)) {
     native.clickTrackers = clickTrackers
       .filter(Boolean)
       .map(
@@ -374,7 +374,7 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
       );
   }
 
-  if (nativeResponse.imptrackers && utils.isArray(nativeResponse.imptrackers)) {
+  if (nativeResponse.imptrackers && isArray(nativeResponse.imptrackers)) {
     native.impressionTrackers = nativeResponse.imptrackers
       .filter(Boolean)
       .map(
@@ -384,16 +384,16 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
       );
   }
 
-  if (nativeResponse.jstracker && utils.isStr(nativeResponse.jstracker)) {
+  if (nativeResponse.jstracker && isStr(nativeResponse.jstracker)) {
     native.javascriptTrackers = [nativeResponse.jstracker];
   }
 
   let assets;
-  if ((assets = nativeResponse.assets) && utils.isArray(assets)) {
+  if ((assets = nativeResponse.assets) && isArray(assets)) {
     assets.forEach((asset) => {
       switch (asset.id) {
         case NATIVE_DEFAULTS.ASSET_ID.TITLE: {
-          const title = utils.deepAccess(asset, 'title.text');
+          const title = deepAccess(asset, 'title.text');
           if (title) {
             native.title = title;
           }
@@ -420,21 +420,21 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
           break;
         }
         case NATIVE_DEFAULTS.ASSET_ID.BODY: {
-          const body = utils.deepAccess(asset, 'data.value');
+          const body = deepAccess(asset, 'data.value');
           if (body) {
             native.body = body;
           }
           break;
         }
         case NATIVE_DEFAULTS.ASSET_ID.SPONSORED: {
-          const sponsoredBy = utils.deepAccess(asset, 'data.value');
+          const sponsoredBy = deepAccess(asset, 'data.value');
           if (sponsoredBy) {
             native.sponsoredBy = sponsoredBy;
           }
           break;
         }
         case NATIVE_DEFAULTS.ASSET_ID.CTA: {
-          const cta = utils.deepAccess(asset, 'data.value');
+          const cta = deepAccess(asset, 'data.value');
           if (cta) {
             native.cta = cta;
           }
@@ -459,13 +459,13 @@ function createImp(bidRequest) {
 
   const impItem = {
     id: bidRequest.bidId,
-    tagid: String(utils.deepAccess(bidRequest, 'params.placementId')),
+    tagid: String(deepAccess(bidRequest, 'params.placementId')),
   };
 
   let mediaType, size;
   let bannerReq, videoReq, nativeReq;
 
-  if ((bannerReq = utils.deepAccess(bidRequest, 'mediaTypes.banner'))) {
+  if ((bannerReq = deepAccess(bidRequest, 'mediaTypes.banner'))) {
     size = canonicalizeSizesArray(bannerReq.sizes || BANNER_DEFAULTS.SIZE)[0];
 
     impItem.banner = {
@@ -475,7 +475,7 @@ function createImp(bidRequest) {
     };
 
     mediaType = BANNER;
-  } else if ((videoReq = utils.deepAccess(bidRequest, 'mediaTypes.video'))) {
+  } else if ((videoReq = deepAccess(bidRequest, 'mediaTypes.video'))) {
     size = canonicalizeSizesArray(videoReq.playerSize || VIDEO_DEFAULTS.SIZE)[0];
 
     impItem.video = {
@@ -493,7 +493,7 @@ function createImp(bidRequest) {
     };
 
     mediaType = VIDEO;
-  } else if ((nativeReq = utils.deepAccess(bidRequest, 'mediaTypes.native'))) {
+  } else if ((nativeReq = deepAccess(bidRequest, 'mediaTypes.native'))) {
     const params = bidRequest.nativeParams || nativeReq;
 
     const request = {
@@ -533,7 +533,7 @@ function createImp(bidRequest) {
  * @returns {Size[][]}
  */
 function canonicalizeSizesArray(sizes) {
-  if (sizes.length === 2 && !utils.isArray(sizes[0])) {
+  if (sizes.length === 2 && !isArray(sizes[0])) {
     return [sizes];
   }
   return sizes;
@@ -645,19 +645,19 @@ function mapNativeImage(image, type) {
  * @returns {String} userId
  */
 function getUserId(bidRequest) {
-  let sharedId = utils.deepAccess(bidRequest, 'userId.sharedid.id');
+  let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
   if (sharedId) {
     return sharedId;
   }
 
   for (const idModule of ['pubcid', 'tdid']) {
-    let userId = utils.deepAccess(bidRequest, `userId.${idModule}`);
+    let userId = deepAccess(bidRequest, `userId.${idModule}`);
     if (userId) {
       return userId;
     }
   }
 
-  return utils.generateUUID();
+  return generateUUID();
 }
 
 /**
@@ -670,7 +670,7 @@ function getDomain(referer) {
   let domain;
 
   if (!(domain = config.getConfig('publisherDomain'))) {
-    const u = utils.parseUrl(referer);
+    const u = parseUrl(referer);
     domain = u.hostname;
   }
 
@@ -685,14 +685,14 @@ function getDomain(referer) {
  * @returns {Floor} floor price
  */
 function getBidFloor(bid, {mediaType = '*', size = '*'}) {
-  if (utils.isFn(bid.getFloor)) {
+  if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: DEFAULT_CURRENCY,
       mediaType,
       size
     });
 
-    if (utils.isPlainObject(floorInfo) && !isNaN(floorInfo.floor)) {
+    if (isPlainObject(floorInfo) && !isNaN(floorInfo.floor)) {
       return {
         currency: floorInfo.currency || DEFAULT_CURRENCY,
         floor: floorInfo.floor
@@ -715,7 +715,7 @@ function getBidFloor(bid, {mediaType = '*', size = '*'}) {
 function getBcat(bidRequest) {
   let bcat = [];
 
-  const pBcat = utils.deepAccess(bidRequest, 'params.bcat');
+  const pBcat = deepAccess(bidRequest, 'params.bcat');
   if (pBcat) {
     bcat = bcat.concat(pBcat);
   }
@@ -736,7 +736,7 @@ function getDevice() {
   device.ua = device.ua || navigator.userAgent;
   device.language = device.language || getLanguage();
   device.dnt = typeof device.dnt === 'number'
-    ? device.dnt : (utils.getDNT() ? 1 : 0);
+    ? device.dnt : (getDNT() ? 1 : 0);
 
   return device;
 }
@@ -759,8 +759,8 @@ function getLanguage() {
  * @returns
  */
 function createRenderer(bidRequest) {
-  const globalRenderer = utils.deepAccess(bidRequest, 'renderer');
-  const currentRenderer = utils.deepAccess(bidRequest, 'mediaTypes.video.renderer');
+  const globalRenderer = deepAccess(bidRequest, 'renderer');
+  const currentRenderer = deepAccess(bidRequest, 'mediaTypes.video.renderer');
 
   let url = OUTSTREAM_RENDERER_URL;
   let config = {};
@@ -795,7 +795,7 @@ function createRenderer(bidRequest) {
   try {
     renderer.setRender(render);
   } catch (e) {
-    utils.logError(BIDDER_CODE, 'Error calling setRender on renderer', e);
+    logError(BIDDER_CODE, 'Error calling setRender on renderer', e);
   }
   return renderer;
 }

@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js';
+import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import { coppaDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -53,12 +53,12 @@ function queuePixelCallback(pixelUrl, id = '', callback) {
   }
 
   // Use pubcid as a cache buster
-  const urlInfo = utils.parseUrl(pixelUrl);
+  const urlInfo = parseUrl(pixelUrl);
   urlInfo.search.id = encodeURIComponent('pubcid:' + id);
-  const targetUrl = utils.buildUrl(urlInfo);
+  const targetUrl = buildUrl(urlInfo);
 
   return function () {
-    utils.triggerPixel(targetUrl);
+    triggerPixel(targetUrl);
   };
 }
 
@@ -89,10 +89,10 @@ export const sharedIdSystemSubmodule = {
    */
   decode(value, config) {
     if (hasOptedOut()) {
-      utils.logInfo('PubCommonId decode: Has opted-out');
+      logInfo('PubCommonId decode: Has opted-out');
       return undefined;
     }
-    utils.logInfo(' Decoded value PubCommonId ' + value);
+    logInfo(' Decoded value PubCommonId ' + value);
     const idObj = {'pubcid': value};
     return idObj;
   },
@@ -106,13 +106,13 @@ export const sharedIdSystemSubmodule = {
    */
   getId: function (config = {}, consentData, storedId) {
     if (hasOptedOut()) {
-      utils.logInfo('PubCommonId: Has opted-out');
+      logInfo('PubCommonId: Has opted-out');
       return;
     }
     const coppa = coppaDataHandler.getCoppa();
 
     if (coppa) {
-      utils.logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
     const {params: {create = true, pixelUrl} = {}} = config;
@@ -126,7 +126,7 @@ export const sharedIdSystemSubmodule = {
       } catch (e) {
       }
 
-      if (!newId) newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
+      if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
     }
 
     const pixelCallback = queuePixelCallback(pixelUrl, newId);
@@ -153,12 +153,12 @@ export const sharedIdSystemSubmodule = {
    */
   extendId: function(config = {}, consentData, storedId) {
     if (hasOptedOut()) {
-      utils.logInfo('PubCommonId: Has opted-out');
+      logInfo('PubCommonId: Has opted-out');
       return {id: undefined};
     }
     const coppa = coppaDataHandler.getCoppa();
     if (coppa) {
-      utils.logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
     const {params: {extend = false, pixelUrl} = {}} = config;

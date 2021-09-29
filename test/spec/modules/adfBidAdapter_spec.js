@@ -331,6 +331,61 @@ describe('Adf adapter', function () {
         }
       });
 
+      describe('price floors', function () {
+        it('should not add if floors module not configured', function () {
+          const validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} }];
+          let imp = getRequestImps(validBidRequests)[0];
+
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, undefined);
+        });
+
+        it('should not add if floor price not defined', function () {
+          const validBidRequests = [ getBidWithFloor() ];
+          let imp = getRequestImps(validBidRequests)[0];
+
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, 'USD');
+        });
+
+        it('should request floor price in adserver currency', function () {
+          config.setConfig({ currency: { adServerCurrency: 'DKK' } });
+          const validBidRequests = [ getBidWithFloor() ];
+          let imp = getRequestImps(validBidRequests)[0];
+
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, 'DKK');
+        });
+
+        it('should add correct floor values', function () {
+          const expectedFloors = [ 1, 1.3, 0.5 ];
+          const validBidRequests = expectedFloors.map(getBidWithFloor);
+          let imps = getRequestImps(validBidRequests);
+
+          expectedFloors.forEach((floor, index) => {
+            assert.equal(imps[index].bidfloor, floor);
+            assert.equal(imps[index].bidfloorcur, 'USD');
+          });
+        });
+
+        function getBidWithFloor(floor) {
+          return {
+            params: { mid: 1 },
+            mediaTypes: { video: {} },
+            getFloor: ({ currency }) => {
+              return {
+                currency: currency,
+                floor
+              }
+            }
+          };
+        }
+
+        function getRequestImps(validBidRequests) {
+          return JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
+        }
+      });
+
       describe('multiple media types', function () {
         it('should use single media type for bidding', function () {
           let validBidRequests = [{
