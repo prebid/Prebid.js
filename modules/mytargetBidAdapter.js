@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { _map } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -55,7 +55,7 @@ export const spec = {
     }
 
     const payload = {
-      places: utils._map(validBidRequests, buildPlacement),
+      places: _map(validBidRequests, buildPlacement),
       site: {
         sitename: getSiteName(referrer),
         page: referrer
@@ -80,7 +80,7 @@ export const spec = {
     let { body } = serverResponse;
 
     if (body.bids) {
-      return utils._map(body.bids, (bid) => {
+      return _map(body.bids, (bid) => {
         let bidResponse = {
           requestId: bid.id,
           cpm: bid.price,
