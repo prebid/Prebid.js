@@ -140,8 +140,7 @@ export function getApiCallback() {
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   const { pubId } = config.params;
-  const anId = pubId;
-  const queryString = constructQueryString(anId, adUnits);
+  const queryString = constructQueryString(pubId, adUnits);
   ajax(
     `${IAS_HOST}?${queryString}`,
     getApiCallback(),
