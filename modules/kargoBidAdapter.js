@@ -1,6 +1,6 @@
-import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { _each } from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -32,10 +32,8 @@ export const spec = {
     const bidIDs = {};
     const bidSizes = {};
 
-    utils._each(validBidRequests, (bid) => {
-      bidIDs[bid.bidId] = bid.params.placementId;
-
-      // For video, this will be player size
+    _each(validBidRequests, bid => {
+      bidIds[bid.bidId] = bid.params.placementId;
       bidSizes[bid.bidId] = bid.sizes;
     });
 

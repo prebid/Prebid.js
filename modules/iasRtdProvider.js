@@ -1,11 +1,13 @@
+import { isArray, getAdUnitSizes, getKeys, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import * as utils from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'ias';
+
+let bidResponses = {};
 
 /**
  * Module init
@@ -19,7 +21,7 @@ export function init(config, userConsent) {
 
 function stringifySlotSizes(sizes) {
   let result = '';
-  if (utils.isArray(sizes)) {
+  if (isArray(sizes)) {
     result = sizes.reduce((acc, size) => {
       acc.push(size.join('.'));
       return acc;
@@ -29,12 +31,13 @@ function stringifySlotSizes(sizes) {
   return result;
 }
 
-function stringifySlot(bidRequest) {
+function stringifySlot(bidRequest, adUnitPath) {
+  const sizes = getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
-  const ss = stringifySlotSizes(bidRequest.sizes);
-  const p = bidRequest.bids[0].params.adUnitPath;
+  const ss = stringifySlotSizes(sizes);
+  const p = bidRequest.code;
   const slot = { id, ss, p };
-  const keyValues = utils.getKeys(slot).map(function (key) {
+  const keyValues = getKeys(slot).map(function (key) {
     return [key, slot[key]].join(':');
   });
   return '{' + keyValues.join(',') + '}';
@@ -59,7 +62,7 @@ function getPageLevelKeywords(response) {
 }
 
 function shallowMerge(dest, src) {
-  utils.getKeys(src).reduce((dest, srcKey) => {
+  getKeys(src).reduce((dest, srcKey) => {
     dest[srcKey] = src[srcKey];
     return dest;
   }, dest);
@@ -67,17 +70,16 @@ function shallowMerge(dest, src) {
 
 function getBidRequestData(reqBidsConfigObj, callback, config) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
-
   let isFinish = false;
 
   const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
-  const { pubId } = config.params;
+  const { pubId, adUnitPath } = config.params;
   const anId = pubId;
   let queries = [];
   queries.push(['anId', anId]);
 
   queries = queries.concat(adUnits.reduce(function (acc, request) {
-    acc.push(['slot', stringifySlot(request)]);
+    acc.push(['slot', stringifySlot(request, adUnitPath)]);
     return acc;
   }, []));
 
@@ -94,11 +96,15 @@ function getBidRequestData(reqBidsConfigObj, callback, config) {
       if (!isFinish) {
         if (request.status === 200) {
           const iasResponse = JSON.parse(response);
+          const commonBidResponse = {};
+          shallowMerge(commonBidResponse, getPageLevelKeywords(iasResponse));
+          commonBidResponse.slots = iasResponse.slots;
+          bidResponses = commonBidResponse;
           adUnits.forEach(adUnit => {
             adUnit.bids.forEach(bid => {
               const rtd = bid.rtd || {};
               const iasRtd = {};
-              iasRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], getPageLevelKeywords(iasResponse));
+              iasRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], bidResponses);
               bid.rtd = Object.assign({}, rtd, iasRtd);
             });
           });
@@ -108,17 +114,31 @@ function getBidRequestData(reqBidsConfigObj, callback, config) {
       callback();
     },
     error: function () {
-      utils.logError('failed to retrieve targeting information');
+      logError('failed to retrieve targeting information');
       callback();
     }
   });
+}
+
+function getTargetingData(adUnits, config, userConsent) {
+  const targeting = {};
+  Object.keys(bidResponses).forEach(key => bidResponses[key] === undefined ? delete bidResponses[key] : {});
+  try {
+    adUnits.forEach(function(adUnit) {
+      targeting[adUnit] = bidResponses;
+    });
+  } catch (err) {
+    logError('error', err);
+  }
+  return targeting;
 }
 
 /** @type {RtdSubmodule} */
 export const iasSubModule = {
   name: SUBMODULE_NAME,
   init: init,
-  getBidRequestData: getBidRequestData
+  getBidRequestData: getBidRequestData,
+  getTargetingData: getTargetingData
 };
 
 submodule(MODULE_NAME, iasSubModule);
