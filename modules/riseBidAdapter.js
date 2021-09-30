@@ -1,5 +1,5 @@
+import { logWarn, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
@@ -25,12 +25,12 @@ export const spec = {
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bidRequest) {
     if (!bidRequest.params) {
-      utils.logWarn('no params have been set to Rise adapter');
+      logWarn('no params have been set to Rise adapter');
       return false;
     }
 
     if (!bidRequest.params.org) {
-      utils.logWarn('org is a mandatory param for Rise adapter');
+      logWarn('org is a mandatory param for Rise adapter');
       return false;
     }
 
@@ -82,7 +82,7 @@ export const spec = {
           url: response.body.userSyncURL
         });
       }
-      if (syncOptions.pixelEnabled && utils.isArray(response.body.userSyncPixels)) {
+      if (syncOptions.pixelEnabled && isArray(response.body.userSyncPixels)) {
         const pixels = response.body.userSyncPixels.map(pixel => {
           return {
             type: 'image',
@@ -104,7 +104,7 @@ registerBidder(spec);
  * @returns {Number}
  */
 function getFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return 0;
   }
   let floorResult = bid.getFloor({
@@ -137,7 +137,7 @@ function buildVideoRequest(bid, bidderRequest) {
  * @returns {Array}
  */
 function getSizes(bid) {
-  if (utils.deepAccess(bid, 'mediaTypes.video.sizes')) {
+  if (deepAccess(bid, 'mediaTypes.video.sizes')) {
     return bid.mediaTypes.video.sizes[0];
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     return bid.sizes[0];
@@ -151,7 +151,7 @@ function getSizes(bid) {
  * @returns {string}
  */
 function getSupplyChain(schainObject) {
-  if (utils.isEmpty(schainObject)) {
+  if (isEmpty(schainObject)) {
     return '';
   }
   let scStr = `${schainObject.ver},${schainObject.complete}`;
@@ -173,7 +173,7 @@ function getSupplyChain(schainObject) {
  * @returns {string}
  */
 function getEncodedValIfNotEmpty(val) {
-  return !utils.isEmpty(val) ? encodeURIComponent(val) : '';
+  return !isEmpty(val) ? encodeURIComponent(val) : '';
 }
 
 /**
@@ -203,8 +203,8 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
     return false;
   }
   const isInclude = syncRule.filter === 'include';
-  const bidders = utils.isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
-  return isInclude && utils.contains(bidders, bidderCode);
+  const bidders = isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
+  return isInclude && contains(bidders, bidderCode);
 }
 
 /**
@@ -263,25 +263,25 @@ function generateParameters(bid, bidderRequest) {
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$',
     adapter_version: ADAPTER_VERSION,
-    auction_start: utils.timestamp(),
-    ad_unit_code: utils.getBidIdParameter('adUnitCode', bid),
+    auction_start: timestamp(),
+    ad_unit_code: getBidIdParameter('adUnitCode', bid),
     tmax: timeout,
     width: width,
     height: height,
     publisher_id: params.org,
     floor_price: Math.max(getFloor(bid), params.floorPrice),
     ua: navigator.userAgent,
-    bid_id: utils.getBidIdParameter('bidId', bid),
-    bidder_request_id: utils.getBidIdParameter('bidderRequestId', bid),
-    transaction_id: utils.getBidIdParameter('transactionId', bid),
-    session_id: utils.getBidIdParameter('auctionId', bid),
+    bid_id: getBidIdParameter('bidId', bid),
+    bidder_request_id: getBidIdParameter('bidderRequestId', bid),
+    transaction_id: getBidIdParameter('transactionId', bid),
+    session_id: getBidIdParameter('auctionId', bid),
     publisher_name: domain,
     site_domain: domain,
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent)
   };
 
-  const userIdsParam = utils.getBidIdParameter('userId', bid);
+  const userIdsParam = getBidIdParameter('userId', bid);
   if (userIdsParam) {
     requestParams.userIds = JSON.stringify(userIdsParam);
   }
@@ -294,31 +294,31 @@ function generateParameters(bid, bidderRequest) {
     requestParams.user_metadata = JSON.stringify(ortb2Metadata.user);
   }
 
-  const playbackMethod = utils.deepAccess(bid, 'mediaTypes.video.playbackmethod');
+  const playbackMethod = deepAccess(bid, 'mediaTypes.video.playbackmethod');
   if (playbackMethod) {
     requestParams.playback_method = playbackMethod;
   }
-  const placement = utils.deepAccess(bid, 'mediaTypes.video.placement');
+  const placement = deepAccess(bid, 'mediaTypes.video.placement');
   if (placement) {
     requestParams.placement = placement;
   }
-  const pos = utils.deepAccess(bid, 'mediaTypes.video.pos');
+  const pos = deepAccess(bid, 'mediaTypes.video.pos');
   if (pos) {
     requestParams.pos = pos;
   }
-  const minduration = utils.deepAccess(bid, 'mediaTypes.video.minduration');
+  const minduration = deepAccess(bid, 'mediaTypes.video.minduration');
   if (minduration) {
     requestParams.min_duration = minduration;
   }
-  const maxduration = utils.deepAccess(bid, 'mediaTypes.video.maxduration');
+  const maxduration = deepAccess(bid, 'mediaTypes.video.maxduration');
   if (maxduration) {
     requestParams.max_duration = maxduration;
   }
-  const skip = utils.deepAccess(bid, 'mediaTypes.video.skip');
+  const skip = deepAccess(bid, 'mediaTypes.video.skip');
   if (skip) {
     requestParams.skip = skip;
   }
-  const linearity = utils.deepAccess(bid, 'mediaTypes.video.linearity');
+  const linearity = deepAccess(bid, 'mediaTypes.video.linearity');
   if (linearity) {
     requestParams.linearity = linearity;
   }
@@ -352,8 +352,8 @@ function generateParameters(bid, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.refererInfo) {
-    requestParams.referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-    requestParams.page_url = config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
+    requestParams.referrer = deepAccess(bidderRequest, 'refererInfo.referer');
+    requestParams.page_url = config.getConfig('pageUrl') || deepAccess(window, 'location.href');
   }
 
   return requestParams;
