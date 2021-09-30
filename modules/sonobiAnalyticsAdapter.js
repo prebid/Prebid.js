@@ -1,9 +1,9 @@
+import { deepClone, logInfo, logError } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
 
-const utils = require('../src/utils.js');
 let ajax = ajaxBuilder(0);
 
 const DEFAULT_EVENT_URL = 'apex.go.sonobi.com/keymaker';
@@ -91,7 +91,7 @@ function addToAuctionQueue(auctionId, id) {
     if (item.bidid !== id) { return true; }
     return auction.stats[id].data.p !== item.p;
   });
-  auction.queue.push(utils.deepClone(auction.stats[id].data));
+  auction.queue.push(deepClone(auction.stats[id].data));
   if (!auction.qTimeout) {
     auction.qTimeout = setTimeout(() => {
       sendQueue(auctionId);
@@ -102,18 +102,18 @@ function updateBidStats(auctionId, id, data) {
   let auction = auctionCache[auctionId];
   auction.stats[id].data = {...auction.stats[id].data, ...data};
   addToAuctionQueue(auctionId, id);
-  logInfo('Updated Bid Stats: ', auction.stats[id]);
+  _logInfo('Updated Bid Stats: ', auction.stats[id]);
   return auction.stats[id];
 }
 
 function handleOtherEvents(eventType, args) {
-  logInfo('Other Event: ' + eventType, args);
+  _logInfo('Other Event: ' + eventType, args);
 }
 
 function handlerAuctionInit(args) {
   auctionCache[args.auctionId] = buildAuctionEntity(args);
   deleteOldAuctions();
-  logInfo('Auction Init', args);
+  _logInfo('Auction Init', args);
 }
 function handlerBidRequested(args) {
   let auction = auctionCache[args.auctionId];
@@ -127,14 +127,14 @@ function handlerBidRequested(args) {
     addToAuctionQueue(args.auctionId, built.bidid);
   })
 
-  logInfo('Bids Requested ', data);
+  _logInfo('Bids Requested ', data);
 }
 
 function handlerBidAdjustment(args) {
-  logInfo('Bid Adjustment', args);
+  _logInfo('Bid Adjustment', args);
 }
 function handlerBidderDone(args) {
-  logInfo('Bidder Done', args);
+  _logInfo('Bidder Done', args);
 }
 
 function handlerAuctionEnd(args) {
@@ -152,24 +152,24 @@ function handlerAuctionEnd(args) {
       updateBidStats(args.auctionId, bidId, {response: 4});
     }
   })
-  logInfo('Auction End', args);
-  logInfo('Auction Cache', auctionCache[args.auctionId].stats);
+  _logInfo('Auction End', args);
+  _logInfo('Auction Cache', auctionCache[args.auctionId].stats);
 }
 function handlerBidWon(args) {
   let {auctionId, requestId} = args;
   let res = updateBidStats(auctionId, requestId, {p: 3, response: 6});
-  logInfo('Bid Won ', args);
-  logInfo('Bid Update Result: ', res);
+  _logInfo('Bid Won ', args);
+  _logInfo('Bid Update Result: ', res);
 }
 function handlerBidResponse(args) {
   let {auctionId, requestId, cpm, size, timeToRespond} = args;
   updateBidStats(auctionId, requestId, {bid: cpm, s: size, jsLatency: timeToRespond, latency: timeToRespond, p: 2, response: 9});
 
-  logInfo('Bid Response ', args);
+  _logInfo('Bid Response ', args);
 }
 function handlerBidTimeout(args) {
   let {auctionId, bidId} = args;
-  logInfo('Bid Timeout ', args);
+  _logInfo('Bid Timeout ', args);
   updateBidStats(auctionId, bidId, {p: 2, response: 0, latency: args.timeout, jsLatency: args.timeout});
 }
 let sonobiAdapter = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
@@ -211,7 +211,7 @@ sonobiAdapter.originEnableAnalytics = sonobiAdapter.enableAnalytics;
 
 sonobiAdapter.enableAnalytics = function (config) {
   if (this.initConfig(config)) {
-    logInfo('Analytics adapter enabled', initOptions);
+    _logInfo('Analytics adapter enabled', initOptions);
     sonobiAdapter.originEnableAnalytics(config);
   }
 };
@@ -219,17 +219,17 @@ sonobiAdapter.enableAnalytics = function (config) {
 sonobiAdapter.initConfig = function (config) {
   let isCorrectConfig = true;
   initOptions = {};
-  initOptions.options = utils.deepClone(config.options);
+  initOptions.options = deepClone(config.options);
 
   initOptions.pubId = initOptions.options.pubId || null;
   initOptions.siteId = initOptions.options.siteId || null;
   initOptions.delay = initOptions.options.delay || QUEUE_TIMEOUT_DEFAULT;
   if (!initOptions.pubId) {
-    logError('"options.pubId" is empty');
+    _logError('"options.pubId" is empty');
     isCorrectConfig = false;
   }
   if (!initOptions.siteId) {
-    logError('"options.siteId" is empty');
+    _logError('"options.siteId" is empty');
     isCorrectConfig = false;
   }
 
@@ -247,7 +247,7 @@ sonobiAdapter.sendData = function (auction, data) {
   let url = 'https://' + initOptions.server + '?pageviewid=' + auction.id + '&corscred=1&pubId=' + initOptions.pubId + '&siteId=' + initOptions.siteId;
   ajax(
     url,
-    function () { logInfo('Auction [' + auction.id + '] sent ', data); },
+    function () { _logInfo('Auction [' + auction.id + '] sent ', data); },
     JSON.stringify(data),
     {
       method: 'POST',
@@ -257,12 +257,12 @@ sonobiAdapter.sendData = function (auction, data) {
   );
 }
 
-function logInfo(message, meta) {
-  utils.logInfo(buildLogMessage(message), meta);
+function _logInfo(message, meta) {
+  logInfo(buildLogMessage(message), meta);
 }
 
-function logError(message) {
-  utils.logError(buildLogMessage(message));
+function _logError(message) {
+  logError(buildLogMessage(message));
 }
 
 function buildLogMessage(message) {

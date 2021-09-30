@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { _each } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -28,7 +28,7 @@ export const spec = {
     const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
     const bidIds = {};
     const bidSizes = {};
-    utils._each(validBidRequests, bid => {
+    _each(validBidRequests, bid => {
       bidIds[bid.bidId] = bid.params.placementId;
       bidSizes[bid.bidId] = bid.sizes;
     });

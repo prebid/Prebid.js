@@ -1,7 +1,7 @@
+import { logMessage } from '../src/utils.js';
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
-import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'bidViewabilityIO';
 const CONFIG_ENABLED = 'enabled';
@@ -23,8 +23,8 @@ export let isSupportedMediaType = (bid) => {
   return supportedMediaTypes.indexOf(bid.mediaType) > -1;
 }
 
-let logMessage = (message) => {
-  return utils.logMessage(`${MODULE_NAME}: ${message}`);
+let _logMessage = (message) => {
+  return logMessage(`${MODULE_NAME}: ${message}`);
 }
 
 // returns options for the iO that detects if the ad is viewable
@@ -43,7 +43,7 @@ export let markViewed = (bid, entry, observer) => {
   return () => {
     observer.unobserve(entry.target);
     events.emit(EVENTS.BID_VIEWABLE, bid);
-    logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`);
+    _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`);
   }
 }
 
@@ -59,13 +59,13 @@ export let viewCallbackFactory = (bid) => {
   return (entries, observer) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        logMessage(`viewable timer starting for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`);
+        _logMessage(`viewable timer starting for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`);
         entry.target.view_tracker = setTimeout(markViewed(bid, entry, observer), IAB_VIEWABLE_DISPLAY_TIME);
       } else {
-        logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} is out of view`);
+        _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} is out of view`);
         if (entry.target.view_tracker) {
           clearTimeout(entry.target.view_tracker);
-          logMessage(`viewable timer stopped for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`);
+          _logMessage(`viewable timer stopped for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`);
         }
       }
     });
