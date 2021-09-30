@@ -3,6 +3,7 @@ import {getStorageManager} from '../../../src/storageManager';
 import {server} from 'test/mocks/xhr.js';
 import sinon from 'sinon';
 import {uspDataHandler} from '../../../src/adapterManager';
+import {parseUrl} from '../../../src/utils';
 
 export const storage = getStorageManager(24);
 const TEST_COOKIE_VALUE = 'cookievalue';
@@ -83,14 +84,22 @@ describe('PublinkIdSystem', () => {
       });
 
       it('Fetch with consent data', () => {
-        const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7'}};
+        const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7', site_id: '102030'}};
         const consentData = {gdprApplies: 1, consentString: 'myconsentstring'};
         let submoduleCallback = publinkIdSubmodule.getId(config, consentData).callback;
         submoduleCallback(callbackSpy);
 
-        let request = server.requests[0];
-        request.url = request.url.replace(':443', '');
-        expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=ca11c0ca7&mpn=Prebid.js&mpv=$prebid.version$&gdpr=1&gdpr_consent=myconsentstring');
+        const request = server.requests[0];
+        const parsed = parseUrl(request.url);
+
+        expect(parsed.hostname).to.equal('proc.ad.cpe.dotomi.com');
+        expect(parsed.pathname).to.equal('/cvx/client/sync/publink');
+        expect(parsed.search.mpn).to.equal('Prebid.js');
+        expect(parsed.search.mpv).to.equal('$prebid.version$');
+        expect(parsed.search.gdpr).to.equal('1');
+        expect(parsed.search.gdpr_consent).to.equal('myconsentstring');
+        expect(parsed.search.sid).to.equal('102030');
+        expect(parsed.search.apikey).to.be.undefined;
 
         request.respond(200, {}, JSON.stringify(serverResponse));
         expect(callbackSpy.calledOnce).to.be.true;
@@ -103,8 +112,12 @@ describe('PublinkIdSystem', () => {
         submoduleCallback(callbackSpy);
 
         let request = server.requests[0];
-        request.url = request.url.replace(':443', '');
-        expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=ca11c0ca7&mpn=Prebid.js&mpv=$prebid.version$');
+        const parsed = parseUrl(request.url);
+
+        expect(parsed.hostname).to.equal('proc.ad.cpe.dotomi.com');
+        expect(parsed.pathname).to.equal('/cvx/client/sync/publink');
+        expect(parsed.search.mpn).to.equal('Prebid.js');
+        expect(parsed.search.mpv).to.equal('$prebid.version$');
 
         request.respond(204, {}, JSON.stringify(serverResponse));
         expect(callbackSpy.called).to.be.false;
@@ -133,13 +146,19 @@ describe('PublinkIdSystem', () => {
       });
 
       it('Fetch with usprivacy data', () => {
-        const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7'}};
+        const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7', api_key: 'abcdefg'}};
         let submoduleCallback = publinkIdSubmodule.getId(config).callback;
         submoduleCallback(callbackSpy);
 
         let request = server.requests[0];
-        request.url = request.url.replace(':443', '');
-        expect(request.url).to.equal('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink?deh=ca11c0ca7&mpn=Prebid.js&mpv=$prebid.version$&us_privacy=1YNN');
+        const parsed = parseUrl(request.url);
+
+        expect(parsed.hostname).to.equal('proc.ad.cpe.dotomi.com');
+        expect(parsed.pathname).to.equal('/cvx/client/sync/publink');
+        expect(parsed.search.mpn).to.equal('Prebid.js');
+        expect(parsed.search.mpv).to.equal('$prebid.version$');
+        expect(parsed.search.us_privacy).to.equal('1YNN');
+        expect(parsed.search.apikey).to.equal('abcdefg');
 
         request.respond(200, {}, JSON.stringify(serverResponse));
         expect(callbackSpy.calledOnce).to.be.true;
