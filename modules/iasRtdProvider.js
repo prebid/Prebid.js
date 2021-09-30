@@ -70,7 +70,7 @@ function formatTargetingData(adUnit) {
   if (iasTargeting[FRAUD_FIELD_NAME]) {
     result[FRAUD_FIELD_NAME] = iasTargeting[FRAUD_FIELD_NAME];
   }
-  if (iasTargeting[CUSTOM_FIELD_NAME] && iasTargeting[CUSTOM_FIELD_NAME][IAS_KW]) {
+  if (iasTargeting[CUSTOM_FIELD_NAME] && IAS_KW in iasTargeting[CUSTOM_FIELD_NAME]) {
     result[IAS_KW] = iasTargeting[CUSTOM_FIELD_NAME][IAS_KW];
   }
   if (iasTargeting[SLOTS_OBJECT_FIELD_NAME] && adUnit in iasTargeting[SLOTS_OBJECT_FIELD_NAME]) {
