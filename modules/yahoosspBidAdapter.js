@@ -15,6 +15,8 @@ const TEST_MODE_BANNER_POS = '8a969978017a7aaabab4ab0bc01a0009';
 const TEST_MODE_VIDEO_POS = '8a96958a017a7a57ac375d50c0c700cc';
 const DEFAULT_RENDERER_TIMEOUT = 700;
 const DEFAULT_CURRENCY = 'USD';
+const SSP_ENDPOINT_DCN_POS = 'https://c2shb.pubgw.yahoo.com/bidRequest';
+const SSP_ENDPOINT_PUBID = 'https://c2shb.pubgw.yahoo.com/admax/bid/partners/PBJS';
 const SUPPORTED_USER_ID_SOURCES = [
   'admixer.net',
   'adserver.org',
@@ -49,9 +51,6 @@ const SUPPORTED_USER_ID_SOURCES = [
   'yahoo.com',
   'zeotap.com'
 ];
-
-const SSP_ENDPOINT_DCN_POS = 'https://c2shb.ssp.yahoo.com/bidRequest';
-const SSP_ENDPOINT_PUBID = 'https://c2shb.ssp.yahoo.com/admax/bid/partners/PBJS';
 
 /* Utility functions */
 function hasPurpose1Consent(bidderRequest) {
