@@ -8,7 +8,7 @@
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
-import * as utils from '../src/utils.js';
+import { parseUrl, buildUrl, logError } from '../src/utils.js';
 import {uspDataHandler} from '../src/adapterManager.js';
 
 const MODULE_NAME = 'publinkId';
@@ -23,7 +23,7 @@ function isHex(s) {
 }
 
 function publinkIdUrl(params, consentData) {
-  let url = utils.parseUrl('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink');
+  let url = parseUrl('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink');
   url.search = {
     deh: params.e,
     mpn: 'Prebid.js',
@@ -39,7 +39,7 @@ function publinkIdUrl(params, consentData) {
     url.search.us_privacy = usPrivacyString;
   }
 
-  return utils.buildUrl(url);
+  return buildUrl(url);
 }
 
 function makeCallback(config = {}, consentData) {
@@ -58,7 +58,7 @@ function makeCallback(config = {}, consentData) {
       if (isHex(config.params.e)) {
         ajax(publinkIdUrl(config.params, consentData), handleResponse, undefined, options);
       } else {
-        utils.logError('params.e must be a hex string');
+        logError('params.e must be a hex string');
       }
     }
   };
@@ -82,7 +82,7 @@ function getlocalValue() {
           return obj.publink;
         }
       } catch (e) {
-        utils.logError(e);
+        logError(e);
       }
     }
   }

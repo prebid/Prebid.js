@@ -1,3 +1,4 @@
+import { deepClone, logInfo, logError } from '../src/utils.js';
 import Base64 from 'crypto-js/enc-base64';
 import hmacSHA512 from 'crypto-js/hmac-sha512';
 import enc from 'crypto-js/enc-utf8';
@@ -5,7 +6,6 @@ import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
-import * as utils from '../src/utils.js';
 
 const secretKey = 'bydata@123456';
 const { EVENTS: { NO_BID, BID_TIMEOUT, AUCTION_END } } = CONSTANTS;
@@ -28,10 +28,10 @@ function onNoBidData(t) {
 }
 
 function onAuctionEnd(t) {
-  logInfo('onAuctionEnd', t);
+  _logInfo('onAuctionEnd', t);
   const {isCorrectOption, logFrequency} = initOptions;
   var value = Math.floor(Math.random() * 10000 + 1);
-  logInfo(' value - frequency ', (value + '-' + logFrequency));
+  _logInfo(' value - frequency ', (value + '-' + logFrequency));
   setTimeout(() => {
     if (isCorrectOption && value < logFrequency) {
       ascAdapter.dataProcess(t);
@@ -64,7 +64,7 @@ ascAdapter.originEnableAnalytics = ascAdapter.enableAnalytics;
 // override enableAnalytics so we can get access to the config passed in from the page
 ascAdapter.enableAnalytics = function(config) {
   if (this.initConfig(config)) {
-    logInfo('initiated:', initOptions);
+    _logInfo('initiated:', initOptions);
     initOptions.isCorrectOption && ascAdapter.getVisitorData();
     ascAdapter.originEnableAnalytics(config);
   }
@@ -73,12 +73,12 @@ ascAdapter.enableAnalytics = function(config) {
 ascAdapter.initConfig = function (config) {
   let isCorrectOption = true;
   initOptions = {};
-  logInfo('initConfig', config);
-  initOptions.options = utils.deepClone(config.options);
+  _logInfo('initConfig', config);
+  initOptions.options = deepClone(config.options);
   initOptions.clientId = initOptions.options.clientId || null;
   initOptions.logFrequency = initOptions.options.logFrequency;
   if (!initOptions.clientId) {
-    logError('"options.clientId" should not empty!!');
+    _logError('"options.clientId" should not empty!!');
     isCorrectOption = false;
   }
   initOptions.isCorrectOption = isCorrectOption;
@@ -264,7 +264,7 @@ ascAdapter.dataProcess = function(t) {
 ascAdapter.sendPayload = function () {
   var obj = { 'records': [ { 'value': payload } ] };
   let strJSON = JSON.stringify(obj);
-  logInfo(' sendPayload ', JSON.stringify(obj));
+  _logInfo(' sendPayload ', JSON.stringify(obj));
   ajax(DEFAULT_EVENT_URL, undefined, strJSON, {
     contentType: 'application/vnd.kafka.json.v2+json',
     method: 'POST',
@@ -296,12 +296,12 @@ adapterManager.registerAnalyticsAdapter({
   code: 'bydata'
 });
 
-function logInfo(message, meta) {
-  utils.logInfo(buildLogMessage(message), meta);
+function _logInfo(message, meta) {
+  logInfo(buildLogMessage(message), meta);
 }
 
-function logError(message) {
-  utils.logError(buildLogMessage(message));
+function _logError(message) {
+  logError(buildLogMessage(message));
 }
 
 function buildLogMessage(message) {
