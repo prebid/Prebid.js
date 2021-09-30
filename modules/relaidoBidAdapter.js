@@ -71,7 +71,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       height: height,
       pv: '$prebid.version$'
     };
-    
+
     const imuid = deepAccess(bidRequest, 'userId.imuid');
     if (imuid) {
       payload.imuid = imuid;
