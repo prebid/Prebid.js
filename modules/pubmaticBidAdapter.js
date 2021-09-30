@@ -1330,7 +1330,7 @@ export const spec = {
 
   transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
     _addJWPlayerSegmentData(params, adUnit.bids[0], true);
-    return utils.convertTypes({
+    return convertTypes({
       'publisherId': 'string',
       'adSlot': 'string'
     }, params);
