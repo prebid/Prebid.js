@@ -76,7 +76,7 @@ describe('RelaidoAdapter', function () {
       mediaType: 'video',
     };
   });
-  
+
   afterEach(() => {
     generateUUIDStub.restore();
     triggerPixelStub.restore();
@@ -272,7 +272,7 @@ describe('RelaidoAdapter', function () {
       expect(keys[0]).to.equal('version');
       expect(keys[keys.length - 1]).to.equal('ref');
     });
-    
+
     it('should get imuid', function () {
       bidRequest.userId = {}
       bidRequest.userId.imuid = 'i.tjHcK_7fTcqnbrS_YA2vaw';
@@ -282,8 +282,6 @@ describe('RelaidoAdapter', function () {
       expect(request.data.imuid).to.equal('i.tjHcK_7fTcqnbrS_YA2vaw');
     });
   });
-  
-  
 
   describe('spec.interpretResponse', function () {
     it('should build bid response by video', function () {
@@ -382,6 +380,7 @@ describe('RelaidoAdapter', function () {
         adUnitCode: bidRequest.adUnitCode,
         ref: window.location.href,
       }
+
       spec.onBidWon(bid);
       const parser = utils.parseUrl(triggerPixelStub.getCall(0).args[0]);
       const query = parser.search;
@@ -409,6 +408,7 @@ describe('RelaidoAdapter', function () {
         params: [bidRequest.params],
         timeout: bidderRequest.timeout,
       }];
+
       spec.onTimeout(data);
       const parser = utils.parseUrl(triggerPixelStub.getCall(0).args[0]);
       const query = parser.search;
