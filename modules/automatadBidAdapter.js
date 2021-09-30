@@ -1,5 +1,5 @@
+import { logInfo } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js'
-import * as utils from '../src/utils.js'
 import {BANNER} from '../src/mediaTypes.js'
 import {ajax} from '../src/ajax.js'
 
@@ -92,7 +92,7 @@ export const spec = {
         })
       })
     } else {
-      utils.logInfo('automatad :: no valid responses to interpret')
+      logInfo('automatad :: no valid responses to interpret')
     }
 
     return bidResponses

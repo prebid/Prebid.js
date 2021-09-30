@@ -1745,6 +1745,8 @@ describe('S2S Adapter', function () {
           interests: ['cars']
         }
       };
+      const bcat = ['IAB25', 'IAB7-39'];
+      const badv = ['blockedAdv-1.com', 'blockedAdv-2.com'];
       const allowedBidders = [ 'rubicon', 'appnexus' ];
 
       const expected = allowedBidders.map(bidder => ({
@@ -1769,19 +1771,23 @@ describe('S2S Adapter', function () {
                   interests: ['cars']
                 }
               }
-            }
+            },
+            bcat: ['IAB25', 'IAB7-39'],
+            badv: ['blockedAdv-1.com', 'blockedAdv-2.com']
           }
         }
       }));
       const commonContextExpected = utils.mergeDeep({'page': 'http://mytestpage.com', 'publisher': {'id': '1'}}, commonContext);
 
-      config.setConfig({ fpd: { context: commonContext, user: commonUser } });
-      config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
+      config.setConfig({ fpd: { context: commonContext, user: commonUser, badv, bcat } });
+      config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user, bcat, badv } } });
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
       expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
       expect(parsedRequestBody.user).to.deep.equal(commonUser);
+      expect(parsedRequestBody.badv).to.deep.equal(badv);
+      expect(parsedRequestBody.bcat).to.deep.equal(bcat);
     });
 
     describe('pbAdSlot config', function () {

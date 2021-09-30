@@ -1,5 +1,5 @@
+import { isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
@@ -170,7 +170,7 @@ function interpretResponse(serverResponse, bidRequest) {
 }
 
 function _assignFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     // eslint-disable-next-line no-console
     console.log(bid.params.bidFloor);
     return bid.params.bidFloor ? bid.params.bidFloor : null;
@@ -182,7 +182,7 @@ function _assignFloor(bid) {
   });
 
   if (
-    utils.isPlainObject(floor) &&
+    isPlainObject(floor) &&
     !isNaN(floor.floor) &&
     floor.currency === 'EUR'
   ) {

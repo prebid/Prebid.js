@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isNumber, deepAccess, isArray, flatten, convertTypes, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -14,7 +14,7 @@ export const spec = {
   gvlid: 280,
   supportedMediaTypes: [VIDEO, BANNER, ADPOD],
   isBidRequestValid: function (bid) {
-    return utils.isNumber(utils.deepAccess(bid, 'params.aid'));
+    return isNumber(deepAccess(bid, 'params.aid'));
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
@@ -43,9 +43,9 @@ export const spec = {
     }
 
     if (syncOptions.pixelEnabled || syncOptions.iframeEnabled) {
-      utils.isArray(serverResponses) && serverResponses.forEach((response) => {
+      isArray(serverResponses) && serverResponses.forEach((response) => {
         if (response.body) {
-          if (utils.isArray(response.body)) {
+          if (isArray(response.body)) {
             response.body.forEach(b => {
               addSyncs(b);
             })
@@ -82,26 +82,26 @@ export const spec = {
     serverResponse = serverResponse.body;
     let bids = [];
 
-    if (!utils.isArray(serverResponse)) {
+    if (!isArray(serverResponse)) {
       return parseRTBResponse(serverResponse, adapterRequest);
     }
 
     serverResponse.forEach(serverBidResponse => {
-      bids = utils.flatten(bids, parseRTBResponse(serverBidResponse, adapterRequest));
+      bids = flatten(bids, parseRTBResponse(serverBidResponse, adapterRequest));
     });
 
     return bids;
   },
 
   transformBidParams(params) {
-    return utils.convertTypes({
+    return convertTypes({
       'aid': 'number',
     }, params);
   }
 };
 
 function parseRTBResponse(serverResponse, adapterRequest) {
-  const isEmptyResponse = !serverResponse || !utils.isArray(serverResponse.bids);
+  const isEmptyResponse = !serverResponse || !isArray(serverResponse.bids);
   const bids = [];
 
   if (isEmptyResponse) {
@@ -126,26 +126,26 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
   const tag = {
-    Domain: utils.deepAccess(adapterRequest, 'refererInfo.referer')
+    Domain: deepAccess(adapterRequest, 'refererInfo.referer')
   };
   if (config.getConfig('coppa') === true) {
     tag.Coppa = 1;
   }
-  if (utils.deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
+  if (deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
     tag.GDPR = 1;
-    tag.GDPRConsent = utils.deepAccess(adapterRequest, 'gdprConsent.consentString');
+    tag.GDPRConsent = deepAccess(adapterRequest, 'gdprConsent.consentString');
   }
-  if (utils.deepAccess(adapterRequest, 'uspConsent')) {
-    tag.USP = utils.deepAccess(adapterRequest, 'uspConsent');
+  if (deepAccess(adapterRequest, 'uspConsent')) {
+    tag.USP = deepAccess(adapterRequest, 'uspConsent');
   }
-  if (utils.deepAccess(bidRequests[0], 'schain')) {
-    tag.Schain = utils.deepAccess(bidRequests[0], 'schain');
+  if (deepAccess(bidRequests[0], 'schain')) {
+    tag.Schain = deepAccess(bidRequests[0], 'schain');
   }
-  if (utils.deepAccess(bidRequests[0], 'userId')) {
-    tag.UserIds = utils.deepAccess(bidRequests[0], 'userId');
+  if (deepAccess(bidRequests[0], 'userId')) {
+    tag.UserIds = deepAccess(bidRequests[0], 'userId');
   }
-  if (utils.deepAccess(bidRequests[0], 'userIdAsEids')) {
-    tag.UserEids = utils.deepAccess(bidRequests[0], 'userIdAsEids');
+  if (deepAccess(bidRequests[0], 'userIdAsEids')) {
+    tag.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
   }
   // end publisher env
   const bids = []
@@ -164,13 +164,13 @@ function bidToTag(bidRequests, adapterRequest) {
  * @returns {object}
  */
 function prepareBidRequests(bidReq) {
-  const mediaType = utils.deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
-  const sizes = mediaType === VIDEO ? utils.deepAccess(bidReq, 'mediaTypes.video.playerSize') : utils.deepAccess(bidReq, 'mediaTypes.banner.sizes');
+  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
+  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
   const bidReqParams = {
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.aid,
     'AdType': mediaType,
-    'Sizes': utils.parseSizesInput(sizes).join(',')
+    'Sizes': parseSizesInput(sizes).join(',')
   };
 
   bidReqParams.PlacementId = bidReq.adUnitCode;
@@ -178,9 +178,9 @@ function prepareBidRequests(bidReq) {
     bidReqParams.AdmType = 'iframe';
   }
   if (mediaType === VIDEO) {
-    const context = utils.deepAccess(bidReq, 'mediaTypes.video.context');
+    const context = deepAccess(bidReq, 'mediaTypes.video.context');
     if (context === ADPOD) {
-      bidReqParams.Adpod = utils.deepAccess(bidReq, 'mediaTypes.video');
+      bidReqParams.Adpod = deepAccess(bidReq, 'mediaTypes.video');
     }
   }
   return bidReqParams;
@@ -192,7 +192,7 @@ function prepareBidRequests(bidReq) {
  * @returns {object}
  */
 function getMediaType(bidderRequest) {
-  return utils.deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
+  return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
 }
 
 /**
@@ -203,7 +203,7 @@ function getMediaType(bidderRequest) {
  */
 function createBid(bidResponse, bidRequest) {
   const mediaType = getMediaType(bidRequest)
-  const context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+  const context = deepAccess(bidRequest, 'mediaTypes.video.context');
   const bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,

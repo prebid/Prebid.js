@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isFn, isPlainObject, isStr, isNumber, getDNT, deepSetValue, inIframe, isArray, deepAccess, logError, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
@@ -40,7 +40,7 @@ export const helper = {
     return BANNER;
   },
   getBidFloor(bid) {
-    if (!utils.isFn(bid.getFloor)) {
+    if (!isFn(bid.getFloor)) {
       return bid.params.bidfloor ? bid.params.bidfloor : null;
     }
 
@@ -50,7 +50,7 @@ export const helper = {
       currency: 'USD'
     });
 
-    if (utils.isPlainObject(bidFloor) && !isNaN(bidFloor.floor) && bidFloor.currency === 'USD') {
+    if (isPlainObject(bidFloor) && !isNaN(bidFloor.floor) && bidFloor.currency === 'USD') {
       return bidFloor.floor;
     }
 
@@ -64,10 +64,10 @@ export const spec = {
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
-    return !!bid.params.supplyPartnerId && utils.isStr(bid.params.supplyPartnerId) &&
-      (!bid.params['rtbEndpoint'] || utils.isStr(bid.params['rtbEndpoint'])) &&
-      (!bid.params.bidfloor || utils.isNumber(bid.params.bidfloor)) &&
-      (!bid.params['adpos'] || utils.isNumber(bid.params['adpos'])) &&
+    return !!bid.params.supplyPartnerId && isStr(bid.params.supplyPartnerId) &&
+      (!bid.params['rtbEndpoint'] || isStr(bid.params['rtbEndpoint'])) &&
+      (!bid.params.bidfloor || isNumber(bid.params.bidfloor)) &&
+      (!bid.params['adpos'] || isNumber(bid.params['adpos'])) &&
       (!bid.params['protocols'] || Array.isArray(bid.params['protocols'])) &&
       (!bid.params.instl || bid.params.instl === 0 || bid.params.instl === 1);
   },
@@ -88,7 +88,7 @@ export const spec = {
         },
         device: {
           ua: navigator.userAgent,
-          dnt: utils.getDNT() ? 1 : 0,
+          dnt: getDNT() ? 1 : 0,
           h: screen.height,
           w: screen.width,
           language: navigator.language
@@ -107,16 +107,16 @@ export const spec = {
           consent_required: gdprConsent.gdprApplies
         };
 
-        utils.deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.gdprApplies === true ? 1 : 0);
-        utils.deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consentString);
+        deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.gdprApplies === true ? 1 : 0);
+        deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consentString);
       }
 
       if (validBidRequests[0].schain) {
-        utils.deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
+        deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
       }
 
       if (bidderRequest && bidderRequest.uspConsent) {
-        utils.deepSetValue(rtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+        deepSetValue(rtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
       const imp = {
@@ -138,7 +138,7 @@ export const spec = {
               w: sizes.length ? sizes[0][0] : 300,
               h: sizes.length ? sizes[0][1] : 250,
               pos: params.pos || 0,
-              topframe: utils.inIframe() ? 0 : 1
+              topframe: inIframe() ? 0 : 1
             }
           });
           rtbBidRequest.imp.push(bannerImp);
@@ -166,10 +166,10 @@ export const spec = {
             }
           });
 
-          if (utils.isArray(playerSize[0])) {
+          if (isArray(playerSize[0])) {
             videoImp.video.w = playerSize[0][0];
             videoImp.video.h = playerSize[0][1];
-          } else if (utils.isNumber(playerSize[0])) {
+          } else if (isNumber(playerSize[0])) {
             videoImp.video.w = playerSize[0];
             videoImp.video.h = playerSize[1];
           } else {
@@ -183,8 +183,8 @@ export const spec = {
 
       let eids = [];
       if (bidRequest && bidRequest.userId) {
-        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
-        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
+        addExternalUserId(eids, deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
+        addExternalUserId(eids, deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
       }
       if (eids.length > 0) {
         rtbBidRequest.user.ext.eids = eids;
@@ -206,7 +206,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse && serverResponse.body;
     if (!response) {
-      utils.logError('empty response');
+      logError('empty response');
       return [];
     }
 
@@ -232,11 +232,11 @@ export const spec = {
         }
       }
 
-      if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
+      if (deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
         if (outBid.mediaType === BANNER) {
           outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
         } else if (outBid.mediaType === VIDEO) {
-          const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
+          const context = deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
           outBids.push(Object.assign({}, outBid, {
             vastUrl: bid.ext.vast_url,
             vastXml: bid.adm,
@@ -315,7 +315,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
   try {
     renderer.setRender(renderOutstream);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
 }
@@ -341,7 +341,7 @@ function renderOutstream(bid) {
 }
 
 function addExternalUserId(eids, value, source, rtiPartner) {
-  if (utils.isStr(value)) {
+  if (isStr(value)) {
     eids.push({
       source,
       uids: [{
