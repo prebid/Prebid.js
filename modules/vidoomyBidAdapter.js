@@ -93,8 +93,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     xhr.open('GET', COOKIE_SYNC_JSON)
     xhr.addEventListener('load', function () {
       const macro = Macro({
-        gpdr: bidderRequest.gdprConsent.gdprApplies,
-        gpdr_consent: bidderRequest.gdprConsent.consentString
+        gpdr: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : '0',
+        gpdr_consent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : '',
       });
       JSON.parse(this.responseText).filter(Boolean).forEach(url => {
         firePixel(macro.replace(url))
@@ -248,6 +248,7 @@ function Macro (obj) {
         /{{\s*([a-zA-Z0-9_]+)\s*}}/g,
         /\$\$\s*([a-zA-Z0-9_]+)\s*\$\$/g,
         /\[\s*([a-zA-Z0-9_]+)\s*\]/g,
+        /\{\s*([a-zA-Z0-9_]+)\s*\}/g,
       ];
       regexes.forEach(regex => {
         string = string.replace(regex, (str, x) => {
