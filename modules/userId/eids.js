@@ -181,15 +181,18 @@ const USER_IDS_CONFIG = {
     source: 'neustar.biz',
     atype: 1
   },
+
   // MediaWallah OpenLink
   'mwOpenLinkId': {
     source: 'mediawallahscript.com',
     atype: 1
   },
+
   'tapadId': {
     source: 'tapad.com',
     atype: 1
   },
+
   // Novatiq Snowflake
   'novatiq': {
     getValue: function(data) {
@@ -198,6 +201,7 @@ const USER_IDS_CONFIG = {
     source: 'novatiq.com',
     atype: 1
   },
+
   'uid2': {
     source: 'uidapi.com',
     atype: 3,
@@ -205,40 +209,54 @@ const USER_IDS_CONFIG = {
       return data.id;
     }
   },
+
   // Akamai Data Activation Platform (DAP)
   'dapId': {
     source: 'akamai.com',
     atype: 1
   },
+
   'deepintentId': {
     source: 'deepintent.com',
     atype: 3
   },
+
   // Admixer Id
   'admixerId': {
     source: 'admixer.net',
     atype: 3
   },
+
   // Adtelligent Id
   'adtelligentId': {
     source: 'adtelligent.com',
     atype: 3
   },
+
   amxId: {
     source: 'amxrtb.com',
     atype: 1,
   },
+
   'publinkId': {
     source: 'epsilon.com',
     atype: 3
   },
+
   'kpuid': {
     source: 'kpuid.com',
     atype: 3
   },
+
   'imuid': {
     source: 'intimatemerger.com',
     atype: 1
+  },
+
+  // Yahoo ConnectID
+  'connectID': {
+    source: 'yahoo.com',
+    atype: 3
   }
 };
 
