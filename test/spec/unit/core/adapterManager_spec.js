@@ -1842,7 +1842,7 @@ describe('adapterManager tests', function () {
           ['visitor-uk', 'desktop']
         );
 
-        // only one adUnit and one bid from that adUnit should make it through the applied labels above
+          // only one adUnit and one bid from that adUnit should make it through the applied labels above
         expect(bidRequests.length).to.equal(1);
         expect(bidRequests[0].bidderCode).to.equal('rubicon');
         expect(bidRequests[0].bids.length).to.equal(1);

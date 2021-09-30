@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
@@ -128,6 +127,7 @@ const isBrowsiAuction = (auctionId) => {
  */
 const isBrowsiDivId = (divId) => Boolean(divId.match(/^browsi_ad_/g))
 
+/* eslint-disable-next-line compat/compat */
 let fluctAnalyticsAdapter = Object.assign(
   adapter({ url, analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
@@ -235,11 +235,11 @@ let fluctAnalyticsAdapter = Object.assign(
  */
 export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
   /** @type {string} */
-  // eslint-disable-next-line standard/computed-property-even-spacing
   const path = slots[find(Object.keys(slots), slot => {
     /** @type {string|null} @example browsi_ad_0_ai_1_rc_ */
-    const [browsiPrefix] = adUnitCode.match(/^browsi_ad_.*_(?=\d*$)/g)
-    return slot === adUnitCode || (slot.match(new RegExp(`^${browsiPrefix}`, 'g')) ?? [])[0]
+    const browsiPrefix = adUnitCode.match(/^browsi_ad_.*_(?=\d*$)/g)?.[0]
+    return slot === adUnitCode
+      || slot.match(new RegExp(`^${browsiPrefix}`, 'g'))?.[0]
   })]
   return find(Object.keys(slots), slot => !isBrowsiDivId(slots[slot]) && slots[slot] === path) ?? adUnitCode
 }
@@ -255,7 +255,7 @@ const modifyBrowsiAdUnit = (adUnit) => {
   //   'div-gpt-ad-1629864618640-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
   //   'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
   // }
-  const slots = window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
+  const slots = googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
   return {
     ...adUnit,
     adUnitCode: getAdUnitCodeBeforeReplication(slots, adUnit.code),
