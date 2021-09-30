@@ -205,5 +205,21 @@ describe('ats analytics adapter', function () {
       let result = atsAnalyticsAdapter.shouldFireRequest(10);
       expect(result).to.equal(false);
     })
+
+    it('should set cookie value to 10 for _lr_sampling_rate', function () {
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+      sinon.stub(Math, 'random').returns(0.99);
+      atsAnalyticsAdapter.setSamplingCookie(10);
+      let samplingRate = storage.getCookie('_lr_sampling_rate');
+      expect(samplingRate).to.equal('10');
+    })
+
+    it('should set cookie value to 0 for _lr_sampling_rate', function () {
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+      sinon.stub(Math, 'random').returns(0.99);
+      atsAnalyticsAdapter.setSamplingCookie(0);
+      let samplingRate = storage.getCookie('_lr_sampling_rate');
+      expect(samplingRate).to.equal('0');
+    })
   })
 })
