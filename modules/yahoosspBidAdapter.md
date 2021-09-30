@@ -1,7 +1,7 @@
 # Overview
 **Module Name:** yahoossp Bid Adapter
 **Module Type:** Bidder Adapter
-**Maintainer:** hb-fe-tech@oath.com
+**Maintainer:** hb-fe-tech@yahooinc.com
 
 # Description
 The Yahoo SSP Bid Adapter is an OpenRTB interface that consolidates all previous "Oath.inc" adapters such as: "aol", "oneMobile", "oneDisplay" & "oneVideo" supply-side platforms.
