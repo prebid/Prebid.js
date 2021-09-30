@@ -259,8 +259,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.publisher = {
         id: bid.params.pubId
       }
-      if (utils.deepAccess(bid, 'params.bidOverride.site.id') || utils.deepAccess(bid, 'params.inventoryid')) {
-        outBoundBidRequest.site.id = utils.deepAccess(bid, 'params.bidOverride.site.id') || bid.params.inventoryid;
+      if (utils.deepAccess(bid, 'params.bidOverride.site.id') || utils.deepAccess(bid, 'params.inventoryId')) {
+        outBoundBidRequest.site.id = utils.deepAccess(bid, 'params.bidOverride.site.id') || bid.params.inventoryId;
       }
     } else {
       outBoundBidRequest.site.id = bid.params.dcn;
@@ -332,6 +332,8 @@ function appendImpObject(bid, openRtbObject) {
     if (getPubIdMode(bid) === false) {
       impObject.tagid = bid.params.pos;
       impObject.ext.pos = bid.params.pos;
+    } else if (utils.deepAccess(bid, 'params.placementId')) {
+      impObject.tagid = bid.params.placementId
     };
 
     openRtbObject.imp.push(impObject);
