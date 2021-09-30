@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isArray, deepAccess, logWarn, parseUrl } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -22,7 +22,7 @@ var consentApiVersion;
  */
 const getNotificationPayload = bidData => {
   if (bidData) {
-    const bids = utils.isArray(bidData) ? bidData : [bidData];
+    const bids = isArray(bidData) ? bidData : [bidData];
     if (bids.length > 0) {
       const result = {
         requestId: undefined,
@@ -31,7 +31,7 @@ const getNotificationPayload = bidData => {
         slotId: [],
       }
       bids.forEach(bid => {
-        let params = utils.isArray(bid.params) ? bid.params[0] : bid.params;
+        let params = isArray(bid.params) ? bid.params[0] : bid.params;
         params = params || {};
 
         // check for stored detection
@@ -122,7 +122,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
 /**
  * Get value for first occurence of key within the collection
  */
-const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || utils.deepAccess(next, key), false);
+const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || deepAccess(next, key), false);
 
 /**
  * Send payload to notification endpoint
@@ -141,7 +141,7 @@ const sendNotification = payload => {
  */
 const mapBanner = slot => {
   if (slot.mediaType === 'banner' ||
-    utils.deepAccess(slot, 'mediaTypes.banner') ||
+    deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
     const format = slot.sizes.map(size => ({
       w: size[0],
@@ -225,7 +225,7 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
         gam.targeting = {};
       }
     } catch (err) {
-      utils.logWarn('Could not parse adm data', bid.adm);
+      logWarn('Could not parse adm data', bid.adm);
     }
   }
 
@@ -281,7 +281,7 @@ const spec = {
     const siteId = setOnAny(validBidRequests, 'params.siteId');
     const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.referer;
-    const domain = setOnAny(validBidRequests, 'params.domain') || utils.parseUrl(page).hostname;
+    const domain = setOnAny(validBidRequests, 'params.domain') || parseUrl(page).hostname;
     const tmax = setOnAny(validBidRequests, 'params.tmax') ? parseInt(setOnAny(validBidRequests, 'params.tmax'), 10) : TMAX;
     const pbver = '$prebid.version$';
     const testMode = setOnAny(validBidRequests, 'params.test') ? 1 : undefined;
@@ -390,7 +390,7 @@ const spec = {
               bids.push(bid);
             }
           } else {
-            utils.logWarn('Discarding response - no matching request / site id', serverBid.impid);
+            logWarn('Discarding response - no matching request / site id', serverBid.impid);
           }
         });
       });
@@ -405,7 +405,7 @@ const spec = {
         url: `${SYNC_URL}?tcf=${consentApiVersion}`,
       }];
     } else {
-      utils.logWarn('sspBC adapter requires iframe based user sync.');
+      logWarn('sspBC adapter requires iframe based user sync.');
     }
   },
 

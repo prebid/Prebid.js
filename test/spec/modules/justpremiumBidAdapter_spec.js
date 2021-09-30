@@ -12,6 +12,18 @@ describe('justpremium adapter', function () {
     sandbox.restore();
   });
 
+  let schainConfig = {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'indirectseller.com',
+        'sid': '00001',
+        'hp': 1
+      }
+    ]
+  }
+
   let adUnits = [
     {
       adUnitCode: 'div-gpt-ad-1471513102552-1',
@@ -33,7 +45,8 @@ describe('justpremium adapter', function () {
       params: {
         zone: 28313,
         allow: ['lb', 'wp']
-      }
+      },
+      schain: schainConfig
     },
     {
       adUnitCode: 'div-gpt-ad-1471513102552-2',
@@ -75,6 +88,7 @@ describe('justpremium adapter', function () {
       expect(jpxRequest).to.not.equal(null)
       expect(jpxRequest.zone).to.not.equal('undefined')
       expect(bidderRequest.refererInfo.referer).to.equal('https://justpremium.com')
+      expect(jpxRequest.schain).to.deep.equal(schainConfig)
       expect(jpxRequest.sw).to.equal(window.top.screen.width)
       expect(jpxRequest.sh).to.equal(window.top.screen.height)
       expect(jpxRequest.ww).to.equal(window.top.innerWidth)
@@ -83,7 +97,7 @@ describe('justpremium adapter', function () {
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.mediaTypes && jpxRequest.mediaTypes.banner && jpxRequest.mediaTypes.banner.sizes).to.not.equal('undefined')
       expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
-      expect(jpxRequest.version.jp_adapter).to.equal('1.7')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.8')
       expect(jpxRequest.pubcid).to.equal('0000000')
       expect(jpxRequest.uids.tdid).to.equal('1111111')
       expect(jpxRequest.uids.id5id.uid).to.equal('2222222')

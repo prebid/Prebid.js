@@ -37,6 +37,9 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
           let lwFloor;
+          let container = document.getElementById(bidRequest.adUnitCode);
+          let adUnitId = container ? container.getAttribute('data-adunitid') : undefined;
+          adUnitId = adUnitId != null ? adUnitId : undefined;
 
           if (bidRequest.lwflr) {
             lwFloor = bidRequest.lwflr.flr;
@@ -49,6 +52,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
           cache.auctions[args.auctionId].bids[bidRequest.bidId] = {
             bidder: bidRequest.bidder,
             adUnit: bidRequest.adUnitCode,
+            adUnitId: adUnitId,
             isBid: false,
             won: false,
             timeout: false,
@@ -85,6 +89,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
             {
               sent: 0,
               lw: bidResponse.lw,
+              adUnitId: bidResponse.adUnitId,
               timeStamp: cache.auctions[args.auctionId].timeStamp
             };
         }
@@ -181,6 +186,7 @@ function getSentRequests() {
         sentRequests.push({
           timeStamp: auction.timeStamp,
           adUnit: bid.adUnit,
+          adUnitId: bid.adUnitId,
           bidder: bid.bidder,
           gdpr: gdprPos,
           floor: bid.lwFloor,
@@ -211,6 +217,7 @@ function getResponses(gdpr, auctionIds) {
         responses.push({
           timeStamp: auction.timeStamp,
           adUnit: bid.adUnit,
+          adUnitId: bid.adUnitId,
           bidder: bid.bidder,
           width: bid.width,
           height: bid.height,
@@ -249,6 +256,7 @@ function getWins(gdpr, auctionIds) {
         wins.push({
           timeStamp: auction.timeStamp,
           adUnit: bid.adUnit,
+          adUnitId: bid.adUnitId,
           bidder: bid.bidder,
           width: bid.width,
           height: bid.height,
@@ -314,6 +322,7 @@ function getTimeouts(auctionIds) {
         timeouts.push({
           bidder: bid.bidder,
           adUnit: bid.adUnit,
+          adUnitId: bid.adUnitId,
           timeStamp: auction.timeStamp,
           auctionId: auctionIdPos,
           auc: bid.auc,
@@ -339,6 +348,7 @@ function getbidAdUnits() {
 
         bidAdUnits.push({
           adUnit: adUnit,
+          adUnitId: bidAdUnit.adUnitId,
           timeStamp: bidAdUnit.timeStamp,
           lw: bidAdUnit.lw
         });
