@@ -567,7 +567,7 @@ describe('YSSP Bid Adapter', () => {
       const response = spec.buildRequests(validBidRequests, bidderRequest);
       expect(response[0]).to.deep.include({
         method: 'POST',
-        url: 'https://c2shb.ssp.yahoo.com/bidRequest'
+        url: 'https://c2shb.pubgw.yahoo.com/bidRequest'
       });
     });
 
@@ -576,7 +576,7 @@ describe('YSSP Bid Adapter', () => {
       const response = spec.buildRequests(validBidRequests, bidderRequest);
       expect(response[0]).to.deep.include({
         method: 'POST',
-        url: 'https://c2shb.ssp.yahoo.com/admax/bid/partners/PBJS'
+        url: 'https://c2shb.pubgw.yahoo.com/admax/bid/partners/PBJS'
       });
     });
 
