@@ -33,7 +33,7 @@ export const spec = {
     const bidSizes = {};
 
     _each(validBidRequests, bid => {
-      bidIds[bid.bidId] = bid.params.placementId;
+      bidIDs[bid.bidId] = bid.params.placementId;
       bidSizes[bid.bidId] = bid.sizes;
     });
 
