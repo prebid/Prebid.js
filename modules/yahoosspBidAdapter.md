@@ -27,7 +27,7 @@ The Yahoo SSP Bid Adapter is an OpenRTB interface that consolidates all previous
         * ext
 
 # Integration Options
-The 'yahoossp' bid adapter supports 2 types of integration:
+The `yahoossp` bid adapter supports 2 types of integration:
 1. **dcn & pos** DEFAULT (Site/App & Position targeting) - For Display partners/publishers.
 2. **pubId** (Publisher ID) - For legacy "oneVideo" AND New partners/publishers.
 **Important:** pubId integration (option 2) is only possible when your Seller account is setup for "Inventory Mapping".
