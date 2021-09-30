@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.6';
+const ADAPTER_VERSION = '1.0.5';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -68,14 +68,8 @@ function buildRequests(validBidRequests, bidderRequest) {
       media_type: mediaType,
       uuid: uuid,
       width: width,
-      height: height,
-      pv: '$prebid.version$'
+      height: height
     };
-
-    const imuid = utils.deepAccess(bidRequest, 'userId.imuid');
-    if (imuid) {
-      payload.imuid = imuid;
-    }
 
     // It may not be encoded, so add it at the end of the payload
     payload.ref = bidderRequest.refererInfo.referer;
