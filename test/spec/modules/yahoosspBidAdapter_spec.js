@@ -699,6 +699,20 @@ describe('YSSP Bid Adapter', () => {
         dfp_ad_unit_code: DEFAULT_AD_UNIT_CODE
       });
     });
+
+    it('should use inventoryId value as site.id in the outbound bid-request when using "pubId" integration mode', () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({pubIdMode: true});
+      validBidRequests[0].params.inventoryId = '1234567';
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+      expect(data.site.id).to.equal('1234567');
+    });
+
+    it('should use placementId value as imp.tagid in the outbound bid-request when using "pubId" integration mode', () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({pubIdMode: true});
+      validBidRequests[0].params.placementId = 'header-300x250';
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+      expect(data.imp[0].tagid).to.deep.equal('header-300x250');
+    });
   });
 
   describe('Request Payload oRTB bid.imp validation:', () => {
