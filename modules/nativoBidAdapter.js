@@ -57,7 +57,7 @@ export const spec = {
         placementIds.add(placementId)
       }
 
-      var key = placementId || validBidRequests.adUnitCode
+      var key = placementId || request.adUnitCode
       placmentBidIdMap[key] = {
         bidId: request.bidId,
         size: getLargestSize(request.sizes),
