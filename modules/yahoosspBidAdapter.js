@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logInfo, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 
@@ -70,7 +70,7 @@ function getSize(size) {
 }
 
 function transformSizes(sizes) {
-  if (utils.isArray(sizes) && sizes.length === 2 && !utils.isArray(sizes[0])) {
+  if (isArray(sizes) && sizes.length === 2 && !isArray(sizes[0])) {
     return [ getSize(sizes) ];
   }
   return sizes.map(getSize);
@@ -108,7 +108,7 @@ function extractUserSyncUrls(syncOptions, pixels) {
 }
 
 function getSupportedEids(bid) {
-  if (utils.isArray(utils.deepAccess(bid, 'userIdAsEids'))) {
+  if (isArray(deepAccess(bid, 'userIdAsEids'))) {
     return bid.userIdAsEids.filter(eid => {
       return SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1;
     });
@@ -117,14 +117,14 @@ function getSupportedEids(bid) {
 }
 
 function isSecure(bid) {
-  return utils.deepAccess(bid, 'params.bidOverride.imp.secure') || (document.location.protocol === 'https:') ? 1 : 0;
+  return deepAccess(bid, 'params.bidOverride.imp.secure') || (document.location.protocol === 'https:') ? 1 : 0;
 };
 
 function getPubIdMode(bid) {
   let pubIdMode;
-  if (utils.deepAccess(bid, 'params.pubId')) {
+  if (deepAccess(bid, 'params.pubId')) {
     pubIdMode = true;
-  } else if (utils.deepAccess(bid, 'params.dcn') && utils.deepAccess(bid, 'params.pos')) {
+  } else if (deepAccess(bid, 'params.dcn') && deepAccess(bid, 'params.pos')) {
     pubIdMode = false;
   };
   return pubIdMode;
@@ -154,11 +154,11 @@ function getResponseFormat(bid) {
 function getFloorModuleData(bid) {
   const adapterMode = getAdapterMode();
   const getFloorRequestObject = {
-    currency: utils.deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY,
+    currency: deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY,
     mediaType: adapterMode,
     size: '*'
   };
-  return (utils.isFn(bid.getFloor)) ? bid.getFloor(getFloorRequestObject) : false;
+  return (isFn(bid.getFloor)) ? bid.getFloor(getFloorRequestObject) : false;
 };
 
 function filterBidRequestByMode(validBidRequests) {
@@ -188,23 +188,23 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
   for (const objectKey in inputObject) {
     switch (validationType) {
       case 'string':
-        if (allowedKeys.includes(objectKey) && utils.isStr(inputObject[objectKey])) {
+        if (allowedKeys.includes(objectKey) && isStr(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
       case 'number':
-        if (allowedKeys.includes(objectKey) && utils.isNumber(inputObject[objectKey])) {
+        if (allowedKeys.includes(objectKey) && isNumber(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
 
       case 'array':
-        if (allowedKeys.includes(objectKey) && utils.isArray(inputObject[objectKey])) {
+        if (allowedKeys.includes(objectKey) && isArray(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
       case 'object':
-        if (allowedKeys.includes(objectKey) && utils.isPlainObject(inputObject[objectKey])) {
+        if (allowedKeys.includes(objectKey) && isPlainObject(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
@@ -216,16 +216,16 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
 function generateOpenRtbObject(bidderRequest, bid) {
   if (bidderRequest) {
     let outBoundBidRequest = {
-      id: utils.generateUUID(),
-      cur: [getFloorModuleData(bidderRequest).currency || utils.deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
+      id: generateUUID(),
+      cur: [getFloorModuleData(bidderRequest).currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
       imp: [],
       site: {
-        page: utils.deepAccess(bidderRequest, 'refererInfo.referer'),
+        page: deepAccess(bidderRequest, 'refererInfo.referer'),
       },
       device: {
         dnt: 0,
         ua: navigator.userAgent,
-        ip: utils.deepAccess(bid, 'params.bidOverride.device.ip') || utils.deepAccess(bid, 'params.ext.ip') || undefined
+        ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined
       },
       regs: {
         ext: {
@@ -258,8 +258,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.publisher = {
         id: bid.params.pubId
       }
-      if (utils.deepAccess(bid, 'params.bidOverride.site.id') || utils.deepAccess(bid, 'params.inventoryId')) {
-        outBoundBidRequest.site.id = utils.deepAccess(bid, 'params.bidOverride.site.id') || bid.params.inventoryId;
+      if (deepAccess(bid, 'params.bidOverride.site.id') || deepAccess(bid, 'params.inventoryId')) {
+        outBoundBidRequest.site.id = deepAccess(bid, 'params.bidOverride.site.id') || bid.params.inventoryId;
       }
     } else {
       outBoundBidRequest.site.id = bid.params.dcn;
@@ -269,7 +269,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    if (utils.deepAccess(bid, 'schain')) {
+    if (deepAccess(bid, 'schain')) {
       outBoundBidRequest.source.ext.schain = bid.schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
     };
@@ -285,7 +285,7 @@ function appendImpObject(bid, openRtbObject) {
     const impObject = {
       id: bid.bidId,
       secure: isSecure(bid),
-      bidfloor: getFloorModuleData(bid).floor || utils.deepAccess(bid, 'params.bidOverride.imp.bidfloor')
+      bidfloor: getFloorModuleData(bid).floor || deepAccess(bid, 'params.bidOverride.imp.bidfloor')
     };
 
     if (bid.mediaTypes.banner && (typeof mediaTypeMode === 'undefined' || mediaTypeMode === 'banner' || mediaTypeMode === '*')) {
@@ -301,20 +301,20 @@ function appendImpObject(bid, openRtbObject) {
     if (bid.mediaTypes.video && (mediaTypeMode === 'video' || mediaTypeMode === '*')) {
       const playerSize = transformSizes(bid.mediaTypes.video.playerSize);
       impObject.video = {
-        mimes: utils.deepAccess(bid, 'params.bidOverride.imp.video.mimes') || bid.mediaTypes.video.mimes || ['video/mp4', 'application/javascript'],
-        w: utils.deepAccess(bid, 'params.bidOverride.imp.video.w') || playerSize[0].w,
-        h: utils.deepAccess(bid, 'params.bidOverride.imp.video.h') || playerSize[0].h,
-        maxbitrate: utils.deepAccess(bid, 'params.bidOverride.imp.video.maxbitrate') || bid.mediaTypes.video.maxbitrate || undefined,
-        maxduration: utils.deepAccess(bid, 'params.bidOverride.imp.video.maxduration') || bid.mediaTypes.video.maxduration || undefined,
-        minduration: utils.deepAccess(bid, 'params.bidOverride.imp.video.minduration') || bid.mediaTypes.video.minduration || undefined,
-        api: utils.deepAccess(bid, 'params.bidOverride.imp.video.api') || bid.mediaTypes.video.api || [2],
-        delivery: utils.deepAccess(bid, 'params.bidOverride.imp.video.delivery') || bid.mediaTypes.video.delivery || undefined,
-        pos: utils.deepAccess(bid, 'params.bidOverride.imp.video.pos') || bid.mediaTypes.video.pos || undefined,
-        playbackmethod: utils.deepAccess(bid, 'params.bidOverride.imp.video.playbackmethod') || bid.mediaTypes.video.playbackmethod || undefined,
-        placement: utils.deepAccess(bid, 'params.bidOverride.imp.video.placement') || bid.mediaTypes.video.placement || undefined,
-        linearity: utils.deepAccess(bid, 'params.bidOverride.imp.video.linearity') || bid.mediaTypes.video.linearity || 1,
-        protocols: utils.deepAccess(bid, 'params.bidOverride.imp.video.protocols') || bid.mediaTypes.video.protocols || [2, 5],
-        rewarded: utils.deepAccess(bid, 'params.bidOverride.imp.video.rewarded') || undefined,
+        mimes: deepAccess(bid, 'params.bidOverride.imp.video.mimes') || bid.mediaTypes.video.mimes || ['video/mp4', 'application/javascript'],
+        w: deepAccess(bid, 'params.bidOverride.imp.video.w') || playerSize[0].w,
+        h: deepAccess(bid, 'params.bidOverride.imp.video.h') || playerSize[0].h,
+        maxbitrate: deepAccess(bid, 'params.bidOverride.imp.video.maxbitrate') || bid.mediaTypes.video.maxbitrate || undefined,
+        maxduration: deepAccess(bid, 'params.bidOverride.imp.video.maxduration') || bid.mediaTypes.video.maxduration || undefined,
+        minduration: deepAccess(bid, 'params.bidOverride.imp.video.minduration') || bid.mediaTypes.video.minduration || undefined,
+        api: deepAccess(bid, 'params.bidOverride.imp.video.api') || bid.mediaTypes.video.api || [2],
+        delivery: deepAccess(bid, 'params.bidOverride.imp.video.delivery') || bid.mediaTypes.video.delivery || undefined,
+        pos: deepAccess(bid, 'params.bidOverride.imp.video.pos') || bid.mediaTypes.video.pos || undefined,
+        playbackmethod: deepAccess(bid, 'params.bidOverride.imp.video.playbackmethod') || bid.mediaTypes.video.playbackmethod || undefined,
+        placement: deepAccess(bid, 'params.bidOverride.imp.video.placement') || bid.mediaTypes.video.placement || undefined,
+        linearity: deepAccess(bid, 'params.bidOverride.imp.video.linearity') || bid.mediaTypes.video.linearity || 1,
+        protocols: deepAccess(bid, 'params.bidOverride.imp.video.protocols') || bid.mediaTypes.video.protocols || [2, 5],
+        rewarded: deepAccess(bid, 'params.bidOverride.imp.video.rewarded') || undefined,
       }
     }
 
@@ -322,8 +322,8 @@ function appendImpObject(bid, openRtbObject) {
       dfp_ad_unit_code: bid.adUnitCode
     };
 
-    if (utils.deepAccess(bid, 'params.ortb2Imp')) {
-      const ortb2ImpExt = utils.deepAccess(bid, 'params.ortb2Imp.ext.data');
+    if (deepAccess(bid, 'params.ortb2Imp')) {
+      const ortb2ImpExt = deepAccess(bid, 'params.ortb2Imp.ext.data');
       const allowedImpExtKeys = ['data']
       impObject.ext = validateAppendObject('object', allowedImpExtKeys, ortb2ImpExt, impObject.ext);
     };
@@ -331,7 +331,7 @@ function appendImpObject(bid, openRtbObject) {
     if (getPubIdMode(bid) === false) {
       impObject.tagid = bid.params.pos;
       impObject.ext.pos = bid.params.pos;
-    } else if (utils.deepAccess(bid, 'params.placementId')) {
+    } else if (deepAccess(bid, 'params.placementId')) {
       impObject.tagid = bid.params.placementId
     };
 
@@ -342,17 +342,17 @@ function appendImpObject(bid, openRtbObject) {
 function appendFirstPartyData(outBoundBidRequest, bid) {
   const ortb2Object = config.getConfig('ortb2');
   const siteObject = ortb2Object.site || undefined;
-  const contentObject = utils.deepAccess(siteObject, 'content') || undefined;
-  const userObject = utils.deepAccess(ortb2Object, 'user') || undefined;
+  const contentObject = deepAccess(siteObject, 'content') || undefined;
+  const userObject = deepAccess(ortb2Object, 'user') || undefined;
 
-  if (siteObject && utils.isPlainObject(siteObject)) {
+  if (siteObject && isPlainObject(siteObject)) {
     const allowedSiteStringKeys = ['name', 'domain', 'page', 'ref', 'keywords', 'search'];
     const allowedSiteArrayKeys = ['cat', 'sectioncat', 'pagecat']
     outBoundBidRequest.site = validateAppendObject('string', allowedSiteStringKeys, siteObject, outBoundBidRequest.site);
     outBoundBidRequest.site = validateAppendObject('array', allowedSiteArrayKeys, siteObject, outBoundBidRequest.site);
   };
 
-  if (contentObject && utils.isPlainObject(contentObject)) {
+  if (contentObject && isPlainObject(contentObject)) {
     const allowedContentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
     const allowedContentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
     const allowedContentArrayKeys = ['cat'];
@@ -363,7 +363,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.site.content = validateAppendObject('object', allowedContentObjectKeys, contentObject, outBoundBidRequest.site.content);
   };
 
-  if (userObject && utils.isPlainObject(userObject)) {
+  if (userObject && isPlainObject(userObject)) {
     const allowedUserStrings = ['id', 'buyeruid', 'gender', 'keywords', 'customdata'];
     const allowedUserNumbers = ['yob'];
     const allowedUserObjects = ['data', 'ext'];
@@ -383,8 +383,8 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
     sspEndpoint = config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_PUBID;
   };
 
-  if (utils.deepAccess(bidderRequest, 'params.testing.e2etest') === true) {
-    utils.logInfo('yahoossp adapter e2etest mode is active');
+  if (deepAccess(bidderRequest, 'params.testing.e2etest') === true) {
+    logInfo('yahoossp adapter e2etest mode is active');
     requestOptions.withCredentials = false;
 
     if (pubIdMode === true) {
@@ -399,13 +399,13 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
         } else if (mediaTypeMode === 'video') {
           impObject.tagid = TEST_MODE_VIDEO_POS; // video passback
         } else {
-          utils.logWarn('yahoossp adapter e2etest mode does not support yahoossp.mode="all". \n Please specify either "banner" or "video"');
-          utils.logWarn('yahoossp adapter e2etest mode: Please make sure your adUnit matches the yahoossp.mode video or banner');
+          logWarn('yahoossp adapter e2etest mode does not support yahoossp.mode="all". \n Please specify either "banner" or "video"');
+          logWarn('yahoossp adapter e2etest mode: Please make sure your adUnit matches the yahoossp.mode video or banner');
         }
       });
     }
   };
-  utils.logWarn('generateServerRequest: (sspEndpoint) ', sspEndpoint);
+  logWarn('generateServerRequest: (sspEndpoint) ', sspEndpoint);
 
   return {
     url: sspEndpoint,
@@ -429,10 +429,10 @@ function newRenderer(bidderRequest, bidResponse) {
         setTimeout(function() {
           // eslint-disable-next-line no-undef
           o2PlayerRender(bidResponse);
-        }, utils.deepAccess(bidderRequest, 'params.testing.renderer.setTimeout') || DEFAULT_RENDERER_TIMEOUT);
+        }, deepAccess(bidderRequest, 'params.testing.renderer.setTimeout') || DEFAULT_RENDERER_TIMEOUT);
       });
     } catch (error) {
-      utils.logWarn('yahoossp renderer error: setRender() failed', error);
+      logWarn('yahoossp renderer error: setRender() failed', error);
     }
     return renderer;
   }
@@ -446,25 +446,25 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     const params = bid.params;
-    if (utils.deepAccess(params, 'testing.e2etest') === true) {
+    if (deepAccess(params, 'testing.e2etest') === true) {
       // e2e test mode skip validations
       return true;
     } else if (
-      utils.isPlainObject(params) &&
-      ((utils.isStr(params.pubId) && params.pubId.length > 0) ||
-      (utils.isStr(params.dcn) && params.dcn.length > 0 &&
-      utils.isStr(params.pos) && params.pos.length > 0))
+      isPlainObject(params) &&
+      ((isStr(params.pubId) && params.pubId.length > 0) ||
+      (isStr(params.dcn) && params.dcn.length > 0 &&
+      isStr(params.pos) && params.pos.length > 0))
     ) {
       return true
     } else {
-      utils.logWarn('yahoossp bidder params missing or incorrect, please pass object with either: dcn & pos OR pubId');
+      logWarn('yahoossp bidder params missing or incorrect, please pass object with either: dcn & pos OR pubId');
       return false
     }
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    if (utils.isEmpty(validBidRequests) || utils.isEmpty(bidderRequest)) {
-      utils.logWarn('yahoossp Adapter: buildRequests called with either empty "validBidRequests" or "bidderRequest"');
+    if (isEmpty(validBidRequests) || isEmpty(bidderRequest)) {
+      logWarn('yahoossp Adapter: buildRequests called with either empty "validBidRequests" or "bidderRequest"');
       return undefined;
     };
 
@@ -546,7 +546,7 @@ export const spec = {
         };
       }
 
-      if (utils.deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidResponse.renderer) {
+      if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidResponse.renderer) {
         bidResponse.renderer = newRenderer(bidderRequest, bidResponse) || undefined;
       }
 
@@ -557,7 +557,7 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const bidResponse = !utils.isEmpty(serverResponses) && serverResponses[0].body;
+    const bidResponse = !isEmpty(serverResponses) && serverResponses[0].body;
 
     if (bidResponse && bidResponse.ext && bidResponse.ext.pixels) {
       return extractUserSyncUrls(syncOptions, bidResponse.ext.pixels);
