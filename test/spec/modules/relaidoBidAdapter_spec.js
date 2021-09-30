@@ -367,7 +367,6 @@ describe('RelaidoAdapter', function () {
   });
 
   describe('spec.onBidWon', function () {
-
     it('Should create nurl pixel if bid nurl', function () {
       let bid = {
         bidder: bidRequest.bidder,
@@ -380,7 +379,6 @@ describe('RelaidoAdapter', function () {
         adUnitCode: bidRequest.adUnitCode,
         ref: window.location.href,
       }
-
       spec.onBidWon(bid);
       const parser = utils.parseUrl(triggerPixelStub.getCall(0).args[0]);
       const query = parser.search;
@@ -398,7 +396,6 @@ describe('RelaidoAdapter', function () {
   });
 
   describe('spec.onTimeout', function () {
-
     it('Should create nurl pixel if bid nurl', function () {
       const data = [{
         bidder: bidRequest.bidder,
@@ -408,7 +405,6 @@ describe('RelaidoAdapter', function () {
         params: [bidRequest.params],
         timeout: bidderRequest.timeout,
       }];
-
       spec.onTimeout(data);
       const parser = utils.parseUrl(triggerPixelStub.getCall(0).args[0]);
       const query = parser.search;
