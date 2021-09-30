@@ -40,7 +40,7 @@ export const connectIDSubmodule = {
       ? {connectid: value.connectid} : undefined;
   },
   /**
-   * Gets the Yahoo Connect ID
+   * Gets the Yahoo ConnectID
    * @function
    * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
