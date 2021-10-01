@@ -31,8 +31,8 @@ export const spec = {
     if (!serverResponse || serverResponse.error) {
       return bidResponses;
     }
-    serverResponse.bids.forEach(function (bids) {
-      bidResponses.push(bids.bid);
+    serverResponse.bids.forEach(function (bid) {
+      bidResponses.push(bid);
     })
     return bidResponses;
   }

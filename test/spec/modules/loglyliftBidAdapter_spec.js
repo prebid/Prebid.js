@@ -54,28 +54,26 @@ describe('loglyliftBidAdapter', function () {
   const nativeServerResponse = {
     body: {
       bids: [{
-        bid: {
-          requestId: '254304ac29e265',
-          cpm: 10.123,
-          width: 360,
-          height: 360,
-          creativeId: '123456789',
-          currency: 'JPY',
-          netRevenue: true,
-          ttl: 30,
-          native: {
-            clickUrl: 'https://dsp.logly.co.jp/click?ad=EXAMPECLICKURL',
-            image: {
-              url: 'https://cdn.logly.co.jp/images/000/194/300/normal.jpg',
-              width: '360',
-              height: '360'
-            },
-            impressionTrackers: [
-              'https://b.logly.co.jp/sorry.html'
-            ],
-            sponsoredBy: 'logly',
-            title: 'Native Title',
-          }
+        requestId: '254304ac29e265',
+        cpm: 10.123,
+        width: 360,
+        height: 360,
+        creativeId: '123456789',
+        currency: 'JPY',
+        netRevenue: true,
+        ttl: 30,
+        native: {
+          clickUrl: 'https://dsp.logly.co.jp/click?ad=EXAMPECLICKURL',
+          image: {
+            url: 'https://cdn.logly.co.jp/images/000/194/300/normal.jpg',
+            width: '360',
+            height: '360'
+          },
+          impressionTrackers: [
+            'https://b.logly.co.jp/sorry.html'
+          ],
+          sponsoredBy: 'logly',
+          title: 'Native Title',
         }
       }],
     }
@@ -108,7 +106,7 @@ describe('loglyliftBidAdapter', function () {
       expect(data.bidId).to.equal(nativeBidRequests[0].bidId);
       expect(data.mediaTypes).to.deep.equal(nativeBidRequests[0].mediaTypes);
       expect(data.params).to.deep.equal(nativeBidRequests[0].params);
-      expect(data.prebidJsVersion).to.equal('5.14.0-pre');
+      expect(data.prebidJsVersion).to.equal('5.16.0-pre');
       expect(data.url).to.exist;
       expect(data.domain).to.exist;
       expect(data.referer).to.equal(bidderRequest.refererInfo.referer);
@@ -129,14 +127,14 @@ describe('loglyliftBidAdapter', function () {
       const interpretedResponse = spec.interpretResponse(nativeServerResponse, request);
 
       expect(interpretedResponse).to.have.lengthOf(1);
-      expect(interpretedResponse[0].cpm).to.equal(nativeServerResponse.body.bids[0].bid.cpm);
-      expect(interpretedResponse[0].width).to.equal(nativeServerResponse.body.bids[0].bid.width);
-      expect(interpretedResponse[0].height).to.equal(nativeServerResponse.body.bids[0].bid.height);
-      expect(interpretedResponse[0].creativeId).to.equal(nativeServerResponse.body.bids[0].bid.creativeId);
-      expect(interpretedResponse[0].currency).to.equal(nativeServerResponse.body.bids[0].bid.currency);
-      expect(interpretedResponse[0].netRevenue).to.equal(nativeServerResponse.body.bids[0].bid.netRevenue);
-      expect(interpretedResponse[0].ttl).to.equal(nativeServerResponse.body.bids[0].bid.ttl);
-      expect(interpretedResponse[0].native).to.deep.equal(nativeServerResponse.body.bids[0].bid.native);
+      expect(interpretedResponse[0].cpm).to.equal(nativeServerResponse.body.bids[0].cpm);
+      expect(interpretedResponse[0].width).to.equal(nativeServerResponse.body.bids[0].width);
+      expect(interpretedResponse[0].height).to.equal(nativeServerResponse.body.bids[0].height);
+      expect(interpretedResponse[0].creativeId).to.equal(nativeServerResponse.body.bids[0].creativeId);
+      expect(interpretedResponse[0].currency).to.equal(nativeServerResponse.body.bids[0].currency);
+      expect(interpretedResponse[0].netRevenue).to.equal(nativeServerResponse.body.bids[0].netRevenue);
+      expect(interpretedResponse[0].ttl).to.equal(nativeServerResponse.body.bids[0].ttl);
+      expect(interpretedResponse[0].native).to.deep.equal(nativeServerResponse.body.bids[0].native);
     });
   });
 });
