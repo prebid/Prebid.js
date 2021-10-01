@@ -9,11 +9,11 @@ const BID_METHOD = 'POST';
 const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
 const FIRST_PRICE = 1;
 const NET_REVENUE = true;
+// eslint-disable-next-line no-template-curly-in-string
 const AUCTION_PRICE = '${AUCTION_PRICE}';
 const TTL = 10;
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
-
 
 function groupBy(values, key) {
   const groups = values.reduce((acc, value) => {
@@ -62,9 +62,6 @@ function hasUserInfo(bid) {
 }
 
 function validateParameters(parameters, adUnit) {
-  if (isVideo(adUnit.mediaTypes)) {
-    if (!isPlainObject(parameters)) return false;
-  }
   if (!(parameters.placementId)) {
     return false;
   }
@@ -87,8 +84,8 @@ function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
     url: BIDDER_URL,
     data: generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext),
     options: {
-        contentType: 'application/json',
-        withCredentials: false,
+      contentType: 'application/json',
+      withCredentials: false,
     }
   }
 }
@@ -146,8 +143,8 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   payload.id = bidRequestId
   payload.at = FIRST_PRICE
   payload.cur = ['USD']
-  payload.imp = adUnits.reduce(generateImpressionsFromAdUnit, [])
-  payload.site = site(adUnits, adUnitContext)
+  payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, [])
+  payload.site = site(bidRequests, adUnitContext)
   if (appDeviceObjBid) {
     payload.device = appDeviceObj
   }
@@ -165,7 +162,6 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
   const {bidId, mediaTypes, params} = adUnit;
   const {placementId} = params;
   const pmp = {};
-  const ext = {placementId};
 
   if (placementId) pmp.deals = [{id: placementId}]
 
@@ -191,7 +187,6 @@ function generateBannerFromAdUnit(impId, data, params) {
 
   return data.sizes.map(([w, h]) => ({id: `${impId}`, banner: {format: [{w, h}], w, h, pos}, pmp, ext, tagid: placementId}));
 }
-
 
 function site(bidRequests, bidderRequest) {
   const url =
@@ -239,7 +234,6 @@ function validateBids(bid, serverRequest) {
   if (!isStr(bid.impid)) return false;
   if (!isStr(bid.crid)) return false;
   if (!isNumber(bid.price)) return false;
-  
   if (!bid.adm && !bid.nurl) return false;
   if (bid.adm) {
     if (!isStr(bid.adm)) return false;
@@ -324,7 +318,7 @@ function generateAdFromBid(bid, bidResponse) {
     currency: bidResponse.cur,
     ttl: TTL,
     creativeId: bid.crid,
-    mediaType:mediaType,
+    mediaType: mediaType,
     netRevenue: NET_REVENUE
   };
 
@@ -341,8 +335,8 @@ function generateAdFromBid(bid, bidResponse) {
     width: size.width,
     ad: creative.markup,
     adUrl: creative.markupUrl,
-    vastXml: isVideo && !isStr(creative.markupUrl) ? creative.markup : null,
-    vastUrl: isVideo && isStr(creative.markupUrl) ? creative.markupUrl : null,
+    // vastXml: isVideo && !isStr(creative.markupUrl) ? creative.markup : null,
+    // vastUrl: isVideo && isStr(creative.markupUrl) ? creative.markupUrl : null,
     renderer: creative.renderer
   };
 }
