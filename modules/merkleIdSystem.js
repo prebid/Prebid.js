@@ -5,8 +5,8 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
+import { logInfo, logError, logWarn } from '../src/utils.js';
+import * as ajaxLib from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -34,7 +34,7 @@ function setCookie(name, value, expires) {
 }
 
 function setSession(storage, response) {
-  utils.logInfo('Merkle setting session ');
+  logInfo('Merkle setting session ');
   if (response && response.c && response.c.value && typeof response.c.value === 'string') {
     setCookie(SESSION_COOKIE_NAME, response.c.value, storage.expires);
   }
@@ -42,11 +42,11 @@ function setSession(storage, response) {
 
 function constructUrl(configParams) {
   const session = getSession(configParams);
-  let url = ID_URL + `?vendor=${configParams.vendor}&sv_cid=${configParams.sv_cid}&sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}`;
+  let url = configParams.endpoint + `?vendor=${configParams.vendor}&sv_cid=${configParams.sv_cid}&sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}`;
   if (session) {
     url = `${url}&sv_session=${session}`;
   }
-  utils.logInfo('Merkle url :' + url);
+  logInfo('Merkle url :' + url);
   return url;
 }
 
@@ -54,30 +54,31 @@ function generateId(configParams, configStorage) {
   const url = constructUrl(configParams);
 
   const resp = function (callback) {
-    const callbacks = {
-      success: response => {
+    ajaxLib.ajaxBuilder()(
+      url,
+      response => {
         let responseObj;
         if (response) {
           try {
             responseObj = JSON.parse(response);
             setSession(configStorage, responseObj)
-            utils.logInfo('Merkle responseObj ' + JSON.stringify(responseObj));
+            logInfo('Merkle responseObj ' + JSON.stringify(responseObj));
           } catch (error) {
-            utils.logError(error);
+            logError(error);
           }
         }
 
         const date = new Date().toUTCString();
         responseObj.date = date;
-        utils.logInfo('Merkle responseObj with date ' + JSON.stringify(responseObj));
+        logInfo('Merkle responseObj with date ' + JSON.stringify(responseObj));
         callback(responseObj);
       },
-      error: error => {
-        utils.logError(`${MODULE_NAME}: merkleId fetch encountered an error`, error);
+      error => {
+        logError(`${MODULE_NAME}: merkleId fetch encountered an error`, error);
         callback();
-      }
-    };
-    ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+      },
+      {method: 'GET', withCredentials: true}
+    );
   };
   return resp;
 }
@@ -97,7 +98,7 @@ export const merkleIdSubmodule = {
    */
   decode(value) {
     const id = (value && value.pam_id && typeof value.pam_id.id === 'string') ? value.pam_id : undefined;
-    utils.logInfo('Merkle id ' + JSON.stringify(id));
+    logInfo('Merkle id ' + JSON.stringify(id));
     return id ? {'merkleId': id} : undefined;
   },
   /**
@@ -108,27 +109,32 @@ export const merkleIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
-    utils.logInfo('User ID - merkleId generating id');
+    logInfo('User ID - merkleId generating id');
 
     const configParams = (config && config.params) || {};
 
     if (!configParams || typeof configParams.vendor !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid vendor to be defined');
+      logError('User ID - merkleId submodule requires a valid vendor to be defined');
       return;
     }
 
     if (typeof configParams.sv_cid !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid sv_cid string to be defined');
+      logError('User ID - merkleId submodule requires a valid sv_cid string to be defined');
       return;
     }
 
     if (typeof configParams.sv_pubid !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid sv_pubid string to be defined');
+      logError('User ID - merkleId submodule requires a valid sv_pubid string to be defined');
       return;
     }
+
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
-      utils.logError('User ID - merkleId submodule does not currently handle consent strings');
+      logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
+    }
+    if (typeof configParams.endpoint !== 'string') {
+      logWarn('User ID - merkleId submodule endpoint string is not defined');
+      configParams.endpoint = ID_URL
     }
 
     if (typeof configParams.sv_domain !== 'string') {
@@ -140,11 +146,11 @@ export const merkleIdSubmodule = {
     return {callback: resp};
   },
   extendId: function (config = {}, consentData, storedId) {
-    utils.logInfo('User ID - merkleId stored id ' + storedId);
+    logInfo('User ID - merkleId stored id ' + storedId);
     const configParams = (config && config.params) || {};
 
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
-      utils.logError('User ID - merkleId submodule does not currently handle consent strings');
+      logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
     }
 
@@ -158,19 +164,19 @@ export const merkleIdSubmodule = {
     let refreshInSeconds = DEFAULT_REFRESH;
     if (configParams && configParams.refreshInSeconds && typeof configParams.refreshInSeconds === 'number') {
       refreshInSeconds = configParams.refreshInSeconds;
-      utils.logInfo('User ID - merkleId param refreshInSeconds' + refreshInSeconds);
+      logInfo('User ID - merkleId param refreshInSeconds' + refreshInSeconds);
     }
     const storedDate = new Date(storedId.date);
     let refreshNeeded = false;
     if (storedDate) {
       refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > refreshInSeconds * 1000);
       if (refreshNeeded) {
-        utils.logInfo('User ID - merkleId needs refreshing id');
+        logInfo('User ID - merkleId needs refreshing id');
         const resp = generateId(configParams, configStorage)
         return {callback: resp};
       }
     }
-    utils.logInfo('User ID - merkleId not refreshed');
+    logInfo('User ID - merkleId not refreshed');
     return {id: storedId};
   }
 

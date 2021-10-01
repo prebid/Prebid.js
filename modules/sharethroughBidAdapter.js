@@ -1,8 +1,9 @@
+import { generateUUID, deepAccess, inIframe } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const VERSION = '4.0.0';
 const BIDDER_CODE = 'sharethrough';
@@ -28,7 +29,7 @@ export const sharethroughAdapterSpec = {
     const secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
 
     const req = {
-      id: utils.generateUUID(),
+      id: generateUUID(),
       at: 1,
       cur: ['USD'],
       tmax: timeout,
@@ -81,7 +82,7 @@ export const sharethroughAdapterSpec = {
     const imps = bidRequests.map(bidReq => {
       const impression = {};
 
-      const gpid = utils.deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
+      const gpid = deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         impression.ext = { gpid: gpid };
       }
@@ -103,7 +104,7 @@ export const sharethroughAdapterSpec = {
 
         impression.video = {
           pos: nullish(videoRequest.pos, 0),
-          topframe: utils.inIframe() ? 0 : 1,
+          topframe: inIframe() ? 0 : 1,
           skip: nullish(videoRequest.skip, 0),
           linearity: nullish(videoRequest.linearity, 1),
           minduration: nullish(videoRequest.minduration, 5),
@@ -125,8 +126,8 @@ export const sharethroughAdapterSpec = {
         if (videoRequest.companionad) impression.video.companionad = videoRequest.companionad;
       } else {
         impression.banner = {
-          pos: utils.deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
-          topframe: utils.inIframe() ? 0 : 1,
+          pos: deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
+          topframe: inIframe() ? 0 : 1,
           format: bidReq.sizes.map(size => ({ w: +size[0], h: +size[1] })),
         };
       }
@@ -251,9 +252,9 @@ function getBidRequestFloor(bid) {
 }
 
 function userIdAsEids(bidRequest) {
-  const eids = createEidsArray(utils.deepAccess(bidRequest, 'userId')) || [];
+  const eids = createEidsArray(deepAccess(bidRequest, 'userId')) || [];
 
-  const flocData = utils.deepAccess(bidRequest, 'userId.flocId');
+  const flocData = deepAccess(bidRequest, 'userId.flocId');
   const isFlocIdValid = flocData && flocData.id && flocData.version;
   if (isFlocIdValid) {
     eids.push({
@@ -270,7 +271,7 @@ function getProtocol() {
 }
 
 function matchRequest(id, request) {
-  return request.bidRequests.find(bid => bid.bidId === id);
+  return find(request.bidRequests, bid => bid.bidId === id);
 }
 
 // stub for ?? operator

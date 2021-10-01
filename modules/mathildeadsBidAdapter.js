@@ -1,6 +1,6 @@
+import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'mathildeads';
@@ -71,8 +71,8 @@ function getPlacementReqData (bid) {
 }
 
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
   }
 
   try {
@@ -121,7 +121,7 @@ export const spec = {
       deviceHeight = winTop.screen.height;
       winLocation = winTop.location;
     } catch (e) {
-      utils.logMessage(e);
+      logMessage(e);
       winLocation = window.location;
     }
 
@@ -130,7 +130,7 @@ export const spec = {
     try {
       refferLocation = refferUrl && new URL(refferUrl);
     } catch (e) {
-      utils.logMessage(e);
+      logMessage(e);
     }
 
     let location = refferLocation || winLocation;
