@@ -3644,5 +3644,183 @@ describe('PubMatic adapter', function () {
         }]);
       });
     });
+
+    describe('JW player segment data for S2S', function() {
+      let sandbox = sinon.sandbox.create();
+      beforeEach(function () {
+        sandbox = sinon.sandbox.create();
+      });
+      afterEach(function() {
+        sandbox.restore();
+      });
+      it('Should append JW player segment data to dctr values in auction endpoint', function() {
+        var videoAdUnit = {
+          'bidderCode': 'pubmatic',
+          'bids': [
+            {
+              'bidder': 'pubmatic',
+              'params': {
+                'publisherId': '156276',
+                'adSlot': 'pubmatic_video2',
+                'dctr': 'key1=123|key2=345',
+                'pmzoneid': '1243',
+                'video': {
+                  'mimes': ['video/mp4', 'video/x-flv'],
+                  'skippable': true,
+                  'minduration': 5,
+                  'maxduration': 30,
+                  'startdelay': 5,
+                  'playbackmethod': [1, 3],
+                  'api': [1, 2],
+                  'protocols': [2, 3],
+                  'battr': [13, 14],
+                  'linearity': 1,
+                  'placement': 2,
+                  'minbitrate': 10,
+                  'maxbitrate': 10
+                }
+              },
+              'rtd': {
+                'jwplayer': {
+                  'targeting': {
+                    'segments': ['80011026', '80011035'],
+                    'content': {
+                      'id': 'jw_d9J2zcaA'
+                    }
+                  }
+                }
+              },
+              'bid_id': '17a6771be26cc4',
+              'ortb2Imp': {
+                'ext': {
+                  'data': {
+                    'pbadslot': 'abcd',
+                    'jwTargeting': {
+                      'playerID': 'myElement1',
+                      'mediaID': 'd9J2zcaA'
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          'auctionStart': 1630923178417,
+          'timeout': 1000,
+          'src': 's2s'
+        }
+
+        spec.transformBidParams(bidRequests[0].params, true, videoAdUnit);
+        expect(bidRequests[0].params.dctr).to.equal('key1:val1,val2|key2:val1|jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1');
+      });
+      it('Should send only JW player segment data in auction endpoint, if dctr is missing', function() {
+        var videoAdUnit = {
+          'bidderCode': 'pubmatic',
+          'bids': [
+            {
+              'bidder': 'pubmatic',
+              'params': {
+                'publisherId': '156276',
+                'adSlot': 'pubmatic_video2',
+                'dctr': 'key1=123|key2=345',
+                'pmzoneid': '1243',
+                'video': {
+                  'mimes': ['video/mp4', 'video/x-flv'],
+                  'skippable': true,
+                  'minduration': 5,
+                  'maxduration': 30,
+                  'startdelay': 5,
+                  'playbackmethod': [1, 3],
+                  'api': [1, 2],
+                  'protocols': [2, 3],
+                  'battr': [13, 14],
+                  'linearity': 1,
+                  'placement': 2,
+                  'minbitrate': 10,
+                  'maxbitrate': 10
+                }
+              },
+              'rtd': {
+                'jwplayer': {
+                  'targeting': {
+                    'segments': ['80011026', '80011035'],
+                    'content': {
+                      'id': 'jw_d9J2zcaA'
+                    }
+                  }
+                }
+              },
+              'bid_id': '17a6771be26cc4',
+              'ortb2Imp': {
+                'ext': {
+                  'data': {
+                    'pbadslot': 'abcd',
+                    'jwTargeting': {
+                      'playerID': 'myElement1',
+                      'mediaID': 'd9J2zcaA'
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          'auctionStart': 1630923178417,
+          'timeout': 1000,
+          'src': 's2s'
+        }
+
+        delete bidRequests[0].params.dctr;
+        spec.transformBidParams(bidRequests[0].params, true, videoAdUnit);
+        expect(bidRequests[0].params.dctr).to.equal('jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1');
+      });
+
+      it('Should not send any JW player segment data in auction endpoint, if it is not available', function() {
+        var videoAdUnit = {
+          'bidderCode': 'pubmatic',
+          'bids': [
+            {
+              'bidder': 'pubmatic',
+              'params': {
+                'publisherId': '156276',
+                'adSlot': 'pubmatic_video2',
+                'dctr': 'key1=123|key2=345',
+                'pmzoneid': '1243',
+                'video': {
+                  'mimes': ['video/mp4', 'video/x-flv'],
+                  'skippable': true,
+                  'minduration': 5,
+                  'maxduration': 30,
+                  'startdelay': 5,
+                  'playbackmethod': [1, 3],
+                  'api': [1, 2],
+                  'protocols': [2, 3],
+                  'battr': [13, 14],
+                  'linearity': 1,
+                  'placement': 2,
+                  'minbitrate': 10,
+                  'maxbitrate': 10
+                }
+              },
+              'bid_id': '17a6771be26cc4',
+              'ortb2Imp': {
+                'ext': {
+                  'data': {
+                    'pbadslot': 'abcd',
+                    'jwTargeting': {
+                      'playerID': 'myElement1',
+                      'mediaID': 'd9J2zcaA'
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          'auctionStart': 1630923178417,
+          'timeout': 1000,
+          'src': 's2s'
+        }
+        spec.transformBidParams(bidRequests[0].params, true, videoAdUnit);
+        expect(bidRequests[0].params.dctr).to.equal('key1:val1,val2|key2:val1');
+      });
+    })
   });
 });

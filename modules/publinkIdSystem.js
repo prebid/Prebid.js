@@ -19,7 +19,7 @@ const PUBLINK_S2S_COOKIE = '_publink_srv';
 export const storage = getStorageManager(GVLID);
 
 function isHex(s) {
-  return (typeof s === 'string' && /^[A-F0-9]+$/i.test(s));
+  return /^[A-F0-9]+$/i.test(s);
 }
 
 function publinkIdUrl(params, consentData) {
@@ -29,10 +29,15 @@ function publinkIdUrl(params, consentData) {
     mpn: 'Prebid.js',
     mpv: '$prebid.version$',
   };
+
   if (consentData) {
     url.search.gdpr = (consentData.gdprApplies) ? 1 : 0;
     url.search.gdpr_consent = consentData.consentString;
   }
+
+  if (params.site_id) { url.search.sid = params.site_id; }
+
+  if (params.api_key) { url.search.apikey = params.api_key; }
 
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString && typeof usPrivacyString === 'string') {
