@@ -1073,32 +1073,6 @@ describe('Ventes Adapter', function () {
         expect(ads[0].renderer).to.equal(null);
       });
 
-      it('should return an ad when given a valid server response with one bid without a win notice URL', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        
-        serverResponse.body.seatbid[0].bid[0].nurl = undefined;
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
-
-        expect(ads).to.be.an('array').and.to.have.length(1);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.equal(admWithAuctionPriceReplaced);
-        expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
-        expect(ads[0].vastUrl).to.equal(null);
-        expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
-        expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
-        expect(ads[0].currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.cur);
-        expect(ads[0].netRevenue).to.exist.and.to.be.a('boolean').and.to.equal(true);
-        expect(ads[0].ttl).to.exist.and.to.be.a('number').and.to.equal(10);
-        expect(ads[0].height).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].h);
-        expect(ads[0].width).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].w);
-        expect(ads[0].mediaType).to.exist.and.to.be.a('string').and.to.equal('banner');
-        expect(ads[0].renderer).to.equal(null);
-      });
-
       it('should return an ad when given a valid server response with one bid using an ad serving URL', function () {
         const serverRequest = examples.serverRequest_banner;
 
