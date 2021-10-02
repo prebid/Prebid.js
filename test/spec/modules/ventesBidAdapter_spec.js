@@ -785,7 +785,6 @@ describe('Ventes Adapter', function () {
         const ads = spec.interpretResponse(serverResponse, serverRequest);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
