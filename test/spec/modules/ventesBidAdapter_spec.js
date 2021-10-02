@@ -14,6 +14,10 @@ describe('Ventes Adapter', function () {
       params: {
         publisherId: 'agltb3B1Yi1pbmNyDAsSA0FwcBiJkfTUCV',
         placementId: 'VA-062-0013-0183',
+        device: {
+          ip: '123.145.167.189',
+          ifa:"AEBE52E7-03EE-455A-B3C4-E57283966239",
+        }
       },
       mediaTypes: {
         banner: {
@@ -489,11 +493,11 @@ describe('Ventes Adapter', function () {
         const serverResponse = utils.deepClone(examples.serverResponse_banner);
         serverResponse.body.cur = 'USD';
 
+        console.log(serverResponse)
+        console.log(serverRequest)
         const ads = spec.interpretResponse(serverResponse, serverRequest);
-        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
         expect(ads[0].currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.cur);

@@ -233,7 +233,7 @@ function validateBids(bid, serverRequest) {
   if (!isStr(bid.impid)) return false;
   if (!isStr(bid.crid)) return false;
   if (!isNumber(bid.price)) return false;
-  if (!bid.adm && !bid.nurl) return false;
+  if (!bid.adm) return false;
   if (bid.adm) {
     if (!isStr(bid.adm)) return false;
   }
