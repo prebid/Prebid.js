@@ -22,6 +22,12 @@ describe('Ventes Adapter', function () {
       }
     },
 
+    adUnitContext: {
+      refererInfo: {
+        referer: 'http://127.0.0.1:5500/modules/Adapter.html',
+      }
+    },
+
     serverRequest_banner: {
       method: 'POST',
       url: 'http://13.234.201.146:8088/va/ad',
@@ -178,7 +184,7 @@ describe('Ventes Adapter', function () {
         const adUnit = utils.deepClone(examples.adUnit_banner);
         adUnit.params = undefined;
 
-        expect(spec.isBidRequestValid(adUnit)).to.equal(true);
+        expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return true when given a valid ad unit with invalid publisher id', function () {
@@ -186,7 +192,7 @@ describe('Ventes Adapter', function () {
         adUnit.params = {};
         adUnit.params.publisherId = undefined;
 
-        expect(spec.isBidRequestValid(adUnit)).to.equal(true);
+        expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return true when given a valid ad unit without placement id', function () {
@@ -194,7 +200,7 @@ describe('Ventes Adapter', function () {
         adUnit.params = {};
         adUnit.params.publisherId = 'agltb3B1Yi1pbmNyDAsSA0FwcBiJkfTUCV';
 
-        expect(spec.isBidRequestValid(adUnit)).to.equal(true);
+        expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return true when given a valid ad unit with invalid placement id', function () {
@@ -203,7 +209,7 @@ describe('Ventes Adapter', function () {
         adUnit.params.publisherId = 'agltb3B1Yi1pbmNyDAsSA0FwcBiJkfTUCV';
         adUnit.params.placementId = undefined;
 
-        expect(spec.isBidRequestValid(adUnit)).to.equal(true);
+        expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return false when given an ad unit without size', function () {
