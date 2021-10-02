@@ -151,7 +151,7 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
     deviceObj = {};
     Object.keys(deviceObjBid.params.device)
       .filter(param => includes(DEVICE_PARAMS, param))
-      .forEach(param => deviceObj[param] = deviceObjBid.params.app[param]);
+      .forEach(param => deviceObj[param] = deviceObjBid.params.device[param]);
     if (!deviceObjBid.hasOwnProperty('ua')) {
       deviceObj.ua = navigator.userAgent;
     }
