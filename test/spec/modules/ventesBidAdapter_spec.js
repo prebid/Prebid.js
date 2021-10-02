@@ -689,39 +689,6 @@ describe('Ventes Adapter', function () {
         expect(ads).to.be.an('array').and.to.have.length(0);
       });
 
-      it('should return no ad when given a server response with a bid with an ad markup without auction price macro', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        serverResponse.body.seatbid[0].bid[0].adm = 'creative_data';
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
-      it('should return no ad when given a server response with a bid with an invalid ad serving URL', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        serverResponse.body.seatbid[0].bid[0].nurl = {};
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
-      it('should return no ad when given a server response with a bid with an ad serving URL without auction price macro', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        serverResponse.body.seatbid[0].bid[0].nurl = 'win_notice_url';
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
       it('should return no ad when given a server response with a bid without bid price', function () {
         const serverRequest = examples.serverRequest_banner;
 
@@ -738,83 +705,6 @@ describe('Ventes Adapter', function () {
 
         const serverResponse = utils.deepClone(examples.serverResponse_banner);
         serverResponse.body.seatbid[0].bid[0].price = {};
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
-      it('should return no ad when given a server response with a bid without extension', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        serverResponse.body.seatbid[0].bid[0].ext = undefined;
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
-      it('should return no ad when given a server response with a bid with an invalid extension', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        serverResponse.body.seatbid[0].bid[0].ext = 'bad_ext';
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
-      it('should return no ad when given a server response with a bid without adot extension', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        serverResponse.body.seatbid[0].bid[0].ext.adot = undefined;
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
-      it('should return no ad when given a server response with a bid with an invalid adot extension', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        serverResponse.body.seatbid[0].bid[0].ext.adot = 'bad_adot_ext';
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
-      it('should return no ad when given a server response with a bid without media type', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        serverResponse.body.seatbid[0].bid[0].ext.adot.media_type = undefined;
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
-      it('should return no ad when given a server response with a bid with an invalid media type', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        serverResponse.body.seatbid[0].bid[0].ext.adot.media_type = {};
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
-      it('should return no ad when given a server response with a bid with an unknown media type', function () {
-        const serverRequest = examples.serverRequest_banner;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
-        serverResponse.body.seatbid[0].bid[0].ext.adot.media_type = 'unknown_media_type';
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
 
@@ -884,17 +774,6 @@ describe('Ventes Adapter', function () {
 
         expect(ads).to.be.an('array').and.to.have.length(0);
       });
-
-      it('should return no ad when given a valid server response and a server request without matching impression', function () {
-        const serverRequest = utils.deepClone(examples.serverRequest_banner);
-        serverRequest.data.imp[0].id = 'unknown_imp_id';
-
-        const serverResponse = examples.serverResponse_banner;
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
     });
 
     describe('Banner', function () {
@@ -904,13 +783,10 @@ describe('Ventes Adapter', function () {
         const serverResponse = examples.serverResponse_banner;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
-        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
-        expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
         expect(ads[0].currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.cur);
@@ -929,11 +805,9 @@ describe('Ventes Adapter', function () {
         serverResponse.body.seatbid[0].bid[0].adm = undefined;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
-        const nurlWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].nurl, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].ad).to.equal(null);
-        expect(ads[0].adUrl).to.exist.and.to.be.a('string').and.to.equal(nurlWithAuctionPriceReplaced);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
         expect(ads[0].currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.cur);
@@ -983,17 +857,6 @@ describe('Ventes Adapter', function () {
 
         const serverResponse = utils.deepClone(examples.serverResponse_banner);
         serverResponse.body.seatbid[0].bid[0].w = {};
-
-        const ads = spec.interpretResponse(serverResponse, serverRequest);
-
-        expect(ads).to.be.an('array').and.to.have.length(0);
-      });
-
-      it('should return no ad when given a valid server response and a server request without banner impression', function () {
-        const serverRequest = utils.deepClone(examples.serverRequest_banner);
-        serverRequest.data.imp[0].banner = undefined;
-
-        const serverResponse = utils.deepClone(examples.serverResponse_banner);
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
 
