@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {convertCamelToUnderscore, parseUrl, isStr, isArray, isNumber, isPlainObject, replaceAuctionPrice} from '../src/utils.js';
+import {convertCamelToUnderscore, isStr, isArray, isNumber, isPlainObject, replaceAuctionPrice} from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { config } from '../src/config.js';
@@ -171,8 +171,7 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   payload.at = FIRST_PRICE
   payload.cur = ['USD']
   payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, [])
-  payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext),
-  payload.site = site(bidRequests, adUnitContext)
+  payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
   if (appDeviceObjBid) {
     payload.device = appDeviceObj
   }
