@@ -85,7 +85,7 @@ function generateSiteFromAdUnitContext(bidRequests, adUnitContext) {
   if (!adUnitContext || !adUnitContext.refererInfo) return null;
 
   const domain = extractSiteDomainFromURL(adUnitContext.refererInfo.referer);
-  const publisherId = bidRequests.params.publisherId;
+  const publisherId = bidRequests[0].params.publisherId;
 
   if (!domain) return null;
 
