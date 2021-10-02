@@ -156,7 +156,7 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
       deviceObj.ua = navigator.userAgent;
     }
     if (!deviceObjBid.hasOwnProperty('language')) {
-      deviceObj.language = navigator.language.anchor;
+      deviceObj.language = navigator.language;
     }
   }
   const appDeviceObjBid = find(bidRequests, hasAppInfo);
@@ -225,11 +225,11 @@ function validateServerResponse(serverResponse) {
 
 function seatBidsToAds(seatBid, bidResponse, serverRequest) {
   return seatBid.bid
-    .filter(bid => validateBids(bid, serverRequest))
+    .filter(bid => validateBids(bid))
     .map(bid => generateAdFromBid(bid, bidResponse));
 }
 
-function validateBids(bid, serverRequest) {
+function validateBids(bid) {
   if (!isPlainObject(bid)) return false;
   if (!isStr(bid.impid)) return false;
   if (!isStr(bid.crid)) return false;
@@ -238,38 +238,7 @@ function validateBids(bid, serverRequest) {
   if (bid.adm) {
     if (!isStr(bid.adm)) return false;
   }
-
-  if (isBidABanner(bid)) {
-    if (!isNumber(bid.h)) return false;
-    if (!isNumber(bid.w)) return false;
-  }
-
-  const impression = getImpressionData(serverRequest, bid.impid);
-
-  if (!isPlainObject(impression.openRTB)) return false;
-  if (!isPlainObject(impression.internal)) return false;
-  if (!isStr(impression.internal.adUnitCode)) return false;
-
-  if (isBidABanner(bid)) {
-    if (!isPlainObject(impression.openRTB.banner)) return false;
-  }
-
   return true;
-}
-
-function isBidABanner(bid) {
-  return isPlainObject(bid) &&
-    isPlainObject(bid.ext) &&
-    bid.ext.venaven.media_type === 'banner';
-}
-
-function getImpressionData(serverRequest, impressionId) {
-  const openRTBImpression = find(serverRequest.data.imp, imp => imp.id === impressionId);
-
-  return {
-    id: impressionId,
-    openRTB: openRTBImpression || null
-  };
 }
 
 const VAST_REGEXP = /VAST\s+version/;

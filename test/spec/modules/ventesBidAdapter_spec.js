@@ -64,6 +64,7 @@ describe('Ventes Adapter', function () {
         at: 1
       }
     },
+    
     serverResponse_banner: {
       body: {
         cur: 'USD',
