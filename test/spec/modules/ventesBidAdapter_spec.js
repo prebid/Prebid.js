@@ -16,7 +16,7 @@ describe('Ventes Adapter', function () {
         placementId: 'VA-062-0013-0183',
         device: {
           ip: '123.145.167.189',
-          ifa:"AEBE52E7-03EE-455A-B3C4-E57283966239",
+          ifa: 'AEBE52E7-03EE-455A-B3C4-E57283966239',
         }
       },
       mediaTypes: {
@@ -492,9 +492,7 @@ describe('Ventes Adapter', function () {
 
         const serverResponse = utils.deepClone(examples.serverResponse_banner);
         serverResponse.body.cur = 'USD';
-
-        console.log(serverResponse)
-        console.log(serverRequest)
+        
         const ads = spec.interpretResponse(serverResponse, serverRequest);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
