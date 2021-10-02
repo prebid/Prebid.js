@@ -11,7 +11,10 @@ describe('Ventes Adapter', function () {
       bidder: 'ventes',
       bidderRequestId: 'bid_request_id',
       bidId: 'bid_id',
-      params: {},
+      params: {
+        publisherId: 'agltb3B1Yi1pbmNyDAsSA0FwcBiJkfTUCV',
+        placementId: 'VA-062-0013-0183',
+      },
       mediaTypes: {
         banner: {
           sizes: [[300, 250]]
