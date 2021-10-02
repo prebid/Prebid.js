@@ -9,11 +9,10 @@ const BID_METHOD = 'POST';
 const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
 const FIRST_PRICE = 1;
 const NET_REVENUE = true;
-// eslint-disable-next-line no-template-curly-in-string
-const AUCTION_PRICE = '${AUCTION_PRICE}';
 const TTL = 10;
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
+const DOMAIN_REGEX = new RegExp('//([^/]*)');
 
 function groupBy(values, key) {
   const groups = values.reduce((acc, value) => {
@@ -70,6 +69,34 @@ function validateParameters(parameters, adUnit) {
   }
 
   return true;
+}
+
+function extractSiteDomainFromURL(url) {
+  if (!url || !isStr(url)) return null;
+
+  const domain = url.match(DOMAIN_REGEX);
+
+  if (isArray(domain) && domain.length === 2) return domain[1];
+
+  return null;
+}
+
+function generateSiteFromAdUnitContext(bidRequests, adUnitContext) {
+  if (!adUnitContext || !adUnitContext.refererInfo) return null;
+
+  const domain = extractSiteDomainFromURL(adUnitContext.refererInfo.referer);
+  const publisherId = bidRequests.params.publisherId;
+
+  if (!domain) return null;
+
+  return {
+    page: adUnitContext.refererInfo.referer,
+    domain: domain,
+    name: domain,
+    publisher: {
+      id: publisherId
+    }
+  };
 }
 
 function validateServerRequest(serverRequest) {
@@ -144,6 +171,7 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   payload.at = FIRST_PRICE
   payload.cur = ['USD']
   payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, [])
+  payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext),
   payload.site = site(bidRequests, adUnitContext)
   if (appDeviceObjBid) {
     payload.device = appDeviceObj
@@ -188,34 +216,6 @@ function generateBannerFromAdUnit(impId, data, params) {
   return data.sizes.map(([w, h]) => ({id: `${impId}`, banner: {format: [{w, h}], w, h, pos}, pmp, ext, tagid: placementId}));
 }
 
-function site(bidRequests, bidderRequest) {
-  const url =
-    config.getConfig('pageUrl') || (bidderRequest &&
-      bidderRequest.refererInfo &&
-      bidderRequest.refererInfo.referer);
-
-  const pubId =
-    bidRequests && bidRequests.length > 0
-      ? bidRequests[0].params.publisherId
-      : '0';
-  const siteId =
-    bidRequests && bidRequests.length > 0 ? bidRequests[0].params.siteId : '0';
-  const appParams = bidRequests[0].params.app;
-  if (!appParams) {
-    return {
-      publisher: {
-        id: pubId.toString(),
-        domain: config.getConfig('publisherDomain')
-      },
-      id: siteId ? siteId.toString() : pubId.toString(),
-      page: url,
-      domain:
-        (url && parseUrl(url).hostname) || config.getConfig('publisherDomain')
-    };
-  }
-  return undefined;
-}
-
 function validateServerResponse(serverResponse) {
   return isPlainObject(serverResponse) &&
     isPlainObject(serverResponse.body) &&
@@ -237,11 +237,6 @@ function validateBids(bid, serverRequest) {
   if (!bid.adm && !bid.nurl) return false;
   if (bid.adm) {
     if (!isStr(bid.adm)) return false;
-    if (bid.adm.indexOf(AUCTION_PRICE) === -1) return false;
-  }
-  if (bid.nurl) {
-    if (!isStr(bid.nurl)) return false;
-    if (bid.nurl.indexOf(AUCTION_PRICE) === -1) return false;
   }
 
   if (isBidABanner(bid)) {
