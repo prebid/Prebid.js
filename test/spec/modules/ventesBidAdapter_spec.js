@@ -42,8 +42,8 @@ describe('Ventes Adapter', function () {
         },
         device: {
           ua: '',
-          ip: "123.145.167.189",
-          ifa: "AEBE52E7-03EE-455A-B3C4-E57283966239",
+          ip: '123.145.167.189',
+          ifa: AEBE52E7-03EE-455A-B3C4-E57283966239',
         },
         user: null,
         regs: null,
@@ -1077,6 +1077,7 @@ describe('Ventes Adapter', function () {
         const serverRequest = examples.serverRequest_banner;
 
         const serverResponse = utils.deepClone(examples.serverResponse_banner);
+        
         serverResponse.body.seatbid[0].bid[0].nurl = undefined;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
