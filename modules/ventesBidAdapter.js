@@ -11,7 +11,7 @@ const FIRST_PRICE = 1;
 const NET_REVENUE = true;
 const TTL = 10;
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
-const DEVICE_PARAMS = ['ua','geo', 'dnt','lmt', 'ip','ipv6', 'devicetype']; 
+const DEVICE_PARAMS = ['ua', 'geo', 'dnt', 'lmt', 'ip', 'ipv6', 'devicetype'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DOMAIN_REGEX = new RegExp('//([^/]*)');
 
@@ -159,12 +159,12 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
       deviceObj.language = navigator.language.anchor;
     }
   }
-  const appIdObjBid = find(bidRequests, hasAppInfo);
+  const appDeviceObjBid = find(bidRequests, hasAppInfo);
   let appIdObj;
-  if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
+  if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
     Object.keys(appDeviceObjBid.params.app)
       .filter(param => includes(APP_DEVICE_PARAMS, param))
-      .forEach(param => appIdObjBid[param] = appIdObjBid.params.app[param]);
+      .forEach(param => appDeviceObjBid[param] = appDeviceObjBid.params.app[param]);
   }
 
   const payload = {}
@@ -176,7 +176,7 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   if (deviceObjBid) {
     payload.device = deviceObj
   }
-  if (appIdObjBid && payload.site != null) {
+  if (appDeviceObjBid && payload.site != null) {
     payload.app = appIdObj;
   }
   payload.user = userObj
@@ -270,13 +270,6 @@ function getImpressionData(serverRequest, impressionId) {
     id: impressionId,
     openRTB: openRTBImpression || null
   };
-}
-
-function hasAppId(bid) {
-  if (bid.params && bid.params.app) {
-    return !!bid.params.app.id
-  }
-  return !!bid.params.app
 }
 
 const VAST_REGEXP = /VAST\s+version/;
