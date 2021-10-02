@@ -492,7 +492,6 @@ describe('Ventes Adapter', function () {
 
         const serverResponse = utils.deepClone(examples.serverResponse_banner);
         serverResponse.body.cur = 'USD';
-        
         const ads = spec.interpretResponse(serverResponse, serverRequest);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
