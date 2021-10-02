@@ -11,6 +11,7 @@ const FIRST_PRICE = 1;
 const NET_REVENUE = true;
 const TTL = 10;
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
+const DEVICE_PARAMS = ['ua','geo', 'dnt','lmt', 'ip','ipv6', 'devicetype']; 
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DOMAIN_REGEX = new RegExp('//([^/]*)');
 
@@ -144,26 +145,26 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
       });
   }
 
-  const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
-  let appDeviceObj;
-  if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
-    appDeviceObj = {};
-    Object.keys(appDeviceObjBid.params.app)
-      .filter(param => includes(APP_DEVICE_PARAMS, param))
-      .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
-    if (!appDeviceObjBid.hasOwnProperty('ua')) {
-      appDeviceObj.ua = navigator.userAgent;
+  const deviceObjBid = find(bidRequests, hasDeviceInfo);
+  let deviceObj;
+  if (deviceObjBid && deviceObjBid.params && deviceObjBid.params.device) {
+    deviceObj = {};
+    Object.keys(deviceObjBid.params.device)
+      .filter(param => includes(DEVICE_PARAMS, param))
+      .forEach(param => deviceObj[param] = deviceObjBid.params.app[param]);
+    if (!deviceObjBid.hasOwnProperty('ua')) {
+      deviceObj.ua = navigator.userAgent;
     }
-    if (!appDeviceObjBid.hasOwnProperty('language')) {
-      appDeviceObj.language = navigator.language.anchor;
+    if (!deviceObjBid.hasOwnProperty('language')) {
+      deviceObj.language = navigator.language.anchor;
     }
   }
-  const appIdObjBid = find(bidRequests, hasAppId);
+  const appIdObjBid = find(bidRequests, hasAppInfo);
   let appIdObj;
   if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-    appIdObj = {
-      appid: appIdObjBid.params.app.id
-    };
+    Object.keys(appDeviceObjBid.params.app)
+      .filter(param => includes(APP_DEVICE_PARAMS, param))
+      .forEach(param => appIdObjBid[param] = appIdObjBid.params.app[param]);
   }
 
   const payload = {}
@@ -172,10 +173,10 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   payload.cur = ['USD']
   payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, [])
   payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
-  if (appDeviceObjBid) {
-    payload.device = appDeviceObj
+  if (deviceObjBid) {
+    payload.device = deviceObj
   }
-  if (appIdObjBid) {
+  if (appIdObjBid && payload.site != null) {
     payload.app = appIdObj;
   }
   payload.user = userObj
@@ -352,7 +353,13 @@ function getCreativeFromBid(bid) {
   };
 }
 
-function hasAppDeviceInfo(bid) {
+function hasDeviceInfo(bid) {
+  if (bid.params) {
+    return !!bid.params.device
+  }
+}
+
+function hasAppInfo(bid) {
   if (bid.params) {
     return !!bid.params.app
   }
