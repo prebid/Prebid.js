@@ -24,7 +24,7 @@ describe('Ventes Adapter', function () {
 
     adUnitContext: {
       refererInfo: {
-        referer: 'http://127.0.0.1:5500/modules/Adapter.html',
+        referer: 'https://ventesavenues.in',
       }
     },
 
@@ -53,6 +53,7 @@ describe('Ventes Adapter', function () {
           ua: '',
           ip: '123.145.167.189',
           ifa: 'AEBE52E7-03EE-455A-B3C4-E57283966239',
+          language: 'en'
         },
         user: null,
         regs: null,
@@ -178,13 +179,6 @@ describe('Ventes Adapter', function () {
         const adUnit = examples.adUnit_banner;
 
         expect(spec.isBidRequestValid(adUnit)).to.equal(true);
-      });
-
-      it('should return true when given a valid ad unit without bidder parameters', function () {
-        const adUnit = utils.deepClone(examples.adUnit_banner);
-        adUnit.params = undefined;
-
-        expect(spec.isBidRequestValid(adUnit)).to.equal(false);
       });
 
       it('should return true when given a valid ad unit with invalid publisher id', function () {
@@ -326,9 +320,6 @@ describe('Ventes Adapter', function () {
         expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
         expect(serverRequests[0].data.id).to.exist.and.to.be.a('string').and.to.equal(adUnits[0].bidderRequestId);
         expect(serverRequests[0].data.at).to.exist.and.to.be.a('number').and.to.equal(1);
-        expect(serverRequests[0].data.ext).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.ext.adot).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.ext.adot.adapter_version).to.exist.and.to.be.a('string').and.to.equal('v1.0.0');
       });
 
       it('should return one server request when given one valid ad unit', function () {
@@ -351,7 +342,7 @@ describe('Ventes Adapter', function () {
           expect(serverRequests[0].data).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp).to.exist.and.to.be.an('array').and.to.have.lengthOf(1);
           expect(serverRequests[0].data.imp[0]).to.exist.and.to.be.an('object');
-          expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}_0_0`);
+          expect(serverRequests[0].data.imp[0].id).to.exist.and.to.be.a('string').and.to.equal(`${adUnits[0].bidId}`);
           expect(serverRequests[0].data.imp[0].banner).to.exist.and.to.be.an('object');
           expect(serverRequests[0].data.imp[0].banner.w).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.banner.sizes[0][0]);
           expect(serverRequests[0].data.imp[0].banner.h).to.exist.and.to.be.a('number').and.to.equal(adUnits[0].mediaTypes.banner.sizes[0][1]);
@@ -377,22 +368,8 @@ describe('Ventes Adapter', function () {
         expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
         expect(serverRequests[0].data.site).to.exist.and.to.be.an('object');
         expect(serverRequests[0].data.site.page).to.exist.and.to.be.an('string').and.to.equal(adUnitContext.refererInfo.referer);
-        expect(serverRequests[0].data.site.id).to.equal(undefined);
-        expect(serverRequests[0].data.site.domain).to.exist.and.to.be.an('string').and.to.equal('we-are-adot.com');
-        expect(serverRequests[0].data.site.name).to.exist.and.to.be.an('string').and.to.equal('we-are-adot.com');
-      });
-
-      it('should return a server request without site information when not given an ad unit context', function () {
-        const adUnits = [examples.adUnit_banner];
-
-        const adUnitContext = undefined;
-
-        const serverRequests = spec.buildRequests(adUnits, adUnitContext);
-
-        expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
-        expect(serverRequests[0].data).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.site).to.equal(null);
+        expect(serverRequests[0].data.site.domain).to.exist.and.to.be.an('string').and.to.equal('ventesavenues.in');
+        expect(serverRequests[0].data.site.name).to.exist.and.to.be.an('string').and.to.equal('ventesavenues.in');
       });
 
       it('should return a server request without site information when given an ad unit context without referer information', function () {
@@ -406,7 +383,6 @@ describe('Ventes Adapter', function () {
         expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
         expect(serverRequests[0].data).to.exist.and.to.be.an('object');
         expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.site).to.equal(null);
       });
 
       it('should return a server request without site information when given an ad unit context with invalid referer information', function () {
@@ -420,7 +396,6 @@ describe('Ventes Adapter', function () {
         expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
         expect(serverRequests[0].data).to.exist.and.to.be.an('object');
         expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.site).to.equal(null);
       });
 
       it('should return a server request without site information when given an ad unit context without referer', function () {
@@ -434,7 +409,6 @@ describe('Ventes Adapter', function () {
         expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
         expect(serverRequests[0].data).to.exist.and.to.be.an('object');
         expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.site).to.equal(null);
       });
 
       it('should return a server request without site information when given an ad unit context with an invalid referer', function () {
@@ -448,7 +422,6 @@ describe('Ventes Adapter', function () {
         expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
         expect(serverRequests[0].data).to.exist.and.to.be.an('object');
         expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.site).to.equal(null);
       });
 
       it('should return a server request without site information when given an ad unit context with a misformatted referer', function () {
@@ -462,7 +435,6 @@ describe('Ventes Adapter', function () {
         expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
         expect(serverRequests[0].data).to.exist.and.to.be.an('object');
         expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.site).to.equal(null);
       });
     });
 
@@ -481,94 +453,6 @@ describe('Ventes Adapter', function () {
       });
     });
 
-    describe('Regs', function () {
-      it('should return a server request with regulations information when given a valid ad unit and a valid ad unit context with GDPR applying', function () {
-        const adUnits = [examples.adUnit_banner];
-
-        const adUnitContext = examples.adUnitContext;
-
-        const serverRequests = spec.buildRequests(adUnits, adUnitContext);
-
-        expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
-        expect(serverRequests[0].data).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.regs).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.regs.ext).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.regs.ext.gdpr).to.exist.and.to.be.a('boolean').and.to.equal(adUnitContext.gdprConsent.gdprApplies);
-      });
-
-      it('should return a server request with regulations information when given a valid ad unit and a valid ad unit context with GDPR not applying', function () {
-        const adUnits = [examples.adUnit_banner];
-
-        const adUnitContext = utils.deepClone(examples.adUnitContext);
-        adUnitContext.gdprConsent.gdprApplies = false;
-
-        const serverRequests = spec.buildRequests(adUnits, adUnitContext);
-
-        expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
-        expect(serverRequests[0].data).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.regs).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.regs.ext).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.regs.ext.gdpr).to.exist.and.to.be.a('boolean').and.to.equal(adUnitContext.gdprConsent.gdprApplies);
-      });
-
-      it('should return a server request without regulations information when not given an ad unit context', function () {
-        const adUnits = [examples.adUnit_banner];
-
-        const adUnitContext = undefined;
-
-        const serverRequests = spec.buildRequests(adUnits, adUnitContext);
-
-        expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
-        expect(serverRequests[0].data).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.regs).to.equal(null);
-      });
-
-      it('should return a server request without regulations information when given an ad unit context without GDPR information', function () {
-        const adUnits = [examples.adUnit_banner];
-
-        const adUnitContext = utils.deepClone(examples.adUnitContext);
-        adUnitContext.gdprConsent = undefined;
-
-        const serverRequests = spec.buildRequests(adUnits, adUnitContext);
-
-        expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
-        expect(serverRequests[0].data).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.regs).to.equal(null);
-      });
-
-      it('should return a server request without regulations information when given an ad unit context with invalid GDPR information', function () {
-        const adUnits = [examples.adUnit_banner];
-
-        const adUnitContext = utils.deepClone(examples.adUnitContext);
-        adUnitContext.gdprConsent = 'bad_gdpr_consent';
-
-        const serverRequests = spec.buildRequests(adUnits, adUnitContext);
-
-        expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
-        expect(serverRequests[0].data).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.regs).to.equal(null);
-      });
-
-      it('should return a server request without regulations information when given an ad unit context with invalid GDPR application information', function () {
-        const adUnits = [examples.adUnit_banner];
-
-        const adUnitContext = utils.deepClone(examples.adUnitContext);
-        adUnitContext.gdprConsent.gdprApplies = 'bad_gdpr_applies';
-
-        const serverRequests = spec.buildRequests(adUnits, adUnitContext);
-
-        expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
-        expect(serverRequests[0].data).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.regs).to.equal(null);
-      });
-    });
-
     describe('User', function () {
       it('should return a server request with user information when given a valid ad unit and a valid ad unit context', function () {
         const adUnits = [examples.adUnit_banner];
@@ -581,8 +465,6 @@ describe('Ventes Adapter', function () {
         expect(serverRequests[0].data).to.exist.and.to.be.an('object');
         expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
         expect(serverRequests[0].data.user).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.user.ext).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.user.ext.consent).to.exist.and.to.be.a('string').and.to.equal(adUnitContext.gdprConsent.consentString);
       });
 
       it('should return a server request without user information when not given an ad unit context', function () {
@@ -595,49 +477,6 @@ describe('Ventes Adapter', function () {
         expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
         expect(serverRequests[0].data).to.exist.and.to.be.an('object');
         expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.user).to.equal(null);
-      });
-
-      it('should return a server request without user information when given an ad unit context without GDPR information', function () {
-        const adUnits = [examples.adUnit_banner];
-
-        const adUnitContext = utils.deepClone(examples.adUnitContext);
-        adUnitContext.gdprConsent = undefined;
-
-        const serverRequests = spec.buildRequests(adUnits, adUnitContext);
-
-        expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
-        expect(serverRequests[0].data).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.user).to.equal(null);
-      });
-
-      it('should return a server request without user information when given an ad unit context with invalid GDPR information', function () {
-        const adUnits = [examples.adUnit_banner];
-
-        const adUnitContext = utils.deepClone(examples.adUnitContext);
-        adUnitContext.gdprConsent = 'bad_gdpr_consent';
-
-        const serverRequests = spec.buildRequests(adUnits, adUnitContext);
-
-        expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
-        expect(serverRequests[0].data).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.user).to.equal(null);
-      });
-
-      it('should return a server request without user information when given an ad unit context with an invalid consent string', function () {
-        const adUnits = [examples.adUnit_banner];
-
-        const adUnitContext = utils.deepClone(examples.adUnitContext);
-        adUnitContext.gdprConsent.consentString = true;
-
-        const serverRequests = spec.buildRequests(adUnits, adUnitContext);
-
-        expect(serverRequests).to.be.an('array').and.to.have.lengthOf(1);
-        expect(serverRequests[0].data).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
-        expect(serverRequests[0].data.user).to.equal(null);
       });
     });
   });
