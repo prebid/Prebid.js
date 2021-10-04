@@ -298,6 +298,10 @@ export const spec = {
     if(gpid){
       if(emxData.imp && emxData.imp.ext){
         emxData.imp.ext.gpid = gpid;
+      }else{
+        emxData.imp.ext = {
+          gpid : gpid
+        };
       }
     }
 
