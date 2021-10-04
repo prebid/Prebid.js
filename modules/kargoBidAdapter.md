@@ -31,7 +31,7 @@ Please use `kargo` as the bidder code. Also, you *must* test on a mobile device,
     bids: [{
       bidder: 'kargo',
       params: {
-        placementId: '_wmy1Mr1Cwf',
+        placementId: '_bLIt2QMYee',
         video: {
           skipppable: true,
           playback_method: ['auto_play_sound_off'],
