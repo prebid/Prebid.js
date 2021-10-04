@@ -10,10 +10,9 @@ export const META_KEYWORDS = 'keywords'
 export const META_DESCRIPTION = 'description'
 
 const VIDEO = 'video'
-const NATIVE = 'native'
 const BANNER = 'banner'
 
-const supportedMediaTypes = [BANNER, VIDEO, NATIVE]
+const supportedMediaTypes = [BANNER, VIDEO]
 const aliasBidderCode = ['bk']
 
 export function getMetaList(name) {
@@ -111,12 +110,12 @@ export const buildBid = (bidRequest, bliinkCreative) => {
 
   const body = {
     requestId: bidRequest.bidId,
+    currency: bliinkCreative.currency,
     cpm: bliinkCreative.price,
     creativeId: bliinkCreative.creativeId,
-    currency: 'EUR',
-    netRevenue: false,
     width: 1,
     height: 1,
+    netRevenue: false,
     ttl: 3600,
   }
 
@@ -131,14 +130,22 @@ export const buildBid = (bidRequest, bliinkCreative) => {
 
   delete bidRequest['bids']
 
-  return Object.assign(body, {
-    currency: bliinkCreative.currency,
-    width: 1,
-    height: 1,
-    mediaType: VIDEO,
-    ad: '<html lang="en"></html>',
-    vastXml: bliinkCreative.content,
-  })
+  switch (bliinkCreative.media_type) {
+    case VIDEO:
+      return Object.assign(body, {
+        mediaType: VIDEO,
+        ad: '<html lang="en"></html>',
+        renderer: '',
+        vastXml: bliinkCreative.content,
+      })
+    case BANNER:
+      return Object.assign(body, {
+        mediaType: BANNER,
+        ad: bliinkCreative.content.creative.adm,
+      })
+    default:
+      break;
+  }
 }
 
 /**
@@ -218,23 +225,36 @@ const interpretResponse = (serverResponse, request) => {
 
   const xml = parseXML(body)
 
-  if (xml) {
-    const price = xml.getElementsByTagName('Price') && xml.getElementsByTagName('Price')[0]
-    const currency = xml.getElementsByTagName('Currency') && xml.getElementsByTagName('Currency')[0]
-    const creativeId = xml.getElementsByTagName('CreativeId') && xml.getElementsByTagName('CreativeId')[0]
+  let creative;
 
-    const creative = {
-      content: body,
-      price: (price && price.textContent) || 0,
-      currency: (currency && currency.textContent) || 'EUR',
-      creativeId: creativeId || 0,
-      media_type: 'video',
-    }
+  switch (serverBody.bids[0].params.placement) {
+    case xml && VIDEO:
+      const price = xml.getElementsByTagName('Price') && xml.getElementsByTagName('Price')[0]
+      const currency = xml.getElementsByTagName('Currency') && xml.getElementsByTagName('Currency')[0]
+      const creativeId = xml.getElementsByTagName('CreativeId') && xml.getElementsByTagName('CreativeId')[0]
 
-    return buildBid(serverBody.bids[0], creative);
+      creative = {
+        content: body,
+        price: (price && price.textContent) || 0,
+        currency: (currency && currency.textContent) || 'EUR',
+        creativeId: creativeId || 0,
+        media_type: 'video',
+      }
+
+      return buildBid(serverBody.bids[0], creative)
+    case BANNER:
+      creative = {
+        content: body,
+        price: body.price,
+        currency: body.currency,
+        creativeId: 0,
+        media_type: 'banner',
+      }
+
+      return buildBid(serverBody.bids[0], creative)
+    default:
+      break
   }
-
-  return []
 }
 
 /**
