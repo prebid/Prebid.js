@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, isArray, inIframe, isNumber, isStr, deepClone, deepSetValue, logError, deepAccess, isBoolean } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -190,22 +190,22 @@ function _checkParamDataType(key, value, datatype) {
   var functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
-      functionToExecute = utils.isBoolean;
+      functionToExecute = isBoolean;
       break;
     case DATA_TYPES.NUMBER:
-      functionToExecute = utils.isNumber;
+      functionToExecute = isNumber;
       break;
     case DATA_TYPES.STRING:
-      functionToExecute = utils.isStr;
+      functionToExecute = isStr;
       break;
     case DATA_TYPES.ARRAY:
-      functionToExecute = utils.isArray;
+      functionToExecute = isArray;
       break;
   }
   if (functionToExecute(value)) {
     return value;
   }
-  utils.logWarn(LOG_WARN_PREFIX + errMsg);
+  logWarn(LOG_WARN_PREFIX + errMsg);
   return UNDEFINED;
 }
 
@@ -216,7 +216,7 @@ function _parseNativeResponse(bid, newBid) {
     try {
       adm = JSON.parse(bid.adm.replace(/\\/g, ''));
     } catch (ex) {
-      // utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + newBid.adm);
+      // logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + newBid.adm);
       return;
     }
     if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
@@ -274,13 +274,13 @@ function _createBannerRequest(bid) {
   var sizes = bid.mediaTypes.banner.sizes;
   var format = [];
   var bannerObj;
-  if (sizes !== UNDEFINED && utils.isArray(sizes)) {
+  if (sizes !== UNDEFINED && isArray(sizes)) {
     bannerObj = {};
     if (!bid.params.width && !bid.params.height) {
       if (sizes.length === 0) {
         // i.e. since bid.params does not have width or height, and length of sizes is 0, need to ignore this banner imp
         bannerObj = UNDEFINED;
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
+        logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
         return bannerObj;
       } else {
         bannerObj.w = parseInt(sizes[0][0], 10);
@@ -303,9 +303,9 @@ function _createBannerRequest(bid) {
       }
     }
     bannerObj.pos = 0;
-    bannerObj.topframe = utils.inIframe() ? 0 : 1;
+    bannerObj.topframe = inIframe() ? 0 : 1;
   } else {
-    utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
+    logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
     bannerObj = UNDEFINED;
   }
   return bannerObj;
@@ -323,10 +323,10 @@ function _createVideoRequest(bid) {
       }
     }
     // read playersize and assign to h and w.
-    if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+    if (isArray(bid.mediaTypes.video.playerSize[0])) {
       videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0][0], 10);
       videoObj.h = parseInt(bid.mediaTypes.video.playerSize[0][1], 10);
-    } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
+    } else if (isNumber(bid.mediaTypes.video.playerSize[0])) {
       videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
       videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
     }
@@ -337,7 +337,7 @@ function _createVideoRequest(bid) {
     }
   } else {
     videoObj = UNDEFINED;
-    utils.logWarn(LOG_WARN_PREFIX + 'Error: Video config params missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
+    logWarn(LOG_WARN_PREFIX + 'Error: Video config params missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
   }
   return videoObj;
 }
@@ -355,7 +355,7 @@ function _checkMediaType(adm, newBid) {
         newBid.mediaType = NATIVE;
       }
     } catch (e) {
-      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
+      logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
     }
   }
 }
@@ -401,9 +401,9 @@ function _createImpressionObject(bid, conf) {
       pos: 0,
       w: bid.params.width,
       h: bid.params.height,
-      topframe: utils.inIframe() ? 0 : 1
+      topframe: inIframe() ? 0 : 1
     };
-    if (utils.isArray(sizes) && sizes.length > 1) {
+    if (isArray(sizes) && sizes.length > 1) {
       sizes = sizes.splice(1, sizes.length - 1);
       sizes.forEach(size => {
         format.push({
@@ -428,19 +428,19 @@ export const spec = {
   isBidRequestValid: function (bid) {
     if (bid && bid.params) {
       if (!bid.params.zoneId) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: missing zoneId');
+        logWarn(LOG_WARN_PREFIX + 'Error: missing zoneId');
         return false;
       }
       if (!bid.params.publisherId) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: missing publisherId');
+        logWarn(LOG_WARN_PREFIX + 'Error: missing publisherId');
         return false;
       }
-      if (!utils.isStr(bid.params.publisherId)) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric');
+      if (!isStr(bid.params.publisherId)) {
+        logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric');
         return false;
       }
-      if (!utils.isStr(bid.params.zoneId)) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: zoneId is mandatory and cannot be numeric');
+      if (!isStr(bid.params.zoneId)) {
+        logWarn(LOG_WARN_PREFIX + 'Error: zoneId is mandatory and cannot be numeric');
         return false;
       }
       return true;
@@ -458,7 +458,7 @@ export const spec = {
     let bidCurrency = '';
     let bid;
     validBidRequests.forEach(originalBid => {
-      bid = utils.deepClone(originalBid);
+      bid = deepClone(originalBid);
       _parseAdSlot(bid);
 
       conf.zoneId = conf.zoneId || bid.params.zoneId;
@@ -468,7 +468,7 @@ export const spec = {
       if (bidCurrency === '') {
         bidCurrency = bid.params.currency || UNDEFINED;
       } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Currency specifier ignored. Only one currency permitted.');
+        logWarn(LOG_WARN_PREFIX + 'Currency specifier ignored. Only one currency permitted.');
       }
       bid.params.currency = bidCurrency;
 
@@ -502,28 +502,28 @@ export const spec = {
     if (typeof config.getConfig('device') === 'object') {
       payload.device = Object.assign(payload.device, config.getConfig('device'));
     }
-    utils.deepSetValue(payload, 'source.tid', conf.transactionId);
+    deepSetValue(payload, 'source.tid', conf.transactionId);
     // test bids
     if (window.location.href.indexOf('adtrueTest=true') !== -1) {
       payload.test = 1;
     }
     // adding schain object
     if (validBidRequests[0].schain) {
-      utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
+      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
-      utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+      deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
-      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
     // coppa compliance
     if (config.getConfig('coppa') === true) {
-      utils.deepSetValue(payload, 'regs.coppa', 1);
+      deepSetValue(payload, 'regs.coppa', 1);
     }
 
     return {
@@ -539,12 +539,12 @@ export const spec = {
     let parsedRequest = JSON.parse(bidderRequest.data);
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
-      if (serverResponses.body && serverResponses.body.seatbid && utils.isArray(serverResponses.body.seatbid)) {
+      if (serverResponses.body && serverResponses.body.seatbid && isArray(serverResponses.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
         respCur = serverResponses.body.cur || respCur;
         serverResponses.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
-          utils.isArray(seatbidder.bid) &&
+          isArray(seatbidder.bid) &&
           seatbidder.bid.forEach(bid => {
             let newBid = {
               requestId: bid.impid,
@@ -598,7 +598,7 @@ export const spec = {
         });
       }
     } catch (error) {
-      utils.logError(error);
+      logError(error);
     }
     return bidResponses;
   },
@@ -607,7 +607,7 @@ export const spec = {
       return [];
     }
     return responses.reduce((accum, rsp) => {
-      let cookieSyncs = utils.deepAccess(rsp, 'body.ext.cookie_sync');
+      let cookieSyncs = deepAccess(rsp, 'body.ext.cookie_sync');
       if (cookieSyncs) {
         let cookieSyncObjects = cookieSyncs.map(cookieSync => {
           return {
