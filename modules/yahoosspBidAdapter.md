@@ -15,6 +15,7 @@ The Yahoo SSP Bid Adapter is an OpenRTB interface that consolidates all previous
 * Advertiser domains
 * End-2-End self-served testing mode
 * Outstream renderer/Player
+* User ID Modules - ConnectId and others
 * First Party Data (excluding ortb2Imp adUnit level data at this point)
     * site
         * page
@@ -545,7 +546,7 @@ const adUnits = [{
 
 ## Site/App Targeting for "pubId" Inventory Mapping
 To target your adUnit explicitly to a specific Site/App Object in Yahoo SSP, you can pass one of the following:
-1. params.inventoryId = External Site ID || Video SSP RTBIS Id (in String format).
+1. params.siteId = External Site ID || Video SSP RTBIS Id (in String format).
 2. params.bidOverride.site.id = External Site ID || Video SSP RTBIS Id (in String format).
 **Important:** Site override is a only supported when using "pubId" mode.
 **Important:** If you are switching from the oneVideo adapter, please make sure to pass inventoryid as a String instead of Integer.
@@ -565,7 +566,7 @@ const adUnits = [{
         bidder: 'yahoossp',
         params: {
             pubId: 'DemoPublisher',
-            inventoryId: '1234567';
+            siteId: '1234567';
         }
     }]
 }]
@@ -575,7 +576,7 @@ const adUnits = [{
 To target your adUnit explicitly to a specific Placement within a Site/App Object in Yahoo SSP, you can pass the following params.placementId = External Placement ID || Placement Alias
 
 **Important:** Placement override is a only supported when using "pubId" mode.
-**Important:** It is highly recommended that you pass both `inventoryId` AND `placementId` together to avoid inventory miss matching.
+**Important:** It is highly recommended that you pass both `siteId` AND `placementId` together to avoid inventory miss matching.
 
 ```javascript
 const adUnits = [{
@@ -592,7 +593,7 @@ const adUnits = [{
         bidder: 'yahoossp',
         params: {
             pubId: 'DemoPublisher',
-            inventoryId: '1234567',
+            siteId: '1234567',
             placementId: 'header-250x300'
         }
     }]

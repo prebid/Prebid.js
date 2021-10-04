@@ -258,8 +258,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.publisher = {
         id: bid.params.pubId
       }
-      if (deepAccess(bid, 'params.bidOverride.site.id') || deepAccess(bid, 'params.inventoryId')) {
-        outBoundBidRequest.site.id = deepAccess(bid, 'params.bidOverride.site.id') || bid.params.inventoryId;
+      if (deepAccess(bid, 'params.bidOverride.site.id') || deepAccess(bid, 'params.siteId')) {
+        outBoundBidRequest.site.id = deepAccess(bid, 'params.bidOverride.site.id') || bid.params.siteId;
       }
     } else {
       outBoundBidRequest.site.id = bid.params.dcn;

@@ -700,9 +700,9 @@ describe('YSSP Bid Adapter', () => {
       });
     });
 
-    it('should use inventoryId value as site.id in the outbound bid-request when using "pubId" integration mode', () => {
+    it('should use siteId value as site.id in the outbound bid-request when using "pubId" integration mode', () => {
       let { validBidRequests, bidderRequest } = generateBuildRequestMock({pubIdMode: true});
-      validBidRequests[0].params.inventoryId = '1234567';
+      validBidRequests[0].params.siteId = '1234567';
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.site.id).to.equal('1234567');
     });
