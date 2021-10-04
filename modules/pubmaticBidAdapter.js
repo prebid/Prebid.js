@@ -537,12 +537,19 @@ function _createBannerRequest(bid) {
   return bannerObj;
 }
 
+export function checkVideoPlacement(videoData) {
+  if (!videoData.hasOwnProperty('placement')) {
+    utils.logMessage('Video.Placement param missing');
+  }
+}
+
 function _createVideoRequest(bid) {
   var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), bid.params.video);
   var videoObj;
 
   if (videoData !== UNDEFINED) {
     videoObj = {};
+    checkVideoPlacement(videoData);
     for (var key in VIDEO_CUSTOM_PARAMS) {
       if (videoData.hasOwnProperty(key)) {
         videoObj[key] = _checkParamDataType(key, videoData[key], VIDEO_CUSTOM_PARAMS[key]);
@@ -963,6 +970,7 @@ export const spec = {
   * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: bid => {
+    // utils.logWarn('Is called..');
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
         utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric (wrap it in quotes in your config). Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
