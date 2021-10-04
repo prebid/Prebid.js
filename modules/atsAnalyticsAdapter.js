@@ -272,7 +272,7 @@ function preflightRequest (envelopeSourceCookieValue) {
       success: function (data) {
         let samplingRateObject = JSON.parse(data);
         logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
-        let samplingRate = samplingRateObject['samplingRate'];
+        let samplingRate = samplingRateObject.samplingRate;
         atsAnalyticsAdapter.setSamplingCookie(samplingRate);
         let samplingRateNumber = Number(samplingRate);
         if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber) && envelopeSourceCookieValue != null) {
@@ -356,7 +356,7 @@ atsAnalyticsAdapter.getUserAgent = function () {
 };
 
 atsAnalyticsAdapter.setSamplingCookie = function (samplRate) {
-  let now = new Date();
+  const now = new Date();
   now.setTime(now.getTime() + 86400000);
   storage.setCookie('_lr_sampling_rate', samplRate, now.toUTCString());
 }
