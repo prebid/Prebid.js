@@ -5,7 +5,7 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 
@@ -29,7 +29,7 @@ export const spec = {
   isBidRequestValid: (bid) => {
     return (
       !!config.getConfig('outbrain.bidderUrl') &&
-      !!utils.deepAccess(bid, 'params.publisher.id') &&
+      !!deepAccess(bid, 'params.publisher.id') &&
       !!(bid.nativeParams || bid.sizes)
     );
   },
@@ -94,15 +94,15 @@ export const spec = {
       request.test = 1;
     }
 
-    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
-      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
-      utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
+    if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
+      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
     }
     if (bidderRequest.uspConsent) {
-      utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+      deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
     }
     if (config.getConfig('coppa') === true) {
-      utils.deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
+      deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
     }
 
     return {
@@ -177,7 +177,7 @@ export const spec = {
     // for native requests we put the nurl as an imp tracker, otherwise if the auction takes place on prebid server
     // the server JS adapter puts the nurl in the adm as a tracking pixel and removes the attribute
     if (bid.nurl) {
-      ajax(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm))
+      ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm))
     }
   }
 };
@@ -216,7 +216,7 @@ function parseNative(bid) {
 
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i], key);
+    result = deepAccess(collection[i], key);
     if (result) {
       return result;
     }
@@ -228,7 +228,7 @@ function flatten(arr) {
 }
 
 function getNativeAssets(bid) {
-  return utils._map(bid.nativeParams, (bidParams, key) => {
+  return _map(bid.nativeParams, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
     const asset = {
       required: bidParams.required & 1,
@@ -266,16 +266,16 @@ function getNativeAssets(bid) {
 
 /* Turn bid request sizes into ut-compatible format */
 function transformSizes(requestSizes) {
-  if (!utils.isArray(requestSizes)) {
+  if (!isArray(requestSizes)) {
     return [];
   }
 
-  if (requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
+  if (requestSizes.length === 2 && !isArray(requestSizes[0])) {
     return [{
       w: parseInt(requestSizes[0], 10),
       h: parseInt(requestSizes[1], 10)
     }];
-  } else if (utils.isArray(requestSizes[0])) {
+  } else if (isArray(requestSizes[0])) {
     return requestSizes.map(item =>
       ({
         w: parseInt(item[0], 10),

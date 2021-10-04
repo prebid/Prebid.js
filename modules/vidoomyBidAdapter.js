@@ -1,7 +1,7 @@
+import { logError, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import * as utils from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
@@ -13,22 +13,22 @@ const COOKIE_SYNC_JSON = 'https://vpaid.vidoomy.com/sync/urls.json';
 
 const isBidRequestValid = bid => {
   if (!bid.params) {
-    utils.logError(BIDDER_CODE + ': bid.params should be non-empty');
+    logError(BIDDER_CODE + ': bid.params should be non-empty');
     return false;
   }
 
   if (!+bid.params.pid) {
-    utils.logError(BIDDER_CODE + ': bid.params.pid should be non-empty Number');
+    logError(BIDDER_CODE + ': bid.params.pid should be non-empty Number');
     return false;
   }
 
   if (!+bid.params.id) {
-    utils.logError(BIDDER_CODE + ': bid.params.id should be non-empty Number');
+    logError(BIDDER_CODE + ': bid.params.id should be non-empty Number');
     return false;
   }
 
   if (bid.params && bid.params.mediaTypes && bid.params.mediaTypes.video && bid.params.mediaTypes.video.context === INSTREAM && !bid.params.mediaTypes.video.playerSize) {
-    utils.logError(BIDDER_CODE + ': bid.params.mediaType.video should have a playerSize property to tell player size when is INSTREAM');
+    logError(BIDDER_CODE + ': bid.params.mediaType.video should have a playerSize property to tell player size when is INSTREAM');
     return false;
   }
 
@@ -65,7 +65,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     aElement.href = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || top.location.href;
     const hostname = aElement.hostname
 
-    const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
+    const videoContext = deepAccess(bid, 'mediaTypes.video.context');
 
     const queryParams = [];
     queryParams.push(['id', bid.params.id]);
@@ -93,8 +93,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     xhr.open('GET', COOKIE_SYNC_JSON)
     xhr.addEventListener('load', function () {
       const macro = Macro({
-        gpdr: bidderRequest.gdprConsent.gdprApplies,
-        gpdr_consent: bidderRequest.gdprConsent.consentString
+        gpdr: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : '0',
+        gpdr_consent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : '',
       });
       JSON.parse(this.responseText).filter(Boolean).forEach(url => {
         firePixel(macro.replace(url))
@@ -146,7 +146,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
           responseBody.renderer = renderer;
         } catch (e) {
           responseBody.ad = responseBody.vastUrl;
-          utils.logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
+          logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
         }
       }
     }
@@ -186,12 +186,12 @@ const interpretResponse = (serverResponse, bidRequest) => {
     if (isBidResponseValid(bid)) {
       bids.push(bid);
     } else {
-      utils.logError(BIDDER_CODE + ': server returns invalid response');
+      logError(BIDDER_CODE + ': server returns invalid response');
     }
 
     return bids;
   } catch (e) {
-    utils.logError(BIDDER_CODE + ': error parsing server response to Prebid format');
+    logError(BIDDER_CODE + ': error parsing server response to Prebid format');
     return [];
   }
 };
@@ -248,6 +248,7 @@ function Macro (obj) {
         /{{\s*([a-zA-Z0-9_]+)\s*}}/g,
         /\$\$\s*([a-zA-Z0-9_]+)\s*\$\$/g,
         /\[\s*([a-zA-Z0-9_]+)\s*\]/g,
+        /\{\s*([a-zA-Z0-9_]+)\s*\}/g,
       ];
       regexes.forEach(regex => {
         string = string.replace(regex, (str, x) => {
