@@ -214,7 +214,7 @@ const mapAsset = (paramName, paramValue) => {
  * @returns {object} native object that conforms to ortb native ads spec
  */
 const mapNative = slot => {
-  const native = utils.deepAccess(slot, 'mediaTypes.native');
+  const native = deepAccess(slot, 'mediaTypes.native');
   let assets;
   if (native) {
     const nativeParams = Object.keys(native);
@@ -228,7 +228,7 @@ const mapNative = slot => {
 }
 
 var mapVideo = slot => {
-  var video = utils.deepAccess(slot, 'mediaTypes.video');
+  var video = deepAccess(slot, 'mediaTypes.video');
   var videoParamsUsed = ['api', 'context', 'linearity', 'maxduration', 'mimes', 'protocols'];
   var videoAssets;
 
@@ -347,13 +347,13 @@ const parseNative = nativeData => {
         break;
 
       default:
-        utils.logWarn('Unrecognized native asset', asset);
+        logWarn('Unrecognized native asset', asset);
     }
   });
   result.clickUrl = nativeData.link.url;
   result.impressionTrackers = nativeData.imptrackers;
 
-  if (utils.isArray(nativeData.jstracker)) {
+  if (isArray(nativeData.jstracker)) {
     result.javascriptTrackers = nativeData.jstracker;
   } else if (nativeData.jstracker) {
     result.javascriptTrackers = [nativeData.jstracker];
@@ -572,7 +572,7 @@ const spec = {
                 bid.width = 1;
                 bid.height = 1;
               } catch (err) {
-                utils.logWarn('Could not parse native data', serverBid.adm);
+                logWarn('Could not parse native data', serverBid.adm);
                 bid.cpm = 0;
               }
             } else {
