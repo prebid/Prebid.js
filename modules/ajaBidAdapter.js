@@ -1,5 +1,5 @@
+import { getBidIdParameter, tryAppendQueryString, createTrackPixelHtml, logError, logWarn } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
-import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js';
 
@@ -16,23 +16,48 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER, NATIVE],
 
-  isBidRequestValid: function(bid) {
-    return !!(bid.params.asi);
+  /**
+   * Determines whether or not the given bid has all the params needed to make a valid request.
+   *
+   * @param {BidRequest} bidRequest
+   * @returns {boolean}
+   */
+  isBidRequestValid: function(bidRequest) {
+    return !!(bidRequest.params.asi);
   },
 
+  /**
+   * Build the request to the Server which requests Bids for the given array of Requests.
+   * Each BidRequest in the argument array is guaranteed to have passed the isBidRequestValid() test.
+   *
+   * @param {BidRequest[]} validBidRequests
+   * @param {*} bidderRequest
+   * @returns {ServerRequest|ServerRequest[]}
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bidRequests = [];
-    for (let i = 0, len = validBidRequests.length; i < len; i++) {
-      const bid = validBidRequests[i];
-      let queryString = '';
-      const asi = utils.getBidIdParameter('asi', bid.params);
-      queryString = utils.tryAppendQueryString(queryString, 'asi', asi);
-      queryString = utils.tryAppendQueryString(queryString, 'skt', SDK_TYPE);
-      queryString = utils.tryAppendQueryString(queryString, 'prebid_id', bid.bidId);
-      queryString = utils.tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
+    const pageUrl = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || undefined;
 
-      if (bidderRequest && bidderRequest.refererInfo) {
-        queryString = utils.tryAppendQueryString(queryString, 'page_url', bidderRequest.refererInfo.referer);
+    for (let i = 0, len = validBidRequests.length; i < len; i++) {
+      const bidRequest = validBidRequests[i];
+      let queryString = '';
+
+      const asi = getBidIdParameter('asi', bidRequest.params);
+      queryString = tryAppendQueryString(queryString, 'asi', asi);
+      queryString = tryAppendQueryString(queryString, 'skt', SDK_TYPE);
+      queryString = tryAppendQueryString(queryString, 'tid', bidRequest.transactionId)
+      queryString = tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
+      queryString = tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
+
+      if (pageUrl) {
+        queryString = tryAppendQueryString(queryString, 'page_url', pageUrl);
+      }
+
+      const eids = bidRequest.userIdAsEids;
+      if (eids && eids.length) {
+        queryString = tryAppendQueryString(queryString, 'eids', JSON.stringify({
+          'eids': eids,
+        }))
       }
 
       bidRequests.push({
@@ -89,11 +114,11 @@ export const spec = {
       });
       try {
         bannerAd.imps.forEach(impTracker => {
-          const tracker = utils.createTrackPixelHtml(impTracker);
+          const tracker = createTrackPixelHtml(impTracker);
           bid.ad += tracker;
         });
       } catch (error) {
-        utils.logError('Error appending tracking pixel', error);
+        logError('Error appending tracking pixel', error);
       }
 
       Array.prototype.push.apply(bid.meta.advertiserDomains, bannerAd.adomain)
@@ -182,7 +207,7 @@ function newRenderer(bidderResponse) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+    logWarn('Prebid Error calling setRender on newRenderer', err);
   }
 
   return renderer;

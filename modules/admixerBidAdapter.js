@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logError } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 
@@ -46,11 +46,10 @@ export const spec = {
       Object.keys(bid).forEach(key => imp[key] = bid[key]);
       payload.imps.push(imp);
     });
-    const payloadString = JSON.stringify(payload);
     return {
-      method: 'GET',
+      method: 'POST',
       url: endpointUrl || ENDPOINT_URL,
-      data: `data=${payloadString}`,
+      data: payload,
     };
   },
   /**
@@ -62,7 +61,7 @@ export const spec = {
       const {body: {ads = []} = {}} = serverResponse;
       ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
-      utils.logError(e);
+      logError(e);
     }
     return bidResponses;
   },
