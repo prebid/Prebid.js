@@ -7,7 +7,7 @@
 
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
-import * as utils from '../src/utils.js';
+import {logError, formatQS} from '../src/utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
 const MODULE_NAME = 'connectID';
@@ -50,7 +50,7 @@ export const connectIDSubmodule = {
     const params = config.params || {};
     if (!params || typeof params.he !== 'string' ||
       (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
-      utils.logError('The connectId submodule requires the \'he\' and \'pixelId\' parameters to be defined.');
+      logError('The connectId submodule requires the \'he\' and \'pixelId\' parameters to be defined.');
       return;
     }
 
@@ -74,18 +74,18 @@ export const connectIDSubmodule = {
             try {
               responseObj = JSON.parse(response);
             } catch (error) {
-              utils.logError(error);
+              logError(error);
             }
           }
           callback(responseObj);
         },
         error: error => {
-          utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+          logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
           callback();
         }
       };
       const endpoint = UPS_ENDPOINT.replace(PLACEHOLDER, params.pixelId);
-      let url = `${params.endpoint || endpoint}?${utils.formatQS(data)}`;
+      let url = `${params.endpoint || endpoint}?${formatQS(data)}`;
       connectIDSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};

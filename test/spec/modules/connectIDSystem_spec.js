@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import * as utils from 'src/utils.js';
+import {parseQS} from 'src/utils.js';
 import {connectIDSubmodule} from 'modules/connectIDSystem.js';
 
 describe('Yahoo ConnectID Submodule', () => {
@@ -90,7 +90,7 @@ describe('Yahoo ConnectID Submodule', () => {
         gdpr_consent: consentData.gdpr.consentString,
         us_privacy: consentData.uspConsent
       };
-      const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+      const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
       expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
       expect(requestQueryParams).to.deep.equal(expectedParams);
@@ -110,7 +110,7 @@ describe('Yahoo ConnectID Submodule', () => {
         gdpr_consent: consentData.gdpr.consentString,
         us_privacy: consentData.uspConsent
       };
-      const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+      const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
       expect(ajaxStub.firstCall.args[0].indexOf(`${OVERRIDE_ENDPOINT}?`)).to.equal(0);
       expect(requestQueryParams).to.deep.equal(expectedParams);
@@ -132,7 +132,7 @@ describe('Yahoo ConnectID Submodule', () => {
         pixelId: PIXEL_ID,
       }, consentData);
 
-      const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+      const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
       expect(requestQueryParams.gdpr).to.equal('1');
       expect(requestQueryParams.gdpr_consent).to.equal(consentData.gdpr.consentString);
     });
@@ -145,7 +145,7 @@ describe('Yahoo ConnectID Submodule', () => {
         pixelId: PIXEL_ID,
       }, consentData);
 
-      const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+      const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
       expect(requestQueryParams.gdpr).to.equal('0');
       expect(requestQueryParams.gdpr_consent).to.equal('');
     });
@@ -158,7 +158,7 @@ describe('Yahoo ConnectID Submodule', () => {
           pixelId: PIXEL_ID,
         }, consentData);
 
-        const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+        const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
         expect(requestQueryParams['1p']).to.equal('1');
       });
     });
