@@ -1052,11 +1052,28 @@ describe('TrustXAdapter', function () {
             'context': 'instream'
           }
         }
+      },
+      {
+        'bidder': 'trustx',
+        'params': {
+          'uid': '52'
+        },
+        'adUnitCode': 'adunit-code-1',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '23312a43bc42',
+        'bidderRequestId': '20394420a762a2',
+        'auctionId': '140132d07b031',
+        'mediaTypes': {
+          'video': {
+            'context': 'instream'
+          }
+        }
       }
     ];
     const response = [
       {'bid': [{'impid': '57dfefb80eca', 'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'auid': 50, content_type: 'video', w: 300, h: 600}], 'seat': '2'},
-      {'bid': [{'impid': '5126e301f4be', 'price': 1.00, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>', 'auid': 51, content_type: 'video'}], 'seat': '2'}
+      {'bid': [{'impid': '5126e301f4be', 'price': 1.00, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>', 'auid': 51, content_type: 'video'}], 'seat': '2'},
+      {'bid': [{'impid': '23312a43bc42', 'price': 2.00, 'nurl': 'https://some_test_vast_url.com', 'auid': 52, content_type: 'video', w: 300, h: 600}], 'seat': '2'},
     ];
     const request = spec.buildRequests(bidRequests);
     const expectedResponse = [
@@ -1078,7 +1095,23 @@ describe('TrustXAdapter', function () {
         'adResponse': {
           'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
         }
-      }
+      },
+      {
+        'requestId': '23312a43bc42',
+        'cpm': 2.00,
+        'creativeId': 52,
+        'dealId': undefined,
+        'width': 300,
+        'height': 600,
+        'currency': 'USD',
+        'mediaType': 'video',
+        'netRevenue': false,
+        'ttl': 360,
+        'meta': {
+          'advertiserDomains': []
+        },
+        'vastUrl': 'https://some_test_vast_url.com',
+      },
     ];
 
     const result = spec.interpretResponse({'body': {'seatbid': response}}, request);
