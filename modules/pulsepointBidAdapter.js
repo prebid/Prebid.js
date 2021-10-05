@@ -119,7 +119,8 @@ function bidResponseAvailable(request, response) {
         adId: id,
         ttl: idToBidMap[id].exp || DEFAULT_BID_TTL,
         netRevenue: DEFAULT_NET_REVENUE,
-        currency: bidResponse.cur || DEFAULT_CURRENCY
+        currency: bidResponse.cur || DEFAULT_CURRENCY,
+        meta: { advertiserDomains: idToBidMap[id].adomain || [] }
       };
       if (idToImpMap[id].video) {
         // for outstream, a renderer is specified
@@ -154,7 +155,7 @@ function impression(slot) {
     'native': nativeImpression(slot),
     tagid: slot.params.ct.toString(),
     video: video(slot),
-    bidfloor: slot.params.bidfloor,
+    bidfloor: bidFloor(slot),
     ext: ext(slot),
   };
 }
@@ -192,7 +193,11 @@ function parseSizes(slot) {
  */
 function video(slot) {
   if (slot.params.video) {
-    return Object.assign({}, slot.params.video, {battr: slot.params.battr});
+    return Object.assign({},
+      slot.params.video, // previously supported as bidder param
+      slot.mediaTypes && slot.mediaTypes.video ? slot.mediaTypes.video : {}, // params on mediaTypes.video
+      {battr: slot.params.battr}
+    );
   }
   return null;
 }
@@ -416,12 +421,18 @@ function user(bidRequest, bidderRequest) {
   if (bidRequest) {
     if (bidRequest.userId) {
       ext.eids = [];
-      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcommon');
+      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcid.org');
       addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
-      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo');
-      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
+      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo.com');
+      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'liveramp.com');
       addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.id5id.uid'), 'id5-sync.com', utils.deepAccess(bidRequest, 'userId.id5id.ext'));
       addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.parrableId.eid'), 'parrable.com');
+      addExternalUserId(ext.eids, bidRequest.userId.fabrickId, 'neustar.biz');
+      addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.haloId.haloId'), 'audigent.com');
+      addExternalUserId(ext.eids, bidRequest.userId.merkleId, 'merkleinc.com');
+      addExternalUserId(ext.eids, bidRequest.userId.lotamePanoramaId, 'crwdcntrl.net');
+      addExternalUserId(ext.eids, bidRequest.userId.connectid, 'verizonmedia.com');
+      addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.uid2.id'), 'uidapi.com');
       // liveintent
       if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
         addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
@@ -517,6 +528,21 @@ function nativeResponse(imp, bid) {
     }
   }
   return null;
+}
+
+function bidFloor(slot) {
+  let floor = slot.params.bidfloor;
+  if (utils.isFn(slot.getFloor)) {
+    const floorData = slot.getFloor({
+      mediaType: slot.mediaTypes.banner ? 'banner' : slot.mediaTypes.video ? 'video' : 'Native',
+      size: '*',
+      currency: DEFAULT_CURRENCY,
+    });
+    if (floorData && floorData.floor) {
+      floor = floorData.floor;
+    }
+  }
+  return floor;
 }
 
 registerBidder(spec);

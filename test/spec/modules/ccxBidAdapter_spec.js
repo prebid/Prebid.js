@@ -434,4 +434,58 @@ describe('ccxAdapter', function () {
       expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.be.empty;
     });
   });
+  describe('mediaTypesVideoParams', function () {
+    it('Valid video mediaTypes', function () {
+      let bids = [
+        {
+          adUnitCode: 'video',
+          auctionId: '0b9de793-8eda-481e-a548-c187d58b28d9',
+          bidId: '3u94t90ut39tt3t',
+          bidder: 'ccx',
+          bidderRequestId: '23ur20r239r2r',
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 480]],
+              protocols: [2, 3, 5, 6],
+              mimes: ['video/mp4', 'video/x-flv'],
+              playbackmethod: [1, 2, 3, 4],
+              skip: 1,
+              skipafter: 5
+            }
+          },
+          params: {
+            placementId: 608
+          },
+          sizes: [[640, 480]],
+          transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
+        }
+      ];
+
+      let imps = [
+        {
+          video: {
+            w: 640,
+            h: 480,
+            protocols: [2, 3, 5, 6],
+            mimes: ['video/mp4', 'video/x-flv'],
+            playbackmethod: [1, 2, 3, 4],
+            skip: 1,
+            skipafter: 5
+          },
+          id: '3u94t90ut39tt3t',
+          secure: 1,
+          ext: {
+            pid: 608
+          }
+        }
+      ];
+
+      let bidsClone = utils.deepClone(bids);
+
+      let response = spec.buildRequests(bidsClone, {'bids': bidsClone});
+      let data = JSON.parse(response.data);
+
+      expect(data.imp).to.deep.have.same.members(imps);
+    });
+  });
 });

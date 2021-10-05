@@ -1,21 +1,25 @@
-import * as utils from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 // import { config } from 'src/config'
 
-const BIDDER_CODE = 'nativo'
-const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid'
+const BIDDER_CODE = 'nativo';
+const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid';
 
-const TIME_TO_LIVE = 360
+const GVLID = 263;
 
-const SUPPORTED_AD_TYPES = [BANNER]
+const TIME_TO_LIVE = 360;
 
-const bidRequestMap = {}
+const SUPPORTED_AD_TYPES = [BANNER];
+
+const bidRequestMap = {};
+const adUnitsRequested = {};
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['ntv'], // short code
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
@@ -54,13 +58,34 @@ export const spec = {
 
     if (!pageUrl) pageUrl = bidderRequest.refererInfo.referer
 
+    // Build adUnit data
+    const adUnitData = {
+      adUnits: validBidRequests.map((adUnit) => {
+        // Track if we've already requested for this ad unit code
+        adUnitsRequested[adUnit.adUnitCode] = adUnitsRequested[adUnit.adUnitCode] !== undefined ? adUnitsRequested[adUnit.adUnitCode]++ : 0
+        return {
+          adUnitCode: adUnit.adUnitCode,
+          mediaTypes: adUnit.mediaTypes,
+        }
+      }),
+    }
+
+    // Build QS Params
     let params = [
       { key: 'ntv_ptd', value: placementIds.toString() },
       { key: 'ntv_pb_rid', value: bidderRequest.bidderRequestId },
       {
+        key: 'ntv_ppc',
+        value: btoa(JSON.stringify(adUnitData)), // Convert to Base 64
+      },
+      {
+        key: 'ntv_dbr',
+        value: btoa(JSON.stringify(adUnitsRequested))
+      },
+      {
         key: 'ntv_url',
         value: encodeURIComponent(pageUrl),
-      },
+      }
     ]
 
     if (bidderRequest.gdprConsent) {

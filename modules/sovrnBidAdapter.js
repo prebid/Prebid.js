@@ -83,7 +83,7 @@ export const spec = {
         sovrnImps.push(imp)
       })
 
-      const fpd = config.getConfig('ortb2') || {}
+      const fpd = utils.deepClone(config.getConfig('ortb2'))
 
       const site = fpd.site || {}
       site.page = bidderRequest.refererInfo.referer
@@ -160,7 +160,8 @@ export const spec = {
             netRevenue: true,
             mediaType: BANNER,
             ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
-            ttl: sovrnBid.ext ? (sovrnBid.ext.ttl || 90) : 90
+            ttl: sovrnBid.ext ? (sovrnBid.ext.ttl || 90) : 90,
+            meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           });
         });
       }

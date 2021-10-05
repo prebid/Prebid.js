@@ -12,8 +12,8 @@ const NET_REVENUE = true;
 const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
-const OPENRTB_VIDEO_BIDPARAMS = ['placement', 'startdelay', 'skipafter',
-  'protocols', 'api', 'playbackmethod', 'maxduration', 'minduration', 'pos'];
+const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
+  'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
 const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
 const LOCAL_WINDOW = utils.getWindowTop();
 const DEFAULT_PLAYBACK_METHOD = 2;
@@ -92,6 +92,9 @@ export const spec = {
         }
         if (request.schain) {
           serverRequest.schain = JSON.stringify(request.schain);
+        }
+        if (utils.deepAccess(request, 'params.lr_env')) {
+          serverRequest.ats_envelope = request.params.lr_env;
         }
       });
       serverRequest.p = '[' + serverRequest.p.toString() + ']';
@@ -179,6 +182,7 @@ function hasVideoMediaType(bidRequest) {
  * @param request bid request
  */
 function addPlacement(request) {
+  const gpid = utils.deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
@@ -192,6 +196,9 @@ function addPlacement(request) {
     if (bidfloor) {
       placementInfo.bidFloor = bidfloor;
     }
+  }
+  if (gpid) {
+    placementInfo.gpid = gpid;
   }
   return JSON.stringify(placementInfo);
 }
@@ -312,18 +319,24 @@ function getId(request, idType) {
  * @return Object OpenRTB request object
  */
 function openRtbRequest(bidRequests, bidderRequest) {
+  const schain = bidRequests[0].schain;
   let openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
     at: 1,
     imp: bidRequests.map(bidRequest => openRtbImpression(bidRequest)),
     site: openRtbSite(bidRequests[0], bidderRequest),
-    device: openRtbDevice(),
+    device: openRtbDevice(bidRequests[0]),
     badv: bidRequests[0].params.badv || [],
     bcat: bidRequests[0].params.bcat || [],
     ext: {
       prebid: '$prebid.version$',
-    }
+    },
+    ats_envelope: bidRequests[0].params.lr_env,
   };
+
+  if (schain) {
+    openRtbRequest.schain = schain;
+  }
 
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
 
@@ -335,7 +348,7 @@ function openRtbRequest(bidRequests, bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
-  const videoReq = utils.deepAccess(bidRequest, 'mediaTypes.video');
+  const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   const size = extractPlayerSize(bidRequest);
   const imp = {
     id: bidRequest.bidId,
@@ -347,23 +360,30 @@ function openRtbImpression(bidRequest) {
     video: {
       w: size[0],
       h: size[1],
-      mimes: videoReq.mimes,
       linearity: 1
     }
   };
+
+  const mediaTypesParams = utils.deepAccess(bidRequest, 'mediaTypes.video');
+  Object.keys(mediaTypesParams)
+    .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
+    .forEach(param => imp.video[param] = mediaTypesParams[param]);
 
   const videoParams = utils.deepAccess(bidRequest, 'params.video');
   Object.keys(videoParams)
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
     .forEach(param => imp.video[param] = videoParams[param]);
 
-  if (videoParams.skippable) imp.video.skip = 1;
-  if (videoParams.placement !== 1) {
-    imp.video = {
-      ...imp.video,
-      startdelay: DEFAULT_START_DELAY,
-      playbackmethod: [ DEFAULT_PLAYBACK_METHOD ]
-    }
+  if (imp.video.skippable) {
+    imp.video.skip = 1;
+    delete imp.video.skippable;
+  }
+  if (imp.video.placement !== 1) {
+    imp.video.startdelay = DEFAULT_START_DELAY;
+    imp.video.playbackmethod = [ DEFAULT_PLAYBACK_METHOD ];
+  }
+  if (gpid) {
+    imp.ext.gpid = gpid;
   }
   return imp;
 }
@@ -426,11 +446,16 @@ function openRtbSite(bidRequest, bidderRequest) {
 /**
  * @return Object OpenRTB's 'device' object
  */
-function openRtbDevice() {
-  return {
+function openRtbDevice(bidRequest) {
+  const ip = utils.deepAccess(bidRequest, 'params.device.ip');
+  const deviceObj = {
     ua: navigator.userAgent,
     language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
   };
+  if (ip) {
+    deviceObj.ip = ip;
+  }
+  return deviceObj;
 }
 
 /**
@@ -476,51 +501,68 @@ function validateVideoParams(bid) {
 
   const isDefined = val => typeof val !== 'undefined';
   const validate = (fieldPath, validateCb, errorCb, errorCbParam) => {
-    const value = utils.deepAccess(bid, fieldPath);
-    if (!validateCb(value)) {
-      errorCb(fieldPath, value, errorCbParam);
+    if (fieldPath.indexOf('video') === 0) {
+      const valueFieldPath = 'params.' + fieldPath;
+      const mediaFieldPath = 'mediaTypes.' + fieldPath;
+      const valueParams = utils.deepAccess(bid, valueFieldPath);
+      const mediaTypesParams = utils.deepAccess(bid, mediaFieldPath);
+      const hasValidValueParams = validateCb(valueParams);
+      const hasValidMediaTypesParams = validateCb(mediaTypesParams);
+
+      if (hasValidValueParams) return valueParams;
+      else if (hasValidMediaTypesParams) return hasValidMediaTypesParams;
+      else {
+        if (!hasValidValueParams) errorCb(valueFieldPath, valueParams, errorCbParam);
+        else if (!hasValidMediaTypesParams) errorCb(mediaFieldPath, mediaTypesParams, errorCbParam);
+      }
+      return valueParams || mediaTypesParams;
+    } else {
+      const value = utils.deepAccess(bid, fieldPath);
+      if (!validateCb(value)) {
+        errorCb(fieldPath, value, errorCbParam);
+      }
+      return value;
     }
-    return value;
   }
 
   try {
+    validate('video.context', val => !utils.isEmpty(val), paramRequired);
+
     validate('params.placementId', val => !utils.isEmpty(val), paramRequired);
 
-    validate('mediaTypes.video.playerSize', val => utils.isArrayOfNums(val, 2) ||
+    validate('video.playerSize', val => utils.isArrayOfNums(val, 2) ||
       (utils.isArray(val) && val.every(v => utils.isArrayOfNums(v, 2))),
     paramInvalid, 'array of 2 integers, ex: [640,480] or [[640,480]]');
 
-    validate('mediaTypes.video.mimes', val => isDefined(val), paramRequired);
-    validate('mediaTypes.video.mimes', val => utils.isArray(val) && val.every(v => utils.isStr(v)), paramInvalid,
+    validate('video.mimes', val => isDefined(val), paramRequired);
+    validate('video.mimes', val => utils.isArray(val) && val.every(v => utils.isStr(v)), paramInvalid,
       'array of strings, ex: ["video/mp4"]');
 
-    validate('params.video', val => !utils.isEmpty(val), paramRequired);
-
-    const placement = validate('params.video.placement', val => isDefined(val), paramRequired);
-    validate('params.video.placement', val => val >= 1 && val <= 5, paramInvalid);
+    const placement = validate('video.placement', val => isDefined(val), paramRequired);
+    validate('video.placement', val => val >= 1 && val <= 5, paramInvalid);
     if (placement === 1) {
-      validate('params.video.startdelay', val => isDefined(val),
+      validate('video.startdelay', val => isDefined(val),
         (field, v) => paramRequired(field, v, 'placement == 1'));
-      validate('params.video.startdelay', val => utils.isNumber(val), paramInvalid, 'number, ex: 5');
+      validate('video.startdelay', val => utils.isNumber(val), paramInvalid, 'number, ex: 5');
     }
 
-    validate('params.video.protocols', val => isDefined(val), paramRequired);
-    validate('params.video.protocols', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+    validate('video.protocols', val => isDefined(val), paramRequired);
+    validate('video.protocols', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
       paramInvalid, 'array of numbers, ex: [2,3]');
 
-    validate('params.video.api', val => isDefined(val), paramRequired);
-    validate('params.video.api', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+    validate('video.api', val => isDefined(val), paramRequired);
+    validate('video.api', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
       paramInvalid, 'array of numbers, ex: [2,3]');
 
-    validate('params.video.playbackmethod', val => !isDefined(val) || utils.isArrayOfNums(val), paramInvalid,
+    validate('video.playbackmethod', val => !isDefined(val) || utils.isArrayOfNums(val), paramInvalid,
       'array of integers, ex: [2,6]');
 
-    validate('params.video.maxduration', val => isDefined(val), paramRequired);
-    validate('params.video.maxduration', val => utils.isInteger(val), paramInvalid);
-    validate('params.video.minduration', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
-    validate('params.video.skippable', val => !isDefined(val) || utils.isBoolean(val), paramInvalid);
-    validate('params.video.skipafter', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
-    validate('params.video.pos', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validate('video.maxduration', val => isDefined(val), paramRequired);
+    validate('video.maxduration', val => utils.isInteger(val), paramInvalid);
+    validate('video.minduration', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validate('video.skippable', val => !isDefined(val) || utils.isBoolean(val), paramInvalid);
+    validate('video.skipafter', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validate('video.pos', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
     validate('params.badv', val => !isDefined(val) || utils.isArray(val), paramInvalid,
       'array of strings, ex: ["ford.com","pepsi.com"]');
     validate('params.bcat', val => !isDefined(val) || utils.isArray(val), paramInvalid,

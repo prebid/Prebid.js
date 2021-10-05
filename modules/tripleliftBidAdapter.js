@@ -6,6 +6,8 @@ import { config } from '../src/config.js';
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
+const BANNER_TIME_TO_LIVE = 300;
+const INSTREAM_TIME_TO_LIVE = 3600;
 let gdprApplies = true;
 let consentString = null;
 
@@ -311,7 +313,7 @@ function _buildResponseObject(bidderRequest, bid) {
       creativeId: creativeId,
       dealId: dealId,
       currency: 'USD',
-      ttl: 300,
+      ttl: BANNER_TIME_TO_LIVE,
       tl_source: bid.tl_source,
       meta: {}
     };
@@ -319,6 +321,7 @@ function _buildResponseObject(bidderRequest, bid) {
     if (_isInstreamBidRequest(breq)) {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
+      bidResponse.ttl = INSTREAM_TIME_TO_LIVE;
     };
 
     if (bid.advertiser_name) {

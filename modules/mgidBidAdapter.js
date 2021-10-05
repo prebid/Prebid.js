@@ -4,9 +4,10 @@ import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
+const GVLID = 358;
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
+export const storage = getStorageManager(GVLID, BIDDER_CODE);
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
 const LOG_WARN_PREFIX = '[MGID warn]: ';
 const LOG_INFO_PREFIX = '[MGID info]: ';
@@ -62,7 +63,7 @@ utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] 
 utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
-  VERSION: '1.4',
+  VERSION: '1.5',
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   reId: /^[1-9][0-9]*$/,
@@ -130,7 +131,7 @@ export const spec = {
     if (utils.isStr(muid) && muid.length > 0) {
       url += '?muid=' + muid;
     }
-    const cur = [setOnAny(validBidRequests, 'params.currency') || setOnAny(validBidRequests, 'params.cur') || config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
+    const cur = setOnAny(validBidRequests, 'params.currency') || setOnAny(validBidRequests, 'params.cur') || config.getConfig('currency.adServerCurrency') || DEFAULT_CUR;
     const secure = window.location.protocol === 'https:' ? 1 : 0;
     let imp = [];
     validBidRequests.forEach(bid => {
@@ -141,9 +142,12 @@ export const spec = {
         tagid,
         secure,
       };
-      const bidFloor = utils.deepAccess(bid, 'params.bidFloor') || utils.deepAccess(bid, 'params.bidfloor') || 0;
-      if (bidFloor && utils.isNumber(bidFloor)) {
-        impObj.bidfloor = bidFloor;
+      const floorData = getBidFloor(bid, cur);
+      if (floorData.floor) {
+        impObj.bidfloor = floorData.floor;
+      }
+      if (floorData.cur) {
+        impObj.bidfloorcur = floorData.cur
       }
       for (let mediaTypes in bid.mediaTypes) {
         switch (mediaTypes) {
@@ -171,7 +175,7 @@ export const spec = {
     let request = {
       id: utils.deepAccess(bidderRequest, 'bidderRequestId'),
       site: {domain, page},
-      cur: cur,
+      cur: [cur],
       geo: {utcoffset: info.timeOffset},
       device: {
         ua: navigator.userAgent,
@@ -181,7 +185,7 @@ export const spec = {
         w: screen.width,
         language: getLanguage()
       },
-      ext: {mgid_ver: spec.VERSION, prebid_ver: $$PREBID_GLOBAL$$.version},
+      ext: {mgid_ver: spec.VERSION, prebid_ver: '$prebid.version$'},
       imp
     };
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -292,6 +296,7 @@ function prebidBid(serverBid, cur) {
     nurl: serverBid.nurl || '',
     burl: serverBid.burl || '',
     isBurl: utils.isStr(serverBid.burl) && serverBid.burl.length > 0,
+    meta: { advertiserDomains: (utils.isArray(serverBid.adomain) && serverBid.adomain.length > 0 ? serverBid.adomain : []) },
   };
   setMediaType(serverBid, bid);
   switch (bid.mediaType) {
@@ -374,6 +379,10 @@ function createBannerRequest(bid) {
   };
   if (format.length) {
     r.format = format
+  }
+  const pos = utils.deepAccess(bid, 'mediaTypes.banner.pos') || 0
+  if (pos) {
+    r.pos = pos
   }
   return r
 }
@@ -573,4 +582,36 @@ function pageInfo() {
     date: t.toUTCString(),
     timeOffset: t.getTimezoneOffset()
   };
+}
+
+/**
+ * Get the floor price from bid.params for backward compatibility.
+ * If not found, then check floor module.
+ * @param bid A valid bid object
+ * @returns {*|number} floor price
+ */
+function getBidFloor(bid, cur) {
+  let bidFloor = utils.getBidIdParameter('bidfloor', bid.params) || utils.getBidIdParameter('bidFloor', bid.params) || 0;
+  const reqCur = cur
+
+  if (!bidFloor && utils.isFn(bid.getFloor)) {
+    const floorObj = bid.getFloor({
+      currency: '*',
+      mediaType: '*',
+      size: '*'
+    });
+    if (utils.isPlainObject(floorObj) && utils.isNumber(floorObj.floor)) {
+      if (!floorObj.currency && reqCur !== DEFAULT_CUR) {
+        floorObj.currency = DEFAULT_CUR
+      }
+      if (floorObj.currency && reqCur !== floorObj.currency) {
+        cur = floorObj.currency
+      }
+      bidFloor = floorObj.floor;
+    }
+  }
+  if (reqCur === cur) {
+    cur = ''
+  }
+  return {floor: bidFloor, cur: cur}
 }

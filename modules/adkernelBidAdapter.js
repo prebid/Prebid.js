@@ -53,7 +53,26 @@ const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
 export const spec = {
   code: 'adkernel',
   gvlid: GVLID,
-  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon', 'andbeyond', 'adbite', 'houseofpubs', 'torchad', 'stringads', 'bcm', 'engageadx'],
+  aliases: [
+    {code: 'headbidding'},
+    {code: 'adsolut'},
+    {code: 'oftmediahb'},
+    {code: 'audiencemedia'},
+    {code: 'waardex_ak'},
+    {code: 'roqoon'},
+    {code: 'andbeyond'},
+    {code: 'adbite'},
+    {code: 'houseofpubs'},
+    {code: 'torchad'},
+    {code: 'stringads'},
+    {code: 'bcm'},
+    {code: 'engageadx'},
+    {code: 'converge', gvlid: 248},
+    {code: 'adomega'},
+    {code: 'denakop'},
+    {code: 'rtbanalytica'},
+    {code: 'unibots'}
+  ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -387,6 +406,10 @@ function buildRtbRequest(imps, bidderRequest, schain) {
   if (schain) {
     utils.deepSetValue(req, 'source.ext.schain', schain);
   }
+  let eids = getExtendedUserIds(bidderRequest);
+  if (eids) {
+    utils.deepSetValue(req, 'user.ext.eids', eids);
+  }
   return req;
 }
 
@@ -416,6 +439,13 @@ function createSite(refInfo) {
     site.keywords = keywords.content;
   }
   return site;
+}
+
+function getExtendedUserIds(bidderRequest) {
+  let eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+  if (utils.isArray(eids)) {
+    return eids;
+  }
 }
 
 /**

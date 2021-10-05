@@ -665,6 +665,12 @@ export function isGptPubadsDefined() {
   }
 }
 
+export function isApnGetTagDefined() {
+  if (window.apntag && isFn(window.apntag.getTag)) {
+    return true;
+  }
+}
+
 // This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
 export const getHighestCpm = getHighestCpmCallback('timeToRespond', (previous, current) => previous > current);
 
