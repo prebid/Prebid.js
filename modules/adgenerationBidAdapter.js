@@ -204,10 +204,7 @@ function createAPVTag() {
 
 function createADGBrowserMTag() {
   const ADGBrowserMURL = 'https://i.socdm.com/sdk/js/adg-browser-m.js';
-  const ADGBrowserMScript = document.createElement('script');
-  ADGBrowserMScript.type = 'text/javascript';
-  ADGBrowserMScript.src = ADGBrowserMURL;
-  return ADGBrowserMScript.outerHTML;
+  return `<script type="text/javascript" src="${ADGBrowserMURL}"></script>`;
 }
 
 function insertVASTMethodForAPV(targetId, vastXml) {
