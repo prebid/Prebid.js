@@ -113,8 +113,8 @@ export const buildBid = (bidRequest, bliinkCreative) => {
     currency: bliinkCreative.currency,
     cpm: bliinkCreative.price,
     creativeId: bliinkCreative.creativeId,
-    width: bidRequest.sizes[0][0] || 1,
-    height: bidRequest.sizes[0][1] || 1,
+    width: (bidRequest.sizes && bidRequest.sizes[0][0]) || 1,
+    height: (bidRequest.sizes && bidRequest.sizes[0][1]) || 1,
     netRevenue: false,
     ttl: 3600,
   }
