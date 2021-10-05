@@ -18,6 +18,7 @@ const DEFAULT_HEIGHT = 0;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
+const VIDEO_PLACEMENT_MISSING_MSG = 'Video.Placement param missing';
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -538,8 +539,10 @@ function _createBannerRequest(bid) {
 }
 
 export function checkVideoPlacement(videoData) {
-  if (!videoData.hasOwnProperty('placement')) {
-    utils.logMessage('Video.Placement param missing');
+  // Checking if placement property send to video config also
+  // Checking if property is not empty.
+  if (!videoData.hasOwnProperty('placement') || !videoData.placement) {
+    utils.logMessage(VIDEO_PLACEMENT_MISSING_MSG);
   }
 }
 
