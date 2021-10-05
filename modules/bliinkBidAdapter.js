@@ -141,7 +141,7 @@ export const buildBid = (bidRequest, bliinkCreative) => {
     case BANNER:
       return Object.assign(body, {
         mediaType: BANNER,
-        ad: bliinkCreative.content.creative.adm,
+        ad: (bliinkCreative && bliinkCreative.content && bliinkCreative.content.creative && bliinkCreative.content.creative.adm) || '',
       })
     default:
       break;
