@@ -243,15 +243,19 @@ const interpretResponse = (serverResponse, request) => {
 
       return buildBid(serverBody.bids[0], creative)
     case BANNER:
-      creative = {
-        content: body,
-        price: body.price,
-        currency: body.currency,
-        creativeId: 0,
-        media_type: 'banner',
+      if (body) {
+        creative = {
+          content: body,
+          price: body.price,
+          currency: body.currency,
+          creativeId: 0,
+          media_type: 'banner',
+        }
+
+        return buildBid(serverBody.bids[0], creative)
       }
 
-      return buildBid(serverBody.bids[0], creative)
+      break
     default:
       break
   }
