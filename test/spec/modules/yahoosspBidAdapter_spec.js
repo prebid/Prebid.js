@@ -171,7 +171,7 @@ const generateResponseMock = (admPayloadType, vastVersion, videoContext) => {
 }
 
 // Unit tests
-describe('YSSP Bid Adapter', () => {
+describe('YahooSSP Bid Adapter', () => {
   it('PLACEHOLDER TO PASS GULP', () => {
     const obj = {};
     expect(obj).to.be.an('object');
@@ -801,7 +801,7 @@ describe('YSSP Bid Adapter', () => {
 
     // Validate Key-Value Pairs
     it('should generate supported String, Number, Array of Strings, Array of Numbers key-value pairs and append to imp.ext.kvs', () => {
-      let { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
       validBidRequests[0].params.kvp = {
         key1: 'String',
         key2: 123456,
@@ -813,7 +813,7 @@ describe('YSSP Bid Adapter', () => {
         invalidKey4: {a: 1, b: 2},
         invalidKey5: undefined
       };
-      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].ext.kvs).to.deep.equal({
         key1: 'String',
         key2: 123456,
