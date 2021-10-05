@@ -1,8 +1,8 @@
 import CONSTANTS from './constants.json';
 import { ajax } from './ajax.js';
+import { logMessage, _each } from './utils.js';
 
 const events = require('./events.js');
-const utils = require('./utils.js');
 
 const {
   EVENTS: {
@@ -123,22 +123,22 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         }
       };
 
-      utils._each(_handlers, (handler, event) => {
+      _each(_handlers, (handler, event) => {
         events.on(event, handler);
       });
     } else {
-      utils.logMessage(`Analytics adapter for "${global}" disabled by sampling`);
+      logMessage(`Analytics adapter for "${global}" disabled by sampling`);
     }
 
     // finally set this function to return log message, prevents multiple adapter listeners
     this._oldEnable = this.enableAnalytics;
     this.enableAnalytics = function _enable() {
-      return utils.logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
+      return logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
     };
   }
 
   function _disable() {
-    utils._each(_handlers, (handler, event) => {
+    _each(_handlers, (handler, event) => {
       events.off(event, handler);
     });
     this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;
@@ -158,6 +158,6 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       _enableCheck = false;
     }
 
-    utils.logMessage(`event count sent to ${global}: ${_eventCount}`);
+    logMessage(`event count sent to ${global}: ${_eventCount}`);
   }
 }

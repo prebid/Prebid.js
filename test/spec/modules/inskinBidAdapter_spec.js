@@ -12,7 +12,8 @@ const REQUEST = {
     'bidder': 'inskin',
     'params': {
       'networkId': 9874,
-      'siteId': 730181
+      'siteId': 730181,
+      'publisherId': 123456
     },
     'placementCode': 'div-gpt-ad-1487778092495-0',
     'sizes': [
@@ -372,6 +373,14 @@ describe('InSkin BidAdapter', function () {
       let opts = spec.getUserSyncs(syncOptions);
 
       expect(opts.length).to.equal(3);
+    });
+  });
+  describe('supply chain id', function () {
+    it('should use publisherId as sid', function () {
+      const request = spec.buildRequests(REQUEST.bidRequest, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.rtb.schain.ext.sid).to.equal('123456');
     });
   });
 });

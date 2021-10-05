@@ -307,7 +307,7 @@ describe('YieldmoAdapter', function () {
       });
 
       it('should only shortcut properties rather then completely remove it', () => {
-        const longString = new Array(7516).join('a');
+        const longString = new Array(8000).join('a');
         const localWindow = utils.getWindowTop();
 
         const originalTitle = localWindow.document.title;
@@ -319,7 +319,7 @@ describe('YieldmoAdapter', function () {
             refererInfo: {
               numIframes: 1,
               reachedTop: true,
-              referer: longString,
+              title: longString,
             },
           })
         )[0];
@@ -344,6 +344,20 @@ describe('YieldmoAdapter', function () {
         })];
         let placementInfo = buildAndGetPlacementInfo(bidArray);
         expect(placementInfo).to.include('"gpid":"/6355419/Travel/Europe/France/Paris"');
+      });
+
+      it('should add eids to the banner bid request', function () {
+        const params = {
+          userId: {pubcid: 'fake_pubcid'},
+          fakeUserIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [{
+              id: 'fake_pubcid',
+              atype: 1
+            }]
+          }]
+        };
+        expect(buildAndGetData([mockBannerBid({...params})]).eids).equal(JSON.stringify(params.fakeUserIdAsEids));
       });
     });
 
@@ -469,18 +483,25 @@ describe('YieldmoAdapter', function () {
         expect(buildAndGetData([mockVideoBid({schain})]).schain).to.deep.equal(schain);
       });
 
-      it('should add ip to the video bidRequest', () => {
-        const device = {
-          ip: '111.222.333.444'
-        };
-        expect(buildAndGetData([mockVideoBid(null, {device})]).device.ip).to.be.equal(device.ip);
-      });
-
       it('should add gpid to the video request', function () {
         const ortb2Imp = {
           ext: { data: { pbadslot: '/6355419/Travel/Europe/France/Paris' } },
         };
         expect(buildAndGetData([mockVideoBid({ortb2Imp})]).imp[0].ext.gpid).to.be.equal(ortb2Imp.ext.data.pbadslot);
+      });
+
+      it('should add eids to the video bid request', function () {
+        const params = {
+          userId: {pubcid: 'fake_pubcid'},
+          fakeUserIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [{
+              id: 'fake_pubcid',
+              atype: 1
+            }]
+          }]
+        };
+        expect(buildAndGetData([mockVideoBid({...params})]).user.eids).to.eql(params.fakeUserIdAsEids);
       });
     });
   });
