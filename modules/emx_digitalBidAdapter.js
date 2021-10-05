@@ -293,14 +293,14 @@ export const spec = {
       }
     }
 
-    //adding gpid support 
-    let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
-    if(gpid){
-      if(emxData.imp && emxData.imp.ext){
+    // adding gpid support
+    let gpid = utils.deepAccess(bidderRequest, 'ortb2Imp.ext.data.pbadslot');
+    if (gpid) {
+      if (emxData.imp && emxData.imp.ext) {
         emxData.imp.ext.gpid = gpid;
-      }else{
+      } else {
         emxData.imp.ext = {
-          gpid : gpid
+          gpid: gpid
         };
       }
     }
