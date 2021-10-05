@@ -973,7 +973,6 @@ export const spec = {
   * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: bid => {
-    // utils.logWarn('Is called..');
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
         utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric (wrap it in quotes in your config). Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
