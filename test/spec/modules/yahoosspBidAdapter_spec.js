@@ -798,6 +798,29 @@ describe('YSSP Bid Adapter', () => {
         placement: undefined
       });
     });
+
+    // Validate Key-Value Pairs
+    it('should generate supported String, Number, Array of Strings, Array of Numbers key-value pairs and append to imp.ext.kvs', () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      validBidRequests[0].params.kvp = {
+        key1: 'String',
+        key2: 123456,
+        key3: ['String', 'String', 'String'],
+        key4: [1, 2, 3],
+        invalidKey1: true,
+        invalidKey2: null,
+        invalidKey3: ['string', 1234],
+        invalidKey4: {a: 1, b: 2},
+        invalidKey5: undefined
+      };
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+      expect(data.imp[0].ext.kvs).to.deep.equal({
+        key1: 'String',
+        key2: 123456,
+        key3: ['String', 'String', 'String'],
+        key4: [1, 2, 3]
+      });
+    });
   });
 
   describe('Multiple adUnit validations:', () => {
@@ -955,7 +978,7 @@ describe('YSSP Bid Adapter', () => {
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].video).to.deep.equal(bidOverride.imp.video);
     });
-    // TODO read adUnit.mediaTypes.video as default
+
     it('should second look at bid.mediaTypes.video for video placement data', () => {
       config.setConfig({
         yahoossp: { mode: 'video' }

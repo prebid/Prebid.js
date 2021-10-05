@@ -322,6 +322,20 @@ function appendImpObject(bid, openRtbObject) {
       dfp_ad_unit_code: bid.adUnitCode
     };
 
+    if (deepAccess(bid, 'params.kvp') && isPlainObject(bid.params.kvp)) {
+      impObject.ext.kvs = {};
+      for (const key in bid.params.kvp) {
+        if (isStr(bid.params.kvp[key]) || isNumber(bid.params.kvp[key])) {
+          impObject.ext.kvs[key] = bid.params.kvp[key];
+        } else if (isArray(bid.params.kvp[key])) {
+          const array = bid.params.kvp[key];
+          if (array.every(value => isStr(value)) || array.every(value => isNumber(value))) {
+            impObject.ext.kvs[key] = bid.params.kvp[key];
+          }
+        }
+      }
+    };
+
     if (deepAccess(bid, 'params.ortb2Imp')) {
       const ortb2ImpExt = deepAccess(bid, 'params.ortb2Imp.ext.data');
       const allowedImpExtKeys = ['data']

@@ -512,6 +512,40 @@ const adUnits = [{
 }]
 ```
 
+# Optional: Custom Key-Value Pairs
+Custom key-value paris can be used for both inventory targeting and reporting.
+You must set up key-value pairs in the Yahoo SSP before sending them via the adapter otherwise the Ad Server will not be listening and picking them up.
+
+Important! Key-value pairs can only contain values of types: String, Number, Array of strings OR Array of numbers
+
+```javascript
+const adUnits = [{
+    code: 'key-value-pairs',
+    mediaTypes: {
+        video: {
+            context: 'outstream',
+            playerSize: [
+                [300, 250]
+            ],
+        }
+    },
+    bids: [{
+        bidder: 'yahoossp',
+        params: {
+            dcn: '8a969516017a7a396ec539d97f540011',
+            pos: '8a96958a017a7a57ac375d50c0c700cc',
+            kvp: {
+                key1: 'value', // String
+                key2: 123456,   // Number
+                key3: ['string1','string2', 'string3'], // Array of strings
+                key4: [1, 23, 456, 7890] // Array of Numbers
+            }
+        }
+    }]
+}]
+```
+
+
 # Special Video Features
 ## Rewarded video flag
 To indicate to Yahoo SSP that this adUnit is a rewarded video you can pass the following in the params.bidOverride.imp.video.rewarded: 1
