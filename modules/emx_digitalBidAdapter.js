@@ -251,12 +251,19 @@ export const spec = {
       let tagid = utils.getBidIdParameter('tagid', bid.params);
       let bidfloor = parseFloat(getBidFloor(bid)) || 0;
       let isVideo = !!bid.mediaTypes.video;
+      let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       let data = {
         id: bid.bidId,
         tid: bid.transactionId,
         tagid,
         secure
       };
+
+      // adding gpid support
+      if (gpid) {
+        data.ext = {gpid: gpid};
+      }
+
       let typeSpecifics = isVideo ? { video: emxAdapter.buildVideo(bid) } : { banner: emxAdapter.buildBanner(bid) };
       let bidfloorObj = bidfloor > 0 ? { bidfloor, bidfloorcur: DEFAULT_CUR } : {};
       let emxBid = Object.assign(data, typeSpecifics, bidfloorObj);
@@ -290,18 +297,6 @@ export const spec = {
             ext: {eids}
           };
         }
-      }
-    }
-
-    // adding gpid support
-    let gpid = utils.deepAccess(bidderRequest, 'ortb2Imp.ext.data.pbadslot');
-    if (gpid) {
-      if (emxData.imp && emxData.imp.ext) {
-        emxData.imp.ext.gpid = gpid;
-      } else {
-        emxData.imp.ext = {
-          gpid: gpid
-        };
       }
     }
 
