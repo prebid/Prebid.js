@@ -134,8 +134,6 @@ export const buildBid = (bidRequest, bliinkCreative) => {
     case VIDEO:
       return Object.assign(body, {
         mediaType: VIDEO,
-        ad: '<html lang="en"></html>',
-        renderer: '',
         vastXml: bliinkCreative.content,
       })
     case BANNER:
@@ -216,7 +214,7 @@ export const buildRequests = (_, bidderRequest) => {
  * @return
  */
 const interpretResponse = (serverResponse, request) => {
-  if ((serverResponse && serverResponse.mode === 'no-ad') && (!request.params)) {
+  if ((serverResponse && serverResponse.mode === 'no-ad')) {
     return []
   }
 
