@@ -103,7 +103,7 @@ export const parseXML = (content) => {
 /**
  * @param bidRequest
  * @param bliinkCreative
- * @return {{cpm, netRevenue: boolean, ad: string, requestId, width: number, currency: string, mediaType: string, vastXml, ttl: number, height: number}|null}
+ * @return {{cpm, netRevenue: boolean, requestId, width: (*|number), currency, ttl: number, creativeId, height: (*|number)} & {mediaType: string, vastXml}}
  */
 export const buildBid = (bidRequest, bliinkCreative) => {
   if (!bidRequest && !bliinkCreative) return null
