@@ -59,8 +59,7 @@ export const spec = {
       data.rtb = {
         schain: validBidRequests[0].schain
       };
-    }
-    else if (data.publisherId) {
+    } else if (data.publisherId) {
       data.rtb = {
         schain: {
           ext: {
