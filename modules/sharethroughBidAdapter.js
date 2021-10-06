@@ -3,9 +3,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
-import find from 'core-js-pure/features/array/find.js';
 
-const VERSION = '4.0.0';
+const VERSION = '4.0.1';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
@@ -141,16 +140,16 @@ export const sharethroughAdapterSpec = {
       };
     }).filter(imp => !!imp);
 
-    return {
-      method: 'POST',
-      url: STR_ENDPOINT,
-      data: {
-        ...req,
-        imp: imps,
-      },
-      bidRequests,
-      bidderRequest,
-    };
+    return imps.map(impression => {
+      return {
+        method: 'POST',
+        url: STR_ENDPOINT,
+        data: {
+          ...req,
+          imp: [impression],
+        },
+      };
+    });
   },
 
   interpretResponse: ({ body }, req) => {
@@ -159,8 +158,6 @@ export const sharethroughAdapterSpec = {
     }
 
     return body.seatbid[0].bid.map(bid => {
-      const request = matchRequest(bid.impid, req);
-
       const response = {
         requestId: bid.impid,
         width: +bid.w,
@@ -168,7 +165,7 @@ export const sharethroughAdapterSpec = {
         cpm: +bid.price,
         creativeId: bid.crid,
         dealId: bid.dealid || null,
-        mediaType: request.mediaTypes && request.mediaTypes.video ? VIDEO : BANNER,
+        mediaType: req.data.imp[0].video ? VIDEO : BANNER,
         currency: body.cur || 'USD',
         netRevenue: true,
         ttl: 360,
@@ -268,10 +265,6 @@ function userIdAsEids(bidRequest) {
 
 function getProtocol() {
   return window.location.protocol;
-}
-
-function matchRequest(id, request) {
-  return find(request.bidRequests, bid => bid.bidId === id);
 }
 
 // stub for ?? operator
