@@ -491,7 +491,7 @@ describe('OguryBidAdapter', function () {
       xhr.restore()
     })
 
-    it('should send on bid timeout notification', function() {
+    it('should send notification on bid timeout', function() {
       const bid = {
         ad: '<img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" />',
         cpm: 3
