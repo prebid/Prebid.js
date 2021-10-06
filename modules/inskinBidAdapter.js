@@ -55,7 +55,12 @@ export const spec = {
       parallel: true
     }, validBidRequests[0].params);
 
-    if (data.publisherId) {
+    if (validBidRequests[0].schain) {
+      data.rtb = {
+        schain: validBidRequests[0].schain
+      };
+    }
+    else if (data.publisherId) {
       data.rtb = {
         schain: {
           ext: {
@@ -63,9 +68,9 @@ export const spec = {
           }
         }
       };
-
-      delete data.publisherId;
     }
+
+    delete data.publisherId;
 
     data.keywords = data.keywords || [];
     const restrictions = [];
