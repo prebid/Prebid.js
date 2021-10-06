@@ -814,6 +814,7 @@ describe('YahooSSP Bid Adapter', () => {
         invalidKey5: undefined
       };
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
       expect(data.imp[0].ext.kvs).to.deep.equal({
         key1: 'String',
         key2: 123456,

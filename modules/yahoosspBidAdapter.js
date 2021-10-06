@@ -365,9 +365,11 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
   if (siteObject && isPlainObject(siteObject)) {
     const allowedSiteStringKeys = ['name', 'domain', 'page', 'ref', 'keywords', 'search'];
-    const allowedSiteArrayKeys = ['cat', 'sectioncat', 'pagecat']
+    const allowedSiteArrayKeys = ['cat', 'sectioncat', 'pagecat'];
+    const allowedSiteObjectKeys = ['ext'];
     outBoundBidRequest.site = validateAppendObject('string', allowedSiteStringKeys, siteObject, outBoundBidRequest.site);
     outBoundBidRequest.site = validateAppendObject('array', allowedSiteArrayKeys, siteObject, outBoundBidRequest.site);
+    outBoundBidRequest.site = validateAppendObject('object', allowedSiteObjectKeys, siteObject, outBoundBidRequest.site);
   };
 
   if (contentObject && isPlainObject(contentObject)) {
