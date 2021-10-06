@@ -341,7 +341,7 @@ function appendImpObject(bid, openRtbObject) {
       }
     };
     // TODO Update for GPID imp.ext.data.pbadslot AND imp.ext.context.data.adserver.adslot
-    if (deepAccess(bid, 'ortb2Imp.ext.data') && isPlainObject(bid.params.ortb2Imp.ext.data)) {
+    if (deepAccess(bid, 'ortb2Imp.ext.data') && isPlainObject(bid.ortb2Imp.ext.data)) {
       impObject.ext.data = bid.ortb2Imp.ext.data;
     };
 

@@ -296,7 +296,6 @@ describe('YahooSSP Bid Adapter', () => {
     });
   });
 
-  // #region buildRequests():
   describe('Price Floor module support:', () => {
     it('should get bidfloor from getFloor method', () => {
       const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
@@ -343,6 +342,7 @@ describe('YahooSSP Bid Adapter', () => {
   });
 
   describe('First party data module - "Site" support (ortb2):', () => {
+    // Global ortb2.site validations
     // Should not allow invalid "site" data types
     const INVALID_ORTB2_TYPES = [ null, [], 123, 'unsupportedKeyName', true, false, undefined ];
     INVALID_ORTB2_TYPES.forEach(param => {
@@ -390,6 +390,7 @@ describe('YahooSSP Bid Adapter', () => {
         expect(data.site[param]).to.be.equal(ortb2.site[param]);
       });
     });
+
     // Should not allow invalid "site.content" data types
     INVALID_ORTB2_TYPES.forEach(param => {
       it(`should determine that the ortb2.site.content key is invalid and should not be added to bid-request:  ${JSON.stringify(param)}`, () => {
@@ -422,11 +423,8 @@ describe('YahooSSP Bid Adapter', () => {
       expect(data.site.content).to.be.a('object');
     });
 
+    // Should append valid "site.content" keys
     const VALID_CONTENT_STRINGS = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
-    const VALID_CONTENT_NUMBERS = ['episode', 'prodq', 'context', 'livestream', 'len'];
-    const VALID_CONTENT_ARRAYS = ['cat'];
-    const VALID_CONTENT_OBJECTS = ['ext'];
-
     VALID_CONTENT_STRINGS.forEach(param => {
       it(`should determine that the ortb2.site String key is valid and append to the bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = {
@@ -445,6 +443,7 @@ describe('YahooSSP Bid Adapter', () => {
       });
     });
 
+    const VALID_CONTENT_NUMBERS = ['episode', 'prodq', 'context', 'livestream', 'len'];
     VALID_CONTENT_NUMBERS.forEach(param => {
       it(`should determine that the ortb2.site.content Number key is valid and append to the bid-request:  ${JSON.stringify(param)}`, () => {
         const ortb2 = {
@@ -462,6 +461,7 @@ describe('YahooSSP Bid Adapter', () => {
       });
     });
 
+    const VALID_CONTENT_ARRAYS = ['cat'];
     VALID_CONTENT_ARRAYS.forEach(param => {
       it(`should determine that the ortb2.site Array key is valid and append to the bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = {
@@ -479,6 +479,7 @@ describe('YahooSSP Bid Adapter', () => {
       });
     });
 
+    const VALID_CONTENT_OBJECTS = ['ext'];
     VALID_CONTENT_OBJECTS.forEach(param => {
       it(`should determine that the ortb2.site.content Object key is valid and append to the bid-request:  ${JSON.stringify(param)}`, () => {
         const ortb2 = {
@@ -496,12 +497,197 @@ describe('YahooSSP Bid Adapter', () => {
         config.setConfig({ortb2: {}});
       });
     });
-
-    // TODO add ortb.user tests
   });
-
+  // TODO add ortb.user tests
   describe('First party data module - "User" support (ortb2):', () => {
-    // TODO add ortb.user tests
+    // Global ortb2.user validations
+    // Should not allow invalid "user" data types
+    const INVALID_ORTB2_TYPES = [ null, [], 'unsupportedKeyName', true, false, undefined ];
+    INVALID_ORTB2_TYPES.forEach(param => {
+      const ortb2 = { user: param }
+      config.setConfig({ortb2});
+      it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.user[param]).to.be.undefined;
+      });
+    });
+
+    // Should add valid "user" params
+    const VALID_USER_STRINGS = ['id', 'buyeruid', 'gender', 'keywords', 'customdata'];
+    VALID_USER_STRINGS.forEach(param => {
+      it(`should allow supported user string keys to be added bid-request: ${JSON.stringify(param)}`, () => {
+        const ortb2 = {
+          user: {
+            [param]: 'something'
+          }
+        };
+        config.setConfig({ortb2});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.user[param]).to.exist;
+        expect(data.user[param]).to.be.a('string');
+        expect(data.user[param]).to.be.equal(ortb2.user[param]);
+      });
+    });
+
+    const VALID_USER_NUMBERS = ['yob'];
+    VALID_USER_NUMBERS.forEach(param => {
+      it(`should allow supported user number keys to be added bid-request: ${JSON.stringify(param)}`, () => {
+        const ortb2 = {
+          user: {
+            [param]: 'something'
+          }
+        };
+        config.setConfig({ortb2});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.user[param]).to.exist;
+        expect(data.user[param]).to.be.a('number');
+        expect(data.user[param]).to.be.equal(ortb2.user[param]);
+      });
+    });
+
+    const VALID_USER_ARRAYS = ['data'];
+    VALID_USER_ARRAYS.forEach(param => {
+      it(`should allow supported user Array keys to be added to the bid-request: ${JSON.stringify(param)}`, () => {
+        const ortb2 = {
+          user: {
+            [param]: ['something']
+          }
+        };
+        config.setConfig({ortb2});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.user[param]).to.exist;
+        expect(data.user[param]).to.be.a('array');
+        expect(data.user[param]).to.be.equal(ortb2.user[param]);
+      });
+    });
+
+    const VALID_USER_OBJECTS = ['ext'];
+    VALID_USER_OBJECTS.forEach(param => {
+      it(`should allow supported user Object keys to be added to the bid-request:  ${JSON.stringify(param)}`, () => {
+        const ortb2 = {
+          user: {
+            [param]: {a: '123', b: '456'}
+          }
+        };
+        config.setConfig({ortb2});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.user.content[param]).to.be.a('object');
+        expect(data.user.content[param]).to.be.equal(ortb2.user[param]);
+        config.setConfig({ortb2: {}});
+      });
+    });
+
+    // Should not allow invalid "site.content" data types
+    INVALID_ORTB2_TYPES.forEach(param => {
+      it(`should determine that the ortb2.site.content key is invalid and should not be added to bid-request:  ${JSON.stringify(param)}`, () => {
+        const ortb2 = {
+          site: {
+            content: param
+          }
+        };
+        config.setConfig({ortb2});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.site.content).to.be.undefined;
+      });
+    });
+
+    // Should not allow invalid "site.content" keys
+    it(`should not allow invalid ortb2.site.content object keys to be added to bid-request: {custom object}`, () => {
+      const ortb2 = {
+        site: {
+          content: {
+            fake: 'news',
+            unreal: 'param',
+            counterfit: 'data'
+          }
+        }
+      };
+      config.setConfig({ortb2});
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.site.content).to.be.a('object');
+    });
+
+    // Should append valid "site.content" keys
+    const VALID_CONTENT_STRINGS = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
+    VALID_CONTENT_STRINGS.forEach(param => {
+      it(`should determine that the ortb2.site String key is valid and append to the bid-request: ${JSON.stringify(param)}`, () => {
+        const ortb2 = {
+          site: {
+            content: {
+              [param]: 'something'
+            }
+          }
+        };
+        config.setConfig({ortb2});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.site.content[param]).to.exist;
+        expect(data.site.content[param]).to.be.a('string');
+        expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
+      });
+    });
+
+    const VALID_CONTENT_NUMBERS = ['episode', 'prodq', 'context', 'livestream', 'len'];
+    VALID_CONTENT_NUMBERS.forEach(param => {
+      it(`should determine that the ortb2.site.content Number key is valid and append to the bid-request:  ${JSON.stringify(param)}`, () => {
+        const ortb2 = {
+          site: {
+            content: {
+              [param]: 1234
+            }
+          }
+        };
+        config.setConfig({ortb2});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.site.content[param]).to.be.a('number');
+        expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
+      });
+    });
+
+    const VALID_CONTENT_ARRAYS = ['cat'];
+    VALID_CONTENT_ARRAYS.forEach(param => {
+      it(`should determine that the ortb2.site Array key is valid and append to the bid-request: ${JSON.stringify(param)}`, () => {
+        const ortb2 = {
+          site: {
+            content: {
+              [param]: ['something', 'something-else']
+            }
+          }
+        };
+        config.setConfig({ortb2});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.site.content[param]).to.be.a('array');
+        expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
+      });
+    });
+
+    const VALID_CONTENT_OBJECTS = ['ext'];
+    VALID_CONTENT_OBJECTS.forEach(param => {
+      it(`should determine that the ortb2.site.content Object key is valid and append to the bid-request:  ${JSON.stringify(param)}`, () => {
+        const ortb2 = {
+          site: {
+            content: {
+              [param]: {a: '123', b: '456'}
+            }
+          }
+        };
+        config.setConfig({ortb2});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.site.content[param]).to.be.a('object');
+        expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
+        config.setConfig({ortb2: {}});
+      });
+    });
   });
 
   describe('e2etest mode support:', () => {
