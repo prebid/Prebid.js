@@ -581,7 +581,7 @@ describe('YahooSSP Bid Adapter', () => {
         config.setConfig({ortb2: {}});
       });
     });
-
+    // TODO Continue from here
     // Should not allow invalid "site.content" data types
     INVALID_ORTB2_TYPES.forEach(param => {
       it(`should determine that the ortb2.site.content key is invalid and should not be added to bid-request:  ${JSON.stringify(param)}`, () => {
