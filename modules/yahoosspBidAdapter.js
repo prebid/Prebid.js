@@ -208,6 +208,11 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
+      case 'objectAllKeys':
+        if (isPlainObject(inputObject)) {
+          outputObject[objectKey] = inputObject[objectKey];
+        };
+        break;
     };
   };
   return outputObject;
@@ -335,11 +340,10 @@ function appendImpObject(bid, openRtbObject) {
         }
       }
     };
-
-    if (deepAccess(bid, 'params.ortb2Imp')) {
-      const ortb2ImpExt = deepAccess(bid, 'params.ortb2Imp.ext.data');
-      const allowedImpExtKeys = ['data']
-      impObject.ext = validateAppendObject('object', allowedImpExtKeys, ortb2ImpExt, impObject.ext);
+    // TODO Update for GPID imp.ext.data.pbadslot AND imp.ext.context.data.adserver.adslot
+    if (deepAccess(bid, 'params.ortb2Imp.ext.data')) {
+      const ortb2ImpExtData = deepAccess(bid, 'params.ortb2Imp.ext.data');
+      impObject.ext.data = validateAppendObject('objectAllKeys', null, ortb2ImpExtData, impObject.ext.data);
     };
 
     if (getPubIdMode(bid) === false) {
