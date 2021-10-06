@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import {isArray, logMessage, deepAccess, logWarn, parseSizesInput, deepSetValue, generateUUID, isEmpty, logError, _each} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -106,7 +106,7 @@ var sizeMap = {
   552: '300x200',
   558: '640x640'
 };
-utils._each(sizeMap, (item, key) => sizeMap[item] = key);
+_each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
   code: BIDDER_CODE,
@@ -139,12 +139,12 @@ export const spec = {
     let parsedRequest = JSON.parse(request.data);
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
-      if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
+      if (response.body && response.body.seatbid && isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
         respCur = response.body.cur || respCur;
         response.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
-            utils.isArray(seatbidder.bid) &&
+            isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
               let newBid = {
                 requestId: bid.impid,
@@ -165,7 +165,7 @@ export const spec = {
         });
       }
     } catch (error) {
-      utils.logError(error);
+      logError(error);
     }
     return bidResponses;
   },
@@ -184,25 +184,25 @@ export const spec = {
                 let type = thisSync.usersync.type;
 
                 if (!url) {
-                  utils.logError(`No sync url for bidder luponmedia.`);
+                  logError(`No sync url for bidder luponmedia.`);
                 } else if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
-                  utils.logMessage(`Invoking image pixel user sync for luponmedia`);
+                  logMessage(`Invoking image pixel user sync for luponmedia`);
                   allUserSyncs.push({type: 'image', url: url});
                 } else if (type == 'iframe' && syncOptions.iframeEnabled) {
-                  utils.logMessage(`Invoking iframe user sync for luponmedia`);
+                  logMessage(`Invoking iframe user sync for luponmedia`);
                   allUserSyncs.push({type: 'iframe', url: url});
                 } else {
-                  utils.logError(`User sync type "${type}" not supported for luponmedia`);
+                  logError(`User sync type "${type}" not supported for luponmedia`);
                 }
               }
             }
           } catch (e) {
-            utils.logError(e);
+            logError(e);
           }
         }
       });
     } else {
-      utils.logWarn('Luponmedia: Please enable iframe/pixel based user sync.');
+      logWarn('Luponmedia: Please enable iframe/pixel based user sync.');
     }
 
     hasSynced = true;
@@ -231,7 +231,7 @@ export function hasValidSupplyChainParams(schain) {
     if (!status) return status;
     return requiredFields.every(field => node[field]);
   }, true);
-  if (!isValid) utils.logError('LuponMedia: required schain params missing');
+  if (!isValid) logError('LuponMedia: required schain params missing');
   return isValid;
 }
 
@@ -267,12 +267,12 @@ export function masSizeOrdering(sizes) {
 function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   bidRequest.startTime = new Date().getTime();
 
-  const bannerParams = utils.deepAccess(bidRequest, 'mediaTypes.banner');
+  const bannerParams = deepAccess(bidRequest, 'mediaTypes.banner');
 
   let bannerSizes = [];
 
   if (bannerParams && bannerParams.sizes) {
-    const sizes = utils.parseSizesInput(bannerParams.sizes);
+    const sizes = parseSizesInput(bannerParams.sizes);
 
     // get banner sizes in form [{ w: <int>, h: <int> }, ...]
     const format = sizes.map(size => {
@@ -325,11 +325,11 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
         size: parseSizes(bidRequest, 'video')
       });
     } catch (e) {
-      utils.logError('LuponMedia: getFloor threw an error: ', e);
+      logError('LuponMedia: getFloor threw an error: ', e);
     }
     bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
   } else {
-    bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+    bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
   }
   if (!isNaN(bidFloor)) {
     data.imp[0].bidfloor = bidFloor;
@@ -339,7 +339,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
 
   const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
   if (digiTrust) {
-    utils.deepSetValue(data, 'user.ext.digitrust', digiTrust);
+    deepSetValue(data, 'user.ext.digitrust', digiTrust);
   }
 
   if (bidderRequest.gdprConsent) {
@@ -349,27 +349,27 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
       gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
     }
 
-    utils.deepSetValue(data, 'regs.ext.gdpr', gdprApplies);
-    utils.deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+    deepSetValue(data, 'regs.ext.gdpr', gdprApplies);
+    deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
   if (bidderRequest.uspConsent) {
-    utils.deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
   // Set user uuid
-  utils.deepSetValue(data, 'user.id', utils.generateUUID());
+  deepSetValue(data, 'user.id', generateUUID());
 
   // set crumbs
   if (bidRequest.crumbs && bidRequest.crumbs.pubcid) {
-    utils.deepSetValue(data, 'user.buyeruid', bidRequest.crumbs.pubcid);
+    deepSetValue(data, 'user.buyeruid', bidRequest.crumbs.pubcid);
   } else {
-    utils.deepSetValue(data, 'user.buyeruid', utils.generateUUID());
+    deepSetValue(data, 'user.buyeruid', generateUUID());
   }
 
   if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
         (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env)) {
-    utils.deepSetValue(data, 'user.ext.eids', []);
+    deepSetValue(data, 'user.ext.eids', []);
 
     if (bidRequest.userId.tdid) {
       data.user.ext.eids.push({
@@ -407,7 +407,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
       };
 
       if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
-        utils.deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
+        deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
       }
     }
 
@@ -423,17 +423,17 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   }
 
   if (config.getConfig('coppa') === true) {
-    utils.deepSetValue(data, 'regs.coppa', 1);
+    deepSetValue(data, 'regs.coppa', 1);
   }
 
   if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
-    utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+    deepSetValue(data, 'source.ext.schain', bidRequest.schain);
   }
 
   const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
   const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
 
-  if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
+  if (!isEmpty(siteData) || !isEmpty(userData)) {
     const bidderData = {
       bidders: [ bidderRequest.bidderCode ],
       config: {
@@ -441,20 +441,20 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
       }
     };
 
-    if (!utils.isEmpty(siteData)) {
+    if (!isEmpty(siteData)) {
       bidderData.config.fpd.site = siteData;
     }
 
-    if (!utils.isEmpty(userData)) {
+    if (!isEmpty(userData)) {
       bidderData.config.fpd.user = userData;
     }
 
-    utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
+    deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
   }
 
-  const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+  const pbAdSlot = deepAccess(bidRequest, 'fpd.context.pbAdSlot');
   if (typeof pbAdSlot === 'string' && pbAdSlot) {
-    utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
+    deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
   }
 
   return data;
@@ -467,7 +467,7 @@ function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
   const propNames = DIGITRUST_PROP_NAMES[endpointName];
 
   function getDigiTrustId() {
-    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
+    const bidRequestDigitrust = deepAccess(bidRequest, 'userId.digitrustid.data');
     if (bidRequestDigitrust) {
       return bidRequestDigitrust;
     }
@@ -523,7 +523,7 @@ function appendSiteAppDevice(data, bidRequest, bidderRequest) {
  * @returns {*}
  */
 function mapSizes(sizes) {
-  return utils.parseSizesInput(sizes)
+  return parseSizesInput(sizes)
     // map sizes while excluding non-matches
     .reduce((result, size) => {
       let mappedSize = parseInt(sizeMap[size], 10);
@@ -543,7 +543,7 @@ function parseSizes(bid, mediaType) {
         params.video.playerWidth,
         params.video.playerHeight
       ];
-    } else if (Array.isArray(utils.deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
+    } else if (Array.isArray(deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
       size = bid.mediaTypes.video.playerSize[0];
     } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
@@ -555,12 +555,12 @@ function parseSizes(bid, mediaType) {
   let sizes = [];
   if (Array.isArray(params.sizes)) {
     sizes = params.sizes;
-  } else if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+  } else if (typeof deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     sizes = mapSizes(bid.sizes)
   } else {
-    utils.logWarn('LuponMedia: no sizes are setup or found');
+    logWarn('LuponMedia: no sizes are setup or found');
   }
 
   return masSizeOrdering(sizes);
