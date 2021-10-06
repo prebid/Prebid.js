@@ -252,7 +252,9 @@ describe('dchain module', function () {
               'domain': 'bidder.com',
               'ext': {}
             }]
-          }
+          },
+          networkName: 'myNetworkName',
+          networkId: 8475
         }
       };
     });
@@ -316,7 +318,7 @@ describe('dchain module', function () {
         expect(bid.meta.dchain).to.exist;
         expect(bid.meta.dchain.ver).to.exist.and.to.equal('1.0');
         expect(bid.meta.dchain.complete).to.exist.and.to.equal(0);
-        expect(bid.meta.dchain.nodes).to.exist.and.to.deep.equal([{ name: 'bidderA' }]);
+        expect(bid.meta.dchain.nodes).to.exist.and.to.deep.equal([{ name: 'myNetworkName', bsid: '8475' }, { name: 'bidderA' }]);
       }
 
       delete bid.meta.dchain;

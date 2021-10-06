@@ -112,8 +112,13 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   const basicDchain = {
     ver: '1.0',
     complete: 0,
-    nodes: [{ name: bid.bidderCode }]
+    nodes: []
   };
+
+  if (deepAccess(bid, 'meta.networkId') && deepAccess(bid, 'meta.networkName')) {
+    basicDchain.nodes.push({ name: bid.meta.networkName, bsid: bid.meta.networkId.toString() });
+  }
+  basicDchain.nodes.push({ name: bid.bidderCode });
 
   let bidDchain = deepAccess(bid, 'meta.dchain');
   if (bidDchain && isPlainObject(bidDchain)) {
