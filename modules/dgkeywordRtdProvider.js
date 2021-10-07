@@ -78,7 +78,6 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
       }
     }, null, {
       withCredentials: true,
-      contentType: 'application/x-www-form-urlencoded',
     });
     setTimeout(function () {
       if (!isFinish) {
