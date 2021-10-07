@@ -1,1 +1,2 @@
-export const vendorDirectory = {};
+export const videoVendorDirectory = {};
+export const adServerDirectory = {};

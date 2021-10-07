@@ -1,41 +1,30 @@
-import { vendorDirectory } from './vendorDirectory.js';
+import { videoVendorDirectory } from './vendorDirectory.js';
+import { ParentModule, submoduleBuilder } from './shared/parentModule';
 
-export function VideoCore(submoduleBuilder_) {
-  const submodules = {};
-  const submoduleBuilder = submoduleBuilder_;
+export function VideoCore(parentModule_) {
+  const parentModule = parentModule_;
 
   function registerProvider(providerConfig) {
-    const divId = providerConfig.divId;
-    if (submodules[divId]) {
-      return;
-    }
-
-    let submodule;
-    try {
-      submodule = submoduleBuilder.build(providerConfig);
-    } catch (e) {
-      throw e;
-    }
-    submodules[divId] = submodule;
+    parentModule.registerSubmodule(providerConfig.divId, providerConfig);
   }
 
   function getOrtbParams(divId) {
-    const submodule = submodules[divId];
+    const submodule = parentModule.getSubmodule(divId);
     return submodule && submodule.getOrtbParams();
   }
 
   function setAdTagUrl(adTagUrl, divId) {
-    const submodule = submodules[divId];
+    const submodule = parentModule.getSubmodule(divId);
     return submodule && submodule.setAdTagUrl(adTagUrl);
   }
 
   function onEvents(events, callback, divId) {
-    const submodule = submodules[divId];
+    const submodule = parentModule.getSubmodule(divId);
     return submodule && submodule.onEvents(events, callback);
   }
 
   function offEvents(events, callback, divId) {
-    const submodule = submodules[divId];
+    const submodule = parentModule.getSubmodule(divId);
     return submodule && submodule.offEvents(events, callback);
   }
 
@@ -49,25 +38,7 @@ export function VideoCore(submoduleBuilder_) {
 }
 
 export function videoCoreFactory() {
-  const submoduleBuilder = VideoSubmoduleBuilder(vendorDirectory);
-  return VideoCore(submoduleBuilder);
-}
-
-export function VideoSubmoduleBuilder(vendorDirectory_) {
-  const vendorDirectory = vendorDirectory_;
-
-  function build(providerConfig) {
-    const submoduleFactory = vendorDirectory[providerConfig.vendorCode];
-    if (!submoduleFactory) {
-      throw new Error('Unrecognized vendor code');
-    }
-
-    const submodule = submoduleFactory(providerConfig);
-    submodule && submodule.init && submodule.init();
-    return submodule;
-  }
-
-  return {
-    build
-  };
+  const videoSubmoduleBuilder = submoduleBuilder(videoVendorDirectory);
+  const parentModule = ParentModule(videoSubmoduleBuilder);
+  return VideoCore(parentModule);
 }
