@@ -16,17 +16,8 @@ This adapter requires setup and approval from the Natexo programmatic team.
 
 # Configuration
 
-The TalkAds adapter does not work without setting the correct tag ID and bidder URL.
-These parameters are totally specific to each Publisher, you will receive them when contacting us.
 
-```
-pbjs.setConfig({
-    talkads: {
-        tag_id: <identifier>,
-        bidder_url: '<bidder url>',
-    }
-});
-```
+
 
 # Test parameters
 
@@ -42,16 +33,12 @@ pbjs.setConfig({
         },
         bids: [{
             bidder: 'talkads',
-            params: {},
+            params: {
+                tag_id: 0,
+                bidder_url: 'https://test.natexo-programmatic.com/tad/tag/prebid',
+            },
         }]
     ];
-
-    pbjs.setConfig({
-        talkads: {
-            tag_id: 0,
-            bidder_url: 'https://test.natexo-programmatic.com/tad/tag/prebid',
-        }
-    });
 ```
 
 ## Test native parameters
@@ -64,14 +51,10 @@ pbjs.setConfig({
         },
         bids: [{
             bidder: 'talkads',
-            params: {},
+            params: {
+                tag_id: 0,
+                bidder_url: 'https://test.natexo-programmatic.com/tad/tag/prebid',
+            },
         }]
     ];
-
-    pbjs.setConfig({
-        talkads: {
-            tag_id: 0,
-            bidder_url: 'https://test.natexo-programmatic.com/tad/tag/prebid',
-        }
-    });
 ```

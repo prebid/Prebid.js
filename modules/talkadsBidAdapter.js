@@ -1,6 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 
@@ -10,6 +9,7 @@ const BIDDER_CODE = 'talkads';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ NATIVE, BANNER ],
+  params: null,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -18,15 +18,20 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (poBid) => {
-    utils.logInfo('isBidRequestValid : ', config.getConfig(), poBid);
-    if (!config.getConfig('talkads.tag_id')) {
+    utils.logInfo('isBidRequestValid : ', poBid);
+    if (poBid.params === undefined) {
+      utils.logError('VALIDATION FAILED : the parameters must be defined');
+      return false;
+    }
+    if (poBid.params.tag_id === undefined) {
       utils.logError('VALIDATION FAILED : the parameter "tag_id" must be defined');
       return false;
     }
-    if (!config.getConfig('talkads.bidder_url')) {
+    if (poBid.params.bidder_url === undefined) {
       utils.logError('VALIDATION FAILED : the parameter "bidder_url" must be defined');
       return false;
     }
+    this.params = poBid.params;
     return !!(poBid.nativeParams || poBid.sizes);
   }, // isBidRequestValid
 
@@ -66,7 +71,7 @@ export const spec = {
         loServerRequest.gdpr.consent = poBidderRequest.gdprConsent.consentString;
       }
     }
-    const lsUrl = config.getConfig('talkads.bidder_url') + '/' + config.getConfig('talkads.tag_id');
+    const lsUrl = this.params.bidder_url + '/' + this.params.tag_id;
     return {
       method: 'POST',
       url: lsUrl,
@@ -116,7 +121,7 @@ export const spec = {
   onBidWon: (poBid) => {
     utils.logInfo('onBidWon : ', poBid);
     if (poBid.pbid) {
-      ajax(config.getConfig('talkads.bidder_url') + 'won/' + poBid.pbid);
+      ajax(this.params.bidder_url + 'won/' + poBid.pbid);
     }
   }, // onBidWon
 };
