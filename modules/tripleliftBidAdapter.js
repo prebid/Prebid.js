@@ -287,7 +287,7 @@ function formatEid(source, rtiPartner) {
   return (id) => ({
     source,
     uids: [{
-      id,
+      id: id.id ? id.id : id,
       ext: { rtiPartner }
     }]
   });
