@@ -9,7 +9,7 @@ import {
 } from './videoModule/constants/events.js';
 import stateFactory from './videoModule/shared/state.js';
 import { JWPLAYER_VENDOR } from './videoModule/constants/vendorCodes.js';
-import { vendorDirectory } from './videoModule/vendorDirectory.js';
+import { videoVendorDirectory } from './videoModule/vendorDirectory.js';
 
 export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils) {
   const jwplayer = jwplayer_;
@@ -632,7 +632,7 @@ const jwplayerSubmoduleFactory = function (config) {
 }
 
 jwplayerSubmoduleFactory.vendorCode = JWPLAYER_VENDOR;
-vendorDirectory[JWPLAYER_VENDOR] = jwplayerSubmoduleFactory;
+videoVendorDirectory[JWPLAYER_VENDOR] = jwplayerSubmoduleFactory;
 export default jwplayerSubmoduleFactory;
 
 // HELPERS
