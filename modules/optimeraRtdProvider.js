@@ -18,7 +18,7 @@
  * @property {string} device
  */
 
-import * as utils from '../src/utils.js';
+import { logInfo, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 
@@ -74,7 +74,7 @@ export let fetchScoreFile = true;
  * Make the request for the Score File.
  */
 export function scoreFileRequest() {
-  utils.logInfo('Fetch Optimera score file.');
+  logInfo('Fetch Optimera score file.');
   const ajax = ajaxBuilder();
   ajax(scoresURL,
     {
@@ -83,14 +83,14 @@ export function scoreFileRequest() {
           try {
             setScores(res);
           } catch (err) {
-            utils.logError('Unable to parse Optimera Score File.', err);
+            logError('Unable to parse Optimera Score File.', err);
           }
         } else if (req.status === 403) {
-          utils.logError('Unable to fetch the Optimera Score File - 403');
+          logError('Unable to fetch the Optimera Score File - 403');
         }
       },
       error: () => {
-        utils.logError('Unable to fetch the Optimera Score File.');
+        logError('Unable to fetch the Optimera Score File.');
       }
     });
 }
@@ -108,9 +108,9 @@ export function returnTargetingData(adUnits, config) {
       }
     });
   } catch (err) {
-    utils.logError('error', err);
+    logError('error', err);
   }
-  utils.logInfo('Apply Optimera targeting');
+  logInfo('Apply Optimera targeting');
   return targeting;
 }
 
@@ -143,7 +143,7 @@ export function init(moduleConfig) {
     return true;
   } else {
     if (!_moduleParams.clientID) {
-      utils.logError('Optimera clientID is missing in the Optimera RTD configuration.');
+      logError('Optimera clientID is missing in the Optimera RTD configuration.');
     }
     return false;
   }
@@ -185,7 +185,7 @@ export function setScores(result) {
       scores = scores.device[device];
     }
   } catch (e) {
-    utils.logError('Optimera score file could not be parsed.');
+    logError('Optimera score file could not be parsed.');
   }
   optimeraTargeting = scores;
 }

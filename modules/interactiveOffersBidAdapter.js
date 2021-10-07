@@ -1,7 +1,7 @@
+import { logWarn, isNumber } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'interactiveOffers';
 const ENDPOINT = 'https://prebid.ioadx.com/bidRequest/?partnerId=';
@@ -36,15 +36,15 @@ export const spec = {
     let ret = true;
     if (bid && bid.params) {
       if (!bid.params.partnerId) {
-        utils.logWarn('partnerId must be a valid ID');
+        logWarn('partnerId must be a valid ID');
         ret = false;
       }
-      if (bid.params.tmax && !utils.isNumber(bid.params.tmax)) {
-        utils.logWarn('tmax must be a valid numeric ID');
+      if (bid.params.tmax && !isNumber(bid.params.tmax)) {
+        logWarn('tmax must be a valid numeric ID');
         ret = false;
       }
     } else {
-      utils.logWarn('invalid request');
+      logWarn('invalid request');
       ret = false;
     }
     return ret;

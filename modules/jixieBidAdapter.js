@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, parseUrl, deepAccess, isArray } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -95,7 +95,7 @@ function createRenderer_(bidAd, scriptUrl, createFcn) {
   try {
     renderer.setRender(createFcn);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
 }
@@ -110,7 +110,7 @@ function getMiscDims_() {
     let refererInfo_ = getRefererInfo();
     let url_ = ((refererInfo_ && refererInfo_.referer) ? refererInfo_.referer : window.location.href);
     ret.pageurl = url_;
-    ret.domain = utils.parseUrl(url_).host;
+    ret.domain = parseUrl(url_).host;
     ret.device = getDevice_();
   } catch (error) {}
   return ret;
@@ -194,8 +194,8 @@ export const spec = {
         device: miscDims.device,
         pageurl: encodeURIComponent(miscDims.pageurl),
         domain: encodeURIComponent(miscDims.domain),
-        auctionid: utils.deepAccess(timeoutData, '0.auctionId'),
-        timeout: utils.deepAccess(timeoutData, '0.timeout'),
+        auctionid: deepAccess(timeoutData, '0.auctionId'),
+        timeout: deepAccess(timeoutData, '0.timeout'),
         count: timeoutData.length
       });
   },
@@ -224,7 +224,7 @@ export const spec = {
   },
 
   interpretResponse: function(response, bidRequest) {
-    if (response && response.body && utils.isArray(response.body.bids)) {
+    if (response && response.body && isArray(response.body.bids)) {
       const bidResponses = [];
       response.body.bids.forEach(function(oneBid) {
         let bnd = {};
