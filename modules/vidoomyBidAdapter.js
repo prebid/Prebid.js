@@ -89,18 +89,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 
     const rawQueryParams = queryParams.map(qp => qp.join('=')).join('&');
 
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', COOKIE_SYNC_JSON)
-    xhr.addEventListener('load', function () {
-      const macro = Macro({
-        gpdr: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : '0',
-        gpdr_consent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : '',
-      });
-      JSON.parse(this.responseText).filter(Boolean).forEach(url => {
-        firePixel(macro.replace(url))
-      })
-    })
-    xhr.send()
+    cookieSync(bidderRequest)
 
     const url = `${ENDPOINT}?${rawQueryParams}`;
     return {
@@ -206,6 +195,24 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+let cookieSynced = false;
+function cookieSync(bidderRequest) {
+  if (cookieSynced) return;
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', COOKIE_SYNC_JSON)
+  xhr.addEventListener('load', function () {
+    const macro = Macro({
+      gpdr: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : '0',
+      gpdr_consent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : '',
+    });
+    JSON.parse(this.responseText).filter(Boolean).forEach(url => {
+      firePixel(macro.replace(url))
+    })
+  })
+  xhr.send()
+  cookieSynced = true;
+}
 
 function firePixel(url) {
   const img = document.createElement('img');
