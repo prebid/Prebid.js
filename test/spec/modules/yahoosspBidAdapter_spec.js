@@ -342,7 +342,6 @@ describe('YahooSSP Bid Adapter', () => {
   });
 
   describe('First party data module - "Site" support (ortb2):', () => {
-    // Global ortb2.site validations
     // Should not allow invalid "site" data types
     const INVALID_ORTB2_TYPES = [ null, [], 123, 'unsupportedKeyName', true, false, undefined ];
     INVALID_ORTB2_TYPES.forEach(param => {
@@ -498,7 +497,7 @@ describe('YahooSSP Bid Adapter', () => {
       });
     });
   });
-  // TODO add ortb.user tests
+
   describe('First party data module - "User" support (ortb2):', () => {
     // Global ortb2.user validations
     // Should not allow invalid "user" data types
@@ -536,7 +535,7 @@ describe('YahooSSP Bid Adapter', () => {
       it(`should allow supported user number keys to be added bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = {
           user: {
-            [param]: 'something'
+            [param]: 1982
           }
         };
         config.setConfig({ortb2});
@@ -567,7 +566,7 @@ describe('YahooSSP Bid Adapter', () => {
 
     const VALID_USER_OBJECTS = ['ext'];
     VALID_USER_OBJECTS.forEach(param => {
-      it(`should allow supported user Object keys to be added to the bid-request:  ${JSON.stringify(param)}`, () => {
+      it(`should allow supported user extObject keys to be added to the bid-request:  ${JSON.stringify(param)}`, () => {
         const ortb2 = {
           user: {
             [param]: {a: '123', b: '456'}
@@ -576,33 +575,41 @@ describe('YahooSSP Bid Adapter', () => {
         config.setConfig({ortb2});
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.user.content[param]).to.be.a('object');
-        expect(data.user.content[param]).to.be.equal(ortb2.user[param]);
+        expect(data.user[param]).to.be.a('object');
+        expect(data.user[param]).to.be.deep.include({[param]: {a: '123', b: '456'}});
         config.setConfig({ortb2: {}});
       });
     });
 
-    // Should allow valid user.data
+    // Should allow valid user.data && site.content.data
     const VALID_USER_DATA_STRINGS = ['id', 'name'];
     VALID_USER_DATA_STRINGS.forEach(param => {
-      it(`should allow supported user data strings to be added to the bid-request: ${JSON.stringify(param)}`, () => {
+      it(`should allow supported user.data & site.content.data strings to be added to the bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = {
           user: {
             data: [{[param]: 'string'}]
+          },
+          site: {
+            content: {
+              data: [{[param]: 'string'}]
+            }
           }
         };
         config.setConfig({ortb2});
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.user.data[param]).to.exist;
-        expect(data.user.data[param]).to.be.a('string');
-        expect(data.user.data[param]).to.be.equal(ortb2.user.data[param]);
+        expect(data.user.data[0][param]).to.exist;
+        expect(data.user.data[0][param]).to.be.a('string');
+        expect(data.user.data[0][param]).to.be.equal(ortb2.user.data[0][param]);
+        expect(data.site.content.data[0][param]).to.exist;
+        expect(data.site.content.data[0][param]).to.be.a('string');
+        expect(data.site.content.data[0][param]).to.be.equal(ortb2.site.content.data[0][param]);
       });
     });
 
     const VALID_USER_DATA_ARRAYS = ['segment']
     VALID_USER_DATA_ARRAYS.forEach(param => {
-      it(`should allow supported user data strings to be added to the bid-request: ${JSON.stringify(param)}`, () => {
+      it(`should allow supported user data arrays to be added to the bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = {
           user: {
             data: [{[param]: [{id: 1}]}]
@@ -611,15 +618,15 @@ describe('YahooSSP Bid Adapter', () => {
         config.setConfig({ortb2});
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.user.data[param]).to.exist;
-        expect(data.user.data[param]).to.be.a('array');
-        expect(data.user.data[param]).to.be.equal(ortb2.user.data[param]);
+        expect(data.user.data[0][param]).to.exist;
+        expect(data.user.data[0][param]).to.be.a('array');
+        expect(data.user.data[0][param]).to.be.equal(ortb2.user.data[0][param]);
       });
     });
 
     const VALID_USER_DATA_OBJECTS = ['ext'];
     VALID_USER_DATA_OBJECTS.forEach(param => {
-      it(`should allow supported user data strings to be added to the bid-request: ${JSON.stringify(param)}`, () => {
+      it(`should allow supported user data objects to be added to the bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = {
           user: {
             data: [{[param]: {id: 'ext'}}]
@@ -628,10 +635,26 @@ describe('YahooSSP Bid Adapter', () => {
         config.setConfig({ortb2});
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.user.data[param]).to.exist;
-        expect(data.user.data[param]).to.be.a('object');
-        expect(data.user.data[param]).to.be.equal(ortb2.user.data[param]);
+        expect(data.user.data[0][param]).to.exist;
+        expect(data.user.data[0][param]).to.be.a('object');
+        expect(data.user.data[0][param]).to.be.equal(ortb2.user.data[0][param]);
+        config.setConfig({ortb2: {}});
       });
+    });
+
+    // adUnit.ortb2Imp.ext.data
+    it(`should allow adUnit.ortb2Imp.ext.data object to be added to the bid-request`, () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      validBidRequests[0].ortb2Imp = {
+        ext: {
+          data: {
+            pbadslot: 'homepage-top-rect',
+            adUnitSpecificAttribute: '123'
+          }
+        }
+      };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].ext.data).to.deep.equal(validBidRequests[0].ortb2Imp.ext.data);
     });
   });
 
@@ -778,7 +801,6 @@ describe('YahooSSP Bid Adapter', () => {
   describe('Request Payload oRTB bid validation:', () => {
     it('should generate a valid openRTB bid-request object in the data field', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
-      // bidRequest.params.bidOverride.cur = undefined;
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.site).to.deep.equal({
         id: bidderRequest.bids[0].params.dcn,
@@ -889,6 +911,7 @@ describe('YahooSSP Bid Adapter', () => {
         h: 250,
         api: [2],
         protocols: [2, 5],
+        startdelay: 0,
         linearity: 1,
         maxbitrate: undefined,
         maxduration: undefined,
@@ -918,6 +941,7 @@ describe('YahooSSP Bid Adapter', () => {
         h: 250,
         api: [2],
         protocols: [2, 5],
+        startdelay: 0,
         linearity: 1,
         maxbitrate: undefined,
         maxduration: undefined,
@@ -1016,6 +1040,7 @@ describe('YahooSSP Bid Adapter', () => {
           h: 250,
           api: [2],
           protocols: [2, 5],
+          startdelay: 0,
           linearity: 1,
           maxbitrate: undefined,
           maxduration: undefined,
@@ -1068,6 +1093,7 @@ describe('YahooSSP Bid Adapter', () => {
         h: 250,
         api: [2],
         protocols: [2, 5],
+        startdelay: 0,
         linearity: 1,
         maxbitrate: undefined,
         maxduration: undefined,
@@ -1094,6 +1120,7 @@ describe('YahooSSP Bid Adapter', () => {
             h: 350,
             api: [1],
             protocols: [1, 3],
+            startdelay: 0,
             linearity: 1,
             maxbitrate: 400000,
             maxduration: 3600,
@@ -1121,6 +1148,7 @@ describe('YahooSSP Bid Adapter', () => {
         playerSize: [400, 350],
         api: [1],
         protocols: [1, 3],
+        startdelay: 0,
         linearity: 1,
         maxbitrate: 400000,
         maxduration: 3600,
@@ -1139,6 +1167,7 @@ describe('YahooSSP Bid Adapter', () => {
         h: 350,
         api: [1],
         protocols: [1, 3],
+        startdelay: 0,
         linearity: 1,
         maxbitrate: 400000,
         maxduration: 3600,

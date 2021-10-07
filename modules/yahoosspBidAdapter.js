@@ -319,6 +319,7 @@ function appendImpObject(bid, openRtbObject) {
         placement: deepAccess(bid, 'params.bidOverride.imp.video.placement') || bid.mediaTypes.video.placement || undefined,
         linearity: deepAccess(bid, 'params.bidOverride.imp.video.linearity') || bid.mediaTypes.video.linearity || 1,
         protocols: deepAccess(bid, 'params.bidOverride.imp.video.protocols') || bid.mediaTypes.video.protocols || [2, 5],
+        startdelay: deepAccess(bid, 'params.bidOverride.imp.video.startdelay') || bid.mediaTypes.video.startdelay || 0,
         rewarded: deepAccess(bid, 'params.bidOverride.imp.video.rewarded') || undefined,
       }
     }
@@ -427,7 +428,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.user = validateAppendObject('string', allowedUserStrings, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('number', allowedUserNumbers, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('array', allowedUserArrays, userObject, outBoundBidRequest.user);
-    outBoundBidRequest.user = validateAppendObject('object', allowedUserObjects, userObject, outBoundBidRequest.user);
+    outBoundBidRequest.user.ext = validateAppendObject('object', allowedUserObjects, userObject, outBoundBidRequest.user.ext);
   };
 
   return outBoundBidRequest;

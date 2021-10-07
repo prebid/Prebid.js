@@ -383,61 +383,134 @@ const adUnits = [{
 ```
 
 # Optional: First Party Data
-The yahoossp adapter now supports first party data passed via the global ortb2 object.
-**Note:** We currently do not support data being passed on the adUnit level via ortb2Imp.
+The yahoossp adapter now supports first party data passed via:
+1. Global ortb2 object using pbjs.setConfig()
+2. adUnit ortb2Imp object declared within an adUnit.
 For further details please see, https://docs.prebid.org/features/firstPartyData.html
+## Global First Party Data "ortb2"
+### Passing First Party Site Data:
 ```javascript
 pbjs.setConfig({
             ortb2: {
                 site: {
-                    page: 'https://yahooadtech.com',
+                    name: 'yahooAdTech',
+                    domain: 'yahooadtech.com',
+                    cat: ['IAB2'],
+                    sectioncat: ['IAB2-2'],
+                    pagecat: ['IAB2-2'],
+                    page: 'https://page.yahooadtech.com/here.html',
+                    ref: 'https://ref.yahooadtech.com/there.html',
+                    keywords:'yahoo, ad, tech',
+                    search: 'SSP',
                     content: {
-                        id: "1234",
-                        title: "Title",
-                        series: "Series",
-                        season: "Season",
+                        id: '1234',
+                        title: 'Title',
+                        series: 'Series',
+                        season: 'Season',
                         episode: 1,
-                        cat: [
-                            "IAB1",
-                            "IAB1-1",
-                            "IAB1-2",
-                            "IAB2",
-                            "IAB2-1"
-                        ],
-                        genre: "Fantase",
-                        contentrating: "C-Rating",
-                        language: "EN",
+                        cat: ['IAB1', 'IAB1-1', 'IAB1-2', 'IAB2', 'IAB2-1'],
+                        genre: 'Fantase',
+                        contentrating: 'C-Rating',
+                        language: 'EN',
                         prodq: 1,
                         context: 1,
                         len: 200,
+                        data: [{
+                            name: "www.dataprovider1.com",
+                            ext: { segtax: 4 },
+                            segment: [
+                                { id: "687" },
+                                { id: "123" }
+                            ]
+                        }],
                         ext: {
-                            network: "ext-network",
-                            channel: "ext-channel"
-                        }
-                    }
-                },
-                user: {
-                    yob: 1985,
-                    gender: "m",
-                    keywords: "a,b",
-                    data: [{
-                        name: "dataprovider.com",
-                        ext: {
-                            segtax: 3
-                        },
-                        segment: [{
-                            id: "1"
-                        }]
-                    }],
-                    ext: {
-                        data: {
-                            registered: true,
-                            interests: ["cars"]
+                            network: 'ext-network',
+                            channel: 'ext-channel',
+                            data: {
+                                pageType: "article",
+                                category: "repair"
+                            }
                         }
                     }
                 }
             }
         });
+```
+### Passing First Party User Data:
+```javascript
+pbjs.setConfig({
+            ortb2: {
+                user: {
+                    yob: 1985,
+                    gender: 'm',
+                    keywords: 'a,b',
+                    data: [{
+                            name: "www.dataprovider1.com",
+                            ext: { segtax: 4 },
+                            segment: [
+                                { id: "687" },
+                                { id: "123" }
+                            ]
+                    }],
+                    ext: {
+                        data: {
+                            registered: true,
+                            interests: ['cars']
+                        }
+                    }
+                }
+            }
+        });
+```
+### Passing First Party App Content Data:
+```javascript
+pbjs.setConfig({
+            ortb2: {
+                app: {
+                    content: {
+                        data: [{
+                            name: "www.dataprovider1.com",
+                            ext: { segtax: 4 },
+                            segment: [
+                                { id: "687" },
+                                { id: "123" }
+                            ]
+                        }],
+                    }
+                }
+            }
+        });
+```
+
+
+## AdUnit First Party Data "ortb2Imp"
+
+```javascript
+const adUnits = [{
+                code: 'placement',
+                mediaTypes: {
+                    banner: {
+                        sizes: [
+                            [300, 250]
+                        ]
+                    },
+                },
+                ortb2Imp: {
+                    ext: {
+                        data: {
+                            pbadslot: "homepage-top-rect",
+                            adUnitSpecificAttribute: "123"
+                        }
+                    }
+                },
+                bids: [{
+                    bidder: 'yahoossp',
+                    params: {
+                        pubdId: 'DemoPublisher'
+                    }
+                }]
+            }
+        ]
 ```
 
 # Optional: Bidder bidOverride Parameters
@@ -497,6 +570,7 @@ const adUnits = [{
                         placement: 1,
                         linearity: 1,
                         protocols: [2,5],
+                        startdelay: 0,
                         rewarded: 0
                     }
                 },
