@@ -685,7 +685,6 @@ To target your adUnit explicitly to a specific Placement within a Site/App Objec
 
 **Important:** Placement override is a only supported when using "pubId" mode.
 **Important:** It is highly recommended that you pass both `siteId` AND `placementId` together to avoid inventory miss matching.
-
 ```javascript
 const adUnits = [{
     code: 'pubId-site-targeting-adUnit',
