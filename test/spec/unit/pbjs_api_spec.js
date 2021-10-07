@@ -891,7 +891,7 @@ describe('Unit: Prebid Module', function () {
       assert.deepEqual(targeting, invokedTargeting, 'google tag targeting options not matching');
 
       // resetPresetTargeting: initiate a new auction with no winning bids, now old targeting should be removed
-      
+
       resetAuction();
       auction.getBidsReceived = function() { return [] };
 
