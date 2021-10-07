@@ -13,7 +13,10 @@ describe('TalkAds adapter', function () {
   }
   const commonBidRequest = {
     bidder: 'talkads',
-    params: {},
+    params: {
+      tag_id: 999999,
+      bidder_url: 'https://test.natexo-programmatic.com/tad/tag/prebid',
+    },
     bidId: '1a2b3c4d56e7f0',
     auctionId: '12345678-1234-1a2b-3c4d-1a2b3c4d56e7',
     transactionId: '4f68b713-04ba-4d7f-8df9-643bcdab5efb',
@@ -23,12 +26,6 @@ describe('TalkAds adapter', function () {
   };
   const bannerBidRequestParams = {
     sizes: [[300, 250], [300, 600]],
-  };
-  const talkadsConfig = {
-    talkads: {
-      tag_id: 999999,
-      bidder_url: 'https://test.natexo-programmatic.com/tad/tag/prebid',
-    }
   };
 
   /**
@@ -40,35 +37,34 @@ describe('TalkAds adapter', function () {
         ...commonBidRequest,
         ...bannerBidRequestParams,
       };
+      bidRequest.params = Object.assign({}, bidRequest.params);
+      delete bidRequest.params;
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
   }); // isBidRequestValid1
   describe('isBidRequestValid2', function() {
-    before(() => {
-      config.setConfig({
-        talkads: {
-          tag_id: 999999,
-        }
-      });
-    });
-    after(() => {
-      config.resetConfig()
-    });
     it('should fail when config is invalid', function () {
       const bidRequest = {
         ...commonBidRequest,
         ...bannerBidRequestParams,
       };
+      bidRequest.params = Object.assign({}, bidRequest.params);
+      delete bidRequest.params.bidder_url;
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
   }); // isBidRequestValid2
   describe('isBidRequestValid3', function() {
-    before(() => {
-      config.setConfig(talkadsConfig);
+    it('should fail when config is invalid', function () {
+      const bidRequest = {
+        ...commonBidRequest,
+        ...bannerBidRequestParams,
+      };
+      bidRequest.params = Object.assign({}, bidRequest.params);
+      delete bidRequest.params.tag_id;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
-    after(() => {
-      config.resetConfig()
-    });
+  }); // isBidRequestValid3
+  describe('isBidRequestValid4', function() {
     let bidRequest = {
       ...commonBidRequest,
       ...bannerBidRequestParams,
@@ -83,18 +79,12 @@ describe('TalkAds adapter', function () {
     it('should succeed when a native bid is valid', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
-  }); // isBidRequestValid3
+  }); // isBidRequestValid4
 
   /**
    * buildRequests
    */
   describe('buildRequests1', function() {
-    before(() => {
-      config.setConfig(talkadsConfig);
-    });
-    after(() => {
-      config.resetConfig()
-    });
     let bidRequest = {
       ...commonBidRequest,
       ...bannerBidRequestParams,
@@ -115,12 +105,6 @@ describe('TalkAds adapter', function () {
     });
   }); // buildRequests1
   describe('buildRequests2', function() {
-    before(() => {
-      config.setConfig(talkadsConfig);
-    });
-    after(() => {
-      config.resetConfig()
-    });
     let bidRequest = {
       ...commonBidRequest,
       ...nativeBidRequestParams,
@@ -212,12 +196,6 @@ describe('TalkAds adapter', function () {
    * onBidWon
    */
   describe('onBidWon', function() {
-    before(() => {
-      config.setConfig(talkadsConfig);
-    });
-    after(() => {
-      config.resetConfig()
-    });
     it('should not make an ajax call if pbid is null', function () {
       const loBid = {
         requestId: '1a2b3c4d56e7f0',
