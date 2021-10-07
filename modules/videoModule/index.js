@@ -6,13 +6,14 @@ import { videoCoreFactory } from './coreVideo.js';
 
 events.addEvents(allVideoEvents);
 
-export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_) {
+export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, adServerCore_) {
   const videoCore = videoCore_;
   const getConfig = getConfig_;
   const pbGlobal = pbGlobal_;
   const requestBids = pbGlobal.requestBids;
   const pbEvents = pbEvents_;
   const videoEvents = videoEvents_;
+  const adServerCore = adServerCore_;
 
   function init() {
     getConfig('video', ({ video }) => {
@@ -23,7 +24,15 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
             pbEvents.emit(type, payload);
           }, provider.divId);
         } catch (e) {}
+
+        const adServerConfig = provider.adServer;
+        if (adServerConfig) {
+          adServerCore.registerProvider(adServerConfig.vendorCode, adServerConfig.params);
+        }
+
       });
+
+      video.adServer
     });
 
     requestBids.before(enrichAdUnits, 40);
