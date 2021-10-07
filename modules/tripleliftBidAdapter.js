@@ -262,8 +262,21 @@ function getPubCommonEids(bidRequest) {
 function getEids(bidRequest, type, source, rtiPartner) {
   return bidRequest
     .map(getUserId(type)) // bids -> userIds of a certain type
-    .filter((x) => !!x) // filter out null userIds
+    .filter(filterEids()) // filter out null userIds
     .map(formatEid(source, rtiPartner)); // userIds -> eid objects
+}
+
+function filterEids() {
+  return userId => (
+    !!userId && // is not null
+    ('string' == typeof userId || userId instanceof String
+      ? !!userId // is not an empty string
+      : 'object' == typeof userId && // or, is object
+        !Array.isArray(userId) && // not an array
+        Object.keys(userId).length !== 0 && // is not empty
+        userId.id && // contains nested id field
+        Object.keys(userId.id).length !== 0) // nested id field is not an empty object
+  );
 }
 
 function getUserId(type) {
