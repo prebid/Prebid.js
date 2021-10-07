@@ -171,7 +171,7 @@ const generateResponseMock = (admPayloadType, vastVersion, videoContext) => {
 }
 
 // Unit tests
-describe('YahooSSP Bid Adapter', () => {
+describe('YahooSSP Bid Adapter:', () => {
   it('PLACEHOLDER TO PASS GULP', () => {
     const obj = {};
     expect(obj).to.be.an('object');
