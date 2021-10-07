@@ -165,7 +165,15 @@ export const spec = {
         },
         device: device,
         at: at,
-        cur: cur
+        cur: cur,
+        ext: {
+          prebid: {
+            channel: {
+              name: 'pbjs',
+              version: '$prebid.version$'
+            }
+          }
+        }
       };
 
       const userExt = {};
@@ -193,6 +201,8 @@ export const spec = {
           ext: userExt
         };
       }
+
+ //     requestPayload.user.ext.ver = pbjs.version;
 
       // Targeting
       if (utils.getBidIdParameter('data', bid.params.user)) {
