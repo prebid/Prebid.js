@@ -484,7 +484,8 @@ pbjs.setConfig({
 
 
 ## AdUnit First Party Data "ortb2Imp"
-
+Most DSPs are adopting the Global Placement ID (GPID).
+Please pass your placement specific GPID value to Yahoo SSP using `adUnit.ortb2Imp.ext.data.pbadslot`.
 ```javascript
 const adUnits = [{
                 code: 'placement',
