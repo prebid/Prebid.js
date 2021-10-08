@@ -78,6 +78,8 @@ describe('Ventes Adapter', function () {
                 crid: 'creative_id',
                 adm: '<html>..</html>',
                 price: 1.5,
+                w: 300,
+                h: 200
               }
             ]
           }
