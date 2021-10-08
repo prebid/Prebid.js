@@ -620,8 +620,30 @@ const adUnits = [{
 }]
 ```
 
-
-# Special Video Features
+# Optional: Custom Cache Time To Live (ttl):
+The yahoossp adapter supports passing of "Time To Live" (ttl) that indicates to prebid chache for how long to keep the chaced winning bid alive. Value is Number in seconds and you can enter any number between 1 - 3600 (seconds).
+```javascript
+const adUnits = [{
+    code: 'custom-ttl',
+    mediaTypes: {
+        video: {
+            context: 'outstream',
+            playerSize: [
+                [300, 250]
+            ],
+        }
+    },
+    bids: [{
+        bidder: 'yahoossp',
+        params: {
+            dcn: '8a969516017a7a396ec539d97f540011',
+            pos: '8a96958a017a7a57ac375d50c0c700cc',
+            ttl: 300,
+        }
+    }]
+}]
+```
+# Optional: Video Features
 ## Rewarded video flag
 To indicate to Yahoo SSP that this adUnit is a rewarded video you can pass the following in the params.bidOverride.imp.video.rewarded: 1
 

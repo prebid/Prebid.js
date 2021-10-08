@@ -8,7 +8,7 @@ const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
 const ADAPTER_VERSION = '1.0.0';
 const PREBID_VERSION = '$prebid.version$';
-const BID_RESPONSE_TTL = 3600;
+const DEFAULT_BID_TTL = 300;
 const TEST_MODE_DCN = '8a969516017a7a396ec539d97f540011';
 const TEST_MODE_PUBID_DCN = '1234567';
 const TEST_MODE_BANNER_POS = '8a969978017a7aaabab4ab0bc01a0009';
@@ -216,6 +216,15 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
     };
   };
   return outputObject;
+};
+
+function getTtl(bidderRequest) {
+  const globalTTL = config.getConfig('yahoossp.ttl');
+  return globalTTL ? validateTTL(globalTTL) : validateTTL(deepAccess(bidderRequest, 'params.ttl'));
+};
+
+function validateTTL(ttl) {
+  return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL
 };
 
 function generateOpenRtbObject(bidderRequest, bid) {
@@ -582,7 +591,7 @@ export const spec = {
         currency: bid.cur || DEFAULT_CURRENCY,
         dealId: bid.dealid ? bid.dealid : null,
         netRevenue: true,
-        ttl: BID_RESPONSE_TTL,
+        ttl: getTtl(bidderRequest),
         meta: {
           advertiserDomains: bid.adomain,
         }

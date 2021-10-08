@@ -1194,13 +1194,8 @@ describe('YahooSSP Bid Adapter:', () => {
       expect(data.device.ip).to.deep.equal(bidOverride.device.ip);
     });
   });
-
-  describe('validating user identity data', () => {
-
-  });
   // #endregion buildRequests():
 
-  // TODO Interprate Response
   describe('interpretResponse()', () => {
     describe('for mediaTypes: "banner"', () => {
       it('should insert banner payload into response[0].ad', () => {
@@ -1254,6 +1249,18 @@ describe('YahooSSP Bid Adapter:', () => {
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
         expect(response[0].meta.advertiserDomains).to.be.a('array');
         expect(response[0].meta.advertiserDomains[0]).to.equal('advertiser-domain.com');
+      })
+    });
+
+    describe('custom TTL', () => {
+      const UNSUPPORTED_TTL_FORMATS = ['string', [1, 2, 3], true, false, null, undefined];
+      UNSUPPORTED_TTL_FORMATS.forEach(param => {
+        it('should not allow unsupported TTL formats and default to 300', () => {
+          const { serverResponse, bidderRequest } = generateResponseMock('banner');
+          bidderRequest.bids[0].params.ttl = param;
+          const response = spec.interpretResponse(serverResponse, {bidderRequest});
+          expect(response[0].ttl).to.equal(300);
+        });
       })
     });
   });
