@@ -20,8 +20,12 @@ describe('RelaidoAdapter', function () {
   let bidderRequest;
   let serverResponse;
   let serverRequest;
+  let generateUUIDStub;
+  let triggerPixelStub;
 
   beforeEach(function () {
+    generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(relaido_uuid);
+    triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     bidRequest = {
       bidder: 'relaido',
       params: {
@@ -71,6 +75,11 @@ describe('RelaidoAdapter', function () {
       height: bidRequest.mediaTypes.video.playerSize[0][1],
       mediaType: 'video',
     };
+  });
+
+  afterEach(() => {
+    generateUUIDStub.restore();
+    triggerPixelStub.restore();
   });
 
   describe('spec.isBidRequestValid', function () {
@@ -207,6 +216,7 @@ describe('RelaidoAdapter', function () {
       expect(request.data.uuid).to.equal(relaido_uuid);
       expect(request.data.width).to.equal(bidRequest.mediaTypes.video.playerSize[0][0]);
       expect(request.data.height).to.equal(bidRequest.mediaTypes.video.playerSize[0][1]);
+      expect(request.data.pv).to.equal('$prebid.version$');
     });
 
     it('should build bid requests by banner', function () {
@@ -251,8 +261,6 @@ describe('RelaidoAdapter', function () {
       expect(bidRequests).to.have.lengthOf(1);
       const request = bidRequests[0];
 
-      // eslint-disable-next-line no-console
-      console.log(bidRequests);
       expect(request.width).to.equal(1);
     });
 
@@ -263,6 +271,15 @@ describe('RelaidoAdapter', function () {
       const keys = Object.keys(request.data);
       expect(keys[0]).to.equal('version');
       expect(keys[keys.length - 1]).to.equal('ref');
+    });
+
+    it('should get imuid', function () {
+      bidRequest.userId = {}
+      bidRequest.userId.imuid = 'i.tjHcK_7fTcqnbrS_YA2vaw';
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      expect(bidRequests).to.have.lengthOf(1);
+      const request = bidRequests[0];
+      expect(request.data.imuid).to.equal('i.tjHcK_7fTcqnbrS_YA2vaw');
     });
   });
 
@@ -350,14 +367,6 @@ describe('RelaidoAdapter', function () {
   });
 
   describe('spec.onBidWon', function () {
-    let stub;
-    beforeEach(() => {
-      stub = sinon.stub(utils, 'triggerPixel');
-    });
-    afterEach(() => {
-      stub.restore();
-    });
-
     it('Should create nurl pixel if bid nurl', function () {
       let bid = {
         bidder: bidRequest.bidder,
@@ -371,7 +380,7 @@ describe('RelaidoAdapter', function () {
         ref: window.location.href,
       }
       spec.onBidWon(bid);
-      const parser = utils.parseUrl(stub.getCall(0).args[0]);
+      const parser = utils.parseUrl(triggerPixelStub.getCall(0).args[0]);
       const query = parser.search;
       expect(parser.hostname).to.equal('api.relaido.jp');
       expect(parser.pathname).to.equal('/tr/v1/prebid/win.gif');
@@ -387,14 +396,6 @@ describe('RelaidoAdapter', function () {
   });
 
   describe('spec.onTimeout', function () {
-    let stub;
-    beforeEach(() => {
-      stub = sinon.stub(utils, 'triggerPixel');
-    });
-    afterEach(() => {
-      stub.restore();
-    });
-
     it('Should create nurl pixel if bid nurl', function () {
       const data = [{
         bidder: bidRequest.bidder,
@@ -405,7 +406,7 @@ describe('RelaidoAdapter', function () {
         timeout: bidderRequest.timeout,
       }];
       spec.onTimeout(data);
-      const parser = utils.parseUrl(stub.getCall(0).args[0]);
+      const parser = utils.parseUrl(triggerPixelStub.getCall(0).args[0]);
       const query = parser.search;
       expect(parser.hostname).to.equal('api.relaido.jp');
       expect(parser.pathname).to.equal('/tr/v1/prebid/timeout.gif');

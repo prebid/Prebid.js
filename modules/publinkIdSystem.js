@@ -8,7 +8,7 @@
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
-import * as utils from '../src/utils.js';
+import { parseUrl, buildUrl, logError } from '../src/utils.js';
 import {uspDataHandler} from '../src/adapterManager.js';
 
 const MODULE_NAME = 'publinkId';
@@ -18,24 +18,33 @@ const PUBLINK_S2S_COOKIE = '_publink_srv';
 
 export const storage = getStorageManager(GVLID);
 
+function isHex(s) {
+  return /^[A-F0-9]+$/i.test(s);
+}
+
 function publinkIdUrl(params, consentData) {
-  let url = utils.parseUrl('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink');
+  let url = parseUrl('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink');
   url.search = {
     deh: params.e,
     mpn: 'Prebid.js',
     mpv: '$prebid.version$',
   };
+
   if (consentData) {
     url.search.gdpr = (consentData.gdprApplies) ? 1 : 0;
     url.search.gdpr_consent = consentData.consentString;
   }
+
+  if (params.site_id) { url.search.sid = params.site_id; }
+
+  if (params.api_key) { url.search.apikey = params.api_key; }
 
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString && typeof usPrivacyString === 'string') {
     url.search.us_privacy = usPrivacyString;
   }
 
-  return utils.buildUrl(url);
+  return buildUrl(url);
 }
 
 function makeCallback(config = {}, consentData) {
@@ -49,8 +58,13 @@ function makeCallback(config = {}, consentData) {
         }
       }
     };
+
     if (config.params && config.params.e) {
-      ajax(publinkIdUrl(config.params, consentData), handleResponse, undefined, options);
+      if (isHex(config.params.e)) {
+        ajax(publinkIdUrl(config.params, consentData), handleResponse, undefined, options);
+      } else {
+        logError('params.e must be a hex string');
+      }
     }
   };
 }
@@ -73,7 +87,7 @@ function getlocalValue() {
           return obj.publink;
         }
       } catch (e) {
-        utils.logError(e);
+        logError(e);
       }
     }
   }
@@ -96,11 +110,11 @@ export const publinkIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {string} id encrypted userid
+   * @param {string} publinkId encrypted userid
    * @returns {{publinkId: string} | undefined}
    */
   decode(publinkId) {
-    return {publink: publinkId};
+    return {publinkId: publinkId};
   },
 
   /**
@@ -108,6 +122,8 @@ export const publinkIdSubmodule = {
    * Use a publink cookie first if it is present, otherwise use prebids copy, if neither are available callout to get a new id
    * @function
    * @param {SubmoduleConfig} [config] Config object with params and storage properties
+   * @param {ConsentData|undefined} consentData GDPR consent
+   * @param {(Object|undefined)} storedId Previously cached id
    * @returns {IdResponse}
    */
   getId: function(config, consentData, storedId) {

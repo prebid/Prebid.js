@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { inIframe, logError, logMessage, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'h12media';
 const DEFAULT_URL = 'https://bidder.h12-media.com/prebid/';
@@ -15,7 +15,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const isiframe = utils.inIframe();
+    const isiframe = inIframe();
     const screenSize = getClientDimensions();
     const docSize = getDocumentDimensions();
 
@@ -24,7 +24,7 @@ export const spec = {
       const requestUrl = bidderParams.endpointdom || DEFAULT_URL;
       let pubsubid = bidderParams.pubsubid || '';
       if (pubsubid && pubsubid.length > 32) {
-        utils.logError('Bidder param \'pubsubid\' should be not more than 32 chars.');
+        logError('Bidder param \'pubsubid\' should be not more than 32 chars.');
         pubsubid = '';
       }
       const pubcontainerid = bidderParams.pubcontainerid;
@@ -57,7 +57,7 @@ export const spec = {
       try {
         windowTop = window.top;
       } catch (e) {
-        utils.logMessage(e);
+        logMessage(e);
         windowTop = window;
       }
 
@@ -66,11 +66,11 @@ export const spec = {
         url: requestUrl,
         options: {withCredentials: true},
         data: {
-          gdpr: !!utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
-          gdpr_cs: utils.deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
-          usp: !!utils.deepAccess(bidderRequest, 'uspConsent', false),
-          usp_cs: utils.deepAccess(bidderRequest, 'uspConsent', ''),
-          topLevelUrl: utils.deepAccess(bidderRequest, 'refererInfo.referer', ''),
+          gdpr: !!deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
+          gdpr_cs: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
+          usp: !!deepAccess(bidderRequest, 'uspConsent', false),
+          usp_cs: deepAccess(bidderRequest, 'uspConsent', ''),
+          topLevelUrl: deepAccess(bidderRequest, 'refererInfo.referer', ''),
           refererUrl: windowTop.document.referrer,
           isiframe,
           version: '$prebid.version$',
@@ -122,14 +122,14 @@ export const spec = {
       }
       return bidResponses;
     } catch (err) {
-      utils.logError(err);
+      logError(err);
     }
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
-    const uspApplies = !!utils.deepAccess(usPrivacy, 'uspConsent', false);
-    const uspString = utils.deepAccess(usPrivacy, 'uspConsent', '');
+    const uspApplies = !!deepAccess(usPrivacy, 'uspConsent', false);
+    const uspString = deepAccess(usPrivacy, 'uspConsent', '');
     gdprConsent = gdprConsent || {
       gdprApplies: false, consentString: '',
     };

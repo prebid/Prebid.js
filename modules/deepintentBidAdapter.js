@@ -1,28 +1,28 @@
+import { generateUUID, deepSetValue, deepAccess, isArray, isInteger, logError, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 const BIDDER_CODE = 'deepintent';
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
 const DI_M_V = '1.0.0';
 export const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
-  'minduration': (value) => utils.isInteger(value),
-  'maxduration': (value) => utils.isInteger(value),
+  'minduration': (value) => isInteger(value),
+  'maxduration': (value) => isInteger(value),
   'protocols': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 10),
-  'w': (value) => utils.isInteger(value),
-  'h': (value) => utils.isInteger(value),
-  'startdelay': (value) => utils.isInteger(value),
+  'w': (value) => isInteger(value),
+  'h': (value) => isInteger(value),
+  'startdelay': (value) => isInteger(value),
   'placement': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
   'linearity': (value) => [1, 2].indexOf(value) !== -1,
   'skip': (value) => [0, 1].indexOf(value) !== -1,
-  'skipmin': (value) => utils.isInteger(value),
-  'skipafter': (value) => utils.isInteger(value),
-  'sequence': (value) => utils.isInteger(value),
+  'skipmin': (value) => isInteger(value),
+  'skipafter': (value) => isInteger(value),
+  'sequence': (value) => isInteger(value),
   'battr': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 17),
-  'maxextended': (value) => utils.isInteger(value),
-  'minbitrate': (value) => utils.isInteger(value),
-  'maxbitrate': (value) => utils.isInteger(value),
+  'maxextended': (value) => isInteger(value),
+  'minbitrate': (value) => isInteger(value),
+  'maxbitrate': (value) => isInteger(value),
   'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
   'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
   'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
@@ -70,7 +70,7 @@ export const spec = {
           });
         }
       } catch (err) {
-        utils.logError(err);
+        logError(err);
       }
     }
     return responses;
@@ -79,7 +79,7 @@ export const spec = {
     var user = validBidRequests.map(bid => buildUser(bid));
     clean(user);
     const openRtbBidRequest = {
-      id: utils.generateUUID(),
+      id: generateUUID(),
       at: 1,
       imp: validBidRequests.map(bid => buildImpression(bid)),
       site: buildSite(bidderRequest),
@@ -88,12 +88,12 @@ export const spec = {
     };
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      utils.deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
-      utils.deepSetValue(openRtbBidRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      utils.deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+      deepSetValue(openRtbBidRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     injectEids(openRtbBidRequest, validBidRequests);
@@ -167,10 +167,10 @@ function buildImpression(bid) {
     displaymanagerver: DI_M_V,
     ext: buildCustomParams(bid)
   };
-  if (utils.deepAccess(bid, 'mediaTypes.banner')) {
+  if (deepAccess(bid, 'mediaTypes.banner')) {
     impression['banner'] = buildBanner(bid);
   }
-  if (utils.deepAccess(bid, 'mediaTypes.video')) {
+  if (deepAccess(bid, 'mediaTypes.video')) {
     impression['video'] = _buildVideo(bid);
   }
   return impression;
@@ -178,8 +178,8 @@ function buildImpression(bid) {
 
 function _buildVideo(bid) {
   const videoObj = {};
-  const videoAdUnitParams = utils.deepAccess(bid, 'mediaTypes.video', {});
-  const videoBidderParams = utils.deepAccess(bid, 'params.video', {});
+  const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {});
+  const videoBidderParams = deepAccess(bid, 'params.video', {});
   const computedParams = {};
 
   if (Array.isArray(videoAdUnitParams.playerSize)) {
@@ -199,7 +199,7 @@ function _buildVideo(bid) {
       if (ORTB_VIDEO_PARAMS[paramName](videoParams[paramName])) {
         videoObj[paramName] = videoParams[paramName];
       } else {
-        utils.logWarn(`The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
+        logWarn(`The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
       }
     }
   });
@@ -231,19 +231,19 @@ function buildUser(bid) {
 }
 
 function injectEids(openRtbBidRequest, validBidRequests) {
-  const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
-  if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
-    utils.deepSetValue(openRtbBidRequest, 'user.eids', bidUserIdAsEids);
-    utils.deepSetValue(openRtbBidRequest, 'user.ext.eids', bidUserIdAsEids);
+  const bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    deepSetValue(openRtbBidRequest, 'user.eids', bidUserIdAsEids);
+    deepSetValue(openRtbBidRequest, 'user.ext.eids', bidUserIdAsEids);
   }
 }
 
 function buildBanner(bid) {
-  if (utils.deepAccess(bid, 'mediaTypes.banner')) {
+  if (deepAccess(bid, 'mediaTypes.banner')) {
     // Get Sizes from MediaTypes Object, Will always take first size, will be overrided by params for exact w,h
-    if (utils.deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.height && !bid.params.width) {
-      let sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
-      if (utils.isArray(sizes) && sizes.length > 0) {
+    if (deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.height && !bid.params.width) {
+      let sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+      if (isArray(sizes) && sizes.length > 0) {
         return {
           h: sizes[0][1],
           w: sizes[0][0],

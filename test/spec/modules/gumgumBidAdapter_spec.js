@@ -177,7 +177,27 @@ describe('gumgumAdapter', function () {
       expect(slotZoneBidRequest.data.maxh).to.equal(600);
       expect(slotPubIdBidRequest.data.maxw).to.equal(300);
       expect(slotPubIdBidRequest.data.maxh).to.equal(600);
-    })
+    });
+
+    // if slot ID is set up incorrectly by a pub, we should send the invalid ID to be
+    // invalidated by ad server instead of trying to force integer type. forcing
+    // integer type can result in incorrect slot IDs that correlate to the incorrect pub ID
+    it('should send params.slot or params.inSlot as string when configured incorrectly', function () {
+      const invalidSlotId = '9gkal1cn';
+      const slotRequest = { ...bidRequests[0] };
+      const legacySlotRequest = { ...bidRequests[0] };
+      let req;
+      let legReq;
+
+      slotRequest.params.slot = invalidSlotId;
+      legacySlotRequest.params.inSlot = invalidSlotId;
+
+      req = spec.buildRequests([ slotRequest ])[0];
+      legReq = spec.buildRequests([ legacySlotRequest ])[0];
+
+      expect(req.data.si).to.equal(invalidSlotId);
+      expect(legReq.data.si).to.equal(invalidSlotId);
+    });
 
     it('should set the iriscat param when found', function () {
       const request = { ...bidRequests[0], params: { iriscat: 'abc123' } }
@@ -209,11 +229,19 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.not.have.property('irisid');
     });
 
-    it('should set the global placement id (gpid)', function () {
+    it('should set the global placement id (gpid) if in adserver property', function () {
       const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
       expect(bidRequest.data.gpid).to.equal(123456);
+    });
+
+    it('should set the global placement id (gpid) if in pbadslot property', function () {
+      const pbadslot = 'abc123'
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { pbadslot } } } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest.data).to.have.property('gpid');
+      expect(bidRequest.data.gpid).to.equal(pbadslot);
     });
 
     it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {
@@ -655,11 +683,24 @@ describe('gumgumAdapter', function () {
         expect(result[0].height).to.equal('1');
       });
 
-      it('uses response width and height for inscreen product', function () {
-        const result = spec.interpretResponse({ body: serverResponse }, bidRequest)[0];
-        expect(result.width).to.equal(serverResponse.ad.width.toString());
-        expect(result.height).to.equal(serverResponse.ad.height.toString());
-      });
+      it('uses request size that nearest matches response size for in-screen', function () {
+        const request = { ...bidRequest };
+        const body = { ...serverResponse };
+        const expectedSize = [ 300, 50 ];
+        let result;
+
+        request.pi = 2;
+        request.sizes.unshift(expectedSize);
+
+        // typical ad server response values for in-screen
+        body.ad.width = 300;
+        body.ad.height = 100;
+
+        result = spec.interpretResponse({ body }, request)[0];
+
+        expect(result.width = expectedSize[0]);
+        expect(result.height = expectedSize[1]);
+      })
 
       it('defaults to use bidRequest sizes', function () {
         const { ad, jcsi, pag, thms, meta } = serverResponse
