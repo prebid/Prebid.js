@@ -227,6 +227,10 @@ function validateTTL(ttl) {
   return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL
 };
 
+function isNotEmptyStr(value) {
+  return (isStr(value) && value.length > 0);
+};
+
 function generateOpenRtbObject(bidderRequest, bid) {
   if (bidderRequest) {
     let outBoundBidRequest = {
@@ -513,13 +517,10 @@ export const spec = {
   isBidRequestValid: function(bid) {
     const params = bid.params;
     if (deepAccess(params, 'testing.e2etest') === true) {
-      // e2e test mode skip validations
       return true;
     } else if (
       isPlainObject(params) &&
-      ((isStr(params.pubId) && params.pubId.length > 0) ||
-      (isStr(params.dcn) && params.dcn.length > 0 &&
-      isStr(params.pos) && params.pos.length > 0))
+      (isNotEmptyStr(params.pubId) || (isNotEmptyStr(params.dcn) && isNotEmptyStr(params.pos)))
     ) {
       return true;
     } else {
