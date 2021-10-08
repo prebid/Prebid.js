@@ -505,7 +505,6 @@ describe('Ventes Adapter', function () {
         expect(ads[0].height).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].h);
         expect(ads[0].width).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].w);
         expect(ads[0].mediaType).to.exist.and.to.be.a('string').and.to.equal('banner');
-        expect(ads[0].renderer).to.equal(null);
       });
 
       it('should return no ad when not given a server response', function () {
@@ -796,7 +795,6 @@ describe('Ventes Adapter', function () {
         expect(ads[0].height).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].h);
         expect(ads[0].width).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].w);
         expect(ads[0].mediaType).to.exist.and.to.be.a('string').and.to.equal('banner');
-        expect(ads[0].renderer).to.equal(null);
       });
 
       it('should return no ad when given a server response with a bid without height', function () {
