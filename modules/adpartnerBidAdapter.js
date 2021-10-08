@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js'
+import { buildUrl } from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'adpartner';
@@ -64,7 +64,7 @@ export const spec = {
     beaconParams.tag = beaconParams.tag.join(',');
     beaconParams.sizes = beaconParams.sizes.join(',');
 
-    let adPartnerRequestUrl = utils.buildUrl({
+    let adPartnerRequestUrl = buildUrl({
       protocol: ENDPOINT_PROTOCOL,
       hostname: ENDPOINT_DOMAIN,
       pathname: ENDPOINT_PATH,
@@ -127,7 +127,7 @@ export const spec = {
 
   onBidWon: function(data) {
     data.winNotification.forEach(function(unitWon) {
-      let adPartnerBidWonUrl = utils.buildUrl({
+      let adPartnerBidWonUrl = buildUrl({
         protocol: ENDPOINT_PROTOCOL,
         hostname: ENDPOINT_DOMAIN,
         pathname: unitWon.path

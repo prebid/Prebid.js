@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { _each, logError, isFn, isPlainObject, isNumber, isStr, deepAccess, parseUrl, _map, getUniqueIdentifierStr, createTrackPixelHtml } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -55,7 +55,7 @@ function buildNativeRequest(nativeMediaType) {
     assets.push(setAssetRequired(sponsoredBy, {data: {type: 1}}));
   }
 
-  utils._each(assets, (asset, id) => asset.id = id);
+  _each(assets, (asset, id) => asset.id = id);
   return {
     ver: '1',
     request: JSON.stringify({
@@ -70,7 +70,7 @@ function tryParseNativeResponse(adm) {
   try {
     native = JSON.parse(adm);
   } catch (e) {
-    utils.logError('Sortable bid adapter unable to parse native bid response:\n\n' + e);
+    logError('Sortable bid adapter unable to parse native bid response:\n\n' + e);
   }
   return native && native.native;
 }
@@ -92,7 +92,7 @@ function interpretNativeResponse(response) {
   if (response.link) {
     native.clickUrl = response.link.url;
   }
-  utils._each(response.assets, asset => {
+  _each(response.assets, asset => {
     switch (asset.id) {
       case 1:
         native.title = asset.title.text;
@@ -118,9 +118,9 @@ function interpretNativeResponse(response) {
 }
 
 function transformSyncs(responses, type, syncs) {
-  utils._each(responses, res => {
+  _each(responses, res => {
     if (res.body && res.body.ext && res.body.ext.sync_dsps && res.body.ext.sync_dsps.length) {
-      utils._each(res.body.ext.sync_dsps, sync => {
+      _each(res.body.ext.sync_dsps, sync => {
         if (sync[0] === type && sync[1]) {
           syncs.push({type, url: sync[1]});
         }
@@ -130,7 +130,7 @@ function transformSyncs(responses, type, syncs) {
 }
 
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return bid.params.floor ? bid.params.floor : null;
   }
 
@@ -141,7 +141,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
     return floor.floor;
   }
   return null;
@@ -155,36 +155,36 @@ export const spec = {
     const sortableConfig = config.getConfig('sortable');
     const haveSiteId = (sortableConfig && !!sortableConfig.siteId) || bid.params.siteId;
     const floor = getBidFloor(bid);
-    const validFloor = !floor || utils.isNumber(floor);
+    const validFloor = !floor || isNumber(floor);
     const validKeywords = !bid.params.keywords ||
-      (utils.isPlainObject(bid.params.keywords) &&
+      (isPlainObject(bid.params.keywords) &&
         Object.keys(bid.params.keywords).every(key =>
-          utils.isStr(key) && utils.isStr(bid.params.keywords[key])
+          isStr(key) && isStr(bid.params.keywords[key])
         ))
     const isBanner = !bid.mediaTypes || bid.mediaTypes[BANNER] || !(bid.mediaTypes[NATIVE] || bid.mediaTypes[VIDEO]);
-    const bannerSizes = isBanner ? utils.deepAccess(bid, `mediaType.${BANNER}.sizes`) || bid.sizes : null;
+    const bannerSizes = isBanner ? deepAccess(bid, `mediaType.${BANNER}.sizes`) || bid.sizes : null;
     return !!(bid.params.tagId && haveSiteId && validFloor && validKeywords && (!isBanner ||
-      (bannerSizes && bannerSizes.length > 0 && bannerSizes.every(sizeArr => sizeArr.length == 2 && sizeArr.every(num => utils.isNumber(num))))));
+      (bannerSizes && bannerSizes.length > 0 && bannerSizes.every(sizeArr => sizeArr.length == 2 && sizeArr.every(num => isNumber(num))))));
   },
 
   buildRequests: function(validBidReqs, bidderRequest) {
     const sortableConfig = config.getConfig('sortable') || {};
     const globalSiteId = sortableConfig.siteId;
-    let loc = utils.parseUrl(bidderRequest.refererInfo.referer);
+    let loc = parseUrl(bidderRequest.refererInfo.referer);
 
-    const sortableImps = utils._map(validBidReqs, bid => {
+    const sortableImps = _map(validBidReqs, bid => {
       const rv = {
         id: bid.bidId,
         tagid: bid.params.tagId,
         ext: {}
       };
-      const bannerMediaType = utils.deepAccess(bid, `mediaTypes.${BANNER}`);
-      const nativeMediaType = utils.deepAccess(bid, `mediaTypes.${NATIVE}`);
-      const videoMediaType = utils.deepAccess(bid, `mediaTypes.${VIDEO}`);
+      const bannerMediaType = deepAccess(bid, `mediaTypes.${BANNER}`);
+      const nativeMediaType = deepAccess(bid, `mediaTypes.${NATIVE}`);
+      const videoMediaType = deepAccess(bid, `mediaTypes.${VIDEO}`);
       if (bannerMediaType || !(nativeMediaType || videoMediaType)) {
         const bannerSizes = (bannerMediaType && bannerMediaType.sizes) || bid.sizes;
         rv.banner = {
-          format: utils._map(bannerSizes, ([width, height]) => ({w: width, h: height}))
+          format: _map(bannerSizes, ([width, height]) => ({w: width, h: height}))
         };
       }
       if (nativeMediaType) {
@@ -193,9 +193,9 @@ export const spec = {
       if (videoMediaType && videoMediaType.context === 'instream') {
         const video = {placement: 1};
         video.mimes = videoMediaType.mimes || [];
-        video.minduration = utils.deepAccess(bid, 'params.video.minduration') || 10;
-        video.maxduration = utils.deepAccess(bid, 'params.video.maxduration') || 60;
-        const startDelay = utils.deepAccess(bid, 'params.video.startdelay');
+        video.minduration = deepAccess(bid, 'params.video.minduration') || 10;
+        video.maxduration = deepAccess(bid, 'params.video.maxduration') || 60;
+        const startDelay = deepAccess(bid, 'params.video.startdelay');
         if (startDelay != null) {
           video.startdelay = startDelay;
         }
@@ -223,7 +223,7 @@ export const spec = {
         rv.ext.keywords = bid.params.keywords;
       }
       if (bid.params.bidderParams) {
-        utils._each(bid.params.bidderParams, (params, partner) => {
+        _each(bid.params.bidderParams, (params, partner) => {
           rv.ext[partner] = params;
         });
       }
@@ -233,7 +233,7 @@ export const spec = {
     const bidUserId = validBidReqs[0].userId;
     const eids = createEidsArray(bidUserId);
     const sortableBidReq = {
-      id: utils.getUniqueIdentifierStr(),
+      id: getUniqueIdentifierStr(),
       imp: sortableImps,
       source: {
         ext: {
@@ -290,8 +290,8 @@ export const spec = {
     const { body: {id, seatbid} } = serverResponse;
     const sortableBids = [];
     if (id && seatbid) {
-      utils._each(seatbid, seatbid => {
-        utils._each(seatbid.bid, bid => {
+      _each(seatbid, seatbid => {
+        _each(seatbid.bid, bid => {
           const bidObj = {
             requestId: bid.impid,
             cpm: parseFloat(bid.price),
@@ -308,7 +308,7 @@ export const spec = {
             }
           };
           if (bid.adm) {
-            const adFormat = utils.deepAccess(bid, 'ext.ad_format')
+            const adFormat = deepAccess(bid, 'ext.ad_format')
             if (adFormat === 'native') {
               let native = tryParseNativeResponse(bid.adm);
               if (!native) {
@@ -323,7 +323,7 @@ export const spec = {
               bidObj.mediaType = BANNER;
               bidObj.ad = bid.adm;
               if (bid.nurl) {
-                bidObj.ad += utils.createTrackPixelHtml(decodeURIComponent(bid.nurl));
+                bidObj.ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
               }
             }
           } else if (bid.nurl) {

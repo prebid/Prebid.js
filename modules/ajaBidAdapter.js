@@ -1,5 +1,5 @@
+import { getBidIdParameter, tryAppendQueryString, createTrackPixelHtml, logError, logWarn } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
-import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js';
 
@@ -42,20 +42,20 @@ export const spec = {
       const bidRequest = validBidRequests[i];
       let queryString = '';
 
-      const asi = utils.getBidIdParameter('asi', bidRequest.params);
-      queryString = utils.tryAppendQueryString(queryString, 'asi', asi);
-      queryString = utils.tryAppendQueryString(queryString, 'skt', SDK_TYPE);
-      queryString = utils.tryAppendQueryString(queryString, 'tid', bidRequest.transactionId)
-      queryString = utils.tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
-      queryString = utils.tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
+      const asi = getBidIdParameter('asi', bidRequest.params);
+      queryString = tryAppendQueryString(queryString, 'asi', asi);
+      queryString = tryAppendQueryString(queryString, 'skt', SDK_TYPE);
+      queryString = tryAppendQueryString(queryString, 'tid', bidRequest.transactionId)
+      queryString = tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
+      queryString = tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
 
       if (pageUrl) {
-        queryString = utils.tryAppendQueryString(queryString, 'page_url', pageUrl);
+        queryString = tryAppendQueryString(queryString, 'page_url', pageUrl);
       }
 
       const eids = bidRequest.userIdAsEids;
       if (eids && eids.length) {
-        queryString = utils.tryAppendQueryString(queryString, 'eids', JSON.stringify({
+        queryString = tryAppendQueryString(queryString, 'eids', JSON.stringify({
           'eids': eids,
         }))
       }
@@ -114,11 +114,11 @@ export const spec = {
       });
       try {
         bannerAd.imps.forEach(impTracker => {
-          const tracker = utils.createTrackPixelHtml(impTracker);
+          const tracker = createTrackPixelHtml(impTracker);
           bid.ad += tracker;
         });
       } catch (error) {
-        utils.logError('Error appending tracking pixel', error);
+        logError('Error appending tracking pixel', error);
       }
 
       Array.prototype.push.apply(bid.meta.advertiserDomains, bannerAd.adomain)
@@ -207,7 +207,7 @@ function newRenderer(bidderResponse) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+    logWarn('Prebid Error calling setRender on newRenderer', err);
   }
 
   return renderer;

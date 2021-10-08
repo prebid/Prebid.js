@@ -25,7 +25,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
 
   return [{
     type: 'image',
-    url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${gdprConsent.consentString}&source=prebid`
+    url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
   }]
 }
 

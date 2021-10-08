@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logError } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 
@@ -61,7 +61,7 @@ export const spec = {
       const {body: {ads = []} = {}} = serverResponse;
       ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
-      utils.logError(e);
+      logError(e);
     }
     return bidResponses;
   },
