@@ -267,34 +267,24 @@ function getEids(bidRequest, type, source, rtiPartner) {
 }
 
 const filterEids = type => (userId, i, arr) => {
-  try {
-    let isValidUserId =
-      !!userId && // is not null nor empty
-      (isStr(userId)
-        ? !!userId
-        : isPlainObject(userId) && // or, is object
-          !isArray(userId) && // not an array
-          !isEmpty(userId) && // is not empty
-          userId.id && // contains nested id field
-          isStr(userId.id) && // nested id field is a string
-          !!userId.id); // that is not empty
-    if (!isValidUserId && arr[0] !== undefined) {
-      logWarn(`Triplelift: invalid ${type} userId format`);
-    }
-    return isValidUserId;
-  } catch (e) {
-    logWarn('Triplelift: error filtering for valid userIds:', type, e);
+  let isValidUserId =
+    !!userId && // is not null nor empty
+    (isStr(userId)
+      ? !!userId
+      : isPlainObject(userId) && // or, is object
+        !isArray(userId) && // not an array
+        !isEmpty(userId) && // is not empty
+        userId.id && // contains nested id field
+        isStr(userId.id) && // nested id field is a string
+        !!userId.id); // that is not empty
+  if (!isValidUserId && arr[0] !== undefined) {
+    logWarn(`Triplelift: invalid ${type} userId format`);
   }
+  return isValidUserId;
 };
 
 function getUserId(type) {
-  return (bid) => {
-    try {
-      return (bid && bid.userId && bid.userId[type]);
-    } catch (e) {
-      logWarn('Triplelift: error getting userId:', type, e);
-    }
-  }
+  return bid => bid && bid.userId && bid.userId[type];
 }
 
 function formatEid(source, rtiPartner) {
