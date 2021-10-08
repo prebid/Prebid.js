@@ -6,14 +6,19 @@ export function ParentModule(submoduleBuilder_) {
   const submoduleBuilder = submoduleBuilder_;
   const submodules = {};
 
-  function registerSubmodule(id, config) {
+  /*
+  id: identifies the submodule instance
+  vendorCode: identifies the submodule type that must be built
+  config: additional information necessary to instantiate the instance
+   */
+  function registerSubmodule(id, vendorCode, config) {
     if (submodules[id]) {
       return;
     }
 
     let submodule;
     try {
-      submodule = submoduleBuilder.build(id, config);
+      submodule = submoduleBuilder.build(vendorCode, config);
     } catch (e) {
       throw e;
     }
@@ -33,10 +38,10 @@ export function ParentModule(submoduleBuilder_) {
 export function SubmoduleBuilder(submoduleDirectory_) {
   const submoduleDirectory = submoduleDirectory_;
 
-  function build(id, config) {
-    const submoduleFactory = submoduleDirectory[id];
+  function build(vendorCode, config) {
+    const submoduleFactory = submoduleDirectory[vendorCode];
     if (!submoduleFactory) {
-      throw new Error('Unrecognized submodule code: ' + id);
+      throw new Error('Unrecognized submodule vendor code: ' + vendorCode);
     }
 
     const submodule = submoduleFactory(config);

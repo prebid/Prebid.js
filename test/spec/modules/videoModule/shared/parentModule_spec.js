@@ -2,8 +2,10 @@ import { SubmoduleBuilder, ParentModule } from 'modules/videoModule/shared/paren
 import { expect } from 'chai';
 
 describe('Parent Module', function() {
-  const vendorCodeForMock = 0;
-  const unrecognizedVendorCode = 999;
+  const idForMock = 0;
+  const vendorCodeForMock = 'a';
+  const unrecognizedId = 999;
+  const unrecognizedVendorCode = 'zzz';
   const mockSubmodule = { test: 'test' };
   const mockSubmoduleBuilder = {
     build: vendorCode => {
@@ -18,26 +20,19 @@ describe('Parent Module', function() {
 
   describe('Register Submodule', function () {
     it('should throw when the builder fails to build', function () {
-      // const flawedVideoCore = VideoCore({
-      //   build: () => {
-      //     throw new Error('flawed');
-      //   }
-      // });
-
-      expect(() => parentModule.registerSubmodule(unrecognizedVendorCode)).to.throw('flawed');
-      // expect(() => flawedVideoCore.registerProvider({ vendorCode: 0 })).to.throw('flawed');
+      expect(() => parentModule.registerSubmodule(unrecognizedId, unrecognizedVendorCode)).to.throw('flawed');
     });
   });
 
   describe('Get Submodule', function () {
     it('should return registered submodules', function () {
-      parentModule.registerSubmodule(vendorCodeForMock);
-      const submodule = parentModule.getSubmodule(vendorCodeForMock);
+      parentModule.registerSubmodule(idForMock, vendorCodeForMock);
+      const submodule = parentModule.getSubmodule(idForMock);
       expect(submodule).to.be.equal(mockSubmodule);
     });
 
     it('should return undefined when submodule is not registered', function () {
-      const submodule = parentModule.getSubmodule(unrecognizedVendorCode);
+      const submodule = parentModule.getSubmodule(unrecognizedId);
       expect(submodule).to.be.undefined;
     });
   })
@@ -73,6 +68,6 @@ describe('Submodule Builder', function () {
 
   it('should throw when vendor code is not recognized', function () {
     const unrecognizedVendorCode = 999;
-    expect(() => submoduleBuilder.build(unrecognizedVendorCode)).to.throw('Unrecognized submodule code: ' + unrecognizedVendorCode);
+    expect(() => submoduleBuilder.build(unrecognizedVendorCode)).to.throw('Unrecognized submodule vendor code: ' + unrecognizedVendorCode);
   });
 });
