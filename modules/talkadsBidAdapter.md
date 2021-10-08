@@ -35,7 +35,7 @@ This adapter requires setup and approval from the Natexo programmatic team.
             bidder: 'talkads',
             params: {
                 tag_id: 0,
-                bidder_url: 'https://test.natexo-programmatic.com/tad/tag/prebid',
+                bidder_url: 'https://d.natexo-programmatic.com/tad/tag/testbid',
             },
         }]
     ];
@@ -53,7 +53,7 @@ This adapter requires setup and approval from the Natexo programmatic team.
             bidder: 'talkads',
             params: {
                 tag_id: 0,
-                bidder_url: 'https://test.natexo-programmatic.com/tad/tag/prebid',
+                bidder_url: 'https://d.natexo-programmatic.com/tad/tag/testbid',
             },
         }]
     ];
