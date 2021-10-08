@@ -300,7 +300,7 @@ describe('dchain module', function () {
       addBidResponseHook(testCallback, adUnitCode, bid);
     });
 
-    it('off', function () {
+    it('off config should allow the bid.meta.dchain to proceed', function () {
       // check for missing nodes
       function testCallback(adUnitCode, bid) {
         expect(bid.meta.dchain).to.exist;
