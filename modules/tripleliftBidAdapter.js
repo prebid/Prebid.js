@@ -1,4 +1,4 @@
-import { tryAppendQueryString, logMessage, isEmpty } from '../src/utils.js';
+import { tryAppendQueryString, logMessage, isEmpty, isStr, isPlainObject, isArray } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -262,21 +262,22 @@ function getPubCommonEids(bidRequest) {
 function getEids(bidRequest, type, source, rtiPartner) {
   return bidRequest
     .map(getUserId(type)) // bids -> userIds of a certain type
-    .filter(filterEids()) // filter out null userIds
+    .filter(filterEids(type, bidRequest)) // filter out unqualified userIds
     .map(formatEid(source, rtiPartner)); // userIds -> eid objects
 }
 
-function filterEids() {
-  return userId => (
+function filterEids(type, bidRequest) {
+  console.log(type, bidRequest);
+  return userId =>
     !!userId && // is not null
-    ('string' == typeof userId || userId instanceof String
+    (isStr(userId)
       ? !!userId // is not an empty string
-      : 'object' == typeof userId && // or, is object
-        !Array.isArray(userId) && // not an array
-        Object.keys(userId).length !== 0 && // is not empty
+      : isPlainObject(userId) && // or, is object
+        !isArray(userId) && // not an array
+        !isEmpty(userId) && // is not empty
         userId.id && // contains nested id field
-        Object.keys(userId.id).length !== 0) // nested id field is not an empty object
-  );
+        isStr(userId.id) && // nested id field is a string
+        !!userId.id); // that is not empty
 }
 
 function getUserId(type) {
@@ -287,7 +288,7 @@ function formatEid(source, rtiPartner) {
   return (id) => ({
     source,
     uids: [{
-      id: id.id ? id.id : id,
+      id: id.id ? id.id.toString() : id.toString(),
       ext: { rtiPartner }
     }]
   });
