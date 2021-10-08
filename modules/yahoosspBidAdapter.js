@@ -3,7 +3,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logInfo, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
-
+typo
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
 const ADAPTER_VERSION = '1.0.0';
