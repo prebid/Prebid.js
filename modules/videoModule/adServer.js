@@ -5,11 +5,12 @@ export function AdServerCore(parentModule_) {
   const parentModule = parentModule_;
 
   function registerAdServer(config) {
-    parentModule.registerSubmodule(config.vendorCode, config.params);
+    const vendorCode = config.vendorCode;
+    parentModule.registerSubmodule(vendorCode, vendorCode, config);
   }
 
   function getAdTagUrl(vendorCode) {
-    const submodule = parentModule.getSudmodule(vendorCode);
+    const submodule = parentModule.getSubmodule(vendorCode);
     return submodule && submodule.getAdTagUrl();
   }
 
