@@ -127,8 +127,9 @@ const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || 
 /**
  * Send payload to notification endpoint
  */
-const sendNotification = payload => {
+ const sendNotification = payload => {
   ajax(NOTIFY_URL, null, JSON.stringify(payload), {
+    contentType: 'application/json',
     withCredentials: false,
     method: 'POST',
     crossOrigin: true
