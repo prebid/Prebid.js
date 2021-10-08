@@ -308,7 +308,6 @@ function getSizeFromBid(bid) {
 function getCreativeFromBid(bid) {
   const shouldUseAdMarkup = !!bid.adm;
   const price = bid.price;
-
   return {
     markup: shouldUseAdMarkup ? replaceAuctionPrice(bid.adm, price) : null,
     markupUrl: !shouldUseAdMarkup ? replaceAuctionPrice(bid.nurl, price) : null
