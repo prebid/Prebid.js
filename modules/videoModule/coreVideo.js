@@ -5,7 +5,7 @@ export function VideoCore(parentModule_) {
   const parentModule = parentModule_;
 
   function registerProvider(providerConfig) {
-    parentModule.registerSubmodule(providerConfig.divId, providerConfig);
+    parentModule.registerSubmodule(providerConfig.divId, providerConfig.vendorCode, providerConfig);
   }
 
   function getOrtbParams(divId) {

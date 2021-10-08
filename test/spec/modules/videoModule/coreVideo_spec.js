@@ -1,25 +1,7 @@
 import { expect } from 'chai';
 import {
-  VideoSubmoduleBuilder,
   VideoCore
 } from 'modules/videoModule/coreVideo.js';
-
-describe('Video Submodule Builder', function () {
-  const playerSpecificSubmoduleFactory = sinon.spy();
-  const vendorDirectory = {
-    1: playerSpecificSubmoduleFactory
-  };
-  const submoduleBuilder = VideoSubmoduleBuilder(vendorDirectory);
-
-  it('should call submodule factory when vendor code is supported', function () {
-    submoduleBuilder.build({ vendorCode: 1 });
-    expect(playerSpecificSubmoduleFactory.calledOnce).to.be.true;
-  });
-
-  it('should throw when vendor code is not recognized', function () {
-    expect(() => submoduleBuilder.build({ vendorCode: 2 })).to.throw('Unrecognized vendor code');
-  });
-});
 
 describe('Video Core', function () {
   const mockSubmodule = {
@@ -36,38 +18,41 @@ describe('Video Core', function () {
     offEvents: () => {},
   };
 
-  const mockSubmoduleBuilder = {
-    build: (config) => {
-      if (config.vendorCode === 0) {
+  const testId = 'test_id';
+  const testVendorCode = 0;
+  const otherId = 'other_id';
+  const otherVendorCode = 1;
+
+  const parentModuleMock = {
+    registerSubmodule: sinon.spy(),
+    getSubmodule: sinon.spy(id => {
+      if (id === testId) {
         return mockSubmodule;
-      } else {
+      } else if (id === otherId) {
         return otherSubmodule;
       }
-    }
+    })
   };
 
-  const videoCore = VideoCore(mockSubmoduleBuilder);
-  const testId = 'test_id';
-  const otherId = 'other_id';
+  const videoCore = VideoCore(parentModuleMock);
 
   videoCore.registerProvider({
-    vendorCode: 0,
+    vendorCode: testVendorCode,
     divId: testId
   });
 
   videoCore.registerProvider({
-    vendorCode: 1,
+    vendorCode: otherVendorCode,
     divId: otherId
   });
 
   describe('registerProvider', function () {
-    it('should throw when the builder fails to build', function () {
-      const flawedVideoCore = VideoCore({
-        build: () => {
-          throw new Error('flawed');
-        }
-      });
-      expect(() => flawedVideoCore.registerProvider({ vendorCode: 0 })).to.throw('flawed');
+    it('should delegate the registration to the Parent Module', function () {
+      expect(parentModuleMock.registerSubmodule.calledTwice).to.be.true;
+      expect(parentModuleMock.registerSubmodule.args[0][0]).to.be.equal(testId);
+      expect(parentModuleMock.registerSubmodule.args[1][0]).to.be.equal(otherId);
+      expect(parentModuleMock.registerSubmodule.args[0][1]).to.be.equal(testVendorCode);
+      expect(parentModuleMock.registerSubmodule.args[1][1]).to.be.equal(otherVendorCode);
     });
   });
 
