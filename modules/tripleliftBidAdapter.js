@@ -262,16 +262,15 @@ function getPubCommonEids(bidRequest) {
 function getEids(bidRequest, type, source, rtiPartner) {
   return bidRequest
     .map(getUserId(type)) // bids -> userIds of a certain type
-    .filter(filterEids(type, bidRequest)) // filter out unqualified userIds
+    .filter(filterEids()) // filter out unqualified userIds
     .map(formatEid(source, rtiPartner)); // userIds -> eid objects
 }
 
-function filterEids(type, bidRequest) {
-  console.log(type, bidRequest);
+function filterEids() {
   return userId =>
-    !!userId && // is not null
+    !!userId && // is not null nor empty
     (isStr(userId)
-      ? !!userId // is not an empty string
+      ? !!userId
       : isPlainObject(userId) && // or, is object
         !isArray(userId) && // not an array
         !isEmpty(userId) && // is not empty
@@ -285,10 +284,10 @@ function getUserId(type) {
 }
 
 function formatEid(source, rtiPartner) {
-  return (id) => ({
+  return (userId) => ({
     source,
     uids: [{
-      id: id.id ? id.id.toString() : id.toString(),
+      id: userId.id ? userId.id : userId,
       ext: { rtiPartner }
     }]
   });
