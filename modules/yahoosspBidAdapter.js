@@ -133,10 +133,10 @@ function getPubIdMode(bid) {
 function getAdapterMode() {
   let adapterMode = config.getConfig('yahoossp.mode');
   adapterMode = adapterMode ? adapterMode.toLowerCase() : undefined;
-  if (typeof adapterMode === 'undefined' || adapterMode === 'banner') {
-    return 'banner';
-  } else if (adapterMode === 'video') {
-    return 'video';
+  if (typeof adapterMode === 'undefined' || adapterMode === BANNER) {
+    return BANNER;
+  } else if (adapterMode === VIDEO) {
+    return VIDEO;
   } else if (adapterMode === 'all') {
     return '*';
   }
@@ -145,9 +145,9 @@ function getAdapterMode() {
 function getResponseFormat(bid) {
   const adm = bid.adm;
   if (adm.includes('o2playerSettings') || adm.includes('YAHOO.VideoPlatform.VideoPlayer') || adm.includes('AdPlacement')) {
-    return 'banner';
+    return BANNER;
   } else if (adm.includes('VAST')) {
-    return 'video';
+    return VIDEO;
   }
 };
 
@@ -164,11 +164,11 @@ function getFloorModuleData(bid) {
 function filterBidRequestByMode(validBidRequests) {
   const mediaTypesMode = getAdapterMode();
   let result = [];
-  if (mediaTypesMode === 'banner') {
+  if (mediaTypesMode === BANNER) {
     result = validBidRequests.filter(bid => {
       return Object.keys(bid.mediaTypes).some(item => item === BANNER);
     });
-  } else if (mediaTypesMode === 'video') {
+  } else if (mediaTypesMode === VIDEO) {
     result = validBidRequests.filter(bid => {
       return Object.keys(bid.mediaTypes).some(item => item === VIDEO);
     });
@@ -293,7 +293,7 @@ function appendImpObject(bid, openRtbObject) {
       bidfloor: getFloorModuleData(bid).floor || deepAccess(bid, 'params.bidOverride.imp.bidfloor')
     };
 
-    if (bid.mediaTypes.banner && (typeof mediaTypeMode === 'undefined' || mediaTypeMode === 'banner' || mediaTypeMode === '*')) {
+    if (bid.mediaTypes.banner && (typeof mediaTypeMode === 'undefined' || mediaTypeMode === BANNER || mediaTypeMode === '*')) {
       impObject.banner = {
         mimes: bid.mediaTypes.banner.mimes || ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
         format: transformSizes(bid.sizes)
@@ -303,7 +303,7 @@ function appendImpObject(bid, openRtbObject) {
       };
     };
 
-    if (bid.mediaTypes.video && (mediaTypeMode === 'video' || mediaTypeMode === '*')) {
+    if (bid.mediaTypes.video && (mediaTypeMode === VIDEO || mediaTypeMode === '*')) {
       const playerSize = transformSizes(bid.mediaTypes.video.playerSize);
       impObject.video = {
         mimes: deepAccess(bid, 'params.bidOverride.imp.video.mimes') || bid.mediaTypes.video.mimes || ['video/mp4', 'application/javascript'],
@@ -341,7 +341,7 @@ function appendImpObject(bid, openRtbObject) {
         }
       }
     };
-    // TODO Update for GPID imp.ext.data.pbadslot AND imp.ext.context.data.adserver.adslot
+
     if (deepAccess(bid, 'ortb2Imp.ext.data') && isPlainObject(bid.ortb2Imp.ext.data)) {
       impObject.ext.data = bid.ortb2Imp.ext.data;
     };
@@ -453,9 +453,9 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
       payload.site.id = TEST_MODE_DCN;
       payload.imp.forEach(impObject => {
         impObject.ext.e2eTestMode = true;
-        if (mediaTypeMode === 'banner') {
+        if (mediaTypeMode === BANNER) {
           impObject.tagid = TEST_MODE_BANNER_POS; // banner passback
-        } else if (mediaTypeMode === 'video') {
+        } else if (mediaTypeMode === VIDEO) {
           impObject.tagid = TEST_MODE_VIDEO_POS; // video passback
         } else {
           logWarn('yahoossp adapter e2etest mode does not support yahoossp.mode="all". \n Please specify either "banner" or "video"');
@@ -475,26 +475,24 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
   };
 };
 
-function newRenderer(bidderRequest, bidResponse) {
-  if (!bidderRequest.renderer) {
-    const renderer = Renderer.install({
-      url: 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js',
-      loaded: false,
-      adUnitCode: bidderRequest.adUnitCode
-    })
+function createRenderer(bidderRequest, bidResponse) {
+  const renderer = Renderer.install({
+    url: 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js',
+    loaded: false,
+    adUnitCode: bidderRequest.adUnitCode
+  })
 
-    try {
-      renderer.setRender(function(bidResponse) {
-        setTimeout(function() {
-          // eslint-disable-next-line no-undef
-          o2PlayerRender(bidResponse);
-        }, deepAccess(bidderRequest, 'params.testing.renderer.setTimeout') || DEFAULT_RENDERER_TIMEOUT);
-      });
-    } catch (error) {
-      logWarn('yahoossp renderer error: setRender() failed', error);
-    }
-    return renderer;
+  try {
+    renderer.setRender(function(bidResponse) {
+      setTimeout(function() {
+        // eslint-disable-next-line no-undef
+        o2PlayerRender(bidResponse);
+      }, deepAccess(bidderRequest, 'params.testing.renderer.setTimeout') || DEFAULT_RENDERER_TIMEOUT);
+    });
+  } catch (error) {
+    logWarn('yahoossp renderer error: setRender() failed', error);
   }
+  return renderer;
 }
 /* Utility functions */
 
@@ -514,10 +512,10 @@ export const spec = {
       (isStr(params.dcn) && params.dcn.length > 0 &&
       isStr(params.pos) && params.pos.length > 0))
     ) {
-      return true
+      return true;
     } else {
       logWarn('yahoossp bidder params missing or incorrect, please pass object with either: dcn & pos OR pubId');
-      return false
+      return false;
     }
   },
 
@@ -591,13 +589,13 @@ export const spec = {
       };
 
       const responseAdmFormat = getResponseFormat(bid);
-      if (responseAdmFormat === 'banner') {
-        bidResponse.mediaType = 'banner';
+      if (responseAdmFormat === BANNER) {
+        bidResponse.mediaType = BANNER;
         bidResponse.ad = bid.adm;
-        bidResponse.meta.mediaType = 'banner';
-      } else if (responseAdmFormat === 'video') {
-        bidResponse.mediaType = 'video';
-        bidResponse.meta.mediaType = 'video';
+        bidResponse.meta.mediaType = BANNER;
+      } else if (responseAdmFormat === VIDEO) {
+        bidResponse.mediaType = VIDEO;
+        bidResponse.meta.mediaType = VIDEO;
         bidResponse.vastXml = bid.adm;
 
         if (bid.nurl) {
@@ -605,8 +603,8 @@ export const spec = {
         };
       }
 
-      if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidResponse.renderer) {
-        bidResponse.renderer = newRenderer(bidderRequest, bidResponse) || undefined;
+      if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidderRequest.renderer) {
+        bidResponse.renderer = createRenderer(bidderRequest, bidResponse) || undefined;
       }
 
       response.push(bidResponse);
