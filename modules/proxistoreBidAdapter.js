@@ -1,10 +1,11 @@
-import { isFn, isPlainObject } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { isFn, isPlainObject } from "../src/utils.js";
+import { registerBidder } from "../src/adapters/bidderFactory.js";
 
-const BIDDER_CODE = 'proxistore';
+const BIDDER_CODE = "proxistore";
 const PROXISTORE_VENDOR_ID = 418;
-const COOKIE_BASE_URL = 'https://abs.proxistore.com/v3/rtb/prebid/multi';
-const COOKIE_LESS_URL = 'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi';
+const COOKIE_BASE_URL = "https://abs.proxistore.com/v3/rtb/prebid/multi";
+const COOKIE_LESS_URL =
+  "https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi";
 
 function _createServerRequest(bidRequests, bidderRequest) {
   var sizeIds = [];
@@ -38,14 +39,14 @@ function _createServerRequest(bidRequests, bidderRequest) {
     var gdprConsent = bidderRequest.gdprConsent;
 
     if (
-      typeof gdprConsent.gdprApplies === 'boolean' &&
+      typeof gdprConsent.gdprApplies === "boolean" &&
       gdprConsent.gdprApplies
     ) {
       payload.gdpr.applies = true;
     }
 
     if (
-      typeof gdprConsent.consentString === 'string' &&
+      typeof gdprConsent.consentString === "string" &&
       gdprConsent.consentString
     ) {
       payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
@@ -60,7 +61,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
         vendorData.vendor &&
         vendorData.vendor.consents &&
         typeof vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)] !==
-          'undefined'
+          "undefined"
       ) {
         payload.gdpr.consentGiven =
           !!vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)];
@@ -68,7 +69,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
         apiVersion === 1 &&
         vendorData.vendorConsents &&
         typeof vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !==
-          'undefined'
+          "undefined"
       ) {
         payload.gdpr.consentGiven =
           !!vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
@@ -77,10 +78,10 @@ function _createServerRequest(bidRequests, bidderRequest) {
   }
 
   var options = {
-    contentType: 'application/json',
+    contentType: "application/json",
     withCredentials: payload.gdpr.consentGiven,
     customHeaders: {
-      version: '1.0.4',
+      version: "1.0.4",
     },
   };
   var endPointUri =
@@ -89,7 +90,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
       : COOKIE_LESS_URL;
 
   return {
-    method: 'POST',
+    method: "POST",
     url: endPointUri,
     data: JSON.stringify(payload),
     options: options,
@@ -176,16 +177,12 @@ function _assignFloor(bid) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
   const floor = bid.getFloor({
-    currency: 'EUR',
-    mediaType: 'banner',
-    size: '*',
+    currency: "EUR",
+    mediaType: "banner",
+    size: "*",
   });
 
-  if (
-    isPlainObject(floor) &&
-    !isNaN(floor.floor) &&
-    floor.currency === 'EUR'
-  ) {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === "EUR") {
     return floor.floor;
   }
   return null;
@@ -196,6 +193,7 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
+  gvlid: PROXISTORE_VENDOR_ID,
 };
 
 registerBidder(spec);
