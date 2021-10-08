@@ -7,16 +7,18 @@ export function init() {
     startMeasurement: startMeasurement,
     stopMeasurement: stopMeasurement,
   };
+
+  listenMessagesFromCreative();
 }
 
 const observers = {};
 
 // vid - unique viewability identifier
 // element
-// trackerURL
+// tracker { method: 'img', url: 'http://my.tracker/123' }
 // criteria - { inViewThreshold: 0.5, timeInView: 5000 }
-export function startMeasurement(vid, element, trackerURL, criteria) {
-  if (!element) {
+export function startMeasurement(vid, element, tracker, criteria) {
+  if (!element || !tracker || !tracker.method || !tracker.url) {
     return;
   }
 
@@ -47,10 +49,21 @@ export function startMeasurement(vid, element, trackerURL, criteria) {
         // stop observing
         observer.unobserve(element);
 
-        utils.logInfo('element is viewable', element);
-        utils.triggerPixel(trackerURL, () => {
-          utils.logInfo('tracker fired', element, trackerURL);
-        });
+        switch (tracker.method) {
+          case 'img':
+            // image
+            utils.triggerPixel(tracker.url, () => {
+              utils.logInfo('tracker fired', tracker.url);
+            });
+            break;
+          case 'js':
+            // javascript
+            utils.insertHtmlIntoIframe(`<script src="${tracker.url}"></script>`);
+            break;
+          default:
+            utils.logWarn('unsupported tracking method', tracker.method);
+            break;
+        }
       }, criteria.timeInView);
     } else if (timeoutId) {
       window.clearTimeout(timeoutId);
@@ -99,7 +112,7 @@ function receiveMessage(evt) {
         element = find(document.getElementsByTagName('IFRAME'), iframe => (iframe.contentWindow || iframe.contentDocument.defaultView) == evt.source);
       }
 
-      startMeasurement(data.vid, element, data.trackerURL, data.criteria);
+      startMeasurement(data.vid, element, data.tracker, data.criteria);
       break;
     case 'stopMeasurement':
       stopMeasurement(data.vid);
@@ -108,4 +121,3 @@ function receiveMessage(evt) {
 }
 
 init();
-listenMessagesFromCreative();
