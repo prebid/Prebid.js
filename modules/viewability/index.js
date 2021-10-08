@@ -1,67 +1,111 @@
 import * as utils from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
-import { Timer } from './timer.js';
+import find from 'core-js-pure/features/array/find.js';
 
-// export const VIEWABILITY_CALLBACKS = {
-//   'onStart': function(element, data) { utils.logInfo('Element has started being viewable', element, data); },
-//   'onStop': function(element, data) { utils.logInfo('Element has stopped being viewable', element, data); },
-//   'onComplete': function(element, data) { utils.logInfo('Element viewability has changed state', element, data); },
-//   'onError': function(element, data) {},
-// };
+export function init() {
+  (getGlobal()).viewability = {
+    startMeasurement: startMeasurement,
+    stopMeasurement: stopMeasurement,
+  };
+}
 
-// var d = document.getElementById('div-gpt-ad-1460505748561-0')
-// pbjs.measureElement(d, 63, 10000, {"onStart": function(){console.log("VIEW start");}, "onStop": function(){console.log("VIEW stop");}, "onComplete": function(){console.log("VIEW complete");}})
+const observers = {};
 
-// let observers = {};
+// vid - unique viewability identifier
+// element
+// trackerURL
+// criteria - { inViewThreshold: 0.5, timeInView: 5000 }
+export function startMeasurement(vid, element, trackerURL, criteria) {
+  if (!element) {
+    return;
+  }
 
-function measureElement(element, percentage, time, callbacks) {
+  if (!criteria || !criteria.inViewThreshold || !criteria.timeInView) {
+    utils.logWarn('missing criteria', criteria);
+    return;
+  }
+
+  if (!vid || observers[vid]) {
+    utils.logWarn('provide an unregistered vid', vid);
+    return;
+  }
+
   let options = {
-    root: null, // defaults to the browser viewport if not specified or if null
+    root: null,
     rootMargin: '0px',
-    threshold: percentage / 100.0,
+    threshold: criteria.inViewThreshold,
   };
 
-  let timer;
   let observer;
   let viewable = false;
-  let stateChange = function(entries) {
+  let timeoutId;
+  let stateChange = (entries) => {
     viewable = entries[0].isIntersecting;
 
-    // TODO: for debugging, remove
-    utils.logInfo('viewability state change', entries[0]);
-
-    if (!timer) {
-      timer = new Timer(function() {
+    if (viewable) {
+      timeoutId = window.setTimeout(() => {
         // stop observing
         observer.unobserve(element);
 
-        if (callbacks.onComplete) {
-          window.setTimeout(callbacks.onComplete, 0);
-        }
-      }, time, false);
-    }
-
-    if (viewable) {
-      timer.resume();
-      if (callbacks.onStart) {
-        window.setTimeout(callbacks.onStart, 0);
-      }
-    } else {
-      timer.pause();
-      if (callbacks.onStop) {
-        window.setTimeout(callbacks.onStop, 0);
-      }
+        utils.logInfo('element is viewable', element);
+        utils.triggerPixel(trackerURL, () => {
+          utils.logInfo('tracker fired', element, trackerURL);
+        });
+      }, criteria.timeInView);
+    } else if (timeoutId) {
+      window.clearTimeout(timeoutId);
     }
   };
 
   observer = new IntersectionObserver(stateChange, options);
-
   observer.observe(element);
+
+  observers[vid] = {
+    observer: observer,
+    element: element,
+  };
 }
 
-function stopMeasurement(element) {
+export function stopMeasurement(vid) {
+  if (!vid || !observers[vid]) {
+    utils.logWarn('provide a registered vid', vid);
+    return;
+  }
 
+  observers[vid].observer.unobserve(observers[vid].element);
 }
 
-(getGlobal()).measureElement = measureElement;
-(getGlobal()).stopMeasurement = stopMeasurement;
+function listenMessagesFromCreative() {
+  window.addEventListener('message', receiveMessage, false);
+}
+
+function receiveMessage(evt) {
+  var key = evt.message ? 'message' : 'data';
+  var data = {};
+  try {
+    data = JSON.parse(evt[key]);
+  } catch (e) {
+    return;
+  }
+
+  if (!data || data.message !== 'Prebid Viewability') {
+    return;
+  }
+
+  switch (data.action) {
+    case 'startMeasurement':
+      let element = data.elementId && document.getElementById(data.elementId);
+      if (!element) {
+        element = find(document.getElementsByTagName('IFRAME'), iframe => (iframe.contentWindow || iframe.contentDocument.defaultView) == evt.source);
+      }
+
+      startMeasurement(data.vid, element, data.trackerURL, data.criteria);
+      break;
+    case 'stopMeasurement':
+      stopMeasurement(data.vid);
+      break;
+  }
+}
+
+init();
+listenMessagesFromCreative();
