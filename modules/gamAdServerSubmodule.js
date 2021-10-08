@@ -1,6 +1,5 @@
-import { GAM_VENDOR } from './videoModule/constants/vendorCodes';
-import { adServerDirectory } from './videoModule/vendorDirectory';
-
+import { GAM_VENDOR } from './videoModule/constants/vendorCodes.js';
+import { adServerDirectory } from './videoModule/vendorDirectory.js';
 
 function GamAdServerProvider(dfpModule_) {
   const dfp = dfpModule_;

@@ -1,8 +1,9 @@
-import {config} from '../../src/config.js';
+import { config } from '../../src/config.js';
 import events from '../../src/events.js';
 import { allVideoEvents } from './constants/events.js';
 import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
+import { coreAdServerFactory } from './adServer.js';
 
 events.addEvents(allVideoEvents);
 
@@ -29,10 +30,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
         if (adServerConfig) {
           adServerCore.registerProvider(adServerConfig.vendorCode, adServerConfig.params);
         }
-
       });
-
-      video.adServer
     });
 
     requestBids.before(enrichAdUnits, 40);
@@ -41,6 +39,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       // TODO: requires AdServer Module.
       // get ad tag from adServer - auctionResult.winningBids
       // coreVideo.setAdTagUrl(adTag, divId);
+      // const adTagUrl = adServerCore.getAdTagUrl();
     });
   }
 
@@ -58,7 +57,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
 function pbVideoFactory() {
   const videoCore = videoCoreFactory();
-  const pbVideo = PbVideo(videoCore, config.getConfig, $$PREBID_GLOBAL$$, events, allVideoEvents);
+  const adServerCore = coreAdServerFactory();
+  const pbVideo = PbVideo(videoCore, config.getConfig, $$PREBID_GLOBAL$$, events, allVideoEvents, adServerCore);
   pbVideo.init();
   return pbVideo;
 }
