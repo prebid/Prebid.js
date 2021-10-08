@@ -117,7 +117,6 @@ pbjs.setConfig({
         mode: 'banner' // 'all', 'video', 'banner' (default)
     }
 });
-
 ```
 
 # Advance adUnit Examples:
@@ -208,6 +207,12 @@ const adUnits = [{
 2. Make sure the Yahoo SSP placement (pos id) supports both banner & video format requests.
 
 ```javascript
+pbjs.setConfig({
+    yahoossp: {
+        mode: 'all'
+    }
+});
+
 const adUnits = [{
     code: 'video-adUnit',
     mediaTypes: {
@@ -322,7 +327,7 @@ This is useful for intergration testing and response parsing when checking banne
 
 **Important!** E2E Testing Mode only works when the Bidder Request Mode is set explicitly to either 'banner' or 'video'.
 
-## Activating E2E Test for"Banner"
+## Activating E2E Test for "Banner"
  ```javascript
 pbjs.setConfig({
     yahoossp: {
@@ -388,7 +393,7 @@ The yahoossp adapter now supports first party data passed via:
 2. adUnit ortb2Imp object declared within an adUnit.
 For further details please see, https://docs.prebid.org/features/firstPartyData.html
 ## Global First Party Data "ortb2"
-### Passing First Party Site Data:
+### Passing First Party "site" data:
 ```javascript
 pbjs.setConfig({
             ortb2: {
@@ -436,7 +441,7 @@ pbjs.setConfig({
             }
         });
 ```
-### Passing First Party User Data:
+### Passing First Party "user" data:
 ```javascript
 pbjs.setConfig({
             ortb2: {
@@ -462,7 +467,7 @@ pbjs.setConfig({
             }
         });
 ```
-### Passing First Party App Content Data:
+### Passing First Party "app.content.data" data:
 ```javascript
 pbjs.setConfig({
             ortb2: {
@@ -515,7 +520,10 @@ const adUnits = [{
 ```
 
 # Optional: Bidder bidOverride Parameters
-The yahoossp adapter allows passing override data to the outbound bid-request in certain senarios.
+The yahoossp adapter allows passing override data to the outbound bid-request in that overrides First Party Data.
+**Important!** We highly recommend using prebid modules to pass data instead of bidder speicifc overrides.
+The use of these parameters are a last resort to force a specific feature or use case in your implementation.
+
 Currently the bidOverride object only accepts the following:
 * imp
   * video
@@ -622,15 +630,44 @@ const adUnits = [{
 
 # Optional: Custom Cache Time To Live (ttl):
 The yahoossp adapter supports passing of "Time To Live" (ttl) that indicates to prebid chache for how long to keep the chaced winning bid alive. Value is Number in seconds and you can enter any number between 1 - 3600 (seconds).
+The setting can be defined globally using setConfig or within the adUnit.params.
+Global level setConfig overrides adUnit.params.
+If no value is being passed default is 300 seconds.
+## Global TTL
 ```javascript
+pbjs.setConfig({
+    yahoossp: {
+        ttl: 300
+    }
+});
+
 const adUnits = [{
-    code: 'custom-ttl',
+    code: 'global-ttl',
     mediaTypes: {
         video: {
             context: 'outstream',
             playerSize: [
                 [300, 250]
             ],
+        }
+    },
+    bids: [{
+        bidder: 'yahoossp',
+        params: {
+            dcn: '8a969516017a7a396ec539d97f540011',
+            pos: '8a96958a017a7a57ac375d50c0c700cc',
+        }
+    }]
+}]
+```
+
+## Ad Unit Params TTL
+```javascript
+const adUnits = [{
+    code: 'adUnit-ttl',
+    mediaTypes: {
+        banner: {
+            sizes: [[300, 250]],
         }
     },
     bids: [{
@@ -706,8 +743,11 @@ const adUnits = [{
 ## Placement Targeting for "pubId" Inventory Mapping
 To target your adUnit explicitly to a specific Placement within a Site/App Object in Yahoo SSP, you can pass the following params.placementId = External Placement ID || Placement Alias
 
-**Important:** Placement override is a only supported when using "pubId" mode.
-**Important:** It is highly recommended that you pass both `siteId` AND `placementId` together to avoid inventory miss matching.
+**Important!** Placement override is a only supported when using "pubId" mode.
+**Important!** It is highly recommended that you pass both `siteId` AND `placementId` together to avoid inventory miss matching.
+
+### Site & Placement override
+**Important!** If the placement ID does not reside under the defined Site/App object, the request will not resolve and no response will be sent back from the ad-server.
 ```javascript
 const adUnits = [{
     code: 'pubId-site-targeting-adUnit',
@@ -729,8 +769,32 @@ const adUnits = [{
     }]
 }]
 ```
+### Placement only override
+**Important!** Using this method is not advised if you have multiple Site/Apps that are broken out of a Run Of Network (RON) Site/App. If the placement ID does not reside under a matching Site/App object, the request will not resolve and no response will be sent back from the ad-server. Using
+```javascript
+const adUnits = [{
+    code: 'pubId-site-targeting-adUnit',
+    mediaTypes: {
+        video: {
+            context: 'outstream',
+            playerSize: [
+                [300, 250]
+            ],
+        }
+    },
+    bids: [{
+        bidder: 'yahoossp',
+        params: {
+            pubId: 'DemoPublisher',
+            placementId: 'header-250x300'
+        }
+    }]
+}]
+```
+
 # Optional: Legacy override Parameters
-For backward compatibility, partners who previously used the 'bidder.params.ext' object to pass custom overrides can still use them, but we urge you to move to the new params.bidOverride format.
+This adapter does not support passing legacy overrides via 'bidder.params.ext' since most of the data should be passed using prebid modules (First Party Data, Schain, Price Floors etc.).
+If you do not know how to pass a custom parameter that you previously used, please contact us using the information provided above.
 
-
-
+Thanks you,
+Yahoo SSP

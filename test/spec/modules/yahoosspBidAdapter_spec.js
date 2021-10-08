@@ -1252,16 +1252,54 @@ describe('YahooSSP Bid Adapter:', () => {
       })
     });
 
-    describe('custom TTL', () => {
+    describe('Time To Live (ttl)', () => {
       const UNSUPPORTED_TTL_FORMATS = ['string', [1, 2, 3], true, false, null, undefined];
       UNSUPPORTED_TTL_FORMATS.forEach(param => {
-        it('should not allow unsupported TTL formats and default to 300', () => {
+        it('should not allow unsupported global yahoossp.ttl formats and default to 300', () => {
+          const { serverResponse, bidderRequest } = generateResponseMock('banner');
+          config.setConfig({
+            yahoossp: { ttl: param }
+          });
+          const response = spec.interpretResponse(serverResponse, {bidderRequest});
+          expect(response[0].ttl).to.equal(300);
+        });
+
+        it('should not allow unsupported params.ttl formats and default to 300', () => {
           const { serverResponse, bidderRequest } = generateResponseMock('banner');
           bidderRequest.bids[0].params.ttl = param;
           const response = spec.interpretResponse(serverResponse, {bidderRequest});
           expect(response[0].ttl).to.equal(300);
         });
-      })
+      });
+
+      const UNSUPPORTED_TTL_VALUES = [-1, 3601];
+      UNSUPPORTED_TTL_VALUES.forEach(param => {
+        it('should not allow invalid global yahoossp.ttl values 3600 < ttl < 0 and default to 300', () => {
+          const { serverResponse, bidderRequest } = generateResponseMock('banner');
+          config.setConfig({
+            yahoossp: { ttl: param }
+          });
+          const response = spec.interpretResponse(serverResponse, {bidderRequest});
+          expect(response[0].ttl).to.equal(300);
+        });
+
+        it('should not allow invalid params.ttl values 3600 < ttl < 0 and default to 300', () => {
+          const { serverResponse, bidderRequest } = generateResponseMock('banner');
+          bidderRequest.bids[0].params.ttl = param;
+          const response = spec.interpretResponse(serverResponse, {bidderRequest});
+          expect(response[0].ttl).to.equal(300);
+        });
+      });
+
+      it('should give presedence to Gloabl ttl over params.ttl ', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        config.setConfig({
+          yahoossp: { ttl: 500 }
+        });
+        bidderRequest.bids[0].params.ttl = 400;
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].ttl).to.equal(500);
+      });
     });
   });
 });
