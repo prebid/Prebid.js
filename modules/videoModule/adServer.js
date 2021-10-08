@@ -1,5 +1,5 @@
 import { adServerDirectory } from './vendorDirectory.js';
-import { ParentModule, submoduleBuilder } from './shared/parentModule';
+import { ParentModule, SubmoduleBuilder } from './shared/parentModule.js';
 
 export function AdServerCore(parentModule_) {
   const parentModule = parentModule_;
@@ -20,7 +20,7 @@ export function AdServerCore(parentModule_) {
 }
 
 export function coreAdServerFactory() {
-  const adServerSubmoduleBuilder = submoduleBuilder(adServerDirectory);
+  const adServerSubmoduleBuilder = SubmoduleBuilder(adServerDirectory);
   const parentModule = ParentModule(adServerSubmoduleBuilder);
   const adServerCore = AdServerCore(parentModule);
   return adServerCore;

@@ -1,5 +1,5 @@
 import { videoVendorDirectory } from './vendorDirectory.js';
-import { ParentModule, submoduleBuilder } from './shared/parentModule';
+import { ParentModule, SubmoduleBuilder } from './shared/parentModule.js';
 
 export function VideoCore(parentModule_) {
   const parentModule = parentModule_;
@@ -38,7 +38,7 @@ export function VideoCore(parentModule_) {
 }
 
 export function videoCoreFactory() {
-  const videoSubmoduleBuilder = submoduleBuilder(videoVendorDirectory);
+  const videoSubmoduleBuilder = SubmoduleBuilder(videoVendorDirectory);
   const parentModule = ParentModule(videoSubmoduleBuilder);
   return VideoCore(parentModule);
 }

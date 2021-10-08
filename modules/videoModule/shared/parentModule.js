@@ -30,7 +30,7 @@ export function ParentModule(submoduleBuilder_) {
   }
 }
 
-export function submoduleBuilder(submoduleDirectory_) {
+export function SubmoduleBuilder(submoduleDirectory_) {
   const submoduleDirectory = submoduleDirectory_;
 
   function build(id, config) {
