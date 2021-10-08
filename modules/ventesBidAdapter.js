@@ -234,6 +234,8 @@ function validateBids(bid) {
   if (!isStr(bid.impid)) return false;
   if (!isStr(bid.crid)) return false;
   if (!isNumber(bid.price)) return false;
+  if (!isNumber(bid.w)) return false;
+  if (!isNumber(bid.h)) return false;
   if (!bid.adm) return false;
   if (bid.adm) {
     if (!isStr(bid.adm)) return false;
