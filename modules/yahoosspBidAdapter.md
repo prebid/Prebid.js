@@ -16,16 +16,7 @@ The Yahoo SSP Bid Adapter is an OpenRTB interface that consolidates all previous
 * End-2-End self-served testing mode
 * Outstream renderer/Player
 * User ID Modules - ConnectId and others
-* First Party Data (excluding ortb2Imp adUnit level data at this point)
-    * site
-        * page
-        * content
-    * user
-        * yob
-        * gender
-        * keywords
-        * data
-        * ext
+* First Party Data (ortb2 & ortb2Imp)
 
 # Integration Options
 The `yahoossp` bid adapter supports 2 types of integration:
