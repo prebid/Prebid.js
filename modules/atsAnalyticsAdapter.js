@@ -13,9 +13,6 @@ export const storage = getStorageManager();
  */
 
 const analyticsType = 'endpoint';
-// dev endpoints
-// const preflightUrl = 'https://analytics-check.publishersite.xyz/check/';
-// export const analyticsUrl = 'https://analyticsv2.publishersite.xyz';
 
 const preflightUrl = 'https://check.analytics.rlcdn.com/check/';
 export const analyticsUrl = 'https://analytics.rlcdn.com';
@@ -23,7 +20,7 @@ export const analyticsUrl = 'https://analytics.rlcdn.com';
 let handlerRequest = [];
 let handlerResponse = [];
 
-let atsAnalyticsAdapterVersion = 1;
+let atsAnalyticsAdapterVersion = 2;
 
 let browsersList = [
   /* Googlebot */
@@ -207,12 +204,6 @@ let browsersList = [
   },
 ];
 
-function setSamplingCookie(samplRate) {
-  let now = new Date();
-  now.setTime(now.getTime() + 3600000);
-  storage.setCookie('_lr_sampling_rate', samplRate, now.toUTCString());
-}
-
 let listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
 
 function bidRequestedHandler(args) {
@@ -276,16 +267,23 @@ function sendDataToAnalytic () {
 // preflight request, to check did publisher have permission to send data to analytics endpoint
 function preflightRequest (envelopeSourceCookieValue) {
   logInfo('ATS Analytics - preflight request!');
-  ajax(preflightUrl + atsAnalyticsAdapter.context.pid, function (data) {
-    let samplingRateObject = JSON.parse(data);
-    logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
-    let samplingRate = samplingRateObject['samplingRate'];
-    setSamplingCookie(samplingRate);
-    let samplingRateNumber = Number(samplingRate);
-    if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber) && envelopeSourceCookieValue != null) {
-      sendDataToAnalytic();
-    }
-  }, undefined, { method: 'GET', crossOrigin: true });
+  ajax(preflightUrl + atsAnalyticsAdapter.context.pid,
+    {
+      success: function (data) {
+        let samplingRateObject = JSON.parse(data);
+        logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
+        let samplingRate = samplingRateObject.samplingRate;
+        atsAnalyticsAdapter.setSamplingCookie(samplingRate);
+        let samplingRateNumber = Number(samplingRate);
+        if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber) && envelopeSourceCookieValue != null) {
+          sendDataToAnalytic();
+        }
+      },
+      error: function () {
+        atsAnalyticsAdapter.setSamplingCookie(0);
+        logInfo('ATS Analytics - Sampling Rate Request Error!');
+      }
+    }, undefined, {method: 'GET', crossOrigin: true});
 }
 
 function callHandler(evtype, args) {
@@ -356,6 +354,13 @@ atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
 atsAnalyticsAdapter.getUserAgent = function () {
   return window.navigator.userAgent;
 };
+
+atsAnalyticsAdapter.setSamplingCookie = function (samplRate) {
+  const now = new Date();
+  now.setTime(now.getTime() + 86400000);
+  storage.setCookie('_lr_sampling_rate', samplRate, now.toUTCString());
+}
+
 // override enableAnalytics so we can get access to the config passed in from the page
 atsAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.pid) {
