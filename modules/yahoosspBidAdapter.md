@@ -134,7 +134,8 @@ const adUnits = [{
 }];
 ```
 ## Video Instream
-**Note:** Make sure to set the adapter mode to allow video requests by setting it to mode: 'video' OR mode: 'all'
+**Important!** Make sure that the Yahoo SSP Placement type (in-stream) matches the adUnit video inventory type.
+**Note:** Make sure to set the adapter mode to allow video requests by setting it to mode: 'video' OR mode: 'all'.
 ```javascript
 pbjs.setConfig({
     yahoossp: {
@@ -164,6 +165,7 @@ const adUnits = [{
 }];
 ```
 ## Video Outstream
+**Important!** Make sure that the Yahoo SSP Placement type (in-feed/ in-article) matches the adUnit video inventory type.
 **Note:** Make sure to set the adapter mode to allow video requests by setting it to mode: 'video' OR mode: 'all'
 ```javascript
 pbjs.setConfig({
