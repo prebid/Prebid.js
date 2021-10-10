@@ -1,8 +1,8 @@
+import { isArray, getUniqueIdentifierStr, parseUrl, deepAccess, logWarn, logError, logInfo } from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
@@ -123,13 +123,13 @@ export const spec = {
 
     const bids = [];
 
-    if (body && body.slots && utils.isArray(body.slots)) {
+    if (body && body.slots && isArray(body.slots)) {
       body.slots.forEach(slot => {
         const bidRequest = find(request.bidRequests, b => b.adUnitCode === slot.impid && (!b.params.zoneId || parseInt(b.params.zoneId) === slot.zoneid));
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,
-          adId: slot.bidId || utils.getUniqueIdentifierStr(),
+          adId: slot.bidId || getUniqueIdentifierStr(),
           cpm: slot.cpm,
           currency: slot.currency,
           netRevenue: true,
@@ -219,7 +219,7 @@ function buildContext(bidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.refererInfo) {
     referrer = bidderRequest.refererInfo.referer;
   }
-  const queryString = utils.parseUrl(referrer).search;
+  const queryString = parseUrl(referrer).search;
 
   const context = {
     url: referrer,
@@ -296,7 +296,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.zoneId) {
         slot.zoneid = bidRequest.params.zoneId;
       }
-      if (utils.deepAccess(bidRequest, 'ortb2Imp.ext')) {
+      if (deepAccess(bidRequest, 'ortb2Imp.ext')) {
         slot.ext = bidRequest.ortb2Imp.ext;
       }
       if (bidRequest.params.ext) {
@@ -305,10 +305,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
-      if (bidRequest.params.nativeCallback || utils.deepAccess(bidRequest, `mediaTypes.${NATIVE}`)) {
+      if (bidRequest.params.nativeCallback || deepAccess(bidRequest, `mediaTypes.${NATIVE}`)) {
         slot.native = true;
         if (!checkNativeSendId(bidRequest)) {
-          utils.logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)');
+          logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)');
         }
         slot.sizes = parseSizes(retrieveBannerSizes(bidRequest), parseNativeSize);
       } else {
@@ -316,7 +316,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       }
       if (hasVideoMediaType(bidRequest)) {
         const video = {
-          playersizes: parseSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
+          playersizes: parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
           mimes: bidRequest.mediaTypes.video.mimes,
           protocols: bidRequest.mediaTypes.video.protocols,
           maxduration: bidRequest.mediaTypes.video.maxduration,
@@ -367,7 +367,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
 }
 
 function retrieveBannerSizes(bidRequest) {
-  return utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
+  return deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
 }
 
 function parseSizes(sizes, parser) {
@@ -389,7 +389,7 @@ function parseNativeSize(size) {
 }
 
 function hasVideoMediaType(bidRequest) {
-  return utils.deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
+  return deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
 }
 
 function hasValidVideoMediaType(bidRequest) {
@@ -398,9 +398,9 @@ function hasValidVideoMediaType(bidRequest) {
   var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
 
   requiredMediaTypesParams.forEach(function(param) {
-    if (utils.deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && utils.deepAccess(bidRequest, 'params.video.' + param) === undefined) {
+    if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined) {
       isValid = false;
-      utils.logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
+      logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
     }
   });
 
@@ -476,7 +476,7 @@ export function getFastBidUrl(fastBidVersion) {
   } else if (fastBidVersion) {
     let majorVersion = String(fastBidVersion).split('.')[0];
     if (majorVersion < 102) {
-      utils.logWarn('Specifying a Fastbid version which is not supporting version selection.')
+      logWarn('Specifying a Fastbid version which is not supporting version selection.')
     }
     version = '.' + fastBidVersion;
   } else {
@@ -499,7 +499,7 @@ export function tryGetCriteoFastBid() {
       const firstLine = fastBidFromStorage.substr(0, firstLineEndPosition).trim();
 
       if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
-        utils.logWarn('No hash found in FastBid');
+        logWarn('No hash found in FastBid');
         storage.removeDataFromLocalStorage(fastBidStorageKey);
       } else {
         // Remove the hash part from the locally stored value
@@ -507,10 +507,10 @@ export function tryGetCriteoFastBid() {
         const publisherTag = fastBidFromStorage.substr(firstLineEndPosition + 1);
 
         if (verify(publisherTag, publisherTagHash, FAST_BID_PUBKEY_N, FAST_BID_PUBKEY_E)) {
-          utils.logInfo('Using Criteo FastBid');
+          logInfo('Using Criteo FastBid');
           eval(publisherTag); // eslint-disable-line no-eval
         } else {
-          utils.logWarn('Invalid Criteo FastBid found');
+          logWarn('Invalid Criteo FastBid found');
           storage.removeDataFromLocalStorage(fastBidStorageKey);
         }
       }

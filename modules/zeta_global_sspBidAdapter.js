@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, deepSetValue, deepAccess, isArray, isNumber, isBoolean, isStr } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -51,7 +51,7 @@ export const spec = {
     if (!(bid &&
       bid.bidId &&
       bid.params)) {
-      utils.logWarn('Invalid bid request - missing required bid data');
+      logWarn('Invalid bid request - missing required bid data');
       return false;
     }
     return true;
@@ -115,13 +115,13 @@ export const spec = {
 
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
-      utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+      deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
-      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
     provideEids(request, payload);
@@ -219,17 +219,17 @@ function buildBanner(request) {
 
 function buildVideo(request) {
   let video = {};
-  const videoParams = utils.deepAccess(request, 'mediaTypes.video', {});
+  const videoParams = deepAccess(request, 'mediaTypes.video', {});
   for (const key in VIDEO_CUSTOM_PARAMS) {
     if (videoParams.hasOwnProperty(key)) {
       video[key] = checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
     }
   }
   if (videoParams.playerSize) {
-    if (utils.isArray(videoParams.playerSize[0])) {
+    if (isArray(videoParams.playerSize[0])) {
       video.w = parseInt(videoParams.playerSize[0][0], 10);
       video.h = parseInt(videoParams.playerSize[0][1], 10);
-    } else if (utils.isNumber(videoParams.playerSize[0])) {
+    } else if (isNumber(videoParams.playerSize[0])) {
       video.w = parseInt(videoParams.playerSize[0], 10);
       video.h = parseInt(videoParams.playerSize[1], 10);
     }
@@ -241,28 +241,28 @@ function checkParamDataType(key, value, datatype) {
   let functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
-      functionToExecute = utils.isBoolean;
+      functionToExecute = isBoolean;
       break;
     case DATA_TYPES.NUMBER:
-      functionToExecute = utils.isNumber;
+      functionToExecute = isNumber;
       break;
     case DATA_TYPES.STRING:
-      functionToExecute = utils.isStr;
+      functionToExecute = isStr;
       break;
     case DATA_TYPES.ARRAY:
-      functionToExecute = utils.isArray;
+      functionToExecute = isArray;
       break;
   }
   if (functionToExecute(value)) {
     return value;
   }
-  utils.logWarn('Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value);
+  logWarn('Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value);
   return undefined;
 }
 
 function provideEids(request, payload) {
   if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
-    utils.deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
+    deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
   }
 }
 

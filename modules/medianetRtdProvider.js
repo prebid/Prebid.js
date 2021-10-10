@@ -1,5 +1,5 @@
+import { isStr, isEmptyStr, logError, mergeDeep, isFn, insertElement } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import * as utils from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
@@ -15,8 +15,8 @@ window.mnjs.que = window.mnjs.que || [];
 
 function init(config) {
   const customerId = config.params && config.params.cid;
-  if (!customerId || !utils.isStr(customerId) || utils.isEmptyStr(customerId)) {
-    utils.logError(`${SOURCE}: cid should be a string`);
+  if (!customerId || !isStr(customerId) || isEmptyStr(customerId)) {
+    logError(`${SOURCE}: cid should be a string`);
     return false;
   }
 
@@ -40,8 +40,8 @@ function getBidRequestData(requestBidsProps, callback, config, userConsent) {
     const success = (adUnitProps, openRtbProps) => {
       adUnits.forEach(adUnit => {
         adUnit[OPEN_RTB_FIELD] = adUnit[OPEN_RTB_FIELD] || {};
-        utils.mergeDeep(adUnit[OPEN_RTB_FIELD], openRtbProps[adUnit.code]);
-        utils.mergeDeep(adUnit, adUnitProps[adUnit.code]);
+        mergeDeep(adUnit[OPEN_RTB_FIELD], openRtbProps[adUnit.code]);
+        mergeDeep(adUnit, adUnitProps[adUnit.code]);
       });
       callback();
     };
@@ -61,7 +61,7 @@ function onAuctionInitEvent(auctionInit) {
 function getTargetingData(adUnitCode) {
   const adUnits = getAdUnits(undefined, adUnitCode);
   let targetingData = {};
-  if (window.mnjs.loaded && utils.isFn(window.mnjs.getTargetingData)) {
+  if (window.mnjs.loaded && isFn(window.mnjs.getTargetingData)) {
     targetingData = window.mnjs.getTargetingData(adUnitCode, adUnits, SOURCE) || {};
   }
   const targeting = {};
@@ -86,7 +86,7 @@ function loadRtdScript(customerId) {
   script.type = 'text/javascript';
   script.async = true;
   script.src = getClientUrl(customerId, window.location.hostname);
-  utils.insertElement(script, window.document, 'head');
+  insertElement(script, window.document, 'head');
 }
 
 function getAdUnits(adUnits, adUnitCodes) {

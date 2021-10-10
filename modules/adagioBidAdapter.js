@@ -1,5 +1,8 @@
 import find from 'core-js-pure/features/array/find.js';
-import * as utils from '../src/utils.js';
+import {
+  isInteger, isArray, deepAccess, mergeDeep, logWarn, logInfo, logError, getWindowTop, getWindowSelf, generateUUID, _map,
+  getDNT, parseUrl, getUniqueIdentifierStr, isNumber, cleanObj, isFn, inIframe, deepClone, getGptSlotInfoForAdUnitCode
+} from '../src/utils.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { loadExternalScript } from '../src/adloader.js';
@@ -31,22 +34,22 @@ const DEFAULT_FLOOR = 0.1;
 // https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
 export const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
-  'minduration': (value) => utils.isInteger(value),
-  'maxduration': (value) => utils.isInteger(value),
+  'minduration': (value) => isInteger(value),
+  'maxduration': (value) => isInteger(value),
   'protocols': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].indexOf(v) !== -1),
-  'w': (value) => utils.isInteger(value),
-  'h': (value) => utils.isInteger(value),
-  'startdelay': (value) => utils.isInteger(value),
+  'w': (value) => isInteger(value),
+  'h': (value) => isInteger(value),
+  'startdelay': (value) => isInteger(value),
   'placement': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5].indexOf(v) !== -1),
   'linearity': (value) => [1, 2].indexOf(value) !== -1,
   'skip': (value) => [0, 1].indexOf(value) !== -1,
-  'skipmin': (value) => utils.isInteger(value),
-  'skipafter': (value) => utils.isInteger(value),
-  'sequence': (value) => utils.isInteger(value),
+  'skipmin': (value) => isInteger(value),
+  'skipafter': (value) => isInteger(value),
+  'sequence': (value) => isInteger(value),
   'battr': (value) => Array.isArray(value) && value.every(v => Array.from({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
-  'maxextended': (value) => utils.isInteger(value),
-  'minbitrate': (value) => utils.isInteger(value),
-  'maxbitrate': (value) => utils.isInteger(value),
+  'maxextended': (value) => isInteger(value),
+  'minbitrate': (value) => isInteger(value),
+  'maxbitrate': (value) => isInteger(value),
   'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
   'playbackmethod': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1),
   'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
@@ -88,7 +91,7 @@ export const GlobalExchange = (function() {
           return value;
         }
       });
-      let random = utils.deepAccess(adagioStorage, 'session.rnd');
+      let random = deepAccess(adagioStorage, 'session.rnd');
       let newSession = false;
 
       if (internal.isNewSession(adagioStorage)) {
@@ -103,7 +106,7 @@ export const GlobalExchange = (function() {
         }
       }
 
-      utils.mergeDeep(exchangeData, adagioStorage, data);
+      mergeDeep(exchangeData, adagioStorage, data);
 
       internal.enqueue({
         action: 'session',
@@ -121,14 +124,14 @@ export const GlobalExchange = (function() {
 export function adagioScriptFromLocalStorageCb(ls) {
   try {
     if (!ls) {
-      utils.logWarn(`${LOG_PREFIX} script not found.`);
+      logWarn(`${LOG_PREFIX} script not found.`);
       return;
     }
 
     const hashRgx = /^(\/\/ hash: (.+)\n)(.+\n)$/;
 
     if (!hashRgx.test(ls)) {
-      utils.logWarn(`${LOG_PREFIX} no hash found.`);
+      logWarn(`${LOG_PREFIX} no hash found.`);
       storage.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
     } else {
       const r = ls.match(hashRgx);
@@ -136,15 +139,15 @@ export function adagioScriptFromLocalStorageCb(ls) {
       const content = r[3];
 
       if (verify(content, hash, ADAGIO_PUBKEY, ADAGIO_PUBKEY_E)) {
-        utils.logInfo(`${LOG_PREFIX} start script.`);
+        logInfo(`${LOG_PREFIX} start script.`);
         Function(ls)(); // eslint-disable-line no-new-func
       } else {
-        utils.logWarn(`${LOG_PREFIX} invalid script found.`);
+        logWarn(`${LOG_PREFIX} invalid script found.`);
         storage.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
       }
     }
   } catch (err) {
-    utils.logError(LOG_PREFIX, err);
+    logError(LOG_PREFIX, err);
   }
 }
 
@@ -167,7 +170,7 @@ export function getAdagioScript() {
         // This key is removed only if localStorage is not accessible.
         window.localStorage.removeItem('adagio');
       } catch (e) {
-        utils.logInfo(`${LOG_PREFIX} unable to clear Adagio scripts from localstorage.`);
+        logInfo(`${LOG_PREFIX} unable to clear Adagio scripts from localstorage.`);
       }
     }
   });
@@ -175,7 +178,7 @@ export function getAdagioScript() {
 
 function canAccessTopWindow() {
   try {
-    if (utils.getWindowTop().location.href) {
+    if (getWindowTop().location.href) {
       return true;
     }
   } catch (error) {
@@ -184,17 +187,17 @@ function canAccessTopWindow() {
 }
 
 function getCurrentWindow() {
-  return currentWindow || utils.getWindowSelf();
+  return currentWindow || getWindowSelf();
 }
 
 function isSafeFrameWindow() {
-  const ws = utils.getWindowSelf();
+  const ws = getWindowSelf();
   return !!(ws.$sf && ws.$sf.ext);
 }
 
 function initAdagio() {
   if (canAccessTopWindow()) {
-    currentWindow = (canAccessTopWindow()) ? utils.getWindowTop() : utils.getWindowSelf();
+    currentWindow = (canAccessTopWindow()) ? getWindowTop() : getWindowSelf();
   }
 
   const w = internal.getCurrentWindow();
@@ -211,7 +214,7 @@ function initAdagio() {
     try {
       GlobalExchange.prepareExchangeData(storageData);
     } catch (e) {
-      utils.logError(LOG_PREFIX, e);
+      logError(LOG_PREFIX, e);
     }
   });
 
@@ -230,7 +233,7 @@ function getPageviewId() {
   const w = internal.getCurrentWindow();
 
   w.ADAGIO = w.ADAGIO || {};
-  w.ADAGIO.pageviewId = w.ADAGIO.pageviewId || utils.generateUUID();
+  w.ADAGIO.pageviewId = w.ADAGIO.pageviewId || generateUUID();
 
   return w.ADAGIO.pageviewId;
 };
@@ -240,7 +243,7 @@ function getDevice() {
   return {
     userAgent: navigator.userAgent,
     language: navigator[language],
-    dnt: utils.getDNT() ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     geo: {},
     js: 1
   };
@@ -254,12 +257,12 @@ function getSite(bidderRequest) {
   const { refererInfo } = bidderRequest;
 
   if (canAccessTopWindow()) {
-    const wt = utils.getWindowTop();
+    const wt = getWindowTop();
     domain = wt.location.hostname;
     page = wt.location.href;
     referrer = wt.document.referrer || '';
   } else if (refererInfo.reachedTop) {
-    const url = utils.parseUrl(refererInfo.referer);
+    const url = parseUrl(refererInfo.referer);
     domain = url.hostname;
     page = refererInfo.referer;
   } else if (refererInfo.stack && refererInfo.stack.length && refererInfo.stack[0]) {
@@ -267,7 +270,7 @@ function getSite(bidderRequest) {
     // will be considered as "localhost" by the parseUrl function.
     // As the isBidRequestValid returns false when it does not reach the referer
     // this should never called.
-    const url = utils.parseUrl(refererInfo.stack[0]);
+    const url = parseUrl(refererInfo.stack[0]);
     domain = url.hostname;
   }
 
@@ -280,9 +283,9 @@ function getSite(bidderRequest) {
 
 function getElementFromTopWindow(element, currentWindow) {
   try {
-    if (utils.getWindowTop() === currentWindow) {
+    if (getWindowTop() === currentWindow) {
       if (!element.getAttribute('id')) {
-        element.setAttribute('id', `adg-${utils.getUniqueIdentifierStr()}`);
+        element.setAttribute('id', `adg-${getUniqueIdentifierStr()}`);
       }
       return element;
     } else {
@@ -297,13 +300,13 @@ function getElementFromTopWindow(element, currentWindow) {
       return getElementFromTopWindow(frame, currentWindow.parent);
     }
   } catch (err) {
-    utils.logWarn(`${LOG_PREFIX}`, err);
+    logWarn(`${LOG_PREFIX}`, err);
     return false;
   }
 };
 
 function autoDetectAdUnitElementIdFromGpt(adUnitCode) {
-  const autoDetectedAdUnit = utils.getGptSlotInfoForAdUnitCode(adUnitCode);
+  const autoDetectedAdUnit = getGptSlotInfoForAdUnitCode(adUnitCode);
 
   if (autoDetectedAdUnit && autoDetectedAdUnit.divId) {
     return autoDetectedAdUnit.divId;
@@ -312,11 +315,11 @@ function autoDetectAdUnitElementIdFromGpt(adUnitCode) {
 
 function isRendererPreferredFromPublisher(bidRequest) {
   // renderer defined at adUnit level
-  const adUnitRenderer = utils.deepAccess(bidRequest, 'renderer');
+  const adUnitRenderer = deepAccess(bidRequest, 'renderer');
   const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
 
   // renderer defined at adUnit.mediaTypes level
-  const mediaTypeRenderer = utils.deepAccess(bidRequest, 'mediaTypes.video.renderer');
+  const mediaTypeRenderer = deepAccess(bidRequest, 'mediaTypes.video.renderer');
   const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render);
 
   return !!(
@@ -332,10 +335,10 @@ function isRendererPreferredFromPublisher(bidRequest) {
  */
 function isNewSession(adagioStorage) {
   const now = Date.now();
-  const { lastActivityTime, vwSmplg } = utils.deepAccess(adagioStorage, 'session', {});
+  const { lastActivityTime, vwSmplg } = deepAccess(adagioStorage, 'session', {});
   return (
-    !utils.isNumber(lastActivityTime) ||
-    !utils.isNumber(vwSmplg) ||
+    !isNumber(lastActivityTime) ||
+    !isNumber(vwSmplg) ||
     (now - lastActivityTime) > MAX_SESS_DURATION
   )
 }
@@ -344,7 +347,7 @@ function setPlayerName(bidRequest) {
   const playerName = (internal.isRendererPreferredFromPublisher(bidRequest)) ? 'other' : 'adagio';
 
   if (playerName === 'other') {
-    utils.logWarn(`${LOG_PREFIX} renderer.backupOnly has not been set. Adagio recommends to use its own player to get expected behavior.`);
+    logWarn(`${LOG_PREFIX} renderer.backupOnly has not been set. Adagio recommends to use its own player to get expected behavior.`);
   }
 
   return playerName;
@@ -365,7 +368,7 @@ export const internal = {
 };
 
 function _getGdprConsent(bidderRequest) {
-  if (!utils.deepAccess(bidderRequest, 'gdprConsent')) {
+  if (!deepAccess(bidderRequest, 'gdprConsent')) {
     return false;
   }
 
@@ -376,7 +379,7 @@ function _getGdprConsent(bidderRequest) {
     allowAuctionWithoutConsent
   } = bidderRequest.gdprConsent;
 
-  return utils.cleanObj({
+  return cleanObj({
     apiVersion,
     consentString,
     consentRequired: gdprApplies ? 1 : 0,
@@ -391,22 +394,22 @@ function _getCoppa() {
 }
 
 function _getUspConsent(bidderRequest) {
-  return (utils.deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
+  return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
 }
 
 function _getSchain(bidRequest) {
-  return utils.deepAccess(bidRequest, 'schain');
+  return deepAccess(bidRequest, 'schain');
 }
 
 function _getEids(bidRequest) {
-  if (utils.deepAccess(bidRequest, 'userId')) {
+  if (deepAccess(bidRequest, 'userId')) {
     return createEidsArray(bidRequest.userId);
   }
 }
 
 function _buildVideoBidRequest(bidRequest) {
-  const videoAdUnitParams = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
+  const videoAdUnitParams = deepAccess(bidRequest, 'mediaTypes.video', {});
+  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
   const computedParams = {};
 
   // Special case for playerSize.
@@ -436,7 +439,7 @@ function _buildVideoBidRequest(bidRequest) {
         bidRequest.mediaTypes.video[paramName] = videoParams[paramName];
       } else {
         delete bidRequest.mediaTypes.video[paramName];
-        utils.logWarn(`${LOG_PREFIX} The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
+        logWarn(`${LOG_PREFIX} The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
       }
     }
   });
@@ -447,14 +450,14 @@ function _renderer(bid) {
     if (typeof window.ADAGIO.outstreamPlayer === 'function') {
       window.ADAGIO.outstreamPlayer(bid);
     } else {
-      utils.logError(`${LOG_PREFIX} Adagio outstream player is not defined`);
+      logError(`${LOG_PREFIX} Adagio outstream player is not defined`);
     }
   });
 }
 
 function _parseNativeBidResponse(bid) {
   if (!bid.admNative || !Array.isArray(bid.admNative.assets)) {
-    utils.logError(`${LOG_PREFIX} Invalid native response`);
+    logError(`${LOG_PREFIX} Invalid native response`);
     return;
   }
 
@@ -559,7 +562,7 @@ function _parseNativeBidResponse(bid) {
 }
 
 function _getFloors(bidRequest) {
-  if (!utils.isFn(bidRequest.getFloor)) {
+  if (!isFn(bidRequest.getFloor)) {
     return false;
   }
 
@@ -572,9 +575,9 @@ function _getFloors(bidRequest) {
       size: []
     });
 
-    floors.push(utils.cleanObj({
+    floors.push(cleanObj({
       mt: mediaType,
-      s: utils.isArray(size) ? `${size[0]}x${size[1]}` : undefined,
+      s: isArray(size) ? `${size[0]}x${size[1]}` : undefined,
       f: (!isNaN(info.floor) && info.currency === CURRENCY) ? info.floor : DEFAULT_FLOOR
     }));
   }
@@ -584,7 +587,7 @@ function _getFloors(bidRequest) {
       const sizeProp = mediaType === VIDEO ? 'playerSize' : 'sizes';
 
       if (bidRequest.mediaTypes[mediaType][sizeProp] && bidRequest.mediaTypes[mediaType][sizeProp].length) {
-        if (utils.isArray(bidRequest.mediaTypes[mediaType][sizeProp][0])) {
+        if (isArray(bidRequest.mediaTypes[mediaType][sizeProp][0])) {
           bidRequest.mediaTypes[mediaType][sizeProp].forEach(size => {
             getAndPush(mediaType, [size[0], size[1]]);
           });
@@ -621,7 +624,7 @@ export function setExtraParam(bid, paramName) {
   const adgGlobalConf = config.getConfig('adagio') || {};
   const ortb2Conf = config.getConfig('ortb2');
 
-  const detected = adgGlobalConf[paramName] || utils.deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
+  const detected = adgGlobalConf[paramName] || deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
   if (detected) {
     bid.params[paramName] = detected;
   }
@@ -644,7 +647,7 @@ function autoFillParams(bid) {
     bid.params.placement = bid.adUnitCode;
   }
 
-  bid.params.adUnitElementId = utils.deepAccess(bid, 'ortb2Imp.ext.data.elementId', null) || bid.params.adUnitElementId;
+  bid.params.adUnitElementId = deepAccess(bid, 'ortb2Imp.ext.data.elementId', null) || bid.params.adUnitElementId;
 
   if (!bid.params.adUnitElementId) {
     if (adgGlobalConf.useAdUnitCodeAsAdUnitElementId === true || bid.params.useAdUnitCodeAsAdUnitElementId === true) {
@@ -667,7 +670,7 @@ function getPageDimensions() {
   }
 
   // the page dimension can be computed on window.top only.
-  const wt = utils.getWindowTop();
+  const wt = getWindowTop();
   const body = wt.document.querySelector('body');
 
   if (!body) {
@@ -692,17 +695,17 @@ function getViewPortDimensions() {
   const viewportDims = { w: 0, h: 0 };
 
   if (isSafeFrameWindow()) {
-    const ws = utils.getWindowSelf();
+    const ws = getWindowSelf();
 
     if (typeof ws.$sf.ext.geom !== 'function') {
-      utils.logWarn(LOG_PREFIX, 'Unable to compute from safeframe api.');
+      logWarn(LOG_PREFIX, 'Unable to compute from safeframe api.');
       return '';
     }
 
     const sfGeom = ws.$sf.ext.geom();
 
     if (!sfGeom || !sfGeom.win) {
-      utils.logWarn(LOG_PREFIX, 'Unable to compute from safeframe api. Missing `geom().win` property');
+      logWarn(LOG_PREFIX, 'Unable to compute from safeframe api. Missing `geom().win` property');
       return '';
     }
 
@@ -710,7 +713,7 @@ function getViewPortDimensions() {
     viewportDims.h = Math.round(sfGeom.h);
   } else {
     // window.top based computing
-    const wt = utils.getWindowTop();
+    const wt = getWindowTop();
     viewportDims.w = wt.innerWidth;
     viewportDims.h = wt.innerHeight;
   }
@@ -730,17 +733,17 @@ function getSlotPosition(adUnitElementId) {
   const position = { x: 0, y: 0 };
 
   if (isSafeFrameWindow()) {
-    const ws = utils.getWindowSelf();
+    const ws = getWindowSelf();
 
     if (typeof ws.$sf.ext.geom !== 'function') {
-      utils.logWarn(LOG_PREFIX, 'Unable to compute from safeframe api.');
+      logWarn(LOG_PREFIX, 'Unable to compute from safeframe api.');
       return '';
     }
 
     const sfGeom = ws.$sf.ext.geom();
 
     if (!sfGeom || !sfGeom.self) {
-      utils.logWarn(LOG_PREFIX, 'Unable to compute from safeframe api. Missing `geom().self` property');
+      logWarn(LOG_PREFIX, 'Unable to compute from safeframe api. Missing `geom().self` property');
       return '';
     }
 
@@ -748,13 +751,13 @@ function getSlotPosition(adUnitElementId) {
     position.y = Math.round(sfGeom.l);
   } else if (canAccessTopWindow()) {
     // window.top based computing
-    const wt = utils.getWindowTop();
+    const wt = getWindowTop();
     const d = wt.document;
 
     let domElement;
 
-    if (utils.inIframe() === true) {
-      const ws = utils.getWindowSelf();
+    if (inIframe() === true) {
+      const ws = getWindowSelf();
       const currentElement = ws.document.getElementById(adUnitElementId);
       domElement = internal.getElementFromTopWindow(currentElement, ws);
     } else {
@@ -813,7 +816,7 @@ function getDomLoadingDuration() {
   let domLoadingDuration = -1;
   let performance;
 
-  performance = (canAccessTopWindow()) ? utils.getWindowTop().performance : utils.getWindowSelf().performance;
+  performance = (canAccessTopWindow()) ? getWindowTop().performance : getWindowSelf().performance;
 
   if (performance && performance.timing && performance.timing.navigationStart > 0) {
     const val = performance.timing.domLoading - performance.timing.navigationStart;
@@ -871,13 +874,13 @@ export const spec = {
     autoFillParams(bid);
 
     if (!internal.getRefererInfo().reachedTop) {
-      utils.logWarn(`${LOG_PREFIX} the main page url is unreachabled.`);
+      logWarn(`${LOG_PREFIX} the main page url is unreachabled.`);
       // internal.enqueue(debugData());
       return false;
     }
 
     if (!(bid.params.organizationId && bid.params.site && bid.params.placement)) {
-      utils.logWarn(`${LOG_PREFIX} at least one required param is missing.`);
+      logWarn(`${LOG_PREFIX} at least one required param is missing.`);
       // internal.enqueue(debugData());
       return false;
     }
@@ -896,7 +899,7 @@ export const spec = {
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];
 
-    const adUnits = utils._map(validBidRequests, (bidRequest) => {
+    const adUnits = _map(validBidRequests, (bidRequest) => {
       const globalFeatures = GlobalExchange.getOrSetGlobalFeatures();
       const features = {
         ...globalFeatures,
@@ -925,7 +928,7 @@ export const spec = {
       // Handle priceFloors module
       bidRequest.floors = _getFloors(bidRequest);
 
-      if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+      if (deepAccess(bidRequest, 'mediaTypes.video')) {
         _buildVideoBidRequest(bidRequest);
       }
 
@@ -936,7 +939,7 @@ export const spec = {
 
     // Group ad units by organizationId
     const groupedAdUnits = adUnits.reduce((groupedAdUnits, adUnit) => {
-      const adUnitCopy = utils.deepClone(adUnit);
+      const adUnitCopy = deepClone(adUnit);
       adUnitCopy.params.organizationId = adUnitCopy.params.organizationId.toString();
 
       // remove useless props
@@ -950,12 +953,12 @@ export const spec = {
     }, {});
 
     // Build one request per organizationId
-    const requests = utils._map(Object.keys(groupedAdUnits), organizationId => {
+    const requests = _map(Object.keys(groupedAdUnits), organizationId => {
       return {
         method: 'POST',
         url: ENDPOINT,
         data: {
-          id: utils.generateUUID(),
+          id: generateUUID(),
           organizationId: organizationId,
           secure: secure,
           device: device,
@@ -1001,12 +1004,12 @@ export const spec = {
             const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
 
             if (bidReq) {
-              bidObj.meta = utils.deepAccess(bidObj, 'meta', {});
+              bidObj.meta = deepAccess(bidObj, 'meta', {});
               bidObj.meta.mediaType = bidObj.mediaType;
               bidObj.meta.advertiserDomains = (Array.isArray(bidObj.aDomain) && bidObj.aDomain.length) ? bidObj.aDomain : [];
 
               if (bidObj.mediaType === VIDEO) {
-                const mediaTypeContext = utils.deepAccess(bidReq, 'mediaTypes.video.context');
+                const mediaTypeContext = deepAccess(bidReq, 'mediaTypes.video.context');
                 // Adagio SSP returns a `vastXml` only. No `vastUrl` nor `videoCacheKey`.
                 if (!bidObj.vastUrl && bidObj.vastXml) {
                   bidObj.vastUrl = 'data:text/xml;charset=utf-8;base64,' + btoa(bidObj.vastXml.replace(/\\"/g, '"'));
@@ -1018,8 +1021,8 @@ export const spec = {
                     adUnitCode: bidObj.adUnitCode,
                     url: bidObj.urlRenderer || RENDERER_URL,
                     config: {
-                      ...utils.deepAccess(bidReq, 'mediaTypes.video'),
-                      ...utils.deepAccess(bidObj, 'outstream', {})
+                      ...deepAccess(bidReq, 'mediaTypes.video'),
+                      ...deepAccess(bidObj, 'outstream', {})
                     }
                   });
 
@@ -1043,7 +1046,7 @@ export const spec = {
         }
       }
     } catch (err) {
-      utils.logError(err);
+      logError(err);
     }
     return bidResponses;
   },
@@ -1077,7 +1080,7 @@ export const spec = {
     if (isOrtb) {
       autoFillParams(adagioBid);
 
-      adagioBid.params.auctionId = utils.deepAccess(adagioBidderRequest, 'auctionId');
+      adagioBid.params.auctionId = deepAccess(adagioBidderRequest, 'auctionId');
 
       const globalFeatures = GlobalExchange.getOrSetGlobalFeatures();
       adagioBid.params.features = {
@@ -1090,7 +1093,7 @@ export const spec = {
       adagioBid.params.prebidVersion = '$prebid.version$';
       adagioBid.params.data = GlobalExchange.getExchangeData();
 
-      if (utils.deepAccess(adagioBid, 'mediaTypes.video.context') === OUTSTREAM) {
+      if (deepAccess(adagioBid, 'mediaTypes.video.context') === OUTSTREAM) {
         adagioBid.params.playerName = setPlayerName(adagioBid);
       }
 

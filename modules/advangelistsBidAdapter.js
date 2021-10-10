@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isEmpty, deepAccess, isFn, parseSizesInput, generateUUID, parseUrl } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -56,7 +56,7 @@ export const spec = {
 
   interpretResponse(serverResponse, {bidRequest}) {
     let response = serverResponse.body;
-    if (response !== null && utils.isEmpty(response) == false) {
+    if (response !== null && isEmpty(response) == false) {
       if (isVideoBid(bidRequest)) {
         let bidResponse = {
           requestId: response.id,
@@ -103,20 +103,20 @@ export const spec = {
 };
 
 function isBannerBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+  return deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
 }
 
 function isVideoBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.video');
+  return deepAccess(bid, 'mediaTypes.video');
 }
 
 function getBannerBidFloor(bid) {
-  let floorInfo = utils.isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }) : {};
+  let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }) : {};
   return floorInfo.floor || getBannerBidParam(bid, 'bidfloor');
 }
 
 function getVideoBidFloor(bid) {
-  let floorInfo = utils.isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'video', size: '*' }) : {};
+  let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'video', size: '*' }) : {};
   return floorInfo.floor || getVideoBidParam(bid, 'bidfloor');
 }
 
@@ -129,11 +129,11 @@ function isBannerBidValid(bid) {
 }
 
 function getVideoBidParam(bid, key) {
-  return utils.deepAccess(bid, 'params.video.' + key) || utils.deepAccess(bid, 'params.' + key);
+  return deepAccess(bid, 'params.video.' + key) || deepAccess(bid, 'params.' + key);
 }
 
 function getBannerBidParam(bid, key) {
-  return utils.deepAccess(bid, 'params.banner.' + key) || utils.deepAccess(bid, 'params.' + key);
+  return deepAccess(bid, 'params.banner.' + key) || deepAccess(bid, 'params.' + key);
 }
 
 function isMobile() {
@@ -184,7 +184,7 @@ function getFirstSize(sizes) {
 }
 
 function parseSizes(sizes) {
-  return utils.parseSizesInput(sizes).map(size => {
+  return parseSizesInput(sizes).map(size => {
     let [ width, height ] = size.split('x');
     return {
       w: parseInt(width, 10) || undefined,
@@ -194,11 +194,11 @@ function parseSizes(sizes) {
 }
 
 function getVideoSizes(bid) {
-  return parseSizes(utils.deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
 }
 
 function getBannerSizes(bid) {
-  return parseSizes(utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
+  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
 }
 
 function getTopWindowReferrer() {
@@ -290,7 +290,7 @@ function createVideoRequestData(bid, bidderRequest) {
       'bidfloorcur': 'USD',
       'secure': secure,
       'video': Object.assign({
-        'id': utils.generateUUID(),
+        'id': generateUUID(),
         'pos': 0,
         'w': firstSize.w,
         'h': firstSize.h,
@@ -311,7 +311,7 @@ function createVideoRequestData(bid, bidderRequest) {
 
 function getTopWindowLocation(bidderRequest) {
   let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return utils.parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
 }
 
 function createBannerRequestData(bid, bidderRequest) {
@@ -378,7 +378,7 @@ function createBannerRequestData(bid, bidderRequest) {
       'bidfloorcur': 'USD',
       'secure': secure,
       'banner': {
-        'id': utils.generateUUID(),
+        'id': generateUUID(),
         'pos': 0,
         'w': size['w'],
         'h': size['h']

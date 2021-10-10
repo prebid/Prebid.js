@@ -1,6 +1,6 @@
+import { getValue, logError, deepAccess, getBidIdParameter, parseSizesInput, isArray } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
@@ -27,13 +27,13 @@ export const spec = {
   isBidRequestValid: function(bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined') {
-      let isValidPlacementId = _validateId(utils.getValue(bid.params, 'placementId'));
-      let isValidPageId = _validateId(utils.getValue(bid.params, 'pageId'));
+      let isValidPlacementId = _validateId(getValue(bid.params, 'placementId'));
+      let isValidPageId = _validateId(getValue(bid.params, 'pageId'));
       isValid = isValidPlacementId && isValidPageId;
     }
 
     if (!isValid) {
-      utils.logError('Teads placementId and pageId parameters are required. Bid aborted.');
+      logError('Teads placementId and pageId parameters are required. Bid aborted.');
     }
     return isValid;
   },
@@ -54,8 +54,8 @@ export const spec = {
       data: bids,
       deviceWidth: screen.width,
       hb_version: '$prebid.version$',
-      ...getFLoCParameters(utils.deepAccess(validBidRequests, '0.userId.flocId')),
-      ...getUnifiedId2Parameter(utils.deepAccess(validBidRequests, '0.userId.uid2')),
+      ...getFLoCParameters(deepAccess(validBidRequests, '0.userId.flocId')),
+      ...getUnifiedId2Parameter(deepAccess(validBidRequests, '0.userId.uid2')),
       ...getFirstPartyTeadsIdParameter()
     };
 
@@ -188,35 +188,35 @@ function isGlobalConsent(gdprData, apiVersion) {
 
 function buildRequestObject(bid) {
   const reqObj = {};
-  let placementId = utils.getValue(bid.params, 'placementId');
-  let pageId = utils.getValue(bid.params, 'pageId');
+  let placementId = getValue(bid.params, 'placementId');
+  let pageId = getValue(bid.params, 'pageId');
 
   reqObj.sizes = getSizes(bid);
-  reqObj.bidId = utils.getBidIdParameter('bidId', bid);
-  reqObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
+  reqObj.bidId = getBidIdParameter('bidId', bid);
+  reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
-  reqObj.adUnitCode = utils.getBidIdParameter('adUnitCode', bid);
-  reqObj.auctionId = utils.getBidIdParameter('auctionId', bid);
-  reqObj.transactionId = utils.getBidIdParameter('transactionId', bid);
+  reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
+  reqObj.auctionId = getBidIdParameter('auctionId', bid);
+  reqObj.transactionId = getBidIdParameter('transactionId', bid);
   return reqObj;
 }
 
 function getSizes(bid) {
-  return utils.parseSizesInput(concatSizes(bid));
+  return parseSizesInput(concatSizes(bid));
 }
 
 function concatSizes(bid) {
-  let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-  let videoSizes = utils.deepAccess(bid, 'mediaTypes.video.sizes');
-  let bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
+  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
+  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
 
-  if (utils.isArray(bannerSizes) || utils.isArray(playerSize) || utils.isArray(videoSizes)) {
+  if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
     let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
     return mediaTypesSizes
       .reduce(function(acc, currSize) {
-        if (utils.isArray(currSize)) {
-          if (utils.isArray(currSize[0])) {
+        if (isArray(currSize)) {
+          if (isArray(currSize[0])) {
             currSize.forEach(function (childSize) {
               acc.push(childSize);
             })

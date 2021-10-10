@@ -1,6 +1,5 @@
-import * as utils from '../src/utils.js'
-
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _each, deepAccess, logError, logWarn, parseSizesInput } from '../src/utils.js';
 
 import { config } from '../src/config.js'
 import { getStorageManager } from '../src/storageManager.js';
@@ -51,7 +50,7 @@ function _getBrowserParams(topWindowUrl) {
     topScreen = topWindow.screen;
     topUrl = topWindowUrl || '';
   } catch (error) {
-    utils.logError(error);
+    logError(error);
     return browserParams
   }
 
@@ -131,7 +130,7 @@ function isBidRequestValid(bid) {
   const id = legacyParamID || params.slot || params.native || params.zone || params.pubID;
 
   if (invalidRequestIds[id]) {
-    utils.logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
+    logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
     return false;
   }
 
@@ -146,12 +145,12 @@ function isBidRequestValid(bid) {
     case !!(params.inVideo): break;
     case !!(params.videoPubID): break;
     default:
-      utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
+      logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
   }
 
   if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
-    utils.logWarn('[GumGum] bidfloor must be a Number');
+    logWarn('[GumGum] bidfloor must be a Number');
     return false;
   }
 
@@ -173,7 +172,7 @@ function _getVidParams(attributes) {
     protocols = [],
     playerSize = []
   } = attributes;
-  const sizes = utils.parseSizesInput(playerSize);
+  const sizes = parseSizesInput(playerSize);
   const [viw, vih] = sizes[0] && sizes[0].split('x');
   let pr = '';
 
@@ -279,7 +278,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const timeout = config.getConfig('bidderTimeout');
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  utils._each(validBidRequests, bidRequest => {
+  _each(validBidRequests, bidRequest => {
     const {
       bidId,
       mediaTypes = {},
@@ -298,8 +297,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
 
-    // ADJS-1024
-    if (utils.deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
+    // ADJS-1024 & ADSS-1297
+    if (deepAccess(ortb2Imp, 'ext.data.pbadslot')) {
+      gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot')
+    } else if (deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
       gpid = ortb2Imp.ext.data.adserver.adslot
     }
 
@@ -433,7 +434,7 @@ function interpretResponse(serverResponse, bidRequest) {
     setTimeout(() => {
       !!invalidRequestIds[id] && delete invalidRequestIds[id];
     }, delayTime);
-    utils.logWarn(`[GumGum] Please check the implementation for ${id}`);
+    logWarn(`[GumGum] Please check the implementation for ${id}`);
   }
 
   const defaultResponse = {
@@ -481,14 +482,19 @@ function interpretResponse(serverResponse, bidRequest) {
     advertiserDomains: advertiserDomains || [],
     mediaType: type || mediaType
   };
-  let sizes = utils.parseSizesInput(bidRequest.sizes);
+  let sizes = parseSizesInput(bidRequest.sizes);
 
   if (maxw && maxh) {
     sizes = [`${maxw}x${maxh}`];
   } else if (product === 5 && includes(sizes, '1x1')) {
     sizes = ['1x1'];
   } else if (product === 2 && includes(sizes, '1x1')) {
-    sizes = responseWidth && responseHeight ? [`${responseWidth}x${responseHeight}`] : utils.parseSizesInput(bidRequest.sizes)
+    const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
+      const [ width, height ] = current;
+      if (responseWidth === width || responseHeight === height) result.push(current.join('x'));
+      return result
+    }, [])) || [];
+    sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
   }
 
   let [width, height] = sizes[0].split('x');
