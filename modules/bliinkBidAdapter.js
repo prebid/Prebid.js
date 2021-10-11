@@ -86,11 +86,12 @@ export function getKeywords() {
 }
 
 export const parseXML = (content) => {
+  const isIE = navigator.userAgent.indexOf('MSIE') !== -1
   if (typeof content !== 'string' || content.length === 0) return null
 
   const parser = new DOMParser()
 
-  if (window.DOMParser) {
+  if (!isIE) {
     const xml = (parser && parser.parseFromString && parser.parseFromString(content, 'text/xml'))
 
     if (xml &&
