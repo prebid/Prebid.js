@@ -27,7 +27,7 @@ The `yahoossp` bid adapter supports 2 types of integration:
 
 **Please Note:** Most examples in this file are using dcn & pos.
 
-## Who is currently eligeble for "pubId" integration
+## Who is currently eligible for "pubId" integration
 At this time, only the following partners/publishers are eligble for pubId integration:
 1. New partners/publishers that do not have any existing accounts on Yahoo SSP (aka: aol, oneMobile, oneDisplay).
 2. Video SSP (oneVideo) partners/publishers that
