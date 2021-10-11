@@ -13,9 +13,9 @@ export function VideoCore(parentModule_) {
     return submodule && submodule.getOrtbParams();
   }
 
-  function setAdTagUrl(adTagUrl, divId, adXml) {
+  function setAdTagUrl(adTagUrl, divId, options) {
     const submodule = parentModule.getSubmodule(divId);
-    return submodule && submodule.setAdTagUrl(adTagUrl, adXml);
+    return submodule && submodule.setAdTagUrl(adTagUrl, options);
   }
 
   function onEvents(events, callback, divId) {
