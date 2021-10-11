@@ -9,9 +9,9 @@ export function AdServerCore(parentModule_) {
     parentModule.registerSubmodule(vendorCode, vendorCode, config);
   }
 
-  function getAdTagUrl(vendorCode) {
+  function getAdTagUrl(vendorCode, adUnit, baseAdTagUrl) {
     const submodule = parentModule.getSubmodule(vendorCode);
-    return submodule && submodule.getAdTagUrl();
+    return submodule && submodule.getAdTagUrl(adUnit, baseAdTagUrl);
   }
 
   return {
