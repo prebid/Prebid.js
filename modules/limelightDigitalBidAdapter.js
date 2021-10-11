@@ -1,4 +1,4 @@
-import { logMessage, groupBy, uniques } from '../src/utils.js';
+import { logMessage, groupBy, uniques, flatten, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
@@ -92,6 +92,24 @@ export const spec = {
     }
     return bidResponses;
   },
+
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const syncs = serverResponses.map(response => response.body).reduce(flatten, [])
+      .map(response => deepAccess(response, 'ext.sync')).filter(Boolean);
+    const iframeSyncUrls = !syncOptions.iframeEnabled ? [] : syncs.map(sync => sync.iframe).filter(Boolean).map(url => {
+      return {
+        type: 'iframe',
+        url: url
+      }
+    });
+    const pixelSyncUrls = !syncOptions.pixelEnabled ? [] : syncs.map(sync => sync.pixel).filter(Boolean).map(url => {
+      return {
+        type: 'image',
+        url: url
+      }
+    });
+    return [iframeSyncUrls, pixelSyncUrls].reduce(flatten, []).filter(uniques);
+  }
 };
 
 registerBidder(spec);
