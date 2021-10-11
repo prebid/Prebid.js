@@ -89,14 +89,22 @@ export const parseXML = (content) => {
   if (typeof content !== 'string' || content.length === 0) return null
 
   const parser = new DOMParser()
-  if (parser) {
-    const xml = (parser && parser.parseFromString && parser.parseFromString(content, 'text/xml')) || ''
+
+  if (window.DOMParser) {
+    const xml = (parser && parser.parseFromString && parser.parseFromString(content, 'text/xml'))
 
     if (xml &&
       xml.getElementsByTagName('VAST')[0] &&
       xml.getElementsByTagName('VAST')[0].tagName === 'VAST') {
       return xml
     }
+  } else {
+    // eslint-disable-next-line no-undef
+    let xmlDoc = new ActiveXObject('Microsoft.XMLDOM')
+    xmlDoc.async = false
+    xmlDoc.loadXML(content)
+
+    return xmlDoc
   }
 
   return null
