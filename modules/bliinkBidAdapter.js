@@ -89,7 +89,7 @@ export const parseXML = (content) => {
   if (typeof content !== 'string' || content.length === 0) return null
 
   const parser = new DOMParser()
-  const xml = parser.parseFromString(content, 'text/xml')
+  const xml = (parser && parser.parseFromString && parser.parseFromString(content, 'text/xml')) || ''
 
   if (xml &&
     xml.getElementsByTagName('VAST')[0] &&
