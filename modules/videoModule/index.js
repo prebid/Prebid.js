@@ -35,41 +35,22 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     requestBids.before(enrichAdUnits, 40);
 
-    /*
-    auction result conforms to:
-    {
-      auctionId: _auctionId,
-      timestamp: _auctionStart,
-      auctionEnd: _auctionEnd,
-      auctionStatus: _auctionStatus,
-      adUnits: _adUnits,
-      adUnitCodes: _adUnitCodes,
-      labels: _labels,
-      bidderRequests: _bidderRequests,
-      noBids: _noBids,
-      bidsReceived: _bidsReceived,
-      winningBids: _winningBids,
-      timeout: _timeout
+    function enrichAdUnits(nextFn, bidRequest) {
+      const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
+      adUnits.forEach(adUnit => {
+        const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
+        adUnit.mediaTypes.video = Object.assign({}, adUnit.mediaTypes.video, oRtbParams);
+      });
+      return nextFn.call(this, bidRequest);
     }
-     */
+
     pbEvents.on(CONSTANTS.EVENTS.AUCTION_END, function(auctionResult) {
-      // TODO: requires AdServer Module.
-      console.log(auctionResult);
       auctionResult.adUnits.forEach(adUnit => {
         if (adUnit.video) {
           renderWinningBid(adUnit);
         }
       });
     });
-  }
-
-  function enrichAdUnits(nextFn, bidRequest) {
-    const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
-    adUnits.forEach(adUnit => {
-      const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
-      adUnit.mediaTypes.video = Object.assign({}, adUnit.mediaTypes.video, oRtbParams);
-    });
-    return nextFn.call(this, bidRequest);
   }
 
   function renderWinningBid(adUnit) {
@@ -81,8 +62,10 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       adTagUrl = adServerCore.getAdTagUrl(adServerConfig.vendorCode, adUnit, adServerConfig.baseAdTagUrl);
     }
 
+    const adUnitCode = adUnit.code;
+    const options = { adUnitCode };
     if (adTagUrl) {
-      videoCore.setAdTagUrl(adTagUrl, divId);
+      videoCore.setAdTagUrl(adTagUrl, divId, options);
       return;
     }
 
@@ -93,8 +76,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     }
 
     adTagUrl = highestBid.vastUrl;
-    let adXml = highestBid.vastXml;
-    videoCore.setAdTagUrl(adTagUrl, divId, adXml);
+    options.adXml = highestBid.vastXml;
+    videoCore.setAdTagUrl(adTagUrl, divId, options);
   }
 
   return { init };
