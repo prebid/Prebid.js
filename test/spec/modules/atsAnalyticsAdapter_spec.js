@@ -41,7 +41,7 @@ describe('ats analytics adapter', function () {
       storage.setCookie('_lr_env_src_ats', 'true', now.toUTCString());
       storage.setCookie('_lr_sampling_rate', '10', now.toUTCString());
 
-      this.timeout(1500);
+      this.timeout(2100);
 
       let initOptions = {
         pid: '10433394'
@@ -181,7 +181,7 @@ describe('ats analytics adapter', function () {
         return [wonRequest]
       });
 
-      clock.tick(1000);
+      clock.tick(2000);
 
       let requests = server.requests.filter(req => {
         return req.url.indexOf(analyticsUrl) > -1;

@@ -391,7 +391,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
           logError('ATS Analytics - preflight request encounter an error: ', err);
         }
       }
-    }, 1000);
+    }, 2000);
   }
 }
 
