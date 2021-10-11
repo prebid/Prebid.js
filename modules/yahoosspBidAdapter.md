@@ -19,6 +19,29 @@ The Yahoo SSP Bid Adapter is an OpenRTB interface that consolidates all previous
 * First Party Data (ortb2 & ortb2Imp)
 * Custom TTL (time to live)
 
+
+# Adapter Request mode
+Since the yahoossp adapter now supports both Banner and Video adUnits a controller was needed to allow you to define when the adapter should generate a bid-requests to our Yahoo SSP.
+
+**Important!** By default the adapter mode is set to "banner" only.
+This means that you do not need to explicitly declare the yahoossp.mode in the Global config to initiate banner adUnit requests.
+
+## Request modes:
+* **undefined** - (Default) Will generate bid-requests for "Banner" formats only.
+* **banner** - Will generate bid-requests for "Banner" formats only (Explicit declaration).
+* **video** - Will generate bid-requests for "Video" formats only (Explicit declaration).
+* **all** - Will generate bid-requests for both "Banner" & "Video" formats
+
+**Important!** When setting yahoossp.mode = 'all' Make sure your Yahoo SSP Placement (pos id) supports both Banner & Video placements.
+If it does not, the Yahoo SSP will respond only in the format it is set too.
+
+```javascript
+pbjs.setConfig({
+    yahoossp: {
+        mode: 'banner' // 'all', 'video', 'banner' (default)
+    }
+});
+```
 # Integration Options
 The `yahoossp` bid adapter supports 2 types of integration:
 1. **dcn & pos** DEFAULT (Site/App & Position targeting) - For Display partners/publishers.
@@ -88,29 +111,6 @@ const adUnits = [{
     ]
 }];
 ```
-# Adapter Request mode
-Since the yahoossp adapter now supports both Banner and Video adUnits a controller was needed to allow you to define when the adapter should generate a bid-requests to our Yahoo SSP.
-
-**Important!** By default the adapter mode is set to "banner" only.
-This means that you do not need to explicitly declare the yahoossp.mode in the Global config to initiate banner adUnit requests.
-
-## Request modes:
-* **undefined** - (Default) Will generate bid-requests for "Banner" formats only.
-* **banner** - Will generate bid-requests for "Banner" formats only (Explicit declaration).
-* **video** - Will generate bid-requests for "Video" formats only (Explicit declaration).
-* **all** - Will generate bid-requests for both "Banner" & "Video" formats
-
-**Important!** When setting yahoossp.mode = 'all' Make sure your Yahoo SSP Placement (pos id) supports both Banner & Video placements.
-If it does not, the Yahoo SSP will respond only in the format it is set too.
-
-```javascript
-pbjs.setConfig({
-    yahoossp: {
-        mode: 'banner' // 'all', 'video', 'banner' (default)
-    }
-});
-```
-
 # Advanced adUnit Examples:
 ## Banner
 ```javascript
@@ -311,7 +311,7 @@ For further details please see, https://docs.prebid.org/dev-docs/modules/floors.
 
 # Optional: Self-served E2E testing mode
 If you want to see how the yahoossp adapter works and loads you are invited to try it out using our testing mode.
-This is useful for intergration testing and response parsing when checking banner vs video capabilities.
+This is useful for integration testing and response parsing when checking banner vs video capabilities.
 
 ## How to use E2E test mode:
 1. Set the yahoossp global config mode to either 'banner' or 'video' - depending on the adUnit you want to test.
@@ -325,7 +325,7 @@ This is useful for intergration testing and response parsing when checking banne
  ```javascript
 pbjs.setConfig({
     yahoossp: {
-        mode: 'banner'
+        mode: 'banner' // select 'banner' or 'video' to define what response to load
     }
 });
 
@@ -764,7 +764,7 @@ const adUnits = [{
 }]
 ```
 ### Placement only override
-**Important!** Using this method is not advised if you have multiple Site/Apps that are broken out of a Run Of Network (RON) Site/App. If the placement ID does not reside under a matching Site/App object, the request will not resolve and no response will be sent back from the ad-server. Using
+**Important!** Using this method is not advised if you have multiple Site/Apps that are broken out of a Run Of Network (RON) Site/App. If the placement ID does not reside under a matching Site/App object, the request will not resolve and no response will be sent back from the ad-server.
 ```javascript
 const adUnits = [{
     code: 'pubId-site-targeting-adUnit',
