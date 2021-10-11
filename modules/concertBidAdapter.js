@@ -1,5 +1,4 @@
-
-import * as utils from '../src/utils.js';
+import { logWarn, logMessage, debugTurnedOn, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js'
 
@@ -17,7 +16,7 @@ export const spec = {
    */
   isBidRequestValid: function(bid) {
     if (!bid.params.partnerId) {
-      utils.logWarn('Missing partnerId bid parameter');
+      logWarn('Missing partnerId bid parameter');
       return false;
     }
 
@@ -32,14 +31,14 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    utils.logMessage(validBidRequests);
-    utils.logMessage(bidderRequest);
+    logMessage(validBidRequests);
+    logMessage(bidderRequest);
     let payload = {
       meta: {
         prebidVersion: '$prebid.version$',
         pageUrl: bidderRequest.refererInfo.referer,
         screen: [window.screen.width, window.screen.height].join('x'),
-        debug: utils.debugTurnedOn(),
+        debug: debugTurnedOn(),
         uid: getUid(bidderRequest),
         optedOut: hasOptedOutOfPersonalization(),
         adapterVersion: '1.1.1',
@@ -64,7 +63,7 @@ export const spec = {
       return slot;
     });
 
-    utils.logMessage(payload);
+    logMessage(payload);
 
     return {
       method: 'POST',
@@ -79,8 +78,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    utils.logMessage(serverResponse);
-    utils.logMessage(bidRequest);
+    logMessage(serverResponse);
+    logMessage(bidRequest);
 
     const serverBody = serverResponse.body;
 
@@ -105,11 +104,11 @@ export const spec = {
       }
     });
 
-    if (utils.debugTurnedOn() && serverBody.debug) {
-      utils.logMessage(`CONCERT`, serverBody.debug);
+    if (debugTurnedOn() && serverBody.debug) {
+      logMessage(`CONCERT`, serverBody.debug);
     }
 
-    utils.logMessage(bidResponses);
+    logMessage(bidResponses);
     return bidResponses;
   },
 
@@ -150,8 +149,8 @@ export const spec = {
    * @param {data} Containing timeout specific data
    */
   onTimeout: function(data) {
-    utils.logMessage('concert bidder timed out');
-    utils.logMessage(data);
+    logMessage('concert bidder timed out');
+    logMessage(data);
   },
 
   /**
@@ -159,8 +158,8 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function(bid) {
-    utils.logMessage('concert bidder won bid');
-    utils.logMessage(bid);
+    logMessage('concert bidder won bid');
+    logMessage(bid);
   }
 
 }
@@ -182,7 +181,7 @@ function getUid(bidderRequest) {
   let uid = storage.getDataFromLocalStorage(CONCERT_UID_KEY);
 
   if (!uid) {
-    uid = utils.generateUUID();
+    uid = generateUUID();
     storage.setDataInLocalStorage(CONCERT_UID_KEY, uid);
   }
 

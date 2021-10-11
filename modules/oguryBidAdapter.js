@@ -3,10 +3,12 @@
 import { BANNER } from '../src/mediaTypes.js';
 import { getAdUnitSizes, logWarn, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js'
 
 const BIDDER_CODE = 'ogury';
 const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
+const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
 
 function isBidRequestValid(bid) {
@@ -24,7 +26,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
 
   return [{
     type: 'image',
-    url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${gdprConsent.consentString}&source=prebid`
+    url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
   }]
 }
 
@@ -112,7 +114,8 @@ function interpretResponse(openRtbBidResponse) {
         ext: bid.ext,
         meta: {
           advertiserDomains: bid.adomain
-        }
+        },
+        nurl: bid.nurl
       };
 
       bidResponse.ad = bid.adm;
@@ -135,6 +138,17 @@ function getFloor(bid) {
   return floorResult.currency === 'USD' ? floorResult.floor : 0;
 }
 
+function onBidWon(bid) {
+  if (bid && bid.hasOwnProperty('nurl') && bid.nurl.length > 0) ajax(bid['nurl'], null);
+}
+
+function onTimeout(timeoutData) {
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify(timeoutData[0]), {
+    method: 'POST',
+    contentType: 'application/json'
+  });
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -142,7 +156,9 @@ export const spec = {
   getUserSyncs,
   buildRequests,
   interpretResponse,
-  getFloor
+  getFloor,
+  onBidWon,
+  onTimeout
 }
 
 registerBidder(spec);

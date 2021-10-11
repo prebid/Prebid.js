@@ -230,6 +230,7 @@ export const spec = {
           delete bids.width;
           delete bids.height;
         } else if (mediaType === 'outstream' && bidRequest) {
+          delete bids.ad; // Some pubs expect bids.ad to be a vast xml structure, we have a vatUrl so lets delete this.
           bids.mediaType = 'video';
           bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
           bids.renderer = newRenderer(bidRequest.adUnitCode, bids, deepAccess(

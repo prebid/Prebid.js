@@ -1,7 +1,7 @@
+import { logError, logInfo } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -13,9 +13,6 @@ export const storage = getStorageManager();
  */
 
 const analyticsType = 'endpoint';
-// dev endpoints
-// const preflightUrl = 'https://analytics-check.publishersite.xyz/check/';
-// export const analyticsUrl = 'https://analyticsv2.publishersite.xyz';
 
 const preflightUrl = 'https://check.analytics.rlcdn.com/check/';
 export const analyticsUrl = 'https://analytics.rlcdn.com';
@@ -23,7 +20,7 @@ export const analyticsUrl = 'https://analytics.rlcdn.com';
 let handlerRequest = [];
 let handlerResponse = [];
 
-let atsAnalyticsAdapterVersion = 1;
+let atsAnalyticsAdapterVersion = 2;
 
 let browsersList = [
   /* Googlebot */
@@ -207,12 +204,6 @@ let browsersList = [
   },
 ];
 
-function setSamplingCookie(samplRate) {
-  let now = new Date();
-  now.setTime(now.getTime() + 3600000);
-  storage.setCookie('_lr_sampling_rate', samplRate, now.toUTCString());
-}
-
 let listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
 
 function bidRequestedHandler(args) {
@@ -256,7 +247,7 @@ export function parseBrowser() {
     let browserName = result && result.length ? result[0].name : '';
     return (listOfSupportedBrowsers.indexOf(browserName) >= 0) ? browserName : 'Unknown';
   } catch (err) {
-    utils.logError('ATS Analytics - Error while checking user browser!', err);
+    logError('ATS Analytics - Error while checking user browser!', err);
   }
 }
 
@@ -265,27 +256,34 @@ function sendDataToAnalytic () {
   try {
     let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
     let strJSON = JSON.stringify(dataToSend);
-    utils.logInfo('ATS Analytics - tried to send analytics data!');
+    logInfo('ATS Analytics - tried to send analytics data!');
     ajax(analyticsUrl, function () {
     }, strJSON, {method: 'POST', contentType: 'application/json'});
   } catch (err) {
-    utils.logError('ATS Analytics - request encounter an error: ', err);
+    logError('ATS Analytics - request encounter an error: ', err);
   }
 }
 
 // preflight request, to check did publisher have permission to send data to analytics endpoint
 function preflightRequest (envelopeSourceCookieValue) {
-  utils.logInfo('ATS Analytics - preflight request!');
-  ajax(preflightUrl + atsAnalyticsAdapter.context.pid, function (data) {
-    let samplingRateObject = JSON.parse(data);
-    utils.logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
-    let samplingRate = samplingRateObject['samplingRate'];
-    setSamplingCookie(samplingRate);
-    let samplingRateNumber = Number(samplingRate);
-    if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber) && envelopeSourceCookieValue != null) {
-      sendDataToAnalytic();
-    }
-  }, undefined, { method: 'GET', crossOrigin: true });
+  logInfo('ATS Analytics - preflight request!');
+  ajax(preflightUrl + atsAnalyticsAdapter.context.pid,
+    {
+      success: function (data) {
+        let samplingRateObject = JSON.parse(data);
+        logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
+        let samplingRate = samplingRateObject.samplingRate;
+        atsAnalyticsAdapter.setSamplingCookie(samplingRate);
+        let samplingRateNumber = Number(samplingRate);
+        if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber) && envelopeSourceCookieValue != null) {
+          sendDataToAnalytic();
+        }
+      },
+      error: function () {
+        atsAnalyticsAdapter.setSamplingCookie(0);
+        logInfo('ATS Analytics - Sampling Rate Request Error!');
+      }
+    }, undefined, {method: 'GET', crossOrigin: true});
 }
 
 function callHandler(evtype, args) {
@@ -332,7 +330,7 @@ let atsAnalyticsAdapter = Object.assign(adapter(
           }
         }
       } catch (err) {
-        utils.logError('ATS Analytics - preflight request encounter an error: ', err);
+        logError('ATS Analytics - preflight request encounter an error: ', err);
       }
     }
   }
@@ -345,10 +343,10 @@ atsAnalyticsAdapter.originEnableAnalytics = atsAnalyticsAdapter.enableAnalytics;
 atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
   if (samplingRate !== 0) {
     let shouldFireRequestValue = (Math.floor((Math.random() * 100 + 1)) === 100);
-    utils.logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
+    logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
     return shouldFireRequestValue;
   } else {
-    utils.logInfo('ATS Analytics - Should Fire Request: ', false);
+    logInfo('ATS Analytics - Should Fire Request: ', false);
     return false;
   }
 };
@@ -356,10 +354,17 @@ atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
 atsAnalyticsAdapter.getUserAgent = function () {
   return window.navigator.userAgent;
 };
+
+atsAnalyticsAdapter.setSamplingCookie = function (samplRate) {
+  const now = new Date();
+  now.setTime(now.getTime() + 86400000);
+  storage.setCookie('_lr_sampling_rate', samplRate, now.toUTCString());
+}
+
 // override enableAnalytics so we can get access to the config passed in from the page
 atsAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.pid) {
-    utils.logError('ATS Analytics - Publisher ID (pid) option is not defined. Analytics won\'t work');
+    logError('ATS Analytics - Publisher ID (pid) option is not defined. Analytics won\'t work');
     return;
   }
   atsAnalyticsAdapter.context = {
@@ -367,7 +372,7 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
     pid: config.options.pid
   };
   let initOptions = config.options;
-  utils.logInfo('ATS Analytics - adapter enabled! ');
+  logInfo('ATS Analytics - adapter enabled! ');
   atsAnalyticsAdapter.originEnableAnalytics(initOptions); // call the base class function
 };
 

@@ -125,16 +125,19 @@ const ANALYTICS_MESSAGE = {
   bidAdUnits: [
     {
       adUnit: 'panorama_d_1',
+      adUnitId: 'adunitid',
       timeStamp: 1519149562216
     },
     {
       adUnit: 'box_d_1',
+      adUnitId: 'adunitid',
       timeStamp: 1519149562216
     }
   ],
   requests: [
     {
       adUnit: 'panorama_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       timeStamp: 1519149562216,
       gdpr: 0,
@@ -142,6 +145,7 @@ const ANALYTICS_MESSAGE = {
     },
     {
       adUnit: 'box_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       timeStamp: 1519149562216,
       gdpr: 0,
@@ -149,6 +153,7 @@ const ANALYTICS_MESSAGE = {
     },
     {
       adUnit: 'box_d_2',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       timeStamp: 1519149562216,
       gdpr: 0,
@@ -159,6 +164,7 @@ const ANALYTICS_MESSAGE = {
     {
       timeStamp: 1519149562216,
       adUnit: 'panorama_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       width: 980,
       height: 240,
@@ -172,6 +178,7 @@ const ANALYTICS_MESSAGE = {
     {
       timeStamp: 1519149562216,
       adUnit: 'box_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       width: 300,
       height: 250,
@@ -185,6 +192,7 @@ const ANALYTICS_MESSAGE = {
     {
       timeStamp: 1519149562216,
       adUnit: 'box_d_2',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       ttr: 200,
       IsBid: false,
@@ -197,6 +205,7 @@ const ANALYTICS_MESSAGE = {
     {
       timeStamp: 1519149562216,
       adUnit: 'panorama_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       width: 980,
       height: 240,
@@ -208,6 +217,7 @@ const ANALYTICS_MESSAGE = {
     {
       timeStamp: 1519149562216,
       adUnit: 'box_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       width: 300,
       height: 250,
@@ -238,8 +248,14 @@ describe('Livewrapped analytics adapter', function () {
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
 
+    let element = {
+      getAttribute: function() {
+        return 'adunitid';
+      }
+    }
     sandbox.stub(events, 'getEvents').returns([]);
     sandbox.stub(utils, 'timestamp').returns(1519149562416);
+    sandbox.stub(document, 'getElementById').returns(element);
 
     clock = sandbox.useFakeTimers(1519767013781);
   });

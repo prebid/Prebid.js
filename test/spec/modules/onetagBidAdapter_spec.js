@@ -191,12 +191,8 @@ describe('onetag', function () {
               'pubId',
               'transactionId',
               'context',
-              'mimes',
               'playerSize',
-              'protocols',
-              'maxDuration',
-              'api',
-              'playbackmethod',
+              'mediaTypeInfo',
               'type'
             );
           } else if (isValid(BANNER, bid)) {
@@ -207,6 +203,7 @@ describe('onetag', function () {
               'bidderRequestId',
               'pubId',
               'transactionId',
+              'mediaTypeInfo',
               'sizes',
               'type'
             );
