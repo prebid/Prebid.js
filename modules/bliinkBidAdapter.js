@@ -85,60 +85,18 @@ export function getKeywords() {
   return []
 }
 
-function validateXML(text) {
-  var message
-  var parser
-  var xmlDoc
-
-  // code for Edge, IE, Mozilla, Firefox, Opera, etc.
-  if (document.implementation.createDocument || window.DOMParser) {
-    parser = new DOMParser();
-    xmlDoc = parser.parseFromString(text, 'text/xml');
-
-    if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
-      return xmlDoc.getElementsByTagName('parsererror')[0]
-    }
-
-    return true
-  } else if (window.ActiveXObject) {
-    // eslint-disable-next-line no-undef
-    xmlDoc = new ActiveXObject('Microsoft.XMLDOM')
-    xmlDoc.async = 'false'
-
-    xmlDoc.loadXML(text);
-
-    if (xmlDoc.parseError.errorCode !== 0) {
-      message = 'Error Code: ' + xmlDoc.parseError.errorCode + '\\n'
-      message = message + 'Error Reason: ' + xmlDoc.parseError.reason
-      message = message + 'Error Line: ' + xmlDoc.parseError.line
-      return message;
-    }
-    return false
-  }
-
-  return false
-}
-
 export const parseXML = (content) => {
   if (typeof content !== 'string' || content.length === 0) return null
 
   const parser = new DOMParser()
-
-  if (validateXML(content)) {
-    const xml = (parser && parser.parseFromString && parser.parseFromString(content, 'text/xml'))
+  if (parser) {
+    const xml = (parser && parser.parseFromString && parser.parseFromString(content, 'text/xml')) || ''
 
     if (xml &&
       xml.getElementsByTagName('VAST')[0] &&
       xml.getElementsByTagName('VAST')[0].tagName === 'VAST') {
       return xml
     }
-  } else {
-    // eslint-disable-next-line no-undef
-    let xmlDoc = new ActiveXObject('Microsoft.XMLDOM')
-    xmlDoc.async = false
-    xmlDoc.loadXML(content)
-
-    return xmlDoc
   }
 
   return null
