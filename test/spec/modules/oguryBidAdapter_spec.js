@@ -129,7 +129,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.contain('https://ms-cookie-sync.presage.io/ttd/init-sync');
     });
 
-    it('should set the source as query param', () => {
+    it('should set the same source as query param', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
       expect(userSyncs[0].url).to.contain('source=prebid');
       expect(userSyncs[1].url).to.contain('source=prebid');
