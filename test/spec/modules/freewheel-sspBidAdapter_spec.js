@@ -17,8 +17,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     let bid = {
       'bidder': 'freewheel-ssp',
       'params': {
-        'zoneId': '277225',
-        'schain'
+        'zoneId': '277225'
       },
       'adUnitCode': 'adunit-code',
       'mediaTypes': {
