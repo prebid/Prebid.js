@@ -119,7 +119,7 @@ describe('OguryBidAdapter', function () {
       };
     });
 
-    it('should return syncs array with two elements of type image', () => {
+    it('should return sync array with two elements of type image', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
 
       expect(userSyncs).to.have.lengthOf(2);
@@ -146,7 +146,7 @@ describe('OguryBidAdapter', function () {
       expect(spec.getUserSyncs(syncOptions, [], gdprConsent)).to.have.lengthOf(0);
     });
 
-    it('should return syncs array with two elements of type image when consentString is undefined', () => {
+    it('should return sync array with two elements of type image when consentString is undefined', () => {
       gdprConsent = {
         gdprApplies: true,
         consentString: undefined
@@ -160,7 +160,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with two elements of type image when consentString is null', () => {
+    it('should return sync array with two elements of type image when consentString is null', () => {
       gdprConsent = {
         gdprApplies: true,
         consentString: null
@@ -174,7 +174,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with two elements of type image when gdprConsent is undefined', () => {
+    it('should return sync array with two elements of type image when gdprConsent is undefined', () => {
       gdprConsent = undefined;
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
@@ -185,7 +185,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with two elements of type image when gdprConsent is null', () => {
+    it('should return sync array with two elements of type image when gdprConsent is null', () => {
       gdprConsent = null;
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
@@ -196,7 +196,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with two elements of type image when gdprConsent is null and gdprApplies is false', () => {
+    it('should return sync array with two elements of type image when gdprConsent is null and gdprApplies is false', () => {
       gdprConsent = {
         gdprApplies: false,
         consentString: null
@@ -210,7 +210,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with two elements of type image when gdprConsent is empty string and gdprApplies is false', () => {
+    it('should return sync array with two elements of type image when gdprConsent is empty string and gdprApplies is false', () => {
       gdprConsent = {
         gdprApplies: false,
         consentString: ''
