@@ -3826,6 +3826,7 @@ describe('PubMatic adapter', function () {
     describe('Checking for Video.Placement property', function() {
       let sandbox, utilsMock;
       const adUnit = 'Div1';
+      const msg_placement_missing = 'Video.Placement param missing for Div1';
       let videoData = {
         battr: [6, 7],
         skipafter: 15,
@@ -3851,12 +3852,12 @@ describe('PubMatic adapter', function () {
 
       it('should log Video.Placement param missing', function() {
         checkVideoPlacement(videoData, adUnit);
-        sinon.assert.callCount(utils.logWarn, 1);
+        sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
       })
       it('shoud not log Video.Placement param missing', function() {
         videoData['placement'] = 1;
         checkVideoPlacement(videoData, adUnit);
-        sinon.assert.callCount(utils.logWarn, 0);
+        sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);
       })
     });
   });
