@@ -124,11 +124,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
   }
 
-  function setAdTagUrl(adTagUrl) {
+  function setAdTagUrl(adTagUrl, adXml) {
     if (!player) {
       return;
     }
-    player.playAd(adTagUrl);
+    player.playAd(adTagUrl || adXml);
   }
 
   function onEvents(events, callback) {
