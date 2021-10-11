@@ -24,10 +24,16 @@ function isBidRequestValid(bid) {
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   if (!syncOptions.pixelEnabled) return [];
 
-  return [{
-    type: 'image',
-    url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
-  }]
+  return [
+    {
+      type: 'image',
+      url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
+    },
+    {
+      type: 'image',
+      url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
+    }
+  ]
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
