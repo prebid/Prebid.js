@@ -759,7 +759,7 @@ describe('PubMatic adapter', function () {
   describe('implementation', function () {
   	describe('Bid validations', function () {
   		it('valid bid case', function () {
-		  let validBid = {
+        let validBid = {
 	        bidder: 'pubmatic',
 	        params: {
 	          publisherId: '5670',
@@ -771,7 +771,7 @@ describe('PubMatic adapter', function () {
   		});
 
       it('invalid bid case: publisherId not passed', function () {
-		    let validBid = {
+        let validBid = {
 	        bidder: 'pubmatic',
 	        params: {
 	          adSlot: '/15671365/DMDemo@300x250:0'
@@ -3729,6 +3729,7 @@ describe('PubMatic adapter', function () {
 
     describe('Checking for Video.Placement property', function() {
       let sandbox, utilsMock;
+      const adUnit = 'Div1';
       let videoData = {
         battr: [6, 7],
         skipafter: 15,
@@ -3744,7 +3745,7 @@ describe('PubMatic adapter', function () {
       beforeEach(() => {
         utilsMock = sinon.mock(utils);
         sandbox = sinon.sandbox.create();
-        sandbox.spy(utils, 'logMessage');
+        sandbox.spy(utils, 'logWarn');
       });
 
       afterEach(() => {
@@ -3753,13 +3754,13 @@ describe('PubMatic adapter', function () {
       })
 
       it('should log Video.Placement param missing', function() {
-        checkVideoPlacement(videoData);
-        sinon.assert.callCount(utils.logMessage, 1);
+        checkVideoPlacement(videoData, adUnit);
+        sinon.assert.callCount(utils.logWarn, 1);
       })
       it('shoud not log Video.Placement param missing', function() {
         videoData['placement'] = 1;
-        checkVideoPlacement(videoData);
-        sinon.assert.callCount(utils.logMessage, 0);
+        checkVideoPlacement(videoData, adUnit);
+        sinon.assert.callCount(utils.logWarn, 0);
       })
     });
   });

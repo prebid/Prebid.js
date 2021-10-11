@@ -538,10 +538,10 @@ function _createBannerRequest(bid) {
   return bannerObj;
 }
 
-export function checkVideoPlacement(videoData) {
+export function checkVideoPlacement(videoData, adUnitCode) {
   // Check for video.placement property. If property is missing display log message.
   if (!utils.deepAccess(videoData, 'placement')) {
-    utils.logMessage(MSG_VIDEO_PLACEMENT_MISSING);
+    utils.logWarn(MSG_VIDEO_PLACEMENT_MISSING + ' for ' + adUnitCode);
   };
 }
 
@@ -551,7 +551,7 @@ function _createVideoRequest(bid) {
 
   if (videoData !== UNDEFINED) {
     videoObj = {};
-    checkVideoPlacement(videoData);
+    checkVideoPlacement(videoData, bid.adUnitCode);
     for (var key in VIDEO_CUSTOM_PARAMS) {
       if (videoData.hasOwnProperty(key)) {
         videoObj[key] = _checkParamDataType(key, videoData[key], VIDEO_CUSTOM_PARAMS[key]);
