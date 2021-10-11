@@ -1,5 +1,6 @@
 import * as browsiRTD from '../../../modules/browsiRtdProvider.js';
 import {makeSlot} from '../integration/faker/googletag.js';
+import * as utils from '../../../src/utils'
 
 describe('browsi Real time  data sub module', function () {
   const conf = {
@@ -72,12 +73,68 @@ describe('browsi Real time  data sub module', function () {
     it('should return prediction from server', function () {
       makeSlot({code: 'hasPrediction', divId: 'hasPrediction'});
       const data = {
-        p: {'hasPrediction': {p: 0.234}},
+        p: {'hasPrediction': {ps: {0: 0.234}}},
         kn: 'bv',
         pmd: undefined
       };
       browsiRTD.setData(data);
       expect(browsiRTD.browsiSubmodule.getTargetingData(['hasPrediction'])).to.eql({hasPrediction: {bv: '0.20'}});
+    })
+  })
+
+  describe('should return prediction according to refresh count', function () {
+    const predictions = {
+      0: 0.123,
+      1: 0.254,
+      3: 0,
+      4: 0.8
+    }
+    const singlePrediction = {
+      0: 0.123
+    }
+    it('should return raw value for valid refresh count', function () {
+      expect(browsiRTD.getPredictionByRefreshCount(predictions, 0)).to.equal(0.123);
+      expect(browsiRTD.getPredictionByRefreshCount(predictions, 1)).to.equal(0.254);
+    })
+    it('should return 0 for prediction = 0', function () {
+      expect(browsiRTD.getPredictionByRefreshCount(predictions, 3)).to.equal(0);
+    })
+    it('should return -1 for invalid params', function () {
+      expect(browsiRTD.getPredictionByRefreshCount(null, 3)).to.equal(-1);
+      expect(browsiRTD.getPredictionByRefreshCount(predictions, null)).to.equal(-1);
+    })
+    it('should return -1 for refresh count > 0 if prediction object length is 1 ', function () {
+      expect(browsiRTD.getPredictionByRefreshCount(singlePrediction, 0)).to.equal(0.123);
+      expect(browsiRTD.getPredictionByRefreshCount(singlePrediction, 1)).to.equal(-1);
+      expect(browsiRTD.getPredictionByRefreshCount(singlePrediction, 2)).to.equal(-1);
+    })
+    it('should return last refresh prediction if there is no value for the refresh count', function () {
+      expect(browsiRTD.getPredictionByRefreshCount(predictions, 4)).to.equal(0.8);
+      expect(browsiRTD.getPredictionByRefreshCount(predictions, 5)).to.equal(0.8);
+      expect(browsiRTD.getPredictionByRefreshCount(predictions, 8)).to.equal(0.8);
+    })
+  })
+  describe('should set bid request data', function () {
+    const data = {
+      p: {
+        'adUnit1': {ps: {0: 0.234}},
+        'adUnit2': {ps: {0: 0.134}}},
+      kn: 'bv',
+      pmd: undefined
+    };
+    browsiRTD.setData(data);
+    const fakeAdUnits = [
+      {
+        code: 'adUnit1'
+      },
+      {
+        code: 'adUnit2'
+      }
+    ]
+    browsiRTD.browsiSubmodule.getBidRequestData({adUnits: fakeAdUnits}, () => {}, {}, null);
+    it('should set ad unit params with prediction values', function () {
+      expect(utils.deepAccess(fakeAdUnits[0], 'ortb2Imp.ext.data.browsi')).to.eql({browsiViewability: '0.20'});
+      expect(utils.deepAccess(fakeAdUnits[1], 'ortb2Imp.ext.data.browsi')).to.eql({browsiViewability: '0.10'});
     })
   })
 });

@@ -15,12 +15,14 @@
  * @property {?string} keyName
  */
 
-import { deepClone, logError, isGptPubadsDefined } from '../src/utils.js';
+import { deepClone, logError, isGptPubadsDefined, isNumber, isFn, deepSetValue } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {getStorageManager} from '../src/storageManager.js';
 import find from 'core-js-pure/features/array/find.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const storage = getStorageManager();
 
@@ -30,6 +32,10 @@ let _moduleParams = {};
 let _predictionsData = null;
 /** @type {string} */
 const DEF_KEYNAME = 'browsiViewability';
+/** @type {null | function} */
+let _dataReadyCallback = null;
+/** @type {null|Object} */
+let _refreshCounter = {};
 
 /**
  * add browsi script to page
@@ -78,35 +84,80 @@ export function collectData() {
   getPredictionsFromServer(`//${_moduleParams.url}/prebid?${toUrlParams(predictorData)}`);
 }
 
-export function setData(data) {
-  _predictionsData = data;
+/**
+ * wait for data from server
+ * call callback when data is ready
+ * @param {function} callback
+ */
+function waitForData(callback) {
+  if (_predictionsData) {
+    _dataReadyCallback = null;
+    callback(_predictionsData);
+  } else {
+    _dataReadyCallback = callback;
+  }
 }
 
-function sendDataToModule(adUnitsCodes) {
+export function setData(data) {
+  _predictionsData = data;
+  if (isFn(_dataReadyCallback)) {
+    _dataReadyCallback(_predictionsData);
+    _dataReadyCallback = null;
+  }
+}
+
+function getViewabilityByAdUnitCodes(adUnitsCodes) {
   try {
     const _predictions = (_predictionsData && _predictionsData.p) || {};
     return adUnitsCodes.reduce((rp, adUnitCode) => {
+      _refreshCounter[adUnitCode] = _refreshCounter[adUnitCode] || 0;
+      const refreshCount = _refreshCounter[adUnitCode];
       if (!adUnitCode) {
         return rp
       }
       const adSlot = getSlotByCode(adUnitCode);
       const identifier = adSlot ? getMacroId(_predictionsData['pmd'], adSlot) : adUnitCode;
       const predictionData = _predictions[identifier];
-      rp[adUnitCode] = getKVObject(-1, _predictionsData['kn']);
+      rp[adUnitCode] = getKVObject(-1);
       if (!predictionData) {
         return rp
       }
-      if (predictionData.p) {
+      if (predictionData.ps) {
         if (!isIdMatchingAdUnit(adSlot, predictionData.w)) {
           return rp;
         }
-        rp[adUnitCode] = getKVObject(predictionData.p, _predictionsData.kn);
+        rp[adUnitCode] = getKVObject(getPredictionByRefreshCount(predictionData.ps, refreshCount));
       }
       return rp;
     }, {});
   } catch (e) {
     return {};
   }
+}
+
+/**
+ * get prediction according to refresh count
+ * return -1 if prediction not found
+ * @param {object} predictionObject
+ * @param {number} refreshCount
+ * @return {number}
+ */
+export function getPredictionByRefreshCount(predictionObject, refreshCount) {
+  if (!predictionObject || !isNumber(refreshCount)) {
+    return -1;
+  }
+  if (isNumber(predictionObject[refreshCount])) {
+    return predictionObject[refreshCount];
+  }
+  if (Object.keys(predictionObject).length > 1) {
+    while (refreshCount > 0) {
+      refreshCount--;
+      if (isNumber(predictionObject[refreshCount])) {
+        return predictionObject[refreshCount];
+      }
+    }
+  }
+  return -1;
 }
 
 /**
@@ -122,11 +173,15 @@ function getAllSlots() {
  * @param {string?} keyName
  * @return {Object} key:value
  */
-function getKVObject(p, keyName) {
+function getKVObject(p) {
   const prValue = p < 0 ? 'NA' : (Math.floor(p * 10) / 10).toFixed(2);
   let prObject = {};
-  prObject[((_moduleParams['keyName'] || keyName || DEF_KEYNAME).toString())] = prValue.toString();
+  prObject[getViewabilityKey()] = prValue.toString();
   return prObject;
+}
+
+function getViewabilityKey() {
+  return ((_moduleParams['keyName'] || (_predictionsData && _predictionsData['kn']) || DEF_KEYNAME).toString())
 }
 /**
  * check if placement id matches one of given ad units
@@ -238,6 +293,28 @@ function toUrlParams(data) {
     .join('&');
 }
 
+function setBidRequestsData(bidObj, callback) {
+  let adUnitCodes = bidObj.adUnitCodes;
+  let adUnits = bidObj.adUnits || getGlobal().adUnits || [];
+  if (adUnitCodes) {
+    adUnits = adUnits.filter(au => includes(adUnitCodes, au.code));
+  } else {
+    adUnitCodes = adUnits.map(au => au.code);
+  }
+  waitForData(() => {
+    const data = getViewabilityByAdUnitCodes(adUnitCodes);
+    if (data) {
+      adUnits.forEach(adUnit => {
+        const adUnitCode = adUnit.code;
+        if (data[adUnitCode]) {
+          deepSetValue(adUnit, 'ortb2Imp.ext.data.browsi', {[DEF_KEYNAME]: data[adUnitCode][getViewabilityKey()]});
+        }
+      });
+    }
+    callback();
+  })
+}
+
 /** @type {RtdSubmodule} */
 export const browsiSubmodule = {
   /**
@@ -250,9 +327,20 @@ export const browsiSubmodule = {
    * @function
    * @param {string[]} adUnitsCodes
    */
-  getTargetingData: sendDataToModule,
+  getTargetingData: getTargetingData,
   init: init,
+  getBidRequestData: setBidRequestsData
 };
+
+function getTargetingData(adUnitCodes) {
+  const viewabilityByAdUnitCodes = getViewabilityByAdUnitCodes(adUnitCodes);
+  adUnitCodes.forEach(auc => {
+    if (isNumber(_refreshCounter[auc])) {
+      _refreshCounter[auc] = _refreshCounter[auc] + 1;
+    }
+  });
+  return viewabilityByAdUnitCodes;
+}
 
 function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
