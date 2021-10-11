@@ -111,7 +111,7 @@ pbjs.setConfig({
 });
 ```
 
-# Advance adUnit Examples:
+# Advanced adUnit Examples:
 ## Banner
 ```javascript
 const adUnits = [{
