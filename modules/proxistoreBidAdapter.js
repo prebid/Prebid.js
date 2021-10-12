@@ -177,12 +177,12 @@ function _assignFloor(bid) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
   const floor = bid.getFloor({
-    currency: 'EUR',
-    mediaType: 'banner',
-    size: '*',
+    currency: "EUR",
+    mediaType: "banner",
+    size: "*",
   });
 
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === "EUR") {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
     return floor.floor;
   }
   return null;
