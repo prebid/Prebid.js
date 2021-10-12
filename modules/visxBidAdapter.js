@@ -168,16 +168,21 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
-    if (syncOptions.pixelEnabled) {
-      var query = [];
-      if (gdprConsent) {
-        if (gdprConsent.consentString) {
-          query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
-        }
-        query.push('gdpr_applies=' + encodeURIComponent(
-          (typeof gdprConsent.gdprApplies === 'boolean')
-            ? Number(gdprConsent.gdprApplies) : 1));
+    var query = [];
+    if (gdprConsent) {
+      if (gdprConsent.consentString) {
+        query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
       }
+      query.push('gdpr_applies=' + encodeURIComponent(
+        (typeof gdprConsent.gdprApplies === 'boolean')
+          ? Number(gdprConsent.gdprApplies) : 1));
+    }
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: buildUrl(ADAPTER_SYNC_PATH) + '?iframe=1' + (query.length ? '&' + query.join('&') : '')
+      }];
+    } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
         url: buildUrl(ADAPTER_SYNC_PATH) + (query.length ? '?' + query.join('&') : '')
@@ -230,7 +235,7 @@ function makeVideo(videoParams = {}) {
       return result;
     }, { w: deepAccess(videoParams, 'playerSize.0.0'), h: deepAccess(videoParams, 'playerSize.0.1') });
 
-  if (video.w && video.h && video.mimes) {
+  if (video.w && video.h) {
     return video;
   }
 }
@@ -344,18 +349,6 @@ function _isValidVideoBid(bid, logErrors = false) {
   if (!(videoMediaType.playerSize && parseSizesInput(deepAccess(videoMediaType, 'playerSize', [])))) {
     if (logErrors) {
       logError(LOG_ERROR_MESS.videoMissing + 'playerSize');
-    }
-    result = false;
-  }
-  if (!videoMediaType.mimes) {
-    if (logErrors) {
-      logError(LOG_ERROR_MESS.videoMissing + 'mimes');
-    }
-    result = false;
-  }
-  if (!videoMediaType.protocols) {
-    if (logErrors) {
-      logError(LOG_ERROR_MESS.videoMissing + 'protocols');
     }
     result = false;
   }

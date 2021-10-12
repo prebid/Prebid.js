@@ -7,7 +7,10 @@ Publink user id module
 | Param Name | Required | Type | Description | Example |
 | --- | --- | --- | --- | --- |
 | name | Yes | String | module identifier | `"publinkId"` |
-| params.e | Yes | String | hashed email address | `"e80b5017098950fc58aad83c8c14978e"` |
+| params.e | Yes | String | hashed email address | `"7D320454942620664D96EF78ED4E3A2A"` |
+| params.api_key | Yes | String | api key for access | `"7ab62359-bdc0-4095-b573-ef474fb55d24"` |
+| params.site_id | Yes | String | site identifier | `"123456"` |
+
 
 ### Example configuration for Publink
 ```
@@ -20,7 +23,9 @@ pbjs.setConfig({
                    type: "html5"
                },
                params: {
-                   e: "e80b5017098950fc58aad83c8c14978e", // example hashed email (md5)
+                   e: "7D320454942620664D96EF78ED4E3A2A",           // example hashed email (md5)
+                   site_id: "123456",                               // provided by Epsilon
+                   api_key: "7ab62359-bdc0-4095-b573-ef474fb55d2"   // provided by Epsilon
                }
            }],
        }
