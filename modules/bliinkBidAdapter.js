@@ -89,14 +89,16 @@ export const parseXML = (content) => {
   if (typeof content !== 'string' || content.length === 0) return null
 
   const parser = new DOMParser()
-  if (parser) {
-    const xml = (parser && parser.parseFromString && parser.parseFromString(content, 'text/xml')) || ''
+  let xml;
 
-    if (xml &&
-      xml.getElementsByTagName('VAST')[0] &&
-      xml.getElementsByTagName('VAST')[0].tagName === 'VAST') {
-      return xml
-    }
+  try {
+    xml = parser.parseFromString(content, 'text/xml')
+  } catch (e) {}
+
+  if (xml &&
+    xml.getElementsByTagName('VAST')[0] &&
+    xml.getElementsByTagName('VAST')[0].tagName === 'VAST') {
+    return xml
   }
 
   return null
