@@ -307,4 +307,29 @@ describe('radsAdapter', function () {
       expect(userSync[2].type).to.be.equal('image');
     });
   });
+
+  describe(`getUserSyncs test usage passback response`, function () {
+    let serverResponses;
+
+    beforeEach(function () {
+      serverResponses = [{
+        body: {
+          reason: 8002,
+          status: 'rejected',
+          msg: 'passback',
+          bid_id: '115de76437d5ae6',
+          'zone': '4773',
+        }
+      }];
+    });
+
+    it(`check for zero array when iframeEnabled`, function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true })).to.be.an('array');
+      expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses).length).to.be.equal(0);
+    });
+    it(`check for zero array when iframeEnabled`, function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true })).to.be.an('array');
+      expect(spec.getUserSyncs({ pixelEnabled: true }, serverResponses).length).to.be.equal(0);
+    });
+  });
 });
