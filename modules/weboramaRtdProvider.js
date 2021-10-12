@@ -220,8 +220,7 @@ function init(moduleConfig) {
 
 /** Initialize contextual sub module
  * @param {WeboCtxConf} weboCtxConf
- * @return {boolean} true if sub module was initi  _bigseaContextualProfile = null;
-alized with success
+ * @return {boolean} true if sub module was initialized with success
  */
 function initWeboCtx(weboCtxConf) {
   _bigseaContextualProfile = null;
