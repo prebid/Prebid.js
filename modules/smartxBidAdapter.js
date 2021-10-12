@@ -301,7 +301,7 @@ export const spec = {
             const playersize = utils.deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
               id: 0,
-              url: 'https://dco.smartclip.net/?plc=7777778',
+              url: 'https://dco.smartclip.net/?plc=123456789', // Outstream 5.3.0
               config: {
                 adText: 'SmartX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],
