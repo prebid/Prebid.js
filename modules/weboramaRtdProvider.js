@@ -15,8 +15,9 @@
 * @typedef {Object} WeboCtxConf
 * @property {string} token required token to be used on bigsea contextual API requests
 * @property {?string} targetURL specify the target url instead use the referer
-* @property {?boolean} setTargeting if true will set the GAM targeting
+* @property {?boolean} setTargeting if true will set the GAM targeting (default true)
 * @property {?object} defaultProfile to be used if the profile is not found
+* @property {?object} setOrtb2 if true will set the global ortb2 configuration (default false)
 */
 
 import { deepSetValue, logError, tryAppendQueryString, logMessage } from '../src/utils.js';
