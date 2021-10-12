@@ -121,10 +121,7 @@ function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
 function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext) {
   const userObjBid = find(bidRequests, hasUserInfo);
   let userObj = {};
-  if (config.getConfig('coppa') === true) {
-    userObj = { 'coppa': true };
-  }
-  if (userObjBid) {
+   if (userObjBid) {
     Object.keys(userObjBid.params.user)
       .filter(param => includes(USER_PARAMS, param))
       .forEach((param) => {
