@@ -9,6 +9,7 @@
 /**
 * @typedef {Object} ModuleParams
 * @property {WeboCtxConf} weboCtxConf
+* @property {Wam2gamConf} wam2gamConf
 */
 
 /**
@@ -20,10 +21,19 @@
 * @property {?object} setOrtb2 if true will set the global ortb2 configuration (default false)
 */
 
-import { deepSetValue, logError, tryAppendQueryString, logMessage } from '../src/utils.js';
+/**
+* @typedef {Object} Wam2gamConf
+* @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
+* @property {?boolean} setTargeting if true will set the GAM targeting (default true)
+* @property {?object} defaultProfile to be used if the profile is not found
+* @property {?object} setOrtb2 if true will set the global ortb2 configuration (default false)
+*/
+
+import { deepSetValue, mergeDeep, logError, tryAppendQueryString, logMessage } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -33,9 +43,24 @@ const SUBMODULE_NAME = 'weborama';
 const WEBO_CTX = 'webo_ctx';
 /** @type {string} */
 const WEBO_DS = 'webo_ds';
+/** @type {string} */
+const WEBO_CS = 'webo_cs';
+/** @type {string} */
+const WEBO_AUDIENCES = 'webo_audiences';
+/** @type {string} */
+const DefaultLocalStorageUserProfileKey = 'webo_wam2gam_entry';
+/** @type {string} */
+const LOCAL_STORAGE_USER_TARGETING_SECTION = 'targeting';
+/** @type {number} */
+const GVLID = 284;
+/** @type {object} */
+const storage = getStorageManager(GVLID, SUBMODULE_NAME);
 
 /** @type {null|Object} */
 let _bigseaContextualProfile = null;
+
+/** @type {null|Object} */
+let _wam2gamUserProfile = null;
 
 /** function that provides ad server targeting data to RTD-core
 * @param {Array} adUnitsCodes
@@ -46,21 +71,45 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
-  const defaultContextualProfiles = weboCtxConf.defaultProfile || {}
-  const profile = _bigseaContextualProfile || defaultContextualProfiles;
+  const defaultContextualProfile = weboCtxConf.defaultProfile || {};
+  const contextualProfile = _bigseaContextualProfile || defaultContextualProfile;
+  const wam2gamConf = moduleParams.wam2gamConf || {};
+  const wam2gamDefaultUserProfile = wam2gamConf.defaultProfile || {};
+  const wam2gamProfile = _wam2gamUserProfile || wam2gamDefaultUserProfile;
 
   if (weboCtxConf.setOrtb2) {
     const ortb2 = config.getConfig('ortb2') || {};
-    if (profile[WEBO_CTX]) {
-      deepSetValue(ortb2, 'site.ext.data.webo_ctx', profile[WEBO_CTX]);
+    if (contextualProfile[WEBO_CTX]) {
+      deepSetValue(ortb2, 'site.ext.data.webo_ctx', contextualProfile[WEBO_CTX]);
     }
-    if (profile[WEBO_DS]) {
-      deepSetValue(ortb2, 'site.ext.data.webo_ds', profile[WEBO_DS]);
+    if (contextualProfile[WEBO_DS]) {
+      deepSetValue(ortb2, 'site.ext.data.webo_ds', contextualProfile[WEBO_DS]);
     }
     config.setConfig({ortb2: ortb2});
   }
 
-  if (weboCtxConf.setTargeting === false) {
+  if (wam2gamConf.setOrtb2) {
+    const ortb2 = config.getConfig('ortb2') || {};
+    if (wam2gamProfile[WEBO_CS]) {
+      deepSetValue(ortb2, 'user.ext.data.webo_cs', wam2gamProfile[WEBO_CS]);
+    }
+    if (wam2gamProfile[WEBO_AUDIENCES]) {
+      deepSetValue(ortb2, 'user.ext.data.webo_audiences', wam2gamProfile[WEBO_AUDIENCES]);
+    }
+    config.setConfig({ortb2: ortb2});
+  }
+
+  let profile = {};
+
+  if (weboCtxConf.setTargeting !== false) {
+    mergeDeep(profile, contextualProfile);
+  }
+
+  if (wam2gamConf.setTargeting !== false) {
+    mergeDeep(profile, wam2gamProfile);
+  }
+
+  if (!profile || Object.keys(profile).length == 0) {
     return {};
   }
 
@@ -80,13 +129,22 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
 }
 
 /** set bigsea contextual profile on module state
- * if the profile is empty, will store the default profile
  * @param {null|Object} data
  * @returns {void}
  */
 export function setBigseaContextualProfile(data) {
   if (data && Object.keys(data).length > 0) {
     _bigseaContextualProfile = data;
+  }
+}
+
+/** set wam2gam user profile on module state
+ * @param {null|Object} data
+ * @returns {void}
+ */
+export function setWam2gamUserProfile(data) {
+  if (data && Object.keys(data).length > 0) {
+    _wam2gamUserProfile = data;
   }
 }
 
@@ -149,19 +207,56 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
  * @return {boolean} true if module was initialized with success
  */
 function init(moduleConfig) {
-  _bigseaContextualProfile = null;
-
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
+  const wam2gamConf = moduleParams.wam2gamConf;
+
+  const weboCtxInitialized = initWeboCtx(weboCtxConf);
+  const wam2gamInitialized = initWam2gam(wam2gamConf);
+
+  return weboCtxInitialized || wam2gamInitialized;
+}
+
+/** Initialize contextual sub module
+ * @param {WeboCtxConf} weboCtxConf
+ * @return {boolean} true if sub module was initi  _bigseaContextualProfile = null;
+alized with success
+ */
+function initWeboCtx(weboCtxConf) {
+  _bigseaContextualProfile = null;
 
   if (weboCtxConf.token) {
     fetchContextualProfile(weboCtxConf, setBigseaContextualProfile,
       () => logMessage('fetchContextualProfile on init is done'));
   } else {
-    logError('missing param "token" for weborama rtd module initialization');
+    logError('missing param "token" for weborama contextual sub module initialization');
     return false;
   }
+
+  return true;
+}
+
+/** Initialize wam2gam sub module
+ * @param {?Wam2gamConf} wam2gamConf
+ * @return {boolean} true if sub module was initialized with success
+ */
+function initWam2gam(wam2gamConf) {
+  _wam2gamUserProfile = null;
+
+  if (!wam2gamConf) {
+    return false;
+  }
+
+  if (!storage.localStorageIsEnabled()) {
+    return false;
+  }
+
+  const localStorageProfileKey = wam2gamConf.localStorageProfileKey || DefaultLocalStorageUserProfileKey;
+
+  const data = JSON.parse(storage.getDataFromLocalStorage(localStorageProfileKey)) || {};
+
+  setWam2gamUserProfile(data[LOCAL_STORAGE_USER_TARGETING_SECTION]);
 
   return true;
 }
