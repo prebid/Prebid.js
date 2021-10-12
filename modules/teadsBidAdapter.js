@@ -184,7 +184,7 @@ function buildRequestObject(bid) {
   reqObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
-  reqObj.adUnitCode = utils.getBidIdParameter('adUnitCode', bid);
+  reqObj.adUnitCode = utils.getBidIdParameter('__parentDivId', bid) || utils.getBidIdParameter('adUnitCode', bid);
   reqObj.auctionId = utils.getBidIdParameter('auctionId', bid);
   reqObj.transactionId = utils.getBidIdParameter('transactionId', bid);
   return reqObj;

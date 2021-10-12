@@ -1,0 +1,21 @@
+[
+	"schain",
+	"admixerBidAdapter",
+	"appnexusBidAdapter",
+	"betweenBidAdapter",
+	"consentManagement",
+	"criteoBidAdapter",
+	"ixBidAdapter",
+	"mgidBidAdapter",
+	"mytargetBidAdapter",
+	"openxBidAdapter",
+	"otmBidAdapter",
+	"pubmaticBidAdapter",
+	"pulsepointBidAdapter",
+	"rtbhouseBidAdapter",
+	"rubiconBidAdapter",
+	"segmentoBidAdapter",
+	"smartadserverBidAdapter",
+	"sovrnBidAdapter",
+	"teadsBidAdapter"
+]

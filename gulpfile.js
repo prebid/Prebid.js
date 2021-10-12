@@ -22,6 +22,8 @@ var replace = require('gulp-replace');
 var shell = require('gulp-shell');
 var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
+var gulpfile = require('gulp-file');
+var wrap = require('gulp-wrap');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
@@ -30,8 +32,11 @@ const path = require('path');
 const execa = require('execa');
 
 var prebid = require('./package.json');
+
+prebid.globalVarName = argv.globalVarName ? argv.globalVarName : prebid.globalVarName;
+
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + '*/\n';
+var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var port = 9999;
 const FAKE_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const FAKE_SERVER_PORT = 4444;
@@ -171,6 +176,7 @@ function makeWebpackPkg() {
     .pipe(uglify())
     .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
+    .pipe(gulpfile("prebid_modules.json", JSON.stringify(helpers.getModuleNames(externalModules))))
     .pipe(gulp.dest('build/dist'));
 }
 
@@ -179,7 +185,9 @@ function getModulesListToAddInBanner(modules) {
 }
 
 function gulpBundle(dev) {
-  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+    return bundle(dev)
+      .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')))
+      .pipe(gulp.dest('../Medianet/client_js/bundles'));
 }
 
 function nodeBundle(modules) {
@@ -230,6 +238,7 @@ function bundle(dev, moduleArr) {
     // Need to uodate the "Modules: ..." section in comment with the current modules list
     .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
     .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
+    .pipe(wrap('/*<%= file.relative %>*/<%= contents %>'))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
       global: prebid.globalVarName
