@@ -8,9 +8,9 @@ Yahoo ConnectID user ID Module.
 pbjs.setConfig({
     userSync: {
         userIds: [{
-            name: 'connectID',
+            name: 'connectId',
             storage: {
-                name: 'connectID',
+                name: 'connectId',
                 type: 'html5',
                 expires: 15
             },
@@ -27,7 +27,7 @@ The below parameters apply only to the Yahoo ConnectID user ID Module.
 
 | Param under usersync.userIds[] | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
-| name | Required | String | ID value for the Yahoo ConnectID module - `"connectID"` | `"connectID"` |
+| name | Required | String | ID value for the Yahoo ConnectID module - `"connectId"` | `"connectId"` |
 | params | Required | Object | Data for Yahoo ConnectID initialization. | |
 | params.pixelId | Required | Number | The Yahoo supplied publisher specific pixel Id  | `8976` |
 | params.he | Required | String | The SHA-256 hashed user email address | `"529cb86de31e9547a712d9f380146e98bbd39beec"` |

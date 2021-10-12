@@ -254,7 +254,7 @@ const USER_IDS_CONFIG = {
   },
 
   // Yahoo ConnectID
-  'connectID': {
+  'connectId': {
     source: 'yahoo.com',
     atype: 3
   }

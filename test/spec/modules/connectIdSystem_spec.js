@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {parseQS} from 'src/utils.js';
-import {connectIDSubmodule} from 'modules/connectIDSystem.js';
+import {connectIdSubmodule} from 'modules/connectIdSystem.js';
 
 describe('Yahoo ConnectID Submodule', () => {
   const HASHED_EMAIL = '6bda6f2fa268bf0438b5423a9861a2cedaa5dec163c03f743cfe05c08a8397b2';
@@ -9,11 +9,11 @@ describe('Yahoo ConnectID Submodule', () => {
   const OVERRIDE_ENDPOINT = 'https://foo/bar';
 
   it('should have the correct module name declared', () => {
-    expect(connectIDSubmodule.name).to.equal('connectID');
+    expect(connectIdSubmodule.name).to.equal('connectId');
   });
 
   it('should have the correct TCFv2 Vendor ID declared', () => {
-    expect(connectIDSubmodule.gvlid).to.equal(25);
+    expect(connectIdSubmodule.gvlid).to.equal(25);
   });
 
   describe('getId()', () => {
@@ -22,7 +22,7 @@ describe('Yahoo ConnectID Submodule', () => {
     let consentData;
     beforeEach(() => {
       ajaxStub = sinon.stub();
-      getAjaxFnStub = sinon.stub(connectIDSubmodule, 'getAjaxFn');
+      getAjaxFnStub = sinon.stub(connectIdSubmodule, 'getAjaxFn');
       getAjaxFnStub.returns(ajaxStub);
 
       consentData = {
@@ -39,7 +39,7 @@ describe('Yahoo ConnectID Submodule', () => {
     });
 
     function invokeGetIdAPI(configParams, consentData) {
-      let result = connectIDSubmodule.getId({
+      let result = connectIdSubmodule.getId({
         params: configParams
       }, consentData);
       if (typeof result === 'object') {
@@ -174,15 +174,15 @@ describe('Yahoo ConnectID Submodule', () => {
     }];
     VALID_API_RESPONSES.forEach(responseData => {
       it('should return a newly constructed object with the connect ID for a payload with ${responseData.key} key(s)', () => {
-        expect(connectIDSubmodule.decode(responseData.payload)).to.deep.equal(
-          {connectid: responseData.expected}
+        expect(connectIdSubmodule.decode(responseData.payload)).to.deep.equal(
+          {connectId: responseData.expected}
         );
       });
     });
 
     [{}, '', {foo: 'bar'}].forEach((response) => {
       it(`should return undefined for an invalid response "${JSON.stringify(response)}"`, () => {
-        expect(connectIDSubmodule.decode(response)).to.be.undefined;
+        expect(connectIdSubmodule.decode(response)).to.be.undefined;
       });
     });
   });

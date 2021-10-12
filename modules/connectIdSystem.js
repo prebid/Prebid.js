@@ -10,7 +10,7 @@ import {submodule} from '../src/hook.js';
 import {logError, formatQS} from '../src/utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const MODULE_NAME = 'connectID';
+const MODULE_NAME = 'connectId';
 const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
 const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
@@ -20,7 +20,7 @@ function isEUConsentRequired(consentData) {
 }
 
 /** @type {Submodule} */
-export const connectIDSubmodule = {
+export const connectIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -33,11 +33,11 @@ export const connectIDSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @returns {{connectid: string} | undefined}
+   * @returns {{connectId: string} | undefined}
    */
   decode(value) {
     return (typeof value === 'object' && value.connectid)
-      ? {connectid: value.connectid} : undefined;
+      ? {connectId: value.connectid} : undefined;
   },
   /**
    * Gets the Yahoo ConnectID
@@ -86,7 +86,7 @@ export const connectIDSubmodule = {
       };
       const endpoint = UPS_ENDPOINT.replace(PLACEHOLDER, params.pixelId);
       let url = `${params.endpoint || endpoint}?${formatQS(data)}`;
-      connectIDSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
+      connectIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};
   },
@@ -101,4 +101,4 @@ export const connectIDSubmodule = {
   }
 };
 
-submodule('userId', connectIDSubmodule);
+submodule('userId', connectIdSubmodule);
