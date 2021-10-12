@@ -3,7 +3,6 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {convertCamelToUnderscore, isStr, isArray, isNumber, isPlainObject, replaceAuctionPrice} from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
-import { config } from '../src/config.js';
 
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
@@ -121,7 +120,7 @@ function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
 function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext) {
   const userObjBid = find(bidRequests, hasUserInfo);
   let userObj = {};
-   if (userObjBid) {
+  if (userObjBid) {
     Object.keys(userObjBid.params.user)
       .filter(param => includes(USER_PARAMS, param))
       .forEach((param) => {
