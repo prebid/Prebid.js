@@ -268,13 +268,13 @@ function createSchainString (schain) {
  * @returns {Object}
  */
 function getContentObject(bid) {
-  if (bid.params.iabContent && utils.isPlainObject(bid.params.iabContent)) {
+  if (bid.params.iabContent && isPlainObject(bid.params.iabContent)) {
     return bid.params.iabContent
   }
 
   const globalContent = config.getConfig('ortb2.site') ? config.getConfig('ortb2.site.content')
     : config.getConfig('ortb2.app.content')
-  if (globalContent && utils.isPlainObject(globalContent)) {
+  if (globalContent && isPlainObject(globalContent)) {
     return globalContent
   }
   return undefined
