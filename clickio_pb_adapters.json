@@ -1,6 +1,7 @@
 [
 	"schain",
 	"admixerBidAdapter",
+	"amxBidAdapter",
 	"appnexusBidAdapter",
 	"betweenBidAdapter",
 	"consentManagement",
