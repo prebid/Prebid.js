@@ -641,7 +641,7 @@ describe('triplelift adapter', function () {
               source: 'pubcid.org',
               uids: [
                 {
-                  id: '3261d8ad-435d-481d-abd1-9f1a9ec99f0e',
+                  id: pubcid,
                   ext: { rtiPartner: 'pubcid' }
                 }
               ]
