@@ -232,13 +232,19 @@ function bundle(dev, moduleArr) {
   gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
   gutil.log('Generating bundle:', outputFileName);
 
+  var notCore = function (file) {
+    if (file.relative !== 'prebid-core.js') {
+      return true;
+    }
+  };
+
   return gulp.src(
     entries
   )
     // Need to uodate the "Modules: ..." section in comment with the current modules list
     .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
     .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
-    .pipe(wrap('/*<%= file.relative %>*/<%= contents %>'))
+    .pipe(gulpif(notCore, wrap('/*<%= file.relative %>*/<%= contents %>')))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
       global: prebid.globalVarName
