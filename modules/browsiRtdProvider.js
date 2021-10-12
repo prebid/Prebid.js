@@ -15,7 +15,7 @@
  * @property {?string} keyName
  */
 
-import * as utils from '../src/utils.js';
+import { deepClone, logError, isGptPubadsDefined } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
@@ -43,7 +43,7 @@ export function addBrowsiTag(data) {
   script.setAttribute('prebidbpt', 'true');
   script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', data.u);
-  script.prebidData = utils.deepClone(data);
+  script.prebidData = deepClone(data);
   if (_moduleParams.keyName) {
     script.prebidData.kn = _moduleParams.keyName;
   }
@@ -61,7 +61,7 @@ export function collectData() {
   try {
     browsiData = storage.getDataFromLocalStorage('__brtd');
   } catch (e) {
-    utils.logError('unable to parse __brtd');
+    logError('unable to parse __brtd');
   }
 
   let predictorData = {
@@ -114,7 +114,7 @@ function sendDataToModule(adUnitsCodes) {
  * @return {Object[]} slot GoogleTag slots
  */
 function getAllSlots() {
-  return utils.isGptPubadsDefined() && window.googletag.pubads().getSlots();
+  return isGptPubadsDefined() && window.googletag.pubads().getSlots();
 }
 /**
  * get prediction and return valid object for key value set
@@ -169,7 +169,7 @@ export function getMacroId(macro, slot) {
       });
       return macroResult;
     } catch (e) {
-      utils.logError(`failed to evaluate: ${macro}`);
+      logError(`failed to evaluate: ${macro}`);
     }
   }
   return slot.getSlotElementId();
@@ -211,7 +211,7 @@ function getPredictionsFromServer(url) {
             }
             addBrowsiTag(data);
           } catch (err) {
-            utils.logError('unable to parse data');
+            logError('unable to parse data');
             setData({})
           }
         } else if (req.status === 204) {
@@ -221,7 +221,7 @@ function getPredictionsFromServer(url) {
       },
       error: function () {
         setData({});
-        utils.logError('unable to get prediction data');
+        logError('unable to get prediction data');
       }
     }
   );
@@ -259,7 +259,7 @@ function init(moduleConfig) {
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
     collectData();
   } else {
-    utils.logError('missing params for Browsi provider');
+    logError('missing params for Browsi provider');
   }
   return true;
 }

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'apacdex';
@@ -32,16 +32,16 @@ export const spec = {
     if (!bid.params.siteId && !bid.params.placementId) {
       return false;
     }
-    if (!utils.deepAccess(bid, 'mediaTypes.banner') && !utils.deepAccess(bid, 'mediaTypes.video')) {
+    if (!deepAccess(bid, 'mediaTypes.banner') && !deepAccess(bid, 'mediaTypes.video')) {
       return false;
     }
-    if (utils.deepAccess(bid, 'mediaTypes.banner')) { // Not support multi type bids, favor banner over video
-      if (!utils.deepAccess(bid, 'mediaTypes.banner.sizes')) {
+    if (deepAccess(bid, 'mediaTypes.banner')) { // Not support multi type bids, favor banner over video
+      if (!deepAccess(bid, 'mediaTypes.banner.sizes')) {
         // sizes at the banner is required.
         return false;
       }
-    } else if (utils.deepAccess(bid, 'mediaTypes.video')) {
-      if (!utils.deepAccess(bid, 'mediaTypes.video.playerSize')) {
+    } else if (deepAccess(bid, 'mediaTypes.video')) {
+      if (!deepAccess(bid, 'mediaTypes.video.playerSize')) {
         // playerSize is required for instream adUnits.
         return false;
       }
@@ -170,12 +170,12 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
-    if (!serverBody || !utils.isPlainObject(serverBody)) {
+    if (!serverBody || !isPlainObject(serverBody)) {
       return [];
     }
 
     const serverBids = serverBody.bids;
-    if (!serverBids || !utils.isArray(serverBids)) {
+    if (!serverBids || !isArray(serverBids)) {
       return [];
     }
 
@@ -197,12 +197,12 @@ export const spec = {
         bidResponse.dealId = dealId;
       }
       if (bid.vastXml) {
-        bidResponse.vastXml = utils.replaceAuctionPrice(bid.vastXml, bid.cpm);
+        bidResponse.vastXml = replaceAuctionPrice(bid.vastXml, bid.cpm);
       } else {
-        bidResponse.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
+        bidResponse.ad = replaceAuctionPrice(bid.ad, bid.cpm);
       }
       bidResponse.meta = {};
-      if (bid.meta && bid.meta.advertiserDomains && utils.isArray(bid.meta.advertiserDomains)) {
+      if (bid.meta && bid.meta.advertiserDomains && isArray(bid.meta.advertiserDomains)) {
         bidResponse.meta.advertiserDomains = bid.meta.advertiserDomains;
       }
       bidResponses.push(bidResponse);
@@ -285,7 +285,7 @@ function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
   if (config.getConfig('pageUrl')) {
     return config.getConfig('pageUrl');
   }
-  if (utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
+  if (deepAccess(bidderRequest, 'refererInfo.referer')) {
     return bidderRequest.refererInfo.referer;
   }
 
@@ -303,7 +303,7 @@ function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
  * @returns {string}
  */
 function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
-  if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
+  if (bidderRequest && deepAccess(bidderRequest, 'refererInfo.referer')) {
     return bidderRequest.refererInfo.referer;
   }
 
@@ -340,7 +340,7 @@ export function getDomain(pageUrl) {
  * @returns {boolean}
  */
 export function validateGeoObject(geo) {
-  if (!utils.isPlainObject(geo)) {
+  if (!isPlainObject(geo)) {
     return false;
   }
   if (!geo.lat) {
@@ -362,7 +362,7 @@ export function validateGeoObject(geo) {
  * @returns {float||null}
  */
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return (bid.params.floorPrice) ? bid.params.floorPrice : null;
   }
 
@@ -371,7 +371,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
     return floor.floor;
   }
   return null;

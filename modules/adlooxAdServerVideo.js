@@ -11,48 +11,48 @@ import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.j
 import { ajax } from '../src/ajax.js';
 import { EVENTS } from '../src/constants.json';
 import { targeting } from '../src/targeting.js';
-import * as utils from '../src/utils.js';
+import { logInfo, isFn, logError, isPlainObject, isStr, isBoolean, deepSetValue, deepClone, timestamp, logWarn } from '../src/utils.js';
 
 const MODULE = 'adlooxAdserverVideo';
 
 const URL_VAST = 'https://j.adlooxtracking.com/ads/vast/tag.php';
 
 export function buildVideoUrl(options, callback) {
-  utils.logInfo(MODULE, 'buildVideoUrl', options);
+  logInfo(MODULE, 'buildVideoUrl', options);
 
-  if (!utils.isFn(callback)) {
-    utils.logError(MODULE, 'invalid callback');
+  if (!isFn(callback)) {
+    logError(MODULE, 'invalid callback');
     return false;
   }
-  if (!utils.isPlainObject(options)) {
-    utils.logError(MODULE, 'missing options');
+  if (!isPlainObject(options)) {
+    logError(MODULE, 'missing options');
     return false;
   }
-  if (!(options.url_vast === undefined || utils.isStr(options.url_vast))) {
-    utils.logError(MODULE, 'invalid url_vast options value');
+  if (!(options.url_vast === undefined || isStr(options.url_vast))) {
+    logError(MODULE, 'invalid url_vast options value');
     return false;
   }
-  if (!(utils.isPlainObject(options.adUnit) || utils.isPlainObject(options.bid))) {
-    utils.logError(MODULE, "requires either 'adUnit' or 'bid' options value");
+  if (!(isPlainObject(options.adUnit) || isPlainObject(options.bid))) {
+    logError(MODULE, "requires either 'adUnit' or 'bid' options value");
     return false;
   }
-  if (!utils.isStr(options.url)) {
-    utils.logError(MODULE, 'invalid url options value');
+  if (!isStr(options.url)) {
+    logError(MODULE, 'invalid url options value');
     return false;
   }
-  if (!(options.wrap === undefined || utils.isBoolean(options.wrap))) {
-    utils.logError(MODULE, 'invalid wrap options value');
+  if (!(options.wrap === undefined || isBoolean(options.wrap))) {
+    logError(MODULE, 'invalid wrap options value');
     return false;
   }
-  if (!(options.blob === undefined || utils.isBoolean(options.blob))) {
-    utils.logError(MODULE, 'invalid blob options value');
+  if (!(options.blob === undefined || isBoolean(options.blob))) {
+    logError(MODULE, 'invalid blob options value');
     return false;
   }
 
   // same logic used in modules/dfpAdServerVideo.js
   options.bid = options.bid || targeting.getWinningBids(options.adUnit.code)[0];
 
-  utils.deepSetValue(options.bid, 'ext.adloox.video.adserver', true);
+  deepSetValue(options.bid, 'ext.adloox.video.adserver', true);
 
   if (options.wrap !== false) {
     VASTWrapper(options, callback);
@@ -70,7 +70,7 @@ registerVideoSupport('adloox', {
 function track(options, callback) {
   callback(options.url);
 
-  const bid = utils.deepClone(options.bid);
+  const bid = deepClone(options.bid);
   bid.ext.adloox.video.adserver = false;
 
   analyticsCommand(COMMAND.TRACK, {
@@ -85,13 +85,13 @@ function VASTWrapper(options, callback) {
   function process(result) {
     function getAd(xml) {
       if (!xml || xml.documentElement.tagName != 'VAST') {
-        utils.logError(MODULE, 'not a VAST tag, using non-wrapped tracking');
+        logError(MODULE, 'not a VAST tag, using non-wrapped tracking');
         return;
       }
 
       const ads = xml.querySelectorAll('Ad');
       if (!ads.length) {
-        utils.logError(MODULE, 'no VAST ads, using non-wrapped tracking');
+        logError(MODULE, 'no VAST ads, using non-wrapped tracking');
         return;
       }
 
@@ -132,7 +132,7 @@ function VASTWrapper(options, callback) {
 
       options.url = toBlob(chain[0]);
 
-      const epoch = utils.timestamp() - new Date().getTimezoneOffset() * 60 * 1000;
+      const epoch = timestamp() - new Date().getTimezoneOffset() * 60 * 1000;
       const expires0 = options.bid.ttl * 1000 - (epoch - options.bid.responseTimestamp);
       const expires = Math.max(30 * 1000, expires0);
       setTimeout(function() { urls.forEach(u => URL.revokeObjectURL(u)) }, expires);
@@ -154,7 +154,7 @@ function VASTWrapper(options, callback) {
     const wrapper = getWrapper(ad);
     if (wrapper) {
       if (chain.length > 5) {
-        utils.logWarn(MODULE, `got wrapped tag at depth ${chain.length}, not continuing`);
+        logWarn(MODULE, `got wrapped tag at depth ${chain.length}, not continuing`);
         blobify();
         return track(options, callback);
       }
@@ -191,7 +191,7 @@ function VASTWrapper(options, callback) {
     if (duration != 15) args.push([ 'duration', duration ]);
     if (skip) args.push([ 'skip', skip ]);
 
-    utils.logInfo(MODULE, `processed VAST tag chain of depth ${chain.depth}, running callback`);
+    logInfo(MODULE, `processed VAST tag chain of depth ${chain.depth}, running callback`);
 
     analyticsCommand(COMMAND.URL, {
       url: (options.url_vast || URL_VAST) + '?',
@@ -202,7 +202,7 @@ function VASTWrapper(options, callback) {
   }
 
   function fetch(url, withoutcredentials) {
-    utils.logInfo(MODULE, `fetching VAST ${url}`);
+    logInfo(MODULE, `fetching VAST ${url}`);
 
     ajax(url, {
       success: function(responseText, q) {
@@ -210,10 +210,10 @@ function VASTWrapper(options, callback) {
       },
       error: function(statusText, q) {
         if (!withoutcredentials) {
-          utils.logWarn(MODULE, `unable to download (${statusText}), suspected CORS withCredentials problem, retrying without`);
+          logWarn(MODULE, `unable to download (${statusText}), suspected CORS withCredentials problem, retrying without`);
           return fetch(url, true);
         }
-        utils.logError(MODULE, `failed to fetch (${statusText}), using non-wrapped tracking`);
+        logError(MODULE, `failed to fetch (${statusText}), using non-wrapped tracking`);
         process();
       }
     }, undefined, { withCredentials: !withoutcredentials });

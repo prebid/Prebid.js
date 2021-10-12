@@ -16,7 +16,10 @@ import { config as _config } from '../src/config.js';
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import * as utils from '../src/utils.js';
+import {
+  getAdUnitSizes, logInfo, isPlainObject, logError, isStr, isInteger, isArray, isBoolean, mergeDeep, deepAccess,
+  _each, deepSetValue, logWarn, getGptSlotInfoForAdUnitCode
+} from '../src/utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
 const MODULE_NAME = 'adloox';
@@ -49,7 +52,7 @@ function atf(adUnit, cb) {
       // Google's advice is to collapse slots on no fill but
       // we have to cater to clients that grow slots on fill
       const rect = (function(rect) {
-        const sizes = utils.getAdUnitSizes(adUnit);
+        const sizes = getAdUnitSizes(adUnit);
 
         if (sizes.length == 0) return false;
         // interstitial (0x0, 1x1)
@@ -141,54 +144,54 @@ function atf(adUnit, cb) {
 }
 
 function init(config, userConsent) {
-  utils.logInfo(MODULE, 'init', config, userConsent);
+  logInfo(MODULE, 'init', config, userConsent);
 
-  if (!utils.isPlainObject(config)) {
-    utils.logError(MODULE, 'missing config');
+  if (!isPlainObject(config)) {
+    logError(MODULE, 'missing config');
     return false;
   }
   if (config.params === undefined) config.params = {};
-  if (!(utils.isPlainObject(config.params))) {
-    utils.logError(MODULE, 'invalid params');
+  if (!(isPlainObject(config.params))) {
+    logError(MODULE, 'invalid params');
     return false;
   }
-  if (!(config.params.api_origin === undefined || utils.isStr(config.params.api_origin))) {
-    utils.logError(MODULE, 'invalid api_origin params value');
+  if (!(config.params.api_origin === undefined || isStr(config.params.api_origin))) {
+    logError(MODULE, 'invalid api_origin params value');
     return false;
   }
-  if (!(config.params.imps === undefined || (utils.isInteger(config.params.imps) && config.params.imps > 0))) {
-    utils.logError(MODULE, 'invalid imps params value');
+  if (!(config.params.imps === undefined || (isInteger(config.params.imps) && config.params.imps > 0))) {
+    logError(MODULE, 'invalid imps params value');
     return false;
   }
-  if (!(config.params.freqcap_ip === undefined || (utils.isInteger(config.params.freqcap_ip) && config.params.freqcap_ip >= 0))) {
-    utils.logError(MODULE, 'invalid freqcap_ip params value');
+  if (!(config.params.freqcap_ip === undefined || (isInteger(config.params.freqcap_ip) && config.params.freqcap_ip >= 0))) {
+    logError(MODULE, 'invalid freqcap_ip params value');
     return false;
   }
-  if (!(config.params.freqcap_ipua === undefined || (utils.isInteger(config.params.freqcap_ipua) && config.params.freqcap_ipua >= 0))) {
-    utils.logError(MODULE, 'invalid freqcap_ipua params value');
+  if (!(config.params.freqcap_ipua === undefined || (isInteger(config.params.freqcap_ipua) && config.params.freqcap_ipua >= 0))) {
+    logError(MODULE, 'invalid freqcap_ipua params value');
     return false;
   }
-  if (!(config.params.thresholds === undefined || (utils.isArray(config.params.thresholds) && config.params.thresholds.every(x => utils.isInteger(x) && x > 0 && x <= 100)))) {
-    utils.logError(MODULE, 'invalid thresholds params value');
+  if (!(config.params.thresholds === undefined || (isArray(config.params.thresholds) && config.params.thresholds.every(x => isInteger(x) && x > 0 && x <= 100)))) {
+    logError(MODULE, 'invalid thresholds params value');
     return false;
   }
-  if (!(config.params.slotinpath === undefined || utils.isBoolean(config.params.slotinpath))) {
-    utils.logError(MODULE, 'invalid slotinpath params value');
+  if (!(config.params.slotinpath === undefined || isBoolean(config.params.slotinpath))) {
+    logError(MODULE, 'invalid slotinpath params value');
     return false;
   }
   // legacy/deprecated configuration code path
-  if (!(config.params.params === undefined || (utils.isPlainObject(config.params.params) && utils.isInteger(config.params.params.clientid) && utils.isInteger(config.params.params.tagid) && utils.isInteger(config.params.params.platformid)))) {
-    utils.logError(MODULE, 'invalid subsection params block');
+  if (!(config.params.params === undefined || (isPlainObject(config.params.params) && isInteger(config.params.params.clientid) && isInteger(config.params.params.tagid) && isInteger(config.params.params.platformid)))) {
+    logError(MODULE, 'invalid subsection params block');
     return false;
   }
 
   config.params.thresholds = config.params.thresholds || [ 50, 60, 70, 80, 90 ];
 
   function analyticsConfigCallback(data) {
-    config = utils.mergeDeep(config.params, data);
+    config = mergeDeep(config.params, data);
   }
   if (config.params.params) {
-    utils.logWarn(MODULE, `legacy/deprecated configuration (please migrate to ${MODULE_NAME}AnalyticsAdapter)`);
+    logWarn(MODULE, `legacy/deprecated configuration (please migrate to ${MODULE_NAME}AnalyticsAdapter)`);
     analyticsConfigCallback(config.params.params);
   } else {
     analyticsCommand(COMMAND.CONFIG, null, analyticsConfigCallback);
@@ -200,8 +203,8 @@ function init(config, userConsent) {
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   // gptPreAuction runs *after* RTD so pbadslot may not be populated... (╯°□°)╯ ┻━┻
   const adUnits = (reqBidsConfigObj.adUnits || getGlobal().adUnits).map(adUnit => {
-    let path = utils.deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
-    if (!path) path = utils.getGptSlotInfoForAdUnitCode(adUnit.code).gptSlot;
+    let path = deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
+    if (!path) path = getGptSlotInfoForAdUnitCode(adUnit.code).gptSlot;
     return {
       path: path,
       unit: adUnit
@@ -219,33 +222,33 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     const dataSite = _config.getConfig('ortb2.site.ext.data') || {};
     const dataUser = _config.getConfig('ortb2.user.ext.data') || {};
 
-    utils._each(response, (v0, k0) => {
+    _each(response, (v0, k0) => {
       if (k0 == '_') return;
       const k = SEGMENT_HISTORIC[k0] || k0;
       const v = val(v0, k0);
-      utils.deepSetValue(k == k0 ? dataUser : dataSite, `${MODULE_NAME}_rtd.${k}`, v);
+      deepSetValue(k == k0 ? dataUser : dataSite, `${MODULE_NAME}_rtd.${k}`, v);
     });
-    utils.deepSetValue(dataSite, `${MODULE_NAME}_rtd.ok`, true);
+    deepSetValue(dataSite, `${MODULE_NAME}_rtd.ok`, true);
 
-    utils.deepSetValue(ortb2, 'site.ext.data', dataSite);
-    utils.deepSetValue(ortb2, 'user.ext.data', dataUser);
+    deepSetValue(ortb2, 'site.ext.data', dataSite);
+    deepSetValue(ortb2, 'user.ext.data', dataUser);
     _config.setConfig({ ortb2 });
 
     adUnits.forEach((adUnit, i) => {
-      utils._each(response['_'][i], (v0, k0) => {
+      _each(response['_'][i], (v0, k0) => {
         const k = SEGMENT_HISTORIC[k0] || k0;
         const v = val(v0, k0);
-        utils.deepSetValue(adUnit.unit, `ortb2Imp.ext.data.${MODULE_NAME}_rtd.${k}`, v);
+        deepSetValue(adUnit.unit, `ortb2Imp.ext.data.${MODULE_NAME}_rtd.${k}`, v);
       });
     });
   };
 
-  // utils.mergeDeep does not handle merging deep arrays... (╯°□°)╯ ┻━┻
+  // mergeDeep does not handle merging deep arrays... (╯°□°)╯ ┻━┻
   function mergeDeep(target, ...sources) {
     function emptyValue(v) {
-      if (utils.isPlainObject(v)) {
+      if (isPlainObject(v)) {
         return {};
-      } else if (utils.isArray(v)) {
+      } else if (isArray(v)) {
         return [];
       } else {
         return undefined;
@@ -255,12 +258,12 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     if (!sources.length) return target;
     const source = sources.shift();
 
-    if (utils.isPlainObject(target) && utils.isPlainObject(source)) {
+    if (isPlainObject(target) && isPlainObject(source)) {
       Object.keys(source).forEach(key => {
         if (!(key in target)) target[key] = emptyValue(source[key]);
         target[key] = target[key] !== undefined ? mergeDeep(target[key], source[key]) : source[key];
       });
-    } else if (utils.isArray(target) && utils.isArray(source)) {
+    } else if (isArray(target) && isArray(source)) {
       source.forEach((v, i) => {
         if (!(i in target)) target[i] = emptyValue(v);
         target[i] = target[i] !== undefined ? mergeDeep(target[i], v) : v;
@@ -294,7 +297,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   ];
 
   if (!adUnits.length) {
-    utils.logWarn(MODULE, 'no suitable adUnits (missing pbadslot?)');
+    logWarn(MODULE, 'no suitable adUnits (missing pbadslot?)');
   }
   const atfQueue = [];
   adUnits.map((adUnit, i) => {
@@ -307,7 +310,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
       atf(adUnit.unit, function(x) {
         let viewable = document.visibilityState === undefined || document.visibilityState == 'visible';
         try { viewable = viewable && top.document.hasFocus() } catch (_) {}
-        utils.logInfo(MODULE, `atf code=${adUnit.unit.code} has area=${x}, viewable=${viewable}`);
+        logInfo(MODULE, `atf code=${adUnit.unit.code} has area=${x}, viewable=${viewable}`);
         const atfList = []; atfList[i] = { atf: parseInt(x * 100) };
         response = mergeDeep(response, { _: atfList });
         semaphoreInc(-1);
@@ -336,12 +339,12 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
             throw false;
           }
         } catch (_) {
-          utils.logError(MODULE, 'unexpected response');
+          logError(MODULE, 'unexpected response');
         }
         semaphoreInc(-1);
       },
       error: function(statusText, q) {
-        utils.logError(MODULE, 'request failed');
+        logError(MODULE, 'request failed');
         semaphoreInc(-1);
       }
     });
@@ -350,8 +353,8 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
 function getTargetingData(adUnitArray, config, userConsent) {
   function targetingNormalise(v) {
-    if (utils.isArray(v) && v.length == 0) return undefined;
-    if (utils.isBoolean(v)) v = ~~v;
+    if (isArray(v) && v.length == 0) return undefined;
+    if (isBoolean(v)) v = ~~v;
     if (!v) return undefined; // empty string and zero
     return v;
   }
@@ -363,14 +366,14 @@ function getTargetingData(adUnitArray, config, userConsent) {
   return getGlobal().adUnits.filter(adUnit => includes(adUnitArray, adUnit.code)).reduce((a, adUnit) => {
     a[adUnit.code] = {};
 
-    utils._each(dataSite, (v0, k) => {
+    _each(dataSite, (v0, k) => {
       if (includes(SEGMENT_HISTORIC_VALUES, k)) return; // ignore site average viewability
       const v = targetingNormalise(v0);
       if (v) a[adUnit.code][ADSERVER_TARGETING_PREFIX + k] = v;
     });
 
-    const adUnitSegments = utils.deepAccess(adUnit, `ortb2Imp.ext.data.${MODULE_NAME}_rtd`, {});
-    utils._each(Object.assign({}, dataUser, adUnitSegments), (v0, k) => {
+    const adUnitSegments = deepAccess(adUnit, `ortb2Imp.ext.data.${MODULE_NAME}_rtd`, {});
+    _each(Object.assign({}, dataUser, adUnitSegments), (v0, k) => {
       const v = targetingNormalise(v0);
       if (v) a[adUnit.code][ADSERVER_TARGETING_PREFIX + k] = v;
     });
