@@ -1,4 +1,4 @@
-import { logMessage, groupBy, uniques, flatten, deepAccess } from '../src/utils.js';
+import { logMessage, groupBy, uniques, flatten, deepAccess, deepEqual } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
@@ -145,7 +145,7 @@ function buildPlacement(bidRequest) {
         break;
     }
   }
-  sizes = (sizes || []).concat(bidRequest.sizes || []).filter(uniques);
+  sizes = deepUniques((sizes || []).concat(bidRequest.sizes || []));
   return {
     host: bidRequest.params.host,
     adUnit: {
@@ -161,4 +161,14 @@ function buildPlacement(bidRequest) {
       type: bidRequest.params.adUnitType.toUpperCase()
     }
   }
+}
+
+function deepUniques(array) {
+  const uniques = [];
+  for (const item of array) {
+    if (!uniques.some(unique => deepEqual(unique, item))) {
+      uniques.push(item);
+    }
+  }
+  return uniques;
 }

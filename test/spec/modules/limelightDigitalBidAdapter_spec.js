@@ -15,7 +15,7 @@ describe('limelightDigitalAdapter', function () {
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
     mediaTypes: {
       banner: {
-        sizes: [[300, 250]]
+        sizes: [[300, 250], [300, 250]]
       }
     },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
@@ -472,10 +472,12 @@ function validateAdUnit(adUnit, bid) {
   if (bid.sizes) {
     bidSizes = bidSizes.concat(bid.sizes || []);
   }
-  expect(adUnit.sizes).to.deep.equal(bidSizes.map(size => {
-    return {
-      width: size[0],
-      height: size[1]
-    }
-  }))
+  const uniqueBidSizes = Array.from(new Map(bidSizes.map(item => [JSON.stringify(item), item])).values())
+    .map(bidSize => {
+      return {
+        width: bidSize[0],
+        height: bidSize[1]
+      };
+    });
+  expect(adUnit.sizes).to.deep.equal(uniqueBidSizes);
 }
