@@ -28,21 +28,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
         const adServerConfig = provider.adServer;
         if (adServerConfig) {
-          adServerCore.registerProvider(adServerConfig.vendorCode, adServerConfig.params);
+          adServerCore.registerAdServer(adServerConfig.vendorCode, adServerConfig.params);
         }
       });
     });
 
     requestBids.before(enrichAdUnits, 40);
-
-    function enrichAdUnits(nextFn, bidRequest) {
-      const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
-      adUnits.forEach(adUnit => {
-        const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
-        adUnit.mediaTypes.video = Object.assign({}, adUnit.mediaTypes.video, oRtbParams);
-      });
-      return nextFn.call(this, bidRequest);
-    }
 
     pbEvents.on(CONSTANTS.EVENTS.AUCTION_END, function(auctionResult) {
       auctionResult.adUnits.forEach(adUnit => {
@@ -51,6 +42,17 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
         }
       });
     });
+  }
+
+  return { init };
+
+  function enrichAdUnits(nextFn, bidRequest) {
+    const adUnits = bidRequest.adUnits || pbGlobal.adUnits || [];
+    adUnits.forEach(adUnit => {
+      const oRtbParams = videoCore.getOrtbParams(adUnit.video.divId);
+      adUnit.mediaTypes.video = Object.assign({}, adUnit.mediaTypes.video, oRtbParams);
+    });
+    return nextFn.call(this, bidRequest);
   }
 
   function renderWinningBid(adUnit) {
@@ -79,16 +81,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     options.adXml = highestBid.vastXml;
     videoCore.setAdTagUrl(adTagUrl, divId, options);
   }
-
-  return { init };
 }
 
-function pbVideoFactory() {
+export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
   const adServerCore = coreAdServerFactory();
   const pbVideo = PbVideo(videoCore, config.getConfig, $$PREBID_GLOBAL$$, events, allVideoEvents, adServerCore);
   pbVideo.init();
   return pbVideo;
 }
-
-pbVideoFactory();

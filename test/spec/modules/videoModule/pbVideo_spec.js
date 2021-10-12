@@ -150,8 +150,12 @@ describe('Prebid Video', function () {
 
     const expectedVendorCode = 5;
     const expectedAdTag = 'test_tag';
+    const expectedAdUnitCode = 'expectedAdUnitcode';
+    const expectedDivId = 'expectedDivId';
     const expectedAdUnit = {
+      code: expectedAdUnitCode,
       video: {
+        divId: expectedDivId,
         adServer: {
           vendorCode: expectedVendorCode,
           baseAdTagUrl: expectedAdTag
@@ -161,7 +165,6 @@ describe('Prebid Video', function () {
     const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
 
     it('should request ad tag url from adServer when configured to use adServer', function () {
-
       pbVideoFactory(null, null, null, pbEvents);
 
       auctionEndCallback(auctionResults);
@@ -175,18 +178,39 @@ describe('Prebid Video', function () {
 
     it('should load ad tag when ad server return ad tag', function () {
       const expectedAdTag = 'resulting ad tag';
-      const adServerCore = {
-        getAdTagUrl: () => expectedAdTag,
-        registerAdServer: sinon.spy(),
-      };
+      const adServerCore = Object.assign({}, adServerMock, {
+        getAdTagUrl: () => expectedAdTag
+      });
       pbVideoFactory(null, null, null, pbEvents, null, adServerCore);
       auctionEndCallback(auctionResults);
       expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
-      expect(videoCoreMock.setAdTagUrl.calledOnce.args[0][0]).to.be.equal(expectedAdTag);
+      expect(videoCoreMock.setAdTagUrl.args[0][0]).to.be.equal(expectedAdTag);
+      expect(videoCoreMock.setAdTagUrl.args[0][1]).to.be.equal(expectedDivId);
+      expect(videoCoreMock.setAdTagUrl.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
     });
 
     it('should load ad tag from highest bid when ad server is not configured', function () {
-      
+      const expectedVastUrl = 'expectedVastUrl';
+      const expectedVastXml = 'expectedVastXml';
+      const pbGlobal = Object.assign({}, pbGlobalMock, {
+        getHighestCpmBids: () => [{
+          vastUrl: expectedVastUrl,
+          vastXml: expectedVastXml
+        }, {}, {}, {}]
+      });
+      const expectedAdUnit = {
+        code: expectedAdUnitCode,
+        video: { divId: expectedDivId }
+      };
+      const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
+
+      pbVideoFactory(null, null, pbGlobal, pbEvents);
+      auctionEndCallback(auctionResults);
+      expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
+      expect(videoCoreMock.setAdTagUrl.args[0][0]).to.be.equal(expectedVastUrl);
+      expect(videoCoreMock.setAdTagUrl.args[0][1]).to.be.equal(expectedDivId);
+      expect(videoCoreMock.setAdTagUrl.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
+      expect(videoCoreMock.setAdTagUrl.args[0][2]).to.have.property('adXml', expectedVastXml);
     });
   });
 });
