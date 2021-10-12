@@ -307,15 +307,30 @@ describe('limelightDigitalAdapter', function () {
             ext: {
               sync: {
                 iframe: 'iframeUrl',
-                pixel: 'pixelUrl'
               }
             }
           },
           {
             ext: {
               sync: {
+                pixel: 'pixelUrl'
+              }
+            }
+          },
+          {},
+          {
+            ext: {}
+          },
+          {
+            ext: {
+              sync: {}
+            }
+          },
+          {
+            ext: {
+              sync: {
                 iframe: 'iframeUrl2',
-                pixel: 'pixelUrl2'
+                pixel: 'pixelUrl3'
               }
             }
           }
@@ -323,6 +338,14 @@ describe('limelightDigitalAdapter', function () {
       },
       {
         body: [
+          {
+            ext: {
+              sync: {
+                iframe: 'iframeUrl2',
+                pixel: 'pixelUrl2'
+              }
+            }
+          },
           {
             ext: {
               sync: {
@@ -389,11 +412,11 @@ describe('limelightDigitalAdapter', function () {
         },
         {
           type: 'image',
-          url: 'pixelUrl2'
+          url: 'pixelUrl3'
         },
         {
           type: 'image',
-          url: 'pixelUrl3'
+          url: 'pixelUrl2'
         }
       ]);
     });
@@ -421,11 +444,11 @@ describe('limelightDigitalAdapter', function () {
         },
         {
           type: 'image',
-          url: 'pixelUrl2'
+          url: 'pixelUrl3'
         },
         {
           type: 'image',
-          url: 'pixelUrl3'
+          url: 'pixelUrl2'
         }
       ]);
     });

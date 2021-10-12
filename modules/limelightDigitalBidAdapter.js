@@ -96,19 +96,21 @@ export const spec = {
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     const syncs = serverResponses.map(response => response.body).reduce(flatten, [])
       .map(response => deepAccess(response, 'ext.sync')).filter(Boolean);
-    const iframeSyncUrls = !syncOptions.iframeEnabled ? [] : syncs.map(sync => sync.iframe).filter(Boolean).map(url => {
-      return {
-        type: 'iframe',
-        url: url
-      }
-    });
-    const pixelSyncUrls = !syncOptions.pixelEnabled ? [] : syncs.map(sync => sync.pixel).filter(Boolean).map(url => {
-      return {
-        type: 'image',
-        url: url
-      }
-    });
-    return [iframeSyncUrls, pixelSyncUrls].reduce(flatten, []).filter(uniques);
+    const iframeSyncUrls = !syncOptions.iframeEnabled ? [] : syncs.map(sync => sync.iframe).filter(Boolean)
+      .filter(uniques).map(url => {
+        return {
+          type: 'iframe',
+          url: url
+        }
+      });
+    const pixelSyncUrls = !syncOptions.pixelEnabled ? [] : syncs.map(sync => sync.pixel).filter(Boolean)
+      .filter(uniques).map(url => {
+        return {
+          type: 'image',
+          url: url
+        }
+      });
+    return [iframeSyncUrls, pixelSyncUrls].reduce(flatten, []);
   }
 };
 
