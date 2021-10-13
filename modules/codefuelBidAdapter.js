@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, isArray } from '../src/utils.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -147,7 +147,7 @@ function getDeviceType() {
 
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i], key);
+    result = deepAccess(collection[i], key);
     if (result) {
       return result;
     }
@@ -160,16 +160,16 @@ function flatten(arr) {
 
 /* Turn bid request sizes into ut-compatible format */
 function transformSizes(requestSizes) {
-  if (!utils.isArray(requestSizes)) {
+  if (!isArray(requestSizes)) {
     return [];
   }
 
-  if (requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
+  if (requestSizes.length === 2 && !isArray(requestSizes[0])) {
     return [{
       w: parseInt(requestSizes[0], 10),
       h: parseInt(requestSizes[1], 10)
     }];
-  } else if (utils.isArray(requestSizes[0])) {
+  } else if (isArray(requestSizes[0])) {
     return requestSizes.map(item =>
       ({
         w: parseInt(item[0], 10),
