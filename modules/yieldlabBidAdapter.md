@@ -25,7 +25,22 @@ Module that connects to Yieldlab's demand sources
                            key1: "value1",
                            key2: "value2"
                        },
-                       extId: "abc"
+                       extId: "abc",
+                       iabContent: {
+                           id: "some_id",
+                           episode: "1",
+                           title: "some title",
+                           series: "some series",
+                           season: "s1",
+                           artist: "John Doe",
+                           genre: "some genre",
+                           isrc: "CC-XXX-YY-NNNNN",
+                           url: "http://foo_url.de",
+                           cat: ["IAB1-1", "IAB1-2", "IAB2-10"],
+                           context: "7",
+                           keywords: ["k1", "k2"],
+                           live: "0"
+                       }
                    }
                }]
            }, {

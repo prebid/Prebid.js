@@ -1,4 +1,4 @@
-import { logError, deepAccess, isArray, getBidIdParameter, getDNT, deepSetValue, isEmpty, _each, logMessage, logWarn, isBoolean, isNumber, isPlainObject } from '../src/utils.js';
+import { logError, deepAccess, isArray, getBidIdParameter, getDNT, deepSetValue, isEmpty, _each, logMessage, logWarn, isBoolean, isNumber, isPlainObject, isFn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -162,6 +162,20 @@ export const spec = {
           mimes: mimes
         }
       };
+
+      if (isFn(bid.getFloor)) {
+        let floorInfo = bid.getFloor({
+          currency: 'USD',
+          mediaType: 'video',
+          size: '*'
+        });
+
+        if (floorInfo.currency === 'USD') {
+          spotxReq.bidfloor = floorInfo.floor;
+        }
+      } else if (getBidIdParameter('price_floor', bid.params) != '') {
+        spotxReq.bidfloor = getBidIdParameter('price_floor', bid.params);
+      }
 
       if (getBidIdParameter('start_delay', bid.params) != '') {
         spotxReq.video.startdelay = 0 + Boolean(getBidIdParameter('start_delay', bid.params));

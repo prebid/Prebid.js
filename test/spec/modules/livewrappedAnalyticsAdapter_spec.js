@@ -416,18 +416,28 @@ describe('Livewrapped analytics adapter', function () {
           {
             'bidder': 'livewrapped',
             'adUnitCode': 'panorama_d_1',
-            'bidId': '2ecff0db240757',
-            'floorData': {
-              'floorValue': 1.1,
-              'floorCurrency': 'SEK'
-            }
+            'bidId': '2ecff0db240757'
           }
         ],
         'start': 1519149562216
       });
 
-      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_RESPONSE, Object.assign({},
+        MOCK.BID_RESPONSE[0],
+        {
+          'floorData': {
+            'floorValue': 1.1,
+            'floorCurrency': 'SEK'
+          }
+        }));
+      events.emit(BID_WON, Object.assign({},
+        MOCK.BID_WON[0],
+        {
+          'floorData': {
+            'floorValue': 1.1,
+            'floorCurrency': 'SEK'
+          }
+        }));
       events.emit(AUCTION_END, MOCK.AUCTION_END);
 
       clock.tick(BID_WON_TIMEOUT + 1000);
