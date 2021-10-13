@@ -81,6 +81,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         bidResponse.ttr = args.timeToRespond;
         bidResponse.readyToSend = 1;
         bidResponse.mediaType = args.mediaType == 'native' ? 2 : (args.mediaType == 'video' ? 4 : 1);
+        bidResponse.floorData = args.floorData;
         if (!bidResponse.ttr) {
           bidResponse.ttr = time - bidResponse.start;
         }
@@ -108,6 +109,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         logInfo('LIVEWRAPPED_BID_WON:', args);
         let wonBid = cache.auctions[args.auctionId].bids[args.requestId];
         wonBid.won = true;
+        wonBid.floorData = args.floorData;
         if (wonBid.sendStatus != 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
@@ -226,7 +228,7 @@ function getResponses(gdpr, auctionIds) {
           IsBid: bid.isBid,
           mediaType: bid.mediaType,
           gdpr: gdprPos,
-          floor: bid.floorData ? bid.floorData.floorValue : bid.lwFloor,
+          floor: bid.lwFloor ? bid.lwFloor : (bid.floorData ? bid.floorData.floorValue : undefined),
           floorCur: bid.floorData ? bid.floorData.floorCurrency : undefined,
           auctionId: auctionIdPos,
           auc: bid.auc,
@@ -263,7 +265,7 @@ function getWins(gdpr, auctionIds) {
           cpm: bid.cpm,
           mediaType: bid.mediaType,
           gdpr: gdprPos,
-          floor: bid.floorData ? bid.floorData.floorValue : bid.lwFloor,
+          floor: bid.lwFloor ? bid.lwFloor : (bid.floorData ? bid.floorData.floorValue : undefined),
           floorCur: bid.floorData ? bid.floorData.floorCurrency : undefined,
           auctionId: auctionIdPos,
           auc: bid.auc,
