@@ -472,13 +472,6 @@ function validateAdUnit(adUnit, bid) {
   if (bid.sizes) {
     bidSizes = bidSizes.concat(bid.sizes || []);
   }
-  const uniqueBidSizes = Array.from(new Map(bidSizes.map(item => [JSON.stringify(item), item])).values())
-    .map(bidSize => {
-      return {
-        width: bidSize[0],
-        height: bidSize[1]
-      };
-    });
   expect(adUnit.sizes).to.deep.equal(bidSizes.map(size => {
     return {
       width: size[0],
