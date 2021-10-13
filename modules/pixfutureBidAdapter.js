@@ -189,7 +189,6 @@ function newBid(serverBid, rtbBid, placementId, uuid) {
   return bid;
 }
 
-
 function hasPurpose1Consent(bidderRequest) {
   let result = true;
   if (bidderRequest && bidderRequest.gdprConsent) {
