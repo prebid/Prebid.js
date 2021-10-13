@@ -29,6 +29,7 @@
 * @property {?object} setOrtb2 if true will set the global ortb2 configuration (default false)
 */
 
+import {getGlobal} from '../src/prebidGlobal.js';
 import { deepSetValue, mergeDeep, logError, tryAppendQueryString, logMessage } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
@@ -61,6 +62,72 @@ let _bigseaContextualProfile = null;
 
 /** @type {null|Object} */
 let _wam2gamUserProfile = null;
+
+/** function that will allow RTD sub-modules to modify the AdUnit object for each auction
+* @param {Object} reqBidsConfigObj
+* @param {doneCallback} onDone
+* @param {Object} moduleConfig
+* @param {Object} userConsent
+* @returns {void}
+*/
+export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
+  moduleConfig = moduleConfig || {};
+  const moduleParams = moduleConfig.params || {};
+  const weboCtxConf = moduleParams.weboCtxConf || {};
+
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+
+  const onSuccess = handleContextualProfile(adUnits, moduleConfig, setBigseaContextualProfile);
+
+  fetchContextualProfile(weboCtxConf, onSuccess, onDone);
+}
+/** function xxx
+* @param {object} adUnits
+* @param {object} moduleConfig
+* @param {successCallback} onSuccess
+* @returns {successCallback}
+*/
+function handleContextualProfile(adUnits, moduleConfig, onSuccess) {
+  const moduleParams = moduleConfig.params || {};
+  return function(data) {
+    logMessage('fetchContextualProfile on getBidRequestData is done');
+    onSuccess(data);
+    setGlobalOrtb2(moduleParams);
+  };
+}
+
+function setGlobaOrtb2(moduleParams) {
+  const weboCtxConf = moduleParams.weboCtxConf || {};
+  const wam2gamConf = moduleParams.wam2gamConf || {};
+
+  const defaultContextualProfile = weboCtxConf.defaultProfile || {};
+  const wam2gamDefaultUserProfile = wam2gamConf.defaultProfile || {};
+
+  const contextualProfile = _bigseaContextualProfile || defaultContextualProfile;
+  const wam2gamProfile = _wam2gamUserProfile || wam2gamDefaultUserProfile;
+
+  if (weboCtxConf.setOrtb2) {
+    const ortb2 = getGlobal().getConfig('ortb2') || {};
+    if (contextualProfile[WEBO_CTX]) {
+      deepSetValue(ortb2, 'site.ext.data.webo_ctx', contextualProfile[WEBO_CTX]);
+    }
+    if (contextualProfile[WEBO_DS]) {
+      deepSetValue(ortb2, 'site.ext.data.webo_ds', contextualProfile[WEBO_DS]);
+    }
+    config.setConfig({ortb2: ortb2});
+  }
+
+  if (wam2gamConf.setOrtb2) {
+    const ortb2 = getGlobal().getConfig('ortb2') || {};
+    if (wam2gamProfile[WEBO_CS]) {
+      deepSetValue(ortb2, 'user.ext.data.webo_cs', wam2gamProfile[WEBO_CS]);
+    }
+    if (wam2gamProfile[WEBO_AUDIENCES]) {
+      deepSetValue(ortb2, 'user.ext.data.webo_audiences', wam2gamProfile[WEBO_AUDIENCES]);
+    }
+    getGlobal().setConfig({ortb2: ortb2});
+  }
+}
 
 /** function that provides ad server targeting data to RTD-core
 * @param {Array} adUnitsCodes
@@ -99,7 +166,7 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
     config.setConfig({ortb2: ortb2});
   }
 
-  let profile = {};
+  const profile = {};
 
   if (weboCtxConf.setTargeting !== false) {
     mergeDeep(profile, contextualProfile);
@@ -225,10 +292,7 @@ function init(moduleConfig) {
 function initWeboCtx(weboCtxConf) {
   _bigseaContextualProfile = null;
 
-  if (weboCtxConf.token) {
-    fetchContextualProfile(weboCtxConf, setBigseaContextualProfile,
-      () => logMessage('fetchContextualProfile on init is done'));
-  } else {
+  if (!weboCtxConf.token) {
     logError('missing param "token" for weborama contextual sub module initialization');
     return false;
   }
@@ -264,6 +328,7 @@ export const weboramaSubmodule = {
   name: SUBMODULE_NAME,
   init: init,
   getTargetingData: getTargetingData,
+  getBidRequestData: getBidRequestData,
 };
 
 submodule(MODULE_NAME, weboramaSubmodule);
