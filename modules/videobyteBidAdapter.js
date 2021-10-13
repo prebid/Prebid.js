@@ -59,12 +59,12 @@ export const spec = {
         logMessage('E2E test mode enabled');
         pubId = 'e2etest'
       }
-      let baseEndpoint = spec.ENDPOINT +'?pid='+pubId;
-      if (placementId){
-        baseEndpoint += '&placementId='+placementId
+      let baseEndpoint = spec.ENDPOINT + '?pid=' + pubId;
+      if (placementId) {
+        baseEndpoint += '&placementId=' + placementId
       }
-      if (nId){
-        baseEndpoint += '&nid='+nId
+      if (nId) {
+        baseEndpoint += '&nid=' + nId
       }
       return {
         method: 'POST',
