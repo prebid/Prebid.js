@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
@@ -57,8 +57,8 @@ export const spec = {
       }
 
       // LiveRampID
-      const idlEnv = utils.deepAccess(bidRequest, 'userId.idl_env');
-      if (utils.isStr(idlEnv) && !utils.isEmpty(idlEnv)) {
+      const idlEnv = deepAccess(bidRequest, 'userId.idl_env');
+      if (isStr(idlEnv) && !isEmpty(idlEnv)) {
         payload.lr_env = idlEnv;
       }
 
@@ -178,17 +178,17 @@ export const spec = {
  * @return {string|null} - `"banner"` or `"video"` or `null`.
  */
 function getMediaType(bidRequest, enabledOldFormat = true) {
-  let hasBannerType = Boolean(utils.deepAccess(bidRequest, 'mediaTypes.banner'));
-  let hasVideoType = Boolean(utils.deepAccess(bidRequest, 'mediaTypes.video'));
+  let hasBannerType = Boolean(deepAccess(bidRequest, 'mediaTypes.banner'));
+  let hasVideoType = Boolean(deepAccess(bidRequest, 'mediaTypes.video'));
 
   if (enabledOldFormat) {
     hasBannerType = hasBannerType || bidRequest.mediaType === BANNER ||
-      (utils.isEmpty(bidRequest.mediaTypes) && utils.isEmpty(bidRequest.mediaType));
+      (isEmpty(bidRequest.mediaTypes) && isEmpty(bidRequest.mediaType));
     hasVideoType = hasVideoType || bidRequest.mediaType === VIDEO;
   }
 
   if (hasBannerType && hasVideoType) {
-    const playerParams = utils.deepAccess(bidRequest, 'params.playerParams')
+    const playerParams = deepAccess(bidRequest, 'params.playerParams')
     if (playerParams) {
       return VIDEO;
     } else {
@@ -215,13 +215,13 @@ function getMediaType(bidRequest, enabledOldFormat = true) {
  * @return {string} - strings like `"300x250"` or `"300x250,728x90"`.
  */
 function getBannerSizes(bidRequest, enabledOldFormat = true) {
-  let sizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes');
+  let sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
 
   if (enabledOldFormat) {
     sizes = sizes || bidRequest.sizes;
   }
 
-  const result = utils.parseSizesInput(sizes).join(',');
+  const result = parseSizesInput(sizes).join(',');
   return result;
 }
 
@@ -238,14 +238,14 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
   const _getPlayerSize = (sizes) => {
     let result = null;
 
-    const size = utils.parseSizesInput(sizes)[0];
-    if (utils.isEmpty(size)) {
+    const size = parseSizesInput(sizes)[0];
+    if (isEmpty(size)) {
       return result;
     }
 
     const splited = size.split('x');
     const sizeObj = {w: parseInt(splited[0], 10), h: parseInt(splited[1], 10)};
-    const _isValidPlayerSize = !(utils.isEmpty(sizeObj)) && (isFinite(sizeObj.w) && isFinite(sizeObj.h));
+    const _isValidPlayerSize = !(isEmpty(sizeObj)) && (isFinite(sizeObj.w) && isFinite(sizeObj.h));
     if (!_isValidPlayerSize) {
       return result;
     }
@@ -254,7 +254,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
     return result;
   }
 
-  let playerSize = _getPlayerSize(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+  let playerSize = _getPlayerSize(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
 
   if (enabledOldFormat) {
     playerSize = playerSize || _getPlayerSize(bidRequest.sizes);
@@ -264,7 +264,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
     // NOTE: `video.playerSize` in Flux is always [1,1].
     if (playerSize && (playerSize.w === 1 && playerSize.h === 1)) {
       // NOTE: `params.playerSize` is a specific object to support `FLUX`.
-      playerSize = _getPlayerSize(utils.deepAccess(bidRequest, 'params.playerSize'));
+      playerSize = _getPlayerSize(deepAccess(bidRequest, 'params.playerSize'));
     }
   }
 
@@ -282,7 +282,7 @@ function newRenderer(response) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+    logWarn('Prebid Error calling setRender on newRenderer', err);
   }
 
   return renderer;
@@ -304,7 +304,7 @@ function newCmerRenderer(response) {
   try {
     renderer.setRender(cmerRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+    logWarn('Prebid Error calling setRender on newRenderer', err);
   }
 
   return renderer;
