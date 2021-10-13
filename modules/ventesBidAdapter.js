@@ -154,6 +154,14 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
     if (!deviceObjBid.hasOwnProperty('language')) {
       deviceObj.language = navigator.language;
     }
+  }else{
+    deviceObj = {};
+    if (!deviceObjBid.hasOwnProperty('ua')) {
+      deviceObj.ua = navigator.userAgent;
+    }
+    if (!deviceObjBid.hasOwnProperty('language')) {
+      deviceObj.language = navigator.language;
+    }
   }
   const appDeviceObjBid = find(bidRequests, hasAppInfo);
   let appIdObj;
