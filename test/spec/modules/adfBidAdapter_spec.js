@@ -1,18 +1,21 @@
 // jshint esversion: 6, es3: false, node: true
-import {assert, expect} from 'chai';
-import {spec} from 'modules/adfBidAdapter.js';
-import { NATIVE } from 'src/mediaTypes.js';
+import { assert } from 'chai';
+import { spec } from 'modules/adfBidAdapter.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Adf adapter', function () {
-  let serverResponse, bidRequest, bidResponses;
   let bids = [];
 
   describe('backwards-compatibility', function () {
     it('should have adformOpenRTB alias defined', function () {
       assert.equal(spec.aliases[0].code, 'adformOpenRTB');
       assert.equal(spec.aliases[0].gvlid, 50);
+    });
+
+    it('should have adform alias defined', function () {
+      assert.equal(spec.aliases[1].code, 'adform');
+      assert.equal(spec.aliases[1].gvlid, 50);
     });
   });
 
@@ -242,6 +245,27 @@ describe('Adf adapter', function () {
       assert.deepEqual(request.cur, [ 'EUR' ]);
     });
 
+    it('should pass supply chain object', function () {
+      let validBidRequests = [{
+        bidId: 'bidId',
+        params: {},
+        schain: {
+          validation: 'strict',
+          config: {
+            ver: '1.0'
+          }
+        }
+      }];
+
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      assert.deepEqual(request.source.ext.schain, {
+        validation: 'strict',
+        config: {
+          ver: '1.0'
+        }
+      });
+    });
+
     describe('priceType', function () {
       it('should send default priceType', function () {
         let validBidRequests = [{
@@ -304,6 +328,61 @@ describe('Adf adapter', function () {
         let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
         for (let i = 0; i < 3; i++) {
           assert.equal(imps[i].tagid, validBidRequests[i].params.mid);
+        }
+      });
+
+      describe('price floors', function () {
+        it('should not add if floors module not configured', function () {
+          const validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} }];
+          let imp = getRequestImps(validBidRequests)[0];
+
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, undefined);
+        });
+
+        it('should not add if floor price not defined', function () {
+          const validBidRequests = [ getBidWithFloor() ];
+          let imp = getRequestImps(validBidRequests)[0];
+
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, 'USD');
+        });
+
+        it('should request floor price in adserver currency', function () {
+          config.setConfig({ currency: { adServerCurrency: 'DKK' } });
+          const validBidRequests = [ getBidWithFloor() ];
+          let imp = getRequestImps(validBidRequests)[0];
+
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, 'DKK');
+        });
+
+        it('should add correct floor values', function () {
+          const expectedFloors = [ 1, 1.3, 0.5 ];
+          const validBidRequests = expectedFloors.map(getBidWithFloor);
+          let imps = getRequestImps(validBidRequests);
+
+          expectedFloors.forEach((floor, index) => {
+            assert.equal(imps[index].bidfloor, floor);
+            assert.equal(imps[index].bidfloorcur, 'USD');
+          });
+        });
+
+        function getBidWithFloor(floor) {
+          return {
+            params: { mid: 1 },
+            mediaTypes: { video: {} },
+            getFloor: ({ currency }) => {
+              return {
+                currency: currency,
+                floor
+              }
+            }
+          };
+        }
+
+        function getRequestImps(validBidRequests) {
+          return JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp;
         }
       });
 

@@ -884,20 +884,33 @@ describe('the rubicon adapter', function () {
                   'ext': { 'segtax': 1 },
                   'segment': [
                     { 'id': '987' }
+		    ]
+		  }, {
+		    'name': 'www.dataprovider1.com',
+		    'ext': { 'segtax': 2 },
+		    'segment': [
+		      { 'id': '432' }
+		    ]
+                }, {
+                  'name': 'www.dataprovider1.com',
+                  'ext': { 'segtax': 5 },
+                  'segment': [
+                    { 'id': '55' }
                   ]
                 }, {
                   'name': 'www.dataprovider1.com',
-                  'ext': { 'segtax': 2 },
+                  'ext': { 'segtax': 6 },
                   'segment': [
-                    { 'id': '432' }
+                    { 'id': '66' }
                   ]
-                }]
+                }
+                ]
               }
             };
             const user = {
               data: [{
                 'name': 'www.dataprovider1.com',
-                'ext': { 'segtax': 3 },
+                'ext': { 'segtax': 4 },
                 'segment': [
                   { 'id': '687' },
                   { 'id': '123' }
@@ -932,7 +945,7 @@ describe('the rubicon adapter', function () {
               'tg_v.gender': 'M',
               'tg_v.age': '40',
               'tg_v.iab': '687,123',
-              'tg_i.iab': '987,432',
+              'tg_i.iab': '987,432,55,66',
               'tg_v.yob': '1984',
               'tg_i.rating': '4-star,5-star',
               'tg_i.page': 'home',

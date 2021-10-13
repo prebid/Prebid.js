@@ -1,6 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
+import {
+  deepAccess, uniques, isArray, getWindowTop, isGptPubadsDefined, isSlotMatchingAdUnitCode, logInfo, logWarn,
+  getWindowSelf
+} from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = '33across';
@@ -61,7 +64,7 @@ function _validateBasic(bid) {
 }
 
 function _validateGUID(bid) {
-  const siteID = utils.deepAccess(bid, 'params.siteId', '') || '';
+  const siteID = deepAccess(bid, 'params.siteId', '') || '';
   if (siteID.trim().match(GUID_PATTERN) === null) {
     return false;
   }
@@ -70,7 +73,7 @@ function _validateGUID(bid) {
 }
 
 function _validateBanner(bid) {
-  const banner = utils.deepAccess(bid, 'mediaTypes.banner');
+  const banner = deepAccess(bid, 'mediaTypes.banner');
   // If there's no banner no need to validate against banner rules
   if (banner === undefined) {
     return true;
@@ -84,8 +87,8 @@ function _validateBanner(bid) {
 }
 
 function _validateVideo(bid) {
-  const videoAdUnit = utils.deepAccess(bid, 'mediaTypes.video');
-  const videoBidderParams = utils.deepAccess(bid, 'params.video', {});
+  const videoAdUnit = deepAccess(bid, 'mediaTypes.video');
+  const videoBidderParams = deepAccess(bid, 'params.video', {});
 
   // If there's no video no need to validate against video rules
   if (videoAdUnit === undefined) {
@@ -145,7 +148,7 @@ function buildRequests(bidRequests, bidderRequest) {
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const pageUrl = (bidderRequest && bidderRequest.refererInfo) ? (bidderRequest.refererInfo.referer) : (undefined);
 
-  adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
+  adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 
   return bidRequests.map(bidRequest => _createServerRequest(
     {
@@ -168,13 +171,13 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
    */
   ttxRequest.imp = [{}];
 
-  if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
+  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     ttxRequest.imp[0].banner = {
       ..._buildBannerORTB(bidRequest)
     }
   }
 
-  if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+  if (deepAccess(bidRequest, 'mediaTypes.video')) {
     ttxRequest.imp[0].video = _buildVideoORTB(bidRequest);
   }
 
@@ -279,7 +282,7 @@ function setExtension(obj = {}, key, value) {
 
 // BUILD REQUESTS: SIZE INFERENCE
 function _transformSizes(sizes) {
-  if (utils.isArray(sizes) && sizes.length === 2 && !utils.isArray(sizes[0])) {
+  if (isArray(sizes) && sizes.length === 2 && !isArray(sizes[0])) {
     return [ _getSize(sizes) ];
   }
 
@@ -308,7 +311,7 @@ function _getProduct(bidRequest) {
 
 // BUILD REQUESTS: BANNER
 function _buildBannerORTB(bidRequest) {
-  const bannerAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.banner', {});
+  const bannerAdUnit = deepAccess(bidRequest, 'mediaTypes.banner', {});
   const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
 
   const sizes = _transformSizes(bannerAdUnit.sizes);
@@ -340,7 +343,7 @@ function _buildBannerORTB(bidRequest) {
   const minSize = _getMinSize(sizes);
 
   const viewabilityAmount = _isViewabilityMeasurable(element)
-    ? _getViewability(element, utils.getWindowTop(), minSize)
+    ? _getViewability(element, getWindowTop(), minSize)
     : NON_MEASURABLE;
 
   const ext = contributeViewability(viewabilityAmount);
@@ -354,8 +357,8 @@ function _buildBannerORTB(bidRequest) {
 // BUILD REQUESTS: VIDEO
 // eslint-disable-next-line no-unused-vars
 function _buildVideoORTB(bidRequest) {
-  const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
+  const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
+  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
 
   const videoParams = {
     ...videoAdUnit,
@@ -429,23 +432,23 @@ function _getViewability(element, topWin, { w, h } = {}) {
 }
 
 function _mapAdUnitPathToElementId(adUnitCode) {
-  if (utils.isGptPubadsDefined()) {
+  if (isGptPubadsDefined()) {
     // eslint-disable-next-line no-undef
     const adSlots = googletag.pubads().getSlots();
-    const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(adUnitCode);
+    const isMatchingAdSlot = isSlotMatchingAdUnitCode(adUnitCode);
 
     for (let i = 0; i < adSlots.length; i++) {
       if (isMatchingAdSlot(adSlots[i])) {
         const id = adSlots[i].getSlotElementId();
 
-        utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
+        logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
 
         return id;
       }
     }
   }
 
-  utils.logWarn(`[33Across Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`);
+  logWarn(`[33Across Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`);
 
   return null;
 }
@@ -546,7 +549,7 @@ function contributeViewability(viewabilityAmount) {
 
 function _isIframe() {
   try {
-    return utils.getWindowSelf() !== utils.getWindowTop();
+    return getWindowSelf() !== getWindowTop();
   } catch (e) {
     return true;
   }
@@ -579,7 +582,7 @@ function _createBidResponse(response) {
     ad: response.seatbid[0].bid[0].adm,
     ttl: response.seatbid[0].bid[0].ttl || 60,
     creativeId: response.seatbid[0].bid[0].crid,
-    mediaType: utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.mediaType', BANNER),
+    mediaType: deepAccess(response.seatbid[0].bid[0], 'ext.ttx.mediaType', BANNER),
     currency: response.cur,
     netRevenue: true
   }
@@ -591,7 +594,7 @@ function _createBidResponse(response) {
   }
 
   if (bid.mediaType === VIDEO) {
-    const vastType = utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.vastType', 'xml');
+    const vastType = deepAccess(response.seatbid[0].bid[0], 'ext.ttx.vastType', 'xml');
 
     if (vastType === 'xml') {
       bid.vastXml = bid.ad;

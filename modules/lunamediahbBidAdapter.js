@@ -1,6 +1,6 @@
+import { logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'lunamediahb';
 const AD_URL = 'https://balancer.lmgssp.com/?c=o&m=multi';
@@ -38,7 +38,7 @@ export const spec = {
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
-      utils.logMessage(e);
+      logMessage(e);
     };
 
     const placements = [];

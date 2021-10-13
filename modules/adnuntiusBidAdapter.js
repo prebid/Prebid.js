@@ -1,19 +1,20 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { isStr, deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adnuntius';
-const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=';
+const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const GVLID = 855;
 
 const checkSegment = function (segment) {
-  if (utils.isStr(segment)) return segment;
+  if (isStr(segment)) return segment;
   if (segment.id) return segment.id
 }
 
 const getSegmentsFromOrtb = function (ortb2) {
-  const userData = utils.deepAccess(ortb2, 'user.data');
+  const userData = deepAccess(ortb2, 'user.data');
   let segments = [];
   if (userData) {
     userData.forEach(userdat => {
@@ -23,6 +24,21 @@ const getSegmentsFromOrtb = function (ortb2) {
     });
   }
   return segments
+}
+
+const handleMeta = function () {
+  const storage = getStorageManager(GVLID, 'adnuntius')
+  let adnMeta = null
+  if (storage.localStorageIsEnabled()) {
+    adnMeta = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'))
+  }
+  const meta = (adnMeta !== null) ? adnMeta.reduce((acc, cur) => { return { ...acc, [cur.key]: cur.value } }, {}) : {}
+  return meta
+}
+
+const getUsi = function (meta, ortb2, bidderRequest) {
+  const usi = (meta !== null) ? meta.usi : false;
+  return usi
 }
 
 export const spec = {
@@ -37,13 +53,20 @@ export const spec = {
     const networks = {};
     const bidRequests = {};
     const requests = [];
+    const request = [];
     const ortb2 = config.getConfig('ortb2');
+    const adnMeta = handleMeta()
+    const usi = getUsi(adnMeta, ortb2, bidderRequest)
     const segments = getSegmentsFromOrtb(ortb2);
     const tzo = new Date().getTimezoneOffset();
-    const gdprApplies = utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
-    const consentString = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
-    const reqConsent = (gdprApplies !== undefined) ? '&consentString=' + consentString : '';
-    const reqSegments = (segments.length > 0) ? '&segments=' + segments.join(',') : '';
+    const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
+    const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
+
+    request.push('tzo=' + tzo)
+    request.push('format=json')
+    if (gdprApplies !== undefined) request.push('consentString=' + consentString);
+    if (segments.length > 0) request.push('segments=' + segments.join(','));
+    if (usi) request.push('userId=' + usi);
 
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
@@ -55,6 +78,8 @@ export const spec = {
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
+      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.referer;
+      if (adnMeta) networks[network].metaData = adnMeta;
       networks[network].adUnits.push({ ...targeting, auId: bid.params.auId, targetId: bid.bidId });
     }
 
@@ -63,7 +88,7 @@ export const spec = {
       const network = networkKeys[j];
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL + tzo + '&format=json' + reqSegments + reqConsent,
+        url: ENDPOINT_URL + '?' + request.join('&'),
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });
@@ -76,19 +101,20 @@ export const spec = {
     const adUnits = serverResponse.body.adUnits;
     const bidResponsesById = adUnits.reduce((response, adUnit) => {
       if (adUnit.matchedAdCount >= 1) {
-        const bid = adUnit.ads[0];
-        const effectiveCpm = (bid.cpc && bid.cpm) ? bid.bid.amount + bid.cpm.amount : (bid.cpc) ? bid.bid.amount : (bid.cpm) ? bid.cpm.amount : 0;
+        const ad = adUnit.ads[0];
+        const effectiveCpm = (ad.bid) ? ad.bid.amount * 1000 : 0;
         return {
           ...response,
           [adUnit.targetId]: {
             requestId: adUnit.targetId,
             cpm: effectiveCpm,
-            width: Number(bid.creativeWidth),
-            height: Number(bid.creativeHeight),
-            creativeId: bid.creativeId,
-            currency: (bid.bid) ? bid.bid.currency : 'EUR',
+            width: Number(ad.creativeWidth),
+            height: Number(ad.creativeHeight),
+            creativeId: ad.creativeId,
+            currency: (ad.bid) ? ad.bid.currency : 'EUR',
+            dealId: ad.dealId || '',
             meta: {
-              advertiserDomains: (bid.destinationUrls.destination) ? [bid.destinationUrls.destination.split('/')[2]] : []
+              advertiserDomains: (ad.destinationUrls.destination) ? [ad.destinationUrls.destination.split('/')[2]] : []
 
             },
             netRevenue: false,

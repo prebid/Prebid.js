@@ -153,7 +153,6 @@ export const spec = {
 
     return bids;
   },
-
   getUserSyncs: function (syncOptions, bid, gdprConsent) {
     var pixid = '';
     if (typeof bid[0] === 'undefined' || bid[0] === null) { pixid = '0'; } else { pixid = bid[0].body.pix_id; }
@@ -189,6 +188,7 @@ function newBid(serverBid, rtbBid, placementId, uuid) {
 
   return bid;
 }
+
 
 function hasPurpose1Consent(bidderRequest) {
   let result = true;

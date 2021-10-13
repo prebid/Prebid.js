@@ -21,7 +21,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequest?pbjs_debug=trues[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -29,8 +29,9 @@ export const spec = {
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
     const refInfo = getRefererInfo();
 
-    validBidRequests.forEach(i => {
+    validBidRequests.forEach((i) => {
       let params = {
+        eids: getUsersIds(i),
         sizes: parseSizesInput(getAdUnitSizes(i)),
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
@@ -42,6 +43,7 @@ export const spec = {
         transactionid: i.transactionId,
         auctionid: i.auctionId
       };
+
       if (i.params.itu !== undefined) {
         params.itu = i.params.itu;
       }
@@ -145,6 +147,10 @@ export const spec = {
     });
     return syncs;
   }
+}
+
+function getUsersIds({ userIdAsEids }) {
+  return (userIdAsEids && userIdAsEids.length !== 0) ? userIdAsEids : [];
 }
 
 function getRr() {
