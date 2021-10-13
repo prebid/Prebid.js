@@ -13,10 +13,15 @@ export function init() {
 
 const observers = {};
 
-// vid - unique viewability identifier
-// element
-// tracker { method: 'img', url: 'http://my.tracker/123' }
-// criteria - { inViewThreshold: 0.5, timeInView: 5000 }
+/**
+ * Start measuring viewability of an element
+ * @typedef {{ method: string='img','js', url: string }} ViewabilityTracker { method: 'img', url: 'http://my.tracker/123' }
+ * @typedef {{ inViewThreshold: number, timeInView: number }} ViewabilityCriteria { inViewThreshold: 0.5, timeInView: 1000 }
+ * @param {string} vid unique viewability identifier
+ * @param {HTMLElement} element
+ * @param {ViewabilityTracker} tracker
+ * @param {ViewabilityCriteria} criteria
+ */
 export function startMeasurement(vid, element, tracker, criteria) {
   if (!element || !tracker || !tracker.method || !tracker.url) {
     return;
@@ -79,6 +84,10 @@ export function startMeasurement(vid, element, tracker, criteria) {
   };
 }
 
+/**
+ * Stop measuring viewability of an element
+ * @param {string} vid unique viewability identifier
+ */
 export function stopMeasurement(vid) {
   if (!vid || !observers[vid]) {
     utils.logWarn('provide a registered vid', vid);
@@ -92,7 +101,11 @@ function listenMessagesFromCreative() {
   window.addEventListener('message', receiveMessage, false);
 }
 
-function receiveMessage(evt) {
+/**
+ * Recieve messages from creatives
+ * @param {MessageEvent} evt
+ */
+export function receiveMessage(evt) {
   var key = evt.message ? 'message' : 'data';
   var data = {};
   try {
