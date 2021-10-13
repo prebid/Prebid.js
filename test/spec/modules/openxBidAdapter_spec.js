@@ -1085,7 +1085,7 @@ describe('OpenxAdapter', function () {
         intentIqId: '1111-intentiqid',
         lipb: {lipbid: '1111-lipb'},
         lotamePanoramaId: '1111-lotameid',
-        merkleId: '1111-merkleid',
+        merkleId: {id: '1111-merkleid'},
         netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
         parrableId: { eid: 'eidVersion.encryptionKeyReference.encryptedValue' },
         pubcid: '1111-pubcid',
@@ -1139,6 +1139,9 @@ describe('OpenxAdapter', function () {
             let userIdValue;
             // handle cases where userId key refers to an object
             switch (userIdProviderKey) {
+              case 'merkleId':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.merkleId.id;
+                break;
               case 'flocId':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.flocId.id;
                 break;

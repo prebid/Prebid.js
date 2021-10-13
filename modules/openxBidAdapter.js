@@ -332,6 +332,9 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
 
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
       switch (userIdProviderKey) {
+        case 'merkleId':
+          queryParams[key] = userIdObjectOrValue.id;
+          break;
         case 'flocId':
           queryParams[key] = userIdObjectOrValue.id;
           break;
