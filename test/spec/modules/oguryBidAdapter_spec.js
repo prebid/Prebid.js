@@ -490,7 +490,7 @@ describe('OguryBidAdapter', function () {
       expect(requests[0].method).to.equal('GET')
     })
 
-    it('Should trigger getWindowContext function', function() {
+    it('Should trigger getWindowContext method', function() {
       const bidSample = {
         id: 'advertId',
         impid: 'bidId',
