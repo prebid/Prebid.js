@@ -334,7 +334,8 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
   }
   atsAnalyticsAdapter.context = {
     events: [],
-    pid: config.options.pid
+    pid: config.options.pid,
+    bidWonTimeout: config.options.bidWonTimeout
   };
   let initOptions = config.options;
   logInfo('ATS Analytics - adapter enabled! ');
@@ -348,6 +349,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
     handlerResponse.push(bidResponseHandler(args));
   }
   if (evtype === CONSTANTS.EVENTS.AUCTION_END) {
+    let bidWonTimeout = atsAnalyticsAdapter.context.bidWonTimeout ? atsAnalyticsAdapter.context.bidWonTimeout : 2000;
     let events = [];
     setTimeout(() => {
       let winningBids = $$PREBID_GLOBAL$$.getAllWinningBids();
@@ -391,7 +393,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
           logError('ATS Analytics - preflight request encounter an error: ', err);
         }
       }
-    }, 2000);
+    }, bidWonTimeout);
   }
 }
 
