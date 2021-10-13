@@ -1,9 +1,9 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, deepAccess, isEmpty, transformBidderParamKeywords, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import includes from 'core-js-pure/features/array/includes.js';
+import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, deepAccess, isEmpty, transformBidderParamKeywords, isFn } from '../src/utils.js';
 import { auctionManager } from '../src/auctionManager.js';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -12,7 +12,7 @@ const storageManager = getStorageManager();
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 export const spec = {
   code: 'pixfuture',
-  hostname: 'https://prebid-js.pixfuture.com',
+  hostname: 'https://gosrv.pixfuture.com',
 
   getHostname() {
     let ret = this.hostname;
@@ -77,7 +77,7 @@ export const spec = {
       };
 
       if (bidderRequest && bidderRequest.uspConsent) {
-        payload.us_privacy = bidderRequest.uspConsent
+        payload.us_privacy = bidderRequest.uspConsent;
       }
 
       if (bidderRequest && bidderRequest.refererInfo) {
@@ -112,7 +112,7 @@ export const spec = {
       }
 
       const ret = {
-        url: `${hostname}/`,
+        url: `${hostname}/pixservices`,
         method: 'POST',
         options: {withCredentials: false},
         data: {
@@ -153,6 +153,16 @@ export const spec = {
 
     return bids;
   },
+  getUserSyncs: function (syncOptions, bid, gdprConsent) {
+    var pixid = '';
+    if (typeof bid[0] === 'undefined' || bid[0] === null) { pixid = '0'; } else { pixid = bid[0].body.pix_id; }
+    if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
+      return [{
+        type: 'iframe',
+        url: 'https://gosrv.pixfuture.com/cookiesync?adsync=' + gdprConsent.consentString + '&pixid=' + pixid + '&gdprconcent=' + gdprConsent.gdprApplies
+      }];
+    }
+  }
 };
 
 function newBid(serverBid, rtbBid, placementId, uuid) {
@@ -179,7 +189,18 @@ function newBid(serverBid, rtbBid, placementId, uuid) {
   return bid;
 }
 
-// Function(s) related optional parameters
+
+function hasPurpose1Consent(bidderRequest) {
+  let result = true;
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
+      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
+    }
+  }
+  return result;
+}
+
+// Functions related optional parameters
 function bidToTag(bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
