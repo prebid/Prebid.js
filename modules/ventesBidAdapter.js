@@ -154,7 +154,7 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
     if (!deviceObjBid.hasOwnProperty('language')) {
       deviceObj.language = navigator.language;
     }
-  }else{
+  } else {
     deviceObj = {};
     if (!deviceObjBid.hasOwnProperty('ua')) {
       deviceObj.ua = navigator.userAgent;
