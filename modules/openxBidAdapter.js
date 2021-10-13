@@ -306,21 +306,21 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
 
 function buildFpdQueryParams(fpdPath) {
   const firstPartyData = config.getConfig(fpdPath);
-  if (!Array.isArray(firstPartyData) || !firstPartyData.length){
+  if (!Array.isArray(firstPartyData) || !firstPartyData.length) {
     return '';
   }
   const fpd = firstPartyData
-  .filter(
-    data => (Array.isArray(data.segment) &&
+    .filter(
+      data => (Array.isArray(data.segment) &&
             data.segment.length > 0 &&
             data.name !== undefined &&
             data.name.length > 0)
-  )
-  .reduce((acc, data) => {
-    const name = typeof data.ext === 'object' && data.ext.segtax ? `${data.name}/${data.ext.segtax}` : data.name;
-    acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
-    return acc;
-  }, {})
+    )
+    .reduce((acc, data) => {
+      const name = typeof data.ext === 'object' && data.ext.segtax ? `${data.name}/${data.ext.segtax}` : data.name;
+      acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
+      return acc;
+    }, {})
   return Object.keys(fpd)
     .map((name, _) => name + ':' + [...new Set(fpd[name])].join('|'))
     .join(',')
@@ -342,7 +342,7 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
           queryParams[key] = userIdObjectOrValue.lipbid;
           if (Array.isArray(userIdObjectOrValue.segments) && userIdObjectOrValue.segments.length > 0) {
             const liveIntentSegments = 'liveintent:' + userIdObjectOrValue.segments.join('|')
-            queryParams.sm = `${queryParams.sm ? queryParams.sm + ',': ''}${liveIntentSegments}`;
+            queryParams.sm = `${queryParams.sm ? queryParams.sm + ',' : ''}${liveIntentSegments}`;
           }
           break;
         case 'parrableId':

@@ -1750,7 +1750,7 @@ describe('OpenxAdapter', function () {
               const request = spec.buildRequests(bidRequests, mockBidderRequest)
               expect(request.length).to.equal(1);
               if (t.expect) {
-                for (const key in t.expect){
+                for (const key in t.expect) {
                   expect(request[0].data[key]).to.exist;
                   expect(request[0].data[key]).to.equal(t.expect[key]);
                 }
