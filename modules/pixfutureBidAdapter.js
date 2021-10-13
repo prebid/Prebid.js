@@ -179,7 +179,7 @@ function newBid(serverBid, rtbBid, placementId, uuid) {
   return bid;
 }
 
-// Functions related optional parameters
+// Function(s) related optional parameters
 function bidToTag(bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
