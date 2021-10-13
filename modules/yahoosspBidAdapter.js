@@ -581,7 +581,7 @@ export const spec = {
       let cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
 
       let bidResponse = {
-        adId: bid.id,
+        adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
         adUnitCode: bidderRequest.adUnitCode,
         requestId: bid.impid,
         bidderCode: spec.code,

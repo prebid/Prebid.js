@@ -1251,6 +1251,33 @@ describe('YahooSSP Bid Adapter:', () => {
         expect(response[0].meta.advertiserDomains[0]).to.equal('advertiser-domain.com');
       })
     });
+    // TODO Finish adId Tests
+    describe('bid response Ad ID / Creative ID', () => {
+      it('should use adId if it exists in the bid-response', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const adId = 'bid-response-adId';
+        serverResponse.body.seatbid[0].bid[0].adId = adId;
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].adId).to.equal(adId);
+      });
+
+      it('should use impid if adId does not exist in the bid-response', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const impid = '25b6c429c1f52f';
+        serverResponse.body.seatbid[0].bid[0].impid = impid;
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].adId).to.equal(impid);
+      });
+
+      it('should use crid if adId & impid do not exist in the bid-response', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const crid = 'passback-12579';
+        serverResponse.body.seatbid[0].bid[0].impid = undefined;
+        serverResponse.body.seatbid[0].bid[0].crid = crid;
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].adId).to.equal(crid);
+      });
+    });
 
     describe('Time To Live (ttl)', () => {
       const UNSUPPORTED_TTL_FORMATS = ['string', [1, 2, 3], true, false, null, undefined];
