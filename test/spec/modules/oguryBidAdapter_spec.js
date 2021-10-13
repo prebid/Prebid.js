@@ -119,22 +119,26 @@ describe('OguryBidAdapter', function () {
       };
     });
 
-    it('should return syncs array with an element of type image', () => {
+    it('should return sync array with two elements of type image', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
 
-      expect(userSyncs).to.have.lengthOf(1);
+      expect(userSyncs).to.have.lengthOf(2);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.contain('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch');
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.contain('https://ms-cookie-sync.presage.io/ttd/init-sync');
     });
 
-    it('should set the source as query param', () => {
+    it('should set the same source as query param', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
       expect(userSyncs[0].url).to.contain('source=prebid');
+      expect(userSyncs[1].url).to.contain('source=prebid');
     });
 
     it('should set the tcString as query param', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
       expect(userSyncs[0].url).to.contain(`iab_string=${gdprConsent.consentString}`);
+      expect(userSyncs[1].url).to.contain(`iab_string=${gdprConsent.consentString}`);
     });
 
     it('should return an empty array when pixel is disable', () => {
@@ -142,70 +146,82 @@ describe('OguryBidAdapter', function () {
       expect(spec.getUserSyncs(syncOptions, [], gdprConsent)).to.have.lengthOf(0);
     });
 
-    it('should return syncs array with an element of type image when consentString is undefined', () => {
+    it('should return sync array with two elements of type image when consentString is undefined', () => {
       gdprConsent = {
         gdprApplies: true,
         consentString: undefined
       };
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(1);
+      expect(userSyncs).to.have.lengthOf(2);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with an element of type image when consentString is null', () => {
+    it('should return sync array with two elements of type image when consentString is null', () => {
       gdprConsent = {
         gdprApplies: true,
         consentString: null
       };
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(1);
+      expect(userSyncs).to.have.lengthOf(2);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with an element of type image when gdprConsent is undefined', () => {
+    it('should return sync array with two elements of type image when gdprConsent is undefined', () => {
       gdprConsent = undefined;
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(1);
+      expect(userSyncs).to.have.lengthOf(2);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with an element of type image when gdprConsent is null', () => {
+    it('should return sync array with two elements of type image when gdprConsent is null', () => {
       gdprConsent = null;
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(1);
+      expect(userSyncs).to.have.lengthOf(2);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with an element of type image when gdprConsent is null and gdprApplies is false', () => {
+    it('should return sync array with two elements of type image when gdprConsent is null and gdprApplies is false', () => {
       gdprConsent = {
         gdprApplies: false,
         consentString: null
       };
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(1);
+      expect(userSyncs).to.have.lengthOf(2);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with an element of type image when gdprConsent is empty string and gdprApplies is false', () => {
+    it('should return sync array with two elements of type image when gdprConsent is empty string and gdprApplies is false', () => {
       gdprConsent = {
         gdprApplies: false,
         consentString: ''
       };
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(1);
+      expect(userSyncs).to.have.lengthOf(2);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
   });
 

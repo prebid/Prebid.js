@@ -1251,7 +1251,7 @@ describe('YahooSSP Bid Adapter:', () => {
         expect(response[0].meta.advertiserDomains[0]).to.equal('advertiser-domain.com');
       })
     });
-    // TODO Finish adId Tests
+
     describe('bid response Ad ID / Creative ID', () => {
       it('should use adId if it exists in the bid-response', () => {
         const { serverResponse, bidderRequest } = generateResponseMock('banner');
