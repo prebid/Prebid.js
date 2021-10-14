@@ -263,15 +263,15 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
       let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
 
-      // uniqueServerId is so we know which server to send which bids to during the callBids function
-      let uniqueServerId = generateUUID();
+      // tid is so we know which server to send which bids to during the callBids function
+      let tid = generateUUID();
       adaptersServerSide.forEach(bidderCode => {
         const bidderRequestId = getUniqueIdentifierStr();
         const bidderRequest = {
           bidderCode,
           auctionId,
           bidderRequestId,
-          uniqueServerId,
+          tid,
           bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
           auctionStart: auctionStart,
           timeout: s2sConfig.timeout,
@@ -352,7 +352,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
   serverBidRequests.forEach(serverBidRequest => {
     var index = -1;
     for (var i = 0; i < uniqueServerBidRequests.length; ++i) {
-      if (serverBidRequest.uniqueServerId === uniqueServerBidRequests[i].uniqueServerId) {
+      if (serverBidRequest.tid === uniqueServerBidRequests[i].tid) {
         index = i;
         break;
       }
@@ -375,10 +375,10 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       } : undefined);
       let adaptersServerSide = s2sConfig.bidders;
       const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
-      let uniqueServerId = uniqueServerBidRequests[counter].uniqueServerId;
+      let tid = uniqueServerBidRequests[counter].tid;
       let adUnitsS2SCopy = uniqueServerBidRequests[counter].adUnitsS2SCopy;
 
-      let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.uniqueServerId === uniqueServerId);
+      let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.tid === tid);
 
       if (s2sAdapter) {
         let s2sBidRequest = {tid: sourceTid, 'ad_units': adUnitsS2SCopy, s2sConfig};

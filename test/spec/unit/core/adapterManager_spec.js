@@ -162,7 +162,7 @@ describe('adapterManager tests', function () {
         'bidderCode': 'appnexus',
         'auctionId': '1863e370099523',
         'bidderRequestId': '2946b569352ef2',
-        'uniqueServerId': '34566b569352ef2',
+        'tid': '34566b569352ef2',
         'bids': [
           {
             'bidder': 'appnexus',
@@ -447,7 +447,7 @@ describe('adapterManager tests', function () {
       'bidderCode': 'appnexus',
       'auctionId': '1863e370099523',
       'bidderRequestId': '2946b569352ef2',
-      'uniqueServerId': '34566b569352ef2',
+      'tid': '34566b569352ef2',
       'timeout': 1000,
       'src': 's2s',
       'adUnitsS2SCopy': [
@@ -676,7 +676,7 @@ describe('adapterManager tests', function () {
       'bidderCode': 'appnexus',
       'auctionId': '1863e370099523',
       'bidderRequestId': '2946b569352ef2',
-      'uniqueServerId': '34566b569352ef2',
+      'tid': '34566b569352ef2',
       'timeout': 1000,
       'src': 's2s',
       'adUnitsS2SCopy': [
@@ -812,7 +812,7 @@ describe('adapterManager tests', function () {
       'bidderCode': 'pubmatic',
       'auctionId': '1863e370099523',
       'bidderRequestId': '2946b569352ef2',
-      'uniqueServerId': '2342342342lfi23',
+      'tid': '2342342342lfi23',
       'timeout': 1000,
       'src': 's2s',
       'adUnitsS2SCopy': [
