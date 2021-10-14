@@ -15,7 +15,7 @@ const observers = {};
 
 /**
  * Start measuring viewability of an element
- * @typedef {{ method: string='img','js', url: string }} ViewabilityTracker { method: 'img', url: 'http://my.tracker/123' }
+ * @typedef {{ method: string='img','js','callback', value: string|function }} ViewabilityTracker { method: 'img', value: 'http://my.tracker/123' }
  * @typedef {{ inViewThreshold: number, timeInView: number }} ViewabilityCriteria { inViewThreshold: 0.5, timeInView: 1000 }
  * @param {string} vid unique viewability identifier
  * @param {HTMLElement} element
@@ -23,7 +23,18 @@ const observers = {};
  * @param {ViewabilityCriteria} criteria
  */
 export function startMeasurement(vid, element, tracker, criteria) {
-  if (!element || !tracker || !tracker.method || !tracker.url) {
+  if (!element) {
+    utils.logWarn('provide an html element to track');
+    return;
+  }
+
+  let validTracker = tracker &&
+    ((tracker.method === 'img' && utils.isStr(tracker.value)) ||
+    (tracker.method === 'js' && utils.isStr(tracker.value)) ||
+    (tracker.method === 'callback' && utils.isFn(tracker.value)));
+
+  if (!validTracker) {
+    utils.logWarn('invalid tracker', tracker);
     return;
   }
 
@@ -45,43 +56,41 @@ export function startMeasurement(vid, element, tracker, criteria) {
 
   let observer;
   let viewable = false;
-  let timeoutId;
   let stateChange = (entries) => {
     viewable = entries[0].isIntersecting;
 
     if (viewable) {
-      timeoutId = window.setTimeout(() => {
+      observers[vid].timeoutId = window.setTimeout(() => {
         // stop observing
         observer.unobserve(element);
 
         switch (tracker.method) {
           case 'img':
-            // image
-            utils.triggerPixel(tracker.url, () => {
-              utils.logInfo('tracker fired', tracker.url);
+            utils.triggerPixel(tracker.value, () => {
+              utils.logInfo('viewability pixel fired', tracker.value);
             });
             break;
           case 'js':
-            // javascript
-            utils.insertHtmlIntoIframe(`<script src="${tracker.url}"></script>`);
+            utils.insertHtmlIntoIframe(`<script src="${tracker.value}"></script>`);
             break;
-          default:
-            utils.logWarn('unsupported tracking method', tracker.method);
+          case 'callback':
+            tracker.value(element);
             break;
         }
       }, criteria.timeInView);
-    } else if (timeoutId) {
-      window.clearTimeout(timeoutId);
+    } else if (observers[vid].timeoutId) {
+      window.clearTimeout(observers[vid].timeoutId);
     }
   };
 
   observer = new IntersectionObserver(stateChange, options);
-  observer.observe(element);
-
   observers[vid] = {
     observer: observer,
     element: element,
+    timeoutId: null,
   };
+
+  observer.observe(element);
 }
 
 /**
@@ -95,6 +104,9 @@ export function stopMeasurement(vid) {
   }
 
   observers[vid].observer.unobserve(observers[vid].element);
+  if (observers[vid].timeoutId) {
+    window.clearTimeout(observers[vid].timeoutId);
+  }
 }
 
 function listenMessagesFromCreative() {
