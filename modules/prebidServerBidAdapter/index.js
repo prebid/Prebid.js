@@ -731,7 +731,7 @@ const OPEN_RTB_PROTOCOL = {
       return;
     }
     const request = {
-      id: s2sBidRequest.tid,
+      id: firstBidRequest.auctionId,
       source: {tid: s2sBidRequest.tid},
       tmax: s2sConfig.timeout,
       imp: imps,
