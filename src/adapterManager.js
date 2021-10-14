@@ -263,15 +263,15 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
       let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
 
-      // tid is so we know which server to send which bids to during the callBids function
-      let tid = generateUUID();
+      // uniquePbsTid is so we know which server to send which bids to during the callBids function
+      let uniquePbsTid = generateUUID();
       adaptersServerSide.forEach(bidderCode => {
         const bidderRequestId = getUniqueIdentifierStr();
         const bidderRequest = {
           bidderCode,
           auctionId,
           bidderRequestId,
-          tid,
+          uniquePbsTid,
           bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
           auctionStart: auctionStart,
           timeout: s2sConfig.timeout,
@@ -352,7 +352,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
   serverBidRequests.forEach(serverBidRequest => {
     var index = -1;
     for (var i = 0; i < uniqueServerBidRequests.length; ++i) {
-      if (serverBidRequest.tid === uniqueServerBidRequests[i].tid) {
+      if (serverBidRequest.uniquePbsTid === uniqueServerBidRequests[i].uniquePbsTid) {
         index = i;
         break;
       }
@@ -375,10 +375,10 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       } : undefined);
       let adaptersServerSide = s2sConfig.bidders;
       const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
-      let tid = uniqueServerBidRequests[counter].tid;
+      let uniquePbsTid = uniqueServerBidRequests[counter].uniquePbsTid;
       let adUnitsS2SCopy = uniqueServerBidRequests[counter].adUnitsS2SCopy;
 
-      let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.tid === tid);
+      let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
       if (s2sAdapter) {
         let s2sBidRequest = {tid: sourceTid, 'ad_units': adUnitsS2SCopy, s2sConfig};
@@ -396,7 +396,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 
           // fire BID_REQUESTED event for each s2s bidRequest
           uniqueServerRequests.forEach(bidRequest => {
-            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+            // add the new sourceTid
+            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, {...bidRequest, tid: sourceTid});
           });
 
           // make bid requests
