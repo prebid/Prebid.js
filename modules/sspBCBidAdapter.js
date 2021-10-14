@@ -326,6 +326,9 @@ const parseNative = nativeData => {
       case 0:
         result.title = asset.title.text;
         break;
+      case 1:
+          result.cta = asset.data.value;
+          break;
       case 2:
         result.icon = {
           url: asset.img.url,
