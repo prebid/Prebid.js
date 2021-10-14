@@ -59,8 +59,5 @@
   "fpdModule": [
     "enrichmentFpdModule",
     "validationFpdModule"
-  ],
-  "viewability": [
-    "timer"
   ]
 }
