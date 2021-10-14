@@ -260,6 +260,7 @@ describe('OguryBidAdapter', function () {
       site: {
         id: bidRequests[0].params.assetKey,
         domain: window.location.hostname,
+        page: window.location.href
       },
       user: {
         ext: {
