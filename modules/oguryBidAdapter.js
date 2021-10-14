@@ -47,7 +47,8 @@ function buildRequests(validBidRequests, bidderRequest) {
       },
     },
     site: {
-      domain: location.hostname
+      domain: location.hostname,
+      page: location.href
     },
     user: {
       ext: {
