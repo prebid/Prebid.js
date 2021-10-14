@@ -761,7 +761,7 @@ const OPEN_RTB_PROTOCOL = {
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
     if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
-      request.ext.prebid = Object.assign(request.ext.prebid, s2sConfig.extPrebid);
+      request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
     }
 
     /**
