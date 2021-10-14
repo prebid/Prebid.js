@@ -259,7 +259,7 @@ describe('Codefuel Adapter', function () {
             ad: '<div>ad</div>',
             width: 300,
             height: 250,
-            meta: {'advertiserDomains':[]}
+            meta: {'advertiserDomains': []}
           }
         ]
 
