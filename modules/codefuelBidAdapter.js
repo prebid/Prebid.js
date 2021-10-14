@@ -108,7 +108,8 @@ export const spec = {
           mediaType: BANNER,
           ad: bidResponse.adm,
           width: bidResponse.w,
-          height: bidResponse.h
+          height: bidResponse.h,
+          meta: { advertiserDomains: bid.adomain ? bid.adomain : [] }
         };
         return bidObject;
       }

@@ -258,7 +258,8 @@ describe('Codefuel Adapter', function () {
             mediaType: 'banner',
             ad: '<div>ad</div>',
             width: 300,
-            height: 250
+            height: 250,
+            meta: {'advertiserDomains': []}
           }
         ]
 
