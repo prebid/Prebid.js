@@ -1,24 +1,22 @@
-import { expect, spy } from 'chai';
+import { expect } from 'chai';
 import * as sinon from 'sinon';
 import * as utils from 'src/utils.js';
-import * as viewability from 'modules/viewability/index.js';
+import * as viewability from 'modules/viewability.js';
 
 describe('viewability test', () => {
   describe('start measurement', () => {
     let sandbox;
     let intersectionObserverStub;
     let setTimeoutStub;
-    let clearTimeoutStub;
     let observeCalled;
     let unobserveCalled;
-    let fakeIntersectionObserver;
     let ti = 1;
     beforeEach(() => {
       observeCalled = false;
       unobserveCalled = false;
       sandbox = sinon.sandbox.create();
 
-      fakeIntersectionObserver = (stateChange, options) => {
+      let fakeIntersectionObserver = (stateChange, options) => {
         return {
           observe: (element) => {
             observeCalled = true;
@@ -35,7 +33,6 @@ describe('viewability test', () => {
         callback();
         return ti++;
       });
-      clearTimeoutStub = sandbox.stub(window, 'clearTimeout').callsFake((timeoutId) => { });
     });
 
     afterEach(() => {
@@ -173,20 +170,19 @@ describe('viewability test', () => {
     let sandbox;
     let intersectionObserverStub;
     let setTimeoutStub;
-    let clearTimeoutStub;
     let observeCalled;
     let unobserveCalled;
-    let fakeIntersectionObserver;
-    let fakeGetElementsByTagName;
-    let fakeGetElementById;
     let ti = 1;
+    let getElementsByTagStub;
+    let getElementByIdStub;
+
     let fakeContentWindow = {};
     beforeEach(() => {
       observeCalled = false;
       unobserveCalled = false;
       sandbox = sinon.sandbox.create();
 
-      fakeIntersectionObserver = (stateChange, options) => {
+      let fakeIntersectionObserver = (stateChange, options) => {
         return {
           observe: (element) => {
             observeCalled = true;
@@ -203,13 +199,13 @@ describe('viewability test', () => {
         callback();
         return ti++;
       });
-      clearTimeoutStub = sandbox.stub(window, 'clearTimeout').callsFake((timeoutId) => { });
-      fakeGetElementsByTagName = sandbox.stub(document, 'getElementsByTagName').callsFake((tagName) => {
+
+      getElementsByTagStub = sandbox.stub(document, 'getElementsByTagName').callsFake((tagName) => {
         return [{
           contentWindow: fakeContentWindow,
         }];
       });
-      fakeGetElementById = sandbox.stub(document, 'getElementById').callsFake((tagName) => {
+      getElementByIdStub = sandbox.stub(document, 'getElementById').callsFake((id) => {
         return {};
       });
     });
@@ -236,6 +232,7 @@ describe('viewability test', () => {
         source: fakeContentWindow,
       });
 
+      sinon.assert.called(getElementsByTagStub);
       sinon.assert.called(intersectionObserverStub);
       sinon.assert.called(setTimeoutStub);
       expect(observeCalled).to.equal(true);
@@ -259,6 +256,7 @@ describe('viewability test', () => {
         data: data,
       });
 
+      sinon.assert.called(getElementByIdStub);
       sinon.assert.called(intersectionObserverStub);
       sinon.assert.called(setTimeoutStub);
       expect(observeCalled).to.equal(true);
