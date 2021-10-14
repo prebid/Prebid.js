@@ -801,7 +801,7 @@ const OPEN_RTB_PROTOCOL = {
       if (requestedBidders && utils.isArray(requestedBidders)) {
         eidPermissions.forEach(i => {
           if (i.bidders) {
-            i.bidders = i.bidders.filter(bidder => requestedBidders.includes(bidder))
+            i.bidders = i.bidders.filter(bidder => includes(requestedBidders,bidder))
           }
         });
       }
