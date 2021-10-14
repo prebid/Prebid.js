@@ -986,11 +986,17 @@ describe('adapterManager tests', function () {
 
     describe('BID_REQUESTED event', function () {
       // function to count BID_REQUESTED events
-      let cnt, count = () => cnt++;
+      let cnt;
+      let tidCount = {};
+      let count = bid => {
+        cnt++;
+        tidCount[bid.tid] = tidCount[bid.tid] ? tidCount[bid.tid]++ : 1;
+      }
 
       beforeEach(function () {
         prebidServerAdapterMock.callBids.reset();
         cnt = 0;
+        tidCount = {};
         events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
       });
 
@@ -1006,6 +1012,21 @@ describe('adapterManager tests', function () {
         let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
         adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
         expect(cnt).to.equal(2);
+        sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+      });
+
+      it('should have one tid for ALL s2s bidRequests', function () {
+        let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+          adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'pubmatic'], bid.bidder));
+          return adUnit;
+        })
+        let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+        adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        expect(Object.keys(tidCount)).to.equal(1);
+
+        // should have 2 counts of the tid
+        let bidTid = Object.keys(tidCount)[0];
+        expect(tidCount[bidTid]).to.equal(2);
         sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
       });
 

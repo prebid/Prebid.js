@@ -751,7 +751,7 @@ const OPEN_RTB_PROTOCOL = {
       }
     };
 
-    // Sets pbjs version, can be overwritten below if channel exists in s2sConfig.extPrebid
+    // This is no longer overwritten unless name and version explicitly overwritten by extPrebid (mergeDeep)
     request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
 
     // set debug flag if in debug mode
