@@ -1022,7 +1022,7 @@ describe('adapterManager tests', function () {
         })
         let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
         adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
-        expect(Object.keys(tidCount)).to.equal(1);
+        expect(Object.keys(tidCount).length).to.equal(1);
 
         // should have 2 counts of the tid
         let bidTid = Object.keys(tidCount)[0];
