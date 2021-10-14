@@ -128,7 +128,7 @@ const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || 
 /**
  * Send payload to notification endpoint
  */
- const sendNotification = payload => {
+const sendNotification = payload => {
   ajax(NOTIFY_URL, null, JSON.stringify(payload), {
     contentType: 'application/json',
     withCredentials: false,
@@ -334,8 +334,8 @@ const parseNative = nativeData => {
         result.title = asset.title.text;
         break;
       case 1:
-          result.cta = asset.data.value;
-          break;
+        result.cta = asset.data.value;
+        break;
       case 2:
         result.icon = {
           url: asset.img.url,

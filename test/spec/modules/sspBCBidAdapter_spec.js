@@ -543,13 +543,16 @@ describe('SSPBC adapter', function () {
       expect(videoAssets).to.have.property('api').that.is.an('array');
     });
 
-    it('should create auxilary placement identifier (size_numUsed)', function () {
+    it('should create auxilary placement identifier (size_numUsed), that is constant for a given adUnit', function () {
       const extAssets1 = payload.imp && payload.imp[0].ext.data;
       const extAssets2 = payloadSingle.imp && payloadSingle.imp[0].ext.data;
 
-      // note that payload comes from first, and payloadSingle from second auction in the test run
+      /*
+        note that payload comes from first, and payloadSingle from second auction in the test run
+        also, since both have same adUnitName, value of pbsize property should be the same
+      */
       expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1')
-      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_2')
+      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1')
     });
   });
 
