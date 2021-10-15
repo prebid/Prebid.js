@@ -19,7 +19,7 @@ gulp build --modules=yieldmoSyntheticInventoryModule,...
 ```js
 pbjs.que.push(function() {
     pbjs.setConfig({
-        ym_synthetic_inventory: {
+        yieldmo_synthetic_inventory: {
             placementId: '1234567890',
             adUnitPath: '/1234567/ad_unit_name_used_in_gam'
         }
