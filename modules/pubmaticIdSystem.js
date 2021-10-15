@@ -4,6 +4,16 @@ import { ajax } from '../src/ajax.js';
 
 const MODULE_NAME = 'pubmaticId';
 
+/*
+	ToDo
+		ATC ticket
+		pass gdpr and ccpa consent params
+		add entry in eids
+		cache the id for fixed duration in local-storage
+		test cases
+*/
+
+
 export const dmdIdSubmodule = {
 	name: MODULE_NAME,
 
