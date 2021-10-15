@@ -23,6 +23,31 @@ describe('betweenBidAdapterTests', function () {
     let req_data = JSON.parse(request.data)[0].data;
     expect(req_data.bidid).to.equal('bid1234');
   });
+
+  it('validate_video_params', function () {
+    let bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'between',
+      params: {w: 240, h: 400, s: 1112},
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          playerSize: [970, 250],
+          maxd: 123,
+          mind: 234,
+        }
+      },
+    }];
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
+
+    expect(req_data.mediaType).to.equal(2);
+    expect(req_data.maxd).to.equal(123);
+    expect(req_data.mind).to.equal(234);
+    expect(req_data.jst).to.equal('pvc');
+    expect(req_data.pos).to.equal('atf');
+  });
+
   it('validate itu param', function() {
     let bidRequestData = [{
       bidId: 'bid1234',
@@ -230,6 +255,21 @@ describe('betweenBidAdapterTests', function () {
     expect(bid.requestId).to.equal('bid1234');
     expect(bid.ad).to.equal('Ad html');
   });
+
+  it('validate_response_video_params', function () {
+    let serverResponse = {
+      body: [{
+        mediaType: 2,
+        vastXml: 'vastXml',
+      }]
+    };
+    let bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    let bid = bids[0];
+    expect(bid.mediaType).to.equal(2);
+    expect(bid.vastXml).to.equal('vastXml');
+  });
+
   it('validate response params without currency', function () {
     let serverResponse = {
       body: [{

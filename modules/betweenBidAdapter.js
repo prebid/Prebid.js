@@ -8,7 +8,7 @@ const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['btw'],
-  supportedMediaTypes: ['banner'],
+  supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -30,6 +30,8 @@ export const spec = {
     const refInfo = getRefererInfo();
 
     validBidRequests.forEach((i) => {
+      const video = i.mediaTypes && i.mediaTypes.video;
+
       let params = {
         eids: getUsersIds(i),
         sizes: parseSizesInput(getAdUnitSizes(i)),
@@ -38,11 +40,19 @@ export const spec = {
         tz: getTz(),
         fl: getFl(),
         rr: getRr(),
-        s: i.params.s,
+        s: i.params && i.params.s,
         bidid: i.bidId,
         transactionid: i.transactionId,
         auctionid: i.auctionId
       };
+
+      if (video) {
+        params.mediaType = 2;
+        params.maxd = video.maxd;
+        params.mind = video.mind;
+        params.jst = 'pvc';
+        params.pos = 'atf';
+      }
 
       if (i.params.itu !== undefined) {
         params.itu = i.params.itu;
@@ -94,12 +104,15 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
+
     for (var i = 0; i < serverResponse.body.length; i++) {
       let bidResponse = {
         requestId: serverResponse.body[i].bidid,
         cpm: serverResponse.body[i].cpm || 0,
         width: serverResponse.body[i].w,
         height: serverResponse.body[i].h,
+        vastXml: serverResponse.body[i].vastXml,
+        mediaType: serverResponse.body[i].mediaType,
         ttl: serverResponse.body[i].ttl,
         creativeId: serverResponse.body[i].creativeid,
         currency: serverResponse.body[i].currency || 'RUB',
@@ -109,6 +122,7 @@ export const spec = {
           advertiserDomains: serverResponse.body[i].adomain ? serverResponse.body[i].adomain : []
         }
       };
+
       bidResponses.push(bidResponse);
     }
     return bidResponses;
