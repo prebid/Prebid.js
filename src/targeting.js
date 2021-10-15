@@ -123,14 +123,14 @@ export function newTargeting(auctionManager) {
     if (isGptPubadsDefined()) {
       const adUnitCodes = getAdUnitCodes(adUnitCode);
       const adUnits = auctionManager.getAdUnits().filter(adUnit => includes(adUnitCodes, adUnit.code));
-      let unsetKeys = pbTargetingKeys.reduce(function(reducer, key) {
+      let unsetKeys = pbTargetingKeys.reduce((reducer, key) => {
         reducer[key] = null;
         return reducer;
       }, {});
       window.googletag.pubads().getSlots().forEach(slot => {
         let customSlotMatchingFunc = isFn(customSlotMatching) && customSlotMatching(slot);
         // reset only registered adunits
-        adUnits.forEach(function(unit) {
+        adUnits.forEach(unit => {
           if (unit.code === slot.getAdUnitPath() ||
               unit.code === slot.getSlotElementId() ||
               (isFn(customSlotMatchingFunc) && customSlotMatchingFunc(unit.code))) {
