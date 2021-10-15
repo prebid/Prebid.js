@@ -154,37 +154,30 @@ export const spec = {
   },
 
   /**
-   * Return server request data from the list of bid requests.
+   * Return prebid server request data from the list of bid requests.
    *
    * @param {validBidRequest[]} validBidRequests an array of bids that have been validated via the isBidRequestValid
    *                                             function.
    * @param {BidderRequest}     bidderRequest    an object with data common to all bid requests.
    *
-   * @return ServerRequest Info describing the request to the server.
+   * @return ServerRequest Info describing the request to the prebid server.
    */
   buildRequests: function buildRequests(validBidRequests, bidderRequest) {
-    // TODO: Include in the payload the window dimensions, language, host gdpr data and/or anything else needed
-    const payload = {};
+    // TODO: Include in the payload the window dimensions, language, host GDPR data and/or anything else needed
 
-    validBidRequests.forEach(function forEachBidRequest(bidRequest) {
-      /*
-      Use `bidderRequest.bids[]` to get bidder-dependent request info.
-
-      If your bidder supports multiple currencies, use
-      `config.getConfig(currency)` to find which one the ad
-      server needs.
-
-      Pull the requested transaction ID from
-      `bidderRequest.bids[].transactionId`.
-      */
-    });
-
-    const payloadString = JSON.stringify(payload);
+    const prebidData = {
+      gdpr: bidderRequest.gdprConsent,
+      window: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      },
+      biddata: validBidRequests,
+    };
 
     return {
       method: 'POST',
       url: VIBRANT_PREBID_URL,
-      data: payloadString,
+      data: JSON.stringify(prebidData),
     };
   },
 
@@ -195,22 +188,19 @@ export const spec = {
    */
   interpretResponse: function interpretResponse(serverResponse /* , bidRequest */) {
     const serverResponseBody = serverResponse.body;
-
-    if (!serverResponseBody.is_ad_return) {
-      return [];
-    }
-
-    const ads = serverResponseBody.ads;
+    const bids = serverResponseBody.bids;
 
     const parsedBids = [];
 
-    ads.forEach(function forEachAd(ad) {
+    bids.forEach(function forEachBid(bid) {
+      console.log('BID RES: ' + JSON.stringify(bidRequest));
+
       const parsedBid = {
-        requestId: ad.prebid_id,
-        cpm: ad.price,
-        creativeId: ad.creative_id,
-        dealId: ad.deal_id,
-        currency: ad.currency || DEFAULT_CURRENCY,
+        requestId: bid.prebid_id,
+        cpm: bid.price,
+        creativeId: bid.creative_id,
+        dealId: bid.deal_id,
+        currency: bid.currency || DEFAULT_CURRENCY,
         netRevenue: true,
         ttl: BID_TTL_SECS,
         meta: {
@@ -218,7 +208,7 @@ export const spec = {
         },
       };
 
-      const adTypeId = ad.ad_type;
+      const adTypeId = bid.ad_type;
 
       if (adTypeId === AD_TYPE_IDS.VIDEO) {
         addVideoDataToParsedBid(parsedBid, serverResponseBody);
@@ -234,6 +224,46 @@ export const spec = {
     });
 
     return parsedBids;
+  },
+
+  // Example timeout data:
+  //
+  // [{
+  //   "bidder": "example",
+  //   "bidId": "51ef8751f9aead",
+  //   "params": {
+  //     ...
+  //   },
+  //   "adUnitCode": "div-gpt-ad-1460505748561-0",
+  //   "timeout": 3000,
+  //   "auctionId": "18fd8b8b0bd757"
+  // }]
+  onTimeout: function onTimeout(timeoutData) {
+    console.log('Timed out waiting for bids: ' + JSON.stringify(timeoutData));
+  },
+
+  // Example bid won data:
+  //
+  // {
+  //   "bidder": "example",
+  //   "width": 300,
+  //   "height": 250,
+  //   "adId": "330a22bdea4cac",
+  //   "mediaType": "banner",
+  //   "cpm": 0.28
+  //   "ad": "...",
+  //   "requestId": "418b37f85e772c",
+  //   "adUnitCode": "div-gpt-ad-1460505748561-0",
+  //   "size": "350x250",
+  //   "adserverTargeting": {
+  //     "hb_bidder": "example",
+  //     "hb_adid": "330a22bdea4cac",
+  //     "hb_pb": "0.20",
+  //     "hb_size": "350x250"
+  //   }
+  // }
+  onBidWon: function onBidWon(bidData) {
+    console.log('Bid won: ' + JSON.stringify(bidData));
   },
 };
 
