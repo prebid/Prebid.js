@@ -30,11 +30,11 @@ describe('browsi Real time  data sub module', function () {
   });
 
   it('should match placement with ad unit', function () {
-    const slot = makeSlot({code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1'});
+    const slot = makeSlot({code: '/123/abc', divId: 'browsiAd_1'});
 
-    const test1 = browsiRTD.isIdMatchingAdUnit(slot, ['/57778053/Browsi_Demo_300x250']); // true
-    const test2 = browsiRTD.isIdMatchingAdUnit(slot, ['/57778053/Browsi_Demo_300x250', '/57778053/Browsi']); // true
-    const test3 = browsiRTD.isIdMatchingAdUnit(slot, ['/57778053/Browsi_Demo_Low']); // false
+    const test1 = browsiRTD.isIdMatchingAdUnit(slot, ['/123/abc']); // true
+    const test2 = browsiRTD.isIdMatchingAdUnit(slot, ['/123/abc', '/456/def']); // true
+    const test3 = browsiRTD.isIdMatchingAdUnit(slot, ['/123/def']); // false
     const test4 = browsiRTD.isIdMatchingAdUnit(slot, []); // true
 
     expect(test1).to.equal(true);
@@ -44,12 +44,12 @@ describe('browsi Real time  data sub module', function () {
   });
 
   it('should return correct macro values', function () {
-    const slot = makeSlot({code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1'});
+    const slot = makeSlot({code: '/123/abc', divId: 'browsiAd_1'});
 
     slot.setTargeting('test', ['test', 'value']);
     // slot getTargeting doesn't act like GPT so we can't expect real value
     const macroResult = browsiRTD.getMacroId({p: '<AD_UNIT>/<KEY_test>'}, slot);
-    expect(macroResult).to.equal('/57778053/Browsi_Demo_300x250/NA');
+    expect(macroResult).to.equal('/123/abc/NA');
 
     const macroResultB = browsiRTD.getMacroId({}, slot);
     expect(macroResultB).to.equal('browsiAd_1');
@@ -82,7 +82,7 @@ describe('browsi Real time  data sub module', function () {
     })
   })
 
-  describe('should return prediction according to refresh count', function () {
+  describe('should return matching prediction', function () {
     const predictions = {
       0: 0.123,
       1: 0.254,
@@ -92,26 +92,24 @@ describe('browsi Real time  data sub module', function () {
     const singlePrediction = {
       0: 0.123
     }
-    it('should return raw value for valid refresh count', function () {
-      expect(browsiRTD.getPredictionByRefreshCount(predictions, 0)).to.equal(0.123);
-      expect(browsiRTD.getPredictionByRefreshCount(predictions, 1)).to.equal(0.254);
+    it('should return raw value if valid', function () {
+      expect(browsiRTD.getCurrentData(predictions, 0)).to.equal(0.123);
+      expect(browsiRTD.getCurrentData(predictions, 1)).to.equal(0.254);
     })
     it('should return 0 for prediction = 0', function () {
-      expect(browsiRTD.getPredictionByRefreshCount(predictions, 3)).to.equal(0);
+      expect(browsiRTD.getCurrentData(predictions, 3)).to.equal(0);
     })
     it('should return -1 for invalid params', function () {
-      expect(browsiRTD.getPredictionByRefreshCount(null, 3)).to.equal(-1);
-      expect(browsiRTD.getPredictionByRefreshCount(predictions, null)).to.equal(-1);
+      expect(browsiRTD.getCurrentData(null, 3)).to.equal(-1);
+      expect(browsiRTD.getCurrentData(predictions, null)).to.equal(-1);
     })
-    it('should return -1 for refresh count > 0 if prediction object length is 1 ', function () {
-      expect(browsiRTD.getPredictionByRefreshCount(singlePrediction, 0)).to.equal(0.123);
-      expect(browsiRTD.getPredictionByRefreshCount(singlePrediction, 1)).to.equal(-1);
-      expect(browsiRTD.getPredictionByRefreshCount(singlePrediction, 2)).to.equal(-1);
-    })
-    it('should return last refresh prediction if there is no value for the refresh count', function () {
-      expect(browsiRTD.getPredictionByRefreshCount(predictions, 4)).to.equal(0.8);
-      expect(browsiRTD.getPredictionByRefreshCount(predictions, 5)).to.equal(0.8);
-      expect(browsiRTD.getPredictionByRefreshCount(predictions, 8)).to.equal(0.8);
+    it('should return prediction according to object keys length ', function () {
+      expect(browsiRTD.getCurrentData(singlePrediction, 0)).to.equal(0.123);
+      expect(browsiRTD.getCurrentData(singlePrediction, 1)).to.equal(-1);
+      expect(browsiRTD.getCurrentData(singlePrediction, 2)).to.equal(-1);
+      expect(browsiRTD.getCurrentData(predictions, 4)).to.equal(0.8);
+      expect(browsiRTD.getCurrentData(predictions, 5)).to.equal(0.8);
+      expect(browsiRTD.getCurrentData(predictions, 8)).to.equal(0.8);
     })
   })
   describe('should set bid request data', function () {

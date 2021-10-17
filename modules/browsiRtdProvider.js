@@ -29,13 +29,13 @@ const storage = getStorageManager();
 /** @type {ModuleParams} */
 let _moduleParams = {};
 /** @type {null|Object} */
-let _predictionsData = null;
+let _browsiData = null;
 /** @type {string} */
 const DEF_KEYNAME = 'browsiViewability';
 /** @type {null | function} */
 let _dataReadyCallback = null;
 /** @type {null|Object} */
-let _refreshCounter = {};
+let _ic = {};
 
 /**
  * add browsi script to page
@@ -90,43 +90,43 @@ export function collectData() {
  * @param {function} callback
  */
 function waitForData(callback) {
-  if (_predictionsData) {
+  if (_browsiData) {
     _dataReadyCallback = null;
-    callback(_predictionsData);
+    callback(_browsiData);
   } else {
     _dataReadyCallback = callback;
   }
 }
 
 export function setData(data) {
-  _predictionsData = data;
+  _browsiData = data;
   if (isFn(_dataReadyCallback)) {
-    _dataReadyCallback(_predictionsData);
+    _dataReadyCallback(_browsiData);
     _dataReadyCallback = null;
   }
 }
 
-function getViewabilityByAdUnitCodes(adUnitsCodes) {
+function getRTD(auc) {
   try {
-    const _predictions = (_predictionsData && _predictionsData.p) || {};
-    return adUnitsCodes.reduce((rp, adUnitCode) => {
-      _refreshCounter[adUnitCode] = _refreshCounter[adUnitCode] || 0;
-      const refreshCount = _refreshCounter[adUnitCode];
-      if (!adUnitCode) {
+    const _bp = (_browsiData && _browsiData.p) || {};
+    return auc.reduce((rp, uc) => {
+      _ic[uc] = _ic[uc] || 0;
+      const _c = _ic[uc];
+      if (!uc) {
         return rp
       }
-      const adSlot = getSlotByCode(adUnitCode);
-      const identifier = adSlot ? getMacroId(_predictionsData['pmd'], adSlot) : adUnitCode;
-      const predictionData = _predictions[identifier];
-      rp[adUnitCode] = getKVObject(-1);
-      if (!predictionData) {
+      const adSlot = getSlotByCode(uc);
+      const identifier = adSlot ? getMacroId(_browsiData['pmd'], adSlot) : uc;
+      const _pd = _bp[identifier];
+      rp[uc] = getKVObject(-1);
+      if (!_pd) {
         return rp
       }
-      if (predictionData.ps) {
-        if (!isIdMatchingAdUnit(adSlot, predictionData.w)) {
+      if (_pd.ps) {
+        if (!isIdMatchingAdUnit(adSlot, _pd.w)) {
           return rp;
         }
-        rp[adUnitCode] = getKVObject(getPredictionByRefreshCount(predictionData.ps, refreshCount));
+        rp[uc] = getKVObject(getCurrentData(_pd.ps, _c));
       }
       return rp;
     }, {});
@@ -136,24 +136,24 @@ function getViewabilityByAdUnitCodes(adUnitsCodes) {
 }
 
 /**
- * get prediction according to refresh count
+ * get prediction
  * return -1 if prediction not found
  * @param {object} predictionObject
- * @param {number} refreshCount
+ * @param {number} _c
  * @return {number}
  */
-export function getPredictionByRefreshCount(predictionObject, refreshCount) {
-  if (!predictionObject || !isNumber(refreshCount)) {
+export function getCurrentData(predictionObject, _c) {
+  if (!predictionObject || !isNumber(_c)) {
     return -1;
   }
-  if (isNumber(predictionObject[refreshCount])) {
-    return predictionObject[refreshCount];
+  if (isNumber(predictionObject[_c])) {
+    return predictionObject[_c];
   }
   if (Object.keys(predictionObject).length > 1) {
-    while (refreshCount > 0) {
-      refreshCount--;
-      if (isNumber(predictionObject[refreshCount])) {
-        return predictionObject[refreshCount];
+    while (_c > 0) {
+      _c--;
+      if (isNumber(predictionObject[_c])) {
+        return predictionObject[_c];
       }
     }
   }
@@ -176,12 +176,12 @@ function getAllSlots() {
 function getKVObject(p) {
   const prValue = p < 0 ? 'NA' : (Math.floor(p * 10) / 10).toFixed(2);
   let prObject = {};
-  prObject[getViewabilityKey()] = prValue.toString();
+  prObject[getKey()] = prValue.toString();
   return prObject;
 }
 
-function getViewabilityKey() {
-  return ((_moduleParams['keyName'] || (_predictionsData && _predictionsData['kn']) || DEF_KEYNAME).toString())
+function getKey() {
+  return ((_moduleParams['keyName'] || (_browsiData && _browsiData['kn']) || DEF_KEYNAME).toString())
 }
 /**
  * check if placement id matches one of given ad units
@@ -302,12 +302,12 @@ function setBidRequestsData(bidObj, callback) {
     adUnitCodes = adUnits.map(au => au.code);
   }
   waitForData(() => {
-    const data = getViewabilityByAdUnitCodes(adUnitCodes);
+    const data = getRTD(adUnitCodes);
     if (data) {
       adUnits.forEach(adUnit => {
         const adUnitCode = adUnit.code;
         if (data[adUnitCode]) {
-          deepSetValue(adUnit, 'ortb2Imp.ext.data.browsi', {[DEF_KEYNAME]: data[adUnitCode][getViewabilityKey()]});
+          deepSetValue(adUnit, 'ortb2Imp.ext.data.browsi', {[DEF_KEYNAME]: data[adUnitCode][getKey()]});
         }
       });
     }
@@ -332,14 +332,14 @@ export const browsiSubmodule = {
   getBidRequestData: setBidRequestsData
 };
 
-function getTargetingData(adUnitCodes) {
-  const viewabilityByAdUnitCodes = getViewabilityByAdUnitCodes(adUnitCodes);
-  adUnitCodes.forEach(auc => {
-    if (isNumber(_refreshCounter[auc])) {
-      _refreshCounter[auc] = _refreshCounter[auc] + 1;
+function getTargetingData(uc) {
+  const targetingData = getRTD(uc);
+  uc.forEach(auc => {
+    if (isNumber(_ic[auc])) {
+      _ic[auc] = _ic[auc] + 1;
     }
   });
-  return viewabilityByAdUnitCodes;
+  return targetingData;
 }
 
 function init(moduleConfig) {
