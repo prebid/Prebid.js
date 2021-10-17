@@ -112,6 +112,7 @@
     "express": "^4.15.4",
     "fun-hooks": "^0.9.9",
     "just-clone": "^1.0.2",
-    "live-connect-js": "2.0.0"
+    "live-connect-js": "2.0.0",
+    "puppeteer": "^10.4.0"
   }
 }
