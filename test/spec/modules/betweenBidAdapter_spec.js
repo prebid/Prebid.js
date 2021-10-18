@@ -35,6 +35,7 @@ describe('betweenBidAdapterTests', function () {
           playerSize: [970, 250],
           maxd: 123,
           mind: 234,
+          codeType: 'unknown code type'
         }
       },
     }];
@@ -46,6 +47,7 @@ describe('betweenBidAdapterTests', function () {
     expect(req_data.mind).to.equal(234);
     expect(req_data.jst).to.equal('pvc');
     expect(req_data.pos).to.equal('atf');
+    expect(req_data.codeType).to.equal('inpage');
   });
 
   it('validate itu param', function() {

@@ -4,6 +4,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'between';
 const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
+const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -52,6 +53,7 @@ export const spec = {
         params.mind = video.mind;
         params.jst = 'pvc';
         params.pos = 'atf';
+        params.codeType = CODE_TYPES.includes(video.codeType) ? video.codeType : 'inpage';
       }
 
       if (i.params.itu !== undefined) {
