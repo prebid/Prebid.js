@@ -17,7 +17,7 @@ export function init(config) {
       document.addEventListener('DOMContentLoaded', () => googletagCmd(config, containerName, googletag));
     }
   });
-};
+}
 
 export function validateConfig(config) {
   if (!('placementId' in config)) {
