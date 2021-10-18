@@ -47,7 +47,7 @@ let adomikAdapter = Object.assign(adapter({}),
               type: 'request',
               event: {
                 bidder: bid.bidder.toUpperCase(),
-                placementCode: bid.placementCode
+                placementCode: bid.adUnitCode
               }
             });
           });
