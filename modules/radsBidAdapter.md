@@ -25,6 +25,7 @@ RADS Bidder Adapter for Prebid.js 1.x
                     bidder: "rads",
                     params: {
                         placement: 3,   // placement ID
+                        vastFormat: "vast2", // vast2(default) or vast4 
                         devMode: true   // if true: library uses dev server for tests
                     }
                 }

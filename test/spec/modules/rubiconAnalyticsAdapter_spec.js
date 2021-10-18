@@ -168,8 +168,8 @@ const floorMinRequest = {
     'zoneId': '335918',
     'userId': '12346',
     'keywords': ['a', 'b', 'c'],
-    'inventory': {'rating': '4-star', 'prodtype': 'tech'},
-    'visitor': {'ucat': 'new', 'lastsearch': 'iphone'},
+    'inventory': { 'rating': '4-star', 'prodtype': 'tech' },
+    'visitor': { 'ucat': 'new', 'lastsearch': 'iphone' },
     'position': 'atf'
   },
   'mediaTypes': {
@@ -195,24 +195,24 @@ const MOCK = {
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
     'timestamp': 1519767010567,
     'auctionStatus': 'inProgress',
-    'adUnits': [ {
+    'adUnits': [{
       'code': '/19968336/header-bid-tag1',
       'sizes': [[640, 480]],
-      'bids': [ {
+      'bids': [{
         'bidder': 'rubicon',
         'params': {
           'accountId': 1001, 'siteId': 113932, 'zoneId': 535512
         }
-      } ],
+      }],
       'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
     }
     ],
     'adUnitCodes': ['/19968336/header-bid-tag1'],
-    'bidderRequests': [ {
+    'bidderRequests': [{
       'bidderCode': 'rubicon',
       'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
       'bidderRequestId': '1be65d7958826a',
-      'bids': [ {
+      'bids': [{
         'bidder': 'rubicon',
         'params': {
           'accountId': 1001, 'siteId': 113932, 'zoneId': 535512
@@ -259,7 +259,7 @@ const MOCK = {
           'userId': '12346',
           'keywords': ['a', 'b', 'c'],
           'inventory': 'test',
-          'visitor': {'ucat': 'new', 'lastsearch': 'iphone'},
+          'visitor': { 'ucat': 'new', 'lastsearch': 'iphone' },
           'position': 'btf',
           'video': {
             'language': 'en',
@@ -274,7 +274,12 @@ const MOCK = {
             }
           }
         },
-        'mediaType': 'video',
+        'mediaTypes': {
+          'video': {
+            'context': 'instream',
+            'playerSize': [640, 480]
+          }
+        },
         'adUnitCode': '/19968336/header-bid-tag-0',
         'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
         'sizes': [[640, 480]],
@@ -291,8 +296,8 @@ const MOCK = {
           'zoneId': '335918',
           'userId': '12346',
           'keywords': ['a', 'b', 'c'],
-          'inventory': {'rating': '4-star', 'prodtype': 'tech'},
-          'visitor': {'ucat': 'new', 'lastsearch': 'iphone'},
+          'inventory': { 'rating': '4-star', 'prodtype': 'tech' },
+          'visitor': { 'ucat': 'new', 'lastsearch': 'iphone' },
           'position': 'atf'
         },
         'mediaTypes': {
@@ -362,7 +367,6 @@ const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
 
 const ANALYTICS_MESSAGE = {
   'channel': 'web',
-  'eventTimeMillis': 1519767013781,
   'integration': 'pbjs',
   'version': '$prebid.version$',
   'referrerUri': 'http://www.test.com/page.html',
@@ -371,6 +375,12 @@ const ANALYTICS_MESSAGE = {
     'id': STUBBED_UUID,
     'start': 1519767013781
   },
+  'timestamps': {
+    'auctionEnded': 1519767013781,
+    'eventTime': 1519767013781,
+    'prebidLoaded': rubiconAnalyticsAdapter.MODULE_INITIALIZED_TIME
+  },
+  'trigger': 'allBidWons',
   'referrerHostname': 'www.test.com',
   'auctions': [
     {
@@ -645,10 +655,10 @@ describe('rubicon analytics adapter', function () {
     expect(utils.logError.called).to.equal(true);
   });
 
-  describe('config subscribe', function() {
+  describe('config subscribe', function () {
     it('should update the pvid if user asks', function () {
       expect(utils.generateUUID.called).to.equal(false);
-      config.setConfig({rubicon: {updatePageView: true}});
+      config.setConfig({ rubicon: { updatePageView: true } });
       expect(utils.generateUUID.called).to.equal(true);
     });
     it('should merge in and preserve older set configs', function () {
@@ -843,6 +853,42 @@ describe('rubicon analytics adapter', function () {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
+    it('should pass along user ids', function () {
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.bidderRequests[0].bids[0].userId = {
+        criteoId: 'sadfe4334',
+        lotamePanoramaId: 'asdf3gf4eg',
+        pubcid: 'dsfa4545-svgdfs5',
+        sharedId: { id1: 'asdf', id2: 'sadf4344' }
+      };
+
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+
+      let message = JSON.parse(request.requestBody);
+      validate(message);
+
+      expect(message.auctions[0].user).to.deep.equal({
+        ids: [
+          { provider: 'criteoId', 'hasId': true },
+          { provider: 'lotamePanoramaId', 'hasId': true },
+          { provider: 'pubcid', 'hasId': true },
+          { provider: 'sharedId', 'hasId': true },
+        ]
+      });
+    });
+
     it('should handle bidResponse dimensions correctly', function () {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
@@ -939,6 +985,28 @@ describe('rubicon analytics adapter', function () {
       validate(message);
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.be.undefined;
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.be.undefined;
+    });
+
+    it('should not pass empty adServerTargeting values', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      const mockTargeting = utils.deepClone(MOCK.SET_TARGETING);
+      mockTargeting['/19968336/header-bid-tag-0'].hb_test = '';
+      mockTargeting['/19968336/header-bid-tag1'].hb_test = 'NOT_EMPTY';
+      events.emit(SET_TARGETING, mockTargeting);
+
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].adserverTargeting.hb_test).to.be.undefined;
+      expect(message.auctions[0].adUnits[1].adserverTargeting.hb_test).to.equal('NOT_EMPTY');
     });
 
     function performFloorAuction(provider) {
@@ -1138,7 +1206,7 @@ describe('rubicon analytics adapter', function () {
     describe('with session handling', function () {
       const expectedPvid = STUBBED_UUID.slice(0, 8);
       beforeEach(function () {
-        config.setConfig({rubicon: {updatePageView: true}});
+        config.setConfig({ rubicon: { updatePageView: true } });
       });
 
       it('should not log any session data if local storage is not enabled', function () {
@@ -1162,12 +1230,14 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should should pass along custom rubicon kv and pvid when defined', function () {
-        config.setConfig({rubicon: {
-          fpkvs: {
-            source: 'fb',
-            link: 'email'
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              source: 'fb',
+              link: 'email'
+            }
           }
-        }});
+        });
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1177,22 +1247,24 @@ describe('rubicon analytics adapter', function () {
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
         expectedMessage.fpkvs = [
-          {key: 'source', value: 'fb'},
-          {key: 'link', value: 'email'}
+          { key: 'source', value: 'fb' },
+          { key: 'link', value: 'email' }
         ]
         expect(message).to.deep.equal(expectedMessage);
       });
 
       it('should convert kvs to strings before sending', function () {
-        config.setConfig({rubicon: {
-          fpkvs: {
-            number: 24,
-            boolean: false,
-            string: 'hello',
-            array: ['one', 2, 'three'],
-            object: {one: 'two'}
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              number: 24,
+              boolean: false,
+              string: 'hello',
+              array: ['one', 2, 'three'],
+              object: { one: 'two' }
+            }
           }
-        }});
+        });
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1202,24 +1274,26 @@ describe('rubicon analytics adapter', function () {
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
         expectedMessage.fpkvs = [
-          {key: 'number', value: '24'},
-          {key: 'boolean', value: 'false'},
-          {key: 'string', value: 'hello'},
-          {key: 'array', value: 'one,2,three'},
-          {key: 'object', value: '[object Object]'}
+          { key: 'number', value: '24' },
+          { key: 'boolean', value: 'false' },
+          { key: 'string', value: 'hello' },
+          { key: 'array', value: 'one,2,three' },
+          { key: 'object', value: '[object Object]' }
         ]
         expect(message).to.deep.equal(expectedMessage);
       });
 
       it('should use the query utm param rubicon kv value and pass updated kv and pvid when defined', function () {
-        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=other', 'pbjs_debug': 'true'});
+        sandbox.stub(utils, 'getWindowLocation').returns({ 'search': '?utm_source=other', 'pbjs_debug': 'true' });
 
-        config.setConfig({rubicon: {
-          fpkvs: {
-            source: 'fb',
-            link: 'email'
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              source: 'fb',
+              link: 'email'
+            }
           }
-        }});
+        });
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1229,8 +1303,8 @@ describe('rubicon analytics adapter', function () {
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
         expectedMessage.fpkvs = [
-          {key: 'source', value: 'other'},
-          {key: 'link', value: 'email'}
+          { key: 'source', value: 'other' },
+          { key: 'link', value: 'email' }
         ]
 
         message.fpkvs.sort((left, right) => left.key < right.key);
@@ -1250,11 +1324,13 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        config.setConfig({rubicon: {
-          fpkvs: {
-            link: 'email' // should merge this with what is in the localStorage!
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
           }
-        }});
+        });
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1269,8 +1345,8 @@ describe('rubicon analytics adapter', function () {
           pvid: expectedPvid
         }
         expectedMessage.fpkvs = [
-          {key: 'source', value: 'tw'},
-          {key: 'link', value: 'email'}
+          { key: 'source', value: 'tw' },
+          { key: 'link', value: 'email' }
         ]
         expect(message).to.deep.equal(expectedMessage);
 
@@ -1292,7 +1368,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should overwrite matching localstorge value and use its remaining values', function () {
-        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=fb&utm_click=dog'});
+        sandbox.stub(utils, 'getWindowLocation').returns({ 'search': '?utm_source=fb&utm_click=dog' });
 
         // set some localStorage
         let inputlocalStorage = {
@@ -1304,11 +1380,13 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        config.setConfig({rubicon: {
-          fpkvs: {
-            link: 'email' // should merge this with what is in the localStorage!
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
           }
-        }});
+        });
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1323,9 +1401,9 @@ describe('rubicon analytics adapter', function () {
           pvid: expectedPvid
         }
         expectedMessage.fpkvs = [
-          {key: 'source', value: 'fb'},
-          {key: 'link', value: 'email'},
-          {key: 'click', value: 'dog'}
+          { key: 'source', value: 'fb' },
+          { key: 'link', value: 'email' },
+          { key: 'click', value: 'dog' }
         ]
 
         message.fpkvs.sort((left, right) => left.key < right.key);
@@ -1361,11 +1439,13 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        config.setConfig({rubicon: {
-          fpkvs: {
-            link: 'email' // should merge this with what is in the localStorage!
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
           }
-        }});
+        });
 
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
@@ -1379,7 +1459,7 @@ describe('rubicon analytics adapter', function () {
 
         // the saved fpkvs should have been thrown out since session expired
         expectedMessage.fpkvs = [
-          {key: 'link', value: 'email'}
+          { key: 'link', value: 'email' }
         ]
         expect(message).to.deep.equal(expectedMessage);
 
@@ -1411,11 +1491,13 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        config.setConfig({rubicon: {
-          fpkvs: {
-            link: 'email' // should merge this with what is in the localStorage!
+        config.setConfig({
+          rubicon: {
+            fpkvs: {
+              link: 'email' // should merge this with what is in the localStorage!
+            }
           }
-        }});
+        });
 
         performStandardAuction();
         expect(server.requests.length).to.equal(1);
@@ -1429,7 +1511,7 @@ describe('rubicon analytics adapter', function () {
 
         // the saved fpkvs should have been thrown out since session expired
         expectedMessage.fpkvs = [
-          {key: 'link', value: 'email'}
+          { key: 'link', value: 'email' }
         ]
         expect(message).to.deep.equal(expectedMessage);
 
@@ -1455,7 +1537,7 @@ describe('rubicon analytics adapter', function () {
       let gptSlotRenderEnded0, gptSlotRenderEnded1;
       beforeEach(function () {
         mockGpt.enable();
-        gptSlot0 = mockGpt.makeSlot({code: '/19968336/header-bid-tag-0'});
+        gptSlot0 = mockGpt.makeSlot({ code: '/19968336/header-bid-tag-0' });
         gptSlotRenderEnded0 = {
           eventName: 'slotRenderEnded',
           params: {
@@ -1467,7 +1549,7 @@ describe('rubicon analytics adapter', function () {
           }
         };
 
-        gptSlot1 = mockGpt.makeSlot({code: '/19968336/header-bid-tag1'});
+        gptSlot1 = mockGpt.makeSlot({ code: '/19968336/header-bid-tag1' });
         gptSlotRenderEnded1 = {
           eventName: 'slotRenderEnded',
           params: {
@@ -1658,6 +1740,7 @@ describe('rubicon analytics adapter', function () {
           lineItemId: 6666,
           adSlot: '/19968336/header-bid-tag1'
         };
+        expectedMessage.trigger = 'gam';
         expect(message).to.deep.equal(expectedMessage);
       });
 
@@ -1902,6 +1985,7 @@ describe('rubicon analytics adapter', function () {
       let timedOutBid = message.auctions[0].adUnits[0].bids[0];
       expect(timedOutBid.status).to.equal('error');
       expect(timedOutBid.error.code).to.equal('timeout-error');
+      expect(timedOutBid.error.description).to.equal('prebid.js timeout');
       expect(timedOutBid).to.not.have.property('bidResponse');
     });
 
@@ -1982,7 +2066,7 @@ describe('rubicon analytics adapter', function () {
 
       // Now add the bidResponse hook which hooks on the currenct conversion function onto the bid response
       let innerBid;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bidCopy);
 
@@ -1995,9 +2079,11 @@ describe('rubicon analytics adapter', function () {
 
   describe('config with integration type', () => {
     it('should use the integration type provided in the config instead of the default', () => {
-      config.setConfig({rubicon: {
-        int_type: 'testType'
-      }})
+      config.setConfig({
+        rubicon: {
+          int_type: 'testType'
+        }
+      })
 
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
@@ -2019,11 +2105,13 @@ describe('rubicon analytics adapter', function () {
 
   describe('wrapper details passed in', () => {
     it('should correctly pass in the wrapper details if provided', () => {
-      config.setConfig({rubicon: {
-        wrapperName: '1001_wrapperName_exp.4',
-        wrapperFamily: '1001_wrapperName',
-        rule_name: 'na-mobile'
-      }});
+      config.setConfig({
+        rubicon: {
+          wrapperName: '1001_wrapperName_exp.4',
+          wrapperFamily: '1001_wrapperName',
+          rule_name: 'na-mobile'
+        }
+      });
 
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {

@@ -26,11 +26,11 @@ describe('nativoBidAdapterTests', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true)
     })
 
-    it('should return false when required params are not passed', function () {
+    it('should return true when params are not passed', function () {
       let bid2 = Object.assign({}, bid)
       delete bid2.params
       bid2.params = {}
-      expect(spec.isBidRequestValid(bid2)).to.equal(false)
+      expect(spec.isBidRequestValid(bid2)).to.equal(true)
     })
   })
 
@@ -69,6 +69,7 @@ describe('nativoBidAdapterTests', function () {
       expect(request.url).to.include('ntv_pb_rid')
       expect(request.url).to.include('ntv_ppc')
       expect(request.url).to.include('ntv_url')
+      expect(request.url).to.include('ntv_dbr')
     })
   })
 })
@@ -121,14 +122,19 @@ describe('interpretResponse', function () {
       bids: [
         {
           params: {
-            placementId: 1
-          }
+            placementId: 1,
+          },
         },
       ],
     }
 
     // mock
-    spec.getRequestId = () => 123456
+    spec.getAdUnitData = () => {
+      return {
+        bidId: 123456,
+        sizes: [300, 250],
+      }
+    }
 
     let result = spec.interpretResponse({ body: response }, { bidderRequest })
     expect(Object.keys(result[0])).to.have.deep.members(
@@ -173,11 +179,11 @@ describe('getUserSyncs', function () {
 
   const gdprConsent = {
     gdprApplies: true,
-    consentString: '111111'
+    consentString: '111111',
   }
 
   const uspConsent = {
-    uspConsent: '1YYY'
+    uspConsent: '1YYY',
   }
 
   it('Returns empty array if no supported user syncs', function () {
@@ -207,7 +213,9 @@ describe('getUserSyncs', function () {
     expect(userSync[0].type).to.exist
     expect(userSync[0].url).to.exist
     expect(userSync[0].type).to.be.equal('iframe')
-    expect(userSync[0].url).to.contain('gdpr=1&gdpr_consent=111111&us_privacy=1YYY')
+    expect(userSync[0].url).to.contain(
+      'gdpr=1&gdpr_consent=111111&us_privacy=1YYY'
+    )
   })
 
   it('Returns valid URL and type', function () {
@@ -224,6 +232,50 @@ describe('getUserSyncs', function () {
     expect(userSync[0].type).to.exist
     expect(userSync[0].url).to.exist
     expect(userSync[0].type).to.be.equal('image')
-    expect(userSync[0].url).to.contain('gdpr=1&gdpr_consent=111111&us_privacy=1YYY')
+    expect(userSync[0].url).to.contain(
+      'gdpr=1&gdpr_consent=111111&us_privacy=1YYY'
+    )
+  })
+})
+
+describe('getAdUnitData', () => {
+  afterEach(() => {
+    if (window.bidRequestMap) delete window.bidRequestMap
+  })
+
+  it('Matches placementId value', () => {
+    const adUnitData = {
+      bidId: 123456,
+      sizes: [300, 250],
+    }
+
+    window.bidRequestMap = {
+      9876543: {
+        12345: adUnitData,
+      },
+    }
+
+    const data = spec.getAdUnitData(9876543, { impid: 12345 })
+    expect(Object.keys(data)).to.have.deep.members(
+      Object.keys(adUnitData)
+    )
+  })
+
+  it('Falls back to ad unit code value', () => {
+    const adUnitData = {
+      bidId: 123456,
+      sizes: [300, 250],
+    }
+
+    window.bidRequestMap = {
+      9876543: {
+        '#test-code': adUnitData,
+      },
+    }
+
+    const data = spec.getAdUnitData(9876543, { impid: 12345, ext: { ad_unit_code: '#test-code' } })
+    expect(Object.keys(data)).to.have.deep.members(
+      Object.keys(adUnitData)
+    )
   })
 })

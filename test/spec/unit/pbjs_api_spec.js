@@ -75,6 +75,10 @@ var Slot = function Slot(elementId, pathId) {
     clearTargeting: function clearTargeting() {
       this.targeting = {};
       return this;
+    },
+
+    updateTargetingFromMap: function updateTargetingFromMap(targetingMap) {
+      Object.keys(targetingMap).forEach(key => this.setTargeting(key, targetingMap[key]))
     }
   };
   slot.spySetTargeting = sinon.spy(slot, 'setTargeting');
@@ -1782,6 +1786,42 @@ describe('Unit: Prebid Module', function () {
             });
             expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250]]);
             expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
+          });
+
+          it('should filter mediaType pos value if not integer', function () {
+            let adUnit = [{
+              code: 'test5',
+              bids: [],
+              sizes: [300, 250],
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 250],
+                  pos: 'foo'
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: adUnit
+            });
+            expect(auctionArgs.adUnits[0].mediaTypes.banner.pos).to.be.undefined;
+          });
+
+          it('should pass mediaType pos value if integer', function () {
+            let adUnit = [{
+              code: 'test5',
+              bids: [],
+              sizes: [300, 250],
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 250],
+                  pos: 2
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: adUnit
+            });
+            expect(auctionArgs.adUnits[0].mediaTypes.banner.pos).to.equal(2);
           });
         });
 

@@ -1,6 +1,5 @@
-import * as utils from '../src/utils.js'
-
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _each, deepAccess, logError, logWarn, parseSizesInput } from '../src/utils.js';
 
 import { config } from '../src/config.js'
 import { getStorageManager } from '../src/storageManager.js';
@@ -19,7 +18,7 @@ const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 
 let invalidRequestIds = {};
 let browserParams = {};
-let pageViewId = null
+let pageViewId = null;
 
 // TODO: potential 0 values for browserParams sent to ad server
 function _getBrowserParams(topWindowUrl) {
@@ -28,12 +27,12 @@ function _getBrowserParams(topWindowUrl) {
   let topUrl
   let ggad
   let ns
-  function getNetworkSpeed () {
+  function getNetworkSpeed() {
     const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
     const Mbps = connection && (connection.downlink || connection.bandwidth)
     return Mbps ? Math.round(Mbps * 1024) : null
   }
-  function getOgURL () {
+  function getOgURL() {
     let ogURL = ''
     const ogURLSelector = "meta[property='og:url']"
     const head = document && document.getElementsByTagName('head')[0]
@@ -51,7 +50,7 @@ function _getBrowserParams(topWindowUrl) {
     topScreen = topWindow.screen;
     topUrl = topWindowUrl || '';
   } catch (error) {
-    utils.logError(error);
+    logError(error);
     return browserParams
   }
 
@@ -81,14 +80,6 @@ function _getBrowserParams(topWindowUrl) {
 
 function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
-}
-
-function _getTradeDeskIDParam(userId) {
-  const unifiedIdObj = {};
-  if (userId.tdid) {
-    unifiedIdObj.tdid = userId.tdid;
-  }
-  return unifiedIdObj;
 }
 
 function _getDigiTrustQueryParams(userId) {
@@ -130,7 +121,7 @@ function _serializeSupplyChainObj(schainObj) {
  * @param {BidRequest} bid The bid params to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
-function isBidRequestValid (bid) {
+function isBidRequestValid(bid) {
   const {
     params,
     adUnitCode
@@ -139,7 +130,7 @@ function isBidRequestValid (bid) {
   const id = legacyParamID || params.slot || params.native || params.zone || params.pubID;
 
   if (invalidRequestIds[id]) {
-    utils.logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
+    logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
     return false;
   }
 
@@ -154,12 +145,12 @@ function isBidRequestValid (bid) {
     case !!(params.inVideo): break;
     case !!(params.videoPubID): break;
     default:
-      utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
+      logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
   }
 
   if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
-    utils.logWarn('[GumGum] bidfloor must be a Number');
+    logWarn('[GumGum] bidfloor must be a Number');
     return false;
   }
 
@@ -171,7 +162,7 @@ function isBidRequestValid (bid) {
  * @param {Object} attributes
  * @returns {Object}
  */
-function _getVidParams (attributes) {
+function _getVidParams(attributes) {
   const {
     minduration: mind,
     maxduration: maxd,
@@ -181,7 +172,7 @@ function _getVidParams (attributes) {
     protocols = [],
     playerSize = []
   } = attributes;
-  const sizes = utils.parseSizesInput(playerSize);
+  const sizes = parseSizesInput(playerSize);
   const [viw, vih] = sizes[0] && sizes[0].split('x');
   let pr = '';
 
@@ -208,7 +199,7 @@ function _getVidParams (attributes) {
  * @param {Object} bid
  * @returns {Number} floor
  */
-function _getFloor (mediaTypes, staticBidfloor, bid) {
+function _getFloor(mediaTypes, staticBidFloor, bid) {
   const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
   const bidFloor = { floor: 0, currency: 'USD' };
 
@@ -220,12 +211,59 @@ function _getFloor (mediaTypes, staticBidfloor, bid) {
     floor && (bidFloor.floor = floor);
     currency && (bidFloor.currency = currency);
 
-    if (staticBidfloor && floor && currency === 'USD') {
-      bidFloor.floor = Math.max(staticBidfloor, parseFloat(floor));
+    if (staticBidFloor && floor && currency === 'USD') {
+      bidFloor.floor = Math.max(staticBidFloor, parseFloat(floor));
     }
+  } else if (staticBidFloor) {
+    bidFloor.floor = staticBidFloor
   }
 
   return bidFloor;
+}
+
+/**
+ * loops through bannerSizes array to get greatest slot dimensions
+ * @param {number[][]} sizes
+ * @returns {number[]}
+ */
+function getGreatestDimensions(sizes) {
+  let maxw = 0;
+  let maxh = 0;
+  let greatestVal = 0;
+  sizes.forEach(bannerSize => {
+    let [width, height] = bannerSize;
+    let greaterSide = width > height ? width : height;
+    if ((greaterSide > greatestVal) || (greaterSide === greatestVal && width >= maxw && height >= maxh)) {
+      greatestVal = greaterSide;
+      maxw = width;
+      maxh = height;
+    }
+  });
+
+  return [maxw, maxh];
+}
+
+function getEids(userId) {
+  const idProperties = [
+    'uid',
+    'eid',
+    'lipbid'
+  ];
+
+  return Object.keys(userId).reduce(function (eids, provider) {
+    const eid = userId[provider];
+    switch (typeof eid) {
+      case 'string':
+        eids[provider] = eid;
+        break;
+
+      case 'object':
+        const idProp = idProperties.filter(prop => eid.hasOwnProperty(prop));
+        idProp.length && (eids[provider] = eid[idProp[0]]);
+        break;
+    }
+    return eids;
+  }, {});
 }
 
 /**
@@ -234,24 +272,37 @@ function _getFloor (mediaTypes, staticBidfloor, bid) {
  * @param {validBidRequests[]} - an array of bids
  * @return ServerRequest Info describing the request to the server.
  */
-function buildRequests (validBidRequests, bidderRequest) {
+function buildRequests(validBidRequests, bidderRequest) {
   const bids = [];
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const timeout = config.getConfig('bidderTimeout');
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  utils._each(validBidRequests, bidRequest => {
+  _each(validBidRequests, bidRequest => {
     const {
       bidId,
       mediaTypes = {},
       params = {},
       schain,
       transactionId,
-      userId = {}
+      userId = {},
+      ortb2Imp
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
+    const eids = getEids(userId);
     let sizes = [1, 1];
     let data = {};
+    let gpid = '';
+
+    // ADTS-134 Retrieve ID envelopes
+    for (const eid in eids) data[eid] = eids[eid];
+
+    // ADJS-1024 & ADSS-1297
+    if (deepAccess(ortb2Imp, 'ext.data.pbadslot')) {
+      gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot')
+    } else if (deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
+      gpid = ortb2Imp.ext.data.adserver.adslot
+    }
 
     if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;
@@ -283,11 +334,14 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.pi = 2; // inscreen
       // override pi if the following is found
       if (params.slot) {
-        data.si = parseInt(params.slot, 10);
+        const [maxw, maxh] = getGreatestDimensions(sizes);
+        data.maxw = maxw;
+        data.maxh = maxh;
+        data.si = params.slot;
         data.pi = 3;
         data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
       } else if (params.native) {
-        data.ni = parseInt(params.native, 10);
+        data.ni = params.native;
         data.pi = 5;
       } else if (mediaTypes.video) {
         data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
@@ -318,13 +372,13 @@ function buildRequests (validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), { gpid })
     })
   });
   return bids;
 }
 
-function handleLegacyParams (params, sizes) {
+function handleLegacyParams(params, sizes) {
   const data = {};
   if (params.inScreenPubID) {
     data.pubId = params.inScreenPubID;
@@ -335,12 +389,15 @@ function handleLegacyParams (params, sizes) {
     data.pi = 2;
   }
   if (params.inSlot) {
-    data.si = parseInt(params.inSlot, 10);
+    const [maxw, maxh] = getGreatestDimensions(sizes);
+    data.maxw = maxw;
+    data.maxh = maxh;
+    data.si = params.inSlot;
     data.pi = 3;
     data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
   }
   if (params.ICV) {
-    data.ni = parseInt(params.ICV, 10);
+    data.ni = params.ICV;
     data.pi = 5;
   }
   if (params.videoPubID) {
@@ -364,12 +421,12 @@ function handleLegacyParams (params, sizes) {
  * @param {*} serverResponse A successful response from the server.
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
-function interpretResponse (serverResponse, bidRequest) {
+function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = []
   const serverResponseBody = serverResponse.body
 
   if (!serverResponseBody || serverResponseBody.err) {
-    const data = bidRequest.data || {}
+    const data = bidRequest.data || {};
     const id = data.si || data.ni || data.t || data.pubId;
     const delayTime = serverResponseBody ? serverResponseBody.err.drt : DELAY_REQUEST_TIME;
     invalidRequestIds[id] = { productId: data.pi, timestamp: new Date().getTime() };
@@ -377,7 +434,7 @@ function interpretResponse (serverResponse, bidRequest) {
     setTimeout(() => {
       !!invalidRequestIds[id] && delete invalidRequestIds[id];
     }, delayTime);
-    utils.logWarn(`[GumGum] Please check the implementation for ${id}`);
+    logWarn(`[GumGum] Please check the implementation for ${id}`);
   }
 
   const defaultResponse = {
@@ -403,7 +460,9 @@ function interpretResponse (serverResponse, bidRequest) {
       markup,
       cur,
       width: responseWidth,
-      height: responseHeight
+      height: responseHeight,
+      maxw,
+      maxh
     },
     cw: wrapper,
     pag: {
@@ -414,24 +473,31 @@ function interpretResponse (serverResponse, bidRequest) {
       adomain: advertiserDomains,
       mediaType: type
     }
-  } = Object.assign(defaultResponse, serverResponseBody)
-  let data = bidRequest.data || {}
-  let product = data.pi
-  let mediaType = (product === 6 || product === 7) ? VIDEO : BANNER
-  let isTestUnit = (product === 3 && data.si === 9)
-  // use response sizes if available
-  let sizes = responseWidth && responseHeight ? [`${responseWidth}x${responseHeight}`] : utils.parseSizesInput(bidRequest.sizes)
-  let [width, height] = sizes[0].split('x')
+  } = Object.assign(defaultResponse, serverResponseBody);
+  let data = bidRequest.data || {};
+  let product = data.pi;
+  let mediaType = (product === 6 || product === 7) ? VIDEO : BANNER;
+  let isTestUnit = (product === 3 && data.si === 9);
   let metaData = {
     advertiserDomains: advertiserDomains || [],
     mediaType: type || mediaType
+  };
+  let sizes = parseSizesInput(bidRequest.sizes);
+
+  if (maxw && maxh) {
+    sizes = [`${maxw}x${maxh}`];
+  } else if (product === 5 && includes(sizes, '1x1')) {
+    sizes = ['1x1'];
+  } else if (product === 2 && includes(sizes, '1x1')) {
+    const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
+      const [ width, height ] = current;
+      if (responseWidth === width || responseHeight === height) result.push(current.join('x'));
+      return result
+    }, [])) || [];
+    sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
   }
 
-  // return 1x1 when breakout expected
-  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
-    width = '1'
-    height = '1'
-  }
+  let [width, height] = sizes[0].split('x');
 
   if (jcsi) {
     serverResponseBody.jcsi = JCSI
@@ -445,7 +511,7 @@ function interpretResponse (serverResponse, bidRequest) {
       // dealId: DEAL_ID,
       // referrer: REFERER,
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
-      ...(mediaType === VIDEO && {ad: markup, vastXml: markup}),
+      ...(mediaType === VIDEO && { ad: markup, vastXml: markup }),
       mediaType,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
@@ -468,7 +534,7 @@ function interpretResponse (serverResponse, bidRequest) {
  * @param {ServerResponse[]} serverResponses List of server's responses.
  * @return {UserSync[]} The user syncs which should be dropped.
  */
-function getUserSyncs (syncOptions, serverResponses) {
+function getUserSyncs(syncOptions, serverResponses) {
   const responses = serverResponses.map((response) => {
     return (response.body && response.body.pxs && response.body.pxs.scr) || []
   })

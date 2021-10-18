@@ -1,19 +1,21 @@
-import {expect} from 'chai';
-import {spec} from 'modules/slimcutBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-
+import {
+  expect
+} from 'chai';
+import {
+  spec
+} from 'modules/slimcutBidAdapter.js';
+import {
+  newBidder
+} from 'src/adapters/bidderFactory.js';
 const ENDPOINT = 'https://sb.freeskreen.com/pbr';
 const AD_SCRIPT = '<script type="text/javascript" class="slimcut" async="true" src="https://static.freeskreen.com/publisher/83/freeskreen.min.js"></script>"';
-
 describe('slimcutBidAdapter', function() {
   const adapter = newBidder(spec);
-
   describe('inherited functions', function() {
     it('exists and is a function', function() {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
-
   describe('isBidRequestValid', function() {
     let bid = {
       'bidder': 'slimcut',
@@ -21,75 +23,66 @@ describe('slimcutBidAdapter', function() {
         'placementId': 83
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600]],
+      'sizes': [
+        [300, 250],
+        [300, 600]
+      ],
       'bidId': '3c871ffa8ef14c',
       'bidderRequestId': 'b41642f1aee381',
       'auctionId': '4e156668c977d7'
     };
-
     it('should return true when required params found', function() {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-
     it('should return false when placementId is not valid (letters)', function() {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
         'placementId': 'ABCD'
       };
-
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
-
     it('should return false when placementId < 0', function() {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
         'placementId': -1
       };
-
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
-
     it('should return false when required params are not passed', function() {
       let bid = Object.assign({}, bid);
       delete bid.params;
-
       bid.params = {};
-
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
-
   describe('buildRequests', function() {
-    let bidRequests = [
-      {
-        'bidder': 'teads',
-        'params': {
-          'placementId': 10433394
-        },
-        'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250], [300, 600]],
-        'bidId': '3c871ffa8ef14c',
-        'bidderRequestId': 'b41642f1aee381',
-        'auctionId': '4e156668c977d7',
-        'deviceWidth': 1680
-      }
-    ];
-
+    let bidRequests = [{
+      'bidder': 'teads',
+      'params': {
+        'placementId': 10433394
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [
+        [300, 250],
+        [300, 600]
+      ],
+      'bidId': '3c871ffa8ef14c',
+      'bidderRequestId': 'b41642f1aee381',
+      'auctionId': '4e156668c977d7',
+      'deviceWidth': 1680
+    }];
     let bidderResquestDefault = {
       'auctionId': '4e156668c977d7',
       'bidderRequestId': 'b41642f1aee381',
       'timeout': 3000
     };
-
     it('sends bid request to ENDPOINT via POST', function() {
       const request = spec.buildRequests(bidRequests, bidderResquestDefault);
-
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
     });
-
     it('should send GDPR to endpoint', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
@@ -104,15 +97,12 @@ describe('slimcutBidAdapter', function() {
           }
         }
       };
-
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
-
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
     });
-
-    it('should add referer info to payload', function () {
+    it('should add referer info to payload', function() {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
@@ -123,12 +113,10 @@ describe('slimcutBidAdapter', function() {
       }
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
-
       expect(payload.referrer).to.exist;
       expect(payload.referrer).to.deep.equal('https://example.com/page.html')
     });
   });
-
   describe('getUserSyncs', () => {
     let bids = {
       'body': {
@@ -147,19 +135,20 @@ describe('slimcutBidAdapter', function() {
         }]
       }
     };
-
     it('should get the correct number of sync urls', () => {
-      let urls = spec.getUserSyncs({iframeEnabled: true}, bids);
+      let urls = spec.getUserSyncs({
+        iframeEnabled: true
+      }, bids);
       expect(urls.length).to.equal(1);
       expect(urls[0].url).to.equal('https://sb.freeskreen.com/async_usersync.html');
     });
-
     it('should return no url if not iframe enabled', () => {
-      let urls = spec.getUserSyncs({iframeEnabled: false}, bids);
+      let urls = spec.getUserSyncs({
+        iframeEnabled: false
+      }, bids);
       expect(urls.length).to.equal(0);
     });
   });
-
   describe('interpretResponse', function() {
     let bids = {
       'body': {
@@ -178,7 +167,6 @@ describe('slimcutBidAdapter', function() {
         }]
       }
     };
-
     it('should get correct bid response', function() {
       let expectedResponse = [{
         'cpm': 0.5,
@@ -191,20 +179,20 @@ describe('slimcutBidAdapter', function() {
         'requestId': '3ede2a3fa0db94',
         'creativeId': 'er2ee',
         'transactionId': 'deadb33f',
-        'winUrl': 'https://sb.freeskreen.com/win'
+        'winUrl': 'https://sb.freeskreen.com/win',
+        'meta': {
+          'advertiserDomains': []
+        }
       }];
-
       let result = spec.interpretResponse(bids);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
-
     it('handles nobid responses', function() {
       let bids = {
         'body': {
           'responses': []
         }
       };
-
       let result = spec.interpretResponse(bids);
       expect(result.length).to.equal(0);
     });

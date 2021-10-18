@@ -229,7 +229,6 @@ describe('the rubicon adapter', function () {
     bid.userId = {
       lipb: {lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB']},
       idl_env: '1111-2222-3333-4444',
-      sharedid: {id: '1111', third: '2222'},
       tdid: '3000',
       pubcid: '4000',
       pubProvidedId: [{
@@ -509,6 +508,38 @@ describe('the rubicon adapter', function () {
 
           expect(data['site_id']).to.equal('70608');
           expect(data['p_pos']).to.equal(undefined);
+        });
+
+        it('should not send p_pos to AE if not mediaTypes.banner.pos is invalid', function () {
+          var bidRequest = utils.deepClone(bidderRequest);
+          bidRequest.bids[0].mediaTypes = {
+            banner: {
+              pos: 5
+            }
+          };
+          delete bidRequest.bids[0].params.position;
+
+          let [request] = spec.buildRequests(bidRequest.bids, bidRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['site_id']).to.equal('70608');
+          expect(data['p_pos']).to.equal(undefined);
+        });
+
+        it('should send p_pos to AE if mediaTypes.banner.pos is valid', function () {
+          var bidRequest = utils.deepClone(bidderRequest);
+          bidRequest.bids[0].mediaTypes = {
+            banner: {
+              pos: 1
+            }
+          };
+          delete bidRequest.bids[0].params.position;
+
+          let [request] = spec.buildRequests(bidRequest.bids, bidRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['site_id']).to.equal('70608');
+          expect(data['p_pos']).to.equal('atf');
         });
 
         it('should not send p_pos to AE if not params.position is invalid', function () {
@@ -853,20 +884,33 @@ describe('the rubicon adapter', function () {
                   'ext': { 'segtax': 1 },
                   'segment': [
                     { 'id': '987' }
+		    ]
+		  }, {
+		    'name': 'www.dataprovider1.com',
+		    'ext': { 'segtax': 2 },
+		    'segment': [
+		      { 'id': '432' }
+		    ]
+                }, {
+                  'name': 'www.dataprovider1.com',
+                  'ext': { 'segtax': 5 },
+                  'segment': [
+                    { 'id': '55' }
                   ]
                 }, {
                   'name': 'www.dataprovider1.com',
-                  'ext': { 'segtax': 2 },
+                  'ext': { 'segtax': 6 },
                   'segment': [
-                    { 'id': '432' }
+                    { 'id': '66' }
                   ]
-                }]
+                }
+                ]
               }
             };
             const user = {
               data: [{
                 'name': 'www.dataprovider1.com',
-                'ext': { 'segtax': 3 },
+                'ext': { 'segtax': 4 },
                 'segment': [
                   { 'id': '687' },
                   { 'id': '123' }
@@ -901,7 +945,7 @@ describe('the rubicon adapter', function () {
               'tg_v.gender': 'M',
               'tg_v.age': '40',
               'tg_v.iab': '687,123',
-              'tg_i.iab': '987,432',
+              'tg_i.iab': '987,432,55,66',
               'tg_v.yob': '1984',
               'tg_i.rating': '4-star,5-star',
               'tg_i.page': 'home',
@@ -1226,23 +1270,6 @@ describe('the rubicon adapter', function () {
             });
           });
 
-          describe('SharedID support', function () {
-            it('should send sharedid when userIdAsEids contains sharedId', function () {
-              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              clonedBid.userId = {
-                sharedid: {
-                  id: '1111',
-                  third: '2222'
-                }
-              };
-              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
-              let [request] = spec.buildRequests([clonedBid], bidderRequest);
-              let data = parseQuery(request.data);
-
-              expect(data['eid_sharedid.org']).to.equal('1111^1^2222');
-            });
-          });
-
           describe('pubProvidedId support', function () {
             it('should send pubProvidedId when userIdAsEids contains pubProvidedId ids', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
@@ -1312,10 +1339,7 @@ describe('the rubicon adapter', function () {
               config.setConfig({user: {id: '123'}});
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
-                sharedid: {
-                  id: '1111',
-                  third: '2222'
-                }
+                pubcid: '1111'
               };
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
@@ -1537,29 +1561,24 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.user.ext.eids[1].uids[0].atype).to.equal(3);
-          // SharedId should exist
-          expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
-          expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[2].uids[0].atype).to.equal(1);
-          expect(post.user.ext.eids[2].uids[0].ext.third).to.equal('2222');
           // UnifiedId should exist
-          expect(post.user.ext.eids[3].source).to.equal('adserver.org');
-          expect(post.user.ext.eids[3].uids[0].atype).to.equal(1);
-          expect(post.user.ext.eids[3].uids[0].id).to.equal('3000');
+          expect(post.user.ext.eids[2].source).to.equal('adserver.org');
+          expect(post.user.ext.eids[2].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[2].uids[0].id).to.equal('3000');
           // PubCommonId should exist
-          expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
-          expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
-          expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
+          expect(post.user.ext.eids[3].source).to.equal('pubcid.org');
+          expect(post.user.ext.eids[3].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[3].uids[0].id).to.equal('4000');
           // example should exist
-          expect(post.user.ext.eids[5].source).to.equal('example.com');
-          expect(post.user.ext.eids[5].uids[0].id).to.equal('333333');
+          expect(post.user.ext.eids[4].source).to.equal('example.com');
+          expect(post.user.ext.eids[4].uids[0].id).to.equal('333333');
           // id-partner.com
-          expect(post.user.ext.eids[6].source).to.equal('id-partner.com');
-          expect(post.user.ext.eids[6].uids[0].id).to.equal('4444444');
+          expect(post.user.ext.eids[5].source).to.equal('id-partner.com');
+          expect(post.user.ext.eids[5].uids[0].id).to.equal('4444444');
           // CriteoId should exist
-          expect(post.user.ext.eids[7].source).to.equal('criteo.com');
-          expect(post.user.ext.eids[7].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[7].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[6].source).to.equal('criteo.com');
+          expect(post.user.ext.eids[6].uids[0].id).to.equal('1111');
+          expect(post.user.ext.eids[6].uids[0].atype).to.equal(1);
 
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
@@ -3211,7 +3230,7 @@ describe('the rubicon adapter', function () {
             width: 640
           });
           // cleanup
-          adUnit.remove();
+          adUnit.parentNode.removeChild(adUnit);
         });
       });
 

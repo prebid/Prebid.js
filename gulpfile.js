@@ -8,13 +8,13 @@ var gutil = require('gulp-util');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
-var uglify = require('gulp-uglify');
+var terser = require('gulp-terser');
 var gulpClean = require('gulp-clean');
 var KarmaServer = require('karma').Server;
-var karmaConfMaker = require('./karma.conf.maker');
+var karmaConfMaker = require('./karma.conf.maker.js');
 var opens = require('opn');
-var webpackConfig = require('./webpack.conf');
-var helpers = require('./gulpHelpers');
+var webpackConfig = require('./webpack.conf.js');
+var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
 var footer = require('gulp-footer');
@@ -71,7 +71,13 @@ function lint(done) {
   const isFixed = function (file) {
     return file.eslint != null && file.eslint.fixed;
   }
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], { base: './' })
+  return gulp.src([
+    'src/**/*.js',
+    'modules/**/*.js',
+    'test/**/*.js',
+    'plugins/**/*.js',
+    './*.js'
+  ], { base: './' })
     .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
@@ -168,7 +174,7 @@ function makeWebpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
-    .pipe(uglify())
+    .pipe(terser())
     .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));

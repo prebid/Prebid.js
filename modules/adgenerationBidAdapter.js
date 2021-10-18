@@ -1,7 +1,8 @@
-import * as utils from '../src/utils.js';
+import {tryAppendQueryString, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
@@ -24,7 +25,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const ADGENE_PREBID_VERSION = '1.0.1';
+    const ADGENE_PREBID_VERSION = '1.2.0';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -32,23 +33,23 @@ export const spec = {
       const URL = 'https://d.socdm.com/adsv/v1';
       const url = validReq.params.debug ? DEBUG_URL : URL;
       let data = ``;
-      data = utils.tryAppendQueryString(data, 'posall', 'SSPLOC');
-      const id = utils.getBidIdParameter('id', validReq.params);
-      data = utils.tryAppendQueryString(data, 'id', id);
-      data = utils.tryAppendQueryString(data, 'sdktype', '0');
-      data = utils.tryAppendQueryString(data, 'hb', 'true');
-      data = utils.tryAppendQueryString(data, 't', 'json3');
-      data = utils.tryAppendQueryString(data, 'transactionid', validReq.transactionId);
-      data = utils.tryAppendQueryString(data, 'sizes', getSizes(validReq));
-      data = utils.tryAppendQueryString(data, 'currency', getCurrencyType());
-      data = utils.tryAppendQueryString(data, 'pbver', '$prebid.version$');
-      data = utils.tryAppendQueryString(data, 'sdkname', 'prebidjs');
-      data = utils.tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
+      data = tryAppendQueryString(data, 'posall', 'SSPLOC');
+      const id = getBidIdParameter('id', validReq.params);
+      data = tryAppendQueryString(data, 'id', id);
+      data = tryAppendQueryString(data, 'sdktype', '0');
+      data = tryAppendQueryString(data, 'hb', 'true');
+      data = tryAppendQueryString(data, 't', 'json3');
+      data = tryAppendQueryString(data, 'transactionid', validReq.transactionId);
+      data = tryAppendQueryString(data, 'sizes', getSizes(validReq));
+      data = tryAppendQueryString(data, 'currency', getCurrencyType());
+      data = tryAppendQueryString(data, 'pbver', '$prebid.version$');
+      data = tryAppendQueryString(data, 'sdkname', 'prebidjs');
+      data = tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
-        data = utils.tryAppendQueryString(data, 'imark', '1');
+        data = tryAppendQueryString(data, 'imark', '1');
       }
-      data = utils.tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
+      data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);
@@ -86,6 +87,11 @@ export const spec = {
       netRevenue: true,
       ttl: body.ttl || 10,
     };
+    if (body.adomain && Array.isArray(body.adomain) && body.adomain.length) {
+      bidResponse.meta = {
+        advertiserDomains: body.adomain
+      }
+    }
     if (isNative(body)) {
       bidResponse.native = createNativeAd(body);
       bidResponse.mediaType = NATIVE;
@@ -112,11 +118,23 @@ export const spec = {
 function createAd(body, bidRequest) {
   let ad = body.ad;
   if (body.vastxml && body.vastxml.length > 0) {
-    ad = `<body><div id="apvad-${bidRequest.bidId}"></div>${createAPVTag()}${insertVASTMethod(bidRequest.bidId, body.vastxml)}</body>`;
+    if (isUpperBillboard(body)) {
+      const marginTop = bidRequest.params.marginTop ? bidRequest.params.marginTop : '0';
+      ad = `<body>${createADGBrowserMTag()}${insertVASTMethodForADGBrowserM(body.vastxml, marginTop)}</body>`;
+    } else {
+      ad = `<body><div id="apvad-${bidRequest.bidId}"></div>${createAPVTag()}${insertVASTMethodForAPV(bidRequest.bidId, body.vastxml)}</body>`;
+    }
   }
   ad = appendChildToBody(ad, body.beacon);
   if (removeWrapper(ad)) return removeWrapper(ad);
   return ad;
+}
+
+function isUpperBillboard(body) {
+  if (body.location_params && body.location_params.option && body.location_params.option.ad_type) {
+    return body.location_params.option.ad_type === 'upper_billboard';
+  }
+  return false;
 }
 
 function isNative(body) {
@@ -184,13 +202,25 @@ function createAPVTag() {
   return apvScript.outerHTML;
 }
 
-function insertVASTMethod(targetId, vastXml) {
+function createADGBrowserMTag() {
+  const ADGBrowserMURL = 'https://i.socdm.com/sdk/js/adg-browser-m.js';
+  return `<script type="text/javascript" src="${ADGBrowserMURL}"></script>`;
+}
+
+function insertVASTMethodForAPV(targetId, vastXml) {
   let apvVideoAdParam = {
     s: targetId
   };
   let script = document.createElement(`script`);
   script.type = 'text/javascript';
   script.innerHTML = `(function(){ new APV.VideoAd(${JSON.stringify(apvVideoAdParam)}).load('${vastXml.replace(/\r?\n/g, '')}'); })();`;
+  return script.outerHTML;
+}
+
+function insertVASTMethodForADGBrowserM(vastXml, marginTop) {
+  const script = document.createElement(`script`);
+  script.type = 'text/javascript';
+  script.innerHTML = `window.ADGBrowserM.init({vastXml: '${vastXml.replace(/\r?\n/g, '')}', marginTop: '${marginTop}'});`;
   return script.outerHTML;
 }
 
