@@ -45,7 +45,6 @@ describe('betweenBidAdapterTests', function () {
     expect(req_data.mediaType).to.equal(2);
     expect(req_data.maxd).to.equal(123);
     expect(req_data.mind).to.equal(234);
-    expect(req_data.jst).to.equal('pvc');
     expect(req_data.pos).to.equal('atf');
     expect(req_data.codeType).to.equal('inpage');
   });
