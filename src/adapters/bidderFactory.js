@@ -335,10 +335,11 @@ export function newBidder(spec) {
 
         // If the server responds with an error, there's not much we can do. Log it, and make sure to
         // call onResponse() so that we're one step closer to calling done().
-        function onFailure(err) {
+        function onFailure(errorMessage, error) {
           onTimelyResponse(spec.code);
-
-          logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
+          adapterManager.callBidderError(spec.code, error, bidderRequest)
+          events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, { error, bidderRequest });
+          logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`);
           onResponse();
         }
       }
