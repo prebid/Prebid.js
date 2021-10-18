@@ -3,7 +3,7 @@ import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'between';
-const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
+let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
 export const spec = {
@@ -51,8 +51,8 @@ export const spec = {
         params.mediaType = 2;
         params.maxd = video.maxd;
         params.mind = video.mind;
-        params.jst = 'pvc';
         params.pos = 'atf';
+        ENDPOINT += '&jst=pvc';
         params.codeType = CODE_TYPES.includes(video.codeType) ? video.codeType : 'inpage';
       }
 
