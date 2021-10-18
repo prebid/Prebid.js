@@ -34,10 +34,10 @@ export const spec = {
 
       if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies !== 'undefined') {
-          postBody.gdprApplies = !!gdprConsent.gdprApplies;
+          postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
         }
         if (typeof gdprConsent.consentString !== 'undefined') {
-          postBody.consentString = gdprConsent.consentString;
+          postBody.user.ext.consent = gdprConsent.consentString;
         }
       }
 
