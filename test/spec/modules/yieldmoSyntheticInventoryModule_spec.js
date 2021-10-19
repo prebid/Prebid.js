@@ -11,7 +11,7 @@ const mockedYmConfig = {
 };
 
 const setGoogletag = () => {
-  window.top.googletag = {
+  window.googletag = {
     cmd: [],
     defineSlot: sinon.stub(),
     addService: sinon.stub(),
@@ -20,20 +20,23 @@ const setGoogletag = () => {
     enableServices: sinon.stub(),
     display: sinon.stub(),
   };
-  window.top.googletag.defineSlot.returns(window.top.googletag);
-  window.top.googletag.addService.returns(window.top.googletag);
-  return window.top.googletag;
+  window.googletag.defineSlot.returns(window.googletag);
+  window.googletag.addService.returns(window.googletag);
+  window.googletag.pubads.returns({getSlots: sinon.stub()});
+  return window.googletag;
 }
 
 describe('Yieldmo Synthetic Inventory Module', function() {
   let config = Object.assign({}, mockedYmConfig);
+  let googletagBkp;
 
   beforeEach(function () {
-    delete window.top.googletag;
+    googletagBkp = window.googletag;
+    delete window.googletag;
   });
 
   afterEach(function () {
-    delete window.top.googletag;
+    window.googletag = googletagBkp;
   });
 
   it('should be enabled with valid required params', function() {
@@ -78,7 +81,7 @@ describe('Yieldmo Synthetic Inventory Module', function() {
     expect(gtag.display.getCall(0).args[0]).to.exist.and.to.equal(containerName);
     expect(gtag.pubads.getCall(0)).to.not.be.null;
 
-    const gamContainerEl = window.top.document.getElementById(containerName);
+    const gamContainerEl = window.document.getElementById(containerName);
     expect(gamContainerEl).to.not.be.null;
 
     gamContainerEl.parentNode.removeChild(gamContainerEl);
