@@ -177,9 +177,7 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   payload.cur = ['USD']
   payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, [])
   payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
-  if (deviceObjBid) {
-    payload.device = deviceObj
-  }
+  payload.device = deviceObj
   if (appDeviceObjBid && payload.site != null) {
     payload.app = appIdObj;
   }
