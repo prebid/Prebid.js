@@ -12,7 +12,8 @@ jobs:
   test-emx-adapter:
     runs-on: ubuntu-latest
     needs: install-js-dependencies
-    steps: 
+    steps:
+      - run: npm install gulp
       - run: gulp test --file "test/spec/modules/emx_digitalBidAdapter_spec.js"
   build-prebid-adapter:
     runs-on: ubuntu-latest
