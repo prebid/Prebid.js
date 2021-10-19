@@ -6,7 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
-const ADAPTER_VERSION = '1.0.0';
+const ADAPTER_VERSION = '1.0.1';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
 const TEST_MODE_DCN = '8a969516017a7a396ec539d97f540011';
@@ -581,7 +581,7 @@ export const spec = {
       let cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
 
       let bidResponse = {
-        adId: bid.id,
+        adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
         adUnitCode: bidderRequest.adUnitCode,
         requestId: bid.impid,
         bidderCode: spec.code,

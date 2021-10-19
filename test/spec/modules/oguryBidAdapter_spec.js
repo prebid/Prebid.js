@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oguryBidAdapter';
-import { deepClone } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 
 const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout'
@@ -68,14 +68,14 @@ describe('OguryBidAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should validate correct bid', () => {
-      let validBid = deepClone(bidRequests[0]);
+      let validBid = utils.deepClone(bidRequests[0]);
 
       let isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(true);
     });
 
     it('should not validate incorrect bid', () => {
-      let invalidBid = deepClone(bidRequests[0]);
+      let invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.sizes;
       delete invalidBid.mediaTypes;
 
@@ -84,7 +84,7 @@ describe('OguryBidAdapter', function () {
     });
 
     it('should not validate bid if adunit is not present', () => {
-      let invalidBid = deepClone(bidRequests[0]);
+      let invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.params.adUnitId;
 
       let isValid = spec.isBidRequestValid(invalidBid);
@@ -92,7 +92,7 @@ describe('OguryBidAdapter', function () {
     });
 
     it('should not validate bid if assetKet is not present', () => {
-      let invalidBid = deepClone(bidRequests[0]);
+      let invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.params.assetKey;
 
       let isValid = spec.isBidRequestValid(invalidBid);
@@ -100,7 +100,7 @@ describe('OguryBidAdapter', function () {
     });
 
     it('should validate bid if getFloor is not present', () => {
-      let invalidBid = deepClone(bidRequests[1]);
+      let invalidBid = utils.deepClone(bidRequests[1]);
       delete invalidBid.getFloor;
 
       let isValid = spec.isBidRequestValid(invalidBid);
@@ -260,6 +260,7 @@ describe('OguryBidAdapter', function () {
       site: {
         id: bidRequests[0].params.assetKey,
         domain: window.location.hostname,
+        page: window.location.href
       },
       user: {
         ext: {
@@ -269,7 +270,7 @@ describe('OguryBidAdapter', function () {
     };
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const validBidRequests = deepClone(bidRequests)
+      const validBidRequests = utils.deepClone(bidRequests)
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.url).to.equal(BID_URL);
@@ -277,7 +278,7 @@ describe('OguryBidAdapter', function () {
     });
 
     it('bid request object should be conform', function () {
-      const validBidRequests = deepClone(bidRequests)
+      const validBidRequests = utils.deepClone(bidRequests)
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.data).to.deep.equal(expectedRequestObject);
@@ -315,7 +316,7 @@ describe('OguryBidAdapter', function () {
         ...expectedRequestObject
       };
 
-      const validBidRequests = deepClone(bidRequests);
+      const validBidRequests = utils.deepClone(bidRequests);
       validBidRequests[1] = {
         ...validBidRequests[1],
         getFloor: undefined
@@ -330,7 +331,7 @@ describe('OguryBidAdapter', function () {
         ...expectedRequestObject
       };
 
-      let validBidRequests = deepClone(bidRequests);
+      let validBidRequests = utils.deepClone(bidRequests);
       validBidRequests[1] = {
         ...validBidRequests[1],
         getFloor: 'getFloor'
@@ -341,9 +342,9 @@ describe('OguryBidAdapter', function () {
     });
 
     it('should handle bidFloor when currency is not USD', () => {
-      const expectedRequestWithUnsupportedFloorCurrency = deepClone(expectedRequestObject)
+      const expectedRequestWithUnsupportedFloorCurrency = utils.deepClone(expectedRequestObject)
       expectedRequestWithUnsupportedFloorCurrency.imp[0].bidfloor = 0;
-      let validBidRequests = deepClone(bidRequests);
+      let validBidRequests = utils.deepClone(bidRequests);
       validBidRequests[0] = {
         ...validBidRequests[0],
         getFloor: ({ size, currency, mediaType }) => {
@@ -488,6 +489,47 @@ describe('OguryBidAdapter', function () {
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.equal(nurl);
       expect(requests[0].method).to.equal('GET')
+    })
+
+    it('Should trigger getWindowContext method', function() {
+      const bidSample = {
+        id: 'advertId',
+        impid: 'bidId',
+        price: 100,
+        nurl: 'url',
+        adm: `<html><head><title>test creative</title></head><body style="margin: 0;"><div><img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div></body></html>`,
+        adomain: ['renault.fr'],
+        ext: {
+          adcontent: 'sample_creative',
+          advertid: '1a278c48-b79a-4bbf-b69f-3824803e7d87',
+          campaignid: '31724',
+          mediatype: 'image',
+          userid: 'ab4aabed-5230-49d9-9f1a-f06280d28366',
+          usersync: true,
+          advertiserid: '1',
+          isomidcompliant: false
+        },
+        w: 180,
+        h: 101
+      }
+      spec.onBidWon(bidSample)
+      expect(window.top.OG_PREBID_BID_OBJECT).to.deep.equal(bidSample)
+    })
+  })
+
+  describe('getWindowContext', function() {
+    it('Should return top window if exist', function() {
+      const res = spec.getWindowContext()
+      expect(res).to.equal(window.top)
+      expect(res).to.not.be.undefined;
+    })
+
+    it('Should return self window if getting top window throw an error', function() {
+      const stub = sinon.stub(utils, 'getWindowTop')
+      stub.throws()
+      const res = spec.getWindowContext()
+      expect(res).to.equal(window.self)
+      utils.getWindowTop.restore()
     })
   })
 
