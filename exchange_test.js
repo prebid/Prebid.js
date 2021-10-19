@@ -28,7 +28,7 @@ const { json } = require('body-parser');
   });
 
   //load test adapter page
-  await page.goto(`file:${path.join(__dirname, './../pages/pbjs.html')}`);
+  await page.goto(`file:${path.join(__dirname, './test/pages/pbjs.html')}`);
   await browser.close();
  
 })();
