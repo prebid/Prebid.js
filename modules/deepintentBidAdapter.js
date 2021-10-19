@@ -32,7 +32,7 @@ export const ORTB_VIDEO_PARAMS = {
 };
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   aliases: [],
 
   // tagId is mandatory param
