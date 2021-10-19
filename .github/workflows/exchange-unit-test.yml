@@ -10,7 +10,7 @@ jobs:
           node-version: '14'
       - run: npm ci
       - run: gulp build --modules=emx_digitalBidAdapter,appnexusBidAdapter
-      - run: gulp test --file "test/spec/modules/emx_digitalBidAdapter_spec.js"          
+      #- run: gulp test --file "test/spec/modules/emx_digitalBidAdapter_spec.js"          
   test-emx-request:
     runs-on: ubuntu-latest
     needs: test-emx-adapter
