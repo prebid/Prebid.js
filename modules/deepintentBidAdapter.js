@@ -40,15 +40,15 @@ export const spec = {
     let valid = false;
     if (bid && bid.params && bid.params.tagId) {
       if (typeof bid.params.tagId === 'string' || bid.params.tagId instanceof String) {
-        valid = true;
+        if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
+          if (bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
+            valid = true;
+          }
+        } else {
+          valid = true;
+        }
       }
     }
-    if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
-      if (bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
-        valid = true;
-      }
-    }
-
     return valid;
   },
   interpretResponse: function(bidResponse, bidRequest) {
