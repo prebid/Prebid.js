@@ -591,8 +591,8 @@ export function newConfig() {
           let prop = (topic === 'fpd') ? 'ortb2' : topic;
           let option = (topic === 'fpd') ? convertFpd(config.config[topic]) : config.config[topic];
 
-          if (utils.isPlainObject(option)) {
-            const func = mergeFlag ? utils.mergeDeep : Object.assign;
+          if (isPlainObject(option)) {
+            const func = mergeFlag ? mergeDeep : Object.assign;
             bidderConfig[bidder][prop] = func({}, bidderConfig[bidder][prop] || {}, option);
           } else {
             bidderConfig[bidder][prop] = option;
@@ -617,14 +617,14 @@ export function newConfig() {
   }
 
   function mergeConfig(obj) {
-    if (!utils.isPlainObject(obj)) {
-      utils.logError('mergeConfig input must be an object');
+    if (!isPlainObject(obj)) {
+      logError('mergeConfig input must be an object');
       return;
     }
 
     const mergedConfig = Object.keys(obj).reduce((accum, key) => {
-      const prevConf = _getConfig(key)[key] || {};
-      accum[key] = utils.mergeDeep(prevConf, obj[key]);
+      const prevConf = getConfig(key)[key] || {};
+      accum[key] = mergeDeep(prevConf, obj[key]);
       return accum;
     }, {});
 
