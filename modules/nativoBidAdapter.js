@@ -71,7 +71,7 @@ export const spec = {
         // Track if we've already requested for this ad unit code
         adUnitsRequested[adUnit.adUnitCode] =
           adUnitsRequested[adUnit.adUnitCode] !== undefined
-            ? adUnitsRequested[adUnit.adUnitCode]++
+            ? adUnitsRequested[adUnit.adUnitCode] + 1
             : 0
         return {
           adUnitCode: adUnit.adUnitCode,
