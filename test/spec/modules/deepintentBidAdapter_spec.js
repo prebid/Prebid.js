@@ -164,7 +164,7 @@ describe('Deepintent adapter', function () {
       let bid = {
           bidder: 'deepintent',
           params: {
-            tagId: 12345,
+            tagId: '12345',
             video: {
               mimes: ['video/mp4', 'video/x-flv'],
               skippable: true,
@@ -184,7 +184,7 @@ describe('Deepintent adapter', function () {
       let bid = {
           bidder: 'deepintent',
           params: {
-            tagId: 12345,
+            tagId: '12345',
             video: {
               mimes: ['video/mp4', 'video/x-flv'],
               skippable: true,
