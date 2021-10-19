@@ -1,7 +1,7 @@
 name: prebidjs-exchange-test
 on: [push]
 jobs:
-  install-js-dependencies:
+  test-emx-adapter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -9,20 +9,11 @@ jobs:
         with:
           node-version: '14'
       - run: npm ci
-  test-emx-adapter:
-    runs-on: ubuntu-latest
-    needs: install-js-dependencies
-    steps:
-      - run: npm install gulp
       - run: gulp test --file "test/spec/modules/emx_digitalBidAdapter_spec.js"
-  build-prebid-adapter:
-    runs-on: ubuntu-latest
-    needs: test-emx-adapter
-    steps:
-      - run: gulp build --modules=emx_digitalBidAdapter,appnexusBidAdapter
+      - run: gulp build --modules=emx_digitalBidAdapter,appnexusBidAdapter          
   test-emx-request:
     runs-on: ubuntu-latest
-    needs: build-prebid-adapter
+    needs: test-emx-adapter
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
