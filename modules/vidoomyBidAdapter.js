@@ -206,19 +206,31 @@ function cookieSync(bidderRequest) {
       gpdr: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : '0',
       gpdr_consent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : '',
     });
-    JSON.parse(this.responseText).filter(Boolean).forEach(url => {
-      firePixel(macro.replace(url))
-    })
+    const urls = JSON.parse(this.responseText).filter(Boolean).map(url => macro.replace(url))
+    const callback = () => {
+      if (urls.length > 0) {
+        firePixel(urls.shift(), () => {
+          setTimeout(() => callback(), 500)
+        })
+      }
+    }
+    callback();
   })
   xhr.send()
   cookieSynced = true;
 }
 
-function firePixel(url) {
+function firePixel(url, cb) {
   const img = document.createElement('img');
   img.width = 1;
   img.height = 1;
   img.src = url;
+
+  if (cb) {
+    img.onload = () => cb();
+    img.onerror = () => cb(new Error());
+  }
+
   document.body.appendChild(img);
   setTimeout(() => {
     img.remove();
