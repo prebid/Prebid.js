@@ -716,7 +716,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, bidReq) {
   // 1) set the keys from "standard" setting or from prebid defaults
   if (bidderSettings) {
     // initialize default if not set
-    const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode, bidReq);
+    const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode);
     setKeys(keyValues, standardSettings, custBidObj, bidReq);
 
     // 2) set keys from specific bidder setting override if they exist
