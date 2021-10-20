@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logError } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 
@@ -19,9 +19,20 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    */
   buildRequests: function (validRequest, bidderRequest) {
+    let w;
+    let docRef;
+    do {
+      w = w ? w.parent : window;
+      try {
+        docRef = w.document.referrer;
+      } catch (e) {
+        break;
+      }
+    } while (w !== window.top);
     const payload = {
       imps: [],
       ortb2: config.getConfig('ortb2'),
+      docReferrer: docRef,
     };
     let endpointUrl;
     if (bidderRequest) {
@@ -61,7 +72,7 @@ export const spec = {
       const {body: {ads = []} = {}} = serverResponse;
       ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
-      utils.logError(e);
+      logError(e);
     }
     return bidResponses;
   },

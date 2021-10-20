@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, deepClone } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
@@ -62,8 +62,8 @@ export const spec = {
 
     return response.map(bid => {
       let requestBid = requestBids[bid.requestId];
-      let context = utils.deepAccess(requestBid, 'mediaTypes.video.context');
-      let validBid = utils.deepClone(bid);
+      let context = deepAccess(requestBid, 'mediaTypes.video.context');
+      let validBid = deepClone(bid);
 
       if (validBid.mediaType === VIDEO && context === OUTSTREAM) {
         let renderer = Renderer.install({
@@ -88,7 +88,7 @@ export const spec = {
  */
 function setOutstreamRenderer(bid) {
   let adData = JSON.parse(bid.ad);
-  let unitSettings = utils.deepAccess(adData, 'placement.unit_settings');
+  let unitSettings = deepAccess(adData, 'placement.unit_settings');
   let extendedSettings = {
     width: '' + bid.width,
     height: '' + bid.height,

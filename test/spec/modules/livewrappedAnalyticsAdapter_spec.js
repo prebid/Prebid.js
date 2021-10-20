@@ -16,7 +16,8 @@ const {
     BIDDER_DONE,
     BID_WON,
     BID_TIMEOUT,
-    SET_TARGETING
+    SET_TARGETING,
+    AD_RENDER_FAILED
   },
   STATUS: {
     GOOD
@@ -115,6 +116,14 @@ const MOCK = {
       'bidId': '2ecff0db240757',
       'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
     }
+  ],
+  AD_RENDER_FAILED: [
+    {
+      'bidId': '2ecff0db240757',
+      'reason': CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+      'message': 'message',
+      'bid': BID1
+    }
   ]
 };
 
@@ -125,16 +134,19 @@ const ANALYTICS_MESSAGE = {
   bidAdUnits: [
     {
       adUnit: 'panorama_d_1',
+      adUnitId: 'adunitid',
       timeStamp: 1519149562216
     },
     {
       adUnit: 'box_d_1',
+      adUnitId: 'adunitid',
       timeStamp: 1519149562216
     }
   ],
   requests: [
     {
       adUnit: 'panorama_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       timeStamp: 1519149562216,
       gdpr: 0,
@@ -142,6 +154,7 @@ const ANALYTICS_MESSAGE = {
     },
     {
       adUnit: 'box_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       timeStamp: 1519149562216,
       gdpr: 0,
@@ -149,6 +162,7 @@ const ANALYTICS_MESSAGE = {
     },
     {
       adUnit: 'box_d_2',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       timeStamp: 1519149562216,
       gdpr: 0,
@@ -159,6 +173,7 @@ const ANALYTICS_MESSAGE = {
     {
       timeStamp: 1519149562216,
       adUnit: 'panorama_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       width: 980,
       height: 240,
@@ -172,6 +187,7 @@ const ANALYTICS_MESSAGE = {
     {
       timeStamp: 1519149562216,
       adUnit: 'box_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       width: 300,
       height: 250,
@@ -185,6 +201,7 @@ const ANALYTICS_MESSAGE = {
     {
       timeStamp: 1519149562216,
       adUnit: 'box_d_2',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       ttr: 200,
       IsBid: false,
@@ -197,6 +214,7 @@ const ANALYTICS_MESSAGE = {
     {
       timeStamp: 1519149562216,
       adUnit: 'panorama_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       width: 980,
       height: 240,
@@ -208,6 +226,7 @@ const ANALYTICS_MESSAGE = {
     {
       timeStamp: 1519149562216,
       adUnit: 'box_d_1',
+      adUnitId: 'adunitid',
       bidder: 'livewrapped',
       width: 300,
       height: 250,
@@ -216,6 +235,17 @@ const ANALYTICS_MESSAGE = {
       gdpr: 0,
       auctionId: 0
     }
+  ],
+  rf: [
+    {
+      timeStamp: 1519149562216,
+      adUnit: 'panorama_d_1',
+      adUnitId: 'adunitid',
+      bidder: 'livewrapped',
+      auctionId: 0,
+      rsn: CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+      msg: 'message'
+    },
   ]
 };
 
@@ -229,6 +259,7 @@ function performStandardAuction() {
   events.emit(SET_TARGETING, MOCK.SET_TARGETING);
   events.emit(BID_WON, MOCK.BID_WON[0]);
   events.emit(BID_WON, MOCK.BID_WON[1]);
+  events.emit(AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED[0]);
 }
 
 describe('Livewrapped analytics adapter', function () {
@@ -238,8 +269,14 @@ describe('Livewrapped analytics adapter', function () {
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
 
+    let element = {
+      getAttribute: function() {
+        return 'adunitid';
+      }
+    }
     sandbox.stub(events, 'getEvents').returns([]);
     sandbox.stub(utils, 'timestamp').returns(1519149562416);
+    sandbox.stub(document, 'getElementById').returns(element);
 
     clock = sandbox.useFakeTimers(1519767013781);
   });
@@ -284,7 +321,7 @@ describe('Livewrapped analytics adapter', function () {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
-    it('should send batched message without BID_WON if necessary and further BID_WON events individually', function () {
+    it('should send batched message without BID_WON AND AD_RENDER_FAILED if necessary and further BID_WON and AD_RENDER_FAILED events individually', function () {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
@@ -297,8 +334,9 @@ describe('Livewrapped analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       events.emit(BID_WON, MOCK.BID_WON[1]);
+      events.emit(AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED[0]);
 
-      expect(server.requests.length).to.equal(2);
+      expect(server.requests.length).to.equal(3);
 
       let message = JSON.parse(server.requests[0].requestBody);
       expect(message.wins.length).to.equal(1);
@@ -308,6 +346,10 @@ describe('Livewrapped analytics adapter', function () {
       message = JSON.parse(server.requests[1].requestBody);
       expect(message.wins.length).to.equal(1);
       expect(message.wins[0]).to.deep.equal(ANALYTICS_MESSAGE.wins[1]);
+
+      message = JSON.parse(server.requests[2].requestBody);
+      expect(message.rf.length).to.equal(1);
+      expect(message.rf[0]).to.deep.equal(ANALYTICS_MESSAGE.rf[0]);
     });
 
     it('should properly mark bids as timed out', function () {
@@ -400,18 +442,28 @@ describe('Livewrapped analytics adapter', function () {
           {
             'bidder': 'livewrapped',
             'adUnitCode': 'panorama_d_1',
-            'bidId': '2ecff0db240757',
-            'floorData': {
-              'floorValue': 1.1,
-              'floorCurrency': 'SEK'
-            }
+            'bidId': '2ecff0db240757'
           }
         ],
         'start': 1519149562216
       });
 
-      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_RESPONSE, Object.assign({},
+        MOCK.BID_RESPONSE[0],
+        {
+          'floorData': {
+            'floorValue': 1.1,
+            'floorCurrency': 'SEK'
+          }
+        }));
+      events.emit(BID_WON, Object.assign({},
+        MOCK.BID_WON[0],
+        {
+          'floorData': {
+            'floorValue': 1.1,
+            'floorCurrency': 'SEK'
+          }
+        }));
       events.emit(AUCTION_END, MOCK.AUCTION_END);
 
       clock.tick(BID_WON_TIMEOUT + 1000);

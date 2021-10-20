@@ -1,6 +1,6 @@
+import { getWindowTop, isGptPubadsDefined, deepAccess, getAdUnitSizes, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
@@ -199,7 +199,7 @@ export const spec = {
   // GET BASIC CLIENT INFORMATION
   get_client_info: function () {
     let botTest = new BotClientTests();
-    let win = utils.getWindowTop();
+    let win = getWindowTop();
     return {
       'wiw': win.innerWidth,
       'wih': win.innerHeight,
@@ -226,7 +226,7 @@ export const spec = {
 
       // ADD GPT EVENT LISTENERS
       let scope = this;
-      if (utils.isGptPubadsDefined()) {
+      if (isGptPubadsDefined()) {
         if (typeof window['googletag'].pubads().addEventListener == 'function') {
           window['googletag'].pubads().addEventListener('impressionViewable', function(event) {
             scope.queue_metric({type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
@@ -306,7 +306,7 @@ export const spec = {
         tagid: bidRequest.params.tagid || bidRequest.adUnitCode,
         placement_id: bidRequest.params.placement_id || 0,
         secure: window.location.protocol == 'https:',
-        ortb2: utils.deepAccess(bidRequest, `ortb2Imp`) || {},
+        ortb2: deepAccess(bidRequest, `ortb2Imp`) || {},
         floor: {}
       }
 
@@ -320,8 +320,8 @@ export const spec = {
       }
 
       // BUILD THE SIZES
-      if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
-        let sizes = utils.getAdUnitSizes(bidRequest);
+      if (deepAccess(bidRequest, `mediaTypes.banner`)) {
+        let sizes = getAdUnitSizes(bidRequest);
         if (sizes.length) {
           imp.banner = {
             w: sizes[0][0],
@@ -332,7 +332,7 @@ export const spec = {
           // ADD TO THE LIST OF IMP REQUESTS
           imps.push(imp);
         }
-      } else if (utils.deepAccess(bidRequest, `mediaTypes.native`)) {
+      } else if (deepAccess(bidRequest, `mediaTypes.native`)) {
         // ADD TO THE LIST OF IMP REQUESTS
         imp.native = createNativeRequest(bidRequest);
         imps.push(imp);
@@ -521,15 +521,15 @@ export const spec = {
         const {id, img, data, title} = asset;
         const key = NATIVE_ID_MAP[id];
         if (key) {
-          if (!utils.isEmpty(title)) {
+          if (!isEmpty(title)) {
             result.title = title.text
-          } else if (!utils.isEmpty(img)) {
+          } else if (!isEmpty(img)) {
             result[key] = {
               url: img.url,
               height: img.h,
               width: img.w
             }
-          } else if (!utils.isEmpty(data)) {
+          } else if (!isEmpty(data)) {
             result[key] = data.value;
           }
         }
@@ -539,11 +539,11 @@ export const spec = {
     }
 
     let bids = [];
-    let resBids = utils.deepAccess(rtbResponse, 'body.seatbid') || [];
+    let resBids = deepAccess(rtbResponse, 'body.seatbid') || [];
     resBids.forEach(bid => {
       let resultItem = {requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: {advertiserDomains: bid.adomain}};
 
-      let mediaType = utils.deepAccess(bid, 'ext.mtype') || '';
+      let mediaType = deepAccess(bid, 'ext.mtype') || '';
       switch (mediaType) {
         case 'banner':
           bids.push(Object.assign({}, resultItem, {mediaType: BANNER, width: bid.w, height: bid.h, ad: bid.adm}));
