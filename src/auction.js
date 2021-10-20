@@ -59,7 +59,7 @@
 
 import {
   flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl, generateUUID,
-  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr, deepClone
+  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr
 } from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
 import { getNativeTargeting } from './native.js';
@@ -612,8 +612,9 @@ export const getPriceGranularity = (mediaType, bidReq) => {
  * @param {string} granularity
  * @returns {function}
  */
-export const getPriceByGranularity = (granularity) => {
+export const getPriceByGranularity = () => {
   return (bid) => {
+    const granularity = getPriceGranularity(bid.mediaType, bid);
     if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
       return bid.pbAg;
     } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
@@ -661,9 +662,8 @@ export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
     };
   }
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
-  const granularity = getPriceGranularity(mediaType, bidReq);
 
-  let bidderSettings = deepClone($$PREBID_GLOBAL$$.bidderSettings);
+  let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
   if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
   }
@@ -671,7 +671,7 @@ export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
       createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
       createKeyVal(TARGETING_KEYS.AD_ID, 'adId'),
-      createKeyVal(TARGETING_KEYS.PRICE_BUCKET, getPriceByGranularity(granularity)),
+      createKeyVal(TARGETING_KEYS.PRICE_BUCKET, getPriceByGranularity()),
       createKeyVal(TARGETING_KEYS.SIZE, 'size'),
       createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
       createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
