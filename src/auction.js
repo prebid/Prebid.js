@@ -612,9 +612,9 @@ export const getPriceGranularity = (mediaType, bidReq) => {
  * @param {string} granularity
  * @returns {function}
  */
-export const getPriceByGranularity = () => {
+export const getPriceByGranularity = (granularity) => {
   return (bid, bidReq) => {
-    const granularity = getPriceGranularity(bid.mediaType, bidReq);
+    granularity = granularity || getPriceGranularity(bid.mediaType, bidReq);
     if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
       return bid.pbAg;
     } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
