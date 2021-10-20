@@ -6,6 +6,8 @@ import { userSync } from 'src/userSync.js'
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
+import CONSTANTS from 'src/constants.json';
+import events from 'src/events.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -314,6 +316,28 @@ describe('bidders created by newBidder', function () {
 
       expect(addBidResponseStub.callCount).to.equal(0);
     });
+
+    it('should emit BEFORE_BIDDER_HTTP events before network requests', function () {
+      const bidder = newBidder(spec);
+      const req = {
+        method: 'POST',
+        url: 'test.url.com',
+        data: { arg: 2 }
+      };
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns([req, req]);
+
+      const eventEmitterSpy = sinon.spy(events, 'emit');
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(ajaxStub.calledTwice).to.equal(true);
+      expect(eventEmitterSpy.getCalls()
+        .filter(call => call.args[0] === CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP)
+      ).to.length(2);
+
+      eventEmitterSpy.restore();
+    });
   });
 
   describe('when the ajax call succeeds', function () {
@@ -528,17 +552,27 @@ describe('bidders created by newBidder', function () {
 
   describe('when the ajax call fails', function () {
     let ajaxStub;
+    let callBidderErrorStub;
+    let eventEmitterStub;
+    let xhrErrorMock = {
+      status: 500,
+      statusText: 'Internal Server Error'
+    };
 
     beforeEach(function () {
       ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
-        callbacks.error('ajax call failed.');
+        callbacks.error('ajax call failed.', xhrErrorMock);
       });
+      callBidderErrorStub = sinon.stub(adapterManager, 'callBidderError');
+      eventEmitterStub = sinon.stub(events, 'emit');
       addBidResponseStub.reset();
       doneStub.reset();
     });
 
     afterEach(function () {
       ajaxStub.restore();
+      callBidderErrorStub.restore();
+      eventEmitterStub.restore();
     });
 
     it('should not spec.interpretResponse()', function () {
@@ -556,6 +590,14 @@ describe('bidders created by newBidder', function () {
 
       expect(spec.interpretResponse.called).to.equal(false);
       expect(doneStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
+      expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
+      expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
+      sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        error: xhrErrorMock,
+        bidderRequest: MOCK_BIDS_REQUEST
+      });
     });
 
     it('should not add bids for each adunit code into the auction', function () {
@@ -574,6 +616,14 @@ describe('bidders created by newBidder', function () {
 
       expect(addBidResponseStub.callCount).to.equal(0);
       expect(doneStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
+      expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
+      expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
+      sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        error: xhrErrorMock,
+        bidderRequest: MOCK_BIDS_REQUEST
+      });
     });
 
     it('should call spec.getUserSyncs() with no responses', function () {
@@ -592,6 +642,40 @@ describe('bidders created by newBidder', function () {
       expect(spec.getUserSyncs.calledOnce).to.equal(true);
       expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
       expect(doneStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
+      expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
+      expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
+      sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        error: xhrErrorMock,
+        bidderRequest: MOCK_BIDS_REQUEST
+      });
+    });
+
+    it('should call spec.getUserSyncs() with no responses', function () {
+      const bidder = newBidder(spec);
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: 'test.url.com',
+        data: {}
+      });
+      spec.getUserSyncs.returns([]);
+
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(spec.getUserSyncs.calledOnce).to.equal(true);
+      expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
+      expect(doneStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.calledOnce).to.equal(true);
+      expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
+      expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
+      expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
+      sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        error: xhrErrorMock,
+        bidderRequest: MOCK_BIDS_REQUEST
+      });
     });
   });
 });

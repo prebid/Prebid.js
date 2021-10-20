@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/nobidBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 
 describe('Nobid Adapter', function () {
@@ -47,6 +48,206 @@ describe('Nobid Adapter', function () {
         'siteId': 0
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
+
+  describe('Request with ORTB2', function () {
+    const SITE_ID = 2;
+    const REFERER = 'https://www.examplereferer.com';
+    const BIDDER_CODE = 'duration';
+    let bidRequests = [
+      {
+        'bidder': BIDDER_CODE,
+        'params': {
+          'siteId': SITE_ID
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      }
+    ];
+
+    let bidderRequest = {
+      refererInfo: {referer: REFERER}, bidderCode: BIDDER_CODE
+    }
+
+    const siteName = 'example';
+    const siteDomain = 'page.example.com';
+    const sitePage = 'https://page.example.com/here.html';
+    const siteRef = 'https://ref.example.com';
+    const siteKeywords = 'power tools, drills';
+    const siteSearch = 'drill';
+    const siteCat = 'IAB2';
+    const siteSectionCat = 'IAB2-2';
+    const sitePageCat = 'IAB2-12';
+
+    it('ortb2 should exist', function () {
+      config.setConfig({
+        ortb2: {
+          site: {
+            name: siteName,
+            domain: siteDomain,
+            cat: [ siteCat ],
+            sectioncat: [ siteSectionCat ],
+            pagecat: [ sitePageCat ],
+            page: sitePage,
+            ref: siteRef,
+            keywords: siteKeywords,
+            search: siteSearch
+          }
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      let payload = JSON.parse(request.data);
+      payload = JSON.parse(JSON.stringify(payload));
+      expect(payload.sid).to.equal(SITE_ID);
+      expect(payload.ortb2.site.name).to.equal(siteName);
+      expect(payload.ortb2.site.domain).to.equal(siteDomain);
+      expect(payload.ortb2.site.page).to.equal(sitePage);
+      expect(payload.ortb2.site.ref).to.equal(siteRef);
+      expect(payload.ortb2.site.keywords).to.equal(siteKeywords);
+      expect(payload.ortb2.site.search).to.equal(siteSearch);
+      expect(payload.ortb2.site.cat[0]).to.equal(siteCat);
+      expect(payload.ortb2.site.sectioncat[0]).to.equal(siteSectionCat);
+      expect(payload.ortb2.site.pagecat[0]).to.equal(sitePageCat);
+    });
+  });
+
+  describe('isDurationBidRequestValid', function () {
+    const SITE_ID = 2;
+    const REFERER = 'https://www.examplereferer.com';
+    const BIDDER_CODE = 'duration';
+    let bidRequests = [
+      {
+        'bidder': BIDDER_CODE,
+        'params': {
+          'siteId': SITE_ID
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      }
+    ];
+
+    let bidderRequest = {
+      refererInfo: {referer: REFERER}, bidderCode: BIDDER_CODE
+    }
+
+    it('should add source and version to the tag', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.sid).to.equal(SITE_ID);
+      expect(payload.pjbdr).to.equal(BIDDER_CODE);
+      expect(payload.l).to.exist.and.to.equal(encodeURIComponent(REFERER));
+      expect(payload.tt).to.exist;
+      expect(payload.a).to.exist;
+      expect(payload.t).to.exist;
+      expect(payload.tz).to.exist;
+      expect(payload.r).to.exist;
+      expect(payload.lang).to.exist;
+      expect(payload.ref).to.exist;
+      expect(payload.gdpr).to.exist;
+    });
+
+    it('sends bid request to ad size', function () {
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.a).to.exist;
+      expect(payload.a.length).to.exist.and.to.equal(1);
+      expect(payload.a[0].z[0][0]).to.equal(300);
+      expect(payload.a[0].z[0][1]).to.equal(250);
+    });
+
+    it('sends bid request to div id', function () {
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.a).to.exist;
+      expect(payload.a[0].d).to.equal('adunit-code');
+    });
+
+    it('sends bid request to site id', function () {
+	  const request = spec.buildRequests(bidRequests);
+	  const payload = JSON.parse(request.data);
+	  expect(payload.a).to.exist;
+	  expect(payload.a[0].sid).to.equal(2);
+	  expect(payload.a[0].at).to.equal('banner');
+	  expect(payload.a[0].params.siteId).to.equal(2);
+    });
+
+    it('sends bid request to ad type', function () {
+  	  const request = spec.buildRequests(bidRequests);
+  	  const payload = JSON.parse(request.data);
+  	  expect(payload.a).to.exist;
+  	  expect(payload.a[0].at).to.equal('banner');
+  	});
+
+    it('sends bid request to ENDPOINT via POST', function () {
+      const request = spec.buildRequests(bidRequests);
+      expect(request.url).to.contain('ads.servenobid.com/adreq');
+      expect(request.method).to.equal('POST');
+    });
+
+    it('should add gdpr consent information to the request', function () {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'nobid',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr).to.exist;
+      expect(payload.gdpr.consentString).to.exist.and.to.equal(consentString);
+      expect(payload.gdpr.consentRequired).to.exist.and.to.be.true;
+    });
+
+    it('should add gdpr consent information to the request', function () {
+      let bidderRequest = {
+        'bidderCode': 'nobid',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          gdprApplies: false
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr).to.exist;
+      expect(payload.gdpr.consentString).to.not.exist;
+      expect(payload.gdpr.consentRequired).to.exist.and.to.be.false;
+    });
+
+    it('should add usp consent information to the request', function () {
+      let bidderRequest = {
+        'bidderCode': 'nobid',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'uspConsent': '1Y-N'
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.usp).to.exist;
+      expect(payload.usp).to.exist.and.to.equal('1Y-N');
     });
   });
 
@@ -114,11 +315,11 @@ describe('Nobid Adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.sid).to.equal(SITE_ID);
+      expect(payload.pjbdr).to.equal('nobid');
       expect(payload.l).to.exist.and.to.equal(encodeURIComponent(REFERER));
       expect(payload.a).to.exist;
       expect(payload.t).to.exist;
       expect(payload.tz).to.exist;
-      expect(payload.r).to.exist.and.to.equal('100x100');
       expect(payload.lang).to.exist;
       expect(payload.ref).to.exist;
       expect(payload.a[0].d).to.exist.and.to.equal('adunit-code');
@@ -202,6 +403,7 @@ describe('Nobid Adapter', function () {
     it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
+      expect(payload.pjbdr).to.equal('nobid');
       expect(payload.sid).to.equal(SITE_ID);
       expect(payload.l).to.exist.and.to.equal(encodeURIComponent(REFERER));
       expect(payload.a).to.exist;

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -152,17 +152,19 @@ export const spec = {
       }
     }
 
-    if (syncOptions.iframeEnabled) {
-      serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
-        type: 'iframe',
-        url: appendToUrl(url, gdprParams)
-      }));
-    }
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      serverResponses[0].body.userSync.imageUrl.forEach((url) => syncs.push({
-        type: 'image',
-        url: appendToUrl(url, gdprParams)
-      }));
+    if (serverResponses.length > 0 && serverResponses[0].body.userSync) {
+      if (syncOptions.iframeEnabled) {
+        serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
+          type: 'iframe',
+          url: appendToUrl(url, gdprParams)
+        }));
+      }
+      if (syncOptions.pixelEnabled) {
+        serverResponses[0].body.userSync.imageUrl.forEach((url) => syncs.push({
+          type: 'image',
+          url: appendToUrl(url, gdprParams)
+        }));
+      }
     }
     return syncs;
   }
@@ -197,7 +199,7 @@ function objectToQueryString(obj, prefix) {
  * @returns {boolean} True if it's a banner bid
  */
 function isBannerRequest(bid) {
-  return bid.mediaType === 'banner' || !!utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoRequest(bid);
+  return bid.mediaType === 'banner' || !!deepAccess(bid, 'mediaTypes.banner') || !isVideoRequest(bid);
 }
 
 /**
@@ -207,7 +209,7 @@ function isBannerRequest(bid) {
  * @returns {boolean} True if it's a video bid
  */
 function isVideoRequest(bid) {
-  return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
+  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
 }
 
 /**
@@ -217,7 +219,7 @@ function isVideoRequest(bid) {
  * @returns {object} True if it's a video bid
  */
 function getVideoSizes(bid) {
-  return parseSizes(utils.deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
 }
 
 /**
@@ -227,7 +229,7 @@ function getVideoSizes(bid) {
  * @returns {object} True if it's a video bid
  */
 function getBannerSizes(bid) {
-  return parseSizes(utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
+  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
 }
 
 /**
