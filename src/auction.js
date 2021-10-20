@@ -647,14 +647,14 @@ export const getAdvertiserDomain = () => {
  * @param {BidRequest} bidReq
  * @returns {*}
  */
-export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
+export function getStandardBidderSettings(mediaType, bidderCode) {
   // factory for key value objs
   function createKeyVal(key, value) {
     return {
       key,
       val: (typeof value === 'function')
-        ? function (bidResponse) {
-          return value(bidResponse);
+        ? function (bidResponse, bidReq) {
+          return value(bidResponse, bidReq);
         }
         : function (bidResponse) {
           return getValue(bidResponse, value);
