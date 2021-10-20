@@ -23,11 +23,17 @@
                         waitForIt: true,
                         params: {
                             weboCtxConf: {
-                                setTargeting: true,
+                                setGAMTargeting: true,
                                 token: "to-be-defined",
                                 targetURL: "https://prebid.org/",
                                 defaultProfile: {
                                   webo_ctx: ['moon']
+                                }
+                            },
+                            wam2gamConf: {
+                                setGAMTargeting: true,
+                                defaultProfile: {
+                                  webo_cs: ['Red']
                                 }
                             }
                         }
@@ -54,7 +60,7 @@
                 }
             },
             bids: [{
-              bidder: 'appnexus',
+              bidder: 'smartadserver',
               params: {
                 placementId: 1
               }

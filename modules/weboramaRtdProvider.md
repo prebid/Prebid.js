@@ -71,7 +71,7 @@ pbjs.setConfig(
 
 To view an example of available segments returned by Weborama's backends:
 
-`gulp serve --modules=rtdModule,weboramaRtdProvider,appnexusBidAdapter`
+`gulp serve --modules=rtdModule,weboramaRtdProvider,smartadserverBidAdapter`
 
 and then point your browser at:
 

@@ -34,7 +34,8 @@ import { deepSetValue, deepAccess, isEmpty, mergeDeep, logError, tryAppendQueryS
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {adapterManager} from '../src/adapterManager.js';
+
+const adapterManager = require('../src/adapterManager.js').default;
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -216,9 +217,11 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
     logMessage('fetchContextualProfile on getBidRequestData is done');
 
     setBigseaContextualProfile(data);
-
+  }, () => {
     handleBidRequestData(adUnits, moduleParams);
-  }, onDone);
+
+    onDone();
+  });
 }
 
 function handleBidRequestData(adUnits, moduleParams) {
@@ -242,8 +245,11 @@ function handleBidRequestData(adUnits, moduleParams) {
 /** @type {string} */
 const SMARTADSERVER = 'smartadserver';
 
+/** @type {Object} */
+const bidderAliasRegistry = adapterManager.aliasRegistry || {};
+
 function handleBid(adUnit, profile, bid) {
-  const bidder = adapterManager.aliasRegistry[bid.bidder] || bid.bidder;
+  const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
   logMessage('handle bidder', bidder, bid);
 
@@ -321,6 +327,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
         } catch (e) {
           onDone();
           logError('unable to parse weborama data', e);
+          throw e;
         }
       } else if (req.status === 204) {
         onDone();
