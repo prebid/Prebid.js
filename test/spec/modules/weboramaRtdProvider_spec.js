@@ -1,7 +1,6 @@
 import { weboramaSubmodule } from 'modules/weboramaRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
-import {config} from 'src/config.js';
-import { getStorageManager } from '../../../src/storageManager.js';
+import { storage, DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY } from '../../../modules/weboramaRtdProvider.js';
 
 const responseHeader = {'Content-Type': 'application/json'};
 
@@ -18,12 +17,8 @@ describe('weboramaRtdProvider', function() {
       };
 
 		  expect(weboramaSubmodule.init(moduleConfig)).to.equal(true);
-
-      let request = server.requests[0];
-
-      expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
-      expect(request.method).to.equal('GET')
     });
+
     it('instantiate without contextual token should fail', function () {
       const moduleConfig = {
         params: {
@@ -32,6 +27,7 @@ describe('weboramaRtdProvider', function() {
       };
 		  expect(weboramaSubmodule.init(moduleConfig)).to.equal(false);
     });
+
     it('instantiate with empty wam2gam conf should return true', function () {
       const moduleConfig = {
         params: {
@@ -43,39 +39,25 @@ describe('weboramaRtdProvider', function() {
   });
 
   describe('Handle Set Targeting', function() {
+    let sandbox;
+
     beforeEach(function() {
-      let conf = {
-        site: {
-          ext: {
-            data: {
-              inventory: ['value1']
-            }
-          }
-        },
-        user: {
-          ext: {
-            data: {
-              visitor: ['value2']
-            }
-          }
-        },
-        cur: ['USD']
-      };
+      sandbox = sinon.sandbox.create();
 
-      config.setConfig({ortb2: conf});
-
-      const storage = getStorageManager();
       storage.removeDataFromLocalStorage('webo_wam2gam_entry');
     });
 
+    afterEach(function() {
+      sandbox.restore();
+    });
+
     describe('Add Contextual Data', function() {
-      it('should set targeting and ortb2 if omit setTargeting', function() {
+      it('should set targeting if omit setTargeting', function() {
         const moduleConfig = {
           params: {
             weboCtxConf: {
               token: 'foo',
               targetURL: 'https://prebid.org',
-              setOrtb2: true,
             }
           }
         };
@@ -84,10 +66,16 @@ describe('weboramaRtdProvider', function() {
           webo_ds: ['baz'],
         };
         const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
+        const reqBidsConfigObj = {adUnits: [1, 2]};
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
         let request = server.requests[0];
         request.respond(200, responseHeader, JSON.stringify(data));
+
+        expect(onDoneSpy.calledOnce).to.be.true;
 
         const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
 
@@ -95,21 +83,15 @@ describe('weboramaRtdProvider', function() {
           'adunit1': data,
           'adunit2': data,
         });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.site.ext.data.webo_ctx).to.deep.equal(data.webo_ctx);
-        expect(ortb2.site.ext.data.webo_ds).to.deep.equal(data.webo_ds);
       });
 
-      it('should set targeting and ortb2 with setTargeting=true', function() {
+      it('should set targeting with setTargeting=true', function() {
         const moduleConfig = {
           params: {
             weboCtxConf: {
               token: 'foo',
               targetURL: 'https://prebid.org',
               setTargeting: true,
-              setOrtb2: true,
             }
           }
         };
@@ -118,10 +100,16 @@ describe('weboramaRtdProvider', function() {
           webo_ds: ['baz'],
         };
         const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
+        const reqBidsConfigObj = {adUnits: [1, 2]};
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
         let request = server.requests[0];
         request.respond(200, responseHeader, JSON.stringify(data));
+
+        expect(onDoneSpy.calledOnce).to.be.true;
 
         const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
 
@@ -129,142 +117,6 @@ describe('weboramaRtdProvider', function() {
           'adunit1': data,
           'adunit2': data,
         });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.site.ext.data.webo_ctx).to.deep.equal(data.webo_ctx);
-        expect(ortb2.site.ext.data.webo_ds).to.deep.equal(data.webo_ds);
-      });
-
-      it('should set targeting and ortb2 only webo_ctx with setTargeting=true', function() {
-        const moduleConfig = {
-          params: {
-            weboCtxConf: {
-              token: 'foo',
-              targetURL: 'https://prebid.org',
-              setTargeting: true,
-              setOrtb2: true,
-            }
-          }
-        };
-        const data = {
-          webo_ctx: ['foo', 'bar'],
-        };
-
-        const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
-
-        let request = server.requests[0];
-        request.respond(200, responseHeader, JSON.stringify(data));
-
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
-
-        expect(targeting).to.deep.equal({
-          'adunit1': data,
-          'adunit2': data,
-        });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.site.ext.data.webo_ctx).to.deep.equal(data.webo_ctx);
-        expect(ortb2.site.ext.data).to.not.have.property('webo_ds');
-      });
-
-      it('should set only targeting and not ortb2 with setTargeting=true and setOrtb2=false', function() {
-        const moduleConfig = {
-          params: {
-            weboCtxConf: {
-              token: 'foo',
-              targetURL: 'https://prebid.org',
-              setTargeting: true,
-              setOrtb2: false,
-            }
-          }
-        };
-        const data = {
-          webo_ctx: ['foo', 'bar'],
-        };
-
-        const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
-
-        let request = server.requests[0];
-        request.respond(200, responseHeader, JSON.stringify(data));
-
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
-
-        expect(targeting).to.deep.equal({
-          'adunit1': data,
-          'adunit2': data,
-        });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.site.ext.data).to.not.have.property('webo_ctx');
-        expect(ortb2.site.ext.data).to.not.have.property('webo_ds');
-      });
-
-      it('should set only targeting and not ortb2 with setTargeting=true and omit setOrtb2', function() {
-        const moduleConfig = {
-          params: {
-            weboCtxConf: {
-              token: 'foo',
-              targetURL: 'https://prebid.org',
-              setTargeting: true,
-            }
-          }
-        };
-        const data = {
-          webo_ctx: ['foo', 'bar'],
-        };
-
-        const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
-
-        let request = server.requests[0];
-        request.respond(200, responseHeader, JSON.stringify(data));
-
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
-
-        expect(targeting).to.deep.equal({
-          'adunit1': data,
-          'adunit2': data,
-        });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.site.ext.data).to.not.have.property('webo_ctx');
-        expect(ortb2.site.ext.data).to.not.have.property('webo_ds');
-      });
-
-      it('should set only ortb2 with setTargeting=false', function() {
-        const moduleConfig = {
-          params: {
-            weboCtxConf: {
-              token: 'foo',
-              targetURL: 'https://prebid.org',
-              setTargeting: false,
-              setOrtb2: true,
-            }
-          }
-        };
-        const data = {
-          webo_ctx: ['foo', 'bar'],
-        };
-        const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
-
-        let request = server.requests[0];
-        request.respond(200, responseHeader, JSON.stringify(data));
-
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
-
-        expect(targeting).to.deep.equal({});
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.site.ext.data.webo_ctx).to.deep.equal(data.webo_ctx);
-        expect(ortb2.site.ext.data).to.not.have.property('webo_ds');
       });
 
       it('should use default profile in case of api error', function() {
@@ -283,10 +135,16 @@ describe('weboramaRtdProvider', function() {
         };
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
+        const reqBidsConfigObj = {adUnits: [1, 2]};
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
         let request = server.requests[0];
         request.respond(500, responseHeader);
+
+        expect(onDoneSpy.calledOnce).to.be.true;
 
         const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
 
@@ -294,20 +152,15 @@ describe('weboramaRtdProvider', function() {
           'adunit1': defaultProfile,
           'adunit2': defaultProfile,
         });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.site.ext.data).to.not.have.property('webo_ctx');
-        expect(ortb2.site.ext.data).to.not.have.property('webo_ds');
       });
     });
 
     describe('Add WAM2GAM Data', function() {
-      it('should set targeting and ortb2 if omit setTargeting', function() {
+      it('should set targeting from local storage', function() {
         const moduleConfig = {
           params: {
             wam2gamConf: {
-              setOrtb2: true,
+              setTargeting: true,
             }
           }
         };
@@ -320,11 +173,19 @@ describe('weboramaRtdProvider', function() {
           targeting: data,
         };
 
-        const storage = getStorageManager();
-        storage.setDataInLocalStorage('webo_wam2gam_entry', JSON.stringify(entry));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'getDataFromLocalStorage')
+          .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
+          .returns(JSON.stringify(entry));
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
+        const reqBidsConfigObj = {adUnits: [1, 2]};
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        expect(onDoneSpy.calledOnce).to.be.true;
 
         const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
 
@@ -332,188 +193,6 @@ describe('weboramaRtdProvider', function() {
           'adunit1': data,
           'adunit2': data,
         });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.user.ext.data.webo_cs).to.deep.equal(data.webo_cs);
-        expect(ortb2.user.ext.data.webo_audiences).to.deep.equal(data.webo_audiences);
-      });
-
-      it('should set targeting and ortb2 with setTargeting=true', function() {
-        const moduleConfig = {
-          params: {
-            wam2gamConf: {
-              setTargeting: true,
-              setOrtb2: true,
-            }
-          }
-        };
-        const data = {
-          webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
-        };
-
-        const entry = {
-          targeting: data,
-        };
-
-        const storage = getStorageManager();
-        storage.setDataInLocalStorage('webo_wam2gam_entry', JSON.stringify(entry));
-
-        const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
-
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
-
-        expect(targeting).to.deep.equal({
-          'adunit1': data,
-          'adunit2': data,
-        });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.user.ext.data.webo_cs).to.deep.equal(data.webo_cs);
-        expect(ortb2.user.ext.data.webo_audiences).to.deep.equal(data.webo_audiences);
-      });
-
-      it('should set targeting and ortb2 only webo_cs with setTargeting=true', function() {
-        const moduleConfig = {
-          params: {
-            wam2gamConf: {
-              setTargeting: true,
-              setOrtb2: true,
-            }
-          }
-        };
-        const data = {
-          webo_cs: ['foo', 'bar'],
-        };
-
-        const entry = {
-          targeting: data,
-        };
-
-        const storage = getStorageManager();
-        storage.setDataInLocalStorage('webo_wam2gam_entry', JSON.stringify(entry));
-
-        const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
-
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
-
-        expect(targeting).to.deep.equal({
-          'adunit1': data,
-          'adunit2': data,
-        });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.user.ext.data.webo_cs).to.deep.equal(data.webo_cs);
-        expect(ortb2.user.ext.data).to.not.have.property('webo_audiences');
-      });
-
-      it('should set only targeting and not ortb2 with setTargeting=true and setOrtb2=false', function() {
-        const moduleConfig = {
-          params: {
-            wam2gamConf: {
-              setTargeting: true,
-              setOrtb2: false,
-            }
-          }
-        };
-        const data = {
-          webo_cs: ['foo', 'bar'],
-        };
-
-        const entry = {
-          targeting: data,
-        };
-
-        const storage = getStorageManager();
-        storage.setDataInLocalStorage('webo_wam2gam_entry', JSON.stringify(entry));
-
-        const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
-
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
-
-        expect(targeting).to.deep.equal({
-          'adunit1': data,
-          'adunit2': data,
-        });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.user.ext.data).to.not.have.property('webo_cs');
-        expect(ortb2.user.ext.data).to.not.have.property('webo_audiences');
-      });
-
-      it('should set only targeting and not ortb2 with setTargeting=true and omit setOrtb2', function() {
-        const moduleConfig = {
-          params: {
-            wam2gamConf: {
-              setTargeting: true,
-            }
-          }
-        };
-        const data = {
-          webo_cs: ['foo', 'bar'],
-        };
-
-        const entry = {
-          targeting: data,
-        };
-
-        const storage = getStorageManager();
-        storage.setDataInLocalStorage('webo_wam2gam_entry', JSON.stringify(entry));
-
-        const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
-
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
-
-        expect(targeting).to.deep.equal({
-          'adunit1': data,
-          'adunit2': data,
-        });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.user.ext.data).to.not.have.property('webo_cs');
-        expect(ortb2.user.ext.data).to.not.have.property('webo_audiences');
-      });
-
-      it('should set only ortb2 with setTargeting=false', function() {
-        const moduleConfig = {
-          params: {
-            wam2gamConf: {
-              setTargeting: false,
-              setOrtb2: true,
-            }
-          }
-        };
-        const data = {
-          webo_cs: ['foo', 'bar'],
-        };
-
-        const entry = {
-          targeting: data,
-        };
-
-        const storage = getStorageManager();
-        storage.setDataInLocalStorage('webo_wam2gam_entry', JSON.stringify(entry));
-
-        const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
-
-        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
-
-        expect(targeting).to.deep.equal({});
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.user.ext.data.webo_cs).to.deep.equal(data.webo_cs);
-        expect(ortb2.user.ext.data).to.not.have.property('webo_audiences');
       });
 
       it('should use default profile in case of nothing on local storage', function() {
@@ -524,14 +203,21 @@ describe('weboramaRtdProvider', function() {
           params: {
             wam2gamConf: {
               setTargeting: true,
-              setOrtb2: true,
               defaultProfile: defaultProfile,
             }
           }
         };
 
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+
         const adUnitsCodes = ['adunit1', 'adunit2'];
-        weboramaSubmodule.init(moduleConfig);
+        const reqBidsConfigObj = {adUnits: [1, 2]};
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        expect(onDoneSpy.calledOnce).to.be.true;
 
         const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
 
@@ -539,11 +225,6 @@ describe('weboramaRtdProvider', function() {
           'adunit1': defaultProfile,
           'adunit2': defaultProfile,
         });
-
-        const ortb2 = config.getConfig('ortb2');
-
-        expect(ortb2.user.ext.data).to.not.have.property('webo_cs');
-        expect(ortb2.user.ext.data.webo_audiences).to.deep.equal(defaultProfile.webo_audiences);
       });
     });
   });

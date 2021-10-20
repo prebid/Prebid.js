@@ -16,117 +16,92 @@
 * @typedef {Object} WeboCtxConf
 * @property {string} token required token to be used on bigsea contextual API requests
 * @property {?string} targetURL specify the target url instead use the referer
-* @property {?boolean} setTargeting if true will set the GAM targeting (default true)
+* @property {?Boolean} setTargeting if true will set the GAM targeting (default true)
+* @property {?Boolean} setBidderTargeting if true will set the GAM targeting (default true)
 * @property {?object} defaultProfile to be used if the profile is not found
-* @property {?object} setOrtb2 if true will set the global ortb2 configuration (default false)
 */
 
 /**
 * @typedef {Object} Wam2gamConf
 * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
-* @property {?boolean} setTargeting if true will set the GAM targeting (default true)
+* @property {?Boolean} setTargeting if true will set the GAM targeting (default true)
+* @property {?Boolean} setBidderTargeting if true will set the GAM targeting (default true)
 * @property {?object} defaultProfile to be used if the profile is not found
-* @property {?object} setOrtb2 if true will set the global ortb2 configuration (default false)
 */
 
 import {getGlobal} from '../src/prebidGlobal.js';
-import { deepSetValue, mergeDeep, logError, tryAppendQueryString, logMessage } from '../src/utils.js';
+import { deepSetValue, deepAccess, isEmpty, mergeDeep, logError, tryAppendQueryString, logMessage } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {adapterManager} from '../src/adapterManager.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 /** @type {string} */
 const SUBMODULE_NAME = 'weborama';
 /** @type {string} */
-const WEBO_CTX = 'webo_ctx';
-/** @type {string} */
-const WEBO_DS = 'webo_ds';
-/** @type {string} */
-const WEBO_CS = 'webo_cs';
-/** @type {string} */
-const WEBO_AUDIENCES = 'webo_audiences';
-/** @type {string} */
-const DefaultLocalStorageUserProfileKey = 'webo_wam2gam_entry';
+export const DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY = 'webo_wam2gam_entry';
 /** @type {string} */
 const LOCAL_STORAGE_USER_TARGETING_SECTION = 'targeting';
 /** @type {number} */
 const GVLID = 284;
 /** @type {object} */
-const storage = getStorageManager(GVLID, SUBMODULE_NAME);
+export const storage = getStorageManager(GVLID, SUBMODULE_NAME);
 
 /** @type {null|Object} */
 let _bigseaContextualProfile = null;
 
+/** @type {Boolean} */
+let _weboCtxInitialized = false;
+
 /** @type {null|Object} */
 let _wam2gamUserProfile = null;
 
-/** function that will allow RTD sub-modules to modify the AdUnit object for each auction
-* @param {Object} reqBidsConfigObj
-* @param {doneCallback} onDone
-* @param {Object} moduleConfig
-* @param {Object} userConsent
-* @returns {void}
-*/
-export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
+/** @type {Boolean} */
+let _wam2gamInitialized = false;
+
+/** Initialize module
+ * @param {object} moduleConfig
+ * @return {Boolean} true if module was initialized with success
+ */
+function init(moduleConfig) {
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
+  const wam2gamConf = moduleParams.wam2gamConf;
 
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+  _weboCtxInitialized = initWeboCtx(weboCtxConf);
+  _wam2gamInitialized = initWam2gam(wam2gamConf);
 
-  const onSuccess = handleContextualProfile(adUnits, moduleConfig, setBigseaContextualProfile);
-
-  fetchContextualProfile(weboCtxConf, onSuccess, onDone);
-}
-/** function xxx
-* @param {object} adUnits
-* @param {object} moduleConfig
-* @param {successCallback} onSuccess
-* @returns {successCallback}
-*/
-function handleContextualProfile(adUnits, moduleConfig, onSuccess) {
-  const moduleParams = moduleConfig.params || {};
-  return function(data) {
-    logMessage('fetchContextualProfile on getBidRequestData is done');
-    onSuccess(data);
-    setGlobalOrtb2(moduleParams);
-  };
+  return _weboCtxInitialized || _wam2gamInitialized;
 }
 
-function setGlobaOrtb2(moduleParams) {
-  const weboCtxConf = moduleParams.weboCtxConf || {};
-  const wam2gamConf = moduleParams.wam2gamConf || {};
+/** Initialize contextual sub module
+ * @param {WeboCtxConf} weboCtxConf
+ * @return {Boolean} true if sub module was initialized with success
+ */
+function initWeboCtx(weboCtxConf) {
+  _weboCtxInitialized = false;
+  _bigseaContextualProfile = null;
 
-  const defaultContextualProfile = weboCtxConf.defaultProfile || {};
-  const wam2gamDefaultUserProfile = wam2gamConf.defaultProfile || {};
-
-  const contextualProfile = _bigseaContextualProfile || defaultContextualProfile;
-  const wam2gamProfile = _wam2gamUserProfile || wam2gamDefaultUserProfile;
-
-  if (weboCtxConf.setOrtb2) {
-    const ortb2 = getGlobal().getConfig('ortb2') || {};
-    if (contextualProfile[WEBO_CTX]) {
-      deepSetValue(ortb2, 'site.ext.data.webo_ctx', contextualProfile[WEBO_CTX]);
-    }
-    if (contextualProfile[WEBO_DS]) {
-      deepSetValue(ortb2, 'site.ext.data.webo_ds', contextualProfile[WEBO_DS]);
-    }
-    config.setConfig({ortb2: ortb2});
+  if (!weboCtxConf.token) {
+    logError('missing param "token" for weborama contextual sub module initialization');
+    return false;
   }
 
-  if (wam2gamConf.setOrtb2) {
-    const ortb2 = getGlobal().getConfig('ortb2') || {};
-    if (wam2gamProfile[WEBO_CS]) {
-      deepSetValue(ortb2, 'user.ext.data.webo_cs', wam2gamProfile[WEBO_CS]);
-    }
-    if (wam2gamProfile[WEBO_AUDIENCES]) {
-      deepSetValue(ortb2, 'user.ext.data.webo_audiences', wam2gamProfile[WEBO_AUDIENCES]);
-    }
-    getGlobal().setConfig({ortb2: ortb2});
-  }
+  return true;
+}
+
+/** Initialize wam2gam sub module
+ * @param {?Wam2gamConf} wam2gamConf
+ * @return {Boolean} true if sub module was initialized with success
+ */
+function initWam2gam(wam2gamConf) {
+  _wam2gamInitialized = false;
+  _wam2gamUserProfile = null;
+
+  return !!wam2gamConf;
 }
 
 /** function that provides ad server targeting data to RTD-core
@@ -138,61 +113,165 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
-  const defaultContextualProfile = weboCtxConf.defaultProfile || {};
-  const contextualProfile = _bigseaContextualProfile || defaultContextualProfile;
   const wam2gamConf = moduleParams.wam2gamConf || {};
-  const wam2gamDefaultUserProfile = wam2gamConf.defaultProfile || {};
-  const wam2gamProfile = _wam2gamUserProfile || wam2gamDefaultUserProfile;
-
-  if (weboCtxConf.setOrtb2) {
-    const ortb2 = config.getConfig('ortb2') || {};
-    if (contextualProfile[WEBO_CTX]) {
-      deepSetValue(ortb2, 'site.ext.data.webo_ctx', contextualProfile[WEBO_CTX]);
-    }
-    if (contextualProfile[WEBO_DS]) {
-      deepSetValue(ortb2, 'site.ext.data.webo_ds', contextualProfile[WEBO_DS]);
-    }
-    config.setConfig({ortb2: ortb2});
-  }
-
-  if (wam2gamConf.setOrtb2) {
-    const ortb2 = config.getConfig('ortb2') || {};
-    if (wam2gamProfile[WEBO_CS]) {
-      deepSetValue(ortb2, 'user.ext.data.webo_cs', wam2gamProfile[WEBO_CS]);
-    }
-    if (wam2gamProfile[WEBO_AUDIENCES]) {
-      deepSetValue(ortb2, 'user.ext.data.webo_audiences', wam2gamProfile[WEBO_AUDIENCES]);
-    }
-    config.setConfig({ortb2: ortb2});
-  }
-
-  const profile = {};
-
-  if (weboCtxConf.setTargeting !== false) {
-    mergeDeep(profile, contextualProfile);
-  }
-
-  if (wam2gamConf.setTargeting !== false) {
-    mergeDeep(profile, wam2gamProfile);
-  }
-
-  if (!profile || Object.keys(profile).length == 0) {
-    return {};
-  }
+  const weboCtxConfTargeting = weboCtxConf.setTargeting !== false;
+  const wam2gamConfTargeting = wam2gamConf.setTargeting !== false;
 
   try {
-    const formattedProfile = profile;
-    const r = adUnitsCodes.reduce((rp, adUnitCode) => {
+    const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, wam2gamConfTargeting);
+
+    if (isEmpty(profile)) {
+      return {};
+    }
+
+    const td = adUnitsCodes.reduce((data, adUnitCode) => {
       if (adUnitCode) {
-        rp[adUnitCode] = formattedProfile;
+        data[adUnitCode] = profile;
       }
-      return rp;
+      return data;
     }, {});
-    return r;
+
+    return td;
   } catch (e) {
     logError('unable to format weborama rtd targeting data', e);
     return {};
   }
+}
+
+/** function that provides complete profile formatted to be used
+* @param {ModuleParams} moduleParams
+* @param {Boolean} weboCtxConfTargeting
+* @param {Boolean} wam2gamConfTargeting
+* @returns {Object} complete profile
+*/
+function getCompleteProfile(moduleParams, weboCtxConfTargeting, wam2gamConfTargeting) {
+  const profile = {};
+
+  if (weboCtxConfTargeting) {
+    const contextualProfile = getContextualProfile(moduleParams.weboCtxConf || {});
+    mergeDeep(profile, contextualProfile);
+  }
+
+  if (wam2gamConfTargeting) {
+    const wam2gamProfile = getWam2gamProfile(moduleParams.wam2gamConf || {});
+    mergeDeep(profile, wam2gamProfile);
+  }
+
+  return profile;
+}
+
+/** return contextual profile
+ * @param {WeboCtxConf} weboCtxConf
+ * @returns {Object} contextual profile
+ */
+function getContextualProfile(weboCtxConf) {
+  const defaultContextualProfile = weboCtxConf.defaultProfile || {};
+  return _bigseaContextualProfile || defaultContextualProfile;
+}
+
+/** return wam2gam profile
+ * @param {Wam2gamConf} wam2gamConf
+ * @returns {Object} wam2gam profile
+ */
+function getWam2gamProfile(wam2gamConf) {
+  const wam2gamDefaultUserProfile = wam2gamConf.defaultProfile || {};
+
+  if (storage.localStorageIsEnabled() && !_wam2gamUserProfile) {
+    const localStorageProfileKey = wam2gamConf.localStorageProfileKey || DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY;
+
+    const entry = storage.getDataFromLocalStorage(localStorageProfileKey);
+    if (entry) {
+      const data = JSON.parse(entry);
+      if (data && Object.keys(data).length > 0) {
+        _wam2gamUserProfile = data[LOCAL_STORAGE_USER_TARGETING_SECTION];
+      }
+    }
+  }
+
+  return _wam2gamUserProfile || wam2gamDefaultUserProfile;
+}
+
+/** function that will allow RTD sub-modules to modify the AdUnit object for each auction
+* @param {Object} reqBidsConfigObj
+* @param {doneCallback} onDone
+* @param {Object} moduleConfig
+* @returns {void}
+*/
+export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
+  moduleConfig = moduleConfig || {};
+  const moduleParams = moduleConfig.params || {};
+  const weboCtxConf = moduleParams.weboCtxConf || {};
+
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+
+  if (!_weboCtxInitialized) {
+    handleBidRequestData(adUnits, moduleParams);
+
+    onDone();
+
+    return;
+  }
+
+  fetchContextualProfile(weboCtxConf, (data) => {
+    logMessage('fetchContextualProfile on getBidRequestData is done');
+
+    setBigseaContextualProfile(data);
+
+    handleBidRequestData(adUnits, moduleParams);
+  }, onDone);
+}
+
+function handleBidRequestData(adUnits, moduleParams) {
+  const weboCtxConf = moduleParams.weboCtxConf || {};
+  const wam2gamConf = moduleParams.wam2gamConf || {};
+  const weboCtxConfTargeting = weboCtxConf.setBidderTargeting !== false;
+  const wam2gamConfTargeting = wam2gamConf.setBidderTargeting !== false;
+  const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, wam2gamConfTargeting);
+
+  if (isEmpty(profile)) {
+    return;
+  }
+
+  adUnits.forEach(adUnit => {
+    if (adUnit.hasOwnProperty('bids')) {
+      adUnit.bids.forEach(bid => handleBid(adUnit, profile, bid));
+    }
+  });
+}
+
+/** @type {string} */
+const SMARTADSERVER = 'smartadserver';
+
+function handleBid(adUnit, profile, bid) {
+  const bidder = adapterManager.aliasRegistry[bid.bidder] || bid.bidder;
+
+  logMessage('handle bidder', bidder, bid);
+
+  switch (bidder) {
+    case SMARTADSERVER:
+      handleSmartadserverBid(adUnit, profile, bid);
+
+      break;
+  }
+}
+
+function handleSmartadserverBid(adUnit, completeProfile, bid) {
+  const target = [];
+
+  if (deepAccess(bid, 'params.target')) {
+    target.push(bid.params.target.split(';'));
+  }
+
+  Object.keys(completeProfile).forEach(key => {
+    completeProfile[key].forEach(value => {
+      const keyword = `${key}=${value}`;
+      if (target.indexOf(keyword) === -1) {
+        target.push(keyword);
+      }
+    });
+  });
+
+  deepSetValue(bid, 'params.target', target.join(';'));
 }
 
 /** set bigsea contextual profile on module state
@@ -202,16 +281,6 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
 export function setBigseaContextualProfile(data) {
   if (data && Object.keys(data).length > 0) {
     _bigseaContextualProfile = data;
-  }
-}
-
-/** set wam2gam user profile on module state
- * @param {null|Object} data
- * @returns {void}
- */
-export function setWam2gamUserProfile(data) {
-  if (data && Object.keys(data).length > 0) {
-    _wam2gamUserProfile = data;
   }
 }
 
@@ -267,61 +336,6 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
     method: 'GET',
     withCredentials: false,
   });
-}
-
-/** Initialize module
- * @param {object} moduleConfig
- * @return {boolean} true if module was initialized with success
- */
-function init(moduleConfig) {
-  moduleConfig = moduleConfig || {};
-  const moduleParams = moduleConfig.params || {};
-  const weboCtxConf = moduleParams.weboCtxConf || {};
-  const wam2gamConf = moduleParams.wam2gamConf;
-
-  const weboCtxInitialized = initWeboCtx(weboCtxConf);
-  const wam2gamInitialized = initWam2gam(wam2gamConf);
-
-  return weboCtxInitialized || wam2gamInitialized;
-}
-
-/** Initialize contextual sub module
- * @param {WeboCtxConf} weboCtxConf
- * @return {boolean} true if sub module was initialized with success
- */
-function initWeboCtx(weboCtxConf) {
-  _bigseaContextualProfile = null;
-
-  if (!weboCtxConf.token) {
-    logError('missing param "token" for weborama contextual sub module initialization');
-    return false;
-  }
-
-  return true;
-}
-
-/** Initialize wam2gam sub module
- * @param {?Wam2gamConf} wam2gamConf
- * @return {boolean} true if sub module was initialized with success
- */
-function initWam2gam(wam2gamConf) {
-  _wam2gamUserProfile = null;
-
-  if (!wam2gamConf) {
-    return false;
-  }
-
-  if (!storage.localStorageIsEnabled()) {
-    return false;
-  }
-
-  const localStorageProfileKey = wam2gamConf.localStorageProfileKey || DefaultLocalStorageUserProfileKey;
-
-  const data = JSON.parse(storage.getDataFromLocalStorage(localStorageProfileKey)) || {};
-
-  setWam2gamUserProfile(data[LOCAL_STORAGE_USER_TARGETING_SECTION]);
-
-  return true;
 }
 
 export const weboramaSubmodule = {
