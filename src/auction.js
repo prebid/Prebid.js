@@ -59,7 +59,7 @@
 
 import {
   flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl, generateUUID,
-  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr
+  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr, deepClone
 } from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
 import { getNativeTargeting } from './native.js';
@@ -663,7 +663,7 @@ export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   const granularity = getPriceGranularity(mediaType, bidReq);
 
-  let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
+  let bidderSettings = deepClone($$PREBID_GLOBAL$$.bidderSettings);
   if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
   }
