@@ -52,7 +52,7 @@ describe('weboramaRtdProvider', function() {
     });
 
     describe('Add Contextual Data', function() {
-      it('should set targeting if omit setTargeting', function() {
+      it('should set targeting if omit setGAMTargeting', function() {
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -85,13 +85,13 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should set targeting with setTargeting=true', function() {
+      it('should set targeting with setGAMTargeting=true', function() {
         const moduleConfig = {
           params: {
             weboCtxConf: {
               token: 'foo',
               targetURL: 'https://prebid.org',
-              setTargeting: true,
+              setGAMTargeting: true,
             }
           }
         };
@@ -117,6 +117,37 @@ describe('weboramaRtdProvider', function() {
           'adunit1': data,
           'adunit2': data,
         });
+      });
+
+      it('should not set targeting with setGAMTargeting=false', function() {
+        const moduleConfig = {
+          params: {
+            weboCtxConf: {
+              token: 'foo',
+              targetURL: 'https://prebid.org',
+              setGAMTargeting: false,
+            }
+          }
+        };
+        const data = {
+          webo_ctx: ['foo', 'bar'],
+          webo_ds: ['baz'],
+        };
+        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const reqBidsConfigObj = {adUnits: [1, 2]};
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        let request = server.requests[0];
+        request.respond(200, responseHeader, JSON.stringify(data));
+
+        expect(onDoneSpy.calledOnce).to.be.true;
+
+        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+
+        expect(targeting).to.deep.equal({});
       });
 
       it('should use default profile in case of api error', function() {
@@ -128,7 +159,7 @@ describe('weboramaRtdProvider', function() {
             weboCtxConf: {
               token: 'foo',
               targetURL: 'https://prebid.org',
-              setTargeting: true,
+              setGAMTargeting: true,
               defaultProfile: defaultProfile,
             }
           }
@@ -156,11 +187,84 @@ describe('weboramaRtdProvider', function() {
     });
 
     describe('Add WAM2GAM Data', function() {
-      it('should set targeting from local storage', function() {
+      it('should set targeting from local storage if omit setGAMTargeting', function() {
+        const moduleConfig = {
+          params: {
+            wam2gamConf: {}
+          }
+        };
+        const data = {
+          webo_cs: ['foo', 'bar'],
+          webo_audiences: ['baz'],
+        };
+
+        const entry = {
+          targeting: data,
+        };
+
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'getDataFromLocalStorage')
+          .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
+          .returns(JSON.stringify(entry));
+
+        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const reqBidsConfigObj = {adUnits: [1, 2]};
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        expect(onDoneSpy.calledOnce).to.be.true;
+
+        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+
+        expect(targeting).to.deep.equal({
+          'adunit1': data,
+          'adunit2': data,
+        });
+      });
+
+      it('should not set targeting from local storage with setGAMTargeting=false', function() {
         const moduleConfig = {
           params: {
             wam2gamConf: {
-              setTargeting: true,
+              setGAMTargeting: false,
+            }
+          }
+        };
+        const data = {
+          webo_cs: ['foo', 'bar'],
+          webo_audiences: ['baz'],
+        };
+
+        const entry = {
+          targeting: data,
+        };
+
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'getDataFromLocalStorage')
+          .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
+          .returns(JSON.stringify(entry));
+
+        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const reqBidsConfigObj = {adUnits: [1, 2]};
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        expect(onDoneSpy.calledOnce).to.be.true;
+
+        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+
+        expect(targeting).to.deep.equal({});
+      });
+
+      it('should set targeting from local storage with setGAMTargeting=true', function() {
+        const moduleConfig = {
+          params: {
+            wam2gamConf: {
+              setGAMTargeting: true,
             }
           }
         };
@@ -202,7 +306,7 @@ describe('weboramaRtdProvider', function() {
         const moduleConfig = {
           params: {
             wam2gamConf: {
-              setTargeting: true,
+              setGAMTargeting: true,
               defaultProfile: defaultProfile,
             }
           }

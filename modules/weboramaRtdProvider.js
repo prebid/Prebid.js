@@ -16,16 +16,16 @@
 * @typedef {Object} WeboCtxConf
 * @property {string} token required token to be used on bigsea contextual API requests
 * @property {?string} targetURL specify the target url instead use the referer
-* @property {?Boolean} setTargeting if true will set the GAM targeting (default true)
-* @property {?Boolean} setBidderTargeting if true will set the GAM targeting (default true)
+* @property {?Boolean} setGAMTargeting if true will set the GAM targeting (default true)
+* @property {?Boolean} sendToBidders if true will set the GAM targeting (default true)
 * @property {?object} defaultProfile to be used if the profile is not found
 */
 
 /**
 * @typedef {Object} Wam2gamConf
 * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
-* @property {?Boolean} setTargeting if true will set the GAM targeting (default true)
-* @property {?Boolean} setBidderTargeting if true will set the GAM targeting (default true)
+* @property {?Boolean} setGAMTargeting if true will set the GAM targeting (default true)
+* @property {?Boolean} sendToBidders if true will set the GAM targeting (default true)
 * @property {?object} defaultProfile to be used if the profile is not found
 */
 
@@ -114,8 +114,8 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
   const wam2gamConf = moduleParams.wam2gamConf || {};
-  const weboCtxConfTargeting = weboCtxConf.setTargeting !== false;
-  const wam2gamConfTargeting = wam2gamConf.setTargeting !== false;
+  const weboCtxConfTargeting = weboCtxConf.setGAMTargeting !== false;
+  const wam2gamConfTargeting = wam2gamConf.setGAMTargeting !== false;
 
   try {
     const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, wam2gamConfTargeting);
@@ -224,8 +224,8 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
 function handleBidRequestData(adUnits, moduleParams) {
   const weboCtxConf = moduleParams.weboCtxConf || {};
   const wam2gamConf = moduleParams.wam2gamConf || {};
-  const weboCtxConfTargeting = weboCtxConf.setBidderTargeting !== false;
-  const wam2gamConfTargeting = wam2gamConf.setBidderTargeting !== false;
+  const weboCtxConfTargeting = weboCtxConf.sendToBidders !== false;
+  const wam2gamConfTargeting = wam2gamConf.sendToBidders !== false;
   const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, wam2gamConfTargeting);
 
   if (isEmpty(profile)) {
