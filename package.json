@@ -103,7 +103,6 @@
   },
   "dependencies": {
     "babel-plugin-transform-object-assign": "^6.22.0",
-    "babel-plugin-transform-spread": "^7.15.8",
     "core-js": "^3.13.0",
     "core-js-pure": "^3.13.0",
     "criteo-direct-rsa-validate": "^1.1.0",
