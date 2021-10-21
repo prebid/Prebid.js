@@ -53,7 +53,7 @@ describe('The Konduit vast wrapper module', function () {
       const callback = sinon.spy();
       processBids({ bid, callback });
       server.respond();
-
+      // maybe expect 2
       expect(server.requests.length).to.equal(1);
 
       const requestBody = JSON.parse(server.requests[0].requestBody);
