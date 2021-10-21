@@ -107,13 +107,13 @@ describe('weboramaRtdProvider', function() {
                 expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
             });
 
-            it('should set gam targeting but not send to bidders with setGAMTargeting=true/sendToBidders=false', function() {
+            it('should set gam targeting but not send to bidders with setPrebidTargeting=true/sendToBidders=false', function() {
                 const moduleConfig = {
                     params: {
                         weboCtxConf: {
                             token: 'foo',
                             targetURL: 'https://prebid.org',
-                            setGAMTargeting: true,
+                            setPrebidTargeting: true,
                             sendToBidders: false,
                         }
                     }
@@ -158,13 +158,13 @@ describe('weboramaRtdProvider', function() {
                 expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
             });
 
-            it('should not set gam targeting with setGAMTargeting=false but send to bidders', function() {
+            it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
                 const moduleConfig = {
                     params: {
                         weboCtxConf: {
                             token: 'foo',
                             targetURL: 'https://prebid.org',
-                            setGAMTargeting: false,
+                            setPrebidTargeting: false,
                         }
                     }
                 };
@@ -214,7 +214,7 @@ describe('weboramaRtdProvider', function() {
                         weboCtxConf: {
                             token: 'foo',
                             targetURL: 'https://prebid.org',
-                            setGAMTargeting: true,
+                            setPrebidTargeting: true,
                             defaultProfile: defaultProfile,
                         }
                     }
@@ -300,11 +300,11 @@ describe('weboramaRtdProvider', function() {
                 expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_cs=foo;webo_cs=bar;webo_audiences=baz');
             });
 
-            it('should set gam targeting but not send to bidders with setGAMTargeting=true/sendToBidders=false', function() {
+            it('should set gam targeting but not send to bidders with setPrebidTargeting=true/sendToBidders=false', function() {
                 const moduleConfig = {
                     params: {
                         weboUserDataConf: {
-                            setGAMTargeting: true,
+                            setPrebidTargeting: true,
                             sendToBidders: false
                         }
                     }
@@ -351,11 +351,11 @@ describe('weboramaRtdProvider', function() {
                 expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
             });
 
-            it('should not set gam targeting with setGAMTargeting=false but send to bidders', function() {
+            it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
                 const moduleConfig = {
                     params: {
                         weboUserDataConf: {
-                            setGAMTargeting: false,
+                            setPrebidTargeting: false,
                         }
                     }
                 };
@@ -405,7 +405,7 @@ describe('weboramaRtdProvider', function() {
                 const moduleConfig = {
                     params: {
                         weboUserDataConf: {
-                            setGAMTargeting: true,
+                            setPrebidTargeting: true,
                             defaultProfile: defaultProfile,
                         }
                     }
@@ -445,7 +445,7 @@ describe('weboramaRtdProvider', function() {
                 const moduleConfig = {
                     params: {
                         weboUserDataConf: {
-                            setGAMTargeting: true,
+                            setPrebidTargeting: true,
                             defaultProfile: defaultProfile,
                         }
                     }
