@@ -28,10 +28,10 @@ describe('weboramaRtdProvider', function() {
 		  expect(weboramaSubmodule.init(moduleConfig)).to.equal(false);
     });
 
-    it('instantiate with empty wam2gam conf should return true', function () {
+    it('instantiate with empty weboUserData conf should return true', function () {
       const moduleConfig = {
         params: {
-          wam2gamConf: {}
+          weboUserDataConf: {}
         }
       };
       expect(weboramaSubmodule.init(moduleConfig)).to.equal(true);
@@ -219,7 +219,7 @@ describe('weboramaRtdProvider', function() {
       it('should set gam targeting from local storage and send to bidders by default', function() {
         const moduleConfig = {
           params: {
-            wam2gamConf: {}
+            weboUserDataConf: {}
           }
         };
         const data = {
@@ -258,7 +258,7 @@ describe('weboramaRtdProvider', function() {
       it('should set gam targeting but not send to bidders with setGAMTargeting=true/sendToBidders=false', function() {
         const moduleConfig = {
           params: {
-            wam2gamConf: {
+            weboUserDataConf: {
               setGAMTargeting: true,
               sendToBidders: false
             }
@@ -300,7 +300,7 @@ describe('weboramaRtdProvider', function() {
       it('should not set gam targeting with setGAMTargeting=false but send to bidders', function() {
         const moduleConfig = {
           params: {
-            wam2gamConf: {
+            weboUserDataConf: {
               setGAMTargeting: false,
             }
           }
@@ -341,7 +341,7 @@ describe('weboramaRtdProvider', function() {
         };
         const moduleConfig = {
           params: {
-            wam2gamConf: {
+            weboUserDataConf: {
               setGAMTargeting: true,
               defaultProfile: defaultProfile,
             }
@@ -375,7 +375,7 @@ describe('weboramaRtdProvider', function() {
         };
         const moduleConfig = {
           params: {
-            wam2gamConf: {
+            weboUserDataConf: {
               setGAMTargeting: true,
               defaultProfile: defaultProfile,
             }

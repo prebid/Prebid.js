@@ -9,7 +9,7 @@
 /**
 * @typedef {Object} ModuleParams
 * @property {WeboCtxConf} weboCtxConf
-* @property {Wam2gamConf} wam2gamConf
+* @property {WeboUserDataConf} weboUserDataConf
 */
 
 /**
@@ -22,7 +22,7 @@
 */
 
 /**
-* @typedef {Object} Wam2gamConf
+* @typedef {Object} WeboUserDataConf
 * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
 * @property {?Boolean} setGAMTargeting if true will set the GAM targeting (default true)
 * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default true)
@@ -57,10 +57,10 @@ let _weboContextualProfile = null;
 let _weboCtxInitialized = false;
 
 /** @type {null|Object} */
-let _wam2gamUserProfile = null;
+let _weboUserDataUserProfile = null;
 
 /** @type {Boolean} */
-let _wam2gamInitialized = false;
+let _weboUserDataInitialized = false;
 
 /** Initialize module
  * @param {object} moduleConfig
@@ -70,12 +70,12 @@ function init(moduleConfig) {
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
-  const wam2gamConf = moduleParams.wam2gamConf;
+  const weboUserDataConf = moduleParams.weboUserDataConf;
 
   _weboCtxInitialized = initWeboCtx(weboCtxConf);
-  _wam2gamInitialized = initWam2gam(wam2gamConf);
+  _weboUserDataInitialized = initWeboUserData(weboUserDataConf);
 
-  return _weboCtxInitialized || _wam2gamInitialized;
+  return _weboCtxInitialized || _weboUserDataInitialized;
 }
 
 /** Initialize contextual sub module
@@ -94,15 +94,15 @@ function initWeboCtx(weboCtxConf) {
   return true;
 }
 
-/** Initialize wam2gam sub module
- * @param {Wam2gamConf} wam2gamConf
+/** Initialize weboUserData sub module
+ * @param {WeboUserDataConf} weboUserDataConf
  * @return {Boolean} true if sub module was initialized with success
  */
-function initWam2gam(wam2gamConf) {
-  _wam2gamInitialized = false;
-  _wam2gamUserProfile = null;
+function initWeboUserData(weboUserDataConf) {
+  _weboUserDataInitialized = false;
+  _weboUserDataUserProfile = null;
 
-  return !!wam2gamConf;
+  return !!weboUserDataConf;
 }
 
 /** function that provides ad server targeting data to RTD-core
@@ -114,12 +114,12 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
-  const wam2gamConf = moduleParams.wam2gamConf || {};
+  const weboUserDataConf = moduleParams.weboUserDataConf || {};
   const weboCtxConfTargeting = weboCtxConf.setGAMTargeting !== false;
-  const wam2gamConfTargeting = wam2gamConf.setGAMTargeting !== false;
+  const weboUserDataConfTargeting = weboUserDataConf.setGAMTargeting !== false;
 
   try {
-    const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, wam2gamConfTargeting);
+    const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting);
 
     if (isEmpty(profile)) {
       return {};
@@ -142,10 +142,10 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
 /** function that provides complete profile formatted to be used
 * @param {ModuleParams} moduleParams
 * @param {Boolean} weboCtxConfTargeting
-* @param {Boolean} wam2gamConfTargeting
+* @param {Boolean} weboUserDataConfTargeting
 * @returns {Object} complete profile
 */
-function getCompleteProfile(moduleParams, weboCtxConfTargeting, wam2gamConfTargeting) {
+function getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting) {
   const profile = {};
 
   if (weboCtxConfTargeting) {
@@ -153,9 +153,9 @@ function getCompleteProfile(moduleParams, weboCtxConfTargeting, wam2gamConfTarge
     mergeDeep(profile, contextualProfile);
   }
 
-  if (wam2gamConfTargeting) {
-    const wam2gamProfile = getWam2gamProfile(moduleParams.wam2gamConf || {});
-    mergeDeep(profile, wam2gamProfile);
+  if (weboUserDataConfTargeting) {
+    const weboUserDataProfile = getWeboUserDataProfile(moduleParams.weboUserDataConf || {});
+    mergeDeep(profile, weboUserDataProfile);
   }
 
   return profile;
@@ -170,26 +170,26 @@ function getContextualProfile(weboCtxConf) {
   return _weboContextualProfile || defaultContextualProfile;
 }
 
-/** return wam2gam profile
- * @param {Wam2gamConf} wam2gamConf
- * @returns {Object} wam2gam profile
+/** return weboUserData profile
+ * @param {WeboUserDataConf} weboUserDataConf
+ * @returns {Object} weboUserData profile
  */
-function getWam2gamProfile(wam2gamConf) {
-  const wam2gamDefaultUserProfile = wam2gamConf.defaultProfile || {};
+function getWeboUserDataProfile(weboUserDataConf) {
+  const weboUserDataDefaultUserProfile = weboUserDataConf.defaultProfile || {};
 
-  if (storage.localStorageIsEnabled() && !_wam2gamUserProfile) {
-    const localStorageProfileKey = wam2gamConf.localStorageProfileKey || DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY;
+  if (storage.localStorageIsEnabled() && !_weboUserDataUserProfile) {
+    const localStorageProfileKey = weboUserDataConf.localStorageProfileKey || DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY;
 
     const entry = storage.getDataFromLocalStorage(localStorageProfileKey);
     if (entry) {
       const data = JSON.parse(entry);
       if (data && Object.keys(data).length > 0) {
-        _wam2gamUserProfile = data[LOCAL_STORAGE_USER_TARGETING_SECTION];
+        _weboUserDataUserProfile = data[LOCAL_STORAGE_USER_TARGETING_SECTION];
       }
     }
   }
 
-  return _wam2gamUserProfile || wam2gamDefaultUserProfile;
+  return _weboUserDataUserProfile || weboUserDataDefaultUserProfile;
 }
 
 /** function that will allow RTD sub-modules to modify the AdUnit object for each auction
@@ -226,10 +226,10 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
 
 function handleBidRequestData(adUnits, moduleParams) {
   const weboCtxConf = moduleParams.weboCtxConf || {};
-  const wam2gamConf = moduleParams.wam2gamConf || {};
+  const weboUserDataConf = moduleParams.weboUserDataConf || {};
   const weboCtxConfTargeting = weboCtxConf.sendToBidders !== false;
-  const wam2gamConfTargeting = wam2gamConf.sendToBidders !== false;
-  const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, wam2gamConfTargeting);
+  const weboUserDataConfTargeting = weboUserDataConf.sendToBidders !== false;
+  const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting);
 
   if (isEmpty(profile)) {
     return;
