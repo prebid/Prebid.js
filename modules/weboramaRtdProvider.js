@@ -51,7 +51,7 @@ const GVLID = 284;
 export const storage = getStorageManager(GVLID, SUBMODULE_NAME);
 
 /** @type {null|Object} */
-let _bigseaContextualProfile = null;
+let _weboContextualProfile = null;
 
 /** @type {Boolean} */
 let _weboCtxInitialized = false;
@@ -84,7 +84,7 @@ function init(moduleConfig) {
  */
 function initWeboCtx(weboCtxConf) {
   _weboCtxInitialized = false;
-  _bigseaContextualProfile = null;
+  _weboContextualProfile = null;
 
   if (!weboCtxConf.token) {
     logError('missing param "token" for weborama contextual sub module initialization');
@@ -167,7 +167,7 @@ function getCompleteProfile(moduleParams, weboCtxConfTargeting, wam2gamConfTarge
  */
 function getContextualProfile(weboCtxConf) {
   const defaultContextualProfile = weboCtxConf.defaultProfile || {};
-  return _bigseaContextualProfile || defaultContextualProfile;
+  return _weboContextualProfile || defaultContextualProfile;
 }
 
 /** return wam2gam profile
@@ -216,7 +216,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
   fetchContextualProfile(weboCtxConf, (data) => {
     logMessage('fetchContextualProfile on getBidRequestData is done');
 
-    setBigseaContextualProfile(data);
+    setWeboContextualProfile(data);
   }, () => {
     handleBidRequestData(adUnits, moduleParams);
 
@@ -284,9 +284,9 @@ function handleSmartadserverBid(adUnit, completeProfile, bid) {
  * @param {null|Object} data
  * @returns {void}
  */
-export function setBigseaContextualProfile(data) {
+export function setWeboContextualProfile(data) {
   if (data && Object.keys(data).length > 0) {
-    _bigseaContextualProfile = data;
+    _weboContextualProfile = data;
   }
 }
 
