@@ -16,7 +16,7 @@
  * @typedef {Object} WeboCtxConf
  * @property {string} token required token to be used on bigsea contextual API requests
  * @property {?string} targetURL specify the target url instead use the referer
- * @property {?Boolean} setGAMTargeting if true will set the GAM targeting (default true)
+ * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default true)
  * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default true)
  * @property {?object} defaultProfile to be used if the profile is not found
  */
@@ -24,7 +24,7 @@
 /**
  * @typedef {Object} WeboUserDataConf
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
- * @property {?Boolean} setGAMTargeting if true will set the GAM targeting (default true)
+ * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default true)
  * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default true)
  * @property {?object} defaultProfile to be used if the profile is not found
  */
@@ -131,8 +131,8 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
     const moduleParams = moduleConfig.params || {};
     const weboCtxConf = moduleParams.weboCtxConf || {};
     const weboUserDataConf = moduleParams.weboUserDataConf || {};
-    const weboCtxConfTargeting = weboCtxConf.setGAMTargeting !== false;
-    const weboUserDataConfTargeting = weboUserDataConf.setGAMTargeting !== false;
+    const weboCtxConfTargeting = weboCtxConf.setPrebidTargeting !== false;
+    const weboUserDataConfTargeting = weboUserDataConf.setPrebidTargeting !== false;
 
     try {
         const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting);
