@@ -58,6 +58,19 @@ Module that connects to Yieldlab's demand sources
                        supplyId: "1381604"
                    }
                }]
+           },
+           {
+               code: "native",
+               mediaTypes: {
+                   native: { }
+               },
+               bids: [{
+                   bidder: "yieldlab",
+                   params: {
+                       adslotId: "5220339",
+                       supplyId: "1381604"
+                   }
+               }]
            }
        ];
 ```

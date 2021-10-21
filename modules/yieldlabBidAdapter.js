@@ -1,7 +1,7 @@
 import { _each, isPlainObject, isArray, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import find from 'core-js-pure/features/array/find.js'
-import { VIDEO, BANNER } from '../src/mediaTypes.js'
+import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js'
 import { Renderer } from '../src/Renderer.js'
 import { config } from '../src/config.js';
 
@@ -15,7 +15,7 @@ const GVLID = 70
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [VIDEO, BANNER],
+  supportedMediaTypes: [VIDEO, BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.adslotId && bid.params.supplyId) {
@@ -149,6 +149,27 @@ export const spec = {
           }
         }
 
+        if (isNative(bidRequest, adType)) {
+          const url = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
+          bidResponse.adUrl = url
+          bidResponse.mediaType = NATIVE
+          const nativeImageAssetObj = matchedBid.native.assets.find(e => e.id === 2)
+          const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : {url: '', w: 0, h: 0};
+          const nativeTitleAsset = matchedBid.native.assets.find(e => e.id === 1)
+          const nativeBodyAsset = matchedBid.native.assets.find(e => e.id === 3)
+          bidResponse.native = {
+            title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
+            body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
+            image: {
+              url: nativeImageAsset.url,
+              width: nativeImageAsset.w,
+              height: nativeImageAsset.h,
+            },
+            clickUrl: matchedBid.native.link.url,
+            impressionTrackers: matchedBid.native.imptrackers,
+          };
+        }
+
         bidResponses.push(bidResponse)
       }
     })
@@ -164,6 +185,16 @@ export const spec = {
  */
 function isVideo (format, adtype) {
   return deepAccess(format, 'mediaTypes.video') && adtype.toLowerCase() === 'video'
+}
+
+/**
+ * Is this a native format?
+ * @param {Object} format
+ * @param {String} adtype
+ * @returns {Boolean}
+ */
+function isNative(format, adtype) {
+  return utils.deepAccess(format, 'mediaTypes.native') && adtype.toLowerCase() === 'native'
 }
 
 /**
