@@ -95,7 +95,7 @@ function initWeboCtx(weboCtxConf) {
 }
 
 /** Initialize wam2gam sub module
- * @param {?Wam2gamConf} wam2gamConf
+ * @param {Wam2gamConf} wam2gamConf
  * @return {Boolean} true if sub module was initialized with success
  */
 function initWam2gam(wam2gamConf) {
