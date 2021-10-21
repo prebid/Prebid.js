@@ -194,7 +194,7 @@ function isVideo (format, adtype) {
  * @returns {Boolean}
  */
 function isNative(format, adtype) {
-  return utils.deepAccess(format, 'mediaTypes.native') && adtype.toLowerCase() === 'native'
+  return deepAccess(format, 'mediaTypes.native') && adtype.toLowerCase() === 'native'
 }
 
 /**
