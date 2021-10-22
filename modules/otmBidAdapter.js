@@ -94,26 +94,24 @@ export const spec = {
         return [];
       }
 
-      _each(responsesBody, (responseBody) => {
-        if (!responseBody.ad) {
-          return null
+      _each(responsesBody, (bid) => {
+        if (bid.ad) {
+          bidResponses.push({
+            requestId: bid.bidid,
+            cpm: bid.cpm,
+            width: bid.w,
+            height: bid.h,
+            creativeId: bid.creativeid,
+            currency: bid.currency || 'RUB',
+            netRevenue: true,
+            ad: bid.ad,
+            ttl: bid.ttl,
+            transactionId: bid.transactionid,
+            meta: {
+              advertiserDomains: bid.adDomain ? [bid.adDomain] : []
+            }
+          });
         }
-
-        bidResponses.push({
-          requestId: responseBody.bidid,
-          cpm: responseBody.cpm,
-          width: responseBody.w,
-          height: responseBody.h,
-          creativeId: responseBody.creativeid,
-          currency: responseBody.currency || 'RUB',
-          netRevenue: true,
-          ad: responseBody.ad,
-          ttl: responseBody.ttl,
-          transactionId: responseBody.transactionid,
-          meta: {
-            advertiserDomains: responseBody.adDomain ? [responseBody.adDomain] : []
-          }
-        });
       });
     } catch (error) {
       logError(error);
