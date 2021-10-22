@@ -45,19 +45,25 @@ export function getBidderFunction(bidderName) {
   const biddersFunction = {
     ix: function (bid, data) {
       if (data.im_segments && data.im_segments.length) {
-        deepSetValue(bid, 'firstPartyData.im_segments', data.im_segments)
+        config.setConfig({
+          ix: {firstPartyData: {im_segments: data.im_segments}},
+        });
       }
       return bid
     },
     pubmatic: function (bid, data) {
       if (data.im_segments && data.im_segments.length) {
         const dctr = deepAccess(bid, 'params.dctr');
-        deepSetValue(bid, 'params.dctr', `${dctr}|im_segments=${data.im_segments.join(',')}|`);
+        deepSetValue(
+          bid,
+          'params.dctr',
+          `${dctr ? dctr + '|' : ''}im_segments=${data.im_segments.join(',')}`
+        );
       }
       return bid
     }
   }
-  return biddersFunction[bidderName] || getDefaultFn();
+  return biddersFunction[bidderName] || null;
 }
 
 export function getCustomBidderFunction(config, bidder) {
@@ -96,12 +102,12 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
 
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
-      const bidderFunction = getBidderFunction(bidder);
+      const bidderFunction = getBidderFunction(bid.bidder);
       const overwriteFunction = getCustomBidderFunction(moduleConfig, bid.bidder);
       if (overwriteFunction) {
         overwriteFunction(bid, data, utils, config);
-      } else if (bidderFn) {
-        bidderFunction(bid, rtd);
+      } else if (bidderFunction) {
+        bidderFunction(bid, data);
       }
     })
   });
