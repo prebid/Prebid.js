@@ -4,6 +4,7 @@ import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, gen
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 
+const includes = require('core-js-pure/features/array/includes.js');
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
 const ADAPTER_VERSION = '1.0.1';
@@ -144,9 +145,9 @@ function getAdapterMode() {
 
 function getResponseFormat(bid) {
   const adm = bid.adm;
-  if (adm.includes('o2playerSettings') || adm.includes('YAHOO.VideoPlatform.VideoPlayer') || adm.includes('AdPlacement')) {
+  if (includes(adm, 'o2playerSettings') || includes(adm, 'YAHOO.VideoPlatform.VideoPlayer') || includes(adm, 'AdPlacement')) {
     return BANNER;
-  } else if (adm.includes('VAST')) {
+  } else if (includes(adm, 'VAST')) {
     return VIDEO;
   }
 };
@@ -188,23 +189,23 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
   for (const objectKey in inputObject) {
     switch (validationType) {
       case 'string':
-        if (allowedKeys.includes(objectKey) && isStr(inputObject[objectKey])) {
+        if (includes(allowedKeys, objectKey) && isStr(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
       case 'number':
-        if (allowedKeys.includes(objectKey) && isNumber(inputObject[objectKey])) {
+        if (includes(allowedKeys, objectKey) && isNumber(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
 
       case 'array':
-        if (allowedKeys.includes(objectKey) && isArray(inputObject[objectKey])) {
+        if (includes(allowedKeys, objectKey) && isArray(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
       case 'object':
-        if (allowedKeys.includes(objectKey) && isPlainObject(inputObject[objectKey])) {
+        if (includes(allowedKeys, objectKey) && isPlainObject(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
