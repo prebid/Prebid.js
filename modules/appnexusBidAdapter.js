@@ -606,7 +606,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       nodes: [],
     };
     if (rtbBid.buyer_member_id) {
-      dchain.nodes.push({ bsid: rtbBid.buyer_member_id.toString(), name: 'xandr' });
+      dchain.nodes.push({ bsid: rtbBid.buyer_member_id.toString() });
     }
     return dchain;
   }
