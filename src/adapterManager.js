@@ -627,4 +627,9 @@ adapterManager.callBidViewableBidder = function(bidder, bid) {
   tryCallBidderMethod(bidder, 'onBidViewable', bid);
 };
 
+adapterManager.callBidderError = function(bidder, error, bidderRequest) {
+  const param = { error, bidderRequest };
+  tryCallBidderMethod(bidder, 'onBidderError', param);
+};
+
 export default adapterManager;

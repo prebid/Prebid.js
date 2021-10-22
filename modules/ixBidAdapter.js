@@ -490,6 +490,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r.ext.ixdiag.msd = 0;
   r.ext.ixdiag.msi = 0;
   r.imp = [];
+  r.at = 1;
 
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
   let ixdiag = buildIXDiag(validBidRequests);
