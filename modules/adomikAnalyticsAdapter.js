@@ -76,6 +76,8 @@ adomikAdapter.sendTypedEvent = function() {
   const groupedTypedEvents = adomikAdapter.buildTypedEvents();
 
   const bulkEvents = {
+    testId: adomikAdapter.currentContext.testId,
+    testValue: adomikAdapter.currentContext.testValue,
     uid: adomikAdapter.currentContext.uid,
     ahbaid: adomikAdapter.currentContext.id,
     hostname: window.location.hostname,
@@ -126,6 +128,8 @@ adomikAdapter.sendTypedEvent = function() {
 };
 
 adomikAdapter.sendWonEvent = function (wonEvent) {
+  let keyValues = { testId: adomikAdapter.currentContext.testId, testValue: adomikAdapter.currentContext.testValue }
+  wonEvent = {...wonEvent, ...keyValues}
   const stringWonEvent = JSON.stringify(wonEvent)
   logInfo('Won event sent to adomik prebid analytic ' + stringWonEvent);
 
@@ -205,6 +209,8 @@ adomikAdapter.enableAnalytics = function (config) {
     adomikAdapter.currentContext = {
       uid: initOptions.id,
       url: initOptions.url,
+      testId: initOptions.testId,
+      testValue: initOptions.testValue,
       id: '',
       timeouted: false,
     }
