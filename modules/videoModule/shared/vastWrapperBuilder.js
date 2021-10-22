@@ -1,5 +1,20 @@
-export function buildVastWrapper(adId, adTagUrl, verification) {
 
+export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, errorUrl) {
+  let wrapperBody = getAdSystemNode('Prebid org', $$PREBID_GLOBAL$$.version);
+
+  if (adTagUrl) {
+    wrapperBody += getAdTagUriNode(adTagUrl);
+  }
+
+  if (impressionUrl) {
+    wrapperBody += getImpressionNode(impressionUrl, impressionId);
+  }
+
+  if (errorUrl) {
+    wrapperBody += getErrorNode(errorUrl);
+  }
+
+  return getVastNode(getAdNode(getWrapperNode(wrapperBody), adId), '4.2');
 }
 
 /*
@@ -14,45 +29,59 @@ export function buildVastWrapper(adId, adTagUrl, verification) {
 */
 
 export function getVastNode(body, vastVersion) {
-  return `<VAST version="${vastVersion}">${body}</VAST>`;
+  return getNode('VAST', body, { version: vastVersion });
 }
 
 export function getAdNode(body, adId) {
-  return `<Ad id="${adId}">${body}</Ad>`
+  return getNode('Ad', body, { id: adId });
 }
 
 export function getWrapperNode(body) {
-  return `<Wrapper>${body}</Wrapper>`;
+  return getNode('Wrapper', body);
 }
 
 export function getAdSystemNode(system, version) {
-  return `<AdSystem version="${version}">${system}</AdSystem>`;
+  return getNode('AdSystem', system, { version });
 }
 
 export function getAdTagUriNode(adTagUrl) {
-  return `<VASTAdTagURI><![CDATA[${adTagUrl}]]></VASTAdTagURI>`;
+  return getUrlNode('VASTAdTagURI', adTagUrl);
 }
 
-// function getVerificationNode() {
-// }
-
 export function getImpressionNode(pingUrl, id) {
-  return `<Impression><![CDATA[${pingUrl}]]></Impression>`;
+  return getUrlNode('Impression', pingUrl, { id });
 }
 
 export function getErrorNode(pingUrl) {
-  return `<Error><![CDATA[${pingUrl}]]></Error>`;
+  return getUrlNode('Error', pingUrl);
 }
 
-// function getUrlNode(name, url, attributes) {
-//   const openLabel = getOpenLabel(name, attributes);
-//   return `<${openLabel}><![CDATA[${url}]]></${name}>`;
-// }
-//
-// function getOpenLabel(name, attributes) {
-//   return `${name}` + attributes;
-// }
-//
-// function getCDataBody(url) {
-//   return `<![CDATA[${url}]]>`;
-// }
+// Helpers
+
+function getUrlNode(labelName, url, attributes) {
+  const body = `<![CDATA[${url}]]>`;
+  return getNode(labelName, body, attributes);
+}
+
+function getNode(labelName, body, attributes) {
+  const openingLabel = getOpeningLabel(labelName, attributes);
+  return `<${openingLabel}>${body}</${labelName}>`;
+}
+
+/*
+attributes is a KVP Object.
+ */
+function getOpeningLabel(name, attributes) {
+  if (!attributes) {
+    return name;
+  }
+
+  return Object.keys(attributes).reduce((label, key) => {
+    const value = attributes[key];
+    if (!value) {
+      return label;
+    }
+
+    return label + ` ${key}="${value}"`;
+  }, name);
+}
