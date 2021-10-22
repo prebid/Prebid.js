@@ -192,7 +192,6 @@ describe('Merkle System', function () {
 
       expect(id.id).to.exist.and.to.equal(storedId);
     });
-    
     it('extendId() should warn on missing endpoint', function () {
       let config = {
         params: {
