@@ -2,6 +2,7 @@
  * This module adds Weborama provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
  * The module will fetch contextual data (page-centric) from Weborama server
+ * and may access user-centric data from local storage
  * @module modules/weboramaRtdProvider
  * @requires module:modules/realTimeData
  */
