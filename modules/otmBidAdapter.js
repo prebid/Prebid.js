@@ -87,14 +87,14 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     logInfo('serverResponse', serverResponse.body);
 
-    const responseBody = serverResponse ? serverResponse.body : {};
+    const responsesBody = serverResponse ? serverResponse.body : {};
     const bidResponses = [];
     try {
-      if (responseBody.length === 0) {
+      if (responsesBody.length === 0) {
         return [];
       }
 
-      _each(serverResponse.body, (responseBody) => {
+      _each(responsesBody, (responseBody) => {
         if (!responseBody.ad) {
           return null
         }
