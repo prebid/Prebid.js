@@ -1603,32 +1603,6 @@ describe('OpenxAdapter', function () {
             },
           },
           {
-            name: 'should not send duplicate proprietary segment data from first party config ',
-            config: {
-              ortb2: {
-                user: {
-                  data: [
-                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}, {id: 'foo'}]},
-                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
-                  ]
-                },
-                site: {
-                  content: {
-                    data: [
-                      {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
-                      {name: 'dmp3', ext: {segtax: 5}, segment: [{id: 'foo2'}, {id: 'foo2'}, {id: 'bar2'}]},
-                      {name: 'dmp3', ext: {segtax: 5}, segment: [{id: 'foo2'}, {id: 'bar2'}]},
-                    ]
-                  }
-                }
-              }
-            },
-            expect: {
-              sm: 'dmp1/4:foo|bar',
-              scsm: 'dmp1/4:foo|bar,dmp3/5:foo2|bar2'
-            },
-          },
-          {
             name: 'should combine same provider segment data from ortb2.user.data',
             config: {
               ortb2: {
