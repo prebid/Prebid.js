@@ -1,5 +1,5 @@
 import { buildVastWrapper, getVastNode, getAdNode, getWrapperNode, getAdSystemNode,
-  getAdTagUriNode, getErrorNode, getImpressionNode } from 'modules/videoModule/shared/vastWrapperBuilder.js';
+  getAdTagUriNode, getErrorNode, getImpressionNode } from 'modules/videoModule/shared/vastXmlBuilder.js';
 import { expect } from 'chai';
 
 describe('buildVastWrapper', function () {
