@@ -598,7 +598,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
   }
 
-  // temporary function; may remove at later date if/when adsever fully supports dchain
+  // temporary function; may remove at later date if/when adserver fully supports dchain
   function setupDChain(rtbBid) {
     let dchain = {
       ver: '1.0',
