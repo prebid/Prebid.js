@@ -456,7 +456,7 @@ describe('adapterManager tests', function () {
     });
 
     it('should call spec\'s onBidderError callback when callBidderError is called', function () {
-      const bidRequests = getBidRequests()
+      const bidRequests = getBidRequests();
       const bidderRequest = find(bidRequests, bidRequest => bidRequest.bidderCode === bidder);
       const xhrErrorMock = {
         status: 500,
