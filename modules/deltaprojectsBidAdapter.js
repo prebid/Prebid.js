@@ -1,9 +1,9 @@
-// jshint esversion: 6, es3: false, node: true
-'use strict';
-
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import {
+  _each, _map, isFn, isNumber, createTrackPixelHtml, deepAccess, parseUrl, logWarn, logError
+} from '../src/utils.js';
+import {config} from '../src/config.js';
 
 export const BIDDER_CODE = 'deltaprojects';
 export const BIDDER_ENDPOINT_URL = 'https://d5p.de17a.com/dogfight/prebid';
@@ -16,9 +16,9 @@ function isBidRequestValid(bid) {
   if (bid.bidder !== BIDDER_CODE) return false;
 
   // publisher id is required
-  const publisherId = utils.deepAccess(bid, 'params.publisherId')
+  const publisherId = deepAccess(bid, 'params.publisherId')
   if (!publisherId) {
-    utils.logError('Invalid bid request, missing publisher id in params');
+    logError('Invalid bid request, missing publisher id in params');
     return false;
   }
 
@@ -32,7 +32,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const id = bidderRequest.auctionId;
 
   // -- build site
-  const loc = utils.parseUrl(bidderRequest.refererInfo.referer);
+  const loc = parseUrl(bidderRequest.refererInfo.referer);
   const publisherId = setOnAny(validBidRequests, 'params.publisherId');
   const siteId = setOnAny(validBidRequests, 'params.siteId');
   const site = {
@@ -79,15 +79,15 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function buildOpenRTBRequest(validBidRequest, id, site, device, user, tmax, regs) {
+  // build cur
+  const currency = config.getConfig('currency.adServerCurrency') || deepAccess(validBidRequest, 'params.currency');
+  const cur = currency && [currency];
+
   // build impression
-  const impression = buildImpression(validBidRequest);
+  const impression = buildImpression(validBidRequest, currency);
 
   // build test
-  const test = utils.deepAccess(validBidRequest, 'params.test') ? 1 : 0
-
-  // build cur
-  const currency = utils.deepAccess(validBidRequest, 'params.currency');
-  const cur = currency && [currency];
+  const test = deepAccess(validBidRequest, 'params.test') ? 1 : 0
 
   const at = 1
 
@@ -113,54 +113,50 @@ function buildOpenRTBRequest(validBidRequest, id, site, device, user, tmax, regs
   };
 }
 
-function buildImpression(bid) {
+function buildImpression(bid, currency) {
   const impression = {
     id: bid.bidId,
     tagid: bid.params.tagId,
     ext: {},
   };
 
-  const bannerMediaType = utils.deepAccess(bid, `mediaTypes.${BANNER}`);
+  const bannerMediaType = deepAccess(bid, `mediaTypes.${BANNER}`);
   impression.banner = buildImpressionBanner(bid, bannerMediaType);
 
-  // bidfloor
-  if (bid.params.floor) {
-    impression.bidfloor = bid.params.floor;
+  // bid floor
+  const bidFloor = getBidFloor(bid, BANNER, '*', currency);
+  if (bidFloor) {
+    impression.bidfloor = bidFloor.floor;
+    impression.bidfloorcur = bidFloor.currency;
   }
 
-  // ext
-  if (bid.params.bidderParams) {
-    utils._each(bid.params.bidderParams, (params, partner) => {
-      impression.ext[partner] = params;
-    });
-  }
   return impression;
 }
 
 function buildImpressionBanner(bid, bannerMediaType) {
   const bannerSizes = (bannerMediaType && bannerMediaType.sizes) || bid.sizes;
   return {
-    format: utils._map(bannerSizes, ([width, height]) => ({ w: width, h: height })),
+    format: _map(bannerSizes, ([width, height]) => ({ w: width, h: height })),
   };
 }
 
 /** -- Interpret response --**/
 function interpretResponse(serverResponse) {
   if (!serverResponse.body) {
-    utils.logWarn('Response body is invalid, return !!');
+    logWarn('Response body is invalid, return !!');
     return [];
   }
 
   const { body: { id, seatbid, cur } } = serverResponse;
   if (!id || !seatbid) {
-    utils.logWarn('Id / seatbid of response is invalid, return !!');
+    logWarn('Id / seatbid of response is invalid, return !!');
     return [];
   }
 
   const bidResponses = [];
 
-  utils._each(seatbid, seatbid => {
-    utils._each(seatbid.bid, bid => {
+  _each(seatbid, seatbid => {
+    _each(seatbid.bid, bid => {
       const bidObj = {
         requestId: bid.impid,
         cpm: parseFloat(bid.price),
@@ -176,7 +172,7 @@ function interpretResponse(serverResponse) {
       bidObj.mediaType = BANNER;
       bidObj.ad = bid.adm;
       if (bid.nurl) {
-        bidObj.ad += utils.createTrackPixelHtml(decodeURIComponent(bid.nurl));
+        bidObj.ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
       }
       if (bid.ext) {
         bidObj[BIDDER_CODE] = bid.ext;
@@ -189,15 +185,13 @@ function interpretResponse(serverResponse) {
 
 /** -- On Bid Won -- **/
 function onBidWon(bid) {
-  // eslint-disable-next-line no-template-curly-in-string
-  if (bid.ad.includes('${AUCTION_PRICE:B64}')) {
-    let cpm = bid.cpm;
-    if (bid.currency && bid.currency !== bid.originalCurrency && typeof bid.getCpmInNewCurrency === 'function') {
-      cpm = bid.getCpmInNewCurrency(bid.originalCurrency);
-    }
-    // eslint-disable-next-line no-template-curly-in-string
-    bid.ad = bid.ad.replaceAll('${AUCTION_PRICE:B64}', Math.round(cpm * 1000000))
+  let cpm = bid.cpm;
+  if (bid.currency && bid.currency !== bid.originalCurrency && typeof bid.getCpmInNewCurrency === 'function') {
+    cpm = bid.getCpmInNewCurrency(bid.originalCurrency);
   }
+  const wonPrice = Math.round(cpm * 1000000);
+  const wonPriceMacroPatten = /\$\{AUCTION_PRICE:B64\}/g;
+  bid.ad = bid.ad.replace(wonPriceMacroPatten, wonPrice);
 }
 
 /** -- Get user syncs --**/
@@ -223,10 +217,21 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
   return syncs;
 }
 
+/** -- Get bid floor --**/
+export function getBidFloor(bid, mediaType, size, currency) {
+  if (isFn(bid.getFloor)) {
+    const bidFloorCurrency = currency || 'USD';
+    const bidFloor = bid.getFloor({currency: bidFloorCurrency, mediaType: mediaType, size: size});
+    if (isNumber(bidFloor.floor)) {
+      return bidFloor;
+    }
+  }
+}
+
 /** -- Helper methods --**/
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i], key);
+    result = deepAccess(collection[i], key);
     if (result) {
       return result;
     }

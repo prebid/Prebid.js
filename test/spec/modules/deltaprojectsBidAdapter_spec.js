@@ -3,9 +3,10 @@ import {
   BIDDER_CODE,
   BIDDER_ENDPOINT_URL,
   spec, USERSYNC_URL,
+  getBidFloor
 } from 'modules/deltaprojectsBidAdapter.js';
 
-const BID_REQ_REFER = 'http://example.com/page?param=val'
+const BID_REQ_REFER = 'http://example.com/page?param=val';
 
 describe('deltaprojectsBidAdapter', function() {
   describe('isBidRequestValid', function () {
@@ -74,16 +75,6 @@ describe('deltaprojectsBidAdapter', function() {
       expect(request.data.test).to.equal(TEST_TAG);
     });
 
-    it('send bid request with imp extensions if it is set in the params', function () {
-      const bidderParams = { partner_abc: { setting1: 'abc', setting2: 'abc' } };
-      const bidRequest = Object.assign({}, BIDREQ, {
-        params: { ...BIDREQ.params, bidderParams },
-      });
-      const bidderRequest = { refererInfo: { referer: BID_REQ_REFER } };
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      expect(request.data.imp[0].ext).to.deep.equal(bidderParams);
-    });
-
     it('send bid request with correct timeout', function () {
       const TMAX = 10;
       const bidderRequest = { refererInfo: { referer: BID_REQ_REFER }, timeout: TMAX };
@@ -118,10 +109,7 @@ describe('deltaprojectsBidAdapter', function() {
       bidder: BIDDER_CODE,
       params: {
         tagId: '403370',
-        siteId: 'example.com',
-        floor: 0.21,
-        keywords: {},
-        floorSizeMap: {}
+        siteId: 'example.com'
       },
       sizes: [
         [300, 250]
@@ -330,7 +318,7 @@ describe('deltaprojectsBidAdapter', function() {
       spec.onBidWon(bid);
       expect(bid.ad).to.contains(`${Math.round(bid.cpm * 1000000)}`);
     });
-  })
+  });
 
   describe('getUserSyncs', function () {
     it('should not do user sync when pixel is disabled', () => {
@@ -361,5 +349,51 @@ describe('deltaprojectsBidAdapter', function() {
       const expectedResult2 = USERSYNC_URL + `?gdpr_consent=${gdprConsent.consentString}`
       expect(result2[0].url).to.equal(expectedResult2);
     });
-  })
+  });
+
+  describe('getBidFloor', () => {
+    it('should not get bid floor when getFloor is not defined', () => {
+      const bid = {};
+      const currency = 'SEK';
+      const result = getBidFloor(bid, 'banner', '*', currency);
+      expect(result).to.be.undefined;
+    });
+
+    it('should not get bid floor when getFloor is not a function', () => {
+      const bid = { getFloor: 1.0 };
+      const currency = 'SEK';
+      const result = getBidFloor(bid, 'banner', '*', currency);
+      expect(result).to.be.undefined;
+    });
+
+    it('should not get bid floor when getFloor return empty', () => {
+      const bid = { getFloor: () => ({}) };
+      const currency = 'SEK';
+      const result = getBidFloor(bid, 'banner', '*', currency);
+      expect(result).to.be.undefined;
+    });
+
+    it('should not get bid floor in SEK when floor is not a number', () => {
+      const bid = { getFloor: () => ({ currency: 'SEK', floor: '1.0' }) };
+      const currency = 'SEK';
+      const result = getBidFloor(bid, 'banner', '*', currency);
+      expect(result).to.be.undefined;
+    });
+
+    it('should get bid floor in USD when currency is not defined', () => {
+      const bid = { getFloor: () => ({ currency: 'USD', floor: 1.0 }) };
+      const currency = undefined;
+      const result = getBidFloor(bid, 'banner', '*', currency);
+      expect(result.floor).to.equal(1.0);
+      expect(result.currency).to.equal('USD');
+    });
+
+    it('should get bid floor in SEK when currency is SEK', () => {
+      const bid = { getFloor: () => ({ currency: 'SEK', floor: 1.0 }) };
+      const currency = 'SEK';
+      const result = getBidFloor(bid, 'banner', '*', currency);
+      expect(result.floor).to.equal(1.0);
+      expect(result.currency).to.equal('SEK');
+    });
+  });
 });
