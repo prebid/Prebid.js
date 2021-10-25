@@ -98,7 +98,7 @@ export const spec = {
     ]
 
     if (placementIds.size > 0) {
-      params.unshift({ key: 'ntv_ptd', value: [...placementIds].join(',') })
+      params.unshift({ key: 'ntv_ptd', value: placementIds.toString() })
     }
 
     if (bidderRequest.gdprConsent) {

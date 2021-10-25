@@ -11,6 +11,7 @@ const REQUESTSENT = 1;
 const RESPONSESENT = 2;
 const WINSENT = 4;
 const TIMEOUTSENT = 8;
+const ADRENDERFAILEDSENT = 16;
 
 let initOptions;
 export const BID_WON_TIMEOUT = 500;
@@ -114,6 +115,16 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
           livewrappedAnalyticsAdapter.sendEvents();
         }
         break;
+      case CONSTANTS.EVENTS.AD_RENDER_FAILED:
+        logInfo('LIVEWRAPPED_AD_RENDER_FAILED:', args);
+        let adRenderFailedBid = cache.auctions[args.bid.auctionId].bids[args.bid.requestId];
+        adRenderFailedBid.adRenderFailed = true;
+        adRenderFailedBid.reason = args.reason;
+        adRenderFailedBid.message = args.message;
+        if (adRenderFailedBid.sendStatus != 0) {
+          livewrappedAnalyticsAdapter.sendEvents();
+        }
+        break;
       case CONSTANTS.EVENTS.BID_TIMEOUT:
         logInfo('LIVEWRAPPED_BID_TIMEOUT:', args);
         args.forEach(timeout => {
@@ -151,13 +162,15 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     wins: getWins(sentRequests.gdpr, sentRequests.auctionIds),
     timeouts: getTimeouts(sentRequests.auctionIds),
     bidAdUnits: getbidAdUnits(),
+    rf: getAdRenderFailed(sentRequests.auctionIds),
     rcv: getAdblockerRecovered()
   };
 
   if (events.requests.length == 0 &&
       events.responses.length == 0 &&
       events.wins.length == 0 &&
-      events.timeouts.length == 0) {
+      events.timeouts.length == 0 &&
+      events.rf.length == 0) {
     return;
   }
 
@@ -336,6 +349,36 @@ function getTimeouts(auctionIds) {
   });
 
   return timeouts;
+}
+
+function getAdRenderFailed(auctionIds) {
+  var adRenderFails = [];
+
+  Object.keys(cache.auctions).forEach(auctionId => {
+    let auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
+    Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
+      let auction = cache.auctions[auctionId];
+      let bid = auction.bids[bidId];
+      if (!(bid.sendStatus & ADRENDERFAILEDSENT) && bid.adRenderFailed) {
+        bid.sendStatus |= ADRENDERFAILEDSENT;
+
+        adRenderFails.push({
+          bidder: bid.bidder,
+          adUnit: bid.adUnit,
+          adUnitId: bid.adUnitId,
+          timeStamp: auction.timeStamp,
+          auctionId: auctionIdPos,
+          auc: bid.auc,
+          buc: bid.buc,
+          lw: bid.lw,
+          rsn: bid.reason,
+          msg: bid.message
+        });
+      }
+    });
+  });
+
+  return adRenderFails;
 }
 
 function getbidAdUnits() {
