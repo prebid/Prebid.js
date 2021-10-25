@@ -518,6 +518,24 @@ describe('SSPBC adapter', function () {
       expect(payload.user).to.be.an('object').and.to.have.property('[ortb_extensions.consent]', bidRequest.gdprConsent.consentString);
     });
 
+    it('should send net info and pvid', function () {
+      expect(payload.user).to.be.an('object').and.to.have.property('data').that.is.an('array');
+
+      const userData = payload.user.data;
+      expect(userData.length).to.equal(2);
+
+      const netInfo = userData[0];
+      expect(netInfo.id).to.equal('12');
+      expect(netInfo.name).to.equal('NetInfo');
+      expect(netInfo).to.have.property('segment').that.is.an('array');
+
+      const pvid = userData[1];
+      expect(pvid.id).to.equal('7');
+      expect(pvid.name).to.equal('pvid');
+      expect(pvid).to.have.property('segment').that.is.an('array');
+      expect(pvid.segment[0]).to.have.property('value');
+    });
+
     it('should build correct native payload', function () {
       const nativeAssets = payloadNative.imp && payloadNative.imp[0].native.request;
 

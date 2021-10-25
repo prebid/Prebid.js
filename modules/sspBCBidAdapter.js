@@ -15,6 +15,7 @@ const { navigator } = W;
 const oneCodeDetection = {};
 const adUnitsCalled = {};
 const adSizesCalled = {};
+const pageView = {};
 var consentApiVersion;
 
 /**
@@ -71,6 +72,7 @@ const cookieSupport = () => {
 };
 
 const applyClientHints = ortbRequest => {
+  const { location } = document;
   const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
   const viewport = W.visualViewport || false;
   const segments = [];
@@ -85,6 +87,16 @@ const applyClientHints = ortbRequest => {
     'CH-BrowserBrands': JSON.stringify(userAgentData.brands),
     'CH-isMobile': userAgentData.mobile,
   };
+
+  /**
+    Check / generate page view id
+    Should be generated dureing first call to applyClientHints(),
+    and re-generated if pathname has changed
+  */
+  if (!pageView.id || location.pathname !== pageView.path) {
+    pageView.path = location.pathname;
+    pageView.id = Math.floor(1E20 * Math.random());
+  }
 
   Object.keys(hints).forEach(key => {
     const hint = hints[key];
@@ -101,6 +113,14 @@ const applyClientHints = ortbRequest => {
       id: '12',
       name: 'NetInfo',
       segment: segments,
+    }, {
+      id: '7',
+      name: 'pvid',
+      segment: [
+        {
+          value: `${pageView.id}`
+        }
+      ]
     }];
 
   ortbRequest.user = Object.assign(ortbRequest.user, { data });
