@@ -144,9 +144,9 @@ function getAdapterMode() {
 
 function getResponseFormat(bid) {
   const adm = bid.adm;
-  if (adm.indexOf('o2playerSettings') !== -1 || adm.indexOf('YAHOO.VideoPlatform.VideoPlayer') !== -1 || adm.indexOf('AdPlacement') !== -1 ) {
+  if (adm.indexOf('o2playerSettings') !== -1 || adm.indexOf('YAHOO.VideoPlatform.VideoPlayer') !== -1 || adm.indexOf('AdPlacement') !== -1) {
     return BANNER;
-  } else if (adm.indexOf('VAST') !== -1 ) {
+  } else if (adm.indexOf('VAST') !== -1) {
     return VIDEO;
   }
 };
