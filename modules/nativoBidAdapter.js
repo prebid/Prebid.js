@@ -57,7 +57,7 @@ export const spec = {
         placementIds.add(placementId)
       }
 
-      var key = placementId || request.adUnitCode
+      var key = placementId || validBidRequests.adUnitCode
       placmentBidIdMap[key] = {
         bidId: request.bidId,
         size: getLargestSize(request.sizes),
@@ -71,7 +71,7 @@ export const spec = {
         // Track if we've already requested for this ad unit code
         adUnitsRequested[adUnit.adUnitCode] =
           adUnitsRequested[adUnit.adUnitCode] !== undefined
-            ? adUnitsRequested[adUnit.adUnitCode] + 1
+            ? adUnitsRequested[adUnit.adUnitCode]++
             : 0
         return {
           adUnitCode: adUnit.adUnitCode,

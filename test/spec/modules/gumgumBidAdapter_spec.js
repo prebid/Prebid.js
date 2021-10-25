@@ -531,8 +531,12 @@ describe('gumgumAdapter', function () {
       const jcsi = JSON.stringify(JCSI);
       const bidRequest = spec.buildRequests(bidRequests)[0];
       const actualKeys = Object.keys(JSON.parse(bidRequest.data.jcsi)).sort();
-      expect(actualKeys).to.eq(actualKeys);
+      expect(actualKeys).to.eql(expectedKeys);
       expect(bidRequest.data.jcsi).to.eq(jcsi);
+    });
+    it('should include the local time and timezone offset', function () {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(!!bidRequest.data.lt).to.be.true;
     });
   })
 
@@ -683,11 +687,24 @@ describe('gumgumAdapter', function () {
         expect(result[0].height).to.equal('1');
       });
 
-      it('uses response width and height for inscreen product', function () {
-        const result = spec.interpretResponse({ body: serverResponse }, bidRequest)[0];
-        expect(result.width).to.equal(serverResponse.ad.width.toString());
-        expect(result.height).to.equal(serverResponse.ad.height.toString());
-      });
+      it('uses request size that nearest matches response size for in-screen', function () {
+        const request = { ...bidRequest };
+        const body = { ...serverResponse };
+        const expectedSize = [ 300, 50 ];
+        let result;
+
+        request.pi = 2;
+        request.sizes.unshift(expectedSize);
+
+        // typical ad server response values for in-screen
+        body.ad.width = 300;
+        body.ad.height = 100;
+
+        result = spec.interpretResponse({ body }, request)[0];
+
+        expect(result.width = expectedSize[0]);
+        expect(result.height = expectedSize[1]);
+      })
 
       it('defaults to use bidRequest sizes', function () {
         const { ad, jcsi, pag, thms, meta } = serverResponse
