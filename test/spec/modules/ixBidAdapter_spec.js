@@ -1377,6 +1377,11 @@ describe('IndexexchangeAdapter', function () {
       expect(requestUrl).to.equal(IX_SECURE_ENDPOINT);
     });
 
+    it('auction type should be set correctly', function () {
+      const at = JSON.parse(query.r).at;
+      expect(at).to.equal(1);
+    })
+
     it('query object (version, siteID and request) should be correct', function () {
       expect(query.v).to.equal(BANNER_ENDPOINT_VERSION);
       expect(query.s).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
@@ -1928,6 +1933,11 @@ describe('IndexexchangeAdapter', function () {
       expect(query.sd).to.equal(1);
       expect(query.nf).to.equal(1);
     });
+
+    it('auction type should be set correctly', function () {
+      const at = JSON.parse(query.r).at;
+      expect(at).to.equal(1);
+    })
 
     it('impression should have correct format and value', function () {
       const impression = JSON.parse(query.r).imp[0];
