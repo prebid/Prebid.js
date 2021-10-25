@@ -646,13 +646,19 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     }
 
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
-      const { id, banner: { topframe } } = impressionObjects[0];
+      const { id, banner: { topframe }, ext } = impressionObjects[0];
       const _bannerImpression = {
         id,
         banner: {
           topframe,
           format: impressionObjects.map(({ banner: { w, h }, ext }) => ({ w, h, ext }))
         },
+      }
+
+      if (ext.dfp_ad_unit_code) {
+        _bannerImpression.ext = {
+          dfp_ad_unit_code: ext.dfp_ad_unit_code
+        }
       }
 
       if ('bidfloor' in impressionObjects[0]) {
