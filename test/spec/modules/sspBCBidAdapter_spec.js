@@ -536,6 +536,15 @@ describe('SSPBC adapter', function () {
       expect(pvid.segment[0]).to.have.property('value');
     });
 
+    it('pvid should be constant on a single page view', function () {
+      const userData1 = payload.user.data;
+      const userData2 = payloadNative.user.data;
+      const pvid1 = userData1[1];
+      const pvid2 = userData2[1];
+
+      expect(pvid1.segment[0].value).to.equal(pvid2.segment[0].value);
+    });
+
     it('should build correct native payload', function () {
       const nativeAssets = payloadNative.imp && payloadNative.imp[0].native.request;
 
