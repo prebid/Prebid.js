@@ -57,7 +57,7 @@ export const spec = {
         placementIds.add(placementId)
       }
 
-      var key = placementId || validBidRequests.adUnitCode
+      var key = placementId || request.adUnitCode
       placmentBidIdMap[key] = {
         bidId: request.bidId,
         size: getLargestSize(request.sizes),
@@ -71,7 +71,7 @@ export const spec = {
         // Track if we've already requested for this ad unit code
         adUnitsRequested[adUnit.adUnitCode] =
           adUnitsRequested[adUnit.adUnitCode] !== undefined
-            ? adUnitsRequested[adUnit.adUnitCode]++
+            ? adUnitsRequested[adUnit.adUnitCode] + 1
             : 0
         return {
           adUnitCode: adUnit.adUnitCode,
@@ -98,7 +98,11 @@ export const spec = {
     ]
 
     if (placementIds.size > 0) {
-      params.unshift({ key: 'ntv_ptd', value: [...placementIds].join(',') })
+      // Convert Set to Array (IE 11 Safe)
+      const placements = []
+      placementIds.forEach((value) => placements.push(value))
+      // Append to query string paramters
+      params.unshift({ key: 'ntv_ptd', value: placements.join(',') })
     }
 
     if (bidderRequest.gdprConsent) {
