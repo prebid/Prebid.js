@@ -168,6 +168,7 @@ function buildRequest(validBidRequests, bidderRequest) {
 
 function buildBid(bid, bidderRequest) {
   const originalBid = bidderRequest.bids.find((b) => b.bidId === bid.impid);
+  const meta = Object.assign({}, bid.ext.meta, { advertiserDomains: bid.adomain });
 
   return {
     requestId: bid.impid,
@@ -181,6 +182,7 @@ function buildBid(bid, bidderRequest) {
     mediaType: 'banner',
     ad: bid.adm,
     adUnitCode: originalBid.adUnitCode,
+    meta: meta,
   };
 }
 
