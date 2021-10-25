@@ -322,7 +322,7 @@ function buildFpdQueryParams(fpdPath) {
       return acc;
     }, {})
   return Object.keys(fpd)
-    .map((name, _) => name + ':' + [...new Set(fpd[name])].join('|'))
+    .map((name, _) => name + ':' + fpd[name].join('|'))
     .join(',')
 }
 

@@ -29,6 +29,7 @@ let hasSynced = false;
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['playwire'],
   supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.
