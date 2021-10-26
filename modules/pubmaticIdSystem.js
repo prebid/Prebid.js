@@ -14,7 +14,7 @@ const MODULE_NAME = 'pubmaticId';
 */
 
 
-export const dmdIdSubmodule = {
+export const pubmaticIdSubmodule = {
 	name: MODULE_NAME,
 
 	decode(value) {
@@ -77,4 +77,4 @@ export const dmdIdSubmodule = {
 	}
 };
 
-submodule('userId', dmdIdSubmodule);
+submodule('userId', pubmaticIdSubmodule);
