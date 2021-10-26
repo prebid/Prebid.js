@@ -131,8 +131,8 @@ describe('browsi Real time  data sub module', function () {
     ]
     browsiRTD.browsiSubmodule.getBidRequestData({adUnits: fakeAdUnits}, () => {}, {}, null);
     it('should set ad unit params with prediction values', function () {
-      expect(utils.deepAccess(fakeAdUnits[0], 'ortb2Imp.ext.data.browsi')).to.eql({browsiViewability: '0.20'});
-      expect(utils.deepAccess(fakeAdUnits[1], 'ortb2Imp.ext.data.browsi')).to.eql({browsiViewability: '0.10'});
+      expect(utils.deepAccess(fakeAdUnits[0], 'ortb2Imp.ext.data.browsi')).to.eql({bv: '0.20'});
+      expect(utils.deepAccess(fakeAdUnits[1], 'ortb2Imp.ext.data.browsi')).to.eql({bv: '0.10'});
     })
   })
 });

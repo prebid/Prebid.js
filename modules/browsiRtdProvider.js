@@ -307,7 +307,7 @@ function setBidRequestsData(bidObj, callback) {
       adUnits.forEach(adUnit => {
         const adUnitCode = adUnit.code;
         if (data[adUnitCode]) {
-          deepSetValue(adUnit, 'ortb2Imp.ext.data.browsi', {[DEF_KEYNAME]: data[adUnitCode][getKey()]});
+          deepSetValue(adUnit, 'ortb2Imp.ext.data.browsi', {[getKey()]: data[adUnitCode][getKey()]});
         }
       });
     }
