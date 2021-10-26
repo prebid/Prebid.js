@@ -402,7 +402,7 @@ describe('TrustXAdapter', function () {
     });
 
     it('if segment is present in permutive targeting, payload must have right params', function () {
-      const permSegments = ['test_perm_1', 'test_perm_2'];
+      const permSegments = [{id: 'test_perm_1'}, {id: 'test_perm_2'}];
       const bidRequestsWithPermutiveTargeting = bidRequests.map((bid) => {
         return Object.assign({
           rtd: {
@@ -421,8 +421,8 @@ describe('TrustXAdapter', function () {
       expect(payload.user.data).to.deep.equal([{
         name: 'permutive',
         segment: [
-          {name: 'p_standard', value: permSegments[0]},
-          {name: 'p_standard', value: permSegments[1]}
+          {name: 'p_standard', value: permSegments[0].id},
+          {name: 'p_standard', value: permSegments[1].id}
         ]
       }]);
     });
