@@ -1,11 +1,16 @@
+import { deepAccess, isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'integr8';
 const ENDPOINT_URL = 'https://integr8.central.gjirafa.tech/bid';
 const DIMENSION_SEPARATOR = 'x';
 const SIZE_SEPARATOR = ';';
+const BISKO_ID = 'biskoId';
+const STORAGE_ID = 'bisko-sid';
+const SEGMENTS = 'biskoSegments';
+const storage = getStorageManager();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -26,9 +31,12 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    const storageId = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(STORAGE_ID) || '' : '';
+    const biskoId = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(BISKO_ID) || '' : '';
+    const segments = storage.localStorageIsEnabled() ? JSON.parse(storage.getDataFromLocalStorage(SEGMENTS)) || [] : [];
+
     let propertyId = '';
     let pageViewGuid = '';
-    let storageId = '';
     let bidderRequestId = '';
     let url = '';
     let contents = [];
@@ -45,7 +53,6 @@ export const spec = {
     let placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
       if (!pageViewGuid) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
-      if (!storageId) { storageId = bidRequest.params.storageId || ''; }
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
       if (!Object.keys(data).length && bidRequest.params.data && Object.keys(bidRequest.params.data).length) { data = bidRequest.params.data; }
 
@@ -55,7 +62,7 @@ export const spec = {
         placementId: bidRequest.params.placementId,
         bidid: bidRequest.bidId,
         count: bidRequest.params.count,
-        skipTime: utils.deepAccess(bidRequest, 'mediaTypes.video.skipafter', bidRequest.params.skipTime),
+        skipTime: deepAccess(bidRequest, 'mediaTypes.video.skipafter', bidRequest.params.skipTime),
         floor: getBidFloor(bidRequest)
       };
     });
@@ -64,6 +71,8 @@ export const spec = {
       propertyId: propertyId,
       pageViewGuid: pageViewGuid,
       storageId: storageId,
+      biskoId: biskoId,
+      segments: segments,
       url: url,
       requestid: bidderRequestId,
       placements: placements,
@@ -121,7 +130,7 @@ function generateSizeParam(sizes) {
 }
 
 export function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return null;
   }
 
@@ -131,7 +140,7 @@ export function getBidFloor(bid) {
     size: '*'
   });
 
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
     return floor.floor;
   }
 

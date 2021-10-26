@@ -7,7 +7,7 @@
 
 // ci trigger: 1
 
-import * as utils from '../src/utils.js'
+import { timestamp, logError, logWarn, isEmpty, contains, inIframe, deepClone, isPlainObject } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
@@ -26,7 +26,7 @@ const EXPIRE_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
 const storage = getStorageManager(PARRABLE_GVLID);
 
 function getExpirationDate() {
-  const oneYearFromNow = new Date(utils.timestamp() + ONE_YEAR_MS);
+  const oneYearFromNow = new Date(timestamp() + ONE_YEAR_MS);
   return oneYearFromNow.toGMTString();
 }
 
@@ -76,15 +76,15 @@ function serializeParrableId(parrableIdAndParams) {
 
 function isValidConfig(configParams) {
   if (!configParams) {
-    utils.logError('User ID - parrableId submodule requires configParams');
+    logError('User ID - parrableId submodule requires configParams');
     return false;
   }
   if (!configParams.partners && !configParams.partner) {
-    utils.logError('User ID - parrableId submodule requires partner list');
+    logError('User ID - parrableId submodule requires partner list');
     return false;
   }
   if (configParams.storage) {
-    utils.logWarn('User ID - parrableId submodule does not require a storage config');
+    logWarn('User ID - parrableId submodule does not require a storage config');
   }
   return true;
 }
@@ -177,28 +177,28 @@ function shouldFilterImpression(configParams, parrableId) {
   }
 
   function isAllowed() {
-    if (utils.isEmpty(config.allowedZones) &&
-      utils.isEmpty(config.allowedOffsets)) {
+    if (isEmpty(config.allowedZones) &&
+      isEmpty(config.allowedOffsets)) {
       return true;
     }
     if (isZoneListed(config.allowedZones, zone)) {
       return true;
     }
-    if (utils.contains(config.allowedOffsets, offset)) {
+    if (contains(config.allowedOffsets, offset)) {
       return true;
     }
     return false;
   }
 
   function isBlocked() {
-    if (utils.isEmpty(config.blockedZones) &&
-      utils.isEmpty(config.blockedOffsets)) {
+    if (isEmpty(config.blockedZones) &&
+      isEmpty(config.blockedOffsets)) {
       return false;
     }
     if (isZoneListed(config.blockedZones, zone)) {
       return true;
     }
-    if (utils.contains(config.blockedOffsets, offset)) {
+    if (contains(config.blockedOffsets, offset)) {
       return true;
     }
     return false;
@@ -246,7 +246,7 @@ function fetchId(configParams, gdprConsentData) {
     trackers,
     url: refererInfo.referer,
     prebidVersion: '$prebid.version$',
-    isIframe: utils.inIframe(),
+    isIframe: inIframe(),
     tpcSupport
   };
 
@@ -276,7 +276,7 @@ function fetchId(configParams, gdprConsentData) {
   const callback = function (cb) {
     const callbacks = {
       success: response => {
-        let newParrableId = parrableId ? utils.deepClone(parrableId) : {};
+        let newParrableId = parrableId ? deepClone(parrableId) : {};
         let newParams = {};
         if (response) {
           try {
@@ -301,18 +301,18 @@ function fetchId(configParams, gdprConsentData) {
               }
             }
           } catch (error) {
-            utils.logError(error);
+            logError(error);
             cb();
           }
           writeCookie({ ...newParrableId, ...newParams });
           cb(newParrableId);
         } else {
-          utils.logError('parrableId: ID fetch returned an empty result');
+          logError('parrableId: ID fetch returned an empty result');
           cb();
         }
       },
       error: error => {
-        utils.logError(`parrableId: ID fetch encountered an error`, error);
+        logError(`parrableId: ID fetch encountered an error`, error);
         cb();
       }
     };
@@ -350,7 +350,7 @@ export const parrableIdSubmodule = {
    * @return {(Object|undefined}
    */
   decode(parrableId) {
-    if (parrableId && utils.isPlainObject(parrableId)) {
+    if (parrableId && isPlainObject(parrableId)) {
       return { parrableId };
     }
     return undefined;

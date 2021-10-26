@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js'
+import { isArray, _map, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
 
@@ -62,13 +62,13 @@ function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid)
 
   return hasVideoMediaType(bid) && !!videoParams.playerSize &&
-    utils.isArray(videoParams.playerSize) &&
+    isArray(videoParams.playerSize) &&
     videoParams.playerSize.length > 0;
 }
 
 function buildBidRequest(validBidRequest) {
   const params = validBidRequest.params;
-  const mediaTypes = utils._map(
+  const mediaTypes = _map(
     Object.keys(validBidRequest.mediaTypes),
     function (pbjsType) {
       return mediaTypesMap[pbjsType];
@@ -145,8 +145,8 @@ function buildBidResponse(seedtagBid) {
 export function getTimeoutUrl (data) {
   let queryParams = '';
   if (
-    utils.isArray(data) && data[0] &&
-    utils.isArray(data[0].params) && data[0].params[0]
+    isArray(data) && data[0] &&
+    isArray(data[0].params) && data[0].params[0]
   ) {
     const params = data[0].params[0];
     queryParams =
@@ -186,7 +186,7 @@ export const spec = {
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
-      bidRequests: utils._map(validBidRequests, buildBidRequest)
+      bidRequests: _map(validBidRequests, buildBidRequest)
     };
 
     if (payload.cmp) {
@@ -211,8 +211,8 @@ export const spec = {
    */
   interpretResponse: function(serverResponse) {
     const serverBody = serverResponse.body;
-    if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
-      return utils._map(serverBody.bids, function(bid) {
+    if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
+      return _map(serverBody.bids, function(bid) {
         return buildBidResponse(bid);
       });
     } else {
@@ -243,7 +243,7 @@ export const spec = {
    */
   onTimeout(data) {
     const url = getTimeoutUrl(data);
-    utils.triggerPixel(url);
+    triggerPixel(url);
   },
 
   /**
@@ -252,7 +252,7 @@ export const spec = {
    */
   onBidWon: function (bid) {
     if (bid && bid.nurl) {
-      utils.triggerPixel(bid.nurl);
+      triggerPixel(bid.nurl);
     }
   }
 }

@@ -1,12 +1,14 @@
 'use strict';
 
 import { BANNER } from '../src/mediaTypes.js';
-import { getAdUnitSizes, logWarn, isFn } from '../src/utils.js';
+import { getAdUnitSizes, logWarn, isFn, getWindowTop, getWindowSelf } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js'
 
 const BIDDER_CODE = 'ogury';
 const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
+const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
 
 function isBidRequestValid(bid) {
@@ -22,10 +24,16 @@ function isBidRequestValid(bid) {
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   if (!syncOptions.pixelEnabled) return [];
 
-  return [{
-    type: 'image',
-    url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${gdprConsent.consentString}&source=prebid`
-  }]
+  return [
+    {
+      type: 'image',
+      url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
+    },
+    {
+      type: 'image',
+      url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
+    }
+  ]
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
@@ -39,7 +47,8 @@ function buildRequests(validBidRequests, bidderRequest) {
       },
     },
     site: {
-      domain: location.hostname
+      domain: location.hostname,
+      page: location.href
     },
     user: {
       ext: {
@@ -112,7 +121,8 @@ function interpretResponse(openRtbBidResponse) {
         ext: bid.ext,
         meta: {
           advertiserDomains: bid.adomain
-        }
+        },
+        nurl: bid.nurl
       };
 
       bidResponse.ad = bid.adm;
@@ -135,6 +145,29 @@ function getFloor(bid) {
   return floorResult.currency === 'USD' ? floorResult.floor : 0;
 }
 
+function getWindowContext() {
+  try {
+    return getWindowTop()
+  } catch (e) {
+    return getWindowSelf()
+  }
+}
+
+function onBidWon(bid) {
+  const w = getWindowContext()
+  w.OG_PREBID_BID_OBJECT = {
+    ...(bid && { ...bid }),
+  }
+  if (bid && bid.hasOwnProperty('nurl') && bid.nurl.length > 0) ajax(bid['nurl'], null);
+}
+
+function onTimeout(timeoutData) {
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify(timeoutData[0]), {
+    method: 'POST',
+    contentType: 'application/json'
+  });
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -142,7 +175,10 @@ export const spec = {
   getUserSyncs,
   buildRequests,
   interpretResponse,
-  getFloor
+  getFloor,
+  onBidWon,
+  getWindowContext,
+  onTimeout
 }
 
 registerBidder(spec);
