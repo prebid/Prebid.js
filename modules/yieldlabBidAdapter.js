@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import find from 'core-js-pure/features/array/find.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
 import { Renderer } from '../src/Renderer.js'
+import { config } from '../src/config.js';
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -51,6 +52,11 @@ export const spec = {
       }
       if (bid.schain && isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
         query.schain = createSchainString(bid.schain)
+      }
+
+      const iabContent = getContentObject(bid)
+      if (iabContent) {
+        query.iab_content = createIabContentString(iabContent)
       }
     })
 
@@ -105,6 +111,7 @@ export const spec = {
         const gdprApplies = reqParams.gdpr ? '&gdpr=' + reqParams.gdpr : ''
         const gdprConsent = reqParams.consent ? '&consent=' + reqParams.consent : ''
         const pvId = matchedBid.pvid !== undefined ? '&pvid=' + matchedBid.pvid : ''
+        const iabContent = reqParams.iab_content ? '&iab_content=' + reqParams.iab_content : ''
 
         const bidResponse = {
           requestId: bidRequest.bidId,
@@ -117,7 +124,7 @@ export const spec = {
           netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}"></script>`,
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,
           meta: {
             advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a'
           }
@@ -130,7 +137,7 @@ export const spec = {
             bidResponse.height = playersize[1]
           }
           bidResponse.mediaType = VIDEO
-          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
+          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}`
           if (isOutstream(bidRequest)) {
             const renderer = Renderer.install({
               id: bidRequest.bidId,
@@ -211,7 +218,7 @@ function createQueryString (obj) {
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
       let val = obj[p]
-      if (p !== 'schain') {
+      if (p !== 'schain' && p !== 'iab_content') {
         str.push(encodeURIComponent(p) + '=' + encodeURIComponent(val))
       } else {
         str.push(p + '=' + val)
@@ -251,6 +258,44 @@ function createSchainString (schain) {
     return acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`
   }, '')
   return `${ver},${complete}${nodesString}`
+}
+
+/**
+ * Get content object from bid request
+ * First get content from bidder params;
+ * If not provided in bidder params, get from first party data under 'ortb2.site.content' or 'ortb2.app.content'
+ * @param {Object} bid
+ * @returns {Object}
+ */
+function getContentObject(bid) {
+  if (bid.params.iabContent && isPlainObject(bid.params.iabContent)) {
+    return bid.params.iabContent
+  }
+
+  const globalContent = config.getConfig('ortb2.site') ? config.getConfig('ortb2.site.content')
+    : config.getConfig('ortb2.app.content')
+  if (globalContent && isPlainObject(globalContent)) {
+    return globalContent
+  }
+  return undefined
+}
+
+/**
+ * Creates a string for iab_content object
+ * @param {Object} iabContent
+ * @returns {String}
+ */
+function createIabContentString(iabContent) {
+  const arrKeys = ['keywords', 'cat']
+  let str = []
+  for (let key in iabContent) {
+    if (iabContent.hasOwnProperty(key)) {
+      const value = (arrKeys.indexOf(key) !== -1 && Array.isArray(iabContent[key]))
+        ? iabContent[key].map(node => encodeURIComponent(node)).join('|') : encodeURIComponent(iabContent[key])
+      str.push(''.concat(key, ':', value))
+    }
+  }
+  return encodeURIComponent(str.join(','))
 }
 
 /**
