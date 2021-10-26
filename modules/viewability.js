@@ -13,6 +13,35 @@ export function init() {
 
 const observers = {};
 
+function isValid(vid, element, tracker, criteria) {
+  if (!element) {
+    utils.logWarn('provide an html element to track');
+    return false;
+  }
+
+  let validTracker = tracker &&
+    ((tracker.method === 'img' && utils.isStr(tracker.value)) ||
+    (tracker.method === 'js' && utils.isStr(tracker.value)) ||
+    (tracker.method === 'callback' && utils.isFn(tracker.value)));
+
+  if (!validTracker) {
+    utils.logWarn('invalid tracker', tracker);
+    return false;
+  }
+
+  if (!criteria || !criteria.inViewThreshold || !criteria.timeInView) {
+    utils.logWarn('missing criteria', criteria);
+    return false;
+  }
+
+  if (!vid || observers[vid]) {
+    utils.logWarn('provide an unregistered vid', vid);
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Start measuring viewability of an element
  * @typedef {{ method: string='img','js','callback', value: string|function }} ViewabilityTracker { method: 'img', value: 'http://my.tracker/123' }
@@ -23,28 +52,7 @@ const observers = {};
  * @param {ViewabilityCriteria} criteria
  */
 export function startMeasurement(vid, element, tracker, criteria) {
-  if (!element) {
-    utils.logWarn('provide an html element to track');
-    return;
-  }
-
-  let validTracker = tracker &&
-    ((tracker.method === 'img' && utils.isStr(tracker.value)) ||
-    (tracker.method === 'js' && utils.isStr(tracker.value)) ||
-    (tracker.method === 'callback' && utils.isFn(tracker.value)));
-
-  if (!validTracker) {
-    utils.logWarn('invalid tracker', tracker);
-    return;
-  }
-
-  if (!criteria || !criteria.inViewThreshold || !criteria.timeInView) {
-    utils.logWarn('missing criteria', criteria);
-    return;
-  }
-
-  if (!vid || observers[vid]) {
-    utils.logWarn('provide an unregistered vid', vid);
+  if (!isValid(vid, element, tracker, criteria)) {
     return;
   }
 
@@ -63,6 +71,7 @@ export function startMeasurement(vid, element, tracker, criteria) {
       observers[vid].timeoutId = window.setTimeout(() => {
         // stop observing
         observer.unobserve(element);
+        observers[vid].done = true;
 
         switch (tracker.method) {
           case 'img':
@@ -88,6 +97,7 @@ export function startMeasurement(vid, element, tracker, criteria) {
     observer: observer,
     element: element,
     timeoutId: null,
+    done: false,
   };
 
   observer.observe(element);
@@ -106,6 +116,11 @@ export function stopMeasurement(vid) {
   observers[vid].observer.unobserve(observers[vid].element);
   if (observers[vid].timeoutId) {
     window.clearTimeout(observers[vid].timeoutId);
+  }
+
+  // allow the observer under this vid to be created again
+  if (!observers[vid].done) {
+    delete observers[vid];
   }
 }
 
