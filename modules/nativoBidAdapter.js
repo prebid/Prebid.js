@@ -45,7 +45,8 @@ export const spec = {
     if (!bid.params) return bid.bidder === BIDDER_CODE
 
     // Check if any supplied parameters are invalid
-    const hasInvalidParameters = Object.entries(bid.params).some(([key, value]) => {
+    const hasInvalidParameters = Object.keys(bid.params).some(key => {
+      const value = bid.params[key]
       const validityCheck = validParameter[key]
 
       // We don't have a test for this so it's not a paramter we care about
