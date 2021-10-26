@@ -2611,7 +2611,7 @@ describe('IndexexchangeAdapter', function () {
     it('should log ERROR_CODES.EXCEEDS_MAX_SIZE in LocalStorage when there is logError called.', () => {
       const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
       bid.bidderRequestId = Array(8000).join('#');
-      
+
       expect(spec.isBidRequestValid(bid)).to.be.true;
       spec.buildRequests([bid]);
       expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { [ERROR_CODES.EXCEEDS_MAX_SIZE]: 2 } });
