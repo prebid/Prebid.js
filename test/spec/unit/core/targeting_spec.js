@@ -461,6 +461,40 @@ describe('targeting tests', function () {
       });
     });
 
+    describe('targetingControls.allowZeroCpmBids', function () {
+      let bid4;
+      beforeEach(function () {
+        bid4 = utils.deepClone(bid1);
+        bid4.adserverTargeting = {
+          hb_pb: '0.0',
+          hb_adid: '567891011',
+          hb_bidder: 'appnexus',
+        };
+        bid4.bidder = bid4.bidderCode = 'appnexus';
+        bid4.cpm = 0;
+        config.resetConfig();
+        bidsReceived = [bid4];
+      });
+
+      after(function() {
+        bidsReceived = [bid1, bid2, bid3];
+      })
+
+      it('targeting should not include a 0 cpm by default', function() {
+        bid4.adserverTargeting = {};
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({});
+      });
+
+      it('targeting should allow a 0 cpm with targetingControls.allowZeroCpmBids set to true', function () {
+        config.setConfig({ targetingControls: { allowZeroCpmBids: true } });
+        debugger; //eslint-disable-line
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_pb', 'hb_bidder', 'hb_adid', 'hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus');
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.0')
+      });
+    });
+
     describe('targetingControls.allowTargetingKeys', function () {
       let bid4;
 

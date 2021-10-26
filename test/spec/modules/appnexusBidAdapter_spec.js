@@ -1010,6 +1010,7 @@ describe('AppNexusAdapter', function () {
 
     after(function() {
       bfStub.restore();
+      config.resetConfig();
     });
 
     let response = {
@@ -1084,9 +1085,37 @@ describe('AppNexusAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
+
+    it('should reject 0 cpm bids', function () {
+      let zeroCpmResponse = deepClone(response);
+      zeroCpmResponse.tags[0].ads[0].cpm = 0;
+
+      let bidderRequest;
+
+      let result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
+      expect(result.length).to.equal(0);
+    });
+
+    it('should allow 0 cpm bids if allowZeroCpmBids setConfig is true', function () {
+      config.setConfig({ targetingControls: { allowZeroCpmBids: true } });
+
+      let zeroCpmResponse = deepClone(response);
+      zeroCpmResponse.tags[0].ads[0].cpm = 0;
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      };
+
+      let result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
+      expect(result.length).to.equal(1);
+      expect(result[0].cpm).to.equal(0);
     });
 
     it('handles nobid responses', function () {
