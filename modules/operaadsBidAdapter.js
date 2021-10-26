@@ -138,9 +138,6 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (syncOptions === undefined) {
-      return [];
-    }
     if ('iframeEnabled' in syncOptions && syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
@@ -148,13 +145,13 @@ export const spec = {
       }];
     }
     if ('pixelEnabled' in syncOptions && syncOptions.pixelEnabled) {
-      let pixels = deepAccess(serverResponses, '0.body.pixels')
+      const pixels = deepAccess(serverResponses, '0.body.pixels')
       if (Array.isArray(pixels)) {
-        let userSyncPixels = []
-        for (let i = 0; i < pixels.length; i++) {
+        const userSyncPixels = []
+        for (const pixel of pixels) {
           userSyncPixels.push({
             type: 'image',
-            url: pixels[i]
+            url: pixel
           })
         }
         return userSyncPixels;

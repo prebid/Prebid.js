@@ -679,17 +679,26 @@ describe('Opera Ads Bid Adapter', function () {
     });
   });
 
-  describe('Test getUserSyncs', function () {
-    it('getUserSyncs should return array', function () {
-      expect(spec.getUserSyncs()).to.be.an('array').that.is.empty;
+  describe('Test getUserSyncs with both iframe and pixel disabled', function () {
+    it('getUserSyncs should return an empty array', function () {
+      const syncOptions = {};
+      expect(spec.getUserSyncs(syncOptions)).to.be.an('array').that.is.empty;
+    });
+  });
 
+  describe('Test getUserSyncs with iframe enabled', function () {
+    it('getUserSyncs should return array', function () {
       const syncOptions = {
         iframeEnabled: true
       }
       const userSyncPixels = spec.getUserSyncs(syncOptions)
       expect(userSyncPixels).to.have.lengthOf(1);
       expect(userSyncPixels[0].url).to.equal('https://s.adx.opera.com/usersync/page')
+    });
+  });
 
+  describe('Test getUserSyncs with pixel enabled', function () {
+    it('getUserSyncs should return array', function () {
       const serverResponse = {
         body: {
           'pixels': [
@@ -698,13 +707,13 @@ describe('Opera Ads Bid Adapter', function () {
           ]
         }
       };
-      const syncOptions2 = {
+      const syncOptions = {
         pixelEnabled: true
       }
-      const userSyncPixels2 = spec.getUserSyncs(syncOptions2, [serverResponse])
-      expect(userSyncPixels2).to.have.lengthOf(2);
-      expect(userSyncPixels2[0].url).to.equal('https://b1.com/usersync')
-      expect(userSyncPixels2[1].url).to.equal('https://b2.com/usersync')
+      const userSyncPixels = spec.getUserSyncs(syncOptions, [serverResponse])
+      expect(userSyncPixels).to.have.lengthOf(2);
+      expect(userSyncPixels[0].url).to.equal('https://b1.com/usersync')
+      expect(userSyncPixels[1].url).to.equal('https://b2.com/usersync')
     });
   });
 
