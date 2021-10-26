@@ -17,6 +17,16 @@ const adUnitsRequested = {}
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
+// Validity checks for optionsl paramters
+const validParameter = {
+  url: (value) => typeof value === 'string',
+  placementId: (value) => {
+    const isString = typeof value === 'string'
+    const isNumber = typeof value === 'number'
+    return isString || isNumber
+  },
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -30,7 +40,22 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return true
+    // We don't need any specific parameters to make a bid request
+    // If not parameters are supplied just verify it's the correct bidder code
+    if (!bid.params) return bid.bidder === BIDDER_CODE
+
+    // Check if any supplied parameters are invalid
+    const hasInvalidParameters = Object.entries(bid.params).some(([key, value]) => {
+      const validityCheck = validParameter[key]
+
+      // We don't have a test for this so it's not a paramter we care about
+      if (!validityCheck) return false
+
+      // Return if the check is not passed
+      return !validityCheck(value)
+    })
+
+    return !hasInvalidParameters
   },
 
   /**
