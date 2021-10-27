@@ -60,7 +60,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('should return a properly formatted request with schain defined', function () {
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      const bidRequests = spec.buildRequests(bid);
       expect(bidRequests.data.schain).to.deep.equal(bidRequest[0].schain)
     });
   });
