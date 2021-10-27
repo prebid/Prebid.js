@@ -1,4 +1,4 @@
-import { logError, deepAccess, triggerPixel } from '../src/utils.js';
+import { logError, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -9,7 +9,17 @@ const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const BIDDER_CODE = 'vidoomy';
 const GVLID = 380;
 
-const COOKIE_SYNC_JSON = 'https://vpaid.vidoomy.com/sync/urls.json';
+const COOKIE_SYNC_FALLBACK_URLS = [
+  'https://x.bidswitch.net/sync?ssp=vidoomy',
+  'https://ib.adnxs.com/getuid?https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadnxs%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
+  'https://pixel-sync.sitescout.com/dmp/pixelSync?nid=120&redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DCEN%26uid%3D%7BuserId%7D',
+  'https://sync.1rx.io/usersync2/vidoomy?redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DUN%26uid%3D%5BRX_UUID%5D',
+  'https://rtb.openx.net/sync/prebid?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&r=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dopenx%26uid%3D$%7BUID%7D',
+  'https://ads.pubmatic.com/AdServer/js/user_sync.html?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&us_privacy=&predirect=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dpubmatic%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D',
+  'https://cm.adform.net/cookie?redirect_url=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadf%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
+  'https://ups.analytics.yahoo.com/ups/58531/occ?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}',
+  'https://ap.lijit.com/pixel?redir=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dsovrn%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID'
+];
 
 const isBidRequestValid = bid => {
   if (!bid.params) {
@@ -36,7 +46,7 @@ const isBidRequestValid = bid => {
 };
 
 const isBidResponseValid = bid => {
-  if (!bid.requestId || !bid.cpm || !bid.ttl || !bid.currency) {
+  if (!bid || !bid.requestId || !bid.cpm || !bid.ttl || !bid.currency) {
     return false;
   }
   switch (bid.mediaType) {
@@ -88,8 +98,6 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     queryParams.push(['coppa', !!config.getConfig('coppa')]);
 
     const rawQueryParams = queryParams.map(qp => qp.join('=')).join('&');
-
-    cookieSync(bidderRequest)
 
     const url = `${ENDPOINT}?${rawQueryParams}`;
     return {
@@ -192,33 +200,25 @@ export const spec = {
   buildRequests,
   interpretResponse,
   gvlid: GVLID,
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
+      const macro = Macro({
+        gpdr: gdprConsent ? gdprConsent.gdprApplies : '0',
+        gpdr_consent: gdprConsent ? gdprConsent.consentString : '',
+      });
+
+      const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
+      const urls = deepAccess(responses, '0.body.pixels') || COOKIE_SYNC_FALLBACK_URLS;
+
+      return [].concat(urls).map(url => ({
+        type: pixelType,
+        url: macro.replace(url)
+      }));
+    }
+  },
 };
 
 registerBidder(spec);
-
-let cookieSynced = false;
-function cookieSync(bidderRequest) {
-  if (cookieSynced) return;
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', COOKIE_SYNC_JSON)
-  xhr.addEventListener('load', function () {
-    const macro = Macro({
-      gpdr: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : '0',
-      gpdr_consent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : '',
-    });
-    const urls = JSON.parse(this.responseText).filter(Boolean).map(url => macro.replace(url))
-    const callback = () => {
-      if (urls.length > 0) {
-        triggerPixel(urls.shift(), () => {
-          setTimeout(callback, 500)
-        })
-      }
-    }
-    callback();
-  })
-  xhr.send()
-  cookieSynced = true;
-}
 
 function normalizeKey (x) {
   return x.replace(/_/g, '').toLowerCase();
