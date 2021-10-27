@@ -1048,7 +1048,8 @@ describe('AppNexusAdapter', function () {
                 'trackers': [
                   {
                     'impression_urls': [
-                      'https://lax1-ib.adnxs.com/impression'
+                      'https://lax1-ib.adnxs.com/impression',
+                      'https://www.test.com/tracker'
                     ],
                     'video_events': {}
                   }

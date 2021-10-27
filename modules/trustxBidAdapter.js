@@ -429,9 +429,10 @@ function addSegments(name, segName, segments, data, bidConfigName) {
   if (segments && segments.length) {
     data.push({
       name: name,
-      segment: segments.map((seg) => {
-        return {name: segName, value: seg};
-      })
+      segment: segments
+        .map((seg) => seg && (seg.id || seg))
+        .filter((seg) => seg && (typeof seg === 'string' || typeof seg === 'number'))
+        .map((seg) => ({ name: segName, value: seg.toString() }))
     });
   } else if (bidConfigName) {
     const configData = config.getConfig('ortb2.user.data');
@@ -445,9 +446,10 @@ function addSegments(name, segName, segments, data, bidConfigName) {
     if (segData && segData.length) {
       data.push({
         name: name,
-        segment: segData.map((seg) => {
-          return {name: segName, value: seg};
-        })
+        segment: segData
+          .map((seg) => seg && (seg.id || seg))
+          .filter((seg) => seg && (typeof seg === 'string' || typeof seg === 'number'))
+          .map((seg) => ({ name: segName, value: seg.toString() }))
       });
     }
   }
