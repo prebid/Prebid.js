@@ -153,10 +153,16 @@ export const spec = {
           const url = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
           bidResponse.adUrl = url
           bidResponse.mediaType = NATIVE
-          const nativeImageAssetObj = matchedBid.native.assets.find(e => e.id === 2)
+          const nativeImageAssetObj = matchedBid.native.assets.filter(function (e) {
+            return e.id === 2
+          })[0];
           const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : {url: '', w: 0, h: 0};
-          const nativeTitleAsset = matchedBid.native.assets.find(e => e.id === 1)
-          const nativeBodyAsset = matchedBid.native.assets.find(e => e.id === 3)
+          const nativeTitleAsset = matchedBid.native.assets.filter(function (e) {
+            return e.id === 1
+          })[0];
+          const nativeBodyAsset = matchedBid.native.assets.filter(function (e) {
+            return e.id === 3
+          })[0];
           bidResponse.native = {
             title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
             body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
@@ -183,7 +189,7 @@ export const spec = {
  * @param {String} adtype
  * @returns {Boolean}
  */
-function isVideo (format, adtype) {
+function isVideo(format, adtype) {
   return deepAccess(format, 'mediaTypes.video') && adtype.toLowerCase() === 'video'
 }
 
@@ -202,7 +208,7 @@ function isNative(format, adtype) {
  * @param {Object} format
  * @returns {Boolean}
  */
-function isOutstream (format) {
+function isOutstream(format) {
   let context = deepAccess(format, 'mediaTypes.video.context')
   return (context === 'outstream')
 }
@@ -212,7 +218,7 @@ function isOutstream (format) {
  * @param {Object} format
  * @returns {Array}
  */
-function getPlayerSize (format) {
+function getPlayerSize(format) {
   let playerSize = deepAccess(format, 'mediaTypes.video.playerSize')
   return (playerSize && isArray(playerSize[0])) ? playerSize[0] : playerSize
 }
@@ -222,7 +228,7 @@ function getPlayerSize (format) {
  * @param {String} size
  * @returns {Array}
  */
-function parseSize (size) {
+function parseSize(size) {
   return size.split('x').map(Number)
 }
 
@@ -231,7 +237,7 @@ function parseSize (size) {
  * @param {Array} eids
  * @returns {String}
  */
-function createUserIdString (eids) {
+function createUserIdString(eids) {
   let str = []
   for (let i = 0; i < eids.length; i++) {
     str.push(eids[i].source + ':' + eids[i].uids[0].id)
@@ -244,7 +250,7 @@ function createUserIdString (eids) {
  * @param {Object} obj
  * @returns {String}
  */
-function createQueryString (obj) {
+function createQueryString(obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
@@ -264,7 +270,7 @@ function createQueryString (obj) {
  * @param {Object} obj
  * @returns {String}
  */
-function createTargetingString (obj) {
+function createTargetingString(obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
@@ -281,7 +287,7 @@ function createTargetingString (obj) {
  * @param {Object} schain
  * @returns {String}
  */
-function createSchainString (schain) {
+function createSchainString(schain) {
   const ver = schain.ver || ''
   const complete = (schain.complete === 1 || schain.complete === 0) ? schain.complete : ''
   const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']
