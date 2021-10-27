@@ -125,6 +125,7 @@ const render = (bid) => {
 const interpretResponse = (serverResponse, bidRequest) => {
   try {
     let responseBody = serverResponse.body;
+    if (!responseBody) return;
     if (responseBody.mediaType === 'video') {
       responseBody.ad = responseBody.vastUrl;
       const videoContext = bidRequest.data.videoContext;
