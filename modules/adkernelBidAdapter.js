@@ -76,7 +76,8 @@ export const spec = {
     {code: 'rtbanalytica'},
     {code: 'unibots'},
     {code: 'ergadx'},
-    {code: 'turktelekom'}
+    {code: 'turktelekom'},
+    {code: 'catapultx'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
