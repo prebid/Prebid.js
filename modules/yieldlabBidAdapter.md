@@ -81,7 +81,7 @@ const adUnits = [
 
 # Multi-Format Setup
 
-A general overview of how to set up multi-format ads can be found in the offical Predid.js docs. See: [show multi-format ads](https://docs.prebid.org/dev-docs/show-multi-format-ads.html)
+A general overview of how to set up multi-format ads can be found in the offical Prebid.js docs. See: [show multi-format ads](https://docs.prebid.org/dev-docs/show-multi-format-ads.html)
 
 When setting up multi-format ads with Yieldlab make sure to always add at least one eligible Adslot per given media type in the ad unit configuration.
 
