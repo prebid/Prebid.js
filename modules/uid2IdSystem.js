@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { logInfo } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -28,11 +28,11 @@ function getStorage() {
 
 const storage = getStorage();
 
-const logInfo = createLogInfo(LOG_PRE_FIX);
+const _logInfo = createLogInfo(LOG_PRE_FIX);
 
 function createLogInfo(prefix) {
   return function (...strings) {
-    utils.logInfo(prefix + ' ', ...strings);
+    logInfo(prefix + ' ', ...strings);
   }
 }
 
@@ -48,7 +48,7 @@ function encodeId(value) {
       id: value
     }
     result.uid2 = bidIds;
-    logInfo('Decoded value ' + JSON.stringify(result));
+    _logInfo('Decoded value ' + JSON.stringify(result));
     return result;
   }
   return undefined;
@@ -85,9 +85,9 @@ export const uid2IdSubmodule = {
    * @returns {uid2Id}
    */
   getId(config, consentData) {
-    logInfo('Creating UID 2.0');
+    _logInfo('Creating UID 2.0');
     let value = readCookie() || readFromLocalStorage();
-    logInfo('The advertising token: ' + value);
+    _logInfo('The advertising token: ' + value);
     return {id: value}
   },
 

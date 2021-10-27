@@ -1,7 +1,7 @@
+import { isFn, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const storageManager = getStorageManager();
 
@@ -38,6 +38,7 @@ function isBidResponseValid(bidResponse) {
 
 export const spec = {
   code: 'orbidder',
+  gvlid: 559,
   hostname: 'https://orbidder.otto.de',
   supportedMediaTypes: [BANNER, NATIVE],
 
@@ -145,7 +146,7 @@ export const spec = {
  * @returns {float||undefined}
  */
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return bid.params.bidfloor;
   }
 
@@ -154,7 +155,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
     return floor.floor;
   }
   return undefined;
