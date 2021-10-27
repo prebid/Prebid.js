@@ -74,3 +74,29 @@ Module that connects to Yieldlab's demand sources
            }
        ];
 ```
+
+# Multi-Format Setup
+
+A general overview of how to set up multi-format ads can be found in the offical Predid.js docs. See: [show multi-format ads](https://docs.prebid.org/dev-docs/show-multi-format-ads.html)
+
+When setting up multi-format ads with Yieldlab make sure to always add at least one eligible Adslot per given media type in the ad unit configuration.
+
+```javascript
+const adUnit = {
+    code: 'multi-format-adslot',
+    mediaTypes: {
+        banner: {
+            sizes: [ [ 728, 90 ] ]
+        },
+        native: {
+            // native config
+        }
+    },
+    bids: [
+        // banner adslot
+        { bidder: 'yieldlab', params: { adslotId: '1234', supplyId: '42' } },
+        // native adslot
+        { bidder: 'yieldlab', params: { adslotId: '2345', supplyId: '42' } }
+    ]
+};
+```
