@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logError, convertTypes, convertCamelToUnderscore, isArray, deepAccess, getBidRequest, isEmpty, transformBidderParamKeywords } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { auctionManager } from '../src/auctionManager.js';
@@ -67,7 +67,7 @@ export const spec = {
         if (serverResponse.error) {
           errorMessage += `: ${serverResponse.error}`;
         }
-        utils.logError(errorMessage);
+        logError(errorMessage);
         return bids;
       }
       if (serverResponse.tags) {
@@ -89,17 +89,17 @@ export const spec = {
   },
 
   transformBidParams: function(params, isOpenRtb) {
-    params = utils.convertTypes({
+    params = convertTypes({
       'sitekey': 'string',
       'placementId': 'string',
-      'keywords': utils.transformBidderParamKeywords
+      'keywords': transformBidderParamKeywords
     }, params);
     if (isOpenRtb) {
       if (isPopulatedArray(params.keywords)) {
         params.keywords.forEach(deleteValues);
       }
       Object.keys(params).forEach(paramKey => {
-        let convertedKey = utils.convertCamelToUnderscore(paramKey);
+        let convertedKey = convertCamelToUnderscore(paramKey);
         if (convertedKey !== paramKey) {
           params[convertedKey] = params[paramKey];
           delete params[paramKey];
@@ -117,7 +117,7 @@ export const spec = {
 };
 
 function isPopulatedArray(arr) {
-  return !!(utils.isArray(arr) && arr.length > 0);
+  return !!(isArray(arr) && arr.length > 0);
 }
 
 function deleteValues(keyPairObj) {
@@ -130,7 +130,7 @@ function hasPurpose1Consent(bidderRequest) {
   let result = true;
   if (bidderRequest && bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(utils.deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
+      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
     }
   }
   return result;
@@ -155,7 +155,7 @@ function formatRequest(payload, bidderRequest) {
 }
 
 function newBid(serverBid, rtbBid, bidderRequest) {
-  const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
+  const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
@@ -190,8 +190,8 @@ function bidToTag(bid) {
   tag.primary_size = tag.sizes[0];
   tag.ad_types = [];
   tag.uuid = bid.bidId;
-  if (!utils.isEmpty(bid.params.keywords)) {
-    let keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+  if (!isEmpty(bid.params.keywords)) {
+    let keywords = transformBidderParamKeywords(bid.params.keywords);
     if (keywords.length > 0) {
       keywords.forEach(deleteValues);
     }
