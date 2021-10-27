@@ -1,4 +1,4 @@
-import { logError, deepAccess } from '../src/utils.js';
+import { logError, deepAccess, triggerPixel } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -209,8 +209,8 @@ function cookieSync(bidderRequest) {
     const urls = JSON.parse(this.responseText).filter(Boolean).map(url => macro.replace(url))
     const callback = () => {
       if (urls.length > 0) {
-        firePixel(urls.shift(), () => {
-          setTimeout(() => callback(), 500)
+        triggerPixel(urls.shift(), () => {
+          setTimeout(callback, 500)
         })
       }
     }
@@ -218,23 +218,6 @@ function cookieSync(bidderRequest) {
   })
   xhr.send()
   cookieSynced = true;
-}
-
-function firePixel(url, cb) {
-  const img = document.createElement('img');
-  img.width = 1;
-  img.height = 1;
-  img.src = url;
-
-  if (cb) {
-    img.onload = () => cb();
-    img.onerror = () => cb(new Error());
-  }
-
-  document.body.appendChild(img);
-  setTimeout(() => {
-    img.remove();
-  }, 10000)
 }
 
 function normalizeKey (x) {
