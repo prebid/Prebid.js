@@ -22,6 +22,7 @@
   "richaudienceBidAdapter",
   "rubiconBidAdapter",
   "smartadserverBidAdapter",
+  "smilewantedBidAdapter",
   "spotxBidAdapter",
   "telariaBidAdapter",
   "tripleliftBidAdapter"
