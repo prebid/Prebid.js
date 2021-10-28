@@ -233,6 +233,7 @@ function createVideoRequestData(bid, bidderRequest) {
   // if size is explicitly given via adapter params
   let paramSize = getVideoBidParam(bid, 'size');
   let sizes = [];
+  let coppa = config.getConfig('coppa');
 
   if (typeof paramSize !== 'undefined' && paramSize != '') {
     sizes = parseSizes(paramSize);
@@ -308,7 +309,9 @@ function createVideoRequestData(bid, bidderRequest) {
 
     });
   }
-
+  if (coppa) {
+    o.regs.ext = {'coppa': 1};
+  }
   if (bidderRequest && bidderRequest.gdprConsent) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     o.regs.ext = {'gdpr': gdprApplies ? 1 : 0};
@@ -331,6 +334,7 @@ function createBannerRequestData(bid, bidderRequest) {
 
   let paramSize = getBannerBidParam(bid, 'size');
   let sizes = [];
+  let coppa = config.getConfig('coppa');
   if (typeof paramSize !== 'undefined' && paramSize != '') {
     sizes = parseSizes(paramSize);
   } else {
@@ -402,7 +406,9 @@ function createBannerRequestData(bid, bidderRequest) {
       }
     });
   }
-
+  if (coppa) {
+    o.regs.ext = {'coppa': 1};
+  }
   if (bidderRequest && bidderRequest.gdprConsent) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     o.regs.ext = {'gdpr': gdprApplies ? 1 : 0};
