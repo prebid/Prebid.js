@@ -194,6 +194,23 @@ const interpretResponse = (serverResponse, bidRequest) => {
   }
 };
 
+function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
+  if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
+    const macro = Macro({
+      gpdr: gdprConsent ? gdprConsent.gdprApplies : '0',
+      gpdr_consent: gdprConsent ? gdprConsent.consentString : '',
+    });
+
+    const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
+    const urls = deepAccess(responses, '0.body.pixels') || COOKIE_SYNC_FALLBACK_URLS;
+
+    return [].concat(urls).map(url => ({
+      type: pixelType,
+      url: macro.replace(url)
+    }));
+  }
+};
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -201,22 +218,7 @@ export const spec = {
   buildRequests,
   interpretResponse,
   gvlid: GVLID,
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
-    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
-      const macro = Macro({
-        gpdr: gdprConsent ? gdprConsent.gdprApplies : '0',
-        gpdr_consent: gdprConsent ? gdprConsent.consentString : '',
-      });
-
-      const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
-      const urls = deepAccess(responses, '0.body.pixels') || COOKIE_SYNC_FALLBACK_URLS;
-
-      return [].concat(urls).map(url => ({
-        type: pixelType,
-        url: macro.replace(url)
-      }));
-    }
-  },
+  getUserSyncs,
 };
 
 registerBidder(spec);
