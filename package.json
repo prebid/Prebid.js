@@ -4,11 +4,6 @@
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
 
-  "browserslist": [
-    "> 0.25%",
-    "not IE 11",
-    "not op_mini all"
-  ],
   "scripts": {
     "test": "gulp test",
     "lint": "gulp lint"
@@ -17,6 +12,11 @@
     "type": "git",
     "url": "https://github.com/prebid/Prebid.js.git"
   },
+  "browserslist": [
+    "> 0.25%",
+    "not IE 11",
+    "not op_mini all"
+  ],
   "keywords": [
     "advertising",
     "auction",
