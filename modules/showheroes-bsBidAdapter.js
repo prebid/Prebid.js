@@ -185,7 +185,7 @@ function createBids(bidRes, reqData) {
     } else if (bid.context === 'outstream') {
       const renderer = Renderer.install({
         id: bid.bidId,
-        url: 'data:text/javascript;base64,IA==',
+        url: 'https://static.showheroes.com/renderer.js',
         adUnitCode: reqBid.adUnitCode,
         config: {
           playerId: reqBid.playerId,
