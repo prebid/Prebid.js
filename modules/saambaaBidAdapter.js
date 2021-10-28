@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import {deepAccess,isFn,generateUUID,parseUrl} as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
