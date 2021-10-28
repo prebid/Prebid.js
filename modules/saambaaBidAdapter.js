@@ -1,4 +1,4 @@
-import { deepAccess, isFn, generateUUID, parseUrl } from '../src/utils.js';
+import { deepAccess, isFn, generateUUID, parseUrl, isEmpty, parseSizesInput } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -57,7 +57,7 @@ export const spec = {
 
   interpretResponse(serverResponse, {bidRequest}) {
     let response = serverResponse.body;
-    if (response !== null && utils.isEmpty(response) == false) {
+    if (response !== null && isEmpty(response) == false) {
       if (isVideoBid(bidRequest)) {
         let bidResponse = {
           requestId: response.id,
@@ -185,7 +185,7 @@ function getFirstSize(sizes) {
 }
 
 function parseSizes(sizes) {
-  return utils.parseSizesInput(sizes).map(size => {
+  return parseSizesInput(sizes).map(size => {
     let [ width, height ] = size.split('x');
     return {
       w: parseInt(width, 10) || undefined,
