@@ -3,6 +3,12 @@
   "version": "6.1.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
+
+  "browserslist": [
+    "> 0.25%",
+    "not IE 11",
+    "not op_mini all"
+  ],
   "scripts": {
     "test": "gulp test",
     "lint": "gulp lint"
