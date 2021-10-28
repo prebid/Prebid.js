@@ -311,7 +311,7 @@ export const lotamePanoramaIdSubmodule = {
                   );
 
                   // End Processing
-                  callback(responseObj.core_id);
+                  callback();
                   return;
                 }
               }

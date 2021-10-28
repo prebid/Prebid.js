@@ -911,9 +911,6 @@ describe('LotameId', function() {
           200,
           responseHeader,
           JSON.stringify({
-            profile_id: '4ec137245858469eb94a4e248f238694',
-            core_id:
-              'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87f',
             expiry_ts: 3600000,
             errors: [111],
             no_consent: 'CLIENT',
@@ -945,7 +942,15 @@ describe('LotameId', function() {
           'panoramaId',
           sinon.match.any
         );
-      })
+      });
+
+      it('should not clear the cache for the panorama id expiry', function () {
+        sinon.assert.neverCalledWith(
+          setCookieStub,
+          'panoramaId_expiry',
+          sinon.match.any
+        );
+      });
     });
   });
 });
