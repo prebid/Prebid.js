@@ -77,33 +77,28 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 
     const videoContext = deepAccess(bid, 'mediaTypes.video.context');
 
-    const queryParams = [];
-    queryParams.push(['id', bid.params.id]);
-    queryParams.push(['adtype', adType]);
-    queryParams.push(['w', w]);
-    queryParams.push(['h', h]);
-    queryParams.push(['pos', parseInt(bid.params.position) || 1]);
-    queryParams.push(['ua', navigator.userAgent]);
-    queryParams.push(['l', navigator.language && navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : '']);
-    queryParams.push(['dt', /Mobi/.test(navigator.userAgent) ? 2 : 1]);
-    queryParams.push(['pid', bid.params.pid]);
-    queryParams.push(['requestId', bid.bidId]);
-    queryParams.push(['d', getDomainWithoutSubdomain(hostname)]);
-    queryParams.push(['sp', encodeURIComponent(aElement.href)]);
-    if (bidderRequest.gdprConsent) {
-      queryParams.push(['gdpr', bidderRequest.gdprConsent.gdprApplies]);
-      queryParams.push(['gdprcs', bidderRequest.gdprConsent.consentString]);
-    }
-    queryParams.push(['usp', bidderRequest.uspConsent || '']);
-    queryParams.push(['coppa', !!config.getConfig('coppa')]);
+    const queryParams = {
+      id: bid.params.id,
+      adtype: adType,
+      w,
+      h,
+      pos: parseInt(bid.params.position) || 1,
+      ua: navigator.userAgent,
+      l: navigator.language && navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : '',
+      dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
+      pid: bid.params.pid,
+      requestId: bid.bidId,
+      d: getDomainWithoutSubdomain(hostname),
+      sp: encodeURIComponent(aElement.href),
+      usp: bidderRequest.uspConsent || '',
+      coppa: !!config.getConfig('coppa'),
+      videoContext: videoContext || ''
+    };
 
-    const rawQueryParams = queryParams.map(qp => qp.join('=')).join('&');
-
-    const url = `${ENDPOINT}?${rawQueryParams}`;
     return {
       method: 'GET',
-      url: url,
-      data: {videoContext}
+      url: ENDPOINT,
+      data: queryParams
     }
   });
   return serverRequests;
