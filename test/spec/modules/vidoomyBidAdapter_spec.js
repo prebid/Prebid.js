@@ -4,6 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { INSTREAM } from '../../../src/video';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
+const PIXELS = ['/test.png', '/test2.png?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}']
 
 describe('vidoomyBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -182,7 +183,8 @@ describe('vidoomyBidAdapter', function() {
           'networkName': null,
           'primaryCatId': 'IAB3-1',
           'secondaryCatIds': null
-        }
+        },
+        'pixels': PIXELS
       }
     }
 
@@ -205,6 +207,23 @@ describe('vidoomyBidAdapter', function() {
       let result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
       expect(result[0].requestId).to.equal(serverResponseBanner.body.requestId);
+    });
+
+    it('should sync user cookies', function () {
+      const GDPR_CONSENT = 'GDPR_TEST'
+      const result = spec.getUserSyncs({
+        pixelEnabled: true
+      }, [serverResponseBanner], { consentString: GDPR_CONSENT, gdprApplies: 1 }, null)
+      expect(result).to.eql([
+        {
+          type: 'image',
+          url: PIXELS[0]
+        },
+        {
+          type: 'image',
+          url: `/test2.png?gdpr=1&gdpr_consent=${GDPR_CONSENT}`
+        }
+      ])
     });
   });
 });

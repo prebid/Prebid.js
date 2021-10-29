@@ -197,8 +197,8 @@ const interpretResponse = (serverResponse, bidRequest) => {
 function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
   if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
     const macro = Macro({
-      gpdr: gdprConsent ? gdprConsent.gdprApplies : '0',
-      gpdr_consent: gdprConsent ? gdprConsent.consentString : '',
+      gdpr: gdprConsent ? gdprConsent.gdprApplies : '0',
+      gdpr_consent: gdprConsent ? gdprConsent.consentString : '',
     });
 
     const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
