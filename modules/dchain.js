@@ -132,8 +132,8 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
         logWarn('bid.meta.dchain.nodes did not exist or was not an array; did not append prebid dchain.', bid);
       }
     } else {
-      // bid.meta.dchain = basicDchain;     // should we assign a backup dchain if bidder's dchain was invalid?
-      delete bid.meta.dchain; // or delete the bad object?
+      // remove invalid dchain
+      delete bid.meta.dchain;
     }
   } else {
     bid.meta.dchain = basicDchain;
