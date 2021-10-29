@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, logInfo, isStr, isFn, triggerPixel, insertHtmlIntoIframe } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -15,27 +15,27 @@ const observers = {};
 
 function isValid(vid, element, tracker, criteria) {
   if (!element) {
-    utils.logWarn('provide an html element to track');
+    logWarn('provide an html element to track');
     return false;
   }
 
   let validTracker = tracker &&
-    ((tracker.method === 'img' && utils.isStr(tracker.value)) ||
-    (tracker.method === 'js' && utils.isStr(tracker.value)) ||
-    (tracker.method === 'callback' && utils.isFn(tracker.value)));
+    ((tracker.method === 'img' && isStr(tracker.value)) ||
+    (tracker.method === 'js' && isStr(tracker.value)) ||
+    (tracker.method === 'callback' && isFn(tracker.value)));
 
   if (!validTracker) {
-    utils.logWarn('invalid tracker', tracker);
+    logWarn('invalid tracker', tracker);
     return false;
   }
 
   if (!criteria || !criteria.inViewThreshold || !criteria.timeInView) {
-    utils.logWarn('missing criteria', criteria);
+    logWarn('missing criteria', criteria);
     return false;
   }
 
   if (!vid || observers[vid]) {
-    utils.logWarn('provide an unregistered vid', vid);
+    logWarn('provide an unregistered vid', vid);
     return false;
   }
 
@@ -75,12 +75,12 @@ export function startMeasurement(vid, element, tracker, criteria) {
 
         switch (tracker.method) {
           case 'img':
-            utils.triggerPixel(tracker.value, () => {
-              utils.logInfo('viewability pixel fired', tracker.value);
+            triggerPixel(tracker.value, () => {
+              logInfo('viewability pixel fired', tracker.value);
             });
             break;
           case 'js':
-            utils.insertHtmlIntoIframe(`<script src="${tracker.value}"></script>`);
+            insertHtmlIntoIframe(`<script src="${tracker.value}"></script>`);
             break;
           case 'callback':
             tracker.value(element);
@@ -109,7 +109,7 @@ export function startMeasurement(vid, element, tracker, criteria) {
  */
 export function stopMeasurement(vid) {
   if (!vid || !observers[vid]) {
-    utils.logWarn('provide a registered vid', vid);
+    logWarn('provide a registered vid', vid);
     return;
   }
 
