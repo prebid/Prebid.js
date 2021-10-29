@@ -106,6 +106,7 @@ var sizeMap = {
   552: '300x200',
   558: '640x640'
 };
+
 _each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
