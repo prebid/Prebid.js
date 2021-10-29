@@ -95,6 +95,11 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       videoContext: videoContext || ''
     };
 
+    if (bidderRequest.gdprConsent) {
+      queryParams.gdpr = bidderRequest.gdprConsent.gdprApplies;
+      queryParams.gdprcs = bidderRequest.gdprConsent.consentString;
+    }
+
     return {
       method: 'GET',
       url: ENDPOINT,
