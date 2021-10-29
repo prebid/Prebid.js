@@ -196,17 +196,14 @@ const interpretResponse = (serverResponse, bidRequest) => {
 
 function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
   if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
-    const macro = Macro({
-      gdpr: gdprConsent ? gdprConsent.gdprApplies : '0',
-      gdpr_consent: gdprConsent ? gdprConsent.consentString : '',
-    });
-
     const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
     const urls = deepAccess(responses, '0.body.pixels') || COOKIE_SYNC_FALLBACK_URLS;
 
     return [].concat(urls).map(url => ({
       type: pixelType,
-      url: macro.replace(url)
+      url: url
+        .replace('{{GDPR}}', gdprConsent ? gdprConsent.gdprApplies : '0')
+        .replace('{{GDPR_CONSENT}}', gdprConsent ? gdprConsent.consentString : '')
     }));
   }
 };
@@ -222,51 +219,6 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-function normalizeKey (x) {
-  return x.replace(/_/g, '').toLowerCase();
-}
-
-function Macro (obj) {
-  const macros = {};
-  for (const key in obj) {
-    macros[normalizeKey(key)] = obj[key];
-  }
-
-  const set = (key, value) => {
-    macros[normalizeKey(key)] = typeof value === 'function' ? value : String(value);
-  };
-
-  return {
-    set,
-    setAll (obj) {
-      for (const key in obj) {
-        macros[normalizeKey(key)] = set(obj[key]);
-      }
-    },
-    replace (string, extraMacros = {}) {
-      const allMacros = {
-        ...macros,
-        ...extraMacros,
-      };
-      const regexes = [
-        /{{\s*([a-zA-Z0-9_]+)\s*}}/g,
-        /\$\$\s*([a-zA-Z0-9_]+)\s*\$\$/g,
-        /\[\s*([a-zA-Z0-9_]+)\s*\]/g,
-        /\{\s*([a-zA-Z0-9_]+)\s*\}/g,
-      ];
-      regexes.forEach(regex => {
-        string = string.replace(regex, (str, x) => {
-          x = normalizeKey(x);
-          let value = allMacros[x];
-          value = typeof value === 'function' ? value(allMacros) : value;
-          return !value && value !== 0 ? '' : value;
-        });
-      });
-      return string;
-    },
-  };
-}
 
 function getDomainWithoutSubdomain (hostname) {
   const parts = hostname.split('.');
