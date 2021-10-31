@@ -696,9 +696,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     });
     try {
       if (rtbBid.rtb.trackers) {
-        const url = rtbBid.rtb.trackers[0].impression_urls[0];
-        const tracker = createTrackPixelHtml(url);
-        bid.ad += tracker;
+        for (let i = 0; i < rtbBid.rtb.trackers[0].impression_urls.length; i++) {
+          const url = rtbBid.rtb.trackers[0].impression_urls[i];
+          const tracker = createTrackPixelHtml(url);
+          bid.ad += tracker;
+        }
       }
     } catch (error) {
       logError('Error appending tracking pixel', error);
