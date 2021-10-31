@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js'
+import { isArray, _map, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
 
@@ -62,39 +62,39 @@ function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid)
 
   return hasVideoMediaType(bid) && !!videoParams.playerSize &&
-    utils.isArray(videoParams.playerSize) &&
+    isArray(videoParams.playerSize) &&
     videoParams.playerSize.length > 0;
 }
 
-function buildBidRequests(validBidRequests) {
-  return utils._map(validBidRequests, function(validBidRequest) {
-    const params = validBidRequest.params;
-    const mediaTypes = utils._map(
-      Object.keys(validBidRequest.mediaTypes),
-      function(pbjsType) {
-        return mediaTypesMap[pbjsType];
-      }
-    );
-
-    const bidRequest = {
-      id: validBidRequest.bidId,
-      transactionId: validBidRequest.transactionId,
-      sizes: validBidRequest.sizes,
-      supplyTypes: mediaTypes,
-      adUnitId: params.adUnitId,
-      placement: params.placement,
-    };
-
-    if (params.adPosition) {
-      bidRequest.adPosition = params.adPosition;
+function buildBidRequest(validBidRequest) {
+  const params = validBidRequest.params;
+  const mediaTypes = _map(
+    Object.keys(validBidRequest.mediaTypes),
+    function (pbjsType) {
+      return mediaTypesMap[pbjsType];
     }
+  );
 
-    if (hasVideoMediaType(validBidRequest)) {
-      bidRequest.videoParams = getVideoParams(validBidRequest)
-    }
+  const bidRequest = {
+    id: validBidRequest.bidId,
+    transactionId: validBidRequest.transactionId,
+    sizes: validBidRequest.sizes,
+    supplyTypes: mediaTypes,
+    adUnitId: params.adUnitId,
+    adUnitCode: validBidRequest.adUnitCode,
+    placement: params.placement,
+    requestCount: validBidRequest.bidderRequestsCount || 1 // FIXME : in unit test the parameter bidderRequestsCount is undefined
+  };
 
-    return bidRequest;
-  })
+  if (params.adPosition) {
+    bidRequest.adPosition = params.adPosition;
+  }
+
+  if (hasVideoMediaType(validBidRequest)) {
+    bidRequest.videoParams = getVideoParams(validBidRequest)
+  }
+
+  return bidRequest;
 }
 
 /**
@@ -145,8 +145,8 @@ function buildBidResponse(seedtagBid) {
 export function getTimeoutUrl (data) {
   let queryParams = '';
   if (
-    utils.isArray(data) && data[0] &&
-    utils.isArray(data[0].params) && data[0].params[0]
+    isArray(data) && data[0] &&
+    isArray(data[0].params) && data[0].params[0]
   ) {
     const params = data[0].params[0];
     queryParams =
@@ -160,7 +160,6 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: [SEEDTAG_ALIAS],
   supportedMediaTypes: [BANNER, VIDEO],
-
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -187,7 +186,7 @@ export const spec = {
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
-      bidRequests: buildBidRequests(validBidRequests)
+      bidRequests: _map(validBidRequests, buildBidRequest)
     };
 
     if (payload.cmp) {
@@ -212,8 +211,8 @@ export const spec = {
    */
   interpretResponse: function(serverResponse) {
     const serverBody = serverResponse.body;
-    if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
-      return utils._map(serverBody.bids, function(bid) {
+    if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
+      return _map(serverBody.bids, function(bid) {
         return buildBidResponse(bid);
       });
     } else {
@@ -244,7 +243,7 @@ export const spec = {
    */
   onTimeout(data) {
     const url = getTimeoutUrl(data);
-    utils.triggerPixel(url);
+    triggerPixel(url);
   },
 
   /**
@@ -253,7 +252,7 @@ export const spec = {
    */
   onBidWon: function (bid) {
     if (bid && bid.nurl) {
-      utils.triggerPixel(bid.nurl);
+      triggerPixel(bid.nurl);
     }
   }
 }

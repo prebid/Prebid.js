@@ -6,6 +6,7 @@ const utils = require('src/utils');
 
 let getConfig;
 let setConfig;
+let readConfig;
 let getBidderConfig;
 let setBidderConfig;
 let setDefaults;
@@ -17,6 +18,7 @@ describe('config API', function () {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
+    readConfig = config.readConfig;
     getBidderConfig = config.getBidderConfig;
     setBidderConfig = config.setBidderConfig;
     setDefaults = config.setDefaults;
@@ -35,6 +37,67 @@ describe('config API', function () {
 
   it('getConfig returns an object', function () {
     expect(getConfig()).to.be.a('object');
+  });
+
+  it('readConfig returns deepCopy of the internal config object', function () {
+    setConfig({ foo: {biz: 'bar'} });
+    const config1 = readConfig('foo');
+    config1.biz = 'buz';
+    const config2 = readConfig('foo');
+    expect(readConfig()).to.be.a('object');
+    expect(config1.biz).to.not.equal(config2.biz);
+  });
+
+  it('readConfig retrieves arbitrary configuration properties', function () {
+    setConfig({ baz: 'qux' });
+    expect(readConfig('baz')).to.equal('qux');
+  });
+
+  it('readConfig has subscribe functionality for adding listeners to config updates', function () {
+    const listener = sinon.spy();
+
+    readConfig(listener);
+
+    setConfig({ foo: 'bar' });
+
+    sinon.assert.calledOnce(listener);
+    sinon.assert.calledWith(listener, { foo: 'bar' });
+  });
+
+  it('readConfig subscribers can unsubscribe', function () {
+    const listener = sinon.spy();
+
+    const unsubscribe = getConfig(listener);
+
+    unsubscribe();
+
+    readConfig({ logging: true });
+
+    sinon.assert.notCalled(listener);
+  });
+
+  it('readConfig subscribers can subscribe to topics', function () {
+    const listener = sinon.spy();
+
+    readConfig('logging', listener);
+
+    setConfig({ logging: true, foo: 'bar' });
+
+    sinon.assert.calledOnce(listener);
+    sinon.assert.calledWithExactly(listener, { logging: true });
+  });
+
+  it('readConfig topic subscribers are only called when that topic is changed', function () {
+    const listener = sinon.spy();
+    const wildcard = sinon.spy();
+
+    readConfig('subject', listener);
+    readConfig(wildcard);
+
+    setConfig({ foo: 'bar' });
+
+    sinon.assert.notCalled(listener);
+    sinon.assert.calledOnce(wildcard);
   });
 
   it('sets and gets arbitrary configuration properties', function () {

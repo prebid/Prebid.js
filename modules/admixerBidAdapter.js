@@ -1,10 +1,10 @@
-import * as utils from '../src/utils.js';
+import { logError } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'admixer';
-const ALIASES = ['go2net', 'adblender'];
-const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.1.aspx';
+const ALIASES = ['go2net', 'adblender', 'adsyield'];
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
@@ -19,9 +19,20 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    */
   buildRequests: function (validRequest, bidderRequest) {
+    let w;
+    let docRef;
+    do {
+      w = w ? w.parent : window;
+      try {
+        docRef = w.document.referrer;
+      } catch (e) {
+        break;
+      }
+    } while (w !== window.top);
     const payload = {
       imps: [],
-      fpd: config.getLegacyFpd(config.getConfig('ortb2'))
+      ortb2: config.getConfig('ortb2'),
+      docReferrer: docRef,
     };
     let endpointUrl;
     if (bidderRequest) {
@@ -43,16 +54,13 @@ export const spec = {
     }
     validRequest.forEach((bid) => {
       let imp = {};
-      Object.keys(bid).forEach(key => {
-        (key === 'ortb2Imp') ? imp.fpd = config.getLegacyImpFpd(bid[key]) : imp[key] = bid[key];
-      });
+      Object.keys(bid).forEach(key => imp[key] = bid[key]);
       payload.imps.push(imp);
     });
-    const payloadString = JSON.stringify(payload);
     return {
-      method: 'GET',
+      method: 'POST',
       url: endpointUrl || ENDPOINT_URL,
-      data: `data=${payloadString}`,
+      data: payload,
     };
   },
   /**
@@ -62,28 +70,9 @@ export const spec = {
     const bidResponses = [];
     try {
       const {body: {ads = []} = {}} = serverResponse;
-      ads.forEach((bidResponse) => {
-        const bidResp = {
-          requestId: bidResponse.bidId,
-          cpm: bidResponse.cpm,
-          width: bidResponse.width,
-          height: bidResponse.height,
-          ad: bidResponse.ad,
-          ttl: bidResponse.ttl,
-          creativeId: bidResponse.creativeId,
-          netRevenue: bidResponse.netRevenue,
-          currency: bidResponse.currency,
-          vastUrl: bidResponse.vastUrl,
-          dealId: bidResponse.dealId,
-          /**
-          * currently includes meta.advertiserDomains ; networkId ; advertiserId
-          */
-          meta: bidResponse.meta,
-        };
-        bidResponses.push(bidResp);
-      });
+      ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
-      utils.logError(e);
+      logError(e);
     }
     return bidResponses;
   },

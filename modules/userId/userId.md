@@ -50,7 +50,17 @@ pbjs.setConfig({
                 // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
                 partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
             }
-        }, {
+        },{
+            name: 'akamaiDAPId',
+            params: {
+              apiHostname: '<see your Akamai account rep>',
+              domain: 'your-domain.com',
+              type: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
+              identity: ‘your@email.com’ | ‘6175551234' | ...,
+              apiVersion: 'v1' | 'x1',
+              attributes: '{ "cohorts": [ "3:14400", "5:14400", "7:0" ],"first_name": "...","last_name": "..." }'
+            }
+        },{
             name: 'identityLink',
             params: {
                 pid: '999', // Set your real identityLink placement ID here
@@ -72,16 +82,6 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
-             name: 'sharedId',
-              params: {
-                    syncTime: 60 // in seconds, default is 24 hours
-               },
-             storage: {
-                 type: 'cookie',
-                 name: 'sharedid',
-                 expires: 28
-              }
-        }, {
              name: 'criteo',
              storage: {             // It is best not to specify this parameter since the module needs to be called as many times as possible
                  type: 'cookie',
@@ -101,7 +101,8 @@ pbjs.setConfig({
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv'
+                sv_domain:'zxv',
+                refreshInSeconds: 10 // Refreshes the id based on this configuration, else by default every 7 days
             },
             storage: {
                 type: "cookie",
@@ -128,7 +129,17 @@ pbjs.setConfig({
                params: {
                     token: "Registered token or default sharedid.org token" // Default sharedid.org token: "A3dHTSoNUMjjERBLlrvJSelNnwWUCwVQhZ5tNQ+sll7y+LkPPVZXtB77u2y7CweRIxiYaGwGXNlW1/dFp8VMEgIAAAB+eyJvcmlnaW4iOiJodHRwczovL3NoYXJlZGlkLm9yZzo0NDMiLCJmZWF0dXJlIjoiSW50ZXJlc3RDb2hvcnRBUEkiLCJleHBpcnkiOjE2MjYyMjA3OTksImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"
            }
-        }],
+        },{
+             name: "kpuid",
+             params:{
+                    accountid: 124 // example of account id
+                   },
+             storage: {
+                 type: "cookie",
+                 name: "knssoId",
+                 expires: 30
+                  },
+        ],
         syncDelay: 5000,
         auctionDelay: 1000
     }
@@ -218,7 +229,8 @@ pbjs.setConfig({
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv'
+                sv_domain:'zxv',
+                refreshInSeconds: 10 // Refreshes the id based on this configuration, else by default every 7 days
             },
             storage: {
                 type: "html5",
@@ -256,6 +268,35 @@ pbjs.setConfig({
                 name: "_dpes_id",
                 expires: 90
             }
+        },{
+             name: "kpuid",
+                   params:{
+                     accountid: 124 // example of account id
+                   },
+             storage: {
+                 type: "html5",
+                 name: "knssoId",
+                 expires: 30
+                  },
+        }   
+        },
+        {
+            name: 'imuid',
+            params: {
+                cid: 5126 // Set your Intimate Merger Customer ID here for production
+            }
+        },
+        {
+            name: 'connectId',
+            params: {
+              pixelId: 58776,
+              he: '0bef996248d63cea1529cb86de31e9547a712d9f380146e98bbd39beec70355a'
+            },
+            storage: {
+              name: 'connectId',
+              type: 'html5',
+              expires: 15
+            }
         }],
         syncDelay: 5000
     }
@@ -287,6 +328,9 @@ pbjs.setConfig({
         {
             name: "novatiq",
             value: { "snowflake": "81b001ec-8914-488c-a96e-8c220d4ee08895ef" }
+        },
+        {
+            name: 'naveggId',
         }],
         syncDelay: 5000
     }

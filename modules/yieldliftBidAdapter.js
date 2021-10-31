@@ -1,5 +1,5 @@
+import { deepSetValue, logInfo, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://x.yieldlift.com/auction';
@@ -58,18 +58,18 @@ export const spec = {
 
     // adding schain object
     if (validBidRequests[0].schain) {
-      utils.deepSetValue(openrtbRequest, 'source.ext.schain', validBidRequests[0].schain);
+      deepSetValue(openrtbRequest, 'source.ext.schain', validBidRequests[0].schain);
     }
 
     // Attaching GDPR Consent Params
     if (bidderRequest.gdprConsent) {
-      utils.deepSetValue(openrtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      utils.deepSetValue(openrtbRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+      deepSetValue(openrtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(openrtbRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     // CCPA
     if (bidderRequest.uspConsent) {
-      utils.deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
     const payloadString = JSON.stringify(openrtbRequest);
@@ -96,15 +96,18 @@ export const spec = {
           creativeId: bid.crid,
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
+          meta: {
+            adomain: bid.adomain
+          }
         })
       })
     } else {
-      utils.logInfo('yieldlift.interpretResponse :: no valid responses to interpret');
+      logInfo('yieldlift.interpretResponse :: no valid responses to interpret');
     }
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
-    utils.logInfo('yieldlift.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
+    logInfo('yieldlift.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
     let syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
@@ -112,7 +115,7 @@ export const spec = {
     }
 
     serverResponses.forEach(resp => {
-      const userSync = utils.deepAccess(resp, 'body.ext.usersync');
+      const userSync = deepAccess(resp, 'body.ext.usersync');
       if (userSync) {
         let syncDetails = [];
         Object.keys(userSync).forEach(key => {
@@ -136,7 +139,7 @@ export const spec = {
         }
       }
     });
-    utils.logInfo('yieldlift.getUserSyncs result=%o', syncs);
+    logInfo('yieldlift.getUserSyncs result=%o', syncs);
     return syncs;
   },
 

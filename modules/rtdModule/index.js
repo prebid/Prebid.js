@@ -42,10 +42,10 @@
  * @function?
  * @summary modify bid request data
  * @name RtdSubmodule#getBidRequestData
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} userConsent
  */
 
 /**
@@ -143,7 +143,7 @@
 
 import {config} from '../../src/config.js';
 import {module} from '../../src/hook.js';
-import * as utils from '../../src/utils.js';
+import { logError, logWarn } from '../../src/utils.js';
 import events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
@@ -174,7 +174,7 @@ export function attachRealTimeDataProvider(submodule) {
 export function init(config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
     if (!realTimeData.dataProviders) {
-      utils.logError('missing parameters for real time module');
+      logError('missing parameters for real time module');
       return;
     }
     confListener(); // unsubscribe config listener
@@ -314,7 +314,7 @@ export function getAdUnitTargeting(auction) {
     if (smTargeting && typeof smTargeting === 'object') {
       targeting.push(smTargeting);
     } else {
-      utils.logWarn('invalid getTargetingData response for sub module', relevantSubModules[i].name);
+      logWarn('invalid getTargetingData response for sub module', relevantSubModules[i].name);
     }
   }
   // place data on auction adUnits

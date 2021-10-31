@@ -1,6 +1,6 @@
+import { getWindowTop, deepAccess, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
@@ -56,7 +56,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    const winTop = utils.getWindowTop();
+    const winTop = getWindowTop();
     const location = winTop.location;
     let placements = [];
     let request = {
@@ -106,13 +106,35 @@ export const spec = {
       if (bid.schain) {
         placement.schain = bid.schain;
       }
+      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        placement.gpid = gpid;
+      }
       if (bid.userId) {
         getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
         getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
-        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com')
+        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
+        getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
         getUserId(placement.eids, bid.userId.tdid, 'adserver.org', {
           rtiPartner: 'TDID'
         });
+      }
+      if (traff === VIDEO) {
+        placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
+        placement.minduration = bid.mediaTypes[VIDEO].minduration;
+        placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
+        placement.mimes = bid.mediaTypes[VIDEO].mimes;
+        placement.protocols = bid.mediaTypes[VIDEO].protocols;
+        placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
+        placement.placement = bid.mediaTypes[VIDEO].placement;
+        placement.skip = bid.mediaTypes[VIDEO].skip;
+        placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
+        placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;
+        placement.maxbitrate = bid.mediaTypes[VIDEO].maxbitrate;
+        placement.delivery = bid.mediaTypes[VIDEO].delivery;
+        placement.playbackmethod = bid.mediaTypes[VIDEO].playbackmethod;
+        placement.api = bid.mediaTypes[VIDEO].api;
+        placement.linearity = bid.mediaTypes[VIDEO].linearity;
       }
       placements.push(placement);
     }
@@ -136,11 +158,14 @@ export const spec = {
       for (let i = 0; i < serverResponse.length; i++) {
         let resItem = serverResponse[i];
         if (isBidResponseValid(resItem)) {
+          const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
+          resItem.meta = { ...resItem.meta, advertiserDomains };
+
           response.push(resItem);
         }
       }
     } catch (e) {
-      utils.logMessage(e);
+      logMessage(e);
     };
     return response;
   },

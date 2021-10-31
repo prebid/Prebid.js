@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oguryBidAdapter';
-import { deepClone } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 
-const BID_HOST = 'https://webmobile.presage.io/api/header-bidding-request';
+const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
+const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout'
 
 describe('OguryBidAdapter', function () {
   let bidRequests;
@@ -17,6 +18,9 @@ describe('OguryBidAdapter', function () {
       params: {
         assetKey: 'OGY-assetkey',
         adUnitId: 'adunitId',
+        xMargin: 20,
+        yMarging: 20,
+        gravity: 'TOP_LEFT',
       },
       mediaTypes: {
         banner: {
@@ -64,14 +68,14 @@ describe('OguryBidAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should validate correct bid', () => {
-      let validBid = deepClone(bidRequests[0]);
+      let validBid = utils.deepClone(bidRequests[0]);
 
       let isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(true);
     });
 
     it('should not validate incorrect bid', () => {
-      let invalidBid = deepClone(bidRequests[0]);
+      let invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.sizes;
       delete invalidBid.mediaTypes;
 
@@ -80,7 +84,7 @@ describe('OguryBidAdapter', function () {
     });
 
     it('should not validate bid if adunit is not present', () => {
-      let invalidBid = deepClone(bidRequests[0]);
+      let invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.params.adUnitId;
 
       let isValid = spec.isBidRequestValid(invalidBid);
@@ -88,7 +92,7 @@ describe('OguryBidAdapter', function () {
     });
 
     it('should not validate bid if assetKet is not present', () => {
-      let invalidBid = deepClone(bidRequests[0]);
+      let invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.params.assetKey;
 
       let isValid = spec.isBidRequestValid(invalidBid);
@@ -96,11 +100,128 @@ describe('OguryBidAdapter', function () {
     });
 
     it('should validate bid if getFloor is not present', () => {
-      let invalidBid = deepClone(bidRequests[1]);
+      let invalidBid = utils.deepClone(bidRequests[1]);
       delete invalidBid.getFloor;
 
       let isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.equal(true);
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    let syncOptions, gdprConsent;
+
+    beforeEach(() => {
+      syncOptions = {pixelEnabled: true};
+      gdprConsent = {
+        gdprApplies: true,
+        consentString: 'CPJl4C8PJl4C8OoAAAENAwCMAP_AAH_AAAAAAPgAAAAIAPgAAAAIAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g'
+      };
+    });
+
+    it('should return sync array with two elements of type image', () => {
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+
+      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs[0].type).to.equal('image');
+      expect(userSyncs[0].url).to.contain('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch');
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.contain('https://ms-cookie-sync.presage.io/ttd/init-sync');
+    });
+
+    it('should set the same source as query param', () => {
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+      expect(userSyncs[0].url).to.contain('source=prebid');
+      expect(userSyncs[1].url).to.contain('source=prebid');
+    });
+
+    it('should set the tcString as query param', () => {
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+      expect(userSyncs[0].url).to.contain(`iab_string=${gdprConsent.consentString}`);
+      expect(userSyncs[1].url).to.contain(`iab_string=${gdprConsent.consentString}`);
+    });
+
+    it('should return an empty array when pixel is disable', () => {
+      syncOptions.pixelEnabled = false;
+      expect(spec.getUserSyncs(syncOptions, [], gdprConsent)).to.have.lengthOf(0);
+    });
+
+    it('should return sync array with two elements of type image when consentString is undefined', () => {
+      gdprConsent = {
+        gdprApplies: true,
+        consentString: undefined
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs[0].type).to.equal('image');
+      expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+    });
+
+    it('should return sync array with two elements of type image when consentString is null', () => {
+      gdprConsent = {
+        gdprApplies: true,
+        consentString: null
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs[0].type).to.equal('image');
+      expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+    });
+
+    it('should return sync array with two elements of type image when gdprConsent is undefined', () => {
+      gdprConsent = undefined;
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs[0].type).to.equal('image');
+      expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+    });
+
+    it('should return sync array with two elements of type image when gdprConsent is null', () => {
+      gdprConsent = null;
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs[0].type).to.equal('image');
+      expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+    });
+
+    it('should return sync array with two elements of type image when gdprConsent is null and gdprApplies is false', () => {
+      gdprConsent = {
+        gdprApplies: false,
+        consentString: null
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs[0].type).to.equal('image');
+      expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+    });
+
+    it('should return sync array with two elements of type image when gdprConsent is empty string and gdprApplies is false', () => {
+      gdprConsent = {
+        gdprApplies: false,
+        consentString: ''
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs[0].type).to.equal('image');
+      expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
+      expect(userSyncs[1].type).to.equal('image');
+      expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
   });
 
@@ -139,6 +260,7 @@ describe('OguryBidAdapter', function () {
       site: {
         id: bidRequests[0].params.assetKey,
         domain: window.location.hostname,
+        page: window.location.href
       },
       user: {
         ext: {
@@ -148,15 +270,15 @@ describe('OguryBidAdapter', function () {
     };
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const validBidRequests = deepClone(bidRequests)
+      const validBidRequests = utils.deepClone(bidRequests)
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(request.url).to.equal(BID_HOST);
+      expect(request.url).to.equal(BID_URL);
       expect(request.method).to.equal('POST');
     });
 
     it('bid request object should be conform', function () {
-      const validBidRequests = deepClone(bidRequests)
+      const validBidRequests = utils.deepClone(bidRequests)
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.data).to.deep.equal(expectedRequestObject);
@@ -194,7 +316,7 @@ describe('OguryBidAdapter', function () {
         ...expectedRequestObject
       };
 
-      const validBidRequests = deepClone(bidRequests);
+      const validBidRequests = utils.deepClone(bidRequests);
       validBidRequests[1] = {
         ...validBidRequests[1],
         getFloor: undefined
@@ -209,7 +331,7 @@ describe('OguryBidAdapter', function () {
         ...expectedRequestObject
       };
 
-      let validBidRequests = deepClone(bidRequests);
+      let validBidRequests = utils.deepClone(bidRequests);
       validBidRequests[1] = {
         ...validBidRequests[1],
         getFloor: 'getFloor'
@@ -220,9 +342,9 @@ describe('OguryBidAdapter', function () {
     });
 
     it('should handle bidFloor when currency is not USD', () => {
-      const expectedRequestWithUnsupportedFloorCurrency = deepClone(expectedRequestObject)
+      const expectedRequestWithUnsupportedFloorCurrency = utils.deepClone(expectedRequestObject)
       expectedRequestWithUnsupportedFloorCurrency.imp[0].bidfloor = 0;
-      let validBidRequests = deepClone(bidRequests);
+      let validBidRequests = utils.deepClone(bidRequests);
       validBidRequests[0] = {
         ...validBidRequests[0],
         getFloor: ({ size, currency, mediaType }) => {
@@ -249,8 +371,18 @@ describe('OguryBidAdapter', function () {
             nurl: 'url',
             adm: `<html><head><title>test creative</title></head><body style="margin: 0;"><div><img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div></body></html>`,
             adomain: ['renault.fr'],
-            w: 300,
-            h: 250
+            ext: {
+              adcontent: 'sample_creative',
+              advertid: '1a278c48-b79a-4bbf-b69f-3824803e7d87',
+              campaignid: '31724',
+              mediatype: 'image',
+              userid: 'ab4aabed-5230-49d9-9f1a-f06280d28366',
+              usersync: true,
+              advertiserid: '1',
+              isomidcompliant: false
+            },
+            w: 180,
+            h: 101
           }, {
             id: 'advertId2',
             impid: 'bidId2',
@@ -258,6 +390,17 @@ describe('OguryBidAdapter', function () {
             nurl: 'url2',
             adm: `<html><head><title>test creative</title></head><body style="margin: 0;"><div><img style="width: 600px; height: 500px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div></body></html>`,
             adomain: ['peugeot.fr'],
+            ext: {
+              adcontent: 'sample_creative',
+              advertid: '2a278c48-b79a-4bbf-b69f-3824803e7d87',
+              campaignid: '41724',
+              userid: 'bb4aabed-5230-49d9-9f1a-f06280d28366',
+              usersync: false,
+              advertiserid: '2',
+              isomidcompliant: true,
+              mediatype: 'image',
+              landingpageurl: 'https://ogury.com'
+            },
             w: 600,
             h: 500
           }],
@@ -274,11 +417,13 @@ describe('OguryBidAdapter', function () {
         height: openRtbBidResponse.body.seatbid[0].bid[0].h,
         ad: openRtbBidResponse.body.seatbid[0].bid[0].adm,
         ttl: 60,
+        ext: openRtbBidResponse.body.seatbid[0].bid[0].ext,
         creativeId: openRtbBidResponse.body.seatbid[0].bid[0].id,
         netRevenue: true,
         meta: {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
-        }
+        },
+        nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
         cpm: openRtbBidResponse.body.seatbid[0].bid[1].price,
@@ -287,11 +432,13 @@ describe('OguryBidAdapter', function () {
         height: openRtbBidResponse.body.seatbid[0].bid[1].h,
         ad: openRtbBidResponse.body.seatbid[0].bid[1].adm,
         ttl: 60,
+        ext: openRtbBidResponse.body.seatbid[0].bid[1].ext,
         creativeId: openRtbBidResponse.body.seatbid[0].bid[1].id,
         netRevenue: true,
         meta: {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
-        }
+        },
+        nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl
       }]
 
       let request = spec.buildRequests(bidRequests, bidderRequest);
@@ -307,6 +454,111 @@ describe('OguryBidAdapter', function () {
 
       expect(result).to.be.instanceof(Array);
       expect(result.length).to.equal(0)
+    })
+  });
+
+  describe('onBidWon', function() {
+    const nurl = 'https://fakewinurl.test';
+    let xhr;
+    let requests;
+
+    beforeEach(function() {
+      xhr = sinon.useFakeXMLHttpRequest();
+      requests = [];
+      xhr.onCreate = (xhr) => {
+        requests.push(xhr);
+      };
+    })
+
+    afterEach(function() {
+      xhr.restore()
+    })
+
+    it('Should not create nurl request if bid is undefined', function() {
+      spec.onBidWon()
+      expect(requests.length).to.equal(0);
+    })
+
+    it('Should not create nurl request if bid does not contains nurl', function() {
+      spec.onBidWon({})
+      expect(requests.length).to.equal(0);
+    })
+
+    it('Should create nurl request if bid nurl', function() {
+      spec.onBidWon({ nurl })
+      expect(requests.length).to.equal(1);
+      expect(requests[0].url).to.equal(nurl);
+      expect(requests[0].method).to.equal('GET')
+    })
+
+    it('Should trigger getWindowContext method', function() {
+      const bidSample = {
+        id: 'advertId',
+        impid: 'bidId',
+        price: 100,
+        nurl: 'url',
+        adm: `<html><head><title>test creative</title></head><body style="margin: 0;"><div><img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div></body></html>`,
+        adomain: ['renault.fr'],
+        ext: {
+          adcontent: 'sample_creative',
+          advertid: '1a278c48-b79a-4bbf-b69f-3824803e7d87',
+          campaignid: '31724',
+          mediatype: 'image',
+          userid: 'ab4aabed-5230-49d9-9f1a-f06280d28366',
+          usersync: true,
+          advertiserid: '1',
+          isomidcompliant: false
+        },
+        w: 180,
+        h: 101
+      }
+      spec.onBidWon(bidSample)
+      expect(window.top.OG_PREBID_BID_OBJECT).to.deep.equal(bidSample)
+    })
+  })
+
+  describe('getWindowContext', function() {
+    it('Should return top window if exist', function() {
+      const res = spec.getWindowContext()
+      expect(res).to.equal(window.top)
+      expect(res).to.not.be.undefined;
+    })
+
+    it('Should return self window if getting top window throw an error', function() {
+      const stub = sinon.stub(utils, 'getWindowTop')
+      stub.throws()
+      const res = spec.getWindowContext()
+      expect(res).to.equal(window.self)
+      utils.getWindowTop.restore()
+    })
+  })
+
+  describe('onTimeout', function () {
+    let xhr;
+    let requests;
+
+    beforeEach(function() {
+      xhr = sinon.useFakeXMLHttpRequest();
+      requests = [];
+      xhr.onCreate = (xhr) => {
+        requests.push(xhr);
+      };
+    })
+
+    afterEach(function() {
+      xhr.restore()
+    })
+
+    it('should send notification on bid timeout', function() {
+      const bid = {
+        ad: '<img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" />',
+        cpm: 3
+      }
+      spec.onTimeout(bid);
+      expect(requests).to.not.be.undefined;
+      expect(requests.length).to.equal(1);
+      expect(requests[0].url).to.equal(TIMEOUT_URL);
+      expect(requests[0].method).to.equal('POST');
     })
   });
 });

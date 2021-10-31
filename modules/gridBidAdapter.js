@@ -1,17 +1,18 @@
-import * as utils from '../src/utils.js';
+import { isEmpty, deepAccess, logError, parseGPTSingleSizeArrayToRtbSize, generateUUID, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
 const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
+const USER_ID_KEY = 'tmguid';
+const GVLID = 686;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-
-let hasSynced = false;
-
+export const storage = getStorageManager(GVLID, BIDDER_CODE);
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -23,8 +24,12 @@ const LOG_ERROR_MESS = {
   hasEmptySeatbidArray: 'Response has empty seatbid array',
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
+
+let hasSynced = false;
+
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['playwire'],
   supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.
@@ -50,7 +55,6 @@ export const spec = {
     let jwpseg = null;
     let content = null;
     let schain = null;
-    let userId = null;
     let userIdAsEids = null;
     let user = null;
     let userExt = null;
@@ -70,17 +74,11 @@ export const spec = {
       if (!schain) {
         schain = bid.schain;
       }
-      if (!userId) {
-        userId = bid.userId;
-      }
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
       }
       const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
       bidsMap[bidId] = bid;
-      if (!pageKeywords && !utils.isEmpty(keywords)) {
-        pageKeywords = utils.transformBidderParamKeywords(keywords);
-      }
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
       if (jwTargeting) {
@@ -92,17 +90,25 @@ export const spec = {
         }
       }
       let impObj = {
-        id: bidId,
+        id: bidId.toString(),
         tagid: uid.toString(),
         ext: {
-          divid: adUnitCode
+          divid: adUnitCode.toString()
         }
       };
       if (ortb2Imp && ortb2Imp.ext && ortb2Imp.ext.data) {
         impObj.ext.data = ortb2Imp.ext.data;
         if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
-          impObj.ext.gpid = impObj.ext.data.adserver.adslot;
+          impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
+        } else {
+          impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
         }
+      }
+      if (!isEmpty(keywords)) {
+        if (!pageKeywords) {
+          pageKeywords = keywords;
+        }
+        impObj.ext.bidder = { keywords };
       }
 
       if (bidFloor) {
@@ -128,7 +134,7 @@ export const spec = {
     });
 
     const source = {
-      tid: auctionId,
+      tid: auctionId && auctionId.toString(),
       ext: {
         wrapper: 'Prebid_js',
         wrapper_version: '$prebid.version$'
@@ -143,7 +149,7 @@ export const spec = {
     const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
 
     let request = {
-      id: bidderRequestId,
+      id: bidderRequestId && bidderRequestId.toString(),
       site: {
         page: referer
       },
@@ -181,27 +187,48 @@ export const spec = {
       user.ext = userExt;
     }
 
+    const fpdUserId = getUserIdFromFPDStorage();
+
+    if (fpdUserId) {
+      user = user || {};
+      user.id = fpdUserId.toString();
+    }
+
     if (user) {
       request.user = user;
     }
 
-    const configKeywords = utils.transformBidderParamKeywords({
-      'user': utils.deepAccess(config.getConfig('ortb2.user'), 'keywords') || null,
-      'context': utils.deepAccess(config.getConfig('ortb2.site'), 'keywords') || null
-    });
+    const userKeywords = deepAccess(config.getConfig('ortb2.user'), 'keywords') || null;
+    const siteKeywords = deepAccess(config.getConfig('ortb2.site'), 'keywords') || null;
 
-    if (configKeywords.length) {
-      pageKeywords = (pageKeywords || []).concat(configKeywords);
+    if (userKeywords) {
+      pageKeywords = pageKeywords || {};
+      pageKeywords.user = pageKeywords.user || {};
+      pageKeywords.user.ortb2 = [
+        {
+          name: 'keywords',
+          keywords: userKeywords.split(','),
+        }
+      ];
     }
-
-    if (pageKeywords && pageKeywords.length > 0) {
-      pageKeywords.forEach(deleteValues);
+    if (siteKeywords) {
+      pageKeywords = pageKeywords || {};
+      pageKeywords.site = pageKeywords.site || {};
+      pageKeywords.site.ortb2 = [
+        {
+          name: 'keywords',
+          keywords: siteKeywords.split(','),
+        }
+      ];
     }
 
     if (pageKeywords) {
-      request.ext = {
-        keywords: pageKeywords
-      };
+      pageKeywords = reformatKeywords(pageKeywords);
+      if (pageKeywords) {
+        request.ext = {
+          keywords: pageKeywords
+        };
+      }
     }
 
     if (gdprConsent && gdprConsent.gdprApplies) {
@@ -257,7 +284,7 @@ export const spec = {
         _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses);
       });
     }
-    if (errorMessage) utils.logError(errorMessage);
+    if (errorMessage) logError(errorMessage);
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
@@ -311,23 +338,13 @@ function _getFloor (mediaTypes, bid) {
   return floor;
 }
 
-function isPopulatedArray(arr) {
-  return !!(utils.isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
-
 function _getBidFromResponse(respItem) {
   if (!respItem) {
-    utils.logError(LOG_ERROR_MESS.emptySeatbid);
+    logError(LOG_ERROR_MESS.emptySeatbid);
   } else if (!respItem.bid) {
-    utils.logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
+    logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
   } else if (!respItem.bid[0]) {
-    utils.logError(LOG_ERROR_MESS.noBid);
+    logError(LOG_ERROR_MESS.noBid);
   }
   return respItem && respItem.bid && respItem.bid[0];
 }
@@ -336,16 +353,16 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
-  if (!serverBid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
+  if (!errorMessage && !serverBid.adm && !serverBid.nurl) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
   else {
     const bid = bidRequest.bidsMap[serverBid.impid];
     if (bid) {
       const bidResponse = {
-        requestId: bid.bidId, // bid.bidderRequestId,
+        requestId: bid.bidId, // bid.bidderRequestId
         cpm: serverBid.price,
         width: serverBid.w,
         height: serverBid.h,
-        creativeId: serverBid.auid, // bid.bidId,
+        creativeId: serverBid.auid, // bid.bidId
         currency: 'USD',
         netRevenue: true,
         ttl: TIME_TO_LIVE,
@@ -355,12 +372,21 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
         dealId: serverBid.dealid
       };
 
+      if (serverBid.ext && serverBid.ext.bidder && serverBid.ext.bidder.grid && serverBid.ext.bidder.grid.demandSource) {
+        bidResponse.adserverTargeting = { 'hb_ds': serverBid.ext.bidder.grid.demandSource };
+        bidResponse.meta.demandSource = serverBid.ext.bidder.grid.demandSource;
+      }
+
       if (serverBid.content_type === 'video') {
-        bidResponse.vastXml = serverBid.adm;
+        if (serverBid.adm) {
+          bidResponse.vastXml = serverBid.adm;
+          bidResponse.adResponse = {
+            content: bidResponse.vastXml
+          };
+        } else if (serverBid.nurl) {
+          bidResponse.vastUrl = serverBid.nurl;
+        }
         bidResponse.mediaType = VIDEO;
-        bidResponse.adResponse = {
-          content: bidResponse.vastXml
-        };
         if (!bid.renderer && (!bid.mediaTypes || !bid.mediaTypes.video || bid.mediaTypes.video.context === 'outstream')) {
           bidResponse.renderer = createRenderer(bidResponse, {
             id: bid.bidId,
@@ -375,7 +401,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
     }
   }
   if (errorMessage) {
-    utils.logError(errorMessage);
+    logError(errorMessage);
   }
 }
 
@@ -384,7 +410,7 @@ function createVideoRequest(bid, mediaType) {
   const size = (playerSize || bid.sizes || [])[0];
   if (!size) return;
 
-  let result = utils.parseGPTSingleSizeArrayToRtbSize(size);
+  let result = parseGPTSingleSizeArrayToRtbSize(size);
 
   if (mimes) {
     result.mimes = mimes;
@@ -406,13 +432,72 @@ function createBannerRequest(bid, mediaType) {
   const sizes = mediaType.sizes || bid.sizes;
   if (!sizes || !sizes.length) return;
 
-  let format = sizes.map((size) => utils.parseGPTSingleSizeArrayToRtbSize(size));
-  let result = utils.parseGPTSingleSizeArrayToRtbSize(sizes[0]);
+  let format = sizes.map((size) => parseGPTSingleSizeArrayToRtbSize(size));
+  let result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
 
   if (format.length) {
     result.format = format
   }
   return result;
+}
+
+function makeNewUserIdInFPDStorage() {
+  if (config.getConfig('localStorageWriteAllowed')) {
+    const value = generateUUID().replace(/-/g, '');
+
+    storage.setDataInLocalStorage(USER_ID_KEY, value);
+    return value;
+  }
+  return null;
+}
+
+function getUserIdFromFPDStorage() {
+  return storage.getDataFromLocalStorage(USER_ID_KEY) || makeNewUserIdInFPDStorage();
+}
+
+function reformatKeywords(pageKeywords) {
+  const formatedPageKeywords = {};
+  Object.keys(pageKeywords).forEach((name) => {
+    const keywords = pageKeywords[name];
+    if (keywords) {
+      if (name === 'site' || name === 'user') {
+        const formatedKeywords = {};
+        Object.keys(keywords).forEach((pubName) => {
+          if (Array.isArray(keywords[pubName])) {
+            const formatedPublisher = [];
+            keywords[pubName].forEach((pubItem) => {
+              if (typeof pubItem === 'object' && pubItem.name) {
+                const formatedPubItem = { name: pubItem.name, segments: [] };
+                Object.keys(pubItem).forEach((key) => {
+                  if (Array.isArray(pubItem[key])) {
+                    pubItem[key].forEach((keyword) => {
+                      if (keyword) {
+                        if (typeof keyword === 'string') {
+                          formatedPubItem.segments.push({ name: key, value: keyword });
+                        } else if (key === 'segments' && typeof keyword.name === 'string' && typeof keyword.value === 'string') {
+                          formatedPubItem.segments.push(keyword);
+                        }
+                      }
+                    });
+                  }
+                });
+                if (formatedPubItem.segments.length) {
+                  formatedPublisher.push(formatedPubItem);
+                }
+              }
+            });
+            if (formatedPublisher.length) {
+              formatedKeywords[pubName] = formatedPublisher;
+            }
+          }
+        });
+        formatedPageKeywords[name] = formatedKeywords;
+      } else {
+        formatedPageKeywords[name] = keywords;
+      }
+    }
+  });
+  return Object.keys(formatedPageKeywords).length && formatedPageKeywords;
 }
 
 function outstreamRender (bid) {
@@ -434,7 +519,7 @@ function createRenderer (bid, rendererParams) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
 
   return renderer;
