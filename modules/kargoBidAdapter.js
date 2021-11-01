@@ -1,13 +1,15 @@
-import * as utils from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { _each } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}';
 const SYNC_COUNT = 5;
 const GVLID = 972;
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const storage = getStorageManager(GVLID, BIDDER_CODE);
 
 let sessionId,
@@ -21,34 +23,38 @@ export const spec = {
     if (!bid || !bid.params) {
       return false;
     }
+
     return !!bid.params.placementId;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const currencyObj = config.getConfig('currency');
     const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
-    const bidIds = {};
+    const bidIDs = {};
     const bidSizes = {};
-    utils._each(validBidRequests, bid => {
-      bidIds[bid.bidId] = bid.params.placementId;
+
+    _each(validBidRequests, bid => {
+      bidIDs[bid.bidId] = bid.params.placementId;
       bidSizes[bid.bidId] = bid.sizes;
     });
+
     let tdid;
     if (validBidRequests.length > 0 && validBidRequests[0].userId && validBidRequests[0].userId.tdid) {
       tdid = validBidRequests[0].userId.tdid;
     }
+
     const transformedParams = Object.assign({}, {
       sessionId: spec._getSessionId(),
       requestCount: spec._getRequestCount(),
       timeout: bidderRequest.timeout,
-      currency: currency,
+      currency,
       cpmGranularity: 1,
       timestamp: (new Date()).getTime(),
       cpmRange: {
         floor: 0,
         ceil: 20
       },
-      bidIDs: bidIds,
-      bidSizes: bidSizes,
+      bidIDs,
+      bidSizes,
       prebidRawBidRequests: validBidRequests
     }, spec._getAllMetadata(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent));
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
@@ -111,6 +117,7 @@ export const spec = {
     }
     return syncs;
   },
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   // PRIVATE
   _readCookie(name) {

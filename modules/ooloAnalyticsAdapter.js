@@ -1,7 +1,7 @@
+import { _each, deepClone, pick, deepSetValue, getOrigin, logError, logInfo } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js'
 import adapterManager from '../src/adapterManager.js'
 import CONSTANTS from '../src/constants.json'
-import * as utils from '../src/utils.js'
 import { ajax } from '../src/ajax.js'
 import { config } from '../src/config.js'
 
@@ -64,7 +64,7 @@ const onAuctionInit = (args) => {
 
   handleCustomFields(auction, AUCTION_INIT, args)
 
-  utils._each(adUnits, adUnit => {
+  _each(adUnits, adUnit => {
     auction.adUnits[adUnit.code] = {
       ...adUnit,
       auctionId,
@@ -144,7 +144,7 @@ const onBidWon = (args) => {
 }
 
 const onBidTimeout = (args) => {
-  utils._each(args, bid => {
+  _each(args, bid => {
     const { auctionId, adUnitCode } = bid
     const bidId = parseBidId(bid)
     let bidCache = auctions[auctionId].adUnits[adUnitCode].bids[bidId]
@@ -172,7 +172,7 @@ const onAuctionEnd = (args) => {
 }
 
 const onAdRenderFailed = (args) => {
-  const data = utils.deepClone(args)
+  const data = deepClone(args)
   data.timestamp = Date.now()
 
   if (data.bid) {
@@ -232,7 +232,7 @@ function handleEvent(eventType, args) {
 }
 
 function sendEvent(eventType, args, isRaw) {
-  let data = utils.deepClone(args)
+  let data = deepClone(args)
 
   Object.assign(data, buildCommonDataProperties(), {
     eventType
@@ -268,7 +268,7 @@ function checkEventsQueue() {
 }
 
 function buildAuctionData(auction) {
-  const auctionData = utils.deepClone(auction)
+  const auctionData = deepClone(auction)
   const keysToRemove = ['adUnitCodes', 'auctionStatus', 'bidderRequests', 'bidsReceived', 'noBids', 'winningBids', 'timestamp', 'config']
 
   keysToRemove.forEach(key => {
@@ -367,12 +367,12 @@ function handleCustomFields(obj, eventType, args) {
     const { pickFields, omitFields } = initOptions.serverConfig.events[eventType]
 
     if (pickFields && obj && args) {
-      Object.assign(obj, utils.pick(args, pickFields))
+      Object.assign(obj, pick(args, pickFields))
     }
 
     if (omitFields && obj && args) {
       omitFields.forEach(field => {
-        utils.deepSetValue(obj, field, undefined)
+        deepSetValue(obj, field, undefined)
       })
     }
   } catch (e) { }
@@ -382,7 +382,7 @@ function handleCustomRawFields(obj, omitRawFields) {
   try {
     if (omitRawFields && obj) {
       omitRawFields.forEach(field => {
-        utils.deepSetValue(obj, field, undefined)
+        deepSetValue(obj, field, undefined)
       })
     }
   } catch (e) { }
@@ -419,7 +419,7 @@ function sendPage() {
       screenHeight: window.screen.height,
       url: window.location.href,
       protocol: window.location.protocol,
-      origin: utils.getOrigin(),
+      origin: getOrigin(),
       referrer: getTopWindowReferrer(),
       pbVersion: prebidVersion,
     }
@@ -507,7 +507,7 @@ ooloAdapter.enableAnalytics = function (config) {
   initOptions = config ? config.options : {}
 
   if (!initOptions.pid) {
-    utils.logError(buildLogMessage('enableAnalytics missing config object with "pid"'))
+    logError(buildLogMessage('enableAnalytics missing config object with "pid"'))
     return
   }
 
@@ -520,9 +520,9 @@ ooloAdapter.enableAnalytics = function (config) {
     window.addEventListener('load', sendPage)
   }
 
-  utils.logInfo(buildLogMessage('enabled analytics adapter'), config)
+  logInfo(buildLogMessage('enabled analytics adapter'), config)
   ooloAdapter.enableAnalytics = function () {
-    utils.logInfo(buildLogMessage('Analytics adapter already enabled..'))
+    logInfo(buildLogMessage('Analytics adapter already enabled..'))
   }
 }
 

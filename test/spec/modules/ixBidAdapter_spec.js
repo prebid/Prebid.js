@@ -1377,6 +1377,11 @@ describe('IndexexchangeAdapter', function () {
       expect(requestUrl).to.equal(IX_SECURE_ENDPOINT);
     });
 
+    it('auction type should be set correctly', function () {
+      const at = JSON.parse(query.r).at;
+      expect(at).to.equal(1);
+    })
+
     it('query object (version, siteID and request) should be correct', function () {
       expect(query.v).to.equal(BANNER_ENDPOINT_VERSION);
       expect(query.s).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
@@ -1400,16 +1405,16 @@ describe('IndexexchangeAdapter', function () {
         }
       };
       const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const { dfp_ad_unit_code } = JSON.parse(requests[0].data.r).imp[0].banner.format[0].ext;
+      const { ext: { dfp_ad_unit_code } } = JSON.parse(requests[0].data.r).imp[0];
       expect(dfp_ad_unit_code).to.equal(AD_UNIT_CODE);
     });
 
     it('should not send dfp_adunit_code in request if ortb2Imp.ext.data.adserver.adslot does not exists', function () {
       const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
       const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const { dfp_ad_unit_code } = JSON.parse(requests[0].data.r).imp[0].banner.format[0].ext;
+      const { ext } = JSON.parse(requests[0].data.r).imp[0];
 
-      expect(dfp_ad_unit_code).to.not.exist;
+      expect(ext).to.not.exist;
     });
 
     it('payload should have correct format and value', function () {
@@ -1928,6 +1933,11 @@ describe('IndexexchangeAdapter', function () {
       expect(query.sd).to.equal(1);
       expect(query.nf).to.equal(1);
     });
+
+    it('auction type should be set correctly', function () {
+      const at = JSON.parse(query.r).at;
+      expect(at).to.equal(1);
+    })
 
     it('impression should have correct format and value', function () {
       const impression = JSON.parse(query.r).imp[0];
