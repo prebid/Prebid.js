@@ -559,9 +559,6 @@ describe('config API', function () {
   });
 
   it('should merge without array duplication', function() {
-    let rtdConfig = {};
-    let bidConfig = {};
-
     const userObj1 = {
       name: 'www.dataprovider1.com',
       ext: { taxonomyname: 'iab_audience_taxonomy' },
