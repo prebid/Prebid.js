@@ -44,7 +44,7 @@ describe('Vast XML Editor', function () {
   const vastXmlEditor = vastXmlEditorFactory();
   const expectedImpressionUrl = 'https://test.impression.com/ping.gif';
   const expectedImpressionId = 'test-impression-id';
-  // const expectedErrorUrl = 'https://test.error.com/ping.gif';
+  const expectedErrorUrl = 'https://test.error.com/ping.gif';
 
   it('should add Impression Nodes to the Ad Wrapper', function () {
     const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(adWrapperXml, expectedImpressionUrl, expectedImpressionId);
@@ -86,6 +86,51 @@ describe('Vast XML Editor', function () {
             <AdSystem version="6">Prebid org</AdSystem>
             <AdTitle>Random Title</AdTitle>
         <Impression id="${expectedImpressionId}"><![CDATA[${expectedImpressionUrl}]]></Impression></InLine>
+    </Ad>
+</VAST>`;
+    expect(vastXml).to.equal(expectedXml);
+  });
+
+  it('should add Error Nodes to the Ad Wrapper', function () {
+    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(adWrapperXml, null, null, expectedErrorUrl);
+    const expectedXml = `<VAST version="4.0">
+    <Ad id="123">
+        <Wrapper>
+            <AdSystem version="6">Prebid org</AdSystem>
+            <VASTAdTagURI><![CDATA[https://random.adTag.com]]></VASTAdTagURI>
+        <Error><![CDATA[${expectedErrorUrl}]]></Error></Wrapper>
+    </Ad>
+</VAST>`;
+    expect(vastXml).to.equal(expectedXml);
+  });
+
+  it('should add Error Nodes to the InLine', function () {
+    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(inlineXml, null, null, expectedErrorUrl);
+    const expectedXml = `<VAST version="4.0">
+    <Ad id="abc">
+        <InLine>
+            <AdSystem version="6">Prebid org</AdSystem>
+            <AdTitle>Random Title</AdTitle>
+        <Error><![CDATA[${expectedErrorUrl}]]></Error></InLine>
+    </Ad>
+</VAST>`;
+    expect(vastXml).to.equal(expectedXml);
+  });
+
+  it('should add Error Nodes to the Ad Wrapper and Inline', function () {
+    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(inLineWithWrapper, null, null, expectedErrorUrl);
+    const expectedXml = `<VAST version="4.0">
+    <Ad id="123">
+        <Wrapper>
+            <AdSystem version="6">Prebid org</AdSystem>
+            <VASTAdTagURI><![CDATA[https://random.adTag.com]]></VASTAdTagURI>
+        <Error><![CDATA[${expectedErrorUrl}]]></Error></Wrapper>
+    </Ad>
+    <Ad id="abc">
+        <InLine>
+            <AdSystem version="6">Prebid org</AdSystem>
+            <AdTitle>Random Title</AdTitle>
+        <Error><![CDATA[${expectedErrorUrl}]]></Error></InLine>
     </Ad>
 </VAST>`;
     expect(vastXml).to.equal(expectedXml);
