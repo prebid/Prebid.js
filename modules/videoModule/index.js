@@ -5,11 +5,12 @@ import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
 import find from 'core-js-pure/features/array/find.js';
-import {buildVastWrapper, getErrorNode, getImpressionNode} from './shared/vastXmlBuilder';
+import { buildVastWrapper } from './shared/vastXmlBuilder';
+import { vastXmlEditorFactory } from './shared/vastXmlEditor';
 
 events.addEvents(allVideoEvents);
 
-export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, adServerCore_) {
+export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, adServerCore_, vastXmlEditor_) {
   const videoCore = videoCore_;
   const getConfig = getConfig_;
   const pbGlobal = pbGlobal_;
@@ -17,6 +18,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   const pbEvents = pbEvents_;
   const videoEvents = videoEvents_;
   const adServerCore = adServerCore_;
+  const vastXmlEditor = vastXmlEditor_;
 
   function init() {
     getConfig('video', ({ video }) => {
@@ -55,52 +57,9 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       const adUnit = find($$PREBID_GLOBAL$$.adUnits, adUnit => adUnitCode === adUnit.code);
       const videoConfig = adUnit && adUnit.video;
       const adServerConfig = videoConfig && videoConfig.adServer;
-      if (!adServerConfig) {
-        return;
-      }
-
-      let { vastXml, vastUrl } = bid;
-      const adId = bid.adId;
-      let impressionUrl;
-      let impressionId;
-      let errorUrl;
-      const trackingConfig = adServerConfig.tracking || {};
-      const impressionTracking = trackingConfig.impression;
-      const errorTracking = trackingConfig.error;
-
-      if (impressionTracking) {
-        impressionUrl = impressionTracking.url;
-        impressionId = impressionTracking.id || adId + '-impression';
-      }
-
-      if (errorTracking) {
-        errorUrl = errorTracking.url;
-      }
-
-      if (vastXml) {
-        vastXml = getVastXmlWithTrackingNodes(vastXml, impressionUrl, impressionId, errorUrl);
-      } else if (vastUrl) {
-        vastXml = buildVastWrapper(adId, vastUrl, impressionUrl, impressionId, errorUrl);
-      }
-
-      bid.vastXml = vastXml;
+      const trackingConfig = adServerConfig && adServerConfig.tracking;
+      addTrackingNodesToVastXml(bid, trackingConfig);
     });
-
-
-
-    // must tie adId to bid id and auction id possibly
-    // bid.auctionId .adId .creativeId .requestId
-
-    // it could be that bid.adId should be equal to the VAST XML adId.
-    // asked in pbjs slack and media grid
-
-    // confirmation comes from jwplayer ad impression event.adId
-    // this is not sent for ad error
-    // check how/if this works for vmap
-    // what happens when there are many redirects ? - initial tests were done with ad tag in event, not ad tag loaded to player
-    // works for IMA!
-
-    // then check impression/error event
   }
 
   return { init };
@@ -140,12 +99,44 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     options.adXml = highestBid.vastXml;
     videoCore.setAdTagUrl(adTagUrl, divId, options);
   }
+
+  function addTrackingNodesToVastXml(bid, trackingConfig) {
+    if (!trackingConfig) {
+      return;
+    }
+
+    let { vastXml, vastUrl, adId } = bid;
+    let impressionUrl;
+    let impressionId;
+    let errorUrl;
+
+    const impressionTracking = trackingConfig.impression;
+    const errorTracking = trackingConfig.error;
+
+    if (impressionTracking) {
+      impressionUrl = impressionTracking.url;
+      impressionId = impressionTracking.id || adId + '-impression';
+    }
+
+    if (errorTracking) {
+      errorUrl = errorTracking.url;
+    }
+
+    if (vastXml) {
+      vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(vastXml, impressionUrl, impressionId, errorUrl);
+    } else if (vastUrl) {
+      vastXml = buildVastWrapper(adId, vastUrl, impressionUrl, impressionId, errorUrl);
+    }
+
+    bid.vastXml = vastXml;
+  }
 }
 
 export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
   const adServerCore = coreAdServerFactory();
-  const pbVideo = PbVideo(videoCore, config.getConfig, $$PREBID_GLOBAL$$, events, allVideoEvents, adServerCore);
+  const vastXmlEditor = vastXmlEditorFactory();
+  const pbVideo = PbVideo(videoCore, config.getConfig, $$PREBID_GLOBAL$$, events, allVideoEvents, adServerCore, vastXmlEditor);
   pbVideo.init();
   return pbVideo;
 }
