@@ -294,6 +294,14 @@ function buildRequests(validBidRequests, bidderRequest) {
     let data = {};
     let gpid = '';
 
+    const date = new Date();
+    const lt = date && date.getTime();
+    const to = date && date.getTimezoneOffset();
+    if (to) {
+      lt && (data.lt = lt);
+      data.to = to;
+    }
+
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
 

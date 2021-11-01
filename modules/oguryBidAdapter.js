@@ -1,7 +1,7 @@
 'use strict';
 
 import { BANNER } from '../src/mediaTypes.js';
-import { getAdUnitSizes, logWarn, isFn } from '../src/utils.js';
+import { getAdUnitSizes, logWarn, isFn, getWindowTop, getWindowSelf } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js'
 
@@ -145,7 +145,19 @@ function getFloor(bid) {
   return floorResult.currency === 'USD' ? floorResult.floor : 0;
 }
 
+function getWindowContext() {
+  try {
+    return getWindowTop()
+  } catch (e) {
+    return getWindowSelf()
+  }
+}
+
 function onBidWon(bid) {
+  const w = getWindowContext()
+  w.OG_PREBID_BID_OBJECT = {
+    ...(bid && { ...bid }),
+  }
   if (bid && bid.hasOwnProperty('nurl') && bid.nurl.length > 0) ajax(bid['nurl'], null);
 }
 
@@ -165,6 +177,7 @@ export const spec = {
   interpretResponse,
   getFloor,
   onBidWon,
+  getWindowContext,
   onTimeout
 }
 
