@@ -1,6 +1,6 @@
 /*
  * Module for getting and setting Prebid configuration.
- */
+*/
 
 /**
  * @typedef {Object} MediaTypePriceGranularity
@@ -673,6 +673,7 @@ export function newConfig() {
     getCurrentBidder,
     resetBidder,
     getConfig,
+    readConfig,
     setConfig,
     mergeConfig,
     setDefaults,
