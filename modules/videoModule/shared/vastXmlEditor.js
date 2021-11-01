@@ -17,7 +17,8 @@ export function VastXmlEditor(xmlUtil_) {
     const nodeCount = nodes.length;
     for (let i = 0; i < nodeCount; i++) {
       const node = nodes[i];
-      const requiresCopy = nodeCount - i > 0;
+      // A copy of the child is required until we reach the last node.
+      const requiresCopy = i < nodeCount - 1;
       appendChild(node, impressionDoc, requiresCopy);
       appendChild(node, errorDoc, requiresCopy);
     }
