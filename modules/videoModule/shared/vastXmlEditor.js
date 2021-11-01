@@ -5,6 +5,30 @@ export const XML_MIME_TYPE = 'application/xml';
 export function VastXmlEditor(xmlUtil_) {
   const xmlUtil = xmlUtil_;
 
+  function getVastXmlWithTrackingNodes(vastXml, impressionUrl, impressionId, errorUrl) {
+    const impressionDoc = getImpressionDoc(impressionUrl, impressionId);
+    const errorDoc = getErrorDoc(errorUrl);
+    if (!impressionDoc && !errorDoc) {
+      return vastXml;
+    }
+
+    const vastXmlDoc = xmlUtil.parse(vastXml);
+    const nodes = vastXmlDoc.querySelectorAll('InLine,Wrapper');
+    const nodeCount = nodes.length;
+    for (let i = 0; i < nodeCount; i++) {
+      const node = nodes[i];
+      const requiresCopy = nodeCount - i > 0;
+      appendChild(node, impressionDoc, requiresCopy);
+      appendChild(node, errorDoc, requiresCopy);
+    }
+
+    return xmlUtil.serialize(vastXmlDoc);
+  }
+
+  return {
+    getVastXmlWithTrackingNodes
+  }
+
   function getImpressionDoc(impressionUrl, impressionId) {
     if (!impressionUrl) {
       return;
@@ -23,32 +47,13 @@ export function VastXmlEditor(xmlUtil_) {
     return xmlUtil.parse(errorNode);
   }
 
-  function getVastXmlWithTrackingNodes(vastXml, impressionUrl, impressionId, errorUrl) {
-    const impressionDoc = getImpressionDoc(impressionUrl, impressionId);
-    const errorDoc = getErrorDoc(errorUrl);
-    if (!impressionDoc && !errorDoc) {
-      return vastXml;
+  function appendChild(node, child, copy) {
+    if (!child) {
+      return;
     }
 
-    const vastXmlDoc = xmlUtil.parse(vastXml);
-    const nodes = vastXmlDoc.querySelectorAll('InLine,Wrapper');
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-      if (impressionDoc) {
-        // console.log('node ' + i + ' - ', node);
-        node.appendChild(impressionDoc.documentElement);
-      }
-
-      if (errorDoc) {
-        node.appendChild(errorDoc.documentElement);
-      }
-    }
-
-    return xmlUtil.serialize(vastXmlDoc);
-  }
-
-  return {
-    getVastXmlWithTrackingNodes
+    const doc = copy ? child.cloneNode(true) : child;
+    node.appendChild(doc.documentElement);
   }
 }
 
