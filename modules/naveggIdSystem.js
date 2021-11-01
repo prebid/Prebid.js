@@ -4,7 +4,7 @@
  * @module modules/naveggId
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils.js'
+import { isStr, isPlainObject, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -58,7 +58,7 @@ export const naveggIdSubmodule = {
    * @return { Object | string | undefined }
    */
   decode(value) {
-    const naveggIdVal = value ? utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined : undefined;
+    const naveggIdVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return naveggIdVal ? {
       'naveggId': naveggIdVal
     } : undefined;
@@ -81,7 +81,7 @@ export const naveggIdSubmodule = {
       try {
         return { id: naveggIdString };
       } catch (error) {
-        utils.logError(error);
+        logError(error);
       }
     }
     return undefined;

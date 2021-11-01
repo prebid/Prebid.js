@@ -83,7 +83,14 @@ export const spec = {
       'lib_name': 'prebid',
       'lib_v': '$prebid.version$',
       'us': 0,
+
     };
+
+    const fpd = config.getConfig('ortb2');
+
+    if (fpd) {
+      payload.fpd = JSON.stringify(fpd);
+    }
 
     if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
       payload.us = config.getConfig('userSync').syncsPerBidder;

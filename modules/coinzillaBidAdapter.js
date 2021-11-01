@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
@@ -31,7 +31,7 @@ export const spec = {
       return [];
     }
     return validBidRequests.map(bidRequest => {
-      const sizes = utils.parseSizesInput(bidRequest.params.size || bidRequest.sizes)[0];
+      const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes)[0];
       const width = sizes.split('x')[0];
       const height = sizes.split('x')[1];
       const payload = {

@@ -496,7 +496,7 @@ export const spec = {
 };
 
 function isPopulatedArray(arr) {
-  return !!(utils.isArray(arr) && arr.length > 0);
+  return !!(isArray(arr) && arr.length > 0);
 }
 
 function deleteValues(keyPairObj) {
@@ -586,7 +586,7 @@ function getAppnexusViewabilityScriptFromJsTrackers(jsTrackerArray) {
     strIsAppnexusViewabilityScript(jsTrackerArray)
   ) {
     viewJsPayload = jsTrackerArray;
-  } else if (utils.isArray(jsTrackerArray)) {
+  } else if (isArray(jsTrackerArray)) {
     for (let i = 0; i < jsTrackerArray.length; i++) {
       let currentJsTracker = jsTrackerArray[i];
       if (strIsAppnexusViewabilityScript(currentJsTracker)) {
@@ -649,7 +649,7 @@ function formatRequest(payload, bidderRequest) {
   }
 
   if (payload.tags.length > MAX_IMPS_PER_REQUEST) {
-    const clonedPayload = utils.deepClone(payload);
+    const clonedPayload = deepClone(payload);
 
     utils.chunk(payload.tags, MAX_IMPS_PER_REQUEST).forEach((tags) => {
       clonedPayload.tags = tags;
@@ -711,7 +711,7 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
  * @return Bid
  */
 function newBid(serverBid, rtbBid, bidderRequest) {
-  const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
+  const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
@@ -807,7 +807,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
     if (jsTrackers == undefined) {
       jsTrackers = jsTrackerDisarmed;
-    } else if (utils.isStr(jsTrackers)) {
+    } else if (isStr(jsTrackers)) {
       jsTrackers = [jsTrackers, jsTrackerDisarmed];
     } else {
       jsTrackers.push(jsTrackerDisarmed);
@@ -855,9 +855,15 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     });
     try {
       if (rtbBid.rtb.trackers) {
-        const url = rtbBid.rtb.trackers[0].impression_urls[0];
-        const tracker = utils.createTrackPixelHtml(url);
-        bid.ad += tracker;
+        for (
+          let i = 0;
+          i < rtbBid.rtb.trackers[0].impression_urls.length;
+          i++
+        ) {
+          const url = rtbBid.rtb.trackers[0].impression_urls[i];
+          const tracker = createTrackPixelHtml(url);
+          bid.ad += tracker;
+        }
       }
     } catch (error) {
       utils.logError("Error appending tracking pixel", error);
@@ -910,8 +916,8 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!utils.isEmpty(bid.params.keywords)) {
-    let keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+  if (!isEmpty(bid.params.keywords)) {
+    let keywords = transformBidderParamKeywords(bid.params.keywords);
 
     if (keywords.length > 0) {
       keywords.forEach(deleteValues);
@@ -1124,7 +1130,7 @@ function hasOmidSupport(bid) {
   let hasOmid = false;
   const bidderParams = bid.params;
   const videoParams = bid.params.video;
-  if (bidderParams.frameworks && utils.isArray(bidderParams.frameworks)) {
+  if (bidderParams.frameworks && isArray(bidderParams.frameworks)) {
     hasOmid = includes(bid.params.frameworks, 6);
   }
   if (
@@ -1147,14 +1153,14 @@ function createAdPodRequest(tags, adPodBid) {
   const { durationRangeSec, requireExactDuration } = adPodBid.mediaTypes.video;
 
   const numberOfPlacements = getAdPodPlacementNumber(adPodBid.mediaTypes.video);
-  const maxDuration = utils.getMaxValueFromArray(durationRangeSec);
+  const maxDuration = getMaxValueFromArray(durationRangeSec);
 
   const tagToDuplicate = tags.filter((tag) => tag.uuid === adPodBid.bidId);
   let request = utils.fill(...tagToDuplicate, numberOfPlacements);
 
   if (requireExactDuration) {
     const divider = Math.ceil(numberOfPlacements / durationRangeSec.length);
-    const chunked = utils.chunk(request, divider);
+    const chunked = chunk(request, divider);
 
     // each configured duration is set as min/maxduration for a subset of requests
     durationRangeSec.forEach((duration, index) => {

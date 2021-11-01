@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { isStr, deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -9,12 +9,12 @@ const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const GVLID = 855;
 
 const checkSegment = function (segment) {
-  if (utils.isStr(segment)) return segment;
+  if (isStr(segment)) return segment;
   if (segment.id) return segment.id
 }
 
 const getSegmentsFromOrtb = function (ortb2) {
-  const userData = utils.deepAccess(ortb2, 'user.data');
+  const userData = deepAccess(ortb2, 'user.data');
   let segments = [];
   if (userData) {
     userData.forEach(userdat => {
@@ -59,8 +59,8 @@ export const spec = {
     const usi = getUsi(adnMeta, ortb2, bidderRequest)
     const segments = getSegmentsFromOrtb(ortb2);
     const tzo = new Date().getTimezoneOffset();
-    const gdprApplies = utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
-    const consentString = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
+    const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
+    const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
 
     request.push('tzo=' + tzo)
     request.push('format=json')
@@ -112,6 +112,7 @@ export const spec = {
             height: Number(ad.creativeHeight),
             creativeId: ad.creativeId,
             currency: (ad.bid) ? ad.bid.currency : 'EUR',
+            dealId: ad.dealId || '',
             meta: {
               advertiserDomains: (ad.destinationUrls.destination) ? [ad.destinationUrls.destination.split('/')[2]] : []
 
