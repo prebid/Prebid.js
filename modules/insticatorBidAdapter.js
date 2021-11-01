@@ -147,13 +147,21 @@ function buildRequest(validBidRequests, bidderRequest) {
     regs: buildRegs(bidderRequest),
     user: buildUser(),
     imp: validBidRequests.map((bidRequest) => buildImpression(bidRequest)),
+    ext: {
+      insticator: {
+        adapter: {
+          vendor: 'prebid',
+          prebid: '$prebid.version$'
+        }
+      }
+    }
   };
 
   const params = config.getConfig('insticator.params');
 
   if (params) {
     req.ext = {
-      insticator: params,
+      insticator: {...req.ext.insticator, ...params},
     };
   }
 
