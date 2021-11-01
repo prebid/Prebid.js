@@ -9,6 +9,7 @@ describe('jixie Adapter', function () {
   const device_ = 'desktop';
   const timeout_ = 1000;
   const currency_ = 'USD';
+  const keywords_ = '';
 
   /**
    * Basic
@@ -212,7 +213,7 @@ describe('jixie Adapter', function () {
         );
       let miscDimsStub = sinon.stub(jixieaux, 'getMiscDims');
       miscDimsStub
-        .returns({ device: device_, pageurl: pageurl_, domain: domain_ });
+        .returns({ device: device_, pageurl: pageurl_, domain: domain_, mkeywords: keywords_ });
 
       // actual api call:
       const request = spec.buildRequests(bidRequests_, bidderRequest_);
@@ -229,6 +230,7 @@ describe('jixie Adapter', function () {
       expect(payload).to.have.property('device', device_);
       expect(payload).to.have.property('domain', domain_);
       expect(payload).to.have.property('pageurl', pageurl_);
+      expect(payload).to.have.property('mkeywords', keywords_);
       expect(payload).to.have.property('timeout', timeout_);
       expect(payload).to.have.property('currency', currency_);
       expect(payload).to.have.property('bids').that.deep.equals(refBids_);
@@ -243,15 +245,15 @@ describe('jixie Adapter', function () {
   /**
    * interpretResponse:
    */
-  const JX_OTHER_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.io/dummyscript.js';
-  const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.io/jxhboutstream.js';
+  const JX_OTHER_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.media/dummyscript.js';
+  const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.media/jxhbrenderer.1.1.min.js';
 
-  const mockVastXml_ = `<?xml version="1.0" encoding="UTF-8"?><VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vast.xsd" version="3.0"><Ad id="JXAD521"><InLine><AdSystem>JXADSERVER</AdSystem><AdTitle>Alway%20Live%20Prebid%20Creative</AdTitle><Description>Hybrid in-stream</Description><Error><![CDATA[https://demo.com?action=error&errorcode=[ERRORCODE]&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Error><Impression><![CDATA[https://demo.com?action=impression&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Impression><Creatives><Creative id="JXAD521" sequence="1"><Linear><Duration>00:00:10</Duration><TrackingEvents><Tracking event="start"><![CDATA[https://demo.com?action=start&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="firstQuartile"><![CDATA[https://demo.com?action=firstQuartile&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="midpoint"><![CDATA[https://demo.com?action=midpoint&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="thirdQuartile"><![CDATA[https://demo.com?action=thirdQuartile&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="complete"><![CDATA[https://demo.com?action=complete&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="mute"><![CDATA[https://demo.com?action=mute&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="unmute"><![CDATA[https://demo.com?action=unmute&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="rewind"><![CDATA[https://demo.com?action=rewind&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="pause"><![CDATA[https://demo.com?action=pause&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="resume"><![CDATA[https://demo.com?action=resume&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="fullscreen"><![CDATA[https://demo.com?action=fullscreen&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="creativeView"><![CDATA[https://demo.com?action=creativeView&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking></TrackingEvents><VideoClicks><ClickThrough><![CDATA[https://toko-iot.com/search/?q=Sonos&utm_source=ivs&utm_medium=video&utm_campaign=promo&utm_content=sonos_category]]></ClickThrough><ClickTracking id="521"><![CDATA[https://demo.com?action=click&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></ClickTracking></VideoClicks><MediaFiles><MediaFile apiFramework="VPAID" type="application/javascript"><![CDATA[https://creatives.b-cdn.net/js/jxvpaid_1_0.min.js]]></MediaFile></MediaFiles><AdParameters><![CDATA[{"embed":true,"videos":[{"url":"https://creative-ivstream.ivideosmart.com/3001004/954006/3001004-954006_240.mp4","bitrate":186,"mimetype":"video/mp4"},{"url":"https://creative-ivstream.ivideosmart.com/3001004/954006/3001004-954006_360.mp4","bitrate":229,"mimetype":"video/mp4"},{"url":"https://creative-ivstream.ivideosmart.com/3001004/954006/3001004-954006_480.mp4","bitrate":279,"mimetype":"video/mp4"},{"url":"https://creative-ivstream.ivideosmart.com/3001004/954006/3001004-954006_720.mp4","bitrate":325,"mimetype":"video/mp4"}],"countpos":"left","hotspots":[{"type":"direct_url","start":0,"duration":10,"position":"top-right","direct_url":"https://toko-iot.com/catalogue/category/audio_8/?utm_source=ivs&utm_medium=banner&utm_campaign=promo&utm_content=audio_category","thumbnail_url":"https://creatives.ivideosmart.com/hotspots/TokoIOT_1.gif","thumbnail_style":"full-height"}],"clickthru":"https://toko-iot.com/search/?q=Sonos&utm_source=ivs&utm_medium=video&utm_campaign=promo&utm_content=sonos_category","reporting":{},"skipoffset":5}]]></AdParameters><Icons><Icon program="AdChoices" width="20" height="20" xPosition="right" yPosition="top" offset="00:00:02"><StaticResource creativeType="image/png"><![CDATA[https://creatives.jixie.io/jxadchoice.png]]></StaticResource><IconClicks><IconClickThrough><![CDATA[https://www.jixie.io/privacy-policy]]></IconClickThrough></IconClicks></Icon></Icons></Linear></Creative><Creative sequence="1"/></Creatives></InLine></Ad></VAST>`;
+  const mockVastXml_ = `<?xml version="1.0" encoding="UTF-8"?><VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vast.xsd" version="3.0"><Ad id="JXAD521"><InLine><AdSystem>JXADSERVER</AdSystem><AdTitle>Alway%20Live%20Prebid%20Creative</AdTitle><Description>Hybrid in-stream</Description><Error><![CDATA[https://demo.com?action=error&errorcode=[ERRORCODE]&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Error><Impression><![CDATA[https://demo.com?action=impression&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Impression><Creatives><Creative id="JXAD521" sequence="1"><Linear><Duration>00:00:10</Duration><TrackingEvents><Tracking event="start"><![CDATA[https://demo.com?action=start&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="firstQuartile"><![CDATA[https://demo.com?action=firstQuartile&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="midpoint"><![CDATA[https://demo.com?action=midpoint&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="thirdQuartile"><![CDATA[https://demo.com?action=thirdQuartile&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="complete"><![CDATA[https://demo.com?action=complete&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="mute"><![CDATA[https://demo.com?action=mute&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="unmute"><![CDATA[https://demo.com?action=unmute&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="rewind"><![CDATA[https://demo.com?action=rewind&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="pause"><![CDATA[https://demo.com?action=pause&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="resume"><![CDATA[https://demo.com?action=resume&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="fullscreen"><![CDATA[https://demo.com?action=fullscreen&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking><Tracking event="creativeView"><![CDATA[https://demo.com?action=creativeView&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></Tracking></TrackingEvents><VideoClicks><ClickThrough><![CDATA[https://toko-iot.com/search/?q=Sonos&utm_source=ivs&utm_medium=video&utm_campaign=promo&utm_content=sonos_category]]></ClickThrough><ClickTracking id="521"><![CDATA[https://demo.com?action=click&mediaurl=[ASSETURI]&abc=1&stackidx=0]]></ClickTracking></VideoClicks><MediaFiles><MediaFile apiFramework="VPAID" type="application/javascript"><![CDATA[https://creatives.b-cdn.net/js/jxvpaid_1_0.min.js]]></MediaFile></MediaFiles><AdParameters><![CDATA[{"embed":true,"videos":[{"url":"https://creative-ivstream.ivideosmart.com/3001004/954006/3001004-954006_240.mp4","bitrate":186,"mimetype":"video/mp4"},{"url":"https://creative-ivstream.ivideosmart.com/3001004/954006/3001004-954006_360.mp4","bitrate":229,"mimetype":"video/mp4"},{"url":"https://creative-ivstream.ivideosmart.com/3001004/954006/3001004-954006_480.mp4","bitrate":279,"mimetype":"video/mp4"},{"url":"https://creative-ivstream.ivideosmart.com/3001004/954006/3001004-954006_720.mp4","bitrate":325,"mimetype":"video/mp4"}],"countpos":"left","hotspots":[{"type":"direct_url","start":0,"duration":10,"position":"top-right","direct_url":"https://toko-iot.com/catalogue/category/audio_8/?utm_source=ivs&utm_medium=banner&utm_campaign=promo&utm_content=audio_category","thumbnail_url":"https://creatives.ivideosmart.com/hotspots/TokoIOT_1.gif","thumbnail_style":"full-height"}],"clickthru":"https://toko-iot.com/search/?q=Sonos&utm_source=ivs&utm_medium=video&utm_campaign=promo&utm_content=sonos_category","reporting":{},"skipoffset":5}]]></AdParameters><Icons><Icon program="AdChoices" width="20" height="20" xPosition="right" yPosition="top" offset="00:00:02"><StaticResource creativeType="image/png"><![CDATA[https://creatives.jixie.media/jxadchoice.png]]></StaticResource><IconClicks><IconClickThrough><![CDATA[https://www.jixie.io/privacy-policy]]></IconClickThrough></IconClicks></Icon></Icons></Linear></Creative><Creative sequence="1"/></Creatives></InLine></Ad></VAST>`;
   const responseBody_ = {
     'bids': [
       // video (vast tag url) returned here
       {
-        'trackingUrlBase': 'https://tr.jixie.io/sync/ad?',
+        'trackingUrlBase': 'https://traid.jixie.io/sync/ad?',
         'jxBidId': '62847e4c696edcb-028d5dee-2c83-44e3-bed1-b75002475cdf',
         'requestId': '62847e4c696edcb',
         'cpm': 2.19,
@@ -284,7 +286,7 @@ describe('jixie Adapter', function () {
       // display ad returned here: This one there is advertiserDomains
       // in the response . Will be checked in the unit tests below
       {
-        'trackingUrlBase': 'https://tr.jixie.io/sync/ad?',
+        'trackingUrlBase': 'https://traid.jixie.io/sync/ad?',
         'jxBidId': '600c9ae6fda1acb-028d5dee-2c83-44e3-bed1-b75002475cdf',
         'requestId': '600c9ae6fda1acb',
         'cpm': 1.999,
@@ -317,11 +319,11 @@ describe('jixie Adapter', function () {
           ],
           'mediaType': 'BANNER'
         },
-        'ad': '<div id="jxoutstream" style="width: 100%;"> <script type="text/javascript" src="https://scripts.jixie.io/jxfriendly.1.3.min.js" defer=""></script> <script> var p ={ responsive: 1, nested: 1, maxwidth: 640,  container: "jxoutstream", creativeid: 520}; function jxdefer(p) { if (window.jxuniversal) { window.jxuniversal.init(p); } else { setTimeout(function() { jxdefer(p) }, 100); } } jxdefer(p); </script> </div>'
+        'ad': '<div id="jxoutstream" style="width: 100%;"> <script type="text/javascript" src="https://scripts.jixie.media/jxfriendly.1.3.min.js" defer=""></script> <script> var p ={ responsive: 1, nested: 1, maxwidth: 640,  container: "jxoutstream", creativeid: 520}; function jxdefer(p) { if (window.jxuniversal) { window.jxuniversal.init(p); } else { setTimeout(function() { jxdefer(p) }, 100); } } jxdefer(p); </script> </div>'
       },
       // outstream, jx non-default renderer specified:
       {
-        'trackingUrlBase': 'https://tr.jixie.io/sync/ad?',
+        'trackingUrlBase': 'https://traid.jixie.io/sync/ad?',
         'jxBidId': '99bc539c81b00ce-028d5dee-2c83-44e3-bed1-b75002475cdf',
         'requestId': '99bc539c81b00ce',
         'cpm': 2.99,
@@ -340,7 +342,7 @@ describe('jixie Adapter', function () {
       },
       // outstream, jx default renderer:
       {
-        'trackingUrlBase': 'https://tr.jixie.io/sync/ad?',
+        'trackingUrlBase': 'https://traid.jixie.io/sync/ad?',
         'jxBidId': '61bc539c81b00ce-028d5dee-2c83-44e3-bed1-b75002475cdf',
         'requestId': '61bc539c81b00ce',
         'cpm': 1.99,
@@ -475,7 +477,7 @@ describe('jixie Adapter', function () {
       ajaxStub = sinon.stub(jixieaux, 'ajax');
 
       miscDimsStub
-        .returns({ device: device_, pageurl: pageurl_, domain: domain_ });
+        .returns({ device: device_, pageurl: pageurl_, domain: domain_, mkeywords: keywords_ });
     })
 
     afterEach(function() {
@@ -537,7 +539,7 @@ describe('jixie Adapter', function () {
       ajaxStub = sinon.stub(jixieaux, 'ajax');
       miscDimsStub = sinon.stub(jixieaux, 'getMiscDims');
       miscDimsStub
-        .returns({ device: device_, pageurl: pageurl_, domain: domain_ });
+        .returns({ device: device_, pageurl: pageurl_, domain: domain_, mkeywords: keywords_ });
     })
 
     afterEach(function() {

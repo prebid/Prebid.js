@@ -11,7 +11,7 @@ const DEFAULT_AD_UNIT_CODE = '/19968336/header-bid-tag-1';
 const DEFAULT_AD_UNIT_TYPE = 'banner';
 const DEFAULT_PARAMS_BID_OVERRIDE = {};
 const DEFAULT_VIDEO_CONTEXT = 'instream';
-const ADAPTER_VERSION = '1.0.0';
+const ADAPTER_VERSION = '1.0.1';
 const PREBID_VERSION = '$prebid.version$';
 const INTEGRATION_METHOD = 'prebid.js';
 
@@ -1250,6 +1250,33 @@ describe('YahooSSP Bid Adapter:', () => {
         expect(response[0].meta.advertiserDomains).to.be.a('array');
         expect(response[0].meta.advertiserDomains[0]).to.equal('advertiser-domain.com');
       })
+    });
+
+    describe('bid response Ad ID / Creative ID', () => {
+      it('should use adId if it exists in the bid-response', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const adId = 'bid-response-adId';
+        serverResponse.body.seatbid[0].bid[0].adId = adId;
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].adId).to.equal(adId);
+      });
+
+      it('should use impid if adId does not exist in the bid-response', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const impid = '25b6c429c1f52f';
+        serverResponse.body.seatbid[0].bid[0].impid = impid;
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].adId).to.equal(impid);
+      });
+
+      it('should use crid if adId & impid do not exist in the bid-response', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const crid = 'passback-12579';
+        serverResponse.body.seatbid[0].bid[0].impid = undefined;
+        serverResponse.body.seatbid[0].bid[0].crid = crid;
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].adId).to.equal(crid);
+      });
     });
 
     describe('Time To Live (ttl)', () => {
