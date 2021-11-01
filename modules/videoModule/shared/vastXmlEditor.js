@@ -1,4 +1,4 @@
-import { getErrorNode, getImpressionNode } from './vastXmlBuilder';
+import { getErrorNode, getImpressionNode } from './vastXmlBuilder.js';
 
 export const XML_MIME_TYPE = 'application/xml';
 
@@ -26,19 +26,21 @@ export function VastXmlEditor(xmlUtil_) {
   function getVastXmlWithTrackingNodes(vastXml, impressionUrl, impressionId, errorUrl) {
     const impressionDoc = getImpressionDoc(impressionUrl, impressionId);
     const errorDoc = getErrorDoc(errorUrl);
-    if(!impressionDoc && !errorDoc) {
+    if (!impressionDoc && !errorDoc) {
       return vastXml;
     }
 
     const vastXmlDoc = xmlUtil.parse(vastXml);
     const nodes = vastXmlDoc.querySelectorAll('InLine,Wrapper');
     for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
       if (impressionDoc) {
-        nodes[i].appendChild(impressionDoc);
+        // console.log('node ' + i + ' - ', node);
+        node.appendChild(impressionDoc.documentElement);
       }
 
       if (errorDoc) {
-        nodes[i].appendChild(errorDoc);
+        node.appendChild(errorDoc.documentElement);
       }
     }
 
