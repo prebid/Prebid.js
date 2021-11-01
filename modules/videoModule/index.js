@@ -5,8 +5,8 @@ import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
 import find from 'core-js-pure/features/array/find.js';
-import { buildVastWrapper } from './shared/vastXmlBuilder';
-import { vastXmlEditorFactory } from './shared/vastXmlEditor';
+import { buildVastWrapper } from './shared/vastXmlBuilder.js';
+import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
 
 events.addEvents(allVideoEvents);
 

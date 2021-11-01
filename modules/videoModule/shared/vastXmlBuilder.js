@@ -17,17 +17,6 @@ export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, er
   return getVastNode(getAdNode(getWrapperNode(wrapperBody), adId), '4.2');
 }
 
-/*
-<VAST version="4.0">
-    <Ad id="${adId}">
-        <Wrapper>
-            <AdSystem version="${$$PREBID_GLOBAL$$.version}">Prebid org</AdSystem>
-            <VASTAdTagURI><![CDATA[${adUrl}]]></VASTAdTagURI>
-        </Wrapper>
-    </Ad>
-</VAST>
-*/
-
 export function getVastNode(body, vastVersion) {
   return getNode('VAST', body, { version: vastVersion });
 }
