@@ -11,6 +11,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'gb_xandr';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
+const PRICING_URL = 'https://templates.da-services.ch/01_universal/burda_prebid/1.0/json/sizeCPMMapping.json';
 const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
@@ -18,6 +19,13 @@ const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
+const DEFAULT_PRICE_MAPPING = {
+  '0x0': 2.5,
+  '300x600': 5,
+  '800x250': 6,
+  '350x600': 6
+};
+let PRICE_MAPPING;
 const VIDEO_MAPPING = {
   playback_method: {
     'unknown': 0,
@@ -97,7 +105,19 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const tags = bidRequests.map(bidToTag);
+    let localBidRequests = [];
+    bidRequests.forEach(bid => {
+      if (Array.isArray(bid.params.placementId)) {
+        const ids = bid.params.placementId;
+        for (let i = 0; i < ids.length; i++) {
+          const newBid = Object.assign({}, bid, {params: {placementId: ids[i]}});
+          localBidRequests.push(newBid)
+        }
+      } else {
+        localBidRequests.push(bid);
+      }
+    });
+    const tags = localBidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj = {};
     if (config.getConfig('coppa') === true) {
@@ -268,7 +288,45 @@ export const spec = {
     }
 
     const request = formatRequest(payload, bidderRequest);
-    return request;
+    // add pricing endpoint
+    return [{method: 'GET', url: PRICING_URL, options: {withCredentials: false}}, request];
+  },
+
+  parseAndMapCpm: function(serverResponse) {
+    const responseBody = serverResponse.body;
+    if (Array.isArray(responseBody) && responseBody.length) {
+      let localData = {};
+      responseBody.forEach(cpmPerSize => {
+        Object.keys(cpmPerSize).forEach(size => {
+          let obj = {};
+          obj[size] = cpmPerSize[size];
+          localData = Object.assign({}, localData, obj)
+        })
+      })
+      PRICE_MAPPING = localData;
+      return null;
+    }
+
+    if (responseBody.version) {
+      const localPriceMapping = PRICE_MAPPING || DEFAULT_PRICE_MAPPING;
+      if (responseBody.tags && Array.isArray(responseBody.tags) && responseBody.tags.length) {
+        responseBody.tags.forEach((tag) => {
+          if (tag.ads && Array.isArray(tag.ads) && tag.ads.length) {
+            tag.ads.forEach(ad => {
+              if (ad.ad_type === 'banner') {
+                const size = `${ad.rtb.banner.width}x${ad.rtb.banner.height}`;
+                if (localPriceMapping[size]) {
+                  ad.cpm = localPriceMapping[size];
+                } else {
+                  ad.cpm = localPriceMapping['0x0'];
+                }
+              }
+            })
+          }
+        });
+      }
+    }
+    return responseBody;
   },
 
   /**
@@ -278,7 +336,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, { bidderRequest }) {
-    serverResponse = serverResponse.body;
+    serverResponse = this.parseAndMapCpm(serverResponse);
+    if (!serverResponse) return [];
     const bids = [];
     if (!serverResponse || serverResponse.error) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
