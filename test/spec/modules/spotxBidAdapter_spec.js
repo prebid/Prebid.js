@@ -102,7 +102,7 @@ describe('the spotx adapter', function () {
     it('should build a very basic request', function() {
       var request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345');
+      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345?src_sys=prebid');
       expect(request.bidRequest).to.equal(bidRequestObj);
       expect(request.data.id).to.equal(12345);
       expect(request.data.ext.wrap_response).to.equal(1);
@@ -144,7 +144,6 @@ describe('the spotx adapter', function () {
         outstream_options: {foo: 'bar'},
         outstream_function: '987',
         custom: {bar: 'foo'},
-        price_floor: 123,
         start_delay: true,
         number_of_ads: 2,
         spotx_all_google_consent: 1,
@@ -194,7 +193,6 @@ describe('the spotx adapter', function () {
       });
 
       expect(request.data.imp.video.startdelay).to.equal(1);
-      expect(request.data.imp.bidfloor).to.equal(123);
       expect(request.data.ext).to.deep.equal({
         number_of_ads: 2,
         wrap_response: 1
@@ -405,6 +403,42 @@ describe('the spotx adapter', function () {
       expect(request.data.ext.wrap_response).to.equal(0);
       config.getConfig.restore();
     });
+
+    it('should pass price floor in USD from the floors module if available', function () {
+      var request;
+
+      bid.getFloor = function () {
+        return { currency: 'USD', floor: 3 };
+      }
+
+      bid.params.price_floor = 2;
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp.bidfloor).to.equal(3);
+    });
+
+    it('should not pass price floor if price floors module gives a non-USD currency', function () {
+      var request;
+
+      bid.getFloor = function () {
+        return { currency: 'EUR', floor: 3 };
+      }
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp.bidfloor).to.be.undefined;
+    });
+
+    it('if floors module is not available, should pass price floor from price_floor param if available', function () {
+      var request;
+
+      bid.params.price_floor = 2;
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp.bidfloor).to.equal(2);
+    });
   });
 
   describe('interpretResponse', function() {
@@ -495,6 +529,7 @@ describe('the spotx adapter', function () {
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].ttl).to.equal(360);
       expect(responses[0].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(responses[0].videoCacheKey).to.equal('cache123');
       expect(responses[0].width).to.equal(400);
       expect(responses[1].cache_key).to.equal('cache124');
       expect(responses[1].channel_id).to.equal(12345);
@@ -508,6 +543,7 @@ describe('the spotx adapter', function () {
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].ttl).to.equal(360);
       expect(responses[1].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache124');
+      expect(responses[1].videoCacheKey).to.equal('cache124');
       expect(responses[1].width).to.equal(200);
     });
   });

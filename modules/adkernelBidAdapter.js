@@ -1,4 +1,7 @@
-import * as utils from '../src/utils.js';
+import {
+  isStr, isArray, isPlainObject, deepSetValue, isNumber, deepAccess, getAdUnitSizes, parseGPTSingleSizeArrayToRtbSize,
+  cleanObj, contains, getDNT, parseUrl, createTrackPixelHtml, _each, isArrayOfNums
+} from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import find from 'core-js-pure/features/array/find.js';
@@ -15,7 +18,7 @@ import {config} from '../src/config.js';
 const VIDEO_TARGETING = Object.freeze(['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
   'pos', 'api', 'ext']);
-const VERSION = '1.5';
+const VERSION = '1.6';
 const SYNC_IFRAME = 1;
 const SYNC_IMAGE = 2;
 const SYNC_TYPES = Object.freeze({
@@ -53,7 +56,29 @@ const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
 export const spec = {
   code: 'adkernel',
   gvlid: GVLID,
-  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon', 'andbeyond', 'adbite', 'houseofpubs', 'torchad', 'stringads', 'bcm'],
+  aliases: [
+    {code: 'headbidding'},
+    {code: 'adsolut'},
+    {code: 'oftmediahb'},
+    {code: 'audiencemedia'},
+    {code: 'waardex_ak'},
+    {code: 'roqoon'},
+    {code: 'andbeyond'},
+    {code: 'adbite'},
+    {code: 'houseofpubs'},
+    {code: 'torchad'},
+    {code: 'stringads'},
+    {code: 'bcm'},
+    {code: 'engageadx'},
+    {code: 'converge', gvlid: 248},
+    {code: 'adomega'},
+    {code: 'denakop'},
+    {code: 'rtbanalytica'},
+    {code: 'unibots'},
+    {code: 'catapultx'},
+    {code: 'ergadx'},
+    {code: 'turktelekom'}
+  ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -135,24 +160,24 @@ export const spec = {
         prBid.mediaType = NATIVE;
         prBid.native = buildNativeAd(JSON.parse(rtbBid.adm));
       }
-      if (utils.isStr(rtbBid.dealid)) {
+      if (isStr(rtbBid.dealid)) {
         prBid.dealId = rtbBid.dealid;
       }
-      if (utils.isArray(rtbBid.adomain)) {
-        utils.deepSetValue(prBid, 'meta.advertiserDomains', rtbBid.adomain);
+      if (isArray(rtbBid.adomain)) {
+        deepSetValue(prBid, 'meta.advertiserDomains', rtbBid.adomain);
       }
-      if (utils.isArray(rtbBid.cat)) {
-        utils.deepSetValue(prBid, 'meta.secondaryCatIds', rtbBid.cat);
+      if (isArray(rtbBid.cat)) {
+        deepSetValue(prBid, 'meta.secondaryCatIds', rtbBid.cat);
       }
-      if (utils.isPlainObject(rtbBid.ext)) {
-        if (utils.isNumber(rtbBid.ext.advertiser_id)) {
-          utils.deepSetValue(prBid, 'meta.advertiserId', rtbBid.ext.advertiser_id);
+      if (isPlainObject(rtbBid.ext)) {
+        if (isNumber(rtbBid.ext.advertiser_id)) {
+          deepSetValue(prBid, 'meta.advertiserId', rtbBid.ext.advertiser_id);
         }
-        if (utils.isStr(rtbBid.ext.advertiser_name)) {
-          utils.deepSetValue(prBid, 'meta.advertiserName', rtbBid.ext.advertiser_name);
+        if (isStr(rtbBid.ext.advertiser_name)) {
+          deepSetValue(prBid, 'meta.advertiserName', rtbBid.ext.advertiser_name);
         }
-        if (utils.isStr(rtbBid.ext.agency_name)) {
-          utils.deepSetValue(prBid, 'meta.agencyName', rtbBid.ext.agency_name);
+        if (isStr(rtbBid.ext.agency_name)) {
+          deepSetValue(prBid, 'meta.agencyName', rtbBid.ext.agency_name);
         }
       }
 
@@ -197,6 +222,18 @@ function dispatchImps(bidRequests, refererInfo) {
     }, {});
 }
 
+function getBidFloor(bid, mediaType, sizes) {
+  var floor;
+  var size = sizes.length === 1 ? sizes[0] : '*';
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor;
+}
+
 /**
  *  Builds rtb imp object for single adunit
  *  @param bidRequest {BidRequest}
@@ -207,27 +244,42 @@ function buildImp(bidRequest, secure) {
     'id': bidRequest.bidId,
     'tagid': bidRequest.adUnitCode
   };
+  var mediaType;
+  var sizes = [];
 
-  if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
-    let sizes = utils.getAdUnitSizes(bidRequest);
+  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+    sizes = getAdUnitSizes(bidRequest);
     imp.banner = {
-      format: sizes.map(wh => utils.parseGPTSingleSizeArrayToRtbSize(wh)),
+      format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
       topframe: 0
     };
-  } else if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
-    let sizes = bidRequest.mediaTypes.video.playerSize || [];
-    imp.video = utils.parseGPTSingleSizeArrayToRtbSize(sizes[0]) || {};
+    mediaType = BANNER;
+  } else if (deepAccess(bidRequest, 'mediaTypes.video')) {
+    let video = deepAccess(bidRequest, 'mediaTypes.video');
+    imp.video = {};
+    if (video.playerSize) {
+      sizes = video.playerSize[0];
+      imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(sizes) || {});
+    }
     if (bidRequest.params.video) {
       Object.keys(bidRequest.params.video)
         .filter(key => includes(VIDEO_TARGETING, key))
         .forEach(key => imp.video[key] = bidRequest.params.video[key]);
     }
-  } else if (utils.deepAccess(bidRequest, 'mediaTypes.native')) {
+    mediaType = VIDEO;
+  } else if (deepAccess(bidRequest, 'mediaTypes.native')) {
     let nativeRequest = buildNativeRequest(bidRequest.mediaTypes.native);
     imp.native = {
       ver: '1.1',
       request: JSON.stringify(nativeRequest)
-    }
+    };
+    mediaType = NATIVE;
+  } else {
+    throw new Error('Unsupported bid received');
+  }
+  let floor = getBidFloor(bidRequest, mediaType, sizes);
+  if (floor) {
+    imp.bidfloor = floor;
   }
   if (secure) {
     imp.secure = 1;
@@ -253,7 +305,7 @@ function buildNativeRequest(nativeReq) {
     if (desc.assetType === 'img') {
       assetRoot[desc.assetType] = buildImageAsset(desc, v);
     } else if (desc.assetType === 'data') {
-      assetRoot.data = utils.cleanObj({type: desc.type, len: v.len});
+      assetRoot.data = cleanObj({type: desc.type, len: v.len});
     } else if (desc.assetType === 'title') {
       assetRoot.title = {len: v.len || 90};
     } else {
@@ -277,7 +329,7 @@ function buildImageAsset(desc, val) {
     img.wmin = val.aspect_ratios[0].min_width;
     img.hmin = val.aspect_ratios[0].min_height;
   }
-  return utils.cleanObj(img);
+  return cleanObj(img);
 }
 
 /**
@@ -290,9 +342,9 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
   if (!syncRule) {
     return false;
   }
-  let bidders = utils.isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
+  let bidders = isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
   let rule = syncRule.filter === 'include';
-  return utils.contains(bidders, bidderCode) === rule;
+  return contains(bidders, bidderCode) === rule;
 }
 
 /**
@@ -336,29 +388,33 @@ function buildRtbRequest(imps, bidderRequest, schain) {
     },
     'tmax': parseInt(timeout)
   };
-  if (utils.getDNT()) {
+  if (getDNT()) {
     req.device.dnt = 1;
   }
   if (gdprConsent) {
     if (gdprConsent.gdprApplies !== undefined) {
-      utils.deepSetValue(req, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
+      deepSetValue(req, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
     }
     if (gdprConsent.consentString !== undefined) {
-      utils.deepSetValue(req, 'user.ext.consent', gdprConsent.consentString);
+      deepSetValue(req, 'user.ext.consent', gdprConsent.consentString);
     }
   }
   if (uspConsent) {
-    utils.deepSetValue(req, 'regs.ext.us_privacy', uspConsent);
+    deepSetValue(req, 'regs.ext.us_privacy', uspConsent);
   }
   if (coppa) {
-    utils.deepSetValue(req, 'regs.coppa', 1);
+    deepSetValue(req, 'regs.coppa', 1);
   }
   let syncMethod = getAllowedSyncMethod(bidderCode);
   if (syncMethod) {
-    utils.deepSetValue(req, 'ext.adk_usersync', syncMethod);
+    deepSetValue(req, 'ext.adk_usersync', syncMethod);
   }
   if (schain) {
-    utils.deepSetValue(req, 'source.ext.schain', schain);
+    deepSetValue(req, 'source.ext.schain', schain);
+  }
+  let eids = getExtendedUserIds(bidderRequest);
+  if (eids) {
+    deepSetValue(req, 'user.ext.eids', eids);
   }
   return req;
 }
@@ -376,7 +432,7 @@ function getLanguage() {
  * Creates site description object
  */
 function createSite(refInfo) {
-  let url = utils.parseUrl(refInfo.referer);
+  let url = parseUrl(refInfo.referer);
   let site = {
     'domain': url.hostname,
     'page': `${url.protocol}://${url.hostname}${url.pathname}`
@@ -391,6 +447,13 @@ function createSite(refInfo) {
   return site;
 }
 
+function getExtendedUserIds(bidderRequest) {
+  let eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+  if (isArray(eids)) {
+    return eids;
+  }
+}
+
 /**
  *  Format creative with optional nurl call
  *  @param bid rtb Bid object
@@ -398,7 +461,7 @@ function createSite(refInfo) {
 function formatAdMarkup(bid) {
   let adm = bid.adm;
   if ('nurl' in bid) {
-    adm += utils.createTrackPixelHtml(`${bid.nurl}&px=1`);
+    adm += createTrackPixelHtml(`${bid.nurl}&px=1`);
   }
   return adm;
 }
@@ -408,8 +471,8 @@ function formatAdMarkup(bid) {
  */
 function validateNativeAdUnit(adUnit) {
   return validateNativeImageSize(adUnit.image) && validateNativeImageSize(adUnit.icon) &&
-    !utils.deepAccess(adUnit, 'privacyLink.required') && // not supported yet
-    !utils.deepAccess(adUnit, 'privacyIcon.required'); // not supported yet
+    !deepAccess(adUnit, 'privacyLink.required') && // not supported yet
+    !deepAccess(adUnit, 'privacyIcon.required'); // not supported yet
 }
 
 /**
@@ -420,9 +483,9 @@ function validateNativeImageSize(img) {
     return true;
   }
   if (img.sizes) {
-    return utils.isArrayOfNums(img.sizes, 2);
+    return isArrayOfNums(img.sizes, 2);
   }
-  if (utils.isArray(img.aspect_ratios)) {
+  if (isArray(img.aspect_ratios)) {
     return img.aspect_ratios.length > 0 && img.aspect_ratios[0].min_height && img.aspect_ratios[0].min_width;
   }
   return true;
@@ -439,14 +502,14 @@ function buildNativeAd(nativeResp) {
     javascriptTrackers: jstracker ? [jstracker] : undefined,
     privacyLink: privacy,
   };
-  utils._each(assets, asset => {
+  _each(assets, asset => {
     let assetName = NATIVE_MODEL[asset.id].name;
     let assetType = NATIVE_MODEL[asset.id].assetType;
-    nativeAd[assetName] = asset[assetType].text || asset[assetType].value || utils.cleanObj({
+    nativeAd[assetName] = asset[assetType].text || asset[assetType].value || cleanObj({
       url: asset[assetType].url,
       width: asset[assetType].w,
       height: asset[assetType].h
     });
   });
-  return utils.cleanObj(nativeAd);
+  return cleanObj(nativeAd);
 }

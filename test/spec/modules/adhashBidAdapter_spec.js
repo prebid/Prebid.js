@@ -123,9 +123,8 @@ describe('adhashBidAdapter', function () {
     it('should interpret the response correctly', function () {
       const serverResponse = {
         body: {
-          creatives: [{
-            costEUR: 1.234
-          }]
+          creatives: [{ costEUR: 1.234 }],
+          advertiserDomains: 'adhash.org'
         }
       };
       const result = spec.interpretResponse(serverResponse, request);
@@ -138,6 +137,7 @@ describe('adhashBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(true);
       expect(result[0].currency).to.equal('EUR');
       expect(result[0].ttl).to.equal(60);
+      expect(result[0].meta.advertiserDomains).to.eql(['adhash.org']);
     });
 
     it('should return empty array when there are no creatives returned', function () {

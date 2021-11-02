@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logWarn, isArray } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -72,7 +72,7 @@ function getPricing(xmlNode) {
       price: priceNode.textContent || priceNode.innerText
     };
   } else {
-    utils.logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
+    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
   }
 
   return princingData;
@@ -329,7 +329,7 @@ export const spec = {
       var playerSize = [];
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-        if (utils.isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
+        if (isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
           playerSize = currentBidRequest.mediaTypes.video.playerSize[0];
         } else {
           playerSize = currentBidRequest.mediaTypes.video.playerSize;
@@ -371,7 +371,7 @@ export const spec = {
     var playerSize = [];
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-      if (utils.isArray(bidrequest.mediaTypes.video.playerSize[0])) {
+      if (isArray(bidrequest.mediaTypes.video.playerSize[0])) {
         playerSize = bidrequest.mediaTypes.video.playerSize[0];
       } else {
         playerSize = bidrequest.mediaTypes.video.playerSize;
@@ -393,7 +393,7 @@ export const spec = {
       var parser = new DOMParser();
       xmlDoc = parser.parseFromString(serverResponse, 'application/xml');
     } catch (err) {
-      utils.logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
+      logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
       return;
     }
 
@@ -420,6 +420,7 @@ export const spec = {
         currency: princingData.currency,
         netRevenue: true,
         ttl: 360,
+        meta: { advertiserDomains: princingData.adomain && isArray(princingData.adomain) ? princingData.adomain : [] },
         dealId: dealId,
         campaignId: campaignId,
         bannerId: bannerId

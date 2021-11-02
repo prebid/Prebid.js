@@ -74,7 +74,7 @@ function isBanner(mediaTypes) {
 }
 
 function isVideo(mediaTypes) {
-  return isPlainObject(mediaTypes) && isPlainObject(mediaTypes.video);
+  return isPlainObject(mediaTypes) && 'video' in mediaTypes;
 }
 
 function validateBanner(banner) {
@@ -104,13 +104,16 @@ function validateMediaSizes(mediaSize) {
 function validateParameters(parameters, adUnit) {
   if (isVideo(adUnit.mediaTypes)) {
     if (!isPlainObject(parameters)) return false;
+    if (!isPlainObject(adUnit.mediaTypes.video)) return false;
     if (!validateVideoParameters(parameters.video, adUnit)) return false;
   }
 
   return true;
 }
 
-function validateVideoParameters(video, adUnit) {
+function validateVideoParameters(videoParams, adUnit) {
+  const video = adUnit.mediaTypes.video;
+
   if (!video) return false;
 
   if (!isArray(video.mimes)) return false;
@@ -124,9 +127,9 @@ function validateVideoParameters(video, adUnit) {
   if (video.protocols.length === 0) return false;
   if (!video.protocols.every(isNumber)) return false;
 
-  if (isInstream(adUnit.mediaTypes.video)) {
-    if (!video.instreamContext) return false;
-    if (SUPPORTED_INSTREAM_CONTEXTS.indexOf(video.instreamContext) === -1) return false;
+  if (isInstream(video)) {
+    if (!videoParams.instreamContext) return false;
+    if (SUPPORTED_INSTREAM_CONTEXTS.indexOf(videoParams.instreamContext) === -1) return false;
   }
 
   return true;
@@ -203,7 +206,7 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
 
       if (mediaType === 'banner') return acc.concat(generateBannerFromAdUnit(impId, data, params));
       if (mediaType === 'video') return acc.concat({id: impId, video: generateVideoFromAdUnit(data, params), pmp, ext});
-      if (mediaType === 'native') return acc.concat({id: impId, native: generateNativeFromAdUnit(data, params), pmp, ext});
+      if (mediaType === 'native') return acc.concat({id: impId, native: generateNativeFromAdUnit(data), pmp, ext});
     }, []);
 
   return acc.concat(imps);
@@ -226,23 +229,50 @@ function generateBannerFromAdUnit(impId, data, params) {
 
 function generateVideoFromAdUnit(data, params) {
   const {playerSize} = data;
+  const video = data
+
   const hasPlayerSize = isArray(playerSize) && playerSize.length > 0;
-  const {position, video = {}} = params;
   const {minDuration, maxDuration, protocols} = video;
 
   const size = {width: hasPlayerSize ? playerSize[0][0] : null, height: hasPlayerSize ? playerSize[0][1] : null};
   const duration = {min: isNumber(minDuration) ? minDuration : null, max: isNumber(maxDuration) ? maxDuration : null};
+  const startdelay = computeStartDelay(data, params);
 
   return {
     mimes: SUPPORTED_VIDEO_MIMES,
+    skip: video.skippable || 0,
     w: size.width,
     h: size.height,
-    startdelay: computeStartDelay(data, params),
+    startdelay: startdelay,
+    linearity: video.linearity || null,
     minduration: duration.min,
     maxduration: duration.max,
     protocols,
-    pos: position || 0
+    api: getApi(protocols),
+    format: hasPlayerSize ? playerSize.map(s => {
+      return {w: s[0], h: s[1]};
+    }) : null,
+    pos: video.position || 0
   };
+}
+
+function getApi(protocols) {
+  let defaultValue = [2];
+  let listProtocols = [
+    {key: 'VPAID_1_0', value: 1},
+    {key: 'VPAID_2_0', value: 2},
+    {key: 'MRAID_1', value: 3},
+    {key: 'ORMMA', value: 4},
+    {key: 'MRAID_2', value: 5},
+    {key: 'MRAID_3', value: 6},
+  ];
+  if (protocols) {
+    return listProtocols.filter(p => {
+      return protocols.indexOf(p.key) !== -1;
+    }).map(p => p.value)
+  } else {
+    return defaultValue;
+  }
 }
 
 function isInstream(video) {
@@ -263,7 +293,7 @@ function computeStartDelay(data, params) {
   return null;
 }
 
-function generateNativeFromAdUnit(data, params) {
+function generateNativeFromAdUnit(data) {
   const {type} = data;
   const presetFormatter = type && NATIVE_PRESET_FORMATTERS[data.type];
   const nativeFields = presetFormatter ? presetFormatter(data) : data;
@@ -499,6 +529,10 @@ function generateAdFromBid(bid, bidResponse, serverRequest) {
     netRevenue: NET_REVENUE,
     mediaType: bid.ext.adot.media_type,
   };
+
+  if (bid.adomain) {
+    base.meta = { advertiserDomains: bid.adomain };
+  }
 
   if (isBidANative(bid)) return {...base, native: formatNativeData(bid)};
 

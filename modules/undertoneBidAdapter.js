@@ -85,13 +85,17 @@ export const spec = {
     const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
     const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
     const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
+    const commons = {
+      'adapterVersion': '$prebid.version$',
+      'uids': validBidRequests[0].userId,
+      'pageSize': pageSizeArray
+    };
+    if (validBidRequests[0].schain) {
+      commons.schain = validBidRequests[0].schain;
+    }
     const payload = {
       'x-ut-hb-params': [],
-      'commons': {
-        'adapterVersion': '$prebid.version$',
-        'uids': validBidRequests[0].userId,
-        'pageSize': pageSizeArray
-      }
+      'commons': commons
     };
     const referer = bidderRequest.refererInfo.referer;
     const hostname = parseUrl(referer).hostname;
@@ -158,7 +162,8 @@ export const spec = {
             creativeId: bidRes.adId,
             currency: bidRes.currency,
             netRevenue: bidRes.netRevenue,
-            ttl: bidRes.ttl || 360
+            ttl: bidRes.ttl || 360,
+            meta: { advertiserDomains: bidRes.adomain ? bidRes.adomain : [] }
           };
           if (bidRes.mediaType && bidRes.mediaType === 'video') {
             bid.vastXml = bidRes.ad;

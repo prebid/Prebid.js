@@ -94,7 +94,10 @@ export const spec = {
       creativeId: request.bidRequest.adUnitCode,
       netRevenue: true,
       currency: 'EUR',
-      ttl: 60
+      ttl: 60,
+      meta: {
+        advertiserDomains: responseBody.advertiserDomains ? [responseBody.advertiserDomains] : []
+      }
     }];
   }
 };

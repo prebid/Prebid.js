@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logInfo } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -8,10 +8,11 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 5,
+  PREBID_VERSION: 7,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
-  USERID_PROVIDERS: ['pubcid', 'pubProvidedId']
+  USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
+  META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType']
 };
 
 const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
@@ -56,14 +57,11 @@ const topWin = getTopMostWindow();
 let invibes = topWin.invibes = topWin.invibes || {};
 invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false];
 invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false];
+invibes.placementBids = invibes.placementBids || [];
+invibes.pushedCids = invibes.pushedCids || {};
 let _customUserSync;
 
 function isBidRequestValid(bid) {
-  if (invibes && typeof invibes.bidResponse === 'object') {
-    utils.logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
-    return false;
-  }
-
   if (typeof bid.params !== 'object') {
     return false;
   }
@@ -116,6 +114,7 @@ function buildRequest(bidRequests, bidderRequest) {
 
     bidParamsJson: JSON.stringify(bidParamsJson),
     capCounts: getCappedCampaignsAsString(),
+    pcids: Object.keys(invibes.pushedCids).join(','),
 
     vId: invibes.visitId,
     width: topWin.innerWidth,
@@ -156,76 +155,136 @@ function buildRequest(bidRequests, bidderRequest) {
 
 function handleResponse(responseObj, bidRequests) {
   if (bidRequests == null || bidRequests.length === 0) {
-    utils.logInfo('Invibes Adapter - No bids have been requested');
+    logInfo('Invibes Adapter - No bids have been requested');
     return [];
   }
 
   if (!responseObj) {
-    utils.logInfo('Invibes Adapter - Bid response is empty');
+    logInfo('Invibes Adapter - Bid response is empty');
     return [];
   }
 
   responseObj = responseObj.body || responseObj;
   responseObj = responseObj.videoAdContentResult || responseObj;
 
-  let bidModel = responseObj.BidModel;
-  if (typeof bidModel !== 'object') {
-    utils.logInfo('Invibes Adapter - Bidding is not configured');
-    return [];
-  }
-
   if (typeof invibes.bidResponse === 'object') {
-    utils.logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
-    return [];
-  }
-
-  invibes.bidResponse = responseObj;
-
-  let ads = responseObj.Ads;
-
-  if (!Array.isArray(ads) || ads.length < 1) {
-    if (responseObj.AdReason != null) {
-      utils.logInfo('Invibes Adapter - ' + responseObj.AdReason);
+    if (responseObj.MultipositionEnabled === true) {
+      invibes.bidResponse.AdPlacements = invibes.bidResponse.AdPlacements.concat(responseObj.AdPlacements);
+    } else {
+      logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
+      return [];
     }
-
-    utils.logInfo('Invibes Adapter - No ads available');
-    return [];
-  }
-
-  let ad = ads[0];
-
-  if (bidModel.PlacementId == null) {
-    utils.logInfo('Invibes Adapter - No Placement Id in response');
-    return [];
+  } else {
+    invibes.bidResponse = responseObj;
   }
 
   const bidResponses = [];
   for (let i = 0; i < bidRequests.length; i++) {
     let bidRequest = bidRequests[i];
 
-    if (bidModel.PlacementId == bidRequest.params.placementId) {
-      let size = getBiggerSize(bidRequest.sizes);
+    if (invibes.placementBids.indexOf(bidRequest.params.placementId) > -1) {
+      logInfo('Invibes Adapter - Placement was previously bid on ' + bidRequest.params.placementId);
+      continue;
+    }
 
-      bidResponses.push({
-        requestId: bidRequest.bidId,
-        cpm: ad.BidPrice,
-        width: bidModel.Width || size[0],
-        height: bidModel.Height || size[1],
-        creativeId: ad.VideoExposedId,
-        currency: bidModel.Currency || CONSTANTS.DEFAULT_CURRENCY,
-        netRevenue: true,
-        ttl: CONSTANTS.TIME_TO_LIVE,
-        ad: renderCreative(bidModel)
-      });
-
-      const now = Date.now();
-      ivLogger.info('Bid auction started at ' + bidModel.AuctionStartTime + ' . Invibes registered the bid at ' + now + ' ; bid request took a total of ' + (now - bidModel.AuctionStartTime) + ' ms.');
+    let requestPlacement = null;
+    if (responseObj.AdPlacements != null) {
+      for (let j = 0; j < responseObj.AdPlacements.length; j++) {
+        let bidModel = responseObj.AdPlacements[j].BidModel;
+        if (bidModel != null && bidModel.PlacementId == bidRequest.params.placementId) {
+          requestPlacement = responseObj.AdPlacements[j];
+          break;
+        }
+      }
     } else {
-      utils.logInfo('Invibes Adapter - Incorrect Placement Id: ' + bidRequest.params.placementId);
+      let bidModel = responseObj.BidModel;
+      if (bidModel != null && bidModel.PlacementId == bidRequest.params.placementId) {
+        requestPlacement = responseObj;
+      }
+    }
+
+    let bid = createBid(bidRequest, requestPlacement, responseObj.MultipositionEnabled);
+    if (bid !== null) {
+      invibes.placementBids.push(bidRequest.params.placementId);
+      bidResponses.push(bid);
     }
   }
 
   return bidResponses;
+}
+
+function createBid(bidRequest, requestPlacement, multipositionEnabled) {
+  if (requestPlacement === null || requestPlacement.BidModel === null) {
+    logInfo('Invibes Adapter - Placement not configured for bidding ' + bidRequest.params.placementId);
+    return null;
+  }
+
+  let bidModel = requestPlacement.BidModel;
+  let ads = requestPlacement.Ads;
+  if (!Array.isArray(ads) || ads.length < 1) {
+    if (requestPlacement.AdReason != null) {
+      logInfo('Invibes Adapter - No ads ' + requestPlacement.AdReason);
+    }
+
+    logInfo('Invibes Adapter - No ads available');
+    return null;
+  }
+
+  let ad = ads[0];
+  let size = getBiggerSize(bidRequest.sizes);
+
+  if (multipositionEnabled === true) {
+    if (Object.keys(invibes.pushedCids).length > 0) {
+      if (ad.Blcids != null && ad.Blcids.length > 0) {
+        let blacklistsPushedCids = Object.keys(invibes.pushedCids).some(function(pushedCid) {
+          return ad.Blcids.indexOf(parseInt(pushedCid)) > -1;
+        });
+
+        if (blacklistsPushedCids) {
+          logInfo('Invibes Adapter - Ad blacklists pushed ids');
+          return null;
+        }
+      }
+
+      let isBlacklisted = Object.keys(invibes.pushedCids).some(function(pushedCid) {
+        return invibes.pushedCids[pushedCid].indexOf(ad.Cid) > -1;
+      });
+      if (isBlacklisted) {
+        logInfo('Invibes Adapter - Ad is blacklisted');
+        return null;
+      }
+    }
+  }
+
+  invibes.pushedCids[ad.Cid] = ad.Blcids || [];
+  const now = Date.now();
+  logInfo('Bid auction started at ' + bidModel.AuctionStartTime + ' . Invibes registered the bid at ' + now + ' ; bid request took a total of ' + (now - bidModel.AuctionStartTime) + ' ms.');
+
+  return {
+    requestId: bidRequest.bidId,
+    cpm: ad.BidPrice,
+    width: bidModel.Width || size[0],
+    height: bidModel.Height || size[1],
+    creativeId: ad.VideoExposedId,
+    currency: bidModel.Currency || CONSTANTS.DEFAULT_CURRENCY,
+    netRevenue: true,
+    ttl: CONSTANTS.TIME_TO_LIVE,
+    ad: renderCreative(bidModel),
+    meta: addMeta(bidModel.Meta)
+  };
+}
+
+function addMeta(bidModelMeta) {
+  var meta = {};
+  if (bidModelMeta != null) {
+    for (let i = 0; i < CONSTANTS.META_TAXONOMY.length; i++) {
+      if (bidModelMeta.hasOwnProperty(CONSTANTS.META_TAXONOMY[i])) {
+        meta[CONSTANTS.META_TAXONOMY[i]] = bidModelMeta[CONSTANTS.META_TAXONOMY[i]];
+      }
+    }
+  }
+
+  return meta;
 }
 
 function generateRandomId() {
@@ -357,17 +416,6 @@ function getCappedCampaignsAsString() {
     .join(',');
 }
 
-const noop = function () {
-};
-
-function initLogger() {
-  if (storage.hasLocalStorage() && localStorage.InvibesDEBUG) {
-    return window.console;
-  }
-
-  return {info: noop, error: noop, log: noop, warn: noop, debug: noop};
-}
-
 function buildSyncUrl() {
   let syncUrl = _customUserSync || CONSTANTS.SYNC_ENDPOINT;
   syncUrl += '?visitId=' + invibes.visitId;
@@ -392,7 +440,7 @@ function readGdprConsent(gdprConsent) {
 
     if (!gdprConsent.vendorData.gdprApplies || gdprConsent.vendorData.hasGlobalConsent) {
       var index;
-      for (index = 0; index < invibes.purposes; ++index) {
+      for (index = 0; index < invibes.purposes.length; ++index) {
         invibes.purposes[index] = true;
       }
 
@@ -448,7 +496,13 @@ function tryCopyValueToArray(value, target, length) {
       }
 
       if (value.hasOwnProperty(prop)) {
-        target[i] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null));
+        let parsedProp = parseInt(prop);
+        if (isNaN(parsedProp)) {
+          target[i] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null));
+        } else {
+          target[parsedProp - 1] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null));
+        }
+
         i++;
       }
     }
@@ -514,8 +568,6 @@ function getVendorLegitimateInterest(vendorData) {
 
   return {};
 }
-
-const ivLogger = initLogger();
 
 /// Local domain cookie management =====================
 invibes.Uid = {
@@ -640,6 +692,8 @@ export function resetInvibes() {
   invibes.dom = undefined;
   invibes.bidResponse = undefined;
   invibes.domainOptions = undefined;
+  invibes.placementBids = [];
+  invibes.pushedCids = {};
 }
 
 export function stubDomainOptions(persistence) {

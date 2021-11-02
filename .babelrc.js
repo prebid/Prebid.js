@@ -16,12 +16,9 @@ module.exports = {
       {
         "targets": {
           "browsers": [
-            "chrome >= 61",
-            "safari >=8",
-            "edge >= 14",
-            "ff >= 57",
-            "ie >= 11",
-            "ios >= 8"
+            ">0.25%",
+            "not ie 11",
+            "not op_mini all"
           ]
         }
       }

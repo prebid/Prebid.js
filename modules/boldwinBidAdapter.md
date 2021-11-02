@@ -24,8 +24,7 @@ Module that connects to boldwin demand sources
                         {
                             bidder: 'boldwin',
                             params: {
-                                placementId: 0,
-                                traffic: 'banner'
+                                placementId: 'testBanner',
                             }
                         }
                     ]
@@ -43,8 +42,7 @@ Module that connects to boldwin demand sources
                         {
                             bidder: 'boldwin',
                             params: {
-                                placementId: 0,
-                                traffic: 'video'
+                                placementId: 'testVideo',
                             }
                         }
                     ]

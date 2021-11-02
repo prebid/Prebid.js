@@ -5,7 +5,7 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 
@@ -29,7 +29,7 @@ export const spec = {
   isBidRequestValid: (bid) => {
     return (
       !!config.getConfig('outbrain.bidderUrl') &&
-      !!utils.deepAccess(bid, 'params.publisher.id') &&
+      !!deepAccess(bid, 'params.publisher.id') &&
       !!(bid.nativeParams || bid.sizes)
     );
   },
@@ -40,6 +40,7 @@ export const spec = {
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const bcat = setOnAny(validBidRequests, 'params.bcat');
     const badv = setOnAny(validBidRequests, 'params.badv');
+    const eids = setOnAny(validBidRequests, 'userIdAsEids')
     const cur = CURRENCY;
     const endpointUrl = config.getConfig('outbrain.bidderUrl');
     const timeout = bidderRequest.timeout;
@@ -79,6 +80,14 @@ export const spec = {
       imp: imps,
       bcat: bcat,
       badv: badv,
+      ext: {
+        prebid: {
+          channel: {
+            name: 'pbjs',
+            version: '$prebid.version$'
+          }
+        }
+      }
     };
 
     if (test) {
@@ -86,15 +95,19 @@ export const spec = {
       request.test = 1;
     }
 
-    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
-      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
-      utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
+    if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
+      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
     }
     if (bidderRequest.uspConsent) {
-      utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+      deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
     }
     if (config.getConfig('coppa') === true) {
-      utils.deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
+      deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
+    }
+
+    if (eids) {
+      deepSetValue(request, 'user.ext.eids', eids);
     }
 
     return {
@@ -147,24 +160,30 @@ export const spec = {
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     const syncs = [];
     let syncUrl = config.getConfig('outbrain.usersyncUrl');
+
+    let query = [];
     if (syncOptions.pixelEnabled && syncUrl) {
       if (gdprConsent) {
-        syncUrl += '&gdpr=' + (gdprConsent.gdprApplies & 1);
-        syncUrl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+        query.push('gdpr=' + (gdprConsent.gdprApplies & 1));
+        query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
       }
       if (uspConsent) {
-        syncUrl += '&us_privacy=' + encodeURIComponent(uspConsent);
+        query.push('us_privacy=' + encodeURIComponent(uspConsent));
       }
 
       syncs.push({
         type: 'image',
-        url: syncUrl
+        url: syncUrl + (query.length ? '?' + query.join('&') : '')
       });
     }
     return syncs;
   },
   onBidWon: (bid) => {
-    ajax(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm))
+    // for native requests we put the nurl as an imp tracker, otherwise if the auction takes place on prebid server
+    // the server JS adapter puts the nurl in the adm as a tracking pixel and removes the attribute
+    if (bid.nurl) {
+      ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm))
+    }
   }
 };
 
@@ -202,7 +221,7 @@ function parseNative(bid) {
 
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i], key);
+    result = deepAccess(collection[i], key);
     if (result) {
       return result;
     }
@@ -214,7 +233,7 @@ function flatten(arr) {
 }
 
 function getNativeAssets(bid) {
-  return utils._map(bid.nativeParams, (bidParams, key) => {
+  return _map(bid.nativeParams, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
     const asset = {
       required: bidParams.required & 1,
@@ -252,16 +271,16 @@ function getNativeAssets(bid) {
 
 /* Turn bid request sizes into ut-compatible format */
 function transformSizes(requestSizes) {
-  if (!utils.isArray(requestSizes)) {
+  if (!isArray(requestSizes)) {
     return [];
   }
 
-  if (requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
+  if (requestSizes.length === 2 && !isArray(requestSizes[0])) {
     return [{
       w: parseInt(requestSizes[0], 10),
       h: parseInt(requestSizes[1], 10)
     }];
-  } else if (utils.isArray(requestSizes[0])) {
+  } else if (isArray(requestSizes[0])) {
     return requestSizes.map(item =>
       ({
         w: parseInt(item[0], 10),
