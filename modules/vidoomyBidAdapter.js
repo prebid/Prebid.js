@@ -203,7 +203,8 @@ function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
       type: pixelType,
       url: url
         .replace('{{GDPR}}', gdprConsent ? gdprConsent.gdprApplies : '0')
-        .replace('{{GDPR_CONSENT}}', gdprConsent ? gdprConsent.consentString : '')
+        .replace('{{GDPR_CONSENT}}', gdprConsent ? encodeURIComponent(gdprConsent.consentString) : '')
+        .replace('{{USP_CONSENT}}', uspConsent ? encodeURIComponent(uspConsent) : '')
     }));
   }
 };
