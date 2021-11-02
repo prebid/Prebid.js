@@ -135,15 +135,49 @@ describe('Vast XML Editor', function () {
 </VAST>`;
     expect(vastXml).to.equal(expectedXml);
   });
-});
 
-/*
-<VAST version="4.0">
-    <Ad id="${adId}">
+  it('should add Impression Nodes and Error Nodes to the Ad Wrapper', function () {
+    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(adWrapperXml, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl);
+    const expectedXml = `<VAST version="4.0">
+    <Ad id="123">
         <Wrapper>
-            <AdSystem version="${$$PREBID_GLOBAL$$.version}">Prebid org</AdSystem>
-            <VASTAdTagURI><![CDATA[${adUrl}]]></VASTAdTagURI>
-        </Wrapper>
+            <AdSystem version="6">Prebid org</AdSystem>
+            <VASTAdTagURI><![CDATA[https://random.adTag.com]]></VASTAdTagURI>
+        <Impression id="${expectedImpressionId}"><![CDATA[${expectedImpressionUrl}]]></Impression><Error><![CDATA[${expectedErrorUrl}]]></Error></Wrapper>
     </Ad>
-</VAST>
-*/
+</VAST>`;
+    expect(vastXml).to.equal(expectedXml);
+  });
+
+  it('should add Impression Nodes and Error Nodes to the InLine', function () {
+    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(inlineXml, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl);
+    const expectedXml = `<VAST version="4.0">
+    <Ad id="abc">
+        <InLine>
+            <AdSystem version="6">Prebid org</AdSystem>
+            <AdTitle>Random Title</AdTitle>
+        <Impression id="${expectedImpressionId}"><![CDATA[${expectedImpressionUrl}]]></Impression><Error><![CDATA[${expectedErrorUrl}]]></Error></InLine>
+    </Ad>
+</VAST>`;
+    expect(vastXml).to.equal(expectedXml);
+  });
+
+  it('should add Impression Nodes and Error Nodes to the Ad Wrapper and Inline', function () {
+    const vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(inLineWithWrapper, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl);
+    const expectedXml = `<VAST version="4.0">
+    <Ad id="123">
+        <Wrapper>
+            <AdSystem version="6">Prebid org</AdSystem>
+            <VASTAdTagURI><![CDATA[https://random.adTag.com]]></VASTAdTagURI>
+        <Impression id="${expectedImpressionId}"><![CDATA[${expectedImpressionUrl}]]></Impression><Error><![CDATA[${expectedErrorUrl}]]></Error></Wrapper>
+    </Ad>
+    <Ad id="abc">
+        <InLine>
+            <AdSystem version="6">Prebid org</AdSystem>
+            <AdTitle>Random Title</AdTitle>
+        <Impression id="${expectedImpressionId}"><![CDATA[${expectedImpressionUrl}]]></Impression><Error><![CDATA[${expectedErrorUrl}]]></Error></InLine>
+    </Ad>
+</VAST>`;
+    expect(vastXml).to.equal(expectedXml);
+  });
+});
