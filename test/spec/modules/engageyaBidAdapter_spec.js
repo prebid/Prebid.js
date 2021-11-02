@@ -4,17 +4,6 @@ import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://recs.engageya.com/rec-api/getrecs.json';
 
-export const _getUrlVars = function (url) {
-  var hash;
-  var myJson = {};
-  var hashes = url.slice(url.indexOf('?') + 1).split('&');
-  for (var i = 0; i < hashes.length; i++) {
-    hash = hashes[i].split('=');
-    myJson[hash[0]] = hash[1];
-  }
-  return myJson;
-}
-
 describe('Engageya adapter', function () {
   let bidRequests;
   let nativeBidRequests;
@@ -55,6 +44,7 @@ describe('Engageya adapter', function () {
       }
     ]
   })
+
   describe('isBidRequestValid', function () {
     it('Valid bid case', function () {
       let validBid = {
@@ -129,21 +119,63 @@ describe('Engageya adapter', function () {
 
     it('Request params check', function () {
       let request = spec.buildRequests(bidRequests)[0];
-      const data = _getUrlVars(request.url)
-      expect(parseInt(data.wid)).to.exist.and.to.equal(bidRequests[0].params.widgetId);
-      expect(parseInt(data.webid)).to.exist.and.to.equal(bidRequests[0].params.websiteId);
+      const urlParams = new URL(request.url).searchParams;
+      expect(parseInt(urlParams.get('wid'))).to.exist.and.to.equal(bidRequests[0].params.widgetId);
+      expect(parseInt(urlParams.get('webid'))).to.exist.and.to.equal(bidRequests[0].params.websiteId);
     });
 
     it('Request pageUrl - use param', function () {
       const pageUrl = 'https://url.test';
       bidRequests[0].params.pageUrl = pageUrl;
       const request = spec.buildRequests(bidRequests)[0];
-      const data = _getUrlVars(request.url)
-      expect(data.url).to.exist.and.to.equal(pageUrl);
+      const urlParams = new URL(request.url).searchParams;
+      expect(urlParams.get('url')).to.exist.and.to.equal(pageUrl);
     });
   })
 
   describe('interpretResponse', function () {
+    let nativeResponse;
+    let bannerResponse;
+
+    beforeEach(() => {
+      const recsResponse = {
+        recs: [
+          {
+            ecpm: 9.20,
+            pecpm: 0.0520,
+            postId: '<!-- CREATIVE ID -->',
+            thumbnail_path: 'https://engageya.live/wp-content/uploads/2019/05/images.png',
+            domain: 'domain.test',
+            title: 'Test title',
+            clickUrl: '//click.test',
+            url: '//url.test',
+            displayName: 'Test displayName',
+            trackers: {
+              impressionPixels: ['//impression.test'],
+              viewPixels: ['//view.test'],
+            }
+          }
+        ],
+        imageWidth: 300,
+        imageHeight: 250,
+        ireqId: '1d236f7890b',
+        viewPxl: '//view.pixel',
+      };
+
+      nativeResponse = {
+        ...recsResponse,
+        pbtypeId: 1,
+      }
+
+      bannerResponse = {
+        ...recsResponse,
+        pbtypeId: 2,
+        widget: {
+          additionalData: '{"css":".eng_tag_ttl{display:block!important}"}'
+        },
+      }
+    })
+
     it('should return empty array if no response', function () {
       const result = spec.interpretResponse({}, [])
       expect(result).to.be.an('array').that.is.empty
@@ -155,7 +187,8 @@ describe('Engageya adapter', function () {
         imageWidth: 300,
         imageHeight: 250,
         ireqId: '1d236f7890b',
-        pbtypeId: 2
+        pbtypeId: 2,
+        viewPxl: '//view.pixel',
       };
       let request = spec.buildRequests(bidRequests)[0];
       const result = spec.interpretResponse({ body: response }, request)
@@ -163,29 +196,6 @@ describe('Engageya adapter', function () {
     });
 
     it('should interpret native response', function () {
-      let serverResponse = {
-        recs: [
-          {
-            ecpm: 9.20,
-            pecpm: 0.0520,
-            postId: '<!-- CREATIVE ID -->',
-            thumbnail_path: 'https://engageya.live/wp-content/uploads/2019/05/images.png',
-            domain: 'domain.test',
-            title: 'Test title',
-            clickUrl: '//click.test',
-            url: '//url.test',
-            displayName: 'Test displayName',
-            trackers: {
-              impressionPixels: ['//impression.test'],
-              viewPixels: ['//view.test'],
-            }
-          }
-        ],
-        imageWidth: 300,
-        imageHeight: 250,
-        ireqId: '1d236f7890b',
-        pbtypeId: 1
-      };
       let expectedResult = [
         {
           requestId: '1d236f7890b',
@@ -212,38 +222,17 @@ describe('Engageya adapter', function () {
             displayUrl: '//url.test',
             cta: '',
             sponsoredBy: 'Test displayName',
-            impressionTrackers: ['//impression.test', '//view.test'],
+            impressionTrackers: ['//impression.test', '//view.test', '//view.pixel'],
           },
         }
       ];
       let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: serverResponse }, request);
+      let result = spec.interpretResponse({ body: nativeResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
     it('should interpret native response - without pecpm', function () {
-      let serverResponse = {
-        recs: [
-          {
-            ecpm: 9.20,
-            postId: '<!-- CREATIVE ID -->',
-            thumbnail_path: 'https://engageya.live/wp-content/uploads/2019/05/images.png',
-            domain: 'domain.test',
-            title: 'Test title',
-            clickUrl: '//click.test',
-            url: '//url.test',
-            displayName: 'Test displayName',
-            trackers: {
-              impressionPixels: ['//impression.test'],
-              viewPixels: ['//view.test'],
-            }
-          }
-        ],
-        imageWidth: 300,
-        imageHeight: 250,
-        ireqId: '1d236f7890b',
-        pbtypeId: 1
-      };
+      delete nativeResponse.recs[0].pecpm;
       let expectedResult = [
         {
           requestId: '1d236f7890b',
@@ -270,42 +259,17 @@ describe('Engageya adapter', function () {
             displayUrl: '//url.test',
             cta: '',
             sponsoredBy: 'Test displayName',
-            impressionTrackers: ['//impression.test', '//view.test'],
+            impressionTrackers: ['//impression.test', '//view.test', '//view.pixel'],
           },
         }
       ];
       let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: serverResponse }, request);
+      let result = spec.interpretResponse({ body: nativeResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
-    it('should interpret display response', function () {
-      let serverResponse = {
-        recs: [
-          {
-            ecpm: 9.20,
-            pecpm: 0.0520,
-            postId: '<!-- CREATIVE ID -->',
-            thumbnail_path: 'https://engageya.live/wp-content/uploads/2019/05/images.png',
-            domain: 'domain.test',
-            title: 'Test title',
-            clickUrl: '//click.test',
-            url: '//url.test',
-            displayName: 'Test displayName',
-            trackers: {
-              impressionPixels: ['//impression.test'],
-              viewPixels: ['//view.test'],
-            }
-          }
-        ],
-        imageWidth: 300,
-        imageHeight: 250,
-        ireqId: '1d236f7890b',
-        pbtypeId: 2,
-        widget: {
-          additionalData: '{"css":".eng_tag_ttl{display:block!important}"}'
-        }
-      };
+    it('should interpret native response - without trackers', function () {
+      delete nativeResponse.recs[0].trackers;
       let expectedResult = [
         {
           requestId: '1d236f7890b',
@@ -319,40 +283,52 @@ describe('Engageya adapter', function () {
           meta: {
             advertiserDomains: ['domain.test']
           },
-          ad: `<html><body><style>.eng_tag_ttl{display:block!important}</style><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt="Test title"/><div class="eng_tag_brnd" style="display: none">Test displayName</div><div class="eng_tag_ttl" style="display: none">Test title</div></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//impression.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.test"></div></div></body></html>`,
+          native: {
+            title: 'Test title',
+            body: '',
+            image: {
+              url: 'https://engageya.live/wp-content/uploads/2019/05/images.png',
+              width: 300,
+              height: 250
+            },
+            privacyLink: '',
+            clickUrl: '//click.test',
+            displayUrl: '//url.test',
+            cta: '',
+            sponsoredBy: 'Test displayName',
+            impressionTrackers: ['//view.pixel'],
+          },
         }
       ];
       let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: serverResponse }, request);
+      let result = spec.interpretResponse({ body: nativeResponse }, request);
+      expect(result).to.deep.equal(expectedResult);
+    });
+
+    it('should interpret display response', function () {
+      let expectedResult = [
+        {
+          requestId: '1d236f7890b',
+          cpm: 0.0520,
+          width: 300,
+          height: 250,
+          netRevenue: true,
+          currency: 'USD',
+          creativeId: '<!-- CREATIVE ID -->',
+          ttl: 360,
+          meta: {
+            advertiserDomains: ['domain.test']
+          },
+          ad: `<html><body><style>.eng_tag_ttl{display:block!important}</style><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt="Test title"/><div class="eng_tag_brnd" style="display: none">Test displayName</div><div class="eng_tag_ttl" style="display: none">Test title</div></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//impression.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.pixel"></div></div></body></html>`,
+        }
+      ];
+      let request = spec.buildRequests(bidRequests)[0];
+      let result = spec.interpretResponse({ body: bannerResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
     it('should interpret display response - without pecpm', function () {
-      let serverResponse = {
-        recs: [
-          {
-            ecpm: 9.20,
-            postId: '<!-- CREATIVE ID -->',
-            thumbnail_path: 'https://engageya.live/wp-content/uploads/2019/05/images.png',
-            domain: 'domain.test',
-            title: 'Test title',
-            clickUrl: '//click.test',
-            url: '//url.test',
-            displayName: 'Test displayName',
-            trackers: {
-              impressionPixels: ['//impression.test'],
-              viewPixels: ['//view.test'],
-            }
-          }
-        ],
-        imageWidth: 300,
-        imageHeight: 250,
-        ireqId: '1d236f7890b',
-        pbtypeId: 2,
-        widget: {
-          additionalData: '{"css":".eng_tag_ttl{display:block!important}"}'
-        }
-      };
+      delete bannerResponse.recs[0].pecpm;
       let expectedResult = [
         {
           requestId: '1d236f7890b',
@@ -366,34 +342,16 @@ describe('Engageya adapter', function () {
           meta: {
             advertiserDomains: ['domain.test']
           },
-          ad: `<html><body><style>.eng_tag_ttl{display:block!important}</style><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt="Test title"/><div class="eng_tag_brnd" style="display: none">Test displayName</div><div class="eng_tag_ttl" style="display: none">Test title</div></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//impression.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.test"></div></div></body></html>`,
+          ad: `<html><body><style>.eng_tag_ttl{display:block!important}</style><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt="Test title"/><div class="eng_tag_brnd" style="display: none">Test displayName</div><div class="eng_tag_ttl" style="display: none">Test title</div></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//impression.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.pixel"></div></div></body></html>`,
         }
       ];
       let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: serverResponse }, request);
+      let result = spec.interpretResponse({ body: bannerResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
     it('should interpret display response - without title', function () {
-      let serverResponse = {
-        recs: [
-          {
-            ecpm: 9.20,
-            pecpm: 0.0520,
-            postId: '<!-- CREATIVE ID -->',
-            thumbnail_path: 'https://engageya.live/wp-content/uploads/2019/05/images.png',
-            domain: 'domain.test',
-            title: ' ',
-            clickUrl: '//click.test',
-            url: '//url.test',
-            displayName: 'Test displayName',
-          }
-        ],
-        imageWidth: 300,
-        imageHeight: 250,
-        ireqId: '1d236f7890b',
-        pbtypeId: 2,
-      };
+      bannerResponse.recs[0].title = ' ';
       let expectedResult = [
         {
           requestId: '1d236f7890b',
@@ -407,11 +365,57 @@ describe('Engageya adapter', function () {
           meta: {
             advertiserDomains: ['domain.test']
           },
-          ad: `<html><body><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt=" "/></a></div></body></html>`,
+          ad: `<html><body><style>.eng_tag_ttl{display:block!important}</style><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt=" "/></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//impression.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.pixel"></div></div></body></html>`,
         }
       ];
       let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: serverResponse }, request);
+      let result = spec.interpretResponse({ body: bannerResponse }, request);
+      expect(result).to.deep.equal(expectedResult);
+    });
+
+    it('should interpret display response - without widget additional data', function () {
+      bannerResponse.widget.additionalData = null;
+      let expectedResult = [
+        {
+          requestId: '1d236f7890b',
+          cpm: 0.0520,
+          width: 300,
+          height: 250,
+          netRevenue: true,
+          currency: 'USD',
+          creativeId: '<!-- CREATIVE ID -->',
+          ttl: 360,
+          meta: {
+            advertiserDomains: ['domain.test']
+          },
+          ad: `<html><body><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt="Test title"/><div class="eng_tag_brnd" style="display: none">Test displayName</div><div class="eng_tag_ttl" style="display: none">Test title</div></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//impression.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.pixel"></div></div></body></html>`,
+        }
+      ];
+      let request = spec.buildRequests(bidRequests)[0];
+      let result = spec.interpretResponse({ body: bannerResponse }, request);
+      expect(result).to.deep.equal(expectedResult);
+    });
+
+    it('should interpret display response - without trackers', function () {
+      bannerResponse.recs[0].trackers = null;
+      let expectedResult = [
+        {
+          requestId: '1d236f7890b',
+          cpm: 0.0520,
+          width: 300,
+          height: 250,
+          netRevenue: true,
+          currency: 'USD',
+          creativeId: '<!-- CREATIVE ID -->',
+          ttl: 360,
+          meta: {
+            advertiserDomains: ['domain.test']
+          },
+          ad: `<html><body><style>.eng_tag_ttl{display:block!important}</style><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt="Test title"/><div class="eng_tag_brnd" style="display: none">Test displayName</div><div class="eng_tag_ttl" style="display: none">Test title</div></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.pixel"></div></div></body></html>`,
+        }
+      ];
+      let request = spec.buildRequests(bidRequests)[0];
+      let result = spec.interpretResponse({ body: bannerResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
   })
