@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule/index.js';
+import CONSTANTS from '../../../../src/constants.json';
 
 let ortbParamsMock;
 let videoCoreMock;
@@ -9,6 +10,7 @@ let pbGlobalMock;
 let pbEventsMock;
 let videoEventsMock;
 let adServerMock;
+let vastXmlEditorMock;
 
 function resetTestVars() {
   ortbParamsMock = {
@@ -38,16 +40,21 @@ function resetTestVars() {
     registerAdServer: sinon.spy(),
     getAdTagUrl: sinon.spy()
   };
+  vastXmlEditorMock = {
+    getVastXmlWithTrackingNodes: sinon.spy(),
+    buildVastWrapper: sinon.spy()
+  };
 }
 
-let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents, adServer) => {
+let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents, adServer, vastXmlEditor) => {
   const pbVideo = PbVideo(
     videoCore || videoCoreMock,
     getConfig || getConfigMock,
     pbGlobal || pbGlobalMock,
     pbEvents || pbEventsMock,
     videoEvents || videoEventsMock,
-    adServer || adServerMock
+    adServer || adServerMock,
+    vastXmlEditor || vastXmlEditorMock
   );
   pbVideo.init();
   return pbVideo;
@@ -215,20 +222,59 @@ describe('Prebid Video', function () {
   });
 
   describe('Ad tracking', function () {
+    let bidAdjustmentCb;
+    const adUnitCode = 'test_ad_unit_code';
+    const sampleBid = {
+      adId: 'test_ad_id',
+      adUnitCode,
+      vastUrl: 'test_ad_url'
+    };
+    const sampleAdUnit = {
+      code: adUnitCode,
+    };
+    const pbEvents = {
+      on: (event, callback) => {
+        if (event === CONSTANTS.EVENTS.BID_ADJUSTMENT) {
+          bidAdjustmentCb = callback;
+        }
+      },
+      emit: () => {}
+    };
+
     it('should not listen for bid adjustments when caching is not configured', function () {
-      
+      pbVideoFactory(null, () => null);
+      expect(pbEventsMock.on.neverCalledWith(CONSTANTS.EVENTS.BID_ADJUSTMENT)).to.be.true;
     });
 
     it('should not modify the bid\'s adXml when the tracking config is omitted', function () {
+      const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: null } } });
+      const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
+      pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
 
+      bidAdjustmentCb(sampleBid);
+      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.false;
+      expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
     });
 
     it('should request a vast wrapper when only an ad url is provided', function () {
+      const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: { } } } });
+      const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
+      pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
 
+      bidAdjustmentCb(sampleBid);
+      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.false;
+      expect(vastXmlEditorMock.buildVastWrapper.called).to.be.true;
     });
 
     it('should request the addition of tracking nodes when an ad xml is provided', function () {
+      const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: { } } } });
+      const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
+      pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
 
+      const bid = Object.assign({}, sampleBid, { vastXml: 'test_xml' });
+      bidAdjustmentCb(bid);
+      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.true;
+      expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
     });
   });
 });
