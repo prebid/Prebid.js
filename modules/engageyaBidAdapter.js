@@ -148,12 +148,12 @@ export const spec = {
     return response.recs.map(rec => {
       let bid = {
         requestId: response.ireqId,
-        cpm: rec.ecpm,
         width: response.imageWidth,
         height: response.imageHeight,
         creativeId: rec.postId,
+        cpm: rec.pecpm || (rec.ecpm / 100),
         currency: 'USD',
-        netRevenue: false,
+        netRevenue: !!rec.pecpm,
         ttl: 360,
         meta: { advertiserDomains: rec.domain ? [rec.domain] : [] },
       }
