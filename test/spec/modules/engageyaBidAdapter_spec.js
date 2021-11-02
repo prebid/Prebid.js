@@ -15,7 +15,7 @@ export const _getUrlVars = function (url) {
   return myJson;
 }
 
-describe('engageya adapter', function () {
+describe('Engageya adapter', function () {
   let bidRequests;
   let nativeBidRequests;
 
@@ -56,39 +56,55 @@ describe('engageya adapter', function () {
     ]
   })
   describe('isBidRequestValid', function () {
-    it('valid bid case', function () {
+    it('Valid bid case', function () {
       let validBid = {
         bidder: 'engageya',
         params: {
           widgetId: 85610,
           websiteId: 91140,
           pageUrl: '[PAGE_URL]'
-        }
+        },
+        sizes: [[300, 250]]
       }
       let isValid = spec.isBidRequestValid(validBid);
-      expect(isValid).to.equal(true);
+      expect(isValid).to.be.true;
     });
 
-    it('invalid bid case: widgetId and websiteId is not passed', function () {
+    it('Invalid bid case: widgetId and websiteId is not passed', function () {
       let validBid = {
         bidder: 'engageya',
         params: {}
       }
       let isValid = spec.isBidRequestValid(validBid);
-      expect(isValid).to.equal(false);
+      expect(isValid).to.be.false;
     })
 
-    it('invalid bid case: widget id must be number', function () {
+    it('Invalid bid case: widget id must be number', function () {
       let invalidBid = {
         bidder: 'engageya',
         params: {
           widgetId: '157746a',
           websiteId: 91140,
           pageUrl: '[PAGE_URL]'
-        }
+        },
+        sizes: [[300, 250]]
       }
       let isValid = spec.isBidRequestValid(invalidBid);
-      expect(isValid).to.equal(false);
+      expect(isValid).to.be.false;
+    })
+
+    it('Invalid bid case: unsupported sizes', function () {
+      let invalidBid = {
+        bidder: 'engageya',
+        params: {
+          widgetId: '157746a',
+          websiteId: 91140,
+          pageUrl: '[PAGE_URL]'
+        },
+        sizes: [[250, 250]]
+      }
+      let isValid = spec.isBidRequestValid(invalidBid);
+      expect(isValid).to.be.false;
     })
   })
 
@@ -116,7 +132,15 @@ describe('engageya adapter', function () {
       const data = _getUrlVars(request.url)
       expect(parseInt(data.wid)).to.exist.and.to.equal(bidRequests[0].params.widgetId);
       expect(parseInt(data.webid)).to.exist.and.to.equal(bidRequests[0].params.websiteId);
-    })
+    });
+
+    it('Request pageUrl - use param', function () {
+      const pageUrl = 'https://url.test';
+      bidRequests[0].params.pageUrl = pageUrl;
+      const request = spec.buildRequests(bidRequests)[0];
+      const data = _getUrlVars(request.url)
+      expect(data.url).to.exist.and.to.equal(pageUrl);
+    });
   })
 
   describe('interpretResponse', function () {
