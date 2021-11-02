@@ -66,8 +66,10 @@ describe('Prebid Video', function () {
   describe('Setting video to config', function () {
     let providers = [{ divId: 'div1' }, { divId: 'div2' }];
     let getConfigCallback;
-    let getConfig = (video, callback) => {
-      getConfigCallback = callback;
+    let getConfig = (propertyName, callback) => {
+      if (propertyName === 'video') {
+        getConfigCallback = callback;
+      }
     };
 
     beforeEach(() => {
@@ -240,6 +242,10 @@ describe('Prebid Video', function () {
       },
       emit: () => {}
     };
+    const expectedImpressionUrl = 'test_impression_url';
+    const expectedImpressionId = 'test_impression_id';
+    const expectedErrorUrl = 'test_error_url';
+    const expectedVastXml = 'test_xml';
 
     it('should not listen for bid adjustments when caching is not configured', function () {
       pbVideoFactory(null, () => null);
@@ -274,6 +280,46 @@ describe('Prebid Video', function () {
       const bid = Object.assign({}, sampleBid, { vastXml: 'test_xml' });
       bidAdjustmentCb(bid);
       expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.true;
+      expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
+    });
+
+    it('should pass the tracking information as args to the xml editing function', function () {
+      const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: {
+        impression: {
+          url: expectedImpressionUrl,
+          id: expectedImpressionId
+        },
+        error: {
+          url: expectedErrorUrl
+        }
+      } } } });
+      const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
+      pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
+
+      const bid = Object.assign({}, sampleBid, { vastXml: expectedVastXml });
+      bidAdjustmentCb(bid);
+      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.true;
+      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.calledWith(expectedVastXml, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl))
+      expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
+    });
+
+    it('should generate the impression id when not specified in config', function () {
+      const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: {
+        impression: {
+          url: expectedImpressionUrl,
+        },
+        error: {
+          url: expectedErrorUrl
+        }
+      } } } });
+      const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
+      pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
+
+      const bid = Object.assign({}, sampleBid, { vastXml: expectedVastXml });
+      bidAdjustmentCb(bid);
+      const expectedGeneratedId = sampleBid.adId + '-impression';
+      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.true;
+      expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.calledWith(expectedVastXml, expectedImpressionUrl, expectedGeneratedId, expectedErrorUrl))
       expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
     });
   });
