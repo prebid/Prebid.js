@@ -266,7 +266,7 @@ describe('Opera Ads Bid Adapter', function () {
       }
     });
 
-    it('currency in params should be used', function () {
+    it('test getBidFloor', function() {
       const bidRequests = [
         {
           adUnitCode: 'test-div',
@@ -276,8 +276,13 @@ describe('Opera Ads Bid Adapter', function () {
           params: {
             placementId: 's12345678',
             publisherId: 'pub12345678',
-            endpointId: 'ep12345678',
-            currency: 'RMB'
+            endpointId: 'ep12345678'
+          },
+          getFloor: function() {
+            return {
+              currency: 'USD',
+              floor: 0.1
+            }
           }
         }
       ];
@@ -292,7 +297,9 @@ describe('Opera Ads Bid Adapter', function () {
           requestData = JSON.parse(req.data);
         }).to.not.throw();
 
-        expect(requestData.cur).to.be.an('array').that.includes('RMB');
+        expect(requestData.imp).to.be.an('array').that.have.lengthOf(1);
+        expect(requestData.imp[0].bidfloor).to.be.equal(0.1);
+        expect(requestData.imp[0].bidfloorcur).to.be.equal('USD');
       }
     });
 
@@ -362,7 +369,7 @@ describe('Opera Ads Bid Adapter', function () {
         requestData = JSON.parse(reqs[0].data);
       }).to.not.throw();
 
-      expect(requestData.user.id).to.equal(bidRequests[0].userId.sharedid.id);
+      expect(requestData.user.buyeruid).to.equal(bidRequests[0].userId.sharedid.id);
     });
 
     it('pubcid should be used when sharedid is empty', function () {
@@ -399,7 +406,7 @@ describe('Opera Ads Bid Adapter', function () {
         requestData = JSON.parse(reqs[0].data);
       }).to.not.throw();
 
-      expect(requestData.user.id).to.equal(bidRequests[0].userId.pubcid);
+      expect(requestData.user.buyeruid).to.equal(bidRequests[0].userId.pubcid);
     });
 
     it('random uid will be generate when userId is empty', function () {
@@ -426,7 +433,7 @@ describe('Opera Ads Bid Adapter', function () {
         requestData = JSON.parse(reqs[0].data);
       }).to.not.throw();
 
-      expect(requestData.user.id).to.not.be.empty;
+      expect(requestData.user.buyeruid).to.not.be.empty;
     })
   });
 
@@ -672,9 +679,41 @@ describe('Opera Ads Bid Adapter', function () {
     });
   });
 
-  describe('Test getUserSyncs', function () {
-    it('getUserSyncs should return empty array', function () {
-      expect(spec.getUserSyncs()).to.be.an('array').that.is.empty;
+  describe('Test getUserSyncs with both iframe and pixel disabled', function () {
+    it('getUserSyncs should return an empty array', function () {
+      const syncOptions = {};
+      expect(spec.getUserSyncs(syncOptions)).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('Test getUserSyncs with iframe enabled', function () {
+    it('getUserSyncs should return array', function () {
+      const syncOptions = {
+        iframeEnabled: true
+      }
+      const userSyncPixels = spec.getUserSyncs(syncOptions)
+      expect(userSyncPixels).to.have.lengthOf(1);
+      expect(userSyncPixels[0].url).to.equal('https://s.adx.opera.com/usersync/page')
+    });
+  });
+
+  describe('Test getUserSyncs with pixel enabled', function () {
+    it('getUserSyncs should return array', function () {
+      const serverResponse = {
+        body: {
+          'pixels': [
+            'https://b1.com/usersync',
+            'https://b2.com/usersync'
+          ]
+        }
+      };
+      const syncOptions = {
+        pixelEnabled: true
+      }
+      const userSyncPixels = spec.getUserSyncs(syncOptions, [serverResponse])
+      expect(userSyncPixels).to.have.lengthOf(2);
+      expect(userSyncPixels[0].url).to.equal('https://b1.com/usersync')
+      expect(userSyncPixels[1].url).to.equal('https://b2.com/usersync')
     });
   });
 

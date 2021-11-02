@@ -1,6 +1,10 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils.js';
+import {
+  _each, getUserConfiguredParams, groupBy, logInfo, deepAccess, isValidMediaTypes,
+  getUniqueIdentifierStr, deepClone, logWarn, logError, logMessage, isArray, generateUUID,
+  flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind
+} from './utils.js';
 import { getLabels, resolveStatus } from './sizeMapping.js';
 import { processNativeAdUnitParams, nativeAdapters } from './native.js';
 import { newBidder } from './adapters/bidderFactory.js';
@@ -12,7 +16,6 @@ import find from 'core-js-pure/features/array/find.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
 
-var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events.js');
 let s2sTestingModule; // store s2sTesting module if it's loaded
@@ -25,7 +28,7 @@ let _aliasRegistry = adapterManager.aliasRegistry = {};
 let _s2sConfigs = [];
 config.getConfig('s2sConfig', config => {
   if (config && config.s2sConfig) {
-    _s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
+    _s2sConfigs = isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
   }
 });
 
@@ -51,16 +54,16 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
     );
 
     if (!active) {
-      utils.logInfo(`Size mapping disabled adUnit "${adUnit.code}"`);
+      logInfo(`Size mapping disabled adUnit "${adUnit.code}"`);
     } else if (filterResults) {
-      utils.logInfo(`Size mapping filtered adUnit "${adUnit.code}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+      logInfo(`Size mapping filtered adUnit "${adUnit.code}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
     }
 
     if (active) {
       result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
         .reduce((bids, bid) => {
           const nativeParams =
-            adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
+            adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
           if (nativeParams) {
             bid = Object.assign({}, bid, {
               nativeParams: processNativeAdUnitParams(nativeParams),
@@ -81,17 +84,17 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
           } = resolveStatus(getLabels(bid, labels), filteredMediaTypes);
 
           if (!active) {
-            utils.logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`);
+            logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`);
           } else if (filterResults) {
-            utils.logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+            logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
           }
 
-          if (utils.isValidMediaTypes(mediaTypes)) {
+          if (isValidMediaTypes(mediaTypes)) {
             bid = Object.assign({}, bid, {
               mediaTypes
             });
           } else {
-            utils.logError(
+            logError(
               `mediaTypes is not correctly configured for adunit ${adUnit.code}`
             );
           }
@@ -100,8 +103,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
             bids.push(Object.assign({}, bid, {
               adUnitCode: adUnit.code,
               transactionId: adUnit.transactionId,
-              sizes: utils.deepAccess(mediaTypes, 'banner.sizes') || utils.deepAccess(mediaTypes, 'video.playerSize') || [],
-              bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
+              sizes: deepAccess(mediaTypes, 'banner.sizes') || deepAccess(mediaTypes, 'video.playerSize') || [],
+              bidId: bid.bid_id || getUniqueIdentifierStr(),
               bidderRequestId,
               auctionId,
               src,
@@ -122,7 +125,7 @@ const hookedGetBids = hook('sync', getBids, 'getBids');
 
 function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
   let adaptersServerSide = s2sConfig.bidders;
-  let adUnitsCopy = utils.deepClone(adUnits);
+  let adUnitsCopy = deepClone(adUnits);
 
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
@@ -130,7 +133,7 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
       return includes(adaptersServerSide, bid.bidder) &&
         (!doingS2STesting(s2sConfig) || bid.finalSource !== s2sTestingModule.CLIENT);
     }).map((bid) => {
-      bid.bid_id = utils.getUniqueIdentifierStr();
+      bid.bid_id = getUniqueIdentifierStr();
       return bid;
     });
   });
@@ -143,7 +146,7 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
 }
 
 function getAdUnitCopyForClientAdapters(adUnits) {
-  let adUnitsClientCopy = utils.deepClone(adUnits);
+  let adUnitsClientCopy = deepClone(adUnits);
   // filter out s2s bids
   adUnitsClientCopy.forEach((adUnit) => {
     adUnit.bids = adUnit.bids.filter((bid) => {
@@ -254,20 +257,20 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   _s2sConfigs.forEach(s2sConfig => {
     if (s2sConfig && s2sConfig.enabled) {
       if ((isTestingServerOnly(s2sConfig) && adUnitsContainServerRequests(adUnits, s2sConfig))) {
-        utils.logWarn('testServerOnly: True.  All client requests will be suppressed.');
+        logWarn('testServerOnly: True.  All client requests will be suppressed.');
         clientBidderCodes.length = 0;
       }
 
       let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
-      let tid = utils.generateUUID();
+      let tid = generateUUID();
       adaptersServerSide.forEach(bidderCode => {
-        const bidderRequestId = utils.getUniqueIdentifierStr();
+        const bidderRequestId = getUniqueIdentifierStr();
         const bidderRequest = {
           bidderCode,
           auctionId,
           bidderRequestId,
           tid,
-          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
+          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
           auctionStart: auctionStart,
           timeout: s2sConfig.timeout,
           src: CONSTANTS.S2S.SRC,
@@ -298,19 +301,19 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   // client adapters
   let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
   clientBidderCodes.forEach(bidderCode => {
-    const bidderRequestId = utils.getUniqueIdentifierStr();
+    const bidderRequestId = getUniqueIdentifierStr();
     const bidderRequest = {
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
+      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsClientCopy), labels, src: 'client'}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo
     };
     const adapter = _bidderRegistry[bidderCode];
     if (!adapter) {
-      utils.logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
+      logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
     }
 
     if (adapter && bidderRequest.bids && bidderRequest.bids.length !== 0) {
@@ -334,7 +337,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
 adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout, onTimelyResponse) => {
   if (!bidRequests.length) {
-    utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
+    logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
   }
 
@@ -384,7 +387,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           let allBidders = s2sBidRequest.ad_units.reduce((adapters, adUnit) => {
             return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => adapters.concat(bid.bidder), []));
           }, []);
-          utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => includes(allBidders, adapter)).join(',')}`);
+          logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => includes(allBidders, adapter)).join(',')}`);
 
           // fire BID_REQUESTED event for each s2s bidRequest
           uniqueServerRequests.forEach(bidRequest => {
@@ -406,7 +409,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           );
         }
       } else {
-        utils.logError('missing ' + s2sConfig.adapter);
+        logError('missing ' + s2sConfig.adapter);
       }
       counter++
     }
@@ -418,7 +421,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidRequest.bidderCode];
     config.runWithBidder(bidRequest.bidderCode, () => {
-      utils.logMessage(`CALLING BIDDER`);
+      logMessage(`CALLING BIDDER`);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
     });
     let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
@@ -441,7 +444,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
         )
       );
     } catch (e) {
-      utils.logError(`${bidRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, {e, bidRequest});
+      logError(`${bidRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, {e, bidRequest});
       adapterDone();
     }
   });
@@ -476,10 +479,10 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
         nativeAdapters.push(bidderCode);
       }
     } else {
-      utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
+      logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
     }
   } else {
-    utils.logError('bidAdapter or bidderCode not specified');
+    logError('bidAdapter or bidderCode not specified');
   }
 };
 
@@ -502,7 +505,7 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
         }
       });
       nonS2SAlias.forEach(bidderCode => {
-        utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adapterManager.aliasBidAdapter');
+        logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adapterManager.aliasBidAdapter');
       })
     } else {
       try {
@@ -524,11 +527,11 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
           supportedMediaTypes
         });
       } catch (e) {
-        utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adapterManager.aliasBidAdapter');
+        logError(bidderCode + ' bidder does not currently support aliasing.', 'adapterManager.aliasBidAdapter');
       }
     }
   } else {
-    utils.logMessage('alias name "' + alias + '" has been already specified.');
+    logMessage('alias name "' + alias + '" has been already specified.');
   }
 };
 
@@ -538,25 +541,25 @@ adapterManager.registerAnalyticsAdapter = function ({adapter, code, gvlid}) {
       adapter.code = code;
       _analyticsRegistry[code] = { adapter, gvlid };
     } else {
-      utils.logError(`Prebid Error: Analytics adaptor error for analytics "${code}"
+      logError(`Prebid Error: Analytics adaptor error for analytics "${code}"
         analytics adapter must implement an enableAnalytics() function`);
     }
   } else {
-    utils.logError('Prebid Error: analyticsAdapter or analyticsCode not specified');
+    logError('Prebid Error: analyticsAdapter or analyticsCode not specified');
   }
 };
 
 adapterManager.enableAnalytics = function (config) {
-  if (!utils.isArray(config)) {
+  if (!isArray(config)) {
     config = [config];
   }
 
-  utils._each(config, adapterConfig => {
+  _each(config, adapterConfig => {
     var adapter = _analyticsRegistry[adapterConfig.provider].adapter;
     if (adapter) {
       adapter.enableAnalytics(adapterConfig);
     } else {
-      utils.logError(`Prebid Error: no analytics adapter found in registry for
+      logError(`Prebid Error: no analytics adapter found in registry for
         ${adapterConfig.provider}.`);
     }
   });
@@ -581,22 +584,22 @@ function tryCallBidderMethod(bidder, method, param) {
     const adapter = _bidderRegistry[bidder];
     const spec = adapter.getSpec();
     if (spec && spec[method] && typeof spec[method] === 'function') {
-      utils.logInfo(`Invoking ${bidder}.${method}`);
+      logInfo(`Invoking ${bidder}.${method}`);
       config.runWithBidder(bidder, bind.call(spec[method], spec, param));
     }
   } catch (e) {
-    utils.logWarn(`Error calling ${method} of ${bidder}`);
+    logWarn(`Error calling ${method} of ${bidder}`);
   }
 }
 
 adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   timedOutBidders = timedOutBidders.map((timedOutBidder) => {
     // Adding user configured params & timeout to timeout event data
-    timedOutBidder.params = utils.getUserConfiguredParams(adUnits, timedOutBidder.adUnitCode, timedOutBidder.bidder);
+    timedOutBidder.params = getUserConfiguredParams(adUnits, timedOutBidder.adUnitCode, timedOutBidder.bidder);
     timedOutBidder.timeout = cbTimeout;
     return timedOutBidder;
   });
-  timedOutBidders = utils.groupBy(timedOutBidders, 'bidder');
+  timedOutBidders = groupBy(timedOutBidders, 'bidder');
 
   Object.keys(timedOutBidders).forEach((bidder) => {
     tryCallBidderMethod(bidder, 'onTimeout', timedOutBidders[bidder]);
@@ -605,7 +608,7 @@ adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeou
 
 adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
-  bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
+  bid.params = getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
   adunitCounter.incrementBidderWinsCounter(bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
@@ -616,6 +619,11 @@ adapterManager.callSetTargetingBidder = function(bidder, bid) {
 
 adapterManager.callBidViewableBidder = function(bidder, bid) {
   tryCallBidderMethod(bidder, 'onBidViewable', bid);
+};
+
+adapterManager.callBidderError = function(bidder, error, bidderRequest) {
+  const param = { error, bidderRequest };
+  tryCallBidderMethod(bidder, 'onBidderError', param);
 };
 
 export default adapterManager;

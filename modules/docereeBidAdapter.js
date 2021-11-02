@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { tryAppendQueryString } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -24,14 +24,14 @@ export const spec = {
       const { publisherUrl, placementId } = validBidRequest.params;
       const url = publisherUrl || page
       let queryString = '';
-      queryString = utils.tryAppendQueryString(queryString, 'id', placementId);
-      queryString = utils.tryAppendQueryString(queryString, 'publisherDomain', domain);
-      queryString = utils.tryAppendQueryString(queryString, 'pubRequestedURL', encodeURIComponent(url));
-      queryString = utils.tryAppendQueryString(queryString, 'loggedInUser', encodedUserInfo);
-      queryString = utils.tryAppendQueryString(queryString, 'currentUrl', url);
-      queryString = utils.tryAppendQueryString(queryString, 'prebidjs', true);
-      queryString = utils.tryAppendQueryString(queryString, 'token', token);
-      queryString = utils.tryAppendQueryString(queryString, 'requestId', validBidRequest.bidId);
+      queryString = tryAppendQueryString(queryString, 'id', placementId);
+      queryString = tryAppendQueryString(queryString, 'publisherDomain', domain);
+      queryString = tryAppendQueryString(queryString, 'pubRequestedURL', encodeURIComponent(url));
+      queryString = tryAppendQueryString(queryString, 'loggedInUser', encodedUserInfo);
+      queryString = tryAppendQueryString(queryString, 'currentUrl', url);
+      queryString = tryAppendQueryString(queryString, 'prebidjs', true);
+      queryString = tryAppendQueryString(queryString, 'token', token);
+      queryString = tryAppendQueryString(queryString, 'requestId', validBidRequest.bidId);
 
       serverRequests.push({
         method: 'GET',

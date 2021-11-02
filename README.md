@@ -1,6 +1,5 @@
 [![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
 [![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
 [![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
 [![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
@@ -60,6 +59,8 @@ module.exports = {
           loader: 'babel-loader',
           // presets and plugins for Prebid.js must be manually specified separate from your other babel rule.
           // this can be accomplished by requiring prebid's .babelrc.js file (requires Babel 7 and Node v8.9.0+)
+          // as of Prebid 6, babelrc.js only targets modern browsers. One can change the targets and build for
+          // older browsers if they prefer, but integration tests on ie11 were removed in Prebid.js 6.0
           options: require('prebid.js/.babelrc.js')
         }
       }
@@ -152,7 +153,7 @@ Building with just these adapters will result in a smaller bundle which should a
 
 **Build standalone prebid.js**
 
-- Clone the repo, run `npm install`
+- Clone the repo, run `npm ci`
 - Then run the build:
 
         $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
@@ -315,7 +316,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 
 ### Supported Browsers
 
-Prebid.js is supported on IE11 and modern browsers.
+Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not Opera Mini; not IE11. 
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
