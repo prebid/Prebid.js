@@ -5,7 +5,6 @@ import CONSTANTS from '../../src/constants.json';
 import { videoCoreFactory } from './coreVideo.js';
 import { coreAdServerFactory } from './adServer.js';
 import find from 'core-js-pure/features/array/find.js';
-import { buildVastWrapper } from './shared/vastXmlBuilder.js';
 import { vastXmlEditorFactory } from './shared/vastXmlEditor.js';
 
 events.addEvents(allVideoEvents);
@@ -54,7 +53,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     pbEvents.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
       const adUnitCode = bid.adUnitCode;
-      const adUnit = find($$PREBID_GLOBAL$$.adUnits, adUnit => adUnitCode === adUnit.code);
+      const adUnit = find(pbGlobal.adUnits, adUnit => adUnitCode === adUnit.code);
       const videoConfig = adUnit && adUnit.video;
       const adServerConfig = videoConfig && videoConfig.adServer;
       const trackingConfig = adServerConfig && adServerConfig.tracking;
@@ -125,7 +124,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     if (vastXml) {
       vastXml = vastXmlEditor.getVastXmlWithTrackingNodes(vastXml, impressionUrl, impressionId, errorUrl);
     } else if (vastUrl) {
-      vastXml = buildVastWrapper(adId, vastUrl, impressionUrl, impressionId, errorUrl);
+      vastXml = vastXmlEditor.buildVastWrapper(adId, vastUrl, impressionUrl, impressionId, errorUrl);
     }
 
     bid.vastXml = vastXml;

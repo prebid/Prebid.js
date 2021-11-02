@@ -1,4 +1,4 @@
-import { getErrorNode, getImpressionNode } from './vastXmlBuilder.js';
+import { getErrorNode, getImpressionNode, buildVastWrapper } from './vastXmlBuilder.js';
 
 export const XML_MIME_TYPE = 'application/xml';
 
@@ -27,7 +27,8 @@ export function VastXmlEditor(xmlUtil_) {
   }
 
   return {
-    getVastXmlWithTrackingNodes
+    getVastXmlWithTrackingNodes,
+    buildVastWrapper
   }
 
   function getImpressionDoc(impressionUrl, impressionId) {

@@ -213,4 +213,22 @@ describe('Prebid Video', function () {
       expect(videoCoreMock.setAdTagUrl.args[0][2]).to.have.property('adXml', expectedVastXml);
     });
   });
+
+  describe('Ad tracking', function () {
+    it('should not listen for bid adjustments when caching is not configured', function () {
+      
+    });
+
+    it('should not modify the bid\'s adXml when the tracking config is omitted', function () {
+
+    });
+
+    it('should request a vast wrapper when only an ad url is provided', function () {
+
+    });
+
+    it('should request the addition of tracking nodes when an ad xml is provided', function () {
+
+    });
+  });
 });
