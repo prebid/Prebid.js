@@ -1,10 +1,11 @@
+import { isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
 const COOKIE_BASE_URL = 'https://abs.proxistore.com/v3/rtb/prebid/multi';
-const COOKIE_LESS_URL = 'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi';
+const COOKIE_LESS_URL =
+  'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi';
 
 function _createServerRequest(bidRequests, bidderRequest) {
   var sizeIds = [];
@@ -170,7 +171,7 @@ function interpretResponse(serverResponse, bidRequest) {
 }
 
 function _assignFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     // eslint-disable-next-line no-console
     console.log(bid.params.bidFloor);
     return bid.params.bidFloor ? bid.params.bidFloor : null;
@@ -181,11 +182,7 @@ function _assignFloor(bid) {
     size: '*',
   });
 
-  if (
-    utils.isPlainObject(floor) &&
-    !isNaN(floor.floor) &&
-    floor.currency === 'EUR'
-  ) {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
     return floor.floor;
   }
   return null;
@@ -196,6 +193,7 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
+  gvlid: PROXISTORE_VENDOR_ID,
 };
 
 registerBidder(spec);

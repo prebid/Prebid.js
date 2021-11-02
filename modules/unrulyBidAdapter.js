@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js'
+import { deepAccess, logError } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js'
 import {registerBidder} from '../src/adapters/bidderFactory.js'
 import {VIDEO, BANNER} from '../src/mediaTypes.js'
@@ -41,7 +41,7 @@ const addBidFloorInfo = (validBid) => {
 };
 
 const RemoveDuplicateSizes = (validBid) => {
-  let bannerMediaType = utils.deepAccess(validBid, 'mediaTypes.banner');
+  let bannerMediaType = deepAccess(validBid, 'mediaTypes.banner');
   if (bannerMediaType) {
     let seenSizes = {};
     let newSizesArray = [];
@@ -87,12 +87,12 @@ const handleBidResponseByMediaType = (bids) => {
 
   bids.forEach((bid) => {
     let parsedBidResponse;
-    let bidMediaType = utils.deepAccess(bid, 'meta.mediaType');
+    let bidMediaType = deepAccess(bid, 'meta.mediaType');
     if (bidMediaType && bidMediaType.toLowerCase() === 'banner') {
       bid.mediaType = BANNER;
       parsedBidResponse = handleBannerBid(bid);
     } else if (bidMediaType && bidMediaType.toLowerCase() === 'video') {
-      let context = utils.deepAccess(bid, 'meta.videoContext');
+      let context = deepAccess(bid, 'meta.videoContext');
       bid.mediaType = VIDEO;
       if (context === 'instream') {
         parsedBidResponse = handleInStreamBid(bid);
@@ -111,7 +111,7 @@ const handleBidResponseByMediaType = (bids) => {
 
 const handleBannerBid = (bid) => {
   if (!bid.ad) {
-    utils.logError(new Error('UnrulyBidAdapter: Missing ad config.'));
+    logError(new Error('UnrulyBidAdapter: Missing ad config.'));
     return;
   }
 
@@ -120,7 +120,7 @@ const handleBannerBid = (bid) => {
 
 const handleInStreamBid = (bid) => {
   if (!(bid.vastUrl || bid.vastXml)) {
-    utils.logError(new Error('UnrulyBidAdapter: Missing vastUrl or vastXml config.'));
+    logError(new Error('UnrulyBidAdapter: Missing vastUrl or vastXml config.'));
     return;
   }
 
@@ -128,19 +128,19 @@ const handleInStreamBid = (bid) => {
 };
 
 const handleOutStreamBid = (bid) => {
-  const hasConfig = !!utils.deepAccess(bid, 'ext.renderer.config');
-  const hasSiteId = !!utils.deepAccess(bid, 'ext.renderer.config.siteId');
+  const hasConfig = !!deepAccess(bid, 'ext.renderer.config');
+  const hasSiteId = !!deepAccess(bid, 'ext.renderer.config.siteId');
 
   if (!hasConfig) {
-    utils.logError(new Error('UnrulyBidAdapter: Missing renderer config.'));
+    logError(new Error('UnrulyBidAdapter: Missing renderer config.'));
     return;
   }
   if (!hasSiteId) {
-    utils.logError(new Error('UnrulyBidAdapter: Missing renderer siteId.'));
+    logError(new Error('UnrulyBidAdapter: Missing renderer siteId.'));
     return;
   }
 
-  const exchangeRenderer = utils.deepAccess(bid, 'ext.renderer');
+  const exchangeRenderer = deepAccess(bid, 'ext.renderer');
 
   configureUniversalTag(exchangeRenderer, bid.requestId);
   configureRendererQueue();
@@ -152,7 +152,7 @@ const handleOutStreamBid = (bid) => {
     bid,
     {
       renderer: rendererInstance,
-      adUnitCode: utils.deepAccess(bid, 'ext.adUnitCode')
+      adUnitCode: deepAccess(bid, 'ext.adUnitCode')
     }
   );
 
@@ -165,8 +165,8 @@ const handleOutStreamBid = (bid) => {
 };
 
 const isMediaTypesValid = (bid) => {
-  const mediaTypeVideoData = utils.deepAccess(bid, 'mediaTypes.video');
-  const mediaTypeBannerData = utils.deepAccess(bid, 'mediaTypes.banner');
+  const mediaTypeVideoData = deepAccess(bid, 'mediaTypes.video');
+  const mediaTypeBannerData = deepAccess(bid, 'mediaTypes.banner');
   let isValid = !!(mediaTypeVideoData || mediaTypeBannerData);
   if (isValid && mediaTypeVideoData) {
     isValid = isVideoMediaTypeValid(mediaTypeVideoData);
@@ -194,7 +194,7 @@ export const adapter = {
   code: 'unruly',
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
-    let siteId = utils.deepAccess(bid, 'params.siteId');
+    let siteId = deepAccess(bid, 'params.siteId');
     let isBidValid = siteId && isMediaTypesValid(bid);
     return !!isBidValid;
   },
@@ -202,7 +202,7 @@ export const adapter = {
   buildRequests: function (validBidRequests, bidderRequest) {
     let endPoint = 'https://targeting.unrulymedia.com/unruly_prebid';
     if (validBidRequests[0]) {
-      endPoint = utils.deepAccess(validBidRequests[0], 'params.endpoint') || endPoint;
+      endPoint = deepAccess(validBidRequests[0], 'params.endpoint') || endPoint;
     }
 
     const url = endPoint;
