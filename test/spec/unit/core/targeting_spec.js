@@ -463,6 +463,12 @@ describe('targeting tests', function () {
 
     describe('targetingControls.allowZeroCpmBids', function () {
       let bid4;
+      let bidderSettingsStorage;
+
+      before(function() {
+        bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
+      });
+
       beforeEach(function () {
         bid4 = utils.deepClone(bid1);
         bid4.adserverTargeting = {
@@ -472,12 +478,12 @@ describe('targeting tests', function () {
         };
         bid4.bidder = bid4.bidderCode = 'appnexus';
         bid4.cpm = 0;
-        config.resetConfig();
         bidsReceived = [bid4];
       });
 
       after(function() {
         bidsReceived = [bid1, bid2, bid3];
+        $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
       })
 
       it('targeting should not include a 0 cpm by default', function() {
@@ -487,8 +493,12 @@ describe('targeting tests', function () {
       });
 
       it('targeting should allow a 0 cpm with targetingControls.allowZeroCpmBids set to true', function () {
-        config.setConfig({ targetingControls: { allowZeroCpmBids: true } });
-        debugger; //eslint-disable-line
+        $$PREBID_GLOBAL$$.bidderSettings = {
+          standard: {
+            allowZeroCpmBids: true
+          }
+        };
+
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_pb', 'hb_bidder', 'hb_adid', 'hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus');
         expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.0')

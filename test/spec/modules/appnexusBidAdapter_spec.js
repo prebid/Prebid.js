@@ -1004,13 +1004,16 @@ describe('AppNexusAdapter', function () {
 
   describe('interpretResponse', function () {
     let bfStub;
+    let bidderSettingsStorage;
+
     before(function() {
       bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
+      bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
     });
 
     after(function() {
       bfStub.restore();
-      config.resetConfig();
+      $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
     });
 
     let response = {
@@ -1095,19 +1098,26 @@ describe('AppNexusAdapter', function () {
       let zeroCpmResponse = deepClone(response);
       zeroCpmResponse.tags[0].ads[0].cpm = 0;
 
-      let bidderRequest;
+      let bidderRequest = {
+        bidderCode: 'appnexus'
+      };
 
       let result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
 
     it('should allow 0 cpm bids if allowZeroCpmBids setConfig is true', function () {
-      config.setConfig({ targetingControls: { allowZeroCpmBids: true } });
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        appnexus: {
+          allowZeroCpmBids: true
+        }
+      };
 
       let zeroCpmResponse = deepClone(response);
       zeroCpmResponse.tags[0].ads[0].cpm = 0;
 
       let bidderRequest = {
+        bidderCode: 'appnexus',
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
