@@ -135,7 +135,6 @@ export const spec = {
       payload.users_uid = validBidRequests[0].userIdAsEids;
     }
 
-    // TODO: blocklist : check data ?
     // Blocklist
     if (validBidRequests[0].params.blocklist) {
       payload.blocklist = validBidRequests[0].params.blocklist;
@@ -264,15 +263,6 @@ export const spec = {
     if (serverResponses.length > 0) {
       if (syncOptions.iframeEnabled) {
         // TODO GDPR ?
-        // let syncUrl = USER_SYNC_URL;
-
-        // if (gdprConsent) {
-        //   syncUrl += '?gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-        //   syncUrl += '?consent=' + encodeURIComponent(gdprConsent.consentString || '');
-        // }
-        // if (uspConsent) {
-        //   syncUrl += '?usp=' + uspConsent;
-        // }
 
         return {
           type: 'iframe',
