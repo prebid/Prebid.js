@@ -262,8 +262,6 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (serverResponses.length > 0) {
       if (syncOptions.iframeEnabled) {
-        // TODO GDPR ?
-
         return {
           type: 'iframe',
           url: USER_SYNC_URL
