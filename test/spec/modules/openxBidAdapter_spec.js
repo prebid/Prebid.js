@@ -1102,6 +1102,11 @@ describe('OpenxAdapter', function () {
         mwOpenLinkId: '1111-mwopenlinkid',
         dapId: '1111-dapId',
         amxId: '1111-amxid',
+        kpuid: '1111-kpuid',
+        publinkId: '1111-publinkid',
+        naveggId: '1111-naveggid',
+        imuid: '1111-imuid',
+        adtelligentId: '1111-adtelligentid'
       };
 
       // generates the same set of tests for each id provider
