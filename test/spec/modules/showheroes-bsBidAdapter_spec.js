@@ -9,6 +9,8 @@ const bidderRequest = {
   }
 }
 
+const adomain = ['showheroes.com'];
+
 const gdpr = {
   'gdprConsent': {
     'consentString': 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
@@ -301,6 +303,7 @@ describe('shBidAdapter', function () {
       'size': {'width': 640, 'height': 480},
       'vastTag': 'https:\/\/video-library.stage.showheroes.com\/commercial\/wrapper?player_id=47427aa0-f11a-4d24-abca-1295a46a46cd&ad_bidder=showheroes-bs&master_shadt=1&description_url=https%3A%2F%2Fbid-service.stage.showheroes.com%2Fvast%2Fad%2Fcache%2F4840b920-40e1-4e09-9231-60bbf088c8d6',
       'vastXml': vastXml,
+      'adomain': adomain,
     };
 
     const responseVideo = {
@@ -340,6 +343,9 @@ describe('shBidAdapter', function () {
           'ttl': 300,
           'adResponse': {
             'content': vastXml
+          },
+          'meta': {
+            'advertiserDomains': adomain
           }
         }
       ]

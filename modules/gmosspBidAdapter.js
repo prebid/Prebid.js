@@ -1,10 +1,12 @@
+import { getDNT, getBidIdParameter, tryAppendQueryString, isEmpty, createTrackPixelHtml, logError, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'gmossp';
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
+const storage = getStorageManager();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -31,7 +33,8 @@ export const spec = {
 
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
     const cur = getCurrencyType();
-    const dnt = utils.getDNT() ? '1' : '0';
+    const dnt = getDNT() ? '1' : '0';
+    const imuid = storage.getCookie('_im_uid.1000283') || '';
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let queryString = '';
@@ -40,16 +43,17 @@ export const spec = {
       const tid = request.transactionId;
       const bid = request.bidId;
       const ver = '$prebid.version$';
-      const sid = utils.getBidIdParameter('sid', request.params);
+      const sid = getBidIdParameter('sid', request.params);
 
-      queryString = utils.tryAppendQueryString(queryString, 'tid', tid);
-      queryString = utils.tryAppendQueryString(queryString, 'bid', bid);
-      queryString = utils.tryAppendQueryString(queryString, 'ver', ver);
-      queryString = utils.tryAppendQueryString(queryString, 'sid', sid);
-      queryString = utils.tryAppendQueryString(queryString, 'url', urlInfo.url);
-      queryString = utils.tryAppendQueryString(queryString, 'ref', urlInfo.ref);
-      queryString = utils.tryAppendQueryString(queryString, 'cur', cur);
-      queryString = utils.tryAppendQueryString(queryString, 'dnt', dnt);
+      queryString = tryAppendQueryString(queryString, 'tid', tid);
+      queryString = tryAppendQueryString(queryString, 'bid', bid);
+      queryString = tryAppendQueryString(queryString, 'ver', ver);
+      queryString = tryAppendQueryString(queryString, 'sid', sid);
+      queryString = tryAppendQueryString(queryString, 'im_uid', imuid);
+      queryString = tryAppendQueryString(queryString, 'url', urlInfo.url);
+      queryString = tryAppendQueryString(queryString, 'ref', urlInfo.ref);
+      queryString = tryAppendQueryString(queryString, 'cur', cur);
+      queryString = tryAppendQueryString(queryString, 'dnt', dnt);
 
       bidRequests.push({
         method: 'GET',
@@ -69,17 +73,17 @@ export const spec = {
   interpretResponse: function (bidderResponse, requests) {
     const res = bidderResponse.body;
 
-    if (utils.isEmpty(res)) {
+    if (isEmpty(res)) {
       return [];
     }
 
     try {
       res.imps.forEach(impTracker => {
-        const tracker = utils.createTrackPixelHtml(impTracker);
+        const tracker = createTrackPixelHtml(impTracker);
         res.ad += tracker;
       });
     } catch (error) {
-      utils.logError('Error appending tracking pixel', error);
+      logError('Error appending tracking pixel', error);
     }
 
     const bid = {
@@ -95,7 +99,7 @@ export const spec = {
     };
 
     if (res.adomains) {
-      utils.deepSetValue(bid, 'meta.advertiserDomains', Array.isArray(res.adomains) ? res.adomains : [res.adomains]);
+      deepSetValue(bid, 'meta.advertiserDomains', Array.isArray(res.adomains) ? res.adomains : [res.adomains]);
     }
 
     return [bid];

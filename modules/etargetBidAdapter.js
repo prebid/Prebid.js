@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepSetValue, isFn, isPlainObject } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -29,6 +29,7 @@ export const spec = {
     var request = [];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     var lastCountry = 'sk';
+    var floors = [];
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
       if (countryMap[bid.params.country]) {
@@ -37,18 +38,25 @@ export const spec = {
       reqParams = bid.params;
       reqParams.transactionId = bid.transactionId;
       request.push(formRequestUrl(reqParams));
+      floors[i] = getBidFloor(bid);
     }
 
     request.unshift('https://' + lastCountry + '.search.etargetnet.com/hb/?hbget=1');
     netRevenue = 'net';
 
-    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
-      gdprObject = {
-        gdpr: bidderRequest.gdprConsent.gdprApplies,
-        gdpr_consent: bidderRequest.gdprConsent.consentString
-      };
-      request.push('gdpr=' + gdprObject.gdpr);
-      request.push('gdpr_consent=' + gdprObject.gdpr_consent);
+    if (bidderRequest) {
+      if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+        gdprObject = {
+          gdpr: bidderRequest.gdprConsent.gdprApplies,
+          gdpr_consent: bidderRequest.gdprConsent.consentString
+        };
+        request.push('gdpr=' + gdprObject.gdpr);
+        request.push('gdpr_consent=' + gdprObject.gdpr_consent);
+      }
+      bidderRequest.metaData = getMetaData();
+      if (floors.length > 0) {
+        bidderRequest.floors = floors;
+      }
     }
 
     return {
@@ -57,7 +65,6 @@ export const spec = {
       data: bidderRequest,
       bids: validBidRequests,
       netRevenue: netRevenue,
-      metaData: getMetaData(),
       bidder: 'etarget',
       gdpr: gdprObject
     };
@@ -137,9 +144,8 @@ export const spec = {
           bidObject.gdpr = bidRequest.gdpr.gdpr;
           bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
         }
-
         if (bid.adomain) {
-          utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
+          deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
         }
         bidRespones.push(bidObject);
       }
@@ -158,4 +164,18 @@ export const spec = {
     }
   }
 };
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return null;
+  }
+  let floor = bid.getFloor({
+    currency: 'EUR',
+    mediaType: '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor)) {
+    return floor.floor;
+  }
+  return null;
+}
 registerBidder(spec);

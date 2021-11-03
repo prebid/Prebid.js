@@ -1,3 +1,4 @@
+import { deepAccess, isEmpty, isStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
@@ -79,6 +80,11 @@ export const spec = {
         if (/^[0-9.\-]+,[0-9.\-]+$/.test(geo)) {
           params['geo'] = geo;
         }
+      }
+
+      const idlEnv = deepAccess(bid, 'userId.idl_env')
+      if (!isEmpty(idlEnv) && isStr(idlEnv)) {
+        params['idl_env'] = idlEnv
       }
 
       requests.push({
