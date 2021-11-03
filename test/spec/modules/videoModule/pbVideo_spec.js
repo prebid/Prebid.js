@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule/index.js';
-import CONSTANTS from '../../../../src/constants.json';
+import CONSTANTS from 'src/constants.json';
 
 let ortbParamsMock;
 let videoCoreMock;
