@@ -13,7 +13,7 @@ const BIDDER_VERSION = '5.3';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
-const adUnitsCalled = {};
+// const adUnitsCalled = {};
 const adSizesCalled = {};
 const pageView = {};
 var consentApiVersion;
@@ -291,14 +291,6 @@ const mapImpression = slot => {
   const slotSize = slot.sizes.length ? slot.sizes.reduce((prev, next) => prev[0] * prev[1] <= next[0] * next[1] ? next : prev).join('x') : '1x1';
   adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] += 1 : 1;
   ext.data = Object.assign({ pbsize: `${slotSize}_${adSizesCalled[slotSize]}` }, ext.data);
-
-  //if (!adUnitsCalled[adUnitCode]) {
-    // this is a new adunit - assign & save pbsize
-  //  adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] += 1 : 1;
-  //  adUnitsCalled[adUnitCode] = `${slotSize}_${adSizesCalled[slotSize]}`
-  //}
-
-  //ext.data = Object.assign({ pbsize: adUnitsCalled[adUnitCode] }, ext.data);
 
   const imp = {
     id: id && siteId ? id : 'bidid-' + bidId,
