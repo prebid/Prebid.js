@@ -1852,7 +1852,7 @@ describe('adapterManager tests', function () {
         bidRequests.forEach(bidRequest => {
           bidRequest.bids.forEach(bid => {
             bid.sizes.forEach(size => {
-              expect(validSizeMap[size]).to.equal(true);
+              expect(validSizeMap[size.toString()]).to.equal(true);
             });
           });
         });
