@@ -34,6 +34,11 @@ describe('正規表現にマッチしている', () => {
     const adUnitCode = getAdUnitCodeBeforeReplication(slots, 'browsi_ad_0_ai_1_rc_0')
     expect(adUnitCode).to.equal('div-gpt-ad-1629864618640-0')
   })
+
+  it('browsi枠ではない枠codeは変化しない', () => {
+    const adUnitCode = getAdUnitCodeBeforeReplication(slots, 'div-gpt-ad-1629864618640-0')
+    expect(adUnitCode).to.equal('div-gpt-ad-1629864618640-0')
+  })
 })
 
 describe('fluct analytics adapter', () => {

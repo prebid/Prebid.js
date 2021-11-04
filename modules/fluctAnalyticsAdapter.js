@@ -220,7 +220,7 @@ let fluctAnalyticsAdapter = Object.assign(
 
 /**
  * GPT slotから共通のpathを持つ、browsi_ad_ではないのadUnitCodeを返す
- * @param {Object} slots
+ * @param {Object.<string, string>} slots
  * @param {string} adUnitCode
  * @returns {string}
  */
@@ -249,21 +249,6 @@ export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
 const getAdUnitMap = () => googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
 
 /**
- * @param {AdUnit} adUnit
- * @returns {AdUnit}
- */
-const modifyBrowsiAdUnit = (adUnit) => {
-  if (!isBrowsiDivId(adUnit.code)) return adUnit
-  return {
-    ...adUnit,
-    adUnitCode: getAdUnitCodeBeforeReplication(getAdUnitMap(), adUnit.code),
-    analytics: adUnit.analytics ?? find(pbjs.adUnits, _adUnit => _adUnit.code === adUnit.code).analytics,
-    bids: undefined,
-    originalAdUnitCode: adUnit.code,
-  }
-}
-
-/**
  * @param {string|undefined} adUnitCode
  * @returns {string|undefined}
  */
@@ -289,7 +274,11 @@ const modifyBrowsiAuctionId = (auctionId, adUnits) => {
  */
 const sendMessage = (auctionId) => {
   let { adUnits, auctionEnd, auctionStatus, bids } = cache.auctions[auctionId]
-  adUnits = adUnits.map(adUnit => modifyBrowsiAdUnit(adUnit))
+  adUnits = adUnits.map(adUnit => ({
+    ...adUnit,
+    analytics: adUnit.analytics ?? find(pbjs.adUnits, _adUnit => _adUnit.code === adUnit.code).analytics,
+    bids: undefined,
+  }))
 
   /**
    * @param {string} adUnitCode
@@ -300,6 +289,8 @@ const sendMessage = (auctionId) => {
     const analytics = find(adUnits, adUnit => adUnit.code === adUnitCode)?.analytics
     return find(analytics ?? [], obj => obj.bidder === bidder)?.dwid ?? null
   }
+
+  const slots = getAdUnitMap()
 
   let payload = {
     auctionId: modifyBrowsiAuctionId(auctionId, adUnits),
@@ -315,7 +306,7 @@ const sendMessage = (auctionId) => {
         status,
         adId,
         adUrl,
-        adUnitCode,
+        adUnitCode: getAdUnitCodeBeforeReplication(slots, adUnitCode),
         bidder,
         netRevenue,
         cpm,
