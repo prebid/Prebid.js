@@ -1,9 +1,8 @@
-import * as utils from '../src/utils.js';
+import { triggerPixel, parseSizesInput, deepAccess, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM as VIDEO_INSTREAM } from '../src/video.js';
-const { parseSizesInput, logError, deepAccess } = utils;
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
 const BASE_URL = 'https://t.visx.net';
@@ -169,16 +168,21 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
-    if (syncOptions.pixelEnabled) {
-      var query = [];
-      if (gdprConsent) {
-        if (gdprConsent.consentString) {
-          query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
-        }
-        query.push('gdpr_applies=' + encodeURIComponent(
-          (typeof gdprConsent.gdprApplies === 'boolean')
-            ? Number(gdprConsent.gdprApplies) : 1));
+    var query = [];
+    if (gdprConsent) {
+      if (gdprConsent.consentString) {
+        query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
       }
+      query.push('gdpr_applies=' + encodeURIComponent(
+        (typeof gdprConsent.gdprApplies === 'boolean')
+          ? Number(gdprConsent.gdprApplies) : 1));
+    }
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: buildUrl(ADAPTER_SYNC_PATH) + '?iframe=1' + (query.length ? '&' + query.join('&') : '')
+      }];
+    } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
         url: buildUrl(ADAPTER_SYNC_PATH) + (query.length ? '?' + query.join('&') : '')
@@ -188,18 +192,18 @@ export const spec = {
   onSetTargeting: function(bid) {
     // Call '/track/pending' with the corresponding bid.requestId
     if (bid.ext && bid.ext.events && bid.ext.events.pending) {
-      utils.triggerPixel(bid.ext.events.pending);
+      triggerPixel(bid.ext.events.pending);
     }
   },
   onBidWon: function(bid) {
     // Call '/track/win' with the corresponding bid.requestId
     if (bid.ext && bid.ext.events && bid.ext.events.win) {
-      utils.triggerPixel(bid.ext.events.win);
+      triggerPixel(bid.ext.events.win);
     }
   },
   onTimeout: function(timeoutData) {
     // Call '/track/bid_timeout' with timeout data
-    utils.triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '?data=' + JSON.stringify(timeoutData));
+    triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '//' + JSON.stringify(timeoutData));
   }
 };
 
@@ -210,7 +214,7 @@ function buildUrl(path) {
 function makeBanner(bannerParams) {
   const bannerSizes = bannerParams && bannerParams.sizes;
   if (bannerSizes) {
-    const sizes = utils.parseSizesInput(bannerSizes);
+    const sizes = parseSizesInput(bannerSizes);
     if (sizes.length) {
       const format = sizes.map(size => {
         const [ width, height ] = size.split('x');
@@ -229,9 +233,9 @@ function makeVideo(videoParams = {}) {
     .reduce((result, param) => {
       result[param] = videoParams[param];
       return result;
-    }, { w: utils.deepAccess(videoParams, 'playerSize.0.0'), h: utils.deepAccess(videoParams, 'playerSize.0.1') });
+    }, { w: deepAccess(videoParams, 'playerSize.0.0'), h: deepAccess(videoParams, 'playerSize.0.1') });
 
-  if (video.w && video.h && video.mimes) {
+  if (video.w && video.h) {
     return video;
   }
 }
@@ -345,18 +349,6 @@ function _isValidVideoBid(bid, logErrors = false) {
   if (!(videoMediaType.playerSize && parseSizesInput(deepAccess(videoMediaType, 'playerSize', [])))) {
     if (logErrors) {
       logError(LOG_ERROR_MESS.videoMissing + 'playerSize');
-    }
-    result = false;
-  }
-  if (!videoMediaType.mimes) {
-    if (logErrors) {
-      logError(LOG_ERROR_MESS.videoMissing + 'mimes');
-    }
-    result = false;
-  }
-  if (!videoMediaType.protocols) {
-    if (logErrors) {
-      logError(LOG_ERROR_MESS.videoMissing + 'protocols');
     }
     result = false;
   }

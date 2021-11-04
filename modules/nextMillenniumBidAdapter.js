@@ -1,5 +1,5 @@
+import { isStr, _each, getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nextMillennium';
@@ -12,32 +12,41 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     return !!(
-      bid.params.placement_id && utils.isStr(bid.params.placement_id)
+      bid.params.placement_id && isStr(bid.params.placement_id)
     );
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
     const requests = [];
 
-    utils._each(validBidRequests, function(bid) {
+    _each(validBidRequests, function(bid) {
       const postBody = {
         'id': bid.auctionId,
         'ext': {
           'prebid': {
             'storedrequest': {
-              'id': utils.getBidIdParameter('placement_id', bid.params)
+              'id': getBidIdParameter('placement_id', bid.params)
             }
           }
         }
       }
-      const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
 
-      if (gdprConsent) {
+      const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+      const uspConsent = bidderRequest && bidderRequest.uspConsent
+
+      if (gdprConsent || uspConsent) {
+        postBody.regs = { ext: {} }
+
+        if (uspConsent) {
+          postBody.regs.ext.us_privacy = uspConsent;
+        }
         if (typeof gdprConsent.gdprApplies !== 'undefined') {
-          postBody.gdprApplies = !!gdprConsent.gdprApplies;
+          postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
         }
         if (typeof gdprConsent.consentString !== 'undefined') {
-          postBody.consentString = gdprConsent.consentString;
+          postBody.user = {
+            ext: { consent: gdprConsent.consentString }
+          }
         }
       }
 
@@ -60,8 +69,8 @@ export const spec = {
     const response = serverResponse.body;
     const bidResponses = [];
 
-    utils._each(response.seatbid, (resp) => {
-      utils._each(resp.bid, (bid) => {
+    _each(response.seatbid, (resp) => {
+      _each(resp.bid, (bid) => {
         bidResponses.push({
           requestId: bidRequest.bidId,
           cpm: bid.price,

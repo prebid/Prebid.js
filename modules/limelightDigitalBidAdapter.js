@@ -1,7 +1,7 @@
+import { logMessage, groupBy, uniques, flatten, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'limelightDigital';
 
@@ -51,10 +51,10 @@ export const spec = {
       winTop = window.top;
       winTop.location.toString();
     } catch (e) {
-      utils.logMessage(e);
+      logMessage(e);
       winTop = window;
     }
-    const placements = utils.groupBy(validBidRequests.map(bidRequest => buildPlacement(bidRequest)), 'host')
+    const placements = groupBy(validBidRequests.map(bidRequest => buildPlacement(bidRequest)), 'host')
     return Object.keys(placements)
       .map(host => buildRequest(winTop, host, placements[host].map(placement => placement.adUnit)));
   },
@@ -92,6 +92,26 @@ export const spec = {
     }
     return bidResponses;
   },
+
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const syncs = serverResponses.map(response => response.body).reduce(flatten, [])
+      .map(response => deepAccess(response, 'ext.sync')).filter(Boolean);
+    const iframeSyncUrls = !syncOptions.iframeEnabled ? [] : syncs.map(sync => sync.iframe).filter(Boolean)
+      .filter(uniques).map(url => {
+        return {
+          type: 'iframe',
+          url: url
+        }
+      });
+    const pixelSyncUrls = !syncOptions.pixelEnabled ? [] : syncs.map(sync => sync.pixel).filter(Boolean)
+      .filter(uniques).map(url => {
+        return {
+          type: 'image',
+          url: url
+        }
+      });
+    return [iframeSyncUrls, pixelSyncUrls].reduce(flatten, []);
+  }
 };
 
 registerBidder(spec);
@@ -125,7 +145,7 @@ function buildPlacement(bidRequest) {
         break;
     }
   }
-  sizes = (sizes || []).concat(bidRequest.sizes || []).filter(utils.uniques);
+  sizes = (sizes || []).concat(bidRequest.sizes || []);
   return {
     host: bidRequest.params.host,
     adUnit: {

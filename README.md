@@ -59,6 +59,8 @@ module.exports = {
           loader: 'babel-loader',
           // presets and plugins for Prebid.js must be manually specified separate from your other babel rule.
           // this can be accomplished by requiring prebid's .babelrc.js file (requires Babel 7 and Node v8.9.0+)
+          // as of Prebid 6, babelrc.js only targets modern browsers. One can change the targets and build for
+          // older browsers if they prefer, but integration tests on ie11 were removed in Prebid.js 6.0
           options: require('prebid.js/.babelrc.js')
         }
       }
@@ -314,7 +316,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 
 ### Supported Browsers
 
-Prebid.js is supported on IE11 and modern browsers.
+Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not Opera Mini; not IE11. 
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

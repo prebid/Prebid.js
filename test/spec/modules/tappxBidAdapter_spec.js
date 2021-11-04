@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 import { spec } from 'modules/tappxBidAdapter.js';
-import { _checkParamDataType, _getHostInfo } from '../../../modules/tappxBidAdapter.js';
+import { _checkParamDataType, _getHostInfo, _extractPageUrl } from '../../../modules/tappxBidAdapter.js';
 
 const c_BIDREQUEST = {
   data: {
@@ -70,7 +70,10 @@ const c_SERVERRESPONSE_B = {
             adm: "<!-- Tappx Test AD :: 320x480 --><a href='http://www.tappx.com' target=\"_blank\">\t<img src='https://testing.ssp.tappx.com/zcdn/creatives/interstitial320x480.gif'></a>",
             w: 320,
             h: 480,
-            lurl: 'http://testing.ssp.tappx.com/rtb/RTBv2Loss?id=3811165568213389257&ep=ZZ1234PBJS&au=test&bu=localhost&sz=320x480&pu=0.005&pt=0.01&cid=&crid=&adv=&aid=${AUCTION_ID}&bidid=${AUCTION_BID_ID}&impid=${AUCTION_IMP_ID}&sid=${AUCTION_SEAT_ID}&adid=${AUCTION_AD_ID}&ap=${AUCTION_PRICE}&cur=${AUCTION_CURRENCY}&mbr=${AUCTION_MBR}&l=${AUCTION_LOSS}',
+            lurl: 'https:\/\/ssp.api.tappx.com\/burlURL',
+            burl: 'https:\/\/ssp.api.tappx.com\/burlURL',
+            nurl: 'https:\/\/ssp.api.tappx.com\/nurllURL',
+            dealId: 'b21d0704-9688-4e46-81d9-41de1050fef7',
             cid: '01744fbb521e9fb10ffea926190effea',
             crid: 'a13cf884e66e7c660afec059c89d98b6',
             adomain: [
@@ -98,7 +101,10 @@ const c_SERVERRESPONSE_V = {
             impid: 1,
             price: 0.05,
             adm: "<?xml version='1.0'?><VAST version='2.0'><Ad id='4381'><InLine><AdSystem>Tappx<\/AdSystem><AdTitle>Tappx<\/AdTitle><Description \/><Impression><![CDATA[https:\/\/ssp.api.tappx.com\/vasttag\/tracker\/impression?tag=VZ12TESTCTV]]><\/Impression><Error><![CDATA[https:\/\/ssp.api.tappx.com\/vasttag\/tracker\/error?tag=VZ12TESTCTV]]><\/Error><Creatives><Creative AdID='4381'><Linear><Duration>00:00:22<\/Duration><TrackingEvents><Tracking event='start'><![CDATA[https:\/\/ssp.api.tappx.com\/vasttag\/tracker\/start?tag=VZ12TESTCTV]]><\/Tracking><Tracking event='pause'><![CDATA[https:\/\/ssp.api.tappx.com\/vasttag\/tracker\/pause?tag=VZ12TESTCTV]]><\/Tracking><Tracking event='complete'><![CDATA[https:\/\/ssp.api.tappx.com\/vasttag\/tracker\/complete?tag=VZ12TESTCTV]]><\/Tracking><Tracking event='mute'><![CDATA[https:\/\/ssp.api.tappx.com\/vasttag\/tracker\/mute?tag=VZ12TESTCTV]]><\/Tracking><Tracking event='firstQuartile'><![CDATA[https:\/\/ssp.api.tappx.com\/vasttag\/tracker\/firstquartile?tag=VZ12TESTCTV]]><\/Tracking><Tracking event='midpoint'><![CDATA[https:\/\/ssp.api.tappx.com\/vasttag\/tracker\/midpoint?tag=VZ12TESTCTV]]><\/Tracking><Tracking event='thirdQuartile'><![CDATA[https:\/\/ssp.api.tappx.com\/vasttag\/tracker\/thirdquartile?tag=VZ12TESTCTV]]><\/Tracking><\/TrackingEvents><VideoClicks><ClickThrough id='ang'><![CDATA[https:\/\/play.google.com\/store\/apps\/details?id=com.tappx.flipnsave.battery&hl=en]]><\/ClickThrough><ClickTracking><![CDATA[https:\/\/ssp.api.tappx.com\/vasttag\/tracker\/click?tag=VZ12TESTCTV]]><\/ClickTracking><\/VideoClicks><MediaFiles><MediaFile delivery='progressive' type='video\/mp4' bitrate='763' width='640' height='480' scalable='true' maintainAspectRatio='true'><![CDATA[https:\/\/ssp.api.tappx.com\/zcdn\/videos\/flipnsave_01_low.mp4]]><\/MediaFile><\/MediaFiles><\/Linear><\/Creative><\/Creatives><\/InLine><\/Ad><\/VAST>",
-            'lurl': 'https:\/\/ssp.api.tappx.com\/rtb\/RTBv2Loss?id=5001829913749291152&ep=VZ12TESTCTV&au=test&bu=localhost&sz=6x6&pu=0.005&pt=0.01&cid=&crid=&adv=&aid=${AUCTION_ID}&bidid=${AUCTION_BID_ID}&impid=${AUCTION_IMP_ID}&sid=${AUCTION_SEAT_ID}&adid=${AUCTION_AD_ID}&ap=${AUCTION_PRICE}&cur=${AUCTION_CURRENCY}&mbr=${AUCTION_MBR}&l=${AUCTION_LOSS}',
+            lurl: 'https:\/\/ssp.api.tappx.com\/lurlURL',
+            burl: 'https:\/\/ssp.api.tappx.com\/burlURL',
+            nurl: 'https:\/\/ssp.api.tappx.com\/nurllURL',
+            dealId: 'b21d0704-9688-4e46-81d9-41de1050fef7',
             cid: '01744fbb521e9fb10ffea926190effea',
             crid: 'a13cf884e66e7c660afec059c89d98b6',
             adomain: [
@@ -240,6 +246,27 @@ describe('Tappx bid adapter', function () {
     it('should properly build a video outstream request', function () {
       delete validBidRequests_Voutstream[0].mediaTypes.banner
       validBidRequests_Voutstream[0].mediaTypes.video = {};
+      validBidRequests_Voutstream[0].mediaTypes.video.playerSize = [640, 480];
+      validBidRequests_Voutstream[0].mediaTypes.video.context = 'outstream';
+      validBidRequests_Voutstream[0].mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
+
+      bidderRequest_VOutstream.bids.mediaTypes.context = 'outstream';
+
+      const request = spec.buildRequests(validBidRequests_Voutstream, bidderRequest_VOutstream);
+      expect(request[0].url).to.match(/^(http|https):\/\/(.*)\.tappx\.com\/.+/);
+      expect(request[0].method).to.equal('POST');
+
+      const data = JSON.parse(request[0].data);
+      expect(data.site).to.not.equal(null);
+      expect(data.imp).to.have.lengthOf(1);
+      expect(data.imp[0].bidfloor, data).to.not.be.null;
+      expect(data.imp[0].video).to.not.equal(null);
+    });
+
+    it('should properly create video rewarded request', function () {
+      delete validBidRequests_Voutstream[0].mediaTypes.banner
+      validBidRequests_Voutstream[0].mediaTypes.video = {};
+      validBidRequests_Voutstream[0].mediaTypes.video.rewarded = 1;
       validBidRequests_Voutstream[0].mediaTypes.video.playerSize = [640, 480];
       validBidRequests_Voutstream[0].mediaTypes.video.context = 'outstream';
       validBidRequests_Voutstream[0].mediaTypes.video.mimes = [ 'video/mp4', 'application/javascript' ];
@@ -441,6 +468,15 @@ describe('Tappx bid adapter', function () {
       expect(_checkParamDataType('Wrong bool', 10, 'boolean')).to.be.undefined;
       expect(_checkParamDataType('Wrong number', 'one', 'number')).to.be.undefined;
       expect(_checkParamDataType('Wrong array', false, 'array')).to.be.undefined;
+    });
+  })
+
+  describe('_extractPageUrl tests', function() {
+    let validBidRequests = c_VALIDBIDREQUESTS;
+    let bidderRequest = c_BIDDERREQUEST_B;
+    it('should return the Domain of the site', function () {
+      validBidRequests[0].params.domainUrl = 'testUrl.com';
+      assert.isString(_extractPageUrl(validBidRequests, bidderRequest));
     });
   })
 });
