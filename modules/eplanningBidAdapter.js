@@ -1,4 +1,4 @@
-import { isEmpty, getWindowSelf, parseSizesInput } from '../src/utils.js';
+import { isEmpty, getWindowSelf, parseSizesInput, logInfo } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -221,6 +221,9 @@ function getSizesSortedByPriority(sizes) {
 
 function getSize(bid, first) {
   var arraySizes = bid.sizes && bid.sizes.length ? getSizesSortedByPriority(bid.sizes) : [];
+  logInfo('*** ' + arraySizes)
+  logInfo('*** ' + getSizesSortedByPriority(bid.sizes))
+  logInfo('*** ' + bid.sizes)
   if (arraySizes.length) {
     return first ? arraySizes[0] : arraySizes.join(',');
   } else {
