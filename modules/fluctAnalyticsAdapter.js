@@ -236,20 +236,27 @@ export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
 }
 
 /**
+ * 各adUnitCodeに対応したadUnitPathを取得する
+ * @returns {Object.<string, string>}
+ * @sample
+ * ```
+ * {
+ *   'div-gpt-ad-1629864618640-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
+ *   'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
+ * }
+ * ```
+ */
+const getAdUnitMap = () => googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
+
+/**
  * @param {AdUnit} adUnit
  * @returns {AdUnit}
  */
 const modifyBrowsiAdUnit = (adUnit) => {
   if (!isBrowsiDivId(adUnit.code)) return adUnit
-  // e.g.
-  // {
-  //   'div-gpt-ad-1629864618640-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
-  //   'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
-  // }
-  const slots = googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
   return {
     ...adUnit,
-    adUnitCode: getAdUnitCodeBeforeReplication(slots, adUnit.code),
+    adUnitCode: getAdUnitCodeBeforeReplication(getAdUnitMap(), adUnit.code),
     analytics: adUnit.analytics ?? find(pbjs.adUnits, _adUnit => _adUnit.code === adUnit.code).analytics,
     bids: undefined,
     originalAdUnitCode: adUnit.code,
@@ -333,7 +340,13 @@ const sendMessage = (auctionId) => {
 };
 
 window.addEventListener('browsiImpression', (data) => {
-  const auction = find(Object.values(cache.auctions), auction => auction.adUnitCodes.includes(data.detail.adUnit.code))
+  const adUnitCode = Object.entries(getAdUnitMap())
+    .reduce((prev, [code, path]) => {
+      return data.detail.adUnit === path && isBrowsiDivId(code)
+        ? code
+        : prev
+    }, '')
+  const auction = find(Object.values(cache.auctions), auction => auction.adUnitCodes.includes(adUnitCode))
   sendMessage(auction.auctionId)
 })
 
