@@ -279,7 +279,7 @@ const mapImpression = slot => {
     ext,
   };
 
-  // Check floorprices for this imp
+  // check floorprices for this imp
   if (typeof slot.getFloor === 'function') {
     var bannerFloor = 0;
     var nativeFloor = 0;
