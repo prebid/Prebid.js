@@ -194,17 +194,6 @@ let fluctAnalyticsAdapter = Object.assign(
         }
         break;
       }
-      // 全てnobid時発火しない
-      case CONSTANTS.EVENTS.SET_TARGETING: {
-        let setTargetingEvent = args
-        /** @type {Array<String>} */
-        let divIds = Object.keys(setTargetingEvent)
-        if (divIds.every(isBrowsiDivId)) {
-          let auctionId = find(Object.values(cache.auctions), auction => find(auction.adUnits, adUnit => divIds.includes(adUnit.code)))?.auctionId
-          sendMessage(auctionId)
-        }
-        break;
-      }
       case CONSTANTS.EVENTS.BID_WON: {
         /** @type {Bid} */
         let bidWonEvent = args
@@ -216,9 +205,11 @@ let fluctAnalyticsAdapter = Object.assign(
           bidWon: true,
           timeout: false,
         })
-        cache.timeouts[auctionId] = setTimeout(() => {
-          sendMessage(auctionId);
-        }, pbjs.getConfig().bidderTimeout || 3000);
+        if (!isBrowsiAuction(auctionId)) {
+          cache.timeouts[auctionId] = setTimeout(() => {
+            sendMessage(auctionId);
+          }, pbjs.getConfig().bidderTimeout || 3000);
+        }
         break;
       }
       default:
@@ -341,10 +332,10 @@ const sendMessage = (auctionId) => {
   ajax(url, () => utils.logInfo(`[sendMessage] ${Date.now()} :`, payload), JSON.stringify(payload), { contentType: 'application/json', method: 'POST' });
 };
 
-// window.addEventListener('browsiImpression', (data) => {
-//   const auction = find(Object.values(cache.auctions), auction => auction.adUnitCodes.includes(data.detail.adUnit.code))
-//   sendMessage(auction.auctionId)
-// })
+window.addEventListener('browsiImpression', (data) => {
+  const auction = find(Object.values(cache.auctions), auction => auction.adUnitCodes.includes(data.detail.adUnit.code))
+  sendMessage(auction.auctionId)
+})
 
 fluctAnalyticsAdapter.originEnableAnalytics = fluctAnalyticsAdapter.enableAnalytics;
 fluctAnalyticsAdapter.enableAnalytics = (config) => {
