@@ -6,7 +6,6 @@ import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
-const pbjs = window.pbjsFluct || window.pbjs
 const url = 'https://an.adingo.jp'
 
 /**
@@ -280,7 +279,7 @@ const sendMessage = (auctionId) => {
 
   adUnits = adUnits.map(adUnit => ({
     ...adUnit,
-    analytics: adUnit.analytics ?? find(pbjs.adUnits, _adUnit => _adUnit.code === getAdUnitCodeBeforeReplication(slots, adUnit.code)).analytics,
+    analytics: adUnit.analytics ?? find(Object.values(cache.auctions).flatMap(auction => auction.adUnits), _adUnit => _adUnit.code === getAdUnitCodeBeforeReplication(slots, adUnit.code)).analytics,
     bids: undefined
   }))
 
