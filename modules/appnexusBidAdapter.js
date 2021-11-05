@@ -603,14 +603,16 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     let dchain = {
       ver: '1.0',
       complete: 0,
-      nodes: [],
+      nodes: [{
+        bsid: rtbBid.buyer_member_id.toString()
+      }],
     };
-    if (rtbBid.buyer_member_id) {
-      dchain.nodes.push({ bsid: rtbBid.buyer_member_id.toString() });
-    }
+
     return dchain;
   }
-  bid.meta = Object.assign({}, bid.meta, {dchain: setupDChain(rtbBid)});
+  if (rtbBid.buyer_member_id) {
+    bid.meta = Object.assign({}, bid.meta, {dchain: setupDChain(rtbBid)});
+  }
 
   if (rtbBid.brand_id) {
     bid.meta = Object.assign({}, bid.meta, { brandId: rtbBid.brand_id });
