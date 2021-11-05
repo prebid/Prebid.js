@@ -274,10 +274,12 @@ const modifyBrowsiAuctionId = (auctionId, adUnits) => {
  */
 const sendMessage = (auctionId) => {
   let { adUnits, auctionEnd, auctionStatus, bids } = cache.auctions[auctionId]
+  const slots = getAdUnitMap()
+
   adUnits = adUnits.map(adUnit => ({
     ...adUnit,
-    analytics: adUnit.analytics ?? find(pbjs.adUnits, _adUnit => _adUnit.code === adUnit.code).analytics,
-    bids: undefined,
+    analytics: adUnit.analytics ?? find(pbjs.adUnits, _adUnit => _adUnit.code === getAdUnitCodeBeforeReplication(slots, adUnit.code)).analytics,
+    bids: undefined
   }))
 
   /**
@@ -289,8 +291,6 @@ const sendMessage = (auctionId) => {
     const analytics = find(adUnits, adUnit => adUnit.code === adUnitCode)?.analytics
     return find(analytics ?? [], obj => obj.bidder === bidder)?.dwid ?? null
   }
-
-  const slots = getAdUnitMap()
 
   let payload = {
     auctionId: modifyBrowsiAuctionId(auctionId, adUnits),
