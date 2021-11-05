@@ -1,6 +1,7 @@
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
+import { config } from '../src/config.js'
 import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
@@ -114,13 +115,16 @@ const cache = {
 };
 
 /**
+ * @returns {string|undefined}
+ */
+const getSiteKey = () => find(config.getConfig('realTimeData.dataProviders') ?? [], provider => provider.name === 'browsi')?.params.siteKey
+
+/**
  * @param {string} auctionId
  * @returns {boolean}
  */
-const isBrowsiAuction = (auctionId) => {
-  const siteKey = find(pbjs.getConfig().realTimeData?.dataProviders ?? [], provider => provider.name === 'browsi')?.params.siteKey
-  return Boolean(auctionId.match(new RegExp(`^${siteKey}`, 'g')))
-}
+const isBrowsiAuction = (auctionId) => Boolean(auctionId.match(new RegExp(`^${getSiteKey()}`, 'g')))
+
 /**
  * @param {string} divId
  * @returns {boolean}
@@ -208,7 +212,7 @@ let fluctAnalyticsAdapter = Object.assign(
         if (!isBrowsiAuction(auctionId)) {
           cache.timeouts[auctionId] = setTimeout(() => {
             sendMessage(auctionId);
-          }, pbjs.getConfig().bidderTimeout || 3000);
+          }, config.getConfig('bidderTimeout') ?? 3000);
         }
         break;
       }
@@ -261,10 +265,8 @@ export const getBrowsiRefreshCount = (adUnitCode) => adUnitCode?.match(/browsi_.
  */
 const modifyBrowsiAuctionId = (auctionId, adUnits) => {
   /** @type {string|undefined} */
-  const siteKey = find(pbjs.getConfig().realTimeData?.dataProviders ?? [], provider => provider.name === 'browsi')?.params.siteKey
-  /** @type {string|undefined} */
   const reloadCount = getBrowsiRefreshCount(find(adUnits, adUnit => isBrowsiDivId(adUnit.code))?.code)
-  return auctionId.match(new RegExp(`^${siteKey}`, 'g')) && reloadCount
+  return auctionId.match(new RegExp(`^${getSiteKey()}`, 'g')) && reloadCount
     ? `${auctionId}_${reloadCount}`
     : auctionId
 }
