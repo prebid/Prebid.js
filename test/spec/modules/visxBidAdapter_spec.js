@@ -44,7 +44,8 @@ describe('VisxAdapter', function () {
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
-          playerSize: [[400, 300]]
+          mimes: ['video/mp4'],
+          protocols: [3, 6]
         }
       };
       expect(spec.isBidRequestValid(videoBid)).to.equal(false);
@@ -55,9 +56,7 @@ describe('VisxAdapter', function () {
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
-          playerSize: [[400, 300]],
-          mimes: ['video/mp4'],
-          protocols: [3, 6]
+          playerSize: [[400, 300]]
         }
       };
       expect(spec.isBidRequestValid(videoBid)).to.equal(true);
@@ -1150,7 +1149,52 @@ describe('VisxAdapter', function () {
     it('onTimeout', function () {
       const data = { timeout: 3000, bidId: '23423', params: { uid: 1 } };
       spec.onTimeout(data);
-      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout?data=' + JSON.stringify(data))).to.equal(true);
+      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout//' + JSON.stringify(data))).to.equal(true);
+    });
+  });
+
+  describe('user sync', function () {
+    function parseUrl(url) {
+      const [, path, querySt] = url.match(/^https?:\/\/[^\/]+(?:\/([^?]+)?)?(?:\?(.+)?)?$/) || [];
+      const query = {};
+      (querySt || '').split('&').forEach((q) => {
+        var kv = q.split('=');
+        if (kv[0]) {
+          query[kv[0]] = decodeURIComponent(kv[1] || '');
+        }
+      });
+      return { path, query };
+    }
+    it('should call iframe', function () {
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
+
+      expect(Array.isArray(syncs)).to.equal(true);
+      expect(syncs.length).to.equal(1);
+      expect(syncs[0]).to.have.property('type', 'iframe');
+      expect(syncs[0]).to.have.property('url');
+      expect(syncs[0].url).to.be.an('string');
+
+      const { path, query } = parseUrl(syncs[0].url);
+      expect(path).to.equal('push_sync');
+      expect(query).to.deep.equal({iframe: '1'});
+    });
+
+    it('should call image', function () {
+      let syncs = spec.getUserSyncs({
+        pixelEnabled: true
+      });
+
+      expect(Array.isArray(syncs)).to.equal(true);
+      expect(syncs.length).to.equal(1);
+      expect(syncs[0]).to.have.property('type', 'image');
+      expect(syncs[0]).to.have.property('url');
+      expect(syncs[0].url).to.be.an('string');
+
+      const { path, query } = parseUrl(syncs[0].url);
+      expect(path).to.equal('push_sync');
+      expect(query).to.deep.equal({});
     });
   });
 });

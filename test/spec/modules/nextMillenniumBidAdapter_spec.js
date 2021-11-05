@@ -8,9 +8,21 @@ describe('nextMillenniumBidAdapterTests', function() {
       auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
       bidder: 'nextMillennium',
       params: { placement_id: '-1' },
-      sizes: [[300, 250]]
+      sizes: [[300, 250]],
+      uspConsent: '1---',
+      gdprConsent: {
+        consentString: 'kjfdniwjnifwenrif3',
+        gdprApplies: true
+      }
     }
   ];
+
+  it('Request params check with GDPR Consent', function () {
+    const request = spec.buildRequests(bidRequestData, bidRequestData[0]);
+    expect(JSON.parse(request[0].data).user.ext.consent).to.equal('kjfdniwjnifwenrif3');
+    expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal('1---');
+    expect(JSON.parse(request[0].data).regs.ext.gdpr).to.equal(1);
+  });
 
   it('validate_generated_params', function() {
     const request = spec.buildRequests(bidRequestData);

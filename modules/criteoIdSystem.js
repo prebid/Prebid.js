@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { timestamp, parseUrl, triggerPixel, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { submodule } from '../src/hook.js';
@@ -20,10 +20,10 @@ const bundleStorageKey = 'cto_bundle';
 const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
 
 const pastDateString = new Date(0).toString();
-const expirationString = new Date(utils.timestamp() + cookiesMaxAge).toString();
+const expirationString = new Date(timestamp() + cookiesMaxAge).toString();
 
 function extractProtocolHost (url, returnOnlyHost = false) {
-  const parsedUrl = utils.parseUrl(url, {noDecodeWholeURL: true})
+  const parsedUrl = parseUrl(url, {noDecodeWholeURL: true})
   return returnOnlyHost
     ? `${parsedUrl.hostname}`
     : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
@@ -87,7 +87,7 @@ function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
       const jsonResponse = JSON.parse(response);
       if (jsonResponse.acwsUrl) {
         const urlsToCall = typeof jsonResponse.acwsUrl === 'string' ? [jsonResponse.acwsUrl] : jsonResponse.acwsUrl;
-        urlsToCall.forEach(url => utils.triggerPixel(url));
+        urlsToCall.forEach(url => triggerPixel(url));
       } else if (jsonResponse.bundle) {
         saveOnAllStorages(bundleStorageKey, jsonResponse.bundle);
       }
@@ -102,7 +102,7 @@ function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
       }
     },
     error: error => {
-      utils.logError(`criteoIdSystem: unable to sync user id`, error);
+      logError(`criteoIdSystem: unable to sync user id`, error);
       callback();
     }
   };

@@ -7,7 +7,7 @@
  * @requires module:modules/realTimeData
  */
 
-import * as utils from '../src/utils.js';
+import { logMessage, deepSetValue, logError, logInfo } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
@@ -26,19 +26,19 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
   const url = (moduleConfig && moduleConfig.params && moduleConfig.params.url) ? moduleConfig.params.url : URL + encodeURIComponent(window.location.href);
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   let isFinish = false;
-  utils.logMessage('[dgkeyword sub module]', adUnits, timeout);
+  logMessage('[dgkeyword sub module]', adUnits, timeout);
   let setKeywordTargetBidders = getTargetBidderOfDgKeywords(adUnits);
   if (setKeywordTargetBidders.length <= 0) {
-    utils.logMessage('[dgkeyword sub module] no dgkeyword targets.');
+    logMessage('[dgkeyword sub module] no dgkeyword targets.');
     callback();
   } else {
-    utils.logMessage('[dgkeyword sub module] dgkeyword targets:', setKeywordTargetBidders);
-    utils.logMessage('[dgkeyword sub module] get targets from profile api start.');
+    logMessage('[dgkeyword sub module] dgkeyword targets:', setKeywordTargetBidders);
+    logMessage('[dgkeyword sub module] get targets from profile api start.');
     ajax(url, {
       success: function(response) {
         const res = JSON.parse(response);
         if (!isFinish) {
-          utils.logMessage('[dgkeyword sub module] get targets from profile api end.');
+          logMessage('[dgkeyword sub module] get targets from profile api end.');
           if (res) {
             let keywords = {};
             if (res['s'] != null && res['s'].length > 0) {
@@ -60,8 +60,8 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
               if (!reqBidsConfigObj._ignoreSetOrtb2) {
                 // set keywrods to ortb2
                 let addOrtb2 = {};
-                utils.deepSetValue(addOrtb2, 'site.keywords', keywords);
-                utils.deepSetValue(addOrtb2, 'user.keywords', keywords);
+                deepSetValue(addOrtb2, 'site.keywords', keywords);
+                deepSetValue(addOrtb2, 'user.keywords', keywords);
                 const ortb2 = {ortb2: addOrtb2};
                 reqBidsConfigObj.setBidderConfig({ bidders: Object.keys(targetBidKeys), config: ortb2 });
               }
@@ -73,17 +73,16 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
       },
       error: function(errorStatus) {
         // error occur
-        utils.logError('[dgkeyword sub module] profile api access error.', errorStatus);
+        logError('[dgkeyword sub module] profile api access error.', errorStatus);
         callback();
       }
     }, null, {
       withCredentials: true,
-      contentType: 'application/json',
     });
     setTimeout(function () {
       if (!isFinish) {
         // profile api timeout
-        utils.logInfo('[dgkeyword sub module] profile api timeout. [timeout: ' + timeout + 'ms]');
+        logInfo('[dgkeyword sub module] profile api timeout. [timeout: ' + timeout + 'ms]');
         isFinish = true;
       }
       callback();
