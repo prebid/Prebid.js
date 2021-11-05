@@ -300,7 +300,7 @@ function raiGetFloor(bid, config) {
         size: '*'
       })
 
-      raiFloor = floorSpec.floor; 
+      raiFloor = floorSpec.floor;
     }
     return raiFloor
   } catch (e) {
