@@ -1718,6 +1718,7 @@ describe('adapterManager tests', function () {
       beforeEach(function () {
         allS2SBidders.length = 0;
         clientTestAdapters.length = 0;
+        sandBox.stub(utils, 'getWindowTop').returns(window);
         sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
       });
 
@@ -1749,7 +1750,7 @@ describe('adapterManager tests', function () {
 
       it('should not filter video bids', function () {
         setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 4444px)',
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
           'sizesSupported': [
             [728, 90],
             [300, 250]
@@ -1788,7 +1789,7 @@ describe('adapterManager tests', function () {
 
       it('should not filter native bids', function () {
         setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 4444px)',
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
           'sizesSupported': [
             [728, 90],
             [300, 250]
@@ -1839,7 +1840,7 @@ describe('adapterManager tests', function () {
         }, {});
 
         setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 4444px)',
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
           'sizesSupported': validSizes,
           'labels': ['tablet', 'phone']
         }]);
@@ -1862,7 +1863,7 @@ describe('adapterManager tests', function () {
         });
 
         setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 4444px)',
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
           'sizesSupported': [],
           'labels': ['tablet', 'phone']
         }]);
