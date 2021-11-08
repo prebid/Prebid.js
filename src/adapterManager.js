@@ -397,7 +397,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           // fire BID_REQUESTED event for each s2s bidRequest
           uniqueServerRequests.forEach(bidRequest => {
             // add the new sourceTid
-            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, {...bidRequest, tid: sourceTid});
+            bidRequest.tid = sourceTid;
+            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
           });
 
           // make bid requests
