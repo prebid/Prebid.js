@@ -1749,7 +1749,7 @@ describe('adapterManager tests', function () {
 
       it('should not filter video bids', function () {
         setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'mediaQuery': '(min-width: 768px) and (max-width: 4444px)',
           'sizesSupported': [
             [728, 90],
             [300, 250]
@@ -1788,7 +1788,7 @@ describe('adapterManager tests', function () {
 
       it('should not filter native bids', function () {
         setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'mediaQuery': '(min-width: 768px) and (max-width: 4444px)',
           'sizesSupported': [
             [728, 90],
             [300, 250]
@@ -1839,7 +1839,7 @@ describe('adapterManager tests', function () {
         }, {});
 
         setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'mediaQuery': '(min-width: 768px) and (max-width: 4444px)',
           'sizesSupported': validSizes,
           'labels': ['tablet', 'phone']
         }]);
@@ -1862,7 +1862,7 @@ describe('adapterManager tests', function () {
         });
 
         setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'mediaQuery': '(min-width: 768px) and (max-width: 4444px)',
           'sizesSupported': [],
           'labels': ['tablet', 'phone']
         }]);
