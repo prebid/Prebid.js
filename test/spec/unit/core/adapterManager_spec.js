@@ -1835,7 +1835,7 @@ describe('adapterManager tests', function () {
         }, {});
 
         setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 4444x)',
+          'mediaQuery': '(min-width: 768px) and (max-width: 4444px)',
           'sizesSupported': validSizes,
           'labels': ['tablet', 'phone']
         }]);

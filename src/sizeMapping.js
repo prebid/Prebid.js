@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { config } from './config.js';
 import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
@@ -127,11 +128,15 @@ function evaluateSizeConfig(configs) {
       let ruleMatch = false;
 
       try {
+        console.log(`WINDOW MATCH MEDIA - BEFORE`);
         ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
+        console.log(`WINDOW MATCH MEDIA - AFTER - ${ruleMatch}`);
       } catch (e) {
         logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated');
 
+        console.log(`MATCH MEDIA - BEFORE`);
         ruleMatch = matchMedia(config.mediaQuery).matches;
+        console.log(`MATCH MEDIA - AFTER - ${ruleMatch}`);
       }
 
       if (ruleMatch) {
