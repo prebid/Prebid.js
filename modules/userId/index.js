@@ -185,7 +185,7 @@ export let syncDelay;
 export let auctionDelay;
 
 /** @type {(string|undefined)} */
-export let ppidSource;
+let ppidSource;
 
 /** @param {Submodule[]} submodules */
 export function setSubmoduleRegistry(submodules) {
