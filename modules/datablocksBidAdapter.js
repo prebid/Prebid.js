@@ -94,7 +94,7 @@ export const spec = {
   code: 'datablocks',
 
   // DATABLOCKS SCOPED OBJECT
-  db_obj: {metrics_host: 'prebid.datablocks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0},
+  db_obj: {metrics_host: 'prebid.dblks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0},
 
   // STORE THE DATABLOCKS BUYERID IN STORAGE
   store_dbid: function(dbid) {
