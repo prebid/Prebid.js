@@ -1,11 +1,11 @@
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
+import { config } from '../src/config.js'
 import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
-const pbjs = window.pbjsFluct || window.pbjs
 const url = 'https://an.adingo.jp'
 
 /**
@@ -114,13 +114,16 @@ const cache = {
 };
 
 /**
+ * @returns {string|undefined}
+ */
+const getSiteKey = () => find(config.getConfig('realTimeData.dataProviders') ?? [], provider => provider.name === 'browsi')?.params.siteKey
+
+/**
  * @param {string} auctionId
  * @returns {boolean}
  */
-const isBrowsiAuction = (auctionId) => {
-  const siteKey = find(pbjs.getConfig().realTimeData?.dataProviders ?? [], provider => provider.name === 'browsi')?.params.siteKey
-  return Boolean(auctionId.match(new RegExp(`^${siteKey}`, 'g')))
-}
+const isBrowsiAuction = (auctionId) => Boolean(auctionId.match(new RegExp(`^${getSiteKey()}`, 'g')))
+
 /**
  * @param {string} divId
  * @returns {boolean}
@@ -208,7 +211,7 @@ let fluctAnalyticsAdapter = Object.assign(
         if (!isBrowsiAuction(auctionId)) {
           cache.timeouts[auctionId] = setTimeout(() => {
             sendMessage(auctionId);
-          }, pbjs.getConfig().bidderTimeout || 3000);
+          }, config.getConfig('bidderTimeout') ?? 3000);
         }
         break;
       }
@@ -220,7 +223,7 @@ let fluctAnalyticsAdapter = Object.assign(
 
 /**
  * GPT slotから共通のpathを持つ、browsi_ad_ではないのadUnitCodeを返す
- * @param {Object} slots
+ * @param {Object.<string, string>} slots
  * @param {string} adUnitCode
  * @returns {string}
  */
@@ -236,25 +239,17 @@ export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
 }
 
 /**
- * @param {AdUnit} adUnit
- * @returns {AdUnit}
+ * 各adUnitCodeに対応したadUnitPathを取得する
+ * @returns {Object.<string, string>}
+ * @sample
+ * ```
+ * {
+ *   'div-gpt-ad-1629864618640-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
+ *   'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
+ * }
+ * ```
  */
-const modifyBrowsiAdUnit = (adUnit) => {
-  if (!isBrowsiDivId(adUnit.code)) return adUnit
-  // e.g.
-  // {
-  //   'div-gpt-ad-1629864618640-0': '/62532913/p_fluctmagazine_320x50_surface_15377',
-  //   'browsi_ad_0_ai_1_rc_0': '/62532913/p_fluctmagazine_320x50_surface_15377'
-  // }
-  const slots = googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
-  return {
-    ...adUnit,
-    adUnitCode: getAdUnitCodeBeforeReplication(slots, adUnit.code),
-    analytics: adUnit.analytics ?? find(pbjs.adUnits, _adUnit => _adUnit.code === adUnit.code).analytics,
-    bids: undefined,
-    originalAdUnitCode: adUnit.code,
-  }
-}
+const getAdUnitMap = () => googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {})
 
 /**
  * @param {string|undefined} adUnitCode
@@ -269,10 +264,8 @@ export const getBrowsiRefreshCount = (adUnitCode) => adUnitCode?.match(/browsi_.
  */
 const modifyBrowsiAuctionId = (auctionId, adUnits) => {
   /** @type {string|undefined} */
-  const siteKey = find(pbjs.getConfig().realTimeData?.dataProviders ?? [], provider => provider.name === 'browsi')?.params.siteKey
-  /** @type {string|undefined} */
   const reloadCount = getBrowsiRefreshCount(find(adUnits, adUnit => isBrowsiDivId(adUnit.code))?.code)
-  return auctionId.match(new RegExp(`^${siteKey}`, 'g')) && reloadCount
+  return auctionId.match(new RegExp(`^${getSiteKey()}`, 'g')) && reloadCount
     ? `${auctionId}_${reloadCount}`
     : auctionId
 }
@@ -282,7 +275,13 @@ const modifyBrowsiAuctionId = (auctionId, adUnits) => {
  */
 const sendMessage = (auctionId) => {
   let { adUnits, auctionEnd, auctionStatus, bids } = cache.auctions[auctionId]
-  adUnits = adUnits.map(adUnit => modifyBrowsiAdUnit(adUnit))
+  const slots = getAdUnitMap()
+
+  adUnits = adUnits.map(adUnit => ({
+    ...adUnit,
+    analytics: adUnit.analytics ?? find(Object.values(cache.auctions).flatMap(auction => auction.adUnits), _adUnit => _adUnit.code === getAdUnitCodeBeforeReplication(slots, adUnit.code)).analytics,
+    bids: undefined
+  }))
 
   /**
    * @param {string} adUnitCode
@@ -308,7 +307,7 @@ const sendMessage = (auctionId) => {
         status,
         adId,
         adUrl,
-        adUnitCode,
+        adUnitCode: getAdUnitCodeBeforeReplication(slots, adUnitCode),
         bidder,
         netRevenue,
         cpm,
@@ -333,7 +332,13 @@ const sendMessage = (auctionId) => {
 };
 
 window.addEventListener('browsiImpression', (data) => {
-  const auction = find(Object.values(cache.auctions), auction => auction.adUnitCodes.includes(data.detail.adUnit.code))
+  const adUnitCode = Object.entries(getAdUnitMap())
+    .reduce((prev, [code, path]) => {
+      return data.detail.adUnit === path && isBrowsiDivId(code)
+        ? code
+        : prev
+    }, '')
+  const auction = find(Object.values(cache.auctions), auction => auction.adUnitCodes.includes(adUnitCode))
   sendMessage(auction.auctionId)
 })
 
