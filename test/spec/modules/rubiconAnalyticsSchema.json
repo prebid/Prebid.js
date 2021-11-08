@@ -263,7 +263,9 @@
         },
         "isSlotEmpty": {
           "type": "boolean",
-          "enum": [true]
+          "enum": [
+            true
+          ]
         }
       }
     },
@@ -369,6 +371,7 @@
         },
         "error": {
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "code"
           ],

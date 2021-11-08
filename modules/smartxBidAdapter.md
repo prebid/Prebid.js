@@ -38,8 +38,8 @@ This adapter requires setup and approval from the smartclip team.
                     maxAdWidth: 900,
                     title: '',
                     skipOffset: 0,
-                    startOpen: true,
-                    endingScreen: true,
+                    startOpen: 'true',
+                    endingScreen: 'true',
                     desiredBitrate: 800,
                 },
             }
@@ -73,8 +73,8 @@ This adapter requires setup and approval from the smartclip team.
                     maxAdWidth: 900,
                     title: '',
                     skipOffset: 0,
-                    startOpen: true,
-                    endingScreen: true,
+                    startOpen: 'true',
+                    endingScreen: 'true',
                     desiredBitrate: 800,
                 },
                 user: {
