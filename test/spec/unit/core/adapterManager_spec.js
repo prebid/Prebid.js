@@ -1718,8 +1718,7 @@ describe('adapterManager tests', function () {
       beforeEach(function () {
         allS2SBidders.length = 0;
         clientTestAdapters.length = 0;
-        sandBox.stub(utils, 'getWindowTop').returns(window);
-        sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
+        sinon.stub(utils.getWindowTop(), 'matchMedia').callsFake(() => ({matches: true}));
       });
 
       afterEach(function () {
