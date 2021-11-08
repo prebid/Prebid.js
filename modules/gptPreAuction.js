@@ -87,8 +87,9 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
   adUnits.forEach(adUnit => {
     const usedAdUnitCode = appendPbAdSlot(adUnit);
     // gpid should be set to itself if already set, or to what pbadslot was (as long as it was not adUnit code)
-    const pbadslot = !usedAdUnitCode ? adUnit.ortb2Imp.ext.data.pbadslot : undefined;
-    adUnit.ortb2Imp.ext.gpid = adUnit.ortb2Imp.ext.gpid || pbadslot;
+    if (!adUnit.ortb2Imp.ext.gpid && !usedAdUnitCode) {
+      adUnit.ortb2Imp.ext.gpid = adUnit.ortb2Imp.ext.data.pbadslot;
+    }
   });
   return fn.call(this, adUnits, ...args);
 };

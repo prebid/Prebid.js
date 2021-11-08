@@ -244,5 +244,27 @@ describe('GPT pre-auction module', () => {
       runMakeBidRequests(testAdUnits);
       expect(returnedAdUnits).to.deep.equal(expectedAdUnits);
     });
+
+    it('should not apply gpid if pbadslot was set by adUnitCode', () => {
+      const testAdUnits = [{
+        code: 'noMatchCode',
+      }];
+
+      // first two adUnits directly pass in pbadslot => gpid is same
+      const expectedAdUnits = [{
+        code: 'noMatchCode',
+        ortb2Imp: {
+          ext: {
+            data: {
+              pbadslot: 'noMatchCode'
+            },
+          }
+        }
+      }];
+
+      window.googletag.pubads().setSlots(testSlots);
+      runMakeBidRequests(testAdUnits);
+      expect(returnedAdUnits).to.deep.equal(expectedAdUnits);
+    });
   });
 });
