@@ -11,11 +11,6 @@
     "type": "git",
     "url": "https://github.com/prebid/Prebid.js.git"
   },
-  "browserslist": [
-    "> 0.25%",
-    "not IE 11",
-    "not op_mini all"
-  ],
   "keywords": [
     "advertising",
     "auction",
