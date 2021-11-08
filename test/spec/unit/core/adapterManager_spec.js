@@ -1716,13 +1716,14 @@ describe('adapterManager tests', function () {
 
     describe('sizeMapping', function () {
       beforeEach(function () {
+        sandbox = sinon.sandbox.create();
         allS2SBidders.length = 0;
         clientTestAdapters.length = 0;
-        sinon.stub(utils.getWindowTop(), 'matchMedia').callsFake(() => ({matches: true}));
+        // always have matchMedia return true for us
+        sandbox.stub(utils.getWindowTop(), 'matchMedia').callsFake(() => ({matches: true}));
       });
 
       afterEach(function () {
-        matchMedia.restore();
         config.resetConfig();
         setSizeConfig([]);
       });

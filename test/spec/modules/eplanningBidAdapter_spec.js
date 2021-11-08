@@ -331,21 +331,22 @@ describe('E-Planning Adapter', function () {
     let sandbox;
     beforeEach(() => {
       sandbox = sinon.sandbox.create();
+      setupSingleWindow(sandBox, 800);
     });
 
     afterEach(() => {
       sandbox.restore();
     });
 
-    const createWindow = () => {
+    const createWindow = (innerWidth) => {
       const win = {};
       win.self = win;
-      win.innerWidth = 1025;
+      win.innerWidth = innerWidth;
       return win;
     };
 
-    function setupSingleWindow(sandBox) {
-      const win = createWindow();
+    function setupSingleWindow(sandBox, innerWidth) {
+      const win = createWindow(innerWidth);
       sandBox.stub(utils, 'getWindowSelf').returns(win);
     }
 
@@ -518,7 +519,8 @@ describe('E-Planning Adapter', function () {
 
     it('should return the e parameter with a value according to the sizes in order corresponding to the desktop priority list of the ad units', function () {
       let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
-      setupSingleWindow(sandbox);
+      // overwrite default innerWdith for tests with a larger one we consider "Desktop" or NOT Mobile
+      setupSingleWindow(sandbox, 1025);
       console.log(`INNER WIDTH IS: ${window.self.innerWidth}`);
       const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
       expect(e).to.equal('300x250_0:300x250,300x600,970x250');
