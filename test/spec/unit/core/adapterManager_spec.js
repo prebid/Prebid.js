@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { expect } from 'chai';
 import adapterManager, { allS2SBidders, clientTestAdapters, gdprDataHandler, coppaDataHandler } from 'src/adapterManager.js';
 import {
@@ -1848,6 +1849,8 @@ describe('adapterManager tests', function () {
           []
         );
 
+        console.log(JSON.stringify(bidRequests, null, 2));
+        console.log(JSON.stringify(validSizeMap, null, 2));
         // only valid sizes as specified in size config should show up in bidRequests
         bidRequests.forEach(bidRequest => {
           bidRequest.bids.forEach(bid => {
