@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
@@ -510,6 +511,7 @@ describe('E-Planning Adapter', function () {
 
     it('should return the e parameter with a value according to the sizes in order corresponding to the mobile priority list of the ad units', function () {
       let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForMobile];
+      console.log(`INNER WIDTH IS: ${window.self.innerWidth}`);
       const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
       expect(e).to.equal('320x50_0:320x50,300x50,970x250');
     });
@@ -517,12 +519,14 @@ describe('E-Planning Adapter', function () {
     it('should return the e parameter with a value according to the sizes in order corresponding to the desktop priority list of the ad units', function () {
       let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
       setupSingleWindow(sandbox);
+      console.log(`INNER WIDTH IS: ${window.self.innerWidth}`);
       const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
       expect(e).to.equal('300x250_0:300x250,300x600,970x250');
     });
 
     it('should return the e parameter with a value according to the sizes in order as they are sent from the ad units', function () {
       let bidRequestsPrioritySizes2 = [validBidSizesNotExistingInPriorityListForMobile];
+      console.log(`INNER WIDTH IS: ${window.self.innerWidth}`);
       const e = spec.buildRequests(bidRequestsPrioritySizes2, bidderRequest).data.e;
       expect(e).to.equal('970x250_0:970x250,300x70,160x600');
     });
