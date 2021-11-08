@@ -339,9 +339,8 @@ export const spec = {
     serverResponse = this.parseAndMapCpm(serverResponse);
     if (!serverResponse) return [];
     const bids = [];
-    if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
+    if (serverResponse.error) {
+      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter : ${serverResponse.error}`;
       utils.logError(errorMessage);
       return bids;
     }
