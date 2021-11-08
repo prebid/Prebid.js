@@ -1715,6 +1715,7 @@ describe('adapterManager tests', function () {
     });
 
     describe('sizeMapping', function () {
+      let sandbox;
       beforeEach(function () {
         sandbox = sinon.sandbox.create();
         allS2SBidders.length = 0;
@@ -1724,6 +1725,7 @@ describe('adapterManager tests', function () {
       });
 
       afterEach(function () {
+        sandbox.restore();
         config.resetConfig();
         setSizeConfig([]);
       });
