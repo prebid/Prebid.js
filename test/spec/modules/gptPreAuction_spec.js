@@ -197,15 +197,47 @@ describe('GPT pre-auction module', () => {
         code: 'slotCode3',
       }];
 
+      // first two adUnits directly pass in pbadslot => gpid is same
       const expectedAdUnits = [{
         code: 'adUnit1',
-        ortb2Imp: { ext: { data: { pbadslot: '12345' } } }
-      }, {
+        ortb2Imp: {
+          ext: {
+            data: {
+              pbadslot: '12345'
+            },
+            gpid: '12345'
+          }
+        }
+      },
+      // second adunit
+      {
         code: 'slotCode1',
-        ortb2Imp: { ext: { data: { pbadslot: '67890', adserver: { name: 'gam', adslot: 'slotCode1' } } } }
+        ortb2Imp: {
+          ext: {
+            data: {
+              pbadslot: '67890',
+              adserver: {
+                name: 'gam',
+                adslot: 'slotCode1'
+              }
+            },
+            gpid: '67890'
+          }
+        }
       }, {
         code: 'slotCode3',
-        ortb2Imp: { ext: { data: { pbadslot: 'slotCode3', adserver: { name: 'gam', adslot: 'slotCode3' } } } }
+        ortb2Imp: {
+          ext: {
+            data: {
+              pbadslot: 'slotCode3',
+              adserver: {
+                name: 'gam',
+                adslot: 'slotCode3'
+              }
+            },
+            gpid: 'slotCode3'
+          }
+        }
       }];
 
       window.googletag.pubads().setSlots(testSlots);
