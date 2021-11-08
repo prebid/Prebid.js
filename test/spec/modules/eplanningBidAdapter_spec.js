@@ -331,7 +331,7 @@ describe('E-Planning Adapter', function () {
     let sandbox;
     beforeEach(() => {
       sandbox = sinon.sandbox.create();
-      setupSingleWindow(sandBox, 800);
+      setupSingleWindow(sandbox, 800);
     });
 
     afterEach(() => {
@@ -345,9 +345,9 @@ describe('E-Planning Adapter', function () {
       return win;
     };
 
-    function setupSingleWindow(sandBox, innerWidth) {
+    function setupSingleWindow(sandbox, innerWidth) {
       const win = createWindow(innerWidth);
-      sandBox.stub(utils, 'getWindowSelf').returns(win);
+      sandbox.stub(utils, 'getWindowSelf').returns(win);
     }
 
     it('should create the url correctly', function () {
