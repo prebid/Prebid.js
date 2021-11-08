@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { expect } from 'chai';
 import adapterManager, { allS2SBidders, clientTestAdapters, gdprDataHandler, coppaDataHandler } from 'src/adapterManager.js';
 import {
@@ -66,7 +65,6 @@ var badAdapterMock = {
 };
 
 describe('adapterManager tests', function () {
-  console.log(`STARTING ADAPTER MANAGER TESTS`);
   let orgAppnexusAdapter;
   let orgAdequantAdapter;
   let orgPrebidServerAdapter;
@@ -81,7 +79,6 @@ describe('adapterManager tests', function () {
   });
 
   after(function () {
-    console.log(`FINISHED ADAPTER MANAGER TESTS`);
     adapterManager.bidderRegistry['appnexus'] = orgAppnexusAdapter;
     adapterManager.bidderRegistry['adequant'] = orgAdequantAdapter;
     adapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
@@ -1830,7 +1827,6 @@ describe('adapterManager tests', function () {
       });
 
       it('should filter sizes using size config', function () {
-        console.log(`STARTING SIZE CONFIG TEST`);
         let validSizes = [
           [728, 90],
           [300, 250]
