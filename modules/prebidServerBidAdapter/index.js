@@ -731,7 +731,7 @@ const OPEN_RTB_PROTOCOL = {
       return;
     }
     const request = {
-      id: firstBidRequest.auctionId,
+      id: s2sBidRequest.tid,
       source: {tid: s2sBidRequest.tid},
       tmax: s2sConfig.timeout,
       imp: imps,
@@ -751,7 +751,7 @@ const OPEN_RTB_PROTOCOL = {
       }
     };
 
-    // This is no longer overwritten unless name and version explicitly overwritten by extPrebid (mergeDeep)
+    // Sets pbjs version, can be overwritten below if channel exists in s2sConfig.extPrebid
     request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
 
     // set debug flag if in debug mode
@@ -761,7 +761,7 @@ const OPEN_RTB_PROTOCOL = {
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
     if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
-      request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
+      request.ext.prebid = Object.assign(request.ext.prebid, s2sConfig.extPrebid);
     }
 
     /**
