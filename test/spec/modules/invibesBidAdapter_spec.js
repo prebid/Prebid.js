@@ -828,6 +828,20 @@ describe('invibesBidAdapter:', function () {
         }
       }
     };
+	
+	let responseWithAdUnit = {
+		Ads: [{
+        BidPrice: 0.5,
+        VideoExposedId: 123
+      }],
+      BidModel: {
+        BidVersion: 1,
+        PlacementId: '12345_test-div1',
+        AuctionStartTime: Date.now(),
+        CreativeHtml: '<!-- Creative -->'
+      },
+	  UseAdUnitCode: true
+	};
 
     let responseWithAdUnit = {
       Ads: [{
