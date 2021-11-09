@@ -30,14 +30,23 @@ export const spec = {
           }
         }
       }
-      const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
 
-      if (gdprConsent) {
+      const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+      const uspConsent = bidderRequest && bidderRequest.uspConsent
+
+      if (gdprConsent || uspConsent) {
+        postBody.regs = { ext: {} }
+
+        if (uspConsent) {
+          postBody.regs.ext.us_privacy = uspConsent;
+        }
         if (typeof gdprConsent.gdprApplies !== 'undefined') {
-          postBody.gdprApplies = !!gdprConsent.gdprApplies;
+          postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
         }
         if (typeof gdprConsent.consentString !== 'undefined') {
-          postBody.consentString = gdprConsent.consentString;
+          postBody.user = {
+            ext: { consent: gdprConsent.consentString }
+          }
         }
       }
 
