@@ -279,7 +279,7 @@ const sendMessage = (auctionId) => {
 
   adUnits = adUnits.map(adUnit => ({
     ...adUnit,
-    analytics: adUnit.analytics ?? find(Object.values(cache.auctions).flatMap(auction => auction.adUnits), _adUnit => _adUnit.code === getAdUnitCodeBeforeReplication(slots, adUnit.code)).analytics,
+    analytics: find(Object.values(cache.auctions).flatMap(auction => auction.adUnits), _adUnit => _adUnit.code === getAdUnitCodeBeforeReplication(slots, adUnit.code)).analytics,
     bids: undefined
   }))
 
@@ -289,8 +289,8 @@ const sendMessage = (auctionId) => {
    * @returns {string|null}
    */
   const findDwIdByAdUnitCode = (adUnitCode, bidder) => {
-    const analytics = find(adUnits, adUnit => adUnit.code === adUnitCode)?.analytics
-    return find(analytics ?? [], obj => obj.bidder === bidder)?.dwid ?? null
+    const analytics = find(adUnits, adUnit => adUnit.code === adUnitCode).analytics
+    return find(analytics, obj => obj.bidder === bidder).dwid
   }
 
   let payload = {
