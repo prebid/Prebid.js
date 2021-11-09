@@ -452,7 +452,7 @@ describe('DatablocksAdapter', function() {
 
     it('Returns valid URL', function() {
       expect(request.url).to.exist;
-      expect(request.url).to.equal('https://7560.v5demo.datablocks.net/openrtb/?sid=7560');
+      expect(request.url).to.equal('https://v5demo.datablocks.net/openrtb/?sid=7560');
     });
 
     it('Creates an array of request objects', function() {
