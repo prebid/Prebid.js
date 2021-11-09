@@ -1,7 +1,7 @@
 #Overview
 
 ```
-Module Name:  Goldbach Xander Bid Adapter
+Module Name:  Goldbach Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer: dusan.veljovic@goldbach.com
 ```
@@ -10,7 +10,7 @@ Maintainer: dusan.veljovic@goldbach.com
 
 Connects to Xandr exchange for bids.
 
-Goldbach Xandr bid adapter supports Banner, Video (instream and outstream) and Native.
+Goldbach bid adapter supports Banner, Video (instream and outstream) and Native.
 
 # Test Parameters
 ```
@@ -24,7 +24,7 @@ var adUnits = [
         }
       },
       bids: [{
-         bidder: 'gb_xandr',
+         bidder: 'goldbach',
          params: {
            placementId: 13144370
          }
@@ -54,7 +54,7 @@ var adUnits = [
         }
       },
       bids: [{
-        bidder: 'gb_xandr',
+        bidder: 'goldbach',
         params: {
           placementId: 13232354,
           allowSmallerSizes: true
@@ -72,7 +72,7 @@ var adUnits = [
         },
       },
       bids: [{
-        gb_xandr: 'gb_xandr',
+        goldbach: 'goldbach',
         params: {
           placementId: 13232361,
           video: {
@@ -91,8 +91,8 @@ var adUnits = [
          playerSize: [[300, 250]],
          context: 'outstream',
          // Certain ORTB 2.5 video values can be read from the mediatypes object; below are examples of supported params.
-         // To note - gb_xandr supports additional values for our system that are not part of the ORTB spec.  If you want
-         // to use these values, they will have to be declared in the bids[].params.video object instead using the gb_xandr syntax.
+         // To note - goldbach supports additional values for our system that are not part of the ORTB spec.  If you want
+         // to use these values, they will have to be declared in the bids[].params.video object instead using the goldbach syntax.
          // Between the corresponding values of the mediaTypes.video and params.video objects, the properties in params.video will 
          // take precedence if declared; eg in the example below, the `skippable: true` setting will be used instead of the `skip: 0`.
          minduration: 1,
@@ -105,7 +105,7 @@ var adUnits = [
      },
      bids: [
        {
-         bidder: 'gb_xandr',
+         bidder: 'goldbach',
          params: {
            placementId: 13232385,
            video: {
@@ -127,7 +127,7 @@ var adUnits = [
        }
      }
      bids: [{
-       bidder: 'gb_xandr',
+       bidder: 'goldbach',
        params: {
          placementId: 13144370,
          app: {

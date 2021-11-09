@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/goldbachXandrBidAdapter.js';
+import { spec } from 'modules/goldbachBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -20,7 +20,7 @@ describe('GoldbachXandrAdapter', function () {
 
   describe('isBidRequestValid', function () {
     let bid = {
-      'bidder': 'gb_xandr',
+      'bidder': 'godlbach',
       'params': {
         'placementId': '10433394'
       },
@@ -60,7 +60,7 @@ describe('GoldbachXandrAdapter', function () {
     let getAdUnitsStub;
     let bidRequests = [
       {
-        'bidder': 'gb_xandr',
+        'bidder': 'goldbach',
         'params': {
           'placementId': '10433394'
         },
@@ -138,7 +138,7 @@ describe('GoldbachXandrAdapter', function () {
           }
         },
         bids: [{
-          bidder: 'gb_xandr',
+          bidder: 'goldbach',
           params: {
             placementId: '10433394'
           }
@@ -714,7 +714,7 @@ describe('GoldbachXandrAdapter', function () {
     it('should add gdpr consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
-        'bidderCode': 'gb_xandr',
+        'bidderCode': 'goldbach',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -739,7 +739,7 @@ describe('GoldbachXandrAdapter', function () {
     it('should add us privacy string to payload', function() {
       let consentString = '1YA-';
       let bidderRequest = {
-        'bidderCode': 'gb_xandr',
+        'bidderCode': 'goldbach',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -889,7 +889,7 @@ describe('GoldbachXandrAdapter', function () {
     it('should set simple domain variant if purpose 1 consent is not given', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
-        'bidderCode': 'gb_xandr',
+        'bidderCode': 'goldbach',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
