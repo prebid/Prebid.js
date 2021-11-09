@@ -89,7 +89,7 @@ const VALID_REQUEST_VIDEO = {
           linearity: 1,
           minduration: 5,
           maxduration: 30,
-          outstream: 'false'
+          outstream: false
         }
       }
     ]

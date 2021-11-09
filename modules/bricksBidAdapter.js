@@ -200,7 +200,7 @@ export const spec = {
           linearity: utils.deepAccess(bidRequest, 'mediaTypes.video.linearity'),
           minduration: utils.deepAccess(bidRequest, 'mediaTypes.video.minduration'),
           maxduration: utils.deepAccess(bidRequest, 'mediaTypes.video.maxduration'),
-          outstream: (utils.deepAccess(bidRequest, 'mediaTypes.video.context') == 'outstream' ? 'true' : 'false'),
+          outstream: (utils.deepAccess(bidRequest, 'mediaTypes.video.context') == 'outstream'),
         };
       }
       return request;
