@@ -221,13 +221,13 @@ function getBannerSizes(bidRequest, enabledOldFormat = true) {
     sizes = sizes || bidRequest.sizes;
   }
 
-  const result = parseSizesInput(sizes).join(',');
-  return result;
+  return parseSizesInput(sizes).join(',');
 }
 
 /**
  * @param  {Object} bidRequest -
  * @param  {boolean} [enabledOldFormat = true] - default: `true`.
+ * @param  {boolean} [enabledFlux = true] - default: `true`.
  * @return {{w: number, h: number}} -
  */
 function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
@@ -268,8 +268,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
     }
   }
 
-  const result = playerSize || DEFAULT_VIDEO_SIZE;
-  return result;
+  return playerSize || DEFAULT_VIDEO_SIZE;
 }
 
 function newRenderer(response) {
