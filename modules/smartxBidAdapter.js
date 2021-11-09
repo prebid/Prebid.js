@@ -349,6 +349,7 @@ function createOutstreamConfig(bid) {
   let confTitle = getBidIdParameter('title', bid.renderer.config.outstream_options);
   let confSkipOffset = getBidIdParameter('skipOffset', bid.renderer.config.outstream_options);
   let confDesiredBitrate = getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options);
+  let confVisibilityThreshold = getBidIdParameter('visibilityThreshold', bid.renderer.config.outstream_options);
   let elementId = getBidIdParameter('slot', bid.renderer.config.outstream_options) || bid.adUnitCode;
 
   logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
@@ -395,6 +396,10 @@ function createOutstreamConfig(bid) {
 
   if (confDesiredBitrate) {
     smartPlayObj.desiredBitrate = confDesiredBitrate;
+  }
+
+  if (confVisibilityThreshold) {
+    smartPlayObj.visibilityThreshold = confVisibilityThreshold;
   }
 
   smartPlayObj.adResponse = bid.vastContent;
