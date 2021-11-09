@@ -303,7 +303,7 @@ function raiGetFloor(bid, config) {
       raiFloor = floorSpec.floor;
     }
     return raiFloor
-  } catch (e) { 
+  } catch (e) {
     return 0
   }
 }
