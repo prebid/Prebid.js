@@ -828,9 +828,9 @@ describe('invibesBidAdapter:', function () {
         }
       }
     };
-	
-	let responseWithAdUnit = {
-		Ads: [{
+
+    let responseWithAdUnit = {
+      Ads: [{
         BidPrice: 0.5,
         VideoExposedId: 123
       }],
@@ -841,7 +841,7 @@ describe('invibesBidAdapter:', function () {
         CreativeHtml: '<!-- Creative -->'
       },
 	  UseAdUnitCode: true
-	};
+    };
 
     var buildResponse = function(placementId, cid, blcids, creativeId) {
       return {
