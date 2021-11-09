@@ -19,9 +19,20 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    */
   buildRequests: function (validRequest, bidderRequest) {
+    let w;
+    let docRef;
+    do {
+      w = w ? w.parent : window;
+      try {
+        docRef = w.document.referrer;
+      } catch (e) {
+        break;
+      }
+    } while (w !== window.top);
     const payload = {
       imps: [],
       ortb2: config.getConfig('ortb2'),
+      docReferrer: docRef,
     };
     let endpointUrl;
     if (bidderRequest) {

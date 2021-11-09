@@ -17,6 +17,16 @@ const adUnitsRequested = {}
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
+// Validity checks for optionsl paramters
+const validParameter = {
+  url: (value) => typeof value === 'string',
+  placementId: (value) => {
+    const isString = typeof value === 'string'
+    const isNumber = typeof value === 'number'
+    return isString || isNumber
+  },
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -30,7 +40,23 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return true
+    // We don't need any specific parameters to make a bid request
+    // If not parameters are supplied just verify it's the correct bidder code
+    if (!bid.params) return bid.bidder === BIDDER_CODE
+
+    // Check if any supplied parameters are invalid
+    const hasInvalidParameters = Object.keys(bid.params).some(key => {
+      const value = bid.params[key]
+      const validityCheck = validParameter[key]
+
+      // We don't have a test for this so it's not a paramter we care about
+      if (!validityCheck) return false
+
+      // Return if the check is not passed
+      return !validityCheck(value)
+    })
+
+    return !hasInvalidParameters
   },
 
   /**
@@ -71,7 +97,7 @@ export const spec = {
         // Track if we've already requested for this ad unit code
         adUnitsRequested[adUnit.adUnitCode] =
           adUnitsRequested[adUnit.adUnitCode] !== undefined
-            ? adUnitsRequested[adUnit.adUnitCode]++
+            ? adUnitsRequested[adUnit.adUnitCode] + 1
             : 0
         return {
           adUnitCode: adUnit.adUnitCode,
@@ -98,7 +124,11 @@ export const spec = {
     ]
 
     if (placementIds.size > 0) {
-      params.unshift({ key: 'ntv_ptd', value: [...placementIds].join(',') })
+      // Convert Set to Array (IE 11 Safe)
+      const placements = []
+      placementIds.forEach((value) => placements.push(value))
+      // Append to query string paramters
+      params.unshift({ key: 'ntv_ptd', value: placements.join(',') })
     }
 
     if (bidderRequest.gdprConsent) {
