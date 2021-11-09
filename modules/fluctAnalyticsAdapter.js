@@ -128,7 +128,7 @@ const isBrowsiAuction = (auctionId) => Boolean(auctionId.match(new RegExp(`^${ge
  * @param {string} divId
  * @returns {boolean}
  */
-const isBrowsiDivId = (divId) => Boolean(divId.match(/^browsi_ad_/g))
+const isBrowsiDivId = (divId) => Boolean(divId.match(/^browsi_/g))
 
 /* eslint-disable-next-line compat/compat */
 let fluctAnalyticsAdapter = Object.assign(
@@ -231,7 +231,7 @@ export const getAdUnitCodeBeforeReplication = (slots, adUnitCode) => {
   /** @type {string} */
   const path = slots[find(Object.keys(slots), slot => {
     /** @type {string|null} @example browsi_ad_0_ai_1_rc_ */
-    const browsiPrefix = adUnitCode.match(/^browsi_ad_.*_(?=\d*$)/g)?.[0]
+    const browsiPrefix = adUnitCode.match(/^browsi_.*_(?=\d*$)/g)?.[0]
     return slot === adUnitCode
       || slot.match(new RegExp(`^${browsiPrefix}`, 'g'))?.[0]
   })]
