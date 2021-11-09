@@ -161,19 +161,22 @@ export const spec = {
           domain: domain,
           publisher: {
             id: publisherId
+          },
+          content: {
+            ext: {
+              prebid: {
+                channel: {
+                  name: 'pbjs',
+                  version: '$prebid.version$'
+                }
+              }
+            }
           }
         },
         device: device,
         at: at,
         cur: cur,
-        ext: {
-          prebid: {
-            channel: {
-              name: 'pbjs',
-              version: '$prebid.version$'
-            }
-          }
-        }
+        ext: {}
       };
 
       const userExt = {};
@@ -202,7 +205,7 @@ export const spec = {
         };
       }
 
- //     requestPayload.user.ext.ver = pbjs.version;
+      //     requestPayload.user.ext.ver = pbjs.version;
 
       // Targeting
       if (getBidIdParameter('data', bid.params.user)) {
@@ -301,7 +304,7 @@ export const spec = {
             const playersize = deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
               id: 0,
-              url: 'https://dco.smartclip.net/?plc=123456789', // Outstream 5.3.0
+              url: 'https://dco.smartclip.net/?plc=7777778',
               config: {
                 adText: 'SmartX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],

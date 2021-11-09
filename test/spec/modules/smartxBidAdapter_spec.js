@@ -189,6 +189,16 @@ describe('The smartx adapter', function () {
         domain: '',
         publisher: {
           id: '__name__'
+        },
+        content: {
+          ext: {
+            prebid: {
+              channel: {
+                name: 'pbjs',
+                version: '$prebid.version$'
+              }
+            }
+          }
         }
       });
     });
