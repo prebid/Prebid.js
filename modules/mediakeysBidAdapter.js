@@ -1,4 +1,5 @@
 import find from 'core-js-pure/features/array/find.js';
+import arrayFrom from 'core-js-pure/features/array/from';
 import { getWindowTop, isFn, logWarn, getDNT, deepAccess, isArray, inIframe, mergeDeep, isStr, isEmpty, deepSetValue, deepClone, parseUrl, cleanObj, logError, triggerPixel, isInteger, isNumber } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -54,7 +55,7 @@ const ORTB_VIDEO_PARAMS = {
   skipmin: value => isInteger(value),
   skipafter: value => isInteger(value),
   sequence: value => isInteger(value),
-  battr: value => Array.isArray(value) && value.every(v => Array.from({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
+  battr: value => Array.isArray(value) && value.every(v => arrayFrom({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
   maxextended: value => isInteger(value),
   minbitrate: value => isInteger(value),
   maxbitrate: value => isInteger(value),
