@@ -31,7 +31,8 @@ const {
     BIDDER_DONE,
     BID_TIMEOUT,
     BID_WON,
-    SET_TARGETING
+    SET_TARGETING,
+    BILLABLE_EVENT
   },
   STATUS: {
     GOOD,
@@ -55,6 +56,7 @@ const cache = {
   targeting: {},
   timeouts: {},
   gpt: {},
+  billing: {}
 };
 
 const BID_REJECTED_IPF = 'rejected-ipf';
@@ -808,6 +810,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           }
         });
         break;
+        case BILLABLE_EVENT:
+          // 
     }
   }
 });

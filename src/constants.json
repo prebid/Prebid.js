@@ -43,7 +43,8 @@
     "TCF2_ENFORCEMENT": "tcf2Enforcement",
     "AUCTION_DEBUG": "auctionDebug",
     "BID_VIEWABLE": "bidViewable",
-    "STALE_RENDER": "staleRender"
+    "STALE_RENDER": "staleRender",
+    "BILLABLE_EVENT": "billableEvent"
   },
   "AD_RENDER_FAILED_REASON" : {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocument",

@@ -17,6 +17,11 @@
       "required": [
         "bidsWon"
       ]
+    },
+    {
+      "required": [
+        "billableEvents"
+      ]
     }
   ],
   "properties": {
@@ -237,9 +242,52 @@
         ]
       }
     },
-    "wrapperName": {
-      "type": "string"
-    }
+    "billableEvents":{
+      "type":"array",
+      "minItems":1,
+      "items":{
+         "type":"object",
+         "required":[
+            "provider",
+            "type",
+            "eventId"
+         ],
+         "properties":{
+            "provider":{
+               "type":"string",
+               "description":"The name of the vendor provider who emitted the billable event",
+               "examples":[
+                  "browsi",
+                  "confiant",
+                  "clean.io"
+               ]
+            },
+            "type":{
+               "type":"string",
+               "description":"The type of billable event",
+               "enum":[
+                  "impression",
+                  "pageLoad",
+                  "auction",
+                  "request",
+                  "other"
+               ]
+            },
+            "transactionId":{
+               "type":"string",
+               "description":"The UUID assigned to the adUnit which this event maps to"
+            },
+            "eventId":{
+               "type":"string",
+               "description":"Vendor random, unique identifier for a given event.  To be used for deduplication"
+            },
+            "auctionId":{
+               "type":"string",
+               "description":"The auction id associated with this event"
+            }
+         }
+      }
+   }
   },
   "definitions": {
     "gam": {
