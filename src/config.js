@@ -584,6 +584,10 @@ export function newConfig() {
     try {
       check(config);
       config.bidders.forEach(bidder => {
+        if (config.config == null) {
+          delete bidderConfig[bidder];
+          return;
+        }
         if (!bidderConfig[bidder]) {
           bidderConfig[bidder] = {};
         }
@@ -608,7 +612,7 @@ export function newConfig() {
       if (!(Array.isArray(obj.bidders) && obj.bidders.length)) {
         throw 'setBidderConfig bidder options must contain a bidders list with at least 1 bidder';
       }
-      if (!isPlainObject(obj.config)) {
+      if (obj.config != null && !isPlainObject(obj.config)) {
         throw 'setBidderConfig bidder options must contain a config object';
       }
     }

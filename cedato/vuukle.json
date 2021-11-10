@@ -1,0 +1,10 @@
+ [
+  "appnexusBidAdapter",
+  "oneVideoBidAdapter",
+  "openxBidAdapter",
+  "pubmaticBidAdapter",
+  
+  "consentManagement",
+  "consentManagementUsp",
+  "schain"
+ ]

@@ -1,0 +1,17 @@
+ [
+  "appnexusBidAdapter",
+  "emx_digitalBidAdapter",
+  "improvedigitalBidAdapter",
+  "ixBidAdapter",
+  "oneVideoBidAdapter",
+  "openxBidAdapter",
+  "pubmaticBidAdapter",
+  "rhythmoneBidAdapter",
+  "rubiconBidAdapter",
+  "sonobiBidAdapter",
+  "spotxBidAdapter",
+
+  "consentManagement",
+  "consentManagementUsp",
+  "schain"
+ ]

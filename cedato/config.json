@@ -1,0 +1,36 @@
+{
+  "config": {
+      "schain": {
+          "config": {
+              "complete": 1,
+              "nodes": [
+                  {
+                      "asi": "cedato.com",
+                      "hp": 1,
+                      "sid": "[SUPPLY_ID]"
+                  }
+              ],
+              "ver": "1.0"
+          },
+          "validation": "off"
+      },
+      "userSync": {
+          "filterSettings": {
+              "iframe": {
+                  "bidders": "*",
+                  "filter": "include"
+              }
+          }
+      }
+  },
+  "rewrite": {
+      "appnexus": "params.video=Object.assign({}, video, params.video);params.reserve=Math.max(params.reserve || 0,floorPrice);",
+      "gumgum": "params.bidfloor=Math.max(params.bidfloor || 0,floorPrice); video.placement=1;",
+      "ix": "params.size=video.playerSize[0]; params.video=Object.assign({}, video, params.video); params.bidfloor=Math.max(params.bidfloor || 0,floorPrice);",
+      "oneVideo": "params.video=Object.assign({playerWidth:video.playerSize[0][0], playerHeight:video.playerSize[0][1]}, video, params.video);params.bidfloor=Math.max(params.bidfloor || 0,floorPrice);",
+      "pubmatic": "params.video=Object.assign({}, video, params.video);params.kadfloor=floorPrice+''",
+      "rhythmone": "params.floor=Math.max(params.floor || 0,floorPrice);",
+      "smartadserver": "params.bidfloor=floorPrice",
+      "synacormedia": "params.video=Object.assign({}, params.video); params.bidfloor=Math.max(params.bidfloor || 0,floorPrice);"
+  }
+}

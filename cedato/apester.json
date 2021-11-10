@@ -1,0 +1,12 @@
+ [
+  "improvedigitalBidAdapter",
+  "ixBidAdapter",
+  "openxBidAdapter",
+  "rubiconBidAdapter",
+  "spotxBidAdapter",
+  "telariaBidAdapter",
+
+  "consentManagement",
+  "consentManagementUsp",
+  "schain"
+ ]

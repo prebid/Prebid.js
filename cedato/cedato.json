@@ -1,0 +1,26 @@
+[
+  "appnexusBidAdapter",
+  "conversantBidAdapter",
+  "emx_digitalBidAdapter",
+  "freewheel-sspBidAdapter",
+  "gumgumBidAdapter",
+  "improvedigitalBidAdapter",
+  "ixBidAdapter",
+  "krushmediaBidAdapter",
+  "onetagBidAdapter",
+  "oneVideoBidAdapter",
+  "openxBidAdapter",
+  "pubmaticBidAdapter",
+  "rhythmoneBidAdapter",
+  "richaudienceBidAdapter",
+  "rubiconBidAdapter",
+  "smartadserverBidAdapter",
+  "sonobiBidAdapter",
+  "spotxBidAdapter",
+  "synacormediaBidAdapter",
+  "telariaBidAdapter",
+
+  "consentManagement",
+  "consentManagementUsp",
+  "schain"
+]

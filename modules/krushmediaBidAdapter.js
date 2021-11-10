@@ -93,8 +93,12 @@ export const spec = {
       if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
         placement.sizes = bid.mediaTypes[BANNER].sizes;
       } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
-        placement.wPlayer = bid.mediaTypes[VIDEO].playerSize[0];
-        placement.hPlayer = bid.mediaTypes[VIDEO].playerSize[1];
+        let dimensionSet = bid.mediaTypes[VIDEO].playerSize;
+        if (utils.isArray(dimensionSet[0])) {
+          dimensionSet = dimensionSet[0];
+        }
+        placement.wPlayer = dimensionSet[0];
+        placement.hPlayer = dimensionSet[1];
         placement.minduration = bid.mediaTypes[VIDEO].minduration;
         placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
         placement.mimes = bid.mediaTypes[VIDEO].mimes;

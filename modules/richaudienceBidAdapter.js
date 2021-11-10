@@ -203,9 +203,13 @@ function raiGetDemandType(bid) {
 function raiGetVideoInfo(bid) {
   let videoData;
   if (raiGetDemandType(bid) == 'video') {
+    let dimensionSet = bid.mediaTypes[VIDEO].playerSize;
+    if (utils.isArray(dimensionSet[0])) {
+      dimensionSet = dimensionSet[0];
+    }
     videoData = {
       format: bid.mediaTypes.video.context,
-      playerSize: bid.mediaTypes.video.playerSize,
+      playerSize: dimensionSet,
       mimes: bid.mediaTypes.video.mimes
     };
   } else {
