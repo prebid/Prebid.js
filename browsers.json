@@ -23,11 +23,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_88_windows_10": {
+  "bs_firefox_93_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "firefox",
-    "browser_version": "88.0",
+    "browser_version": "93.0",
     "device": null,
     "os": "Windows"
   },
