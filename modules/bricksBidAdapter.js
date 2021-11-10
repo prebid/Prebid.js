@@ -162,9 +162,8 @@ export const spec = {
             size: '*'
           });
 
-          if (floor) {
+          if (floor && floor.currency == CURRENCY) {
             request.floor = floor.floor;
-            request.floor_currency = floor.currency;
           }
         }
 
@@ -184,9 +183,8 @@ export const spec = {
             size: '*'
           });
 
-          if (floor) {
+          if (floor && floor.currency == CURRENCY) {
             request.floor = floor.floor;
-            request.floor_currency = floor.currency;
           }
         }
 
