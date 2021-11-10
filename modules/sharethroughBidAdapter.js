@@ -63,7 +63,7 @@ export const sharethroughAdapterSpec = {
       test: 0,
     };
 
-    req.user = firstPartyData.user ?? {};
+    req.user = nullish(firstPartyData.user, {});
     if (!req.user.ext) req.user.ext = {};
     req.user.ext.eids = userIdAsEids(bidRequests[0]);
 
