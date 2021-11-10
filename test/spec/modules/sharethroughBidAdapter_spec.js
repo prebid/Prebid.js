@@ -205,6 +205,7 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.cur).to.deep.equal(['USD']);
             expect(openRtbReq.tmax).to.equal(242);
 
+            expect(Object.keys(openRtbReq.site)).to.have.length(3);
             expect(openRtbReq.site.domain).not.to.be.undefined;
             expect(openRtbReq.site.page).not.to.be.undefined;
             expect(openRtbReq.site.ref).to.equal('https://referer.com');
@@ -253,6 +254,17 @@ describe('sharethrough adapter spec', function () {
           const openRtbReq = spec.buildRequests([bidRequests[1]], bidderRequest)[0].data;
 
           expect(openRtbReq.user.ext.eids).to.deep.equal([]);
+        });
+      });
+
+      describe('no referer provided', () => {
+        beforeEach(() => {
+          bidderRequest = {};
+        });
+
+        it('should set referer to undefined', () => {
+          const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+          expect(openRtbReq.site.ref).to.be.undefined;
         });
       });
 
@@ -430,6 +442,60 @@ describe('sharethrough adapter spec', function () {
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
 
           expect(builtRequest).to.be.undefined;
+        });
+      });
+
+      describe('first party data', () => {
+        const firstPartyData = {
+          site: {
+            name: 'example',
+            keywords: 'power tools, drills',
+            search: 'drill',
+            content: {
+              userrating: '4',
+            },
+            ext: {
+              data: {
+                pageType: 'article',
+                category: 'repair',
+              },
+            },
+          },
+          user: {
+            yob: 1985,
+            gender: 'm',
+            ext: {
+              data: {
+                registered: true,
+                interests: ['cars'],
+              },
+            },
+          },
+        };
+
+        beforeEach(() => {
+          config.setConfig({
+            ortb2: firstPartyData,
+          });
+        });
+
+        it('should include first party data in open rtb request, site section', () => {
+          const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+
+          expect(openRtbReq.site.name).to.equal(firstPartyData.site.name);
+          expect(openRtbReq.site.keywords).to.equal(firstPartyData.site.keywords);
+          expect(openRtbReq.site.search).to.equal(firstPartyData.site.search);
+          expect(openRtbReq.site.content).to.deep.equal(firstPartyData.site.content);
+          expect(openRtbReq.site.ext).to.deep.equal(firstPartyData.site.ext);
+        });
+
+        it('should include first party data in open rtb request, user section', () => {
+          const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+
+          expect(openRtbReq.user.yob).to.equal(firstPartyData.user.yob);
+          expect(openRtbReq.user.gender).to.equal(firstPartyData.user.gender);
+          expect(openRtbReq.user.ext.data).to.deep.equal(firstPartyData.user.ext.data);
+          expect(openRtbReq.user.ext.eids).not.to.be.undefined;
         });
       });
     });

@@ -1,10 +1,10 @@
-import { generateUUID, deepAccess, inIframe } from '../src/utils.js';
+import { deepAccess, generateUUID, inIframe } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { createEidsArray } from './userId/eids.js';
 
-const VERSION = '4.0.1';
+const VERSION = '4.1.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
@@ -23,6 +23,7 @@ export const sharethroughAdapterSpec = {
 
   buildRequests: (bidRequests, bidderRequest) => {
     const timeout = config.getConfig('bidderTimeout');
+    const firstPartyData = config.getConfig('ortb2') || {};
 
     const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
     const secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
@@ -35,12 +36,8 @@ export const sharethroughAdapterSpec = {
       site: {
         domain: window.location.hostname,
         page: window.location.href,
-        ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null,
-      },
-      user: {
-        ext: {
-          eids: userIdAsEids(bidRequests[0]),
-        },
+        ref: deepAccess(bidderRequest, 'refererInfo.referer'),
+        ...firstPartyData.site,
       },
       device: {
         ua: navigator.userAgent,
@@ -65,6 +62,10 @@ export const sharethroughAdapterSpec = {
       badv: bidRequests[0].params.badv || [],
       test: 0,
     };
+
+    req.user = firstPartyData.user ?? {};
+    if (!req.user.ext) req.user.ext = {};
+    req.user.ext.eids = userIdAsEids(bidRequests[0]);
 
     if (bidderRequest.gdprConsent) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
