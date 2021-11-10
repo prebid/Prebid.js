@@ -7,11 +7,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_97_windows_10": {
+  "bs_chrome_96_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
-    "browser_version": "97.0",
+    "browser_version": "96.0",
     "device": null,
     "os": "Windows"
   },
