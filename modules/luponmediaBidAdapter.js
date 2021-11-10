@@ -552,7 +552,7 @@ function parseSizes(bid, mediaType) {
     return size;
   }
 
-  // deprecated: temp legacy support
+  // Deprecated: temp legacy support
   let sizes = [];
   if (Array.isArray(params.sizes)) {
     sizes = params.sizes;
