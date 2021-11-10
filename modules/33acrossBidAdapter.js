@@ -9,7 +9,8 @@ import {
   isSlotMatchingAdUnitCode,
   logInfo,
   logWarn,
-  getWindowSelf
+  getWindowSelf,
+  mergeDeep,
 } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -246,7 +247,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
   ttxRequest.imp = [];
 
   bidRequests.forEach((req) => {
-    ttxRequest.imp.push(_createImp(req));
+    ttxRequest.imp.push(_buildImpORTB(req));
   });
 
   ttxRequest.site = { id: siteId };
@@ -322,15 +323,20 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
 
 // BUILD REQUESTS: SET EXTENSIONS
 function setExtensions(obj = {}, extFields) {
-  return Object.assign({}, obj, {
-    ext: Object.assign({}, obj.ext, extFields)
+  return mergeDeep({}, obj, {
+    'ext': extFields
   });
 }
 
 // BUILD REQUESTS: IMP
-function _createImp(bidRequest) {
+function _buildImpORTB(bidRequest) {
   const imp = {
-    id: bidRequest.bidId
+    id: bidRequest.bidId,
+    ext: {
+      ttx: {
+        prod: deepAccess(bidRequest, 'params.productId')
+      }
+    }
   };
 
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
@@ -342,12 +348,6 @@ function _createImp(bidRequest) {
   if (deepAccess(bidRequest, 'mediaTypes.video')) {
     imp.video = _buildVideoORTB(bidRequest);
   }
-
-  imp.ext = {
-    ttx: {
-      prod: deepAccess(bidRequest, 'params.productId')
-    }
-  };
 
   return imp;
 }
@@ -370,10 +370,11 @@ function _getSize(size) {
 
 // BUILD REQUESTS: PRODUCT INFERENCE
 function _inferProduct(bidRequest) {
-  const copy = Object.assign({}, bidRequest);
-  copy.params.productId = _getProduct(bidRequest);
-
-  return copy;
+  return mergeDeep({}, bidRequest, {
+    params: {
+      productId: _getProduct(bidRequest)
+    }
+  });
 }
 
 function _getProduct(bidRequest) {
@@ -637,31 +638,26 @@ function _isIframe() {
 
 // **************************** INTERPRET RESPONSE ******************************** //
 function interpretResponse(serverResponse, bidRequest) {
-  let bidResponses = [];
   const { seatbid, cur = 'USD' } = serverResponse.body;
 
   if (!isArray(seatbid)) {
-    return bidResponses;
+    return [];
   }
 
   // Pick seats with valid bids and convert them into an Array of responses
   // in format expected by Prebid Core
-  bidResponses = (
-    seatbid
-      .filter((seat) => (
-        isArray(seat.bid) &&
-        seat.bid.length > 0
-      ))
-      .map((seat) => {
-        return (
-          seat.bid
-            .map((bid) => _createBidResponse(bid, cur))
-        );
-      })
-      .flat()
-  );
-
-  return bidResponses;
+  return seatbid
+    .filter((seat) => (
+      isArray(seat.bid) &&
+      seat.bid.length > 0
+    ))
+    .map((seat) => {
+      return (
+        seat.bid
+          .map((bid) => _createBidResponse(bid, cur))
+      );
+    })
+    .flat()
 }
 
 function _createBidResponse(bid, cur) {

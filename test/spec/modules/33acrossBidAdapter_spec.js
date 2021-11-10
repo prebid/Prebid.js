@@ -1454,23 +1454,23 @@ describe('33acrossBidAdapter:', function () {
 
         const req1 = new TtxRequestBuilder()
           .addImp()
+          .withProduct('siab')
           .withBanner()
           .withVideo()
-          .withProduct('siab')
           .build();
 
         const req2 = new TtxRequestBuilder('sample33xGUID123456780')
+          .withProduct('siab')
           .withBanner()
           .withVideo()
-          .withProduct('siab')
           .build();
 
         req2.imp[0].id = 'b3';
 
         const req3 = new TtxRequestBuilder('sample33xGUID123456780')
+          .withProduct('inview')
           .withBanner()
           .withVideo()
-          .withProduct('inview')
           .build();
 
         req3.imp[0].id = 'b4';
@@ -1512,23 +1512,23 @@ describe('33acrossBidAdapter:', function () {
           .build();
 
         const req1 = new TtxRequestBuilder()
+          .withProduct('siab')
           .withBanner()
           .withVideo()
-          .withProduct('siab')
           .build();
 
         const req2 = new TtxRequestBuilder()
+          .withProduct('siab')
           .withBanner()
           .withVideo()
-          .withProduct('siab')
           .build();
 
         req2.imp[0].id = 'b2';
 
         const req3 = new TtxRequestBuilder('sample33xGUID123456780')
+          .withProduct('siab')
           .withBanner()
           .withVideo()
-          .withProduct('siab')
           .build();
 
         req3.imp[0].id = 'b3';
