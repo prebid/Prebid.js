@@ -575,6 +575,8 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
             window.googletag.pubads().setPublisherProvidedId(ppidValue);
           });
         }
+      } else {
+        logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} is not between 32 and 150 characters - ${ppidValue}`);
       }
     }
 

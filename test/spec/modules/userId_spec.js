@@ -121,6 +121,7 @@ describe('User ID', function () {
       coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('pubcid_alt', 'altpubcid200000', (new Date(Date.now() + 5000).toUTCString()));
       sinon.spy(coreStorage, 'setCookie');
+      sinon.stub(utils, 'logWarn');
     });
 
     afterEach(function () {
@@ -128,6 +129,7 @@ describe('User ID', function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       config.resetConfig();
       coreStorage.setCookie.restore();
+      utils.logWarn.restore();
     });
 
     after(function () {
@@ -346,6 +348,28 @@ describe('User ID', function () {
       requestBidsHook(() => {}, {adUnits});
       // ppid should have been set without dashes and stuff
       expect(window.googletag._ppid).to.equal('pubCommonidvaluepubCommonidvalue');
+    });
+
+    it('should log a warning if PPID too big or small', function () {
+      let adUnits = [getAdUnitMock()];
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
+      init(config);
+
+      config.setConfig({
+        userSync: {
+          ppid: 'pubcid.org',
+          userIds: [
+            { name: 'pubCommonId', value: {'pubcid': 'pubcommonIdValue'} },
+          ]
+        }
+      });
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
+      requestBidsHook(() => {}, {adUnits});
+      // ppid should NOT have been set
+      expect(window.googletag._ppid).to.equal(undefined);
+      // a warning should have been emmited
+      expect(utils.logWarn.args[0][0]).to.exist.and.to.contain('User ID - Googletag Publisher Provided ID for pubcid.org is not between 32 and 150 characters - pubcommonIdValue');
     });
 
     it('pbjs.refreshUserIds refreshes', function() {
