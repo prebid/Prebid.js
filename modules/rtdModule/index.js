@@ -42,10 +42,10 @@
  * @function?
  * @summary modify bid request data
  * @name RtdSubmodule#getBidRequestData
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} userConsent
  */
 
 /**
