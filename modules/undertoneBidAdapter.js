@@ -98,6 +98,9 @@ export const spec = {
       'commons': commons
     };
     const referer = bidderRequest.refererInfo.referer;
+    if (referer) {
+      commons.referrer = referer;
+    }
     const hostname = parseUrl(referer).hostname;
     let domain = extractDomainFromHost(hostname);
     const pageUrl = getCanonicalUrl() || referer;
