@@ -6,6 +6,8 @@ import CONSTANTS from 'src/constants.json';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
+import 'core-js-pure/features/array/flat-map';
+import 'core-js-pure/features/set';
 
 const bid1 = {
   'bidderCode': 'rubicon',
