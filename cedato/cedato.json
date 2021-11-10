@@ -19,6 +19,7 @@
   "spotxBidAdapter",
   "synacormediaBidAdapter",
   "telariaBidAdapter",
+  "yahoosspBidAdapter",
 
   "consentManagement",
   "consentManagementUsp",

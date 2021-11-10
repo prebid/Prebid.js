@@ -86,8 +86,8 @@ export const spec = {
     }
 
     const device = getConfig('device') || {};
-    device.w = device.w || window.innerWidth;
-    device.h = device.h || window.innerHeight;
+    device.w = device.w || screen.width;
+    device.h = device.h || screen.height;
     device.ua = device.ua || navigator.userAgent;
 
     const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
