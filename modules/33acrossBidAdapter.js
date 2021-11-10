@@ -53,8 +53,7 @@ const NON_MEASURABLE = 'nm';
 
 function getTTXConfig() {
   const ttxSettings = Object.assign({},
-    config.getConfig('ttxSettings'),
-    config.getConfig('33across')
+    config.getConfig('ttxSettings')
   );
 
   return ttxSettings;
