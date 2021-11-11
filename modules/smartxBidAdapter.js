@@ -165,10 +165,8 @@ export const spec = {
           content: {
             ext: {
               prebid: {
-                channel: {
-                  name: 'pbjs',
-                  version: '$prebid.version$'
-                }
+                name: 'pbjs',
+                version: '$prebid.version$'
               }
             }
           }
