@@ -293,7 +293,7 @@ export const spec = {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
-          const cpmCheck = (isAllowZeroCpmBidsEnabled(bidderRequest.bidderCode)) ? rtbBid.cpm >= 0 : rtbBid.cpm !== 0;
+          const cpmCheck = (isAllowZeroCpmBidsEnabled(bidderRequest.bidderCode)) ? rtbBid.cpm >= 0 : rtbBid.cpm > 0;
           if (cpmCheck && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);

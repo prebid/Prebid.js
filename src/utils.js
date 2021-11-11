@@ -1298,9 +1298,6 @@ export function cyrb53Hash(str, seed = 0) {
 
 export function isAllowZeroCpmBidsEnabled(bidderCode) {
   const bidderSettings = getGlobal().bidderSettings;
-  if ((bidderSettings[bidderCode] && bidderSettings[bidderCode].allowZeroCpmBids === true) ||
-   (bidderSettings.standard && bidderSettings.standard.allowZeroCpmBids === true)) {
-    return true;
-  }
-  return false;
+  return ((bidderSettings[bidderCode] && bidderSettings[bidderCode].allowZeroCpmBids === true) ||
+   (bidderSettings.standard && bidderSettings.standard.allowZeroCpmBids === true));
 }
