@@ -251,17 +251,21 @@ export const spec = {
       let tagid = utils.getBidIdParameter('tagid', bid.params);
       let bidfloor = parseFloat(getBidFloor(bid)) || 0;
       let isVideo = !!bid.mediaTypes.video;
-      let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       let data = {
         id: bid.bidId,
         tid: bid.transactionId,
         tagid,
         secure
       };
-
+      
       // adding gpid support
+      let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
+      if(!gpid){
+        gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      }
+
       if (gpid) {
-        data.ext = {gpid: gpid};
+        data.ext = {gpid: gpid.toString()};
       }
 
       let typeSpecifics = isVideo ? { video: emxAdapter.buildVideo(bid) } : { banner: emxAdapter.buildBanner(bid) };

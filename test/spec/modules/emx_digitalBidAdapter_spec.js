@@ -436,8 +436,9 @@ describe('emx_digital Adapter', function () {
       // inject gpid
       const gpid = '/12345/my-gpt-tag-0';
       let bid = utils.deepClone(bidderRequest.bids[0]);
+      bid.ortb2Imp = { ext: { data: { adserver : { adslot : gpid } } } }; //put gpid in both spots
       bid.ortb2Imp = { ext: { data: { pbadslot: gpid } } };
-
+     
       // build bid request
       let requestWithGPID = spec.buildRequests([bid], bidderRequest);
       requestWithGPID = JSON.parse(requestWithGPID.data);
