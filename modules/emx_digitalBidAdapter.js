@@ -257,10 +257,10 @@ export const spec = {
         tagid,
         secure
       };
-      
+
       // adding gpid support
       let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
-      if(!gpid){
+      if (!gpid) {
         gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       }
 
