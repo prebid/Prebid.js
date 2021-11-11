@@ -650,13 +650,11 @@ function interpretResponse(serverResponse, bidRequest) {
       isArray(seat.bid) &&
       seat.bid.length > 0
     ))
-    .map((seat) => {
-      return (
-        seat.bid
-          .map((bid) => _createBidResponse(bid, cur))
+    .reduce((acc, seat) => {
+      return acc.concat(
+        seat.bid.map((bid) => _createBidResponse(bid, cur))
       );
-    })
-    .flat()
+    }, []);
 }
 
 function _createBidResponse(bid, cur) {
