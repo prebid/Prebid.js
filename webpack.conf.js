@@ -57,6 +57,19 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /modules\/.*\.js$/,
+        exclude: path.resolve('./test'),
+        use: [
+          {
+            loader: 'babel-loader',
+            options: helpers.getAnalyticsOptions(),
+          },
+          {
+            loader: path.resolve('./preprocessor/src/adapterLoader.js')
+          }
+        ]
+      },
+      {
         test: /\.js$/,
         exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
         use: [

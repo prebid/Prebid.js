@@ -4,6 +4,7 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
+const mocha = require('gulp-mocha');
 var gutil = require('gulp-util');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
@@ -393,11 +394,12 @@ gulp.task(clean);
 
 gulp.task(escapePostbidConfig);
 
+gulp.task('test-preprocessor', () => gulp.src('preprocessor/tests/**/*.js', {read: false}).pipe(mocha({ignore: 'test/**'})))
 gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
 gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
-gulp.task('test', gulp.series(clean, lint, test));
+gulp.task('test', gulp.series('test-preprocessor', clean, lint, test));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);

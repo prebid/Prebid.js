@@ -1,9 +1,9 @@
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { createTrackPixelHtml } from '../src/utils.js';
 
-const {
+import {
   registerBidder
-} = require('../src/adapters/bidderFactory.js');
+} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'engageya';
 const ENDPOINT_URL = 'https://recs.engageya.com/rec-api/getrecs.json';
 const ENDPOINT_METHOD = 'GET';

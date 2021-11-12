@@ -1,4 +1,4 @@
-
+/* #define bidderCode: marsmedia */
 'use strict';
 import { deepAccess, getDNT, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
