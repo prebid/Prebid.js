@@ -286,7 +286,8 @@ function buildRequests(validBidRequests, bidderRequest) {
       schain,
       transactionId,
       userId = {},
-      ortb2Imp
+      ortb2Imp,
+      adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
@@ -301,6 +302,13 @@ function buildRequests(validBidRequests, bidderRequest) {
       lt && (data.lt = lt);
       data.to = to;
     }
+
+    /**
+     * ADTS-169 adds ad unit code to requests since pbadslot is not
+     * widely supported by our pubs. also, `auc` was taken, so property
+     * stands for 'ad unit name'
+     */
+    if (adUnitCode) data.aun = adUnitCode
 
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
