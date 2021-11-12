@@ -303,11 +303,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       data.to = to;
     }
 
-    /**
-     * ADTS-169 adds ad unit code to requests since pbadslot is not
-     * widely supported by our pubs. also, `auc` was taken, so property
-     * stands for 'ad unit name'
-     */
+    // ADTS-169 add adUnitCode to requests
     if (adUnitCode) data.aun = adUnitCode
 
     // ADTS-134 Retrieve ID envelopes
