@@ -353,6 +353,37 @@ describe('IndexexchangeAdapter', function () {
     ]
   };
 
+  const DEFAULT_VIDEO_BID_RESPONSE_WITH_MTYPE_SET = {
+    cur: 'USD',
+    id: '1aa2bb3cc4de',
+    seatbid: [
+      {
+        bid: [
+          {
+            crid: '12346',
+            adomain: ['www.abcd.com'],
+            adid: '14851456',
+            impid: '1a2b3c4e',
+            cid: '3051267',
+            price: 110,
+            id: '2',
+            mtype: 2,
+            adm: '<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"vast.xsd\" version=\"3.0\"> <Ad id=\"488427365\">  <InLine>   <AdSystem>Test</AdSystem>   <AdTitle>In-Stream Video</AdTitle> </InLine> </Ad></VAST',
+            ext: {
+              vasturl: 'www.abcd.com/vast',
+              errorurl: 'www.abcd.com/error',
+              dspid: 51,
+              pricelevel: '_110',
+              advbrandid: 303326,
+              advbrand: 'OECTB'
+            }
+          }
+        ],
+        seat: '3971'
+      }
+    ]
+  };
+
   const DEFAULT_OPTION = {
     gdprConsent: {
       gdprApplies: true,
@@ -2337,6 +2368,45 @@ describe('IndexexchangeAdapter', function () {
         }
       ];
       const result = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: ONE_VIDEO
+      });
+
+      expect(result[0]).to.deep.equal(expectedParse[0]);
+    });
+
+    it('should get correct bid response for video ad and set bid.vastXml when mtype is 2 (video)', function () {
+      const expectedParse = [
+        {
+          requestId: '1a2b3c4e',
+          cpm: 1.1,
+          creativeId: '12346',
+          mediaType: 'video',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [
+                [
+                  400,
+                  100
+                ]
+              ]
+            }
+          },
+          width: 640,
+          height: 480,
+          currency: 'USD',
+          ttl: 3600,
+          netRevenue: true,
+          vastXml: '<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"vast.xsd\" version=\"3.0\"> <Ad id=\"488427365\">  <InLine>   <AdSystem>Test</AdSystem>   <AdTitle>In-Stream Video</AdTitle> </InLine> </Ad></VAST',
+          meta: {
+            networkId: 51,
+            brandId: 303326,
+            brandName: 'OECTB',
+            advertiserDomains: ['www.abcd.com']
+          }
+        }
+      ];
+      const result = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE_WITH_MTYPE_SET }, {
         data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: ONE_VIDEO
       });
 

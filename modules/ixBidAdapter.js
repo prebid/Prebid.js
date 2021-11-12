@@ -84,6 +84,14 @@ const LOCAL_STORAGE_KEY = 'ixdiag';
 let hasRegisteredHandler = false;
 export const storage = getStorageManager(GLOBAL_VENDOR_ID, BIDDER_CODE);
 
+// Possible values for bidResponse.seatBid[].bid[].mtype which indicates the type of the creative markup so that it can properly be associated with the right sub-object of the BidRequest.Imp.
+const MEDIA_TYPES = {
+  Banner: 1,
+  Video: 2,
+  Audio: 3,
+  Native: 4
+}
+
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
  *
@@ -275,9 +283,14 @@ function parseBid(rawBid, currency, bidRequest) {
   bid.currency = currency;
   bid.creativeId = rawBid.hasOwnProperty('crid') ? rawBid.crid : '-';
 
-  // in the event of a video
-  if (deepAccess(rawBid, 'ext.vasturl')) {
+  if (rawBid.mtype == MEDIA_TYPES.Video) {
+    bid.vastXml = rawBid.adm
+  } else if (rawBid.ext && rawBid.ext.vasturl) {
     bid.vastUrl = rawBid.ext.vasturl
+  }
+
+  // in the event of a video
+  if ((rawBid.ext && rawBid.ext.vasturl) || rawBid.mtype == MEDIA_TYPES.Video) {
     bid.width = bidRequest.video.w;
     bid.height = bidRequest.video.h;
     bid.mediaType = VIDEO;
@@ -1066,7 +1079,13 @@ function outstreamRenderer(bid) {
       timeout: 3000
     };
 
-    window.IXOutstreamPlayer(bid.vastUrl, bid.adUnitCode, config);
+    // IXOutstreamPlayer supports both vastUrl and vastXml, so we can pass either.
+    // Since vastUrl is going to be deprecated from exchange response, vastXml takes priority.
+    if (bid.vastXml) {
+      window.IXOutstreamPlayer(bid.vastXml, bid.adUnitCode, config);
+    } else {
+      window.IXOutstreamPlayer(bid.vastUrl, bid.adUnitCode, config);
+    }
   });
 }
 
