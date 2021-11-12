@@ -1,19 +1,22 @@
 import { BANNER } from '../src/mediaTypes.js'
+import { config } from '../src/config.js'
 import { getStorageManager } from '../src/storageManager.js'
 import { isArray } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 
 const storageManager = getStorageManager()
 
+const GVLID = 1012
 const BIDDER_CODE = 'glimpse'
 const ENDPOINT = 'https://api.glimpsevault.io/ads/serving/public/v1/prebid'
 const LOCAL_STORAGE_KEY = {
-  glimpse: {
+  vault: {
     jwt: 'gp_vault_jwt',
   },
 }
 
 export const spec = {
+  gvlid: GVLID,
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
@@ -37,20 +40,28 @@ export const spec = {
    * @returns {ServerRequest}
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    const networkId = window.networkId || -1
-    const bids = validBidRequests.map(processBidRequest)
+    const demo = config.getConfig('glimpse.demo') || false
+    const account = config.getConfig('glimpse.account') || -1
+    const demand = config.getConfig('glimpse.demand') || 'glimpse'
+    const keywords = config.getConfig('glimpse.keywords') || {}
+
+    const auth = getVaultJwt()
     const referer = getReferer(bidderRequest)
     const gdprConsent = getGdprConsentChoice(bidderRequest)
-    const jwt = getVaultJwt()
+    const bids = validBidRequests.map((bidRequest) => {
+      return processBidRequest(bidRequest, keywords)
+    })
 
     const data = {
-      auth: jwt,
+      auth,
       data: {
         bidderCode: spec.code,
-        networkId,
-        bids,
+        demo,
+        account,
+        demand,
         referer,
         gdprConsent,
+        bids,
       }
     }
 
@@ -65,10 +76,9 @@ export const spec = {
   /**
    * Parse response from Glimpse server
    * @param bidResponse {ServerResponse}
-   * @param bidRequest {BidRequest}
    * @returns {Bid[]}
    */
-  interpretResponse: (bidResponse, bidRequest) => {
+  interpretResponse: (bidResponse) => {
     const isValidResponse = isValidBidResponse(bidResponse)
 
     if (isValidResponse) {
@@ -81,16 +91,20 @@ export const spec = {
   },
 }
 
-function processBidRequest(bidRequest) {
+function processBidRequest(bidRequest, globalKeywords) {
   const sizes = normalizeSizes(bidRequest.sizes)
-  const keywords = bidRequest.params.keywords || []
+  const bidKeywords = bidRequest.params.keywords || {}
+  const keywords = {
+    ...globalKeywords,
+    ...bidKeywords,
+  }
 
   return {
+    unitCode: bidRequest.adUnitCode,
     bidId: bidRequest.bidId,
     placementId: bidRequest.params.placementId,
-    unitCode: bidRequest.adUnitCode,
-    sizes,
     keywords,
+    sizes,
   }
 }
 
@@ -124,7 +138,8 @@ function getReferer(bidderRequest) {
 function getGdprConsentChoice(bidderRequest) {
   const hasGdprConsent =
     hasValue(bidderRequest) &&
-    hasValue(bidderRequest.gdprConsent)
+    hasValue(bidderRequest.gdprConsent) &&
+    hasStringValue(bidderRequest.gdprConsent.consentString)
 
   if (hasGdprConsent) {
     return bidderRequest.gdprConsent
@@ -138,11 +153,11 @@ function getGdprConsentChoice(bidderRequest) {
 }
 
 function setVaultJwt(auth) {
-  storageManager.setDataInLocalStorage(LOCAL_STORAGE_KEY.glimpse.jwt, auth)
+  storageManager.setDataInLocalStorage(LOCAL_STORAGE_KEY.vault.jwt, auth)
 }
 
 function getVaultJwt() {
-  return storageManager.getDataFromLocalStorage(LOCAL_STORAGE_KEY.glimpse.jwt) || ''
+  return storageManager.getDataFromLocalStorage(LOCAL_STORAGE_KEY.vault.jwt) || ''
 }
 
 function isValidBidResponse(bidResponse) {
