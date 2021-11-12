@@ -1,12 +1,15 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 // #region Constants
 export const BIDDER_CODE = 'adplus';
 export const ADPLUS_ENDPOINT = 'https://ssp.ad-plus.com.tr/server/headerBidding';
 export const DGID_CODE = 'adplus_dg_id';
 export const SESSION_CODE = 'adplus_s_id';
+export const storage = getStorageManager(undefined, BIDDER_CODE);
+const COOKIE_EXP = 1000 * 60 * 60 * 24; // 1 day
 // #endregion
 
 // #region Helpers
@@ -16,21 +19,8 @@ export function isValidUuid (uuid) {
   );
 }
 
-function sessionStorageEnabled() {
-  try {
-    sessionStorage.setItem('prebid.cookieTest', '1');
-    return sessionStorage.getItem('prebid.cookieTest') === '1';
-  } catch (error) {
-  } finally {
-    try {
-      sessionStorage.removeItem('prebid.cookieTest');
-    } catch (error) {}
-  }
-  return false;
-}
-
 function getSessionId() {
-  let sid = sessionStorageEnabled() && sessionStorage.getItem(SESSION_CODE);
+  let sid = storage.cookiesAreEnabled() && storage.getCookie(SESSION_CODE);
 
   if (
     !sid || !isValidUuid(sid)
@@ -43,8 +33,10 @@ function getSessionId() {
 }
 
 function setSessionId(sid) {
-  if (sessionStorageEnabled()) {
-    sessionStorage.setItem(SESSION_CODE, sid);
+  if (storage.cookiesAreEnabled()) {
+    const expires = new Date(Date.now() + COOKIE_EXP).toISOString();
+
+    storage.setCookie(SESSION_CODE, sid, expires);
   }
 }
 // #endregion
