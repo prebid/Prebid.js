@@ -215,8 +215,8 @@ export const spec = {
         }
 
         request.video_params = {
-          protocols: utils.deepAccess(bidRequest, 'mediaTypes.video.protocols'),
-          api: utils.deepAccess(bidRequest, 'mediaTypes.video.api'),
+          protocols: utils.deepAccess(bidRequest, 'mediaTypes.video.protocols').filter(x => ALLOWED_VIDEO_PROTOCOLS.indexOf(x) !== -1),
+          api: utils.deepAccess(bidRequest, 'mediaTypes.video.api').filter(x => ALLOWED_VIDEO_API.indexOf(x) !== -1),
           mimes: utils.deepAccess(bidRequest, 'mediaTypes.video.mimes'),
           skip: utils.deepAccess(bidRequest, 'mediaTypes.video.skip'),
           startdelay: utils.deepAccess(bidRequest, 'mediaTypes.video.startdelay'),
