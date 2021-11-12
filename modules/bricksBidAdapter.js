@@ -11,6 +11,8 @@ const TTL = 60;
 const HTTP_METHOD = 'POST';
 const REQUEST_URL = 'https://dev-bidadapter.viously.io/catch';
 const USER_SYNC_URL = 'https://sync.bricks-co.com/sync';
+const ALLOWED_VIDEO_PROTOCOLS = [1, 2, 3, 4, 5, 6, 7, 8];
+const ALLOWED_VIDEO_API = [1, 2];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -79,6 +81,30 @@ export const spec = {
           areParamsValid = false;
         }
       });
+
+      /**
+       * We make sure that at least one of the supported protocols is on the list
+       * See the list here: https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
+       */
+      if (videoParams['protocols']) {
+        let allowedProtocols = videoParams['protocols'].filter(x => ALLOWED_VIDEO_PROTOCOLS.indexOf(x) !== -1);
+        if (!allowedProtocols.length) {
+          utils.logError('The list of protocols for the video must contain at least one of the following : [1, 2, 3, 4, 5, 6, 7, 8]');
+          areParamsValid = false;
+        }
+      }
+
+      /**
+       * We make sure that at least one of the supported api is on the list
+       * See the list here: https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
+       */
+      if (videoParams['api']) {
+        let allowedApi = videoParams['api'].filter(x => ALLOWED_VIDEO_API.indexOf(x) !== -1);
+        if (!allowedApi.length) {
+          utils.logError('The list of api for the video must contain at least one of the following : [1, 2]');
+          areParamsValid = false;
+        }
+      }
 
       if (!areParamsValid) {
         return false;

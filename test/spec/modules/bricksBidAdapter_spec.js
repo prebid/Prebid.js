@@ -148,12 +148,18 @@ describe('BricksAdapter', function () {
       it('should return false because the video protocols parameter is missing', function () {
         let wrongBid = utils.deepClone(VALID_BID_VIDEO);
 
+        wrongBid.mediaTypes.video.protocols = [9];
+        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
+
         delete wrongBid.mediaTypes.video.protocols;
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
       });
 
       it('should return false because the video api parameter is missing', function () {
         let wrongBid = utils.deepClone(VALID_BID_VIDEO);
+
+        wrongBid.mediaTypes.video.api = [3];
+        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
 
         delete wrongBid.mediaTypes.video.api;
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
