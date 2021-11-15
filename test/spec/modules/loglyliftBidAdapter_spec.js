@@ -7,7 +7,7 @@ describe('loglyliftBidAdapter', function () {
     bidder: 'loglylift',
     bidId: '254304ac29e265',
     params: {
-      adspotId: '16'
+      adspotId: 16
     },
     adUnitCode: '/19968336/prebid_native_example_1',
     transactionId: '10aee457-617c-4572-ab5b-99df1d73ccb4',
