@@ -41,7 +41,7 @@
   },
   "bs_safari_15_Catalina": {
     "base": "BrowserStack",
-    "os_version": "Mojave",
+    "os_version": "Catalina",
     "browser": "safari",
     "browser_version": "15",
     "device": null,
