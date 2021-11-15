@@ -77,12 +77,14 @@ function isBidRequestValid(bid) {
 function buildRequest(bidRequests, bidderRequest) {
   bidderRequest = bidderRequest || {};
   const _placementIds = [];
+  const _adUnitCodes = [];
   let _loginId, _customEndpoint, _userId;
   let _ivAuctionStart = bidderRequest.auctionStart || Date.now();
 
   bidRequests.forEach(function (bidRequest) {
     bidRequest.startTime = new Date().getTime();
     _placementIds.push(bidRequest.params.placementId);
+    _adUnitCodes.push(bidRequest.adUnitCode);
     _loginId = _loginId || bidRequest.params.loginId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
     _customUserSync = _customUserSync || bidRequest.params.customUserSync;
@@ -99,6 +101,7 @@ function buildRequest(bidRequests, bidderRequest) {
   let userIdModel = getUserIds(_userId);
   let bidParamsJson = {
     placementIds: _placementIds,
+    adUnitCodes: _adUnitCodes,
     loginId: _loginId,
     auctionStartTime: _ivAuctionStart,
     bidVersion: CONSTANTS.PREBID_VERSION
@@ -181,9 +184,12 @@ function handleResponse(responseObj, bidRequests) {
   const bidResponses = [];
   for (let i = 0; i < bidRequests.length; i++) {
     let bidRequest = bidRequests[i];
+    let usedPlacementId = responseObj.UseAdUnitCode === true
+      ? bidRequest.params.placementId + '_' + bidRequest.adUnitCode
+      : bidRequest.params.placementId;
 
-    if (invibes.placementBids.indexOf(bidRequest.params.placementId) > -1) {
-      logInfo('Invibes Adapter - Placement was previously bid on ' + bidRequest.params.placementId);
+    if (invibes.placementBids.indexOf(usedPlacementId) > -1) {
+      logInfo('Invibes Adapter - Placement was previously bid on ' + usedPlacementId);
       continue;
     }
 
@@ -191,21 +197,21 @@ function handleResponse(responseObj, bidRequests) {
     if (responseObj.AdPlacements != null) {
       for (let j = 0; j < responseObj.AdPlacements.length; j++) {
         let bidModel = responseObj.AdPlacements[j].BidModel;
-        if (bidModel != null && bidModel.PlacementId == bidRequest.params.placementId) {
+        if (bidModel != null && bidModel.PlacementId == usedPlacementId) {
           requestPlacement = responseObj.AdPlacements[j];
           break;
         }
       }
     } else {
       let bidModel = responseObj.BidModel;
-      if (bidModel != null && bidModel.PlacementId == bidRequest.params.placementId) {
+      if (bidModel != null && bidModel.PlacementId == usedPlacementId) {
         requestPlacement = responseObj;
       }
     }
 
-    let bid = createBid(bidRequest, requestPlacement, responseObj.MultipositionEnabled);
+    let bid = createBid(bidRequest, requestPlacement, responseObj.MultipositionEnabled, usedPlacementId);
     if (bid !== null) {
-      invibes.placementBids.push(bidRequest.params.placementId);
+      invibes.placementBids.push(usedPlacementId);
       bidResponses.push(bid);
     }
   }
@@ -213,9 +219,9 @@ function handleResponse(responseObj, bidRequests) {
   return bidResponses;
 }
 
-function createBid(bidRequest, requestPlacement, multipositionEnabled) {
+function createBid(bidRequest, requestPlacement, multipositionEnabled, usedPlacementId) {
   if (requestPlacement === null || requestPlacement.BidModel === null) {
-    logInfo('Invibes Adapter - Placement not configured for bidding ' + bidRequest.params.placementId);
+    logInfo('Invibes Adapter - Placement not configured for bidding ' + usedPlacementId);
     return null;
   }
 
@@ -684,7 +690,7 @@ let keywords = (function () {
   return kw;
 }());
 
-// =====================
+// ======================
 
 export function resetInvibes() {
   invibes.optIn = undefined;

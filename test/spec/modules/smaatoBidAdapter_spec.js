@@ -287,6 +287,13 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.regs.ext.us_privacy).to.equal('uspConsentString');
       });
 
+      it('sends no schain if no schain exists', () => {
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.source.ext.schain).to.not.exist;
+      });
+
       it('sends tmax', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
@@ -852,6 +859,29 @@ describe('smaatoBidAdapterTest', () => {
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.user.ext.eids).to.exist;
         expect(req.user.ext.eids).to.have.length(2);
+      });
+    });
+
+    describe('schain in request', () => {
+      it('schain is added to source.ext.schain', () => {
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              'asi': 'asi',
+              'sid': 'sid',
+              'rid': 'rid',
+              'hp': 1
+            }
+          ]
+        };
+        const bidRequestWithSchain = Object.assign({}, singleBannerBidRequest, {schain: schain});
+
+        const reqs = spec.buildRequests([bidRequestWithSchain], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.source.ext.schain).to.deep.equal(schain);
       });
     });
   });

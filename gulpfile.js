@@ -76,6 +76,7 @@ function lint(done) {
     'modules/**/*.js',
     'test/**/*.js',
     'plugins/**/*.js',
+    '!plugins/**/node_modules/**',
     './*.js'
   ], { base: './' })
     .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
