@@ -31,17 +31,17 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_safari_latest_mac_monterey": {
+  "bs_safari_latest_mac_bigsur": {
     "base": "BrowserStack",
-    "os_version": "Monterey",
+    "os_version": "Big Sur",
     "browser": "safari",
     "browser_version": "latest",
     "device": null,
     "os": "OS X"
   },
-  "bs_safari_15_mac_bigsur": {
+  "bs_safari_15_Catalina": {
     "base": "BrowserStack",
-    "os_version": "Big Sur",
+    "os_version": "Mojave",
     "browser": "safari",
     "browser_version": "15",
     "device": null,
