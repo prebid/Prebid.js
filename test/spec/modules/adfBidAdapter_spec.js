@@ -602,6 +602,29 @@ describe('Adf adapter', function () {
 
             assert.doesNotThrow(() => spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }));
           });
+          
+          it('should not throw error if min_width & min_height not defined', function () {
+            const validBidRequests = [{
+              bidId: 'bidId',
+              params: { mid: 1000 },
+              nativeParams: {
+                image: {
+                  aspect_ratios: [{
+                    min_width: 100,
+                    min_height: 300
+                  }]
+                },
+                icon: {
+                  aspect_ratios: [{
+                    min_width: 10,
+                    min_height: 25
+                  }]
+                }
+              }
+            }];
+
+            assert.doesNotThrow(() => spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }));
+          });
         });
 
         it('should expect any dimensions if min_width not passed', function () {
