@@ -554,12 +554,13 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
   logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
+  let _s2sConfigs = [];
   const s2sBidders = [];
-  let _s2sConfigs = config.getConfig('s2sConfig') || [];
-
-  if (!Array.isArray(_s2sConfigs)) {
-    _s2sConfigs = [_s2sConfigs];
-  }
+  config.getConfig('s2sConfig', config => {
+    if (config && config.s2sConfig) {
+      _s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
+    }
+  });
 
   _s2sConfigs.forEach(s2sConfig => {
     s2sBidders.push(...s2sConfig.bidders);
