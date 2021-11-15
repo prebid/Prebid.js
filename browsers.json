@@ -31,19 +31,19 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_safari_latest_mac_catalina": {
+  "bs_safari_latest_mac_monterey": {
     "base": "BrowserStack",
-    "os_version": "Catalina",
+    "os_version": "Monterey",
     "browser": "safari",
     "browser_version": "latest",
     "device": null,
     "os": "OS X"
   },
-  "bs_safari_13_mac_highsierra": {
+  "bs_safari_15_mac_bigsur": {
     "base": "BrowserStack",
-    "os_version": "High Sierra",
+    "os_version": "Big Sur",
     "browser": "safari",
-    "browser_version": "13.1",
+    "browser_version": "15",
     "device": null,
     "os": "OS X"
   }
