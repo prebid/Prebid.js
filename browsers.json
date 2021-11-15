@@ -39,11 +39,11 @@
     "device": null,
     "os": "OS X"
   },
-  "bs_safari_15_Catalina": {
+  "bs_safari_15_catalina": {
     "base": "BrowserStack",
     "os_version": "Catalina",
     "browser": "safari",
-    "browser_version": "15",
+    "browser_version": "13.1",
     "device": null,
     "os": "OS X"
   }
