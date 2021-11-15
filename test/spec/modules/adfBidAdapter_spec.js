@@ -602,7 +602,7 @@ describe('Adf adapter', function () {
 
             assert.doesNotThrow(() => spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }));
           });
-          
+
           it('should not throw error if min_width & min_height not defined', function () {
             const validBidRequests = [{
               bidId: 'bidId',
