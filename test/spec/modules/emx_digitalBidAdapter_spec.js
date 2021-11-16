@@ -432,6 +432,21 @@ describe('emx_digital Adapter', function () {
       });
     });
 
+    it('should add gpid to request if present', () => {
+      // inject gpid
+      const gpid = '/12345/my-gpt-tag-0';
+      let bid = utils.deepClone(bidderRequest.bids[0]);
+      bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid } } } }; // put gpid in both spots
+      bid.ortb2Imp = { ext: { data: { pbadslot: gpid } } };
+  
+      // build bid request
+      let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+      requestWithGPID = JSON.parse(requestWithGPID.data);
+  
+      // ensure gpid inside bid request
+      expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+    });
+
     it('should add UID 2.0 to request', () => {
       const uid2 = { id: '456' };
       const bidRequestWithUID = utils.deepClone(bidderRequest);
