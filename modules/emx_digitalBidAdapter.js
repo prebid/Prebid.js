@@ -259,9 +259,9 @@ export const spec = {
       };
 
       // adding gpid support
-      let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
+      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
       if (!gpid) {
-        gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+        gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       }
 
       if (gpid) {
