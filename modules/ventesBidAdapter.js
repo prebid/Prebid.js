@@ -12,7 +12,6 @@ import {
   replaceAuctionPrice
 } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
@@ -22,26 +21,25 @@ const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
 const FIRST_PRICE = 1;
 const NET_REVENUE = true;
 const TTL = 10;
-const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const DOMAIN_REGEX = new RegExp('//([^/]*)');
 
 function groupBy(values, key) {
   const groups = values.reduce((acc, value) => {
-      const groupId = value[key];
+    const groupId = value[key];
 
-      if (!acc[groupId]) acc[groupId] = [];
-      acc[groupId].push(value);
+    if (!acc[groupId]) acc[groupId] = [];
+    acc[groupId].push(value);
 
-      return acc;
+    return acc;
   }, {});
 
   return Object
-      .keys(groups)
-      .map(id => ({
-          id,
-          key,
-          values: groups[id]
-      }));
+    .keys(groups)
+    .map(id => ({
+      id,
+      key,
+      values: groups[id]
+    }));
 }
 
 function validateMediaTypes(mediaTypes, allowedMediaTypes) {
@@ -49,7 +47,7 @@ function validateMediaTypes(mediaTypes, allowedMediaTypes) {
   if (!allowedMediaTypes.some(mediaType => mediaType in mediaTypes)) return false;
 
   if (isBanner(mediaTypes)) {
-      if (!validateBanner(mediaTypes.banner)) return false;
+    if (!validateBanner(mediaTypes.banner)) return false;
   }
   return true;
 }
@@ -75,12 +73,12 @@ function hasUserInfo(bid) {
   return !!bid.params.user;
 }
 
-function validateParameters(parameters, adUnit) {
+function validateParameters(parameters) {
   if (!(parameters.placementId)) {
-      return false;
+    return false;
   }
   if (!(parameters.publisherId)) {
-      return false;
+    return false;
   }
 
   return true;
@@ -105,12 +103,12 @@ function generateSiteFromAdUnitContext(bidRequests, adUnitContext) {
   if (!domain) return null;
 
   return {
-      page: adUnitContext.refererInfo.referer,
-      domain: domain,
-      name: domain,
-      publisher: {
-          id: publisherId
-      }
+    page: adUnitContext.refererInfo.referer,
+    domain: domain,
+    name: domain,
+    publisher: {
+      id: publisherId
+    }
   };
 }
 
@@ -122,13 +120,13 @@ function validateServerRequest(serverRequest) {
 
 function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
   return {
-      method: BID_METHOD,
-      url: BIDDER_URL,
-      data: generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext),
-      options: {
-          contentType: 'application/json',
-          withCredentials: false,
-      }
+    method: BID_METHOD,
+    url: BIDDER_URL,
+    data: generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext),
+    options: {
+      contentType: 'application/json',
+      withCredentials: false,
+    }
   }
 }
 
@@ -136,26 +134,25 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   const userObjBid = find(bidRequests, hasUserInfo);
   let userObj = {};
   if (userObjBid) {
-      Object.keys(userObjBid.params.user)
-          .filter(param => includes(USER_PARAMS, param))
-          .forEach((param) => {
-              let uparam = convertCamelToUnderscore(param);
-              if (param === 'segments' && isArray(userObjBid.params.user[param])) {
-                  let segs = [];
-                  userObjBid.params.user[param].forEach(val => {
-                      if (isNumber(val)) {
-                          segs.push({
-                              'id': val
-                          });
-                      } else if (isPlainObject(val)) {
-                          segs.push(val);
-                      }
-                  });
-                  userObj[uparam] = segs;
-              } else if (param !== 'segments') {
-                  userObj[uparam] = userObjBid.params.user[param];
-              }
-          });
+    Object.keys(userObjBid.params.user)
+    .forEach((param) => {
+      let uparam = convertCamelToUnderscore(param);
+      if (param === 'segments' && isArray(userObjBid.params.user[param])) {
+        let segs = [];
+        userObjBid.params.user[param].forEach(val => {
+          if (isNumber(val)) {
+            segs.push({
+              'id': val
+            });
+          } else if (isPlainObject(val)) {
+            segs.push(val);
+          }
+        });
+        userObj[uparam] = segs;
+      } else if (param !== 'segments') {
+        userObj[uparam] = userObjBid.params.user[param];
+      }
+    });
   }
 
   const deviceObjBid = find(bidRequests, hasDeviceInfo);
@@ -209,9 +206,7 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
   } = params;
   const pmp = {};
 
-  if (placementId) pmp.deals = [{
-      id: placementId
-  }]
+  if (placementId) pmp.deals = [{id: placementId }]
 
   const imps = Object
       .keys(mediaTypes)
@@ -236,9 +231,7 @@ function generateBannerFromAdUnit(impId, data, params) {
       placementId
   };
 
-  if (placementId) pmp.deals = [{
-      id: placementId
-  }]
+  if (placementId) pmp.deals = [{ id: placementId }]
 
   return data.sizes.map(([w, h]) => ({
       id: `${impId}`,
@@ -385,7 +378,7 @@ const venavenBidderSpec = {
           isStr(adUnit.bidderRequestId) &&
           isStr(adUnit.bidId) &&
           validateMediaTypes(adUnit.mediaTypes, this.supportedMediaTypes) &&
-          validateParameters(adUnit.params, adUnit);
+          validateParameters(adUnit.params);
   },
   buildRequests(bidRequests, bidderRequest) {
       if (!bidRequests) return null;
