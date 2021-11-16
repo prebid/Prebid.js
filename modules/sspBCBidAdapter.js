@@ -343,7 +343,7 @@ const isVideoAd = bid => {
 const isNativeAd = bid => {
   const xmlTester = new RegExp(/^{['"]native['"]/);
 
-  return bid.adm && bid.adm.match(xmlTester);
+  return bid.admNative || (bid.adm && bid.adm.match(xmlTester));
 }
 
 const parseNative = nativeData => {
@@ -599,7 +599,7 @@ const spec = {
               bid.mediaType = 'native';
               // check native object
               try {
-                const nativeData = JSON.parse(serverBid.adm).native;
+                const nativeData = serverBid.admNative || JSON.parse(serverBid.adm).native;
                 bid.native = parseNative(nativeData);
                 bid.width = 1;
                 bid.height = 1;
