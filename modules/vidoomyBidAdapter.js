@@ -53,7 +53,7 @@ const isBidResponseValid = bid => {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return Boolean(bid.vastUrl);
+      return Boolean(bid.vastUrl || bid.vastXml);
     default:
       return false;
   }
@@ -89,7 +89,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
-      d: getDomainWithoutSubdomain(hostname),
+      d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       sp: encodeURIComponent(aElement.href),
       usp: bidderRequest.uspConsent || '',
       coppa: !!config.getConfig('coppa'),
@@ -128,7 +128,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
     let responseBody = serverResponse.body;
     if (!responseBody) return;
     if (responseBody.mediaType === 'video') {
-      responseBody.ad = responseBody.vastUrl;
+      responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
       const videoContext = bidRequest.data.videoContext;
 
       if (videoContext === OUTSTREAM) {
@@ -144,13 +144,12 @@ const interpretResponse = (serverResponse, bidRequest) => {
 
           responseBody.renderer = renderer;
         } catch (e) {
-          responseBody.ad = responseBody.vastUrl;
+          responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
           logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
         }
       }
     }
     const bid = {
-      vastUrl: responseBody.vastUrl,
       ad: responseBody.ad,
       renderer: responseBody.renderer,
       mediaType: responseBody.mediaType,
@@ -179,6 +178,11 @@ const interpretResponse = (serverResponse, bidRequest) => {
         secondaryCatIds: responseBody.meta.secondaryCatIds
       }
     };
+    if (responseBody.vastUrl) {
+      bid.vastUrl = responseBody.vastUrl;
+    } else if (responseBody.vastXml) {
+      bid.vastXml = responseBody.vastXml;
+    }
 
     const bids = [];
 
