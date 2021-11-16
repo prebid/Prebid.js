@@ -1,7 +1,7 @@
 import { logError } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {BANNER, VIDEO, NATIVE} from "../src/mediaTypes.js";
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'admixer';
 const ALIASES = ['go2net', 'adblender', 'adsyield'];
