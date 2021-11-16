@@ -10,8 +10,6 @@ const FIRST_PRICE = 1;
 const NET_REVENUE = true;
 const TTL = 10;
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
-const DEVICE_PARAMS = ['ua', 'geo', 'dnt', 'lmt', 'ip', 'ipv6', 'devicetype'];
-const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DOMAIN_REGEX = new RegExp('//([^/]*)');
 
 function groupBy(values, key) {
@@ -146,7 +144,6 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   if (deviceObjBid && deviceObjBid.params && deviceObjBid.params.device) {
     deviceObj = {};
     Object.keys(deviceObjBid.params.device)
-      .filter(param => includes(DEVICE_PARAMS, param))
       .forEach(param => deviceObj[param] = deviceObjBid.params.device[param]);
     if (!deviceObjBid.hasOwnProperty('ua')) {
       deviceObj.ua = navigator.userAgent;
@@ -159,24 +156,24 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
     deviceObj.ua = navigator.userAgent;
     deviceObj.language = navigator.language;
   }
-  const appDeviceObjBid = find(bidRequests, hasAppInfo);
-  let appIdObj;
-  if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-    Object.keys(appDeviceObjBid.params.app)
-      .filter(param => includes(APP_DEVICE_PARAMS, param))
-      .forEach(param => appDeviceObjBid[param] = appDeviceObjBid.params.app[param]);
-  }
-
   const payload = {}
   payload.id = bidRequestId
   payload.at = FIRST_PRICE
   payload.cur = ['USD']
   payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, [])
-  payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
-  payload.device = deviceObj
-  if (appDeviceObjBid && payload.site != null) {
+  const appDeviceObjBid = find(bidRequests, hasAppInfo);
+  if(!appDeviceObjBid){
+    payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
+  }else{
+    let appIdObj;
+    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
+      appIdObj = {};
+      Object.keys(appDeviceObjBid.params.app)
+        .forEach(param => appIdObj[param] = appDeviceObjBid.params.app[param]);
+    }
     payload.app = appIdObj;
   }
+  payload.device = deviceObj;
   payload.user = userObj
   // payload.regs = getRegulationFromAdUnitContext(adUnitContext)
   // payload.ext = generateBidRequestExtension()
