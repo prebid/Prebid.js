@@ -18,9 +18,7 @@ import {
 
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
-const FIRST_PRICE = 1;
-const NET_REVENUE = true;
-const TTL = 10;
+
 const DOMAIN_REGEX = new RegExp('//([^/]*)');
 
 function groupBy(values, key) {
@@ -135,60 +133,60 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   let userObj = {};
   if (userObjBid) {
     Object.keys(userObjBid.params.user)
-    .forEach((param) => {
-      let uparam = convertCamelToUnderscore(param);
-      if (param === 'segments' && isArray(userObjBid.params.user[param])) {
-        let segs = [];
-        userObjBid.params.user[param].forEach(val => {
-          if (isNumber(val)) {
-            segs.push({
-              'id': val
-            });
-          } else if (isPlainObject(val)) {
-            segs.push(val);
-          }
-        });
-        userObj[uparam] = segs;
-      } else if (param !== 'segments') {
-        userObj[uparam] = userObjBid.params.user[param];
-      }
-    });
+      .forEach((param) => {
+        let uparam = convertCamelToUnderscore(param);
+        if (param === 'segments' && isArray(userObjBid.params.user[param])) {
+          let segs = [];
+          userObjBid.params.user[param].forEach(val => {
+            if (isNumber(val)) {
+              segs.push({
+                'id': val
+              });
+            } else if (isPlainObject(val)) {
+              segs.push(val);
+            }
+          });
+          userObj[uparam] = segs;
+        } else if (param !== 'segments') {
+          userObj[uparam] = userObjBid.params.user[param];
+        }
+      });
   }
 
   const deviceObjBid = find(bidRequests, hasDeviceInfo);
   let deviceObj;
   if (deviceObjBid && deviceObjBid.params && deviceObjBid.params.device) {
-      deviceObj = {};
-      Object.keys(deviceObjBid.params.device)
-          .forEach(param => deviceObj[param] = deviceObjBid.params.device[param]);
-      if (!deviceObjBid.hasOwnProperty('ua')) {
-          deviceObj.ua = navigator.userAgent;
-      }
-      if (!deviceObjBid.hasOwnProperty('language')) {
-          deviceObj.language = navigator.language;
-      }
-  } else {
-      deviceObj = {};
+    deviceObj = {};
+    Object.keys(deviceObjBid.params.device)
+      .forEach(param => deviceObj[param] = deviceObjBid.params.device[param]);
+    if (!deviceObjBid.hasOwnProperty('ua')) {
       deviceObj.ua = navigator.userAgent;
+    }
+    if (!deviceObjBid.hasOwnProperty('language')) {
       deviceObj.language = navigator.language;
+    }
+} else {
+    deviceObj = {};
+    deviceObj.ua = navigator.userAgent;
+    deviceObj.language = navigator.language;
   }
 
   const payload = {}
   payload.id = bidRequestId
-  payload.at = FIRST_PRICE
+  payload.at = 1
   payload.cur = ['USD']
   payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, [])
   const appDeviceObjBid = find(bidRequests, hasAppInfo);
   if (!appDeviceObjBid) {
-      payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
+    payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
   } else {
-      let appIdObj;
-      if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-          appIdObj = {};
-          Object.keys(appDeviceObjBid.params.app)
-              .forEach(param => appIdObj[param] = appDeviceObjBid.params.app[param]);
-      }
-      payload.app = appIdObj;
+    let appIdObj;
+    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
+      appIdObj = {};
+      Object.keys(appDeviceObjBid.params.app)
+        .forEach(param => appIdObj[param] = appDeviceObjBid.params.app[param]);
+    }
+    payload.app = appIdObj;
   }
   payload.device = deviceObj;
   payload.user = userObj
@@ -197,56 +195,56 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
 
 function generateImpressionsFromAdUnit(acc, adUnit) {
   const {
-      bidId,
-      mediaTypes,
-      params
+    bidId,
+    mediaTypes,
+    params
   } = adUnit;
   const {
-      placementId
+    placementId
   } = params;
   const pmp = {};
 
-  if (placementId) pmp.deals = [{id: placementId }]
+  if (placementId) pmp.deals = [{ id: placementId }]
 
   const imps = Object
-      .keys(mediaTypes)
-      .reduce((acc, mediaType) => {
-          const data = mediaTypes[mediaType];
-          const impId = `${bidId}`;
+    .keys(mediaTypes)
+    .reduce((acc, mediaType) => {
+      const data = mediaTypes[mediaType];
+      const impId = `${bidId}`;
 
-          if (mediaType === 'banner') return acc.concat(generateBannerFromAdUnit(impId, data, params));
-      }, []);
+      if (mediaType === 'banner') return acc.concat(generateBannerFromAdUnit(impId, data, params));
+    }, []);
 
   return acc.concat(imps);
 }
 
 function generateBannerFromAdUnit(impId, data, params) {
   const {
-      position,
-      placementId
+    position,
+    placementId
   } = params;
   const pos = position || 0;
   const pmp = {};
   const ext = {
-      placementId
+    placementId
   };
 
   if (placementId) pmp.deals = [{ id: placementId }]
 
   return data.sizes.map(([w, h]) => ({
-      id: `${impId}`,
-      banner: {
-          format: [{
-              w,
-              h
-          }],
-          w,
-          h,
-          pos
-      },
-      pmp,
-      ext,
-      tagid: placementId
+    id: `${impId}`,
+    banner: {
+      format: [{
+        w,
+        h
+      }],
+      w,
+      h,
+      pos
+    },
+    pmp,
+    ext,
+    tagid: placementId
   }));
 }
 
@@ -259,8 +257,8 @@ function validateServerResponse(serverResponse) {
 
 function seatBidsToAds(seatBid, bidResponse, serverRequest) {
   return seatBid.bid
-      .filter(bid => validateBids(bid))
-      .map(bid => generateAdFromBid(bid, bidResponse));
+    .filter(bid => validateBids(bid))
+    .map(bid => generateAdFromBid(bid, bidResponse));
 }
 
 function validateBids(bid) {
@@ -272,7 +270,7 @@ function validateBids(bid) {
   if (!isNumber(bid.h)) return false;
   if (!bid.adm) return false;
   if (bid.adm) {
-      if (!isStr(bid.adm)) return false;
+    if (!isStr(bid.adm)) return false;
   }
   return true;
 }
@@ -281,13 +279,13 @@ function getMediaType(adm) {
   const videoRegex = new RegExp(/VAST\s+version/);
 
   if (videoRegex.test(adm)) {
-      return VIDEO;
+    return VIDEO;
   }
 
   const markup = safeJSONparse(adm.replace(/\\/g, ''));
 
   if (markup && isPlainObject(markup.native)) {
-      return NATIVE;
+    return NATIVE;
   }
 
   return BANNER;
@@ -295,53 +293,53 @@ function getMediaType(adm) {
 
 function safeJSONparse(...args) {
   try {
-      return JSON.parse(...args);
+    return JSON.parse(...args);
   } catch (_) {
-      return undefined;
+    return undefined;
   }
 }
 
 function generateAdFromBid(bid, bidResponse) {
   const mediaType = getMediaType(bid.adm);
   const base = {
-      requestId: bid.impid,
-      cpm: bid.price,
-      currency: bidResponse.cur,
-      ttl: TTL,
-      creativeId: bid.crid,
-      mediaType: mediaType,
-      netRevenue: NET_REVENUE
+    requestId: bid.impid,
+    cpm: bid.price,
+    currency: bidResponse.cur,
+    ttl: 10,
+    creativeId: bid.crid,
+    mediaType: mediaType,
+    netRevenue: true
   };
 
   if (bid.adomain) {
-      base.meta = {
-          advertiserDomains: bid.adomain
-      };
+    base.meta = {
+      advertiserDomains: bid.adomain
+    };
   }
 
   const size = getSizeFromBid(bid);
   const creative = getCreativeFromBid(bid);
 
   return {
-      ...base,
-      height: size.height,
-      width: size.width,
-      ad: creative.markup,
-      adUrl: creative.markupUrl,
-      renderer: creative.renderer
+    ...base,
+    height: size.height,
+    width: size.width,
+    ad: creative.markup,
+    adUrl: creative.markupUrl,
+    renderer: creative.renderer
   };
 }
 
 function getSizeFromBid(bid) {
   if (isNumber(bid.w) && isNumber(bid.h)) {
-      return {
-          width: bid.w,
-          height: bid.h
-      };
+    return {
+      width: bid.w,
+      height: bid.h
+    };
   }
   return {
-      width: null,
-      height: null
+    width: null,
+    height: null
   };
 }
 
@@ -349,20 +347,20 @@ function getCreativeFromBid(bid) {
   const shouldUseAdMarkup = !!bid.adm;
   const price = bid.price;
   return {
-      markup: shouldUseAdMarkup ? replaceAuctionPrice(bid.adm, price) : null,
-      markupUrl: !shouldUseAdMarkup ? replaceAuctionPrice(bid.nurl, price) : null
+    markup: shouldUseAdMarkup ? replaceAuctionPrice(bid.adm, price) : null,
+    markupUrl: !shouldUseAdMarkup ? replaceAuctionPrice(bid.nurl, price) : null
   };
 }
 
 function hasDeviceInfo(bid) {
   if (bid.params) {
-      return !!bid.params.device
+    return !!bid.params.device
   }
 }
 
 function hasAppInfo(bid) {
   if (bid.params) {
-      return !!bid.params.app
+    return !!bid.params.app
   }
 }
 
@@ -370,9 +368,9 @@ const venavenBidderSpec = {
   code: 'ventes',
   supportedMediaTypes: [BANNER],
   isBidRequestValid(adUnit) {
-      const allowedBidderCodes = [this.code];
+    const allowedBidderCodes = [this.code];
 
-      return isPlainObject(adUnit) &&
+    return isPlainObject(adUnit) &&
           allowedBidderCodes.indexOf(adUnit.bidder) !== -1 &&
           isStr(adUnit.adUnitCode) &&
           isStr(adUnit.bidderRequestId) &&
@@ -381,27 +379,27 @@ const venavenBidderSpec = {
           validateParameters(adUnit.params);
   },
   buildRequests(bidRequests, bidderRequest) {
-      if (!bidRequests) return null;
+    if (!bidRequests) return null;
 
-      return groupBy(bidRequests, 'bidderRequestId').map(group => {
-          const bidRequestId = group.id;
-          const adUnits = groupBy(group.values, 'bidId').map((group) => {
-              const length = group.values.length;
-              return length > 0 && group.values[length - 1]
-          });
-
-          return createServerRequestFromAdUnits(adUnits, bidRequestId, bidderRequest)
+    return groupBy(bidRequests, 'bidderRequestId').map(group => {
+      const bidRequestId = group.id;
+      const adUnits = groupBy(group.values, 'bidId').map((group) => {
+        const length = group.values.length;
+        return length > 0 && group.values[length - 1]
       });
+
+      return createServerRequestFromAdUnits(adUnits, bidRequestId, bidderRequest)
+    });
   },
   interpretResponse(serverResponse, serverRequest) {
-      if (!validateServerRequest(serverRequest)) return [];
-      if (!validateServerResponse(serverResponse)) return [];
+    if (!validateServerRequest(serverRequest)) return [];
+    if (!validateServerResponse(serverResponse)) return [];
 
-      const bidResponse = serverResponse.body;
+    const bidResponse = serverResponse.body;
 
-      return bidResponse.seatbid
-          .filter(seatBid => isPlainObject(seatBid) && isArray(seatBid.bid))
-          .reduce((acc, seatBid) => acc.concat(seatBidsToAds(seatBid, bidResponse, serverRequest)), []);
+    return bidResponse.seatbid
+      .filter(seatBid => isPlainObject(seatBid) && isArray(seatBid.bid))
+      .reduce((acc, seatBid) => acc.concat(seatBidsToAds(seatBid, bidResponse, serverRequest)), []);
   }
 };
 
