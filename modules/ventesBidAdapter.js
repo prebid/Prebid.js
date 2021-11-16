@@ -159,12 +159,6 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
     deviceObj.ua = navigator.userAgent;
     deviceObj.language = navigator.language;
   }
-  const appDeviceObjBid = find(bidRequests, hasAppInfo);
-  let appIdObj;
-  if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-    Object.keys(appDeviceObjBid.params.app)
-      .forEach(param => appDeviceObjBid[param] = appDeviceObjBid.params.app[param]);
-  }
 
   const payload = {}
   payload.id = bidRequestId
