@@ -8,8 +8,9 @@ const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
+const TRACKER_URL = 'https://bdr.wpcdn.pl/tag/jstracker.js';
 const TMAX = 450;
-const BIDDER_VERSION = '5.3';
+const BIDDER_VERSION = '5.4';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
@@ -602,6 +603,23 @@ const spec = {
                 bid.native = parseNative(nativeData);
                 bid.width = 1;
                 bid.height = 1;
+
+                // append viewability tracker
+                const jsData = {
+                  rid: bid.requestId,
+                  adid: bid.adId,
+                  adunit: bid.adUnitCode,
+                  url: bid.native.clickUrl,
+                  vendor: seat,
+                  site: site.id,
+                  slot: site
+                }
+                const jsTracker = '<script type="text/javascript" async="true" src="' + TRACKER_URL + '" ' + Object.keys(jsData).reduce((acc, current) => { return acc + ` data-wpar-${current}="${jsData[current]}"` }, '') + '><\/script>';
+                if (bid.native.javascriptTrackers) {
+                  bid.native.javascriptTrackers.push(jsTracker);
+                } else {
+                  bid.native.javascriptTrackers = [jsTracker];
+                }
               } catch (err) {
                 logWarn('Could not parse native data', serverBid.adm);
                 bid.cpm = 0;
