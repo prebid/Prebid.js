@@ -7,7 +7,6 @@ import { auctionManager } from '../src/auctionManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
-import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'goldbach';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -67,12 +66,9 @@ const mappingFileUrl = 'https://acdn.adnxs-simple.com/prebid/appnexus-mapping/ma
 const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
-const GVLID = 32;
-const storage = getStorageManager(GVLID, BIDDER_CODE);
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -150,20 +146,9 @@ export const spec = {
 
     let debugObj = {};
     let debugObjParams = {};
-    const debugCookieName = 'apn_prebid_debug';
-    const debugCookie = storage.getCookie(debugCookieName) || null;
-
-    if (debugCookie) {
-      try {
-        debugObj = JSON.parse(debugCookie);
-      } catch (e) {
-        utils.logError('Debug Auction Cookie Error:\n\n' + e);
-      }
-    } else {
-      const debugBidRequest = find(bidRequests, hasDebug);
-      if (debugBidRequest && debugBidRequest.debug) {
-        debugObj = debugBidRequest.debug;
-      }
+    const debugBidRequest = find(bidRequests, hasDebug);
+    if (debugBidRequest && debugBidRequest.debug) {
+      debugObj = debugBidRequest.debug;
     }
 
     if (debugObj && debugObj.enabled) {
