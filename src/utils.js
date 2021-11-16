@@ -1294,3 +1294,47 @@ export function cyrb53Hash(str, seed = 0) {
   h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
 }
+
+/**
+ * Return a memoized version of the given function that uses the first argument as cache key.
+ */
+export function memoize1(fun) {
+  const cache = {};
+  return function (a0, ...rest) {
+    if (!cache.hasOwnProperty(a0)) {
+      cache[a0] = fun(a0, ...rest);
+    }
+    return cache[a0];
+  }
+}
+
+/**
+ * Return a memoized version of the given zero-arg function.
+ */
+export function cache(fun) {
+  const f = memoize1((arg) => fun());
+  return function () {
+    return f(null);
+  }
+}
+
+/**
+ * Return an object that is the result of recursively merging properties from the given objects. If multiple
+ * objects define the same "leaf" properties, the right-most's value is picked.
+ */
+export function deepMerge(left, right) {
+  let result;
+  if (typeof left === 'object' && typeof right === 'object' && left.constructor === Object && right.constructor === Object) {
+    result = Object.assign({}, left);
+    Object.keys(right).forEach((key) => {
+      if (!left.hasOwnProperty(key)) {
+        result[key] = right[key];
+      } else {
+        result[key] = deepMerge(left[key], right[key]);
+      }
+    });
+  } else {
+    result = right;
+  }
+  return result;
+}

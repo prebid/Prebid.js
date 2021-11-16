@@ -72,6 +72,7 @@ import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM } from './video.js';
 import { VIDEO } from './mediaTypes.js';
+import {bidderSettings} from './bidderSettings.js';
 
 const { syncUsers } = userSync;
 
@@ -661,14 +662,13 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
         }
     };
   }
-  const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
 
-  let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
-  if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
-    bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
-  }
-  if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-    bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
+  const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
+  const standardSettings = Object.assign({}, bidderSettings.settingsFor(null));
+
+  if (!standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+    standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
+      // NOTE: some callers (probably tests) are modifying these - they are not safe to cache
       createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
       createKeyVal(TARGETING_KEYS.AD_ID, 'adId'),
       createKeyVal(TARGETING_KEYS.PRICE_BUCKET, getPriceByGranularity()),
@@ -681,7 +681,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
   }
 
   if (mediaType === 'video') {
-    const adserverTargeting = bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
+    const adserverTargeting = standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
 
     // Adding hb_uuid + hb_cache_id
     [TARGETING_KEYS.UUID, TARGETING_KEYS.CACHE_ID].forEach(targetingKeyVal => {
@@ -691,7 +691,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     });
 
     // Adding hb_cache_host
-    if (config.getConfig('cache.url') && (!bidderCode || deepAccess(bidderSettings, `${bidderCode}.sendStandardTargeting`) !== false)) {
+    if (config.getConfig('cache.url') && (!bidderCode || bidderSettings.get(bidderCode, 'sendStandardTargeting') !== false)) {
       const urlInfo = parseUrl(config.getConfig('cache.url'));
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
@@ -702,7 +702,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
       }
     }
   }
-  return bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
+  return standardSettings;
 }
 
 export function getKeyValueTargetingPairs(bidderCode, custBidObj, bidReq) {
@@ -711,19 +711,15 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, bidReq) {
   }
 
   var keyValues = {};
-  var bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
 
   // 1) set the keys from "standard" setting or from prebid defaults
-  if (bidderSettings) {
-    // initialize default if not set
-    const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode);
-    setKeys(keyValues, standardSettings, custBidObj, bidReq);
+  const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode);
+  setKeys(keyValues, standardSettings, custBidObj, bidReq);
 
-    // 2) set keys from specific bidder setting override if they exist
-    if (bidderCode && bidderSettings[bidderCode] && bidderSettings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-      setKeys(keyValues, bidderSettings[bidderCode], custBidObj, bidReq);
-      custBidObj.sendStandardTargeting = bidderSettings[bidderCode].sendStandardTargeting;
-    }
+  // 2) set keys from specific bidder setting override if they exist
+  if (bidderCode && bidderSettings.getOwn(bidderCode, CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING)) {
+    setKeys(keyValues, bidderSettings.ownSettingsFor(bidderCode), custBidObj, bidReq);
+    custBidObj.sendStandardTargeting = bidderSettings.get(bidderCode, 'sendStandardTargeting');
   }
 
   // set native key value targeting
@@ -775,19 +771,13 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 export function adjustBids(bid) {
   let code = bid.bidderCode;
   let bidPriceAdjusted = bid.cpm;
-  let bidCpmAdjustment;
-  if ($$PREBID_GLOBAL$$.bidderSettings) {
-    if (code && $$PREBID_GLOBAL$$.bidderSettings[code] && typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
-      bidCpmAdjustment = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment;
-    } else if ($$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] && typeof $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment === 'function') {
-      bidCpmAdjustment = $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment;
-    }
-    if (bidCpmAdjustment) {
-      try {
-        bidPriceAdjusted = bidCpmAdjustment(bid.cpm, Object.assign({}, bid));
-      } catch (e) {
-        logError('Error during bid adjustment', 'bidmanager.js', e);
-      }
+  const bidCpmAdjustment = bidderSettings.get(code || null, 'bidCpmAdjustment');
+
+  if (bidCpmAdjustment && typeof bidCpmAdjustment === 'function') {
+    try {
+      bidPriceAdjusted = bidCpmAdjustment(bid.cpm, Object.assign({}, bid));
+    } catch (e) {
+      logError('Error during bid adjustment', 'bidmanager.js', e);
     }
   }
 
