@@ -75,6 +75,7 @@ export const spec = {
     {code: 'denakop'},
     {code: 'rtbanalytica'},
     {code: 'unibots'},
+    {code: 'catapultx'},
     {code: 'ergadx'},
     {code: 'turktelekom'}
   ],

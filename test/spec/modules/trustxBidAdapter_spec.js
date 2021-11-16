@@ -402,7 +402,7 @@ describe('TrustXAdapter', function () {
     });
 
     it('if segment is present in permutive targeting, payload must have right params', function () {
-      const permSegments = ['test_perm_1', 'test_perm_2'];
+      const permSegments = [{id: 'test_perm_1'}, {id: 'test_perm_2'}];
       const bidRequestsWithPermutiveTargeting = bidRequests.map((bid) => {
         return Object.assign({
           rtd: {
@@ -421,8 +421,8 @@ describe('TrustXAdapter', function () {
       expect(payload.user.data).to.deep.equal([{
         name: 'permutive',
         segment: [
-          {name: 'p_standard', value: permSegments[0]},
-          {name: 'p_standard', value: permSegments[1]}
+          {name: 'p_standard', value: permSegments[0].id},
+          {name: 'p_standard', value: permSegments[1].id}
         ]
       }]);
     });
@@ -518,6 +518,48 @@ describe('TrustXAdapter', function () {
       const payload = parseRequest(request.data);
       expect(payload.tmax).to.equal(3000);
       getConfigStub.restore();
+    });
+    it('should contain imp[].ext.data.adserver if available', function() {
+      const ortb2Imp = [{
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/111111/slot'
+            },
+            pbadslot: '/111111/slot'
+          }
+        }
+      }, {
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/222222/slot'
+            },
+            pbadslot: '/222222/slot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
+        return Object.assign(ortb2Imp[ind] ? { ortb2Imp: ortb2Imp[ind] } : {}, bid);
+      });
+      const request = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].ext).to.deep.equal({
+        divid: bidRequests[0].adUnitCode,
+        data: ortb2Imp[0].ext.data,
+        gpid: ortb2Imp[0].ext.data.adserver.adslot
+      });
+      expect(payload.imp[1].ext).to.deep.equal({
+        divid: bidRequests[1].adUnitCode,
+        data: ortb2Imp[1].ext.data,
+        gpid: ortb2Imp[1].ext.data.adserver.adslot
+      });
+      expect(payload.imp[2].ext).to.deep.equal({
+        divid: bidRequests[2].adUnitCode
+      });
     });
     it('all id like request fields must be a string', function () {
       const bidderRequestWithNumId = Object.assign({}, bidderRequest, { bidderRequestId: 123123, auctionId: 345345543 });
