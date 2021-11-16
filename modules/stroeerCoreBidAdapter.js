@@ -1,6 +1,6 @@
+import { getWindowSelf, getWindowTop, buildUrl, logError, isStr, isEmpty, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
@@ -10,22 +10,22 @@ const DEFAULT_PORT = '';
 const FIVE_MINUTES_IN_SECONDS = 300;
 const USER_SYNC_IFRAME_URL = 'https://js.adscale.de/pbsync.html';
 
-const isSecureWindow = () => utils.getWindowSelf().location.protocol === 'https:';
-const isMainPageAccessible = () => getMostAccessibleTopWindow() === utils.getWindowTop();
+const isSecureWindow = () => getWindowSelf().location.protocol === 'https:';
+const isMainPageAccessible = () => getMostAccessibleTopWindow() === getWindowTop();
 
 function getTopWindowReferrer() {
   try {
-    return utils.getWindowTop().document.referrer;
+    return getWindowTop().document.referrer;
   } catch (e) {
-    return utils.getWindowSelf().referrer;
+    return getWindowSelf().referrer;
   }
 }
 
 function getMostAccessibleTopWindow() {
-  let res = utils.getWindowSelf();
+  let res = getWindowSelf();
 
   try {
-    while (utils.getWindowTop().top !== res && res.parent.location.href.length) {
+    while (getWindowTop().top !== res && res.parent.location.href.length) {
       res = res.parent;
     }
   } catch (ignore) {
@@ -36,7 +36,7 @@ function getMostAccessibleTopWindow() {
 
 function elementInView(elementId) {
   const resolveElement = (elId) => {
-    const win = utils.getWindowSelf();
+    const win = getWindowSelf();
 
     return win.document.getElementById(elId);
   };
@@ -53,19 +53,19 @@ function elementInView(elementId) {
   };
 
   try {
-    return visibleInWindow(resolveElement(elementId), utils.getWindowSelf());
+    return visibleInWindow(resolveElement(elementId), getWindowSelf());
   } catch (e) {
     // old browser, element not found, cross-origin etc.
   }
   return undefined;
 }
 
-function buildUrl({host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH}) {
+function _buildUrl({host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH}) {
   if (securePort) {
     port = securePort;
   }
 
-  return utils.buildUrl({protocol: 'https', hostname, port, pathname});
+  return buildUrl({protocol: 'https', hostname, port, pathname});
 }
 
 function getGdprParams(gdprConsent) {
@@ -92,7 +92,7 @@ export const spec = {
         if (checkFn(bidRequest)) {
           return true;
         } else {
-          utils.logError(`invalid bid: ${errorMsgFn(bidRequest)}`, 'ERROR');
+          logError(`invalid bid: ${errorMsgFn(bidRequest)}`, 'ERROR');
           return false;
         }
       }
@@ -108,7 +108,7 @@ export const spec = {
       bidReq => `bid request ${bidReq.bidId} is not a banner`));
     validators.push(createValidator((bidReq) => typeof bidReq.params === 'object',
       bidReq => `bid request ${bidReq.bidId} does not have custom params`));
-    validators.push(createValidator((bidReq) => utils.isStr(bidReq.params.sid),
+    validators.push(createValidator((bidReq) => isStr(bidReq.params.sid),
       bidReq => `bid request ${bidReq.bidId} does not have a sid string field`));
 
     return function (bidRequest) {
@@ -130,7 +130,7 @@ export const spec = {
 
     const userIds = anyBid.userId;
 
-    if (!utils.isEmpty(userIds)) {
+    if (!isEmpty(userIds)) {
       payload.user = {
         euids: userIds
       };
@@ -145,7 +145,7 @@ export const spec = {
     }
 
     function bidSizes(bid) {
-      return utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes /* for prebid < 3 */ || [];
+      return deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes /* for prebid < 3 */ || [];
     }
 
     validBidRequests.forEach(bid => {
@@ -155,7 +155,7 @@ export const spec = {
     });
 
     return {
-      method: 'POST', url: buildUrl(anyBid.params), data: payload
+      method: 'POST', url: _buildUrl(anyBid.params), data: payload
     }
   },
 

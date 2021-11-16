@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { targeting as targetingInstance, filters, getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm } from 'src/targeting.js';
 import { config } from 'src/config.js';
-import { getAdUnits, createBidReceived } from 'test/fixtures/fixtures.js';
+import { createBidReceived } from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
@@ -280,6 +280,51 @@ describe('targeting tests', function () {
       bidExpiryStub.restore();
     });
 
+    describe('when handling different adunit targeting value types', function () {
+      const adUnitCode = '/123456/header-bid-tag-0';
+      const adServerTargeting = {};
+
+      let getAdUnitsStub;
+
+      before(function() {
+        getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(function() {
+          return [
+            {
+              'code': adUnitCode,
+              [CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]: adServerTargeting
+            }
+          ];
+        });
+      });
+
+      after(function() {
+        getAdUnitsStub.restore();
+      });
+
+      afterEach(function() {
+        delete adServerTargeting.test_type;
+      });
+
+      const pairs = [
+        ['string', '2.3', '2.3'],
+        ['number', 2.3, '2.3'],
+        ['boolean', true, 'true'],
+        ['string-separated', '2.3, 4.5', '2.3,4.5'],
+        ['array-of-string', ['2.3', '4.5'], '2.3,4.5'],
+        ['array-of-number', [2.3, 4.5], '2.3,4.5'],
+        ['array-of-boolean', [true, false], 'true,false']
+      ];
+      pairs.forEach(([type, value, result]) => {
+        it(`accepts ${type}`, function() {
+          adServerTargeting.test_type = value;
+
+          const targeting = targetingInstance.getAllTargeting([adUnitCode]);
+
+          expect(targeting[adUnitCode].test_type).is.equal(result);
+        });
+      });
+    });
+
     describe('when hb_deal is present in bid.adserverTargeting', function () {
       let bid4;
 
@@ -413,6 +458,50 @@ describe('targeting tests', function () {
         let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
 
         expect(limitedBids.length).to.equal(2);
+      });
+    });
+
+    describe('targetingControls.allowZeroCpmBids', function () {
+      let bid4;
+      let bidderSettingsStorage;
+
+      before(function() {
+        bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
+      });
+
+      beforeEach(function () {
+        bid4 = utils.deepClone(bid1);
+        bid4.adserverTargeting = {
+          hb_pb: '0.0',
+          hb_adid: '567891011',
+          hb_bidder: 'appnexus',
+        };
+        bid4.bidder = bid4.bidderCode = 'appnexus';
+        bid4.cpm = 0;
+        bidsReceived = [bid4];
+      });
+
+      after(function() {
+        bidsReceived = [bid1, bid2, bid3];
+        $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
+      })
+
+      it('targeting should not include a 0 cpm by default', function() {
+        bid4.adserverTargeting = {};
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({});
+      });
+
+      it('targeting should allow a 0 cpm with targetingControls.allowZeroCpmBids set to true', function () {
+        $$PREBID_GLOBAL$$.bidderSettings = {
+          standard: {
+            allowZeroCpmBids: true
+          }
+        };
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_pb', 'hb_bidder', 'hb_adid', 'hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus');
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.0')
       });
     });
 

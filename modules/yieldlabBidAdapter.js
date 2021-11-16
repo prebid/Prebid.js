@@ -1,8 +1,9 @@
-import * as utils from '../src/utils.js'
+import { _each, isPlainObject, isArray, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import find from 'core-js-pure/features/array/find.js'
-import { VIDEO, BANNER } from '../src/mediaTypes.js'
+import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js'
 import { Renderer } from '../src/Renderer.js'
+import { config } from '../src/config.js';
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -14,7 +15,7 @@ const GVLID = 70
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [VIDEO, BANNER],
+  supportedMediaTypes: [VIDEO, BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.adslotId && bid.params.supplyId) {
@@ -36,7 +37,7 @@ export const spec = {
       json: true
     }
 
-    utils._each(validBidRequests, function (bid) {
+    _each(validBidRequests, function (bid) {
       adslotIds.push(bid.params.adslotId)
       if (bid.params.targeting) {
         query.t = createTargetingString(bid.params.targeting)
@@ -44,13 +45,18 @@ export const spec = {
       if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
         query.ids = createUserIdString(bid.userIdAsEids)
       }
-      if (bid.params.customParams && utils.isPlainObject(bid.params.customParams)) {
+      if (bid.params.customParams && isPlainObject(bid.params.customParams)) {
         for (let prop in bid.params.customParams) {
           query[prop] = bid.params.customParams[prop]
         }
       }
-      if (bid.schain && utils.isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
+      if (bid.schain && isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
         query.schain = createSchainString(bid.schain)
+      }
+
+      const iabContent = getContentObject(bid)
+      if (iabContent) {
+        query.iab_content = createIabContentString(iabContent)
       }
     })
 
@@ -98,13 +104,14 @@ export const spec = {
       })
 
       if (matchedBid) {
-        const adUnitSize = bidRequest.sizes.length === 2 && !utils.isArray(bidRequest.sizes[0]) ? bidRequest.sizes : bidRequest.sizes[0]
+        const adUnitSize = bidRequest.sizes.length === 2 && !isArray(bidRequest.sizes[0]) ? bidRequest.sizes : bidRequest.sizes[0]
         const adSize = bidRequest.params.adSize !== undefined ? parseSize(bidRequest.params.adSize) : (matchedBid.adsize !== undefined) ? parseSize(matchedBid.adsize) : adUnitSize
         const extId = bidRequest.params.extId !== undefined ? '&id=' + bidRequest.params.extId : ''
         const adType = matchedBid.adtype !== undefined ? matchedBid.adtype : ''
         const gdprApplies = reqParams.gdpr ? '&gdpr=' + reqParams.gdpr : ''
         const gdprConsent = reqParams.consent ? '&consent=' + reqParams.consent : ''
         const pvId = matchedBid.pvid !== undefined ? '&pvid=' + matchedBid.pvid : ''
+        const iabContent = reqParams.iab_content ? '&iab_content=' + reqParams.iab_content : ''
 
         const bidResponse = {
           requestId: bidRequest.bidId,
@@ -117,7 +124,7 @@ export const spec = {
           netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}"></script>`,
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,
           meta: {
             advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a'
           }
@@ -130,7 +137,7 @@ export const spec = {
             bidResponse.height = playersize[1]
           }
           bidResponse.mediaType = VIDEO
-          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
+          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}`
           if (isOutstream(bidRequest)) {
             const renderer = Renderer.install({
               id: bidRequest.bidId,
@@ -140,6 +147,27 @@ export const spec = {
             renderer.setRender(outstreamRender)
             bidResponse.renderer = renderer
           }
+        }
+
+        if (isNative(bidRequest, adType)) {
+          const url = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`
+          bidResponse.adUrl = url
+          bidResponse.mediaType = NATIVE
+          const nativeImageAssetObj = find(matchedBid.native.assets, e => e.id === 2)
+          const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : {url: '', w: 0, h: 0};
+          const nativeTitleAsset = find(matchedBid.native.assets, e => e.id === 1)
+          const nativeBodyAsset = find(matchedBid.native.assets, e => e.id === 3)
+          bidResponse.native = {
+            title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
+            body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
+            image: {
+              url: nativeImageAsset.url,
+              width: nativeImageAsset.w,
+              height: nativeImageAsset.h,
+            },
+            clickUrl: matchedBid.native.link.url,
+            impressionTrackers: matchedBid.native.imptrackers,
+          };
         }
 
         bidResponses.push(bidResponse)
@@ -155,8 +183,18 @@ export const spec = {
  * @param {String} adtype
  * @returns {Boolean}
  */
-function isVideo (format, adtype) {
-  return utils.deepAccess(format, 'mediaTypes.video') && adtype.toLowerCase() === 'video'
+function isVideo(format, adtype) {
+  return deepAccess(format, 'mediaTypes.video') && adtype.toLowerCase() === 'video'
+}
+
+/**
+ * Is this a native format?
+ * @param {Object} format
+ * @param {String} adtype
+ * @returns {Boolean}
+ */
+function isNative(format, adtype) {
+  return deepAccess(format, 'mediaTypes.native') && adtype.toLowerCase() === 'native'
 }
 
 /**
@@ -164,8 +202,8 @@ function isVideo (format, adtype) {
  * @param {Object} format
  * @returns {Boolean}
  */
-function isOutstream (format) {
-  let context = utils.deepAccess(format, 'mediaTypes.video.context')
+function isOutstream(format) {
+  let context = deepAccess(format, 'mediaTypes.video.context')
   return (context === 'outstream')
 }
 
@@ -174,9 +212,9 @@ function isOutstream (format) {
  * @param {Object} format
  * @returns {Array}
  */
-function getPlayerSize (format) {
-  let playerSize = utils.deepAccess(format, 'mediaTypes.video.playerSize')
-  return (playerSize && utils.isArray(playerSize[0])) ? playerSize[0] : playerSize
+function getPlayerSize(format) {
+  let playerSize = deepAccess(format, 'mediaTypes.video.playerSize')
+  return (playerSize && isArray(playerSize[0])) ? playerSize[0] : playerSize
 }
 
 /**
@@ -184,7 +222,7 @@ function getPlayerSize (format) {
  * @param {String} size
  * @returns {Array}
  */
-function parseSize (size) {
+function parseSize(size) {
   return size.split('x').map(Number)
 }
 
@@ -193,7 +231,7 @@ function parseSize (size) {
  * @param {Array} eids
  * @returns {String}
  */
-function createUserIdString (eids) {
+function createUserIdString(eids) {
   let str = []
   for (let i = 0; i < eids.length; i++) {
     str.push(eids[i].source + ':' + eids[i].uids[0].id)
@@ -206,12 +244,12 @@ function createUserIdString (eids) {
  * @param {Object} obj
  * @returns {String}
  */
-function createQueryString (obj) {
+function createQueryString(obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
       let val = obj[p]
-      if (p !== 'schain') {
+      if (p !== 'schain' && p !== 'iab_content') {
         str.push(encodeURIComponent(p) + '=' + encodeURIComponent(val))
       } else {
         str.push(p + '=' + val)
@@ -226,7 +264,7 @@ function createQueryString (obj) {
  * @param {Object} obj
  * @returns {String}
  */
-function createTargetingString (obj) {
+function createTargetingString(obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
@@ -243,7 +281,7 @@ function createTargetingString (obj) {
  * @param {Object} schain
  * @returns {String}
  */
-function createSchainString (schain) {
+function createSchainString(schain) {
   const ver = schain.ver || ''
   const complete = (schain.complete === 1 || schain.complete === 0) ? schain.complete : ''
   const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']
@@ -251,6 +289,44 @@ function createSchainString (schain) {
     return acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`
   }, '')
   return `${ver},${complete}${nodesString}`
+}
+
+/**
+ * Get content object from bid request
+ * First get content from bidder params;
+ * If not provided in bidder params, get from first party data under 'ortb2.site.content' or 'ortb2.app.content'
+ * @param {Object} bid
+ * @returns {Object}
+ */
+function getContentObject(bid) {
+  if (bid.params.iabContent && isPlainObject(bid.params.iabContent)) {
+    return bid.params.iabContent
+  }
+
+  const globalContent = config.getConfig('ortb2.site') ? config.getConfig('ortb2.site.content')
+    : config.getConfig('ortb2.app.content')
+  if (globalContent && isPlainObject(globalContent)) {
+    return globalContent
+  }
+  return undefined
+}
+
+/**
+ * Creates a string for iab_content object
+ * @param {Object} iabContent
+ * @returns {String}
+ */
+function createIabContentString(iabContent) {
+  const arrKeys = ['keywords', 'cat']
+  let str = []
+  for (let key in iabContent) {
+    if (iabContent.hasOwnProperty(key)) {
+      const value = (arrKeys.indexOf(key) !== -1 && Array.isArray(iabContent[key]))
+        ? iabContent[key].map(node => encodeURIComponent(node)).join('|') : encodeURIComponent(iabContent[key])
+      str.push(''.concat(key, ':', value))
+    }
+  }
+  return encodeURIComponent(str.join(','))
 }
 
 /**

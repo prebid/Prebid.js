@@ -96,8 +96,8 @@ const bidderRequest = {
   refererInfo: {
     numIframes: 0,
     reachedTop: true,
-    referer: 'https://v5demo.datablocks.net/test',
-    stack: ['https://v5demo.datablocks.net/test']
+    referer: 'https://7560.v5demo.datablocks.net/test',
+    stack: ['https://7560.v5demo.datablocks.net/test']
   },
   start: Date.now(),
   timeout: 10000
@@ -452,7 +452,7 @@ describe('DatablocksAdapter', function() {
 
     it('Returns valid URL', function() {
       expect(request.url).to.exist;
-      expect(request.url).to.equal('https://7560.v5demo.datablocks.net/openrtb/?sid=7560');
+      expect(request.url).to.equal('https://v5demo.datablocks.net/openrtb/?sid=7560');
     });
 
     it('Creates an array of request objects', function() {

@@ -316,58 +316,54 @@ describe('BeachfrontAdapter', function () {
         expect(data.source.ext.schain).to.deep.equal(schain);
       });
 
-      it('must add the Trade Desk User ID to the request', () => {
-        const tdid = '4321';
+      it('must add supported user IDs to the request', () => {
+        const userId = {
+          tdid: '54017816',
+          idl_env: '13024996',
+          uid2: { id: '45843401' },
+          haloId: { haloId: '60314917', auSeg: ['segment1', 'segment2'] }
+        };
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
-        bidRequest.userId = { tdid };
+        bidRequest.userId = userId;
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.user.ext.eids[0]).to.deep.equal({
-          source: 'adserver.org',
-          uids: [{
-            id: tdid,
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }]
-        });
-      });
-
-      it('must add the IdentityLink ID to the request', () => {
-        const idl_env = '4321';
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { video: {} };
-        bidRequest.userId = { idl_env };
-        const requests = spec.buildRequests([ bidRequest ]);
-        const data = requests[0].data;
-        expect(data.user.ext.eids[0]).to.deep.equal({
-          source: 'liveramp.com',
-          uids: [{
-            id: idl_env,
-            ext: {
-              rtiPartner: 'idl'
-            }
-          }]
-        });
-      });
-
-      it('must add the Unified ID 2.0 to the request', () => {
-        const uid2 = { id: '4321' };
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { video: {} };
-        bidRequest.userId = { uid2 };
-        const requests = spec.buildRequests([ bidRequest ]);
-        const data = requests[0].data;
-        expect(data.user.ext.eids[0]).to.deep.equal({
-          source: 'uidapi.com',
-          uids: [{
-            id: uid2.id,
-            ext: {
-              rtiPartner: 'UID2'
-            }
-          }]
-        });
+        expect(data.user.ext.eids).to.deep.equal([
+          {
+            source: 'adserver.org',
+            uids: [{
+              id: userId.tdid,
+              ext: {
+                rtiPartner: 'TDID'
+              }
+            }]
+          },
+          {
+            source: 'liveramp.com',
+            uids: [{
+              id: userId.idl_env,
+              ext: {
+                rtiPartner: 'idl'
+              }
+            }]
+          },
+          {
+            source: 'uidapi.com',
+            uids: [{
+              id: userId.uid2.id,
+              ext: {
+                rtiPartner: 'UID2'
+              }
+            }]
+          },
+          {
+            source: 'audigent.com',
+            uids: [{
+              id: userId.haloId,
+              atype: 1,
+            }]
+          }
+        ]);
       });
     });
 
@@ -541,34 +537,22 @@ describe('BeachfrontAdapter', function () {
         expect(data.schain).to.deep.equal(schain);
       });
 
-      it('must add the Trade Desk User ID to the request', () => {
-        const tdid = '4321';
+      it('must add supported user IDs to the request', () => {
+        const userId = {
+          tdid: '54017816',
+          idl_env: '13024996',
+          uid2: { id: '45843401' },
+          haloId: { haloId: '60314917', auSeg: ['segment1', 'segment2'] }
+        };
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
-        bidRequest.userId = { tdid };
+        bidRequest.userId = userId;
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.tdid).to.equal(tdid);
-      });
-
-      it('must add the IdentityLink ID to the request', () => {
-        const idl_env = '4321';
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { banner: {} };
-        bidRequest.userId = { idl_env };
-        const requests = spec.buildRequests([ bidRequest ]);
-        const data = requests[0].data;
-        expect(data.idl).to.equal(idl_env);
-      });
-
-      it('must add the Unified ID 2.0 to the request', () => {
-        const uid2 = { id: '4321' };
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { banner: {} };
-        bidRequest.userId = { uid2 };
-        const requests = spec.buildRequests([ bidRequest ]);
-        const data = requests[0].data;
-        expect(data.uid2).to.equal(uid2.id);
+        expect(data.tdid).to.equal(userId.tdid);
+        expect(data.idl).to.equal(userId.idl_env);
+        expect(data.uid2).to.equal(userId.uid2.id);
+        expect(data.haloid).to.equal(userId.haloId);
       });
     });
 
