@@ -59,7 +59,7 @@
 
 import {
   flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl, generateUUID,
-  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr
+  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr, cache
 } from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
 import { getNativeTargeting } from './native.js';
@@ -615,18 +615,18 @@ export const getPriceGranularity = (mediaType, bidReq) => {
  */
 export const getPriceByGranularity = (granularity) => {
   return (bid, bidReq) => {
-    granularity = granularity || getPriceGranularity(bid.mediaType, bidReq);
-    if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+    const bidGranularity = granularity || getPriceGranularity(bid.mediaType, bidReq);
+    if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
       return bid.pbAg;
-    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+    } else if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
       return bid.pbDg;
-    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+    } else if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
       return bid.pbLg;
-    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+    } else if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
       return bid.pbMg;
-    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+    } else if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
       return bid.pbHg;
-    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+    } else if (bidGranularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
       return bid.pbCg;
     }
   }
@@ -642,6 +642,34 @@ export const getAdvertiserDomain = () => {
   }
 }
 
+// factory for key value objs
+function createKeyVal(key, value) {
+  return {
+    key,
+    val: (typeof value === 'function')
+      ? function (bidResponse, bidReq) {
+        return value(bidResponse, bidReq);
+      }
+      : function (bidResponse) {
+        return getValue(bidResponse, value);
+      }
+  };
+}
+
+const defaultAdserverTargeting = cache(() => {
+  const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
+  return [
+    createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
+    createKeyVal(TARGETING_KEYS.AD_ID, 'adId'),
+    createKeyVal(TARGETING_KEYS.PRICE_BUCKET, getPriceByGranularity()),
+    createKeyVal(TARGETING_KEYS.SIZE, 'size'),
+    createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
+    createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
+    createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
+    createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
+  ]
+})
+
 /**
  * @param {string} mediaType
  * @param {string} bidderCode
@@ -649,35 +677,11 @@ export const getAdvertiserDomain = () => {
  * @returns {*}
  */
 export function getStandardBidderSettings(mediaType, bidderCode) {
-  // factory for key value objs
-  function createKeyVal(key, value) {
-    return {
-      key,
-      val: (typeof value === 'function')
-        ? function (bidResponse, bidReq) {
-          return value(bidResponse, bidReq);
-        }
-        : function (bidResponse) {
-          return getValue(bidResponse, value);
-        }
-    };
-  }
-
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   const standardSettings = Object.assign({}, bidderSettings.settingsFor(null));
 
   if (!standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-    standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
-      // NOTE: some callers (probably tests) are modifying these - they are not safe to cache
-      createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
-      createKeyVal(TARGETING_KEYS.AD_ID, 'adId'),
-      createKeyVal(TARGETING_KEYS.PRICE_BUCKET, getPriceByGranularity()),
-      createKeyVal(TARGETING_KEYS.SIZE, 'size'),
-      createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
-      createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
-      createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
-      createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
-    ]
+    standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = defaultAdserverTargeting();
   }
 
   if (mediaType === 'video') {
