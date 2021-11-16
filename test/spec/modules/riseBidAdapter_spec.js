@@ -75,6 +75,15 @@ describe('riseAdapter', function () {
     const bidderRequest = {
       bidderCode: 'rise',
     }
+    const placementId = '12345678';
+
+    it('sends the placementId as a query param', function () {
+      bidRequests[0].params.placementId = placementId;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      for (const request of requests) {
+        expect(request.data.placement_id).to.equal(placementId);
+      }
+    });
 
     it('sends bid request to ENDPOINT via GET', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);

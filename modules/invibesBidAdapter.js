@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { logInfo } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -8,7 +8,7 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 6,
+  PREBID_VERSION: 7,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
@@ -57,14 +57,11 @@ const topWin = getTopMostWindow();
 let invibes = topWin.invibes = topWin.invibes || {};
 invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false];
 invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false];
+invibes.placementBids = invibes.placementBids || [];
+invibes.pushedCids = invibes.pushedCids || {};
 let _customUserSync;
 
 function isBidRequestValid(bid) {
-  if (invibes && typeof invibes.bidResponse === 'object') {
-    utils.logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
-    return false;
-  }
-
   if (typeof bid.params !== 'object') {
     return false;
   }
@@ -80,12 +77,14 @@ function isBidRequestValid(bid) {
 function buildRequest(bidRequests, bidderRequest) {
   bidderRequest = bidderRequest || {};
   const _placementIds = [];
+  const _adUnitCodes = [];
   let _loginId, _customEndpoint, _userId;
   let _ivAuctionStart = bidderRequest.auctionStart || Date.now();
 
   bidRequests.forEach(function (bidRequest) {
     bidRequest.startTime = new Date().getTime();
     _placementIds.push(bidRequest.params.placementId);
+    _adUnitCodes.push(bidRequest.adUnitCode);
     _loginId = _loginId || bidRequest.params.loginId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
     _customUserSync = _customUserSync || bidRequest.params.customUserSync;
@@ -102,6 +101,7 @@ function buildRequest(bidRequests, bidderRequest) {
   let userIdModel = getUserIds(_userId);
   let bidParamsJson = {
     placementIds: _placementIds,
+    adUnitCodes: _adUnitCodes,
     loginId: _loginId,
     auctionStartTime: _ivAuctionStart,
     bidVersion: CONSTANTS.PREBID_VERSION
@@ -117,6 +117,7 @@ function buildRequest(bidRequests, bidderRequest) {
 
     bidParamsJson: JSON.stringify(bidParamsJson),
     capCounts: getCappedCampaignsAsString(),
+    pcids: Object.keys(invibes.pushedCids).join(','),
 
     vId: invibes.visitId,
     width: topWin.innerWidth,
@@ -157,12 +158,12 @@ function buildRequest(bidRequests, bidderRequest) {
 
 function handleResponse(responseObj, bidRequests) {
   if (bidRequests == null || bidRequests.length === 0) {
-    utils.logInfo('Invibes Adapter - No bids have been requested');
+    logInfo('Invibes Adapter - No bids have been requested');
     return [];
   }
 
   if (!responseObj) {
-    utils.logInfo('Invibes Adapter - Bid response is empty');
+    logInfo('Invibes Adapter - Bid response is empty');
     return [];
   }
 
@@ -170,34 +171,47 @@ function handleResponse(responseObj, bidRequests) {
   responseObj = responseObj.videoAdContentResult || responseObj;
 
   if (typeof invibes.bidResponse === 'object') {
-    utils.logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
-    return [];
+    if (responseObj.MultipositionEnabled === true) {
+      invibes.bidResponse.AdPlacements = invibes.bidResponse.AdPlacements.concat(responseObj.AdPlacements);
+    } else {
+      logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
+      return [];
+    }
+  } else {
+    invibes.bidResponse = responseObj;
   }
-
-  invibes.bidResponse = responseObj;
 
   const bidResponses = [];
   for (let i = 0; i < bidRequests.length; i++) {
     let bidRequest = bidRequests[i];
+    let usedPlacementId = responseObj.UseAdUnitCode === true
+      ? bidRequest.params.placementId + '_' + bidRequest.adUnitCode
+      : bidRequest.params.placementId;
+
+    if (invibes.placementBids.indexOf(usedPlacementId) > -1) {
+      logInfo('Invibes Adapter - Placement was previously bid on ' + usedPlacementId);
+      continue;
+    }
 
     let requestPlacement = null;
     if (responseObj.AdPlacements != null) {
       for (let j = 0; j < responseObj.AdPlacements.length; j++) {
         let bidModel = responseObj.AdPlacements[j].BidModel;
-        if (bidModel != null && bidModel.PlacementId == bidRequest.params.placementId) {
+        if (bidModel != null && bidModel.PlacementId == usedPlacementId) {
           requestPlacement = responseObj.AdPlacements[j];
           break;
         }
       }
     } else {
       let bidModel = responseObj.BidModel;
-      if (bidModel != null && bidModel.PlacementId == bidRequest.params.placementId) {
+      if (bidModel != null && bidModel.PlacementId == usedPlacementId) {
         requestPlacement = responseObj;
       }
     }
 
-    let bid = createBid(bidRequest, requestPlacement);
+    let bid = createBid(bidRequest, requestPlacement, responseObj.MultipositionEnabled, usedPlacementId);
     if (bid !== null) {
+      invibes.placementBids.push(usedPlacementId);
       bidResponses.push(bid);
     }
   }
@@ -205,9 +219,9 @@ function handleResponse(responseObj, bidRequests) {
   return bidResponses;
 }
 
-function createBid(bidRequest, requestPlacement) {
+function createBid(bidRequest, requestPlacement, multipositionEnabled, usedPlacementId) {
   if (requestPlacement === null || requestPlacement.BidModel === null) {
-    utils.logInfo('Invibes Adapter - Placement not configured for bidding ' + bidRequest.params.placementId);
+    logInfo('Invibes Adapter - Placement not configured for bidding ' + usedPlacementId);
     return null;
   }
 
@@ -215,18 +229,42 @@ function createBid(bidRequest, requestPlacement) {
   let ads = requestPlacement.Ads;
   if (!Array.isArray(ads) || ads.length < 1) {
     if (requestPlacement.AdReason != null) {
-      utils.logInfo('Invibes Adapter - No ads ' + requestPlacement.AdReason);
+      logInfo('Invibes Adapter - No ads ' + requestPlacement.AdReason);
     }
 
-    utils.logInfo('Invibes Adapter - No ads available');
+    logInfo('Invibes Adapter - No ads available');
     return null;
   }
 
   let ad = ads[0];
   let size = getBiggerSize(bidRequest.sizes);
 
+  if (multipositionEnabled === true) {
+    if (Object.keys(invibes.pushedCids).length > 0) {
+      if (ad.Blcids != null && ad.Blcids.length > 0) {
+        let blacklistsPushedCids = Object.keys(invibes.pushedCids).some(function(pushedCid) {
+          return ad.Blcids.indexOf(parseInt(pushedCid)) > -1;
+        });
+
+        if (blacklistsPushedCids) {
+          logInfo('Invibes Adapter - Ad blacklists pushed ids');
+          return null;
+        }
+      }
+
+      let isBlacklisted = Object.keys(invibes.pushedCids).some(function(pushedCid) {
+        return invibes.pushedCids[pushedCid].indexOf(ad.Cid) > -1;
+      });
+      if (isBlacklisted) {
+        logInfo('Invibes Adapter - Ad is blacklisted');
+        return null;
+      }
+    }
+  }
+
+  invibes.pushedCids[ad.Cid] = ad.Blcids || [];
   const now = Date.now();
-  utils.logInfo('Bid auction started at ' + bidModel.AuctionStartTime + ' . Invibes registered the bid at ' + now + ' ; bid request took a total of ' + (now - bidModel.AuctionStartTime) + ' ms.');
+  logInfo('Bid auction started at ' + bidModel.AuctionStartTime + ' . Invibes registered the bid at ' + now + ' ; bid request took a total of ' + (now - bidModel.AuctionStartTime) + ' ms.');
 
   return {
     requestId: bidRequest.bidId,
@@ -652,7 +690,7 @@ let keywords = (function () {
   return kw;
 }());
 
-// =====================
+// ======================
 
 export function resetInvibes() {
   invibes.optIn = undefined;
@@ -660,6 +698,8 @@ export function resetInvibes() {
   invibes.dom = undefined;
   invibes.bidResponse = undefined;
   invibes.domainOptions = undefined;
+  invibes.placementBids = [];
+  invibes.pushedCids = {};
 }
 
 export function stubDomainOptions(persistence) {

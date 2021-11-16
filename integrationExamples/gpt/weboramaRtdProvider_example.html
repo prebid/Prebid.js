@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+<script src="../../build/dev/prebid.js" async></script>
+
+<script>
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    pbjs.que.push(function() {
+        pbjs.setConfig({
+            debug: true,
+            realTimeData: {
+                auctionDelay: 1000,
+                dataProviders: [
+                    {
+                        name: "weborama",
+                        waitForIt: true,
+                        params: {
+                            weboCtxConf: {
+                                setTargeting: true,
+                                token: "to-be-defined",
+                                targetURL: "https://prebid.org/",
+                                defaultProfile: {
+                                  webo_ctx: ['moon']
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        });
+    });
+</script>
+<script>
+    var div_1_sizes = [
+        [300, 300]
+    ];
+
+    var PREBID_TIMEOUT = 3000;
+    var FAILSAFE_TIMEOUT = 5000;
+
+    var adUnits = [
+        {
+            code: '/1056029/webo-ctx-prebid',
+            mediaTypes: {
+                banner: {
+                    sizes: div_1_sizes
+                }
+            },
+            bids: [{
+              bidder: 'appnexus',
+              params: {
+                placementId: 1
+              }
+            }]
+        }
+        ];
+
+    // ======== DO NOT EDIT BELOW THIS LINE =========== //
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function() {
+        googletag.pubads().disableInitialLoad();
+    });
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    pbjs.que.push(function() {
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+            bidsBackHandler: initAdserver,
+            timeout: PREBID_TIMEOUT
+        });
+    });
+
+    function initAdserver() {
+        if (pbjs.initAdserverSet) return;
+        pbjs.initAdserverSet = true;
+        googletag.cmd.push(function() {
+            pbjs.que.push(function() {
+                pbjs.setTargetingForGPTAsync();
+                googletag.pubads().refresh();
+            });
+        });
+    }
+
+
+    // in case PBJS doesn't load
+    setTimeout(function() {
+        initAdserver();
+    }, FAILSAFE_TIMEOUT);
+
+    googletag.cmd.push(function() {
+        googletag.defineSlot('/1056029/webo-ctx-prebid', div_1_sizes, 'div-gpt-ad-1620653642627-0').addService(googletag.pubads());
+        googletag.pubads().disableInitialLoad();
+        googletag.enableServices();
+    });
+
+</script>
+
+<article>
+<p>
+test webo ctx using prebid.js
+</p>
+</article>
+        <h2>Basic Prebid.js Example</h2>
+        <h5>Div-1</h5>
+        <div id='div-gpt-ad-1620653642627-0' style='width: 300px; height: 300px;'>
+            <script type='text/javascript'>
+                googletag.cmd.push(function() {
+                    googletag.display('div-gpt-ad-1620653642627-0');
+                });
+            </script>
+        </div>
+        <button onclick="googletag.cmd.push(function() { googletag.pubads().refresh(); });">
+              Show/Refresh Ad
+        </button>
+</body>
+</html>

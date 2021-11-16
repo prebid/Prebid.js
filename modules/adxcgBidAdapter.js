@@ -1,5 +1,5 @@
+import { logWarn, isStr, deepAccess, inIframe, checkCookieSupport, timestamp, getBidIdParameter, parseSizesInput, buildUrl, logMessage, isArray, deepSetValue, isPlainObject, triggerPixel, replaceAuctionPrice, isFn } from '../src/utils.js';
 import {config} from '../src/config.js'
-import * as utils from '../src/utils.js'
 import {registerBidder} from '../src/adapters/bidderFactory.js'
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js'
 import includes from 'core-js-pure/features/array/includes.js'
@@ -36,44 +36,44 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (!bid || !bid.params) {
-      utils.logWarn(BIDDER_CODE + ': Missing bid parameters');
+      logWarn(BIDDER_CODE + ': Missing bid parameters');
       return false
     }
 
-    if (!utils.isStr(bid.params.adzoneid)) {
-      utils.logWarn(BIDDER_CODE + ': adzoneid must be specified as a string');
+    if (!isStr(bid.params.adzoneid)) {
+      logWarn(BIDDER_CODE + ': adzoneid must be specified as a string');
       return false
     }
 
     if (isBannerRequest(bid)) {
-      const banneroAdUnit = utils.deepAccess(bid, 'mediaTypes.banner');
+      const banneroAdUnit = deepAccess(bid, 'mediaTypes.banner');
       if (!banneroAdUnit.sizes) {
-        utils.logWarn(BIDDER_CODE + ': banner sizes must be specified');
+        logWarn(BIDDER_CODE + ': banner sizes must be specified');
         return false;
       }
     }
 
     if (isVideoRequest(bid)) {
       // prebid 4.0 use standardized Video parameters
-      const videoAdUnit = utils.deepAccess(bid, 'mediaTypes.video');
+      const videoAdUnit = deepAccess(bid, 'mediaTypes.video');
 
       if (!Array.isArray(videoAdUnit.playerSize)) {
-        utils.logWarn(BIDDER_CODE + ': video playerSize must be an array of integers');
+        logWarn(BIDDER_CODE + ': video playerSize must be an array of integers');
         return false;
       }
 
       if (!videoAdUnit.context) {
-        utils.logWarn(BIDDER_CODE + ': video context must be specified');
+        logWarn(BIDDER_CODE + ': video context must be specified');
         return false;
       }
 
       if (!Array.isArray(videoAdUnit.mimes) || videoAdUnit.mimes.length === 0) {
-        utils.logWarn(BIDDER_CODE + ': video mimes must be an array of strings');
+        logWarn(BIDDER_CODE + ': video mimes must be an array of strings');
         return false;
       }
 
       if (!Array.isArray(videoAdUnit.protocols) || videoAdUnit.protocols.length === 0) {
-        utils.logWarn(BIDDER_CODE + ': video protocols must be an array of integers');
+        logWarn(BIDDER_CODE + ': video protocols must be an array of integers');
         return false;
       }
     }
@@ -97,8 +97,8 @@ export const spec = {
       bt = Math.min(window.PREBID_TIMEOUT, bt);
     }
 
-    let referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-    let page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
+    let referrer = deepAccess(bidderRequest, 'refererInfo.referer');
+    let page = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || deepAccess(window, 'location.href');
 
     // add common parameters
     let beaconParams = {
@@ -110,10 +110,10 @@ export const spec = {
       uh: window.screen.height,
       dpr: ratio,
       bt: bt,
-      isinframe: utils.inIframe(),
-      cookies: utils.checkCookieSupport() ? '1' : '0',
+      isinframe: inIframe(),
+      cookies: checkCookieSupport() ? '1' : '0',
       tz: dt.getTimezoneOffset(),
-      dt: utils.timestamp(),
+      dt: timestamp(),
       iob: iobavailable ? '1' : '0',
       pbjs: '$prebid.version$',
       rndid: Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000,
@@ -126,19 +126,19 @@ export const spec = {
       beaconParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
     }
 
-    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.pubcid'))) {
+    if (isStr(deepAccess(validBidRequests, '0.userId.pubcid'))) {
       beaconParams.pubcid = validBidRequests[0].userId.pubcid;
     }
 
-    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+    if (isStr(deepAccess(validBidRequests, '0.userId.tdid'))) {
       beaconParams.tdid = validBidRequests[0].userId.tdid;
     }
 
-    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.id5id.uid'))) {
+    if (isStr(deepAccess(validBidRequests, '0.userId.id5id.uid'))) {
       beaconParams.id5id = validBidRequests[0].userId.id5id.uid;
     }
 
-    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.idl_env'))) {
+    if (isStr(deepAccess(validBidRequests, '0.userId.idl_env'))) {
       beaconParams.idl_env = validBidRequests[0].userId.idl_env;
     }
 
@@ -156,14 +156,14 @@ export const spec = {
     let bidfloors = [];
 
     validBidRequests.forEach((bid, index) => {
-      adZoneIds.push(utils.getBidIdParameter('adzoneid', bid.params));
+      adZoneIds.push(getBidIdParameter('adzoneid', bid.params));
       prebidBidIds.push(bid.bidId);
 
       let bidfloor = getFloor(bid);
       bidfloors.push(bidfloor);
 
       // copy all custom parameters impression level parameters not supported above
-      let customBidParams = utils.getBidIdParameter('custom', bid.params) || {}
+      let customBidParams = getBidIdParameter('custom', bid.params) || {}
       if (customBidParams) {
         Object.keys(customBidParams)
           .filter(param => includes(USER_PARAMS_BID, param))
@@ -171,7 +171,7 @@ export const spec = {
       }
 
       if (isBannerRequest(bid)) {
-        sizes.push(utils.parseSizesInput(bid.mediaTypes.banner.sizes).join('|'));
+        sizes.push(parseSizesInput(bid.mediaTypes.banner.sizes).join('|'));
       }
 
       if (isNativeRequest(bid)) {
@@ -185,10 +185,10 @@ export const spec = {
             .forEach(param => beaconParams['video.' + param + '.' + index] = encodeURIComponent(bid.params.video[param]))
         }
         // copy video standarized params
-        beaconParams['video.context' + '.' + index] = utils.deepAccess(bid, 'mediaTypes.video.context');
-        sizes.push(utils.parseSizesInput(bid.mediaTypes.video.playerSize).join('|'));
-        beaconParams['video.mimes' + '.' + index] = utils.deepAccess(bid, 'mediaTypes.video.mimes').join(',');
-        beaconParams['video.protocols' + '.' + index] = utils.deepAccess(bid, 'mediaTypes.video.protocols').join(',');
+        beaconParams['video.context' + '.' + index] = deepAccess(bid, 'mediaTypes.video.context');
+        sizes.push(parseSizesInput(bid.mediaTypes.video.playerSize).join('|'));
+        beaconParams['video.mimes' + '.' + index] = deepAccess(bid, 'mediaTypes.video.mimes').join(',');
+        beaconParams['video.protocols' + '.' + index] = deepAccess(bid, 'mediaTypes.video.protocols').join(',');
       }
     })
 
@@ -197,14 +197,14 @@ export const spec = {
     beaconParams.prebidBidIds = prebidBidIds.join(',');
     beaconParams.bidfloors = bidfloors.join(',');
 
-    let adxcgRequestUrl = utils.buildUrl({
+    let adxcgRequestUrl = buildUrl({
       protocol: 'https',
       hostname: 'hbps.adxcg.net',
       pathname: '/get/adi',
       search: beaconParams
     });
 
-    utils.logMessage(`calling adi adxcg`);
+    logMessage(`calling adi adxcg`);
     return {
       contentType: 'text/plain',
       method: 'GET',
@@ -220,11 +220,11 @@ export const spec = {
    */
   interpretResponse:
     function (serverResponse) {
-      utils.logMessage(`interpretResponse adxcg`);
+      logMessage(`interpretResponse adxcg`);
       let bidsAll = [];
 
-      if (!serverResponse || !serverResponse.body || !utils.isArray(serverResponse.body.seatbid) || !serverResponse.body.seatbid.length) {
-        utils.logWarn(BIDDER_CODE + ': empty bid response');
+      if (!serverResponse || !serverResponse.body || !isArray(serverResponse.body.seatbid) || !serverResponse.body.seatbid.length) {
+        logWarn(BIDDER_CODE + ': empty bid response');
         return bidsAll;
       }
 
@@ -256,28 +256,28 @@ export const spec = {
             bid.mediaType = 'native';
             bid.native = parseNative(JSON.parse(serverResponseOneItem.adm));
           } else {
-            utils.logWarn(BIDDER_CODE + ': unknown or undefined crType');
+            logWarn(BIDDER_CODE + ': unknown or undefined crType');
           }
 
           // prebid 4.0 meta taxonomy
-          if (utils.isArray(serverResponseOneItem.adomain)) {
-            utils.deepSetValue(bid, 'meta.advertiserDomains', serverResponseOneItem.adomain);
+          if (isArray(serverResponseOneItem.adomain)) {
+            deepSetValue(bid, 'meta.advertiserDomains', serverResponseOneItem.adomain);
           }
-          if (utils.isArray(serverResponseOneItem.cat)) {
-            utils.deepSetValue(bid, 'meta.secondaryCatIds', serverResponseOneItem.cat);
+          if (isArray(serverResponseOneItem.cat)) {
+            deepSetValue(bid, 'meta.secondaryCatIds', serverResponseOneItem.cat);
           }
-          if (utils.isPlainObject(serverResponseOneItem.ext)) {
-            if (utils.isStr(serverResponseOneItem.ext.advertiser_id)) {
-              utils.deepSetValue(bid, 'meta.mediaType', serverResponseOneItem.ext.mediaType);
+          if (isPlainObject(serverResponseOneItem.ext)) {
+            if (isStr(serverResponseOneItem.ext.advertiser_id)) {
+              deepSetValue(bid, 'meta.mediaType', serverResponseOneItem.ext.mediaType);
             }
-            if (utils.isStr(serverResponseOneItem.ext.advertiser_id)) {
-              utils.deepSetValue(bid, 'meta.advertiserId', serverResponseOneItem.ext.advertiser_id);
+            if (isStr(serverResponseOneItem.ext.advertiser_id)) {
+              deepSetValue(bid, 'meta.advertiserId', serverResponseOneItem.ext.advertiser_id);
             }
-            if (utils.isStr(serverResponseOneItem.ext.advertiser_name)) {
-              utils.deepSetValue(bid, 'meta.advertiserName', serverResponseOneItem.ext.advertiser_name);
+            if (isStr(serverResponseOneItem.ext.advertiser_name)) {
+              deepSetValue(bid, 'meta.advertiserName', serverResponseOneItem.ext.advertiser_name);
             }
-            if (utils.isStr(serverResponseOneItem.ext.agency_name)) {
-              utils.deepSetValue(bid, 'meta.agencyName', serverResponseOneItem.ext.agency_name);
+            if (isStr(serverResponseOneItem.ext.agency_name)) {
+              deepSetValue(bid, 'meta.agencyName', serverResponseOneItem.ext.agency_name);
             }
           }
           bidsAll.push(bid)
@@ -288,7 +288,7 @@ export const spec = {
 
   onBidWon: (bid) => {
     if (bid.burl) {
-      utils.triggerPixel(utils.replaceAuctionPrice(bid.burl, bid.originalCpm));
+      triggerPixel(replaceAuctionPrice(bid.burl, bid.originalCpm));
     }
   },
 
@@ -304,14 +304,14 @@ export const spec = {
       cn: timeoutData.timeout,
       aud: timeoutData.auctionId,
     };
-    let adxcgRequestUrl = utils.buildUrl({
+    let adxcgRequestUrl = buildUrl({
       protocol: 'https',
       hostname: 'hbps.adxcg.net',
       pathname: '/event/timeout.gif',
       search: beaconParams
     });
-    utils.logWarn(BIDDER_CODE + ': onTimeout called');
-    utils.triggerPixel(adxcgRequestUrl);
+    logWarn(BIDDER_CODE + ': onTimeout called');
+    triggerPixel(adxcgRequestUrl);
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
@@ -336,20 +336,20 @@ export const spec = {
 }
 
 function isVideoRequest(bid) {
-  return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
+  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
 }
 
 function isBannerRequest(bid) {
-  return bid.mediaType === 'banner' || !!utils.deepAccess(bid, 'mediaTypes.banner');
+  return bid.mediaType === 'banner' || !!deepAccess(bid, 'mediaTypes.banner');
 }
 
 function isNativeRequest(bid) {
-  return bid.mediaType === 'native' || !!utils.deepAccess(bid, 'mediaTypes.native');
+  return bid.mediaType === 'native' || !!deepAccess(bid, 'mediaTypes.native');
 }
 
 function getFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.floor', DEFAULT_MIN_FLOOR);
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.floor', DEFAULT_MIN_FLOOR);
   }
 
   try {
@@ -361,7 +361,7 @@ function getFloor(bid) {
     });
     return floor.floor;
   } catch (e) {
-    utils.logWarn(BIDDER_CODE + ': call to getFloor failed:' + e.message);
+    logWarn(BIDDER_CODE + ': call to getFloor failed:' + e.message);
     return DEFAULT_MIN_FLOOR;
   }
 }

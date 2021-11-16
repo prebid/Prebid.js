@@ -1,5 +1,7 @@
+import { getValue, logError, deepAccess, getBidIdParameter, parseSizesInput, isArray } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-const utils = require('../src/utils.js');
+import {getStorageManager} from '../src/storageManager.js';
+
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
 const ENDPOINT_URL = 'https://a.teads.tv/hb/bid-request';
@@ -8,7 +10,9 @@ const gdprStatus = {
   GDPR_APPLIES_GLOBAL: 11,
   GDPR_DOESNT_APPLY: 0,
   CMP_NOT_FOUND_OR_ERROR: 22
-}
+};
+const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
+export const storage = getStorageManager(GVL_ID, BIDDER_CODE);
 
 export const spec = {
   code: BIDDER_CODE,
@@ -23,13 +27,13 @@ export const spec = {
   isBidRequestValid: function(bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined') {
-      let isValidPlacementId = _validateId(utils.getValue(bid.params, 'placementId'));
-      let isValidPageId = _validateId(utils.getValue(bid.params, 'pageId'));
+      let isValidPlacementId = _validateId(getValue(bid.params, 'placementId'));
+      let isValidPageId = _validateId(getValue(bid.params, 'pageId'));
       isValid = isValidPlacementId && isValidPageId;
     }
 
     if (!isValid) {
-      utils.logError('Teads placementId and pageId parameters are required. Bid aborted.');
+      logError('Teads placementId and pageId parameters are required. Bid aborted.');
     }
     return isValid;
   },
@@ -41,6 +45,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
+
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
       pageReferrer: document.referrer,
@@ -48,7 +53,10 @@ export const spec = {
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
-      hb_version: '$prebid.version$'
+      hb_version: '$prebid.version$',
+      ...getFLoCParameters(deepAccess(validBidRequests, '0.userId.flocId')),
+      ...getUnifiedId2Parameter(deepAccess(validBidRequests, '0.userId.uid2')),
+      ...getFirstPartyTeadsIdParameter()
     };
 
     if (validBidRequests[0].schain) {
@@ -57,11 +65,11 @@ export const spec = {
 
     let gdpr = bidderRequest.gdprConsent;
     if (bidderRequest && gdpr) {
-      let isCmp = (typeof gdpr.gdprApplies === 'boolean')
-      let isConsentString = (typeof gdpr.consentString === 'string')
+      let isCmp = typeof gdpr.gdprApplies === 'boolean';
+      let isConsentString = typeof gdpr.consentString === 'string';
       let status = isCmp
         ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData, gdpr.apiVersion)
-        : gdprStatus.CMP_NOT_FOUND_OR_ERROR
+        : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
         status: status,
@@ -70,14 +78,14 @@ export const spec = {
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      payload.us_privacy = bidderRequest.uspConsent
+      payload.us_privacy = bidderRequest.uspConsent;
     }
 
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
       url: ENDPOINT_URL,
-      data: payloadString,
+      data: payloadString
     };
   },
   /**
@@ -114,7 +122,7 @@ export const spec = {
       });
     }
     return bidResponses;
-  },
+  }
 };
 
 function getReferrerInfo(bidderRequest) {
@@ -159,10 +167,14 @@ function getTimeToFirstByte(win) {
 }
 
 function findGdprStatus(gdprApplies, gdprData, apiVersion) {
-  let status = gdprStatus.GDPR_APPLIES_PUBLISHER
+  let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
   if (gdprApplies) {
-    if (isGlobalConsent(gdprData, apiVersion)) status = gdprStatus.GDPR_APPLIES_GLOBAL
-  } else status = gdprStatus.GDPR_DOESNT_APPLY
+    if (isGlobalConsent(gdprData, apiVersion)) {
+      status = gdprStatus.GDPR_APPLIES_GLOBAL;
+    }
+  } else {
+    status = gdprStatus.GDPR_DOESNT_APPLY;
+  }
   return status;
 }
 
@@ -171,47 +183,52 @@ function isGlobalConsent(gdprData, apiVersion) {
     ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
     : gdprData && apiVersion === 2
       ? !gdprData.isServiceSpecific
-      : false
+      : false;
 }
 
 function buildRequestObject(bid) {
   const reqObj = {};
-  let placementId = utils.getValue(bid.params, 'placementId');
-  let pageId = utils.getValue(bid.params, 'pageId');
+  let placementId = getValue(bid.params, 'placementId');
+  let pageId = getValue(bid.params, 'pageId');
+  const impressionData = deepAccess(bid, 'ortb2Imp.ext.data');
+  const gpid = deepAccess(impressionData, 'pbadslot') || deepAccess(impressionData, 'adserver.adslot');
 
   reqObj.sizes = getSizes(bid);
-  reqObj.bidId = utils.getBidIdParameter('bidId', bid);
-  reqObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
+  reqObj.bidId = getBidIdParameter('bidId', bid);
+  reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
-  reqObj.adUnitCode = utils.getBidIdParameter('adUnitCode', bid);
-  reqObj.auctionId = utils.getBidIdParameter('auctionId', bid);
-  reqObj.transactionId = utils.getBidIdParameter('transactionId', bid);
+  reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
+  reqObj.auctionId = getBidIdParameter('auctionId', bid);
+  reqObj.transactionId = getBidIdParameter('transactionId', bid);
+  if (gpid) { reqObj.gpid = gpid; }
   return reqObj;
 }
 
 function getSizes(bid) {
-  return utils.parseSizesInput(concatSizes(bid));
+  return parseSizesInput(concatSizes(bid));
 }
 
 function concatSizes(bid) {
-  let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-  let videoSizes = utils.deepAccess(bid, 'mediaTypes.video.sizes');
-  let bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
+  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
+  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
 
-  if (utils.isArray(bannerSizes) || utils.isArray(playerSize) || utils.isArray(videoSizes)) {
+  if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
     let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
     return mediaTypesSizes
       .reduce(function(acc, currSize) {
-        if (utils.isArray(currSize)) {
-          if (utils.isArray(currSize[0])) {
-            currSize.forEach(function (childSize) { acc.push(childSize) })
+        if (isArray(currSize)) {
+          if (isArray(currSize[0])) {
+            currSize.forEach(function (childSize) {
+              acc.push(childSize);
+            })
           } else {
             acc.push(currSize);
           }
         }
         return acc;
-      }, [])
+      }, []);
   } else {
     return bid.sizes;
   }
@@ -219,6 +236,41 @@ function concatSizes(bid) {
 
 function _validateId(id) {
   return (parseInt(id) > 0);
+}
+
+/**
+ * Get FLoC parameters to be sent in the bid request.
+ * @param `{id: string, version: string} | undefined` optionalFlocId FLoC user ID object available if "flocIdSystem" module is enabled.
+ * @returns `{} | {cohortId: string} | {cohortVersion: string} | {cohortId: string, cohortVersion: string}`
+ */
+function getFLoCParameters(optionalFlocId) {
+  if (!optionalFlocId) {
+    return {};
+  }
+  const cohortId = optionalFlocId.id ? { cohortId: optionalFlocId.id } : {};
+  const cohortVersion = optionalFlocId.version ? { cohortVersion: optionalFlocId.version } : {};
+  return { ...cohortId, ...cohortVersion };
+}
+
+/**
+ * Get unified ID v2 parameter to be sent in bid request.
+ * @param `{id: string} | undefined` optionalUid2 uid2 user ID object available if "uid2IdSystem" module is enabled.
+ * @returns `{} | {unifiedId2: string}`
+ */
+function getUnifiedId2Parameter(optionalUid2) {
+  return optionalUid2 ? { unifiedId2: optionalUid2.id } : {};
+}
+
+/**
+ * Get the first-party cookie Teads ID parameter to be sent in bid request.
+ * @returns `{} | {firstPartyCookieTeadsId: string}`
+ */
+function getFirstPartyTeadsIdParameter() {
+  if (!storage.cookiesAreEnabled()) {
+    return {};
+  }
+  const firstPartyTeadsId = storage.getCookie(FP_TEADS_ID_COOKIE_NAME);
+  return firstPartyTeadsId ? { firstPartyCookieTeadsId: firstPartyTeadsId } : {};
 }
 
 registerBidder(spec);
