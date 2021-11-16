@@ -438,13 +438,9 @@ describe('emx_digital Adapter', function () {
       let bid = utils.deepClone(bidderRequest.bids[0]);
       bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid } } } }; // put gpid in both spots
       bid.ortb2Imp = { ext: { data: { pbadslot: gpid } } };
-  
-      // build bid request
-      let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+      let requestWithGPID = spec.buildRequests([bid], bidderRequest); // build bid request
       requestWithGPID = JSON.parse(requestWithGPID.data);
-  
-      // ensure gpid inside bid request
-      expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+      expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);   // ensure gpid inside bid request
     });
 
     it('should add UID 2.0 to request', () => {
