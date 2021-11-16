@@ -116,7 +116,7 @@ describe('secureCreatives', () => {
     beforeEach(function() {
       spyAddWinningBid = sinon.spy(auctionManager, 'addWinningBid');
       spyLogWarn = sinon.spy(utils, 'logWarn');
-      stubFireNativeTrackers = sinon.stub(native, 'fireNativeTrackers');
+      stubFireNativeTrackers = sinon.stub(native, 'fireNativeTrackers').callsFake(message => { return message.action; });
       stubGetAllAssetsMessage = sinon.stub(native, 'getAllAssetsMessage');
       stubEmit = sinon.stub(events, 'emit');
     });
@@ -263,10 +263,9 @@ describe('secureCreatives', () => {
         sinon.assert.calledOnce(stubGetAllAssetsMessage);
         sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
         sinon.assert.calledOnce(ev.source.postMessage);
-        sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubFireNativeTrackers, data, adResponse);
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.notCalled(stubFireNativeTrackers);
+        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
+        sinon.assert.notCalled(spyAddWinningBid);
         sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
       });
 
@@ -293,13 +292,10 @@ describe('secureCreatives', () => {
         sinon.assert.calledOnce(stubGetAllAssetsMessage);
         sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
         sinon.assert.calledOnce(ev.source.postMessage);
-        sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubFireNativeTrackers, data, adResponse);
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.notCalled(stubFireNativeTrackers);
+        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
+        sinon.assert.notCalled(spyAddWinningBid);
         sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
-
-        expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
 
         resetHistories(ev.source.postMessage);
 
@@ -309,10 +305,9 @@ describe('secureCreatives', () => {
         sinon.assert.calledOnce(stubGetAllAssetsMessage);
         sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
         sinon.assert.calledOnce(ev.source.postMessage);
-        sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubFireNativeTrackers, data, adResponse);
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.notCalled(stubFireNativeTrackers);
+        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
+        sinon.assert.notCalled(spyAddWinningBid);
         sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
       });
 
@@ -341,13 +336,10 @@ describe('secureCreatives', () => {
         sinon.assert.calledOnce(stubGetAllAssetsMessage);
         sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
         sinon.assert.calledOnce(ev.source.postMessage);
-        sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubFireNativeTrackers, data, adResponse);
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.notCalled(stubFireNativeTrackers);
+        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
+        sinon.assert.notCalled(spyAddWinningBid);
         sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
-
-        expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
 
         resetHistories(ev.source.postMessage);
 
@@ -357,13 +349,50 @@ describe('secureCreatives', () => {
         sinon.assert.calledOnce(stubGetAllAssetsMessage);
         sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
         sinon.assert.calledOnce(ev.source.postMessage);
-        sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubFireNativeTrackers, data, adResponse);
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.notCalled(stubFireNativeTrackers);
+        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
+        sinon.assert.notCalled(spyAddWinningBid);
         sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
 
         configObj.setConfig({'auctionOptions': {}});
+      });
+
+      it('Prebid native should fire trackers', function () {
+        pushBidResponseToAuction({});
+
+        const data = {
+          adId: bidId,
+          message: 'Prebid Native',
+          action: 'click',
+        };
+
+        const ev = {
+          data: JSON.stringify(data),
+          source: {
+            postMessage: sinon.stub()
+          },
+          origin: 'any origin'
+        };
+
+        receiveMessage(ev);
+
+        sinon.assert.neverCalledWith(spyLogWarn, warning);
+        sinon.assert.calledOnce(stubFireNativeTrackers);
+        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
+        sinon.assert.notCalled(spyAddWinningBid);
+
+        resetHistories(ev.source.postMessage);
+
+        delete data.action;
+        ev.data = JSON.stringify(data);
+        receiveMessage(ev);
+
+        sinon.assert.neverCalledWith(spyLogWarn, warning);
+        sinon.assert.calledOnce(stubFireNativeTrackers);
+        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.calledOnce(spyAddWinningBid);
+
+        expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
       });
     });
   });
