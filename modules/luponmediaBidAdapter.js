@@ -1,4 +1,4 @@
-import {isArray, logMessage, deepAccess, logWarn, parseSizesInput, deepSetValue, generateUUID, isEmpty, logError, _each} from '../src/utils.js';
+import {isArray, logMessage, deepAccess, logWarn, parseSizesInput, deepSetValue, generateUUID, isEmpty, logError, _each, isFn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -317,7 +317,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   }
 
   let bidFloor;
-  if (typeof bidRequest.getFloor === 'function' && !config.getConfig('disableFloors')) {
+  if (isFn(bidRequest.getFloor) && !config.getConfig('disableFloors')) {
     let floorInfo;
     try {
       floorInfo = bidRequest.getFloor({
