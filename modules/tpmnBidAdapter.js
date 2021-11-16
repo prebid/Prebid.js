@@ -1,6 +1,6 @@
 /* eslint-disable no-tabs */
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
+import { parseUrl, deepAccess } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 export const ADAPTER_VERSION = '1';
@@ -72,7 +72,7 @@ registerBidder(spec);
  * Creates site description object
  */
 function createSite(refInfo) {
-  let url = utils.parseUrl(refInfo.referer);
+  let url = parseUrl(refInfo.referer);
   let site = {
     'domain': url.hostname,
     'page': url.protocol + '://' + url.hostname + url.pathname
@@ -102,7 +102,7 @@ function parseSizes(sizes) {
 }
 
 function getBannerSizes(bidRequest) {
-  return parseSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes);
+  return parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes);
 }
 
 function bidToRequest(bid) {

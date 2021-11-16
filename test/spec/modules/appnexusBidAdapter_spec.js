@@ -1047,7 +1047,8 @@ describe('AppNexusAdapter', function () {
                 'trackers': [
                   {
                     'impression_urls': [
-                      'https://lax1-ib.adnxs.com/impression'
+                      'https://lax1-ib.adnxs.com/impression',
+                      'https://www.test.com/tracker'
                     ],
                     'video_events': {}
                   }
@@ -1332,6 +1333,20 @@ describe('AppNexusAdapter', function () {
       }
       let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
+    });
+
+    it('should add brand id', function() {
+      let responseBrandId = deepClone(response);
+      responseBrandId.tags[0].ads[0].brand_id = 123;
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      }
+      let result = spec.interpretResponse({ body: responseBrandId }, {bidderRequest});
+      expect(Object.keys(result[0].meta)).to.include.members(['brandId']);
     });
 
     it('should add advertiserDomains', function() {

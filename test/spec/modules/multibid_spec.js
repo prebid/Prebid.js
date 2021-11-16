@@ -82,7 +82,7 @@ describe('multibid adapter', function () {
           'sizes': [[300, 250]]
         }
       },
-      'adUnitCode': 'test-div',
+      'adUnitCode': 'test.div',
       'transactionId': 'c153f3da-84f0-4be8-95cb-0647c458bc60',
       'sizes': [[300, 250]],
       'bidId': '2408ef83b84c9d',
@@ -106,7 +106,7 @@ describe('multibid adapter', function () {
           'sizes': [[300, 250]]
         }
       },
-      'adUnitCode': 'test-div',
+      'adUnitCode': 'test.div',
       'transactionId': 'c153f3da-84f0-4be8-95cb-0647c458bc60',
       'sizes': [[300, 250]],
       'bidId': '2408ef83b84c9d',
@@ -197,14 +197,14 @@ describe('multibid adapter', function () {
     });
 
     it('adds original bids and does not modify', function () {
-      let adUnitCode = 'test-div';
+      let adUnitCode = 'test.div';
       let bids = [{...bidArray[0]}, {...bidArray[1]}];
 
       addBidResponseHook(callbackFn, adUnitCode, {...bids[0]});
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[0]);
 
@@ -214,13 +214,13 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[1]);
     });
 
     it('modifies and adds both bids based on multibid configuration', function () {
-      let adUnitCode = 'test-div';
+      let adUnitCode = 'test.div';
       let bids = [{...bidArray[0]}, {...bidArray[1]}];
 
       config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}]});
@@ -232,7 +232,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[0]);
 
@@ -250,13 +250,13 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[1]);
     });
 
     it('only modifies bids defined in the multibid configuration', function () {
-      let adUnitCode = 'test-div';
+      let adUnitCode = 'test.div';
       let bids = [{...bidArray[0]}, {...bidArray[1]}];
 
       bids.push({
@@ -276,7 +276,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[0]);
 
@@ -292,7 +292,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[1]);
 
@@ -302,13 +302,13 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[2]);
     });
 
     it('only modifies and returns bids under limit for a specifc bidder in the multibid configuration', function () {
-      let adUnitCode = 'test-div';
+      let adUnitCode = 'test.div';
       let bids = [{...bidArray[0]}, {...bidArray[1]}];
 
       bids.push({
@@ -328,7 +328,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[0]);
 
@@ -344,7 +344,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[1]);
 
@@ -356,7 +356,7 @@ describe('multibid adapter', function () {
     });
 
     it('if no prefix in multibid configuration, modifies and returns bids under limit without preifx property', function () {
-      let adUnitCode = 'test-div';
+      let adUnitCode = 'test.div';
       let bids = [{...bidArray[0]}, {...bidArray[1]}];
 
       bids.push({
@@ -375,7 +375,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[0]);
 
@@ -389,7 +389,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid).to.deep.equal(bids[1]);
 
@@ -401,7 +401,7 @@ describe('multibid adapter', function () {
     });
 
     it('does not include extra bids if cpm is less than floor value', function () {
-      let adUnitCode = 'test-div';
+      let adUnitCode = 'test.div';
       let bids = [{...bidArrayAlt[1]}, {...bidArrayAlt[0]}, {...bidArrayAlt[2]}, {...bidArrayAlt[3]}];
 
       bids.map(bid => {
@@ -418,7 +418,7 @@ describe('multibid adapter', function () {
           floorRuleValue: 65,
           floorValue: 65,
           matchedFields: {
-            gptSlot: 'test-div',
+            gptSlot: 'test.div',
             mediaType: 'banner'
           }
         }
@@ -435,7 +435,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid.bidder).to.equal('bidderA');
       expect(result.bid.targetingBidder).to.equal(undefined);
@@ -452,7 +452,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid.bidder).to.equal('bidderB');
       expect(result.bid.targetingBidder).to.equal(undefined);
@@ -463,14 +463,14 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid.bidder).to.equal('bidderC');
       expect(result.bid.targetingBidder).to.equal(undefined);
     });
 
     it('does  include extra bids if cpm is not less than floor value', function () {
-      let adUnitCode = 'test-div';
+      let adUnitCode = 'test.div';
       let bids = [{...bidArrayAlt[1]}, {...bidArrayAlt[0]}];
 
       bids.map(bid => {
@@ -487,7 +487,7 @@ describe('multibid adapter', function () {
           floorRuleValue: 25,
           floorValue: 25,
           matchedFields: {
-            gptSlot: 'test-div',
+            gptSlot: 'test.div',
             mediaType: 'banner'
           }
         }
@@ -504,7 +504,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid.bidder).to.equal('bidderA');
       expect(result.bid.targetingBidder).to.equal(undefined);
@@ -518,7 +518,7 @@ describe('multibid adapter', function () {
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
-      expect(result.adUnitCode).to.equal('test-div');
+      expect(result.adUnitCode).to.equal('test.div');
       expect(result.bid).to.not.equal(null);
       expect(result.bid.bidder).to.equal('bidderA');
       expect(result.bid.targetingBidder).to.equal('bidA2');
@@ -578,7 +578,7 @@ describe('multibid adapter', function () {
 
     it('it sorts and creates dynamic alias on bidsReceived if multibid configuration found with prefix', function () {
       let modifiedBids = [{...bidArray[1]}, {...bidArray[0]}].map(bid => {
-        addBidResponseHook(bidResponseCallback, 'test-div', {...bid});
+        addBidResponseHook(bidResponseCallback, 'test.div', {...bid});
 
         return bidResult;
       });
@@ -603,7 +603,7 @@ describe('multibid adapter', function () {
 
     it('it sorts by cpm treating dynamic alias as unique bid when no bid limit defined', function () {
       let modifiedBids = [{...bidArrayAlt[0]}, {...bidArrayAlt[2]}, {...bidArrayAlt[3]}, {...bidArrayAlt[1]}].map(bid => {
-        addBidResponseHook(bidResponseCallback, 'test-div', {...bid});
+        addBidResponseHook(bidResponseCallback, 'test.div', {...bid});
 
         return bidResult;
       });
@@ -636,7 +636,7 @@ describe('multibid adapter', function () {
 
     it('it should filter out dynamic bid when bid limit is less than unique bid pool', function () {
       let modifiedBids = [{...bidArrayAlt[0]}, {...bidArrayAlt[2]}, {...bidArrayAlt[3]}, {...bidArrayAlt[1]}].map(bid => {
-        addBidResponseHook(bidResponseCallback, 'test-div', {...bid});
+        addBidResponseHook(bidResponseCallback, 'test.div', {...bid});
 
         return bidResult;
       });
@@ -662,7 +662,7 @@ describe('multibid adapter', function () {
       config.setConfig({ multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}] });
 
       let modifiedBids = [{...bidArrayAlt[0]}, {...bidArrayAlt[2]}, {...bidArrayAlt[3]}, {...bidArrayAlt[1]}].map(bid => {
-        addBidResponseHook(bidResponseCallback, 'test-div', {...bid});
+        addBidResponseHook(bidResponseCallback, 'test.div', {...bid});
 
         return bidResult;
       });
