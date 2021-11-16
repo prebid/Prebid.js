@@ -20,7 +20,7 @@ describe('GoldbachXandrAdapter', function () {
 
   describe('isBidRequestValid', function () {
     let bid = {
-      'bidder': 'godlbach',
+      'bidder': 'goldbach',
       'params': {
         'placementId': '10433394'
       },

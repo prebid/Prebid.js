@@ -9,7 +9,7 @@ import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const BIDDER_CODE = 'godlbach';
+const BIDDER_CODE = 'goldbach';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const PRICING_URL = 'https://templates.da-services.ch/01_universal/burda_prebid/1.0/json/sizeCPMMapping.json';
 const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
