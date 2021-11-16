@@ -149,6 +149,11 @@ export const merkleIdSubmodule = {
     logInfo('User ID - merkleId stored id ' + storedId);
     const configParams = (config && config.params) || {};
 
+    if (typeof configParams.endpoint !== 'string') {
+      logWarn('User ID - merkleId submodule endpoint string is not defined');
+      configParams.endpoint = ID_URL
+    }
+
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
       logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
