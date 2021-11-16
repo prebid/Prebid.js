@@ -1,4 +1,4 @@
-import { logError, deepAccess } from '../src/utils.js';
+import { logError, deepAccess, parseSizesInput } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -62,14 +62,15 @@ const isBidResponseValid = bid => {
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
     let adType = BANNER;
-    let w, h;
+    let sizes;
     if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
-      [w, h] = bid.mediaTypes[BANNER].sizes[0];
+      sizes = bid.mediaTypes[BANNER].sizes;
       adType = BANNER;
     } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
-      [w, h] = bid.mediaTypes[VIDEO].playerSize;
+      sizes = bid.mediaTypes[VIDEO].playerSize;
       adType = VIDEO;
     }
+    const [w, h] = (parseSizesInput(sizes)[0] || '0x0').split('x');
 
     const aElement = document.createElement('a');
     aElement.href = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || top.location.href;
