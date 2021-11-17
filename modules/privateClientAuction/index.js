@@ -53,8 +53,8 @@ export function handleSetFledgeConfig(config) {
   ]);
 
   // check if fledge is enabled and available
-  if (_privateClientAuctionConfig.enabled && 
-    privateClientAuctionConfig.supportedAuctionTypes.includes('fledge') && 
+  if (_privateClientAuctionConfig.enabled &&
+    _privateClientAuctionConfig.supportedAuctionTypes.includes('fledge') &&
     navigator.runAdAuction) {
     getGlobal()
       .renderAd
