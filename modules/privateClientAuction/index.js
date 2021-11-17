@@ -1,8 +1,8 @@
-import { auctionManager } from '../src/auctionManager.js';
-import { config } from '../src/config.js';
-import CONSTANTS from '../src/constants.json';
-import { getGlobal } from '../src/prebidGlobal.js';
-import * as utils from '../src/utils.js';
+import { auctionManager } from '../../src/auctionManager.js';
+import { config } from '../../src/config.js';
+import CONSTANTS from '../../src/constants.json';
+import { getGlobal } from '../../src/prebidGlobal.js';
+import * as utils from '../../src/utils.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to run a private client auction such as Fledge or Parakeet against a PreBid winning bid
@@ -31,7 +31,7 @@ export function renderAdHook(fn, doc, id, options) {
         if (results) {
           // render winning ad in fenced frame
           var adFrame = document.createElement('fencedframe');
-          adFrame.setAttribute(src,results);
+          adFrame.setAttribute('src', results);
           document.getElementById(bid.adUnitCode).appendChild(adFrame);
         } else {
           return fn.call(this, doc, id, options);
@@ -46,16 +46,16 @@ export function renderAdHook(fn, doc, id, options) {
  * @summary This is the function which controls what happens during a pbjs.setConfig({...floors: {}}) is called
  */
 export function handleSetFledgeConfig(config) {
-    _privateClientAuctionConfig = utils.pick(config, [
+  _privateClientAuctionConfig = utils.pick(config, [
     'enabled', enabled => enabled !== false, // defaults to true
     'supportedAuctionTypes',
     'auctionConfig',
   ]);
 
   // check if fledge is enabled and available
-  if (_privateClientAuctionConfig.enabled
-    && supportedAuctionTypes.includes('fledge')
-    && navigator.runAdAuction) {
+  if (_privateClientAuctionConfig.enabled && 
+    privateClientAuctionConfig.supportedAuctionTypes.includes('fledge') && 
+    navigator.runAdAuction) {
     getGlobal()
       .renderAd
       .before(renderAdHook, CONSTANTS.HOOK_PRIORITY.RENDER_AD);
