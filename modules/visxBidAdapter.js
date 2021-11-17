@@ -359,18 +359,17 @@ function _isValidVideoBid(bid, logErrors = false) {
   return result;
 }
 
-function _getAdSlotElementIdByCode(adUnitCode) {
-  const gptAdSlot = getGptSlotInfoForAdUnitCode(adUnitCode);
-  if (gptAdSlot && gptAdSlot.divId) {
-    return gptAdSlot.divId
-  }
-  return null;
-}
-
 function _isAdSlotExists(adUnitCode) {
-  const adSlotElement = document.getElementById(adUnitCode) ||
-    document.getElementById(_getAdSlotElementIdByCode(adUnitCode));
-  return !!adSlotElement;
+  if (document.getElementById(adUnitCode)) {
+    return true;
+  }
+
+  const gptAdSlot = getGptSlotInfoForAdUnitCode(adUnitCode);
+  if (gptAdSlot && gptAdSlot.divId && document.getElementById(gptAdSlot.divId)) {
+    return true;
+  }
+
+  return false;
 }
 
 registerBidder(spec);
