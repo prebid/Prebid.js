@@ -1,9 +1,14 @@
-import { ajax } from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import { parseSizesInput, uniques, buildUrl, logError } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as url from '../src/url';
-import * as utils from '../src/utils';
+
+/**
+ * Analytics adapter from adxcg.com
+ * maintainer info@adxcg.com
+ * updated 201911 for prebid 3.0
+ */
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -27,7 +32,7 @@ var adxcgAnalyticsAdapter = Object.assign(adapter(
       case CONSTANTS.EVENTS.BID_ADJUSTMENT:
         break;
       case CONSTANTS.EVENTS.BID_TIMEOUT:
-        adxcgAnalyticsAdapter.context.events.bidTimeout = args.map(item => item.bidder).filter(utils.uniques);
+        adxcgAnalyticsAdapter.context.events.bidTimeout = args.map(item => item.bidder).filter(uniques);
         break;
       case CONSTANTS.EVENTS.BIDDER_DONE:
         break;
@@ -62,7 +67,7 @@ function mapBidRequested (bidRequests) {
         adUnitCode: bid.adUnitCode,
         bidId: bid.bidId,
         start: bid.startTime,
-        sizes: utils.parseSizesInput(bid.sizes).toString(),
+        sizes: parseSizesInput(bid.sizes).toString(),
         params: bid.params
       };
     }),
@@ -107,11 +112,8 @@ function mapBidWon (bidResponse) {
 }
 
 function send (data) {
-  let location = utils.getTopWindowLocation();
-  let secure = location.protocol === 'https:';
-
-  let adxcgAnalyticsRequestUrl = url.format({
-    protocol: secure ? 'https' : 'http',
+  let adxcgAnalyticsRequestUrl = buildUrl({
+    protocol: 'https',
     hostname: adxcgAnalyticsAdapter.context.host,
     pathname: '/pbrx/v2',
     search: {
@@ -141,18 +143,17 @@ adxcgAnalyticsAdapter.context = {};
 adxcgAnalyticsAdapter.originEnableAnalytics = adxcgAnalyticsAdapter.enableAnalytics;
 adxcgAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.publisherId) {
-    utils.logError('PublisherId option is not defined. Analytics won\'t work');
+    logError('PublisherId option is not defined. Analytics won\'t work');
     return;
   }
 
-  let secure = location.protocol === 'https:';
   adxcgAnalyticsAdapter.context = {
     events: {
       bidRequests: [],
       bidResponses: []
     },
     initOptions: config.options,
-    host: config.options.host || (secure ? 'hbarxs.adxcg.net' : 'hbarx.adxcg.net')
+    host: config.options.host || ('hbarxs.adxcg.net')
   };
 
   adxcgAnalyticsAdapter.originEnableAnalytics(config);

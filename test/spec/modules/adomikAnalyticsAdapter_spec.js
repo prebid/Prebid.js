@@ -1,5 +1,6 @@
-import adomikAnalytics from 'modules/adomikAnalyticsAdapter';
+import adomikAnalytics from 'modules/adomikAnalyticsAdapter.js';
 import {expect} from 'chai';
+
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
@@ -7,6 +8,14 @@ let constants = require('src/constants.json');
 describe('Adomik Prebid Analytic', function () {
   let sendEventStub;
   let sendWonEventStub;
+  let clock;
+
+  before(function () {
+    clock = sinon.useFakeTimers();
+  });
+  after(function () {
+    clock.restore();
+  });
 
   describe('enableAnalytics', function () {
     beforeEach(function () {
@@ -84,7 +93,7 @@ describe('Adomik Prebid Analytic', function () {
         type: 'request',
         event: {
           bidder: 'BIDDERTEST',
-          placementCode: 'placementtest',
+          placementCode: '0000',
         }
       });
 
@@ -120,7 +129,6 @@ describe('Adomik Prebid Analytic', function () {
       expect(adomikAnalytics.currentContext.timeouted).to.equal(true);
 
       // Step 7: Send auction end event
-      var clock = sinon.useFakeTimers();
       events.emit(constants.EVENTS.AUCTION_END, {});
 
       setTimeout(function() {
@@ -130,7 +138,6 @@ describe('Adomik Prebid Analytic', function () {
       }, 3000);
 
       clock.tick(5000);
-      clock.restore();
 
       sinon.assert.callCount(adomikAnalytics.track, 6);
     });

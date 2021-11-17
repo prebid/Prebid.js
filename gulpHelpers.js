@@ -34,7 +34,6 @@ module.exports = {
   },
 
   jsonifyHTML: function (str) {
-    console.log(arguments);
     return str.replace(/\n/g, '')
       .replace(/<\//g, '<\\/')
       .replace(/\/>/g, '\\/>');
@@ -59,6 +58,7 @@ module.exports = {
       });
     }
 
+    // we need to forcefuly include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
     Object.keys(submodules).forEach(parentModule => {
       if (
         !modules.includes(parentModule) &&
@@ -83,7 +83,9 @@ module.exports = {
           if (fs.lstatSync(modulePath).isDirectory()) {
             modulePath = path.join(modulePath, 'index.js')
           }
-          memo[modulePath] = moduleName;
+          if (fs.existsSync(modulePath)) {
+            memo[modulePath] = moduleName;
+          }
           return memo;
         }, {});
     } catch (err) {
@@ -91,7 +93,10 @@ module.exports = {
     }
     return Object.assign(externalModules.reduce((memo, module) => {
       try {
-        var modulePath = require.resolve(module);
+        // prefer internal project modules before looking at project dependencies
+        var modulePath = require.resolve(module, {paths: ['./modules']});
+        if (modulePath === '') modulePath = require.resolve(module);
+
         memo[modulePath] = module;
       } catch (err) {
         // do something

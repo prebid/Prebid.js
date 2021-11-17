@@ -1,11 +1,13 @@
 /* Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
 Updated : 2018-03-28 */
-import includes from 'core-js/library/fn/array/includes';
-import adapter from '../src/AnalyticsAdapter';
+import includes from 'core-js-pure/features/array/includes.js';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
+import adapterManager from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { generateUUID, logInfo, logError } from '../src/utils.js';
 
-const utils = require('../src/utils');
+const storage = getStorageManager();
 
 const url = 'https://kinesis.us-east-1.amazonaws.com/';
 const analyticsType = 'endpoint';
@@ -53,32 +55,32 @@ function buildSessionIdTimeoutLocalStorageKey() {
 
 function updateSessionId() {
   if (isSessionIdTimeoutExpired()) {
-    let newSessionId = utils.generateUUID();
-    localStorage.setItem(buildSessionIdLocalStorageKey(), newSessionId);
+    let newSessionId = generateUUID();
+    storage.setDataInLocalStorage(buildSessionIdLocalStorageKey(), newSessionId);
   }
   initOptions.sessionId = getSessionId();
   updateSessionIdTimeout();
 }
 
 function updateSessionIdTimeout() {
-  localStorage.setItem(buildSessionIdTimeoutLocalStorageKey(), Date.now());
+  storage.setDataInLocalStorage(buildSessionIdTimeoutLocalStorageKey(), Date.now());
 }
 
 function isSessionIdTimeoutExpired() {
-  let cpmSessionTimestamp = localStorage.getItem(buildSessionIdTimeoutLocalStorageKey());
+  let cpmSessionTimestamp = storage.getDataFromLocalStorage(buildSessionIdTimeoutLocalStorageKey());
   return Date.now() - cpmSessionTimestamp > sessionTimeout;
 }
 
 function getSessionId() {
-  return localStorage.getItem(buildSessionIdLocalStorageKey()) ? localStorage.getItem(buildSessionIdLocalStorageKey()) : '';
+  return storage.getDataFromLocalStorage(buildSessionIdLocalStorageKey()) ? storage.getDataFromLocalStorage(buildSessionIdLocalStorageKey()) : '';
 }
 
 function updateUtmTimeout() {
-  localStorage.setItem(buildUtmLocalStorageTimeoutKey(), Date.now());
+  storage.setDataInLocalStorage(buildUtmLocalStorageTimeoutKey(), Date.now());
 }
 
 function isUtmTimeoutExpired() {
-  let utmTimestamp = localStorage.getItem(buildUtmLocalStorageTimeoutKey());
+  let utmTimestamp = storage.getDataFromLocalStorage(buildUtmLocalStorageTimeoutKey());
   return (Date.now() - utmTimestamp) > utmTimeout;
 }
 
@@ -203,7 +205,7 @@ sigmoidAdapter.originEnableAnalytics = sigmoidAdapter.enableAnalytics;
 sigmoidAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
   initOptions.utmTagData = this.buildUtmTagData();
-  utils.logInfo('Sigmoid Analytics enabled with config', initOptions);
+  logInfo('Sigmoid Analytics enabled with config', initOptions);
   sigmoidAdapter.originEnableAnalytics(config);
 };
 
@@ -219,11 +221,11 @@ sigmoidAdapter.buildUtmTagData = function () {
   });
   utmTags.forEach(function(utmTagKey) {
     if (utmTagsDetected) {
-      localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      storage.setDataInLocalStorage(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
       updateUtmTimeout();
     } else {
       if (!isUtmTimeoutExpired()) {
-        utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+        utmTagData[utmTagKey] = storage.getDataFromLocalStorage(buildUtmLocalStorageKey(utmTagKey)) ? storage.getDataFromLocalStorage(buildUtmLocalStorageKey(utmTagKey)) : '';
         updateUtmTimeout();
       }
     }
@@ -232,18 +234,22 @@ sigmoidAdapter.buildUtmTagData = function () {
 };
 
 function send(eventType, data, sendDataType) {
+  // eslint-disable-next-line no-undef
   AWS.config.credentials = new AWS.Credentials({
     accessKeyId: 'accesskey', secretAccessKey: 'secretkey'
   });
 
+  // eslint-disable-next-line no-undef
   AWS.config.region = 'us-east-1';
+  // eslint-disable-next-line no-undef
   AWS.config.credentials.get(function(err) {
     // attach event listener
     if (err) {
-      utils.logError(err);
+      logError(err);
       return;
     }
     // create kinesis service object
+    // eslint-disable-next-line no-undef
     var kinesis = new AWS.Kinesis({
       apiVersion: '2013-12-02'
     });

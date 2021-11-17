@@ -1,215 +1,187 @@
 import {expect} from 'chai';
-import {spec} from 'modules/admanBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from '../../../modules/admanBidAdapter.js';
 
-const ENDPOINT = '//bidtor.admanmedia.com/prebid';
-const BANNER = '<script type="text/javascript" async="true" src="https://bogus.script"></script>"';
-const VAST = '<VAST version="3.0"></VAST>';
-const USER_SYNC_IFRAME_URL = '//cs.admanmedia.com/sync_tag/html';
-
-describe('admanBidAdapter', function() {
-  const adapter = newBidder(spec);
-
-  describe('inherited functions', function() {
-    it('exists and is a function', function() {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
-
-  describe('isBidRequestValid', function() {
-    let bid = {
-      'bidder': 'adman',
-      'params': {
-        'id': '1234asdf'
-      },
-      'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600]],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
-      'creativeId': 'er2ee'
-    };
-
-    it('should return true when required params found', function() {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('should return false when id is not valid (not string)', function() {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
-        'id': 1234
-      };
-
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return false when required params are not passed', function() {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-
-      bid.params = {};
-
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-  });
-
-  describe('buildRequests', function() {
-    let bidRequests = [
-      {
-        'bidder': 'adman',
-        'bidId': '51ef8751f9aead',
-        'params': {
-          'id': '1234asdf'
-        },
-        'adUnitCode': 'div-gpt-ad-1460505748561-0',
-        'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-        'sizes': [[320, 50], [300, 250], [300, 600]],
-        'bidderRequestId': '418b37f85e772c',
-        'auctionId': '18fd8b8b0bd757',
-        'bidRequestsCount': 1
+describe('AdmanAdapter', function () {
+  let bid = {
+    bidId: '2dd581a2b6281d',
+    bidder: 'adman',
+    bidderRequestId: '145e1d6a7837c9',
+    params: {
+      placementId: 0
+    },
+    placementCode: 'placementid_0',
+    auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]]
       }
-    ];
-
-    it('sends a valid bid request to ENDPOINT via POST', function() {
-      const request = spec.buildRequests(bidRequests, {
-        gdprConsent: {
-          consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-          gdprApplies: true
-        }
-      });
-
-      expect(request.url).to.equal(ENDPOINT);
-      expect(request.method).to.equal('POST');
-
-      const payload = JSON.parse(request.data);
-      expect(payload.gdpr).to.exist;
-
-      expect(payload.bids).to.exist.and.to.be.an('array').and.to.have.lengthOf(1);
-      expect(payload.referer).to.exist;
-
-      const bid = payload.bids[0];
-      expect(bid).to.exist;
-      expect(bid.params).to.exist;
-      expect(bid.params.id).to.exist;
-      expect(bid.params.bidId).to.exist;
-      expect(bid.sizes).to.exist.and.to.be.an('array').and.to.have.lengthOf(3);
-      bid.sizes.forEach(size => {
-        expect(size).to.be.an('array').and.to.have.lengthOf(2);
-        expect(size[0]).to.be.a('number');
-        expect(size[1]).to.be.a('number');
-      })
-    });
-
-    it('should send GDPR to endpoint and honor gdprApplies value', function() {
-      let consentString = 'bogusConsent';
-      let bidderRequest = {
-        'gdprConsent': {
-          'consentString': consentString,
-          'gdprApplies': true
-        }
-      };
-
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
-      expect(payload.gdpr).to.exist;
-      expect(payload.gdpr.consent).to.equal(consentString);
-      expect(payload.gdpr.applies).to.equal(true);
-
-      let bidderRequest2 = {
-        'gdprConsent': {
-          'consentString': consentString,
-          'gdprApplies': false
-        }
-      };
-
-      const request2 = spec.buildRequests(bidRequests, bidderRequest2);
-      const payload2 = JSON.parse(request2.data);
-
-      expect(payload2.gdpr).to.exist;
-      expect(payload2.gdpr.consent).to.equal(consentString);
-      expect(payload2.gdpr.applies).to.equal(false);
-    });
-  });
-
-  describe('interpretResponse', function() {
-    let bids = {
-      'body': {
-        'bids': [{
-          'ad': BANNER,
-          'height': 250,
-          'cpm': 0.5,
-          'currency': 'USD',
-          'netRevenue': true,
-          'requestId': '3ede2a3fa0db94',
-          'ttl': 3599,
-          'width': 300,
-          'creativeId': 'er2ee'
-        },
+    },
+    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
         {
-          'vastXml': VAST,
-          'cpm': 0.5,
-          'currency': 'USD',
-          'height': 250,
-          'netRevenue': true,
-          'requestId': '3ede2a3fa0db95',
-          'ttl': 3599,
-          'width': 300,
-          'creativeId': 'er2ef'
-        }]
-      }
-    };
-
-    it('should get correct bid response', function() {
-      let expectedResponse = [{
-        'ad': BANNER,
-        'cpm': 0.5,
-        'creativeId': 'er2ee',
-        'currency': 'USD',
-        'height': 250,
-        'netRevenue': true,
-        'requestId': '3ede2a3fa0db94',
-        'ttl': 3599,
-        'width': 300,
-      },
-      {
-        'vastXml': VAST,
-        'cpm': 0.5,
-        'creativeId': 'er2ef',
-        'currency': 'USD',
-        'height': 250,
-        'netRevenue': true,
-        'requestId': '3ede2a3fa0db95',
-        'ttl': 3599,
-        'width': 300,
-      }];
-      // los bids vienen formateados de server
-      let result = spec.interpretResponse(bids);
-
-      expect(result[0]).to.deep.equal(expectedResponse[0]);
-      expect(result[1]).to.deep.equal(expectedResponse[1]);
-      // expect(Object.keys(result[1])).to.deep.equal(Object.keys(bids[1]));
-    });
-
-    it('handles nobid responses', function() {
-      let bids = {
-        'body': {
-          'bids': []
+          asi: 'example.com',
+          sid: '0',
+          hp: 1,
+          rid: 'bidrequestid',
+          // name: 'alladsallthetime',
+          domain: 'example.com'
         }
-      };
+      ]
+    }
+  };
+  let bidderRequest = {
+    bidderCode: 'adman',
+    auctionId: 'fffffff-ffff-ffff-ffff-ffffffffffff',
+    bidderRequestId: 'ffffffffffffff',
+    start: 1472239426002,
+    auctionStart: 1472239426000,
+    timeout: 5000,
+    uspConsent: '1YN-',
+    refererInfo: {
+      referer: 'http://www.example.com',
+      reachedTop: true,
+    },
+    bids: [bid]
+  }
 
-      let result = spec.interpretResponse(bids);
-      expect(result.length).to.equal(0);
+  describe('isBidRequestValid', function () {
+    it('Should return true when placementId can be cast to a number', function () {
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+    it('Should return false when placementId is not a number', function () {
+      bid.params.placementId = 'aaa';
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
-  describe('getUserSyncs', () => {
-    it('should get correct user sync iframe url', function() {
-      expect(spec.getUserSyncs({
-        iframeEnabled: true
-      }, [{}])).to.deep.equal([{
-        type: 'iframe',
-        url: USER_SYNC_IFRAME_URL
-      }]);
+
+  describe('buildRequests', function () {
+    let serverRequest = spec.buildRequests([bid], bidderRequest);
+    it('Creates a ServerRequest object with method, URL and data', function () {
+      expect(serverRequest).to.exist;
+      expect(serverRequest.method).to.exist;
+      expect(serverRequest.url).to.exist;
+      expect(serverRequest.data).to.exist;
+    });
+    it('Returns POST method', function () {
+      expect(serverRequest.method).to.equal('POST');
+    });
+    it('Returns valid URL', function () {
+      expect(serverRequest.url).to.equal('https://pub.admanmedia.com/?c=o&m=multi');
+    });
+    it('Should contain ccpa', function() {
+      expect(serverRequest.data.ccpa).to.be.an('string')
+    })
+
+    it('Returns valid data if array of bids is valid', function () {
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa');
+      expect(data.deviceWidth).to.be.a('number');
+      expect(data.deviceHeight).to.be.a('number');
+      expect(data.language).to.be.a('string');
+      expect(data.secure).to.be.within(0, 1);
+      expect(data.host).to.be.a('string');
+      expect(data.page).to.be.a('string');
+      let placements = data['placements'];
+      for (let i = 0; i < placements.length; i++) {
+        let placement = placements[i];
+        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'bidFloor');
+        expect(placement.schain).to.be.an('object')
+        expect(placement.placementId).to.be.a('number');
+        expect(placement.bidId).to.be.a('string');
+        expect(placement.traffic).to.be.a('string');
+        expect(placement.sizes).to.be.an('array');
+        expect(placement.bidFloor).to.be.an('number');
+      }
+    });
+    it('Returns empty data if no valid requests are passed', function () {
+      serverRequest = spec.buildRequests([]);
+      let data = serverRequest.data;
+      expect(data.placements).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('buildRequests with user ids', function () {
+    bid.userId = {}
+    bid.userId.uid2 = { id: 'uid2id123' };
+    let serverRequest = spec.buildRequests([bid], bidderRequest);
+    it('Returns valid data if array of bids is valid', function () {
+      let data = serverRequest.data;
+      let placements = data['placements'];
+      expect(data).to.be.an('object');
+      for (let i = 0; i < placements.length; i++) {
+        let placement = placements[i];
+        expect(placement).to.have.property('eids')
+        expect(placement.eids).to.be.an('array')
+        expect(placement.eids.length).to.be.equal(1)
+        for (let index in placement.eids) {
+          let v = placement.eids[index];
+          expect(v).to.have.all.keys('source', 'uids')
+          expect(v.source).to.be.oneOf(['uidapi.com'])
+          expect(v.uids).to.be.an('array');
+          expect(v.uids.length).to.be.equal(1)
+          expect(v.uids[0]).to.have.property('id')
+        }
+      }
+    });
+  });
+
+  describe('interpretResponse', function () {
+    let resObject = {
+      body: [ {
+        requestId: '123',
+        mediaType: 'banner',
+        cpm: 0.3,
+        width: 320,
+        height: 50,
+        ad: '<h1>Hello ad</h1>',
+        ttl: 1000,
+        creativeId: '123asd',
+        netRevenue: true,
+        currency: 'USD',
+        meta: {
+          advertiserDomains: ['google.com'],
+          advertiserId: 1234
+        }
+      } ]
+    };
+    let serverResponses = spec.interpretResponse(resObject);
+    it('Returns an array of valid server responses if response object is valid', function () {
+      expect(serverResponses).to.be.an('array').that.is.not.empty;
+      for (let i = 0; i < serverResponses.length; i++) {
+        let dataItem = serverResponses[i];
+        expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
+          'netRevenue', 'currency', 'mediaType', 'meta');
+        expect(dataItem.requestId).to.be.a('string');
+        expect(dataItem.cpm).to.be.a('number');
+        expect(dataItem.width).to.be.a('number');
+        expect(dataItem.height).to.be.a('number');
+        expect(dataItem.ad).to.be.a('string');
+        expect(dataItem.ttl).to.be.a('number');
+        expect(dataItem.creativeId).to.be.a('string');
+        expect(dataItem.netRevenue).to.be.a('boolean');
+        expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
+      }
+      it('Returns an empty array if invalid response is passed', function () {
+        serverResponses = spec.interpretResponse('invalid_response');
+        expect(serverResponses).to.be.an('array').that.is.empty;
+      });
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    let userSync = spec.getUserSyncs();
+    it('Returns valid URL and type', function () {
+      expect(userSync).to.be.an('array').with.lengthOf(1);
+      expect(userSync[0].type).to.exist;
+      expect(userSync[0].url).to.exist;
+      expect(userSync[0].type).to.be.equal('image');
+      expect(userSync[0].url).to.be.equal('https://pub.admanmedia.com/?c=o&m=sync');
     });
   });
 });

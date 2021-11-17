@@ -1,14 +1,16 @@
 
 import {
   getCurrencyRates
-} from 'test/fixtures/fixtures';
+} from 'test/fixtures/fixtures.js';
+
+import { getGlobal } from 'src/prebidGlobal.js';
 
 import {
   setConfig,
   addBidResponseHook,
   currencySupportEnabled,
   currencyRates
-} from 'modules/currency';
+} from 'modules/currency.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -43,8 +45,12 @@ describe('currency', function () {
     it('results in currencySupportEnabled = false when currency not configured', function () {
       setConfig({});
       expect(currencySupportEnabled).to.equal(false);
+      expect(getGlobal().convertCurrency).to.be.undefined;
     });
-
+    it('adds conversion function onto pbjs global var once initiated', function () {
+      setConfig({ 'adServerCurrency': 'JPY' });
+      expect(getGlobal().convertCurrency).to.be.a('function');
+    });
     it('results in currencySupportEnabled = true and currencyRates being loaded when configured', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
@@ -124,6 +130,38 @@ describe('currency', function () {
     });
   });
 
+  describe('global currency function', function () {
+    it('still returns conversion if default rates present with fetch not returned yet', function () {
+      setConfig({
+        'adServerCurrency': 'USD',
+        'defaultRates': {
+          'USD': { EUR: 2, JPY: 100 }
+        }
+      });
+      // first conversion should use default rates
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'EUR')).to.equal(2);
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'JPY')).to.equal(100);
+      fakeCurrencyFileServer.respond();
+    });
+    it('uses fetch rates if returned', function () {
+      fakeCurrencyFileServer.respondWith(JSON.stringify({
+        'dataAsOf': '2017-04-25',
+        'conversions': {
+          'USD': { EUR: 4, JPY: 200 }
+        }
+      }));
+      setConfig({
+        'adServerCurrency': 'USD',
+        'defaultRates': {
+          'USD': { EUR: 2, JPY: 100 }
+        }
+      });
+      // now respond and should use updates rates
+      fakeCurrencyFileServer.respond();
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'EUR')).to.equal(4);
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'JPY')).to.equal(200);
+    });
+  });
   describe('bidder override', function () {
     it('allows setConfig to set bidder currency', function () {
       setConfig({});

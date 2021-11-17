@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {spec} from 'modules/feedadBidAdapter';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
-import * as sinon from 'sinon';
+import {spec} from 'modules/feedadBidAdapter.js';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
+import {server} from 'test/mocks/xhr.js';
 
 const CODE = 'feedad';
 
@@ -13,7 +13,7 @@ describe('FeedAdAdapter', function () {
     it('should only support video and banner ads', function () {
       expect(spec.supportedMediaTypes).to.be.a('array');
       expect(spec.supportedMediaTypes).to.include(BANNER);
-      expect(spec.supportedMediaTypes).to.include(VIDEO);
+      expect(spec.supportedMediaTypes).not.to.include(VIDEO);
       expect(spec.supportedMediaTypes).not.to.include(NATIVE);
     });
     it('should export the BidderSpec functions', function () {
@@ -23,6 +23,9 @@ describe('FeedAdAdapter', function () {
       expect(spec.onTimeout).to.be.a('function');
       expect(spec.onBidWon).to.be.a('function');
     });
+    it('should export the TCF vendor ID', function () {
+      expect(spec.gvlid).to.equal(781);
+    })
   });
 
   describe('isBidRequestValid', function () {
@@ -248,6 +251,40 @@ describe('FeedAdAdapter', function () {
       let result = spec.buildRequests([bid, bid, bid]);
       expect(result).to.be.empty;
     });
+    it('should not include GDPR data if the bidder request has none available', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.data.gdprApplies).to.be.undefined;
+      expect(result.data.consentIabTcf).to.be.undefined;
+    });
+    it('should include GDPR data if the bidder requests contains it', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let request = Object.assign({}, bidderRequest, {
+        gdprConsent: {
+          consentString: 'the consent string',
+          gdprApplies: true
+        }
+      });
+      let result = spec.buildRequests([bid], request);
+      expect(result.data.gdprApplies).to.equal(request.gdprConsent.gdprApplies);
+      expect(result.data.consentIabTcf).to.equal(request.gdprConsent.consentString);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -382,28 +419,15 @@ describe('FeedAdAdapter', function () {
     cases.forEach(([name, data, eventKlass]) => {
       let subject = spec[name];
       describe(name + ' handler', function () {
-        let xhr;
-        let requests;
-
-        beforeEach(function () {
-          xhr = sinon.useFakeXMLHttpRequest();
-          requests = [];
-          xhr.onCreate = xhr => requests.push(xhr);
-        });
-
-        afterEach(function () {
-          xhr.restore();
-        });
-
         it('should do nothing on empty data', function () {
           subject(undefined);
           subject(null);
-          expect(requests.length).to.equal(0);
+          expect(server.requests.length).to.equal(0);
         });
 
         it('should do nothing when bid metadata is not set', function () {
           subject(data);
-          expect(requests.length).to.equal(0);
+          expect(server.requests.length).to.equal(0);
         });
 
         it('should send tracking params when correct metadata was set', function () {
@@ -417,11 +441,11 @@ describe('FeedAdAdapter', function () {
             prebid_bid_id: bidId,
             prebid_transaction_id: transactionId,
             referer,
-            sdk_version: '1.0.0'
+            sdk_version: '1.0.2'
           };
           subject(data);
-          expect(requests.length).to.equal(1);
-          let call = requests[0];
+          expect(server.requests.length).to.equal(1);
+          let call = server.requests[0];
           expect(call.url).to.equal('https://api.feedad.com/1/prebid/web/events');
           expect(JSON.parse(call.requestBody)).to.deep.equal(expectedData);
           expect(call.method).to.equal('POST');

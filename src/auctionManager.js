@@ -9,16 +9,19 @@
  *
  * @property {function(): Array} getBidsRequested - returns consolidated bid requests
  * @property {function(): Array} getBidsReceived - returns consolidated bid received
+ * @property {function(): Array} getAllBidsForAdUnitCode - returns consolidated bid received for a given adUnit
  * @property {function(): Array} getAdUnits - returns consolidated adUnits
  * @property {function(): Array} getAdUnitCodes - returns consolidated adUnitCodes
  * @property {function(): Object} createAuction - creates auction instance and stores it for future reference
  * @property {function(): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
+ * @property {function(Object): void} addWinningBid - add a winning bid to an auction based on auctionId
+ * @property {function(): void} clearAllAuctions - clear all auctions for testing
  */
 
-import { uniques, flatten } from './utils';
-import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction';
-import find from 'core-js/library/fn/array/find';
+import { uniques, flatten, logWarn } from './utils.js';
+import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -35,9 +38,10 @@ export function newAuctionManager() {
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
+      bid.status = CONSTANTS.BID_STATUS.RENDERED;
       auction.addWinningBid(bid);
     } else {
-      utils.logWarn(`Auction not found when adding winning bid`);
+      logWarn(`Auction not found when adding winning bid`);
     }
   };
 
@@ -63,6 +67,13 @@ export function newAuctionManager() {
       }
     }).reduce(flatten, [])
       .filter(bid => bid);
+  };
+
+  auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
+    return _auctions.map((auction) => {
+      return auction.getBidsReceived();
+    }).reduce(flatten, [])
+      .filter(bid => bid && bid.adUnitCode === adUnitCode)
   };
 
   auctionManager.getAdUnits = function() {
@@ -103,6 +114,10 @@ export function newAuctionManager() {
   auctionManager.getLastAuctionId = function() {
     return _auctions.length && _auctions[_auctions.length - 1].getAuctionId()
   };
+
+  auctionManager.clearAllAuctions = function() {
+    _auctions.length = 0;
+  }
 
   function _addAuction(auction) {
     _auctions.push(auction);

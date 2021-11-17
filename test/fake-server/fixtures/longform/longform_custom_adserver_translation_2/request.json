@@ -1,0 +1,142 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/",
+    "body": {
+      "tags": [
+        {
+          "sizes": [
+            {
+              "width": 640,
+              "height": 480
+            }
+          ],
+          "primary_size": {
+            "width": 640,
+            "height": 480
+          },
+          "ad_types": [
+            "video"
+          ],
+          "id": 15394006,
+          "allow_smaller_sizes": false,
+          "use_pmt_rule": false,
+          "prebid": true,
+          "disable_psa": true,
+          "hb_source": 7,
+          "require_asset_url": true,
+          "video": {
+            "minduration": 30,
+            "maxduration": 30
+          }
+        },
+        {
+          "sizes": [
+            {
+              "width": 640,
+              "height": 480
+            }
+          ],
+          "primary_size": {
+            "width": 640,
+            "height": 480
+          },
+          "ad_types": [
+            "video"
+          ],
+          "id": 15394006,
+          "allow_smaller_sizes": false,
+          "use_pmt_rule": false,
+          "prebid": true,
+          "disable_psa": true,
+          "hb_source": 7,
+          "require_asset_url": true,
+          "video": {
+            "minduration": 30,
+            "maxduration": 30
+          }
+        },
+        {
+          "sizes": [
+            {
+              "width": 640,
+              "height": 480
+            }
+          ],
+          "primary_size": {
+            "width": 640,
+            "height": 480
+          },
+          "ad_types": [
+            "video"
+          ],
+          "id": 15394006,
+          "allow_smaller_sizes": false,
+          "use_pmt_rule": false,
+          "prebid": true,
+          "disable_psa": true,
+          "hb_source": 7,
+          "require_asset_url": true,
+          "video": {
+            "minduration": 30,
+            "maxduration": 30
+          }
+        },
+        {
+          "sizes": [
+            {
+              "width": 640,
+              "height": 480
+            }
+          ],
+          "primary_size": {
+            "width": 640,
+            "height": 480
+          },
+          "ad_types": [
+            "video"
+          ],
+          "id": 15394006,
+          "allow_smaller_sizes": false,
+          "use_pmt_rule": false,
+          "prebid": true,
+          "disable_psa": true,
+          "hb_source": 7,
+          "require_asset_url": true,
+          "video": {
+            "minduration": 30,
+            "maxduration": 30
+          }
+        },
+        {
+          "sizes": [
+            {
+              "width": 640,
+              "height": 480
+            }
+          ],
+          "primary_size": {
+            "width": 640,
+            "height": 480
+          },
+          "ad_types": [
+            "video"
+          ],
+          "id": 15394006,
+          "allow_smaller_sizes": false,
+          "use_pmt_rule": false,
+          "prebid": true,
+          "disable_psa": true,
+          "hb_source": 7,
+          "require_asset_url": true,
+          "video": {
+            "minduration": 30,
+            "maxduration": 30
+          }
+        }
+      ],
+      "user": {},
+      "brand_category_uniqueness": true
+    }
+  }
+}
