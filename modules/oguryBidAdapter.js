@@ -1,7 +1,7 @@
 'use strict';
 
 import { BANNER } from '../src/mediaTypes.js';
-import { getAdUnitSizes, logWarn, isFn } from '../src/utils.js';
+import { getAdUnitSizes, logWarn, isFn, getWindowTop, getWindowSelf } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js'
 
@@ -24,10 +24,16 @@ function isBidRequestValid(bid) {
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   if (!syncOptions.pixelEnabled) return [];
 
-  return [{
-    type: 'image',
-    url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
-  }]
+  return [
+    {
+      type: 'image',
+      url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
+    },
+    {
+      type: 'image',
+      url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
+    }
+  ]
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
@@ -41,7 +47,8 @@ function buildRequests(validBidRequests, bidderRequest) {
       },
     },
     site: {
-      domain: location.hostname
+      domain: location.hostname,
+      page: location.href
     },
     user: {
       ext: {
@@ -76,7 +83,8 @@ function buildRequests(validBidRequests, bidderRequest) {
         bidfloor: getFloor(bidRequest),
         banner: {
           format: sizes
-        }
+        },
+        ext: bidRequest.params
       });
     }
   });
@@ -138,7 +146,19 @@ function getFloor(bid) {
   return floorResult.currency === 'USD' ? floorResult.floor : 0;
 }
 
+function getWindowContext() {
+  try {
+    return getWindowTop()
+  } catch (e) {
+    return getWindowSelf()
+  }
+}
+
 function onBidWon(bid) {
+  const w = getWindowContext()
+  w.OG_PREBID_BID_OBJECT = {
+    ...(bid && { ...bid }),
+  }
   if (bid && bid.hasOwnProperty('nurl') && bid.nurl.length > 0) ajax(bid['nurl'], null);
 }
 
@@ -158,6 +178,7 @@ export const spec = {
   interpretResponse,
   getFloor,
   onBidWon,
+  getWindowContext,
   onTimeout
 }
 
