@@ -38,3 +38,18 @@ var adUnits = [
   }
 ];
 ```
+
+# UserSync example
+
+```
+pbjs.setConfig({
+  userSync: {
+    filterSettings: {
+      iframe: {
+        bidders: '*', // '*' represents all bidders
+        filter: 'include'
+      }
+    }
+  }
+});
+```

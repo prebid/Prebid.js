@@ -137,4 +137,24 @@ describe('loglyliftBidAdapter', function () {
       expect(interpretedResponse[0].native).to.deep.equal(nativeServerResponse.body.bids[0].native);
     });
   });
+
+  describe('getUserSync tests', function () {
+    it('UserSync test : check type = iframe, check usermatch URL', function () {
+      const syncOptions = {
+        'iframeEnabled': true
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync[0].type).to.equal('iframe');
+      const USER_SYNC_URL = 'https://sync.logly.co.jp/sync/sync.html';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL);
+    });
+
+    it('When iframeEnabled is false, no userSync should be returned', function () {
+      const syncOptions = {
+        'iframeEnabled': false
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync).to.be.an('array').that.is.empty;
+    });
+  });
 });

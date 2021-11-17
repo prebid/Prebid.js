@@ -8,9 +8,11 @@ const ENDPOINT_URL = 'https://bid.logly.co.jp/prebid/client/v1';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [NATIVE],
+
   isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.adspotId);
   },
+
   buildRequests: function (bidRequests, bidderRequest) {
     const requests = [];
     for (let i = 0, len = bidRequests.length; i < len; i++) {
@@ -25,6 +27,7 @@ export const spec = {
     }
     return requests;
   },
+
   interpretResponse: function (serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     const bidResponses = [];
@@ -35,7 +38,20 @@ export const spec = {
       bidResponses.push(bid);
     })
     return bidResponses;
+  },
+
+  getUserSyncs: function (syncOptions, serverResponses) {
+    const syncs = [];
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'https://sync.logly.co.jp/sync/sync.html'
+      });
+    }
+    return syncs;
   }
+
 };
 
 function newBidRequest(bid, bidderRequest) {
