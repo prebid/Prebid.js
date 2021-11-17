@@ -13,7 +13,7 @@ const REQUEST = {
   },
   'params': {
     bidFloor: 0.1,
-    publisherToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f',
+    token: 'e64782a4-8e68-4c38-965b-80ccf115d46f',
     pos: 7
   }
 }
@@ -70,7 +70,7 @@ describe('alkimiAdapter', function () {
 
     it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, REQUEST)
-      delete bid.params.publisherToken
+      delete bid.params.token
       expect(spec.isBidRequestValid(bid)).to.equal(false)
 
       bid = Object.assign({}, REQUEST)
@@ -96,7 +96,7 @@ describe('alkimiAdapter', function () {
       expect(bidderRequest.method).to.equal('POST')
       expect(bidderRequest.data.requestId).to.equal('123')
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
-      expect(bidderRequest.data.bids).to.deep.contains({ bidId: '456', publisherToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, bidFloor: 0.1, width: 300, height: 250, impMediaType: 'Banner' })
+      expect(bidderRequest.data.bids).to.deep.contains({ bidId: '456', token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, bidFloor: 0.1, width: 300, height: 250, impMediaType: 'Banner' })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
       expect(bidderRequest.options.contentType).to.equal('application/json')
       expect(bidderRequest.url).to.equal(ENDPOINT)
