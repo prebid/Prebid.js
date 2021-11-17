@@ -54,7 +54,7 @@ pbjs.setConfig(
         ]
     }
     ...
-}
+);
 ```
 
 ### Parameter Descriptions for the Weborama Configuration Section
