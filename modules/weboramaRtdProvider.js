@@ -353,30 +353,30 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
   const url = 'https://ctx.weborama.com/api/profile?' + queryString;
 
   ajax(url, {
-      success: function(response, req) {
-        if (req.status === 200) {
-          try {
-            const data = JSON.parse(response);
-            onSuccess(data);
-            onDone();
-          } catch (e) {
-            onDone();
-            logError('unable to parse weborama data', e);
-            throw e;
-          }
-        } else if (req.status === 204) {
+    success: function(response, req) {
+      if (req.status === 200) {
+        try {
+          const data = JSON.parse(response);
+          onSuccess(data);
           onDone();
+        } catch (e) {
+          onDone();
+          logError('unable to parse weborama data', e);
+          throw e;
         }
-      },
-      error: function() {
+      } else if (req.status === 204) {
         onDone();
-        logError('unable to get weborama data');
       }
     },
-    null, {
-      method: 'GET',
-      withCredentials: false,
-    });
+    error: function() {
+      onDone();
+      logError('unable to get weborama data');
+    }
+  },
+  null, {
+    method: 'GET',
+    withCredentials: false,
+  });
 }
 
 export const weboramaSubmodule = {
@@ -387,3 +387,4 @@ export const weboramaSubmodule = {
 };
 
 submodule(MODULE_NAME, weboramaSubmodule);
+
