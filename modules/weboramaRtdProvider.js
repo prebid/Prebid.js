@@ -31,25 +31,25 @@
  */
 
 import {
-    getGlobal
+  getGlobal
 } from '../src/prebidGlobal.js';
 import {
-    deepSetValue,
-    deepAccess,
-    isEmpty,
-    mergeDeep,
-    logError,
-    tryAppendQueryString,
-    logMessage
+  deepSetValue,
+  deepAccess,
+  isEmpty,
+  mergeDeep,
+  logError,
+  tryAppendQueryString,
+  logMessage
 } from '../src/utils.js';
 import {
-    submodule
+  submodule
 } from '../src/hook.js';
 import {
-    ajax
+  ajax
 } from '../src/ajax.js';
 import {
-    getStorageManager
+  getStorageManager
 } from '../src/storageManager.js';
 
 const adapterManager = require('../src/adapterManager.js').default;
@@ -84,15 +84,15 @@ let _weboUserDataInitialized = false;
  * @return {Boolean} true if module was initialized with success
  */
 function init(moduleConfig) {
-    moduleConfig = moduleConfig || {};
-    const moduleParams = moduleConfig.params || {};
-    const weboCtxConf = moduleParams.weboCtxConf || {};
-    const weboUserDataConf = moduleParams.weboUserDataConf;
+  moduleConfig = moduleConfig || {};
+  const moduleParams = moduleConfig.params || {};
+  const weboCtxConf = moduleParams.weboCtxConf || {};
+  const weboUserDataConf = moduleParams.weboUserDataConf;
 
-    _weboCtxInitialized = initWeboCtx(weboCtxConf);
-    _weboUserDataInitialized = initWeboUserData(weboUserDataConf);
+  _weboCtxInitialized = initWeboCtx(weboCtxConf);
+  _weboUserDataInitialized = initWeboUserData(weboUserDataConf);
 
-    return _weboCtxInitialized || _weboUserDataInitialized;
+  return _weboCtxInitialized || _weboUserDataInitialized;
 }
 
 /** Initialize contextual sub module
@@ -100,15 +100,15 @@ function init(moduleConfig) {
  * @return {Boolean} true if sub module was initialized with success
  */
 function initWeboCtx(weboCtxConf) {
-    _weboCtxInitialized = false;
-    _weboContextualProfile = null;
+  _weboCtxInitialized = false;
+  _weboContextualProfile = null;
 
-    if (!weboCtxConf.token) {
-        logError('missing param "token" for weborama contextual sub module initialization');
-        return false;
-    }
+  if (!weboCtxConf.token) {
+    logError('missing param "token" for weborama contextual sub module initialization');
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
 /** Initialize weboUserData sub module
@@ -116,10 +116,10 @@ function initWeboCtx(weboCtxConf) {
  * @return {Boolean} true if sub module was initialized with success
  */
 function initWeboUserData(weboUserDataConf) {
-    _weboUserDataInitialized = false;
-    _weboUserDataUserProfile = null;
+  _weboUserDataInitialized = false;
+  _weboUserDataUserProfile = null;
 
-    return !!weboUserDataConf;
+  return !!weboUserDataConf;
 }
 
 /** function that provides ad server targeting data to RTD-core
@@ -128,32 +128,32 @@ function initWeboUserData(weboUserDataConf) {
  * @returns {Object} target data
  */
 function getTargetingData(adUnitsCodes, moduleConfig) {
-    moduleConfig = moduleConfig || {};
-    const moduleParams = moduleConfig.params || {};
-    const weboCtxConf = moduleParams.weboCtxConf || {};
-    const weboUserDataConf = moduleParams.weboUserDataConf || {};
-    const weboCtxConfTargeting = weboCtxConf.setPrebidTargeting !== false;
-    const weboUserDataConfTargeting = weboUserDataConf.setPrebidTargeting !== false;
+  moduleConfig = moduleConfig || {};
+  const moduleParams = moduleConfig.params || {};
+  const weboCtxConf = moduleParams.weboCtxConf || {};
+  const weboUserDataConf = moduleParams.weboUserDataConf || {};
+  const weboCtxConfTargeting = weboCtxConf.setPrebidTargeting !== false;
+  const weboUserDataConfTargeting = weboUserDataConf.setPrebidTargeting !== false;
 
-    try {
-        const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting);
+  try {
+    const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting);
 
-        if (isEmpty(profile)) {
-            return {};
-        }
-
-        const td = adUnitsCodes.reduce((data, adUnitCode) => {
-            if (adUnitCode) {
-                data[adUnitCode] = profile;
-            }
-            return data;
-        }, {});
-
-        return td;
-    } catch (e) {
-        logError('unable to format weborama rtd targeting data', e);
-        return {};
+    if (isEmpty(profile)) {
+      return {};
     }
+
+    const td = adUnitsCodes.reduce((data, adUnitCode) => {
+      if (adUnitCode) {
+        data[adUnitCode] = profile;
+      }
+      return data;
+    }, {});
+
+    return td;
+  } catch (e) {
+    logError('unable to format weborama rtd targeting data', e);
+    return {};
+  }
 }
 
 /** function that provides complete profile formatted to be used
@@ -163,19 +163,19 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
  * @returns {Object} complete profile
  */
 function getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting) {
-    const profile = {};
+  const profile = {};
 
-    if (weboCtxConfTargeting) {
-        const contextualProfile = getContextualProfile(moduleParams.weboCtxConf || {});
-        mergeDeep(profile, contextualProfile);
-    }
+  if (weboCtxConfTargeting) {
+    const contextualProfile = getContextualProfile(moduleParams.weboCtxConf || {});
+    mergeDeep(profile, contextualProfile);
+  }
 
-    if (weboUserDataConfTargeting) {
-        const weboUserDataProfile = getWeboUserDataProfile(moduleParams.weboUserDataConf || {});
-        mergeDeep(profile, weboUserDataProfile);
-    }
+  if (weboUserDataConfTargeting) {
+    const weboUserDataProfile = getWeboUserDataProfile(moduleParams.weboUserDataConf || {});
+    mergeDeep(profile, weboUserDataProfile);
+  }
 
-    return profile;
+  return profile;
 }
 
 /** return contextual profile
@@ -183,8 +183,8 @@ function getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConf
  * @returns {Object} contextual profile
  */
 function getContextualProfile(weboCtxConf) {
-    const defaultContextualProfile = weboCtxConf.defaultProfile || {};
-    return _weboContextualProfile || defaultContextualProfile;
+  const defaultContextualProfile = weboCtxConf.defaultProfile || {};
+  return _weboContextualProfile || defaultContextualProfile;
 }
 
 /** return weboUserData profile
@@ -192,21 +192,21 @@ function getContextualProfile(weboCtxConf) {
  * @returns {Object} weboUserData profile
  */
 function getWeboUserDataProfile(weboUserDataConf) {
-    const weboUserDataDefaultUserProfile = weboUserDataConf.defaultProfile || {};
+  const weboUserDataDefaultUserProfile = weboUserDataConf.defaultProfile || {};
 
-    if (storage.localStorageIsEnabled() && !_weboUserDataUserProfile) {
-        const localStorageProfileKey = weboUserDataConf.localStorageProfileKey || DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY;
+  if (storage.localStorageIsEnabled() && !_weboUserDataUserProfile) {
+    const localStorageProfileKey = weboUserDataConf.localStorageProfileKey || DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY;
 
-        const entry = storage.getDataFromLocalStorage(localStorageProfileKey);
-        if (entry) {
-            const data = JSON.parse(entry);
-            if (data && Object.keys(data).length > 0) {
-                _weboUserDataUserProfile = data[LOCAL_STORAGE_USER_TARGETING_SECTION];
-            }
-        }
+    const entry = storage.getDataFromLocalStorage(localStorageProfileKey);
+    if (entry) {
+      const data = JSON.parse(entry);
+      if (data && Object.keys(data).length > 0) {
+        _weboUserDataUserProfile = data[LOCAL_STORAGE_USER_TARGETING_SECTION];
+      }
     }
+  }
 
-    return _weboUserDataUserProfile || weboUserDataDefaultUserProfile;
+  return _weboUserDataUserProfile || weboUserDataDefaultUserProfile;
 }
 
 /** function that will allow RTD sub-modules to modify the AdUnit object for each auction
@@ -216,29 +216,29 @@ function getWeboUserDataProfile(weboUserDataConf) {
  * @returns {void}
  */
 export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
-    moduleConfig = moduleConfig || {};
-    const moduleParams = moduleConfig.params || {};
-    const weboCtxConf = moduleParams.weboCtxConf || {};
+  moduleConfig = moduleConfig || {};
+  const moduleParams = moduleConfig.params || {};
+  const weboCtxConf = moduleParams.weboCtxConf || {};
 
-    const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
-    if (!_weboCtxInitialized) {
-        handleBidRequestData(adUnits, moduleParams);
+  if (!_weboCtxInitialized) {
+    handleBidRequestData(adUnits, moduleParams);
 
-        onDone();
+    onDone();
 
-        return;
-    }
+    return;
+  }
 
-    fetchContextualProfile(weboCtxConf, (data) => {
-        logMessage('fetchContextualProfile on getBidRequestData is done');
+  fetchContextualProfile(weboCtxConf, (data) => {
+    logMessage('fetchContextualProfile on getBidRequestData is done');
 
-        setWeboContextualProfile(data);
-    }, () => {
-        handleBidRequestData(adUnits, moduleParams);
+    setWeboContextualProfile(data);
+  }, () => {
+    handleBidRequestData(adUnits, moduleParams);
 
-        onDone();
-    });
+    onDone();
+  });
 }
 
 /** function that handles bid request data
@@ -248,21 +248,21 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
  */
 
 function handleBidRequestData(adUnits, moduleParams) {
-    const weboCtxConf = moduleParams.weboCtxConf || {};
-    const weboUserDataConf = moduleParams.weboUserDataConf || {};
-    const weboCtxConfTargeting = weboCtxConf.sendToBidders !== false;
-    const weboUserDataConfTargeting = weboUserDataConf.sendToBidders !== false;
-    const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting);
+  const weboCtxConf = moduleParams.weboCtxConf || {};
+  const weboUserDataConf = moduleParams.weboUserDataConf || {};
+  const weboCtxConfTargeting = weboCtxConf.sendToBidders !== false;
+  const weboUserDataConfTargeting = weboUserDataConf.sendToBidders !== false;
+  const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting);
 
-    if (isEmpty(profile)) {
-        return;
+  if (isEmpty(profile)) {
+    return;
+  }
+
+  adUnits.forEach(adUnit => {
+    if (adUnit.hasOwnProperty('bids')) {
+      adUnit.bids.forEach(bid => handleBid(adUnit, profile, bid));
     }
-
-    adUnits.forEach(adUnit => {
-        if (adUnit.hasOwnProperty('bids')) {
-            adUnit.bids.forEach(bid => handleBid(adUnit, profile, bid));
-        }
-    });
+  });
 }
 
 /** @type {string} */
@@ -278,16 +278,16 @@ const bidderAliasRegistry = adapterManager.aliasRegistry || {};
  * @returns {void}
  */
 function handleBid(adUnit, profile, bid) {
-    const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
+  const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-    logMessage('handle bidder', bidder, bid);
+  logMessage('handle bidder', bidder, bid);
 
-    switch (bidder) {
-        case SMARTADSERVER:
-            handleSmartadserverBid(adUnit, profile, bid);
+  switch (bidder) {
+    case SMARTADSERVER:
+      handleSmartadserverBid(adUnit, profile, bid);
 
-            break;
-    }
+      break;
+  }
 }
 
 /** handle smartadserver bid
@@ -297,22 +297,22 @@ function handleBid(adUnit, profile, bid) {
  * @returns {void}
  */
 function handleSmartadserverBid(adUnit, profile, bid) {
-    const target = [];
+  const target = [];
 
-    if (deepAccess(bid, 'params.target')) {
-        target.push(bid.params.target.split(';'));
-    }
+  if (deepAccess(bid, 'params.target')) {
+    target.push(bid.params.target.split(';'));
+  }
 
-    Object.keys(profile).forEach(key => {
-        profile[key].forEach(value => {
-            const keyword = `${key}=${value}`;
-            if (target.indexOf(keyword) === -1) {
-                target.push(keyword);
-            }
-        });
+  Object.keys(profile).forEach(key => {
+    profile[key].forEach(value => {
+      const keyword = `${key}=${value}`;
+      if (target.indexOf(keyword) === -1) {
+        target.push(keyword);
+      }
     });
+  });
 
-    deepSetValue(bid, 'params.target', target.join(';'));
+  deepSetValue(bid, 'params.target', target.join(';'));
 }
 
 /** set bigsea contextual profile on module state
@@ -320,9 +320,9 @@ function handleSmartadserverBid(adUnit, profile, bid) {
  * @returns {void}
  */
 export function setWeboContextualProfile(data) {
-    if (data && Object.keys(data).length > 0) {
-        _weboContextualProfile = data;
-    }
+  if (data && Object.keys(data).length > 0) {
+    _weboContextualProfile = data;
+  }
 }
 
 /** onSuccess callback type
@@ -343,47 +343,47 @@ export function setWeboContextualProfile(data) {
  * @returns {void}
  */
 function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
-    const targetURL = weboCtxConf.targetURL || document.URL;
-    const token = weboCtxConf.token;
+  const targetURL = weboCtxConf.targetURL || document.URL;
+  const token = weboCtxConf.token;
 
-    let queryString = '';
-    queryString = tryAppendQueryString(queryString, 'token', token);
-    queryString = tryAppendQueryString(queryString, 'url', targetURL);
+  let queryString = '';
+  queryString = tryAppendQueryString(queryString, 'token', token);
+  queryString = tryAppendQueryString(queryString, 'url', targetURL);
 
-    const url = 'https://ctx.weborama.com/api/profile?' + queryString;
+  const url = 'https://ctx.weborama.com/api/profile?' + queryString;
 
-    ajax(url, {
-            success: function(response, req) {
-                if (req.status === 200) {
-                    try {
-                        const data = JSON.parse(response);
-                        onSuccess(data);
-                        onDone();
-                    } catch (e) {
-                        onDone();
-                        logError('unable to parse weborama data', e);
-                        throw e;
-                    }
-                } else if (req.status === 204) {
-                    onDone();
-                }
-            },
-            error: function() {
-                onDone();
-                logError('unable to get weborama data');
-            }
-        },
-        null, {
-            method: 'GET',
-            withCredentials: false,
-        });
+  ajax(url, {
+      success: function(response, req) {
+        if (req.status === 200) {
+          try {
+            const data = JSON.parse(response);
+            onSuccess(data);
+            onDone();
+          } catch (e) {
+            onDone();
+            logError('unable to parse weborama data', e);
+            throw e;
+          }
+        } else if (req.status === 204) {
+          onDone();
+        }
+      },
+      error: function() {
+        onDone();
+        logError('unable to get weborama data');
+      }
+    },
+    null, {
+      method: 'GET',
+      withCredentials: false,
+    });
 }
 
 export const weboramaSubmodule = {
-    name: SUBMODULE_NAME,
-    init: init,
-    getTargetingData: getTargetingData,
-    getBidRequestData: getBidRequestData,
+  name: SUBMODULE_NAME,
+  init: init,
+  getTargetingData: getTargetingData,
+  getBidRequestData: getBidRequestData,
 };
 
 submodule(MODULE_NAME, weboramaSubmodule);
