@@ -451,15 +451,9 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
   window.gdpr = ${JSON.stringify(request.gdprConsent)};
   window.page = "${site.page}";
   window.ref = "${site.ref}";
+  window.adlabel = "${site.adLabel ? site.adLabel : ''}";
+  window.pubid = "${site.publisherId ? site.publisherId : ''}";
   `;
-
-  if (site.adLabel) {
-    adcode += `window.adlabel = "${site.adLabel}";`;
-  }
-
-  if (site.publisherId) {
-    adcode += `window.pubid = "${site.publisherId}";`;
-  }
 
   adcode += `</script>
     </head>
