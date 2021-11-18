@@ -63,7 +63,6 @@ export const spec = {
 
         return {
           type: streamType,
-          adUnitCode: bid.adUnitCode,
           bidId: bid.bidId,
           mediaType: type,
           context: context,
@@ -160,7 +159,6 @@ function createBids(bidRes, reqData) {
     let bidUnit = {};
     bidUnit.cpm = bid.cpm;
     bidUnit.requestId = bid.bidId;
-    bidUnit.adUnitCode = reqBid.adUnitCode;
     bidUnit.currency = bid.currency;
     bidUnit.mediaType = bid.mediaType || VIDEO;
     bidUnit.ttl = TTL;
@@ -185,8 +183,7 @@ function createBids(bidRes, reqData) {
     } else if (bid.context === 'outstream') {
       const renderer = Renderer.install({
         id: bid.bidId,
-        url: 'https://static.showheroes.com/renderer.js',
-        adUnitCode: reqBid.adUnitCode,
+        url: '//',
         config: {
           playerId: reqBid.playerId,
           width: bid.size.width,
