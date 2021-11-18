@@ -110,24 +110,27 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    let gdprParams = '';
+    let params = '';
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      gdprParams = `?consent_str=${gdprConsent.consentString}`;
+      params = `?consent_str=${gdprConsent.consentString}`;
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = gdprParams + `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+        params = params + `&gdpr=${Number(gdprConsent.gdprApplies)}`;
       }
-      gdprParams = gdprParams + `&consent_given=` + kubientGetConsentGiven(gdprConsent);
+      params = params + `&consent_given=` + kubientGetConsentGiven(gdprConsent);
+    }
+    if (uspConsent) {
+      params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
     }
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: 'https://kdmp.kbntx.ch/init.html' + gdprParams
+        url: 'https://kdmp.kbntx.ch/init.html' + params
       });
     }
     if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: 'https://kdmp.kbntx.ch/init.png' + gdprParams
+        url: 'https://kdmp.kbntx.ch/init.png' + params
       });
     }
     return syncs;
