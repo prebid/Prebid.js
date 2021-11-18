@@ -37,7 +37,8 @@ const handleMeta = function () {
 }
 
 const getUsi = function (meta, ortb2, bidderRequest) {
-  const usi = (meta !== null) ? meta.usi : false;
+  let usi = (meta !== null && meta.usi) ? meta.usi : false;
+  if (ortb2 && ortb2.user && ortb2.user.id) { usi = ortb2.user.id }
   return usi
 }
 

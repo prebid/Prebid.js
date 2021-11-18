@@ -1,5 +1,28 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, logError, logInfo, deepAccess, logMessage, convertTypes, isStr, getParameterByName, deepClone, chunk, logWarn, getBidRequest, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, getMaxValueFromArray, fill, getMinValueFromArray, isArrayOfNums, isFn, isAllowZeroCpmBidsEnabled } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
+import {
+  isEmpty,
+  convertCamelToUnderscore,
+  isFn,
+  createTrackPixelHtml,
+  convertTypes,
+  deepClone,
+  fill,
+  getParameterByName,
+  getMaxValueFromArray,
+  getMinValueFromArray,
+  chunk,
+  isArray,
+  isArrayOfNums,
+  isNumber,
+  isStr,
+  isPlainObject,
+  logError,
+  logInfo,
+  logMessage,
+  deepAccess,
+  getBidRequest,
+  transformBidderParamKeywords
+} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
@@ -7,10 +30,10 @@ import { auctionManager } from '../src/auctionManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
-import { getStorageManager } from '../src/storageManager.js';
 
-const BIDDER_CODE = 'appnexus';
+const BIDDER_CODE = 'goldbach';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
+const PRICING_URL = 'https://templates.da-services.ch/01_universal/burda_prebid/1.0/json/sizeCPMMapping.json';
 const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
@@ -18,6 +41,13 @@ const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
+const DEFAULT_PRICE_MAPPING = {
+  '0x0': 2.5,
+  '300x600': 5,
+  '800x250': 6,
+  '350x600': 6
+};
+let PRICE_MAPPING;
 const VIDEO_MAPPING = {
   playback_method: {
     'unknown': 0,
@@ -59,27 +89,9 @@ const mappingFileUrl = 'https://acdn.adnxs-simple.com/prebid/appnexus-mapping/ma
 const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
-const GVLID = 32;
-const storage = getStorageManager(GVLID, BIDDER_CODE);
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
-  aliases: [
-    { code: 'appnexusAst', gvlid: 32 },
-    { code: 'brealtime' },
-    { code: 'emxdigital', gvlid: 183 },
-    { code: 'pagescience' },
-    { code: 'defymedia' },
-    { code: 'gourmetads' },
-    { code: 'matomy' },
-    { code: 'featureforward' },
-    { code: 'oftmedia' },
-    { code: 'districtm', gvlid: 144 },
-    { code: 'adasta' },
-    { code: 'beintoo', gvlid: 618 },
-    { code: 'targetVideo' },
-  ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -99,7 +111,19 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const tags = bidRequests.map(bidToTag);
+    let localBidRequests = [];
+    bidRequests.forEach(bid => {
+      if (Array.isArray(bid.params.placementId)) {
+        const ids = bid.params.placementId;
+        for (let i = 0; i < ids.length; i++) {
+          const newBid = Object.assign({}, bid, {params: {placementId: ids[i]}});
+          localBidRequests.push(newBid)
+        }
+      } else {
+        localBidRequests.push(bid);
+      }
+    });
+    const tags = localBidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj = {};
     if (config.getConfig('coppa') === true) {
@@ -145,20 +169,9 @@ export const spec = {
 
     let debugObj = {};
     let debugObjParams = {};
-    const debugCookieName = 'apn_prebid_debug';
-    const debugCookie = storage.getCookie(debugCookieName) || null;
-
-    if (debugCookie) {
-      try {
-        debugObj = JSON.parse(debugCookie);
-      } catch (e) {
-        logError('AppNexus Debug Auction Cookie Error:\n\n' + e);
-      }
-    } else {
-      const debugBidRequest = find(bidRequests, hasDebug);
-      if (debugBidRequest && debugBidRequest.debug) {
-        debugObj = debugBidRequest.debug;
-      }
+    const debugBidRequest = find(bidRequests, hasDebug);
+    if (debugBidRequest && debugBidRequest.debug) {
+      debugObj = debugBidRequest.debug;
     }
 
     if (debugObj && debugObj.enabled) {
@@ -208,7 +221,7 @@ export const spec = {
 
     if (debugObjParams.enabled) {
       payload.debug = debugObjParams;
-      logInfo('AppNexus Debug Auction Settings:\n\n' + JSON.stringify(debugObjParams, null, 4));
+      logInfo('Debug Auction Settings:\n\n' + JSON.stringify(debugObjParams, null, 4));
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -270,7 +283,45 @@ export const spec = {
     }
 
     const request = formatRequest(payload, bidderRequest);
-    return request;
+    // add pricing endpoint
+    return [{method: 'GET', url: PRICING_URL, options: {withCredentials: false}}, request];
+  },
+
+  parseAndMapCpm: function(serverResponse) {
+    const responseBody = serverResponse.body;
+    if (Array.isArray(responseBody) && responseBody.length) {
+      let localData = {};
+      responseBody.forEach(cpmPerSize => {
+        Object.keys(cpmPerSize).forEach(size => {
+          let obj = {};
+          obj[size] = cpmPerSize[size];
+          localData = Object.assign({}, localData, obj)
+        })
+      })
+      PRICE_MAPPING = localData;
+      return null;
+    }
+
+    if (responseBody.version) {
+      const localPriceMapping = PRICE_MAPPING || DEFAULT_PRICE_MAPPING;
+      if (responseBody.tags && Array.isArray(responseBody.tags) && responseBody.tags.length) {
+        responseBody.tags.forEach((tag) => {
+          if (tag.ads && Array.isArray(tag.ads) && tag.ads.length) {
+            tag.ads.forEach(ad => {
+              if (ad.ad_type === 'banner') {
+                const size = `${ad.rtb.banner.width}x${ad.rtb.banner.height}`;
+                if (localPriceMapping[size]) {
+                  ad.cpm = localPriceMapping[size];
+                } else {
+                  ad.cpm = localPriceMapping['0x0'];
+                }
+              }
+            })
+          }
+        });
+      }
+    }
+    return responseBody;
   },
 
   /**
@@ -280,11 +331,11 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, { bidderRequest }) {
-    serverResponse = serverResponse.body;
+    serverResponse = this.parseAndMapCpm(serverResponse);
+    if (!serverResponse) return [];
     const bids = [];
-    if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
+    if (serverResponse.error) {
+      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter : ${serverResponse.error}`;
       logError(errorMessage);
       return bids;
     }
@@ -293,8 +344,7 @@ export const spec = {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
-          const cpmCheck = (isAllowZeroCpmBidsEnabled(bidderRequest.bidderCode)) ? rtbBid.cpm >= 0 : rtbBid.cpm > 0;
-          if (cpmCheck && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+          if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
@@ -314,7 +364,6 @@ export const spec = {
         .replace(/<h1>(.*)<\/h1>/gm, '\n\n===== $1 =====\n\n') // Header H1
         .replace(/<h[2-6]>(.*)<\/h[2-6]>/gm, '\n\n*** $1 ***\n\n') // Headers
         .replace(/(<([^>]+)>)/igm, ''); // Remove any other tags
-      logMessage('https://console.appnexus.com/docs/understanding-the-debug-auction');
       logMessage(debugText);
     }
 
@@ -551,14 +600,14 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
+    logError('Prebid Error calling setRender on renderer', err);
   }
 
   renderer.setEventHandlers({
-    impression: () => logMessage('AppNexus outstream video impression event'),
-    loaded: () => logMessage('AppNexus outstream video loaded event'),
+    impression: () => logMessage('Outstream video impression event'),
+    loaded: () => logMessage('Outstream video loaded event'),
     ended: () => {
-      logMessage('AppNexus outstream renderer video event');
+      logMessage('Outstream renderer video event');
       document.querySelector(`#${adUnitCode}`).style.display = 'none';
     }
   });
@@ -597,10 +646,6 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
   if (rtbBid.advertiser_id) {
     bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
-  }
-
-  if (rtbBid.brand_id) {
-    bid.meta = Object.assign({}, bid.meta, { brandId: rtbBid.brand_id });
   }
 
   if (rtbBid.rtb.video) {
@@ -701,11 +746,9 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     });
     try {
       if (rtbBid.rtb.trackers) {
-        for (let i = 0; i < rtbBid.rtb.trackers[0].impression_urls.length; i++) {
-          const url = rtbBid.rtb.trackers[0].impression_urls[i];
-          const tracker = createTrackPixelHtml(url);
-          bid.ad += tracker;
-        }
+        const url = rtbBid.rtb.trackers[0].impression_urls[0];
+        const tracker = createTrackPixelHtml(url);
+        bid.ad += tracker;
       }
     } catch (error) {
       logError('Error appending tracking pixel', error);
