@@ -300,7 +300,7 @@ const mapImpression = slot => {
   ext.data = Object.assign({ pbsize: adUnitsCalled[adUnitCode] }, ext.data);
 
   const imp = {
-    id: id && siteId ? id : 'bidid-' + bidId,
+    id: id && siteId ? id.padStart(3, '0') : 'bidid-' + bidId,
     banner: mapBanner(slot),
     native: mapNative(slot),
     video: mapVideo(slot),
