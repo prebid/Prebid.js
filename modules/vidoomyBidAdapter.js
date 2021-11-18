@@ -207,7 +207,7 @@ function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
     return [].concat(urls).map(url => ({
       type: pixelType,
       url: url
-        .replace('{{GDPR}}', gdprConsent ? gdprConsent.gdprApplies : '0')
+        .replace('{{GDPR}}', gdprConsent ? (gdprConsent.gdprApplies ? '1' : '0') : '0')
         .replace('{{GDPR_CONSENT}}', gdprConsent ? encodeURIComponent(gdprConsent.consentString) : '')
         .replace('{{USP_CONSENT}}', uspConsent ? encodeURIComponent(uspConsent) : '')
     }));
