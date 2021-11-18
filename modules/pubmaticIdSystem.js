@@ -17,6 +17,8 @@ const MODULE_NAME = 'pubmaticId';
 export const pubmaticIdSubmodule = {
 	name: MODULE_NAME,
 
+	gvlid: 76,
+
 	decode(value) {
 	    return value && typeof value === 'string'
 	      ? { 'pubmaticId': value }
