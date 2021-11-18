@@ -453,8 +453,12 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
   window.ref = "${site.ref}";
   `;
 
-  if (gam) {
-    adcode += `window.gam = ${JSON.stringify(gam)};`;
+  if (site.adLabel) {
+    adcode += `window.adlabel = "${site.adLabel}";`;
+  }
+
+  if (site.publisherId) {
+    adcode += `window.pubid = "${site.publisherId}";`;
   }
 
   adcode += `</script>
@@ -559,10 +563,14 @@ const spec = {
             /*
               bid response might include ext object containing siteId / slotId, as detected by OneCode
               update site / slot data in this case
+
+              ext also might contain publisherId and custom ad label
             */
-            const { siteid, slotid } = ext;
+            const { siteid, slotid, pubid, adlabel } = ext;
             site.id = siteid || site.id;
             site.slot = slotid || site.slot;
+            site.publisherId = pubid;
+            site.adLabel = adlabel;
           }
 
           if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
@@ -612,7 +620,7 @@ const spec = {
                   url: bid.native.clickUrl,
                   vendor: seat,
                   site: site.id,
-                  slot: site
+                  slot: site.slot,
                 }
                 const jsTracker = '<script type="text/javascript" async="true" src="' + TRACKER_URL + '" ' + Object.keys(jsData).reduce((acc, current) => { return acc + ` data-wpar-${current}="${jsData[current]}"` }, '') + '><\/script>';
                 if (bid.native.javascriptTrackers) {
