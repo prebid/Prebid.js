@@ -143,7 +143,7 @@ describe('loglyliftBidAdapter', function () {
       const syncOptions = {
         'iframeEnabled': true
       }
-      let userSync = spec.getUserSyncs(syncOptions);
+      let userSync = spec.getUserSyncs(syncOptions, [nativeServerResponse]);
       expect(userSync[0].type).to.equal('iframe');
       const USER_SYNC_URL = 'https://sync.logly.co.jp/sync/sync.html';
       expect(userSync[0].url).to.equal(USER_SYNC_URL);
@@ -153,7 +153,15 @@ describe('loglyliftBidAdapter', function () {
       const syncOptions = {
         'iframeEnabled': false
       }
-      let userSync = spec.getUserSyncs(syncOptions);
+      let userSync = spec.getUserSyncs(syncOptions, [nativeServerResponse]);
+      expect(userSync).to.be.an('array').that.is.empty;
+    });
+
+    it('When nativeSrrverResponses empty, no userSync should be returned', function () {
+      const syncOptions = {
+        'iframeEnabled': false
+      }
+      let userSync = spec.getUserSyncs(syncOptions, []);
       expect(userSync).to.be.an('array').that.is.empty;
     });
   });

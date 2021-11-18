@@ -43,7 +43,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
 
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
       syncs.push({
         type: 'iframe',
         url: 'https://sync.logly.co.jp/sync/sync.html'
