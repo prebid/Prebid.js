@@ -296,7 +296,7 @@ function raiGetFloor(bid, config) {
     } else if (typeof bid.getFloor == 'function') {
       let floorSpec = bid.getFloor({
         currency: config.getConfig('currency.adServerCurrency'),
-        mediaType: bid.mediaType.banner ? 'banner' : 'video',
+        mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
         size: '*'
       })
 
