@@ -162,7 +162,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     const receivedBid1 = response.body.seatbid[0].bid[0];
     expect(bid1).to.not.be.empty;
     expect(bid1.ad).to.equal(receivedBid1.adm);
-    expect(bid1.vastXml).to.be.empty;
+    expect(bid1.vastXml).to.be.undefined;
     expect(bid1.cpm).to.equal(receivedBid1.price);
     expect(bid1.height).to.equal(receivedBid1.h);
     expect(bid1.width).to.equal(receivedBid1.w);
