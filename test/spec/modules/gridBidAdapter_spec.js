@@ -874,6 +874,22 @@ describe('TheMediaGrid Adapter', function () {
           },
           'adUnitCode': 'adunit-code-2',
           'sizes': [[300, 250], [300, 600]],
+          'bidId': '112432ab4f34',
+          'bidderRequestId': '5f2009617a7c0a',
+          'auctionId': '1cbd2feafe5e8b',
+          'mediaTypes': {
+            'video': {
+              'context': 'instream'
+            }
+          }
+        },
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '15'
+          },
+          'adUnitCode': 'adunit-code-2',
+          'sizes': [[300, 250], [300, 600]],
           'bidId': 'a74b342f8cd',
           'bidderRequestId': '5f2009617a7c0a',
           'auctionId': '1cbd2feafe5e8b',
@@ -888,7 +904,8 @@ describe('TheMediaGrid Adapter', function () {
         {'bid': [{'impid': '659423fff799cb', 'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'auid': 11, content_type: 'video', w: 300, h: 600}], 'seat': '2'},
         {'bid': [{'impid': '2bc598e42b6a', 'price': 1.00, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>', 'auid': 12, content_type: 'video'}], 'seat': '2'},
         {'bid': [{'impid': '23312a43bc42', 'price': 2.00, 'nurl': 'https://some_test_vast_url.com', 'auid': 13, content_type: 'video', 'adomain': ['example.com'], w: 300, h: 600}], 'seat': '2'},
-        {'bid': [{'impid': 'a74b342f8cd', 'price': 1.50, 'nurl': '', 'auid': 14, content_type: 'video'}], 'seat': '2'}
+        {'bid': [{'impid': '112432ab4f34', 'price': 1.80, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"32115432\"><\/Ad>\n<\/VAST>', 'nurl': 'https://wrong_url.com', 'auid': 14, content_type: 'video', 'adomain': ['example.com'], w: 300, h: 600}], 'seat': '2'},
+        {'bid': [{'impid': 'a74b342f8cd', 'price': 1.50, 'nurl': '', 'auid': 15, content_type: 'video'}], 'seat': '2'}
       ];
       const request = spec.buildRequests(bidRequests);
       const expectedResponse = [
@@ -945,7 +962,26 @@ describe('TheMediaGrid Adapter', function () {
             advertiserDomains: ['example.com']
           },
           'vastUrl': 'https://some_test_vast_url.com',
-        }
+        },
+        {
+          'requestId': '112432ab4f34',
+          'cpm': 1.80,
+          'creativeId': 14,
+          'dealId': undefined,
+          'width': 300,
+          'height': 600,
+          'currency': 'USD',
+          'mediaType': 'video',
+          'netRevenue': true,
+          'ttl': 360,
+          'meta': {
+            advertiserDomains: ['example.com']
+          },
+          'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"32115432\"><\/Ad>\n<\/VAST>',
+          'adResponse': {
+            'content': '<VAST version=\"3.0\">\n<Ad id=\"32115432\"><\/Ad>\n<\/VAST>'
+          }
+        },
       ];
 
       const result = spec.interpretResponse({'body': {'seatbid': response}}, request);

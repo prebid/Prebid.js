@@ -50,10 +50,10 @@ describe('SharedId System', function () {
       expect(callbackSpy.calledOnce).to.be.true;
       expect(callbackSpy.lastCall.lastArg).to.equal(UUID);
     });
-    it('should log message if coppa is set', function () {
+    it('should abort if coppa is set', function () {
       coppaDataHandlerDataStub.returns('true');
-      sharedIdSystemSubmodule.getId({});
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      const result = sharedIdSystemSubmodule.getId({});
+      expect(result).to.be.undefined;
     });
   });
   describe('SharedId System extendId()', function () {
@@ -85,10 +85,10 @@ describe('SharedId System', function () {
       let pubcommId = sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').id;
       expect(pubcommId).to.equal('TestId');
     });
-    it('should log message if coppa is set', function () {
+    it('should abort if coppa is set', function () {
       coppaDataHandlerDataStub.returns('true');
-      sharedIdSystemSubmodule.extendId({}, undefined, 'TestId');
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      const result = sharedIdSystemSubmodule.extendId({params: {extend: true}}, undefined, 'TestId');
+      expect(result).to.be.undefined;
     });
   });
 });
