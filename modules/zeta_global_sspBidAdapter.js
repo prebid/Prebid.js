@@ -152,6 +152,7 @@ export const spec = {
             width: zetaBid.w,
             height: zetaBid.h,
             ad: zetaBid.adm,
+            vastXml: zetaBid.adm,
             ttl: TTL,
             creativeId: zetaBid.crid,
             netRevenue: NET_REV,
