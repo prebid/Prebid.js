@@ -1,6 +1,6 @@
 import {
   uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp,
-  deepAccess, deepClone, logError, logWarn, logInfo, isFn, isArray, logMessage, isStr
+  deepAccess, deepClone, logError, logWarn, logInfo, isFn, isArray, logMessage, isStr, isAllowZeroCpmBidsEnabled
 } from './utils.js';
 import { config } from './config.js';
 import { NATIVE_TARGETING_KEYS } from './native.js';
@@ -123,17 +123,19 @@ export function newTargeting(auctionManager) {
     if (isGptPubadsDefined()) {
       const adUnitCodes = getAdUnitCodes(adUnitCode);
       const adUnits = auctionManager.getAdUnits().filter(adUnit => includes(adUnitCodes, adUnit.code));
+      let unsetKeys = pbTargetingKeys.reduce((reducer, key) => {
+        reducer[key] = null;
+        return reducer;
+      }, {});
       window.googletag.pubads().getSlots().forEach(slot => {
         let customSlotMatchingFunc = isFn(customSlotMatching) && customSlotMatching(slot);
-        pbTargetingKeys.forEach(function(key) {
-          // reset only registered adunits
-          adUnits.forEach(function(unit) {
-            if (unit.code === slot.getAdUnitPath() ||
-                unit.code === slot.getSlotElementId() ||
-                (isFn(customSlotMatchingFunc) && customSlotMatchingFunc(unit.code))) {
-              slot.setTargeting(key, null);
-            }
-          });
+        // reset only registered adunits
+        adUnits.forEach(unit => {
+          if (unit.code === slot.getAdUnitPath() ||
+              unit.code === slot.getSlotElementId() ||
+              (isFn(customSlotMatchingFunc) && customSlotMatchingFunc(unit.code))) {
+            slot.updateTargetingFromMap(unsetKeys);
+          }
         });
       });
     }
@@ -436,7 +438,7 @@ export function newTargeting(auctionManager) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
     return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
-      .filter(bid => bid.cpm > 0)
+      .filter(bid => (isAllowZeroCpmBidsEnabled(bid.bidderCode)) ? bid.cpm >= 0 : bid.cpm > 0)
       .map(bid => bid.adUnitCode)
       .filter(uniques)
       .map(adUnitCode => bidsReceived
