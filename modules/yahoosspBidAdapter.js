@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, isBoolean, generateUUID, logInfo, logWarn } from '../src/utils.js';
+import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logInfo, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 
@@ -359,7 +359,7 @@ function appendImpObject(bid, openRtbObject) {
       impObject.ext.data = bid.ortb2Imp.ext.data;
     };
 
-    if (deepAccess(bid, 'ortb2Imp.instl') && isNumber(bid.ortb2Imp.instl) && isBoolean(bid.ortb2Imp.instl)) {
+    if (deepAccess(bid, 'ortb2Imp.instl') && (bid.ortb2Imp.instl === 1)) {
       impObject.instl = bid.ortb2Imp.instl;
     };
 
