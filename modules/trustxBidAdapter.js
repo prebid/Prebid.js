@@ -76,7 +76,7 @@ export const spec = {
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
       }
-      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd} = bid;
+      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
       bidsMap[bidId] = bid;
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       if (rtd) {
@@ -101,6 +101,15 @@ export const spec = {
           divid: adUnitCode && adUnitCode.toString()
         }
       };
+
+      if (ortb2Imp && ortb2Imp.ext && ortb2Imp.ext.data) {
+        impObj.ext.data = ortb2Imp.ext.data;
+        if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
+          impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
+        } else {
+          impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
+        }
+      }
 
       if (!isEmpty(keywords)) {
         if (!pageKeywords) {
@@ -315,7 +324,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
-  if (!serverBid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
+  if (!serverBid.adm && !serverBid.nurl) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
   else {
     const { bidsMap } = bidRequest;
     const bid = bidsMap[serverBid.impid];
@@ -336,11 +345,15 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst) {
         },
       };
       if (serverBid.content_type === 'video') {
-        bidResponse.vastXml = serverBid.adm;
+        if (serverBid.adm) {
+          bidResponse.vastXml = serverBid.adm;
+          bidResponse.adResponse = {
+            content: bidResponse.vastXml
+          };
+        } else if (serverBid.nurl) {
+          bidResponse.vastUrl = serverBid.nurl;
+        }
         bidResponse.mediaType = VIDEO;
-        bidResponse.adResponse = {
-          content: bidResponse.vastXml
-        };
         if (!bid.renderer && (!bid.mediaTypes || !bid.mediaTypes.video || bid.mediaTypes.video.context === 'outstream')) {
           bidResponse.renderer = createRenderer(bidResponse, {
             id: bid.bidId,
@@ -425,9 +438,10 @@ function addSegments(name, segName, segments, data, bidConfigName) {
   if (segments && segments.length) {
     data.push({
       name: name,
-      segment: segments.map((seg) => {
-        return {name: segName, value: seg};
-      })
+      segment: segments
+        .map((seg) => seg && (seg.id || seg))
+        .filter((seg) => seg && (typeof seg === 'string' || typeof seg === 'number'))
+        .map((seg) => ({ name: segName, value: seg.toString() }))
     });
   } else if (bidConfigName) {
     const configData = config.getConfig('ortb2.user.data');
@@ -441,9 +455,10 @@ function addSegments(name, segName, segments, data, bidConfigName) {
     if (segData && segData.length) {
       data.push({
         name: name,
-        segment: segData.map((seg) => {
-          return {name: segName, value: seg};
-        })
+        segment: segData
+          .map((seg) => seg && (seg.id || seg))
+          .filter((seg) => seg && (typeof seg === 'string' || typeof seg === 'number'))
+          .map((seg) => ({ name: segName, value: seg.toString() }))
       });
     }
   }

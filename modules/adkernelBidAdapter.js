@@ -74,7 +74,10 @@ export const spec = {
     {code: 'adomega'},
     {code: 'denakop'},
     {code: 'rtbanalytica'},
-    {code: 'unibots'}
+    {code: 'unibots'},
+    {code: 'catapultx'},
+    {code: 'ergadx'},
+    {code: 'turktelekom'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

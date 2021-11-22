@@ -9,7 +9,17 @@ const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const BIDDER_CODE = 'vidoomy';
 const GVLID = 380;
 
-const COOKIE_SYNC_JSON = 'https://vpaid.vidoomy.com/sync/urls.json';
+const COOKIE_SYNC_FALLBACK_URLS = [
+  'https://x.bidswitch.net/sync?ssp=vidoomy',
+  'https://ib.adnxs.com/getuid?https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadnxs%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
+  'https://pixel-sync.sitescout.com/dmp/pixelSync?nid=120&redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DCEN%26uid%3D%7BuserId%7D',
+  'https://sync.1rx.io/usersync2/vidoomy?redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DUN%26uid%3D%5BRX_UUID%5D',
+  'https://rtb.openx.net/sync/prebid?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&r=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dopenx%26uid%3D$%7BUID%7D',
+  'https://ads.pubmatic.com/AdServer/js/user_sync.html?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&us_privacy=&predirect=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dpubmatic%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D',
+  'https://cm.adform.net/cookie?redirect_url=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadf%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
+  'https://ups.analytics.yahoo.com/ups/58531/occ?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}',
+  'https://ap.lijit.com/pixel?redir=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dsovrn%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID'
+];
 
 const isBidRequestValid = bid => {
   if (!bid.params) {
@@ -36,7 +46,7 @@ const isBidRequestValid = bid => {
 };
 
 const isBidResponseValid = bid => {
-  if (!bid.requestId || !bid.cpm || !bid.ttl || !bid.currency) {
+  if (!bid || !bid.requestId || !bid.cpm || !bid.ttl || !bid.currency) {
     return false;
   }
   switch (bid.mediaType) {
@@ -67,46 +77,33 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 
     const videoContext = deepAccess(bid, 'mediaTypes.video.context');
 
-    const queryParams = [];
-    queryParams.push(['id', bid.params.id]);
-    queryParams.push(['adtype', adType]);
-    queryParams.push(['w', w]);
-    queryParams.push(['h', h]);
-    queryParams.push(['pos', parseInt(bid.params.position) || 1]);
-    queryParams.push(['ua', navigator.userAgent]);
-    queryParams.push(['l', navigator.language && navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : '']);
-    queryParams.push(['dt', /Mobi/.test(navigator.userAgent) ? 2 : 1]);
-    queryParams.push(['pid', bid.params.pid]);
-    queryParams.push(['requestId', bid.bidId]);
-    queryParams.push(['d', getDomainWithoutSubdomain(hostname)]);
-    queryParams.push(['sp', encodeURIComponent(aElement.href)]);
+    const queryParams = {
+      id: bid.params.id,
+      adtype: adType,
+      w,
+      h,
+      pos: parseInt(bid.params.position) || 1,
+      ua: navigator.userAgent,
+      l: navigator.language && navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : '',
+      dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
+      pid: bid.params.pid,
+      requestId: bid.bidId,
+      d: getDomainWithoutSubdomain(hostname),
+      sp: encodeURIComponent(aElement.href),
+      usp: bidderRequest.uspConsent || '',
+      coppa: !!config.getConfig('coppa'),
+      videoContext: videoContext || ''
+    };
+
     if (bidderRequest.gdprConsent) {
-      queryParams.push(['gdpr', bidderRequest.gdprConsent.gdprApplies]);
-      queryParams.push(['gdprcs', bidderRequest.gdprConsent.consentString]);
+      queryParams.gdpr = bidderRequest.gdprConsent.gdprApplies;
+      queryParams.gdprcs = bidderRequest.gdprConsent.consentString;
     }
-    queryParams.push(['usp', bidderRequest.uspConsent || '']);
-    queryParams.push(['coppa', !!config.getConfig('coppa')]);
 
-    const rawQueryParams = queryParams.map(qp => qp.join('=')).join('&');
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', COOKIE_SYNC_JSON)
-    xhr.addEventListener('load', function () {
-      const macro = Macro({
-        gpdr: bidderRequest.gdprConsent.gdprApplies,
-        gpdr_consent: bidderRequest.gdprConsent.consentString
-      });
-      JSON.parse(this.responseText).filter(Boolean).forEach(url => {
-        firePixel(macro.replace(url))
-      })
-    })
-    xhr.send()
-
-    const url = `${ENDPOINT}?${rawQueryParams}`;
     return {
       method: 'GET',
-      url: url,
-      data: {videoContext}
+      url: ENDPOINT,
+      data: queryParams
     }
   });
   return serverRequests;
@@ -128,6 +125,7 @@ const render = (bid) => {
 const interpretResponse = (serverResponse, bidRequest) => {
   try {
     let responseBody = serverResponse.body;
+    if (!responseBody) return;
     if (responseBody.mediaType === 'video') {
       responseBody.ad = responseBody.vastUrl;
       const videoContext = bidRequest.data.videoContext;
@@ -196,6 +194,21 @@ const interpretResponse = (serverResponse, bidRequest) => {
   }
 };
 
+function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
+  if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
+    const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
+    const urls = deepAccess(responses, '0.body.pixels') || COOKIE_SYNC_FALLBACK_URLS;
+
+    return [].concat(urls).map(url => ({
+      type: pixelType,
+      url: url
+        .replace('{{GDPR}}', gdprConsent ? gdprConsent.gdprApplies : '0')
+        .replace('{{GDPR_CONSENT}}', gdprConsent ? encodeURIComponent(gdprConsent.consentString) : '')
+        .replace('{{USP_CONSENT}}', uspConsent ? encodeURIComponent(uspConsent) : '')
+    }));
+  }
+};
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -203,64 +216,10 @@ export const spec = {
   buildRequests,
   interpretResponse,
   gvlid: GVLID,
+  getUserSyncs,
 };
 
 registerBidder(spec);
-
-function firePixel(url) {
-  const img = document.createElement('img');
-  img.width = 1;
-  img.height = 1;
-  img.src = url;
-  document.body.appendChild(img);
-  setTimeout(() => {
-    img.remove();
-  }, 10000)
-}
-
-function normalizeKey (x) {
-  return x.replace(/_/g, '').toLowerCase();
-}
-
-function Macro (obj) {
-  const macros = {};
-  for (const key in obj) {
-    macros[normalizeKey(key)] = obj[key];
-  }
-
-  const set = (key, value) => {
-    macros[normalizeKey(key)] = typeof value === 'function' ? value : String(value);
-  };
-
-  return {
-    set,
-    setAll (obj) {
-      for (const key in obj) {
-        macros[normalizeKey(key)] = set(obj[key]);
-      }
-    },
-    replace (string, extraMacros = {}) {
-      const allMacros = {
-        ...macros,
-        ...extraMacros,
-      };
-      const regexes = [
-        /{{\s*([a-zA-Z0-9_]+)\s*}}/g,
-        /\$\$\s*([a-zA-Z0-9_]+)\s*\$\$/g,
-        /\[\s*([a-zA-Z0-9_]+)\s*\]/g,
-      ];
-      regexes.forEach(regex => {
-        string = string.replace(regex, (str, x) => {
-          x = normalizeKey(x);
-          let value = allMacros[x];
-          value = typeof value === 'function' ? value(allMacros) : value;
-          return !value && value !== 0 ? '' : value;
-        });
-      });
-      return string;
-    },
-  };
-}
 
 function getDomainWithoutSubdomain (hostname) {
   const parts = hostname.split('.');

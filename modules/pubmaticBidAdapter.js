@@ -11,12 +11,14 @@ const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/user_sync.htm
 const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
+const GROUPM_ALIAS = {code: 'groupm', gvlid: 98};
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
+const MSG_VIDEO_PLACEMENT_MISSING = 'Video.Placement param missing';
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -537,12 +539,20 @@ function _createBannerRequest(bid) {
   return bannerObj;
 }
 
+export function checkVideoPlacement(videoData, adUnitCode) {
+  // Check for video.placement property. If property is missing display log message.
+  if (!deepAccess(videoData, 'placement')) {
+    logWarn(MSG_VIDEO_PLACEMENT_MISSING + ' for ' + adUnitCode);
+  };
+}
+
 function _createVideoRequest(bid) {
   var videoData = mergeDeep(deepAccess(bid.mediaTypes, 'video'), bid.params.video);
   var videoObj;
 
   if (videoData !== UNDEFINED) {
     videoObj = {};
+    checkVideoPlacement(videoData, bid.adUnitCode);
     for (var key in VIDEO_CUSTOM_PARAMS) {
       if (videoData.hasOwnProperty(key)) {
         videoObj[key] = _checkParamDataType(key, videoData[key], VIDEO_CUSTOM_PARAMS[key]);
@@ -605,7 +615,7 @@ function _addDealCustomTargetings(imp, bid) {
   }
 }
 
-function _addJWPlayerSegmentData(imp, bid) {
+function _addJWPlayerSegmentData(imp, bid, isS2S) {
   var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
   var jwPlayerData = '';
   const jwMark = 'jw-';
@@ -619,10 +629,15 @@ function _addJWPlayerSegmentData(imp, bid) {
   for (var i = 0; i < maxLength; i++) {
     jwPlayerData += '|' + jwMark + jwSegData.segments[i] + '=1';
   }
-  const ext = imp.ext;
-  (ext && ext.key_val === undefined)
-    ? ext.key_val = jwPlayerData
-    : ext.key_val += '|' + jwPlayerData;
+
+  var ext;
+
+  if (isS2S) {
+    (imp.dctr === undefined || imp.dctr.length == 0) ? imp.dctr = jwPlayerData : imp.dctr += '|' + jwPlayerData;
+  } else {
+    ext = imp.ext;
+    ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
+  }
 }
 
 function _createImpressionObject(bid, conf) {
@@ -852,10 +867,10 @@ function _handleEids(payload, validBidRequests) {
 
 function _checkMediaType(bid, newBid) {
   // Create a regex here to check the strings
-  if (bid.ext && bid.ext['BidType'] != undefined) {
-    newBid.mediaType = MEDIATYPE[bid.ext.BidType];
+  if (bid.ext && bid.ext['bidtype'] != undefined) {
+    newBid.mediaType = MEDIATYPE[bid.ext.bidtype];
   } else {
-    logInfo(LOG_WARN_PREFIX + 'bid.ext.BidType does not exist, checking alternatively for mediaType')
+    logInfo(LOG_WARN_PREFIX + 'bid.ext.bidtype does not exist, checking alternatively for mediaType')
     var adm = bid.adm;
     var admStr = '';
     var videoRegex = new RegExp(/VAST\s+version/);
@@ -991,6 +1006,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  aliases: [GROUPM_ALIAS],
   /**
   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
   *
@@ -1322,7 +1338,9 @@ export const spec = {
    * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
    * @return {Object} params bid params
    */
-  transformBidParams: function (params, isOpenRtb) {
+
+  transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
+    _addJWPlayerSegmentData(params, adUnit.bids[0], true);
     return convertTypes({
       'publisherId': 'string',
       'adSlot': 'string'

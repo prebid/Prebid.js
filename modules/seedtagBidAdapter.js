@@ -13,6 +13,11 @@ const ALLOWED_PLACEMENTS = {
   banner: true,
   video: true
 }
+
+// Global Vendor List Id
+// https://iabeurope.eu/vendor-list-tcf-v2-0/
+const GVLID = 157;
+
 const mediaTypesMap = {
   [BANNER]: 'display',
   [VIDEO]: 'video'
@@ -158,6 +163,7 @@ export function getTimeoutUrl (data) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: [SEEDTAG_ALIAS],
   supportedMediaTypes: [BANNER, VIDEO],
   /**

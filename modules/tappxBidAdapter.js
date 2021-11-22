@@ -7,9 +7,10 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'tappx';
+const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.0921';
+const TAPPX_BIDDER_VERSION = '0.1.1005';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -42,6 +43,7 @@ var hostDomain;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -495,15 +497,16 @@ export function _getHostInfo(validBidRequests) {
 }
 
 function outstreamRender(bid, request) {
+  let rendererOptions = {};
+  rendererOptions = (typeof bid.params[0].video != 'undefined') ? bid.params[0].video : {};
+  rendererOptions.content = bid.vastXml;
+
   bid.renderer.push(() => {
     window.tappxOutstream.renderAd({
       sizes: [bid.width, bid.height],
       targetId: bid.adUnitCode,
       adResponse: bid.adResponse,
-      rendererOptions: {
-        content: bid.vastXml,
-        skip: (typeof bid.params[0].video.skip != 'undefined' && bid.params[0].video.skip > 0) ? bid.params[0].video.skip : 0
-      }
+      rendererOptions: rendererOptions
     });
   });
 }

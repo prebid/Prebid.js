@@ -1,4 +1,4 @@
-import { logMessage, groupBy, uniques } from '../src/utils.js';
+import { logMessage, groupBy, uniques, flatten, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
@@ -92,6 +92,26 @@ export const spec = {
     }
     return bidResponses;
   },
+
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const syncs = serverResponses.map(response => response.body).reduce(flatten, [])
+      .map(response => deepAccess(response, 'ext.sync')).filter(Boolean);
+    const iframeSyncUrls = !syncOptions.iframeEnabled ? [] : syncs.map(sync => sync.iframe).filter(Boolean)
+      .filter(uniques).map(url => {
+        return {
+          type: 'iframe',
+          url: url
+        }
+      });
+    const pixelSyncUrls = !syncOptions.pixelEnabled ? [] : syncs.map(sync => sync.pixel).filter(Boolean)
+      .filter(uniques).map(url => {
+        return {
+          type: 'image',
+          url: url
+        }
+      });
+    return [iframeSyncUrls, pixelSyncUrls].reduce(flatten, []);
+  }
 };
 
 registerBidder(spec);
@@ -125,7 +145,7 @@ function buildPlacement(bidRequest) {
         break;
     }
   }
-  sizes = (sizes || []).concat(bidRequest.sizes || []).filter(uniques);
+  sizes = (sizes || []).concat(bidRequest.sizes || []);
   return {
     host: bidRequest.params.host,
     adUnit: {
@@ -138,7 +158,8 @@ function buildPlacement(bidRequest) {
           height: size[1]
         }
       }),
-      type: bidRequest.params.adUnitType.toUpperCase()
+      type: bidRequest.params.adUnitType.toUpperCase(),
+      publisherId: bidRequest.params.publisherId
     }
   }
 }

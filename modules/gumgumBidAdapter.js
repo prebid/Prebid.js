@@ -1,5 +1,6 @@
-import { logError, logWarn, parseSizesInput, _each, deepAccess } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _each, deepAccess, logError, logWarn, parseSizesInput } from '../src/utils.js';
+
 import { config } from '../src/config.js'
 import { getStorageManager } from '../src/storageManager.js';
 import includes from 'core-js-pure/features/array/includes';
@@ -285,13 +286,25 @@ function buildRequests(validBidRequests, bidderRequest) {
       schain,
       transactionId,
       userId = {},
-      ortb2Imp
+      ortb2Imp,
+      adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
     let sizes = [1, 1];
     let data = {};
     let gpid = '';
+
+    const date = new Date();
+    const lt = date.getTime();
+    const to = date.getTimezoneOffset();
+    if (to) {
+      lt && (data.lt = lt);
+      data.to = to;
+    }
+
+    // ADTS-169 add adUnitCode to requests
+    if (adUnitCode) data.aun = adUnitCode
 
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
@@ -488,7 +501,12 @@ function interpretResponse(serverResponse, bidRequest) {
   } else if (product === 5 && includes(sizes, '1x1')) {
     sizes = ['1x1'];
   } else if (product === 2 && includes(sizes, '1x1')) {
-    sizes = responseWidth && responseHeight ? [`${responseWidth}x${responseHeight}`] : parseSizesInput(bidRequest.sizes)
+    const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
+      const [ width, height ] = current;
+      if (responseWidth === width || responseHeight === height) result.push(current.join('x'));
+      return result
+    }, [])) || [];
+    sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
   }
 
   let [width, height] = sizes[0].split('x');

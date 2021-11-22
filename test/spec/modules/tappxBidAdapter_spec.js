@@ -183,6 +183,10 @@ describe('Tappx bid adapter', function () {
       badBidRequest_v.bids.mediaTypes.video.playerSize = [320, 250];
       assert.isFalse(spec.isBidRequestValid(badBidRequest_v.bids));
     });
+
+    it('should export the TCF vendor ID', function () {
+      expect(spec.gvlid).to.equal(628);
+    })
   });
 
   /**

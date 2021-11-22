@@ -37,7 +37,8 @@ const handleMeta = function () {
 }
 
 const getUsi = function (meta, ortb2, bidderRequest) {
-  const usi = (meta !== null) ? meta.usi : false;
+  let usi = (meta !== null && meta.usi) ? meta.usi : false;
+  if (ortb2 && ortb2.user && ortb2.user.id) { usi = ortb2.user.id }
   return usi
 }
 
@@ -112,6 +113,7 @@ export const spec = {
             height: Number(ad.creativeHeight),
             creativeId: ad.creativeId,
             currency: (ad.bid) ? ad.bid.currency : 'EUR',
+            dealId: ad.dealId || '',
             meta: {
               advertiserDomains: (ad.destinationUrls.destination) ? [ad.destinationUrls.destination.split('/')[2]] : []
 
