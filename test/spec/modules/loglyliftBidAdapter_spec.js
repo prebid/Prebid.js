@@ -157,7 +157,7 @@ describe('loglyliftBidAdapter', function () {
       expect(userSync).to.be.an('array').that.is.empty;
     });
 
-    it('When nativeSrrverResponses empty, no userSync should be returned', function () {
+    it('When nativeServerResponses empty, no userSync should be returned', function () {
       const syncOptions = {
         'iframeEnabled': false
       }
