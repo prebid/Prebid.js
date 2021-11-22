@@ -656,6 +656,15 @@ describe('YahooSSP Bid Adapter:', () => {
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].ext.data).to.deep.equal(validBidRequests[0].ortb2Imp.ext.data);
     });
+    // adUnit.ortb2Imp.instl
+    it(`should allow adUnit.ortb2Imp.instl numeric boolean to be added to the bid-request`, () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      validBidRequests[0].ortb2Imp = {
+        instl: 1
+      };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].instl).to.deep.equal(validBidRequests[0].ortb2Imp.instl);
+    });
   });
 
   describe('e2etest mode support:', () => {
