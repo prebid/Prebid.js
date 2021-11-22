@@ -608,7 +608,7 @@ const spec = {
 
                 // append viewability tracker
                 const jsData = {
-                  rid: bid.requestId,
+                  rid: bidRequest.auctionId,
                   crid: bid.creativeId,
                   adunit: bidRequest.adUnitCode,
                   url: bid.native.clickUrl,
