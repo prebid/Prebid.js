@@ -32,7 +32,7 @@ var adUnits = [
     bids: [{
       bidder: 'loglylift',
       params: {
-        adspotId: 16
+        adspotId: 4302078
       }
     }]
   }
