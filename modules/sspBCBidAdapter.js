@@ -609,12 +609,13 @@ const spec = {
                 // append viewability tracker
                 const jsData = {
                   rid: bid.requestId,
-                  adid: bid.adId,
-                  adunit: bid.adUnitCode,
+                  crid: bid.creativeId,
+                  adunit: bidRequest.adUnitCode,
                   url: bid.native.clickUrl,
                   vendor: seat,
                   site: site.id,
                   slot: site.slot,
+                  cpm: bid.cpm.toPrecision(4),
                 }
                 const jsTracker = '<script type="text/javascript" async="true" src="' + TRACKER_URL + '" ' + Object.keys(jsData).reduce((acc, current) => { return acc + ` data-wpar-${current}="${jsData[current]}"` }, '') + '><\/script>';
                 if (bid.native.javascriptTrackers) {
