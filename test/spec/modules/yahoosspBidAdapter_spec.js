@@ -657,13 +657,40 @@ describe('YahooSSP Bid Adapter:', () => {
       expect(data.imp[0].ext.data).to.deep.equal(validBidRequests[0].ortb2Imp.ext.data);
     });
     // adUnit.ortb2Imp.instl
-    it(`should allow adUnit.ortb2Imp.instl numeric boolean to be added to the bid-request`, () => {
+    it(`should allow adUnit.ortb2Imp.instl numeric boolean (1) to be added to the bid-request`, () => {
       let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
       validBidRequests[0].ortb2Imp = {
         instl: 1
       };
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].instl).to.deep.equal(validBidRequests[0].ortb2Imp.instl);
+    });
+
+    it(`should allow adUnit.ortb2Imp.instl numeric boolean (0) to be added to the bid-request`, () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      validBidRequests[0].ortb2Imp = {
+        instl: 0
+      };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].instl).to.deep.equal(validBidRequests[0].ortb2Imp.instl);
+    });
+
+    it(`should prevent adUnit.ortb2Imp.instl boolean true to be added to the bid-request`, () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      validBidRequests[0].ortb2Imp = {
+        instl: true
+      };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].instl).to.not.exist;
+    });
+
+    it(`should prevent adUnit.ortb2Imp.instl boolean false to be added to the bid-request`, () => {
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      validBidRequests[0].ortb2Imp = {
+        instl: false
+      };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].instl).to.not.exist;
     });
   });
 
