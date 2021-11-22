@@ -359,6 +359,10 @@ function appendImpObject(bid, openRtbObject) {
       impObject.ext.data = bid.ortb2Imp.ext.data;
     };
 
+    if (deepAccess(bid, 'ortb2Imp.instl') && isNumber(bid.ortb2Imp.instl)) {
+      impObject.instl = bid.ortb2Imp.instl;
+    };
+
     if (getPubIdMode(bid) === false) {
       impObject.tagid = bid.params.pos;
       impObject.ext.pos = bid.params.pos;
