@@ -81,6 +81,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     const queryParams = {
       id: bid.params.id,
       adtype: adType,
+      auc: bid.adUnitCode,
       w,
       h,
       pos: parseInt(bid.params.position) || 1,
