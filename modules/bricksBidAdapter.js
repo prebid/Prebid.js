@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-// import { config } from '../src/config.js';
+import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -164,6 +164,12 @@ export const spec = {
     // Blocklist
     if (validBidRequests[0].params.blocklist) {
       payload.blocklist = validBidRequests[0].params.blocklist;
+    }
+
+    // First party data
+    let firstPartyData = config.getConfig('ortb2');
+    if (firstPartyData) {
+      payload.first_party_data = firstPartyData;
     }
 
     // Placements
