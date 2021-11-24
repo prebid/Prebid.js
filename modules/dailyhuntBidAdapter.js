@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
-import {deepAccess,_map,isEmpty} from '../src/utils.js';
+import {deepAccess, _map, isEmpty} from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import find from 'core-js-pure/features/array/find.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
@@ -126,8 +126,8 @@ const createOrtbSiteObj = (validBidRequests, page) => {
 const createOrtbPublisherObj = (validBidRequests) => ({ ...extractKeyInfo(validBidRequests, `publisher`) })
 
 // get bidFloor Function for different creatives
-function getBidFloor(bid,creative) {
-  let floorInfo = typeof(bid.getFloor)== "function"? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
+function getBidFloor(bid, creative) {
+  let floorInfo = typeof (bid.getFloor) == 'function' ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
   return Math.floor(floorInfo.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
 }
 
@@ -245,7 +245,6 @@ const createOrtbImpVideoObj = (bid, videoObj) => {
   }
   return obj;
 }
-
 
 export function getProtocols({protocols}) {
   let defaultValue = [2, 3, 5, 6, 7, 8];
