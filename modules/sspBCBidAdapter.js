@@ -30,7 +30,6 @@ const getNotificationPayload = bidData => {
       const result = {
         requestId: undefined,
         siteId: [],
-        adUnit: [],
         slotId: [],
       }
       bids.forEach(bid => {
@@ -56,7 +55,7 @@ const getNotificationPayload = bidData => {
           result.adomain = meta.advertiserDomains && meta.advertiserDomains[0];
           result.networkName = meta.networkName;
         }
-        result.adUnit.push(bid.adUnitCode)
+        result.tagid = bid.adUnitCode;
         result.requestId = bid.auctionId || result.requestId;
         result.timeout = bid.timeout || result.timeout;
       })
