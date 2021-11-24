@@ -32,7 +32,7 @@ describe('nextMillenniumBidAdapterTests', function() {
 
   it('Test getUserSyncs function', function () {
     const syncOptions = {
-      'iframeEnabled': 'false'
+      'iframeEnabled': true
     }
     const userSync = spec.getUserSyncs(syncOptions);
     expect(userSync).to.be.an('array').with.lengthOf(1);
