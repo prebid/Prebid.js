@@ -1,7 +1,7 @@
 /**
  * This module adds brandmetrics provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
- * The module will set brandmetrics survey targeting to ad units of specific bidders
+ * The module will load load the brandmetrics script and set survey- targeting to ad units of specific bidders.
  * @module modules/brandmetricsRtdProvider
  * @requires module:modules/realTimeData
  */
@@ -10,68 +10,106 @@ import { submodule } from '../src/hook.js'
 import { deepSetValue, mergeDeep, logError } from '../src/utils.js'
 const MODULE_NAME = 'brandmetrics'
 
+const RECEIVED_EVENTS = [];
+
 function init (config, userConsent) {
+  const moduleConfig = getMergedConfig(config);
+  initializeBrandmetrics(moduleConfig.params.scriptId);
   return true
 }
 
 /**
-* Set targeting for brandmetrics surveys
+* Add event- listeners to hook in to brandmetrics events
+* @param {Object} reqBidsConfigObj
+* @param {function} callback
 */
-function setSurveyTargeting (reqBidsConfigObj, callback, customConfig) {
-  const config = mergeDeep({
-    waitForIt: false,
-    params: {
-    }
-  }, customConfig)
-
-  if (config.waitForIt) {
-    const onBrandmetricsReady = () => {
-      const brandmetricsApi = window.brandmetrics.api;
-      if (brandmetricsApi.surveyLoadCompleted()) {
-        setBidTargeting(reqBidsConfigObj, brandmetricsApi);
-        callback();
-      } else {
-        brandmetricsApi.addEventListener({
-          event: 'surveyloaded',
-          handler: () => {
-            setBidTargeting(reqBidsConfigObj, brandmetricsApi);
-            callback();
-          }
-        })
+function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
+  const callBidTargeting = (event) => {
+    if (event.available && event.conf) {
+      const targetingConf = event.conf.displayOption || {}
+      if (targetingConf.type === 'pbjs') {
+        setBidTargeting(reqBidsConfigObj, moduleConfig, targetingConf.targetKey || 'brandmetrics_survey', event.survey.measurementId)
       }
-    };
+    }
+    callback();
+  };
 
+  if (RECEIVED_EVENTS.length > 0) {
+    callBidTargeting(RECEIVED_EVENTS[RECEIVED_EVENTS.length - 1]);
+  } else {
     window._brandmetrics = window._brandmetrics || [];
     window._brandmetrics.push({
       cmd: '_addeventlistener',
       val: {
-        event: 'ready',
-        handler: onBrandmetricsReady
+        event: 'surveyloaded',
+        reEmitLast: true,
+        handler: (ev) => {
+          RECEIVED_EVENTS.push(ev);
+          if (RECEIVED_EVENTS.length === 1) {
+            // Call bid targeting only for the first received event, if called subsequently, last event from the RECEIVED_EVENTS array is used
+            callBidTargeting(ev);
+          }
+        },
       }
     });
-  } else {
-    callback()
   }
 }
 
-function setBidTargeting (reqBidsConfigObj, brandmetricsApi) {
+/**
+ * Sets bid targeting of specific bidders
+ * @param {Object} reqBidsConfigObj
+ * @param {string} key Targeting key
+ * @param {string} val Targeting value
+ */
+function setBidTargeting (reqBidsConfigObj, moduleConfig, key, val) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits
-
-  const targetingConf = brandmetricsApi.getSurveyTargeting('pb')
-  if (targetingConf) {
-    adUnits.forEach(adUnit => {
-      adUnit.bids.forEach(bid => {
-        const bidder = bid.bidder
+  adUnits.forEach(adUnit => {
+    adUnit.bids.forEach(bid => {
+      const bidder = bid.bidder
+      if (moduleConfig.params.bidders.indexOf(bidder) !== -1) {
         switch (bidder) {
           case 'ozone':
-            deepSetValue(bid, 'params.customData.0.targeting.' + targetingConf.key, targetingConf.val)
+            deepSetValue(bid, 'params.customData.0.targeting.' + key, val)
             break;
           default:
             break;
         }
-      })
+      }
     })
+  })
+}
+
+/**
+ * Add the brandmetrics script to the page.
+ * @param {string} scriptId - The script- id provided by brandmetrics or brandmetrics partner
+ */
+function initializeBrandmetrics(scriptId) {
+  if (scriptId) {
+    const path = 'https://cdn.brandmetrics.com/survey/script/';
+    const file = scriptId + '.js';
+
+    const el = document.createElement('script');
+    el.type = 'text/javascript';
+    el.async = true;
+    el.src = path + file;
+
+    document.getElementsByTagName('head')[0].appendChild(el);
   }
+}
+
+/**
+ * Merges a provided config with default values
+ * @param {Object} customConfig
+ * @returns
+ */
+function getMergedConfig(customConfig) {
+  return mergeDeep({
+    waitForIt: false,
+    params: {
+      bidders: [],
+      scriptId: undefined,
+    }
+  }, customConfig);
 }
 
 /** @type {RtdSubmodule} */
@@ -79,7 +117,12 @@ export const brandmetricsSubmodule = {
   name: MODULE_NAME,
   getBidRequestData: function (reqBidsConfigObj, callback, customConfig) {
     try {
-      setSurveyTargeting(reqBidsConfigObj, callback, customConfig);
+      const moduleConfig = getMergedConfig(customConfig);
+      if (moduleConfig.waitForIt) {
+        processBrandmetricsEvents(reqBidsConfigObj, moduleConfig, callback);
+      } else {
+        callback();
+      }
     } catch (e) {
       logError(e)
     }
