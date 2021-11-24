@@ -15,7 +15,8 @@ import { uspDataHandler } from '../src/adapterManager.js';
 const MODULE_NAME = 'pubmaticId';
 const GVLID = 76;
 export const STORAGE_NAME = 'pubmaticId';
-const STORAGE_TYPE = 'cookie';
+const STORAGE_TYPE_COOKIE = 'cookie';
+const STORAGE_TYPE_HTML5 = 'html5';
 const STORAGE_EXPIRES = 30; // days
 const STORAGE_REFRESH_IN_SECONDS = 24*3600; // 24 Hours
 const LOG_PREFIX = 'User ID - PubMatic submodule: ';
@@ -123,8 +124,8 @@ function hasRequiredConfig(config) {
     return false;
   }
   
-  if (config.storage.type !== STORAGE_TYPE) {
-    logError(LOG_PREFIX + `storage type should be '${STORAGE_TYPE}'.`);
+  if (config.storage.type !== STORAGE_TYPE_COOKIE && config.storage.type !== STORAGE_TYPE_HTML5) {
+    logError(LOG_PREFIX + `storage type should be '${STORAGE_TYPE_COOKIE}' or '${STORAGE_TYPE_HTML5}'.`);
     return false;
   }
   
