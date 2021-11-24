@@ -1,10 +1,3 @@
-/*
-	ToDo:
-		Try CF worker with PBJS code
-		Check if user id core module handles caching automatically
-		Can we set the config internally and not depend on pubs for the same
-*/
-
 /**
  * This module adds PubMatic to the User ID module
  * The {@link module:modules/userId} module is required
