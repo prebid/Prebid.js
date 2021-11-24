@@ -491,16 +491,20 @@ export function insertElement(elm, doc, target, asLastChildChild) {
  * @returns {Promise}
  */
 export function waitForElementToLoad(element, timeout) {
+  let timer = null;
   return new Promise((resolve) => {
     const onLoad = function() {
       element.removeEventListener('load', onLoad);
       element.removeEventListener('error', onLoad);
+      if (timer != null) {
+        window.clearTimeout(timer);
+      }
       resolve();
     };
     element.addEventListener('load', onLoad);
     element.addEventListener('error', onLoad);
     if (timeout != null) {
-      window.setTimeout(onLoad, timeout);
+      timer = window.setTimeout(onLoad, timeout);
     }
   });
 }
