@@ -1,82 +1,156 @@
-import { logError, getWindowLocation } from '../src/utils.js';
-import { submodule } from '../src/hook.js';
-import { ajax } from '../src/ajax.js';
-
-const MODULE_NAME = 'pubmaticId';
-
 /*
-	ToDo
-		ATC ticket
-		pass gdpr and ccpa consent params
-		add entry in eids
-		cache the id for fixed duration in local-storage
-		test cases
+	ToDo:
+		Try CF worker with PBJS code
+		Check if user id core module handles caching automatically
+		Can we set the config internally and not depend on pubs for the same
 */
 
+/**
+ * This module adds PubMatic to the User ID module
+ * The {@link module:modules/userId} module is required
+ * @module modules/pubmaticIdSystem
+ * @requires module:modules/userId
+ */
 
+import { deepAccess, logInfo, deepSetValue, logError, isEmpty, isStr, isEmptyStr, logWarn } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { uspDataHandler } from '../src/adapterManager.js';
+
+const MODULE_NAME = 'pubmaticId';
+const GVLID = 76;
+export const STORAGE_NAME = 'pubmaticId';
+const STORAGE_TYPE = 'cookie';
+const STORAGE_EXPIRES = 30; // days
+const STORAGE_REFRESH_IN_SECONDS = 24*3600; // 24 Hours
+const LOG_PREFIX = 'User ID - PubMatic submodule: ';
+
+const storage = getStorageManager(GVLID, MODULE_NAME);
+
+/** @type {Submodule} */
 export const pubmaticIdSubmodule = {
-	name: MODULE_NAME,
+  /**
+   * used to link submodule with config
+   * @type {string}
+   */
+  name: MODULE_NAME,
 
-	gvlid: 76,
+  /**
+   * Vendor id of PubMatic
+   * @type {Number}
+   */
+  gvlid: GVLID,
 
-	decode(value) {
-	    return value && typeof value === 'string'
-	      ? { 'pubmaticId': value }
-	      : undefined;
-	},
+  /**
+   * decode the stored id value for passing to bid requests
+   * @function decode
+   * @param {(Object|string)} value
+   * @param {SubmoduleConfig|undefined} config
+   * @returns {(Object|undefined)}
+   */
+  decode(value, config) {
+    if(isStr(value) && !isEmptyStr(value) ){
+    	return {pubmaticId: value};
+    }
+    return undefined;
+  },
 
-	getId(config, consentData, cacheIdObj) {
-		const configParams = (config && config.params) || {};
-	    
-		// if (
-		//   !configParams ||
-		//   !configParams.api_key ||
-		//   typeof configParams.api_key !== 'string'
-		// ) {
-		//   logError('dmd submodule requires an api_key.');
-		//   return;
-		// }
+  /**
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function getId
+   * @param {SubmoduleConfig} config
+   * @param {ConsentData} consentData
+   * @param {(Object|undefined)} cacheIdObj
+   * @returns {IdResponse|undefined}
+   */
+  getId(config, consentData, cacheIdObj) {
+    if (!hasRequiredConfig(config)) {
+      return undefined;
+    }    
 
-	    // If cahceIdObj is null or undefined - calling AIX-API
-	    if (cacheIdObj) {
-	      return cacheIdObj;
-	    } else {
-			const hasGdprData = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
-    		const gdprConsentString = hasGdprData ? consentData.consentString : undefined;
-			const url = `https://image6.pubmatic.com/UCookieSetPug?oid=2`;
-			url += '&gdpr=' + (hasGdprData ? 1 : 0);
-      		url += '&gdpr_consent=' + encodeURIComponent(gdprConsentString || '');
-			// Setting headers
-			const headers = {};
-			// headers['x-api-key'] = configParams.api_key;
-			// headers['x-domain'] = getWindowLocation();
+    const resp = function (callback) {      
+      const callbacks = {
+        success: response => {
+          let responseObj;
+          if (response) {
+            try {
+              responseObj = JSON.parse(response);
+              logInfo(LOG_PREFIX + 'response received from the server', responseObj);              
+            } catch (error) {
+              logError(LOG_PREFIX + error);
+            }
+          }
+          if(isStr(responseObj.id) && !isEmptyStr(responseObj.id)){
+          	callback(responseObj.id);
+          } else {
+          	callback()
+          }                    
+        },
+        error: error => {
+          logError(LOG_PREFIX + 'getId fetch encountered an error', error);
+          callback();
+        }
+      };
 
-			// Response callbacks
-			const resp = function (callback) {
-				const callbacks = {
-					success: response => {
-						let responseObj;
-						let responseId;
-						try {
-							responseObj = JSON.parse(response);
-							if (responseObj && responseObj.id) {
-								responseId = responseObj.id;
-							}
-						} catch (error) {
-							logError(error);
-						}
-						callback(responseId);
-					},
-					error: error => {
-						logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
-						callback();
-					}
-				};
-				ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true, customHeaders: headers });
-			};
-	      return { callback: resp };
-	    }
-	}
+      logInfo(LOG_PREFIX + 'requesting an ID from the server');
+
+      ajax(generateURL(consentData), callbacks, null, { method: 'POST', withCredentials: true });
+    };
+    return { callback: resp };
+  }
 };
+
+function generateURL(consentData){
+	// let endpoint = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
+	let endpoint = "https://production.explore.harshad-mane.workers.dev/?p=1";
+    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+    const usp = uspDataHandler.getConsentData();
+    const referer = getRefererInfo();
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (hasGdpr) {
+      endpoint += '&gdpr=1';
+      let gdprConsentstring = (typeof consentData.consentString !== 'undefined' && !isEmpty(consentData.consentString) && !isEmptyStr(consentData.consentString)) ? encodeURIComponent(consentData.consentString) : '';
+      endpoint += '&gdpr_consent=' + gdprConsentstring;
+    }
+
+    // CCPA
+    if (usp) {
+      endpoint += '&us_privacy=' + encodeURIComponent(usp);
+    }
+
+    return endpoint;
+}
+
+function hasRequiredConfig(config) {
+  if (!config.storage || !config.storage.type || !config.storage.name) {
+    logError(LOG_PREFIX + 'storage required to be set');
+    return false;
+  }
+  
+  if (config.storage.type !== STORAGE_TYPE) {
+    logError(LOG_PREFIX + `storage type should be '${STORAGE_TYPE}'.`);
+    return false;
+  }
+  
+  if (config.storage.name !== STORAGE_NAME) {
+    logError(LOG_PREFIX + `storage name should be '${STORAGE_NAME}'.`);
+    return false;
+  }
+
+  if(config.storage.expires !== STORAGE_EXPIRES) {
+  	logError(LOG_PREFIX + `storage expires should be ${STORAGE_EXPIRES}.`);
+  	return false;
+  }
+
+  if(config.storage.refreshInSeconds !== STORAGE_REFRESH_IN_SECONDS) {
+  	logError(LOG_PREFIX + `storage refreshInSeconds should be ${STORAGE_REFRESH_IN_SECONDS}.`);
+  	return false;
+  }
+
+  return true;
+}
 
 submodule('userId', pubmaticIdSubmodule);
