@@ -1,4 +1,4 @@
-import { isStr, _each, getBidIdParameter, getWindowTop } from '../src/utils.js';
+import { isStr, _each, getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
@@ -18,13 +18,13 @@ export const spec = {
 
   buildRequests: function(validBidRequests, bidderRequest) {
     const requests = [];
-    const nmmRefreshCounts = (getWindowTop()).nmmRefreshCounts || {};
+    window.nmmRefreshCounts = window.nmmRefreshCounts || {};
 
     _each(validBidRequests, function(bid) {
-      nmmRefreshCounts[bid.adUnitCode] = nmmRefreshCounts[bid.adUnitCode] || 0;
+      window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const postBody = {
         'id': bid.auctionId,
-        'refresh_count': nmmRefreshCounts[bid.adUnitCode]++,
+        'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
         'ext': {
           'prebid': {
             'storedrequest': {

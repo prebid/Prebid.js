@@ -33,7 +33,7 @@ describe('nextMillenniumBidAdapterTests', function() {
 
   it('Check if refresh_count param is incremented', function() {
     const request = spec.buildRequests(bidRequestData);
-    expect(JSON.parse(request[0].data).refresh_count).to.equal(1);
+    expect(JSON.parse(request[0].data).refresh_count).to.equal(2);
   });
 
   it('validate_response_params', function() {
