@@ -13,6 +13,7 @@
   "prebidServerBidAdapter",
   "pubCommonId",
   "pubmaticBidAdapter",
+  "smartadserverBidAdapter",
   "sonobiBidAdapter",
   "tripleliftBidAdapter",
   "trustxBidAdapter"
