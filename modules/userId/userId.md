@@ -133,13 +133,21 @@ pbjs.setConfig({
              name: "kpuid",
              params:{
                     accountid: 124 // example of account id
-                   },
-             storage: {
+            },
+            storage: {
                  type: "cookie",
                  name: "knssoId",
                  expires: 30
-                  },
-        ],
+            },
+        },{
+            name: "pubmaticId",
+            storage: {
+                type: "cookie", // user id value will be stored in first party cookie
+                name: "pubmaticId", // name of the first party cookie
+                expires: 30, // cookie will be expired after 30 days
+                refreshInSeconds: 24*3600    // refresh ID every 24 hours to ensure it's fresh
+            }
+        }],
         syncDelay: 5000,
         auctionDelay: 1000
     }

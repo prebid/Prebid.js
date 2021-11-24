@@ -257,6 +257,12 @@ const USER_IDS_CONFIG = {
   'connectId': {
     source: 'yahoo.com',
     atype: 3
+  },
+
+  // PubMatic ID
+  'pubmaticId': {
+    source: 'pubmatic.com',
+    atype: 3
   }
 };
 
