@@ -4,6 +4,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
+const SYNC_ENDPOINT = 'https://statics.nextmillmedia.com/load-cookie.html?v=4';
 const TIME_TO_LIVE = 360;
 
 export const spec = {
@@ -89,7 +90,31 @@ export const spec = {
     });
 
     return bidResponses;
-  }
+  },
+
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+    if (!syncOptions.iframeEnabled) {
+      return
+    }
+
+    let syncurl = gdprConsent && gdprConsent.gdprApplies ? `${SYNC_ENDPOINT}&gdpr=1&gdpr_consent=${gdprConsent.consentString}` : SYNC_ENDPOINT
+
+    let bidders = []
+    if (responses) {
+      _each(responses, (response) => {
+        _each(Object.keys(response.body.ext.responsetimemillis), b => bidders.push(b))
+      })
+    }
+
+    if (bidders.length) {
+      syncurl += `&bidders=${bidders.join(',')}`
+    }
+
+    return [{
+      type: 'iframe',
+      url: syncurl
+    }];
+  },
 };
 
 registerBidder(spec);
