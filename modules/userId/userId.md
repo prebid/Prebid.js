@@ -305,6 +305,14 @@ pbjs.setConfig({
               type: 'html5',
               expires: 15
             }
+        }{
+            name: "pubmaticId",
+            storage: {
+                type: "html5", // user id value will be stored in local-storage
+                name: "pubmaticId", // name of the first party cookie
+                expires: 30, // cookie will be expired after 30 days
+                refreshInSeconds: 24*3600    // refresh ID every 24 hours to ensure it's fresh
+            }
         }],
         syncDelay: 5000
     }
