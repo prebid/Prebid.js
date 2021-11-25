@@ -3,10 +3,8 @@ import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
-
+import { logMessage, logError } from '../src/utils.js';
 const storage = getStorageManager();
-
-const utils = require('../src/utils.js');
 
 let realvuAnalyticsAdapter = adapter({
   global: 'realvuAnalytics',
@@ -401,7 +399,7 @@ export let lib = {
             // @if NODE_ENV='debug'
             let now = new Date();
             let msg = (now.getTime() - time0) / 1000 + ' RENDERED ' + a.unit_id;
-            utils.logMessage(msg);
+            logMessage(msg);
             // @endif
             let rpt = z.bids_rpt(a, true);
             z.track(a, 'rend', rpt);
@@ -885,7 +883,7 @@ realvuAnalyticsAdapter.originEnableAnalytics = realvuAnalyticsAdapter.enableAnal
 realvuAnalyticsAdapter.enableAnalytics = function (config) {
   _options = config.options;
   if (typeof (_options.partnerId) == 'undefined' || _options.partnerId == '') {
-    utils.logError('Missed realvu.com partnerId parameter', 101, 'Missed partnerId parameter');
+    logError('Missed realvu.com partnerId parameter', 101, 'Missed partnerId parameter');
   }
   realvuAnalyticsAdapter.originEnableAnalytics(config);
   return _options.partnerId;
@@ -905,7 +903,7 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
       ' creativei_id=' + args.creative_id;
   }
   // msg += '\nargs=' + JSON.stringify(args) + '<br>';
-  utils.logMessage(msg);
+  logMessage(msg);
   // @endif
 
   const boost = window.top1.realvu_aa;
@@ -935,7 +933,7 @@ realvuAnalyticsAdapter.track = function ({eventType, args}) {
 realvuAnalyticsAdapter.checkIn = function (bid, partnerId) {
   // find (or add if not registered yet) the unit in boost
   if (typeof (partnerId) == 'undefined' || partnerId == '') {
-    utils.logError('Missed realvu.com partnerId parameter', 102, 'Missed partnerId parameter');
+    logError('Missed realvu.com partnerId parameter', 102, 'Missed partnerId parameter');
   }
   let a = window.top1.realvu_aa.check({
     unit_id: bid.adUnitCode,

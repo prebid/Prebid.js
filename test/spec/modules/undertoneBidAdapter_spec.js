@@ -60,6 +60,23 @@ const videoBidReq = [{
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
 }];
+const schainObj = {
+  'ver': '1.0',
+  'complete': 1,
+  'nodes': [
+    {
+      'asi': 'indirectseller.com',
+      'sid': '00001',
+      'hp': 1
+    },
+
+    {
+      'asi': 'indirectseller-2.com',
+      'sid': '00002',
+      'hp': 2
+    }
+  ]
+};
 const bidReq = [{
   adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,
@@ -72,6 +89,29 @@ const bidReq = [{
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
 },
 {
+  adUnitCode: 'div-gpt-ad-1460505748561-0',
+  bidder: BIDDER_CODE,
+  params: {
+    publisherId: 12345
+  },
+  sizes: [[1, 1]],
+  bidId: '453cf42d72bb3c',
+  auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874',
+  schain: schainObj
+}];
+
+const supplyChainedBidReqs = [{
+  adUnitCode: 'div-gpt-ad-1460505748561-0',
+  bidder: BIDDER_CODE,
+  params: {
+    placementId: '10433394',
+    publisherId: 12345,
+  },
+  sizes: [[300, 250], [300, 600]],
+  bidId: '263be71e91dd9d',
+  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
+  schain: schainObj
+}, {
   adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,
   params: {
@@ -236,6 +276,18 @@ describe('Undertone Adapter', () => {
       sandbox.restore();
     });
 
+    describe('supply chain', function () {
+      it('should send supply chain if found on first bid', function () {
+        const request = spec.buildRequests(supplyChainedBidReqs, bidderReq);
+        const commons = JSON.parse(request.data)['commons'];
+        expect(commons.schain).to.deep.equal(schainObj);
+      });
+      it('should not send supply chain if not found on first bid', function () {
+        const request = spec.buildRequests(bidReq, bidderReq);
+        const commons = JSON.parse(request.data)['commons'];
+        expect(commons.schain).to.not.exist;
+      });
+    });
     it('should send request to correct url via POST not in GDPR or CCPA', function () {
       const request = spec.buildRequests(bidReq, bidderReq);
       const domainStart = bidderReq.refererInfo.referer.indexOf('//');

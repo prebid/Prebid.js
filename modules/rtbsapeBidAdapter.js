@@ -1,9 +1,8 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, triggerPixel } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
 import {Renderer} from '../src/Renderer.js';
-import {triggerPixel} from '../src/utils.js';
 
 const BIDDER_CODE = 'rtbsape';
 const ENDPOINT = 'https://ssp-rtb.sape.ru/prebid';
@@ -68,7 +67,7 @@ export const spec = {
       .filter(bid => typeof (bid.meta || {}).advertiserDomains !== 'undefined')
       .map(bid => {
         let requestBid = bids[bid.requestId];
-        let context = utils.deepAccess(requestBid, 'mediaTypes.video.context');
+        let context = deepAccess(requestBid, 'mediaTypes.video.context');
 
         if (context === OUTSTREAM && (bid.vastUrl || bid.vastXml)) {
           let renderer = Renderer.install({
@@ -77,7 +76,7 @@ export const spec = {
             loaded: false
           });
 
-          let muted = utils.deepAccess(requestBid, 'params.video.playerMuted');
+          let muted = deepAccess(requestBid, 'params.video.playerMuted');
           if (typeof muted === 'undefined') {
             muted = true;
           }
