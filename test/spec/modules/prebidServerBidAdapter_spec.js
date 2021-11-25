@@ -507,6 +507,17 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
+    it('should set id to auction ID and source.tid to tid', function () {
+      config.setConfig({ s2sConfig: CONFIG });
+
+      adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.id).to.equal('173afb6d132ba3');
+      expect(requestBid.source).to.be.an('object');
+      expect(requestBid.source.tid).to.equal('437fbbf5-33f5-487a-8e16-a7112903cfe5');
+    });
+
     it('should block request if config did not define p1Consent URL in endpoint object config', function() {
       let badConfig = utils.deepClone(CONFIG);
       badConfig.endpoint = { noP1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };
@@ -1705,7 +1716,7 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: 'v$prebid.version$'});
     });
 
-    it('does not set pbjs version in request if channel does exist in s2sConfig', () => {
+    it('extPrebid is now mergedDeep -> should include default channel as well', () => {
       const s2sBidRequest = utils.deepClone(REQUEST);
       const bidRequests = utils.deepClone(BID_REQUESTS);
 
@@ -1714,7 +1725,13 @@ describe('S2S Adapter', function () {
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
 
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({test: 1});
+
+      // extPrebid is now deep merged with
+      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({
+        name: 'pbjs',
+        test: 1,
+        version: 'v$prebid.version$'
+      });
     });
 
     it('passes first party data in request', () => {
@@ -1745,6 +1762,8 @@ describe('S2S Adapter', function () {
           interests: ['cars']
         }
       };
+      const bcat = ['IAB25', 'IAB7-39'];
+      const badv = ['blockedAdv-1.com', 'blockedAdv-2.com'];
       const allowedBidders = [ 'rubicon', 'appnexus' ];
 
       const expected = allowedBidders.map(bidder => ({
@@ -1769,19 +1788,23 @@ describe('S2S Adapter', function () {
                   interests: ['cars']
                 }
               }
-            }
+            },
+            bcat: ['IAB25', 'IAB7-39'],
+            badv: ['blockedAdv-1.com', 'blockedAdv-2.com']
           }
         }
       }));
       const commonContextExpected = utils.mergeDeep({'page': 'http://mytestpage.com', 'publisher': {'id': '1'}}, commonContext);
 
-      config.setConfig({ fpd: { context: commonContext, user: commonUser } });
-      config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
+      config.setConfig({ fpd: { context: commonContext, user: commonUser, badv, bcat } });
+      config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user, bcat, badv } } });
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
       expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
       expect(parsedRequestBody.user).to.deep.equal(commonUser);
+      expect(parsedRequestBody.badv).to.deep.equal(badv);
+      expect(parsedRequestBody.bcat).to.deep.equal(bcat);
     });
 
     describe('pbAdSlot config', function () {

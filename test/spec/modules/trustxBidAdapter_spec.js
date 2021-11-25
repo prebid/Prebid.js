@@ -402,7 +402,7 @@ describe('TrustXAdapter', function () {
     });
 
     it('if segment is present in permutive targeting, payload must have right params', function () {
-      const permSegments = ['test_perm_1', 'test_perm_2'];
+      const permSegments = [{id: 'test_perm_1'}, {id: 'test_perm_2'}];
       const bidRequestsWithPermutiveTargeting = bidRequests.map((bid) => {
         return Object.assign({
           rtd: {
@@ -421,8 +421,8 @@ describe('TrustXAdapter', function () {
       expect(payload.user.data).to.deep.equal([{
         name: 'permutive',
         segment: [
-          {name: 'p_standard', value: permSegments[0]},
-          {name: 'p_standard', value: permSegments[1]}
+          {name: 'p_standard', value: permSegments[0].id},
+          {name: 'p_standard', value: permSegments[1].id}
         ]
       }]);
     });
@@ -518,6 +518,93 @@ describe('TrustXAdapter', function () {
       const payload = parseRequest(request.data);
       expect(payload.tmax).to.equal(3000);
       getConfigStub.restore();
+    });
+    it('should contain imp[].ext.data.adserver if available', function() {
+      const ortb2Imp = [{
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/111111/slot'
+            },
+            pbadslot: '/111111/slot'
+          }
+        }
+      }, {
+        ext: {
+          data: {
+            adserver: {
+              name: 'ad_server_name',
+              adslot: '/222222/slot'
+            },
+            pbadslot: '/222222/slot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
+        return Object.assign(ortb2Imp[ind] ? { ortb2Imp: ortb2Imp[ind] } : {}, bid);
+      });
+      const request = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].ext).to.deep.equal({
+        divid: bidRequests[0].adUnitCode,
+        data: ortb2Imp[0].ext.data,
+        gpid: ortb2Imp[0].ext.data.adserver.adslot
+      });
+      expect(payload.imp[1].ext).to.deep.equal({
+        divid: bidRequests[1].adUnitCode,
+        data: ortb2Imp[1].ext.data,
+        gpid: ortb2Imp[1].ext.data.adserver.adslot
+      });
+      expect(payload.imp[2].ext).to.deep.equal({
+        divid: bidRequests[2].adUnitCode
+      });
+    });
+    it('all id like request fields must be a string', function () {
+      const bidderRequestWithNumId = Object.assign({}, bidderRequest, { bidderRequestId: 123123, auctionId: 345345543 });
+
+      let bidRequestWithNumId = {
+        'bidder': 'trustx',
+        'params': {
+          'uid': 43,
+        },
+        'adUnitCode': 111111,
+        'sizes': [[300, 250], [300, 600]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250], [300, 600]]
+          }
+        },
+        'bidId': 23423423,
+        'bidderRequestId': 123123,
+        'auctionId': 345345543,
+      };
+
+      const request = spec.buildRequests([bidRequestWithNumId], bidderRequestWithNumId);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.deep.equal({
+        'id': '123123',
+        'site': {
+          'page': referrer
+        },
+        'tmax': bidderRequest.timeout,
+        'source': {
+          'tid': '345345543',
+          'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
+        },
+        'imp': [{
+          'id': '23423423',
+          'tagid': '43',
+          'ext': {'divid': '111111'},
+          'banner': {
+            'w': 300,
+            'h': 250,
+            'format': [{'w': 300, 'h': 250}, {'w': 300, 'h': 600}]
+          }
+        }]
+      });
     });
 
     describe('floorModule', function () {
@@ -1007,11 +1094,28 @@ describe('TrustXAdapter', function () {
             'context': 'instream'
           }
         }
+      },
+      {
+        'bidder': 'trustx',
+        'params': {
+          'uid': '52'
+        },
+        'adUnitCode': 'adunit-code-1',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '23312a43bc42',
+        'bidderRequestId': '20394420a762a2',
+        'auctionId': '140132d07b031',
+        'mediaTypes': {
+          'video': {
+            'context': 'instream'
+          }
+        }
       }
     ];
     const response = [
       {'bid': [{'impid': '57dfefb80eca', 'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'auid': 50, content_type: 'video', w: 300, h: 600}], 'seat': '2'},
-      {'bid': [{'impid': '5126e301f4be', 'price': 1.00, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>', 'auid': 51, content_type: 'video'}], 'seat': '2'}
+      {'bid': [{'impid': '5126e301f4be', 'price': 1.00, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>', 'auid': 51, content_type: 'video'}], 'seat': '2'},
+      {'bid': [{'impid': '23312a43bc42', 'price': 2.00, 'nurl': 'https://some_test_vast_url.com', 'auid': 52, content_type: 'video', w: 300, h: 600}], 'seat': '2'},
     ];
     const request = spec.buildRequests(bidRequests);
     const expectedResponse = [
@@ -1033,7 +1137,23 @@ describe('TrustXAdapter', function () {
         'adResponse': {
           'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
         }
-      }
+      },
+      {
+        'requestId': '23312a43bc42',
+        'cpm': 2.00,
+        'creativeId': 52,
+        'dealId': undefined,
+        'width': 300,
+        'height': 600,
+        'currency': 'USD',
+        'mediaType': 'video',
+        'netRevenue': false,
+        'ttl': 360,
+        'meta': {
+          'advertiserDomains': []
+        },
+        'vastUrl': 'https://some_test_vast_url.com',
+      },
     ];
 
     const result = spec.interpretResponse({'body': {'seatbid': response}}, request);

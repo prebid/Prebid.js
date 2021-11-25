@@ -76,6 +76,7 @@ function lint(done) {
     'modules/**/*.js',
     'test/**/*.js',
     'plugins/**/*.js',
+    '!plugins/**/node_modules/**',
     './*.js'
   ], { base: './' })
     .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
@@ -140,12 +141,6 @@ function watch(done) {
   done();
 };
 
-function makeModuleList(modules) {
-  return modules.map(module => {
-    return '"' + module + '"'
-  });
-}
-
 function makeDevpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
   cloned.devtool = 'source-map';
@@ -157,7 +152,6 @@ function makeDevpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
-    .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 }
@@ -175,7 +169,6 @@ function makeWebpackPkg() {
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(terser())
-    .pipe(replace(/('|")v\$prebid\.modulesList\$('|")/g, makeModuleList(externalModules)))
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));
 }

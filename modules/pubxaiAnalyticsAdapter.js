@@ -1,8 +1,8 @@
+import { deepAccess, getGptSlotInfoForAdUnitCode, parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -34,7 +34,7 @@ var pubxaiAnalyticsAdapter = Object.assign(adapter(
         events.auctionInit = args;
         events.floorDetail = {};
         events.bids = [];
-        const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
+        const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (typeof floorData !== 'undefined') {
           Object.assign(events.floorDetail, floorData);
         }
@@ -57,7 +57,7 @@ function mapBidResponse(bidResponse, status) {
   if (typeof bidResponse !== 'undefined') {
     let bid = {
       adUnitCode: bidResponse.adUnitCode,
-      gptSlotCode: utils.getGptSlotInfoForAdUnitCode(bidResponse.adUnitCode).gptSlot || null,
+      gptSlotCode: getGptSlotInfoForAdUnitCode(bidResponse.adUnitCode).gptSlot || null,
       auctionId: bidResponse.auctionId,
       bidderCode: bidResponse.bidder,
       cpm: bidResponse.cpm,
@@ -77,7 +77,7 @@ function mapBidResponse(bidResponse, status) {
       Object.assign(bid, {
         bidId: status === 'timeout' ? bidResponse.bidId : bidResponse.requestId,
         renderStatus: status === 'timeout' ? 3 : 2,
-        sizes: utils.parseSizesInput(bidResponse.size).toString(),
+        sizes: parseSizesInput(bidResponse.size).toString(),
       });
       events.bids.push(bid);
     } else {
@@ -85,7 +85,7 @@ function mapBidResponse(bidResponse, status) {
         bidId: bidResponse.requestId,
         floorProvider: events.floorDetail ? events.floorDetail.floorProvider : null,
         isWinningBid: true,
-        placementId: bidResponse.params ? utils.deepAccess(bidResponse, 'params.0.placementId') : null,
+        placementId: bidResponse.params ? deepAccess(bidResponse, 'params.0.placementId') : null,
         renderedSize: bidResponse.size,
         renderStatus: 4
       });
@@ -131,7 +131,7 @@ pubxaiAnalyticsAdapter.shouldFireEventRequest = function (samplingRate = 1) {
 
 function send(data, status) {
   if (pubxaiAnalyticsAdapter.shouldFireEventRequest(initOptions.samplingRate)) {
-    let location = utils.getWindowLocation();
+    let location = getWindowLocation();
     data.initOptions = initOptions;
     if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
       Object.assign(data.pageDetail, {
@@ -150,7 +150,7 @@ function send(data, status) {
       deviceOS: getOS(),
       browser: getBrowser()
     });
-    let pubxaiAnalyticsRequestUrl = utils.buildUrl({
+    let pubxaiAnalyticsRequestUrl = buildUrl({
       protocol: 'https',
       hostname: (initOptions && initOptions.hostName) || defaultHost,
       pathname: status == 'bidwon' ? winningBidPath : auctionPath,

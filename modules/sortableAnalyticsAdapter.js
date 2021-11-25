@@ -1,7 +1,7 @@
+import { logInfo, getParameterByName, getOldestHighestCpmBid } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import { config } from '../src/config.js';
@@ -160,7 +160,7 @@ function getSessionParams() {
     sessionParams = paramsFromStorage && stillValid(paramsFromStorage) ? paramsFromStorage : null;
   }
   sessionParams = sessionParams || {'created': +new Date(), 'sessionId': generateRandomId()};
-  const urlParams = UTM_PARAMS.map(utils.getParameterByName);
+  const urlParams = UTM_PARAMS.map(getParameterByName);
   if (UTM_PARAMS.every(key => !sessionParams[key])) {
     UTM_PARAMS.forEach((v, i) => sessionParams[v] = urlParams[i] || sessionParams[v]);
     sessionParams.created = +new Date();
@@ -318,7 +318,7 @@ function sendEvents(events) {
     'method': 'POST',
     'withCredentials': true
   };
-  const onSend = () => utils.logInfo('Sortable Analytics data sent');
+  const onSend = () => logInfo('Sortable Analytics data sent');
   ajax(url, onSend, JSON.stringify(mergedEvents), options);
 }
 
@@ -444,7 +444,7 @@ function handleAuctionEnd(event) {
     const events = Object.keys(adUnits).map(adUnitCode => {
       const bidderKeys = Object.keys(auction.adUnits[adUnitCode].bids);
       const bids = bidderKeys.map(bidderCode => auction.adUnits[adUnitCode].bids[bidderCode]);
-      const highestBid = bids.length ? bids.reduce(utils.getOldestHighestCpmBid) : null;
+      const highestBid = bids.length ? bids.reduce(getOldestHighestCpmBid) : null;
       return bidderKeys.map(bidderCode => {
         const bid = auction.adUnits[adUnitCode].bids[bidderCode];
         if (highestBid && highestBid.cpm) {
@@ -507,7 +507,7 @@ sortableAnalyticsAdapter.originEnableAnalytics = sortableAnalyticsAdapter.enable
 
 sortableAnalyticsAdapter.enableAnalytics = function (setupConfig) {
   if (this.initConfig(setupConfig)) {
-    utils.logInfo('Sortable Analytics adapter enabled');
+    logInfo('Sortable Analytics adapter enabled');
     sortableAnalyticsAdapter.originEnableAnalytics(setupConfig);
   }
 };
