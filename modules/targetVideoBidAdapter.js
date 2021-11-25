@@ -1,6 +1,6 @@
 import find from 'core-js-pure/features/array/find.js';
 import { getBidRequest } from '../src/utils.js';
-import { VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const SOURCE = 'pbjs';
@@ -11,6 +11,7 @@ const MARGIN = 1.35;
 export const spec = {
 
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -32,7 +33,7 @@ export const spec = {
     const tags = bidRequests.map(createVideoTag);
     const schain = bidRequests[0].schain;
     const payload = {
-      tags: [...tags],
+      tags: tags,
       sdk: {
         source: SOURCE,
         version: '$prebid.version$'
@@ -60,6 +61,7 @@ export const spec = {
         }
       });
     }
+
     return bids;
   }
 
@@ -67,9 +69,16 @@ export const spec = {
 
 function getSizes(request) {
   let sizes = request.sizes;
-  if (request.mediaTypes && request.mediaTypes.banner && request.mediaTypes.banner.sizes) {
+  if (!sizes && request.mediaTypes && request.mediaTypes.banner && request.mediaTypes.banner.sizes) {
     sizes = request.mediaTypes.banner.sizes;
   }
+  if (Array.isArray(sizes) && !Array.isArray(sizes[0])) {
+    sizes = [sizes[0], sizes[1]];
+  }
+  if (!Array.isArray(sizes) || !Array.isArray(sizes[0])) {
+    sizes = [[0, 0]];
+  }
+
   return sizes;
 }
 
@@ -125,6 +134,7 @@ function createVideoTag(bid) {
  */
 function newBid(serverBid, rtbBid, bidderRequest) {
   const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
+  const sizes = getSizes(bidRequest);
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm * MARGIN,
@@ -132,8 +142,8 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     dealId: rtbBid.deal_id,
     currency: 'USD',
     netRevenue: true,
-    width: bidRequest.sizes[0][0],
-    height: bidRequest.sizes[0][1],
+    width: sizes[0][0],
+    height: sizes[0][1],
     ttl: 300,
     adUnitCode: bidRequest.adUnitCode,
     appnexus: {
@@ -146,11 +156,9 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   if (rtbBid.rtb.video) {
     Object.assign(bid, {
       vastImpUrl: rtbBid.notify_url,
+      ad: getBannerHtml(rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url)),
       ttl: 3600
     });
-
-    bid.vastUrl = rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url);
-    bid.ad = getBannerHtml(bid.vastUrl);
   }
 
   return bid;
@@ -170,8 +178,8 @@ function getBannerHtml(vastUrl) {
     </head>
     <body>
       <div id="targetVideoPlayer"></div>
-      <script type="text/javascript" src="https://player.target-video.com/custom/targetvideo-banner.js"></script>
-      <script type="text/javascript">initPlayer("${vastUrl}");</script>
+      <script src="https://player.target-video.com/custom/targetvideo-banner.js"></script>
+      <script>initPlayer("${vastUrl}");</script>
     </body>
   </html>`;
 }
