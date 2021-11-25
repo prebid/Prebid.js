@@ -21,7 +21,7 @@ let events = {
   deviceDetail: {}
 };
 
-export function getStorage() {
+function getStorage() {
   try {
     return window.top['sessionStorage'];
   } catch (e) {
