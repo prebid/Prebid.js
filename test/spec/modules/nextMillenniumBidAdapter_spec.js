@@ -36,6 +36,18 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(JSON.parse(request[0].data).refresh_count).to.equal(2);
   });
 
+  it('Test getUserSyncs function', function () {
+    const syncOptions = {
+      'iframeEnabled': true
+    }
+    const userSync = spec.getUserSyncs(syncOptions);
+    expect(userSync).to.be.an('array').with.lengthOf(1);
+    expect(userSync[0].type).to.exist;
+    expect(userSync[0].url).to.exist;
+    expect(userSync[0].type).to.be.equal('iframe');
+    expect(userSync[0].url).to.be.equal('https://statics.nextmillmedia.com/load-cookie.html?v=4');
+  });
+
   it('validate_response_params', function() {
     const serverResponse = {
       body: {
