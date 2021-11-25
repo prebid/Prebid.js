@@ -106,11 +106,7 @@ export const spec = {
       if (bid.schain) {
         placement.schain = bid.schain;
       }
-<<<<<<< HEAD
-      let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
-=======
       let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
->>>>>>> prebid/master
       if (gpid) {
         placement.gpid = gpid;
       }
