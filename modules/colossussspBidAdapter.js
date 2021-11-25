@@ -178,7 +178,7 @@ export const spec = {
     }];
   },
 
-  onBidWon: function(bid) {
+  onBidWon: (bid) => {
     if (bid.nurl) {
       ajax(bid.nurl, null);
     }
