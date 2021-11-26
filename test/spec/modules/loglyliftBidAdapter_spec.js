@@ -106,7 +106,7 @@ describe('loglyliftBidAdapter', function () {
       expect(data.bidId).to.equal(nativeBidRequests[0].bidId);
       expect(data.mediaTypes).to.deep.equal(nativeBidRequests[0].mediaTypes);
       expect(data.params).to.deep.equal(nativeBidRequests[0].params);
-      expect(data.prebidJsVersion).to.equal('5.16.0-pre');
+      expect(data.prebidJsVersion).to.equal('6.3.0-pre');
       expect(data.url).to.exist;
       expect(data.domain).to.exist;
       expect(data.referer).to.equal(bidderRequest.refererInfo.referer);
