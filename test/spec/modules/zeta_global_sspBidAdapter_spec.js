@@ -143,7 +143,10 @@ describe('Zeta Ssp Bid Adapter', function () {
                   'https://example2.com'
                 ],
                 h: 150,
-                w: 200
+                w: 200,
+                ext: {
+                  bidtype: 'video'
+                }
               }
             ]
           }
@@ -159,6 +162,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     const receivedBid1 = response.body.seatbid[0].bid[0];
     expect(bid1).to.not.be.empty;
     expect(bid1.ad).to.equal(receivedBid1.adm);
+    expect(bid1.vastXml).to.be.undefined;
     expect(bid1.cpm).to.equal(receivedBid1.price);
     expect(bid1.height).to.equal(receivedBid1.h);
     expect(bid1.width).to.equal(receivedBid1.w);
@@ -169,6 +173,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     const receivedBid2 = response.body.seatbid[0].bid[1];
     expect(bid2).to.not.be.empty;
     expect(bid2.ad).to.equal(receivedBid2.adm);
+    expect(bid2.vastXml).to.equal(receivedBid2.adm);
     expect(bid2.cpm).to.equal(receivedBid2.price);
     expect(bid2.height).to.equal(receivedBid2.h);
     expect(bid2.width).to.equal(receivedBid2.w);
