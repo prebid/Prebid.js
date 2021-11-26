@@ -198,6 +198,17 @@ const addNativeDataToParsedBid = function addNativeDataToParsedBid(parsedBid, se
 };
 
 /**
+ * Returns whether the given URL contains just a domain, and not (for example) a subdirectory or query parameters.
+ * @param {string} url the URL to check.
+ * @returns {boolean} whether the URL contains just a domain.
+ */
+const isBaseUrl = function isBaseUrl(url) {
+  const urlMinusScheme = url.substring(url.indexOf('://') + 3);
+  const endOfDomain = urlMinusScheme.indexOf('/');
+  return (endOfDomain === -1) || (endOfDomain === (urlMinusScheme.length - 1));
+};
+
+/**
  * Returns transformed bid requests that are in a format native to the Vibrant Prebid Server.
  *
  * @param {*[]} bidRequests the bid requests sent by the Prebid API.
@@ -265,8 +276,16 @@ export const spec = {
   buildRequests: function buildRequests(validBidRequests, bidderRequest) {
     const transformedBidRequests = transformBidRequests(validBidRequests);
 
+    var url = window.parent.location.href;
+
+    if ((window.self === window.top) && (!url || (url.substr(0, 4) !== 'http') || isBaseUrl(url))) {
+      url = document.URL;
+    }
+
+    url = encodeURIComponent(url);
+
     const prebidData = {
-      url: window.parent.location.href,
+      url,
       gdpr: bidderRequest.gdprConsent,
       window: {
         width: window.innerWidth,
