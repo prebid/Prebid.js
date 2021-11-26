@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, isArray, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 const BIDDER_CODE = 'beop';
@@ -36,7 +36,7 @@ export const spec = {
     */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
-    let pageUrl = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
+    let pageUrl = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || deepAccess(window, 'location.href');
     let fpd = config.getLegacyFpd(config.getConfig('ortb2'));
     let gdpr = bidderRequest.gdprConsent;
     let firstSlot = slots[0];
@@ -50,7 +50,7 @@ export const spec = {
       kwds: (fpd && fpd.site && fpd.site.keywords) || [],
       dbg: false,
       slts: slots,
-      is_amp: utils.deepAccess(bidderRequest, 'referrerInfo.isAmp'),
+      is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
     };
     const payloadString = JSON.stringify(payloadObject);
@@ -61,7 +61,7 @@ export const spec = {
     }
   },
   interpretResponse: function(serverResponse, request) {
-    if (serverResponse && serverResponse.body && utils.isArray(serverResponse.body.bids) && serverResponse.body.bids.length > 0) {
+    if (serverResponse && serverResponse.body && isArray(serverResponse.body.bids) && serverResponse.body.bids.length > 0) {
       return serverResponse.body.bids;
     }
     return [];
@@ -73,8 +73,8 @@ export const spec = {
 
     let trackingParams = buildTrackingParams(timeoutData, 'timeout', timeoutData.timeout);
 
-    utils.logWarn(BIDDER_CODE + ': timed out request');
-    utils.triggerPixel(utils.buildUrl({
+    logWarn(BIDDER_CODE + ': timed out request');
+    triggerPixel(buildUrl({
       protocol: 'https',
       hostname: 't.beop.io',
       pathname: '/bid',
@@ -87,8 +87,8 @@ export const spec = {
     }
     let trackingParams = buildTrackingParams(bid, 'won', bid.cpm);
 
-    utils.logInfo(BIDDER_CODE + ': won request');
-    utils.triggerPixel(utils.buildUrl({
+    logInfo(BIDDER_CODE + ': won request');
+    triggerPixel(buildUrl({
       protocol: 'https',
       hostname: 't.beop.io',
       pathname: '/bid',
@@ -113,8 +113,8 @@ function buildTrackingParams(data, info, value) {
 }
 
 function beOpRequestSlotsMaker(bid) {
-  const bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
-  const publisherCurrency = config.getConfig('currency.adServerCurrency') || utils.getValue(bid.params, 'currency') || 'EUR';
+  const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+  const publisherCurrency = config.getConfig('currency.adServerCurrency') || getValue(bid.params, 'currency') || 'EUR';
   let floor;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({currency: publisherCurrency, mediaType: 'banner', size: [1, 1]});
@@ -123,19 +123,19 @@ function beOpRequestSlotsMaker(bid) {
     }
   }
   return {
-    sizes: utils.isArray(bannerSizes) ? bannerSizes : bid.sizes,
+    sizes: isArray(bannerSizes) ? bannerSizes : bid.sizes,
     flr: floor,
-    pid: utils.getValue(bid.params, 'accountId'),
-    nid: utils.getValue(bid.params, 'networkId'),
-    nptnid: utils.getValue(bid.params, 'networkPartnerId'),
-    bid: utils.getBidIdParameter('bidId', bid),
-    brid: utils.getBidIdParameter('bidderRequestId', bid),
-    name: utils.getBidIdParameter('adUnitCode', bid),
-    aid: utils.getBidIdParameter('auctionId', bid),
-    tid: utils.getBidIdParameter('transactionId', bid),
-    brc: utils.getBidIdParameter('bidRequestsCount', bid),
-    bdrc: utils.getBidIdParameter('bidderRequestCount', bid),
-    bwc: utils.getBidIdParameter('bidderWinsCount', bid),
+    pid: getValue(bid.params, 'accountId'),
+    nid: getValue(bid.params, 'networkId'),
+    nptnid: getValue(bid.params, 'networkPartnerId'),
+    bid: getBidIdParameter('bidId', bid),
+    brid: getBidIdParameter('bidderRequestId', bid),
+    name: getBidIdParameter('adUnitCode', bid),
+    aid: getBidIdParameter('auctionId', bid),
+    tid: getBidIdParameter('transactionId', bid),
+    brc: getBidIdParameter('bidRequestsCount', bid),
+    bdrc: getBidIdParameter('bidderRequestCount', bid),
+    bwc: getBidIdParameter('bidderWinsCount', bid),
   }
 }
 

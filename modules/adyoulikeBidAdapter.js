@@ -1,6 +1,7 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, buildUrl, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import { createEidsArray } from './userId/eids.js';
 import find from 'core-js-pure/features/array/find.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
@@ -97,15 +98,19 @@ export const spec = {
       PageRefreshed: getPageRefreshed()
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentString: bidderRequest.gdprConsent.consentString,
         consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : null
       };
     }
 
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       payload.uspConsent = bidderRequest.uspConsent;
+    }
+
+    if (deepAccess(bidderRequest, 'userId')) {
+      payload.userId = createEidsArray(bidderRequest.userId);
     }
 
     const data = JSON.stringify(payload);
@@ -175,11 +180,11 @@ function getCanonicalUrl() {
 
 /* Get mediatype from bidRequest */
 function getMediatype(bidRequest) {
-  if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+  if (deepAccess(bidRequest, 'mediaTypes.video')) {
     return VIDEO;
-  } else if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
+  } else if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     return BANNER;
-  } else if (utils.deepAccess(bidRequest, 'mediaTypes.native')) {
+  } else if (deepAccess(bidRequest, 'mediaTypes.native')) {
     return NATIVE;
   }
 }
@@ -210,7 +215,7 @@ function getPageRefreshed() {
 /* Create endpoint url */
 function createEndpoint(bidRequests, bidderRequest) {
   let host = getHostname(bidRequests);
-  return utils.buildUrl({
+  return buildUrl({
     protocol: 'https',
     host: `${DEFAULT_DC}${host}.omnitagjs.com`,
     pathname: '/hb-api/prebid/v1',
@@ -260,7 +265,7 @@ function getSizeArray(bid) {
     }
   }
 
-  return utils.parseSizesInput(inputSize);
+  return parseSizesInput(inputSize);
 }
 
 /* Get parsed size from request size */
@@ -342,7 +347,7 @@ function getVideoAd(response) {
   var adJson = {};
   if (typeof response.Ad === 'string') {
     adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
-    return utils.deepAccess(adJson, 'Content.MainVideo.Vast');
+    return deepAccess(adJson, 'Content.MainVideo.Vast');
   }
 }
 
@@ -404,7 +409,7 @@ function getNativeAssets(response, nativeConfig) {
           imgSize[1] = response.Height || 250;
         }
 
-        const url = getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Thumbnail.Image'), imgSize[0], imgSize[1]);
+        const url = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Thumbnail.Image'), imgSize[0], imgSize[1]);
         if (url) {
           native[key] = {
             url,
@@ -422,7 +427,7 @@ function getNativeAssets(response, nativeConfig) {
           iconSize[1] = 50;
         }
 
-        const icurl = getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Sponsor.Logo.Resource'), iconSize[0], iconSize[1]);
+        const icurl = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Sponsor.Logo.Resource'), iconSize[0], iconSize[1]);
 
         if (url) {
           native[key] = {
@@ -433,10 +438,10 @@ function getNativeAssets(response, nativeConfig) {
         }
         break;
       case 'privacyIcon':
-        native[key] = getImageUrl(adJson, utils.deepAccess(adJson, 'Content.Preview.Credit.Logo.Resource'), 25, 25);
+        native[key] = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Credit.Logo.Resource'), 25, 25);
         break;
       case 'privacyLink':
-        native[key] = utils.deepAccess(adJson, 'Content.Preview.Credit.Url');
+        native[key] = deepAccess(adJson, 'Content.Preview.Credit.Url');
         break;
     }
   });

@@ -8,7 +8,7 @@
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import * as utils from '../src/utils.js';
+import { isFn, isStr, isPlainObject, logError } from '../src/utils.js';
 
 const MODULE_NAME = 'haloId';
 const AU_GVLID = 561;
@@ -21,9 +21,9 @@ export const storage = getStorageManager(AU_GVLID, 'halo');
  * @param {String} defaultVal
  */
 function paramOrDefault(param, defaultVal, arg) {
-  if (utils.isFn(param)) {
+  if (isFn(param)) {
     return param(arg);
-  } else if (utils.isStr(param)) {
+  } else if (isStr(param)) {
     return param;
   }
   return defaultVal;
@@ -44,7 +44,7 @@ export const haloIdSubmodule = {
    */
   decode(value) {
     let haloId = storage.getDataFromLocalStorage('auHaloId');
-    if (utils.isStr(haloId)) {
+    if (isStr(haloId)) {
       return {haloId: haloId};
     }
     return (value && typeof value['haloId'] === 'string') ? { 'haloId': value['haloId'] } : undefined;
@@ -56,7 +56,7 @@ export const haloIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
-    if (!utils.isPlainObject(config.params)) {
+    if (!isPlainObject(config.params)) {
       config.params = {};
     }
     const url = paramOrDefault(config.params.url,
@@ -65,7 +65,7 @@ export const haloIdSubmodule = {
 
     const resp = function (callback) {
       let haloId = storage.getDataFromLocalStorage('auHaloId');
-      if (utils.isStr(haloId)) {
+      if (isStr(haloId)) {
         const responseObj = {haloId: haloId};
         callback(responseObj);
       } else {
@@ -76,13 +76,13 @@ export const haloIdSubmodule = {
               try {
                 responseObj = JSON.parse(response);
               } catch (error) {
-                utils.logError(error);
+                logError(error);
               }
             }
             callback(responseObj);
           },
           error: error => {
-            utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+            logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
             callback();
           }
         };

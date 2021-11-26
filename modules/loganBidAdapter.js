@@ -1,6 +1,6 @@
+import { isFn, deepAccess, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'logan';
@@ -25,8 +25,8 @@ function isBidResponseValid(bid) {
 }
 
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
   }
 
   try {
@@ -50,7 +50,7 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    const winTop = utils.getWindowTop();
+    const winTop = getWindowTop();
     const location = winTop.location;
     const placements = [];
     const request = {
