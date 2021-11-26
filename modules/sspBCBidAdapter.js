@@ -9,6 +9,7 @@ const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TRACKER_URL = 'https://bdr.wpcdn.pl/tag/jstracker.js';
+const GVLID = 676;
 const TMAX = 450;
 const BIDDER_VERSION = '5.4';
 const W = window;
@@ -467,6 +468,7 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
 
 const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: [],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   isBidRequestValid(bid) {
@@ -644,15 +646,15 @@ const spec = {
 
     return bids;
   },
-  getUserSyncs(syncOptions) {
+  getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+    let mySyncs = [];
     if (syncOptions.iframeEnabled && consentApiVersion != 1) {
-      return [{
+      mySyncs.push({
         type: 'iframe',
         url: `${SYNC_URL}?tcf=${consentApiVersion}`,
-      }];
-    } else {
-      logWarn('sspBC adapter requires iframe based user sync.');
-    }
+      });
+    };
+    return mySyncs;
   },
 
   onTimeout(timeoutData) {
