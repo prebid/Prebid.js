@@ -1,15 +1,25 @@
 import {expect} from 'chai';
 import {spec} from 'modules/vibrantBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 
 describe('VibrantBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  const validBidParams = Object.freeze({
+  const validBannerBidParams = Object.freeze({
+    member: '1234',
+    invCode: 'ABCD',
+    placementId: '10433394'
+  });
+
+  const validVideoBidParams = Object.freeze({
     member: '1234',
     invCode: 'ABCD',
     placementId: '10433394',
+    video: {
+      skippable: false,
+      playback_method: 'auto_play_sound_off'
+    }
   });
 
   const validBidRequestSizes = [[300, 250]];
@@ -103,12 +113,7 @@ describe('VibrantBidAdapter', function () {
 
   describe('transformBidParams', function () {
     it('transforms bid params correctly', function () {
-      const bidParams = {
-        a: 1,
-        b: '2',
-      };
-
-      expect(spec.transformBidParams(bidParams)).to.deep.equal(bidParams);
+      expect(spec.transformBidParams(validVideoBidParams)).to.deep.equal(validVideoBidParams);
     });
   })
 
@@ -139,21 +144,21 @@ describe('VibrantBidAdapter', function () {
       });
 
       it('should return true for a valid banner bid request', function () {
-        bid.params = validBidParams;
+        bid.params = validBannerBidParams;
         bid.mediaTypes.banner.sizes = validBidRequestSizes;
 
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
       it('should return true for a valid banner bid request with some valid sizes', function () {
-        bid.params = validBidParams;
+        bid.params = validBannerBidParams;
         bid.mediaTypes.banner.sizes = [[300, 250], [300, 600]];
 
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
       it('should return false for a banner bid request with no compatible sizes', function () {
-        bid.params = validBidParams;
+        bid.params = validBannerBidParams;
         bid.mediaTypes.banner.sizes = [[600, 500], [300, 600]];
 
         expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -205,115 +210,242 @@ describe('VibrantBidAdapter', function () {
     });
 
     describe('with video bid requests', function () {
-      const validVideoMediaTypes = {
-        context: 'outstream',
-        sizes: validBidRequestSizes,
-      };
-
-      beforeEach(function () {
-        bid.mediaTypes.video = {
-          // Filled in by individual tests
-        };
-      });
-
-      it('should return true for a valid video bid request', function () {
-        bid.params = validBidParams;
-        bid.mediaTypes.video = validVideoMediaTypes;
-
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-
-      it('should return true for a valid video bid request with some valid sizes', function () {
-        bid.params = validBidParams;
-        bid.mediaTypes.video = {
+      describe('with sizes attribute', function () {
+        const validVideoMediaTypes = {
           context: 'outstream',
-          sizes: [[300, 250], [300, 600]],
+          sizes: validBidRequestSizes,
+          minduration: 1,
+          maxduration: 60,
+          skip: 0,
+          skipafter: 5,
+          playbackmethod: [2],
+          protocols: [1, 2, 3]
         };
 
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
+        beforeEach(function () {
+          bid.mediaTypes.video = {
+            // Filled in by individual tests
+          };
+        });
+
+        it('should return true for a valid video bid request', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = validVideoMediaTypes;
+
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
+
+        it('should return true for a valid video bid request with some valid sizes', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = {
+            context: 'outstream',
+            sizes: [[300, 250], [300, 600]],
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
+
+        it('should return false for a video request with no compatible sizes', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = {
+            context: 'outstream',
+            sizes: [[600, 500], [300, 600]],
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+
+        it('should return false for an instream video bid request', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = {
+            context: 'instream',
+            sizes: validBidRequestSizes,
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+
+        it('should return false for a video bid request with an unknown context', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = {
+            context: 'fake',
+            sizes: validBidRequestSizes,
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+
+        it('should return false for a video bid request with no context', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = {
+            sizes: validBidRequestSizes,
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+
+        it('should return true for a valid video bid request with a member id and inventory code', function () {
+          bid.params = {
+            member: '1234',
+            invCode: 'ABCD',
+          };
+          bid.mediaTypes.video = validVideoMediaTypes;
+
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
+
+        it('should return true for a valid video bid request with a placement id', function () {
+          bid.params = {
+            placementId: '10433394',
+          };
+          bid.mediaTypes.video = validVideoMediaTypes;
+
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
+
+        it('should return false for a valid video bid request but with a member id and no inventory code', function () {
+          bid.params = {
+            member: '1234',
+          };
+          bid.mediaTypes.video = validVideoMediaTypes;
+
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+
+        it('should return false for a valid video bid request but with no member id and an inventory code', function () {
+          bid.params = {
+            invCode: 'ABCD',
+          };
+          bid.mediaTypes.video = validVideoMediaTypes;
+
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+
+        it('should return false for a valid video bid request but with no params', function () {
+          bid.params = {};
+          bid.mediaTypes.video = validVideoMediaTypes;
+
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
       });
 
-      it('should return false for a video request with no compatible sizes', function () {
-        bid.params = validBidParams;
-        bid.mediaTypes.video = {
+      describe('with playerSize attribute', function () {
+        const validVideoMediaTypes = {
           context: 'outstream',
-          sizes: [[600, 500], [300, 600]],
+          playerSize: validBidRequestSizes,
+          minduration: 1,
+          maxduration: 60,
+          skip: 0,
+          skipafter: 5,
+          playbackmethod: [2],
+          protocols: [1, 2, 3]
         };
 
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
+        beforeEach(function () {
+          bid.mediaTypes.video = {
+            // Filled in by individual tests
+          };
+        });
 
-      it('should return false for an instream video bid request', function () {
-        bid.params = validBidParams;
-        bid.mediaTypes.video = {
-          context: 'instream',
-          sizes: validBidRequestSizes,
-        };
+        it('should return true for a valid video bid request', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = validVideoMediaTypes;
 
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
 
-      it('should return false for a video bid request with an unknown context', function () {
-        bid.params = validBidParams;
-        bid.mediaTypes.video = {
-          context: 'fake',
-          sizes: validBidRequestSizes,
-        };
+        it('should return true for a valid video bid request with some valid sizes', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = {
+            context: 'outstream',
+            playerSize: [[300, 250], [300, 600]],
+          };
 
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
 
-      it('should return false for a video bid request with no context', function () {
-        bid.params = validBidParams;
-        bid.mediaTypes.video = {
-          sizes: validBidRequestSizes,
-        };
+        it('should return false for a video request with no compatible sizes', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = {
+            context: 'outstream',
+            playerSize: [[600, 500], [300, 600]],
+          };
 
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
 
-      it('should return true for a valid video bid request with a member id and inventory code', function () {
-        bid.params = {
-          member: '1234',
-          invCode: 'ABCD',
-        };
-        bid.mediaTypes.video = validVideoMediaTypes;
+        it('should return false for an instream video bid request', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = {
+            context: 'instream',
+            playerSize: validBidRequestSizes,
+          };
 
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
 
-      it('should return true for a valid video bid request with a placement id', function () {
-        bid.params = {
-          placementId: '10433394',
-        };
-        bid.mediaTypes.video = validVideoMediaTypes;
+        it('should return false for a video bid request with an unknown context', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = {
+            context: 'fake',
+            playerSize: validBidRequestSizes,
+          };
 
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
 
-      it('should return false for a valid video bid request but with a member id and no inventory code', function () {
-        bid.params = {
-          member: '1234',
-        };
-        bid.mediaTypes.video = validVideoMediaTypes;
+        it('should return false for a video bid request with no context', function () {
+          bid.params = validVideoBidParams;
+          bid.mediaTypes.video = {
+            playerSize: validBidRequestSizes,
+          };
 
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
 
-      it('should return false for a valid video bid request but with no member id and an inventory code', function () {
-        bid.params = {
-          invCode: 'ABCD',
-        };
-        bid.mediaTypes.video = validVideoMediaTypes;
+        it('should return true for a valid video bid request with a member id and inventory code', function () {
+          bid.params = {
+            member: '1234',
+            invCode: 'ABCD',
+          };
+          bid.mediaTypes.video = validVideoMediaTypes;
 
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
 
-      it('should return false for a valid video bid request but with no params', function () {
-        bid.params = {};
-        bid.mediaTypes.video = validVideoMediaTypes;
+        it('should return true for a valid video bid request with a placement id', function () {
+          bid.params = {
+            placementId: '10433394',
+          };
+          bid.mediaTypes.video = validVideoMediaTypes;
 
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
+
+        it('should return false for a valid video bid request but with a member id and no inventory code', function () {
+          bid.params = {
+            member: '1234',
+          };
+          bid.mediaTypes.video = validVideoMediaTypes;
+
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+
+        it('should return false for a valid video bid request but with no member id and an inventory code', function () {
+          bid.params = {
+            invCode: 'ABCD',
+          };
+          bid.mediaTypes.video = validVideoMediaTypes;
+
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+
+        it('should return false for a valid video bid request but with no params', function () {
+          bid.params = {};
+          bid.mediaTypes.video = validVideoMediaTypes;
+
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
       });
     });
   });
@@ -324,7 +456,7 @@ describe('VibrantBidAdapter', function () {
     beforeEach(function () {
       bidRequests = [bid];
 
-      bidRequests[0].params = validBidParams;
+      bidRequests[0].params = validBannerBidParams;
       bidRequests[0].mediaTypes.banner = {
         sizes: validBidRequestSizes,
       };
@@ -378,10 +510,32 @@ describe('VibrantBidAdapter', function () {
       expect(payload.window).to.exist;
       expect(payload.window.width).to.equal(window.innerWidth);
       expect(payload.window.height).to.equal(window.innerHeight);
-    })
+    });
+
+    it('should add the top-level sizes to the bid request, if present', function () {
+      bid.params = validBannerBidParams;
+      bid.sizes = validBidRequestSizes;
+      bid.mediaTypes = {
+        banner: {},
+      };
+
+      const request = spec.buildRequests(bidRequests, {}, true);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.biddata).to.exist;
+      expect(payload.biddata.length).to.equal(1);
+      expect(payload.biddata[0]).to.exist;
+      expect(payload.biddata[0].code).to.equal(bid.adUnitCode);
+      expect(payload.biddata[0].id).to.equal(bid.bidId);
+      expect(payload.biddata[0].bidder).to.equal(bid.bidder);
+      expect(payload.biddata[0].sizes).to.deep.equal(validBidRequestSizes);
+      expect(payload.biddata[0].mediaTypes).to.exist;
+      expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
+      expect(payload.biddata[0].mediaTypes[BANNER]).to.deep.equal({});
+    });
 
     it('should add the correct bid data to the server request for one bid request', function () {
-      bid.params = validBidParams;
+      bid.params = validBannerBidParams;
       bid.mediaTypes = {
         banner: {
           sizes: validBidRequestSizes,
@@ -397,6 +551,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata[0].code).to.equal(bid.adUnitCode);
       expect(payload.biddata[0].id).to.equal(bid.bidId);
       expect(payload.biddata[0].bidder).to.equal(bid.bidder);
+      expect(payload.biddata[0].sizes).to.be.undefined;
       expect(payload.biddata[0].mediaTypes).to.exist;
       expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
       expect(payload.biddata[0].mediaTypes[BANNER]).to.deep.equal({
@@ -405,7 +560,7 @@ describe('VibrantBidAdapter', function () {
     });
 
     it('should add the correct bid data to the server request for two bid requests', function () {
-      bid.params = validBidParams;
+      bid.params = validBannerBidParams;
       bid.mediaTypes = {
         banner: {
           sizes: validBidRequestSizes,
@@ -414,7 +569,7 @@ describe('VibrantBidAdapter', function () {
 
       const bid2 = {
         bidder: 'vibrantmedia',
-        params: validBidParams,
+        params: validVideoBidParams,
         mediaTypes: {
           video: {
             sizes: validBidRequestSizes,
@@ -454,7 +609,7 @@ describe('VibrantBidAdapter', function () {
     });
 
     it('should add the correct bid data to the bid request where a bid has two media types', function () {
-      bid.params = validBidParams;
+      bid.params = validVideoBidParams;
       bid.mediaTypes = {
         banner: {
           sizes: validBidRequestSizes,
@@ -467,7 +622,7 @@ describe('VibrantBidAdapter', function () {
 
       const bid2 = {
         bidder: 'vibrantmedia',
-        params: validBidParams,
+        params: validVideoBidParams,
         mediaTypes: {
           video: {
             sizes: validBidRequestSizes,
@@ -521,7 +676,7 @@ describe('VibrantBidAdapter', function () {
 
   describe('Flow tests', function () {
     it('should behave correctly for successive API calls to the public functions', function () {
-      const bidParams = spec.transformBidParams(validBidParams);
+      const bidParams = spec.transformBidParams(validVideoBidParams);
       const bid = {
         bidder: 'vibrantmedia',
         params: bidParams,

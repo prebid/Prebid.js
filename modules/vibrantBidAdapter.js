@@ -43,8 +43,9 @@ const areValidSupportedMediaTypesPresent = function areSupportedMediaTypesPresen
       });
     } else if (mediaType === VIDEO) {
       const videoMediaType = bidRequest.mediaTypes[VIDEO];
+      const sizes = videoMediaType.sizes || videoMediaType.playerSize;
 
-      return (videoMediaType.context === OUTSTREAM) && videoMediaType.sizes.some(function forSomeVideoSize(size) {
+      return (videoMediaType.context === OUTSTREAM) && sizes.some(function forSomeVideoSize(size) {
         return (size[0] === 300) && (size[1] === 250);
       });
     } else {
@@ -209,12 +210,18 @@ const transformBidRequests = function transformBidRequests(bidRequests) {
 
   bidRequests.forEach(function forEachBidRequestToTransform(bidRequest) {
     // TODO: This is a bit dodgy, we should know exactly which fields to get data from in the request
-    transformedBidRequests.push({
+    const transformedBidRequest = {
       code: bidRequest.adUnitCode || bidRequest.code,
       id: bidRequest.bidId || bidRequest.transactionId,
-      bidder: bidRequest.bidder || ((bidRequest.bids) ? bidRequest.bids[0] : {}).bidder,
+      bidder: bidRequest.bidder || ((bidRequest.bids && bidRequest.bids.length !== 0) ? bidRequest.bids[0] : {}).bidder,
       mediaTypes: bidRequest.mediaTypes
-    });
+    };
+
+    if (bidRequest.sizes) {
+      transformedBidRequest.sizes = bidRequest.sizes;
+    }
+
+    transformedBidRequests.push(transformedBidRequest);
   });
 
   return transformedBidRequests;
@@ -382,53 +389,6 @@ export const spec = {
   onBidWon: function onBidWon(bidData) {
     // TODO: Use logInfo
     logInfo('Bid won: ' + JSON.stringify(bidData));
-  },
-
-  /**
-   * Register the user sync pixels which should be dropped after the auction.
-   * TODO: Is this needed? Does it work as expected, if so?
-   *
-   * @param {SyncOptions}      syncOptions     which user syncs are allowed.
-   * @param {ServerResponse[]} serverResponses list of server responses.
-   * @param {{}}               [gdprConsent]   the GDPR consent choices.
-   *
-   * @return {UserSync[]} the user syncs which should be dropped.
-   */
-  getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
-    const syncs = [];
-
-    let gdprParams;
-
-    if (gdprConsent) {
-      gdprParams = (typeof gdprConsent.gdprApplies === 'boolean')
-        ? `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`
-        : `gdpr_consent=${gdprConsent.consentString}`;
-    } else {
-      gdprParams = '';
-    }
-
-    const serverResponse = serverResponses[0];
-    const serverResponseBody = serverResponse.body;
-
-    if (syncOptions.pixelEnabled && serverResponseBody.syncs) {
-      serverResponseBody.syncs.forEach(function forEachPixelSync(sync) {
-        syncs.push({
-          type: 'image',
-          url: sync + '?' + gdprParams,
-        });
-      });
-    }
-
-    if (syncOptions.iframeEnabled && serverResponseBody.sync_htmls) {
-      serverResponseBody.sync_htmls.forEach(function forEachIframeSync(sync) {
-        syncs.push({
-          type: 'iframe',
-          url: sync + '?' + gdprParams,
-        });
-      });
-    }
-
-    return syncs;
   }
 };
 
