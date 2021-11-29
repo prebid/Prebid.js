@@ -257,6 +257,11 @@ const USER_IDS_CONFIG = {
   'connectId': {
     source: 'yahoo.com',
     atype: 3
+  },
+
+  'fingerprintId': {
+    source: 'fingerprintjs.com',
+    atype: 1
   }
 };
 

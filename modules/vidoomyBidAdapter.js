@@ -61,6 +61,7 @@ const isBidResponseValid = bid => {
 
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
+    console.log('userids', bid.userId, bid.userIdAsEids)
     let adType = BANNER;
     let sizes;
     if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
@@ -94,7 +95,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       sp: encodeURIComponent(aElement.href),
       usp: bidderRequest.uspConsent || '',
       coppa: !!config.getConfig('coppa'),
-      videoContext: videoContext || ''
+      videoContext: videoContext || '',
+      userId: bid.userId,
     };
 
     if (bidderRequest.gdprConsent) {
