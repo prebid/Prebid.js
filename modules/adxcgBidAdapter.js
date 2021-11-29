@@ -14,10 +14,9 @@ import {
   isArray,
   isPlainObject,
   parseUrl,
-  replaceAuctionPrice
+  replaceAuctionPrice, triggerPixel
 } from '../src/utils.js';
 import {config} from '../src/config.js';
-import {ajax} from '../src/ajax.js';
 
 const { getConfig } = config;
 
@@ -324,7 +323,7 @@ export const spec = {
     // for native requests we put the nurl as an imp tracker, otherwise if the auction takes place on prebid server
     // the server JS adapter puts the nurl in the adm as a tracking pixel and removes the attribute
     if (bid.nurl) {
-      ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm))
+      triggerPixel(replaceAuctionPrice(bid.nurl, bid.originalCpm))
     }
   }
 };

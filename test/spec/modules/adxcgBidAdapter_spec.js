@@ -3,7 +3,7 @@ import {assert} from 'chai';
 import {spec} from 'modules/adxcgBidAdapter.js';
 import {config} from 'src/config.js';
 import {createEidsArray} from 'modules/userId/eids.js';
-import {server} from 'test/mocks/xhr';
+const utils = require('src/utils');
 
 describe('Adxcg adapter', function () {
   let bids = [];
@@ -881,15 +881,22 @@ describe('Adxcg adapter', function () {
     });
   });
 
-  describe('onBidWon', function () {
-    it('should make an ajax call with the original cpm', function () {
+  describe('onBidWon', function() {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+    it('Should trigger pixel if bid nurl', function() {
       const bid = {
         nurl: 'http://example.com/win/${AUCTION_PRICE}',
         cpm: 2.1,
         originalCpm: 1.1,
       }
-      spec.onBidWon(bid)
-      expect(server.requests[0].url).to.equals('http://example.com/win/1.1')
-    });
-  });
+      spec.onBidWon(bid);
+      expect(utils.triggerPixel.callCount).to.equal(1)
+    })
+  })
 });
