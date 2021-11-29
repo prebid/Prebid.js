@@ -161,6 +161,9 @@ export const spec = {
               advertiserDomains: zetaBid.adomain
             };
           }
+          if (deepAccess(zetaBid, 'ext.bidtype', '') === VIDEO) {
+            bid.vastXml = bid.ad;
+          }
           bidResponses.push(bid);
         })
       })
