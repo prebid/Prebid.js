@@ -56,6 +56,12 @@ describe('currency', function () {
       let config = { 'url': 'URL', 'fullscan': true }
       idImportlibrary.setConfig(config);
       expect(config.fullscan).to.be.equal(true);
+      expect(config.inputscan).to.be.equal(false);
+    });
+    it('results with config inputscan ', function () {
+      let config = { 'inputscan': true }
+      idImportlibrary.setConfig(config);
+      expect(config.inputscan).to.be.equal(true);
     });
   });
 });
