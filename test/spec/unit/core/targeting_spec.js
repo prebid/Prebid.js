@@ -5,6 +5,7 @@ import { createBidReceived } from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
+import {deepClone} from 'src/utils.js';
 
 const bid1 = {
   'bidderCode': 'rubicon',
@@ -542,6 +543,77 @@ describe('targeting tests', function () {
       it('targeting should not include keys prefixed by disallowed default targeting keys', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         expect(targeting['/123456/header-bid-tag-0']).to.not.have.all.keys(['hb_deal_appnexus', 'hb_deal_rubicon']);
+      });
+    });
+
+    describe('targetingControls.addTargetingKeys', function () {
+      let winningBid = null;
+
+      beforeEach(function () {
+        bidsReceived = [bid1, bid2, nativeBid1, nativeBid2].map(deepClone);
+        bidsReceived.forEach((bid) => {
+          bid.adserverTargeting[CONSTANTS.TARGETING_KEYS.SOURCE] = 'test-source';
+          bid.adUnitCode = 'adunit';
+          if (winningBid == null || bid.cpm > winningBid.cpm) {
+            winningBid = bid;
+          }
+        });
+        enableSendAllBids = true;
+      });
+
+      const expandKey = function (key) {
+        const keys = new Set();
+        if (winningBid.adserverTargeting[key] != null) {
+          keys.add(key);
+        }
+        bidsReceived
+          .filter((bid) => bid.adserverTargeting[key] != null)
+          .map((bid) => bid.bidderCode)
+          .forEach((code) => keys.add(`${key}_${code}`.substr(0, 20)));
+        return new Array(...keys);
+      }
+
+      const targetingResult = function () {
+        return targetingInstance.getAllTargeting(['adunit'])['adunit'];
+      }
+
+      it('should include added keys', function () {
+        config.setConfig({
+          targetingControls: {
+            addTargetingKeys: ['SOURCE']
+          }
+        });
+        expect(targetingResult()).to.include.all.keys(...expandKey(CONSTANTS.TARGETING_KEYS.SOURCE));
+      });
+
+      it('should keep default and native keys', function() {
+        config.setConfig({
+          targetingControls: {
+            addTargetingKeys: ['SOURCE']
+          }
+        });
+        const defaultKeys = new Set(Object.values(CONSTANTS.DEFAULT_TARGETING_KEYS));
+        Object.values(CONSTANTS.NATIVE_KEYS).forEach((k) => defaultKeys.add(k));
+
+        const expectedKeys = new Set();
+        bidsReceived
+          .map((bid) => Object.keys(bid.adserverTargeting))
+          .reduce((left, right) => left.concat(right), [])
+          .filter((key) => defaultKeys.has(key))
+          .map(expandKey)
+          .reduce((left, right) => left.concat(right), [])
+          .forEach((k) => expectedKeys.add(k));
+        expect(targetingResult()).to.include.all.keys(...expectedKeys);
+      });
+
+      it('should not be allowed together with allowTargetingKeys', function () {
+        config.setConfig({
+          targetingControls: {
+            allowTargetingKeys: [CONSTANTS.TARGETING_KEYS.BIDDER],
+            addTargetingKeys: [CONSTANTS.TARGETING_KEYS.SOURCE]
+          }
+        });
+        expect(targetingResult).to.throw();
       });
     });
 
