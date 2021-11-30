@@ -34,38 +34,6 @@ var adUnits = [
          }
        }]
    },
-   // Native adUnit
-   // See https://developers.google.com/authorized-buyers/rtb/openrtb-guide#native
-   {
-      code: 'native',
-      sizes: [[1, 1]],
-      mediaTypes: {
-        native: {
-          title: {
-            required: true
-          },
-          body: {
-            required: true
-          },
-          image: {
-            required: true
-          },
-          sponsoredBy: {
-            required: true
-          },
-          icon: {
-            required: false
-          }
-        }
-      },
-      bids: [{
-        bidder: 'vibrantmedia',
-        params: {
-          placementId: 13232354,
-          allowSmallerSizes: true
-        }
-      }]
-   },
    // Video outstream adUnit
    // See https://developers.google.com/authorized-buyers/rtb/openrtb-guide#video
    {
@@ -95,6 +63,35 @@ var adUnits = [
          }
        }
      ]
+   },
+   // Native adUnit
+   // See https://developers.google.com/authorized-buyers/rtb/openrtb-guide#native
+   {
+      code: 'native',
+      mediaTypes: {
+        native: {
+          image: {
+            required: true,
+            sizes: [300, 250]
+          },
+          title: {
+            required: true
+          },
+          sponsoredBy: {
+            required: true
+          },
+          clickUrl: {
+            required: true
+          },
+        }
+      },
+      bids: [{
+        bidder: 'vibrantmedia',
+        params: {
+          placementId: 13232354,
+          allowSmallerSizes: true
+        }
+      }]
    }
 ];
 ```

@@ -6,11 +6,11 @@
  * Note: Only BANNER and VIDEO are currently supported by the Vibrant Prebid Server.
  */
 
-import { createTrackPixelHtml, logError, logWarn, logInfo } from '../src/utils.js';
-import { Renderer } from '../src/Renderer.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { OUTSTREAM } from '../src/video.js';
+import {createTrackPixelHtml, logError, logInfo} from '../src/utils.js';
+import {Renderer} from '../src/Renderer.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'vibrantmedia';
 const VIBRANT_PREBID_URL = 'https://k.intellitxt.com/prebid';
@@ -45,9 +45,24 @@ const areValidSupportedMediaTypesPresent = function areSupportedMediaTypesPresen
       const videoMediaType = bidRequest.mediaTypes[VIDEO];
       const sizes = videoMediaType.sizes || videoMediaType.playerSize;
 
-      return (videoMediaType.context === OUTSTREAM) && sizes.some(function forSomeVideoSize(size) {
+      return (videoMediaType.context === OUTSTREAM) && sizes && sizes.some(function forSomeVideoSize(size) {
         return (size[0] === 300) && (size[1] === 250);
       });
+    } else if (mediaType === NATIVE) {
+      const image = bidRequest.mediaTypes[NATIVE].image;
+
+      if (!image || !image.sizes || (image.sizes.length === 0)) {
+        return false;
+      }
+
+      if (image.sizes[0].length) {
+        // We have an array of sizes, check whether we support at least one
+        return image.sizes.some(function forSomeVideoSize(size) {
+          return (size[0] === 300) && (size[1] === 250);
+        });
+      } else {
+        return (image.sizes[0] === 300) && (image.sizes[1] === 250);
+      }
     } else {
       return false;
     }
@@ -85,7 +100,7 @@ const getNewRenderer = function getNewRenderer(bidderResponse) {
   try {
     renderer.setRender(addOutstreamRenderer);
   } catch (err) {
-    logWarn('Pre-bid failed while creating new outstream renderer', err);
+    logError('Pre-bid failed while creating new outstream renderer', err);
   }
 
   return renderer;
@@ -220,7 +235,6 @@ const transformBidRequests = function transformBidRequests(bidRequests) {
   const transformedBidRequests = [];
 
   bidRequests.forEach(function forEachBidRequestToTransform(bidRequest) {
-    // TODO: This is a bit dodgy, we should know exactly which fields to get data from in the request
     const transformedBidRequest = {
       code: bidRequest.adUnitCode || bidRequest.code,
       id: bidRequest.bidId || bidRequest.transactionId,
@@ -265,11 +279,7 @@ export const spec = {
    */
   isBidRequestValid: function isBidRequestValid(bid) {
     const areBidRequestParamsValid = !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
-    const isValid = areBidRequestParamsValid && areValidSupportedMediaTypesPresent(bid);
-
-    logInfo('Bid req valid = ' + isValid + ' for ' + JSON.stringify(bid));
-
-    return isValid;
+    return areBidRequestParamsValid && areValidSupportedMediaTypesPresent(bid);
   },
 
   /**
@@ -323,8 +333,6 @@ export const spec = {
     const parsedBids = [];
 
     bids.forEach(function forEachBid(bid) {
-      logInfo('Bid request: ' + JSON.stringify(bidRequest));
-
       const parsedBid = {
         requestId: bid.prebid_id,
         cpm: bid.price,
@@ -375,8 +383,7 @@ export const spec = {
    * @param {{}} timeoutData data relating to the timeout.
    */
   onTimeout: function onTimeout(timeoutData) {
-    // TODO: Use logInfo
-    logInfo('Timed out waiting for bids: ' + JSON.stringify(timeoutData));
+    logError('Timed out waiting for bids: ' + JSON.stringify(timeoutData));
   },
 
   /**
@@ -406,7 +413,6 @@ export const spec = {
    * @param {*} bidData the data associated with the won bid. See example above for data format.
    */
   onBidWon: function onBidWon(bidData) {
-    // TODO: Use logInfo
     logInfo('Bid won: ' + JSON.stringify(bidData));
   }
 };
