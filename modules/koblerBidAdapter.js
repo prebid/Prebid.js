@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, isStr, replaceAuctionPrice, triggerPixel, isArray, parseQueryStringParameters, getWindowSelf } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -27,11 +27,14 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
 };
 
 export const interpretResponse = function (serverResponse) {
+  const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   const res = serverResponse.body;
   const bids = []
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
+        const adWithCorrectCurrency = b.adm
+          .replace(/\${AUCTION_PRICE_CURRENCY}/g, adServerPriceCurrency);
         bids.push({
           requestId: b.impid,
           cpm: b.price,
@@ -42,7 +45,7 @@ export const interpretResponse = function (serverResponse) {
           dealId: b.dealid,
           netRevenue: true,
           ttl: TIME_TO_LIVE_IN_SECONDS,
-          ad: b.adm,
+          ad: adWithCorrectCurrency,
           nurl: b.nurl,
           meta: {
             advertiserDomains: b.adomain
@@ -56,31 +59,35 @@ export const interpretResponse = function (serverResponse) {
 
 export const onBidWon = function (bid) {
   const cpm = bid.cpm || 0;
-  const adServerPrice = utils.deepAccess(bid, 'adserverTargeting.hb_pb', 0);
-  if (utils.isStr(bid.nurl) && bid.nurl !== '') {
-    const winNotificationUrl = utils.replaceAuctionPrice(bid.nurl, cpm)
-      .replace(/\${AD_SERVER_PRICE}/g, adServerPrice);
-    utils.triggerPixel(winNotificationUrl);
+  const cpmCurrency = bid.currency || SUPPORTED_CURRENCY;
+  const adServerPrice = deepAccess(bid, 'adserverTargeting.hb_pb', 0);
+  const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
+  if (isStr(bid.nurl) && bid.nurl !== '') {
+    const winNotificationUrl = replaceAuctionPrice(bid.nurl, cpm)
+      .replace(/\${AUCTION_PRICE_CURRENCY}/g, cpmCurrency)
+      .replace(/\${AD_SERVER_PRICE}/g, adServerPrice)
+      .replace(/\${AD_SERVER_PRICE_CURRENCY}/g, adServerPriceCurrency);
+    triggerPixel(winNotificationUrl);
   }
 };
 
 export const onTimeout = function (timeoutDataArray) {
-  if (utils.isArray(timeoutDataArray)) {
+  if (isArray(timeoutDataArray)) {
     const refererInfo = getRefererInfo();
     const pageUrl = (refererInfo && refererInfo.referer)
       ? refererInfo.referer
       : window.location.href;
     timeoutDataArray.forEach(timeoutData => {
-      const query = utils.parseQueryStringParameters({
+      const query = parseQueryStringParameters({
         ad_unit_code: timeoutData.adUnitCode,
         auction_id: timeoutData.auctionId,
         bid_id: timeoutData.bidId,
         timeout: timeoutData.timeout,
-        placement_id: utils.deepAccess(timeoutData, 'params.0.placementId'),
+        placement_id: deepAccess(timeoutData, 'params.0.placementId'),
         page_url: pageUrl,
       });
       const timeoutNotificationUrl = `${TIMEOUT_NOTIFICATION_ENDPOINT}?${query}`;
-      utils.triggerPixel(timeoutNotificationUrl);
+      triggerPixel(timeoutNotificationUrl);
     });
   }
 };
@@ -136,7 +143,7 @@ function buildOpenRtbImpObject(validBidRequest) {
 }
 
 function getDevice() {
-  const ws = utils.getWindowSelf();
+  const ws = getWindowSelf();
   const ua = ws.navigator.userAgent;
 
   if (/(tablet|ipad|playbook|silk|android 3.0|xoom|sch-i800|kindle)|(android(?!.*mobi))/i
@@ -164,8 +171,8 @@ function getTest(validBidRequest) {
 }
 
 function getSizes(validBidRequest) {
-  const sizes = utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes', validBidRequest.sizes);
-  if (utils.isArray(sizes) && sizes.length > 0) {
+  const sizes = deepAccess(validBidRequest, 'mediaTypes.banner.sizes', validBidRequest.sizes);
+  if (isArray(sizes) && sizes.length > 0) {
     return sizes;
   }
 

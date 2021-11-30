@@ -17,6 +17,7 @@ const aliasEP = {
   mediafuse: 'https://ghb.hbmp.mediafuse.com/v2/auction/',
   navelix: 'https://ghb.hb.navelix.com/v2/auction/',
   bidsxchange: 'https://ghb.hbd.bidsxchange.com/v2/auction/',
+  streamkey: 'https://ghb.hb.streamkey.net/v2/auction/',
 };
 
 const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };
@@ -80,9 +81,9 @@ const SERVER_VIDEO_RESPONSE = {
     'height': 480,
     'cur': 'USD',
     'width': 640,
-    'cpm': 0.9
-  }
-  ]
+    'cpm': 0.9,
+    'adomain': ['a.com']
+  }]
 };
 const SERVER_OUSTREAM_VIDEO_RESPONSE = SERVER_VIDEO_RESPONSE;
 const SERVER_DISPLAY_RESPONSE = {
@@ -163,7 +164,10 @@ const videoEqResponse = [{
   height: 480,
   width: 640,
   ttl: 300,
-  cpm: 0.9
+  cpm: 0.9,
+  meta: {
+    advertiserDomains: ['a.com']
+  }
 }];
 
 const displayEqResponse = [{
@@ -177,7 +181,11 @@ const displayEqResponse = [{
   height: 250,
   width: 300,
   ttl: 300,
-  cpm: 0.9
+  cpm: 0.9,
+  meta: {
+    advertiserDomains: []
+  }
+
 }];
 
 describe('adtelligentBidAdapter', () => {

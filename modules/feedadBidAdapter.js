@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
@@ -107,15 +107,15 @@ const BID_METADATA = {};
  * @return {boolean} true if the bid is valid
  */
 function isBidRequestValid(bid) {
-  const clientToken = utils.deepAccess(bid, 'params.clientToken');
+  const clientToken = deepAccess(bid, 'params.clientToken');
   if (!clientToken || !isValidClientToken(clientToken)) {
-    utils.logWarn(TAG, "missing or invalid parameter 'clientToken'. found value:", clientToken);
+    logWarn(TAG, "missing or invalid parameter 'clientToken'. found value:", clientToken);
     return false;
   }
 
-  const placementId = utils.deepAccess(bid, 'params.placementId');
+  const placementId = deepAccess(bid, 'params.placementId');
   if (!placementId || !isValidPlacementId(placementId)) {
-    utils.logWarn(TAG, "missing or invalid parameter 'placementId'. found value:", placementId);
+    logWarn(TAG, "missing or invalid parameter 'placementId'. found value:", placementId);
     return false;
   }
 

@@ -108,7 +108,8 @@ describe('wipesBidAdapter', function () {
         'status_message': '',
         'currency': 'JPY',
         'video_creative_id': 600004,
-        'bid_id': '23beaa6af6cdde'
+        'bid_id': '23beaa6af6cdde',
+        'advertiser_domain': 'wipes.com',
       }
     };
 
@@ -125,7 +126,10 @@ describe('wipesBidAdapter', function () {
         'ttl': 3000,
         'referrer': '',
         'mediaType': 'banner',
-        'ad': '<!-- adtag -->'
+        'ad': '<!-- adtag -->',
+        'meta': {
+          'advertiserDomains': ['wipes.com'],
+        },
       }];
       let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));

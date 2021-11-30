@@ -75,6 +75,10 @@ var Slot = function Slot(elementId, pathId) {
     clearTargeting: function clearTargeting() {
       this.targeting = {};
       return this;
+    },
+
+    updateTargetingFromMap: function updateTargetingFromMap(targetingMap) {
+      Object.keys(targetingMap).forEach(key => this.setTargeting(key, targetingMap[key]))
     }
   };
   slot.spySetTargeting = sinon.spy(slot, 'setTargeting');
@@ -94,7 +98,6 @@ var createSlotArrayScenario2 = function createSlotArrayScenario2() {
   var slot1 = new Slot(config.adUnitElementIDs[0], config.adUnitCodes[0]);
   slot1.setTargeting('pos1', '750x350');
   var slot2 = new Slot(config.adUnitElementIDs[1], config.adUnitCodes[0]);
-  slot2.setTargeting('gender', ['male', 'female']);
   return [
     slot1,
     slot2
@@ -197,6 +200,10 @@ describe('Unit: Prebid Module', function () {
     $$PREBID_GLOBAL$$.adUnits = [];
     bidExpiryStub.restore();
     configObj.setConfig({ useBidCache: false });
+  });
+
+  after(function() {
+    auctionManager.clearAllAuctions();
   });
 
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
@@ -854,6 +861,9 @@ describe('Unit: Prebid Module', function () {
 
     it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function () {
       var slots = createSlotArrayScenario2();
+
+      // explicitly setting some PBJS key value pairs to verify whether these are removed befor new keys are set
+
       window.googletag.pubads().setSlots(slots);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
@@ -861,7 +871,7 @@ describe('Unit: Prebid Module', function () {
       // googletag's targeting structure
       // googletag setTargeting will override old value if invoked with same key
 
-      const targeting = [];
+      let targeting = [];
       slots[1].getTargetingKeys().map(function (key) {
         const value = slots[1].getTargeting(key);
         targeting.push([key, value]);
@@ -879,6 +889,39 @@ describe('Unit: Prebid Module', function () {
         invokedTargeting.push([key, value]);
       });
       assert.deepEqual(targeting, invokedTargeting, 'google tag targeting options not matching');
+
+      // resetPresetTargeting: initiate a new auction with no winning bids, now old targeting should be removed
+
+      resetAuction();
+      auction.getBidsReceived = function() { return [] };
+
+      var slots = createSlotArrayScenario2();
+      window.googletag.pubads().setSlots(slots);
+
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
+
+      targeting = [];
+      slots[1].getTargetingKeys().map(function (key) {
+        const value = slots[1].getTargeting(key);
+        targeting.push([key, value]);
+      });
+
+      invokedTargetingMap = {};
+      slots[1].spySetTargeting.args.map(function (entry) {
+        invokedTargetingMap[entry[0]] = entry[1];
+      });
+
+      var invokedTargeting = [];
+
+      Object.getOwnPropertyNames(invokedTargetingMap).map(function (key) {
+        const value = Array.isArray(invokedTargetingMap[key]) ? invokedTargetingMap[key] : [invokedTargetingMap[key]]; // values are always returned as array in googletag
+        invokedTargeting.push([key, value]);
+      });
+      assert.deepEqual(targeting, invokedTargeting, 'google tag targeting options not matching');
+      targeting.forEach(function(e) {
+        // here e[0] is key and e[1] is value in array that should be [null] as we are un-setting prebid keys in resetPresetTargeting
+        assert.deepEqual(e[1], [null], 'resetPresetTargeting: the value of the key ' + e[0] + ' should be [null]');
+      });
     });
 
     it('should set googletag targeting keys to specific slot with customSlotMatching', function () {
@@ -1062,6 +1105,8 @@ describe('Unit: Prebid Module', function () {
     var adResponse = {};
     var spyLogError = null;
     var spyLogMessage = null;
+    var spyLogWarn = null;
+    var spyAddWinningBid;
     var inIframe = true;
     var triggerPixelStub;
 
@@ -1100,6 +1145,8 @@ describe('Unit: Prebid Module', function () {
 
       spyLogError = sinon.spy(utils, 'logError');
       spyLogMessage = sinon.spy(utils, 'logMessage');
+      spyLogWarn = sinon.spy(utils, 'logWarn');
+      spyAddWinningBid = sinon.spy(auctionManager, 'addWinningBid');
 
       inIframe = true;
       sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
@@ -1110,8 +1157,10 @@ describe('Unit: Prebid Module', function () {
       auction.getBidsReceived = getBidResponses;
       utils.logError.restore();
       utils.logMessage.restore();
+      utils.logWarn.restore();
       utils.inIframe.restore();
       triggerPixelStub.restore();
+      spyAddWinningBid.restore();
     });
 
     it('should require doc and id params', function () {
@@ -1217,6 +1266,117 @@ describe('Unit: Prebid Module', function () {
 
       sinon.assert.calledOnce(triggerPixelStub);
       sinon.assert.calledWith(triggerPixelStub, burl);
+    });
+
+    it('should call addWinningBid', function () {
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      var message = 'Calling renderAd with adId :' + bidId;
+      sinon.assert.calledWith(spyLogMessage, message);
+
+      sinon.assert.calledOnce(spyAddWinningBid);
+      sinon.assert.calledWith(spyAddWinningBid, adResponse);
+    });
+
+    it('should warn stale rendering', function () {
+      var message = 'Calling renderAd with adId :' + bidId;
+      var warning = `Ad id ${bidId} has been rendered before`;
+      var onWonEvent = sinon.stub();
+      var onStaleEvent = sinon.stub();
+
+      $$PREBID_GLOBAL$$.onEvent(CONSTANTS.EVENTS.BID_WON, onWonEvent);
+      $$PREBID_GLOBAL$$.onEvent(CONSTANTS.EVENTS.STALE_RENDER, onStaleEvent);
+
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+
+      // First render should pass with no warning and added to winning bids
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      sinon.assert.calledWith(spyLogMessage, message);
+      sinon.assert.neverCalledWith(spyLogWarn, warning);
+
+      sinon.assert.calledOnce(spyAddWinningBid);
+      sinon.assert.calledWith(spyAddWinningBid, adResponse);
+
+      sinon.assert.calledWith(onWonEvent, adResponse);
+      sinon.assert.notCalled(onStaleEvent);
+      expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
+
+      // Reset call history for spies and stubs
+      spyLogMessage.resetHistory();
+      spyLogWarn.resetHistory();
+      spyAddWinningBid.resetHistory();
+      onWonEvent.resetHistory();
+      onStaleEvent.resetHistory();
+
+      // Second render should have a warning but still added to winning bids
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      sinon.assert.calledWith(spyLogMessage, message);
+      sinon.assert.calledWith(spyLogWarn, warning);
+
+      sinon.assert.calledOnce(spyAddWinningBid);
+      sinon.assert.calledWith(spyAddWinningBid, adResponse);
+
+      sinon.assert.calledWith(onWonEvent, adResponse);
+      sinon.assert.calledWith(onStaleEvent, adResponse);
+
+      // Clean up
+      $$PREBID_GLOBAL$$.offEvent(CONSTANTS.EVENTS.BID_WON, onWonEvent);
+      $$PREBID_GLOBAL$$.offEvent(CONSTANTS.EVENTS.STALE_RENDER, onStaleEvent);
+    });
+
+    it('should stop stale rendering', function () {
+      var message = 'Calling renderAd with adId :' + bidId;
+      var warning = `Ad id ${bidId} has been rendered before`;
+      var onWonEvent = sinon.stub();
+      var onStaleEvent = sinon.stub();
+
+      // Setting suppressStaleRender to true explicitly
+      configObj.setConfig({'auctionOptions': {'suppressStaleRender': true}});
+
+      $$PREBID_GLOBAL$$.onEvent(CONSTANTS.EVENTS.BID_WON, onWonEvent);
+      $$PREBID_GLOBAL$$.onEvent(CONSTANTS.EVENTS.STALE_RENDER, onStaleEvent);
+
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+
+      // First render should pass with no warning and added to winning bids
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      sinon.assert.calledWith(spyLogMessage, message);
+      sinon.assert.neverCalledWith(spyLogWarn, warning);
+
+      sinon.assert.calledOnce(spyAddWinningBid);
+      sinon.assert.calledWith(spyAddWinningBid, adResponse);
+      expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
+
+      sinon.assert.calledWith(onWonEvent, adResponse);
+      sinon.assert.notCalled(onStaleEvent);
+
+      // Reset call history for spies and stubs
+      spyLogMessage.resetHistory();
+      spyLogWarn.resetHistory();
+      spyAddWinningBid.resetHistory();
+      onWonEvent.resetHistory();
+      onStaleEvent.resetHistory();
+
+      // Second render should have a warning and do not proceed further
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      sinon.assert.calledWith(spyLogMessage, message);
+      sinon.assert.calledWith(spyLogWarn, warning);
+
+      sinon.assert.notCalled(spyAddWinningBid);
+
+      sinon.assert.notCalled(onWonEvent);
+      sinon.assert.calledWith(onStaleEvent, adResponse);
+
+      // Clean up
+      $$PREBID_GLOBAL$$.offEvent(CONSTANTS.EVENTS.BID_WON, onWonEvent);
+      $$PREBID_GLOBAL$$.offEvent(CONSTANTS.EVENTS.STALE_RENDER, onStaleEvent);
+      configObj.setConfig({'auctionOptions': {}});
     });
   });
 
@@ -1661,6 +1821,42 @@ describe('Unit: Prebid Module', function () {
             });
             expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250]]);
             expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
+          });
+
+          it('should filter mediaType pos value if not integer', function () {
+            let adUnit = [{
+              code: 'test5',
+              bids: [],
+              sizes: [300, 250],
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 250],
+                  pos: 'foo'
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: adUnit
+            });
+            expect(auctionArgs.adUnits[0].mediaTypes.banner.pos).to.be.undefined;
+          });
+
+          it('should pass mediaType pos value if integer', function () {
+            let adUnit = [{
+              code: 'test5',
+              bids: [],
+              sizes: [300, 250],
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 250],
+                  pos: 2
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: adUnit
+            });
+            expect(auctionArgs.adUnits[0].mediaTypes.banner.pos).to.equal(2);
           });
         });
 

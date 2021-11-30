@@ -3,7 +3,7 @@
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
 
 var _ = require('lodash');
-var webpackConf = require('./webpack.conf');
+var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
 
 function newWebpackConfig(codeCoverage) {
@@ -166,7 +166,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     browserNoActivityTimeout: 3e5, // default 10000
     captureTimeout: 3e5, // default 60000,
     browserDisconnectTolerance: 3,
-    concurrency: 5,
+    concurrency: 6,
 
     plugins: plugins
   }
