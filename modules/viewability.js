@@ -2,6 +2,8 @@ import { logWarn, logInfo, isStr, isFn, triggerPixel, insertHtmlIntoIframe } fro
 import { getGlobal } from '../src/prebidGlobal.js';
 import find from 'core-js-pure/features/array/find.js';
 
+export const MODULE_NAME = 'viewability';
+
 export function init() {
   (getGlobal()).viewability = {
     startMeasurement: startMeasurement,
@@ -15,7 +17,7 @@ const observers = {};
 
 function isValid(vid, element, tracker, criteria) {
   if (!element) {
-    logWarn('provide an html element to track');
+    logWarn(`${MODULE_NAME}: provide an html element to track`);
     return false;
   }
 
@@ -25,17 +27,17 @@ function isValid(vid, element, tracker, criteria) {
     (tracker.method === 'callback' && isFn(tracker.value)));
 
   if (!validTracker) {
-    logWarn('invalid tracker', tracker);
+    logWarn(`${MODULE_NAME}: invalid tracker`, tracker);
     return false;
   }
 
   if (!criteria || !criteria.inViewThreshold || !criteria.timeInView) {
-    logWarn('missing criteria', criteria);
+    logWarn(`${MODULE_NAME}: missing criteria`, criteria);
     return false;
   }
 
   if (!vid || observers[vid]) {
-    logWarn('provide an unregistered vid', vid);
+    logWarn(`${MODULE_NAME}: provide an unregistered vid`, vid);
     return false;
   }
 
@@ -76,7 +78,7 @@ export function startMeasurement(vid, element, tracker, criteria) {
         switch (tracker.method) {
           case 'img':
             triggerPixel(tracker.value, () => {
-              logInfo('viewability pixel fired', tracker.value);
+              logInfo(`${MODULE_NAME}: viewability pixel fired`, tracker.value);
             });
             break;
           case 'js':
@@ -109,7 +111,7 @@ export function startMeasurement(vid, element, tracker, criteria) {
  */
 export function stopMeasurement(vid) {
   if (!vid || !observers[vid]) {
-    logWarn('provide a registered vid', vid);
+    logWarn(`${MODULE_NAME}: provide a registered vid`, vid);
     return;
   }
 
