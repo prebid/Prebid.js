@@ -4,6 +4,8 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 import {INSTREAM, OUTSTREAM} from 'src/video.js';
 
+const EXPECTED_PREBID_SERVER_URL = 'https://prebid.intellitxt.com';
+
 describe('VibrantBidAdapter', function () {
   const adapter = newBidder(spec);
 
@@ -25,7 +27,7 @@ describe('VibrantBidAdapter', function () {
 
   const validNativeBidParams = validBannerBidParams;
 
-  const validBidRequestSizes = [[300, 250]];
+  const defaultBidRequestSizes = [[300, 250], [600, 240]];
 
   const validConsentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
 
@@ -83,29 +85,13 @@ describe('VibrantBidAdapter', function () {
     describe('with banner bid requests', function () {
       beforeEach(function () {
         bid.mediaTypes.banner = {
-          // Filled in by individual tests
+          sizes: defaultBidRequestSizes,
         };
       });
 
       it('should return true for a valid banner bid request', function () {
         bid.params = validBannerBidParams;
-        bid.mediaTypes.banner.sizes = validBidRequestSizes;
-
         expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-
-      it('should return true for a valid banner bid request with some valid sizes', function () {
-        bid.params = validBannerBidParams;
-        bid.mediaTypes.banner.sizes = [[300, 250], [300, 600]];
-
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-
-      it('should return false for a banner bid request with no compatible sizes', function () {
-        bid.params = validBannerBidParams;
-        bid.mediaTypes.banner.sizes = [[600, 500], [300, 600]];
-
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return true for a valid banner bid request with a member id and inventory code', function () {
@@ -113,8 +99,6 @@ describe('VibrantBidAdapter', function () {
           member: '1234',
           invCode: 'ABCD',
         };
-        bid.mediaTypes.banner.sizes = validBidRequestSizes;
-
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
@@ -122,8 +106,6 @@ describe('VibrantBidAdapter', function () {
         bid.params = {
           placementId: '10433394',
         };
-        bid.mediaTypes.banner.sizes = validBidRequestSizes;
-
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
@@ -131,8 +113,6 @@ describe('VibrantBidAdapter', function () {
         bid.params = {
           member: '1234',
         };
-        bid.mediaTypes.banner.sizes = validBidRequestSizes;
-
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
@@ -140,15 +120,11 @@ describe('VibrantBidAdapter', function () {
         bid.params = {
           invCode: 'ABCD',
         };
-        bid.mediaTypes.banner.sizes = validBidRequestSizes;
-
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return false for a valid banner bid request but with no params', function () {
         bid.params = {};
-        bid.mediaTypes.banner.sizes = validBidRequestSizes;
-
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
     });
@@ -157,7 +133,7 @@ describe('VibrantBidAdapter', function () {
       describe('with sizes attribute', function () {
         const validVideoMediaTypes = {
           context: OUTSTREAM,
-          sizes: validBidRequestSizes,
+          sizes: defaultBidRequestSizes,
           minduration: 1,
           maxduration: 60,
           skip: 0,
@@ -166,12 +142,6 @@ describe('VibrantBidAdapter', function () {
           protocols: [1, 2, 3]
         };
 
-        beforeEach(function () {
-          bid.mediaTypes.video = {
-            // Filled in by individual tests
-          };
-        });
-
         it('should return true for a valid video bid request', function () {
           bid.params = validVideoBidParams;
           bid.mediaTypes.video = validVideoMediaTypes;
@@ -179,31 +149,11 @@ describe('VibrantBidAdapter', function () {
           expect(spec.isBidRequestValid(bid)).to.equal(true);
         });
 
-        it('should return true for a valid video bid request with some valid sizes', function () {
-          bid.params = validVideoBidParams;
-          bid.mediaTypes.video = {
-            context: OUTSTREAM,
-            sizes: [[300, 250], [300, 600]],
-          };
-
-          expect(spec.isBidRequestValid(bid)).to.equal(true);
-        });
-
-        it('should return false for a video request with no compatible sizes', function () {
-          bid.params = validVideoBidParams;
-          bid.mediaTypes.video = {
-            context: OUTSTREAM,
-            sizes: [[600, 500], [300, 600]],
-          };
-
-          expect(spec.isBidRequestValid(bid)).to.equal(false);
-        });
-
         it('should return false for an instream video bid request', function () {
           bid.params = validVideoBidParams;
           bid.mediaTypes.video = {
             context: INSTREAM,
-            sizes: validBidRequestSizes,
+            sizes: defaultBidRequestSizes,
           };
 
           expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -213,7 +163,7 @@ describe('VibrantBidAdapter', function () {
           bid.params = validVideoBidParams;
           bid.mediaTypes.video = {
             context: 'fake',
-            sizes: validBidRequestSizes,
+            sizes: defaultBidRequestSizes,
           };
 
           expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -222,7 +172,7 @@ describe('VibrantBidAdapter', function () {
         it('should return false for a video bid request with no context', function () {
           bid.params = validVideoBidParams;
           bid.mediaTypes.video = {
-            sizes: validBidRequestSizes,
+            sizes: defaultBidRequestSizes,
           };
 
           expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -276,7 +226,7 @@ describe('VibrantBidAdapter', function () {
       describe('with playerSize attribute', function () {
         const validVideoMediaTypes = {
           context: OUTSTREAM,
-          playerSize: validBidRequestSizes,
+          playerSize: defaultBidRequestSizes,
           minduration: 1,
           maxduration: 60,
           skip: 0,
@@ -298,31 +248,11 @@ describe('VibrantBidAdapter', function () {
           expect(spec.isBidRequestValid(bid)).to.equal(true);
         });
 
-        it('should return true for a valid video bid request with some valid sizes', function () {
-          bid.params = validVideoBidParams;
-          bid.mediaTypes.video = {
-            context: OUTSTREAM,
-            playerSize: [[300, 250], [300, 600]],
-          };
-
-          expect(spec.isBidRequestValid(bid)).to.equal(true);
-        });
-
-        it('should return false for a video request with no compatible sizes', function () {
-          bid.params = validVideoBidParams;
-          bid.mediaTypes.video = {
-            context: OUTSTREAM,
-            playerSize: [[600, 500], [300, 600]],
-          };
-
-          expect(spec.isBidRequestValid(bid)).to.equal(false);
-        });
-
         it('should return false for an instream video bid request', function () {
           bid.params = validVideoBidParams;
           bid.mediaTypes.video = {
             context: INSTREAM,
-            playerSize: validBidRequestSizes,
+            playerSize: defaultBidRequestSizes,
           };
 
           expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -332,7 +262,7 @@ describe('VibrantBidAdapter', function () {
           bid.params = validVideoBidParams;
           bid.mediaTypes.video = {
             context: 'fake',
-            playerSize: validBidRequestSizes,
+            playerSize: defaultBidRequestSizes,
           };
 
           expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -341,7 +271,7 @@ describe('VibrantBidAdapter', function () {
         it('should return false for a video bid request with no context', function () {
           bid.params = validVideoBidParams;
           bid.mediaTypes.video = {
-            playerSize: validBidRequestSizes,
+            playerSize: defaultBidRequestSizes,
           };
 
           expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -397,7 +327,7 @@ describe('VibrantBidAdapter', function () {
       beforeEach(function () {
         bid.mediaTypes.native = {
           image: {
-            required: true
+            required: true,
             // Sizes is filled in by individual tests
           },
           title: {
@@ -412,32 +342,18 @@ describe('VibrantBidAdapter', function () {
         };
       });
 
-      it('should return true for a valid native bid request with a single, supported size', function () {
+      it('should return true for a valid native bid request with a single size', function () {
         bid.params = validNativeBidParams;
         bid.mediaTypes.native.image.sizes = [300, 250];
 
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
-      it('should return true for a valid native bid request with a single, unsupported size', function () {
-        bid.params = validNativeBidParams;
-        bid.mediaTypes.native.image.sizes = [600, 500];
-
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-
-      it('should return true for a valid native bid request with some valid sizes', function () {
+      it('should return true for a valid native bid request with multiple sizes', function () {
         bid.params = validNativeBidParams;
         bid.mediaTypes.native.image.sizes = [[300, 250], [300, 600]];
 
         expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-
-      it('should return false for a native bid request with no compatible sizes', function () {
-        bid.params = validNativeBidParams;
-        bid.mediaTypes.native.image.sizes = [[600, 500], [300, 600]];
-
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return true for a valid native bid request with a member id and inventory code', function () {
@@ -501,7 +417,7 @@ describe('VibrantBidAdapter', function () {
 
       bidRequests[0].params = validBannerBidParams;
       bidRequests[0].mediaTypes.banner = {
-        sizes: validBidRequestSizes,
+        sizes: defaultBidRequestSizes,
       };
     });
 
@@ -512,7 +428,7 @@ describe('VibrantBidAdapter', function () {
 
     it('should use the correct prebid server URL', function () {
       const request = spec.buildRequests(bidRequests, {});
-      expect(request.url).to.equal('https://k.intellitxt.com/prebid');
+      expect(request.url).to.equal(EXPECTED_PREBID_SERVER_URL);
     });
 
     it('should add the page URL to the server request', function () {
@@ -557,7 +473,7 @@ describe('VibrantBidAdapter', function () {
 
     it('should add the top-level sizes to the bid request, if present', function () {
       bid.params = validBannerBidParams;
-      bid.sizes = validBidRequestSizes;
+      bid.sizes = defaultBidRequestSizes;
       bid.mediaTypes = {
         banner: {},
       };
@@ -571,7 +487,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata[0].code).to.equal(bid.adUnitCode);
       expect(payload.biddata[0].id).to.equal(bid.bidId);
       expect(payload.biddata[0].bidder).to.equal(bid.bidder);
-      expect(payload.biddata[0].sizes).to.deep.equal(validBidRequestSizes);
+      expect(payload.biddata[0].sizes).to.deep.equal(defaultBidRequestSizes);
       expect(payload.biddata[0].mediaTypes).to.exist;
       expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
       expect(payload.biddata[0].mediaTypes[BANNER]).to.deep.equal({});
@@ -581,7 +497,7 @@ describe('VibrantBidAdapter', function () {
       bid.params = validBannerBidParams;
       bid.mediaTypes = {
         banner: {
-          sizes: validBidRequestSizes,
+          sizes: defaultBidRequestSizes,
         },
       };
 
@@ -598,7 +514,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata[0].mediaTypes).to.exist;
       expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
       expect(payload.biddata[0].mediaTypes[BANNER]).to.deep.equal({
-        sizes: validBidRequestSizes,
+        sizes: defaultBidRequestSizes,
       });
     });
 
@@ -606,7 +522,7 @@ describe('VibrantBidAdapter', function () {
       bid.params = validBannerBidParams;
       bid.mediaTypes = {
         banner: {
-          sizes: validBidRequestSizes,
+          sizes: defaultBidRequestSizes,
         },
       };
       const bid2 = {
@@ -615,7 +531,7 @@ describe('VibrantBidAdapter', function () {
         mediaTypes: {
           video: {
             context: OUTSTREAM,
-            sizes: validBidRequestSizes,
+            sizes: defaultBidRequestSizes,
           }
         },
         adUnitCode: 'video-div',
@@ -663,7 +579,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata[0].mediaTypes).to.exist;
       expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
       expect(payload.biddata[0].mediaTypes[BANNER]).to.deep.equal({
-        sizes: validBidRequestSizes,
+        sizes: defaultBidRequestSizes,
       });
       expect(payload.biddata[1]).to.exist;
       expect(payload.biddata[1].code).to.equal(bid2.adUnitCode);
@@ -673,7 +589,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata[1].mediaTypes[VIDEO]).to.exist;
       expect(payload.biddata[1].mediaTypes[VIDEO]).to.deep.equal({
         context: OUTSTREAM,
-        sizes: validBidRequestSizes,
+        sizes: defaultBidRequestSizes,
       });
       expect(payload.biddata[2]).to.exist;
       expect(payload.biddata[2].code).to.equal(bid3.adUnitCode);
@@ -687,11 +603,11 @@ describe('VibrantBidAdapter', function () {
       bid.params = validVideoBidParams;
       bid.mediaTypes = {
         banner: {
-          sizes: validBidRequestSizes,
+          sizes: defaultBidRequestSizes,
         },
         video: {
           context: OUTSTREAM,
-          sizes: validBidRequestSizes,
+          sizes: defaultBidRequestSizes,
         },
         native: {
           image: {
@@ -717,7 +633,7 @@ describe('VibrantBidAdapter', function () {
         mediaTypes: {
           video: {
             context: OUTSTREAM,
-            sizes: validBidRequestSizes,
+            sizes: defaultBidRequestSizes,
           }
         },
         adUnitCode: 'video-div',
@@ -741,12 +657,12 @@ describe('VibrantBidAdapter', function () {
       expect(Object.keys(payload.biddata[0].mediaTypes).length).to.equal(3);
       expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
       expect(payload.biddata[0].mediaTypes[BANNER]).to.deep.equal({
-        sizes: validBidRequestSizes,
+        sizes: defaultBidRequestSizes,
       });
       expect(payload.biddata[0].mediaTypes[VIDEO]).to.exist;
       expect(payload.biddata[0].mediaTypes[VIDEO]).to.deep.equal({
         context: OUTSTREAM,
-        sizes: validBidRequestSizes,
+        sizes: defaultBidRequestSizes,
       });
       expect(payload.biddata[0].code).to.equal(bid.adUnitCode);
       expect(payload.biddata[0].id).to.equal(bid.bidId);
@@ -762,7 +678,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata[1].mediaTypes[VIDEO]).to.exist;
       expect(payload.biddata[1].mediaTypes[VIDEO]).to.deep.equal({
         context: OUTSTREAM,
-        sizes: validBidRequestSizes,
+        sizes: defaultBidRequestSizes,
       });
     });
   });
@@ -775,8 +691,8 @@ describe('VibrantBidAdapter', function () {
             'banner': {
               '12345': [{
                 'ads': [{
-                  'width': validBidRequestSizes[0][0],
-                  'height': validBidRequestSizes[0][1],
+                  'width': defaultBidRequestSizes[0][0],
+                  'height': defaultBidRequestSizes[0][1],
                   'clickUrl': 'test.example.com/abc',
                   'displayUrl': 'test.example.com/abc',
                   'creative': {
@@ -810,7 +726,7 @@ describe('VibrantBidAdapter', function () {
       const expectedServerTranslation = [{
         cpm: void 0,
         creativeId: void 0,
-        currency: 'GBP',
+        currency: 'USD',
         dealId: void 0,
         meta: {
           advertiserDomains: []
@@ -830,8 +746,8 @@ describe('VibrantBidAdapter', function () {
             'video': {
               '12345': [{
                 'ads': [{
-                  'width': validBidRequestSizes[0][0],
-                  'height': validBidRequestSizes[0][1],
+                  'width': defaultBidRequestSizes[0][0],
+                  'height': defaultBidRequestSizes[0][1],
                   'clickUrl': 'test.example.com/abc',
                   'displayUrl': 'test.example.com/abc',
                   'creative': {
@@ -865,7 +781,7 @@ describe('VibrantBidAdapter', function () {
       const expectedServerTranslation = [{
         cpm: void 0,
         creativeId: void 0,
-        currency: 'GBP',
+        currency: 'USD',
         dealId: void 0,
         meta: {
           advertiserDomains: []
@@ -885,8 +801,8 @@ describe('VibrantBidAdapter', function () {
             'native': {
               '12345': [{
                 'ads': [{
-                  'width': validBidRequestSizes[0][0],
-                  'height': validBidRequestSizes[0][1],
+                  'width': defaultBidRequestSizes[0][0],
+                  'height': defaultBidRequestSizes[0][1],
                   'clickUrl': 'test.example.com/abc',
                   'displayUrl': 'test.example.com/abc',
                   'creative': {
@@ -920,7 +836,7 @@ describe('VibrantBidAdapter', function () {
       const expectedServerTranslation = [{
         cpm: void 0,
         creativeId: void 0,
-        currency: 'GBP',
+        currency: 'USD',
         dealId: void 0,
         meta: {
           advertiserDomains: []
@@ -941,8 +857,8 @@ describe('VibrantBidAdapter', function () {
               'outstream': {
                 '12345': [{
                   'ads': [{
-                    'width': validBidRequestSizes[0][0],
-                    'height': validBidRequestSizes[0][1],
+                    'width': defaultBidRequestSizes[0][0],
+                    'height': defaultBidRequestSizes[0][1],
                     'clickUrl': 'test.example.com/abc',
                     'displayUrl': 'test.example.com/abc',
                     'creative': {
@@ -974,8 +890,8 @@ describe('VibrantBidAdapter', function () {
               'native': {
                 '12345': [{
                   'ads': [{
-                    'width': validBidRequestSizes[0][0],
-                    'height': validBidRequestSizes[0][1],
+                    'width': defaultBidRequestSizes[0][0],
+                    'height': defaultBidRequestSizes[0][1],
                     'clickUrl': 'test.example.com/abc',
                     'displayUrl': 'test.example.com/abc',
                     'creative': {
@@ -1011,7 +927,7 @@ describe('VibrantBidAdapter', function () {
         {
           cpm: void 0,
           creativeId: void 0,
-          currency: 'GBP',
+          currency: 'USD',
           dealId: void 0,
           meta: {
             advertiserDomains: []
@@ -1023,7 +939,7 @@ describe('VibrantBidAdapter', function () {
         {
           cpm: void 0,
           creativeId: void 0,
-          currency: 'GBP',
+          currency: 'USD',
           dealId: void 0,
           meta: {
             advertiserDomains: []
@@ -1050,7 +966,7 @@ describe('VibrantBidAdapter', function () {
           params: transformedBannerBidParams,
           mediaTypes: {
             banner: {
-              sizes: validBidRequestSizes,
+              sizes: defaultBidRequestSizes,
             },
           },
           adUnitCode: 'banner-div',
@@ -1064,7 +980,7 @@ describe('VibrantBidAdapter', function () {
           mediaTypes: {
             video: {
               context: OUTSTREAM,
-              sizes: validBidRequestSizes,
+              sizes: defaultBidRequestSizes,
             },
           },
           adUnitCode: 'video-div',
@@ -1106,7 +1022,7 @@ describe('VibrantBidAdapter', function () {
         const validBidderRequest = getValidBidderRequest(bidRequests);
         const serverRequest = spec.buildRequests(bidRequests, validBidderRequest);
         expect(serverRequest.method).to.equal('POST');
-        expect(serverRequest.url).to.equal('https://k.intellitxt.com/prebid');
+        expect(serverRequest.url).to.equal(EXPECTED_PREBID_SERVER_URL);
 
         const payload = JSON.parse(serverRequest.data);
         expect(payload.biddata).to.exist;
@@ -1117,7 +1033,7 @@ describe('VibrantBidAdapter', function () {
         expect(payload.biddata[0].bidder).to.equal(bannerBid.bidder);
         expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
         expect(payload.biddata[0].mediaTypes[BANNER]).to.deep.equal({
-          sizes: validBidRequestSizes,
+          sizes: defaultBidRequestSizes,
         });
         expect(payload.biddata[1]).to.exist;
         expect(payload.biddata[1].code).to.equal(videoBid.adUnitCode);
@@ -1126,7 +1042,7 @@ describe('VibrantBidAdapter', function () {
         expect(payload.biddata[1].mediaTypes[VIDEO]).to.exist;
         expect(payload.biddata[1].mediaTypes[VIDEO]).to.deep.equal({
           context: OUTSTREAM,
-          sizes: validBidRequestSizes
+          sizes: defaultBidRequestSizes
         });
         expect(payload.biddata[2]).to.exist;
         expect(payload.biddata[2].code).to.equal(nativeBid.adUnitCode);
@@ -1145,14 +1061,14 @@ describe('VibrantBidAdapter', function () {
           params: bidParams,
           mediaTypes: {
             banner: {
-              sizes: validBidRequestSizes
+              sizes: defaultBidRequestSizes
             },
             video: {
               context: OUTSTREAM,
-              sizes: validBidRequestSizes
+              sizes: defaultBidRequestSizes
             },
             native: {
-              sizes: validBidRequestSizes
+              sizes: defaultBidRequestSizes
             }
           },
           adUnitCode: 'test-div',
@@ -1167,7 +1083,7 @@ describe('VibrantBidAdapter', function () {
         const validBidderRequest = getValidBidderRequest(bidRequests);
         const serverRequest = spec.buildRequests(bidRequests, validBidderRequest);
         expect(serverRequest.method).to.equal('POST');
-        expect(serverRequest.url).to.equal('https://k.intellitxt.com/prebid');
+        expect(serverRequest.url).to.equal(EXPECTED_PREBID_SERVER_URL);
 
         const payload = JSON.parse(serverRequest.data);
         expect(payload.biddata).to.exist;
@@ -1178,16 +1094,16 @@ describe('VibrantBidAdapter', function () {
         expect(payload.biddata[0].bidder).to.equal(bid.bidder);
         expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
         expect(payload.biddata[0].mediaTypes[BANNER]).to.deep.equal({
-          sizes: validBidRequestSizes,
+          sizes: defaultBidRequestSizes,
         });
         expect(payload.biddata[0].mediaTypes[VIDEO]).to.exist;
         expect(payload.biddata[0].mediaTypes[VIDEO]).to.deep.equal({
           context: OUTSTREAM,
-          sizes: validBidRequestSizes,
+          sizes: defaultBidRequestSizes,
         });
         expect(payload.biddata[0].mediaTypes[NATIVE]).to.exist;
         expect(payload.biddata[0].mediaTypes[NATIVE]).to.deep.equal({
-          sizes: validBidRequestSizes,
+          sizes: defaultBidRequestSizes,
         });
 
         // From here, the API would call the Prebid Server and call interpretResponse, which is covered by tests elsewhere

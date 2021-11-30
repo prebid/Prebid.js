@@ -38,34 +38,14 @@ const areValidSupportedMediaTypesPresent = function areSupportedMediaTypesPresen
 
   return mediaTypes.some(function forSomeMediaTypes(mediaType) {
     if (mediaType === BANNER) {
-      return bidRequest.mediaTypes[BANNER].sizes.some(function forSomeVideoSize(size) {
-        return (size[0] === 300) && (size[1] === 250);
-      });
+      return true;
     } else if (mediaType === VIDEO) {
-      const videoMediaType = bidRequest.mediaTypes[VIDEO];
-      const sizes = videoMediaType.sizes || videoMediaType.playerSize;
-
-      return (videoMediaType.context === OUTSTREAM) && sizes && sizes.some(function forSomeVideoSize(size) {
-        return (size[0] === 300) && (size[1] === 250);
-      });
+      return (bidRequest.mediaTypes[VIDEO].context === OUTSTREAM);
     } else if (mediaType === NATIVE) {
-      const image = bidRequest.mediaTypes[NATIVE].image;
-
-      if (!image || !image.sizes || (image.sizes.length === 0)) {
-        return false;
-      }
-
-      if (image.sizes[0].length) {
-        // We have an array of sizes, check whether we support at least one
-        return image.sizes.some(function forSomeVideoSize(size) {
-          return (size[0] === 300) && (size[1] === 250);
-        });
-      } else {
-        return (image.sizes[0] === 300) && (image.sizes[1] === 250);
-      }
-    } else {
-      return false;
+      return !!bidRequest.mediaTypes[NATIVE].image;
     }
+
+    return false;
   });
 };
 
