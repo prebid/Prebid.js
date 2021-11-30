@@ -800,11 +800,7 @@ describe('VibrantBidAdapter', function () {
                 },
                 'differentSettings': {},
                 'priority': 0,
-                'setType': 0,
-                'term': {
-                  'keywordId': 'abc',
-                  'keyword': 'test'
-                }
+                'setType': 0
               }]
             }
           }]
@@ -831,7 +827,7 @@ describe('VibrantBidAdapter', function () {
       const validPrebidServerResponse = Object.freeze({
         body: {
           bids: [{
-            'banner': {
+            'video': {
               '12345': [{
                 'ads': [{
                   'width': validBidRequestSizes[0][0],
@@ -859,11 +855,7 @@ describe('VibrantBidAdapter', function () {
                 },
                 'differentSettings': {},
                 'priority': 0,
-                'setType': 0,
-                'term': {
-                  'keywordId': 'abc',
-                  'keyword': 'test'
-                }
+                'setType': 0
               }]
             }
           }]
@@ -882,6 +874,165 @@ describe('VibrantBidAdapter', function () {
         requestId: void 0,
         ttl: 300,
       }];
+
+      expect(spec.interpretResponse(validPrebidServerResponse, {})).to.deep.equal(expectedServerTranslation);
+    });
+
+    it('returns a valid Prebid API response object for a native Prebid Server response', function () {
+      const validPrebidServerResponse = Object.freeze({
+        body: {
+          bids: [{
+            'native': {
+              '12345': [{
+                'ads': [{
+                  'width': validBidRequestSizes[0][0],
+                  'height': validBidRequestSizes[0][1],
+                  'clickUrl': 'test.example.com/abc',
+                  'displayUrl': 'test.example.com/abc',
+                  'creative': {
+                    'implementationType': 'internal',
+                    'creativeTypeId': 1,
+                    'value': 'd28e8e0c-2f17-421d-84db-5c9814bf4a79',
+                    'diyValues': null,
+                    'instreamValues': null,
+                    'setValues': {}
+                  },
+                  'bidPrice': 0.30
+                }],
+                'vibrantParameters': {
+                  'setId': 371480,
+                  'product': 11,
+                  'category': 1419,
+                  'keywordId': 'abc',
+                  'keyword': 'test',
+                  'adProviderId': 1,
+                  'hookId': '28de95fa-4919-46a0-8b3a-c49b4de95e24'
+                },
+                'differentSettings': {},
+                'priority': 0,
+                'setType': 0
+              }]
+            }
+          }]
+        }
+      });
+
+      const expectedServerTranslation = [{
+        cpm: void 0,
+        creativeId: void 0,
+        currency: 'GBP',
+        dealId: void 0,
+        meta: {
+          advertiserDomains: []
+        },
+        netRevenue: true,
+        requestId: void 0,
+        ttl: 300,
+      }];
+
+      expect(spec.interpretResponse(validPrebidServerResponse, {})).to.deep.equal(expectedServerTranslation);
+    });
+
+    it('returns a valid Prebid API response object for a multi-bid Prebid Server response', function () {
+      const validPrebidServerResponse = Object.freeze({
+        body: {
+          bids: [
+            {
+              'outstream': {
+                '12345': [{
+                  'ads': [{
+                    'width': validBidRequestSizes[0][0],
+                    'height': validBidRequestSizes[0][1],
+                    'clickUrl': 'test.example.com/abc',
+                    'displayUrl': 'test.example.com/abc',
+                    'creative': {
+                      'implementationType': 'internal',
+                      'creativeTypeId': 1,
+                      'value': 'd28e8e0c-2f17-421d-84db-5c9814bf4a79',
+                      'diyValues': null,
+                      'instreamValues': null,
+                      'setValues': {}
+                    },
+                    'bidPrice': 0.30
+                  }],
+                  'vibrantParameters': {
+                    'setId': 371480,
+                    'product': 11,
+                    'category': 1419,
+                    'keywordId': 'abc',
+                    'keyword': 'test',
+                    'adProviderId': 1,
+                    'hookId': '28de95fa-4919-46a0-8b3a-c49b4de95e24'
+                  },
+                  'differentSettings': {},
+                  'priority': 0,
+                  'setType': 0
+                }]
+              }
+            },
+            {
+              'native': {
+                '12345': [{
+                  'ads': [{
+                    'width': validBidRequestSizes[0][0],
+                    'height': validBidRequestSizes[0][1],
+                    'clickUrl': 'test.example.com/abc',
+                    'displayUrl': 'test.example.com/abc',
+                    'creative': {
+                      'implementationType': 'internal',
+                      'creativeTypeId': 1,
+                      'value': 'd28e8e0c-2f17-421d-84db-5c9814bf4a79',
+                      'diyValues': null,
+                      'instreamValues': null,
+                      'setValues': {}
+                    },
+                    'bidPrice': 0.30
+                  }],
+                  'vibrantParameters': {
+                    'setId': 371480,
+                    'product': 11,
+                    'category': 1419,
+                    'keywordId': 'abc',
+                    'keyword': 'test',
+                    'adProviderId': 1,
+                    'hookId': '28de95fa-4919-46a0-8b3a-c49b4de95e24'
+                  },
+                  'differentSettings': {},
+                  'priority': 0,
+                  'setType': 0
+                }]
+              }
+            }
+          ]
+        }
+      });
+
+      const expectedServerTranslation = [
+        {
+          cpm: void 0,
+          creativeId: void 0,
+          currency: 'GBP',
+          dealId: void 0,
+          meta: {
+            advertiserDomains: []
+          },
+          netRevenue: true,
+          requestId: void 0,
+          ttl: 300,
+        },
+        {
+          cpm: void 0,
+          creativeId: void 0,
+          currency: 'GBP',
+          dealId: void 0,
+          meta: {
+            advertiserDomains: []
+          },
+          netRevenue: true,
+          requestId: void 0,
+          ttl: 300,
+        }
+      ];
 
       expect(spec.interpretResponse(validPrebidServerResponse, {})).to.deep.equal(expectedServerTranslation);
     });

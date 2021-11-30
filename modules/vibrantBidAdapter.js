@@ -13,16 +13,16 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'vibrantmedia';
-const VIBRANT_PREBID_URL = 'https://k.intellitxt.com/prebid';
+const VIBRANT_PREBID_URL = 'https://prebid.intellitxt.com';
 const AD_TYPE_IDS = {
   BANNER: 1,
   NATIVE: 2,
   VIDEO: 3,
 };
-const DEFAULT_CURRENCY = 'GBP';
+const DEFAULT_CURRENCY = 'USD';
 const BID_TTL_SECS = 5 * 60; // 5 minutes
 const VIBRANT_VAST_PLAYER = 'vibrant-player';
-const SUPPORTED_MEDIA_TYPES = [ BANNER, NATIVE, VIDEO ];
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 
 /**
  * Returns whether the given bid request contains at least one supported media request, which has valid data. (We can
@@ -238,9 +238,20 @@ const transformBidRequests = function transformBidRequests(bidRequests) {
     const transformedBidRequest = {
       code: bidRequest.adUnitCode || bidRequest.code,
       id: bidRequest.bidId || bidRequest.transactionId,
-      bidder: bidRequest.bidder || ((bidRequest.bids && bidRequest.bids.length !== 0) ? bidRequest.bids[0] : {}).bidder,
+      bidder: bidRequest.bidder,
       mediaTypes: bidRequest.mediaTypes
     };
+
+    // TODO: Accommodate multiple bids in the same request
+    const firstBid = (bidRequest.bids && (bidRequest.bids.length !== 0)) ? bidRequest.bids[0] : {};
+
+    if (!transformedBidRequest.id) {
+      transformedBidRequest.id = (firstBid.params || {}).placementId;
+    }
+
+    if (!transformedBidRequest.bidder) {
+      transformedBidRequest.bidder = firstBid.bidder;
+    }
 
     if (bidRequest.sizes) {
       transformedBidRequest.sizes = bidRequest.sizes;

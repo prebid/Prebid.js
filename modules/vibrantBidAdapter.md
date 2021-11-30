@@ -14,28 +14,24 @@ This adapter supports Banner, Native and Video (outstream only).
 
 # Test Parameters
 
-Use these parameters, emulating a Vibrant Prebid Service response, to test the adapter:
-
 ```
 var adUnits = [
-   // Banner adUnit
-   // See https://developers.google.com/authorized-buyers/rtb/openrtb-guide#banner
+   // Banner ad unit
    {
-      code: 'banner-div',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250], [300,600]]
-        }
-      },
-      bids: [{
-         bidder: 'vibrantmedia',
-         params: {
-           placementId: 13144370
-         }
-       }]
+     code: 'banner-div',
+     mediaTypes: {
+       banner: {
+         sizes: [[300, 250], [300, 600]]
+       }
+     },
+     bids: [{
+       bidder: 'vibrantmedia',
+       params: {
+         placementId: 12345
+       }
+     }]
    },
-   // Video outstream adUnit
-   // See https://developers.google.com/authorized-buyers/rtb/openrtb-guide#video
+   // Video (outstream) ad unit
    {
      code: 'video-outstream',
      sizes: [[300, 250]],
@@ -55,7 +51,7 @@ var adUnits = [
        {
          bidder: 'vibrantmedia',
          params: {
-           placementId: 13232385,
+           placementId: 23456,
            video: {
              skippable: true,
              playback_method: 'auto_play_sound_off'
@@ -64,8 +60,7 @@ var adUnits = [
        }
      ]
    },
-   // Native adUnit
-   // See https://developers.google.com/authorized-buyers/rtb/openrtb-guide#native
+   // Native ad unit
    {
       code: 'native',
       mediaTypes: {
@@ -88,7 +83,7 @@ var adUnits = [
       bids: [{
         bidder: 'vibrantmedia',
         params: {
-          placementId: 13232354,
+          placementId: 34567,
           allowSmallerSizes: true
         }
       }]
@@ -96,14 +91,14 @@ var adUnits = [
 ];
 ```
 
-Use these parameters, emulating a Prebid Service request, to call the Prebid Service and get guaranteed bids:
+Call the Prebid Service with this request body to get guaranteed bids for all supported media types:
 
 ```
 {
-    "url": "http://prebidtest.vibrantmedia.com",
+    "url": "https://prebidtest.vibrantmedia.com",
     "gdpr": {
-        "consentString": "CO4fdqYO4fdqYAKAKAENA0CsAP_AAH_AAAwIGYtd_X9fb2vj-_5999t0eY1f9_63v-wzjgeNs-8NyZ_X_L4Xr2MyvB34pq4KmR4Eu3LBAQVlHGHcTQmQwIkVqTLsak2Mq7NKJ7JEilMbM2dYGG1Pn8XTuZCY70_sf__z_3-_-___67YGXkEmGpfAQJCWMBJNmlUKIEIVxIVAOACihGFo0sNCRwU7K4CPUACABAYgIwIgQYgoxZBAAAAAElEQAkAwIBEARAIAAQArQEIACJAEFgBIGAQACoGhYARRBKBIQZHBUcogQFSLRQTzRgAA.f_gAAAAAAAAA", 
-        "vendorData": {}, 
+        "consentString": "CO4fdqYO4fdqYAKAKAENA0CsAP_AAH_AAAwIGYtd_X9fb2vj-_5999t0eY1f9_63v-wzjgeNs-8NyZ_X_L4Xr2MyvB34pq4KmR4Eu3LBAQVlHGHcTQmQwIkVqTLsak2Mq7NKJ7JEilMbM2dYGG1Pn8XTuZCY70_sf__z_3-_-___67YGXkEmGpfAQJCWMBJNmlUKIEIVxIVAOACihGFo0sNCRwU7K4CPUACABAYgIwIgQYgoxZBAAAAAElEQAkAwIBEARAIAAQArQEIACJAEFgBIGAQACoGhYARRBKBIQZHBUcogQFSLRQTzRgAA.f_gAAAAAAAAA",
+        "vendorData": {},
         "gdprApplies": false
     },
     "window": {
@@ -117,7 +112,9 @@ Use these parameters, emulating a Prebid Service request, to call the Prebid Ser
             "bidder": "vibrantmedia",
             "mediaTypes": {
                 "banner": {
-                    "sizes": [[300, 250]]
+                    "sizes": [
+                        [300, 250]
+                    ]
                 }
             }
         },
@@ -126,8 +123,35 @@ Use these parameters, emulating a Prebid Service request, to call the Prebid Ser
             "id": "67890",
             "bidder": "vibrantmedia",
             "mediaTypes": {
-                "banner": {
-                    "sizes": [[300, 250]]
+                "video": {
+                    "context": "outstream",
+                    "sizes": [
+                        [300, 250]
+                    ]
+                }
+            }
+        },
+        {
+            "code": "native-div",
+            "id": "13579",
+            "bidder": "vibrantmedia",
+            "mediaTypes": {
+                "native": {
+                    "image": {
+                        "required": true,
+                    "sizes": [
+                        [300, 250]
+                    ]
+                    },
+                    "title": {
+                        "required": true
+                    },
+                    "sponsoredBy": {
+                        "required": true
+                    },
+                    "clickUrl": {
+                        "required": true
+                    }
                 }
             }
         }
