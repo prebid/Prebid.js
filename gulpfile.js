@@ -389,7 +389,8 @@ gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, 
 gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
-gulp.task('test', gulp.series(clean, lint, test));
+gulp.task('test-only', test);
+gulp.task('test', gulp.series(clean, lint, 'test-only'));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
