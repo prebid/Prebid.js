@@ -137,14 +137,8 @@ export const spec = {
     if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
-    } else {
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') { params += typeof gdprConsent.gdprApplies === 'boolean' ? `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}` : `&gdpr_consent=${gdprConsent.consentString}`; }
-      if (uspConsent && typeof uspConsent === 'string') { params += '&uspConsent=' + uspConsent }
-      return {
-        type: 'iframe',
-        url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=iframe' + params
-      };
-    }
+    } else 
+      return [];
   },
 
   /**
