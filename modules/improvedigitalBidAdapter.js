@@ -11,7 +11,7 @@ const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js
 const VIDEO_TARGETING = ['skip', 'skipmin', 'skipafter'];
 
 export const spec = {
-  version: '7.4.0',
+  version: '7.5.0',
   code: BIDDER_CODE,
   gvlid: 253,
   aliases: ['id'],
