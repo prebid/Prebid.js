@@ -45,8 +45,24 @@ export const spec = {
       libVersion: this.version
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
-      requestParameters.gdpr = bidderRequest.gdprConsent.consentString;
+    const gdprConsent = deepAccess(bidderRequest, 'gdprConsent')
+    if (gdprConsent) {
+      // GDPR Consent String
+      if (gdprConsent.consentString) {
+        requestParameters.gdpr = gdprConsent.consentString;
+      }
+
+      // Additional Consent String
+      const additionalConsent = deepAccess(gdprConsent, 'addtlConsent');
+      if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
+        // Google Ad Tech Provider IDs
+        const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
+        deepSetValue(
+          requestParameters,
+          'user.ext.consented_providers_settings.consented_providers',
+          atpIds.split('.').map(id => parseInt(id, 10))
+        );
+      }
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
