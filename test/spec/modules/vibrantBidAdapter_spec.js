@@ -731,58 +731,52 @@ describe('VibrantBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('returns a valid Prebid API response object for a banner Prebid Server response', function () {
-      const validPrebidServerResponse = Object.freeze({
-        body: {
-          bids: [{
-            'banner': {
-              '12345': [{
-                'ads': [{
-                  'width': defaultBidRequestSizes[0][0],
-                  'height': defaultBidRequestSizes[0][1],
-                  'clickUrl': 'test.example.com/abc',
-                  'displayUrl': 'test.example.com/abc',
-                  'creative': {
-                    'implementationType': 'internal',
-                    'creativeTypeId': 1,
-                    'value': 'd28e8e0c-2f17-421d-84db-5c9814bf4a79',
-                    'diyValues': null,
-                    'instreamValues': null,
-                    'setValues': {}
-                  },
-                  'bidPrice': 0.30
-                }],
-                'vibrantParameters': {
-                  'setId': 371480,
-                  'product': 11,
-                  'category': 1419,
-                  'keywordId': 'abc',
-                  'keyword': 'test',
-                  'adProviderId': 1,
-                  'hookId': '28de95fa-4919-46a0-8b3a-c49b4de95e24'
-                },
-                'differentSettings': {},
-                'priority': 0,
-                'setType': 0
-              }]
+      const prebidServerResponse = Object.freeze({
+        body: Object.freeze({
+          bids: [Object.freeze({
+            mediaType: 'banner',
+            requestId: '12345',
+            cpm: 0.12,
+            currency: 'USD',
+            width: 640,
+            height: 240,
+            ad: '<!DOCTYPE html><html><head><title>Test Banner Ad Unit</title></head><body>Hello!</body></html>',
+            ttl: 300,
+            creativeId: '86f4aef9-2f17-421d-84db-5c9814bf4a79',
+            netRevenue: false,
+            meta: {
+              advertiser: '105600',
+              width: 300,
+              height: 250,
+              isCustom: '1',
+              progressBar: false,
+              mpuSrc: '//images.intellitxt.com/a/105600/Genpact/genpact.jpg',
+              clickURL: '{{click}}'
             }
-          }]
-        }
+          })],
+        }),
       });
 
-      const expectedServerTranslation = [{
-        cpm: void 0,
-        creativeId: void 0,
-        currency: 'USD',
-        dealId: void 0,
-        meta: {
-          advertiserDomains: []
-        },
-        netRevenue: true,
-        requestId: void 0,
-        ttl: 300,
-      }];
+      const interpretedResponse = spec.interpretResponse(prebidServerResponse, {});
 
-      expect(spec.interpretResponse(validPrebidServerResponse, {})).to.deep.equal(expectedServerTranslation);
+      expect(interpretedResponse).to.be.a('array');
+      expect(interpretedResponse.length).to.equal(1);
+
+      const interpretedBid = interpretedResponse[0];
+
+      expect(interpretedBid.mediaType).to.equal(prebidServerResponse.body.bids[0].mediaType);
+      expect(interpretedBid.requestId).to.equal(prebidServerResponse.body.bids[0].requestId);
+      expect(interpretedBid.cpm).to.equal(prebidServerResponse.body.bids[0].cpm);
+      expect(interpretedBid.currency).to.equal(prebidServerResponse.body.bids[0].currency);
+      expect(interpretedBid.width).to.equal(prebidServerResponse.body.bids[0].width);
+      expect(interpretedBid.height).to.equal(prebidServerResponse.body.bids[0].height);
+      expect(interpretedBid.ad).to.equal(prebidServerResponse.body.bids[0].ad);
+      expect(interpretedBid.ttl).to.equal(prebidServerResponse.body.bids[0].ttl);
+      expect(interpretedBid.creativeId).to.equal(prebidServerResponse.body.bids[0].creativeId);
+      expect(interpretedBid.netRevenue).to.equal(prebidServerResponse.body.bids[0].netRevenue);
+      expect(interpretedBid.meta).to.deep.equal(prebidServerResponse.body.bids[0].meta);
+      expect(interpretedBid.renderer).to.be.undefined;
+      expect(interpretedBid.adResponse).to.deep.equal(prebidServerResponse.body);
     });
 
     it('returns a valid Prebid API response object for a video Prebid Server response', function () {

@@ -6,7 +6,7 @@
  * Note: Only BANNER and VIDEO are currently supported by the Vibrant Prebid Server.
  */
 
-import {createTrackPixelHtml, logError, logInfo} from '../src/utils.js';
+import {logError, logInfo} from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -14,13 +14,6 @@ import {OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'vibrantmedia';
 const VIBRANT_PREBID_URL = 'https://prebid.intellitxt.com';
-const AD_TYPE_IDS = {
-  BANNER: 1,
-  NATIVE: 2,
-  VIDEO: 3,
-};
-const DEFAULT_CURRENCY = 'USD';
-const BID_TTL_SECS = 5 * 60; // 5 minutes
 const VIBRANT_VAST_PLAYER = 'vibrant-player';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 
@@ -72,7 +65,7 @@ const getNewRenderer = function(bidderResponse) {
   };
 
   const renderer = Renderer.install({
-    id: bidderResponse.id.prebid_id,
+    id: bidderResponse.id.prebidId,
     url: bidderResponse.ad.video.purl,
     loaded: false,
   });
@@ -87,110 +80,26 @@ const getNewRenderer = function(bidderResponse) {
 };
 
 /**
- * Transforms the video ad bid in the given Vibrant Prebid Server response into the Prebid format and adds it to the
- * given parsed bid.
+ * Augments the given ad bid with any additional data required for the media type.
  *
- * TODO: Should this be needed? This adapter should be thin, so the correct format should be returned by the server.
- *
- * @param {*} parsedBid          the bid object to add the video bid data to.
- * @param {*} serverResponseBody the response from the Vibrant Prebid Server to get the video bid from.
+ * @param {*} bid                the bid object to augment.
+ * @param {*} serverResponseBody the Vibrant Prebid Server response body containing the bid.
  *
  * @return {void}
  */
-const addVideoDataToParsedBid = function(parsedBid, serverResponseBody) {
-  const videoAd = serverResponseBody.ad.video;
-  const newRenderer = getNewRenderer(serverResponseBody);
+const augmentBidWithRequiredData = {
+  [BANNER]: function(bid, serverResponseBody) {
+    // Nothing to do for banners
+  },
+  [VIDEO]: function(bid, serverResponseBody) {
+    const newRenderer = getNewRenderer(serverResponseBody);
 
-  parsedBid.vastXml = videoAd.vtag;
-  parsedBid.width = videoAd.w;
-  parsedBid.height = videoAd.h;
-  parsedBid.renderer = newRenderer;
-  parsedBid.adResponse = serverResponseBody;
-  parsedBid.mediaType = VIDEO;
-
-  parsedBid.meta.advertiserDomains.push(videoAd.adomain);
-};
-
-/**
- * Transforms the banner ad bid in the given Vibrant Prebid Server response into the Prebid format and adds it to the
- * given parsed bid.
- *
- * TODO: Should this be needed? This adapter should be thin, so the correct format should be returned by the server.
- *
- * @param {*} parsedBid          the bid object to add the banner bid data to.
- * @param {*} serverResponseBody the response from the Vibrant Prebid Server to get the banner bid from.
- *
- * @return {void}
- */
-const addBannerDataToParsedBid = function(parsedBid, serverResponseBody) {
-  const bannerAd = serverResponseBody.ad.banner;
-
-  parsedBid.width = bannerAd.w;
-  parsedBid.height = bannerAd.h;
-  parsedBid.ad = bannerAd.tag;
-  parsedBid.mediaType = BANNER;
-
-  bannerAd.imps.forEach(function(imp) {
-    try {
-      const tracker = createTrackPixelHtml(imp);
-      parsedBid.ad += tracker;
-    } catch (err) {
-      logError('Unable to create tracking pixel for ad impression');
-    }
-
-    parsedBid.meta.advertiserDomains.push(bannerAd.adomain);
-  });
-};
-
-/**
- * Transforms the native ad bid in the given Vibrant Prebid Server response into the Prebid format and adds it to the
- * given parsed bid.
- *
- * TODO: Should this be needed? This adapter should be thin, so the correct format should be returned by the server.
- *
- * @param {*} parsedBid          the bid object to add the native bid data to.
- * @param {*} serverResponseBody the response from the Vibrant Prebid Server to get the native bid from.
- *
- * @return {void}
- */
-const addNativeDataToParsedBid = function(parsedBid, serverResponseBody) {
-  const nativeAds = serverResponseBody.ad.native.template_and_ads.ads;
-
-  if (nativeAds.length === 0) {
-    return;
+    bid.renderer = newRenderer;
+    bid.adResponse = serverResponseBody;
+  },
+  [NATIVE]: function(bid, serverResponseBody) {
+    // Nothing to do for native
   }
-
-  const nativeAd = nativeAds[0];
-  const assets = nativeAd.assets;
-
-  parsedBid.mediaType = NATIVE;
-  parsedBid.native = {
-    title: assets.title,
-    body: assets.description,
-    cta: assets.cta_text,
-    sponsoredBy: assets.sponsor,
-    clickUrl: assets.lp_link,
-    impressionTrackers: nativeAd.imps,
-    privacyLink: assets.adchoice_url,
-  };
-
-  if (typeof assets.img_main !== 'undefined') {
-    parsedBid.native.image = {
-      url: assets.img_main,
-      width: parseInt(assets.img_main_width, 10),
-      height: parseInt(assets.img_main_height, 10),
-    };
-  }
-
-  if (typeof assets.img_icon !== 'undefined') {
-    parsedBid.native.icon = {
-      url: assets.img_icon,
-      width: parseInt(assets.img_icon_width, 10),
-      height: parseInt(assets.img_icon_height, 10),
-    };
-  }
-
-  parsedBid.meta.advertiserDomains.push(nativeAd.adomain);
 };
 
 /**
@@ -302,44 +211,17 @@ export const spec = {
    * @param {ServerResponse} serverResponse a successful response from the server.
    * @param {BidRequest}     bidRequest     the original bid request associated with this response.
    *
-   * @return {Bid[]} an array of bids which were nested inside the server.
+   * @return {Bid[]} an array of bids returned by the server, translated into the expected Prebid.js format.
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const serverResponseBody = serverResponse.body;
     const bids = serverResponseBody.bids;
 
-    const parsedBids = [];
-
     bids.forEach(function(bid) {
-      const parsedBid = {
-        requestId: bid.prebid_id,
-        cpm: bid.price,
-        creativeId: bid.creative_id,
-        dealId: bid.deal_id,
-        currency: bid.currency || DEFAULT_CURRENCY,
-        netRevenue: true,
-        ttl: BID_TTL_SECS,
-        meta: {
-          advertiserDomains: [], // This will be filled in later on
-        },
-      };
-
-      const adTypeId = bid.ad_type;
-
-      if (adTypeId === AD_TYPE_IDS.VIDEO) {
-        addVideoDataToParsedBid(parsedBid, serverResponseBody);
-      } else if (adTypeId === AD_TYPE_IDS.BANNER) {
-        addBannerDataToParsedBid(parsedBid, serverResponseBody);
-      } else if (adTypeId === AD_TYPE_IDS.NATIVE) {
-        addNativeDataToParsedBid(parsedBid, serverResponseBody);
-      } else {
-        logError('Unsupported ad type id: ' + adTypeId);
-      }
-
-      parsedBids.push(parsedBid);
+      augmentBidWithRequiredData[bid.mediaType](bid, serverResponseBody);
     });
 
-    return parsedBids;
+    return bids;
   },
 
   /**
