@@ -303,10 +303,11 @@ describe('GPT pre-auction module', () => {
         code: 'adUnit1',
         ortb2Imp: {
           ext: {
+            // no slotname match so uses adUnit.code-counter
             data: {
               pbadslot: 'adUnit1-1'
             },
-            gpid: 'adUnit1-'
+            gpid: 'adUnit1-1'
           }
         }
       },
@@ -315,16 +316,18 @@ describe('GPT pre-auction module', () => {
         code: 'adUnit2',
         ortb2Imp: {
           ext: {
+            // no slotname match so uses adUnit.code-counter
             data: {
               pbadslot: 'adUnit2-2'
             },
-            gpid: 'adUnit2-'
+            gpid: 'adUnit2-2'
           }
         }
       }, {
         code: 'slotCode3',
         ortb2Imp: {
           ext: {
+            // slotname found, so uses code + slotname (which is same)
             data: {
               pbadslot: 'slotCode3-slotCode3',
               adserver: {
@@ -339,6 +342,7 @@ describe('GPT pre-auction module', () => {
         code: 'div4',
         ortb2Imp: {
           ext: {
+            // slotname found, so uses code + slotname
             data: {
               pbadslot: 'div4-slotCode4',
               adserver: {
