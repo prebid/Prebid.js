@@ -48,7 +48,7 @@ const sanitizeSlotPath = (path) => {
   return path;
 }
 
-export const defaultPreAuction = (adUnit, adServerAdSlot) => {
+const defaultPreAuction = (adUnit, adServerAdSlot) => {
   const context = adUnit.ortb2Imp.ext.data;
 
   // use pbadslot if supplied
