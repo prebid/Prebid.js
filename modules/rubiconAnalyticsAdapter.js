@@ -12,6 +12,7 @@ export const storage = getStorageManager(RUBICON_GVL_ID, 'rubicon');
 const COOKIE_NAME = 'rpaSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
+const MODULE_NAME = 'Rubicon Analytics';
 
 const pbsErrorMap = {
   1: 'timeout-error',
@@ -63,7 +64,11 @@ const BID_REJECTED_IPF = 'rejected-ipf';
 
 export let rubiConf = {
   pvid: generateUUID().slice(0, 8),
-  analyticsEventDelay: 0
+  analyticsEventDelay: 0,
+  dmBilling: {
+    enabled: false,
+    providers: []
+  }
 };
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
@@ -522,6 +527,26 @@ function subscribeToGamSlots() {
   });
 }
 
+const isBillingEventValid = event => {
+  // provider is whitelisted
+  const isWhitelistedProvider = rubiConf.dmBilling.providers.includes(event.provider);
+  // event is not duplicated
+  const isNotDuplicate = typeof deepAccess(cache.billing, `${event.provider}.${event.eventId}`) !== 'boolean';
+  return isWhitelistedProvider && isNotDuplicate;
+}
+
+const sendOrAddEventToQueue = event => {
+  // if any auction is not sent yet, then add it to the auction queue
+  const pendingAuction = Object.keys(cache.auctions).find(auctionId => !cache.auctions[auctionId].sent);
+
+  if (pendingAuction) {
+    cache.auctions[pendingAuction].billing = cache.auctions[pendingAuction].billing || [];
+    cache.auctions[pendingAuction].billing.push(event);
+  } else {
+
+  }
+}
+
 let baseAdapter = adapter({ analyticsType: 'endpoint' });
 let rubiconAdapter = Object.assign({}, baseAdapter, {
   MODULE_INITIALIZED_TIME: Date.now(),
@@ -810,8 +835,14 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           }
         });
         break;
-        case BILLABLE_EVENT:
-          // 
+      case BILLABLE_EVENT:
+        if (rubiConf.dmBilling.enabled && isBillingEventValid(args)) {
+          // add to the map indicating it has not been sent yet
+          cache.billing[args.provider][args.eventId] = false;
+          sendOrAddEventToQueue(args);
+        } else {
+          logWarn(`${MODULE_NAME}: Billing event ignored`, args);
+        }
     }
   }
 });
