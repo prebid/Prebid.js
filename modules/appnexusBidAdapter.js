@@ -78,7 +78,6 @@ export const spec = {
     { code: 'districtm', gvlid: 144 },
     { code: 'adasta' },
     { code: 'beintoo', gvlid: 618 },
-    { code: 'targetVideo' },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -597,6 +596,22 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
   if (rtbBid.advertiser_id) {
     bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
+  }
+
+  // temporary function; may remove at later date if/when adserver fully supports dchain
+  function setupDChain(rtbBid) {
+    let dchain = {
+      ver: '1.0',
+      complete: 0,
+      nodes: [{
+        bsid: rtbBid.buyer_member_id.toString()
+      }],
+    };
+
+    return dchain;
+  }
+  if (rtbBid.buyer_member_id) {
+    bid.meta = Object.assign({}, bid.meta, {dchain: setupDChain(rtbBid)});
   }
 
   if (rtbBid.brand_id) {
