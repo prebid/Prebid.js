@@ -142,11 +142,12 @@ function getGdprConsentChoice(bidderRequest) {
 
   if (hasGdprConsent) {
     const gdprConsent = bidderRequest.gdprConsent
+    const hasGdprApplies = hasBooleanValue(gdprConsent.gdprApplies)
 
     return {
       consentString: gdprConsent.consentString || '',
       vendorData: gdprConsent.vendorData || {},
-      gdprApplies: gdprConsent.gdprApplies || true,
+      gdprApplies: hasGdprApplies ? gdprConsent.gdprApplies : true,
     }
   }
 
@@ -179,6 +180,13 @@ function hasValue(value) {
   return (
     value !== undefined &&
     value !== null
+  )
+}
+
+function hasBooleanValue(value) {
+  return (
+    hasValue(value) &&
+    typeof value === 'boolean'
   )
 }
 
