@@ -44,30 +44,30 @@ const areValidSupportedMediaTypesPresent = function(bidRequest) {
 
 /**
  * Returns a new outstream video renderer for the given bidder response.
- * @param {{}} bidderResponse the bid response to create the renderer for.
- * @returns {Renderer} a new renderer for the given bidder response.
+ * @param {{}} bid the bid to create the renderer for.
+ * @returns {Renderer} a new renderer for the given bid.
  */
-const getNewRenderer = function(bidderResponse) {
-  const addOutstreamRenderer = function(bid) {
-    const bidVideo = bid.adResponse.ad.video;
-
+const getNewRenderer = function(bid) {
+  const addOutstreamRenderer = function() {
+    // TODO: This needs to be evaluated. Do we need it? If so, the properties aren't sent by the server
     bid.renderer.push(function() {
       window[VIBRANT_VAST_PLAYER].setAdUnit({
-        vast_tag: bidVideo.vtag,
-        ad_unit_code: bid.adUnitCode, // Video renderer div id
-        width: bid.width,
-        height: bid.height,
-        progress: bidVideo.progress,
-        loop: bidVideo.loop,
-        inread: bidVideo.inread,
+        vast_tag: bid.vastTag,
+        ad_unit_code: bid.requestId, // Video renderer div id
+        width: bid.width || bid.meta.width,
+        height: bid.height || bid.meta.height,
+        progressBar: bid.meta.progressBar,
+        progress: (bid.meta.progressBar) ? bid.meta.progress : 0,
+        loop: bid.meta.loop || false,
+        inread: bid.meta.inread || false
       });
     });
   };
 
   const renderer = Renderer.install({
-    id: bidderResponse.id.prebidId,
-    url: bidderResponse.ad.video.purl,
-    loaded: false,
+    id: bid.creativeId,
+    url: bid.meta.mpuSrc,
+    loaded: false
   });
 
   try {
@@ -89,16 +89,16 @@ const getNewRenderer = function(bidderResponse) {
  */
 const augmentBidWithRequiredData = {
   [BANNER]: function(bid, serverResponseBody) {
-    // Nothing to do for banners
+    bid.adResponse = serverResponseBody;
   },
   [VIDEO]: function(bid, serverResponseBody) {
-    const newRenderer = getNewRenderer(serverResponseBody);
+    const newRenderer = getNewRenderer(bid);
 
     bid.renderer = newRenderer;
     bid.adResponse = serverResponseBody;
   },
   [NATIVE]: function(bid, serverResponseBody) {
-    // Nothing to do for native
+    bid.adResponse = serverResponseBody;
   }
 };
 
