@@ -56,6 +56,7 @@ let eidPermissions;
  * @property {string} [adapter='prebidServer'] adapter code to use for S2S
  * @property {boolean} [enabled=false] enables S2S bidding
  * @property {number} [timeout=1000] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
+ * @property {number} [syncTimeout=1000] timeout for cookie sync iframe / image rendering
  * @property {number} [maxBids=1]
  * @property {AdapterOptions} [adapterOptions] adds arguments to resulting OpenRTB payload to Prebid Server
  * @property {Object} [syncUrlModifier]
@@ -77,6 +78,7 @@ let eidPermissions;
  */
 const s2sDefaultConfig = {
   timeout: 1000,
+  syncTimeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
   adapterOptions: {},
@@ -274,11 +276,9 @@ function doAllSyncs(bidders, s2sConfig) {
  */
 function doPreBidderSync(type, url, bidder, done, s2sConfig) {
   if (s2sConfig.syncUrlModifier && typeof s2sConfig.syncUrlModifier[bidder] === 'function') {
-    const newSyncUrl = s2sConfig.syncUrlModifier[bidder](type, url, bidder);
-    doBidderSync(type, newSyncUrl, bidder, done)
-  } else {
-    doBidderSync(type, url, bidder, done)
+    url = s2sConfig.syncUrlModifier[bidder](type, url, bidder);
   }
+  doBidderSync(type, url, bidder, done, s2sConfig.syncTimeout)
 }
 
 /**
@@ -288,17 +288,18 @@ function doPreBidderSync(type, url, bidder, done, s2sConfig) {
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
  * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
+ * @param {number} timeout: maximum time to wait for rendering in milliseconds
  */
-function doBidderSync(type, url, bidder, done) {
+function doBidderSync(type, url, bidder, done, timeout) {
   if (!url) {
     logError(`No sync url for bidder "${bidder}": ${url}`);
     done();
   } else if (type === 'image' || type === 'redirect') {
     logMessage(`Invoking image pixel user sync for bidder: "${bidder}"`);
-    triggerPixel(url, done);
-  } else if (type == 'iframe') {
+    triggerPixel(url, done, timeout);
+  } else if (type === 'iframe') {
     logMessage(`Invoking iframe user sync for bidder: "${bidder}"`);
-    insertUserSyncIframe(url, done);
+    insertUserSyncIframe(url, done, timeout);
   } else {
     logError(`User sync type "${type}" not supported for bidder: "${bidder}"`);
     done();

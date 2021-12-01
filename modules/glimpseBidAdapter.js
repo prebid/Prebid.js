@@ -138,11 +138,16 @@ function getReferer(bidderRequest) {
 function getGdprConsentChoice(bidderRequest) {
   const hasGdprConsent =
     hasValue(bidderRequest) &&
-    hasValue(bidderRequest.gdprConsent) &&
-    hasStringValue(bidderRequest.gdprConsent.consentString)
+    hasValue(bidderRequest.gdprConsent)
 
   if (hasGdprConsent) {
-    return bidderRequest.gdprConsent
+    const gdprConsent = bidderRequest.gdprConsent
+
+    return {
+      consentString: gdprConsent.consentString || '',
+      vendorData: gdprConsent.vendorData || {},
+      gdprApplies: gdprConsent.gdprApplies || true,
+    }
   }
 
   return {

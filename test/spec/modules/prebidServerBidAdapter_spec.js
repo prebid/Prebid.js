@@ -2420,6 +2420,36 @@ describe('S2S Adapter', function () {
 
       utils.getBidRequest.restore();
     });
+
+    describe('on sync requested with no cookie', () => {
+      let cfg, req, csRes;
+
+      beforeEach(() => {
+        cfg = utils.deepClone(CONFIG);
+        req = utils.deepClone(REQUEST);
+        cfg.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
+        req.s2sConfig = cfg;
+        config.setConfig({ s2sConfig: cfg });
+        csRes = utils.deepClone(RESPONSE_NO_COOKIE);
+      });
+
+      afterEach(() => {
+        resetSyncedStatus();
+      })
+
+      Object.entries({
+        iframe: () => utils.insertUserSyncIframe,
+        image: () => utils.triggerPixel,
+      }).forEach(([type, syncer]) => {
+        it(`passes timeout to ${type} syncs`, () => {
+          cfg.syncTimeout = 123;
+          csRes.bidder_status[0].usersync.type = type;
+          adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+          server.requests[0].respond(200, {}, JSON.stringify(csRes));
+          expect(syncer().args[0]).to.include.members([123]);
+        });
+      });
+    });
   });
 
   describe('bid won events', function () {
