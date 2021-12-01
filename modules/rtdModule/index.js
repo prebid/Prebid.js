@@ -99,6 +99,15 @@
  */
 
 /**
+ * @function?
+ * @summary on bid requested event
+ * @name RtdSubmodule#onBidRequestEvent
+ * @param {Object} data
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} userConsent
+ */
+
+/**
  * @interface ModuleConfig
  */
 
@@ -164,8 +173,10 @@ let _dataProviders = [];
 let _userConsent;
 
 /**
- * enable submodule in User ID
+ * Register a RTD submodule.
+ *
  * @param {RtdSubmodule} submodule
+ * @returns {function()} a de-registration function that will unregister the module when called.
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
