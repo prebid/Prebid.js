@@ -33,10 +33,10 @@ const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
  * @return {boolean} true if the given bid request contains at least one supported media request with valid details,
  *                   otherwise false.
  */
-const areValidSupportedMediaTypesPresent = function areSupportedMediaTypesPresent(bidRequest) {
+const areValidSupportedMediaTypesPresent = function(bidRequest) {
   const mediaTypes = Object.keys(bidRequest.mediaTypes);
 
-  return mediaTypes.some(function forSomeMediaTypes(mediaType) {
+  return mediaTypes.some(function(mediaType) {
     if (mediaType === BANNER) {
       return true;
     } else if (mediaType === VIDEO) {
@@ -54,11 +54,11 @@ const areValidSupportedMediaTypesPresent = function areSupportedMediaTypesPresen
  * @param {{}} bidderResponse the bid response to create the renderer for.
  * @returns {Renderer} a new renderer for the given bidder response.
  */
-const getNewRenderer = function getNewRenderer(bidderResponse) {
-  const addOutstreamRenderer = function addOutstreamRenderer(bid) {
+const getNewRenderer = function(bidderResponse) {
+  const addOutstreamRenderer = function(bid) {
     const bidVideo = bid.adResponse.ad.video;
 
-    bid.renderer.push(function bidRenderer() {
+    bid.renderer.push(function() {
       window[VIBRANT_VAST_PLAYER].setAdUnit({
         vast_tag: bidVideo.vtag,
         ad_unit_code: bid.adUnitCode, // Video renderer div id
@@ -97,7 +97,7 @@ const getNewRenderer = function getNewRenderer(bidderResponse) {
  *
  * @return {void}
  */
-const addVideoDataToParsedBid = function addVideoDataToParsedBid(parsedBid, serverResponseBody) {
+const addVideoDataToParsedBid = function(parsedBid, serverResponseBody) {
   const videoAd = serverResponseBody.ad.video;
   const newRenderer = getNewRenderer(serverResponseBody);
 
@@ -122,7 +122,7 @@ const addVideoDataToParsedBid = function addVideoDataToParsedBid(parsedBid, serv
  *
  * @return {void}
  */
-const addBannerDataToParsedBid = function addBannerDataToParsedBid(parsedBid, serverResponseBody) {
+const addBannerDataToParsedBid = function(parsedBid, serverResponseBody) {
   const bannerAd = serverResponseBody.ad.banner;
 
   parsedBid.width = bannerAd.w;
@@ -130,7 +130,7 @@ const addBannerDataToParsedBid = function addBannerDataToParsedBid(parsedBid, se
   parsedBid.ad = bannerAd.tag;
   parsedBid.mediaType = BANNER;
 
-  bannerAd.imps.forEach(function forEachBannerAdImpression(imp) {
+  bannerAd.imps.forEach(function(imp) {
     try {
       const tracker = createTrackPixelHtml(imp);
       parsedBid.ad += tracker;
@@ -153,7 +153,7 @@ const addBannerDataToParsedBid = function addBannerDataToParsedBid(parsedBid, se
  *
  * @return {void}
  */
-const addNativeDataToParsedBid = function addNativeDataToParsedBid(parsedBid, serverResponseBody) {
+const addNativeDataToParsedBid = function(parsedBid, serverResponseBody) {
   const nativeAds = serverResponseBody.ad.native.template_and_ads.ads;
 
   if (nativeAds.length === 0) {
@@ -198,7 +198,7 @@ const addNativeDataToParsedBid = function addNativeDataToParsedBid(parsedBid, se
  * @param {string} url the URL to check.
  * @returns {boolean} whether the URL contains just a domain.
  */
-const isBaseUrl = function isBaseUrl(url) {
+const isBaseUrl = function(url) {
   const urlMinusScheme = url.substring(url.indexOf('://') + 3);
   const endOfDomain = urlMinusScheme.indexOf('/');
   return (endOfDomain === -1) || (endOfDomain === (urlMinusScheme.length - 1));
@@ -211,31 +211,18 @@ const isBaseUrl = function isBaseUrl(url) {
  *
  * @returns {*[]} the transformed bid requests.
  */
-const transformBidRequests = function transformBidRequests(bidRequests) {
+const transformBidRequests = function(bidRequests) {
   const transformedBidRequests = [];
 
-  bidRequests.forEach(function forEachBidRequestToTransform(bidRequest) {
+  bidRequests.forEach(function(bidRequest) {
     const transformedBidRequest = {
       code: bidRequest.adUnitCode || bidRequest.code,
       id: bidRequest.bidId || bidRequest.transactionId,
       bidder: bidRequest.bidder,
-      mediaTypes: bidRequest.mediaTypes
+      mediaTypes: bidRequest.mediaTypes,
+      bids: bidRequest.bids,
+      sizes: bidRequest.sizes
     };
-
-    // TODO: Accommodate multiple bids in the same request
-    const firstBid = (bidRequest.bids && (bidRequest.bids.length !== 0)) ? bidRequest.bids[0] : {};
-
-    if (!transformedBidRequest.id) {
-      transformedBidRequest.id = (firstBid.params || {}).placementId;
-    }
-
-    if (!transformedBidRequest.bidder) {
-      transformedBidRequest.bidder = firstBid.bidder;
-    }
-
-    if (bidRequest.sizes) {
-      transformedBidRequest.sizes = bidRequest.sizes;
-    }
 
     transformedBidRequests.push(transformedBidRequest);
   });
@@ -255,7 +242,7 @@ export const spec = {
    *
    * @returns {object} the bid params.
    */
-  transformBidParams: function transformBidParams(bidParams) {
+  transformBidParams: function(bidParams) {
     return bidParams;
   },
 
@@ -268,7 +255,7 @@ export const spec = {
    * @return {boolean} true if this is a valid bid, otherwise false.
    * @see SUPPORTED_MEDIA_TYPES
    */
-  isBidRequestValid: function isBidRequestValid(bid) {
+  isBidRequestValid: function(bid) {
     const areBidRequestParamsValid = !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
     return areBidRequestParamsValid && areValidSupportedMediaTypesPresent(bid);
   },
@@ -281,7 +268,7 @@ export const spec = {
    *
    * @return ServerRequest Info describing the request to the prebid server.
    */
-  buildRequests: function buildRequests(validBidRequests, bidderRequest) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const transformedBidRequests = transformBidRequests(validBidRequests);
 
     var url = window.parent.location.href;
@@ -317,13 +304,13 @@ export const spec = {
    *
    * @return {Bid[]} an array of bids which were nested inside the server.
    */
-  interpretResponse: function interpretResponse(serverResponse, bidRequest) {
+  interpretResponse: function(serverResponse, bidRequest) {
     const serverResponseBody = serverResponse.body;
     const bids = serverResponseBody.bids;
 
     const parsedBids = [];
 
-    bids.forEach(function forEachBid(bid) {
+    bids.forEach(function(bid) {
       const parsedBid = {
         requestId: bid.prebid_id,
         cpm: bid.price,
@@ -373,7 +360,7 @@ export const spec = {
    *
    * @param {{}} timeoutData data relating to the timeout.
    */
-  onTimeout: function onTimeout(timeoutData) {
+  onTimeout: function(timeoutData) {
     logError('Timed out waiting for bids: ' + JSON.stringify(timeoutData));
   },
 
@@ -403,7 +390,7 @@ export const spec = {
    *
    * @param {*} bidData the data associated with the won bid. See example above for data format.
    */
-  onBidWon: function onBidWon(bidData) {
+  onBidWon: function(bidData) {
     logInfo('Bid won: ' + JSON.stringify(bidData));
   }
 };
