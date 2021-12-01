@@ -540,10 +540,13 @@ const OPEN_RTB_PROTOCOL = {
                 }
                 if (Array.isArray(params.aspect_ratios)) {
                   // pass aspect_ratios as ext data I guess?
-                  asset.ext = {
-                    aspectratios: params.aspect_ratios.map(
-                      ratio => `${ratio.ratio_width}:${ratio.ratio_height}`
-                    )
+                  const aspectRatios = params.aspect_ratios
+                    .filter((ar) => ar.ratio_width && ar.ratio_height)
+                    .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
+                  if (aspectRatios.length > 0) {
+                    asset.ext = {
+                      aspectratios: aspectRatios
+                    }
                   }
                 }
                 assets.push(newAsset({
