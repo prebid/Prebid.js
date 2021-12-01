@@ -542,7 +542,7 @@ const OPEN_RTB_PROTOCOL = {
                   const aspectRatios = params.aspect_ratios
                     .filter((ar) => ar.ratio_width && ar.ratio_height)
                     .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
-                  if (aspectRatios.length === params.aspect_ratios.length) {
+                  if (aspectRatios.length > 0) {
                     asset.ext = {
                       aspectratios: aspectRatios
                     }
