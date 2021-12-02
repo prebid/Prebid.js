@@ -440,7 +440,10 @@ describe('IndexexchangeAdapter', function () {
     netId: 'testnetid123', // NetId
     IDP: 'userIDP000', // IDP
     fabrickId: 'fabrickId9000', // FabrickId
-    uid2: { id: 'testuid2' } // UID 2.0
+    // so structured because when calling createEidsArray, UID2's getValue func takes .id to set in uids
+    uid2: { id: 'testuid2' }, // UID 2.0
+    // similar to uid2, but id5's getValue takes .uid
+    id5id: { uid: 'testid5id' } // ID5
   };
 
   const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
@@ -481,11 +484,15 @@ describe('IndexexchangeAdapter', function () {
     }, {
       source: 'uidapi.com',
       uids: [{
-        // when calling createEidsArray, UID2's getValue func returns .id, which is then set in uids
         id: DEFAULT_USERID_DATA.uid2.id,
         ext: {
           rtiPartner: 'UID2'
         }
+      }]
+    }, {
+      source: 'id5-sync.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA.id5id.uid
       }]
     }
   ];
@@ -753,7 +760,7 @@ describe('IndexexchangeAdapter', function () {
         const payload = JSON.parse(request[0].data.r);
         expect(request).to.be.an('array');
         expect(request).to.have.lengthOf.above(0); // should be 1 or more
-        expect(payload.user.eids).to.have.lengthOf(5);
+        expect(payload.user.eids).to.have.lengthOf(6);
         expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
       });
     });
@@ -952,12 +959,8 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
-      expect(payload.user.eids).to.have.lengthOf(5);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).to.have.lengthOf(6);
+      expect(payload.user.eids).to.have.deep.members(DEFAULT_USERID_PAYLOAD);
     });
 
     it('IX adapter reads floc id from prebid userId and adds it to eids when there is not other eids', function () {
@@ -977,12 +980,8 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
-      expect(payload.user.eids).to.have.lengthOf(6);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).to.have.lengthOf(7);
+      expect(payload.user.eids).to.deep.include.members(DEFAULT_USERID_PAYLOAD);
       expect(payload.user.eids).to.deep.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
     });
 
@@ -993,12 +992,8 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
-      expect(payload.user.eids).to.have.lengthOf(5);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).to.have.lengthOf(6);
+      expect(payload.user.eids).to.deep.include.members(DEFAULT_USERID_PAYLOAD);
       expect(payload.user.eids).should.not.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
     });
 
@@ -1009,12 +1004,8 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
-      expect(payload.user.eids).to.have.lengthOf(5);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).to.have.lengthOf(6);
+      expect(payload.user.eids).to.deep.include.members(DEFAULT_USERID_PAYLOAD);
       expect(payload.user.eids).should.not.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
     });
 
@@ -1025,12 +1016,8 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
-      expect(payload.user.eids).to.have.lengthOf(5);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).to.have.lengthOf(6);
+      expect(payload.user.eids).to.deep.include.members(DEFAULT_USERID_PAYLOAD);
       expect(payload.user.eids).should.not.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
     });
 
@@ -1041,12 +1028,8 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
-      expect(payload.user.eids).to.have.lengthOf(5);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
-      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[4]);
+      expect(payload.user.eids).to.have.lengthOf(6);
+      expect(payload.user.eids).to.deep.include.members(DEFAULT_USERID_PAYLOAD);
       expect(payload.user.eids).should.not.include(DEFAULT_FLOC_USERID_PAYLOAD[0]);
     });
 
@@ -1179,15 +1162,9 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(7);
+      expect(payload.user.eids).to.have.lengthOf(8);
 
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[3]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[4]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[5]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[6]);
+      expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
 
     it('IXL and Prebid are mutually exclusive', function () {
@@ -1227,13 +1204,8 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = JSON.parse(request.data.r);
-      expect(payload.user.eids).to.have.lengthOf(6);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[3]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[4]);
-      expect(payload.user.eids).to.deep.include(validUserIdPayload[5]);
+      expect(payload.user.eids).to.have.lengthOf(7);
+      expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
   });
 

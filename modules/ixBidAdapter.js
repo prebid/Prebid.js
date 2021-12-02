@@ -53,7 +53,11 @@ const SOURCE_RTI_MAPPING = {
   'neustar.biz': 'fabrickId',
   'zeotap.com': 'zeotapIdPlus',
   'uidapi.com': 'UID2',
-  'adserver.org': 'TDID'
+  'adserver.org': 'TDID',
+  'id5-sync.com': '', // ID5 Universal ID, configured as id5Id
+  'crwdcntrl.net': '', // Lotame Panorama ID, lotamePanoramaId
+  'epsilon.com': '', // Publisher Link, publinkId
+  'audigent.com': '' // Halo ID from Audigent, haloId
 };
 const PROVIDERS = [
   'britepoolid',
@@ -444,16 +448,19 @@ function getEidInfo(allEids, flocData) {
   let seenSources = {};
   if (isArray(allEids)) {
     for (const eid of allEids) {
-      if (SOURCE_RTI_MAPPING[eid.source] && deepAccess(eid, 'uids.0')) {
+      if (SOURCE_RTI_MAPPING.hasOwnProperty(eid.source) && deepAccess(eid, 'uids.0')) {
         seenSources[eid.source] = true;
-        eid.uids[0].ext = {
-          rtiPartner: SOURCE_RTI_MAPPING[eid.source]
-        };
+        if (SOURCE_RTI_MAPPING[eid.source] != '') {
+          eid.uids[0].ext = {
+            rtiPartner: SOURCE_RTI_MAPPING[eid.source]
+          };
+        }
         delete eid.uids[0].atype;
         toSend.push(eid);
       }
     }
   }
+
   const isValidFlocId = flocData && flocData.id && flocData.version;
   if (isValidFlocId) {
     const flocEid = {
@@ -466,6 +473,7 @@ function getEidInfo(allEids, flocData) {
 
   return { toSend, seenSources };
 }
+
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
