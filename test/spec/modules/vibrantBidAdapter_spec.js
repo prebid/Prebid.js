@@ -4,7 +4,7 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 import {INSTREAM, OUTSTREAM} from 'src/video.js';
 
-const EXPECTED_PREBID_SERVER_URL = 'https://prebid.intellitxt.com';
+const EXPECTED_PREBID_SERVER_URL = 'https://prebid.intellitxt.com/prebid';
 
 const BANNER_AD =
   '<!DOCTYPE html><html lang="en"><head><title>Test Banner Ad Unit</title></head><body>Hello!</body></html>';
