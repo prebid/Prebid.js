@@ -16,6 +16,7 @@ const VALID_BID_BANNER = {
   params: {
     account: 'myaccount',
     id: 'id-1234',
+    pid: '123e4567-e89b-12d3-a456-426614174000',
   },
   mediaTypes: {
     banner: {
@@ -31,6 +32,7 @@ const VALID_BID_VIDEO = {
   params: {
     account: 'otheraccount',
     id: 'id-5678',
+    pid: '123e4567-e89b-12d3-a456-426614174001',
   },
   mediaTypes: {
     video: {
@@ -54,6 +56,7 @@ const VALID_REQUEST_BANNER = {
   url: REQUEST_URL,
   data: {
     account: 'myaccount',
+    pid: '123e4567-e89b-12d3-a456-426614174000',
     currency_code: CURRENCY,
     placements: [
       {
@@ -72,6 +75,7 @@ const VALID_REQUEST_VIDEO = {
   url: REQUEST_URL,
   data: {
     account: 'otheraccount',
+    pid: '123e4567-e89b-12d3-a456-426614174001',
     currency_code: CURRENCY,
     placements: [
       {
@@ -107,6 +111,13 @@ describe('BricksAdapter', function () {
       it('should return false because the account is missing', function () {
         let wrongBid = utils.deepClone(VALID_BID_BANNER);
         delete wrongBid.params.account;
+
+        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
+      });
+
+      it('should return false because the pid is missing', function () {
+        let wrongBid = utils.deepClone(VALID_BID_BANNER);
+        delete wrongBid.params.pid;
 
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
       });

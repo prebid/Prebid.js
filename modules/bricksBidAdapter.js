@@ -39,6 +39,11 @@ export const spec = {
       return false;
     }
 
+    if (!bid.params.pid) {
+      utils.logError('The pid is missing');
+      return false;
+    }
+
     if (!bid.params.id) {
       utils.logError('The id is missing');
       return false;
@@ -122,13 +127,20 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     let payload = {};
 
-    // Bricks account type
+    /** Bricks account type */
     if (validBidRequests[0].params.account) {
       payload.account = validBidRequests[0].params.account;
     }
+    /** Bricks Publisher ID */
+    if (validBidRequests[0].params.pid) {
+      payload.pid = validBidRequests[0].params.pid;
+    }
 
     // Referer Info
-    if (bidderRequest && bidderRequest.refererInfo) {
+    if (config.getConfig('publisherDomain') && config.getConfig('pageUrl')) {
+      payload.domain = config.getConfig('publisherDomain');
+      payload.page_domain = config.getConfig('pageUrl');
+    } else if (bidderRequest && bidderRequest.refererInfo) {
       let parsedUrl = utils.parseUrl(bidderRequest.refererInfo.referer);
 
       payload.domain = parsedUrl.hostname;
