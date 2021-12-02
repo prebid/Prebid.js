@@ -4,6 +4,7 @@ import { spec } from 'modules/nextMillenniumBidAdapter.js';
 describe('nextMillenniumBidAdapterTests', function() {
   const bidRequestData = [
     {
+      adUnitCode: 'test-div',
       bidId: 'bid1234',
       auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
       bidder: 'nextMillennium',
@@ -28,6 +29,23 @@ describe('nextMillenniumBidAdapterTests', function() {
     const request = spec.buildRequests(bidRequestData);
     expect(request[0].bidId).to.equal('bid1234');
     expect(JSON.parse(request[0].data).id).to.equal('b06c5141-fe8f-4cdf-9d7d-54415490a917');
+  });
+
+  it('Check if refresh_count param is incremented', function() {
+    const request = spec.buildRequests(bidRequestData);
+    expect(JSON.parse(request[0].data).refresh_count).to.equal(2);
+  });
+
+  it('Test getUserSyncs function', function () {
+    const syncOptions = {
+      'iframeEnabled': true
+    }
+    const userSync = spec.getUserSyncs(syncOptions);
+    expect(userSync).to.be.an('array').with.lengthOf(1);
+    expect(userSync[0].type).to.exist;
+    expect(userSync[0].url).to.exist;
+    expect(userSync[0].type).to.be.equal('iframe');
+    expect(userSync[0].url).to.be.equal('https://statics.nextmillmedia.com/load-cookie.html?v=4');
   });
 
   it('validate_response_params', function() {
