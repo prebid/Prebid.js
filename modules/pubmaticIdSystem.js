@@ -97,7 +97,7 @@ export const pubmaticIdSubmodule = {
 };
 
 function generateURL(consentData){
-	// let endpoint = 'https://image8.pubmatic.com/AdServer/UCookieSetPug?oid=5&rdf=5'; //ToDo: confirm sub-domain
+	// let endpoint = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5';
 	let endpoint = "https://production.explore.harshad-mane.workers.dev/?p=1";
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const usp = uspDataHandler.getConsentData();
