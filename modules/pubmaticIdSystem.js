@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { deepAccess, logInfo, deepSetValue, logError, isEmpty, isStr, isEmptyStr, logWarn } from '../src/utils.js';
+import { deepAccess, logInfo, deepSetValue, logError, isEmpty, isNumber, isStr, isEmptyStr, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -90,15 +90,15 @@ export const pubmaticIdSubmodule = {
 
       logInfo(LOG_PREFIX + 'requesting an ID from the server');
 
-      ajax(generateURL(consentData), callbacks, null, { method: 'POST', withCredentials: true });
+      ajax(generateURL(config, consentData), callbacks, null, { method: 'POST', withCredentials: true });
     };
     return { callback: resp };
   }
 };
 
-function generateURL(consentData){
-	// let endpoint = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5';
-	let endpoint = "https://production.explore.harshad-mane.workers.dev/?p=1";
+function generateURL(config, consentData){
+	// let endpoint = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p='+config.params.publisherId;
+	let endpoint = "https://production.explore.harshad-mane.workers.dev/?p="+config.params.publisherId;
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const usp = uspDataHandler.getConsentData();
     const referer = getRefererInfo();
@@ -119,16 +119,6 @@ function generateURL(consentData){
 }
 
 function hasRequiredConfig(config) {
-  if (!config.storage || !config.storage.type || !config.storage.name) {
-    logError(LOG_PREFIX + 'storage required to be set');
-    return false;
-  }
-  
-  if (config.storage.type !== STORAGE_TYPE_COOKIE && config.storage.type !== STORAGE_TYPE_HTML5) {
-    logError(LOG_PREFIX + `storage type should be '${STORAGE_TYPE_COOKIE}' or '${STORAGE_TYPE_HTML5}'.`);
-    return false;
-  }
-  
   if (config.storage.name !== STORAGE_NAME) {
     logError(LOG_PREFIX + `storage name should be '${STORAGE_NAME}'.`);
     return false;
@@ -142,6 +132,11 @@ function hasRequiredConfig(config) {
   if(config.storage.refreshInSeconds !== STORAGE_REFRESH_IN_SECONDS) {
   	logError(LOG_PREFIX + `storage refreshInSeconds should be ${STORAGE_REFRESH_IN_SECONDS}.`);
   	return false;
+  }
+
+  if(config.storage && !isNumber(config.storage.publisherId)){
+  	logError(LOG_PREFIX + `config.storage.publisherId (int) should be provided.`);
+  	return false;	
   }
 
   return true;
