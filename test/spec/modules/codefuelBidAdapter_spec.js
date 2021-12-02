@@ -183,7 +183,7 @@ describe('Codefuel Adapter', function () {
           tmax: 500
         }
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
-        expect(res.url).to.equal('https://bidder-url.com')
+        expect(res.url).to.equal('https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid')
         expect(res.data).to.deep.equal(expectedData)
       })
 

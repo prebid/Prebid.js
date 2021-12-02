@@ -2,6 +2,7 @@ import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/livewrappe
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
+import { setConfig } from 'modules/currency.js';
 
 let events = require('src/events');
 let utils = require('src/utils');
@@ -28,6 +29,9 @@ const BID1 = {
   width: 980,
   height: 240,
   cpm: 1.1,
+  originalCpm: 12.0,
+  currency: 'USD',
+  originalCurrency: 'FOO',
   timeToRespond: 200,
   bidId: '2ecff0db240757',
   requestId: '2ecff0db240757',
@@ -43,6 +47,9 @@ const BID2 = Object.assign({}, BID1, {
   width: 300,
   height: 250,
   cpm: 2.2,
+  originalCpm: 23.0,
+  currency: 'USD',
+  originalCurrency: 'FOO',
   timeToRespond: 300,
   bidId: '3ecff0db240757',
   requestId: '3ecff0db240757',
@@ -178,6 +185,7 @@ const ANALYTICS_MESSAGE = {
       width: 980,
       height: 240,
       cpm: 1.1,
+      orgCpm: 120,
       ttr: 200,
       IsBid: true,
       mediaType: 1,
@@ -192,6 +200,7 @@ const ANALYTICS_MESSAGE = {
       width: 300,
       height: 250,
       cpm: 2.2,
+      orgCpm: 230,
       ttr: 300,
       IsBid: true,
       mediaType: 1,
@@ -219,6 +228,7 @@ const ANALYTICS_MESSAGE = {
       width: 980,
       height: 240,
       cpm: 1.1,
+      orgCpm: 120,
       mediaType: 1,
       gdpr: 0,
       auctionId: 0
@@ -231,6 +241,7 @@ const ANALYTICS_MESSAGE = {
       width: 300,
       height: 250,
       cpm: 2.2,
+      orgCpm: 230,
       mediaType: 1,
       gdpr: 0,
       auctionId: 0
@@ -279,6 +290,14 @@ describe('Livewrapped analytics adapter', function () {
     sandbox.stub(document, 'getElementById').returns(element);
 
     clock = sandbox.useFakeTimers(1519767013781);
+    setConfig({
+      adServerCurrency: 'USD',
+      rates: {
+        USD: {
+          FOO: 0.1
+        }
+      }
+    });
   });
 
   afterEach(function () {
@@ -453,7 +472,7 @@ describe('Livewrapped analytics adapter', function () {
         {
           'floorData': {
             'floorValue': 1.1,
-            'floorCurrency': 'SEK'
+            'floorCurrency': 'FOO'
           }
         }));
       events.emit(BID_WON, Object.assign({},
@@ -461,7 +480,7 @@ describe('Livewrapped analytics adapter', function () {
         {
           'floorData': {
             'floorValue': 1.1,
-            'floorCurrency': 'SEK'
+            'floorCurrency': 'FOO'
           }
         }));
       events.emit(AUCTION_END, MOCK.AUCTION_END);
@@ -476,11 +495,11 @@ describe('Livewrapped analytics adapter', function () {
 
       expect(message.responses.length).to.equal(1);
       expect(message.responses[0].floor).to.equal(1.1);
-      expect(message.responses[0].floorCur).to.equal('SEK');
+      expect(message.responses[0].floorCur).to.equal('FOO');
 
       expect(message.wins.length).to.equal(1);
       expect(message.wins[0].floor).to.equal(1.1);
-      expect(message.wins[0].floorCur).to.equal('SEK');
+      expect(message.wins[0].floorCur).to.equal('FOO');
     });
 
     it('should forward Livewrapped floor data', function () {

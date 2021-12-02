@@ -36,11 +36,6 @@ const BidderRequestBuilder = function BidderRequestBuilder(options) {
     bidderRequestId: BID_DEFAULTS.request.bidderRequestId,
     transactionId: BID_DEFAULTS.request.transactionId,
     timeout: 3000,
-    refererInfo: {
-      numIframes: 0,
-      reachedTop: true,
-      referer: 'http://test.io/index.html?pbjs_debug=true'
-    }
   };
 
   const request = {
@@ -82,16 +77,13 @@ const BidRequestBuilder = function BidRequestBuilder(options, deleteKeys) {
 };
 
 describe('C-WIRE bid adapter', () => {
-  let utilsMock;
   let sandbox;
 
   beforeEach(() => {
-    utilsMock = sinon.mock(utils);
     sandbox = sinon.createSandbox();
   });
 
   afterEach(() => {
-    utilsMock.restore();
     sandbox.restore();
   });
 
@@ -146,6 +138,12 @@ describe('C-WIRE bid adapter', () => {
 
   describe('C-WIRE - buildRequests()', function () {
     it('creates a valid request', function () {
+      // for whatever reason stub for getWindowLocation does not work
+      // so this was the closest way to test for get params
+      const params = sandbox.stub(utils, 'getParameterByName');
+      params.withArgs('cwgroups').returns('group_1');
+      params.withArgs('cwcreative').returns('54321');
+
       const bid01 = new BidRequestBuilder({
         mediaTypes: {
           banner: {
@@ -153,12 +151,16 @@ describe('C-WIRE bid adapter', () => {
           }
         }
       }).withParams().build();
+
       const bidderRequest01 = new BidderRequestBuilder().build();
 
       const requests = spec.buildRequests([bid01], bidderRequest01);
+
       expect(requests.data.slots.length).to.equal(1);
       expect(requests.data.cwid).to.be.null;
       expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
+      expect(requests.data.cwcreative).to.equal('54321');
+      expect(requests.data.refgroups[0]).to.equal('group_1');
     });
   });
 

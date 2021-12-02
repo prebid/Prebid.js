@@ -1,5 +1,4 @@
 import { deepAccess, isArray } from '../src/utils.js';
-import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'codefuel';
@@ -34,8 +33,7 @@ export const spec = {
     const devicetype = getDeviceType()
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const cur = CURRENCY;
-    // const endpointUrl = 'http://localhost:5000/prebid'
-    const endpointUrl = config.getConfig('codefuel.bidderUrl');
+    const endpointUrl = 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid'
     const timeout = bidderRequest.timeout;
 
     validBidRequests.forEach(bid => bid.netRevenue = 'net');
