@@ -7,14 +7,12 @@
  */
 
 import {logError, logInfo} from '../src/utils.js';
-import {Renderer} from '../src/Renderer.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
 
 const BIDDER_CODE = 'vibrantmedia';
 const VIBRANT_PREBID_URL = 'https://prebid.intellitxt.com/prebid';
-const VIBRANT_VAST_PLAYER = 'vibrant-player';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 
 /**
@@ -40,66 +38,6 @@ const areValidSupportedMediaTypesPresent = function(bidRequest) {
 
     return false;
   });
-};
-
-/**
- * Returns a new outstream video renderer for the given bidder response.
- * @param {{}} bid the bid to create the renderer for.
- * @returns {Renderer} a new renderer for the given bid.
- */
-const getNewRenderer = function(bid) {
-  const addOutstreamRenderer = function() {
-    // TODO: This needs to be evaluated. Do we need it? If so, the properties aren't sent by the server
-    bid.renderer.push(function() {
-      window[VIBRANT_VAST_PLAYER].setAdUnit({
-        vast_tag: bid.vastTag,
-        ad_unit_code: bid.requestId, // Video renderer div id
-        width: bid.width || bid.meta.width,
-        height: bid.height || bid.meta.height,
-        progressBar: bid.meta.progressBar,
-        progress: (bid.meta.progressBar) ? bid.meta.progress : 0,
-        loop: bid.meta.loop || false,
-        inread: bid.meta.inread || false
-      });
-    });
-  };
-
-  const renderer = Renderer.install({
-    id: bid.creativeId,
-    url: bid.meta.mpuSrc,
-    loaded: false
-  });
-
-  try {
-    renderer.setRender(addOutstreamRenderer);
-  } catch (err) {
-    logError('Pre-bid failed while creating new outstream renderer', err);
-  }
-
-  return renderer;
-};
-
-/**
- * Augments the given ad bid with any additional data required for the media type.
- *
- * @param {*} bid                the bid object to augment.
- * @param {*} serverResponseBody the Vibrant Prebid Server response body containing the bid.
- *
- * @return {void}
- */
-const augmentBidWithRequiredData = {
-  [BANNER]: function(bid, serverResponseBody) {
-    bid.adResponse = serverResponseBody;
-  },
-  [VIDEO]: function(bid, serverResponseBody) {
-    const newRenderer = getNewRenderer(bid);
-
-    bid.renderer = newRenderer;
-    bid.adResponse = serverResponseBody;
-  },
-  [NATIVE]: function(bid, serverResponseBody) {
-    bid.adResponse = serverResponseBody;
-  }
 };
 
 /**
@@ -218,7 +156,7 @@ export const spec = {
     const bids = serverResponseBody.bids;
 
     bids.forEach(function(bid) {
-      augmentBidWithRequiredData[bid.mediaType](bid, serverResponseBody);
+      bid.adResponse = serverResponseBody;
     });
 
     return bids;

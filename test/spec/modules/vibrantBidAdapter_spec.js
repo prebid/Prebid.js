@@ -830,7 +830,7 @@ describe('VibrantBidAdapter', function () {
       expect(interpretedBid.creativeId).to.equal('248e8e0c-2f17-421d-84db-5c9814bf4a79');
       expect(interpretedBid.netRevenue).to.be.false;
       expect(interpretedBid.meta).to.deep.equal(prebidServerResponse.body.bids[0].meta);
-      expect(interpretedBid.renderer).to.not.be.undefined;
+      expect(interpretedBid.renderer).to.be.undefined;
       expect(interpretedBid.adResponse).to.deep.equal(prebidServerResponse.body);
     });
 
@@ -989,7 +989,7 @@ describe('VibrantBidAdapter', function () {
       expect(interpretedVideoBid.creativeId).to.equal('d28e8e0c-2f17-421d-84db-5c9814bf4a79');
       expect(interpretedVideoBid.netRevenue).to.be.false;
       expect(interpretedVideoBid.meta).to.deep.equal(prebidServerResponse.body.bids[1].meta);
-      expect(interpretedVideoBid.renderer).to.not.be.undefined;
+      expect(interpretedVideoBid.renderer).to.be.undefined;
       expect(interpretedVideoBid.adResponse).to.deep.equal(prebidServerResponse.body);
 
       const interpretedNativeBid = interpretedResponse[2];
