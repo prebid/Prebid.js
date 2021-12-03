@@ -69,14 +69,14 @@ describe('Debugging', function () {
           const config = 'raw';
           const result = 'serialized';
           sandbox.stub(BidInterceptor.prototype, 'serializeConfig').returns(result);
-          sandbox.stub(window.sessionStorage, 'setItem');
+          const mockSS = {setItem: sinon.spy()};
           sandbox.stub(BidInterceptor.prototype, 'updateConfig');
           getConfig({
             enabled: true,
-            [interceptorConfigKey]: config
-          });
+            [interceptorConfigKey]: config,
+          }, {sessionStorage: mockSS});
           expect(BidInterceptor.prototype.serializeConfig.calledWith(config)).to.be.true;
-          expect(window.sessionStorage.setItem.calledWith(sinon.match({
+          expect(mockSS.setItem.calledWith(sinon.match({
             [interceptorConfigKey]: result
           })));
         });

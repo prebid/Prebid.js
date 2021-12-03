@@ -142,13 +142,12 @@ export function addBidderRequestsHook(next, bidderRequests) {
   next(includedBidderRequests);
 }
 
-export function getConfig(debugging) {
+export function getConfig(debugging, {sessionStorage = window.sessionStorage} = {}) {
   if (!debugging.enabled) {
     disableOverrides();
     try {
-      window.sessionStorage.removeItem(OVERRIDE_KEY);
-    } catch (e) {
-    }
+      sessionStorage.removeItem(OVERRIDE_KEY);
+    } catch (e) {}
   } else {
     try {
       const intKey = bidInterceptor.KEYS.rules;
@@ -156,9 +155,8 @@ export function getConfig(debugging) {
       if (config[intKey]) {
         config[intKey] = bidInterceptor.serializeConfig(config[intKey]);
       }
-      window.sessionStorage.setItem(OVERRIDE_KEY, JSON.stringify(config));
-    } catch (e) {
-    }
+      sessionStorage.setItem(OVERRIDE_KEY, JSON.stringify(config));
+    } catch (e) {}
     enableOverrides(debugging);
   }
 }
