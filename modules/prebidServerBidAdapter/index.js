@@ -921,13 +921,13 @@ const OPEN_RTB_PROTOCOL = {
 
           if (deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
-            
+
             let sizes = bidRequest.sizes && bidRequest.sizes[0];
             if (Array.isArray(sizes)) {
               bidObject.playerWidth = sizes[0];
               bidObject.playerHeight = sizes[1];
             }
-            
+
             // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
             if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
