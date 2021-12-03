@@ -8,6 +8,7 @@ import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import {deepAccess, deepClone} from 'src/utils.js';
 
 let CONFIG = {
   accountId: '1',
@@ -505,6 +506,17 @@ describe('S2S Adapter', function () {
   describe('request function', function () {
     beforeEach(function () {
       resetSyncedStatus();
+    });
+
+    it('should set id to auction ID and source.tid to tid', function () {
+      config.setConfig({ s2sConfig: CONFIG });
+
+      adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.id).to.equal('173afb6d132ba3');
+      expect(requestBid.source).to.be.an('object');
+      expect(requestBid.source.tid).to.equal('437fbbf5-33f5-487a-8e16-a7112903cfe5');
     });
 
     it('should block request if config did not define p1Consent URL in endpoint object config', function() {
@@ -1080,6 +1092,18 @@ describe('S2S Adapter', function () {
         ver: '1.2'
       });
     });
+
+    it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
+      const req = deepClone(REQUEST);
+      req.ad_units[0].mediaTypes.native.icon.aspect_ratios[0] = {'min_width': 1, 'min_height': 2};
+      adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+      const nativeReq = JSON.parse(JSON.parse(server.requests[0].requestBody).imp[0].native.request);
+      const icons = nativeReq.assets.map((a) => a.img).filter((img) => img && img.type === 1);
+      expect(icons).to.have.length(1);
+      expect(icons[0].hmin).to.equal(2);
+      expect(icons[0].wmin).to.equal(1);
+      expect(deepAccess(icons[0], 'ext.aspectratios')).to.be.undefined;
+    })
 
     it('adds site if app is not present', function () {
       const _config = {
@@ -1705,7 +1729,7 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: 'v$prebid.version$'});
     });
 
-    it('does not set pbjs version in request if channel does exist in s2sConfig', () => {
+    it('extPrebid is now mergedDeep -> should include default channel as well', () => {
       const s2sBidRequest = utils.deepClone(REQUEST);
       const bidRequests = utils.deepClone(BID_REQUESTS);
 
@@ -1714,7 +1738,13 @@ describe('S2S Adapter', function () {
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
 
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({test: 1});
+
+      // extPrebid is now deep merged with
+      expect(parsedRequestBody.ext.prebid.channel).to.deep.equal({
+        name: 'pbjs',
+        test: 1,
+        version: 'v$prebid.version$'
+      });
     });
 
     it('passes first party data in request', () => {
@@ -2402,6 +2432,36 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('cpm', 10);
 
       utils.getBidRequest.restore();
+    });
+
+    describe('on sync requested with no cookie', () => {
+      let cfg, req, csRes;
+
+      beforeEach(() => {
+        cfg = utils.deepClone(CONFIG);
+        req = utils.deepClone(REQUEST);
+        cfg.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
+        req.s2sConfig = cfg;
+        config.setConfig({ s2sConfig: cfg });
+        csRes = utils.deepClone(RESPONSE_NO_COOKIE);
+      });
+
+      afterEach(() => {
+        resetSyncedStatus();
+      })
+
+      Object.entries({
+        iframe: () => utils.insertUserSyncIframe,
+        image: () => utils.triggerPixel,
+      }).forEach(([type, syncer]) => {
+        it(`passes timeout to ${type} syncs`, () => {
+          cfg.syncTimeout = 123;
+          csRes.bidder_status[0].usersync.type = type;
+          adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+          server.requests[0].respond(200, {}, JSON.stringify(csRes));
+          expect(syncer().args[0]).to.include.members([123]);
+        });
+      });
     });
   });
 

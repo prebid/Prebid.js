@@ -92,7 +92,8 @@ describe('Improve Digital Adapter Tests', function () {
     gdprConsent: {
       consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
       vendorData: {},
-      gdprApplies: true
+      gdprApplies: true,
+      addtlConsent: '1~1.35.41.101',
     },
   };
 
@@ -278,6 +279,7 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest], bidderRequestGdpr)[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+      expect(params.bid_request.user.ext.consented_providers_settings.consented_providers).to.exist.and.to.deep.equal([1, 35, 41, 101]);
     });
 
     it('should add CCPA consent string', function () {
