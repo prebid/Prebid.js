@@ -8,6 +8,7 @@ import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import {pbsBidInterceptor} from '../../../modules/prebidServerBidAdapter/debugging.js';
 
 let CONFIG = {
   accountId: '1',
@@ -2869,6 +2870,129 @@ describe('S2S Adapter', function () {
       let requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.ext.prebid.debug).is.equal(true);
+    });
+  });
+});
+
+describe('pbsBidInterceptor', () => {
+  const EMPTY_INT_RES = {bids: [], bidRequest: {bids: []}};
+  let next, interceptBids, s2sBidRequest, bidRequests, ajax, onResponse, onError, onBid, interceptResults,
+    addBids, dones, reqIdx;
+
+  beforeEach(() => {
+    reqIdx = 0;
+    [addBids, dones] = [[], []];
+    next = sinon.spy();
+    ajax = sinon.spy();
+    onResponse = sinon.spy();
+    onError = sinon.spy();
+    onBid = sinon.spy();
+    interceptBids = sinon.stub().callsFake((opts) => {
+      addBids.push(opts.addBid);
+      dones.push(opts.done);
+      return interceptResults[reqIdx++];
+    });
+    s2sBidRequest = {};
+    bidRequests = [{bids: []}, {bids: []}];
+    interceptResults = [EMPTY_INT_RES, EMPTY_INT_RES];
+  });
+
+  function callInterceptor() {
+    return pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid});
+  }
+
+  it('passes addBids that trigger onBid', () => {
+    callInterceptor();
+    bidRequests.forEach((_, i) => {
+      const bid = {adUnitCode: i, prop: i};
+      const bidRequest = {req: i};
+      addBids[i](bid, bidRequest);
+      expect(onBid.calledWith({adUnit: i, bid: sinon.match(bid)}));
+    });
+  });
+
+  describe('on no match', () => {
+    it('should not call next', () => {
+      callInterceptor();
+      expect(next.called).to.be.false;
+    });
+
+    it('should pass done callbacks that trigger a dummy onResponse once they all run', () => {
+      callInterceptor();
+      expect(onResponse.called).to.be.false;
+      bidRequests.forEach((_, i) => {
+        dones[i]();
+        expect(onResponse.called).to.equal(i === bidRequests.length - 1);
+      });
+      expect(onResponse.calledWith(true, [])).to.be.true;
+    });
+  });
+
+  describe('on match', () => {
+    let matchingBids;
+    beforeEach(() => {
+      matchingBids = [
+        [{bidId: 1, matching: true}, {bidId: 2, matching: true}],
+        [],
+        [{bidId: 3, matching: true}]
+      ]
+      interceptResults = matchingBids.map((bids) => ({bids, bidRequest: {bids}}));
+      s2sBidRequest = {
+        ad_units: [
+          {bids: [{bid_id: 1, matching: true}, {bid_id: 3, matching: true}, {bid_id: 100}, {bid_id: 101}]},
+          {bids: [{bid_id: 2, matching: true}, {bid_id: 110}, {bid_id: 111}]},
+          {bids: [{bid_id: 120}]}
+        ]
+      }
+      bidRequests = matchingBids.map((mBids, i) => [
+        {bidId: 100 + (i * 10)},
+        {bidId: 101 + (i * 10)},
+        ...mBids
+      ]);
+    });
+
+    it('should call next', () => {
+      callInterceptor();
+      expect(next.calledOnceWith(
+        sinon.match.any,
+        sinon.match.any,
+        ajax,
+        sinon.match({
+          onError,
+          onBid
+        })
+      )).to.be.true;
+    });
+
+    it('should filter out intercepted bids from s2sBidRequest', () => {
+      callInterceptor();
+      const interceptedS2SReq = next.args[0][0];
+      const allMatching = interceptedS2SReq.ad_units.every((u) => u.bids.length > 0 && u.bids.every((b) => b.matching));
+      expect(allMatching).to.be.true;
+    });
+
+    it('should pass bidRequests as returned by interceptBids', () => {
+      callInterceptor();
+      const passedBidReqs = next.args[0][1];
+      interceptResults
+        .filter((r) => r.bids.length > 0)
+        .forEach(({bidRequest}, i) => {
+          expect(passedBidReqs[i]).to.equal(bidRequest);
+        });
+    });
+
+    it('should pass an onResponse that triggers original onResponse only once all intercept dones are called', () => {
+      callInterceptor();
+      const interceptedOnResponse = next.args[0][next.args[0].length - 1].onResponse;
+      expect(onResponse.called).to.be.false;
+      const responseArgs = ['dummy', 'args'];
+      interceptedOnResponse(...responseArgs);
+      expect(onResponse.called).to.be.false;
+      dones.forEach((f, i) => {
+        f();
+        expect(onResponse.called).to.equal(i === dones.length - 1);
+      });
+      expect(onResponse.calledOnceWith(...responseArgs)).to.be.true;
     });
   });
 });

@@ -2,7 +2,7 @@ import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
-import {waitForElementToLoad} from 'src/utils.js';
+import {deepEqual, waitForElementToLoad} from 'src/utils.js';
 
 var assert = require('assert');
 
@@ -1177,6 +1177,13 @@ describe('Utils', function () {
         },
       }
       expect(utils.deepEqual(obj1, obj2)).to.equal(false);
+    });
+    it('should check types if {matchTypes: true}', () => {
+      function Typed(obj) {
+        Object.assign(this, obj);
+      }
+      const obj = {key: 'value'};
+      expect(deepEqual({outer: obj}, {outer: new Typed(obj)}, {checkTypes: true})).to.be.false;
     });
 
     describe('cyrb53Hash', function() {
