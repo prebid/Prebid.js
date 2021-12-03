@@ -1,8 +1,8 @@
-import { deepAccess, parseGPTSingleSizeArray, inIframe, deepClone, logError, logWarn, isFn, contains, isInteger, isArray, deepSetValue, parseQueryStringParameters, isEmpty, mergeDeep, convertTypes } from '../src/utils.js';
+import { deepAccess, parseGPTSingleSizeArray, inIframe, deepClone, logError, logWarn, isFn, contains, isInteger, isArray, deepSetValue, parseQueryStringParameters, isEmpty, mergeDeep, convertTypes, hasDeviceAccess } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.json';
-import { getStorageManager } from '../src/storageManager.js';
+import { getStorageManager, validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
 import find from 'core-js-pure/features/array/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -39,6 +39,10 @@ export const ERROR_CODES = {
   EXCEEDS_MAX_SIZE: 7,
   PB_FPD_EXCEEDS_MAX_SIZE: 8,
   VIDEO_DURATION_INVALID: 9
+};
+const DEFAULT_ENFORCEMENT_SETTINGS = {
+  hasEnforcementHook: false,
+  valid: hasDeviceAccess()
 };
 const FIRST_PARTY_DATA = {
   SITE: [
@@ -991,7 +995,7 @@ function createMissingBannerImp(bid, imp, newSize) {
  *
  * @param {ErrorData} data
  */
-function errorEventHandler(data) {
+function storeErrorEventData(data) {
   if (!storage.localStorageIsEnabled()) {
     return;
   }
@@ -1031,6 +1035,20 @@ function errorEventHandler(data) {
   }
 
   storage.setDataInLocalStorage(LOCAL_STORAGE_KEY, JSON.stringify(currentStorage));
+}
+
+/**
+ * Event handler for storing data into local storage. It will only store data if
+ * local storage premissions are avaliable
+ */
+function localStorageHandler(data) {
+  if (data.type === 'ERROR' && data.arguments && data.arguments[1] && data.arguments[1].bidder === BIDDER_CODE) {
+    validateStorageEnforcement(GLOBAL_VENDOR_ID, BIDDER_CODE, DEFAULT_ENFORCEMENT_SETTINGS, (permissions) => {
+      if (permissions.valid) {
+        storeErrorEventData(data);
+      }
+    });
+  }
 }
 
 /**
@@ -1129,8 +1147,8 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (!hasRegisteredHandler) {
-      events.on(EVENTS.AUCTION_DEBUG, errorEventHandler);
-      events.on(EVENTS.AD_RENDER_FAILED, errorEventHandler);
+      events.on(EVENTS.AUCTION_DEBUG, localStorageHandler);
+      events.on(EVENTS.AD_RENDER_FAILED, localStorageHandler);
       hasRegisteredHandler = true;
     }
 

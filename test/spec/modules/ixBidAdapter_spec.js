@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, storage, ERROR_CODES } from '../../../modules/ixBidAdapter.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { gdprDataHandler } from 'src/adapterManager.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/cygnus';
@@ -2614,6 +2615,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     afterEach(() => {
+      gdprDataHandler.setConsentData(null);
       setDataInLocalStorageStub.restore();
       getDataFromLocalStorageStub.restore();
       removeDataFromLocalStorageStub.restore();
@@ -2805,6 +2807,38 @@ describe('IndexexchangeAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.false;
       expect(JSON.parse(localStorageValues[key])[EXPIRED_DATE]).to.be.undefined;
       expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { '1': 1, '3': 8, '4': 1 } })
+    });
+
+    it('should not save error data into localstorage if consent is not given', () => {
+      gdprDataHandler.setConsentData({
+        'apiVersion': 2,
+        'gdprApplies': true,
+        'vendorData': {
+          'purpose': {
+            'consents': {
+              '1': true
+            }
+          },
+          'vendor': {
+            'consents': {
+              '10': false
+            }
+          }
+        }
+      });
+
+      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
+      bid.params.size = ['400', 100];
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+      expect(localStorageValues[key]).to.be.undefined;
+    });
+
+    it('should not save error data into localstorage if deviceAccess is false', () => {
+      config.setConfig({ deviceAccess: false });
+      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
+      bid.params.size = ['400', 100];
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+      expect(localStorageValues[key]).to.be.undefined;
     });
   });
 });
