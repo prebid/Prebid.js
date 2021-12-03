@@ -8,6 +8,7 @@ import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import {deepAccess, deepClone} from 'src/utils.js';
 import {pbsBidInterceptor} from '../../../modules/prebidServerBidAdapter/debugging.js';
 
 let CONFIG = {
@@ -1092,6 +1093,18 @@ describe('S2S Adapter', function () {
         ver: '1.2'
       });
     });
+
+    it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
+      const req = deepClone(REQUEST);
+      req.ad_units[0].mediaTypes.native.icon.aspect_ratios[0] = {'min_width': 1, 'min_height': 2};
+      adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+      const nativeReq = JSON.parse(JSON.parse(server.requests[0].requestBody).imp[0].native.request);
+      const icons = nativeReq.assets.map((a) => a.img).filter((img) => img && img.type === 1);
+      expect(icons).to.have.length(1);
+      expect(icons[0].hmin).to.equal(2);
+      expect(icons[0].wmin).to.equal(1);
+      expect(deepAccess(icons[0], 'ext.aspectratios')).to.be.undefined;
+    })
 
     it('adds site if app is not present', function () {
       const _config = {
