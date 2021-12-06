@@ -1,6 +1,6 @@
 import {
   uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp,
-  deepAccess, deepClone, logError, logWarn, logInfo, isFn, isArray, logMessage, isStr
+  deepAccess, deepClone, logError, logWarn, logInfo, isFn, isArray, logMessage, isStr, isAllowZeroCpmBidsEnabled
 } from './utils.js';
 import { config } from './config.js';
 import { NATIVE_TARGETING_KEYS } from './native.js';
@@ -17,6 +17,10 @@ var pbTargetingKeys = [];
 
 const MAX_DFP_KEYLENGTH = 20;
 const TTL_BUFFER = 1000;
+
+const CFG_ALLOW_TARGETING_KEYS = `targetingControls.allowTargetingKeys`;
+const CFG_ADD_TARGETING_KEYS = `targetingControls.addTargetingKeys`;
+const TARGETING_KEY_CONFIGURATION_ERROR_MSG = `Only one of "${CFG_ALLOW_TARGETING_KEYS}" or "${CFG_ADD_TARGETING_KEYS}" can be set`;
 
 export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
   key => CONSTANTS.TARGETING_KEYS[key]
@@ -261,7 +265,17 @@ export function newTargeting(auctionManager) {
     });
 
     const defaultKeys = Object.keys(Object.assign({}, CONSTANTS.DEFAULT_TARGETING_KEYS, CONSTANTS.NATIVE_KEYS));
-    const allowedKeys = config.getConfig('targetingControls.allowTargetingKeys') || defaultKeys;
+    let allowedKeys = config.getConfig(CFG_ALLOW_TARGETING_KEYS);
+    const addedKeys = config.getConfig(CFG_ADD_TARGETING_KEYS);
+
+    if (addedKeys != null && allowedKeys != null) {
+      throw new Error(TARGETING_KEY_CONFIGURATION_ERROR_MSG);
+    } else if (addedKeys != null) {
+      allowedKeys = defaultKeys.concat(addedKeys);
+    } else {
+      allowedKeys = allowedKeys || defaultKeys;
+    }
+
     if (Array.isArray(allowedKeys) && allowedKeys.length > 0) {
       targeting = getAllowedTargetingKeyValues(targeting, allowedKeys);
     }
@@ -283,6 +297,13 @@ export function newTargeting(auctionManager) {
 
     return targeting;
   };
+
+  // warn about conflicting configuration
+  config.getConfig('targetingControls', function (config) {
+    if (deepAccess(config, CFG_ALLOW_TARGETING_KEYS) != null && deepAccess(config, CFG_ADD_TARGETING_KEYS) != null) {
+      logError(TARGETING_KEY_CONFIGURATION_ERROR_MSG);
+    }
+  });
 
   // create an encoded string variant based on the keypairs of the provided object
   //  - note this will encode the characters between the keys (ie = and &)
@@ -438,7 +459,7 @@ export function newTargeting(auctionManager) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
     return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
-      .filter(bid => bid.cpm > 0)
+      .filter(bid => (isAllowZeroCpmBidsEnabled(bid.bidderCode)) ? bid.cpm >= 0 : bid.cpm > 0)
       .map(bid => bid.adUnitCode)
       .filter(uniques)
       .map(adUnitCode => bidsReceived
