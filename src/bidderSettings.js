@@ -1,4 +1,4 @@
-import {deepAccess, deepMerge} from './utils.js';
+import {deepAccess, mergeDeep} from './utils.js';
 import {getGlobal} from './prebidGlobal.js';
 
 const CONSTANTS = require('./constants.json');
@@ -45,7 +45,7 @@ ScopedSettings.prototype.getScopes = function () {
  * @returns all settings in the given scope, merged with the settings for the default scope.
  */
 ScopedSettings.prototype.settingsFor = function (scope) {
-  return deepMerge(this.ownSettingsFor(null), this.ownSettingsFor(scope));
+  return mergeDeep({}, this.ownSettingsFor(null), this.ownSettingsFor(scope));
 }
 
 /**

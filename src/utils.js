@@ -1351,24 +1351,3 @@ export function cache(fun) {
     return f(null);
   }
 }
-
-/**
- * Return an object that is the result of recursively merging properties from the given objects. If multiple
- * objects define the same "leaf" properties, the right-most's value is picked.
- */
-export function deepMerge(left, right) {
-  let result;
-  if (typeof left === 'object' && typeof right === 'object' && left.constructor === Object && right.constructor === Object) {
-    result = Object.assign({}, left);
-    Object.keys(right).forEach((key) => {
-      if (!left.hasOwnProperty(key)) {
-        result[key] = right[key];
-      } else {
-        result[key] = deepMerge(left[key], right[key]);
-      }
-    });
-  } else {
-    result = right;
-  }
-  return result;
-}
