@@ -40,10 +40,6 @@ export const ERROR_CODES = {
   PB_FPD_EXCEEDS_MAX_SIZE: 8,
   VIDEO_DURATION_INVALID: 9
 };
-const DEFAULT_ENFORCEMENT_SETTINGS = {
-  hasEnforcementHook: false,
-  valid: hasDeviceAccess()
-};
 const FIRST_PARTY_DATA = {
   SITE: [
     'id', 'name', 'domain', 'cat', 'sectioncat', 'pagecat', 'page', 'ref', 'search', 'mobile',
@@ -1043,6 +1039,10 @@ function storeErrorEventData(data) {
  */
 function localStorageHandler(data) {
   if (data.type === 'ERROR' && data.arguments && data.arguments[1] && data.arguments[1].bidder === BIDDER_CODE) {
+    const DEFAULT_ENFORCEMENT_SETTINGS = {
+      hasEnforcementHook: false,
+      valid: hasDeviceAccess()
+    };
     validateStorageEnforcement(GLOBAL_VENDOR_ID, BIDDER_CODE, DEFAULT_ENFORCEMENT_SETTINGS, (permissions) => {
       if (permissions.valid) {
         storeErrorEventData(data);
