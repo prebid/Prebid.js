@@ -134,8 +134,8 @@ function hasRequiredConfig(config) {
   	return false;
   }
 
-  if(config.storage && !isNumber(config.storage.publisherId)){
-  	logError(LOG_PREFIX + `config.storage.publisherId (int) should be provided.`);
+  if(!config.params || !isNumber(config.params.publisherId)){
+  	logError(LOG_PREFIX + `config.params.publisherId (int) should be provided.`);
   	return false;	
   }
 
