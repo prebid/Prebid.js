@@ -11,27 +11,37 @@
 <head>
     <script async src="../../build/dev/prebid.js"></script>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+
     <script>
         var FAILSAFE_TIMEOUT = 3300;
         var PREBID_TIMEOUT = 1000;
 
-        var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
-            mediaTypes: {
-                banner: {
-                    sizes: [[300, 250], [300,600]],
-                }
-            },
-            // Replace this object to test a new Adapter!
-            bids: [{
-                bidder: 'appnexus',
-                params: {
-                    placementId: 13144370
-                }
-            }]
-
-        }];
-
+        var adUnits = [
+            {
+                code: 'banner-adquery-div',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]],
+                    }
+                },
+                bids: [
+                    {
+                        bidder: 'adquery',
+                        params: {
+                            placementId: '6d93f2a0e5f0fe2cc3a6e9e3ade964b43b07f897',
+                            type: 'banner300x250'
+                        }
+                    },
+                    {
+                        bidder: 'adquery',
+                        params: {
+                            placementId: '123',
+                            type: 'banner300x250'
+                        }
+                    }
+                ]
+            }
+        ];
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
 
@@ -45,6 +55,7 @@
         });
 
         pbjs.que.push(function() {
+            console.log(adUnits);
             pbjs.addAdUnits(adUnits);
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
@@ -71,7 +82,7 @@
 
     <script>
         googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
 
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
