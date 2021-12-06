@@ -18,7 +18,7 @@ This adapter supports Banner, Native and Video (outstream only).
 var adUnits = [
    // Banner ad unit
    {
-     code: 'test-banner-div',
+     code: 'test-banner',
      mediaTypes: {
        banner: {
          sizes: [[300, 250], [300, 600]]
