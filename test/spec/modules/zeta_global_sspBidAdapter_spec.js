@@ -1,4 +1,5 @@
-import {spec} from '../../../modules/zetaSspBidAdapter.js'
+import {spec} from '../../../modules/zeta_global_sspBidAdapter.js'
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
@@ -39,6 +40,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       gdprApplies: 1,
       consentString: 'consentString'
     },
+    uspConsent: 'someCCPAString',
     params: {
       placement: 111,
       user: {
@@ -52,6 +54,36 @@ describe('Zeta Ssp Bid Adapter', function () {
       test: 1
     },
     userIdAsEids: eids
+  }];
+
+  const videoRequest = [{
+    bidId: 112233,
+    auctionId: 667788,
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [[720, 340]],
+        mimes: ['video/mp4'],
+        minduration: 5,
+        maxduration: 30,
+        protocols: [2, 3]
+      }
+    },
+    refererInfo: {
+      referer: 'http://www.zetaglobal.com/page?param=video'
+    },
+    params: {
+      placement: 111,
+      user: {
+        uid: 222,
+        buyeruid: 333
+      },
+      tags: {
+        someTag: 444,
+        sid: 'publisherId'
+      },
+      test: 1
+    },
   }];
 
   it('Test the bid validation function', function () {
@@ -112,7 +144,22 @@ describe('Zeta Ssp Bid Adapter', function () {
                   'https://example2.com'
                 ],
                 h: 150,
-                w: 200
+                w: 200,
+                ext: {
+                  bidtype: 'video'
+                }
+              },
+              {
+                id: 'auctionId3',
+                impid: 'impId3',
+                price: 0.2,
+                adm: '<?xml version=\\"1.0\\"?><VAST version=\\"4.0\\">',
+                crid: 'creativeId3',
+                adomain: [
+                  'https://example3.com'
+                ],
+                h: 400,
+                w: 300
               }
             ]
           }
@@ -128,6 +175,8 @@ describe('Zeta Ssp Bid Adapter', function () {
     const receivedBid1 = response.body.seatbid[0].bid[0];
     expect(bid1).to.not.be.empty;
     expect(bid1.ad).to.equal(receivedBid1.adm);
+    expect(bid1.vastXml).to.be.undefined;
+    expect(bid1.mediaType).to.equal(BANNER);
     expect(bid1.cpm).to.equal(receivedBid1.price);
     expect(bid1.height).to.equal(receivedBid1.h);
     expect(bid1.width).to.equal(receivedBid1.w);
@@ -138,11 +187,25 @@ describe('Zeta Ssp Bid Adapter', function () {
     const receivedBid2 = response.body.seatbid[0].bid[1];
     expect(bid2).to.not.be.empty;
     expect(bid2.ad).to.equal(receivedBid2.adm);
+    expect(bid2.vastXml).to.equal(receivedBid2.adm);
+    expect(bid2.mediaType).to.equal(VIDEO);
     expect(bid2.cpm).to.equal(receivedBid2.price);
     expect(bid2.height).to.equal(receivedBid2.h);
     expect(bid2.width).to.equal(receivedBid2.w);
     expect(bid2.requestId).to.equal(receivedBid2.impid);
     expect(bid2.meta.advertiserDomains).to.equal(receivedBid2.adomain);
+
+    const bid3 = bidResponse[2];
+    const receivedBid3 = response.body.seatbid[0].bid[2];
+    expect(bid3).to.not.be.empty;
+    expect(bid3.ad).to.equal(receivedBid3.adm);
+    expect(bid3.vastXml).to.equal(receivedBid3.adm);
+    expect(bid3.mediaType).to.equal(VIDEO);
+    expect(bid3.cpm).to.equal(receivedBid3.price);
+    expect(bid3.height).to.equal(receivedBid3.h);
+    expect(bid3.width).to.equal(receivedBid3.w);
+    expect(bid3.requestId).to.equal(receivedBid3.impid);
+    expect(bid3.meta.advertiserDomains).to.equal(receivedBid3.adomain);
   });
 
   it('Different cases for user syncs', function () {
@@ -169,11 +232,34 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(sync4.url).to.include('&us_privacy=');
   });
 
+  it('Test provide gdpr and ccpa values in payload', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.user.ext.consent).to.eql('consentString');
+    expect(payload.regs.ext.gdpr).to.eql(1);
+    expect(payload.regs.ext.us_privacy).to.eql('someCCPAString');
+  });
+
   it('Test do not override user object', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
     expect(payload.user.uid).to.eql(222);
     expect(payload.user.buyeruid).to.eql(333);
     expect(payload.user.ext.consent).to.eql('consentString');
+  });
+
+  it('Test video object', function () {
+    const request = spec.buildRequests(videoRequest, videoRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.imp[0].video.minduration).to.eql(videoRequest[0].mediaTypes.video.minduration);
+    expect(payload.imp[0].video.maxduration).to.eql(videoRequest[0].mediaTypes.video.maxduration);
+    expect(payload.imp[0].video.protocols).to.eql(videoRequest[0].mediaTypes.video.protocols);
+    expect(payload.imp[0].video.mimes).to.eql(videoRequest[0].mediaTypes.video.mimes);
+    expect(payload.imp[0].video.w).to.eql(720);
+    expect(payload.imp[0].video.h).to.eql(340);
+
+    expect(payload.imp[0].banner).to.be.undefined;
   });
 });

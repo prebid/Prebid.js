@@ -2,6 +2,7 @@ import {
   lotamePanoramaIdSubmodule,
   storage,
 } from 'modules/lotamePanoramaIdSystem.js';
+import { uspDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import sinon from 'sinon';
@@ -16,6 +17,7 @@ describe('LotameId', function() {
   let setLocalStorageStub;
   let removeFromLocalStorageStub;
   let timeStampStub;
+  let uspConsentDataStub;
 
   const nowTimestamp = new Date().getTime();
 
@@ -30,6 +32,7 @@ describe('LotameId', function() {
       'removeDataFromLocalStorage'
     );
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
+    uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
   });
 
   afterEach(function () {
@@ -40,6 +43,7 @@ describe('LotameId', function() {
     setLocalStorageStub.restore();
     removeFromLocalStorageStub.restore();
     timeStampStub.restore();
+    uspConsentDataStub.restore();
   });
 
   describe('caching initial data received from the remote server', function () {
@@ -724,6 +728,229 @@ describe('LotameId', function() {
         'Thu, 01 Jan 1970 00:00:00 GMT',
         'Lax'
       );
+    });
+  });
+
+  describe('with a custom client id', function () {
+    describe('with a client expiry set', function () {
+      beforeEach(function () {
+        getCookieStub
+          .withArgs('panoramaId_expiry_1234')
+          .returns(String(Date.now() + 500 * 1000));
+      });
+
+      describe('and an existing pano id', function() {
+        let submoduleCallback;
+        beforeEach(function () {
+          getCookieStub
+            .withArgs('panoramaId_expiry')
+            .returns(String(Date.now() + 100000));
+          getCookieStub
+            .withArgs('panoramaId')
+            .returns(
+              'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87c'
+            );
+          submoduleCallback = lotamePanoramaIdSubmodule.getId(
+            {
+              params: {
+                clientId: '1234',
+              },
+            },
+            {
+              gdprApplies: false,
+            }
+          );
+        });
+
+        it('should not call the remote server when getId is called nor get an id', function () {
+          expect(submoduleCallback).to.be.eql({
+            id: undefined,
+            reason: 'NO_CLIENT_CONSENT',
+          });
+        });
+      });
+
+      describe('and no existing pano id', function () {
+        let submoduleCallback;
+
+        beforeEach(function () {
+          // Let the panoramaId_expiry be empty
+
+          submoduleCallback = lotamePanoramaIdSubmodule.getId(
+            {
+              params: {
+                clientId: '1234',
+              },
+            },
+            {
+              gdprApplies: false,
+            }
+          );
+        });
+
+        it('should not call the remote server nor return an id', function () {
+          expect(submoduleCallback).to.be.eql({
+            id: undefined,
+            reason: 'NO_CLIENT_CONSENT',
+          });
+        });
+      });
+    });
+
+    describe('with no client expiry set', function () {
+      describe('and no existing pano id', function () {
+        let request;
+        let callBackSpy = sinon.spy();
+
+        beforeEach(function () {
+          uspConsentDataStub.returns('1NNN');
+          let submoduleCallback = lotamePanoramaIdSubmodule.getId(
+            {
+              params: {
+                clientId: '1234',
+              },
+            },
+            {
+              gdprApplies: false,
+            }
+          ).callback;
+          submoduleCallback(callBackSpy);
+
+          request = server.requests[0];
+
+          request.respond(
+            200,
+            responseHeader,
+            JSON.stringify({
+              profile_id: '4ec137245858469eb94a4e248f238694',
+              core_id:
+                'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87f',
+              expiry_ts: 3600000,
+            })
+          );
+        });
+
+        it('should call the remote server when getId is called', function () {
+          expect(callBackSpy.calledOnce).to.be.true;
+        });
+
+        it('should pass the usp consent string and client id back', function () {
+          expect(request.url).to.be.eq(
+            'https://id.crwdcntrl.net/id?gdpr_applies=false&us_privacy=1NNN&c=1234'
+          );
+        });
+
+        it('should NOT set an expiry for the client', function () {
+          sinon.assert.neverCalledWith(
+            setCookieStub,
+            'panoramaId_expiry_1234',
+            sinon.match.number
+          );
+        });
+      });
+
+      describe('and an existing pano id', function () {
+        let submoduleCallback;
+
+        beforeEach(function () {
+          getCookieStub
+            .withArgs('panoramaId_expiry')
+            .returns(String(Date.now() + 100000));
+          getCookieStub
+            .withArgs('panoramaId')
+            .returns(
+              'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87c'
+            );
+          submoduleCallback = lotamePanoramaIdSubmodule.getId(
+            {
+              params: {
+                clientId: '1234',
+              },
+            },
+            {
+              gdprApplies: false,
+            }
+          );
+        });
+
+        it('should not call the remote server but use the cached value', function () {
+          expect(submoduleCallback).to.be.eql({
+            id: 'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87c',
+          });
+        });
+
+        it('should NOT set an expiry for the client', function () {
+          sinon.assert.neverCalledWith(
+            setCookieStub,
+            'panoramaId_expiry_1234',
+            sinon.match.number
+          );
+        });
+      });
+    });
+    describe('when client consent has errors', function () {
+      let request;
+      let callBackSpy = sinon.spy();
+
+      beforeEach(function () {
+        let submoduleCallback = lotamePanoramaIdSubmodule.getId(
+          {
+            params: {
+              clientId: '1234',
+            },
+          },
+          {
+            gdprApplies: false,
+          }
+        ).callback;
+        submoduleCallback(callBackSpy);
+
+        request = server.requests[0];
+
+        request.respond(
+          200,
+          responseHeader,
+          JSON.stringify({
+            expiry_ts: 3600000,
+            errors: [111],
+            no_consent: 'CLIENT',
+          })
+        );
+      });
+
+      it('should call the remote server when getId is called', function () {
+        expect(callBackSpy.calledOnce).to.be.true;
+      });
+
+      it('should pass client id back', function () {
+        expect(request.url).to.be.eq(
+          'https://id.crwdcntrl.net/id?gdpr_applies=false&c=1234'
+        );
+      });
+
+      it('should set the received expiry for the client', function() {
+        sinon.assert.calledWith(
+          setCookieStub,
+          'panoramaId_expiry_1234',
+          3600000
+        );
+      });
+
+      it('should not clear the cache for the panorama id', function() {
+        sinon.assert.neverCalledWith(
+          setCookieStub,
+          'panoramaId',
+          sinon.match.any
+        );
+      });
+
+      it('should not clear the cache for the panorama id expiry', function () {
+        sinon.assert.neverCalledWith(
+          setCookieStub,
+          'panoramaId_expiry',
+          sinon.match.any
+        );
+      });
     });
   });
 });
