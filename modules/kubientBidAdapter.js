@@ -1,6 +1,7 @@
 import { isArray, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'kubient';
 const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
@@ -59,7 +60,12 @@ export const spec = {
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,
         consentGiven: kubientGetConsentGiven(bidderRequest.gdprConsent),
         uspConsent: bidderRequest.uspConsent
-      };
+      }
+
+      if (config.getConfig('coppa') === true) {
+        data.coppa = 1
+      }
+
 
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         data.referer = bidderRequest.refererInfo.referer
