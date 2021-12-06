@@ -173,6 +173,14 @@ export const spec = {
       };
     }
 
+    const ortb2UserData = config.getConfig('ortb2.user.data');
+    if (ortb2UserData && ortb2UserData.length) {
+      if (!user) {
+        user = { data: [] };
+      }
+      user.data = user.data.concat(ortb2UserData);
+    }
+
     if (gdprConsent && gdprConsent.consentString) {
       userExt = {consent: gdprConsent.consentString};
     }
