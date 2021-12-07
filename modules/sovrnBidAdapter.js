@@ -1,12 +1,15 @@
 import * as utils from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
 import { createEidsArray } from './userId/eids.js';
 import {config} from '../src/config.js';
 
+export const DEFAULT_MIMES = ['video/3gpp', 'video/mov', 'video/mp4', 'video/mpv', 'application/javascript']
+export const DEFAULT_PROTOCOLS = [1, 2, 3, 4, 5, 6]
+
 export const spec = {
   code: 'sovrn',
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   gvlid: 13,
 
   /**
@@ -50,13 +53,9 @@ export const spec = {
         }
         iv = iv || utils.getBidIdParameter('iv', bid.params)
 
-        let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes
-        bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
-        bidSizes = bidSizes.filter(size => utils.isArray(size))
-        const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
         const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
           currency: 'USD',
-          mediaType: 'banner',
+          mediaType: bid.mediaTypes && bid.mediaTypes.banner ? 'banner' : 'video',
           size: '*'
         }) : {}
         floorInfo.floor = floorInfo.floor || utils.getBidIdParameter('bidfloor', bid.params)
@@ -64,13 +63,38 @@ export const spec = {
         const imp = {
           adunitcode: bid.adUnitCode,
           id: bid.bidId,
-          banner: {
+          tagid: String(utils.getBidIdParameter('tagid', bid.params)),
+          bidfloor: floorInfo.floor
+        }
+
+        if (bid.mediaTypes && bid.mediaTypes.banner) {
+          let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes
+          bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
+          bidSizes = bidSizes.filter(size => utils.isArray(size))
+          const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
+
+          imp.banner = {
             format: processedSizes,
             w: 1,
             h: 1,
-          },
-          tagid: String(utils.getBidIdParameter('tagid', bid.params)),
-          bidfloor: floorInfo.floor
+          };
+        }
+        if (bid.mediaTypes && bid.mediaTypes.video) {
+          let bidSizes = bid.mediaTypes.video.playerSize
+          bidSizes = (utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes]
+          bidSizes = bidSizes.filter(size => utils.isArray(size))
+
+          const video = utils.deepAccess(bid, 'mediaTypes.video') || {}
+
+          imp.video = {
+            w: bidSizes[0][0],
+            h: bidSizes[0][1],
+            mimes: video.mimes || DEFAULT_MIMES,
+            protocols: video.protocols || DEFAULT_PROTOCOLS,
+            minduration: video.minduration,
+            maxduration: video.maxduration,
+            startdelay: video.startdelay
+          }
         }
 
         imp.ext = utils.getBidIdParameter('ext', bid.ortb2Imp) || undefined
@@ -158,7 +182,7 @@ export const spec = {
             dealId: sovrnBid.dealid || null,
             currency: 'USD',
             netRevenue: true,
-            mediaType: BANNER,
+            mediaType: sovrnBid.mediaType || BANNER,
             ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
             ttl: sovrnBid.ext ? (sovrnBid.ext.ttl || 90) : 90,
             meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
