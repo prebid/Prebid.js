@@ -109,7 +109,7 @@ export const spec = {
   },
 
   /**
-   * Return prebid server request data from the list of bid requests.
+   * Return a prebid server request from the list of bid requests.
    *
    * @param {BidRequest[]}  validBidRequests an array of bids validated via the isBidRequestValid function.
    * @param {BidderRequest} bidderRequest    an object with data common to all bid requests.
