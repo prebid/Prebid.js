@@ -767,17 +767,22 @@ const OPEN_RTB_PROTOCOL = {
     if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
       request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
     }
-
+    
+    const commonFpd = getConfig('ortb2') || {};
+    mergeDeep(request, commonFpd);
+    
     /**
      * @type {(string[]|string|undefined)} - OpenRTB property 'cur', currencies available for bids
      */
-    const adServerCur = config.getConfig('currency.adServerCurrency');
-    if (adServerCur && typeof adServerCur === 'string') {
-      // if the value is a string, wrap it with an array
-      request.cur = [adServerCur];
-    } else if (Array.isArray(adServerCur) && adServerCur.length) {
-      // if it's an array, get the first element
-      request.cur = [adServerCur[0]];
+    if (!request.cur) {
+      const adServerCur = config.getConfig('currency.adServerCurrency');
+      if (adServerCur && typeof adServerCur === 'string') {
+        // if the value is a string, wrap it with an array
+        request.cur = [adServerCur];
+      } else if (Array.isArray(adServerCur) && adServerCur.length) {
+        // if it's an array, get the first element
+        request.cur = [adServerCur[0]];
+      } 
     }
 
     _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer, s2sConfig.accountId);
@@ -848,9 +853,6 @@ const OPEN_RTB_PROTOCOL = {
     if (getConfig('coppa') === true) {
       deepSetValue(request, 'regs.coppa', 1);
     }
-
-    const commonFpd = getConfig('ortb2') || {};
-    mergeDeep(request, commonFpd);
 
     addBidderFirstPartyDataToRequest(request);
 
