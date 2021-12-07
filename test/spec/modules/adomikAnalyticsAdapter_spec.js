@@ -45,6 +45,8 @@ describe('Adomik Prebid Analytic', function () {
       const initOptions = {
         id: '123456',
         url: 'testurl',
+        testId: '12345',
+        testValue: '1000'
       };
 
       const bid = {
@@ -71,6 +73,8 @@ describe('Adomik Prebid Analytic', function () {
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
         url: 'testurl',
+        testId: '12345',
+        testValue: '1000',
         id: '',
         timeouted: false
       });
@@ -81,6 +85,8 @@ describe('Adomik Prebid Analytic', function () {
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
         url: 'testurl',
+        testId: '12345',
+        testValue: '1000',
         id: 'test-test-test',
         timeouted: false
       });
