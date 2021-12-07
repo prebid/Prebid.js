@@ -1147,8 +1147,8 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (!hasRegisteredHandler) {
-      events.on(CONSTANTS.EVENTS.AUCTION_DEBUG, errorEventHandler);
-      events.on(CONSTANTS.EVENTS.AD_RENDER_FAILED, errorEventHandler);
+      events.on(CONSTANTS.EVENTS.AUCTION_DEBUG, localStorageHandler);
+      events.on(CONSTANTS.EVENTS.AD_RENDER_FAILED, localStorageHandler);
       hasRegisteredHandler = true;
     }
 
