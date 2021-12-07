@@ -57,7 +57,8 @@ const SOURCE_RTI_MAPPING = {
   'id5-sync.com': '', // ID5 Universal ID, configured as id5Id
   'crwdcntrl.net': '', // Lotame Panorama ID, lotamePanoramaId
   'epsilon.com': '', // Publisher Link, publinkId
-  'audigent.com': '' // Halo ID from Audigent, haloId
+  'audigent.com': '', // Halo ID from Audigent, haloId
+  'pubcid.org': '' // SharedID, pubcid
 };
 const PROVIDERS = [
   'britepoolid',
@@ -73,7 +74,8 @@ const PROVIDERS = [
   'quantcastId',
   'pubcid',
   'TDID',
-  'flocId'
+  'flocId',
+  'pubProvidedId'
 ];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
 const VIDEO_PARAMS_ALLOW_LIST = [
