@@ -21,7 +21,7 @@ export const spec = {
     const encodedUserInfo = window.btoa(encodeURIComponent(JSON.stringify(data)))
 
     validBidRequests.forEach(function(validBidRequest) {
-      const { publisherUrl, placementId, gdpr, gdpr_consent } = validBidRequest.params;
+      const { publisherUrl, placementId, gdpr, gdprConsent } = validBidRequest.params;
       const url = publisherUrl || page
       let queryString = '';
       queryString = tryAppendQueryString(queryString, 'id', placementId);
@@ -33,7 +33,7 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'token', token);
       queryString = tryAppendQueryString(queryString, 'requestId', validBidRequest.bidId);
       queryString = tryAppendQueryString(queryString, 'gdpr', gdpr);
-      queryString = tryAppendQueryString(queryString, 'gdpr_consent', gdpr_consent);
+      queryString = tryAppendQueryString(queryString, 'gdpr_consent', gdprConsent);
 
       serverRequests.push({
         method: 'GET',
