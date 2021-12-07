@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/sovrnBidAdapter.js';
+import {spec, DEFAULT_MIMES, DEFAULT_PROTOCOLS} from 'modules/sovrnBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js'
 
@@ -67,11 +67,77 @@ describe('sovrnBidAdapter', function() {
       });
 
       it('sets the proper banner object', function() {
+        const bannerBidRequest = {
+          ...baseBidRequest,
+          'mediaTypes': {
+            banner: {}
+          }
+        }
+        const request = spec.buildRequests([bannerBidRequest], baseBidderRequest)
+
+        const payload = JSON.parse(request.data)
         const impression = payload.imp[0]
 
         expect(impression.banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
         expect(impression.banner.w).to.equal(1)
         expect(impression.banner.h).to.equal(1)
+      })
+
+      it('sets the proper video object', function() {
+        const width = 640
+        const height = 480
+        const mimes = ['video/mp4', 'application/javascript']
+        const protocols = [2, 5]
+        const minduration = 5
+        const maxduration = 60
+        const startdelay = 0
+        const videoBidRequest = {
+          ...baseBidRequest,
+          'mediaTypes': {
+            video: {
+              mimes,
+              protocols,
+              playerSize: [[width, height], [360, 240]],
+              minduration,
+              maxduration,
+              startdelay
+            }
+          }
+        }
+        const request = spec.buildRequests([videoBidRequest], baseBidderRequest)
+
+        const payload = JSON.parse(request.data)
+        const impression = payload.imp[0]
+
+        expect(impression.video.w).to.equal(width)
+        expect(impression.video.h).to.equal(height)
+        expect(impression.video.mimes).to.have.same.members(mimes)
+        expect(impression.video.protocols).to.have.same.members(protocols)
+        expect(impression.video.minduration).to.equal(minduration)
+        expect(impression.video.maxduration).to.equal(maxduration)
+        expect(impression.video.startdelay).to.equal(startdelay)
+      })
+
+      it('sets the proper video object with default values', function() {
+        const width = 640
+        const height = 480
+        const videoBidRequest = {
+          ...baseBidRequest,
+          'mediaTypes': {
+            video: {
+              playerSize: [width, height],
+            }
+          }
+        }
+        const request = spec.buildRequests([videoBidRequest], baseBidderRequest)
+
+        const payload = JSON.parse(request.data)
+        const impression = payload.imp[0]
+
+        expect(impression.video.w).to.equal(width)
+        expect(impression.video.h).to.equal(height)
+        expect(impression.video.mimes).to.have.same.members(DEFAULT_MIMES)
+        expect(impression.video.protocols).to.have.same.members(DEFAULT_PROTOCOLS)
       })
 
       it('gets correct site info', function() {
@@ -95,7 +161,10 @@ describe('sovrnBidAdapter', function() {
         'params': {
           'iv': 'vet'
         },
-        'sizes': [300, 250]
+        'sizes': [300, 250],
+        'mediaTypes': {
+          banner: {}
+        },
       }
       const request = spec.buildRequests([singleSizeBidRequest], baseBidderRequest)
 
