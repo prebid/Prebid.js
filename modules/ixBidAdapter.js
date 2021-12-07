@@ -194,7 +194,7 @@ function bidToImp(bid) {
   imp.id = bid.bidId;
 
   imp.ext = {};
-  imp.ext.siteID = bid.params.siteId;
+  imp.ext.siteID = bid.params.siteId.toString();
 
   if (bid.params.hasOwnProperty('id') &&
     (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
@@ -1168,7 +1168,12 @@ export const spec = {
     }
 
     if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
-      logError('IX Bid Adapter: siteId must be string or number value.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+      logError('IX Bid Adapter: siteId must be string or number type.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+      return false;
+    }
+
+    if (typeof bid.params.siteId !== 'string' && isNaN(Number(bid.params.siteId))) {
+      logError('IX Bid Adapter: siteId must valid value', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
       return false;
     }
 
