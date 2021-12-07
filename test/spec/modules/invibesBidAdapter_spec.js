@@ -164,7 +164,7 @@ describe('invibesBidAdapter:', function () {
         bidder: BIDDER_CODE,
         params: {
           placementId: 'placement',
-	  	  customEndpoint: 'sub.domain.com/Bid/VideoAdContent'
+          customEndpoint: 'sub.domain.com/Bid/VideoAdContent'
         },
         adUnitCode: 'test-div1'
       }]);
@@ -189,7 +189,7 @@ describe('invibesBidAdapter:', function () {
         bidId: 'b1',
         bidder: BIDDER_CODE,
         params: {
-		  placementId: null
+          placementId: null
         },
         adUnitCode: 'test-div1'
       }]);
@@ -216,7 +216,7 @@ describe('invibesBidAdapter:', function () {
         bidder: BIDDER_CODE,
         params: {
           placementId: 'placement',
-	  	  domainId: 1001
+          domainId: 1001
         },
         adUnitCode: 'test-div1'
       }]);
@@ -230,7 +230,7 @@ describe('invibesBidAdapter:', function () {
         bidder: BIDDER_CODE,
         params: {
           placementId: 'placement',
-	  	  domainId: 1002
+          domainId: 1002
         },
         adUnitCode: 'test-div1'
       }]);

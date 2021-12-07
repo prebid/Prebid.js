@@ -21,7 +21,7 @@ Connect to Invibes for bids.
                        bidder: 'invibes',
                        params: {
                            placementId: '12345',
-						   networkId: 1001
+                           domainId: 1001
                        }
                    }
                ]
