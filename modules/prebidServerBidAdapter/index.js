@@ -767,10 +767,10 @@ const OPEN_RTB_PROTOCOL = {
     if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
       request.ext.prebid = mergeDeep(request.ext.prebid, s2sConfig.extPrebid);
     }
-    
+
     const commonFpd = getConfig('ortb2') || {};
     mergeDeep(request, commonFpd);
-    
+
     /**
      * @type {(string[]|string|undefined)} - OpenRTB property 'cur', currencies available for bids
      */
@@ -782,7 +782,7 @@ const OPEN_RTB_PROTOCOL = {
       } else if (Array.isArray(adServerCur) && adServerCur.length) {
         // if it's an array, get the first element
         request.cur = [adServerCur[0]];
-      } 
+      }
     }
 
     _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer, s2sConfig.accountId);
