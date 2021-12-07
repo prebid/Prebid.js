@@ -262,7 +262,7 @@ const USER_IDS_CONFIG = {
   // PubMatic ID
   'pubmaticId': {
     source: 'pubmatic.com',
-    atype: 3
+    atype: 1
   }
 };
 
