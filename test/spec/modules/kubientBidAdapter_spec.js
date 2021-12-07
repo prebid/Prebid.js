@@ -292,6 +292,22 @@ describe('KubientAdapter', function () {
     });
   });
 
+  describe('with COPPA', function() {
+    beforeEach(function() {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+    });
+    afterEach(function() {
+      config.getConfig.restore();
+    });
+
+    it('should send the Coppa "required" flag set to "1" in the request', function () {
+      let serverRequest = spec.buildRequests([bidBanner]);
+      expect(serverRequest.data.coppa).to.equal(1);
+    });
+  });
+
   describe('getUserSyncs', function () {
     it('should register the sync iframe without gdpr', function () {
       let syncOptions = {

@@ -66,7 +66,6 @@ export const spec = {
         data.coppa = 1
       }
 
-
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         data.referer = bidderRequest.refererInfo.referer
       }
