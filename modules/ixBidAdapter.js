@@ -1,7 +1,7 @@
 import { deepAccess, parseGPTSingleSizeArray, inIframe, deepClone, logError, logWarn, isFn, contains, isInteger, isArray, deepSetValue, parseQueryStringParameters, isEmpty, mergeDeep, convertTypes, hasDeviceAccess } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { EVENTS } from '../src/constants.json';
+import CONSTANTS from '../src/constants.json';
 import { getStorageManager, validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
 import find from 'core-js-pure/features/array/find.js';
@@ -1147,8 +1147,8 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (!hasRegisteredHandler) {
-      events.on(EVENTS.AUCTION_DEBUG, localStorageHandler);
-      events.on(EVENTS.AD_RENDER_FAILED, localStorageHandler);
+      events.on(CONSTANTS.EVENTS.AUCTION_DEBUG, errorEventHandler);
+      events.on(CONSTANTS.EVENTS.AD_RENDER_FAILED, errorEventHandler);
       hasRegisteredHandler = true;
     }
 

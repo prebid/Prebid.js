@@ -994,6 +994,8 @@ function applyFPD(bidRequest, mediaType, data) {
 
   let fpd = mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
   let impData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
+
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
@@ -1022,16 +1024,6 @@ function applyFPD(bidRequest, mediaType, data) {
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
   }
 
-  Object.keys(impData).forEach((key) => {
-    if (key === 'adserver') {
-      ['name', 'adslot'].forEach(prop => {
-        if (impData[key][prop]) impData[key][prop] = impData[key][prop].toString().replace(/^\/+/, '');
-      });
-    } else if (key === 'pbadslot') {
-      impData[key] = impData[key].toString().replace(/^\/+/, '');
-    }
-  });
-
   if (mediaType === BANNER) {
     ['site', 'user'].forEach(name => {
       Object.keys(fpd[name]).forEach((key) => {
@@ -1047,11 +1039,29 @@ function applyFPD(bidRequest, mediaType, data) {
       });
     });
     Object.keys(impData).forEach((key) => {
-      (key === 'adserver') ? addBannerData(impData[key].adslot, name, key) : addBannerData(impData[key], 'site', key);
+      if (key !== 'adserver') {
+        addBannerData(impData[key], 'site', key);
+      } else if (impData[key].name === 'gam') {
+        addBannerData(impData[key].adslot, name, key)
+      }
     });
+
+    // add in gpid
+    if (gpid) {
+      data['p_gpid'] = gpid;
+    }
+
+    // only send one of pbadslot or dfp adunit code (prefer pbadslot)
+    if (data['tg_i.pbadslot']) {
+      delete data['tg_i.dfp_ad_unit_code'];
+    }
   } else {
     if (Object.keys(impData).length) {
       mergeDeep(data.imp[0].ext, {data: impData});
+    }
+    // add in gpid
+    if (gpid) {
+      data.imp[0].ext.gpid = gpid;
     }
 
     mergeDeep(data, fpd);
