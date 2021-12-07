@@ -292,22 +292,6 @@ describe('KubientAdapter', function () {
     });
   });
 
-  describe('with COPPA', function() {
-    beforeEach(function() {
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-    });
-    afterEach(function() {
-      config.getConfig.restore();
-    });
-
-    it('should send the Coppa "required" flag set to "1" in the request', function () {
-      let serverRequest = spec.buildRequests([bidBanner]);
-      expect(serverRequest.data.coppa).to.equal(1);
-    });
-  });
-
   describe('getUserSyncs', function () {
     it('should register the sync iframe without gdpr', function () {
       let syncOptions = {
@@ -410,6 +394,34 @@ describe('KubientAdapter', function () {
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.png?consent_str=' + consentString + '&gdpr=1&consent_given=1');
+    });
+    it('should register the sync image without gdpr and with uspConsent', function () {
+      let syncOptions = {
+        iframeEnabled: true
+      };
+      let serverResponses = null;
+      let gdprConsent = {
+        consentString: consentString
+      };
+      let uspConsent = '1YNN';
+      let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      expect(syncs).to.be.an('array').and.to.have.length(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.html?consent_str=' + consentString + '&consent_given=0&us_privacy=' + uspConsent);
+    });
+    it('should register the sync image without gdpr and with uspConsent', function () {
+      let syncOptions = {
+        pixelEnabled: true
+      };
+      let serverResponses = null;
+      let gdprConsent = {
+        consentString: consentString
+      };
+      let uspConsent = '1YNN';
+      let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      expect(syncs).to.be.an('array').and.to.have.length(1);
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.png?consent_str=' + consentString + '&consent_given=0&us_privacy=' + uspConsent);
     });
   })
 });
