@@ -62,9 +62,10 @@ const transformBidRequests = function(bidRequests) {
   const transformedBidRequests = [];
 
   bidRequests.forEach(function(bidRequest) {
+    const params = bidRequest.params || {};
     const transformedBidRequest = {
       code: bidRequest.adUnitCode || bidRequest.code,
-      id: bidRequest.placementId || (bidRequest.params || {}).invCode,
+      id: bidRequest.placementId || params.placementId || params.invCode,
       requestId: bidRequest.bidId || bidRequest.transactionId,
       bidder: bidRequest.bidder,
       mediaTypes: bidRequest.mediaTypes,
