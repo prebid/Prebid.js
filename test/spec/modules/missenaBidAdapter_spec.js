@@ -87,6 +87,9 @@ describe('Missena Adapter', function () {
       cpm: 0.5,
       currency: 'USD',
       ad: '<!-- -->',
+      meta: {
+        advertiserDomains: ['missena.com']
+      },
     };
 
     const serverTimeoutResponse = {

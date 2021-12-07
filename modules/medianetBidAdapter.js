@@ -1,5 +1,5 @@
+import { parseUrl, getWindowTop, isArray, getGptSlotInfoForAdUnitCode, isStr, deepAccess, isEmpty, logError, triggerPixel, buildUrl, isEmptyStr, logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -27,7 +27,7 @@ window.mnet = window.mnet || {};
 window.mnet.queue = window.mnet.queue || [];
 
 mnData.urlData = {
-  domain: utils.parseUrl(refererInfo.referer).hostname,
+  domain: parseUrl(refererInfo.referer).hostname,
   page: refererInfo.referer,
   isTop: refererInfo.reachedTop
 }
@@ -78,7 +78,7 @@ function getUrlFromSelector(selector, attribute) {
 
 function getAttributeFromSelector(selector, attribute) {
   try {
-    let doc = utils.getWindowTop().document;
+    let doc = getWindowTop().document;
     let element = doc.querySelector(selector);
     if (element !== null && element[attribute]) {
       return element[attribute];
@@ -87,7 +87,7 @@ function getAttributeFromSelector(selector, attribute) {
 }
 
 function getAbsoluteUrl(url) {
-  let aTag = utils.getWindowTop().document.createElement('a');
+  let aTag = getWindowTop().document.createElement('a');
   aTag.href = url;
 
   return aTag.href;
@@ -98,7 +98,7 @@ function filterUrlsByType(urls, type) {
 }
 
 function transformSizes(sizes) {
-  if (utils.isArray(sizes) && sizes.length === 2 && !utils.isArray(sizes[0])) {
+  if (isArray(sizes) && sizes.length === 2 && !isArray(sizes[0])) {
     return [getSize(sizes)];
   }
 
@@ -114,8 +114,8 @@ function getSize(size) {
 
 function getWindowSize() {
   return {
-    w: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || -1,
-    h: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || -1
+    w: window.screen.width || -1,
+    h: window.screen.height || -1
   }
 }
 
@@ -123,8 +123,8 @@ function getCoordinates(adUnitCode) {
   let element = document.getElementById(adUnitCode);
   if (!element && adUnitCode.indexOf('/') !== -1) {
     // now it means that adUnitCode is GAM AdUnitPath
-    const {divId} = utils.getGptSlotInfoForAdUnitCode(adUnitCode);
-    if (utils.isStr(divId)) {
+    const {divId} = getGptSlotInfoForAdUnitCode(adUnitCode);
+    if (isStr(divId)) {
       element = document.getElementById(divId);
     }
   }
@@ -145,11 +145,11 @@ function getCoordinates(adUnitCode) {
 }
 
 function extParams(bidRequest, bidderRequests) {
-  const params = utils.deepAccess(bidRequest, 'params');
-  const gdpr = utils.deepAccess(bidderRequests, 'gdprConsent');
-  const uspConsent = utils.deepAccess(bidderRequests, 'uspConsent');
-  const userId = utils.deepAccess(bidRequest, 'userId');
-  const sChain = utils.deepAccess(bidRequest, 'schain') || {};
+  const params = deepAccess(bidRequest, 'params');
+  const gdpr = deepAccess(bidderRequests, 'gdprConsent');
+  const uspConsent = deepAccess(bidderRequests, 'uspConsent');
+  const userId = deepAccess(bidRequest, 'userId');
+  const sChain = deepAccess(bidRequest, 'schain') || {};
   const windowSize = spec.getWindowSize();
   const gdprApplies = !!(gdpr && gdpr.gdprApplies);
   const uspApplies = !!(uspConsent);
@@ -165,7 +165,7 @@ function extParams(bidRequest, bidderRequests) {
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
     $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true },
-    !utils.isEmpty(sChain) && {schain: sChain}
+    !isEmpty(sChain) && {schain: sChain}
   );
 }
 
@@ -179,13 +179,18 @@ function slotParams(bidRequest) {
     },
     all: bidRequest.params
   };
-  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
 
-  const videoInMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
-  const videoInParams = utils.deepAccess(bidRequest, 'params.video') || {};
+  if (bidRequest.ortb2Imp) {
+    params.ortb2Imp = bidRequest.ortb2Imp;
+  }
+
+  let bannerSizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
+
+  const videoInMediaType = deepAccess(bidRequest, 'mediaTypes.video') || {};
+  const videoInParams = deepAccess(bidRequest, 'params.video') || {};
   const videoCombinedObj = Object.assign({}, videoInParams, videoInMediaType);
 
-  if (!utils.isEmpty(videoCombinedObj)) {
+  if (!isEmpty(videoCombinedObj)) {
     params.video = videoCombinedObj;
   }
 
@@ -196,7 +201,7 @@ function slotParams(bidRequest) {
     try {
       params.native = JSON.stringify(bidRequest.nativeParams);
     } catch (e) {
-      utils.logError((`${BIDDER_CODE} : Incorrect JSON : bidRequest.nativeParams`));
+      logError((`${BIDDER_CODE} : Incorrect JSON : bidRequest.nativeParams`));
     }
   }
 
@@ -314,8 +319,8 @@ function isValidBid(bid) {
 }
 
 function fetchCookieSyncUrls(response) {
-  if (!utils.isEmpty(response) && response[0].body &&
-    response[0].body.ext && utils.isArray(response[0].body.ext.csUrl)) {
+  if (!isEmpty(response) && response[0].body &&
+    response[0].body.ext && isArray(response[0].body.ext.csUrl)) {
     return response[0].body.ext.csUrl;
   }
 
@@ -323,15 +328,15 @@ function fetchCookieSyncUrls(response) {
 }
 
 function getLoggingData(event, data) {
-  data = (utils.isArray(data) && data) || [];
+  data = (isArray(data) && data) || [];
 
   let params = {};
   params.logid = 'kfk';
   params.evtid = 'projectevents';
   params.project = 'prebid';
-  params.acid = utils.deepAccess(data, '0.auctionId') || '';
+  params.acid = deepAccess(data, '0.auctionId') || '';
   params.cid = $$PREBID_GLOBAL$$.medianetGlobals.cid || '';
-  params.crid = data.map((adunit) => utils.deepAccess(adunit, 'params.0.crid') || adunit.adUnitCode).join('|');
+  params.crid = data.map((adunit) => deepAccess(adunit, 'params.0.crid') || adunit.adUnitCode).join('|');
   params.adunit_count = data.length || 0;
   params.dn = mnData.urlData.domain || '';
   params.requrl = mnData.urlData.page || '';
@@ -349,7 +354,7 @@ function logEvent (event, data) {
     hostname: EVENT_PIXEL_URL,
     search: getLoggingData(event, data)
   };
-  utils.triggerPixel(utils.buildUrl(getParams));
+  triggerPixel(buildUrl(getParams));
 }
 
 function clearMnData() {
@@ -357,8 +362,8 @@ function clearMnData() {
 }
 
 function addRenderer(bid) {
-  const videoContext = utils.deepAccess(bid, 'context') || '';
-  const vastTimeout = utils.deepAccess(bid, 'vto');
+  const videoContext = deepAccess(bid, 'context') || '';
+  const vastTimeout = deepAccess(bid, 'vto');
   /* Adding renderer only when the context is Outstream
      and the provider has responded with a renderer.
    */
@@ -384,7 +389,7 @@ function newVideoRenderer(bid) {
         mute: bid.mt
       }
       const adUnitCode = bid.dfp_id;
-      const divId = utils.getGptSlotInfoForAdUnitCode(adUnitCode).divId || adUnitCode;
+      const divId = getGptSlotInfoForAdUnitCode(adUnitCode).divId || adUnitCode;
       window.mnet.mediaNetoutstreamPlayer(bid, divId, obj);
     });
   });
@@ -405,12 +410,12 @@ export const spec = {
    */
   isBidRequestValid: function(bid) {
     if (!bid.params) {
-      utils.logError(`${BIDDER_CODE} : Missing bid parameters`);
+      logError(`${BIDDER_CODE} : Missing bid parameters`);
       return false;
     }
 
-    if (!bid.params.cid || !utils.isStr(bid.params.cid) || utils.isEmptyStr(bid.params.cid)) {
-      utils.logError(`${BIDDER_CODE} : cid should be a string`);
+    if (!bid.params.cid || !isStr(bid.params.cid) || isEmptyStr(bid.params.cid)) {
+      logError(`${BIDDER_CODE} : cid should be a string`);
       return false;
     }
 
@@ -445,13 +450,13 @@ export const spec = {
     let validBids = [];
 
     if (!serverResponse || !serverResponse.body) {
-      utils.logInfo(`${BIDDER_CODE} : response is empty`);
+      logInfo(`${BIDDER_CODE} : response is empty`);
       return validBids;
     }
 
     let bids = serverResponse.body.bidList;
-    if (!utils.isArray(bids) || bids.length === 0) {
-      utils.logInfo(`${BIDDER_CODE} : no bids`);
+    if (!isArray(bids) || bids.length === 0) {
+      logInfo(`${BIDDER_CODE} : no bids`);
       return validBids;
     }
     validBids = bids.filter(bid => isValidBid(bid));

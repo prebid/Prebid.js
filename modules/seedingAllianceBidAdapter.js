@@ -3,7 +3,7 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { _map, deepSetValue, isEmpty, deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'seedingAlliance';
@@ -65,7 +65,7 @@ export const spec = {
     let url = bidderRequest.refererInfo.referer;
 
     const imp = validBidRequests.map((bid, id) => {
-      const assets = utils._map(bid.nativeParams, (bidParams, key) => {
+      const assets = _map(bid.nativeParams, (bidParams, key) => {
         const props = NATIVE_PARAMS[key];
 
         const asset = {
@@ -130,8 +130,8 @@ export const spec = {
     };
 
     if (bidderRequest && bidderRequest.gdprConsent) {
-      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      utils.deepSetValue(request, 'regs.ext.gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0);
+      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(request, 'regs.ext.gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0);
     }
 
     return {
@@ -146,7 +146,7 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, { bids }) {
-    if (utils.isEmpty(serverResponse.body)) {
+    if (isEmpty(serverResponse.body)) {
       return [];
     }
 
@@ -171,7 +171,10 @@ export const spec = {
             currency: cur,
             mediaType: NATIVE,
             bidderCode: BIDDER_CODE,
-            native: parseNative(bidResponse)
+            native: parseNative(bidResponse),
+            meta: {
+              advertiserDomains: bidResponse.adomain && bidResponse.adomain.length > 0 ? bidResponse.adomain : []
+            }
           };
         }
       })
@@ -184,13 +187,16 @@ registerBidder(spec);
 function parseNative(bid) {
   const {assets, link, imptrackers} = bid.adm.native;
 
-  link.clicktrackers.forEach(function (clicktracker, index) {
-    link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
-  });
-
-  imptrackers.forEach(function (imptracker, index) {
-    imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
-  });
+  if (link.clicktrackers) {
+    link.clicktrackers.forEach(function (clicktracker, index) {
+      link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
+    });
+  }
+  if (imptrackers) {
+    imptrackers.forEach(function (imptracker, index) {
+      imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
+    });
+  }
 
   const result = {
     url: link.url,
@@ -213,7 +219,7 @@ function parseNative(bid) {
 
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i], key);
+    result = deepAccess(collection[i], key);
     if (result) {
       return result;
     }

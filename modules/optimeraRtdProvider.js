@@ -18,7 +18,7 @@
  * @property {string} device
  */
 
-import * as utils from '../src/utils.js';
+import { logInfo, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 
@@ -65,10 +65,16 @@ export let device = 'default';
 export let optimeraTargeting = {};
 
 /**
+ * Flag to indicateo if a new score file should be fetched.
+ * @type {string}
+ */
+export let fetchScoreFile = true;
+
+/**
  * Make the request for the Score File.
  */
 export function scoreFileRequest() {
-  utils.logInfo('Fetch Optimera score file.');
+  logInfo('Fetch Optimera score file.');
   const ajax = ajaxBuilder();
   ajax(scoresURL,
     {
@@ -77,14 +83,14 @@ export function scoreFileRequest() {
           try {
             setScores(res);
           } catch (err) {
-            utils.logError('Unable to parse Optimera Score File.', err);
+            logError('Unable to parse Optimera Score File.', err);
           }
         } else if (req.status === 403) {
-          utils.logError('Unable to fetch the Optimera Score File - 403');
+          logError('Unable to fetch the Optimera Score File - 403');
         }
       },
       error: () => {
-        utils.logError('Unable to fetch the Optimera Score File.');
+        logError('Unable to fetch the Optimera Score File.');
       }
     });
 }
@@ -98,14 +104,25 @@ export function returnTargetingData(adUnits, config) {
     adUnits.forEach(function(adUnit) {
       if (optimeraTargeting[adUnit]) {
         targeting[adUnit] = {};
-        targeting[adUnit][optimeraKeyName] = optimeraTargeting[adUnit];
+        targeting[adUnit][optimeraKeyName] = [optimeraTargeting[adUnit]];
       }
     });
   } catch (err) {
-    utils.logError('error', err);
+    logError('error', err);
   }
-  utils.logInfo('Apply Optimera targeting');
+  logInfo('Apply Optimera targeting');
   return targeting;
+}
+
+/**
+ * Fetch a new score file when an auction starts.
+ * Only fetch the new file if a new score file is needed.
+ */
+export function onAuctionInit(auctionDetails, config, userConsent) {
+  setScoresURL();
+  if (fetchScoreFile) {
+    scoreFileRequest();
+  }
 }
 
 /**
@@ -126,7 +143,7 @@ export function init(moduleConfig) {
     return true;
   } else {
     if (!_moduleParams.clientID) {
-      utils.logError('Optimera clientID is missing in the Optimera RTD configuration.');
+      logError('Optimera clientID is missing in the Optimera RTD configuration.');
     }
     return false;
   }
@@ -134,14 +151,25 @@ export function init(moduleConfig) {
 
 /**
  * Set the score file url.
- * This fully-formed URL for the data endpoint request to fetch
+ *
+ * This fully-formed URL is for the data endpoint request to fetch
  * the targeting values. This is not a js library, rather JSON
  * which has the targeting values for the page.
+ *
+ * The score file url is based on the web page url. If the new score file URL
+ * has been updated, set the fetchScoreFile flag to true to is can be fetched.
+ *
  */
 export function setScoresURL() {
   const optimeraHost = window.location.host;
   const optimeraPathName = window.location.pathname;
-  scoresURL = `${scoresBaseURL}${clientID}/${optimeraHost}${optimeraPathName}.js`;
+  let newScoresURL = `${scoresBaseURL}${clientID}/${optimeraHost}${optimeraPathName}.js`;
+  if (scoresURL !== newScoresURL) {
+    scoresURL = newScoresURL;
+    fetchScoreFile = true;
+  } else {
+    fetchScoreFile = false;
+  }
 }
 
 /**
@@ -157,7 +185,7 @@ export function setScores(result) {
       scores = scores.device[device];
     }
   } catch (e) {
-    utils.logError('Optimera score file could not be parsed.');
+    logError('Optimera score file could not be parsed.');
   }
   optimeraTargeting = scores;
 }
@@ -170,9 +198,13 @@ export const optimeraSubmodule = {
    */
   name: 'optimeraRTD',
   /**
+   * get data when an auction starts
+   * @function
+   */
+  onAuctionInitEvent: onAuctionInit,
+  /**
    * get data and send back to realTimeData module
    * @function
-   * @param {string[]} adUnitsCodes
    */
   getTargetingData: returnTargetingData,
   init,

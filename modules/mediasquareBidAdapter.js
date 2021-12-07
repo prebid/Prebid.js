@@ -7,7 +7,6 @@ const BIDDER_CODE = 'mediasquare';
 const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
 const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/'
 const BIDDER_ENDPOINT_AUCTION = 'msq_prebid';
-const BIDDER_ENDPOINT_SYNC = 'cookie_sync';
 const BIDDER_ENDPOINT_WINNING = 'winning';
 
 export const spec = {
@@ -106,6 +105,9 @@ export const spec = {
             'advertiserDomains': value['adomain']
           }
         };
+        if ('match' in value) {
+          bidResponse['mediasquare']['match'] = value['match'];
+        }
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
@@ -129,18 +131,11 @@ export const spec = {
      * @return {UserSync[]} The user syncs which should be dropped.
      */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    let params = '';
-    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
     } else {
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') { params += typeof gdprConsent.gdprApplies === 'boolean' ? `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}` : `&gdpr_consent=${gdprConsent.consentString}`; }
-      if (uspConsent && typeof uspConsent === 'string') { params += '&uspConsent=' + uspConsent }
-      return {
-        type: 'iframe',
-        url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=iframe' + params
-      };
+      return [];
     }
   },
 
@@ -156,12 +151,13 @@ export const spec = {
     if (bid.hasOwnProperty('mediasquare')) {
       if (bid['mediasquare'].hasOwnProperty('bidder')) { params.push('bidder=' + bid['mediasquare']['bidder']); }
       if (bid['mediasquare'].hasOwnProperty('code')) { params.push('code=' + bid['mediasquare']['code']); }
+      if (bid['mediasquare'].hasOwnProperty('match')) { params.push('match=' + bid['mediasquare']['match']); }
     };
     for (let i = 0; i < paramsToSearchFor.length; i++) {
       if (bid.hasOwnProperty(paramsToSearchFor[i])) { params.push(paramsToSearchFor[i] + '=' + bid[paramsToSearchFor[i]]); }
     }
     if (params.length > 0) { params = '?' + params.join('&'); }
-    ajax(endpoint + BIDDER_ENDPOINT_WINNING + params, null);
+    ajax(endpoint + BIDDER_ENDPOINT_WINNING + params, null, undefined, {method: 'GET', withCredentials: true});
     return true;
   }
 
