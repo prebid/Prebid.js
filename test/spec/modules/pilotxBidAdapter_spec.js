@@ -147,22 +147,6 @@ describe('pilotxAdapter', function () {
       src: 'client',
       transactionId: 'fec9f2ff-da13-4921-8437-8d679c2be7fe',
     }];
-    /* const expectedResultVideo1 = [{
-      379: {
-        bidId: '2a59588c0114fa',
-        gdprConsentRequrired: false,
-        gdprConsentString: '',
-        sizes: [[640, 480]],
-        video: {
-          context: 'instream',
-          mimes: ['video/mp4'],
-          playbackmethod: [2],
-          playerSize: [[640, 480]],
-          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
-          skip: 1
-        }
-      }
-    }]; */
     it('should return correct response', function () {
       const builtRequest = spec.buildRequests(mockVideo1, mockRequest)
       let builtRequestData = builtRequest.data
