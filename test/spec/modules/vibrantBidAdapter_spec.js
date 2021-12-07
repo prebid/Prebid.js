@@ -80,9 +80,11 @@ describe('VibrantBidAdapter', function () {
         // Filled in by individual tests
       },
       adUnitCode: 'test-div',
+      transactionId: '13579acef87623',
+      placementId: '7623587623857',
       bidId: '30b31c1838de1e',
       bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475',
+      auctionId: '1d1a030790a475'
     };
   });
 
@@ -501,7 +503,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata.length).to.equal(1);
       expect(payload.biddata[0]).to.exist;
       expect(payload.biddata[0].code).to.equal(bidRequest.adUnitCode);
-      expect(payload.biddata[0].id).to.equal(bidRequest.bidId);
+      expect(payload.biddata[0].id).to.equal(bidRequest.placementId);
       expect(payload.biddata[0].bidder).to.equal(bidRequest.bidder);
       expect(payload.biddata[0].sizes).to.deep.equal(DEFAULT_BID_SIZES);
       expect(payload.biddata[0].mediaTypes).to.exist;
@@ -535,7 +537,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata.length).to.equal(1);
       expect(payload.biddata[0]).to.exist;
       expect(payload.biddata[0].code).to.equal(bidRequest.adUnitCode);
-      expect(payload.biddata[0].id).to.equal(bidRequest.bidId);
+      expect(payload.biddata[0].id).to.equal(bidRequest.placementId);
       expect(payload.biddata[0].bidder).to.equal(bidRequest.bidder);
       expect(payload.biddata[0].bids.length).to.equal(1);
       expect(payload.biddata[0].bids[0]).to.deep.equal(testBid);
@@ -559,7 +561,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata.length).to.equal(1);
       expect(payload.biddata[0]).to.exist;
       expect(payload.biddata[0].code).to.equal(bidRequest.adUnitCode);
-      expect(payload.biddata[0].id).to.equal(bidRequest.bidId);
+      expect(payload.biddata[0].id).to.equal(bidRequest.placementId);
       expect(payload.biddata[0].bidder).to.equal(bidRequest.bidder);
       expect(payload.biddata[0].sizes).to.be.undefined;
       expect(payload.biddata[0].mediaTypes).to.exist;
@@ -611,7 +613,7 @@ describe('VibrantBidAdapter', function () {
           }
         },
         adUnitCode: 'native-div',
-        bidId: '30b31c1838de1e',
+        bidId: '30b31c1838de14',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
       };
@@ -625,7 +627,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata.length).to.equal(3);
       expect(payload.biddata[0]).to.exist;
       expect(payload.biddata[0].code).to.equal(bidRequest.adUnitCode);
-      expect(payload.biddata[0].id).to.equal(bidRequest.bidId);
+      expect(payload.biddata[0].id).to.equal(bidRequest.placementId);
       expect(payload.biddata[0].bidder).to.equal(bidRequest.bidder);
       expect(payload.biddata[0].mediaTypes).to.exist;
       expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
@@ -634,7 +636,7 @@ describe('VibrantBidAdapter', function () {
       });
       expect(payload.biddata[1]).to.exist;
       expect(payload.biddata[1].code).to.equal(bid2.adUnitCode);
-      expect(payload.biddata[1].id).to.equal(bid2.bidId);
+      expect(payload.biddata[1].id).to.equal(bid2.placementId);
       expect(payload.biddata[1].bidder).to.equal(bid2.bidder);
       expect(payload.biddata[1].mediaTypes).to.exist;
       expect(payload.biddata[1].mediaTypes[VIDEO]).to.exist;
@@ -644,7 +646,7 @@ describe('VibrantBidAdapter', function () {
       });
       expect(payload.biddata[2]).to.exist;
       expect(payload.biddata[2].code).to.equal(bid3.adUnitCode);
-      expect(payload.biddata[2].id).to.equal(bid3.bidId);
+      expect(payload.biddata[2].id).to.equal(bid3.placementId);
       expect(payload.biddata[2].bidder).to.equal(bid3.bidder);
       expect(payload.biddata[2].mediaTypes[NATIVE]).to.exist;
       expect(payload.biddata[2].mediaTypes[NATIVE]).to.deep.equal(bid3.mediaTypes.native);
@@ -688,7 +690,7 @@ describe('VibrantBidAdapter', function () {
           }
         },
         adUnitCode: 'video-div',
-        bidId: '30b31c1838de1f',
+        bidId: '30b31c1838de1a',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
       };
@@ -702,7 +704,7 @@ describe('VibrantBidAdapter', function () {
       expect(payload.biddata.length).to.equal(2);
       expect(payload.biddata[0]).to.exist;
       expect(payload.biddata[0].code).to.equal(bidRequest.adUnitCode);
-      expect(payload.biddata[0].id).to.equal(bidRequest.bidId);
+      expect(payload.biddata[0].id).to.equal(bidRequest.placementId);
       expect(payload.biddata[0].bidder).to.equal(bidRequest.bidder);
       expect(payload.biddata[0].mediaTypes).to.exist;
       expect(Object.keys(payload.biddata[0].mediaTypes).length).to.equal(3);
@@ -716,13 +718,13 @@ describe('VibrantBidAdapter', function () {
         sizes: DEFAULT_BID_SIZES,
       });
       expect(payload.biddata[0].code).to.equal(bidRequest.adUnitCode);
-      expect(payload.biddata[0].id).to.equal(bidRequest.bidId);
+      expect(payload.biddata[0].id).to.equal(bidRequest.placementId);
       expect(payload.biddata[0].bidder).to.equal(bidRequest.bidder);
       expect(payload.biddata[0].mediaTypes[NATIVE]).to.exist;
       expect(payload.biddata[0].mediaTypes[NATIVE]).to.deep.equal(bidRequest.mediaTypes.native);
       expect(payload.biddata[1]).to.exist;
       expect(payload.biddata[1].code).to.equal(bid2.adUnitCode);
-      expect(payload.biddata[1].id).to.equal(bid2.bidId);
+      expect(payload.biddata[1].id).to.equal(bid2.placementId);
       expect(payload.biddata[1].bidder).to.equal(bid2.bidder);
       expect(payload.biddata[1].mediaTypes).to.exist;
       expect(Object.keys(payload.biddata[1].mediaTypes).length).to.equal(1);
@@ -737,29 +739,27 @@ describe('VibrantBidAdapter', function () {
   describe('interpretResponse', function () {
     it('returns a valid Prebid API response object for a banner Prebid Server response', function () {
       const prebidServerResponse = {
-        body: {
-          bids: [{
-            mediaType: 'banner',
-            requestId: '12345',
-            cpm: 0.12,
-            currency: 'USD',
-            width: 640,
-            height: 240,
-            ad: BANNER_AD,
-            ttl: 300,
-            creativeId: '86f4aef9-2f17-421d-84db-5c9814bf4a79',
-            netRevenue: false,
-            meta: Object.freeze({
-              advertiser: '105600',
-              width: 300,
-              height: 250,
-              isCustom: '1',
-              progressBar: false,
-              mpuSrc: '//images.intellitxt.com/a/105600/Genpact/genpact.jpg',
-              clickURL: '{{click}}'
-            })
-          }],
-        },
+        body: [{
+          mediaType: 'banner',
+          requestId: '12345',
+          cpm: 0.12,
+          currency: 'USD',
+          width: 640,
+          height: 240,
+          ad: BANNER_AD,
+          ttl: 300,
+          creativeId: '86f4aef9-2f17-421d-84db-5c9814bf4a79',
+          netRevenue: false,
+          meta: Object.freeze({
+            advertiser: '105600',
+            width: 300,
+            height: 250,
+            isCustom: '1',
+            progressBar: false,
+            mpuSrc: '//images.intellitxt.com/a/105600/Genpact/genpact.jpg',
+            clickURL: '{{click}}'
+          })
+        }]
       };
 
       const interpretedResponse = spec.interpretResponse(prebidServerResponse, {});
@@ -779,37 +779,35 @@ describe('VibrantBidAdapter', function () {
       expect(interpretedBid.ttl).to.equal(300);
       expect(interpretedBid.creativeId).to.equal('86f4aef9-2f17-421d-84db-5c9814bf4a79');
       expect(interpretedBid.netRevenue).to.be.false;
-      expect(interpretedBid.meta).to.deep.equal(prebidServerResponse.body.bids[0].meta);
+      expect(interpretedBid.meta).to.deep.equal(prebidServerResponse.body[0].meta);
       expect(interpretedBid.renderer).to.be.undefined;
-      expect(interpretedBid.adResponse).to.deep.equal(prebidServerResponse.body);
+      expect(interpretedBid.adResponse).to.deep.equal(prebidServerResponse);
     });
 
     it('returns a valid Prebid API response object for a video Prebid Server response', function () {
       const prebidServerResponse = Object.freeze({
-        body: Object.freeze({
-          bids: [{
-            mediaType: 'video',
-            requestId: '67890',
-            cpm: 0.65,
-            currency: 'USD',
-            width: 600,
-            height: 300,
-            ad: VIDEO_AD,
-            ttl: 300,
-            creativeId: '248e8e0c-2f17-421d-84db-5c9814bf4a79',
-            netRevenue: false,
-            meta: {
-              advertiser: '105600',
-              width: 300,
-              height: 250,
-              isCustom: '1',
-              progressBar: false,
-              mpuSrc: '//images.intellitxt.com/a/105600/Genpact/genpact.jpg',
-              clickURL: '{{click}}'
-            },
-            vastUrl: 'https://www.example.com/myVastVideo'
-          }]
-        }),
+        body: [{
+          mediaType: 'video',
+          requestId: '67890',
+          cpm: 0.65,
+          currency: 'USD',
+          width: 600,
+          height: 300,
+          ad: VIDEO_AD,
+          ttl: 300,
+          creativeId: '248e8e0c-2f17-421d-84db-5c9814bf4a79',
+          netRevenue: false,
+          meta: {
+            advertiser: '105600',
+            width: 300,
+            height: 250,
+            isCustom: '1',
+            progressBar: false,
+            mpuSrc: '//images.intellitxt.com/a/105600/Genpact/genpact.jpg',
+            clickURL: '{{click}}'
+          },
+          vastUrl: 'https://www.example.com/myVastVideo'
+        }]
       });
 
       const interpretedResponse = spec.interpretResponse(prebidServerResponse, {});
@@ -829,36 +827,34 @@ describe('VibrantBidAdapter', function () {
       expect(interpretedBid.ttl).to.equal(300);
       expect(interpretedBid.creativeId).to.equal('248e8e0c-2f17-421d-84db-5c9814bf4a79');
       expect(interpretedBid.netRevenue).to.be.false;
-      expect(interpretedBid.meta).to.deep.equal(prebidServerResponse.body.bids[0].meta);
+      expect(interpretedBid.meta).to.deep.equal(prebidServerResponse.body[0].meta);
       expect(interpretedBid.renderer).to.be.undefined;
-      expect(interpretedBid.adResponse).to.deep.equal(prebidServerResponse.body);
+      expect(interpretedBid.adResponse).to.deep.equal(prebidServerResponse);
     });
 
     it('returns a valid Prebid API response object for a native Prebid Server response', function () {
       const prebidServerResponse = Object.freeze({
-        body: Object.freeze({
-          bids: [{
-            mediaType: 'native',
-            requestId: '13579',
-            cpm: 0.30,
-            currency: 'USD',
+        body: [{
+          mediaType: 'native',
+          requestId: '13579',
+          cpm: 0.30,
+          currency: 'USD',
+          width: 240,
+          height: 300,
+          ad: 'https://www.example.com/native-display.html',
+          ttl: 300,
+          creativeId: 'd28e8e0c-2f17-421d-84db-5c9814bf4a81',
+          netRevenue: false,
+          meta: {},
+          title: 'Test native ad bid for 13579',
+          sponsoredBy: 'Vibrant Media Ltd',
+          clickUrl: 'https://www.example.com/native-ct.html',
+          image: {
+            url: 'https://www.example.com/native-display.html',
             width: 240,
-            height: 300,
-            ad: 'https://www.example.com/native-display.html',
-            ttl: 300,
-            creativeId: 'd28e8e0c-2f17-421d-84db-5c9814bf4a81',
-            netRevenue: false,
-            meta: {},
-            title: 'Test native ad bid for 13579',
-            sponsoredBy: 'Vibrant Media Ltd',
-            clickUrl: 'https://www.example.com/native-ct.html',
-            image: {
-              url: 'https://www.example.com/native-display.html',
-              width: 240,
-              height: 300
-            }
-          }]
-        })
+            height: 300
+          }
+        }]
       });
 
       const interpretedResponse = spec.interpretResponse(prebidServerResponse, {});
@@ -878,81 +874,79 @@ describe('VibrantBidAdapter', function () {
       expect(interpretedBid.ttl).to.equal(300);
       expect(interpretedBid.creativeId).to.equal('d28e8e0c-2f17-421d-84db-5c9814bf4a81');
       expect(interpretedBid.netRevenue).to.be.false;
-      expect(interpretedBid.meta).to.deep.equal(prebidServerResponse.body.bids[0].meta);
+      expect(interpretedBid.meta).to.deep.equal(prebidServerResponse.body[0].meta);
       expect(interpretedBid.renderer).to.be.undefined;
-      expect(interpretedBid.adResponse).to.deep.equal(prebidServerResponse.body);
+      expect(interpretedBid.adResponse).to.deep.equal(prebidServerResponse);
     });
 
     it('returns a valid Prebid API response object for a multi-bid Prebid Server response', function () {
       const prebidServerResponse = Object.freeze({
-        body: Object.freeze({
-          bids: [
-            {
-              mediaType: 'banner',
-              requestId: '12345',
-              cpm: 0.4,
-              currency: 'USD',
-              width: 640,
-              height: 240,
-              ad: BANNER_AD,
-              ttl: 300,
-              creativeId: '86f4aef9-2f17-421d-84db-5c9814bf4a79',
-              netRevenue: false,
-              meta: {
-                advertiser: '105600',
-                width: 300,
-                height: 250,
-                isCustom: '1',
-                progressBar: false,
-                mpuSrc: '//images.intellitxt.com/a/105600/Genpact/genpact.jpg',
-                clickURL: '{{click}}'
-              }
-            },
-            {
-              mediaType: 'video',
-              requestId: '67890',
-              cpm: 1.2,
-              currency: 'USD',
+        body: [
+          {
+            mediaType: 'banner',
+            requestId: '12345',
+            cpm: 0.4,
+            currency: 'USD',
+            width: 640,
+            height: 240,
+            ad: BANNER_AD,
+            ttl: 300,
+            creativeId: '86f4aef9-2f17-421d-84db-5c9814bf4a79',
+            netRevenue: false,
+            meta: {
+              advertiser: '105600',
               width: 300,
-              height: 300,
-              ad: VIDEO_AD,
-              ttl: 300,
-              creativeId: 'd28e8e0c-2f17-421d-84db-5c9814bf4a79',
-              netRevenue: false,
-              meta: {
-                advertiser: '105600',
-                width: 300,
-                height: 250,
-                isCustom: '1',
-                progressBar: false,
-                mpuSrc: '//images.intellitxt.com/a/105600/Genpact/genpact.jpg',
-                clickURL: '{{click}}'
-              },
-              vastUrl: 'https://www.example.com/myVastVideo'
-            },
-            {
-              mediaType: 'native',
-              requestId: '13579',
-              cpm: 0.12,
-              currency: 'USD',
-              width: 640,
-              height: 240,
-              ad: 'https://www.example.com/native-display.html',
-              ttl: 300,
-              creativeId: '888e8e0c-2f17-421d-84db-5c9814bf4a81',
-              netRevenue: false,
-              meta: {},
-              title: 'Test native ad bid for 13579',
-              sponsoredBy: 'Vibrant Media Ltd',
-              clickUrl: 'https://www.example.com/native-ct.html',
-              image: {
-                url: 'https://www.example.com/native-display.html',
-                width: 640,
-                height: 240
-              }
+              height: 250,
+              isCustom: '1',
+              progressBar: false,
+              mpuSrc: '//images.intellitxt.com/a/105600/Genpact/genpact.jpg',
+              clickURL: '{{click}}'
             }
-          ],
-        })
+          },
+          {
+            mediaType: 'video',
+            requestId: '67890',
+            cpm: 1.2,
+            currency: 'USD',
+            width: 300,
+            height: 300,
+            ad: VIDEO_AD,
+            ttl: 300,
+            creativeId: 'd28e8e0c-2f17-421d-84db-5c9814bf4a79',
+            netRevenue: false,
+            meta: {
+              advertiser: '105600',
+              width: 300,
+              height: 250,
+              isCustom: '1',
+              progressBar: false,
+              mpuSrc: '//images.intellitxt.com/a/105600/Genpact/genpact.jpg',
+              clickURL: '{{click}}'
+            },
+            vastUrl: 'https://www.example.com/myVastVideo'
+          },
+          {
+            mediaType: 'native',
+            requestId: '13579',
+            cpm: 0.12,
+            currency: 'USD',
+            width: 640,
+            height: 240,
+            ad: 'https://www.example.com/native-display.html',
+            ttl: 300,
+            creativeId: '888e8e0c-2f17-421d-84db-5c9814bf4a81',
+            netRevenue: false,
+            meta: {},
+            title: 'Test native ad bid for 13579',
+            sponsoredBy: 'Vibrant Media Ltd',
+            clickUrl: 'https://www.example.com/native-ct.html',
+            image: {
+              url: 'https://www.example.com/native-display.html',
+              width: 640,
+              height: 240
+            }
+          }
+        ]
       });
 
       const interpretedResponse = spec.interpretResponse(prebidServerResponse, {});
@@ -972,9 +966,9 @@ describe('VibrantBidAdapter', function () {
       expect(interpretedBannerBid.ttl).to.equal(300);
       expect(interpretedBannerBid.creativeId).to.equal('86f4aef9-2f17-421d-84db-5c9814bf4a79');
       expect(interpretedBannerBid.netRevenue).to.be.false;
-      expect(interpretedBannerBid.meta).to.deep.equal(prebidServerResponse.body.bids[0].meta);
+      expect(interpretedBannerBid.meta).to.deep.equal(prebidServerResponse.body[0].meta);
       expect(interpretedBannerBid.renderer).to.be.undefined;
-      expect(interpretedBannerBid.adResponse).to.deep.equal(prebidServerResponse.body);
+      expect(interpretedBannerBid.adResponse).to.deep.equal(prebidServerResponse);
 
       const interpretedVideoBid = interpretedResponse[1];
 
@@ -988,9 +982,9 @@ describe('VibrantBidAdapter', function () {
       expect(interpretedVideoBid.ttl).to.equal(300);
       expect(interpretedVideoBid.creativeId).to.equal('d28e8e0c-2f17-421d-84db-5c9814bf4a79');
       expect(interpretedVideoBid.netRevenue).to.be.false;
-      expect(interpretedVideoBid.meta).to.deep.equal(prebidServerResponse.body.bids[1].meta);
+      expect(interpretedVideoBid.meta).to.deep.equal(prebidServerResponse.body[1].meta);
       expect(interpretedVideoBid.renderer).to.be.undefined;
-      expect(interpretedVideoBid.adResponse).to.deep.equal(prebidServerResponse.body);
+      expect(interpretedVideoBid.adResponse).to.deep.equal(prebidServerResponse);
 
       const interpretedNativeBid = interpretedResponse[2];
 
@@ -1004,9 +998,9 @@ describe('VibrantBidAdapter', function () {
       expect(interpretedNativeBid.ttl).to.equal(300);
       expect(interpretedNativeBid.creativeId).to.equal('888e8e0c-2f17-421d-84db-5c9814bf4a81');
       expect(interpretedNativeBid.netRevenue).to.be.false;
-      expect(interpretedNativeBid.meta).to.deep.equal(prebidServerResponse.body.bids[2].meta);
+      expect(interpretedNativeBid.meta).to.deep.equal(prebidServerResponse.body[2].meta);
       expect(interpretedNativeBid.renderer).to.be.undefined;
-      expect(interpretedNativeBid.adResponse).to.deep.equal(prebidServerResponse.body);
+      expect(interpretedNativeBid.adResponse).to.deep.equal(prebidServerResponse);
     });
   });
 
@@ -1026,7 +1020,7 @@ describe('VibrantBidAdapter', function () {
             },
           },
           adUnitCode: 'banner-div',
-          bidId: '30b31c1838de1e',
+          bidId: '30b31c1838de11',
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
         };
@@ -1040,7 +1034,7 @@ describe('VibrantBidAdapter', function () {
             },
           },
           adUnitCode: 'video-div',
-          bidId: '30b31c1838de1e',
+          bidId: '30b31c1838de15',
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
         };
@@ -1065,7 +1059,7 @@ describe('VibrantBidAdapter', function () {
             }
           },
           adUnitCode: 'native-div',
-          bidId: '30b31c1838de1e',
+          bidId: '30b31c1838de12',
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
         };
@@ -1085,7 +1079,7 @@ describe('VibrantBidAdapter', function () {
         expect(payload.biddata.length).to.equal(3);
         expect(payload.biddata[0]).to.exist;
         expect(payload.biddata[0].code).to.equal(bannerBid.adUnitCode);
-        expect(payload.biddata[0].id).to.equal(bannerBid.bidId);
+        expect(payload.biddata[0].id).to.equal(bannerBid.placementId);
         expect(payload.biddata[0].bidder).to.equal(bannerBid.bidder);
         expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
         expect(payload.biddata[0].mediaTypes[BANNER]).to.deep.equal({
@@ -1093,7 +1087,7 @@ describe('VibrantBidAdapter', function () {
         });
         expect(payload.biddata[1]).to.exist;
         expect(payload.biddata[1].code).to.equal(videoBid.adUnitCode);
-        expect(payload.biddata[1].id).to.equal(videoBid.bidId);
+        expect(payload.biddata[1].id).to.equal(videoBid.placementId);
         expect(payload.biddata[1].bidder).to.equal(videoBid.bidder);
         expect(payload.biddata[1].mediaTypes[VIDEO]).to.exist;
         expect(payload.biddata[1].mediaTypes[VIDEO]).to.deep.equal({
@@ -1102,7 +1096,7 @@ describe('VibrantBidAdapter', function () {
         });
         expect(payload.biddata[2]).to.exist;
         expect(payload.biddata[2].code).to.equal(nativeBid.adUnitCode);
-        expect(payload.biddata[2].id).to.equal(nativeBid.bidId);
+        expect(payload.biddata[2].id).to.equal(nativeBid.placementId);
         expect(payload.biddata[2].bidder).to.equal(nativeBid.bidder);
         expect(payload.biddata[2].mediaTypes[NATIVE]).to.exist;
         expect(payload.biddata[2].mediaTypes[NATIVE]).to.deep.equal(nativeBid.mediaTypes.native);
@@ -1128,7 +1122,7 @@ describe('VibrantBidAdapter', function () {
             }
           },
           adUnitCode: 'test-div',
-          bidId: '30b31c1838de1e',
+          bidId: '30b31c1838de13',
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
         };
@@ -1146,7 +1140,7 @@ describe('VibrantBidAdapter', function () {
         expect(payload.biddata.length).to.equal(1);
         expect(payload.biddata[0]).to.exist;
         expect(payload.biddata[0].code).to.equal(bid.adUnitCode);
-        expect(payload.biddata[0].id).to.equal(bid.bidId);
+        expect(payload.biddata[0].id).to.equal(bid.placementId);
         expect(payload.biddata[0].bidder).to.equal(bid.bidder);
         expect(payload.biddata[0].mediaTypes[BANNER]).to.exist;
         expect(payload.biddata[0].mediaTypes[BANNER]).to.deep.equal({

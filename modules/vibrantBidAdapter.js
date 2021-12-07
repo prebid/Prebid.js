@@ -64,7 +64,8 @@ const transformBidRequests = function(bidRequests) {
   bidRequests.forEach(function(bidRequest) {
     const transformedBidRequest = {
       code: bidRequest.adUnitCode || bidRequest.code,
-      id: bidRequest.bidId || bidRequest.transactionId,
+      id: bidRequest.placementId || (bidRequest.params || {}).invCode,
+      requestId: bidRequest.bidId || bidRequest.transactionId,
       bidder: bidRequest.bidder,
       mediaTypes: bidRequest.mediaTypes,
       bids: bidRequest.bids,
@@ -152,11 +153,10 @@ export const spec = {
    * @return {Bid[]} an array of bids returned by the server, translated into the expected Prebid.js format.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const serverResponseBody = serverResponse.body;
-    const bids = serverResponseBody.bids;
+    const bids = serverResponse.body;
 
     bids.forEach(function(bid) {
-      bid.adResponse = serverResponseBody;
+      bid.adResponse = serverResponse;
     });
 
     return bids;
