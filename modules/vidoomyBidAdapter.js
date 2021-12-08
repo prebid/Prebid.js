@@ -61,7 +61,6 @@ const isBidResponseValid = bid => {
 
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
-    console.log('userids', bid.userId, bid.userIdAsEids)
     let adType = BANNER;
     let sizes;
     if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {

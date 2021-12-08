@@ -4,6 +4,7 @@
  * @module modules/fingerprintIdSystem
  * @requires module:modules/userId
  */
+// eslint-disable-next-line prebid/validate-imports
 import { load as loadFingerprint } from '@fingerprintjs/fingerprintjs';
 import { logError, logInfo } from '../src/utils.js'
 import { submodule } from '../src/hook.js';
