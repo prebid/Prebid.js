@@ -44,6 +44,7 @@
   "rtdModule": [
     "browsiRtdProvider",
     "dgkeywordRtdProvider",
+    "ftrackRtdProvider",
     "geoedgeRtdProvider",
     "haloRtdProvider",
     "iasRtdProvider",
