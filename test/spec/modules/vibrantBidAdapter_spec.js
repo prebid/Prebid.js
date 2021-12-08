@@ -35,7 +35,7 @@ const VALID_CONSENT_STRING = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
 
 const getValidBidderRequest = (bidRequests) => {
   return Object.freeze({
-    bidderCode: 'vibrantmedia',
+    bidderCode: 'vibrant',
     auctionId: '1d1a030790a475',
     bidderRequestId: '22edbae2733bf6',
     timeout: 3000,
@@ -52,7 +52,7 @@ describe('VibrantBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('constants', function () {
-    expect(spec.code).to.equal('vibrantmedia');
+    expect(spec.code).to.equal('vibrant');
     expect(spec.supportedMediaTypes).to.deep.equal([BANNER, NATIVE, VIDEO]);
   });
 
@@ -72,7 +72,7 @@ describe('VibrantBidAdapter', function () {
 
   beforeEach(function () {
     bidRequest = {
-      bidder: 'vibrantmedia',
+      bidder: 'vibrant',
       params: {
         // Filled in by individual tests
       },
@@ -459,7 +459,7 @@ describe('VibrantBidAdapter', function () {
 
     it('should add GDPR consent to the server request', function () {
       const bidderRequest = {
-        bidderCode: 'vibrantmedia',
+        bidderCode: 'vibrant',
         auctionId: '1d1a030790a475',
         bidderRequestId: '22edbae2733bf6',
         timeout: 3000,
@@ -579,7 +579,7 @@ describe('VibrantBidAdapter', function () {
         },
       };
       const bid2 = {
-        bidder: 'vibrantmedia',
+        bidder: 'vibrant',
         params: VALID_VIDEO_BID_PARAMS,
         mediaTypes: {
           video: {
@@ -594,7 +594,7 @@ describe('VibrantBidAdapter', function () {
         auctionId: '1d1a030790a475',
       };
       const bid3 = {
-        bidder: 'vibrantmedia',
+        bidder: 'vibrant',
         params: VALID_NATIVE_BID_PARAMS,
         mediaTypes: {
           native: {
@@ -683,7 +683,7 @@ describe('VibrantBidAdapter', function () {
       bidRequest.adUnitCode = 'mixed-div';
 
       const bid2 = {
-        bidder: 'vibrantmedia',
+        bidder: 'vibrant',
         params: VALID_VIDEO_BID_PARAMS,
         mediaTypes: {
           video: {
@@ -1015,7 +1015,7 @@ describe('VibrantBidAdapter', function () {
         const transformedNativeBidParams = spec.transformBidParams(VALID_NATIVE_BID_PARAMS);
 
         const bannerBid = {
-          bidder: 'vibrantmedia',
+          bidder: 'vibrant',
           params: transformedBannerBidParams,
           mediaTypes: {
             banner: {
@@ -1029,7 +1029,7 @@ describe('VibrantBidAdapter', function () {
           auctionId: '1d1a030790a475',
         };
         const videoBid = {
-          bidder: 'vibrantmedia',
+          bidder: 'vibrant',
           params: transformedVideoBidParams,
           mediaTypes: {
             video: {
@@ -1044,7 +1044,7 @@ describe('VibrantBidAdapter', function () {
           auctionId: '1d1a030790a475',
         };
         const nativeBid = {
-          bidder: 'vibrantmedia',
+          bidder: 'vibrant',
           params: transformedNativeBidParams,
           mediaTypes: {
             native: {
@@ -1113,7 +1113,7 @@ describe('VibrantBidAdapter', function () {
       it('should succeed with multiple media types for a single bid', function () {
         const bidParams = spec.transformBidParams(VALID_VIDEO_BID_PARAMS);
         const bid = {
-          bidder: 'vibrantmedia',
+          bidder: 'vibrant',
           params: bidParams,
           mediaTypes: {
             banner: {

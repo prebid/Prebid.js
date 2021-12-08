@@ -23,7 +23,7 @@ var adUnits = [
       }
     },
     bids: [{
-      bidder: 'vibrantmedia',
+      bidder: 'vibrant',
       params: {
         placementId: 12345
       }
@@ -48,7 +48,7 @@ var adUnits = [
     },
     bids: [
       {
-        bidder: 'vibrantmedia',
+        bidder: 'vibrant',
         params: {
           placementId: 67890,
           video: {
@@ -81,7 +81,7 @@ var adUnits = [
       }
     },
     bids: [{
-      bidder: 'vibrantmedia',
+      bidder: 'vibrant',
       params: {
         placementId: 13579,
         allowSmallerSizes: true

@@ -11,7 +11,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
 
-const BIDDER_CODE = 'vibrantmedia';
+const BIDDER_CODE = 'vibrant';
 const VIBRANT_PREBID_URL = 'https://prebid.intellitxt.com/prebid';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 
