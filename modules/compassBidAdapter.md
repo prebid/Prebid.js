@@ -9,7 +9,6 @@ Maintainer: sa-support@brightcom.com
 # Description
 
 Connects to Compass exchange for bids.
-
 Compass bid adapter supports Banner, Video (instream and outstream) and Native.
 
 # Test Parameters

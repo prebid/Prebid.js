@@ -1,4 +1,5 @@
-import { isFn, deepAccess, logMessage } from '../src/utils.js';
+import { isFn, deepAccess, logMessage, logError } from '../src/utils.js';
+
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -77,8 +78,9 @@ function getBidFloor(bid) {
       size: '*',
     });
     return bidFloor.floor;
-  } catch (_) {
-    return 0
+  } catch (err) {
+    logError(err);
+    return 0;
   }
 }
 
