@@ -87,15 +87,9 @@ export const sharethroughAdapterSpec = {
         impression.ext = { gpid: gpid };
       }
 
-      // if request is for video, we only support instream
-      if (bidReq.mediaTypes && bidReq.mediaTypes.video && bidReq.mediaTypes.video.context === 'outstream') {
-        // return null so we can easily remove this imp from the array of imps that we send to adserver
-        return null;
-      }
+      const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
 
-      if (bidReq.mediaTypes && bidReq.mediaTypes.video) {
-        const videoRequest = bidReq.mediaTypes.video;
-
+      if (videoRequest) {
         // default playerSize, only change this if we know width and height are properly defined in the request
         let [w, h] = [640, 360];
         if (videoRequest.playerSize && videoRequest.playerSize[0] && videoRequest.playerSize[1]) {
@@ -118,9 +112,9 @@ export const sharethroughAdapterSpec = {
           startdelay: nullish(videoRequest.startdelay, 0),
           skipmin: nullish(videoRequest.skipmin, 0),
           skipafter: nullish(videoRequest.skipafter, 0),
+          placement: videoRequest.context === 'instream' ? 1 : +deepAccess(videoRequest, 'placement', 4),
         };
 
-        if (videoRequest.placement) impression.video.placement = videoRequest.placement;
         if (videoRequest.delivery) impression.video.delivery = videoRequest.delivery;
         if (videoRequest.companiontype) impression.video.companiontype = videoRequest.companiontype;
         if (videoRequest.companionad) impression.video.companionad = videoRequest.companionad;

@@ -157,7 +157,6 @@ describe('sharethrough adapter spec', function () {
               startdelay: 42,
               skipmin: 10,
               skipafter: 20,
-              placement: 1,
               delivery: 1,
               companiontype: 'companion type',
               companionad: 'companion ad',
@@ -431,17 +430,31 @@ describe('sharethrough adapter spec', function () {
           expect(videoImp.startdelay).to.equal(0);
           expect(videoImp.skipmin).to.equal(0);
           expect(videoImp.skipafter).to.equal(0);
-          expect(videoImp.placement).to.be.undefined;
+          expect(videoImp.placement).to.equal(1);
           expect(videoImp.delivery).to.be.undefined;
           expect(videoImp.companiontype).to.be.undefined;
           expect(videoImp.companionad).to.be.undefined;
         });
 
-        it('should not return a video impression if context is outstream', () => {
-          bidRequests[1].mediaTypes.video.context = 'outstream';
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+        describe('outstream', () => {
+          it('should use placement value if provided', () => {
+            bidRequests[1].mediaTypes.video.context = 'outstream';
+            bidRequests[1].mediaTypes.video.placement = 3;
 
-          expect(builtRequest).to.be.undefined;
+            const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+            const videoImp = builtRequest.data.imp[0].video;
+
+            expect(videoImp.placement).to.equal(3);
+          });
+
+          it('should default placement to 4 if not provided', () => {
+            bidRequests[1].mediaTypes.video.context = 'outstream';
+
+            const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+            const videoImp = builtRequest.data.imp[0].video;
+
+            expect(videoImp.placement).to.equal(4);
+          });
         });
       });
 
