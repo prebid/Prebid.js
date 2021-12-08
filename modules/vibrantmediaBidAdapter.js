@@ -1,9 +1,9 @@
 /*
  * Vibrant Media Ltd.
  *
- * Prebid Adapter for sending bid requests to the Vibrant Prebid Server and bid responses back to the Prebid client
+ * Prebid Adapter for sending bid requests to the prebid server and bid responses back to the client
  *
- * Note: Only BANNER and VIDEO are currently supported by the Vibrant Prebid Server.
+ * Note: Only BANNER and VIDEO are currently supported by the prebid server.
  */
 
 import {logError, logInfo} from '../src/utils.js';
@@ -11,8 +11,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
 
-const BIDDER_CODE = 'vibrant';
-const VIBRANT_PREBID_URL = 'https://prebid.intellitxt.com/prebid';
+const BIDDER_CODE = 'vibrantmedia';
+const VIBRANT_MEDIA_PREBID_URL = 'https://prebid.intellitxt.com/prebid';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 
 /**
@@ -52,7 +52,7 @@ const isBaseUrl = function(url) {
 };
 
 /**
- * Returns transformed bid requests that are in a format native to the Vibrant Prebid Server.
+ * Returns transformed bid requests that are in a format native to the prebid server.
  *
  * @param {*[]} bidRequests the bid requests sent by the Prebid API.
  *
@@ -141,7 +141,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: VIBRANT_PREBID_URL,
+      url: VIBRANT_MEDIA_PREBID_URL,
       data: JSON.stringify(prebidData)
     };
   },
@@ -149,10 +149,10 @@ export const spec = {
   /**
    * Translate the Kormorant prebid server response into a list of bids.
    *
-   * @param {ServerResponse} serverResponse a successful response from the server.
+   * @param {ServerResponse} serverResponse a successful response from the prebid server.
    * @param {BidRequest}     bidRequest     the original bid request associated with this response.
    *
-   * @return {Bid[]} an array of bids returned by the server, translated into the expected Prebid.js format.
+   * @return {Bid[]} an array of bids returned by the prebid server, translated into the expected Prebid.js format.
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const bids = serverResponse.body;
@@ -187,7 +187,7 @@ export const spec = {
   },
 
   /**
-   * Called when a bid returned by the Vibrant Bidder Service is successful.
+   * Called when a bid returned by the prebid server is successful.
    *
    * Example bid won data:
    *

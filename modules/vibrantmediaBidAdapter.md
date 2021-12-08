@@ -1,6 +1,6 @@
 ## Overview
 
-**Module Name:** Vibrant Bidder Adapter
+**Module Name:** Vibrant Media Bidder Adapter
 
 **Module Type:** Bidder Adapter
 
@@ -23,7 +23,7 @@ var adUnits = [
       }
     },
     bids: [{
-      bidder: 'vibrant',
+      bidder: 'vibrantmedia',
       params: {
         placementId: 12345
       }
@@ -48,7 +48,7 @@ var adUnits = [
     },
     bids: [
       {
-        bidder: 'vibrant',
+        bidder: 'vibrantmedia',
         params: {
           placementId: 67890,
           video: {
@@ -81,7 +81,7 @@ var adUnits = [
       }
     },
     bids: [{
-      bidder: 'vibrant',
+      bidder: 'vibrantmedia',
       params: {
         placementId: 13579,
         allowSmallerSizes: true
