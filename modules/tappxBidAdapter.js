@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.10610';
+const TAPPX_BIDDER_VERSION = '0.1.10714';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream'];
@@ -225,11 +225,11 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   hostDomain = hostInfo.domain;
 
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
+  const MKTAG = utils.deepAccess(validBidRequests, 'params.mktag');
   const BIDFLOOR = utils.deepAccess(validBidRequests, 'params.bidfloor');
   const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.banner');
   const videoMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.video');
-  const { refererInfo } = bidderRequest;
 
   // let requests = [];
   let payload = {};
@@ -249,12 +249,12 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     payload.app = app;
     api[0] = utils.deepAccess(validBidRequests, 'params.api') ? utils.deepAccess(validBidRequests, 'params.api') : [3, 5];
   } else {
+    let bundle = _extractPageUrl(validBidRequests, bidderRequest);
     let site = {};
-    site.name = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    site.bundle = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    site.domain = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    publisher.name = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    publisher.domain = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
+    site.name = bundle;
+    site.domain = bundle;
+    publisher.name = bundle;
+    publisher.domain = bundle;
     tagid = `${site.name}_typeAdBanVid_${getOs()}`;
     payload.site = site;
   }
@@ -294,9 +294,11 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     let video = {};
 
     let videoParams = utils.deepAccess(validBidRequests, 'params.video');
-    for (var key in VIDEO_CUSTOM_PARAMS) {
-      if (videoParams.hasOwnProperty(key)) {
-        video[key] = _checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
+    if (typeof videoParams !== 'undefined') {
+      for (var key in VIDEO_CUSTOM_PARAMS) {
+        if (videoParams.hasOwnProperty(key)) {
+          video[key] = _checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
+        }
       }
     }
 
@@ -337,7 +339,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   }
 
   let bidder = {};
-  bidder.tappxkey = TAPPXKEY;
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
   bidder.bidfloor = BIDFLOOR;
@@ -366,35 +367,28 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   geo.country = utils.deepAccess(validBidRequests, 'params.geo.country');
   // < Device object
 
-  // > Params
-  let params = {};
-  params.host = 'tappx.com';
-  params.bidfloor = BIDFLOOR;
-  // < Params
-
   // > GDPR
+  let user = {};
+  user.ext = {};
 
   // Universal ID
   let eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
   if (typeof eidsArr !== 'undefined') {
     eidsArr = eidsArr.filter(
       uuid =>
-        uuid !== null &&
-          (uuid.source !== undefined && uuid.source !== null && typeof uuid.uids[0].id == 'string') &&
-          (uuid.uids[0].id !== undefined && uuid.uids[0].id !== null && typeof uuid.uids[0].id == 'string')
+        (typeof uuid !== 'undefined' && uuid !== null) &&
+        (typeof uuid.source == 'string' && uuid.source !== null) &&
+        (typeof uuid.uids[0].id == 'string' && uuid.uids[0].id !== null)
     )
-  }
-  payload.user = {
-    ext: {
-      eids: eidsArr
-    }
+
+    if (typeof user !== 'undefined') { user.ext.eids = eidsArr }
   };
 
   let regs = {};
   regs.gdpr = 0;
   if (!(bidderRequest.gdprConsent == null)) {
     if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') { regs.gdpr = bidderRequest.gdprConsent.gdprApplies; }
-    if (regs.gdpr) { payload.user.ext.consent = bidderRequest.gdprConsent.consentString; }
+    if (regs.gdpr) { user.ext.consent = bidderRequest.gdprConsent.consentString; }
   }
 
   // CCPA
@@ -409,6 +403,15 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   }
   // < GDPR
 
+  // > Payload Ext
+  let payloadExt = {};
+  payloadExt.bidder = {};
+  payloadExt.bidder.tappxkey = TAPPXKEY;
+  payloadExt.bidder.mktag = MKTAG;
+  payloadExt.bidder.bcid = utils.deepAccess(validBidRequests, 'params.bcid');
+  payloadExt.bidder.bcrid = utils.deepAccess(validBidRequests, 'params.bcrid');
+  // < Payload Ext
+
   // > Payload
   payload.id = validBidRequests.auctionId;
   payload.test = utils.deepAccess(validBidRequests, 'params.test') ? 1 : 0;
@@ -416,9 +419,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.tmax = bidderRequest.timeout ? bidderRequest.timeout : 600;
   payload.bidder = BIDDER_CODE;
   payload.imp = [imp];
+  payload.user = user;
+  payload.ext = payloadExt;
 
   payload.device = device;
-  payload.params = params;
   payload.regs = regs;
   // < Payload
 
@@ -487,6 +491,34 @@ export function _checkParamDataType(key, value, datatype) {
   }
   utils.logWarn(LOG_PREFIX, errMsg);
   return undefined;
+}
+
+export function _extractPageUrl(validBidRequests, bidderRequest) {
+  let domainUrl = utils.deepAccess(validBidRequests, 'params.domainUrl');
+
+  if (typeof domainUrl == 'undefined' || domainUrl == null) {
+    domainUrl = config.getConfig('pageUrl') || utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
+  }
+
+  if (typeof domainUrl == 'undefined' || domainUrl == null) {
+    try {
+      domainUrl = window.top.document.head.querySelector('link[rel="canonical"][href]').getAttribute('href');
+    } catch (error) {
+      domainUrl = undefined;
+    }
+  }
+
+  try {
+    domainUrl = domainUrl.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img)[0].replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?/img, '');
+  } catch (error) {
+    domainUrl = undefined;
+  }
+
+  if (typeof domainUrl == 'undefined' || domainUrl == null) {
+    domainUrl = window.location.hostname;
+  }
+
+  return domainUrl;
 }
 
 registerBidder(spec);

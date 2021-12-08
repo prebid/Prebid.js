@@ -107,6 +107,9 @@ function adResponse(bid, ad) {
       originData: adDetails.originData,
       origin: adDetails.origin,
       originInstance: adDetails.originInstance
+    },
+    meta: {
+      advertiserDomains: ad.adomain || []
     }
   });
 

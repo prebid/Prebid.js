@@ -29,7 +29,12 @@ Ads sizes available: [300,250], [320,50], [320,480], [480,320], [728,90], [768,1
                             tappxkey: "pub-1234-android-1234",
                             endpoint: "ZZ1234PBJS",
                             bidfloor: 0.005,
-                            test: true // Optional for testing purposes
+                            mktag: "123456",                // Optional: tappx mktag
+                            test: true,                     // Optional: for testing purposes
+                            domainUrl: "www.example.com",   // Optional: add domain site
+                            ext: {                          // Optional: extra params
+                                foo: "bar"
+                            }
                         }
                     }
                 ]
@@ -62,21 +67,26 @@ Ads sizes available: [300,250], [320,50], [320,480], [480,320], [728,90], [768,1
                     tappxkey: "pub-1234-desktop-1234",
                     endpoint: "VZ12TESTCTV",
                     bidfloor: 0.005,
-                    test: true,
-                    video: {
-                        skippable: true,                      // optional
-                        minduration: 5,                       // optional
-                        maxduration: 30,                      // optional
-                        startdelay: 5,                        // optional
-                        playbackmethod: [1,3],                // optional
-                        api: [ 1, 2 ],                        // optional
-                        protocols: [ 2, 3 ],                  // optional
-                        battr: [ 13, 14 ],                    // optional
-                        linearity: 1,                         // optional
-                        placement: 2,                         // optional
-                        minbitrate: 10,                       // optional
-                        maxbitrate: 10                        // optional
-                    }
+                    mktag: "123456",                // Optional: tappx mktag
+                    test: true,                     // Optional: for testing purposes
+                    domainUrl: "www.example.com",   // Optional: add domain site
+                    video: {                        // Optional
+                        skippable: true,            // Optional
+                        minduration: 5,             // Optional
+                        maxduration: 30,            // Optional
+                        startdelay: 5,              // Optional
+                        playbackmethod: [1,3],      // Optional
+                        api: [ 1, 2 ],              // Optional
+                        protocols: [ 2, 3 ],        // Optional
+                        battr: [ 13, 14 ],          // Optional
+                        linearity: 1,               // Optional
+                        placement: 2,               // Optional
+                        minbitrate: 10,             // Optional
+                        maxbitrate: 10              // Optional
+                    },
+                    ext: {                          // Optional: extra params
+                                foo: "bar"
+                            }
                 }
             }]
         }

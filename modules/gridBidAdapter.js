@@ -362,6 +362,11 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
         dealId: serverBid.dealid
       };
 
+      if (serverBid.ext && serverBid.ext.bidder && serverBid.ext.bidder.grid && serverBid.ext.bidder.grid.demandSource) {
+        bidResponse.adserverTargeting = { 'hb_ds': serverBid.ext.bidder.grid.demandSource };
+        bidResponse.meta.demandSource = serverBid.ext.bidder.grid.demandSource;
+      }
+
       if (serverBid.content_type === 'video') {
         bidResponse.vastXml = serverBid.adm;
         bidResponse.mediaType = VIDEO;

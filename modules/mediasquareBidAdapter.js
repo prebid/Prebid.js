@@ -106,6 +106,9 @@ export const spec = {
             'advertiserDomains': value['adomain']
           }
         };
+        if ('match' in value) {
+          bidResponse['mediasquare']['match'] = value['match'];
+        }
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
@@ -156,12 +159,13 @@ export const spec = {
     if (bid.hasOwnProperty('mediasquare')) {
       if (bid['mediasquare'].hasOwnProperty('bidder')) { params.push('bidder=' + bid['mediasquare']['bidder']); }
       if (bid['mediasquare'].hasOwnProperty('code')) { params.push('code=' + bid['mediasquare']['code']); }
+      if (bid['mediasquare'].hasOwnProperty('match')) { params.push('match=' + bid['mediasquare']['match']); }
     };
     for (let i = 0; i < paramsToSearchFor.length; i++) {
       if (bid.hasOwnProperty(paramsToSearchFor[i])) { params.push(paramsToSearchFor[i] + '=' + bid[paramsToSearchFor[i]]); }
     }
     if (params.length > 0) { params = '?' + params.join('&'); }
-    ajax(endpoint + BIDDER_ENDPOINT_WINNING + params, null);
+    ajax(endpoint + BIDDER_ENDPOINT_WINNING + params, null, undefined, {method: 'GET', withCredentials: true});
     return true;
   }
 

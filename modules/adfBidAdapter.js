@@ -15,7 +15,10 @@ const { getConfig } = config;
 
 const BIDDER_CODE = 'adf';
 const GVLID = 50;
-const BIDDER_ALIAS = [ { code: 'adformOpenRTB', gvlid: GVLID } ];
+const BIDDER_ALIAS = [
+  { code: 'adformOpenRTB', gvlid: GVLID },
+  { code: 'adform', gvlid: GVLID }
+];
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
 const NATIVE_PARAMS = {
   title: {
@@ -91,6 +94,7 @@ export const spec = {
     const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
+    const schain = setOnAny(validBidRequests, 'schain');
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
@@ -201,6 +205,10 @@ export const spec = {
 
     if (eids) {
       utils.deepSetValue(request, 'user.ext.eids', eids);
+    }
+
+    if (schain) {
+      utils.deepSetValue(request, 'source.ext.schain', schain);
     }
 
     return {

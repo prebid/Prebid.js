@@ -133,6 +133,13 @@ function formatUrlParams(option) {
       let temp = option[prop];
       option[prop] = { p1Consent: temp, noP1Consent: temp };
     }
+    if (utils.isPlainObject(option[prop]) && (!option[prop].p1Consent || !option[prop].noP1Consent)) {
+      ['p1Consent', 'noP1Consent'].forEach((conUrl) => {
+        if (!option[prop][conUrl]) {
+          utils.logWarn(`s2sConfig.${prop}.${conUrl} not defined.  PBS request will be skipped in some P1 scenarios.`);
+        }
+      });
+    }
   });
 }
 
@@ -602,10 +609,12 @@ const OPEN_RTB_PROTOCOL = {
         });
 
         mediaTypes['banner'] = {format};
+
+        if (bannerParams.pos) mediaTypes['banner'].pos = bannerParams.pos;
       }
 
       if (!utils.isEmpty(videoParams)) {
-        if (videoParams.context === 'outstream' && (!videoParams.renderer || !adUnit.renderer)) {
+        if (videoParams.context === 'outstream' && !videoParams.renderer && !adUnit.renderer) {
           // Don't push oustream w/o renderer to request object.
           utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
         } else {
@@ -652,7 +661,7 @@ const OPEN_RTB_PROTOCOL = {
       const ext = adUnit.bids.reduce((acc, bid) => {
         const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
-          bid.params = adapter.getSpec().transformBidParams(bid.params, true);
+          bid.params = adapter.getSpec().transformBidParams(bid.params, true, adUnit, bidRequests);
         }
         acc[bid.bidder] = (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params;
         return acc;
@@ -728,7 +737,8 @@ const OPEN_RTB_PROTOCOL = {
       source: {tid: s2sBidRequest.tid},
       tmax: s2sConfig.timeout,
       imp: imps,
-      test: getConfig('debug') ? 1 : 0,
+      // to do: add setconfig option to pass test = 1
+      test: 0,
       ext: {
         prebid: {
           // set ext.prebid.auctiontimestamp with the auction timestamp. Data type is long integer.
@@ -745,6 +755,11 @@ const OPEN_RTB_PROTOCOL = {
 
     // Sets pbjs version, can be overwritten below if channel exists in s2sConfig.extPrebid
     request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
+
+    // set debug flag if in debug mode
+    if (getConfig('debug')) {
+      request.ext.prebid = Object.assign(request.ext.prebid, {debug: true})
+    }
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
     if (s2sConfig.extPrebid && typeof s2sConfig.extPrebid === 'object') {
@@ -1089,9 +1104,10 @@ export function PrebidServer() {
       const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits, s2sBidRequest.s2sConfig, requestedBidders);
       const requestJson = request && JSON.stringify(request);
       utils.logInfo('BidRequest: ' + requestJson);
-      if (request && requestJson) {
+      const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
+      if (request && requestJson && endpointUrl) {
         ajax(
-          getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
+          endpointUrl,
           {
             success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done, s2sBidRequest.s2sConfig),
             error: done
@@ -1099,6 +1115,8 @@ export function PrebidServer() {
           requestJson,
           { contentType: 'text/plain', withCredentials: true }
         );
+      } else {
+        utils.logError('PBS request not made.  Check endpoints.');
       }
     }
   };

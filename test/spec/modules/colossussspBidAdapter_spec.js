@@ -144,7 +144,11 @@ describe('ColossussspAdapter', function () {
         ttl: 1000,
         creativeId: '123asd',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: {
+          advertiserDomains: ['google.com'],
+          advertiserId: 1234
+        }
       } ]
     };
     let serverResponses = spec.interpretResponse(resObject);
@@ -153,7 +157,7 @@ describe('ColossussspAdapter', function () {
       for (let i = 0; i < serverResponses.length; i++) {
         let dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-          'netRevenue', 'currency', 'mediaType');
+          'netRevenue', 'currency', 'mediaType', 'meta');
         expect(dataItem.requestId).to.be.a('string');
         expect(dataItem.cpm).to.be.a('number');
         expect(dataItem.width).to.be.a('number');
@@ -164,6 +168,7 @@ describe('ColossussspAdapter', function () {
         expect(dataItem.netRevenue).to.be.a('boolean');
         expect(dataItem.currency).to.be.a('string');
         expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
       }
       it('Returns an empty array if invalid response is passed', function () {
         serverResponses = spec.interpretResponse('invalid_response');
