@@ -1,6 +1,7 @@
+import { getWindowTop, deepAccess, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
@@ -56,7 +57,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    const winTop = utils.getWindowTop();
+    const winTop = getWindowTop();
     const location = winTop.location;
     let placements = [];
     let request = {
@@ -106,7 +107,7 @@ export const spec = {
       if (bid.schain) {
         placement.schain = bid.schain;
       }
-      let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         placement.gpid = gpid;
       }
@@ -165,7 +166,7 @@ export const spec = {
         }
       }
     } catch (e) {
-      utils.logMessage(e);
+      logMessage(e);
     };
     return response;
   },
@@ -175,6 +176,12 @@ export const spec = {
       type: 'image',
       url: G_URL_SYNC
     }];
+  },
+
+  onBidWon: (bid) => {
+    if (bid.nurl) {
+      ajax(bid.nurl, null);
+    }
   }
 };
 

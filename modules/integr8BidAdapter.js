@@ -1,7 +1,7 @@
+import { deepAccess, isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'integr8';
 const ENDPOINT_URL = 'https://integr8.central.gjirafa.tech/bid';
@@ -62,7 +62,7 @@ export const spec = {
         placementId: bidRequest.params.placementId,
         bidid: bidRequest.bidId,
         count: bidRequest.params.count,
-        skipTime: utils.deepAccess(bidRequest, 'mediaTypes.video.skipafter', bidRequest.params.skipTime),
+        skipTime: deepAccess(bidRequest, 'mediaTypes.video.skipafter', bidRequest.params.skipTime),
         floor: getBidFloor(bidRequest)
       };
     });
@@ -130,7 +130,7 @@ function generateSizeParam(sizes) {
 }
 
 export function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return null;
   }
 
@@ -140,7 +140,7 @@ export function getBidFloor(bid) {
     size: '*'
   });
 
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
     return floor.floor;
   }
 

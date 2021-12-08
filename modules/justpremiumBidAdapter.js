@@ -4,7 +4,7 @@ import { deepAccess } from '../src/utils.js';
 const BIDDER_CODE = 'justpremium'
 const GVLID = 62
 const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = '1.7'
+const JP_ADAPTER_VERSION = '1.8.1'
 const pixels = []
 
 export const spec = {
@@ -65,6 +65,10 @@ export const spec = {
       jp_adapter: JP_ADAPTER_VERSION
     }
 
+    if (validBidRequests[0].schain) {
+      payload.schain = validBidRequests[0].schain;
+    }
+
     const payloadString = JSON.stringify(payload)
 
     return {
@@ -95,6 +99,11 @@ export const spec = {
           format: bid.format,
           meta: {
             advertiserDomains: bid.adomain && bid.adomain.length > 0 ? bid.adomain : []
+          }
+        }
+        if (bid.ext && bid.ext.pg) {
+          bidResponse.adserverTargeting = {
+            'hb_deal_justpremium': 'jp_pg'
           }
         }
         bidResponses.push(bidResponse)

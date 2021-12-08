@@ -1,6 +1,6 @@
+import { logInfo, generateUUID, formatQS, triggerPixel, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'sublime';
 const BIDDER_GVLID = 114;
@@ -43,7 +43,7 @@ function isValidNotifyId(value) {
  * @param {Object=} obj
  */
 export function log(msg, obj) {
-  utils.logInfo('SublimeBidAdapter - ' + msg, obj);
+  logInfo('SublimeBidAdapter - ' + msg, obj);
 }
 
 // Default state
@@ -73,7 +73,7 @@ function getNotifyId(params) {
 
   let notifyId = params.notifyId || sublime.notifyId;
   if (!notifyId) {
-    notifyId = utils.generateUUID();
+    notifyId = generateUUID();
     log('generating a notifyId', notifyId);
   }
   if (!sublime.notifyId) {
@@ -110,8 +110,8 @@ export function sendEvent(eventName, sspName) {
 
   log('Sending pixel for event: ' + eventName, eventObject);
 
-  const queryString = utils.formatQS(eventObject);
-  utils.triggerPixel('https://' + SUBLIME_ANTENNA + '/?' + queryString);
+  const queryString = formatQS(eventObject);
+  triggerPixel('https://' + SUBLIME_ANTENNA + '/?' + queryString);
 }
 
 /**
@@ -280,7 +280,7 @@ function onBidWon(bid) {
 function onTimeout(timeoutData) {
   log('Timeout from adapter', timeoutData);
 
-  const timeout = utils.deepAccess(timeoutData, '0.timeout');
+  const timeout = deepAccess(timeoutData, '0.timeout');
   if (timeout) {
     // Set timeout to the one we got from the bid
     setState({ timeout });

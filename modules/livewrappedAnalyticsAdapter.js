@@ -3,6 +3,7 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = 'https://lwadm.com/analytics/10';
@@ -11,8 +12,10 @@ const REQUESTSENT = 1;
 const RESPONSESENT = 2;
 const WINSENT = 4;
 const TIMEOUTSENT = 8;
+const ADRENDERFAILEDSENT = 16;
 
 let initOptions;
+let prebidGlobal = getGlobal();
 export const BID_WON_TIMEOUT = 500;
 
 const cache = {
@@ -37,6 +40,9 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
           let lwFloor;
+          let container = document.getElementById(bidRequest.adUnitCode);
+          let adUnitId = container ? container.getAttribute('data-adunitid') : undefined;
+          adUnitId = adUnitId != null ? adUnitId : undefined;
 
           if (bidRequest.lwflr) {
             lwFloor = bidRequest.lwflr.flr;
@@ -49,6 +55,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
           cache.auctions[args.auctionId].bids[bidRequest.bidId] = {
             bidder: bidRequest.bidder,
             adUnit: bidRequest.adUnitCode,
+            adUnitId: adUnitId,
             isBid: false,
             won: false,
             timeout: false,
@@ -74,9 +81,11 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         bidResponse.width = args.width;
         bidResponse.height = args.height;
         bidResponse.cpm = args.cpm;
+        bidResponse.originalCpm = prebidGlobal.convertCurrency(args.originalCpm, args.originalCurrency, args.currency);
         bidResponse.ttr = args.timeToRespond;
         bidResponse.readyToSend = 1;
         bidResponse.mediaType = args.mediaType == 'native' ? 2 : (args.mediaType == 'video' ? 4 : 1);
+        bidResponse.floorData = args.floorData;
         if (!bidResponse.ttr) {
           bidResponse.ttr = time - bidResponse.start;
         }
@@ -85,6 +94,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
             {
               sent: 0,
               lw: bidResponse.lw,
+              adUnitId: bidResponse.adUnitId,
               timeStamp: cache.auctions[args.auctionId].timeStamp
             };
         }
@@ -103,7 +113,18 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         logInfo('LIVEWRAPPED_BID_WON:', args);
         let wonBid = cache.auctions[args.auctionId].bids[args.requestId];
         wonBid.won = true;
+        wonBid.floorData = args.floorData;
         if (wonBid.sendStatus != 0) {
+          livewrappedAnalyticsAdapter.sendEvents();
+        }
+        break;
+      case CONSTANTS.EVENTS.AD_RENDER_FAILED:
+        logInfo('LIVEWRAPPED_AD_RENDER_FAILED:', args);
+        let adRenderFailedBid = cache.auctions[args.bid.auctionId].bids[args.bid.requestId];
+        adRenderFailedBid.adRenderFailed = true;
+        adRenderFailedBid.reason = args.reason;
+        adRenderFailedBid.message = args.message;
+        if (adRenderFailedBid.sendStatus != 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
         break;
@@ -144,13 +165,15 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     wins: getWins(sentRequests.gdpr, sentRequests.auctionIds),
     timeouts: getTimeouts(sentRequests.auctionIds),
     bidAdUnits: getbidAdUnits(),
+    rf: getAdRenderFailed(sentRequests.auctionIds),
     rcv: getAdblockerRecovered()
   };
 
   if (events.requests.length == 0 &&
       events.responses.length == 0 &&
       events.wins.length == 0 &&
-      events.timeouts.length == 0) {
+      events.timeouts.length == 0 &&
+      events.rf.length == 0) {
     return;
   }
 
@@ -181,6 +204,7 @@ function getSentRequests() {
         sentRequests.push({
           timeStamp: auction.timeStamp,
           adUnit: bid.adUnit,
+          adUnitId: bid.adUnitId,
           bidder: bid.bidder,
           gdpr: gdprPos,
           floor: bid.lwFloor,
@@ -211,15 +235,17 @@ function getResponses(gdpr, auctionIds) {
         responses.push({
           timeStamp: auction.timeStamp,
           adUnit: bid.adUnit,
+          adUnitId: bid.adUnitId,
           bidder: bid.bidder,
           width: bid.width,
           height: bid.height,
           cpm: bid.cpm,
+          orgCpm: bid.originalCpm,
           ttr: bid.ttr,
           IsBid: bid.isBid,
           mediaType: bid.mediaType,
           gdpr: gdprPos,
-          floor: bid.floorData ? bid.floorData.floorValue : bid.lwFloor,
+          floor: bid.lwFloor ? bid.lwFloor : (bid.floorData ? bid.floorData.floorValue : undefined),
           floorCur: bid.floorData ? bid.floorData.floorCurrency : undefined,
           auctionId: auctionIdPos,
           auc: bid.auc,
@@ -249,13 +275,15 @@ function getWins(gdpr, auctionIds) {
         wins.push({
           timeStamp: auction.timeStamp,
           adUnit: bid.adUnit,
+          adUnitId: bid.adUnitId,
           bidder: bid.bidder,
           width: bid.width,
           height: bid.height,
           cpm: bid.cpm,
+          orgCpm: bid.originalCpm,
           mediaType: bid.mediaType,
           gdpr: gdprPos,
-          floor: bid.floorData ? bid.floorData.floorValue : bid.lwFloor,
+          floor: bid.lwFloor ? bid.lwFloor : (bid.floorData ? bid.floorData.floorValue : undefined),
           floorCur: bid.floorData ? bid.floorData.floorCurrency : undefined,
           auctionId: auctionIdPos,
           auc: bid.auc,
@@ -314,6 +342,7 @@ function getTimeouts(auctionIds) {
         timeouts.push({
           bidder: bid.bidder,
           adUnit: bid.adUnit,
+          adUnitId: bid.adUnitId,
           timeStamp: auction.timeStamp,
           auctionId: auctionIdPos,
           auc: bid.auc,
@@ -325,6 +354,36 @@ function getTimeouts(auctionIds) {
   });
 
   return timeouts;
+}
+
+function getAdRenderFailed(auctionIds) {
+  var adRenderFails = [];
+
+  Object.keys(cache.auctions).forEach(auctionId => {
+    let auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
+    Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
+      let auction = cache.auctions[auctionId];
+      let bid = auction.bids[bidId];
+      if (!(bid.sendStatus & ADRENDERFAILEDSENT) && bid.adRenderFailed) {
+        bid.sendStatus |= ADRENDERFAILEDSENT;
+
+        adRenderFails.push({
+          bidder: bid.bidder,
+          adUnit: bid.adUnit,
+          adUnitId: bid.adUnitId,
+          timeStamp: auction.timeStamp,
+          auctionId: auctionIdPos,
+          auc: bid.auc,
+          buc: bid.buc,
+          lw: bid.lw,
+          rsn: bid.reason,
+          msg: bid.message
+        });
+      }
+    });
+  });
+
+  return adRenderFails;
 }
 
 function getbidAdUnits() {
@@ -339,6 +398,7 @@ function getbidAdUnits() {
 
         bidAdUnits.push({
           adUnit: adUnit,
+          adUnitId: bidAdUnit.adUnitId,
           timeStamp: bidAdUnit.timeStamp,
           lw: bidAdUnit.lw
         });
