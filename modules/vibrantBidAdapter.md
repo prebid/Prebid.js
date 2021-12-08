@@ -1,16 +1,16 @@
-# Overview
+## Overview
 
-```
-Module Name: Vibrant Bidder Adapter
-Module Type: Bidder Adapter
-Maintainer: kormorant@vibrantmedia.com
-```
+**Module Name:** Vibrant Bidder Adapter
 
-# Description
+**Module Type:** Bidder Adapter
+
+**Maintainer:** kormorant@vibrantmedia.com
+
+## Description
 
 Module that allows Vibrant Media to provide ad bids for banner, native and video (outstream only).
 
-# Test Parameters
+## Test Parameters
 
 ```
 var adUnits = [

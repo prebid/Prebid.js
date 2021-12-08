@@ -742,7 +742,7 @@ describe('VibrantBidAdapter', function () {
         body: [{
           mediaType: 'banner',
           requestId: '12345',
-          cpm: 0.12,
+          cpm: 1,
           currency: 'USD',
           width: 640,
           height: 240,
@@ -771,7 +771,7 @@ describe('VibrantBidAdapter', function () {
 
       expect(interpretedBid.mediaType).to.equal('banner');
       expect(interpretedBid.requestId).to.equal('12345');
-      expect(interpretedBid.cpm).to.equal(0.12);
+      expect(interpretedBid.cpm).to.equal(1);
       expect(interpretedBid.currency).to.equal('USD');
       expect(interpretedBid.width).to.equal(640);
       expect(interpretedBid.height).to.equal(240);
@@ -789,7 +789,7 @@ describe('VibrantBidAdapter', function () {
         body: [{
           mediaType: 'video',
           requestId: '67890',
-          cpm: 0.65,
+          cpm: 2,
           currency: 'USD',
           width: 600,
           height: 300,
@@ -819,7 +819,7 @@ describe('VibrantBidAdapter', function () {
 
       expect(interpretedBid.mediaType).to.equal('video');
       expect(interpretedBid.requestId).to.equal('67890');
-      expect(interpretedBid.cpm).to.equal(0.65);
+      expect(interpretedBid.cpm).to.equal(2);
       expect(interpretedBid.currency).to.equal('USD');
       expect(interpretedBid.width).to.equal(600);
       expect(interpretedBid.height).to.equal(300);
@@ -837,7 +837,7 @@ describe('VibrantBidAdapter', function () {
         body: [{
           mediaType: 'native',
           requestId: '13579',
-          cpm: 0.30,
+          cpm: 3,
           currency: 'USD',
           width: 240,
           height: 300,
@@ -866,7 +866,7 @@ describe('VibrantBidAdapter', function () {
 
       expect(interpretedBid.mediaType).to.equal('native');
       expect(interpretedBid.requestId).to.equal('13579');
-      expect(interpretedBid.cpm).to.equal(0.30);
+      expect(interpretedBid.cpm).to.equal(3);
       expect(interpretedBid.currency).to.equal('USD');
       expect(interpretedBid.width).to.equal(240);
       expect(interpretedBid.height).to.equal(300);
@@ -885,7 +885,7 @@ describe('VibrantBidAdapter', function () {
           {
             mediaType: 'banner',
             requestId: '12345',
-            cpm: 0.4,
+            cpm: 3,
             currency: 'USD',
             width: 640,
             height: 240,
@@ -906,7 +906,7 @@ describe('VibrantBidAdapter', function () {
           {
             mediaType: 'video',
             requestId: '67890',
-            cpm: 1.2,
+            cpm: 4,
             currency: 'USD',
             width: 300,
             height: 300,
@@ -928,7 +928,7 @@ describe('VibrantBidAdapter', function () {
           {
             mediaType: 'native',
             requestId: '13579',
-            cpm: 0.12,
+            cpm: 5,
             currency: 'USD',
             width: 640,
             height: 240,
@@ -958,7 +958,7 @@ describe('VibrantBidAdapter', function () {
 
       expect(interpretedBannerBid.mediaType).to.equal('banner');
       expect(interpretedBannerBid.requestId).to.equal('12345');
-      expect(interpretedBannerBid.cpm).to.equal(0.4);
+      expect(interpretedBannerBid.cpm).to.equal(3);
       expect(interpretedBannerBid.currency).to.equal('USD');
       expect(interpretedBannerBid.width).to.equal(640);
       expect(interpretedBannerBid.height).to.equal(240);
@@ -974,7 +974,7 @@ describe('VibrantBidAdapter', function () {
 
       expect(interpretedVideoBid.mediaType).to.equal('video');
       expect(interpretedVideoBid.requestId).to.equal('67890');
-      expect(interpretedVideoBid.cpm).to.equal(1.2);
+      expect(interpretedVideoBid.cpm).to.equal(4);
       expect(interpretedVideoBid.currency).to.equal('USD');
       expect(interpretedVideoBid.width).to.equal(300);
       expect(interpretedVideoBid.height).to.equal(300);
@@ -990,7 +990,7 @@ describe('VibrantBidAdapter', function () {
 
       expect(interpretedNativeBid.mediaType).to.equal('native');
       expect(interpretedNativeBid.requestId).to.equal('13579');
-      expect(interpretedNativeBid.cpm).to.equal(0.12);
+      expect(interpretedNativeBid.cpm).to.equal(5);
       expect(interpretedNativeBid.currency).to.equal('USD');
       expect(interpretedNativeBid.width).to.equal(640);
       expect(interpretedNativeBid.height).to.equal(240);
