@@ -12,7 +12,7 @@ Module that allows Vibrant Media to provide ad bids for banner, native and video
 
 ## Test Parameters
 
-```
+```javascript
 var adUnits = [
   // Banner ad unit
   {
