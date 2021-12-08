@@ -570,7 +570,7 @@ function setupBidTargeting(bidObject, bidderRequest) {
   let keyValues;
   const cpmCheck = (isAllowZeroCpmBidsEnabled(bidObject.bidderCode)) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
   if (bidObject.bidderCode && (cpmCheck || bidObject.dealId)) {
-    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode);
+    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode && bid.bidId === bidObject.requestId);
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
