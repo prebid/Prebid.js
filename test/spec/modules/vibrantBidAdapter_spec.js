@@ -589,6 +589,7 @@ describe('VibrantBidAdapter', function () {
         },
         adUnitCode: 'video-div',
         bidId: '30b31c1838de1f',
+        placementId: '135797531abcdef',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
       };
@@ -614,6 +615,7 @@ describe('VibrantBidAdapter', function () {
         },
         adUnitCode: 'native-div',
         bidId: '30b31c1838de14',
+        placementId: '918273645abcdef',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
       };
@@ -692,6 +694,7 @@ describe('VibrantBidAdapter', function () {
         adUnitCode: 'video-div',
         bidId: '30b31c1838de1a',
         bidderRequestId: '22edbae2733bf6',
+        placementId: '293857832abfef',
         auctionId: '1d1a030790a475',
       };
 
@@ -1022,6 +1025,7 @@ describe('VibrantBidAdapter', function () {
           adUnitCode: 'banner-div',
           bidId: '30b31c1838de11',
           bidderRequestId: '22edbae2733bf6',
+          placementId: '293857832abfef',
           auctionId: '1d1a030790a475',
         };
         const videoBid = {
@@ -1036,6 +1040,7 @@ describe('VibrantBidAdapter', function () {
           adUnitCode: 'video-div',
           bidId: '30b31c1838de15',
           bidderRequestId: '22edbae2733bf6',
+          placementId: '293857832abfef',
           auctionId: '1d1a030790a475',
         };
         const nativeBid = {
@@ -1061,6 +1066,7 @@ describe('VibrantBidAdapter', function () {
           adUnitCode: 'native-div',
           bidId: '30b31c1838de12',
           bidderRequestId: '22edbae2733bf6',
+          placementId: '293857832abfef',
           auctionId: '1d1a030790a475',
         };
 
@@ -1124,6 +1130,7 @@ describe('VibrantBidAdapter', function () {
           adUnitCode: 'test-div',
           bidId: '30b31c1838de13',
           bidderRequestId: '22edbae2733bf6',
+          placementId: '293857832abfef',
           auctionId: '1d1a030790a475',
         };
 
