@@ -131,6 +131,7 @@ export const spec = {
     const prebidData = {
       url,
       gdpr: bidderRequest.gdprConsent,
+      usp: bidderRequest.uspConsent,
       window: {
         width: window.innerWidth,
         height: window.innerHeight,

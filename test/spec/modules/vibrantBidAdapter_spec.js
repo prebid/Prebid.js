@@ -455,9 +455,9 @@ describe('VibrantBidAdapter', function () {
 
       expect(payload.url).to.exist;
       expect(payload.url).to.be.a('string');
-    })
+    });
 
-    it('should add GDPR consent to the server request', function () {
+    it('should add GDPR consent to the server request, where present', function () {
       const bidderRequest = {
         bidderCode: 'vibrant',
         auctionId: '1d1a030790a475',
@@ -478,6 +478,73 @@ describe('VibrantBidAdapter', function () {
       expect(payload.gdpr).to.exist;
       expect(payload.gdpr.consentString).to.exist.and.to.equal(VALID_CONSENT_STRING);
       expect(payload.gdpr.gdprApplies).to.exist.and.to.be.true;
+    });
+
+    it('should add USP consent to the server request, where present', function () {
+      const bidderRequest = {
+        bidderCode: 'vibrant',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        uspConsent: {
+          cmpApi: 'iab',
+          timeout: 10000,
+          consentData: {
+            testDatum: true
+          }
+        },
+        bids: bidRequests
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      // TODO: Check that we should not be implementing withCredentials
+      // expect(request.options).to.deep.equal({withCredentials: true});
+
+      const payload = JSON.parse(request.data);
+      expect(payload.usp).to.exist;
+      expect(payload.usp.cmpApi).to.exist.and.to.equal('iab');
+      expect(payload.usp.timeout).to.exist.and.to.equal(10000);
+      expect(payload.usp.consentData).to.exist.and.to.deep.equal({
+        testDatum: true
+      });
+    });
+
+    it('should add GDPR and USP consent to the server request, where both present', function () {
+      const bidderRequest = {
+        bidderCode: 'vibrant',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        gdprConsent: {
+          consentString: VALID_CONSENT_STRING,
+          gdprApplies: true,
+        },
+        uspConsent: {
+          cmpApi: 'iab',
+          timeout: 10000,
+          consentData: {
+            testDatum: true
+          }
+        },
+        bids: bidRequests,
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      // TODO: Check that we should not be implementing withCredentials
+      // expect(request.options).to.deep.equal({withCredentials: true});
+
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr).to.exist;
+      expect(payload.gdpr.consentString).to.exist.and.to.equal(VALID_CONSENT_STRING);
+      expect(payload.gdpr.gdprApplies).to.exist.and.to.be.true;
+
+      expect(payload.usp).to.exist;
+      expect(payload.usp.cmpApi).to.exist.and.to.equal('iab');
+      expect(payload.usp.timeout).to.exist.and.to.equal(10000);
+      expect(payload.usp.consentData).to.exist.and.to.deep.equal({
+        testDatum: true
+      });
     });
 
     it('should add window dimensions to the server request', function () {
