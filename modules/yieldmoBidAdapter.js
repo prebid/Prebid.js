@@ -55,13 +55,8 @@ export const spec = {
         p: [],
         page_url: bidderRequest.refererInfo.referer,
         bust: new Date().getTime().toString(),
-        pr: (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '',
-        scrd: LOCAL_WINDOW.devicePixelRatio || 0,
         dnt: getDNT(),
         description: getPageDescription(),
-        title: LOCAL_WINDOW.document.title || '',
-        w: LOCAL_WINDOW.innerWidth,
-        h: LOCAL_WINDOW.innerHeight,
         userConsent: JSON.stringify({
           // case of undefined, stringify will remove param
           gdprApplies: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
@@ -69,6 +64,14 @@ export const spec = {
         }),
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || ''
       };
+
+      if (canAccessTopWindow()) {
+        serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
+        serverRequest.scrd = LOCAL_WINDOW.devicePixelRatio || 0;
+        serverRequest.title = LOCAL_WINDOW.document.title || '';
+        serverRequest.w = LOCAL_WINDOW.innerWidth;
+        serverRequest.h = LOCAL_WINDOW.innerHeight;
+      }
 
       const mtp = window.navigator.maxTouchPoints;
       if (mtp) {
@@ -609,3 +612,18 @@ function getEids(bidRequest) {
     return createEidsArray(bidRequest.userId) || [];
   }
 };
+
+/**
+ * Check if top window can be accessed
+ *
+ * @return {boolean} true if can access top window otherwise false
+ */
+function canAccessTopWindow() {
+  try {
+    if (getWindowTop().location.href) {
+      return true;
+    }
+  } catch (error) {
+    return false;
+  }
+}
