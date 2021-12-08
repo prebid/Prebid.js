@@ -57,6 +57,8 @@ const cache = {
   gpt: {},
 };
 
+let pbjs = getGlobal();
+
 const BID_REJECTED_IPF = 'rejected-ipf';
 
 export let rubiConf = {
@@ -234,11 +236,31 @@ function sendMessage(auctionId, bidWonId, trigger) {
 
     let auction = {
       clientTimeoutMillis: auctionCache.timeout,
+      auctionStart: auctionCache.timestamp,
+      auctionEnd: auctionCache.endTs,
       samplingFactor,
       accountId,
       adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i]),
       requestId: auctionId
     };
+
+    // get bidder timestamps if available
+    const bidderTimestamps = auctionCache.bidderOrder.reduce((accum, bidder) => {
+      const bidderTimes = pbjs.getBidderTelemetry(auctionId, bidder);
+      if (bidderTimes) {
+        accum.push({bidder, ...bidderTimes});
+      }
+      return accum;
+    }, []);
+    if (bidderTimestamps.length) {
+      auction.bidderTimestamps = bidderTimestamps;
+    }
+
+    // get http calls
+    const httpCalls = pbjs.getHttpData(auctionId);
+    if (httpCalls) {
+      auction.httpCalls = httpCalls;
+    }
 
     // pick our of top level floor data we want to send!
     if (auctionCache.floorData) {
@@ -582,6 +604,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
         cacheEntry.gamHasRendered = {};
+        cacheEntry.bidderOrder = [];
         cacheEntry.referrer = deepAccess(args, 'bidderRequests.0.refererInfo.referer');
         const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (floorData) {
@@ -607,6 +630,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case BID_REQUESTED:
+        cache.auctions[args.auctionId].bidderOrder.push(args.bidderCode);
         Object.assign(cache.auctions[args.auctionId].bids, args.bids.reduce((memo, bid) => {
           // mark adUnits we expect bidWon events for
           cache.auctions[args.auctionId].bidsWon[bid.adUnitCode] = false;

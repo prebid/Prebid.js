@@ -5,7 +5,7 @@ import {
   adUnitsFilter, flatten, getHighestCpm, isArrayOfNums, isGptPubadsDefined, uniques, logInfo,
   contains, logError, isArray, deepClone, deepAccess, isNumber, logWarn, logMessage, isFn,
   transformAdServerTargetingObj, bind, replaceAuctionPrice, replaceClickThrough, insertElement,
-  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty
+  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty, deepSetValue, timestamp
 } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
@@ -950,6 +950,23 @@ $$PREBID_GLOBAL$$.readConfig = config.readConfig;
  */
 $$PREBID_GLOBAL$$.setConfig = config.setConfig;
 $$PREBID_GLOBAL$$.setBidderConfig = config.setBidderConfig;
+
+let telemetry = {};
+$$PREBID_GLOBAL$$.addBidderTelemetry = function (auctionId, bidder, key) {
+  deepSetValue(telemetry, `${auctionId}.${bidder}.${key}`, timestamp());
+};
+$$PREBID_GLOBAL$$.getBidderTelemetry = function (auctionId, bidder) {
+  return deepAccess(telemetry, `${auctionId}.${bidder}`);
+}
+
+let httpRequests = {};
+$$PREBID_GLOBAL$$.addHttpData = function (auctionId, httpData) {
+  httpRequests[auctionId] = httpRequests[auctionId] || [];
+  httpRequests[auctionId].push(httpData);
+};
+$$PREBID_GLOBAL$$.getHttpData = function (auctionId) {
+  return httpRequests[auctionId];
+}
 
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 

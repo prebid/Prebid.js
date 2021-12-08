@@ -9,13 +9,15 @@ import CONSTANTS from '../constants.json';
 import events from '../events.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject, parseUrl } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
+import { getGlobal } from '../prebidGlobal.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
 
+let pbjs = getGlobal();
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
  *
@@ -217,7 +219,10 @@ export function newBidder(spec) {
         }
       });
 
+      pbjs.addBidderTelemetry(bidderRequest.auctionId, bidderRequest.bidderCode, 'buildStart');
       let requests = spec.buildRequests(validBidRequests, bidderRequest);
+      pbjs.addBidderTelemetry(bidderRequest.auctionId, bidderRequest.bidderCode, 'buildEnd');
+
       if (!requests || requests.length === 0) {
         afterAllResponses();
         return;
@@ -241,7 +246,13 @@ export function newBidder(spec) {
         return '';
       }
 
-      function processRequest(request) {
+      function processRequest(request, index) {
+        let http = {
+          bidder: bidderRequest.bidderCode,
+          requestNum: index + 1,
+          hostname: parseUrl(request.url).hostname,
+          start: timestamp()
+        }
         switch (request.method) {
           case 'GET':
             ajax(
@@ -281,6 +292,10 @@ export function newBidder(spec) {
         // If the adapter code fails, no bids should be added. After all the bids have been added,
         // make sure to call the `onResponse` function so that we're one step closer to calling done().
         function onSuccess(response, responseObj) {
+          http.end = timestamp();
+          http.status = responseObj.status;
+          http.timeTaken = http.end - http.start;
+          pbjs.addHttpData(bidderRequest.auctionId, http);
           onTimelyResponse(spec.code);
 
           try {
@@ -296,7 +311,9 @@ export function newBidder(spec) {
 
           let bids;
           try {
+            pbjs.addBidderTelemetry(bidderRequest.auctionId, bidderRequest.bidderCode, 'interpretStart');
             bids = spec.interpretResponse(response, request);
+            pbjs.addBidderTelemetry(bidderRequest.auctionId, bidderRequest.bidderCode, 'interpretEnd');
           } catch (err) {
             logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
             onResponse();
@@ -336,6 +353,10 @@ export function newBidder(spec) {
         // If the server responds with an error, there's not much we can do. Log it, and make sure to
         // call onResponse() so that we're one step closer to calling done().
         function onFailure(errorMessage, error) {
+          http.end = timestamp();
+          http.status = responseObj.status;
+          http.timeTaken = http.end - http.start;
+          pbjs.addHttpData(bidderRequest.auctionId, http);
           onTimelyResponse(spec.code);
           adapterManager.callBidderError(spec.code, error, bidderRequest)
           events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, { error, bidderRequest });
