@@ -392,7 +392,7 @@ var ftrack = {
           }
         }
 
-        if (obj) {
+        if (null !== obj) {
           var version = obj.GetVersions().split(',');
           version = version[0].split('=');
           version = parseFloat(version[1]);
