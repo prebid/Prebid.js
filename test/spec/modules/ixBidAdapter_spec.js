@@ -2778,5 +2778,13 @@ describe('IndexexchangeAdapter', function () {
       expect(JSON.parse(localStorageValues[key])[EXPIRED_DATE]).to.be.undefined;
       expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { '1': 1, '3': 8, '4': 1 } })
     });
+
+    it('should not save error data into localstorage if consent is not given', () => {
+      config.setConfig({ deviceAccess: false });
+      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
+      bid.params.size = ['400', 100];
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+      expect(localStorageValues[key]).to.be.undefined;
+    });
   });
 });

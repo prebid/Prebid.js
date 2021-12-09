@@ -1,4 +1,4 @@
-import { isSafariBrowser, deepAccess, getWindowTop } from '../src/utils.js';
+import { isSafariBrowser, deepAccess, getWindowTop, mergeDeep } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
@@ -60,10 +60,16 @@ export const spec = {
     const bundle = find(bidRequests, hasBundleParam);
     const tid = find(bidRequests, hasTidParam);
     const schain = bidRequests[0].schain;
+    let ortb2 = config.getConfig('ortb2');
+    const eids = handleEids(bidRequests);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
     var adRequests = bidRequests.map(bidToAdRequest);
+
+    if (eids) {
+      ortb2 = mergeDeep(ortb2 || {}, eids);
+    }
 
     const payload = {
       auctionId: auctionId ? auctionId.auctionId : undefined,
@@ -86,7 +92,7 @@ export const spec = {
       cookieSupport: !isSafariBrowser() && storage.cookiesAreEnabled(),
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
-      rtbData: handleEids(bidRequests),
+      rtbData: ortb2,
       schain: schain
     };
 
