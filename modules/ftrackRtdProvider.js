@@ -379,17 +379,20 @@ var ftrack = {
 
         try {
           obj = new window.ActiveXObject('AcroPDF.PDF');
-        } catch (e) {}
+        } catch (e) {
+          obj = null;
+        }
 
         if (!obj) {
           try {
             obj = new window.ActiveXObject('PDF.PdfCtrl');
           } catch (e) {
+            obj = null;
             return null;
           }
         }
 
-        if (!!obj) {
+        if (obj) {
           var version = obj.GetVersions().split(',');
           version = version[0].split('=');
           version = parseFloat(version[1]);
