@@ -1273,14 +1273,14 @@ export function mergeDeep(target, ...sources) {
           Object.assign(target, { [key]: source[key] });
         } else if (isArray(target[key])) {
           source[key].forEach(obj => {
-            let e = 1;
+            let addItFlag = 1;
             for (let i = 0; i < target[key].length; i++) {
               if (deepEqual(target[key][i], obj)) {
-                e = 0;
+                addItFlag = 0;
                 break;
               }
             }
-            if (e) {
+            if (addItFlag) {
               target[key].push(obj);
             }
           });
