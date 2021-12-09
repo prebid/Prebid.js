@@ -2,12 +2,10 @@ import {ftrackSubmodule} from 'modules/ftrackRtdProvider.js';
 import { config } from 'src/config.js';
 let expect = require('chai').expect;
 
-let server, requests;
-
 describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
   afterEach(function() {
     config.resetConfig();
-    config.resetBidder();    
+    config.resetBidder();
 
     window.localStorage.removeItem('ftrack-rtd');
     window.localStorage.removeItem('ftrack-rtd_exp');
@@ -41,6 +39,7 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
     });
 
     describe(`init() method:`, function() {
+      var ftCacheRegExp = /https:\/\/e\.flashtalking\.com\/cache/;
       var sandbox = sinon.createSandbox();
       afterEach(function() {
         sandbox.restore();
@@ -82,7 +81,7 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
       it(`should reach out to ftrack if ID is not in localstorage`, function() {
         ftrackSubmodule.init();
         expect(server.requests).to.have.length(1);
-        expect((/.flashtalking\.com\/cache/).test(server.requests[0].url)).to.be.ok;
+        expect((ftCacheRegExp).test(server.requests[0].url)).to.be.ok;
         server.resetHistory();
       });
 
@@ -112,7 +111,7 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
         expect(config.getBidderConfig()).to.deep.equal({'grid': {'localStorageWriteAllowed': true}});
 
         return new Promise(function(resolve, reject) {
-          expect((/.flashtalking\.com\/cache/).test(server.requests[0].url)).to.be.ok;
+          expect((ftCacheRegExp).test(server.requests[0].url)).to.be.ok;
           server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '{"cache_id":"<CACHE ID>"}');
           expect((/lgc/).test(server.requests[1].url)).to.be.ok;
           server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({'DeviceID': ['mock_id_value_from_lgc']}));
