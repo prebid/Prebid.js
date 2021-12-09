@@ -98,6 +98,12 @@ function addInputElementsElementListner() {
 
 function addFormInputElementsElementListner(id) {
   _logInfo('Adding input element listeners');
+  if (doesFormInputElementsHaveEmail(id)) {
+    _logInfo('Email found in input elements ' + email);
+    postData();
+    return;
+  }
+  _logInfo('Adding input element listeners');
   const input = document.getElementById(id);
   input.addEventListener('change', event => processInputChange(event));
   input.addEventListener('blur', event => processInputChange(event));
@@ -183,6 +189,17 @@ function doesInputElementsHaveEmail() {
   for (let index = 0; index < inputs.length; ++index) {
     const curInput = inputs[index];
     email = getEmail(curInput.value);
+    if (email !== null) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function doesFormInputElementsHaveEmail(formElementId) {
+  const input = document.getElementById(formElementId);
+  if (input) {
+    email = getEmail(input.value);
     if (email !== null) {
       return true;
     }
