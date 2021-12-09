@@ -744,7 +744,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
     var value = kvPair.val;
 
     if (keyValues[key]) {
-      logWarn('The key: ' + key + ' is getting ovewritten');
+      logWarn('The key: ' + key + ' is being overwritten');
     }
 
     if (isFn(value)) {
