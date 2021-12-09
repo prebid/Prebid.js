@@ -1,9 +1,8 @@
 import { isArray, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import URLSearchParams from 'core-js-pure/web/url-search-params'
+import URLSearchParams from 'core-js-pure/web/url-search-params';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-
 
 const BIDDER_CODE = 'kubient';
 const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
@@ -117,16 +116,16 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    var values = new URLSearchParams();
+    let values = new URLSearchParams();
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      values.append("consent", gdprConsent.consentString);
+      values.append('consent', gdprConsent.consentString);
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        values.append("gdpr", Number(gdprConsent.gdprApplies));
+        values.append('gdpr', Number(gdprConsent.gdprApplies));
       }
     }
     if (uspConsent) {
-      values.append("usp", uspConsent);
+      values.append('usp', uspConsent);
     }
 
     if (syncOptions.pixelEnabled) {
