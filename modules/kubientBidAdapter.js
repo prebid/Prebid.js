@@ -1,7 +1,9 @@
 import { isArray, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import URLSearchParams from 'core-js-pure/web/url-search-params'
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+
 
 const BIDDER_CODE = 'kubient';
 const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
@@ -115,27 +117,22 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    let params = '';
+    var values = new URLSearchParams();
+
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      params = `?consent_str=${gdprConsent.consentString}`;
+      values.append("consent", gdprConsent.consentString);
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params = params + `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+        values.append("gdpr", Number(gdprConsent.gdprApplies));
       }
-      params = params + `&consent_given=` + kubientGetConsentGiven(gdprConsent);
     }
     if (uspConsent) {
-      params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
+      values.append("usp", uspConsent);
     }
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: 'https://kdmp.kbntx.ch/init.html' + params
-      });
-    }
+
     if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: 'https://kdmp.kbntx.ch/init.png' + params
+        url: 'https://matching.kubient.net/match/sp?' + values.toString()
       });
     }
     return syncs;

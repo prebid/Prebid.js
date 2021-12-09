@@ -293,56 +293,6 @@ describe('KubientAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    it('should register the sync iframe without gdpr', function () {
-      let syncOptions = {
-        iframeEnabled: true
-      };
-      let serverResponses = null;
-      let gdprConsent = {
-        consentString: consentString
-      };
-      let uspConsent = null;
-      let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      expect(syncs).to.be.an('array').and.to.have.length(1);
-      expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.html?consent_str=' + consentString + '&consent_given=0');
-    });
-    it('should register the sync iframe with gdpr', function () {
-      let syncOptions = {
-        iframeEnabled: true
-      };
-      let serverResponses = null;
-      let gdprConsent = {
-        gdprApplies: true,
-        consentString: consentString
-      };
-      let uspConsent = null;
-      let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      expect(syncs).to.be.an('array').and.to.have.length(1);
-      expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.html?consent_str=' + consentString + '&gdpr=1&consent_given=0');
-    });
-    it('should register the sync iframe with gdpr vendor', function () {
-      let syncOptions = {
-        iframeEnabled: true
-      };
-      let serverResponses = null;
-      let gdprConsent = {
-        gdprApplies: true,
-        consentString: consentString,
-        apiVersion: 1,
-        vendorData: {
-          vendorConsents: {
-            794: 1
-          }
-        }
-      };
-      let uspConsent = null;
-      let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      expect(syncs).to.be.an('array').and.to.have.length(1);
-      expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.html?consent_str=' + consentString + '&gdpr=1&consent_given=1');
-    });
     it('should register the sync image without gdpr', function () {
       let syncOptions = {
         pixelEnabled: true
@@ -355,7 +305,7 @@ describe('KubientAdapter', function () {
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
-      expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.png?consent_str=' + consentString + '&consent_given=0');
+      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?consent=' + consentString);
     });
     it('should register the sync image with gdpr', function () {
       let syncOptions = {
@@ -370,7 +320,7 @@ describe('KubientAdapter', function () {
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
-      expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.png?consent_str=' + consentString + '&gdpr=1&consent_given=0');
+      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?consent=' + consentString + '&gdpr=1');
     });
     it('should register the sync image with gdpr vendor', function () {
       let syncOptions = {
@@ -393,21 +343,7 @@ describe('KubientAdapter', function () {
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
-      expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.png?consent_str=' + consentString + '&gdpr=1&consent_given=1');
-    });
-    it('should register the sync image without gdpr and with uspConsent', function () {
-      let syncOptions = {
-        iframeEnabled: true
-      };
-      let serverResponses = null;
-      let gdprConsent = {
-        consentString: consentString
-      };
-      let uspConsent = '1YNN';
-      let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      expect(syncs).to.be.an('array').and.to.have.length(1);
-      expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.html?consent_str=' + consentString + '&consent_given=0&us_privacy=' + uspConsent);
+      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?consent=' + consentString + '&gdpr=1');
     });
     it('should register the sync image without gdpr and with uspConsent', function () {
       let syncOptions = {
@@ -421,7 +357,7 @@ describe('KubientAdapter', function () {
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
-      expect(syncs[0].url).to.equal('https://kdmp.kbntx.ch/init.png?consent_str=' + consentString + '&consent_given=0&us_privacy=' + uspConsent);
+      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?consent=' + consentString + '&usp=' + uspConsent);
     });
   })
 });
