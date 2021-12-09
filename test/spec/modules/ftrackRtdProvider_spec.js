@@ -5,7 +5,7 @@ let expect = require('chai').expect;
 describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
   afterEach(function() {
     config.resetConfig();
-    config.resetBidder();    
+    config.resetBidder();
 
     window.localStorage.removeItem('ftrack-rtd');
     window.localStorage.removeItem('ftrack-rtd_exp');
