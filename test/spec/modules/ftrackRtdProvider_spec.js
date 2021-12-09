@@ -65,7 +65,8 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
 
       it(`should attempt to get the ftrack ID from local storage`, function() {
         window.localStorage.setItem('ftrack-rtd', '{"DeviceID":["mock_id_value"]}');
-        sandbox.spy(window.localStorage, 'getItem');
+
+        sandbox.spy(window.Storage.prototype, 'getItem');
 
         ftrackSubmodule.init({
           'name': 'ftrack-rtd'
@@ -75,7 +76,7 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
           'coppa': false
         });
 
-        expect(window.localStorage.getItem.calledWith('ftrack-rtd')).to.be.ok;
+        expect(window.Storage.prototype.getItem.calledWith('ftrack-rtd')).to.be.ok;
       });
 
       it(`should reach out to ftrack if ID is not in localstorage`, function() {
@@ -90,7 +91,7 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
         expect(window.localStorage.getItem('ftrack-rtd')).to.not.be.ok;
         expect(window.localStorage.getItem('ftrack-rtd_exp')).to.not.be.ok;
 
-        sandbox.spy(window.localStorage, 'setItem');
+        sandbox.spy(window.Storage.prototype, 'setItem');
 
         config.setBidderConfig({
           bidders: ['grid'],
@@ -134,8 +135,8 @@ describe('FTrack Real Time Data 🕒 submodule aka "ftrackRtdProvider"', () => {
               }
             };
 
-            expect(window.localStorage.setItem.calledWith('ftrack-rtd')).to.be.ok;
-            expect(window.localStorage.setItem.calledWith('ftrack-rtd_exp')).to.be.ok;
+            expect(window.Storage.prototype.setItem.calledWith('ftrack-rtd')).to.be.ok;
+            expect(window.Storage.prototype.setItem.calledWith('ftrack-rtd_exp')).to.be.ok;
 
             expect(config.getBidderConfig()).to.deep.equal(expectedBidderConfig);
             resolve();
