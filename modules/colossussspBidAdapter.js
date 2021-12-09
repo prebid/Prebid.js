@@ -1,6 +1,7 @@
 import { getWindowTop, deepAccess, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
@@ -175,6 +176,12 @@ export const spec = {
       type: 'image',
       url: G_URL_SYNC
     }];
+  },
+
+  onBidWon: (bid) => {
+    if (bid.nurl) {
+      ajax(bid.nurl, null);
+    }
   }
 };
 
