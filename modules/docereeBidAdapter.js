@@ -16,7 +16,7 @@ export const spec = {
   },
   isGdprConsentPresent: (bid) => {
     const { gdpr, gdprConsent } = bid.params;
-    if (gdpr=='1'){
+    if (gdpr == '1') {
       return !!gdprConsent
     }
     return true
