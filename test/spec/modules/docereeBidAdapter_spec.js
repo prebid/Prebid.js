@@ -45,7 +45,7 @@ describe('BidlabBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
-  
+ 
   describe('isGdprConsentPresent', function () {
     it('Should return true if gdpr consent is present', function () {
       expect(spec.isGdprConsentPresent(bid)).to.be.true;
