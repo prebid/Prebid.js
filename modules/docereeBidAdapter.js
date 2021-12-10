@@ -14,6 +14,13 @@ export const spec = {
     const { placementId } = bid.params;
     return !!placementId
   },
+  isGdprConsentPresent: (bid) => {
+    const { gdpr, gdprConsent } = bid.params;
+    if (gdpr=='1'){
+      return !!gdprConsent
+    }
+    return true
+  },
   buildRequests: (validBidRequests) => {
     const serverRequests = [];
     const { data } = config.getConfig('doceree.user')
