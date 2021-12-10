@@ -393,6 +393,80 @@ describe('native.js', function () {
   });
 });
 
+describe('validate native openRTB', function () {
+  it('should validate openRTB request', function() {
+    let openRTBNativeRequest = {assets: []};
+    // assets array can't be empty
+    expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(false);
+    openRTBNativeRequest.assets.push({
+      id: 1.5,
+      required: 1,
+      title: {},
+    });
+
+    // asset.id must be integer
+    expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(false);
+    openRTBNativeRequest.assets[0].id = 1;
+    // title must have 'len' property
+    expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(false);
+    openRTBNativeRequest.assets[0].title.len = 140;
+    // openRTB request is valid
+    expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(true);
+
+    openRTBNativeRequest.assets.push({
+      id: 2,
+      required: 1,
+      video: {
+        mimes: [],
+        protocols: [],
+        minduration: 50,
+      },
+    });
+    // video asset should have all required properties
+    expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(false);
+    openRTBNativeRequest.assets[1].video.maxduration = 60;
+    expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(true);
+  });
+
+  it('should validate openRTB native bid', function () {
+    const openRTBRequest = {
+      assets: [
+        {
+          id: 1,
+          required: 1,
+        },
+        {
+          id: 2,
+          required: 0,
+        },
+        {
+          id: 3,
+          required: 1,
+        },
+      ]
+    }
+    let openRTBBid = {
+      assets: [
+        {
+          id: 1,
+        },
+        {
+          id: 2,
+        }
+      ],
+    };
+
+    // link is missing
+    expect(isNativeOpenRTBBidValid(openRTBBid, openRTBRequest)).to.eq(false);
+    openRTBBid.link = { url: 'www.foo.bar' }
+    // required id == 3 is missing
+    expect(isNativeOpenRTBBidValid(openRTBBid, openRTBRequest)).to.eq(false);
+
+    openRTBBid.assets[1].id = 3;
+    expect(isNativeOpenRTBBidValid(openRTBBid, openRTBRequest)).to.eq(true);
+  });
+});
+
 describe('validate native', function () {
   const adUnit = {
     transactionId: 'test_adunit',
