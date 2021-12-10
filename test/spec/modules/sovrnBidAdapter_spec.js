@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, DEFAULT_MIMES, DEFAULT_PROTOCOLS} from 'modules/sovrnBidAdapter.js';
+import {spec} from 'modules/sovrnBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js'
 
@@ -116,28 +116,6 @@ describe('sovrnBidAdapter', function() {
         expect(impression.video.minduration).to.equal(minduration)
         expect(impression.video.maxduration).to.equal(maxduration)
         expect(impression.video.startdelay).to.equal(startdelay)
-      })
-
-      it('sets the proper video object with default values', function() {
-        const width = 640
-        const height = 480
-        const videoBidRequest = {
-          ...baseBidRequest,
-          'mediaTypes': {
-            video: {
-              playerSize: [width, height],
-            }
-          }
-        }
-        const request = spec.buildRequests([videoBidRequest], baseBidderRequest)
-
-        const payload = JSON.parse(request.data)
-        const impression = payload.imp[0]
-
-        expect(impression.video.w).to.equal(width)
-        expect(impression.video.h).to.equal(height)
-        expect(impression.video.mimes).to.have.same.members(DEFAULT_MIMES)
-        expect(impression.video.protocols).to.have.same.members(DEFAULT_PROTOCOLS)
       })
 
       it('gets correct site info', function() {
@@ -447,7 +425,7 @@ describe('sovrnBidAdapter', function() {
 
       const result = spec.interpretResponse(response);
 
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse))
+      expect(result[0]).to.have.deep.keys(expectedResponse)
     });
 
     it('crid should default to the bid id if not on the response', function () {
@@ -485,6 +463,108 @@ describe('sovrnBidAdapter', function() {
       }
 
       const result = spec.interpretResponse(response)
+
+      expect(result[0]).to.deep.equal(expectedResponse)
+    })
+
+    it('handles empty bid response', function () {
+      const response = {
+        body: {
+          'id': '37386aade21a71',
+          'seatbid': []
+        }
+      };
+
+      const result = spec.interpretResponse(response)
+
+      expect(result.length).to.equal(0);
+    });
+  });
+
+  describe('interpretResponse video', function () {
+    let videoResponse;
+    const baseVideoResponse = {
+      'requestId': '263c448586f5a1',
+      'cpm': 0.45882675,
+      'width': 640,
+      'height': 480,
+      'creativeId': 'creativelycreatedcreativecreative',
+      'dealId': null,
+      'currency': 'USD',
+      'netRevenue': true,
+      'mediaType': 'video',
+      'ad': decodeURIComponent(`<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>`),
+      'ttl': 90,
+      'meta': { advertiserDomains: [] },
+      'vastXml': `<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>`
+    }
+    beforeEach(function () {
+      videoResponse = {
+        body: {
+          'id': '37386aade21a71',
+          'seatbid': [{
+            'bid': [{
+              'id': 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+              'crid': 'creativelycreatedcreativecreative',
+              'impid': '263c448586f5a1',
+              'price': 0.45882675,
+              'nurl': '',
+              'adm': '<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>',
+              'h': 480,
+              'w': 640
+            }]
+          }]
+        }
+      };
+    });
+
+    it('should get the correct bid response', function () {
+      const expectedResponse = {
+        ...baseVideoResponse,
+        'ad': decodeURIComponent(`<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>`),
+        'ttl': 60000,
+      };
+
+      const result = spec.interpretResponse(videoResponse);
+
+      expect(result[0]).to.have.deep.keys(expectedResponse)
+    });
+
+    it('crid should default to the bid id if not on the response', function () {
+      delete videoResponse.body.seatbid[0].bid[0].crid;
+
+      const expectedResponse = {
+        ...baseVideoResponse,
+        'creativeId': videoResponse.body.seatbid[0].bid[0].id,
+        'ad': decodeURIComponent(`<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>`),
+      }
+
+      const result = spec.interpretResponse(videoResponse);
+
+      expect(result[0]).to.deep.equal(expectedResponse);
+    });
+
+    it('should get correct bid response when dealId is passed', function () {
+      videoResponse.body.seatbid[0].bid[0].dealid = 'baking';
+      const expectedResponse = {
+        ...baseVideoResponse,
+        'dealId': 'baking',
+      }
+
+      const result = spec.interpretResponse(videoResponse)
+
+      expect(result[0]).to.deep.equal(expectedResponse);
+    });
+
+    it('should get correct bid response when ttl is set', function () {
+      videoResponse.body.seatbid[0].bid[0].ext = { 'ttl': 480 }
+
+      const expectedResponse = {
+        ...baseVideoResponse,
+        'ttl': 480,
+      }
+
+      const result = spec.interpretResponse(videoResponse)
 
       expect(result[0]).to.deep.equal(expectedResponse)
     })
