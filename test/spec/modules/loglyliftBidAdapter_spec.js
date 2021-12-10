@@ -62,6 +62,9 @@ describe('loglyliftBidAdapter', function () {
         currency: 'JPY',
         netRevenue: true,
         ttl: 30,
+        meta: {
+          advertiserDomains: ['advertiserexample.com']
+        },
         native: {
           clickUrl: 'https://dsp.logly.co.jp/click?ad=EXAMPECLICKURL',
           image: {
@@ -106,7 +109,7 @@ describe('loglyliftBidAdapter', function () {
       expect(data.bidId).to.equal(nativeBidRequests[0].bidId);
       expect(data.mediaTypes).to.deep.equal(nativeBidRequests[0].mediaTypes);
       expect(data.params).to.deep.equal(nativeBidRequests[0].params);
-      expect(data.prebidJsVersion).to.equal('6.3.0-pre');
+      expect(data.prebidJsVersion).to.equal('6.5.0-pre');
       expect(data.url).to.exist;
       expect(data.domain).to.exist;
       expect(data.referer).to.equal(bidderRequest.refererInfo.referer);
@@ -135,6 +138,7 @@ describe('loglyliftBidAdapter', function () {
       expect(interpretedResponse[0].netRevenue).to.equal(nativeServerResponse.body.bids[0].netRevenue);
       expect(interpretedResponse[0].ttl).to.equal(nativeServerResponse.body.bids[0].ttl);
       expect(interpretedResponse[0].native).to.deep.equal(nativeServerResponse.body.bids[0].native);
+      expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal(nativeServerResponse.body.bids[0].meta.advertiserDomains[0]);
     });
   });
 
