@@ -19,10 +19,13 @@ export const spec = {
 
   buildRequests: function(validBidRequests, bidderRequest) {
     const requests = [];
+    window.nmmRefreshCounts = window.nmmRefreshCounts || {};
 
     _each(validBidRequests, function(bid) {
+      window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const postBody = {
         'id': bid.auctionId,
+        'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
         'ext': {
           'prebid': {
             'storedrequest': {
@@ -41,12 +44,14 @@ export const spec = {
         if (uspConsent) {
           postBody.regs.ext.us_privacy = uspConsent;
         }
-        if (typeof gdprConsent.gdprApplies !== 'undefined') {
-          postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-        }
-        if (typeof gdprConsent.consentString !== 'undefined') {
-          postBody.user = {
-            ext: { consent: gdprConsent.consentString }
+        if (gdprConsent) {
+          if (typeof gdprConsent.gdprApplies !== 'undefined') {
+            postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+          }
+          if (typeof gdprConsent.consentString !== 'undefined') {
+            postBody.user = {
+              ext: { consent: gdprConsent.consentString }
+            }
           }
         }
       }
