@@ -148,6 +148,7 @@ function buildPlacement(bidRequest) {
   sizes = (sizes || []).concat(bidRequest.sizes || []);
   return {
     host: bidRequest.params.host,
+    userIdAsEids: bidRequest.userIdAsEids,
     adUnit: {
       id: bidRequest.params.adUnitId,
       bidId: bidRequest.bidId,
