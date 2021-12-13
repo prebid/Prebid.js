@@ -15,7 +15,6 @@ import { ajaxBuilder } from '../src/ajax.js';
 import { logError } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import * as utils from '../src/utils'
 
 const SUBMODULE_NAME = 'jwplayer';
 const segCache = {};
@@ -256,8 +255,8 @@ export function formatTargetingResponse(vat) {
   return targeting;
 }
 
-function getContentId(mediaId) {
-  if (!mediaId) {
+function getContentId(mediaID) {
+  if (!mediaID) {
     return;
   }
 
@@ -278,7 +277,7 @@ function getContentData(segments) {
   }, []);
 
   return {
-    name: "jwplayer",
+    name: 'jwplayer',
     ext: {
       segtax: 502
     },
@@ -313,8 +312,8 @@ function enrichBids(bids, targeting, contentId, contentData) {
   }
 
   bids.forEach(bid => {
-      addTargetingToBid(bid, targeting);
-      addOrtbSiteContent(bid, contentId, contentData);
+    addTargetingToBid(bid, targeting);
+    addOrtbSiteContent(bid, contentId, contentData);
   });
 }
 
@@ -330,7 +329,6 @@ export function addTargetingToBid(bid, targeting) {
   const jwRtd = {};
   jwRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], { targeting });
   bid.rtd = Object.assign({}, rtd, jwRtd);
-
 }
 
 function getPlayer(playerID) {
