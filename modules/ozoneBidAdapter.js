@@ -5,7 +5,6 @@ import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
 import { Renderer } from '../src/Renderer.js';
 
-
 const BIDDER_CODE = 'ozone';
 
 const ORIGIN = 'https://elb.the-ozone-project.com' // applies only to auction & cookie

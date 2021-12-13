@@ -2205,7 +2205,6 @@ describe('ozone Adapter', function () {
       let cookieUrl = specMock.getCookieSyncUrl();
       expect(cookieUrl).to.equal('https://elb.the-ozone-project.com/static/load-cookie.html');
 
-
       specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
         return {'auction': 'dev', 'cookiesync': 'dev'};
