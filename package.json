@@ -5,6 +5,7 @@
   "main": "src/prebid.js",
   "scripts": {
     "bundle:cedato": "gulp build --modules=cedato/cedato.json && cp build/dist/prebid.js cedato/prebid_mp_${npm_package_version}_$(date +\"%m_%d\").js",
+    "bundle:exco": "gulp build --modules=cedato/exco.json && cp build/dist/prebid.js exco/prebid_mp__${npm_package_version}_$(date +\"%m_%d\").js",
     "bundle:zippor": "gulp build --modules=cedato/zippor.json && cp build/dist/prebid.js cedato/prebid_zippor_${npm_package_version}_$(date +\"%m_%d\").js",
     "bundle:vuukle": "gulp build --modules=cedato/vuukle.json && cp build/dist/prebid.js cedato/prebid_vuukle_${npm_package_version}_$(date +\"%m_%d\").js",
     "bundle:apester": "gulp build --modules=cedato/apester.json && cp build/dist/prebid.js cedato/prebid_apester_${npm_package_version}_$(date +\"%m_%d\").js",

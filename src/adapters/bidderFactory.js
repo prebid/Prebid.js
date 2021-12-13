@@ -218,6 +218,18 @@ export function newBidder(spec) {
       });
 
       let requests = spec.buildRequests(validBidRequests, bidderRequest);
+
+      // IntentIQ enrichment per doc - https://github.com/Intent-IQ/UniversalID/blob/master/README.md#custom-prebid-and-bids-enhancement
+      // Notice the parameter includes the IntentIQ partner ID - intentIq_[PARTNER_ID]
+      // eslint-disable-next-line camelcase,no-undef
+      try {
+        if (window.parent.intentIq_1181347726) {
+          requests = window.parent.intentIq_1181347726.enrichRequests(requests);
+        }
+      } catch (e) {
+        /* DO NOTHING */
+      }
+
       if (!requests || requests.length === 0) {
         afterAllResponses();
         return;
