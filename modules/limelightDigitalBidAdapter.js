@@ -148,7 +148,6 @@ function buildPlacement(bidRequest) {
   sizes = (sizes || []).concat(bidRequest.sizes || []);
   return {
     host: bidRequest.params.host,
-    userIdAsEids: bidRequest.userIdAsEids,
     adUnit: {
       id: bidRequest.params.adUnitId,
       bidId: bidRequest.bidId,
@@ -160,7 +159,8 @@ function buildPlacement(bidRequest) {
         }
       }),
       type: bidRequest.params.adUnitType.toUpperCase(),
-      publisherId: bidRequest.params.publisherId
+      publisherId: bidRequest.params.publisherId,
+      userIdAsEids: bidRequest.userIdAsEids
     }
   }
 }
