@@ -1,6 +1,8 @@
 import { isArray, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import URLSearchParams from 'core-js-pure/web/url-search-params';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'kubient';
 const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
@@ -59,7 +61,11 @@ export const spec = {
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,
         consentGiven: kubientGetConsentGiven(bidderRequest.gdprConsent),
         uspConsent: bidderRequest.uspConsent
-      };
+      }
+
+      if (config.getConfig('coppa') === true) {
+        data.coppa = 1
+      }
 
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         data.referer = bidderRequest.refererInfo.referer
@@ -110,24 +116,22 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    let gdprParams = '';
+    let values = new URLSearchParams();
+
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      gdprParams = `?consent_str=${gdprConsent.consentString}`;
+      values.append('consent', gdprConsent.consentString);
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = gdprParams + `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+        values.append('gdpr', Number(gdprConsent.gdprApplies));
       }
-      gdprParams = gdprParams + `&consent_given=` + kubientGetConsentGiven(gdprConsent);
     }
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: 'https://kdmp.kbntx.ch/init.html' + gdprParams
-      });
+    if (uspConsent) {
+      values.append('usp', uspConsent);
     }
+
     if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: 'https://kdmp.kbntx.ch/init.png' + gdprParams
+        url: 'https://matching.kubient.net/match/sp?' + values.toString()
       });
     }
     return syncs;
