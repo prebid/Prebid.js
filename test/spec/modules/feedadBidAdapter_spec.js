@@ -171,6 +171,21 @@ describe('FeedAdAdapter', function () {
       expect(result.data.bids).to.be.lengthOf(1);
       expect(result.data.bids[0]).to.deep.equal(bid);
     });
+    it('should pass through additional bid parameters', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id', another: 'parameter', more: 'parameters'}
+      };
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.data.bids).to.be.lengthOf(1);
+      expect(result.data.bids[0].params.another).to.equal('parameter');
+      expect(result.data.bids[0].params.more).to.equal('parameters');
+    });
     it('should detect empty media types', function () {
       let bid = {
         code: 'feedad',

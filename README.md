@@ -274,7 +274,7 @@ As you make code changes, the bundles will be rebuilt and the page reloaded auto
 
 ## Contribute
 
-Many SSPs, bidders, and publishers have contributed to this project. [Hundreds of bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+Many SSPs, bidders, and publishers have contributed to this project. [Hundreds of bidders](https://github.com/prebid/Prebid.js/tree/master/modules) are supported by Prebid.js.
 
 For guidelines, see [Contributing](./CONTRIBUTING.md).
 
