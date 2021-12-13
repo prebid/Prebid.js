@@ -425,4 +425,3 @@ describe('Zeta Global SSP Analytics Adapter', function() {
     });
   });
 });
-
