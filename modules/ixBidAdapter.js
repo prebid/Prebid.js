@@ -680,6 +680,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe }, ext } = impressionObjects[0];
+      const gpid = impressions[transactionIds[adUnitIndex]].gpid;
       const _bannerImpression = {
         id,
         banner: {
@@ -688,10 +689,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         },
       }
 
-      if (ext.dfp_ad_unit_code) {
-        _bannerImpression.ext = {
-          dfp_ad_unit_code: ext.dfp_ad_unit_code
-        }
+      if (ext.dfp_ad_unit_code || gpid) {
+        _bannerImpression.ext = {};
+        _bannerImpression.ext.dfp_ad_unit_code = ext.dfp_ad_unit_code;
+        _bannerImpression.ext.gpid = gpid;
       }
 
       if ('bidfloor' in impressionObjects[0]) {
@@ -911,6 +912,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
       bannerImps[validBidRequest.transactionId].ixImps = []
     }
     bannerImps[validBidRequest.transactionId].ixImps.push(imp);
+    bannerImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   }
 
   if (ixConfig.hasOwnProperty('detectMissingSizes') && ixConfig.detectMissingSizes) {
