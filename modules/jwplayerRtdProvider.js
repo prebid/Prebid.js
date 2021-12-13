@@ -156,8 +156,10 @@ export function enrichAdUnits(adUnits) {
       if (!vat) {
         return;
       }
+      const contentId = getContentId(vat.mediaID);
+      const contentData = getContentData(vat.segments);
       const targeting = formatTargetingResponse(vat);
-      addTargetingToBids(adUnit.bids, targeting);
+      enrichBids(adUnit.bids, targeting, contentId, contentData);
     };
     loadVat(jwTargeting, onVatResponse);
   });
@@ -236,6 +238,9 @@ export function getVatFromPlayer(playerID, mediaID) {
   };
 }
 
+/*
+  deprecated
+ */
 export function formatTargetingResponse(vat) {
   const { segments, mediaID } = vat;
   const targeting = {};
@@ -244,68 +249,88 @@ export function formatTargetingResponse(vat) {
   }
 
   if (mediaID) {
-    const id = 'jw_' + mediaID;
     targeting.content = {
-      id
+      id: getContentId(mediaID)
     }
   }
   return targeting;
 }
 
-function addTargetingToBids(bids, targeting) {
-  if (!bids || !targeting) {
+function getContentId(mediaId) {
+  if (!mediaId) {
     return;
   }
 
-  bids.forEach(bid => addTargetingToBid(bid, targeting));
+  return 'jw_' + mediaID;
 }
 
+function getContentData(segments) {
+  if (!segments) {
+    return;
+  }
+
+  const formattedSegments = segments.reduce((convertedSegments, rawSegment) => {
+    convertedSegments.push({
+      id: rawSegment,
+      value: rawSegment
+    });
+    return convertedSegments;
+  }, []);
+
+  return {
+    name: "jwplayer",
+    ext: {
+      segtax: 502
+    },
+    segment: formattedSegments
+  };
+}
+
+function addOrtbSiteContent(bid, contentId, contentData) {
+  if (!contentId && !contentData) {
+    return;
+  }
+
+  let ortb2 = bid.ortb2 || {};
+  let site = ortb2.site || {};
+  let content = site.content || {};
+
+  if (contentId) {
+    content.id = content.id || contentId;
+  }
+
+  if (contentData) {
+    const data = content.data || [];
+    data.push(contentData);
+  }
+
+  bid.ortb2 = ortb2;
+}
+
+function enrichBids(bids, targeting, contentId, contentData) {
+  if (!bids) {
+    return;
+  }
+
+  bids.forEach(bid => {
+      addTargetingToBid(bid, targeting);
+      addOrtbSiteContent(bid, contentId, contentData);
+  });
+}
+
+/*
+  deprecated
+ */
 export function addTargetingToBid(bid, targeting) {
+  if (!targeting) {
+    return;
+  }
+
   const rtd = bid.rtd || {};
   const jwRtd = {};
   jwRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], { targeting });
   bid.rtd = Object.assign({}, rtd, jwRtd);
-}
 
-/*
-{
-  ...,
-  "user": {
-    "data": [
-      {
-        "name": "a-data-provider.com",
-        "ext": {
-          "segtax": 3
-        },
-        "segment": [
-          { "id": "1001" },
-          { "id": "1002" }
-        ]
-      }
-    }
-  }
-}
- */
-
-export function setGlobalOrtb2(segments, categories) {
-  try {
-    let oRtb = {};
-    let testGlobal = getGlobal().getConfig('ortb2') || {};
-    if (!utils.deepAccess(testGlobal, 'site.content.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.user.ext.data.sd_rtd, segments)) {
-      utils.deepSetValue(oRtb, 'user.ext.data.sd_rtd', segments || {});
-    }
-    if (!utils.deepAccess(testGlobal, 'site.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.site.ext.data.sd_rtd, categories)) {
-      utils.deepSetValue(oRtb, 'site.ext.data.sd_rtd', categories || {});
-    }
-    if (!utils.isEmpty(oRtb)) {
-      let ortb2 = {ortb2: utils.mergeDeep({}, testGlobal, oRtb)};
-      getGlobal().setConfig(ortb2);
-    }
-  } catch (e) {
-    utils.logError(e)
-  }
-
-  return true;
 }
 
 function getPlayer(playerID) {
