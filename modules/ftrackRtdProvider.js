@@ -160,9 +160,7 @@ var ftrack = {
         var navLang = navigator.language || navigator.browserLanguage;
         var navLangArr = navLang.split('-');
 
-        if (typeof navLangArr[0] == 'undefined') {
-          // navLang = navLang;
-        } else {
+        if (typeof navLangArr[0] !== 'undefined') {
           navLang = navLangArr[0];
         }
 
