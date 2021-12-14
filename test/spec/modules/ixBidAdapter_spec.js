@@ -1560,8 +1560,20 @@ describe('IndexexchangeAdapter', function () {
 
         expect(w).to.equal(size[0]);
         expect(h).to.equal(size[1]);
-        expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+        expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
         expect(ext.sid).to.equal(sidValue);
+      });
+    });
+
+    it('payload should have imp[].banner.format[].ext.siteID as string ', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.params.siteId = 1234;
+
+      request = spec.buildRequests([bid], DEFAULT_OPTION)[0];
+
+      const payload = JSON.parse(request.data.r);
+      payload.imp[0].banner.format.forEach((imp) => {
+        expect(imp.ext.siteID).to.be.a('string');
       });
     });
 
@@ -1696,7 +1708,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.banner.format[0].w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
       expect(impression.banner.format[0].h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
-      expect(impression.banner.format[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+      expect(impression.banner.format[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
       expect(impression.banner.format[0].ext.sid).to.equal('50');
     });
 
@@ -1710,7 +1722,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.banner.format[0].w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
       expect(impression.banner.format[0].h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
-      expect(impression.banner.format[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+      expect(impression.banner.format[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
       expect(impression.banner.format[0].ext.sid).to.equal('abc');
     });
 
@@ -1808,7 +1820,7 @@ describe('IndexexchangeAdapter', function () {
 
           expect(w).to.equal(size[0]);
           expect(h).to.equal(size[1]);
-          expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+          expect(ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
           expect(ext.sid).to.equal(sidValue);
         });
       });
@@ -1973,7 +1985,7 @@ describe('IndexexchangeAdapter', function () {
 
           expect(w).to.equal(size[0]);
           expect(h).to.equal(size[1]);
-          expect(ext.siteID).to.equal(bids[impressionIndex].params.siteId.toString());
+          expect(ext.siteID).to.equal(bids[impressionIndex].params.siteId);
           expect(ext.sid).to.equal(sidValue);
         });
       });
@@ -2177,7 +2189,7 @@ describe('IndexexchangeAdapter', function () {
 
             expect(w).to.equal(size[0]);
             expect(h).to.equal(size[1]);
-            expect(ext.siteID).to.equal(bid.params.siteId.toString());
+            expect(ext.siteID).to.equal(bid.params.siteId);
             expect(ext.sid).to.equal(sidValue);
           });
         });
