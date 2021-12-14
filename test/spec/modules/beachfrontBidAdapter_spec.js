@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter.js';
-import { parseUrl } from 'src/utils.js';
+import { config } from 'src/config.js';
+import { parseUrl, deepAccess } from 'src/utils.js';
 
 describe('BeachfrontAdapter', function () {
   let bidRequests;
@@ -553,6 +554,69 @@ describe('BeachfrontAdapter', function () {
         expect(data.idl).to.equal(userId.idl_env);
         expect(data.uid2).to.equal(userId.uid2.id);
         expect(data.haloid).to.equal(userId.haloId);
+      });
+    });
+
+    describe('with first-party data', function () {
+      let sandbox
+
+      beforeEach(function () {
+        sandbox = sinon.sandbox.create();
+      });
+
+      afterEach(function () {
+        sandbox.restore();
+      });
+
+      it('must add first-party data to the video bid request', function () {
+        sandbox.stub(config, 'getConfig').callsFake(key => {
+          const cfg = {
+            ortb2: {
+              site: {
+                keywords: 'test keyword'
+              },
+              user: {
+                data: 'some user data'
+              }
+            }
+          };
+          return deepAccess(cfg, key);
+        });
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'http://example.com/page.html'
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.user.data).to.equal('some user data');
+        expect(data.site.keywords).to.equal('test keyword');
+        expect(data.site.page).to.equal('http://example.com/page.html');
+        expect(data.site.domain).to.equal('example.com');
+      });
+
+      it('must add first-party data to the banner bid request', function () {
+        sandbox.stub(config, 'getConfig').callsFake(key => {
+          const cfg = {
+            ortb2: {
+              site: {
+                keywords: 'test keyword'
+              },
+              user: {
+                data: 'some user data'
+              }
+            }
+          };
+          return deepAccess(cfg, key);
+        });
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.ortb2.user.data).to.equal('some user data');
+        expect(data.ortb2.site.keywords).to.equal('test keyword');
       });
     });
 
