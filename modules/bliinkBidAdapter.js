@@ -174,6 +174,8 @@ export const buildRequests = (_, bidderRequest) => {
     pageUrl: bidderRequest.refererInfo.referer,
     pageDescription: getMetaValue(META_DESCRIPTION),
     keywords: getKeywords().join(','),
+    gdpr: false,
+    gdpr_consent: '',
     pageTitle: document.title,
   }
 
