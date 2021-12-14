@@ -483,6 +483,8 @@ describe('sovrnBidAdapter', function() {
 
   describe('interpretResponse video', function () {
     let videoResponse;
+    const bidAdm = '<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>';
+    const decodedBidAdm = decodeURIComponent(bidAdm);
     const baseVideoResponse = {
       'requestId': '263c448586f5a1',
       'cpm': 0.45882675,
@@ -493,10 +495,9 @@ describe('sovrnBidAdapter', function() {
       'currency': 'USD',
       'netRevenue': true,
       'mediaType': 'video',
-      'ad': decodeURIComponent(`<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>`),
       'ttl': 90,
       'meta': { advertiserDomains: [] },
-      'vastXml': `<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>`
+      'vastXml': decodedBidAdm
     }
     beforeEach(function () {
       videoResponse = {
@@ -509,7 +510,7 @@ describe('sovrnBidAdapter', function() {
               'impid': '263c448586f5a1',
               'price': 0.45882675,
               'nurl': '',
-              'adm': '<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>',
+              'adm': bidAdm,
               'h': 480,
               'w': 640
             }]
@@ -521,7 +522,6 @@ describe('sovrnBidAdapter', function() {
     it('should get the correct bid response', function () {
       const expectedResponse = {
         ...baseVideoResponse,
-        'ad': decodeURIComponent(`<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>`),
         'ttl': 60000,
       };
 
@@ -536,7 +536,6 @@ describe('sovrnBidAdapter', function() {
       const expectedResponse = {
         ...baseVideoResponse,
         'creativeId': videoResponse.body.seatbid[0].bid[0].id,
-        'ad': decodeURIComponent(`<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>`),
       }
 
       const result = spec.interpretResponse(videoResponse);
