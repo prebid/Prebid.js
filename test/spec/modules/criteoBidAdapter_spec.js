@@ -944,6 +944,215 @@ describe('The Criteo bidding adapter', function () {
         }
       });
     });
+
+    it('should properly build a request with gpid if gpid is non-empty', function() {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              gpid: 'gpid-123'
+            }
+          }
+        },
+      ];
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+        };
+        return utils.deepAccess(config, key);
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].gpid).to.equal('gpid-123');
+    });
+
+    it('should properly build a request with gpid if pbadslot is non-empty', function() {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              data: {
+                pbadslot: 'gpid-123'
+              }
+            }
+          }
+        },
+      ];
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+        };
+        return utils.deepAccess(config, key);
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].gpid).to.equal('gpid-123');
+    });
+
+    it('should properly build a request with gpid if adserver adslot is non-empty', function() {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              data: {
+                adserver: {
+                  adslot: 'gpid-123'
+                }
+              }
+            }
+          }
+        },
+      ];
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+        };
+        return utils.deepAccess(config, key);
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].gpid).to.equal('gpid-123');
+    });
+
+    it('should properly build a request with no gpid if all values are empty', function() {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              gpid: '',
+              data: {
+                pbadslot: '',
+                adserver: {
+                  adslot: ''
+                }
+              }
+            }
+          }
+        },
+      ];
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+        };
+        return utils.deepAccess(config, key);
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].gpid).to.be.undefined;
+    });
+
+    it('should properly build a request with gpid if both gpid and pbadslot and adserver adslot are present', function() {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              gpid: 'gpid-123',
+              data: {
+                pbadslot: 'gpid-456',
+                adserver: {
+                  adslot: 'gpid-789'
+                }
+              }
+            }
+          }
+        },
+      ];
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+        };
+        return utils.deepAccess(config, key);
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].gpid).to.equal('gpid-123');
+    });
+
+    it('should properly build a request with pbadslot gpid if both pbadslot and adserver adslot are present', function() {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              data: {
+                pbadslot: 'gpid-123',
+                adserver: {
+                  adslot: 'gpid-456'
+                }
+              }
+            }
+          }
+        },
+      ];
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+        };
+        return utils.deepAccess(config, key);
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].gpid).to.equal('gpid-123');
+    });
   });
 
   describe('interpretResponse', function () {
