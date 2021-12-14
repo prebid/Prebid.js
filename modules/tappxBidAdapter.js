@@ -7,9 +7,10 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'tappx';
+const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.1004';
+const TAPPX_BIDDER_VERSION = '0.1.1005';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -42,6 +43,7 @@ var hostDomain;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

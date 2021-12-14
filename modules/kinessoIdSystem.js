@@ -180,7 +180,7 @@ function kinessoSyncUrl(accountId, consentData) {
   const usPrivacyString = uspDataHandler.getConsentData();
   let kinessoSyncUrl = `${ID_SVC}?accountid=${accountId}`;
   if (usPrivacyString) {
-    kinessoSyncUrl = `${kinessoSyncUrl}?us_privacy=${usPrivacyString}`;
+    kinessoSyncUrl = `${kinessoSyncUrl}&us_privacy=${usPrivacyString}`;
   }
   if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return kinessoSyncUrl;
 
