@@ -357,7 +357,9 @@ export function getAllAssetsMessage(data, adObject) {
   };
 
   if (adObject.native.ortb2) {
-    message.native = adObject.native;
+    Object.keys(adObject.native).forEach(key => {
+      message[key] = adObject.native[key];
+    });
     return message;
   }
   message.assets = [];
