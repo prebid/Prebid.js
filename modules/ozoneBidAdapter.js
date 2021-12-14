@@ -5,6 +5,7 @@ import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
 import { Renderer } from '../src/Renderer.js';
 
+
 const BIDDER_CODE = 'ozone';
 
 const ORIGIN = 'https://elb.the-ozone-project.com' // applies only to auction & cookie
@@ -52,6 +53,7 @@ export const spec = {
         this.propertyBag.whitelabel.auctionUrl = bidderConfig.endpointOverride.origin + AUCTIONURI;
         this.propertyBag.whitelabel.cookieSyncUrl = bidderConfig.endpointOverride.origin + OZONECOOKIESYNC;
       }
+
       if (arr.hasOwnProperty('renderer')) {
         if (arr.renderer.match('%3A%2F%2F')) {
           this.propertyBag.whitelabel.rendererUrl = decodeURIComponent(arr['renderer']);
@@ -374,7 +376,7 @@ export const spec = {
       ozoneRequest.auctionId = bidderRequest.auctionId; // not sure if this should be here?
       ozoneRequest.imp = tosendtags;
       ozoneRequest.ext = extObj;
-      deepSetValue(ozoneRequest, 'tid', bidderRequest.auctionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
+      deepSetValue(ozoneRequest, 'source.tid', bidderRequest.auctionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
       deepSetValue(ozoneRequest, 'user.ext.eids', userExtEids);
       var ret = {
         method: 'POST',
@@ -395,7 +397,7 @@ export const spec = {
       ozoneRequestSingle.auctionId = imp.ext[whitelabelBidder].transactionId; // not sure if this should be here?
       ozoneRequestSingle.imp = [imp];
       ozoneRequestSingle.ext = extObj;
-      deepSetValue(ozoneRequestSingle, 'tid', imp.ext[whitelabelBidder].transactionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
+      deepSetValue(ozoneRequestSingle, 'source.tid', imp.ext[whitelabelBidder].transactionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
       deepSetValue(ozoneRequestSingle, 'user.ext.eids', userExtEids);
       logInfo('buildRequests RequestSingle (for non-single) = ', ozoneRequestSingle);
       return {
@@ -571,14 +573,14 @@ export const spec = {
   /**
    * Use this to get all config values
    * Now it's getting complicated with whitelabeling, this simplifies the code for getting config values.
-   * eg. to get ozone.oz_omp_floor you just send '_omp_floor'
+   * eg. to get whitelabelled version you just sent the ozone default string like ozone.oz_omp_floor
    * @param ozoneVersion string like 'ozone.oz_omp_floor'
    * @return {string|object}
    */
   getWhitelabelConfigItem(ozoneVersion) {
     if (this.propertyBag.whitelabel.bidder == 'ozone') { return config.getConfig(ozoneVersion); }
     let whitelabelledSearch = ozoneVersion.replace('ozone', this.propertyBag.whitelabel.bidder);
-    whitelabelledSearch = ozoneVersion.replace('oz_', this.propertyBag.whitelabel.keyPrefix + '_');
+    whitelabelledSearch = whitelabelledSearch.replace('oz_', this.propertyBag.whitelabel.keyPrefix + '_');
     return config.getConfig(whitelabelledSearch);
   },
   /**

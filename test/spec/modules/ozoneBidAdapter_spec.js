@@ -2205,6 +2205,7 @@ describe('ozone Adapter', function () {
       let cookieUrl = specMock.getCookieSyncUrl();
       expect(cookieUrl).to.equal('https://elb.the-ozone-project.com/static/load-cookie.html');
 
+
       specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
         return {'auction': 'dev', 'cookiesync': 'dev'};
@@ -2874,6 +2875,29 @@ describe('ozone Adapter', function () {
       expect(response[0].bid.length).to.equal(2);
       expect(response[0].seat).to.equal('ozappnexus');
       expect(response[1].bid.length).to.equal(2);
+    });
+  });
+  /**
+   * spec.getWhitelabelConfigItem test - get a config value for a whitelabelled bidder,
+   * from a standard ozone.oz_xxxx_yyy string
+   */
+  describe('getWhitelabelConfigItem', function() {
+    it('should fetch the whitelabelled equivalent config value correctly', function () {
+      var specMock = utils.deepClone(spec);
+      config.setConfig({'ozone': {'oz_omp_floor': 'ozone-floor-value'}});
+      config.setConfig({'markbidder': {'mb_omp_floor': 'markbidder-floor-value'}});
+      specMock.propertyBag.whitelabel = {bidder: 'ozone', keyPrefix: 'oz'};
+      let testKey = 'ozone.oz_omp_floor';
+      let ozone_value = specMock.getWhitelabelConfigItem(testKey);
+      expect(ozone_value).to.equal('ozone-floor-value');
+      specMock.propertyBag.whitelabel = {bidder: 'markbidder', keyPrefix: 'mb'};
+      let markbidder_config = specMock.getWhitelabelConfigItem(testKey);
+      expect(markbidder_config).to.equal('markbidder-floor-value');
+      config.setConfig({'markbidder': {'singleRequest': 'markbidder-singlerequest-value'}});
+      let testKey2 = 'ozone.singleRequest';
+      let markbidder_config2 = specMock.getWhitelabelConfigItem(testKey2);
+      expect(markbidder_config2).to.equal('markbidder-singlerequest-value');
+      config.resetConfig();
     });
   });
 });
