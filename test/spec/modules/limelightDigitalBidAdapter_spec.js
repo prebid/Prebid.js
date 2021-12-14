@@ -251,7 +251,7 @@ describe('limelightDigitalAdapter', function () {
         expect(dataItem.meta.advertiserDomains).to.be.an('array');
         expect(dataItem.meta.mediaType).to.be.a('string');
       }
-      it('Returns an empty array if invalid response is passed', function () {
+      it('should return an empty array if invalid response is passed', function () {
         serverResponses = spec.interpretResponse('invalid_response');
         expect(serverResponses).to.be.an('array').that.is.empty;
       });
