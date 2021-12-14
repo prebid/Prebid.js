@@ -3,6 +3,7 @@ import {config} from 'src/config.js';
 import * as sinon from 'sinon';
 import {default as CONSTANTS} from '../../../src/constants.json';
 import {default as events} from '../../../src/events.js';
+import 'src/prebid.js';
 
 const getBidRequestDataSpy = sinon.spy();
 
@@ -140,7 +141,56 @@ describe('Real time module', function () {
       const adUnits = rtdModule.getAdUnitTargeting(auction);
       assert.deepEqual(expectedAdUnits, adUnits)
       done();
-    })
+    });
+
+    describe('setBidRequestData', () => {
+      let withWait, withoutWait;
+
+      function runSetBidRequestData() {
+        return new Promise((resolve) => {
+          rtdModule.setBidRequestsData(resolve, {bidRequest: {}});
+        });
+      }
+
+      beforeEach(() => {
+        withWait = {
+          submod: validSMWait,
+          cbTime: 0,
+          cbRan: false
+        };
+        withoutWait = {
+          submod: validSM,
+          cbTime: 0,
+          cbRan: false
+        };
+
+        [withWait, withoutWait].forEach((c) => {
+          c.submod.getBidRequestData = sinon.stub().callsFake((_, cb) => {
+            setTimeout(() => {
+              c.cbRan = true;
+              cb();
+            }, c.cbTime);
+          });
+        });
+      });
+
+      it('should allow non-priority submodules to run synchronously', () => {
+        withWait.cbTime = withoutWait.cbTime = 0;
+        return runSetBidRequestData().then(() => {
+          expect(withWait.cbRan).to.be.true;
+          expect(withoutWait.cbRan).to.be.true;
+        })
+      });
+
+      it('should not wait for non-priority submodules if priority ones complete first', () => {
+        withWait.cbTime = 10;
+        withoutWait.cbTime = 100;
+        return runSetBidRequestData().then(() => {
+          expect(withWait.cbRan).to.be.true;
+          expect(withoutWait.cbRan).to.be.false;
+        });
+      });
+    });
   });
 
   it('deep merge object', function () {
@@ -242,5 +292,5 @@ describe('Real time module', function () {
         expect(providers[1][hook].called).to.be.true;
       });
     });
-  })
+  });
 });

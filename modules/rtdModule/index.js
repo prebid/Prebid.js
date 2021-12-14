@@ -289,17 +289,11 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
     return exitHook();
   }
 
-  if (shouldDelayAuction) {
-    waitTimeout = setTimeout(exitHook, _moduleConfig.auctionDelay);
-  }
+  waitTimeout = setTimeout(exitHook, shouldDelayAuction ? _moduleConfig.auctionDelay : 0);
 
   relevantSubModules.forEach(sm => {
     sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent)
   });
-
-  if (!shouldDelayAuction) {
-    return exitHook();
-  }
 
   function onGetBidRequestDataCallback() {
     if (isDone) {
@@ -308,12 +302,15 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
     if (this.config && this.config.waitForIt) {
       callbacksExpected--;
     }
-    if (callbacksExpected <= 0) {
-      return exitHook();
+    if (callbacksExpected === 0) {
+      setTimeout(exitHook, 0);
     }
   }
 
   function exitHook() {
+    if (isDone) {
+      return;
+    }
     isDone = true;
     clearTimeout(waitTimeout);
     fn.call(this, reqBidsConfigObj);
