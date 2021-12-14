@@ -9,7 +9,8 @@ describe('limelightDigitalAdapter', function () {
     params: {
       host: 'exchange.ortb.net',
       adUnitId: 123,
-      adUnitType: 'banner'
+      adUnitType: 'banner',
+      publisherId: 'perfectPublisher'
     },
     placementCode: 'placement_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
@@ -41,7 +42,8 @@ describe('limelightDigitalAdapter', function () {
     params: {
       host: 'exchange.ortb.net',
       adUnitId: 789,
-      adUnitType: 'video'
+      adUnitType: 'video',
+      publisherId: 'secondPerfectPublisher'
     },
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
@@ -89,7 +91,7 @@ describe('limelightDigitalAdapter', function () {
         expect(data.deviceHeight).to.be.a('number')
         expect(data.secure).to.be.a('boolean')
         data.adUnits.forEach(adUnit => {
-          expect(adUnit).to.have.all.keys('id', 'bidId', 'type', 'sizes', 'transactionId')
+          expect(adUnit).to.have.all.keys('id', 'bidId', 'type', 'sizes', 'transactionId', 'publisherId')
           expect(adUnit.id).to.be.a('number')
           expect(adUnit.bidId).to.be.a('string')
           expect(adUnit.type).to.be.a('string')
@@ -299,13 +301,167 @@ describe('limelightDigitalAdapter', function () {
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
     });
   });
+  describe('getUserSyncs', function () {
+    const serverResponses = [
+      {
+        body: [
+          {
+            ext: {
+              sync: {
+                iframe: 'iframeUrl',
+              }
+            }
+          },
+          {
+            ext: {
+              sync: {
+                pixel: 'pixelUrl'
+              }
+            }
+          },
+          {},
+          {
+            ext: {}
+          },
+          {
+            ext: {
+              sync: {}
+            }
+          },
+          {
+            ext: {
+              sync: {
+                iframe: 'iframeUrl2',
+                pixel: 'pixelUrl3'
+              }
+            }
+          }
+        ]
+      },
+      {
+        body: [
+          {
+            ext: {
+              sync: {
+                iframe: 'iframeUrl2',
+                pixel: 'pixelUrl2'
+              }
+            }
+          },
+          {
+            ext: {
+              sync: {
+                iframe: 'iframeUrl3',
+                pixel: 'pixelUrl3'
+              }
+            }
+          }
+        ]
+      }
+    ];
+    it('should return empty array if server responses do not contain sync urls', function () {
+      const syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: true
+      };
+      const serverResponsesWithoutSyncUrls = serverResponses.map(serverResponse => {
+        const serverResponseWithoutSyncUrls = Object.assign({}, serverResponse);
+        serverResponseWithoutSyncUrls.body = serverResponse.body.map(serverResponseBody => {
+          const serverResponseBodyWithoutSyncUrls = Object.assign({}, serverResponseBody);
+          delete serverResponseBodyWithoutSyncUrls.ext;
+          return serverResponseBodyWithoutSyncUrls;
+        });
+        return serverResponseWithoutSyncUrls;
+      });
+      expect(spec.getUserSyncs(syncOptions, serverResponsesWithoutSyncUrls)).to.be.an('array').that.is.empty;
+    });
+    it('should return empty array if all sync types are disabled', function () {
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: false
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty;
+    });
+    it('should return iframe sync urls if iframe sync is enabled', function () {
+      const syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: false
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'iframeUrl'
+        },
+        {
+          type: 'iframe',
+          url: 'iframeUrl2'
+        },
+        {
+          type: 'iframe',
+          url: 'iframeUrl3'
+        }
+      ]);
+    });
+    it('should return image sync urls if pixel sync is enabled', function () {
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: true
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'image',
+          url: 'pixelUrl'
+        },
+        {
+          type: 'image',
+          url: 'pixelUrl3'
+        },
+        {
+          type: 'image',
+          url: 'pixelUrl2'
+        }
+      ]);
+    });
+    it('should return all sync urls if all sync types are enabled', function () {
+      const syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: true
+      }
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'iframeUrl'
+        },
+        {
+          type: 'iframe',
+          url: 'iframeUrl2'
+        },
+        {
+          type: 'iframe',
+          url: 'iframeUrl3'
+        },
+        {
+          type: 'image',
+          url: 'pixelUrl'
+        },
+        {
+          type: 'image',
+          url: 'pixelUrl3'
+        },
+        {
+          type: 'image',
+          url: 'pixelUrl2'
+        }
+      ]);
+    });
+  });
 });
 
 function validateAdUnit(adUnit, bid) {
-  expect(adUnit.id).to.equal(bid.params.adUnitId)
-  expect(adUnit.bidId).to.equal(bid.bidId)
-  expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase())
-  expect(adUnit.transactionId).to.equal(bid.transactionId)
+  expect(adUnit.id).to.equal(bid.params.adUnitId);
+  expect(adUnit.bidId).to.equal(bid.bidId);
+  expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase());
+  expect(adUnit.transactionId).to.equal(bid.transactionId);
   let bidSizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
@@ -323,5 +479,6 @@ function validateAdUnit(adUnit, bid) {
       width: size[0],
       height: size[1]
     }
-  }))
+  }));
+  expect(adUnit.publisherId).to.equal(bid.params.publisherId);
 }

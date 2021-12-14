@@ -210,6 +210,13 @@ userIdAsEids = [
               id: 'some-random-id-value',
               atype: 3
          }]
+    },
+    {
+         source: 'yahoo.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
     }
 ]
 ```

@@ -10,7 +10,7 @@ export const storage = getStorageManager();
 
 const BIDDER_CODE = 'jixie';
 const EVENTS_URL = 'https://hbtra.jixie.io/sync/hb?';
-const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.io/jxhboutstream.js';
+const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.media/jxhbrenderer.1.1.min.js';
 const REQUESTS_URL = 'https://hb.jixie.io/v2/hbpost';
 const sidTTLMins_ = 30;
 
@@ -104,7 +104,8 @@ function getMiscDims_() {
   let ret = {
     pageurl: '',
     domain: '',
-    device: 'unknown'
+    device: 'unknown',
+    mkeywords: ''
   }
   try {
     let refererInfo_ = getRefererInfo();
@@ -112,6 +113,10 @@ function getMiscDims_() {
     ret.pageurl = url_;
     ret.domain = parseUrl(url_).host;
     ret.device = getDevice_();
+    let keywords = document.getElementsByTagName('meta')['keywords'];
+    if (keywords && keywords.content) {
+      ret.mkeywords = keywords.content;
+    }
   } catch (error) {}
   return ret;
 }
@@ -167,6 +172,7 @@ export const spec = {
       device: miscDims.device,
       domain: miscDims.domain,
       pageurl: miscDims.pageurl,
+      mkeywords: miscDims.mkeywords,
       bids: bids,
       cfg: jixieCfgBlob
     }, ids);

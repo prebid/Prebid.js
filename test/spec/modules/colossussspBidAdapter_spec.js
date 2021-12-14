@@ -186,6 +186,15 @@ describe('ColossussspAdapter', function () {
     });
   });
 
+  describe('onBidWon', function () {
+    it('should make an ajax call', function () {
+      const bid = {
+        nurl: 'http://example.com/win',
+      };
+      expect(spec.onBidWon(bid)).to.equals(undefined);
+    });
+  })
+
   describe('getUserSyncs', function () {
     let userSync = spec.getUserSyncs();
     it('Returns valid URL and type', function () {

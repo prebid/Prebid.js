@@ -12,6 +12,7 @@ const bidRequested = CONSTANTS.EVENTS.BID_REQUESTED;
 const bidResponse = CONSTANTS.EVENTS.BID_RESPONSE;
 const bidWon = CONSTANTS.EVENTS.BID_WON;
 const bidTimeout = CONSTANTS.EVENTS.BID_TIMEOUT;
+const ua = navigator.userAgent;
 
 let adomikAdapter = Object.assign(adapter({}),
   {
@@ -47,7 +48,7 @@ let adomikAdapter = Object.assign(adapter({}),
               type: 'request',
               event: {
                 bidder: bid.bidder.toUpperCase(),
-                placementCode: bid.placementCode
+                placementCode: bid.adUnitCode
               }
             });
           });
@@ -67,10 +68,16 @@ adomikAdapter.initializeBucketEvents = function() {
   adomikAdapter.bucketEvents = [];
 }
 
+adomikAdapter.maxPartLength = function () {
+  return (ua.includes(' MSIE ')) ? 1600 : 60000;
+};
+
 adomikAdapter.sendTypedEvent = function() {
   const groupedTypedEvents = adomikAdapter.buildTypedEvents();
 
   const bulkEvents = {
+    testId: adomikAdapter.currentContext.testId,
+    testValue: adomikAdapter.currentContext.testValue,
     uid: adomikAdapter.currentContext.uid,
     ahbaid: adomikAdapter.currentContext.id,
     hostname: window.location.hostname,
@@ -108,9 +115,10 @@ adomikAdapter.sendTypedEvent = function() {
   // Encode object in base64
   const encodedBuf = window.btoa(stringBulkEvents);
 
-  // Create final url and split it in 1600 characters max (+endpoint length)
+  // Create final url and split it (+endpoint length)
   const encodedUri = encodeURIComponent(encodedBuf);
-  const splittedUrl = encodedUri.match(/.{1,1600}/g);
+  const maxLength = adomikAdapter.maxPartLength();
+  const splittedUrl = encodedUri.match(new RegExp(`.{1,${maxLength}}`, 'g'));
 
   splittedUrl.forEach((split, i) => {
     const partUrl = `${split}&id=${adomikAdapter.currentContext.id}&part=${i}&on=${splittedUrl.length - 1}`;
@@ -120,8 +128,10 @@ adomikAdapter.sendTypedEvent = function() {
 };
 
 adomikAdapter.sendWonEvent = function (wonEvent) {
+  let keyValues = { testId: adomikAdapter.currentContext.testId, testValue: adomikAdapter.currentContext.testValue }
+  wonEvent = {...wonEvent, ...keyValues}
   const stringWonEvent = JSON.stringify(wonEvent)
-  logInfo('Won event sent to adomik prebid analytic ' + wonEvent);
+  logInfo('Won event sent to adomik prebid analytic ' + stringWonEvent);
 
   // Encode object in base64
   const encodedBuf = window.btoa(stringWonEvent);
@@ -199,6 +209,8 @@ adomikAdapter.enableAnalytics = function (config) {
     adomikAdapter.currentContext = {
       uid: initOptions.id,
       url: initOptions.url,
+      testId: initOptions.testId,
+      testValue: initOptions.testValue,
       id: '',
       timeouted: false,
     }
