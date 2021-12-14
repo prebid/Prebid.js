@@ -4,7 +4,7 @@ import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js'
 import { createEidsArray } from './userId/eids.js';
 import {config} from '../src/config.js';
 
-export const ORTB_VIDEO_PARAMS = {
+const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
   'minduration': (value) => utils.isInteger(value),
   'maxduration': (value) => utils.isInteger(value),
@@ -198,12 +198,9 @@ export const spec = {
             meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           }
 
-          const videoRegex = new RegExp(/VAST\s+version/)
-
-          if (videoRegex.test(sovrnBid.adm)) {
+          if (!sovrnBid.nurl) {
             bid.mediaType = VIDEO
-            bid.ad = decodeURIComponent(sovrnBid.adm)
-            bid.vastXml = sovrnBid.adm
+            bid.vastXml = decodeURIComponent(sovrnBid.adm)
           } else {
             bid.mediaType = BANNER
             bid.ad = decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`)
