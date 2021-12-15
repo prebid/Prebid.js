@@ -58,11 +58,10 @@ export const spec = {
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
 
       payload.gdpr_consent = '';
-      payload.gdpr = null;
+      payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-        payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
       }
 
       var payloadString = JSON.stringify(payload);
