@@ -371,7 +371,13 @@ function processCmpData(consentObject, hookConfig) {
  * General timeout callback when interacting with CMP takes too long.
  */
 function cmpTimedOut(hookConfig) {
-  cmpFailed('CMP workflow exceeded timeout threshold.', hookConfig);
+  if (cmpVersion === 2) {
+    logWarn(`No response from CMP, continuing auction...`)
+    storeConsentData(undefined);
+    exitModule(null, hookConfig)
+  } else {
+    cmpFailed('CMP workflow exceeded timeout threshold.', hookConfig);
+  }
 }
 
 /**

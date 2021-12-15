@@ -58,11 +58,10 @@ export const spec = {
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
 
       payload.gdpr_consent = '';
-      payload.gdpr = null;
+      payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-        payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
       }
 
       var payloadString = JSON.stringify(payload);
@@ -296,7 +295,7 @@ function raiGetFloor(bid, config) {
     } else if (typeof bid.getFloor == 'function') {
       let floorSpec = bid.getFloor({
         currency: config.getConfig('currency.adServerCurrency'),
-        mediaType: bid.mediaType.banner ? 'banner' : 'video',
+        mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
         size: '*'
       })
 

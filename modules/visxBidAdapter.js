@@ -1,4 +1,4 @@
-import { triggerPixel, parseSizesInput, deepAccess, logError } from '../src/utils.js';
+import { triggerPixel, parseSizesInput, deepAccess, logError, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -241,7 +241,7 @@ function makeVideo(videoParams = {}) {
 }
 
 function buildImpObject(bid) {
-  const { params: { uid }, bidId, mediaTypes, sizes } = bid;
+  const { params: { uid }, bidId, mediaTypes, sizes, adUnitCode } = bid;
   const video = mediaTypes && _isVideoBid(bid) && _isValidVideoBid(bid) && makeVideo(mediaTypes.video);
   const banner = makeBanner((mediaTypes && mediaTypes.banner) || (!video && { sizes }));
   const impObject = {
@@ -252,6 +252,10 @@ function buildImpObject(bid) {
       bidder: { uid: Number(uid) },
     }
   };
+
+  if (impObject.banner) {
+    impObject.ext.bidder.adslotExists = _isAdSlotExists(adUnitCode);
+  }
 
   if (impObject.ext.bidder.uid && (impObject.banner || impObject.video)) {
     return impObject;
@@ -353,6 +357,19 @@ function _isValidVideoBid(bid, logErrors = false) {
     result = false;
   }
   return result;
+}
+
+function _isAdSlotExists(adUnitCode) {
+  if (document.getElementById(adUnitCode)) {
+    return true;
+  }
+
+  const gptAdSlot = getGptSlotInfoForAdUnitCode(adUnitCode);
+  if (gptAdSlot && gptAdSlot.divId && document.getElementById(gptAdSlot.divId)) {
+    return true;
+  }
+
+  return false;
 }
 
 registerBidder(spec);
