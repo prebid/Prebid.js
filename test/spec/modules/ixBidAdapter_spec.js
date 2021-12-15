@@ -1233,7 +1233,7 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('First party data', function () {
-    afterEach(function() {
+    afterEach(function () {
       config.setConfig({
         ortb2: {}
       })
@@ -1372,16 +1372,15 @@ describe('IndexexchangeAdapter', function () {
     const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
     const queryWithoutSchain = requestWithoutSchain.data;
 
-    const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-    delete bidWithoutMediaType[0].mediaTypes;
-    bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
-    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType, DEFAULT_OPTION)[0];
-    const queryWithoutMediaType = requestWithoutMediaType.data;
-
     it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
       expect(requestUrl).to.equal(IX_SECURE_ENDPOINT);
     });
+
+    it('auction type should be set correctly', function () {
+      const at = JSON.parse(query.r).at;
+      expect(at).to.equal(1);
+    })
 
     it('query object (version, siteID and request) should be correct', function () {
       expect(query.v).to.equal(BANNER_ENDPOINT_VERSION);
@@ -1406,16 +1405,16 @@ describe('IndexexchangeAdapter', function () {
         }
       };
       const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const { dfp_ad_unit_code } = JSON.parse(requests[0].data.r).imp[0].banner.format[0].ext;
+      const { ext: { dfp_ad_unit_code } } = JSON.parse(requests[0].data.r).imp[0];
       expect(dfp_ad_unit_code).to.equal(AD_UNIT_CODE);
     });
 
     it('should not send dfp_adunit_code in request if ortb2Imp.ext.data.adserver.adslot does not exists', function () {
       const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
       const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
-      const { dfp_ad_unit_code } = JSON.parse(requests[0].data.r).imp[0].banner.format[0].ext;
+      const { ext } = JSON.parse(requests[0].data.r).imp[0];
 
-      expect(dfp_ad_unit_code).to.not.exist;
+      expect(ext).to.not.exist;
     });
 
     it('payload should have correct format and value', function () {
@@ -1596,27 +1595,6 @@ describe('IndexexchangeAdapter', function () {
         expect(impression.bidfloor).to.equal(expectedFloor);
         expect(impression.bidfloorcur).to.equal(currency);
       });
-    });
-
-    it('payload without mediaType should have correct format and value', function () {
-      const payload = JSON.parse(queryWithoutMediaType.r);
-
-      expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
-      expect(payload.site.page).to.equal(DEFAULT_OPTION.refererInfo.referer);
-      expect(payload.site.ref).to.equal(document.referrer);
-      expect(payload.ext.source).to.equal('prebid');
-      expect(payload.imp).to.be.an('array');
-      expect(payload.imp).to.have.lengthOf(1);
-    });
-
-    it('impression without mediaType should have correct format and value', function () {
-      const impression = JSON.parse(queryWithoutMediaType.r).imp[0];
-
-      expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
-      expect(impression.banner.format).to.be.length(1);
-      expect(impression.banner.format[0].w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
-      expect(impression.banner.format[0].h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
-      expect(impression.banner.topframe).to.be.oneOf([0, 1]);
     });
 
     it('impression should have sid if id is configured as number', function () {
@@ -1956,6 +1934,11 @@ describe('IndexexchangeAdapter', function () {
       expect(query.nf).to.equal(1);
     });
 
+    it('auction type should be set correctly', function () {
+      const at = JSON.parse(query.r).at;
+      expect(at).to.equal(1);
+    })
+
     it('impression should have correct format and value', function () {
       const impression = JSON.parse(query.r).imp[0];
       const sidValue = utils.parseGPTSingleSizeArray(DEFAULT_VIDEO_VALID_BID[0].params.size);
@@ -2005,7 +1988,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('should handle unexpected context', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
-      bid.mediaTypes.video.context = 'VaccineJanssen';
+      bid.mediaTypes.video.context = 'not-valid';
       const request = spec.buildRequests([bid])[0];
       const impression = JSON.parse(request.data.r).imp[0];
       expect(impression.video.placement).to.be.undefined;
@@ -2156,7 +2139,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -2180,7 +2163,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -2207,7 +2190,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
     });
 
     it('should set Japanese price correctly', function () {
@@ -2233,7 +2216,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -2262,7 +2245,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
 
       expect(result[0].dealId).to.equal(expectedParse[0].dealId);
     });
@@ -2289,7 +2272,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -2317,7 +2300,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
       expect(result[0].dealId).to.deep.equal(expectedParse[0].dealId);
     });
 
@@ -2328,6 +2311,17 @@ describe('IndexexchangeAdapter', function () {
           cpm: 1.1,
           creativeId: '12346',
           mediaType: 'video',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [
+                [
+                  400,
+                  100
+                ]
+              ]
+            }
+          },
           width: 640,
           height: 480,
           currency: 'USD',
@@ -2342,7 +2336,10 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const result = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: ONE_VIDEO
+      });
+
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -2384,16 +2381,16 @@ describe('IndexexchangeAdapter', function () {
       const VIDEO_RESPONSE_WITH_EXP = utils.deepClone(DEFAULT_VIDEO_BID_RESPONSE);
       VIDEO_RESPONSE_WITH_EXP.seatbid[0].bid[0].exp = 200;
       BANNER_RESPONSE_WITH_EXP.seatbid[0].bid[0].exp = 100;
-      const bannerResult = spec.interpretResponse({ body: BANNER_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA });
-      const videoResult = spec.interpretResponse({ body: VIDEO_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const bannerResult = spec.interpretResponse({ body: BANNER_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
+      const videoResult = spec.interpretResponse({ body: VIDEO_RESPONSE_WITH_EXP }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
 
       expect(bannerResult[0].ttl).to.equal(100);
       expect(videoResult[0].ttl).to.equal(200);
     });
 
     it('should default bid[].ttl if seat[].bid[].exp is not in the resposne', function () {
-      const bannerResult = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
-      const videoResult = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      const bannerResult = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
+      const videoResult = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: [] });
 
       expect(bannerResult[0].ttl).to.equal(300);
       expect(videoResult[0].ttl).to.equal(3600);

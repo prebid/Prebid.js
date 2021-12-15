@@ -1,6 +1,6 @@
+import { deepAccess, getBidIdParameter, isArray, _each, getWindowTop, parseUrl } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import * as utils from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {INSTREAM} from '../src/video.js';
 
@@ -28,11 +28,11 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    const banner = utils.deepAccess(bid, 'mediaTypes.banner');
-    const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-    const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+    const banner = deepAccess(bid, 'mediaTypes.banner');
+    const videoMediaType = deepAccess(bid, 'mediaTypes.video');
+    const context = deepAccess(bid, 'mediaTypes.video.context');
     if ((videoMediaType && context === INSTREAM)) {
-      const videoBidderParams = utils.deepAccess(bid, 'params.video', {});
+      const videoBidderParams = deepAccess(bid, 'params.video', {});
 
       if (!Array.isArray(videoMediaType.playerSize)) {
         return false;
@@ -85,7 +85,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
       var finalRequest = {};
-      let bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      let bidfloor = getBidIdParameter('bidfloor', bid.params);
 
       const imp = {
         id: bid.bidId,
@@ -95,10 +95,10 @@ export const spec = {
         displaymanagerver: VERSION,
 
       }
-      if (utils.deepAccess(bid, 'mediaTypes.banner')) {
+      if (deepAccess(bid, 'mediaTypes.banner')) {
         imp.banner = getSize(bid.sizes);
         imp.mediatype = 'banner';
-      } else if (utils.deepAccess(bid, 'mediaTypes.video')) {
+      } else if (deepAccess(bid, 'mediaTypes.video')) {
         imp.video = _buildVideoORTB(bid);
         imp.mediatype = 'video';
       }
@@ -107,8 +107,8 @@ export const spec = {
       finalRequest = {
         sizes: bid.sizes,
         id: bid.bidId,
-        publisherId: utils.getBidIdParameter('publisherId', bid.params),
-        placementId: utils.getBidIdParameter('placementId', bid.params),
+        publisherId: getBidIdParameter('publisherId', bid.params),
+        placementId: getBidIdParameter('placementId', bid.params),
         device: device,
         site: site,
         imp: imp,
@@ -138,9 +138,9 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     serverResponse = serverResponse.body;
-    if (serverResponse && utils.isArray(serverResponse.seatbid)) {
-      utils._each(serverResponse.seatbid, function (bidList) {
-        utils._each(bidList.bid, function (bid) {
+    if (serverResponse && isArray(serverResponse.seatbid)) {
+      _each(serverResponse.seatbid, function (bidList) {
+        _each(bidList.bid, function (bid) {
           const responseCPM = parseFloat(bid.price);
           if (responseCPM > 0.0 && bid.impid) {
             const bidResponse = {
@@ -228,16 +228,16 @@ function getSite(bidderRequest) {
   const {refererInfo} = bidderRequest;
 
   if (canAccessTopWindow()) {
-    const wt = utils.getWindowTop();
+    const wt = getWindowTop();
     domain = wt.location.hostname;
     page = wt.location.href;
     referrer = wt.document.referrer || '';
   } else if (refererInfo.reachedTop) {
-    const url = utils.parseUrl(refererInfo.referer);
+    const url = parseUrl(refererInfo.referer);
     domain = url.hostname;
     page = refererInfo.referer;
   } else if (refererInfo.stack && refererInfo.stack.length && refererInfo.stack[0]) {
-    const url = utils.parseUrl(refererInfo.stack[0]);
+    const url = parseUrl(refererInfo.stack[0]);
     domain = url.hostname;
   }
 
@@ -251,7 +251,7 @@ function getSite(bidderRequest) {
 
 function canAccessTopWindow() {
   try {
-    if (utils.getWindowTop().location.href) {
+    if (getWindowTop().location.href) {
       return true;
     }
   } catch (error) {
@@ -260,8 +260,8 @@ function canAccessTopWindow() {
 }
 
 function _buildVideoORTB(bidRequest) {
-  const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video');
-  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
+  const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video');
+  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
   const video = {}
 
   const videoParams = {

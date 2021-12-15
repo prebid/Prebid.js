@@ -67,7 +67,7 @@ describe('AdmixerAdapter', function () {
 
     it('should add referrer and imp to be equal bidRequest', function () {
       const request = spec.buildRequests(validRequest, bidderRequest);
-      const payload = JSON.parse(request.data.substr(5));
+      const payload = request.data;
       expect(payload.referrer).to.not.be.undefined;
       expect(payload.imps[0]).to.deep.equal(validRequest[0]);
     });
@@ -75,7 +75,7 @@ describe('AdmixerAdapter', function () {
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(validRequest, bidderRequest);
       expect(request.url).to.equal(ENDPOINT_URL);
-      expect(request.method).to.equal('GET');
+      expect(request.method).to.equal('POST');
     });
 
     it('sends bid request to CUSTOM_ENDPOINT via GET', function () {
@@ -85,7 +85,7 @@ describe('AdmixerAdapter', function () {
       });
       const request = config.runWithBidder(BIDDER_CODE, () => spec.buildRequests(validRequest, bidderRequest));
       expect(request.url).to.equal(ENDPOINT_URL_CUSTOM);
-      expect(request.method).to.equal('GET');
+      expect(request.method).to.equal('POST');
     });
   });
 

@@ -436,6 +436,38 @@ describe('adapterManager tests', function () {
     });
   }); // end onBidViewable
 
+  describe('onBidderError', function () {
+    const bidder = 'appnexus';
+    const appnexusSpec = { onBidderError: sinon.stub() };
+    const appnexusAdapter = {
+      bidder,
+      getSpec: function() { return appnexusSpec; },
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      adapterManager.bidderRegistry[bidder] = appnexusAdapter;
+    });
+
+    afterEach(function () {
+      delete adapterManager.bidderRegistry[bidder];
+    });
+
+    it('should call spec\'s onBidderError callback when callBidderError is called', function () {
+      const bidRequests = getBidRequests();
+      const bidderRequest = find(bidRequests, bidRequest => bidRequest.bidderCode === bidder);
+      const xhrErrorMock = {
+        status: 500,
+        statusText: 'Internal Server Error'
+      };
+      adapterManager.callBidderError(bidder, xhrErrorMock, bidderRequest);
+      sinon.assert.calledOnce(appnexusSpec.onBidderError);
+      sinon.assert.calledWithExactly(appnexusSpec.onBidderError, { error: xhrErrorMock, bidderRequest });
+    });
+  }); // end onBidderError
+
   describe('S2S tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
@@ -1665,14 +1697,17 @@ describe('adapterManager tests', function () {
     });
 
     describe('sizeMapping', function () {
+      let sandbox;
       beforeEach(function () {
+        sandbox = sinon.sandbox.create();
         allS2SBidders.length = 0;
         clientTestAdapters.length = 0;
-        sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
+        // always have matchMedia return true for us
+        sandbox.stub(utils.getWindowTop(), 'matchMedia').callsFake(() => ({matches: true}));
       });
 
       afterEach(function () {
-        matchMedia.restore();
+        sandbox.restore();
         config.resetConfig();
         setSizeConfig([]);
       });
