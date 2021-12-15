@@ -2166,7 +2166,7 @@ describe('Unit: Prebid Module', function () {
         $$PREBID_GLOBAL$$.requestBids({adUnits});
         const spyArgs = adapterManager.callBids.getCall(0);
         const nativeRequest = spyArgs.args[1][0].bids[0].nativeParams;
-        expect(nativeRequest.ortb2.assets).to.deep.equal([
+        expect(nativeRequest.ortb.assets).to.deep.equal([
           {
             required: 1,
             id: 1,
