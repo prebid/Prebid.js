@@ -5,6 +5,7 @@ import {
   deepAccess,
   generateUUID,
   logError,
+  isArray,
 } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -130,6 +131,13 @@ function extractSchain(bids) {
   return bid ? bid.schain : bids[0].schain;
 }
 
+function extractEids(bids) {
+  if (!bids) return;
+
+  const bid = bids.find(bid => isArray(bid.userIdAsEids) && bid.userIdAsEids.length > 0);
+  return bid ? bid.userIdAsEids : bids[0].userIdAsEids;
+}
+
 function buildRequest(validBidRequests, bidderRequest) {
   const req = {
     id: bidderRequest.bidderRequestId,
@@ -169,6 +177,12 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (schain) {
     req.source.ext = { schain };
+  }
+
+  const eids = extractEids(bidderRequest.bids);
+
+  if (eids) {
+    req.user.ext = { eids };
   }
 
   return req;
