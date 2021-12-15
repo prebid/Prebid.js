@@ -119,7 +119,7 @@ describe('OguryBidAdapter', function () {
       };
     });
 
-    it('should return sync array with two elements of type image', () => {
+    it('should return syncs array with two elements of type image', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
 
       expect(userSyncs).to.have.lengthOf(2);
@@ -129,7 +129,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.contain('https://ms-cookie-sync.presage.io/ttd/init-sync');
     });
 
-    it('should set the same source as query param', () => {
+    it('should set the source as query param', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
       expect(userSyncs[0].url).to.contain('source=prebid');
       expect(userSyncs[1].url).to.contain('source=prebid');
@@ -146,7 +146,7 @@ describe('OguryBidAdapter', function () {
       expect(spec.getUserSyncs(syncOptions, [], gdprConsent)).to.have.lengthOf(0);
     });
 
-    it('should return sync array with two elements of type image when consentString is undefined', () => {
+    it('should return syncs array with two elements of type image when consentString is undefined', () => {
       gdprConsent = {
         gdprApplies: true,
         consentString: undefined
@@ -160,7 +160,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return sync array with two elements of type image when consentString is null', () => {
+    it('should return syncs array with two elements of type image when consentString is null', () => {
       gdprConsent = {
         gdprApplies: true,
         consentString: null
@@ -174,7 +174,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return sync array with two elements of type image when gdprConsent is undefined', () => {
+    it('should return syncs array with two elements of type image when gdprConsent is undefined', () => {
       gdprConsent = undefined;
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
@@ -185,7 +185,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return sync array with two elements of type image when gdprConsent is null', () => {
+    it('should return syncs array with two elements of type image when gdprConsent is null', () => {
       gdprConsent = null;
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
@@ -196,7 +196,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return sync array with two elements of type image when gdprConsent is null and gdprApplies is false', () => {
+    it('should return syncs array with two elements of type image when gdprConsent is null and gdprApplies is false', () => {
       gdprConsent = {
         gdprApplies: false,
         consentString: null
@@ -210,7 +210,7 @@ describe('OguryBidAdapter', function () {
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return sync array with two elements of type image when gdprConsent is empty string and gdprApplies is false', () => {
+    it('should return syncs array with two elements of type image when gdprConsent is empty string and gdprApplies is false', () => {
       gdprConsent = {
         gdprApplies: false,
         consentString: ''
@@ -240,7 +240,8 @@ describe('OguryBidAdapter', function () {
             w: 300,
             h: 250
           }]
-        }
+        },
+        ext: bidRequests[0].params
       }, {
         id: bidRequests[1].bidId,
         tagid: bidRequests[1].params.adUnitId,
@@ -250,7 +251,8 @@ describe('OguryBidAdapter', function () {
             w: 600,
             h: 500
           }]
-        }
+        },
+        ext: bidRequests[1].params
       }],
       regs: {
         ext: {
@@ -549,7 +551,7 @@ describe('OguryBidAdapter', function () {
       xhr.restore()
     })
 
-    it('should send notification on bid timeout', function() {
+    it('should send on bid timeout notification', function() {
       const bid = {
         ad: '<img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" />',
         cpm: 3

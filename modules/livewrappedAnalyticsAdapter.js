@@ -3,6 +3,7 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = 'https://lwadm.com/analytics/10';
@@ -14,6 +15,7 @@ const TIMEOUTSENT = 8;
 const ADRENDERFAILEDSENT = 16;
 
 let initOptions;
+let prebidGlobal = getGlobal();
 export const BID_WON_TIMEOUT = 500;
 
 const cache = {
@@ -79,6 +81,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         bidResponse.width = args.width;
         bidResponse.height = args.height;
         bidResponse.cpm = args.cpm;
+        bidResponse.originalCpm = prebidGlobal.convertCurrency(args.originalCpm, args.originalCurrency, args.currency);
         bidResponse.ttr = args.timeToRespond;
         bidResponse.readyToSend = 1;
         bidResponse.mediaType = args.mediaType == 'native' ? 2 : (args.mediaType == 'video' ? 4 : 1);
@@ -111,6 +114,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         let wonBid = cache.auctions[args.auctionId].bids[args.requestId];
         wonBid.won = true;
         wonBid.floorData = args.floorData;
+        wonBid.rUp = args.rUp;
         if (wonBid.sendStatus != 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
@@ -237,6 +241,7 @@ function getResponses(gdpr, auctionIds) {
           width: bid.width,
           height: bid.height,
           cpm: bid.cpm,
+          orgCpm: bid.originalCpm,
           ttr: bid.ttr,
           IsBid: bid.isBid,
           mediaType: bid.mediaType,
@@ -276,6 +281,7 @@ function getWins(gdpr, auctionIds) {
           width: bid.width,
           height: bid.height,
           cpm: bid.cpm,
+          orgCpm: bid.originalCpm,
           mediaType: bid.mediaType,
           gdpr: gdprPos,
           floor: bid.lwFloor ? bid.lwFloor : (bid.floorData ? bid.floorData.floorValue : undefined),
@@ -283,7 +289,8 @@ function getWins(gdpr, auctionIds) {
           auctionId: auctionIdPos,
           auc: bid.auc,
           buc: bid.buc,
-          lw: bid.lw
+          lw: bid.lw,
+          rUp: bid.rUp
         });
       }
     });
