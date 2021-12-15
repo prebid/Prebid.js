@@ -5,6 +5,7 @@ import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
 import { Renderer } from '../src/Renderer.js';
 
+
 const BIDDER_CODE = 'ozone';
 
 const ORIGIN = 'https://elb.the-ozone-project.com' // applies only to auction & cookie
@@ -288,7 +289,7 @@ export const spec = {
         }
       }
       if (fpd && deepAccess(fpd, 'site')) {
-        logInfo('added fdp.site');
+        logInfo('added fpd.site');
         if (deepAccess(obj, 'ext.' + whitelabelBidder + '.customData.0.targeting', false)) {
           obj.ext[whitelabelBidder].customData[0].targeting = Object.assign(obj.ext[whitelabelBidder].customData[0].targeting, fpd.site);
         } else {
