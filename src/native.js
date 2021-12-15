@@ -10,7 +10,7 @@ export const NATIVE_TARGETING_KEYS = Object.keys(CONSTANTS.NATIVE_KEYS).map(
 );
 
 const IMAGE = {
-  ortb2: {
+  ortb: {
     ver: '1.2',
     assets: [
       {
@@ -76,7 +76,7 @@ export function processNativeAdUnitParams(params) {
     params = SUPPORTED_TYPES[params.type];
   }
 
-  if (params && params.ortb2 && !isOpenRTBBidRequestValid(params.ortb2)) {
+  if (params && params.ortb && !isOpenRTBBidRequestValid(params.ortb)) {
     return;
   }
   return params;
@@ -91,10 +91,10 @@ export function decorateAdUnitsWithNativeParams(adUnits) {
     }
   });
 }
-export function isOpenRTBBidRequestValid(ortb2) {
-  const assets = ortb2.assets;
+export function isOpenRTBBidRequestValid(ortb) {
+  const assets = ortb.assets;
   if (!Array.isArray(assets) || assets.length === 0) {
-    logError(`assets in mediaTypes.native.ortb2 is not an array, or it's empty. Assets: `, assets);
+    logError(`assets in mediaTypes.native.ortb is not an array, or it's empty. Assets: `, assets);
     return false;
   }
 
@@ -105,8 +105,8 @@ export function isOpenRTBBidRequestValid(ortb2) {
     return false;
   }
 
-  if (ortb2.hasOwnProperty('eventtrackers') && !Array.isArray(ortb2.eventtrackers)) {
-    logError('ortb2.eventtrackers is not an array. Eventtrackers: ', ortb2.eventtrackers);
+  if (ortb.hasOwnProperty('eventtrackers') && !Array.isArray(ortb.eventtrackers)) {
+    logError('ortb.eventtrackers is not an array. Eventtrackers: ', ortb.eventtrackers);
     return false;
   }
 
@@ -184,8 +184,8 @@ export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
   const bidRequest = index.getAdUnit(bid);
   if (!bidRequest) { return false; }
 
-  if (deepAccess(bid, 'native.ortb2') && deepAccess(bidRequest, 'nativeParams.ortb2')) {
-    return isNativeOpenRTBBidValid(bid.native.ortb2, bidRequest.nativeParams.ortb2);
+  if (deepAccess(bid, 'native.ortb') && deepAccess(bidRequest, 'nativeParams.ortb')) {
+    return isNativeOpenRTBBidValid(bid.native.ortb, bidRequest.nativeParams.ortb);
   }
   // all native bid responses must define a landing page url
   if (!deepAccess(bid, 'native.clickUrl')) {
@@ -209,7 +209,7 @@ export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
 
 export function isNativeOpenRTBBidValid(bidORTB, bidRequestORTB) {
   if (!deepAccess(bidORTB, 'link.url')) {
-    logError(`native response doesn't have 'link' property. Ortb2 response: `, bidORTB);
+    logError(`native response doesn't have 'link' property. Ortb response: `, bidORTB);
     return false;
   }
 
@@ -356,7 +356,7 @@ export function getAllAssetsMessage(data, adObject) {
     adId: data.adId,
   };
 
-  if (adObject.native.ortb2) {
+  if (adObject.native.ortb) {
     Object.keys(adObject.native).forEach(key => {
       message[key] = adObject.native[key];
     });
