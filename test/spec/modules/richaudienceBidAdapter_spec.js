@@ -905,7 +905,7 @@ describe('Richaudience adapter tests', function () {
       }, [], {
         consentString: null,
         referer: 'http://domain.com',
-        gdprApplies: true
+        gdprApplies: false
       })
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
@@ -942,7 +942,7 @@ describe('Richaudience adapter tests', function () {
       }, [], {
         consentString: null,
         referer: 'http://domain.com',
-        gdprApplies: true
+        gdprApplies: false
       })
       expect(syncs).to.have.lengthOf(0);
     });

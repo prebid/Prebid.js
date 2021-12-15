@@ -552,6 +552,28 @@ describe('Livewrapped analytics adapter', function () {
       expect(message.wins[0].floor).to.equal(1.1);
       expect(message.wins[1].floor).to.equal(2.2);
     });
+
+    it('should forward runner-up data as given by Livewrapped wrapper', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_WON, Object.assign({},
+        MOCK.BID_WON[0],
+        {
+          'rUp': 'rUpObject'
+        }));
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      expect(message.wins.length).to.equal(1);
+      expect(message.wins[0].rUp).to.equal('rUpObject');
+    });
   });
 
   describe('when given other endpoint', function () {

@@ -1,4 +1,4 @@
-import { logError, deepAccess } from '../src/utils.js';
+import { logError, deepAccess, parseSizesInput } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -53,7 +53,7 @@ const isBidResponseValid = bid => {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return Boolean(bid.vastUrl);
+      return Boolean(bid.vastUrl || bid.vastXml);
     default:
       return false;
   }
@@ -62,14 +62,15 @@ const isBidResponseValid = bid => {
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
     let adType = BANNER;
-    let w, h;
+    let sizes;
     if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
-      [w, h] = bid.mediaTypes[BANNER].sizes[0];
+      sizes = bid.mediaTypes[BANNER].sizes;
       adType = BANNER;
     } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
-      [w, h] = bid.mediaTypes[VIDEO].playerSize;
+      sizes = bid.mediaTypes[VIDEO].playerSize;
       adType = VIDEO;
     }
+    const [w, h] = (parseSizesInput(sizes)[0] || '0x0').split('x');
 
     const aElement = document.createElement('a');
     aElement.href = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || top.location.href;
@@ -80,6 +81,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     const queryParams = {
       id: bid.params.id,
       adtype: adType,
+      auc: bid.adUnitCode,
       w,
       h,
       pos: parseInt(bid.params.position) || 1,
@@ -88,7 +90,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
-      d: getDomainWithoutSubdomain(hostname),
+      d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       sp: encodeURIComponent(aElement.href),
       usp: bidderRequest.uspConsent || '',
       coppa: !!config.getConfig('coppa'),
@@ -127,7 +129,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
     let responseBody = serverResponse.body;
     if (!responseBody) return;
     if (responseBody.mediaType === 'video') {
-      responseBody.ad = responseBody.vastUrl;
+      responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
       const videoContext = bidRequest.data.videoContext;
 
       if (videoContext === OUTSTREAM) {
@@ -143,13 +145,12 @@ const interpretResponse = (serverResponse, bidRequest) => {
 
           responseBody.renderer = renderer;
         } catch (e) {
-          responseBody.ad = responseBody.vastUrl;
+          responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
           logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
         }
       }
     }
     const bid = {
-      vastUrl: responseBody.vastUrl,
       ad: responseBody.ad,
       renderer: responseBody.renderer,
       mediaType: responseBody.mediaType,
@@ -178,6 +179,11 @@ const interpretResponse = (serverResponse, bidRequest) => {
         secondaryCatIds: responseBody.meta.secondaryCatIds
       }
     };
+    if (responseBody.vastUrl) {
+      bid.vastUrl = responseBody.vastUrl;
+    } else if (responseBody.vastXml) {
+      bid.vastXml = responseBody.vastXml;
+    }
 
     const bids = [];
 
@@ -202,7 +208,7 @@ function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
     return [].concat(urls).map(url => ({
       type: pixelType,
       url: url
-        .replace('{{GDPR}}', gdprConsent ? gdprConsent.gdprApplies : '0')
+        .replace('{{GDPR}}', gdprConsent ? (gdprConsent.gdprApplies ? '1' : '0') : '0')
         .replace('{{GDPR_CONSENT}}', gdprConsent ? encodeURIComponent(gdprConsent.consentString) : '')
         .replace('{{USP_CONSENT}}', uspConsent ? encodeURIComponent(uspConsent) : '')
     }));
