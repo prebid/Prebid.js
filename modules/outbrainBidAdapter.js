@@ -40,6 +40,7 @@ export const spec = {
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const bcat = setOnAny(validBidRequests, 'params.bcat');
     const badv = setOnAny(validBidRequests, 'params.badv');
+    const eids = setOnAny(validBidRequests, 'userIdAsEids')
     const cur = CURRENCY;
     const endpointUrl = config.getConfig('outbrain.bidderUrl');
     const timeout = bidderRequest.timeout;
@@ -103,6 +104,10 @@ export const spec = {
     }
     if (config.getConfig('coppa') === true) {
       deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
+    }
+
+    if (eids) {
+      deepSetValue(request, 'user.ext.eids', eids);
     }
 
     return {

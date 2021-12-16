@@ -6,7 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.2';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
 const TEST_MODE_DCN = '8a969516017a7a396ec539d97f540011';
@@ -144,9 +144,9 @@ function getAdapterMode() {
 
 function getResponseFormat(bid) {
   const adm = bid.adm;
-  if (adm.includes('o2playerSettings') || adm.includes('YAHOO.VideoPlatform.VideoPlayer') || adm.includes('AdPlacement')) {
+  if (adm.indexOf('o2playerSettings') !== -1 || adm.indexOf('YAHOO.VideoPlatform.VideoPlayer') !== -1 || adm.indexOf('AdPlacement') !== -1) {
     return BANNER;
-  } else if (adm.includes('VAST')) {
+  } else if (adm.indexOf('VAST') !== -1) {
     return VIDEO;
   }
 };
@@ -188,23 +188,23 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
   for (const objectKey in inputObject) {
     switch (validationType) {
       case 'string':
-        if (allowedKeys.includes(objectKey) && isStr(inputObject[objectKey])) {
+        if (allowedKeys.indexOf(objectKey) !== -1 && isStr(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
       case 'number':
-        if (allowedKeys.includes(objectKey) && isNumber(inputObject[objectKey])) {
+        if (allowedKeys.indexOf(objectKey) !== -1 && isNumber(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
 
       case 'array':
-        if (allowedKeys.includes(objectKey) && isArray(inputObject[objectKey])) {
+        if (allowedKeys.indexOf(objectKey) !== -1 && isArray(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
       case 'object':
-        if (allowedKeys.includes(objectKey) && isPlainObject(inputObject[objectKey])) {
+        if (allowedKeys.indexOf(objectKey) !== -1 && isPlainObject(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
         };
         break;
@@ -357,6 +357,10 @@ function appendImpObject(bid, openRtbObject) {
 
     if (deepAccess(bid, 'ortb2Imp.ext.data') && isPlainObject(bid.ortb2Imp.ext.data)) {
       impObject.ext.data = bid.ortb2Imp.ext.data;
+    };
+
+    if (deepAccess(bid, 'ortb2Imp.instl') && isNumber(bid.ortb2Imp.instl) && (bid.ortb2Imp.instl === 1)) {
+      impObject.instl = bid.ortb2Imp.instl;
     };
 
     if (getPubIdMode(bid) === false) {

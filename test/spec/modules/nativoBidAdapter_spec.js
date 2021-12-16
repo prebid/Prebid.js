@@ -8,29 +8,46 @@ import { spec } from 'modules/nativoBidAdapter.js'
 describe('nativoBidAdapterTests', function () {
   describe('isBidRequestValid', function () {
     let bid = {
-      bidder: 'nativo',
-      params: {
-        placementId: '10433394',
-      },
-      adUnitCode: 'adunit-code',
-      sizes: [
-        [300, 250],
-        [300, 600],
-      ],
-      bidId: '27b02036ccfa6e',
-      bidderRequestId: '1372cd8bd8d6a8',
-      auctionId: 'cfc467e4-2707-48da-becb-bcaab0b2c114',
+      bidder: 'nativo'
     }
 
-    it('should return true when required params found', function () {
+    it('should return true if no params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true)
     })
 
-    it('should return true when params are not passed', function () {
-      let bid2 = Object.assign({}, bid)
-      delete bid2.params
-      bid2.params = {}
-      expect(spec.isBidRequestValid(bid2)).to.equal(true)
+    it('should return true for valid placementId value', function () {
+      bid.params = {
+        placementId: '10433394',
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should return true for valid placementId value', function () {
+      bid.params = {
+        placementId: 10433394,
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should return false for invalid placementId value', function () {
+      bid.params = {
+        placementId: true,
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
+
+    it('should return true for valid placementId value', function () {
+      bid.params = {
+        url: 'www.test.com',
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should return false for invalid placementId value', function () {
+      bid.params = {
+        url: 4567890,
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
   })
 
