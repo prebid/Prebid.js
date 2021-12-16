@@ -15,10 +15,10 @@ export function setupBeforeHookFnOnce(baseFn, hookFn, priority = 15) {
 }
 const submoduleInstallMap = {};
 
-export function module(name, install) {
+export function module(name, install, {postInstallAllowed = false} = {}) {
   hook('async', function (submodules) {
     submodules.forEach(args => install(...args));
-    submoduleInstallMap[name] = install;
+    if (postInstallAllowed) submoduleInstallMap[name] = install;
   }, name)([]); // will be queued until hook.ready() called in pbjs.processQueue();
 }
 
