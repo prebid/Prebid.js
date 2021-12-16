@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'welect';
@@ -19,7 +19,7 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     return (
-      utils.deepAccess(bid, 'mediaTypes.video.context') === 'instream' &&
+      deepAccess(bid, 'mediaTypes.video.context') === 'instream' &&
       !!bid.params.placementId
     );
   },
@@ -32,7 +32,7 @@ export const spec = {
   buildRequests: function (validBidRequests) {
     return validBidRequests.map((bidRequest) => {
       let rawSizes =
-        utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') ||
+        deepAccess(bidRequest, 'mediaTypes.video.playerSize') ||
         bidRequest.sizes;
       let size = rawSizes[0];
 
