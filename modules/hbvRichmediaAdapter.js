@@ -1,7 +1,7 @@
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { spec as baseAdapter } from './appnexusBidAdapter';
+import { spec as baseAdapter } from './appnexusBidAdapter.js'; // eslint-disable-line prebid/validate-imports
 
 const BIDDER_CODE = 'hbv-richmedia';
 
