@@ -9,6 +9,11 @@ import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 import {deepAccess, deepClone} from 'src/utils.js';
+import 'modules/appnexusBidAdapter.js' // appnexus alias test
+import 'modules/rubiconBidAdapter.js' // rubicon alias test
+import 'src/prebid.js' // $$PREBID_GLOBAL$$.aliasBidder test
+import 'modules/currency.js' // adServerCurrency test
+import {hook} from '../../../src/hook.js';
 
 let CONFIG = {
   accountId: '1',
@@ -447,6 +452,10 @@ describe('S2S Adapter', function () {
   let adapter,
     addBidResponse = sinon.spy(),
     done = sinon.spy();
+
+  before(() => {
+    hook.ready();
+  });
 
   beforeEach(function () {
     config.resetConfig();
