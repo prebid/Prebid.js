@@ -8,6 +8,7 @@ import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import CONSTANTS from 'src/constants.json';
 import events from 'src/events.js';
+import {hook} from '../../../../src/hook.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -43,6 +44,10 @@ describe('bidders created by newBidder', function () {
   let addBidResponseStub;
   let doneStub;
 
+  before(() => {
+    hook.ready();
+  });
+
   beforeEach(function () {
     spec = {
       code: CODE,
@@ -59,17 +64,22 @@ describe('bidders created by newBidder', function () {
   describe('when the ajax response is irrelevant', function () {
     let ajaxStub;
     let getConfigSpy;
+    let aliasRegistryStub, aliasRegistry;
 
     beforeEach(function () {
       ajaxStub = sinon.stub(ajax, 'ajax');
       addBidResponseStub.reset();
       getConfigSpy = sinon.spy(config, 'getConfig');
       doneStub.reset();
+      aliasRegistry = {};
+      aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
+      aliasRegistryStub.get(() => aliasRegistry);
     });
 
     afterEach(function () {
       ajaxStub.restore();
       getConfigSpy.restore();
+      aliasRegistryStub.restore();
     });
 
     it('should let registerSyncs run with invalid alias and aliasSync enabled', function () {
@@ -116,6 +126,7 @@ describe('bidders created by newBidder', function () {
       });
       spec.code = 'aliasBidder';
       const bidder = newBidder(spec);
+      aliasRegistry = {[spec.code]: CODE};
       bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
       expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(false);
     });
@@ -547,6 +558,30 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(logErrorSpy.calledOnce).to.equal(true);
+    });
+
+    it('should require requestId from interpretResponse', () => {
+      const bidder = newBidder(spec);
+      const bid = {
+        'ad': 'creative',
+        'cpm': '1.99',
+        'creativeId': 'some-id',
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 360
+      };
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: 'test.url.com',
+        data: {}
+      });
+      spec.getUserSyncs.returns([]);
+      spec.interpretResponse.returns(bid);
+
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.called).to.be.false;
     });
   });
 

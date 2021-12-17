@@ -130,7 +130,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  */
 
 // common params for all mediaTypes
-const COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
 
 const DEFAULT_REFRESHIN_DAYS = 1;
 

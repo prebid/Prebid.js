@@ -888,7 +888,8 @@ Object.assign(ORTB2.prototype, {
           let bidObject = createBid(status, {
             bidder: seatbid.seat,
             src: TYPE,
-            bidId: bidRequest && (bidRequest.bidId || bidRequest.bid_Id)
+            bidId: bidRequest ? (bidRequest.bidId || bidRequest.bid_Id) : null,
+            transactionId: this.adUnitsByImp[bid.impid].transactionId
           });
 
           bidObject.cpm = cpm;
