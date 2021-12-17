@@ -10,7 +10,6 @@ import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
 import { config } from '../../src/config.js';
 import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
-import { processNativeAdUnitParams } from '../../src/native.js';
 import { isValid } from '../../src/adapters/bidderFactory.js';
 import events from '../../src/events.js';
 import includes from 'core-js-pure/features/array/includes.js';
@@ -526,7 +525,7 @@ Object.assign(ORTB2.prototype, {
       impIds.add(impressionId);
       this.adUnitsByImp[impressionId] = adUnit;
 
-      const nativeParams = processNativeAdUnitParams(deepAccess(adUnit, 'mediaTypes.native'));
+      const nativeParams = adUnit.nativeParams;
       let nativeAssets;
       if (nativeParams) {
         try {

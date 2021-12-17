@@ -5,7 +5,6 @@
  */
 
 import { isArray, logError, isArrayOfNums, deepClone, logWarn, getWindowTop, deepEqual, logInfo, isValidMediaTypes, deepAccess, getDefinedParams, getUniqueIdentifierStr, flatten } from '../src/utils.js';
-import { processNativeAdUnitParams } from '../src/native.js';
 import { adunitCounter } from '../src/adUnits.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { getHook } from '../src/hook.js';
@@ -536,14 +535,8 @@ export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, label
             .reduce((bids, bid) => {
               if (internal.isLabelActivated(bid, labels, adUnit.code, adUnitInstance)) {
                 // handle native params
-                const nativeParams = adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
-                if (nativeParams) {
-                  bid = Object.assign({}, bid, {
-                    nativeParams: processNativeAdUnitParams(nativeParams)
-                  });
-                }
 
-                bid = Object.assign({}, bid, getDefinedParams(adUnit, ['mediaType', 'renderer']));
+                bid = Object.assign({}, bid, getDefinedParams(adUnit, ['mediaType', 'renderer', 'nativeParams']));
 
                 if (bid.sizeConfig) {
                   const relevantMediaTypes = internal.getRelevantMediaTypesForBidder(bid.sizeConfig, activeViewport);

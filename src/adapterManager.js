@@ -1,20 +1,37 @@
 /** @module adaptermanger */
 
 import {
-  _each, getUserConfiguredParams, groupBy, logInfo, deepAccess, isValidMediaTypes,
-  getUniqueIdentifierStr, deepClone, logWarn, logError, logMessage, isArray, generateUUID,
-  flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind
+  _each,
+  bind,
+  deepAccess,
+  deepClone,
+  flatten,
+  generateUUID,
+  getBidderCodes,
+  getBidderRequest,
+  getDefinedParams,
+  getUniqueIdentifierStr,
+  getUserConfiguredParams,
+  groupBy,
+  isArray,
+  isValidMediaTypes,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  shuffle,
+  timestamp
 } from './utils.js';
-import { getLabels, resolveStatus } from './sizeMapping.js';
-import { processNativeAdUnitParams, nativeAdapters } from './native.js';
-import { newBidder } from './adapters/bidderFactory.js';
-import { ajaxBuilder } from './ajax.js';
-import { config, RANDOM } from './config.js';
-import { hook } from './hook.js';
+import {getLabels, resolveStatus} from './sizeMapping.js';
+import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
+import {newBidder} from './adapters/bidderFactory.js';
+import {ajaxBuilder} from './ajax.js';
+import {config, RANDOM} from './config.js';
+import {hook} from './hook.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import find from 'core-js-pure/features/array/find.js';
-import { adunitCounter } from './adUnits.js';
-import { getRefererInfo } from './refererDetection.js';
+import {adunitCounter} from './adUnits.js';
+import {getRefererInfo} from './refererDetection.js';
 
 var CONSTANTS = require('./constants.json');
 var events = require('./events.js');
@@ -62,15 +79,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
     if (active) {
       result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
         .reduce((bids, bid) => {
-          const nativeParams =
-            adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
-          if (nativeParams) {
-            bid = Object.assign({}, bid, {
-              nativeParams: processNativeAdUnitParams(nativeParams),
-            });
-          }
-
           bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+            'nativeParams',
             'ortb2Imp',
             'mediaType',
             'renderer',
@@ -209,6 +219,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
    * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
    */
   events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
+  decorateAdUnitsWithNativeParams(adUnits);
 
   let bidderCodes = getBidderCodes(adUnits);
   if (config.getConfig('bidderSequence') === RANDOM) {

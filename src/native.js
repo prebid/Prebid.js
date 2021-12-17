@@ -35,6 +35,16 @@ export function processNativeAdUnitParams(params) {
   return params;
 }
 
+export function decorateAdUnitsWithNativeParams(adUnits) {
+  adUnits.forEach(adUnit => {
+    const nativeParams =
+      adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
+    if (nativeParams) {
+      adUnit.nativeParams = processNativeAdUnitParams(nativeParams);
+    }
+  });
+}
+
 /**
  * Check if the native type specified in the adUnit is supported by Prebid.
  */

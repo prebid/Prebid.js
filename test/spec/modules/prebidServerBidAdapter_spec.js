@@ -14,6 +14,7 @@ import 'modules/rubiconBidAdapter.js' // rubicon alias test
 import 'src/prebid.js' // $$PREBID_GLOBAL$$.aliasBidder test
 import 'modules/currency.js' // adServerCurrency test
 import {hook} from '../../../src/hook.js';
+import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 
 let CONFIG = {
   accountId: '1',
@@ -453,8 +454,14 @@ describe('S2S Adapter', function () {
     addBidResponse = sinon.spy(),
     done = sinon.spy();
 
+  function prepRequest(req) {
+    req.ad_units.forEach((adUnit) => { delete adUnit.nativeParams });
+    decorateAdUnitsWithNativeParams(req.ad_units);
+  }
+
   before(() => {
     hook.ready();
+    prepRequest(REQUEST);
   });
 
   beforeEach(function () {
@@ -1105,6 +1112,7 @@ describe('S2S Adapter', function () {
     it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
       const req = deepClone(REQUEST);
       req.ad_units[0].mediaTypes.native.icon.aspect_ratios[0] = {'min_width': 1, 'min_height': 2};
+      prepRequest(req);
       adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
       const nativeReq = JSON.parse(JSON.parse(server.requests[0].requestBody).imp[0].native.request);
       const icons = nativeReq.assets.map((a) => a.img).filter((img) => img && img.type === 1);
