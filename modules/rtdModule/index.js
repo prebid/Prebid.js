@@ -203,6 +203,9 @@ const setEventsListeners = (function () {
         [CONSTANTS.EVENTS.BID_REQUESTED]: 'onBidRequestEvent'
       }).forEach(([ev, handler]) => {
         events.on(ev, (args) => {
+          if(ev === 'auctionEnd') {
+            getAdUnitTargeting(args);
+          }
           subModules.forEach(sm => {
             try {
               sm[handler] && sm[handler](args, sm.config, _userConsent)
