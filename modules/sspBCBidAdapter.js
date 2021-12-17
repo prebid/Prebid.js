@@ -32,6 +32,7 @@ const getNotificationPayload = bidData => {
         requestId: undefined,
         siteId: [],
         slotId: [],
+        tagid: [],
       }
       bids.forEach(bid => {
         let params = isArray(bid.params) ? bid.params[0] : bid.params;
@@ -56,7 +57,7 @@ const getNotificationPayload = bidData => {
           result.adomain = meta.advertiserDomains && meta.advertiserDomains[0];
           result.networkName = meta.networkName;
         }
-        result.tagid = bid.adUnitCode;
+        result.tagid.push(bid.adUnitCode);
         result.requestId = bid.auctionId || result.requestId;
         result.timeout = bid.timeout || result.timeout;
       })
@@ -304,7 +305,7 @@ const mapImpression = slot => {
     banner: mapBanner(slot),
     native: mapNative(slot),
     video: mapVideo(slot),
-    tagid: [adUnitCode],
+    tagid: adUnitCode,
     ext,
   };
 
