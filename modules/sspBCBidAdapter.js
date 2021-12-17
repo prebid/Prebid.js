@@ -304,7 +304,7 @@ const mapImpression = slot => {
     banner: mapBanner(slot),
     native: mapNative(slot),
     video: mapVideo(slot),
-    tagid: adUnitCode,
+    tagid: [adUnitCode],
     ext,
   };
 
