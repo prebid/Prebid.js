@@ -248,19 +248,15 @@
       "items":{
          "type":"object",
          "required":[
-            "provider",
+           "accountId",
+            "vendor",
             "type",
-            "eventId"
+            "billingId"
          ],
          "properties":{
-            "provider":{
+            "vendor":{
                "type":"string",
-               "description":"The name of the vendor provider who emitted the billable event",
-               "examples":[
-                  "browsi",
-                  "confiant",
-                  "clean.io"
-               ]
+               "description":"The name of the vendor who emitted the billable event"
             },
             "type":{
                "type":"string",
@@ -270,20 +266,16 @@
                   "pageLoad",
                   "auction",
                   "request",
-                  "other"
+                  "general"
                ]
             },
-            "transactionId":{
+            "billingId":{
                "type":"string",
-               "description":"The UUID assigned to the adUnit which this event maps to"
+               "description":"A UUID which is responsible more mapping this event to"
             },
-            "eventId":{
-               "type":"string",
-               "description":"Vendor random, unique identifier for a given event.  To be used for deduplication"
-            },
-            "auctionId":{
-               "type":"string",
-               "description":"The auction id associated with this event"
+            "accountId": {
+              "type": "number",
+              "description": "The account id for the rubicon publisher"
             }
          }
       }
