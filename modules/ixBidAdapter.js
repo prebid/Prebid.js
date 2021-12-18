@@ -53,7 +53,12 @@ const SOURCE_RTI_MAPPING = {
   'neustar.biz': 'fabrickId',
   'zeotap.com': 'zeotapIdPlus',
   'uidapi.com': 'UID2',
-  'adserver.org': 'TDID'
+  'adserver.org': 'TDID',
+  'id5-sync.com': '', // ID5 Universal ID, configured as id5Id
+  'crwdcntrl.net': '', // Lotame Panorama ID, lotamePanoramaId
+  'epsilon.com': '', // Publisher Link, publinkId
+  'audigent.com': '', // Halo ID from Audigent, haloId
+  'pubcid.org': '' // SharedID, pubcid
 };
 const PROVIDERS = [
   'britepoolid',
@@ -69,7 +74,8 @@ const PROVIDERS = [
   'quantcastId',
   'pubcid',
   'TDID',
-  'flocId'
+  'flocId',
+  'pubProvidedId'
 ];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
 const VIDEO_PARAMS_ALLOW_LIST = [
@@ -194,7 +200,7 @@ function bidToImp(bid) {
   imp.id = bid.bidId;
 
   imp.ext = {};
-  imp.ext.siteID = bid.params.siteId;
+  imp.ext.siteID = bid.params.siteId.toString();
 
   if (bid.params.hasOwnProperty('id') &&
     (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
@@ -444,16 +450,19 @@ function getEidInfo(allEids, flocData) {
   let seenSources = {};
   if (isArray(allEids)) {
     for (const eid of allEids) {
-      if (SOURCE_RTI_MAPPING[eid.source] && deepAccess(eid, 'uids.0')) {
+      if (SOURCE_RTI_MAPPING.hasOwnProperty(eid.source) && deepAccess(eid, 'uids.0')) {
         seenSources[eid.source] = true;
-        eid.uids[0].ext = {
-          rtiPartner: SOURCE_RTI_MAPPING[eid.source]
-        };
+        if (SOURCE_RTI_MAPPING[eid.source] != '') {
+          eid.uids[0].ext = {
+            rtiPartner: SOURCE_RTI_MAPPING[eid.source]
+          };
+        }
         delete eid.uids[0].atype;
         toSend.push(eid);
       }
     }
   }
+
   const isValidFlocId = flocData && flocData.id && flocData.version;
   if (isValidFlocId) {
     const flocEid = {
@@ -466,6 +475,7 @@ function getEidInfo(allEids, flocData) {
 
   return { toSend, seenSources };
 }
+
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
@@ -1188,7 +1198,12 @@ export const spec = {
     }
 
     if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
-      logError('IX Bid Adapter: siteId must be string or number value.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+      logError('IX Bid Adapter: siteId must be string or number type.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+      return false;
+    }
+
+    if (typeof bid.params.siteId !== 'string' && isNaN(Number(bid.params.siteId))) {
+      logError('IX Bid Adapter: siteId must valid value', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
       return false;
     }
 
