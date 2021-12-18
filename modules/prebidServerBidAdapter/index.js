@@ -889,7 +889,8 @@ Object.assign(ORTB2.prototype, {
             bidder: seatbid.seat,
             src: TYPE,
             bidId: bidRequest ? (bidRequest.bidId || bidRequest.bid_Id) : null,
-            transactionId: this.adUnitsByImp[bid.impid].transactionId
+            transactionId: this.adUnitsByImp[bid.impid].transactionId,
+            auctionId: this.auctionId
           });
 
           bidObject.cpm = cpm;

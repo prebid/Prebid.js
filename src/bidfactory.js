@@ -14,7 +14,7 @@ import { getUniqueIdentifierStr } from './utils.js';
  dealId,
  priceKeyString;
  */
-function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId} = {}) {
+function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, auctionId} = {}) {
   var _bidSrc = src;
   var _statusCode = statusCode || 0;
 
@@ -25,6 +25,7 @@ function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId} = {
   this.adId = getUniqueIdentifierStr();
   this.requestId = bidId;
   this.transactionId = transactionId;
+  this.auctionId = auctionId;
   this.mediaType = 'banner';
   this.source = _bidSrc;
 
