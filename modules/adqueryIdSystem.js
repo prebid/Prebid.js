@@ -1,5 +1,5 @@
 /**
- * This module adds AdqueryID to the User ID module
+ * This module adds Adquery QID to the User ID module
  * The {@link module:modules/userId} module is required
  * @module modules/adqueryIdSystem
  * @requires module:modules/userId
@@ -10,10 +10,10 @@ import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
 
-const MODULE_NAME = 'adqueryId';
+const MODULE_NAME = 'qid';
 const AU_GVLID = 902;
 
-export const storage = getStorageManager(AU_GVLID, 'adquery');
+export const storage = getStorageManager(AU_GVLID, 'qid');
 
 /**
  * Param or default.
@@ -36,6 +36,13 @@ export const adqueryIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+
+  /**
+   * IAB TCF Vendor ID
+   * @type {string}
+   */
+  gvlid: AU_GVLID,
+
   /**
    * decode the stored id value for passing to bid requests
    * @function
