@@ -1,4 +1,4 @@
-import { isEmpty, deepAccess, logError, parseGPTSingleSizeArrayToRtbSize, generateUUID, logWarn } from '../src/utils.js';
+import { isEmpty, deepAccess, logError, parseGPTSingleSizeArrayToRtbSize, generateUUID, mergeDeep, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -178,7 +178,7 @@ export const spec = {
       if (!user) {
         user = { data: [] };
       }
-      user.data = user.data.concat(ortb2UserData);
+      user = mergeDeep(user, { data: ortb2UserData });
     }
 
     if (gdprConsent && gdprConsent.consentString) {
