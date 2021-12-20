@@ -291,15 +291,15 @@ export function addOrtbSiteContent(bid, contentId, contentData) {
   }
 
   let ortb2 = bid.ortb2 || {};
-  let site = ortb2.site || {};
-  let content = site.content || {};
+  let site = ortb2.site = ortb2.site || {};
+  let content = site.content = site.content || {};
 
   if (contentId) {
-    content.id = content.id || contentId;
+    content.id = contentId;
   }
 
   if (contentData) {
-    const data = content.data || [];
+    const data = content.data = content.data || [];
     data.push(contentData);
   }
 
