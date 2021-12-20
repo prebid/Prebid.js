@@ -255,7 +255,7 @@ export function formatTargetingResponse(vat) {
   return targeting;
 }
 
-function getContentId(mediaID) {
+export function getContentId(mediaID) {
   if (!mediaID) {
     return;
   }
@@ -263,8 +263,8 @@ function getContentId(mediaID) {
   return 'jw_' + mediaID;
 }
 
-function getContentData(segments) {
-  if (!segments) {
+export function getContentData(segments) {
+  if (!segments || !segments.length) {
     return;
   }
 
@@ -285,7 +285,7 @@ function getContentData(segments) {
   };
 }
 
-function addOrtbSiteContent(bid, contentId, contentData) {
+export function addOrtbSiteContent(bid, contentId, contentData) {
   if (!contentId && !contentData) {
     return;
   }

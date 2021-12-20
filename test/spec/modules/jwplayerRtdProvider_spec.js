@@ -1,6 +1,6 @@
 import { fetchTargetingForMediaId, getVatFromCache, extractPublisherParams,
   formatTargetingResponse, getVatFromPlayer, enrichAdUnits, addTargetingToBid,
-  fetchTargetingInformation, jwplayerSubmodule } from 'modules/jwplayerRtdProvider.js';
+  fetchTargetingInformation, jwplayerSubmodule, getContentId, getContentData } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
 describe('jwplayerRtdProvider', function() {
@@ -412,7 +412,7 @@ describe('jwplayerRtdProvider', function() {
     });
   });
 
-  describe(' Extract Publisher Params', function () {
+  describe('Extract Publisher Params', function () {
     const config = { mediaID: 'test' };
 
     it('should exclude adUnits that do not support instream video and do not specify jwTargeting', function () {
@@ -479,6 +479,50 @@ describe('jwplayerRtdProvider', function() {
       expect(targeting).to.be.undefined;
     })
   });
+
+  describe('Get content id', function() {
+    it('prefixes jw_ to the media id', function () {
+      const mediaId = 'mediaId';
+      const contentId = getContentId(mediaId);
+      expect(contentId).to.equal('jw_mediaId');
+    });
+
+    it('returns undefined when media id is empty', function () {
+      let contentId = getContentId();
+      expect(contentId).to.be.undefined;
+      contentId = getContentId('');
+      expect(contentId).to.be.undefined;
+      contentId = getContentId(null);
+      expect(contentId).to.be.undefined;
+    });
+  });
+
+  describe('Get Content Data', function () {
+    it('returns undefined when segments are empty', function () {
+      let data = getContentData(null);
+      expect(data).to.be.undefined;
+      data = getContentData(undefined);
+      expect(data).to.be.undefined;
+      data = getContentData([]);
+      expect(data).to.be.undefined;
+    });
+
+    it('returns proper format', function () {
+      const segment1 = 'segment1';
+      const segment2 = 'segment2';
+      const segment3 = 'segment3';
+      const data = getContentData([segment1, segment2, segment3]);
+      expect(data).to.have.property('name', 'jwplayer');
+      expect(data.ext).to.have.property('segtax', 502);
+      expect(data.segment[0]).to.deep.equal({ id: segment1, value: segment1 });
+      expect(data.segment[1]).to.deep.equal({ id: segment2, value: segment2 });
+      expect(data.segment[2]).to.deep.equal({ id: segment3, value: segment3 });
+    });
+  });
+
+  /*
+  addOrtbSiteContent
+   */
 
   describe('Add Targeting to Bid', function () {
     const targeting = {foo: 'bar'};
