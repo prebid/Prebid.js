@@ -4,11 +4,14 @@ import { logError } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 
 function init(config, userConsent) {
+  if (!config.params) return false
+  if (!config.params.providers) return false
   return true;
 }
 
 // Make sure that ajax has a function as callback
 function prepProvider(provider) {
+  // Map parameter to something that adnuntius endpoint understands.
   const mappedParameters = {
     siteId: 's',
     userId: 'browserId',
@@ -33,31 +36,34 @@ function prepProvider(provider) {
   });
 }
 
+function setGlobalConfig(config, segments) {
+  const pbjsG = getGlobal()
+  const ortbSegments = {
+    ortb2: {
+      user: {
+        data: [{
+          name: 'adnuntius',
+          segment: segments
+        }]
+      }
+    }
+  }
+  if (config.params && config.params.bidders) {
+    pbjsG.setBidderConfig({
+      bidders: config.params.bidders,
+      config: ortbSegments
+    });
+  } else {
+    pbjsG.setConfig(ortbSegments)
+  }
+}
+
 function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
   const providerRequests = config.params.providers.map(provider => prepProvider(provider))
 
   Promise.allSettled(providerRequests).then((values) => {
     const segments = values.reduce((segments, array) => (array.status === 'fulfilled') ? segments.concat(array.value.segments) : [], []).map(segmentId => ({ id: segmentId }))
-    const pbjsG = getGlobal()
-    const config = {
-      ortb2: {
-        user: {
-          data: [{
-            name: 'adnuntius',
-            segment: segments
-          }]
-        }
-      }
-    }
-    if (config.params && config.params.bidders) {
-      pbjsG.setBidderConfig({
-        bidders: config.params.bidders,
-        config: config
-      });
-    } else {
-      pbjsG.setConfig(config)
-    }
-
+    setGlobalConfig(config, segments)
     callback();
   })
     .catch(err => logError('ADN: err', err));
@@ -68,6 +74,7 @@ export const adnuntiusSubmodule = {
   name: 'adnuntius',
   init: init,
   getBidRequestData: alterBidRequests,
+  setGlobalConfig: setGlobalConfig,
 };
 
 export function beforeInit() {
