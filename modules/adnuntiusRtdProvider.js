@@ -1,11 +1,14 @@
 import { getGlobal } from '../src/prebidGlobal.js';
 import { submodule } from '../src/hook.js'
-import { logError } from '../src/utils.js'
+import { logError, logInfo } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
+
+const GVLID = 855;
 
 function init(config, userConsent) {
   if (!config.params) return false
   if (!config.params.providers) return false
+  logInfo(userConsent)
   return true;
 }
 
@@ -59,14 +62,24 @@ function setGlobalConfig(config, segments) {
 }
 
 function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
-  const providerRequests = config.params.providers.map(provider => prepProvider(provider))
+  let allowedToRun = true
+  if (userConsent && userConsent.gdpr) {
+    logInfo('USR', userConsent.gdpr.gdprApplies)
+    logInfo('USR', userConsent.gdpr)
+    if (userConsent.gdpr.gdprApplies) {
+      if (!userConsent.gdpr.vendorData.vendorConsents[GVLID]) allowedToRun = false;
+    }
+  }
+  if (allowedToRun) {
+    const providerRequests = config.params.providers.map(provider => prepProvider(provider))
 
-  Promise.allSettled(providerRequests).then((values) => {
-    const segments = values.reduce((segments, array) => (array.status === 'fulfilled') ? segments.concat(array.value.segments) : [], []).map(segmentId => ({ id: segmentId }))
-    setGlobalConfig(config, segments)
-    callback();
-  })
-    .catch(err => logError('ADN: err', err));
+    Promise.allSettled(providerRequests).then((values) => {
+      const segments = values.reduce((segments, array) => (array.status === 'fulfilled') ? segments.concat(array.value.segments) : [], []).map(segmentId => ({ id: segmentId }))
+      setGlobalConfig(config, segments)
+      callback();
+    })
+      .catch(err => logError('ADN: err', err));
+  } else callback();
 }
 
 /** @type {RtdSubmodule} */
