@@ -15,6 +15,8 @@ import 'src/prebid.js' // $$PREBID_GLOBAL$$.aliasBidder test
 import 'modules/currency.js' // adServerCurrency test
 import {hook} from '../../../src/hook.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
+import {auctionManager} from '../../../src/auctionManager.js';
+import {stubAuctionIndex} from '../../helpers/indexStub.js';
 
 let CONFIG = {
   accountId: '1',
@@ -2421,11 +2423,8 @@ describe('S2S Adapter', function () {
     });
 
     it('handles OpenRTB native responses', function () {
-      sinon.stub(utils, 'getBidRequest').returns({
-        adUnitCode: 'div-gpt-ad-1460505748561-0',
-        bidder: 'appnexus',
-        bidId: '123'
-      });
+      const stub = sinon.stub(auctionManager, 'index');
+      stub.get(() => stubAuctionIndex({adUnits: REQUEST.ad_units}));
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: {
           p1Consent: 'https://prebidserverurl/openrtb2/auction?querystring=param'
@@ -2448,7 +2447,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('cpm', 10);
 
-      utils.getBidRequest.restore();
+      stub.restore();
     });
 
     describe('on sync requested with no cookie', () => {

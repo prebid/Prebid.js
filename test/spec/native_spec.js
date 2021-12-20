@@ -1,6 +1,14 @@
 import { expect } from 'chai';
-import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid, getAssetMessage, getAllAssetsMessage } from 'src/native.js';
+import {
+  fireNativeTrackers,
+  getNativeTargeting,
+  nativeBidIsValid,
+  getAssetMessage,
+  getAllAssetsMessage,
+  processNativeAdUnitParams, decorateAdUnitsWithNativeParams
+} from 'src/native.js';
 import CONSTANTS from 'src/constants.json';
+import {stubAuctionIndex} from '../helpers/indexStub.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -374,35 +382,33 @@ describe('native.js', function () {
 });
 
 describe('validate native', function () {
-  let bidReq = [{
-    bids: [{
-      bidderCode: 'test_bidder',
-      bidId: 'test_bid_id',
-      mediaTypes: {
-        native: {
-          title: {
-            required: true,
-          },
-          body: {
-            required: true,
-          },
-          image: {
-            required: true,
-            sizes: [150, 50],
-            aspect_ratios: [150, 50]
-          },
-          icon: {
-            required: true,
-            sizes: [50, 50]
-          },
-        }
+  const adUnit = {
+    transactionId: 'test_adunit',
+    mediaTypes: {
+      native: {
+        title: {
+          required: true,
+        },
+        body: {
+          required: true,
+        },
+        image: {
+          required: true,
+          sizes: [150, 50],
+          aspect_ratios: [150, 50]
+        },
+        icon: {
+          required: true,
+          sizes: [50, 50]
+        },
       }
-    }]
-  }];
+    }
+  }
 
   let validBid = {
     adId: 'abc123',
     requestId: 'test_bid_id',
+    transactionId: 'test_adunit',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -428,6 +434,7 @@ describe('validate native', function () {
   let noIconDimBid = {
     adId: 'abc234',
     requestId: 'test_bid_id',
+    transactionId: 'test_adunit',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -449,6 +456,7 @@ describe('validate native', function () {
   let noImgDimBid = {
     adId: 'abc345',
     requestId: 'test_bid_id',
+    transactionId: 'test_adunit',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -472,11 +480,13 @@ describe('validate native', function () {
   afterEach(function () {});
 
   it('should accept bid if no image sizes are defined', function () {
-    let result = nativeBidIsValid(validBid, bidReq);
+    decorateAdUnitsWithNativeParams([adUnit]);
+    const index = stubAuctionIndex({adUnits: [adUnit]})
+    let result = nativeBidIsValid(validBid, {index});
     expect(result).to.be.true;
-    result = nativeBidIsValid(noIconDimBid, bidReq);
+    result = nativeBidIsValid(noIconDimBid, {index});
     expect(result).to.be.true;
-    result = nativeBidIsValid(noImgDimBid, bidReq);
+    result = nativeBidIsValid(noImgDimBid, {index});
     expect(result).to.be.true;
   });
 });

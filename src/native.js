@@ -1,5 +1,6 @@
-import { deepAccess, getBidRequest, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils.js';
+import { deepAccess, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
+import {auctionManager} from './auctionManager.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -78,16 +79,13 @@ export const hasNonNativeBidder = adUnit =>
  * @param {BidRequest[]} bidRequests All bid requests for an auction
  * @return {Boolean} If object is valid
  */
-export function nativeBidIsValid(bid, bidRequests) {
-  const bidRequest = getBidRequest(bid.requestId, bidRequests);
-  if (!bidRequest) { return false; }
-
+export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
   // all native bid responses must define a landing page url
   if (!deepAccess(bid, 'native.clickUrl')) {
     return false;
   }
 
-  const requestedAssets = bidRequest.nativeParams;
+  const requestedAssets = index.getAdUnit(bid).nativeParams;
   if (!requestedAssets) {
     return true;
   }

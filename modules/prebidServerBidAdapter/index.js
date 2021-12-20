@@ -1150,7 +1150,7 @@ export function PrebidServer() {
       bids = ortb2.interpretResponse(result);
 
       bids.forEach(({adUnit, bid}) => {
-        if (isValid(adUnit, bid, ortb2.bidderRequests)) {
+        if (isValid(adUnit, bid)) {
           addBidResponse(adUnit, bid);
         }
       });

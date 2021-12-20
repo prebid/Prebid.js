@@ -985,7 +985,7 @@ describe('adpod.js', function () {
       },
       vastXml: '<VAST>test XML here</VAST>'
     };
-    const bidderRequestNoExact = {
+    const adUnitNoExact = {
       mediaTypes: {
         video: {
           context: ADPOD,
@@ -996,7 +996,7 @@ describe('adpod.js', function () {
         }
       }
     };
-    const bidderRequestWithExact = {
+    const adUnitWithExact = {
       mediaTypes: {
         video: {
           context: ADPOD,
@@ -1051,7 +1051,7 @@ describe('adpod.js', function () {
 
       let goodBid = utils.deepClone(adpodTestBid);
       goodBid.meta.primaryCatId = undefined;
-      checkVideoBidSetupHook(callbackFn, goodBid, bidderRequestNoExact, {}, ADPOD);
+      checkVideoBidSetupHook(callbackFn, goodBid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
       expect(callbackResult).to.be.null;
       expect(bailResult).to.equal(true);
       expect(logErrorStub.called).to.equal(false);
@@ -1059,7 +1059,7 @@ describe('adpod.js', function () {
 
     it('returns true when adpod bid is missing iab category while brandCategoryExclusion in config is false', function() {
       let goodBid = utils.deepClone(adpodTestBid);
-      checkVideoBidSetupHook(callbackFn, goodBid, bidderRequestNoExact, {}, ADPOD);
+      checkVideoBidSetupHook(callbackFn, goodBid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
       expect(callbackResult).to.be.null;
       expect(bailResult).to.equal(true);
       expect(logErrorStub.called).to.equal(false);
@@ -1067,7 +1067,7 @@ describe('adpod.js', function () {
 
     it('returns false when a required property from an adpod bid is missing', function() {
       function testInvalidAdpodBid(badTestBid, shouldErrorBeLogged) {
-        checkVideoBidSetupHook(callbackFn, badTestBid, bidderRequestNoExact, {}, ADPOD);
+        checkVideoBidSetupHook(callbackFn, badTestBid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
         expect(callbackResult).to.be.null;
         expect(bailResult).to.equal(false);
         expect(logErrorStub.called).to.equal(shouldErrorBeLogged);
@@ -1108,7 +1108,7 @@ describe('adpod.js', function () {
 
       it('when requireExactDuration is true', function() {
         let goodBid = utils.deepClone(basicBid);
-        checkVideoBidSetupHook(callbackFn, goodBid, bidderRequestWithExact, {}, ADPOD);
+        checkVideoBidSetupHook(callbackFn, goodBid, adUnitWithExact, adUnitWithExact.mediaTypes.video, ADPOD);
 
         expect(callbackResult).to.be.null;
         expect(goodBid.video.durationBucket).to.equal(30);
@@ -1117,7 +1117,7 @@ describe('adpod.js', function () {
 
         let badBid = utils.deepClone(basicBid);
         badBid.video.durationSeconds = 14;
-        checkVideoBidSetupHook(callbackFn, badBid, bidderRequestWithExact, {}, ADPOD);
+        checkVideoBidSetupHook(callbackFn, badBid, adUnitWithExact, adUnitWithExact.mediaTypes.video, ADPOD);
 
         expect(callbackResult).to.be.null;
         expect(badBid.video.durationBucket).to.be.undefined;
@@ -1127,7 +1127,7 @@ describe('adpod.js', function () {
 
       it('when requireExactDuration is false and bids are bucketed properly', function() {
         function testRoundingForGoodBId(bid, bucketValue) {
-          checkVideoBidSetupHook(callbackFn, bid, bidderRequestNoExact, {}, ADPOD);
+          checkVideoBidSetupHook(callbackFn, bid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
           expect(callbackResult).to.be.null;
           expect(bid.video.durationBucket).to.equal(bucketValue);
           expect(bailResult).to.equal(true);
@@ -1157,7 +1157,7 @@ describe('adpod.js', function () {
 
       it('when requireExactDuration is false and bid duration exceeds listed buckets', function() {
         function testRoundingForBadBid(bid) {
-          checkVideoBidSetupHook(callbackFn, bid, bidderRequestNoExact, {}, ADPOD);
+          checkVideoBidSetupHook(callbackFn, bid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
           expect(callbackResult).to.be.null;
           expect(bid.video.durationBucket).to.be.undefined;
           expect(bailResult).to.equal(false);
