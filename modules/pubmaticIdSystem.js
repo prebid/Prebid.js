@@ -20,8 +20,14 @@ const STORAGE_TYPE_HTML5 = 'html5';
 const STORAGE_EXPIRES = 30; // days
 const STORAGE_REFRESH_IN_SECONDS = 24*3600; // 24 Hours
 const LOG_PREFIX = 'User ID - PubMatic submodule: ';
+const VERSION = '1';
 
 const storage = getStorageManager(GVLID, MODULE_NAME);
+
+function generateEncodedId(responseObj){
+  let jsonData = {"pmid": responseObj.id};
+  return (VERSION + '||' + btoa(JSON.stringify(jsonData)));
+}
 
 /** @type {Submodule} */
 export const pubmaticIdSubmodule = {
@@ -77,7 +83,7 @@ export const pubmaticIdSubmodule = {
             }
           }
           if(isStr(responseObj.id) && !isEmptyStr(responseObj.id)){
-          	callback(responseObj.id);
+          	callback(generateEncodedId(responseObj));
           } else {
           	callback()
           }                    
@@ -99,23 +105,23 @@ export const pubmaticIdSubmodule = {
 function generateURL(config, consentData){
 	// let endpoint = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p='+config.params.publisherId;
 	let endpoint = "https://production.explore.harshad-mane.workers.dev/?p="+config.params.publisherId;
-    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
-    const usp = uspDataHandler.getConsentData();
-    const referer = getRefererInfo();
+  const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+  const usp = uspDataHandler.getConsentData();
+  const referer = getRefererInfo();
 
-    // Attaching GDPR Consent Params in UserSync url
-    if (hasGdpr) {
-      endpoint += '&gdpr=1';
-      let gdprConsentstring = (typeof consentData.consentString !== 'undefined' && !isEmpty(consentData.consentString) && !isEmptyStr(consentData.consentString)) ? encodeURIComponent(consentData.consentString) : '';
-      endpoint += '&gdpr_consent=' + gdprConsentstring;
-    }
+  // Attaching GDPR Consent Params in UserSync url
+  if (hasGdpr) {
+    endpoint += '&gdpr=1';
+    let gdprConsentstring = (typeof consentData.consentString !== 'undefined' && !isEmpty(consentData.consentString) && !isEmptyStr(consentData.consentString)) ? encodeURIComponent(consentData.consentString) : '';
+    endpoint += '&gdpr_consent=' + gdprConsentstring;
+  }
 
-    // CCPA
-    if (usp) {
-      endpoint += '&us_privacy=' + encodeURIComponent(usp);
-    }
+  // CCPA
+  if (usp) {
+    endpoint += '&us_privacy=' + encodeURIComponent(usp);
+  }
 
-    return endpoint;
+  return endpoint;
 }
 
 function hasRequiredConfig(config) {
