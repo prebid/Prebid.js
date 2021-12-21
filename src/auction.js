@@ -58,7 +58,7 @@
  */
 
 import {
-  flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl, generateUUID,
+  flatten, timestamp, adUnitsFilter, deepAccess, getValue, parseUrl, generateUUID,
   logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr, isAllowZeroCpmBidsEnabled
 } from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';

@@ -81,42 +81,6 @@ describe('auction index', () => {
     });
   });
 
-  describe('getBidderRequest', () => {
-    let bidderRequests;
-    beforeEach(() => {
-      bidderRequests = [
-        {bidderRequestId: 'ber1', bids: [{bidId: 'b1'}, {}]},
-        {bidderRequestId: 'ber2', bids: [{bidId: 'b2'}]}
-      ]
-      auctions = [
-        mockAuction('a1', [], [bidderRequests[0], {}]),
-        mockAuction('a2', [], [bidderRequests[1]])
-      ]
-    });
-
-    it('should find requests by requestId', () => {
-      expect(index.getBidderRequest({requestId: 'b2'})).to.equal(bidderRequests[1]);
-    });
-
-    it('should find requests by bidderRequestId', () => {
-      expect(index.getBidderRequest({bidderRequestId: 'ber1'})).to.equal(bidderRequests[0]);
-    });
-
-    it('should return undef if requestId and bidderRequestId do not match', () => {
-      expect(index.getBidderRequest({requestId: 'b1', bidderRequestId: 'ber2'})).to.be.undefined;
-    });
-
-    it('should return undef if no params are provided', () => {
-      expect(index.getBidderRequest({})).to.be.undefined;
-    });
-
-    ['requestId', 'bidderRequestId'].forEach(param => {
-      it(`should return undef if ${param} is missing`, () => {
-        expect(index.getBidderRequest({[param]: 'missing'})).to.be.undefined;
-      });
-    });
-  });
-
   describe('getMediaTypes', () => {
     let bidderRequests, mediaTypes, adUnits;
 

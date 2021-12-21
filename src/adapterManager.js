@@ -8,7 +8,6 @@ import {
   flatten,
   generateUUID,
   getBidderCodes,
-  getBidderRequest,
   getDefinedParams,
   getUniqueIdentifierStr,
   getUserConfiguredParams,
@@ -415,12 +414,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           s2sAdapter.callBids(
             s2sBidRequest,
             serverBidRequests,
-            (adUnitCode, bid) => {
-              let bidderRequest = getBidderRequest(serverBidRequests, bid.bidderCode, adUnitCode);
-              if (bidderRequest) {
-                addBidResponse.call(bidderRequest, adUnitCode, bid)
-              }
-            },
+            addBidResponse,
             () => doneCbs.forEach(done => done()),
             s2sAjax
           );

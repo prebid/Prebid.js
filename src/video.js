@@ -1,5 +1,5 @@
 import adapterManager from './adapterManager.js';
-import { getBidRequest, deepAccess, logError } from './utils.js';
+import { deepAccess, logError } from './utils.js';
 import { config } from '../src/config.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { hook } from './hook.js';
