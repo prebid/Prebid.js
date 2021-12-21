@@ -4,7 +4,7 @@ import {
   getPrebidInternal, logError, isStr, isPlainObject, logWarn, generateUUID, bind, logMessage,
   triggerPixel, insertUserSyncIframe, deepAccess, mergeDeep, deepSetValue, cleanObj, parseSizesInput,
   getBidRequest, getDefinedParams, createTrackPixelHtml, pick, deepClone, uniques, flatten, isNumber,
-  isEmpty, isArray, logInfo
+  isEmpty, isArray, logInfo, timestamp
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
@@ -500,6 +500,7 @@ function ORTB2(s2sBidRequest, bidderRequests, adUnits, s2sConfig, requestedBidde
   this.adUnitsByImp = {};
   this.impRequested = {};
   this.auctionId = bidderRequests.map(br => br.auctionId).reduce((l, r) => (l == null || l === r) && r);
+  this.requestTimestamp = timestamp();
 }
 
 Object.assign(ORTB2.prototype, {
@@ -890,9 +891,9 @@ Object.assign(ORTB2.prototype, {
             src: TYPE,
             bidId: bidRequest ? (bidRequest.bidId || bidRequest.bid_Id) : null,
             transactionId: this.adUnitsByImp[bid.impid].transactionId,
-            auctionId: this.auctionId
+            auctionId: this.auctionId,
           });
-
+          bidObject.requestTimestamp = this.requestTimestamp;
           bidObject.cpm = cpm;
 
           // temporarily leaving attaching it to each bidResponse so no breaking change

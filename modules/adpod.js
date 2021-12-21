@@ -122,7 +122,7 @@ function getPricePartForAdpodKey(bid) {
     const adpodDealPrefix = config.getConfig(`adpod.dealTier.${bid.bidderCode}.prefix`);
     pricePart = (adpodDealPrefix) ? adpodDealPrefix + deepAccess(bid, 'video.dealTier') : deepAccess(bid, 'video.dealTier');
   } else {
-    const granularity = getPriceGranularity(bid.mediaType);
+    const granularity = getPriceGranularity(bid);
     pricePart = getPriceByGranularity(granularity)(bid);
   }
   return pricePart
@@ -223,10 +223,9 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
  * @param {*} auctionInstance running context of the auction
  * @param {Object} bidResponse incoming bid; if adpod, will be processed through hook function.  If not adpod, returns to original function.
  * @param {Function} afterBidAdded callback function used when Prebid Cache responds
- * @param {Object} bidderRequest copy of bid's associated bidderRequest object
+ * @param {Object} videoConfig mediaTypes.video from the bid's adUnit
  */
-export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
-  let videoConfig = deepAccess(bidderRequest, 'mediaTypes.video');
+export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, videoConfig) {
   if (videoConfig && videoConfig.context === ADPOD) {
     let brandCategoryExclusion = config.getConfig('adpod.brandCategoryExclusion');
     let adServerCatId = deepAccess(bidResponse, 'meta.adServerCatId');
@@ -250,7 +249,7 @@ export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAd
       }
     }
   } else {
-    fn.call(this, auctionInstance, bidResponse, afterBidAdded, bidderRequest);
+    fn.call(this, auctionInstance, bidResponse, afterBidAdded, videoConfig);
   }
 }
 

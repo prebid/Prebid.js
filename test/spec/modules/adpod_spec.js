@@ -73,16 +73,11 @@ describe('adpod.js', function () {
         mediaType: 'video'
       };
 
-      let bidderRequest = {
-        adUnitCode: 'adUnit_123',
-        mediaTypes: {
-          video: {
-            context: 'outstream'
-          }
-        }
-      }
+      let videoMT = {
+        context: 'outstream'
+      };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bid, function () {}, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bid, function () {}, videoMT);
       expect(callbackResult).to.equal(true);
     });
 
@@ -132,22 +127,16 @@ describe('adpod.js', function () {
         }
       };
 
-      let bidderRequest = {
-        adUnitCode: 'adpod_1',
-        auctionId: 'no_defer_123',
-        mediaTypes: {
-          video: {
-            context: ADPOD,
-            playerSize: [[300, 300]],
-            adPodDurationSec: 300,
-            durationRangeSec: [15, 30, 45],
-            requireExactDuration: false
-          }
-        },
+      let videoMT = {
+        context: ADPOD,
+        playerSize: [[300, 300]],
+        adPodDurationSec: 300,
+        durationRangeSec: [15, 30, 45],
+        requireExactDuration: false
       };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, videoMT);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, videoMT);
 
       // check if bid adsereverTargeting is setup
       expect(callbackResult).to.be.null;
@@ -214,22 +203,16 @@ describe('adpod.js', function () {
           durationBucket: 30
         }
       };
-      let bidderRequest = {
-        adUnitCode: 'adpod_1',
-        auctionId: 'full_abc123',
-        mediaTypes: {
-          video: {
-            context: ADPOD,
-            playerSize: [[300, 300]],
-            adPodDurationSec: 120,
-            durationRangeSec: [15, 30],
-            requireExactDuration: false
-          }
-        }
+      let videoMT = {
+        context: ADPOD,
+        playerSize: [[300, 300]],
+        adPodDurationSec: 120,
+        durationRangeSec: [15, 30],
+        requireExactDuration: false
       };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, videoMT);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, videoMT);
 
       expect(callbackResult).to.be.null;
       expect(afterBidAddedSpy.calledTwice).to.equal(true);
@@ -276,21 +259,15 @@ describe('adpod.js', function () {
           durationBucket: 30
         }
       };
-      let bidderRequest = {
-        adUnitCode: 'adpod_2',
-        auctionId: 'timer_abc234',
-        mediaTypes: {
-          video: {
-            context: ADPOD,
-            playerSize: [[300, 300]],
-            adPodDurationSec: 120,
-            durationRangeSec: [15, 30],
-            requireExactDuration: true
-          }
-        }
+      let videoMT = {
+        context: ADPOD,
+        playerSize: [[300, 300]],
+        adPodDurationSec: 120,
+        durationRangeSec: [15, 30],
+        requireExactDuration: true
       };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse, afterBidAddedSpy, videoMT);
       clock.tick(31);
 
       expect(callbackResult).to.be.null;
@@ -370,23 +347,17 @@ describe('adpod.js', function () {
         }
       };
 
-      let bidderRequest = {
-        adUnitCode: 'adpod_3',
-        auctionId: 'multi_call_abc345',
-        mediaTypes: {
-          video: {
-            context: ADPOD,
-            playerSize: [[300, 300]],
-            adPodDurationSec: 45,
-            durationRangeSec: [15, 30],
-            requireExactDuration: false
-          }
-        }
+      let videoMT = {
+        context: ADPOD,
+        playerSize: [[300, 300]],
+        adPodDurationSec: 45,
+        durationRangeSec: [15, 30],
+        requireExactDuration: false
       };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse3, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, videoMT);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, videoMT);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse3, afterBidAddedSpy, videoMT);
       clock.next();
 
       expect(callbackResult).to.be.null;
@@ -459,22 +430,16 @@ describe('adpod.js', function () {
         }
       };
 
-      let bidderRequest = {
-        adUnitCode: 'adpod_4',
-        auctionId: 'no_category_abc345',
-        mediaTypes: {
-          video: {
-            context: ADPOD,
-            playerSize: [[300, 300]],
-            adPodDurationSec: 45,
-            durationRangeSec: [15, 30],
-            requireExactDuration: false
-          }
-        }
+      let videoMT = {
+        context: ADPOD,
+        playerSize: [[300, 300]],
+        adPodDurationSec: 45,
+        durationRangeSec: [15, 30],
+        requireExactDuration: false
       };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, videoMT);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, videoMT);
 
       expect(callbackResult).to.be.null;
       expect(afterBidAddedSpy.calledTwice).to.equal(true);
@@ -519,21 +484,15 @@ describe('adpod.js', function () {
         }
       };
 
-      let bidderRequest = {
-        adUnitCode: 'adpod_5',
-        auctionId: 'missing_category_abc345',
-        mediaTypes: {
-          video: {
-            context: ADPOD,
-            playerSize: [[300, 300]],
-            adPodDurationSec: 45,
-            durationRangeSec: [15, 30],
-            requireExactDuration: false
-          }
-        }
+      let videoMT = {
+        context: ADPOD,
+        playerSize: [[300, 300]],
+        adPodDurationSec: 45,
+        durationRangeSec: [15, 30],
+        requireExactDuration: false
       };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, videoMT);
 
       expect(callbackResult).to.be.null;
       expect(afterBidAddedSpy.calledOnce).to.equal(true);
@@ -596,22 +555,16 @@ describe('adpod.js', function () {
           durationBucket: 45
         }
       };
-      let bidderRequest = {
-        adUnitCode: 'adpod_4',
-        auctionId: 'duplicate_def123',
-        mediaTypes: {
-          video: {
-            context: ADPOD,
-            playerSize: [[300, 300]],
-            adPodDurationSec: 120,
-            durationRangeSec: [15, 30, 45],
-            requireExactDuration: false
-          }
-        }
+      let videoMT = {
+        context: ADPOD,
+        playerSize: [[300, 300]],
+        adPodDurationSec: 120,
+        durationRangeSec: [15, 30, 45],
+        requireExactDuration: false
       };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, videoMT);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, videoMT);
 
       expect(callbackResult).to.be.null;
       expect(afterBidAddedSpy.calledTwice).to.equal(true);
@@ -669,22 +622,16 @@ describe('adpod.js', function () {
           durationBucket: 30
         }
       };
-      let bidderRequest = {
-        adUnitCode: 'adpod_5',
-        auctionId: 'error_xyz123',
-        mediaTypes: {
-          video: {
-            context: ADPOD,
-            playerSize: [[300, 300]],
-            adPodDurationSec: 120,
-            durationRangeSec: [15, 30, 45],
-            requireExactDuration: false
-          }
-        }
+      let videoMT = {
+        context: ADPOD,
+        playerSize: [[300, 300]],
+        adPodDurationSec: 120,
+        durationRangeSec: [15, 30, 45],
+        requireExactDuration: false
       };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, videoMT);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, videoMT);
 
       expect(doCallbacksIfTimedoutStub.calledTwice).to.equal(true);
       expect(logWarnStub.calledOnce).to.equal(true);
@@ -742,21 +689,15 @@ describe('adpod.js', function () {
         }
       };
 
-      let bidderRequest = {
-        adUnitCode: 'adpod_5',
-        auctionId: 'test_category_abc345',
-        mediaTypes: {
-          video: {
-            context: ADPOD,
-            playerSize: [[300, 300]],
-            adPodDurationSec: 45,
-            durationRangeSec: [15, 30],
-            requireExactDuration: false
-          }
-        }
+      let videoMT = {
+        context: ADPOD,
+        playerSize: [[300, 300]],
+        adPodDurationSec: 45,
+        durationRangeSec: [15, 30],
+        requireExactDuration: false
       };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, videoMT);
 
       expect(callbackResult).to.be.null;
       expect(afterBidAddedSpy.calledOnce).to.equal(true);
@@ -820,22 +761,16 @@ describe('adpod.js', function () {
         }
       };
 
-      let bidderRequest = {
-        adUnitCode: 'adpod_1',
-        auctionId: 'no_defer_123',
-        mediaTypes: {
-          video: {
-            context: ADPOD,
-            playerSize: [[300, 300]],
-            adPodDurationSec: 300,
-            durationRangeSec: [15, 30, 45],
-            requireExactDuration: false
-          }
-        },
+      let videoMT = {
+        context: ADPOD,
+        playerSize: [[300, 300]],
+        adPodDurationSec: 300,
+        durationRangeSec: [15, 30, 45],
+        requireExactDuration: false
       };
 
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, videoMT);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, videoMT);
 
       expect(auctionBids[0].adserverTargeting.hb_pb_cat_dur).to.equal('tier7_test_15s');
       expect(auctionBids[1].adserverTargeting.hb_pb_cat_dur).to.equal('12.00_value_15s');

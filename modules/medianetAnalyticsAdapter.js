@@ -511,7 +511,7 @@ function bidResponseHandler(bid) {
   bidObj.originalCpm = originalCpm || cpm;
   let dfpbd = deepAccess(bid, 'adserverTargeting.hb_pb');
   if (!dfpbd) {
-    let priceGranularity = getPriceGranularity(mediaType, bid);
+    let priceGranularity = getPriceGranularity(bid);
     let priceGranularityKey = PRICE_GRANULARITY[priceGranularity];
     dfpbd = bid[priceGranularityKey] || cpm;
   }
