@@ -203,10 +203,10 @@ function getAdapterNameForAlias(aliasName) {
 function getAdDomain(bidResponse) {
   if (bidResponse.meta && bidResponse.meta.advertiserDomains) {
     let adomain = bidResponse.meta.advertiserDomains[0]
-    if(!!adomain){
+    if (adomain) {
       try {
-        adomain = (new URL(adomain));
-        return adomain.hostname.replace('www.', '');
+        let hostname = (new URL(adomain));
+        return hostname.hostname.replace('www.', '');
       } catch (e) {
         logWarn(LOG_PRE_FIX + 'Adomain URL (Not a proper URL):', adomain);
         return adomain.replace('www.', '');
