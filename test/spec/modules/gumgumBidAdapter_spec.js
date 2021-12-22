@@ -152,6 +152,12 @@ describe('gumgumAdapter', function () {
     const zoneParam = { 'zone': '123a' };
     const pubIdParam = { 'pubId': 123 };
 
+    it('should set aun if the adUnitCode is available', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.aun).to.equal(bidRequests[0].adUnitCode);
+    });
+
     it('should set pubId param if found', function () {
       const request = { ...bidRequests[0], params: pubIdParam };
       const bidRequest = spec.buildRequests([request])[0];
@@ -531,8 +537,12 @@ describe('gumgumAdapter', function () {
       const jcsi = JSON.stringify(JCSI);
       const bidRequest = spec.buildRequests(bidRequests)[0];
       const actualKeys = Object.keys(JSON.parse(bidRequest.data.jcsi)).sort();
-      expect(actualKeys).to.eq(actualKeys);
+      expect(actualKeys).to.eql(expectedKeys);
       expect(bidRequest.data.jcsi).to.eq(jcsi);
+    });
+    it('should include the local time and timezone offset', function () {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(!!bidRequest.data.lt).to.be.true;
     });
   })
 

@@ -83,7 +83,8 @@ function buildRequests(validBidRequests, bidderRequest) {
         bidfloor: getFloor(bidRequest),
         banner: {
           format: sizes
-        }
+        },
+        ext: bidRequest.params
       });
     }
   });

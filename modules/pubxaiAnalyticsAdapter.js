@@ -21,6 +21,14 @@ let events = {
   deviceDetail: {}
 };
 
+function getStorage() {
+  try {
+    return window.top['sessionStorage'];
+  } catch (e) {
+    return null;
+  }
+}
+
 var pubxaiAnalyticsAdapter = Object.assign(adapter(
   {
     emptyUrl,
@@ -132,6 +140,7 @@ pubxaiAnalyticsAdapter.shouldFireEventRequest = function (samplingRate = 1) {
 function send(data, status) {
   if (pubxaiAnalyticsAdapter.shouldFireEventRequest(initOptions.samplingRate)) {
     let location = getWindowLocation();
+    const storage = getStorage();
     data.initOptions = initOptions;
     if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
       Object.assign(data.pageDetail, {
@@ -142,6 +151,13 @@ function send(data, status) {
       });
       data.initOptions.auctionId = data.auctionInit.auctionId;
       delete data.auctionInit;
+
+      data.pmcDetail = {}
+      Object.assign(data.pmcDetail, {
+        bidDensity: storage ? storage.getItem('pbx:dpbid') : null,
+        maxBid: storage ? storage.getItem('pbx:mxbid') : null,
+        auctionId: storage ? storage.getItem('pbx:aucid') : null,
+      });
     }
     data.deviceDetail = {};
     Object.assign(data.deviceDetail, {
@@ -150,6 +166,7 @@ function send(data, status) {
       deviceOS: getOS(),
       browser: getBrowser()
     });
+
     let pubxaiAnalyticsRequestUrl = buildUrl({
       protocol: 'https',
       hostname: (initOptions && initOptions.hostName) || defaultHost,
