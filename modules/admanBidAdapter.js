@@ -5,7 +5,7 @@ import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'adman';
 const AD_URL = 'https://pub.admanmedia.com/?c=o&m=multi';
-const URL_SYNC = 'https://pub.admanmedia.com/?c=o&m=sync';
+const URL_SYNC = 'https://pub.admanmedia.com';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
