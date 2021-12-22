@@ -8,7 +8,7 @@ const URL = 'https://dev-prebid.dianomi.net/cgi-bin/smartads_prebid.pl';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['dia'], // short code
-  supportedMediaTypes: ['banner'],
+  supportedMediaTypes: ['banner', 'native'],
   isBidRequestValid: function (bid) {
     return true;
   },
