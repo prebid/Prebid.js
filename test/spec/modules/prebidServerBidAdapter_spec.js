@@ -2450,6 +2450,27 @@ describe('S2S Adapter', function () {
       stub.restore();
     });
 
+    it('does not (by default) allow bids that were not requested', function () {
+      config.setConfig({ s2sConfig: CONFIG });
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const response = deepClone(RESPONSE_OPENRTB);
+      response.seatbid[0].seat = 'unknown';
+      server.requests[0].respond(200, {}, JSON.stringify(response));
+
+      expect(addBidResponse.called).to.be.false;
+    });
+
+    it('allows unrequested bids if config.allowUnknownBidderCodes', function () {
+      const cfg = {...CONFIG, allowUnknownBidderCodes: true};
+      config.setConfig({s2sConfig: cfg});
+      adapter.callBids({...REQUEST, s2sConfig: cfg}, BID_REQUESTS, addBidResponse, done, ajax);
+      const response = deepClone(RESPONSE_OPENRTB);
+      response.seatbid[0].seat = 'unknown';
+      server.requests[0].respond(200, {}, JSON.stringify(response));
+
+      expect(addBidResponse.calledWith(sinon.match.any, sinon.match({bidderCode: 'unknown'}))).to.be.true;
+    });
+
     describe('on sync requested with no cookie', () => {
       let cfg, req, csRes;
 

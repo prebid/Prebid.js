@@ -53,6 +53,7 @@ let eidPermissions;
  * @typedef {Object} S2SDefaultConfig
  * @summary Base config properties for server to server header bidding
  * @property {string} [adapter='prebidServer'] adapter code to use for S2S
+ * @property {boolean} [allowUnknownBidderCodes=false] allow bids from bidders that were not explicitly requested
  * @property {boolean} [enabled=false] enables S2S bidding
  * @property {number} [timeout=1000] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
  * @property {number} [syncTimeout=1000] timeout for cookie sync iframe / image rendering
@@ -80,6 +81,7 @@ const s2sDefaultConfig = {
   syncTimeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
+  allowUnknownBidderCodes: false,
   adapterOptions: {},
   syncUrlModifier: {}
 };
@@ -489,11 +491,11 @@ export function resetWurlMap() {
   wurlMap = {};
 }
 
-function ORTB2(s2sBidRequest, bidderRequests, adUnits, s2sConfig, requestedBidders) {
+function ORTB2(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
   this.s2sBidRequest = s2sBidRequest;
   this.bidderRequests = bidderRequests;
   this.adUnits = adUnits;
-  this.s2sConfig = s2sConfig;
+  this.s2sConfig = s2sBidRequest.s2sConfig;
   this.requestedBidders = requestedBidders;
 
   this.bidIdMap = {};
@@ -883,6 +885,10 @@ Object.assign(ORTB2.prototype, {
       response.seatbid.forEach(seatbid => {
         (seatbid.bid || []).forEach(bid => {
           const bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
+          if (bidRequest == null && !s2sConfig.allowUnknownBidderCodes) {
+            logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
+            return;
+          }
 
           const cpm = bid.price;
           const status = cpm !== 0 ? CONSTANTS.STATUS.GOOD : CONSTANTS.STATUS.NO_BID;
@@ -1118,7 +1124,7 @@ export function PrebidServer() {
         queueSync(syncBidders, gdprConsent, uspConsent, s2sBidRequest.s2sConfig);
       }
 
-      const ortb2 = new ORTB2(s2sBidRequest, bidRequests, validAdUnits, s2sBidRequest.s2sConfig, requestedBidders);
+      const ortb2 = new ORTB2(s2sBidRequest, bidRequests, validAdUnits, requestedBidders);
       const request = ortb2.buildRequest();
       const requestJson = request && JSON.stringify(request);
       logInfo('BidRequest: ' + requestJson);
