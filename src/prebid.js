@@ -47,8 +47,7 @@ $$PREBID_GLOBAL$$.libLoaded = true;
 $$PREBID_GLOBAL$$.version = 'v$prebid.version$';
 logInfo('Prebid.js v$prebid.version$ loaded');
 
-// modules list generated from build
-$$PREBID_GLOBAL$$.installedModules = ['v$prebid.modulesList$'];
+$$PREBID_GLOBAL$$.installedModules = $$PREBID_GLOBAL$$.installedModules || [];
 
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
@@ -902,6 +901,8 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
  */
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
 $$PREBID_GLOBAL$$.readConfig = config.readConfig;
+$$PREBID_GLOBAL$$.mergeConfig = config.mergeConfig;
+$$PREBID_GLOBAL$$.mergeBidderConfig = config.mergeBidderConfig;
 
 /**
  * Set Prebid config options.
