@@ -32,6 +32,7 @@
     "quantcastIdSystem",
     "sharedIdSystem",
     "tapadIdSystem",
+    "trustpidSystem",
     "uid2IdSystem",
     "unifiedIdSystem",
     "verizonMediaIdSystem",

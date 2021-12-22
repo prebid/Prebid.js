@@ -5,6 +5,21 @@ const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // trustpid
+  'trustpid': {
+    source: 'trustpid.com',
+    atype: 1,
+    getValue: function (data) {
+      // eslint-disable-next-line no-console
+      console.log('eids data: ', data)
+      // TODO: This seems to have no sense - why we return undefined if data is not defined?
+      if (data) {
+        return data // returns string in format [umid]:[acronym]
+      }
+      return undefined;
+    },
+  },
+
   // intentIqId
   'intentIqId': {
     source: 'intentiq.com',
