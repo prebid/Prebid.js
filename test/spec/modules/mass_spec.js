@@ -63,7 +63,6 @@ const mockedNonMassBids = [
 const noop = function() {};
 
 describe('MASS Module', function() {
-
   it('should be enabled by default', function() {
     expect(isEnabled).to.equal(true);
   });

@@ -34,7 +34,6 @@ function getMockBid(bidder, auctionId, bidderRequestId) {
   };
 }
 
-
 describe('The video cache', function () {
   function assertError(callbackSpy) {
     callbackSpy.calledOnce.should.equal(true);
