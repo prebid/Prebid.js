@@ -356,7 +356,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 }
 
 export const addBidResponse = hook('async', function(adUnitCode, bid) {
-  this.dispatch.call(this.bidderRequest, adUnitCode, bid);
+  this.dispatch.call(null, adUnitCode, bid);
 }, 'addBidResponse');
 
 export const addBidderRequests = hook('sync', function(bidderRequests) {

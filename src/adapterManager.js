@@ -447,7 +447,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           adapter.callBids,
           adapter,
           bidRequest,
-          addBidResponse.bind(bidRequest),
+          addBidResponse,
           adapterDone,
           ajax,
           onTimelyResponse,
