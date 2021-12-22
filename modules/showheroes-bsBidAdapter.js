@@ -61,6 +61,14 @@ export const spec = {
           }
         }
 
+        const consentData = bidderRequest.gdprConsent || {};
+
+        const gdprConsent = {
+          apiVersion: consentData.apiVersion || 2,
+          gdprApplies: consentData.gdprApplies || 0,
+          consentString: consentData.consentString || '',
+        }
+
         return {
           type: streamType,
           adUnitCode: bid.adUnitCode,
@@ -70,7 +78,7 @@ export const spec = {
           playerId: getBidIdParameter('playerId', bid.params),
           auctionId: bidderRequest.auctionId,
           bidderCode: BIDDER_CODE,
-          gdprConsent: bidderRequest.gdprConsent,
+          gdprConsent: gdprConsent,
           start: +new Date(),
           timeout: 3000,
           size: {
