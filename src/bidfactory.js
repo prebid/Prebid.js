@@ -50,9 +50,19 @@ function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, auc
   this.getSize = function () {
     return this.width + 'x' + this.height;
   };
+
+  this.getIdentifiers = function () {
+    return {
+      src: this.source,
+      bidder: this.bidderCode,
+      bidId: this.requestId,
+      transactionId: this.transactionId,
+      auctionId: this.auctionId
+    }
+  }
 }
 
 // Bid factory function.
-export function createBid(statusCode, requestData) {
-  return new Bid(statusCode, requestData);
+export function createBid(statusCode, identifiers) {
+  return new Bid(statusCode, identifiers);
 }
