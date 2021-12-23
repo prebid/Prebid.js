@@ -781,7 +781,7 @@ describe('pubmatic analytics adapter', function () {
     it('Logger: regexPattern in bid.bidResponse and url in adomain', function() {
       const BID2_COPY = utils.deepClone(BID2);
       BID2_COPY.regexPattern = '*';
-      BID2_COPY.meta.advertiserDomains = ["https://www.example.com/abc/223"]
+      BID2_COPY.meta.advertiserDomains = ['https://www.example.com/abc/223']
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
