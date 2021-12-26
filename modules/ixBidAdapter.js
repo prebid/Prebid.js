@@ -1,8 +1,8 @@
-import { deepAccess, parseGPTSingleSizeArray, inIframe, deepClone, logError, logWarn, isFn, contains, isInteger, isArray, deepSetValue, parseQueryStringParameters, isEmpty, mergeDeep, convertTypes, hasDeviceAccess } from '../src/utils.js';
+import { deepAccess, parseGPTSingleSizeArray, inIframe, deepClone, logError, logWarn, isFn, contains, isInteger, isArray, deepSetValue, parseQueryStringParameters, isEmpty, mergeDeep, convertTypes } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import CONSTANTS from '../src/constants.json';
-import { getStorageManager, validateStorageEnforcement } from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 import events from '../src/events.js';
 import find from 'core-js-pure/features/array/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -53,12 +53,7 @@ const SOURCE_RTI_MAPPING = {
   'neustar.biz': 'fabrickId',
   'zeotap.com': 'zeotapIdPlus',
   'uidapi.com': 'UID2',
-  'adserver.org': 'TDID',
-  'id5-sync.com': '', // ID5 Universal ID, configured as id5Id
-  'crwdcntrl.net': '', // Lotame Panorama ID, lotamePanoramaId
-  'epsilon.com': '', // Publisher Link, publinkId
-  'audigent.com': '', // Halo ID from Audigent, haloId
-  'pubcid.org': '' // SharedID, pubcid
+  'adserver.org': 'TDID'
 };
 const PROVIDERS = [
   'britepoolid',
@@ -74,8 +69,7 @@ const PROVIDERS = [
   'quantcastId',
   'pubcid',
   'TDID',
-  'flocId',
-  'pubProvidedId'
+  'flocId'
 ];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
 const VIDEO_PARAMS_ALLOW_LIST = [
@@ -200,7 +194,7 @@ function bidToImp(bid) {
   imp.id = bid.bidId;
 
   imp.ext = {};
-  imp.ext.siteID = bid.params.siteId.toString();
+  imp.ext.siteID = bid.params.siteId;
 
   if (bid.params.hasOwnProperty('id') &&
     (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
@@ -450,19 +444,16 @@ function getEidInfo(allEids, flocData) {
   let seenSources = {};
   if (isArray(allEids)) {
     for (const eid of allEids) {
-      if (SOURCE_RTI_MAPPING.hasOwnProperty(eid.source) && deepAccess(eid, 'uids.0')) {
+      if (SOURCE_RTI_MAPPING[eid.source] && deepAccess(eid, 'uids.0')) {
         seenSources[eid.source] = true;
-        if (SOURCE_RTI_MAPPING[eid.source] != '') {
-          eid.uids[0].ext = {
-            rtiPartner: SOURCE_RTI_MAPPING[eid.source]
-          };
-        }
+        eid.uids[0].ext = {
+          rtiPartner: SOURCE_RTI_MAPPING[eid.source]
+        };
         delete eid.uids[0].atype;
         toSend.push(eid);
       }
     }
   }
-
   const isValidFlocId = flocData && flocData.id && flocData.version;
   if (isValidFlocId) {
     const flocEid = {
@@ -475,7 +466,6 @@ function getEidInfo(allEids, flocData) {
 
   return { toSend, seenSources };
 }
-
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
@@ -690,7 +680,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe }, ext } = impressionObjects[0];
-      const gpid = impressions[transactionIds[adUnitIndex]].gpid;
       const _bannerImpression = {
         id,
         banner: {
@@ -699,10 +688,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         },
       }
 
-      if (ext.dfp_ad_unit_code || gpid) {
-        _bannerImpression.ext = {};
-        _bannerImpression.ext.dfp_ad_unit_code = ext.dfp_ad_unit_code;
-        _bannerImpression.ext.gpid = gpid;
+      if (ext.dfp_ad_unit_code) {
+        _bannerImpression.ext = {
+          dfp_ad_unit_code: ext.dfp_ad_unit_code
+        }
       }
 
       if ('bidfloor' in impressionObjects[0]) {
@@ -922,7 +911,6 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
       bannerImps[validBidRequest.transactionId].ixImps = []
     }
     bannerImps[validBidRequest.transactionId].ixImps.push(imp);
-    bannerImps[validBidRequest.transactionId].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   }
 
   if (ixConfig.hasOwnProperty('detectMissingSizes') && ixConfig.detectMissingSizes) {
@@ -1003,7 +991,7 @@ function createMissingBannerImp(bid, imp, newSize) {
  *
  * @param {ErrorData} data
  */
-function storeErrorEventData(data) {
+function errorEventHandler(data) {
   if (!storage.localStorageIsEnabled()) {
     return;
   }
@@ -1043,24 +1031,6 @@ function storeErrorEventData(data) {
   }
 
   storage.setDataInLocalStorage(LOCAL_STORAGE_KEY, JSON.stringify(currentStorage));
-}
-
-/**
- * Event handler for storing data into local storage. It will only store data if
- * local storage premissions are avaliable
- */
-function localStorageHandler(data) {
-  if (data.type === 'ERROR' && data.arguments && data.arguments[1] && data.arguments[1].bidder === BIDDER_CODE) {
-    const DEFAULT_ENFORCEMENT_SETTINGS = {
-      hasEnforcementHook: false,
-      valid: hasDeviceAccess()
-    };
-    validateStorageEnforcement(GLOBAL_VENDOR_ID, BIDDER_CODE, DEFAULT_ENFORCEMENT_SETTINGS, (permissions) => {
-      if (permissions.valid) {
-        storeErrorEventData(data);
-      }
-    });
-  }
 }
 
 /**
@@ -1159,8 +1129,8 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (!hasRegisteredHandler) {
-      events.on(CONSTANTS.EVENTS.AUCTION_DEBUG, localStorageHandler);
-      events.on(CONSTANTS.EVENTS.AD_RENDER_FAILED, localStorageHandler);
+      events.on(CONSTANTS.EVENTS.AUCTION_DEBUG, errorEventHandler);
+      events.on(CONSTANTS.EVENTS.AD_RENDER_FAILED, errorEventHandler);
       hasRegisteredHandler = true;
     }
 
@@ -1198,12 +1168,7 @@ export const spec = {
     }
 
     if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
-      logError('IX Bid Adapter: siteId must be string or number type.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
-      return false;
-    }
-
-    if (typeof bid.params.siteId !== 'string' && isNaN(Number(bid.params.siteId))) {
-      logError('IX Bid Adapter: siteId must valid value', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+      logError('IX Bid Adapter: siteId must be string or number value.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
       return false;
     }
 
