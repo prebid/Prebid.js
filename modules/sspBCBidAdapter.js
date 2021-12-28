@@ -125,7 +125,16 @@ const applyClientHints = ortbRequest => {
       ]
     }];
 
-  ortbRequest.user = Object.assign(ortbRequest.user, { data });
+  const ch = { data };
+  ortbRequest.user = {...ortbRequest.user, ...ch };
+};
+
+const applyUserIds = (validBidRequest, ortbRequest) => {
+  const eids = validBidRequest.userIdAsEids
+  if (eids && eids.length){ 
+    const ids = { eids };
+    ortbRequest.user = { ...ortbRequest.user, ...ids };
+  }
 };
 
 /**
@@ -514,6 +523,7 @@ const spec = {
 
     applyGdpr(bidderRequest, payload);
     applyClientHints(payload);
+    applyUserIds(validBidRequests[0], payload);
 
     return {
       method: 'POST',
