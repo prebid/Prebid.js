@@ -165,16 +165,26 @@ function mapBanner(slot) {
  * @returns {object} Site by OpenRTB 2.5 §3.2.13
  */
 function mapSite(slot, bidderRequest) {
-  const pubId = slot && slot.length > 0
-    ? slot[0].params.publisherId
-    : 'unknown';
-  return {
+  let pubId = 'unknown';
+  let channel = null;
+  if (slot && slot.length > 0) {
+    pubId = slot[0].params.publisherId;
+    channel = slot[0].params.channel &&
+    slot[0].params.channel
+      .toString()
+      .slice(0, 50);
+  }
+  let siteData = {
     publisher: {
       id: pubId.toString(),
     },
     page: bidderRequest.refererInfo.referer,
     name: getOrigin()
+  };
+  if (channel) {
+    siteData.channel = channel;
   }
+  return siteData;
 }
 
 /**
