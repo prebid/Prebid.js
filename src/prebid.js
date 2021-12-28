@@ -901,6 +901,8 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
  */
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
 $$PREBID_GLOBAL$$.readConfig = config.readConfig;
+$$PREBID_GLOBAL$$.mergeConfig = config.mergeConfig;
+$$PREBID_GLOBAL$$.mergeBidderConfig = config.mergeBidderConfig;
 
 /**
  * Set Prebid config options.
