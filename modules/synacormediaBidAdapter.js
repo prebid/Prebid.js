@@ -243,6 +243,19 @@ export const spec = {
               }
             });
           }
+
+          let ttl = bid.exp;
+          if (!ttl && bidRequest.data && bidRequest.data.imp && bidRequest.data.imp.length > 0) {
+            bidRequest.data.imp.forEach(req => {
+              if (bid.impid === req.id) {
+                ttl = req.exp;
+              }
+            });
+          }
+          if (!ttl) {
+            ttl = 60;
+          }
+
           const bidObj = {
             requestId: impid,
             cpm: parseFloat(bid.price),
@@ -253,7 +266,7 @@ export const spec = {
             netRevenue: true,
             mediaType: isVideo ? VIDEO : BANNER,
             ad: creative,
-            ttl: 60
+            ttl: parseInt(ttl, 10)
           };
 
           if (bid.adomain != undefined || bid.adomain != null) {
