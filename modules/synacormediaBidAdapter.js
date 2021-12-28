@@ -67,7 +67,7 @@ export const spec = {
       } else {
         seatId = bid.params.seatId;
       }
-      const tagIdOrplacementId = bid.params.tagId || bid.params.placementId;
+      const tagIdOrPlacementId = bid.params.tagId || bid.params.placementId;
       let pos = parseInt(bid.params.pos, 10);
       if (isNaN(pos)) {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
@@ -159,7 +159,7 @@ export const spec = {
     return imps;
   },
 
-  buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos,  videoOrBannerKey) {
+  buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
     let imps = [];
     adSizes.forEach((size, i) => {
       if (!size || size.length != 2) {
