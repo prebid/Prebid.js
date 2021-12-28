@@ -1272,7 +1272,18 @@ export function mergeDeep(target, ...sources) {
         if (!target[key]) {
           Object.assign(target, { [key]: source[key] });
         } else if (isArray(target[key])) {
-          target[key] = target[key].concat(source[key]);
+          source[key].forEach(obj => {
+            let addItFlag = 1;
+            for (let i = 0; i < target[key].length; i++) {
+              if (deepEqual(target[key][i], obj)) {
+                addItFlag = 0;
+                break;
+              }
+            }
+            if (addItFlag) {
+              target[key].push(obj);
+            }
+          });
         }
       } else {
         Object.assign(target, { [key]: source[key] });

@@ -268,6 +268,10 @@ describe('OguryBidAdapter', function () {
         ext: {
           consent: bidderRequest.gdprConsent.consentString
         },
+      },
+      ext: {
+        prebidversion: '$prebid.version$',
+        adapterversion: '1.2.7'
       }
     };
 
@@ -425,7 +429,9 @@ describe('OguryBidAdapter', function () {
         meta: {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
         },
-        nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl
+        nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl,
+        adapterVersion: '1.2.7',
+        prebidVersion: '$prebid.version$'
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
         cpm: openRtbBidResponse.body.seatbid[0].bid[1].price,
@@ -440,7 +446,9 @@ describe('OguryBidAdapter', function () {
         meta: {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
         },
-        nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl
+        nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl,
+        adapterVersion: '1.2.7',
+        prebidVersion: '$prebid.version$'
       }]
 
       let request = spec.buildRequests(bidRequests, bidderRequest);
