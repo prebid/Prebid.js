@@ -268,6 +268,9 @@ function handleBidRequestData(adUnits, moduleParams) {
 /** @type {string} */
 const SMARTADSERVER = 'smartadserver';
 
+/** @type {string} */
+const PUBMATIC = 'pubmatic';
+
 /** @type {Object} */
 const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 
@@ -287,6 +290,11 @@ function handleBid(adUnit, profile, bid) {
       handleSmartadserverBid(adUnit, profile, bid);
 
       break;
+
+    case PUBMATIC:
+      handlePubmaticBid(adUnit, profile, bid);
+
+      break;
   }
 }
 
@@ -297,10 +305,13 @@ function handleBid(adUnit, profile, bid) {
  * @returns {void}
  */
 function handleSmartadserverBid(adUnit, profile, bid) {
+  const sep = ';';
+  const bidKey = 'params.target';
   const target = [];
 
-  if (deepAccess(bid, 'params.target')) {
-    target.push(bid.params.target.split(';'));
+  const data = deepAccess(bid, bidKey);
+  if (data) {
+    target.push(data.split(sep));
   }
 
   Object.keys(profile).forEach(key => {
@@ -312,7 +323,35 @@ function handleSmartadserverBid(adUnit, profile, bid) {
     });
   });
 
-  deepSetValue(bid, 'params.target', target.join(';'));
+  deepSetValue(bid, bidKey, target.join(sep));
+}
+
+/** handle pubmatic bid
+ * @param {Object} adUnit
+ * @param {Object} profile
+ * @param {Object} bid
+ * @returns {void}
+ */
+function handlePubmaticBid(adUnit, profile, bid) {
+  const sep = '|';
+  const subsep = ',';
+  const bidKey = 'params.dctr';
+  const target = [];
+
+  const data = deepAccess(bid, bidKey);
+  if (data) {
+    target.push(data.split(sep));
+  }
+
+  Object.keys(profile).forEach(key => {
+    const value = profile[key].join(subsep);
+    const keyword = `${key}=${value}`;
+    if (target.indexOf(keyword) === -1) {
+      target.push(keyword);
+    }
+  });
+
+  deepSetValue(bid, bidKey, target.join(sep));
 }
 
 /** set bigsea contextual profile on module state

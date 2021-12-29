@@ -79,6 +79,8 @@ describe('weboramaRtdProvider', function() {
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
+            },{
+              bidder: 'pubmatic'
             }]
           }]
         };
@@ -105,6 +107,7 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_ctx=foo,bar|webo_ds=baz');
       });
 
       it('should set gam targeting but not send to bidders with setPrebidTargeting=true/sendToBidders=false', function() {
@@ -129,6 +132,11 @@ describe('weboramaRtdProvider', function() {
               bidder: 'smartadserver',
               params: {
                 target: 'foo=bar'
+              }
+            },{
+              bidder: 'pubmatic',
+              params: {
+                dctr: 'foo=bar'
               }
             }]
           }]
@@ -156,6 +164,7 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
       });
 
       it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
@@ -180,6 +189,11 @@ describe('weboramaRtdProvider', function() {
               params: {
                 target: 'foo=bar'
               }
+            },{
+              bidder: 'pubmatic',
+              params: {
+                dctr: 'foo=bar'
+              }
             }]
           }]
         }
@@ -203,6 +217,7 @@ describe('weboramaRtdProvider', function() {
         expect(targeting).to.deep.equal({});
 
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar|webo_ctx=foo,bar|webo_ds=baz');
       });
 
       it('should use default profile in case of api error', function() {
@@ -225,6 +240,8 @@ describe('weboramaRtdProvider', function() {
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
+            },{
+              bidder: 'pubmatic'
             }]
           }]
         };
@@ -251,6 +268,7 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_ctx=baz');
       });
     });
 
@@ -280,6 +298,8 @@ describe('weboramaRtdProvider', function() {
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
+            },{
+              bidder: 'pubmatic'
             }]
           }]
         };
@@ -298,6 +318,7 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_cs=foo;webo_cs=bar;webo_audiences=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_cs=foo,bar|webo_audiences=baz');
       });
 
       it('should set gam targeting but not send to bidders with setPrebidTargeting=true/sendToBidders=false', function() {
@@ -331,6 +352,11 @@ describe('weboramaRtdProvider', function() {
               params: {
                 target: 'foo=bar'
               }
+            },{
+              bidder: 'pubmatic',
+              params: {
+                dctr: 'foo=bar'
+              }
             }]
           }]
         };
@@ -349,6 +375,7 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
       });
 
       it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
@@ -381,6 +408,11 @@ describe('weboramaRtdProvider', function() {
               params: {
                 target: 'foo=bar'
               }
+            },{
+              bidder: 'pubmatic',
+              params: {
+                dctr: 'foo=bar'
+              }
             }]
           }]
         };
@@ -396,6 +428,7 @@ describe('weboramaRtdProvider', function() {
         expect(targeting).to.deep.equal({});
 
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;webo_cs=foo;webo_cs=bar;webo_audiences=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar|webo_cs=foo,bar|webo_audiences=baz');
       });
 
       it('should use default profile in case of nothing on local storage', function() {
@@ -418,6 +451,8 @@ describe('weboramaRtdProvider', function() {
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
+            },{
+              bidder: 'pubmatic'
             }]
           }]
         };
@@ -436,6 +471,7 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_audiences=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_audiences=baz');
       });
 
       it('should use default profile if cant read from local storage', function() {
@@ -458,6 +494,8 @@ describe('weboramaRtdProvider', function() {
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
+            },{
+              bidder: 'pubmatic'
             }]
           }]
         };
@@ -476,6 +514,7 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_audiences=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_audiences=baz');
       });
     });
   });
