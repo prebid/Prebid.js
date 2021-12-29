@@ -252,15 +252,32 @@ function handleBidRequestData(adUnits, moduleParams) {
   const weboUserDataConf = moduleParams.weboUserDataConf || {};
   const weboCtxConfTargeting = weboCtxConf.sendToBidders !== false;
   const weboUserDataConfTargeting = weboUserDataConf.sendToBidders !== false;
-  const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting);
 
-  if (isEmpty(profile)) {
-    return;
+  if (weboCtxConfTargeting) {
+    const contextualProfile = getContextualProfile(weboCtxConf);
+    if (contextualProfile) {
+      setBidRequestProfile(adUnits, contextualProfile, true);
+    }
   }
 
+  if (weboUserDataConfTargeting) {
+    const weboUserDataProfile = getWeboUserDataProfile(weboUserDataConf);
+    if (weboUserDataProfile) {
+      setBidRequestProfile(adUnits, weboUserDataProfile, false);
+    }
+  }
+}
+
+/** function that set bid request data on each segment (site or user centric)
+ * @param {Object[]} adUnits
+ * @param {Object} profile
+ * @param {Boolean} site true if site centric, else it is user centric
+ * @returns {void}
+ */
+function setBidRequestProfile(adUnits, profile, site) {
   adUnits.forEach(adUnit => {
     if (adUnit.hasOwnProperty('bids')) {
-      adUnit.bids.forEach(bid => handleBid(adUnit, profile, bid));
+      adUnit.bids.forEach(bid => handleBid(adUnit, Object.assign(profile), site, bid));
     }
   });
 }
@@ -272,6 +289,9 @@ const APPNEXUS = 'appnexus';
 const PUBMATIC = 'pubmatic';
 
 /** @type {string} */
+const RUBICON = 'rubicon';
+
+/** @type {string} */
 const SMARTADSERVER = 'smartadserver';
 
 /** @type {Object} */
@@ -280,10 +300,11 @@ const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 /** handle individual bid
  * @param {Object} adUnit
  * @param {Object} profile
+ * @param {Boolean} site true if site centric, else it is user centric
  * @param {Object} bid
  * @returns {void}
  */
-function handleBid(adUnit, profile, bid) {
+function handleBid(adUnit, profile, site, bid) {
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
   logMessage('handle bidder', bidder, bid);
@@ -303,7 +324,22 @@ function handleBid(adUnit, profile, bid) {
       handleSmartadserverBid(adUnit, profile, bid);
 
       break;
+    case RUBICON:
+      handleOrtb2Bid(adUnit, profile, site, bid);
+
+      break;
   }
+}
+
+/** handle ortb2 bid (rubicon,...)
+ * @param {Object} adUnit
+ * @param {Object} profile
+ * @param {Boolean} site
+ * @param {Object} bid
+ * @returns {void}
+ */
+function handleOrtb2Bid(adUnit, profile, site, bid) {
+
 }
 
 /** handle appnexus/xandr bid
@@ -318,7 +354,7 @@ function handleAppnexusBid(adUnit, profile, bid) {
 
   Object.keys(profile).forEach(key => {
     if (!(key in target)) {
-      target[key] = profile[key];
+      target[key] = Object.assign(profile[key]);
     }
   });
 
@@ -339,7 +375,7 @@ function handlePubmaticBid(adUnit, profile, bid) {
 
   const data = deepAccess(bid, bidKey);
   if (data) {
-    target.push(data.split(sep));
+    data.split(sep).forEach(t => target.push(t));
   }
 
   Object.keys(profile).forEach(key => {
@@ -366,7 +402,7 @@ function handleSmartadserverBid(adUnit, profile, bid) {
 
   const data = deepAccess(bid, bidKey);
   if (data) {
-    target.push(data.split(sep));
+    data.split(sep).forEach(t => target.push(t));
   }
 
   Object.keys(profile).forEach(key => {
@@ -377,7 +413,6 @@ function handleSmartadserverBid(adUnit, profile, bid) {
       }
     });
   });
-
   deepSetValue(bid, bidKey, target.join(sep));
 }
 

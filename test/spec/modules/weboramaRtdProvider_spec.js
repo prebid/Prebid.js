@@ -86,6 +86,7 @@ describe('weboramaRtdProvider', function() {
             }]
           }]
         };
+
         const onDoneSpy = sinon.spy();
 
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
