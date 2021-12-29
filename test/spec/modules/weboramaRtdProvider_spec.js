@@ -79,7 +79,7 @@ describe('weboramaRtdProvider', function() {
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
-            },{
+            }, {
               bidder: 'pubmatic'
             }]
           }]
@@ -133,7 +133,7 @@ describe('weboramaRtdProvider', function() {
               params: {
                 target: 'foo=bar'
               }
-            },{
+            }, {
               bidder: 'pubmatic',
               params: {
                 dctr: 'foo=bar'
@@ -189,7 +189,7 @@ describe('weboramaRtdProvider', function() {
               params: {
                 target: 'foo=bar'
               }
-            },{
+            }, {
               bidder: 'pubmatic',
               params: {
                 dctr: 'foo=bar'
@@ -240,7 +240,7 @@ describe('weboramaRtdProvider', function() {
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
-            },{
+            }, {
               bidder: 'pubmatic'
             }]
           }]
@@ -298,7 +298,7 @@ describe('weboramaRtdProvider', function() {
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
-            },{
+            }, {
               bidder: 'pubmatic'
             }]
           }]
@@ -352,7 +352,7 @@ describe('weboramaRtdProvider', function() {
               params: {
                 target: 'foo=bar'
               }
-            },{
+            }, {
               bidder: 'pubmatic',
               params: {
                 dctr: 'foo=bar'
@@ -408,7 +408,7 @@ describe('weboramaRtdProvider', function() {
               params: {
                 target: 'foo=bar'
               }
-            },{
+            }, {
               bidder: 'pubmatic',
               params: {
                 dctr: 'foo=bar'
@@ -451,7 +451,7 @@ describe('weboramaRtdProvider', function() {
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
-            },{
+            }, {
               bidder: 'pubmatic'
             }]
           }]
@@ -494,7 +494,7 @@ describe('weboramaRtdProvider', function() {
           adUnits: [{
             bids: [{
               bidder: 'smartadserver'
-            },{
+            }, {
               bidder: 'pubmatic'
             }]
           }]
