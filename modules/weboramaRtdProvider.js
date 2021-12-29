@@ -266,10 +266,13 @@ function handleBidRequestData(adUnits, moduleParams) {
 }
 
 /** @type {string} */
-const SMARTADSERVER = 'smartadserver';
+const APPNEXUS = 'appnexus';
 
 /** @type {string} */
 const PUBMATIC = 'pubmatic';
+
+/** @type {string} */
+const SMARTADSERVER = 'smartadserver';
 
 /** @type {Object} */
 const bidderAliasRegistry = adapterManager.aliasRegistry || {};
@@ -286,8 +289,8 @@ function handleBid(adUnit, profile, bid) {
   logMessage('handle bidder', bidder, bid);
 
   switch (bidder) {
-    case SMARTADSERVER:
-      handleSmartadserverBid(adUnit, profile, bid);
+    case APPNEXUS:
+      handleAppnexusBid(adUnit, profile, bid);
 
       break;
 
@@ -295,35 +298,31 @@ function handleBid(adUnit, profile, bid) {
       handlePubmaticBid(adUnit, profile, bid);
 
       break;
+
+    case SMARTADSERVER:
+      handleSmartadserverBid(adUnit, profile, bid);
+
+      break;
   }
 }
 
-/** handle smartadserver bid
+/** handle appnexus/xandr bid
  * @param {Object} adUnit
  * @param {Object} profile
  * @param {Object} bid
  * @returns {void}
  */
-function handleSmartadserverBid(adUnit, profile, bid) {
-  const sep = ';';
-  const bidKey = 'params.target';
-  const target = [];
-
-  const data = deepAccess(bid, bidKey);
-  if (data) {
-    target.push(data.split(sep));
-  }
+function handleAppnexusBid(adUnit, profile, bid) {
+  const bidKey = 'params.keyword';
+  const target = deepAccess(bid, bidKey) || {};
 
   Object.keys(profile).forEach(key => {
-    profile[key].forEach(value => {
-      const keyword = `${key}=${value}`;
-      if (target.indexOf(keyword) === -1) {
-        target.push(keyword);
-      }
-    });
+    if (!(key in target)) {
+      target[key] = profile[key];
+    }
   });
 
-  deepSetValue(bid, bidKey, target.join(sep));
+  deepSetValue(bid, bidKey, target);
 }
 
 /** handle pubmatic bid
@@ -349,6 +348,34 @@ function handlePubmaticBid(adUnit, profile, bid) {
     if (target.indexOf(keyword) === -1) {
       target.push(keyword);
     }
+  });
+
+  deepSetValue(bid, bidKey, target.join(sep));
+}
+
+/** handle smartadserver bid
+ * @param {Object} adUnit
+ * @param {Object} profile
+ * @param {Object} bid
+ * @returns {void}
+ */
+function handleSmartadserverBid(adUnit, profile, bid) {
+  const sep = ';';
+  const bidKey = 'params.target';
+  const target = [];
+
+  const data = deepAccess(bid, bidKey);
+  if (data) {
+    target.push(data.split(sep));
+  }
+
+  Object.keys(profile).forEach(key => {
+    profile[key].forEach(value => {
+      const keyword = `${key}=${value}`;
+      if (target.indexOf(keyword) === -1) {
+        target.push(keyword);
+      }
+    });
   });
 
   deepSetValue(bid, bidKey, target.join(sep));
