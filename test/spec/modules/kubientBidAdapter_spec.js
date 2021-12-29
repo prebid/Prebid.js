@@ -1,8 +1,13 @@
 import { expect, assert } from 'chai';
 import { spec } from 'modules/kubientBidAdapter.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
-import URLSearchParams from 'core-js-pure/web/url-search-params';
 import {config} from '../../../src/config';
+
+function encodeQueryData(data) {
+  return Object.keys(data).map(function(key) {
+    return [key, data[key]].map(encodeURIComponent).join('=');
+  }).join('&');
+};
 
 describe('KubientAdapter', function () {
   let bidBanner = {
@@ -387,23 +392,23 @@ describe('KubientAdapter', function () {
       let syncOptions = {
         pixelEnabled: true
       };
-      let values = new URLSearchParams();
+      let values = {};
       let serverResponses = null;
       let gdprConsent = {
         consentString: consentString
       };
       let uspConsent = null;
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      values.append('consent', consentString);
+      values['consent'] = consentString;
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
-      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + values.toString());
+      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + encodeQueryData(values));
     });
     it('should register the sync image with gdpr', function () {
       let syncOptions = {
         pixelEnabled: true
       };
-      let values = new URLSearchParams();
+      let values = {};
       let serverResponses = null;
       let gdprConsent = {
         gdprApplies: true,
@@ -411,17 +416,17 @@ describe('KubientAdapter', function () {
       };
       let uspConsent = null;
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      values.append('consent', consentString);
-      values.append('gdpr', 1);
+      values['consent'] = consentString;
+      values['gdpr'] = 1;
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
-      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + values.toString());
+      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + encodeQueryData(values));
     });
     it('should register the sync image with gdpr vendor', function () {
       let syncOptions = {
         pixelEnabled: true
       };
-      let values = new URLSearchParams();
+      let values = {};
       let serverResponses = null;
       let gdprConsent = {
         gdprApplies: true,
@@ -437,28 +442,28 @@ describe('KubientAdapter', function () {
       };
       let uspConsent = null;
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      values.append('consent', consentString);
-      values.append('gdpr', 1);
+      values['consent'] = consentString;
+      values['gdpr'] = 1;
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
-      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + values.toString());
+      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + encodeQueryData(values));
     });
     it('should register the sync image without gdpr and with uspConsent', function () {
       let syncOptions = {
         pixelEnabled: true
       };
-      let values = new URLSearchParams();
+      let values = {};
       let serverResponses = null;
       let gdprConsent = {
         consentString: consentString
       };
       let uspConsent = '1YNN';
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      values.append('consent', consentString);
-      values.append('usp', uspConsent);
+      values['consent'] = consentString;
+      values['usp'] = uspConsent;
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
-      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + values.toString());
+      expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + encodeQueryData(values));
     });
   })
 });

@@ -114,7 +114,10 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = [];
+    if (!syncOptions.pixelEnabled) {
+      return [];
+    }
+
     let values = {};
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -127,13 +130,10 @@ export const spec = {
       values['usp'] = uspConsent;
     }
 
-    if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: 'https://matching.kubient.net/match/sp?' + encodeQueryData(values)
-      });
-    }
-    return syncs;
+    return [{
+      type: 'image',
+      url: 'https://matching.kubient.net/match/sp?' + encodeQueryData(values)
+    }];
   }
 };
 
