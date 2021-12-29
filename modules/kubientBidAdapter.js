@@ -1,6 +1,5 @@
 import { isArray, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import URLSearchParams from 'core-js-pure/web/url-search-params';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
@@ -116,26 +115,32 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    let values = new URLSearchParams();
+    let values = {};
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      values.append('consent', gdprConsent.consentString);
+      values['consent'] = gdprConsent.consentString;
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        values.append('gdpr', Number(gdprConsent.gdprApplies));
+        values['gdpr'] = Number(gdprConsent.gdprApplies);
       }
     }
     if (uspConsent) {
-      values.append('usp', uspConsent);
+      values['usp'] = uspConsent;
     }
 
     if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: 'https://matching.kubient.net/match/sp?' + values.toString()
+        url: 'https://matching.kubient.net/match/sp?' + encodeQueryData(values)
       });
     }
     return syncs;
   }
+};
+
+function encodeQueryData(data) {
+  return Object.keys(data).map(function(key) {
+    return [key, data[key]].map(encodeURIComponent).join('=');
+  }).join('&');
 };
 
 function kubientGetConsentGiven(gdprConsent) {
