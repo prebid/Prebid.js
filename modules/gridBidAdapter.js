@@ -185,6 +185,12 @@ export const spec = {
       userExt = {consent: gdprConsent.consentString};
     }
 
+    const ortb2UserExtDevice = config.getConfig('ortb2.user.ext.device');
+    if (ortb2UserExtDevice) {
+      userExt = userExt || {};
+      userExt.device = { ...ortb2UserExtDevice };
+    }
+
     if (userIdAsEids && userIdAsEids.length) {
       userExt = userExt || {};
       userExt.eids = [...userIdAsEids];
