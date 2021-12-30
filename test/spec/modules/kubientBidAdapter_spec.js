@@ -398,7 +398,18 @@ describe('KubientAdapter', function () {
         consentString: consentString
       };
       let uspConsent = null;
+      config.setConfig({
+        userSync: {
+          filterSettings: {
+            image: {
+              bidders: '*',
+              filter: 'include'
+            }
+          }
+        }
+      });
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      config.resetConfig();
       values['consent'] = consentString;
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
@@ -415,7 +426,18 @@ describe('KubientAdapter', function () {
         consentString: consentString
       };
       let uspConsent = null;
+      config.setConfig({
+        userSync: {
+          filterSettings: {
+            image: {
+              bidders: '*',
+              filter: 'include'
+            }
+          }
+        }
+      });
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      config.resetConfig();
       values['consent'] = consentString;
       values['gdpr'] = 1;
       expect(syncs).to.be.an('array').and.to.have.length(1);
@@ -441,7 +463,18 @@ describe('KubientAdapter', function () {
         }
       };
       let uspConsent = null;
+      config.setConfig({
+        userSync: {
+          filterSettings: {
+            image: {
+              bidders: '*',
+              filter: 'include'
+            }
+          }
+        }
+      });
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      config.resetConfig();
       values['consent'] = consentString;
       values['gdpr'] = 1;
       expect(syncs).to.be.an('array').and.to.have.length(1);
@@ -458,7 +491,18 @@ describe('KubientAdapter', function () {
         consentString: consentString
       };
       let uspConsent = '1YNN';
+      config.setConfig({
+        userSync: {
+          filterSettings: {
+            image: {
+              bidders: '*',
+              filter: 'include'
+            }
+          }
+        }
+      });
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      config.resetConfig();
       values['consent'] = consentString;
       values['usp'] = uspConsent;
       expect(syncs).to.be.an('array').and.to.have.length(1);
