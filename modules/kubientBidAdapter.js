@@ -1,4 +1,4 @@
-import {isArray, deepAccess, contains} from '../src/utils.js';
+import {isArray, deepAccess} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
