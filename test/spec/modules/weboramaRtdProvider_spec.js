@@ -161,7 +161,7 @@ describe('weboramaRtdProvider', function() {
                 inventory: {
                   foo: 'bar',
                 },
-                keyword: {
+                visitor: {
                   baz: 'bam',
                 }
               }
@@ -200,7 +200,7 @@ describe('weboramaRtdProvider', function() {
           inventory: {
             foo: 'bar',
           },
-          keyword: {
+          visitor: {
             baz: 'bam',
           }
         });
@@ -246,7 +246,7 @@ describe('weboramaRtdProvider', function() {
                 inventory: {
                   foo: 'bar',
                 },
-                keyword: {
+                visitor: {
                   baz: 'bam',
                 }
               }
@@ -286,7 +286,7 @@ describe('weboramaRtdProvider', function() {
             webo_ctx: ['foo', 'bar'],
             webo_ds: ['baz'],
           },
-          keyword: {
+          visitor: {
             baz: 'bam',
           }
         });
@@ -407,7 +407,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_cs=foo,bar|webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
-          keyword: data
+          visitor: data
         });
       });
 
@@ -460,7 +460,7 @@ describe('weboramaRtdProvider', function() {
                 inventory: {
                   foo: 'bar'
                 },
-                keyword: {
+                visitor: {
                   baz: 'bam'
                 }
               }
@@ -491,7 +491,7 @@ describe('weboramaRtdProvider', function() {
           inventory: {
             foo: 'bar'
           },
-          keyword: {
+          visitor: {
             baz: 'bam'
           }
         });
@@ -545,7 +545,7 @@ describe('weboramaRtdProvider', function() {
                 inventory: {
                   foo: 'bar',
                 },
-                keyword: {
+                visitor: {
                   baz: 'bam',
                 }
               }
@@ -575,7 +575,7 @@ describe('weboramaRtdProvider', function() {
           inventory: {
             foo: 'bar',
           },
-          keyword: {
+          visitor: {
             baz: 'bam',
             webo_cs: ['foo', 'bar'],
             webo_audiences: ['baz'],
@@ -631,7 +631,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
-          keyword: defaultProfile
+          visitor: defaultProfile
         });
       });
 
@@ -683,7 +683,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
-          keyword: defaultProfile
+          visitor: defaultProfile
         });
       });
     });

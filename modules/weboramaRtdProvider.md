@@ -21,40 +21,42 @@ Compile the Weborama RTD module into your Prebid build:
 Add the Weborama RTD provider to your Prebid config.
 
 ```javascript
-pbjs.setConfig(
-    ...
-    realTimeData: {
-        auctionDelay: 1000,
-        dataProviders: [
-            {
+var pbjs = pbjs || {};
+pbjs.que = pbjs.que || [];
+
+pbjs.que.push(function () {
+    pbjs.setConfig({
+        debug: true,
+        realTimeData: {
+            auctionDelay: 1000,
+            dataProviders: [{
                 name: "weborama",
                 waitForIt: true,
                 params: {
-                  weboCtxConf: {  // contextual configuration
-                      token: "<<provided by weborama>>", // mandatory
-                      targetURL: "...",         // default is document.URL
-                      setPrebidTargeting: true, // default
-                      sendToBidders: true,      // default
-                      defaultProfile: {         // optional, default is none
-                        webo_ctx: ['foo'],
-                        webo_ds: ['bar']
-		      }
+                    weboCtxConf: {
+                        token: "to-be-defined", // mandatory
+                        targetURL: "https://prebid.org", // default is document.URL
+                        setPrebidTargeting: true, // default
+                        sendToBidders: true,      // default
+                        defaultProfile: {         // optional
+                            webo_ctx: ['moon'],
+                            webo_ds: ['bar']
+                        }
                     },
-                    weboUserDataConf: { // user-centric configuration
-                      setPrebidTargeting: true, // default
-                      sendToBidders: true,      // default
-                      defaultProfile: {         // optional, default is none
-                        webo_cs: ['baz'],
-                        webo_audiences: ['bam']
-		      },
-                      localStorageProfileKey: 'webo_wam2gam_entry' // default
+                    weboUserDataConf: {
+                        setPrebidTargeting: true, // default
+                        sendToBidders: true,      // default
+                        defaultProfile: {         // optional
+                            webo_cs: ['Red'],
+                            webo_audiences: ['bam']
+                        },
+                        localStorageProfileKey: 'webo_wam2gam_entry' // default
                     }
                 }
-            }
-        ]
-    }
-    ...
-);
+            }]
+        }
+    });
+});
 ```
 
 ### Parameter Descriptions for the Weborama Configuration Section
@@ -68,19 +70,27 @@ pbjs.setConfig(
 | params.weboCtxConf.token | String | Security Token provided by Weborama, unique per client | Mandatory |
 | params.weboCtxConf.targetURL | String | Url to be profiled in the contextual api | Optional. Defaults to `document.URL` |
 | params.weboCtxConf.setPrebidTargeting|Boolean|If true, will use the contextual profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is *true*.|
-| params.weboCtxConf.sendToBidders|Boolean|If true, will send the contextual profile to all bidders (only smartadserver is supported now)| Optional. Default is *true*.|
+| params.weboCtxConf.sendToBidders|Boolean|If true, will send the contextual profile to all bidders| Optional. Default is *true*.|
 | params.weboCtxConf.defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | params.weboUserDataConf | Object | WeboUserData Configuration | Optional |
 | params.weboUserDataConf.setPrebidTargeting|Boolean|If true, will use the contextual profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is *true*.|
-| params.weboUserDataConf.sendToBidders|Boolean|If true, will send the contextual profile to all bidders (only smartadserver is supported now)| Optional. Default is *true*.|
+| params.weboUserDataConf.sendToBidders|Boolean|If true, will send the contextual profile to all bidders| Optional. Default is *true*.|
 | params.weboUserDataConf.defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | params.weboUserDataConf.localStorageProfileKey| String | can be used to customize the local storage key | Optional |
+
+### Supported Bidders
+
+We currently support the following bidder adapters:
+* SmartADServer SSP
+* PubMatic SSP
+* AppNexus SSP
+* Rubicon SSP
 
 ### Testing
 
 To view an example of available segments returned by Weborama's backends:
 
-`gulp serve --modules=rtdModule,weboramaRtdProvider,smartadserverBidAdapter`
+`gulp serve --modules=rtdModule,weboramaRtdProvider,smartadserverBidAdapter,pubmaticBidAdapter,appnexusBidAdapter,rubiconBidAdapter`
 
 and then point your browser at:
 
