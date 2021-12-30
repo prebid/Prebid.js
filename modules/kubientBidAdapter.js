@@ -1,11 +1,31 @@
-import { isArray, deepAccess } from '../src/utils.js';
+import {isArray, deepAccess, contains} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from "../src/config";
 
 const BIDDER_CODE = 'kubient';
 const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
 const VERSION = '1.1';
 const VENDOR_ID = 794;
+
+function kubientGetSyncInclude(config) {
+  try {
+    let kubientSync = {};
+    if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
+      let filterSettings = config.getConfig('userSync').filterSettings
+      if (filterSettings.iframe !== null && typeof filterSettings.iframe !== 'undefined') {
+        kubientSync.iframe = ((isArray(filterSettings.image.bidders) && filterSettings.iframe.bidders.indexOf('kubient') !== -1) || filterSettings.iframe.bidders === '*') ? filterSettings.iframe.filter : 'exclude';
+      }
+      if (filterSettings.image !== null && typeof filterSettings.image !== 'undefined') {
+        kubientSync.image = ((isArray(filterSettings.image.bidders) && filterSettings.image.bidders.indexOf('kubient') !== -1) || filterSettings.image.bidders === '*') ? filterSettings.image.filter : 'exclude';
+      }
+    }
+    return kubientSync;
+  } catch (e) {
+    return null;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: VENDOR_ID,
@@ -110,6 +130,8 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
+
+    let kubientSync = kubientGetSyncInclude(config);
     let gdprParams = '';
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
       gdprParams = `?consent_str=${gdprConsent.consentString}`;
@@ -118,13 +140,13 @@ export const spec = {
       }
       gdprParams = gdprParams + `&consent_given=` + kubientGetConsentGiven(gdprConsent);
     }
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled && kubientSync.iframe !== 'exclude') {
       syncs.push({
         type: 'iframe',
         url: 'https://kdmp.kbntx.ch/init.html' + gdprParams
       });
     }
-    if (syncOptions.pixelEnabled) {
+    if (syncOptions.pixelEnabled && kubientSync.image !== 'exclude') {
       syncs.push({
         type: 'image',
         url: 'https://kdmp.kbntx.ch/init.png' + gdprParams
