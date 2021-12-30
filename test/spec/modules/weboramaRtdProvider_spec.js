@@ -83,6 +83,8 @@ describe('weboramaRtdProvider', function() {
               bidder: 'pubmatic'
             }, {
               bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
             }]
           }]
         };
@@ -109,10 +111,13 @@ describe('weboramaRtdProvider', function() {
           'adunit2': data,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(3);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_ctx=foo,bar|webo_ds=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(data);
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: data
+        });
       });
 
       it('should set gam targeting but not send to bidders with setPrebidTargeting=true/sendToBidders=false', function() {
@@ -131,9 +136,6 @@ describe('weboramaRtdProvider', function() {
           webo_ds: ['baz'],
         };
         const adUnitsCodes = ['adunit1', 'adunit2'];
-        const appnexusKeyword = {
-          foo: ['bar']
-        };
         const reqBidsConfigObj = {
           adUnits: [{
             bids: [{
@@ -149,7 +151,19 @@ describe('weboramaRtdProvider', function() {
             }, {
               bidder: 'appnexus',
               params: {
-                keyword: Object.assign(appnexusKeyword)
+                keyword: {
+                  foo: ['bar']
+                }
+              }
+            }, {
+              bidder: 'rubicon',
+              params: {
+                inventory: {
+                  foo: 'bar',
+                },
+                keyword: {
+                  baz: 'bam',
+                }
               }
             }]
           }]
@@ -176,11 +190,20 @@ describe('weboramaRtdProvider', function() {
           'adunit2': data,
         });
 
-        const expectedAppnexusKeyword = Object.assign(appnexusKeyword, data);
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(3);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(expectedAppnexusKeyword);
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal({
+          foo: ['bar']
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: {
+            foo: 'bar',
+          },
+          keyword: {
+            baz: 'bam',
+          }
+        });
       });
 
       it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
@@ -198,9 +221,6 @@ describe('weboramaRtdProvider', function() {
           webo_ds: ['baz'],
         };
         const adUnitsCodes = ['adunit1', 'adunit2'];
-        const appnexusKeyword = {
-          foo: ['bar']
-        };
         const reqBidsConfigObj = {
           adUnits: [{
             bids: [{
@@ -216,7 +236,19 @@ describe('weboramaRtdProvider', function() {
             }, {
               bidder: 'appnexus',
               params: {
-                keyword: Object.assign(appnexusKeyword)
+                keyword: {
+                  foo: ['bar']
+                }
+              }
+            }, {
+              bidder: 'rubicon',
+              params: {
+                inventory: {
+                  foo: 'bar',
+                },
+                keyword: {
+                  baz: 'bam',
+                }
               }
             }]
           }]
@@ -240,11 +272,24 @@ describe('weboramaRtdProvider', function() {
 
         expect(targeting).to.deep.equal({});
 
-        const expectedAppnexusKeyword = Object.assign(appnexusKeyword, data);
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(3);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar|webo_ctx=foo,bar|webo_ds=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(expectedAppnexusKeyword);
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal({
+          foo: ['bar'],
+          webo_ctx: ['foo', 'bar'],
+          webo_ds: ['baz'],
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: {
+            foo: 'bar',
+            webo_ctx: ['foo', 'bar'],
+            webo_ds: ['baz'],
+          },
+          keyword: {
+            baz: 'bam',
+          }
+        });
       });
 
       it('should use default profile in case of api error', function() {
@@ -271,6 +316,8 @@ describe('weboramaRtdProvider', function() {
               bidder: 'pubmatic'
             }, {
               bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
             }]
           }]
         };
@@ -296,10 +343,13 @@ describe('weboramaRtdProvider', function() {
           'adunit2': defaultProfile,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(3);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_ctx=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(defaultProfile);
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: defaultProfile
+        });
       });
     });
 
@@ -333,6 +383,8 @@ describe('weboramaRtdProvider', function() {
               bidder: 'pubmatic'
             }, {
               bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
             }]
           }]
         };
@@ -350,10 +402,13 @@ describe('weboramaRtdProvider', function() {
           'adunit2': data,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(3);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_cs=foo;webo_cs=bar;webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_cs=foo,bar|webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(data);
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          keyword: data
+        });
       });
 
       it('should set gam targeting but not send to bidders with setPrebidTargeting=true/sendToBidders=false', function() {
@@ -380,9 +435,6 @@ describe('weboramaRtdProvider', function() {
           .returns(JSON.stringify(entry));
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
-        const appnexusKeyword = {
-          foo: ['bar']
-        };
         const reqBidsConfigObj = {
           adUnits: [{
             bids: [{
@@ -398,7 +450,19 @@ describe('weboramaRtdProvider', function() {
             }, {
               bidder: 'appnexus',
               params: {
-                keyword: Object.assign(appnexusKeyword)
+                keyword: {
+                  foo: ['bar']
+                }
+              }
+            }, {
+              bidder: 'rubicon',
+              params: {
+                inventory: {
+                  foo: 'bar'
+                },
+                keyword: {
+                  baz: 'bam'
+                }
               }
             }]
           }]
@@ -417,11 +481,20 @@ describe('weboramaRtdProvider', function() {
           'adunit2': data,
         });
 
-        const expectedAppnexusKeyword = Object.assign(appnexusKeyword, data);
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(3);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(expectedAppnexusKeyword);
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal({
+          foo: ['bar']
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: {
+            foo: 'bar'
+          },
+          keyword: {
+            baz: 'bam'
+          }
+        });
       });
 
       it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
@@ -447,9 +520,6 @@ describe('weboramaRtdProvider', function() {
           .returns(JSON.stringify(entry));
 
         const adUnitsCodes = ['adunit1', 'adunit2'];
-        const appnexusKeyword = {
-          foo: ['bar']
-        };
         const reqBidsConfigObj = {
           adUnits: [{
             bids: [{
@@ -465,7 +535,19 @@ describe('weboramaRtdProvider', function() {
             }, {
               bidder: 'appnexus',
               params: {
-                keyword: Object.assign(appnexusKeyword)
+                keyword: {
+                  foo: ['bar']
+                }
+              }
+            }, {
+              bidder: 'rubicon',
+              params: {
+                inventory: {
+                  foo: 'bar',
+                },
+                keyword: {
+                  baz: 'bam',
+                }
               }
             }]
           }]
@@ -481,11 +563,24 @@ describe('weboramaRtdProvider', function() {
 
         expect(targeting).to.deep.equal({});
 
-        const expectedAppnexusKeyword = Object.assign(appnexusKeyword, data);
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(3);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;webo_cs=foo;webo_cs=bar;webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar|webo_cs=foo,bar|webo_audiences=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(expectedAppnexusKeyword);
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal({
+          foo: ['bar'],
+          webo_cs: ['foo', 'bar'],
+          webo_audiences: ['baz'],
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          inventory: {
+            foo: 'bar',
+          },
+          keyword: {
+            baz: 'bam',
+            webo_cs: ['foo', 'bar'],
+            webo_audiences: ['baz'],
+          }
+        });
       });
 
       it('should use default profile in case of nothing on local storage', function() {
@@ -512,6 +607,8 @@ describe('weboramaRtdProvider', function() {
               bidder: 'pubmatic'
             }, {
               bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
             }]
           }]
         };
@@ -529,10 +626,13 @@ describe('weboramaRtdProvider', function() {
           'adunit2': defaultProfile,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(3);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(defaultProfile);
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          keyword: defaultProfile
+        });
       });
 
       it('should use default profile if cant read from local storage', function() {
@@ -559,6 +659,8 @@ describe('weboramaRtdProvider', function() {
               bidder: 'pubmatic'
             }, {
               bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
             }]
           }]
         };
@@ -576,10 +678,13 @@ describe('weboramaRtdProvider', function() {
           'adunit2': defaultProfile,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(3);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(defaultProfile);
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
+          keyword: defaultProfile
+        });
       });
     });
   });

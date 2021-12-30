@@ -255,14 +255,14 @@ function handleBidRequestData(adUnits, moduleParams) {
 
   if (weboCtxConfTargeting) {
     const contextualProfile = getContextualProfile(weboCtxConf);
-    if (contextualProfile) {
+    if (!isEmpty(contextualProfile)) {
       setBidRequestProfile(adUnits, contextualProfile, true);
     }
   }
 
   if (weboUserDataConfTargeting) {
     const weboUserDataProfile = getWeboUserDataProfile(weboUserDataConf);
-    if (weboUserDataProfile) {
+    if (!isEmpty(weboUserDataProfile)) {
       setBidRequestProfile(adUnits, weboUserDataProfile, false);
     }
   }
@@ -325,21 +325,30 @@ function handleBid(adUnit, profile, site, bid) {
 
       break;
     case RUBICON:
-      handleOrtb2Bid(adUnit, profile, site, bid);
+      handleRubiconBid(adUnit, profile, site, bid);
 
       break;
   }
 }
 
-/** handle ortb2 bid (rubicon,...)
+/** handle rubicon bid
  * @param {Object} adUnit
  * @param {Object} profile
  * @param {Boolean} site
  * @param {Object} bid
  * @returns {void}
  */
-function handleOrtb2Bid(adUnit, profile, site, bid) {
+function handleRubiconBid(adUnit, profile, site, bid) {
+  const bidKey = (site) ? 'params.inventory' : 'params.keyword';
+  const target = deepAccess(bid, bidKey) || {};
 
+  Object.keys(profile).forEach(key => {
+    if (!(key in target)) {
+      target[key] = Object.assign(profile[key]);
+    }
+  });
+
+  deepSetValue(bid, bidKey, target);
 }
 
 /** handle appnexus/xandr bid
