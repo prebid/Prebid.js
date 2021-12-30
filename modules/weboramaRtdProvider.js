@@ -51,6 +51,9 @@ import {
 import {
   getStorageManager
 } from '../src/storageManager.js';
+// import {
+//   config
+// } from '../src/config.js';
 
 const adapterManager = require('../src/adapterManager.js').default;
 
@@ -307,76 +310,128 @@ const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 function handleBid(adUnit, profile, site, bid) {
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-  logMessage('handle bidder', bidder, bid);
+  logMessage('handle bidder and bid', bidder, bid);
+
+  setGlobalOrtb2(profile, site);
 
   switch (bidder) {
     case APPNEXUS:
-      handleAppnexusBid(adUnit, profile, bid);
+      handleAppnexusBid(profile, bid);
 
       break;
 
     case PUBMATIC:
-      handlePubmaticBid(adUnit, profile, bid);
+      handlePubmaticBid(profile, bid);
 
       break;
 
     case SMARTADSERVER:
-      handleSmartadserverBid(adUnit, profile, bid);
+      handleSmartadserverBid(profile, bid);
 
       break;
     case RUBICON:
-      handleRubiconBid(adUnit, profile, site, bid);
+      handleRubiconBid(profile, site, bid);
+
+      // setBidderOrtb2(profile, site, bidder);
 
       break;
+    default:
+      logMessage('unsupported bidder "', bidder, '", trying via bidder ortb2 fpd');
+
+      const base = 'ortb2.' + ((site) ? 'site' : 'user') + '.ext.data.';
+
+      assignProfileToObject(profile, base, bid);
   }
 }
 
+/**
+ * set ortb2 global data
+ * @param {Object} profile
+ * @param {Boolean} site
+ */
+function setGlobalOrtb2(profile, site) {
+  try {
+    const base = ((site) ? 'site' : 'user') + '.ext.data.';
+    let addOrtb2 = {};
+    let testGlobal = getGlobal().getConfig('ortb2') || {};
+    assignProfileToObject(profile, base, addOrtb2);
+    if (!isEmpty(addOrtb2)) {
+      let ortb2 = {
+        ortb2: mergeDeep({}, testGlobal, addOrtb2)
+      };
+      getGlobal().setConfig(ortb2);
+    }
+  } catch (e) {
+    logError('error while set global ortb2 conf', e)
+  }
+}
+
+// /**
+//  * set ortb2 bidder data
+//  * @param {Object} profile
+//  * @param {Boolean} site
+//  * @param {String} bidder
+//  */
+// function setBidderOrtb2(profile, site, bidder) {
+//   try {
+//     const base = ((site) ? 'site' : 'user') + '.ext.data.';
+//     let addOrtb2 = {};
+//     let testGlobal = deepAccess(config.getBidderConfig(), bidder + '.ortb2') || {};
+//     assignProfileToObject(profile, base, addOrtb2);
+//     if (!isEmpty(addOrtb2)) {
+//       let ortb2 = {
+//         ortb2: mergeDeep({}, testGlobal, addOrtb2)
+//       };
+//       getGlobal().setBidderConfig({
+//         bidders: [bidder],
+//         config: ortb2
+//       });
+//     }
+//   } catch (e) {
+//     logError('error while set ortb2 conf for bidder', bidder, e)
+//   }
+// }
+
+/**
+ * assign profile to object
+ * @param {Object} profile
+ * @param {path} base
+ * @param {Object} destination
+ */
+function assignProfileToObject(profile, base, destination) {
+  Object.keys(profile).forEach(key => {
+    const path = base + key;
+    deepSetValue(destination, path, Object.assign(profile[key]))
+  })
+}
+
 /** handle rubicon bid
- * @param {Object} adUnit
  * @param {Object} profile
  * @param {Boolean} site
  * @param {Object} bid
  * @returns {void}
  */
-function handleRubiconBid(adUnit, profile, site, bid) {
-  const bidKey = (site) ? 'params.inventory' : 'params.visitor';
-  const target = deepAccess(bid, bidKey) || {};
-
-  Object.keys(profile).forEach(key => {
-    if (!(key in target)) {
-      target[key] = Object.assign(profile[key]);
-    }
-  });
-
-  deepSetValue(bid, bidKey, target);
+function handleRubiconBid(profile, site, bid) {
+  const base = (site) ? 'params.inventory.' : 'params.visitor.';
+  assignProfileToObject(profile, base, bid);
 }
 
 /** handle appnexus/xandr bid
- * @param {Object} adUnit
  * @param {Object} profile
  * @param {Object} bid
  * @returns {void}
  */
-function handleAppnexusBid(adUnit, profile, bid) {
-  const bidKey = 'params.keyword';
-  const target = deepAccess(bid, bidKey) || {};
-
-  Object.keys(profile).forEach(key => {
-    if (!(key in target)) {
-      target[key] = Object.assign(profile[key]);
-    }
-  });
-
-  deepSetValue(bid, bidKey, target);
+function handleAppnexusBid(profile, bid) {
+  const base = 'params.keywords.';
+  assignProfileToObject(profile, base, bid);
 }
 
 /** handle pubmatic bid
- * @param {Object} adUnit
  * @param {Object} profile
  * @param {Object} bid
  * @returns {void}
  */
-function handlePubmaticBid(adUnit, profile, bid) {
+function handlePubmaticBid(profile, bid) {
   const sep = '|';
   const subsep = ',';
   const bidKey = 'params.dctr';
@@ -399,12 +454,11 @@ function handlePubmaticBid(adUnit, profile, bid) {
 }
 
 /** handle smartadserver bid
- * @param {Object} adUnit
  * @param {Object} profile
  * @param {Object} bid
  * @returns {void}
  */
-function handleSmartadserverBid(adUnit, profile, bid) {
+function handleSmartadserverBid(profile, bid) {
   const sep = ';';
   const bidKey = 'params.target';
   const target = [];

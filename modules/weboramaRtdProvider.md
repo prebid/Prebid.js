@@ -86,6 +86,13 @@ We currently support the following bidder adapters:
 * AppNexus SSP
 * Rubicon SSP
 
+We also set the bidder and global ortb2 site and user sections, used by:
+* Criteo
+* Smaato
+* TripleLift
+* Avocet
+* Proxistore
+
 ### Testing
 
 To view an example of available segments returned by Weborama's backends:
