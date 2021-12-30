@@ -1,7 +1,6 @@
 import { isArray, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'kubient';
 const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
@@ -60,11 +59,7 @@ export const spec = {
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,
         consentGiven: kubientGetConsentGiven(bidderRequest.gdprConsent),
         uspConsent: bidderRequest.uspConsent
-      }
-
-      if (config.getConfig('coppa') === true) {
-        data.coppa = 1
-      }
+      };
 
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         data.referer = bidderRequest.refererInfo.referer
@@ -114,33 +109,29 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (!syncOptions.pixelEnabled) {
-      return [];
-    }
-
-    let values = {};
-
+    const syncs = [];
+    let gdprParams = '';
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      values['consent'] = gdprConsent.consentString;
+      gdprParams = `?consent_str=${gdprConsent.consentString}`;
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        values['gdpr'] = Number(gdprConsent.gdprApplies);
+        gdprParams = gdprParams + `&gdpr=${Number(gdprConsent.gdprApplies)}`;
       }
+      gdprParams = gdprParams + `&consent_given=` + kubientGetConsentGiven(gdprConsent);
     }
-    if (uspConsent) {
-      values['usp'] = uspConsent;
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'https://kdmp.kbntx.ch/init.html' + gdprParams
+      });
     }
-
-    return [{
-      type: 'image',
-      url: 'https://matching.kubient.net/match/sp?' + encodeQueryData(values)
-    }];
+    if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: 'https://kdmp.kbntx.ch/init.png' + gdprParams
+      });
+    }
+    return syncs;
   }
-};
-
-function encodeQueryData(data) {
-  return Object.keys(data).map(function(key) {
-    return [key, data[key]].map(encodeURIComponent).join('=');
-  }).join('&');
 };
 
 function kubientGetConsentGiven(gdprConsent) {
