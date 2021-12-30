@@ -8,6 +8,13 @@ import {
   storage,
   DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY
 } from '../../../modules/weboramaRtdProvider.js';
+import {
+  config
+} from 'src/config.js';
+import {
+  getGlobal
+} from 'src/prebidGlobal.js';
+import 'src/prebid.js';
 
 const responseHeader = {
   'Content-Type': 'application/json'
@@ -54,6 +61,10 @@ describe('weboramaRtdProvider', function() {
       sandbox = sinon.sandbox.create();
 
       storage.removeDataFromLocalStorage('webo_wam2gam_entry');
+
+      getGlobal().setConfig({
+        ortb2: undefined
+      });
     });
 
     afterEach(function() {
@@ -85,6 +96,8 @@ describe('weboramaRtdProvider', function() {
               bidder: 'appnexus'
             }, {
               bidder: 'rubicon'
+            }, {
+              bidder: 'other'
             }]
           }]
         };
@@ -111,12 +124,26 @@ describe('weboramaRtdProvider', function() {
           'adunit2': data,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_ctx=foo,bar|webo_ds=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(data);
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: data
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          site: {
+            ext: {
+              data: data
+            },
+          }
+        });
+        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+          site: {
+            ext: {
+              data: data
+            },
+          }
         });
       });
 
@@ -151,7 +178,7 @@ describe('weboramaRtdProvider', function() {
             }, {
               bidder: 'appnexus',
               params: {
-                keyword: {
+                keywords: {
                   foo: ['bar']
                 }
               }
@@ -165,6 +192,8 @@ describe('weboramaRtdProvider', function() {
                   baz: 'bam',
                 }
               }
+            }, {
+              bidder: 'other',
             }]
           }]
         };
@@ -190,10 +219,10 @@ describe('weboramaRtdProvider', function() {
           'adunit2': data,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal({
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           foo: ['bar']
         });
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
@@ -204,6 +233,8 @@ describe('weboramaRtdProvider', function() {
             baz: 'bam',
           }
         });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
+        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
       });
 
       it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
@@ -236,7 +267,7 @@ describe('weboramaRtdProvider', function() {
             }, {
               bidder: 'appnexus',
               params: {
-                keyword: {
+                keywords: {
                   foo: ['bar']
                 }
               }
@@ -250,6 +281,8 @@ describe('weboramaRtdProvider', function() {
                   baz: 'bam',
                 }
               }
+            }, {
+              bidder: 'other',
             }]
           }]
         }
@@ -272,10 +305,10 @@ describe('weboramaRtdProvider', function() {
 
         expect(targeting).to.deep.equal({});
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar|webo_ctx=foo,bar|webo_ds=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal({
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           foo: ['bar'],
           webo_ctx: ['foo', 'bar'],
           webo_ds: ['baz'],
@@ -288,6 +321,20 @@ describe('weboramaRtdProvider', function() {
           },
           visitor: {
             baz: 'bam',
+          }
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          site: {
+            ext: {
+              data: data
+            },
+          }
+        });
+        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+          site: {
+            ext: {
+              data: data
+            },
           }
         });
       });
@@ -318,6 +365,8 @@ describe('weboramaRtdProvider', function() {
               bidder: 'appnexus'
             }, {
               bidder: 'rubicon'
+            }, {
+              bidder: 'other'
             }]
           }]
         };
@@ -343,17 +392,31 @@ describe('weboramaRtdProvider', function() {
           'adunit2': defaultProfile,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_ctx=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(defaultProfile);
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: defaultProfile
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          site: {
+            ext: {
+              data: defaultProfile
+            },
+          }
+        });
+        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+          site: {
+            ext: {
+              data: defaultProfile
+            },
+          }
         });
       });
     });
 
-    describe('Add WAM2GAM Data', function() {
+    describe('Add user-centric data (WAM2GAM)', function() {
       it('should set gam targeting from local storage and send to bidders by default', function() {
         const moduleConfig = {
           params: {
@@ -385,6 +448,8 @@ describe('weboramaRtdProvider', function() {
               bidder: 'appnexus'
             }, {
               bidder: 'rubicon'
+            }, {
+              bidder: 'other'
             }]
           }]
         };
@@ -402,12 +467,26 @@ describe('weboramaRtdProvider', function() {
           'adunit2': data,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_cs=foo;webo_cs=bar;webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_cs=foo,bar|webo_audiences=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(data);
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: data
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          user: {
+            ext: {
+              data: data
+            },
+          }
+        });
+        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+          user: {
+            ext: {
+              data: data
+            },
+          }
         });
       });
 
@@ -450,7 +529,7 @@ describe('weboramaRtdProvider', function() {
             }, {
               bidder: 'appnexus',
               params: {
-                keyword: {
+                keywords: {
                   foo: ['bar']
                 }
               }
@@ -464,6 +543,8 @@ describe('weboramaRtdProvider', function() {
                   baz: 'bam'
                 }
               }
+            }, {
+              bidder: 'other'
             }]
           }]
         };
@@ -481,10 +562,10 @@ describe('weboramaRtdProvider', function() {
           'adunit2': data,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal({
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           foo: ['bar']
         });
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
@@ -495,6 +576,8 @@ describe('weboramaRtdProvider', function() {
             baz: 'bam'
           }
         });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
+        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
       });
 
       it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
@@ -535,7 +618,7 @@ describe('weboramaRtdProvider', function() {
             }, {
               bidder: 'appnexus',
               params: {
-                keyword: {
+                keywords: {
                   foo: ['bar']
                 }
               }
@@ -549,6 +632,8 @@ describe('weboramaRtdProvider', function() {
                   baz: 'bam',
                 }
               }
+            }, {
+              bidder: 'other'
             }]
           }]
         };
@@ -563,10 +648,10 @@ describe('weboramaRtdProvider', function() {
 
         expect(targeting).to.deep.equal({});
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;webo_cs=foo;webo_cs=bar;webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar|webo_cs=foo,bar|webo_audiences=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal({
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           foo: ['bar'],
           webo_cs: ['foo', 'bar'],
           webo_audiences: ['baz'],
@@ -579,6 +664,20 @@ describe('weboramaRtdProvider', function() {
             baz: 'bam',
             webo_cs: ['foo', 'bar'],
             webo_audiences: ['baz'],
+          }
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          user: {
+            ext: {
+              data: data
+            },
+          }
+        });
+        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+          user: {
+            ext: {
+              data: data
+            },
           }
         });
       });
@@ -609,6 +708,8 @@ describe('weboramaRtdProvider', function() {
               bidder: 'appnexus'
             }, {
               bidder: 'rubicon'
+            }, {
+              bidder: 'other'
             }]
           }]
         };
@@ -626,12 +727,26 @@ describe('weboramaRtdProvider', function() {
           'adunit2': defaultProfile,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_audiences=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(defaultProfile);
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: defaultProfile
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          user: {
+            ext: {
+              data: defaultProfile
+            },
+          }
+        });
+        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+          user: {
+            ext: {
+              data: defaultProfile
+            },
+          }
         });
       });
 
@@ -661,6 +776,8 @@ describe('weboramaRtdProvider', function() {
               bidder: 'appnexus'
             }, {
               bidder: 'rubicon'
+            }, {
+              bidder: 'other'
             }]
           }]
         };
@@ -678,12 +795,26 @@ describe('weboramaRtdProvider', function() {
           'adunit2': defaultProfile,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(4);
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_audiences=baz');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('webo_audiences=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keyword).to.deep.equal(defaultProfile);
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: defaultProfile
+        });
+        expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.deep.equal({
+          user: {
+            ext: {
+              data: defaultProfile
+            },
+          }
+        });
+        expect(getGlobal().getConfig('ortb2')).to.deep.equal({
+          user: {
+            ext: {
+              data: defaultProfile
+            },
+          }
         });
       });
     });

@@ -71,9 +71,15 @@
                         placementId: 1
                     }
                 }, {
-                    bidder: 'pubmatic'
+                    bidder: 'pubmatic',
+                    params: {
+                        publisherId: '32572',
+                    }
                 }, {
-                    bidder: 'appnexus'
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 234234,
+                    }
                 }, {
                     bidder: 'rubicon',
                     params: {
@@ -82,7 +88,19 @@
                         zoneId: '335918',
                         userId: '12346',
                     }
-                }]
+                }/*, {
+                    bidder: 'smaato',
+                    params: {
+                        publisherId: '1100012345',
+                        adspaceId: '11002234',
+                    }
+                }, {
+                    bidder: 'criteo',
+                    params: {
+                        zoneId: 234234,
+                        networkId: 456456,
+                    },
+                }*/]
             }
         ];
 
