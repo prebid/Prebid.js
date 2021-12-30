@@ -51,9 +51,6 @@ import {
 import {
   getStorageManager
 } from '../src/storageManager.js';
-// import {
-//   config
-// } from '../src/config.js';
 
 const adapterManager = require('../src/adapterManager.js').default;
 
@@ -332,8 +329,6 @@ function handleBid(adUnit, profile, site, bid) {
     case RUBICON:
       handleRubiconBid(profile, site, bid);
 
-      // setBidderOrtb2(profile, site, bidder);
-
       break;
     default:
       logMessage('unsupported bidder "', bidder, '", trying via bidder ortb2 fpd');
@@ -365,32 +360,6 @@ function setGlobalOrtb2(profile, site) {
     logError('error while set global ortb2 conf', e)
   }
 }
-
-// /**
-//  * set ortb2 bidder data
-//  * @param {Object} profile
-//  * @param {Boolean} site
-//  * @param {String} bidder
-//  */
-// function setBidderOrtb2(profile, site, bidder) {
-//   try {
-//     const base = ((site) ? 'site' : 'user') + '.ext.data.';
-//     let addOrtb2 = {};
-//     let testGlobal = deepAccess(config.getBidderConfig(), bidder + '.ortb2') || {};
-//     assignProfileToObject(profile, base, addOrtb2);
-//     if (!isEmpty(addOrtb2)) {
-//       let ortb2 = {
-//         ortb2: mergeDeep({}, testGlobal, addOrtb2)
-//       };
-//       getGlobal().setBidderConfig({
-//         bidders: [bidder],
-//         config: ortb2
-//       });
-//     }
-//   } catch (e) {
-//     logError('error while set ortb2 conf for bidder', bidder, e)
-//   }
-// }
 
 /**
  * assign profile to object
