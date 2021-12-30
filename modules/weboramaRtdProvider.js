@@ -339,7 +339,7 @@ function handleBid(adUnit, profile, site, bid) {
  * @returns {void}
  */
 function handleRubiconBid(adUnit, profile, site, bid) {
-  const bidKey = (site) ? 'params.inventory' : 'params.keyword';
+  const bidKey = (site) ? 'params.inventory' : 'params.visitor';
   const target = deepAccess(bid, bidKey) || {};
 
   Object.keys(profile).forEach(key => {
