@@ -41,6 +41,7 @@ import {
   isEmpty,
   mergeDeep,
   logError,
+  logWarn,
   tryAppendQueryString,
   logMessage
 } from '../src/utils.js';
@@ -137,7 +138,7 @@ function initWeboCtx(moduleParams, weboCtxConf) {
   _weboContextualProfile = null;
 
   if (!weboCtxConf.token) {
-    logError('missing param "token" for weborama contextual sub module initialization');
+    logWarn('missing param "token" for weborama contextual sub module initialization');
     return false;
   }
 
