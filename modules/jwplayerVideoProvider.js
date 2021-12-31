@@ -107,7 +107,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
 
     const item = player.getPlaylistItem() || {}; // TODO does player call need optimization ?
-    const { duration, playbackMode } = timeState.getState();
+    let { duration, playbackMode } = timeState.getState();
+    if (duration === undefined) {
+      duration = player.getDuration();
+    }
+
     const content = {
       id: item.mediaid,
       url: item.file,
