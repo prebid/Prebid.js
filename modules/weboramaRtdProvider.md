@@ -86,12 +86,38 @@ We currently support the following bidder adapters:
 * AppNexus SSP
 * Rubicon SSP
 
-We also set the bidder and global ortb2 site and user sections, used by:
-* Criteo
-* Smaato
-* TripleLift
+We also set the bidder and global ortb2 `site` and `user` sections. The following bidders may support it (to be sure, check the `First Party Data Support` on the feature list for the particular bidder from here: https://docs.prebid.org/dev-docs/bidders ):
+
+* Adagio
+* AdformOpenRTB
+* AdKernel
+* AdMixer
+* Adnuntius
+* Adrelevantis
+* adxcg
+* AMX RTB
 * Avocet
+* BeOp
+* Criteo
+* Etarget
+* Inmar
+* Index Exchange
+* Livewrapped
+* Mediakeys
+* NoBid
+* OpenX
+* Opt Out Advertising
+* Ozone Project
 * Proxistore
+* Rise
+* Smaato
+* Sonobi
+* TheMediaGrid
+* TripleLift
+* TrustX
+* Yahoo SSP
+* Yieldlab
+* Zeta Global Ssp
 
 ### Testing
 
