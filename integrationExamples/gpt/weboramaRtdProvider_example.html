@@ -24,19 +24,21 @@
                         name: "weborama",
                         waitForIt: true,
                         params: {
+                            setPrebidTargeting: true, // optional
+                            sendToBidders: true,      // optional
                             weboCtxConf: {
                                 token: "to-be-defined", // mandatory
                                 targetURL: "https://prebid.org", // default is document.URL
-                                setPrebidTargeting: true, // default
-                                sendToBidders: true,      // default
+                                setPrebidTargeting: true, // override param.setPrebidTargeting or default true
+                                sendToBidders: true,      // override param.sendToBidders or default true
                                 defaultProfile: {         // optional
                                     webo_ctx: ['moon'],
                                     webo_ds: ['bar']
                                 }
                             },
                             weboUserDataConf: {
-                                setPrebidTargeting: true, // default
-                                sendToBidders: true,      // default
+                                setPrebidTargeting: true, // override param.setPrebidTargeting or default true
+                                sendToBidders: true,      // override param.sendToBidders or default true
                                 defaultProfile: {         // optional
                                     webo_cs: ['Red'],
                                     webo_audiences: ['bam']

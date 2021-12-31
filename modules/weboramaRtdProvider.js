@@ -9,6 +9,8 @@
 
 /**
  * @typedef {Object} ModuleParams
+ * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default undefined)
+ * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default undefined)
  * @property {WeboCtxConf} weboCtxConf
  * @property {WeboUserDataConf} weboUserDataConf
  */
@@ -17,16 +19,16 @@
  * @typedef {Object} WeboCtxConf
  * @property {string} token required token to be used on bigsea contextual API requests
  * @property {?string} targetURL specify the target url instead use the referer
- * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default true)
- * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default true)
+ * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default params.setPrebidTargeting or true)
+ * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default params.sendToBidders or true)
  * @property {?object} defaultProfile to be used if the profile is not found
  */
 
 /**
  * @typedef {Object} WeboUserDataConf
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
- * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default true)
- * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default true)
+ * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default params.setPrebidTargeting or true)
+ * @property {?Boolean} sendToBidders if true, will send the user-centric profile to all bidders (default params.sendToBidders or true)
  * @property {?object} defaultProfile to be used if the profile is not found
  */
 
@@ -89,17 +91,48 @@ function init(moduleConfig) {
   const weboCtxConf = moduleParams.weboCtxConf || {};
   const weboUserDataConf = moduleParams.weboUserDataConf;
 
-  _weboCtxInitialized = initWeboCtx(weboCtxConf);
-  _weboUserDataInitialized = initWeboUserData(weboUserDataConf);
+  _weboCtxInitialized = initWeboCtx(moduleParams, weboCtxConf);
+  _weboUserDataInitialized = initWeboUserData(moduleParams, weboUserDataConf);
 
   return _weboCtxInitialized || _weboUserDataInitialized;
 }
 
+/** @type {string} */
+const setPrebidTargetingPropertyName = 'setPrebidTargeting';
+
+/** @type {string} */
+const sendToBiddersPropertyName = 'sendToBidders';
+
+/** @type {Boolean} */
+const setPrebidTargetingDefaultValue = true;
+
+/** @type {Boolean} */
+const sendToBiddersDefaultValue = true;
+
+/** normalize submodule configuration
+ * @param {ModuleParams} moduleParams
+ * @param {WeboCtxConf|WeboUserDataConf} submoduleParams
+ * @return {void}
+ */
+function normalizeConf(moduleParams, submoduleParams) {
+  if (!submoduleParams.hasOwnProperty(setPrebidTargetingPropertyName)) {
+    const hasModuleParam = moduleParams.hasOwnProperty(setPrebidTargetingPropertyName);
+    submoduleParams.setPrebidTargeting = (hasModuleParam) ? moduleParams.setPrebidTargeting : setPrebidTargetingDefaultValue;
+  }
+  if (!submoduleParams.hasOwnProperty(sendToBiddersPropertyName)) {
+    const hasModuleParam = moduleParams.hasOwnProperty(sendToBiddersPropertyName);
+    submoduleParams.sendToBidders = (hasModuleParam) ? moduleParams.sendToBidders : sendToBiddersDefaultValue;
+  }
+}
+
 /** Initialize contextual sub module
+ * @param {ModuleParams} moduleParams
  * @param {WeboCtxConf} weboCtxConf
  * @return {Boolean} true if sub module was initialized with success
  */
-function initWeboCtx(weboCtxConf) {
+function initWeboCtx(moduleParams, weboCtxConf) {
+  normalizeConf(moduleParams, weboCtxConf);
+
   _weboCtxInitialized = false;
   _weboContextualProfile = null;
 
@@ -112,14 +145,20 @@ function initWeboCtx(weboCtxConf) {
 }
 
 /** Initialize weboUserData sub module
+ * @param {ModuleParams} moduleParams
  * @param {WeboUserDataConf} weboUserDataConf
  * @return {Boolean} true if sub module was initialized with success
  */
-function initWeboUserData(weboUserDataConf) {
+function initWeboUserData(moduleParams, weboUserDataConf) {
+  const success = !!weboUserDataConf;
+  if (success) {
+    normalizeConf(moduleParams, weboUserDataConf);
+  }
+
   _weboUserDataInitialized = false;
   _weboUserDataUserProfile = null;
 
-  return !!weboUserDataConf;
+  return success;
 }
 
 /** function that provides ad server targeting data to RTD-core
@@ -132,8 +171,8 @@ function getTargetingData(adUnitsCodes, moduleConfig) {
   const moduleParams = moduleConfig.params || {};
   const weboCtxConf = moduleParams.weboCtxConf || {};
   const weboUserDataConf = moduleParams.weboUserDataConf || {};
-  const weboCtxConfTargeting = weboCtxConf.setPrebidTargeting !== false;
-  const weboUserDataConfTargeting = weboUserDataConf.setPrebidTargeting !== false;
+  const weboCtxConfTargeting = weboCtxConf.setPrebidTargeting;
+  const weboUserDataConfTargeting = weboUserDataConf.setPrebidTargeting;
 
   try {
     const profile = getCompleteProfile(moduleParams, weboCtxConfTargeting, weboUserDataConfTargeting);
@@ -250,8 +289,8 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
 function handleBidRequestData(adUnits, moduleParams) {
   const weboCtxConf = moduleParams.weboCtxConf || {};
   const weboUserDataConf = moduleParams.weboUserDataConf || {};
-  const weboCtxConfTargeting = weboCtxConf.sendToBidders !== false;
-  const weboUserDataConfTargeting = weboUserDataConf.sendToBidders !== false;
+  const weboCtxConfTargeting = weboCtxConf.sendToBidders;
+  const weboUserDataConfTargeting = weboUserDataConf.sendToBidders;
 
   if (weboCtxConfTargeting) {
     const contextualProfile = getContextualProfile(weboCtxConf);
