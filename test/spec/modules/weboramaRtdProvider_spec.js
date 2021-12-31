@@ -237,6 +237,59 @@ describe('weboramaRtdProvider', function() {
         expect(getGlobal().getConfig('ortb2')).to.be.undefined;
       });
 
+      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function() {
+        const moduleConfig = {
+          params: {
+            setPrebidTargeting: false,
+            sendToBidders: false,
+            weboCtxConf: {
+              token: 'foo',
+              targetURL: 'https://prebid.org',
+              setPrebidTargeting: true, // submodule parameter will override module parameter
+            }
+          }
+        };
+        const data = {
+          webo_ctx: ['foo', 'bar'],
+          webo_ds: ['baz'],
+        };
+        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const reqBidsConfigObj = {
+          adUnits: [{
+            bids: [{
+              bidder: 'smartadserver',
+              params: {
+                target: 'foo=bar'
+              }
+            }]
+          }]
+        };
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        let request = server.requests[0];
+
+        expect(request.method).to.equal('GET');
+        expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
+        expect(request.withCredentials).to.be.false;
+
+        request.respond(200, responseHeader, JSON.stringify(data));
+
+        expect(onDoneSpy.calledOnce).to.be.true;
+
+        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+
+        expect(targeting).to.deep.equal({
+          'adunit1': data,
+          'adunit2': data,
+        });
+
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(1);
+        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
+      });
+
       it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
         const moduleConfig = {
           params: {
@@ -577,6 +630,60 @@ describe('weboramaRtdProvider', function() {
           }
         });
         expect(reqBidsConfigObj.adUnits[0].bids[4].ortb2).to.be.undefined;
+        expect(getGlobal().getConfig('ortb2')).to.be.undefined;
+      });
+
+      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function() {
+        const moduleConfig = {
+          params: {
+            setPrebidTargeting: false,
+            sendToBidders: false,
+            weboUserDataConf: {
+              setPrebidTargeting: true, // submodule parameter will override module parameter
+            }
+          }
+        };
+        const data = {
+          webo_cs: ['foo', 'bar'],
+          webo_audiences: ['baz'],
+        };
+
+        const entry = {
+          targeting: data,
+        };
+
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'getDataFromLocalStorage')
+          .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
+          .returns(JSON.stringify(entry));
+
+        const adUnitsCodes = ['adunit1', 'adunit2'];
+        const reqBidsConfigObj = {
+          adUnits: [{
+            bids: [{
+              bidder: 'smartadserver',
+              params: {
+                target: 'foo=bar'
+              }
+            }]
+          }]
+        };
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        expect(onDoneSpy.calledOnce).to.be.true;
+
+        const targeting = weboramaSubmodule.getTargetingData(adUnitsCodes, moduleConfig);
+
+        expect(targeting).to.deep.equal({
+          'adunit1': data,
+          'adunit2': data,
+        });
+
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(1);
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(getGlobal().getConfig('ortb2')).to.be.undefined;
       });
 
