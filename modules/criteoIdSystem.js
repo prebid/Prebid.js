@@ -33,15 +33,37 @@ function getFromAllStorages(key) {
   return storage.getCookie(key) || storage.getDataFromLocalStorage(key);
 }
 
-function saveOnAllStorages(key, value) {
+function saveOnAllStorages(key, value, hostname) {
   if (key && value) {
-    storage.setCookie(key, value, expirationString);
     storage.setDataInLocalStorage(key, value);
+    setCookieOnAllDomains(key, value, expirationString, hostname, true);
   }
 }
 
-function deleteFromAllStorages(key) {
-  storage.setCookie(key, '', pastDateString);
+function setCookieOnAllDomains(key, value, expiration, hostname, stopOnSuccess) {
+  const subDomains = hostname.split('.');
+  for (let i = 0; i < subDomains.length; ++i) {
+    // Try to write the cookie on this subdomain (we want it to be stored only on the TLD+1)
+    const domain = subDomains.slice(subDomains.length - i - 1, subDomains.length).join('.');
+
+    try {
+      storage.setCookie(key, value, expiration, null, '.' + domain);
+
+      if (stopOnSuccess) {
+        // Try to read the cookie to check if we wrote it
+        const ck = storage.getCookie(key);
+        if (ck && ck === value) {
+          break;
+        }
+      }
+    } catch (error) {
+
+    }
+  }
+}
+
+function deleteFromAllStorages(key, hostname) {
+  setCookieOnAllDomains(key, '', pastDateString, hostname, true);
   storage.removeDataFromLocalStorage(key);
 }
 
@@ -89,15 +111,15 @@ function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
         const urlsToCall = typeof jsonResponse.acwsUrl === 'string' ? [jsonResponse.acwsUrl] : jsonResponse.acwsUrl;
         urlsToCall.forEach(url => triggerPixel(url));
       } else if (jsonResponse.bundle) {
-        saveOnAllStorages(bundleStorageKey, jsonResponse.bundle);
+        saveOnAllStorages(bundleStorageKey, jsonResponse.bundle, domain);
       }
 
       if (jsonResponse.bidId) {
-        saveOnAllStorages(bididStorageKey, jsonResponse.bidId);
+        saveOnAllStorages(bididStorageKey, jsonResponse.bidId, domain);
         const criteoId = { criteoId: jsonResponse.bidId };
         callback(criteoId);
       } else {
-        deleteFromAllStorages(bididStorageKey);
+        deleteFromAllStorages(bididStorageKey, domain);
         callback();
       }
     },
