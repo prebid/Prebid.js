@@ -275,9 +275,11 @@ function handleBidRequestData(adUnits, moduleParams) {
  * @returns {void}
  */
 function setBidRequestProfile(adUnits, profile, site) {
+  setGlobalOrtb2(profile, site);
+
   adUnits.forEach(adUnit => {
     if (adUnit.hasOwnProperty('bids')) {
-      adUnit.bids.forEach(bid => handleBid(adUnit, Object.assign(profile), site, bid));
+      adUnit.bids.forEach(bid => handleBid(profile, site, bid));
     }
   });
 }
@@ -298,18 +300,15 @@ const SMARTADSERVER = 'smartadserver';
 const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 
 /** handle individual bid
- * @param {Object} adUnit
  * @param {Object} profile
  * @param {Boolean} site true if site centric, else it is user centric
  * @param {Object} bid
  * @returns {void}
  */
-function handleBid(adUnit, profile, site, bid) {
+function handleBid(profile, site, bid) {
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
   logMessage('handle bidder and bid', bidder, bid);
-
-  setGlobalOrtb2(profile, site);
 
   switch (bidder) {
     case APPNEXUS:
@@ -335,7 +334,7 @@ function handleBid(adUnit, profile, site, bid) {
 
       const base = 'ortb2.' + ((site) ? 'site' : 'user') + '.ext.data.';
 
-      assignProfileToObject(profile, base, bid);
+      assignProfileToObject(bid, base, profile);
   }
 }
 
@@ -345,32 +344,30 @@ function handleBid(adUnit, profile, site, bid) {
  * @param {Boolean} site
  */
 function setGlobalOrtb2(profile, site) {
-  try {
-    const base = ((site) ? 'site' : 'user') + '.ext.data.';
-    let addOrtb2 = {};
-    let testGlobal = getGlobal().getConfig('ortb2') || {};
-    assignProfileToObject(profile, base, addOrtb2);
-    if (!isEmpty(addOrtb2)) {
-      let ortb2 = {
-        ortb2: mergeDeep({}, testGlobal, addOrtb2)
-      };
-      getGlobal().setConfig(ortb2);
-    }
-  } catch (e) {
-    logError('error while set global ortb2 conf', e)
+  const base = ((site) ? 'site' : 'user') + '.ext.data.';
+  const addOrtb2 = {};
+
+  assignProfileToObject(addOrtb2, base, profile);
+
+  if (!isEmpty(addOrtb2)) {
+    const testGlobal = getGlobal().getConfig('ortb2') || {};
+    const ortb2 = {
+      ortb2: mergeDeep({}, testGlobal, addOrtb2)
+    };
+    getGlobal().setConfig(ortb2);
   }
 }
 
 /**
  * assign profile to object
- * @param {Object} profile
- * @param {path} base
  * @param {Object} destination
+ * @param {path} base
+ * @param {Object} profile
  */
-function assignProfileToObject(profile, base, destination) {
+function assignProfileToObject(destination, base, profile) {
   Object.keys(profile).forEach(key => {
     const path = base + key;
-    deepSetValue(destination, path, Object.assign(profile[key]))
+    deepSetValue(destination, path, profile[key])
   })
 }
 
@@ -382,7 +379,7 @@ function assignProfileToObject(profile, base, destination) {
  */
 function handleRubiconBid(profile, site, bid) {
   const base = (site) ? 'params.inventory.' : 'params.visitor.';
-  assignProfileToObject(profile, base, bid);
+  assignProfileToObject(bid, base, profile);
 }
 
 /** handle appnexus/xandr bid
@@ -392,7 +389,7 @@ function handleRubiconBid(profile, site, bid) {
  */
 function handleAppnexusBid(profile, bid) {
   const base = 'params.keywords.';
-  assignProfileToObject(profile, base, bid);
+  assignProfileToObject(bid, base, profile);
 }
 
 /** handle pubmatic bid
