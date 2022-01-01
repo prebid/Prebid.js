@@ -10,6 +10,8 @@ Maintainer: prebid-support@weborama.com
 
 Weborama provides a Semantic AI Contextual API that classifies in Real-time a web page seen by a web user within generic and custom topics. It enables publishers to better monetize their inventory and unlock it to programmatic.
 
+TODO: add text about user-centric profile/wam2gam
+
 Contact prebid-support@weborama.com for information.
 
 ### Publisher Usage
@@ -33,19 +35,21 @@ pbjs.que.push(function () {
                 name: "weborama",
                 waitForIt: true,
                 params: {
+                    setPrebidTargeting: true, // optional
+                    sendToBidders: true,      // optional
                     weboCtxConf: {
                         token: "to-be-defined", // mandatory
                         targetURL: "https://prebid.org", // default is document.URL
-                        setPrebidTargeting: true, // default
-                        sendToBidders: true,      // default
-                        defaultProfile: {         // optional
+                        setPrebidTargeting: true, // override param.setPrebidTargeting or default true
+                        sendToBidders: true,      // override param.sendToBidders or default true
+                        defaultProfile: {         // optruetional
                             webo_ctx: ['moon'],
                             webo_ds: ['bar']
                         }
                     },
                     weboUserDataConf: {
-                        setPrebidTargeting: true, // default
-                        sendToBidders: true,      // default
+                        setPrebidTargeting: true, // override param.setPrebidTargeting or default true
+                        sendToBidders: true,      // override param.sendToBidders or default true
                         defaultProfile: {         // optional
                             webo_cs: ['Red'],
                             webo_audiences: ['bam']
@@ -88,7 +92,7 @@ We currently support the following bidder adapters:
 * AppNexus SSP
 * Rubicon SSP
 
-We also set the bidder and global ortb2 `site` and `user` sections. The following bidders may support it (to be sure, check the `First Party Data Support` on the feature list for the particular bidder from here: https://docs.prebid.org/dev-docs/bidders ):
+We also set the bidder and global ortb2 `site` and `user` sections. The following bidders may support it, to be sure, check the `First Party Data Support` on the feature list for the particular bidder from here: https://docs.prebid.org/dev-docs/bidders 
 
 * Adagio
 * AdformOpenRTB
