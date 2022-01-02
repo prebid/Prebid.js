@@ -72,17 +72,27 @@ pbjs.que.push(function () {
 | params | Object | | Optional |
 | params.setPrebidTargeting | Boolean | If true, may use the profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
 | params.sendToBidders | Boolean | If true, may send the profile to all bidders | Optional. Affects the `weboCtxConf` and `weboUserDataConf` sections |
-| params.weboCtxConf | Object | Weborama Contextual Configuration | Optional |
-| params.weboCtxConf.token | String | Security Token provided by Weborama, unique per client | Mandatory |
-| params.weboCtxConf.targetURL | String | Url to be profiled in the contextual api | Optional. Defaults to `document.URL` |
-| params.weboCtxConf.setPrebidTargeting|Boolean|If true, will use the contextual profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
-| params.weboCtxConf.sendToBidders|Boolean|If true, will send the contextual profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or **true**.|
-| params.weboCtxConf.defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
-| params.weboUserDataConf | Object | WeboUserData Configuration | Optional |
-| params.weboUserDataConf.setPrebidTargeting|Boolean|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
-| params.weboUserDataConf.sendToBidders|Boolean|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or **true**.|
-| params.weboUserDataConf.defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
-| params.weboUserDataConf.localStorageProfileKey| String | can be used to customize the local storage key | Optional |
+| params.weboCtxConf | Object | Weborama Contextual Configuration | Optional 
+| params.weboUserDataConf | Object | Weborama User-Centric Configuration | Optional |
+
+#### Contextual Configuration
+
+| Name  |Type | Description   | Notes  |
+| :------------ | :------------ | :------------ |:------------ |
+| token | String | Security Token provided by Weborama, unique per client | Mandatory |
+| targetURL | String | Url to be profiled in the contextual api | Optional. Defaults to `document.URL` |
+| setPrebidTargeting|Boolean|If true, will use the contextual profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
+| sendToBidders|Boolean|If true, will send the contextual profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or **true**.|
+| defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
+
+#### User-Centric Configuration
+
+| Name  |Type | Description   | Notes  |
+| :------------ | :------------ | :------------ |:------------ |
+| setPrebidTargeting|Boolean|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
+| sendToBidders|Boolean|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or **true**.|
+| defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
+| localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 
 ### Supported Bidders
 
