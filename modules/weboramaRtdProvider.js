@@ -89,13 +89,54 @@ let _weboUserDataInitialized = false;
 function init(moduleConfig) {
   moduleConfig = moduleConfig || {};
   const moduleParams = moduleConfig.params || {};
-  const weboCtxConf = moduleParams.weboCtxConf || {};
+  const weboCtxConf = moduleParams.weboCtxConf;
   const weboUserDataConf = moduleParams.weboUserDataConf;
 
   _weboCtxInitialized = initWeboCtx(moduleParams, weboCtxConf);
   _weboUserDataInitialized = initWeboUserData(moduleParams, weboUserDataConf);
 
   return _weboCtxInitialized || _weboUserDataInitialized;
+}
+
+/** Initialize contextual sub module
+ * @param {ModuleParams} moduleParams
+ * @param {WeboCtxConf} weboCtxConf
+ * @return {Boolean} true if sub module was initialized with success
+ */
+function initWeboCtx(moduleParams, weboCtxConf) {
+  if (!weboCtxConf) {
+    return false
+  }
+
+  normalizeConf(moduleParams, weboCtxConf);
+
+  _weboCtxInitialized = false;
+  _weboContextualProfile = null;
+
+  if (!weboCtxConf.token) {
+    logWarn('missing param "token" for weborama contextual sub module initialization');
+    return false;
+  }
+
+  return true;
+}
+
+/** Initialize weboUserData sub module
+ * @param {ModuleParams} moduleParams
+ * @param {WeboUserDataConf} weboUserDataConf
+ * @return {Boolean} true if sub module was initialized with success
+ */
+function initWeboUserData(moduleParams, weboUserDataConf) {
+  if (!weboUserDataConf) {
+    return false;
+  }
+
+  normalizeConf(moduleParams, weboUserDataConf);
+
+  _weboUserDataInitialized = false;
+  _weboUserDataUserProfile = null;
+
+  return true;
 }
 
 /** @type {string} */
@@ -124,42 +165,6 @@ function normalizeConf(moduleParams, submoduleParams) {
     const hasModuleParam = moduleParams.hasOwnProperty(sendToBiddersPropertyName);
     submoduleParams.sendToBidders = (hasModuleParam) ? moduleParams.sendToBidders : sendToBiddersDefaultValue;
   }
-}
-
-/** Initialize contextual sub module
- * @param {ModuleParams} moduleParams
- * @param {WeboCtxConf} weboCtxConf
- * @return {Boolean} true if sub module was initialized with success
- */
-function initWeboCtx(moduleParams, weboCtxConf) {
-  normalizeConf(moduleParams, weboCtxConf);
-
-  _weboCtxInitialized = false;
-  _weboContextualProfile = null;
-
-  if (!weboCtxConf.token) {
-    logWarn('missing param "token" for weborama contextual sub module initialization');
-    return false;
-  }
-
-  return true;
-}
-
-/** Initialize weboUserData sub module
- * @param {ModuleParams} moduleParams
- * @param {WeboUserDataConf} weboUserDataConf
- * @return {Boolean} true if sub module was initialized with success
- */
-function initWeboUserData(moduleParams, weboUserDataConf) {
-  const success = !!weboUserDataConf;
-  if (success) {
-    normalizeConf(moduleParams, weboUserDataConf);
-  }
-
-  _weboUserDataInitialized = false;
-  _weboUserDataUserProfile = null;
-
-  return success;
 }
 
 /** function that provides ad server targeting data to RTD-core
@@ -382,6 +387,7 @@ function handleBid(profile, site, bid) {
  * set ortb2 global data
  * @param {Object} profile
  * @param {Boolean} site
+ * @returns {void}
  */
 function setGlobalOrtb2(profile, site) {
   const base = ((site) ? 'site' : 'user') + '.ext.data.';
@@ -403,6 +409,7 @@ function setGlobalOrtb2(profile, site) {
  * @param {Object} destination
  * @param {path} base
  * @param {Object} profile
+ * @returns {void}
  */
 function assignProfileToObject(destination, base, profile) {
   Object.keys(profile).forEach(key => {
