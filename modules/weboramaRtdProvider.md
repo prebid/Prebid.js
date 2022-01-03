@@ -42,12 +42,13 @@ pbjs.que.push(function () {
                         targetURL: "https://prebid.org", // default is document.URL
                         setPrebidTargeting: true, // override param.setPrebidTargeting or default true
                         sendToBidders: true,      // override param.sendToBidders or default true
-                        defaultProfile: {         // optruetional
+                        defaultProfile: {         // optional
                             webo_ctx: ['moon'],
                             webo_ds: ['bar']
                         }
                     },
                     weboUserDataConf: {
+                        accountId: 12345,         // optional, used for logging
                         setPrebidTargeting: true, // override param.setPrebidTargeting or default true
                         sendToBidders: true,      // override param.sendToBidders or default true
                         defaultProfile: {         // optional
@@ -89,6 +90,7 @@ pbjs.que.push(function () {
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
+| accountId|Number|WAM account id. If present, will be used on logging and statistics| Optional.|
 | setPrebidTargeting|Boolean|If true, will use the user profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or **true**.|
 | sendToBidders|Boolean|If true, will send the user profile to all bidders| Optional. Default is `params.sendToBidders` (if any) or **true**.|
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |

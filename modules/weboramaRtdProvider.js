@@ -118,6 +118,8 @@ function initWeboCtx(moduleParams, weboCtxConf) {
     return false;
   }
 
+  logMessage('weborama contextual intialized with success');
+
   return true;
 }
 
@@ -135,6 +137,13 @@ function initWeboUserData(moduleParams, weboUserDataConf) {
 
   _weboUserDataInitialized = false;
   _weboUserDataUserProfile = null;
+
+  let message = 'weborama user-centric intialized with success';
+  if (weboUserDataConf.hasOwnProperty('accountId')) {
+    message = `weborama user-centric intialized with success for account: ${weboUserDataConf.accountId}`;
+  }
+
+  logMessage(message);
 
   return true;
 }
