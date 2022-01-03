@@ -26,7 +26,7 @@
 
 /**
  * @typedef {Object} WeboUserDataConf
- * @property {number} accountId wam account id
+ * @property {?number} accountId wam account id
  * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default params.setPrebidTargeting or true)
  * @property {?Boolean} sendToBidders if true, will send the user-centric profile to all bidders (default params.sendToBidders or true)
  * @property {?object} defaultProfile to be used if the profile is not found
