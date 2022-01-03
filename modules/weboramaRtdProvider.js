@@ -386,7 +386,7 @@ function handleBid(profile, site, bid) {
     default:
       logMessage('unsupported bidder "', bidder, '", trying via bidder ortb2 fpd');
       const section = ((site) ? 'site' : 'user');
-      const base = `ortb2.${section}.ext.data.`;
+      const base = `ortb2.${section}.ext.data`;
 
       assignProfileToObject(bid, base, profile);
   }
@@ -400,7 +400,7 @@ function handleBid(profile, site, bid) {
  */
 function setGlobalOrtb2(profile, site) {
   const section = ((site) ? 'site' : 'user');
-  const base = `${section}.ext.data.`;
+  const base = `${section}.ext.data`;
   const addOrtb2 = {};
 
   assignProfileToObject(addOrtb2, base, profile);
@@ -423,7 +423,7 @@ function setGlobalOrtb2(profile, site) {
  */
 function assignProfileToObject(destination, base, profile) {
   Object.keys(profile).forEach(key => {
-    const path = base + key;
+    const path = `${base}.${key}`;
     deepSetValue(destination, path, profile[key])
   })
 }
@@ -435,7 +435,8 @@ function assignProfileToObject(destination, base, profile) {
  * @returns {void}
  */
 function handleRubiconBid(profile, site, bid) {
-  const base = (site) ? 'params.inventory.' : 'params.visitor.';
+  const section = (site) ? 'inventory' : 'visitor';
+  const base = `params.${section}`;
   assignProfileToObject(bid, base, profile);
 }
 
@@ -445,7 +446,7 @@ function handleRubiconBid(profile, site, bid) {
  * @returns {void}
  */
 function handleAppnexusBid(profile, bid) {
-  const base = 'params.keywords.';
+  const base = 'params.keywords';
   assignProfileToObject(bid, base, profile);
 }
 
