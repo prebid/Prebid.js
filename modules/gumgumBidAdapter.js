@@ -17,32 +17,48 @@ const TIME_TO_LIVE = 60
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 
 let invalidRequestIds = {};
-let browserParams = {};
 let pageViewId = null;
 
 // TODO: potential 0 values for browserParams sent to ad server
 function _getBrowserParams(topWindowUrl) {
-  let topWindow
-  let topScreen
-  let topUrl
-  let ggad
-  let ns
-  function getNetworkSpeed() {
-    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
-    const Mbps = connection && (connection.downlink || connection.bandwidth)
-    return Mbps ? Math.round(Mbps * 1024) : null
+  const paramRegex = paramName => new RegExp(`[?#&](${paramName}=(.*?))($|&)`, 'i');
+
+  let browserParams = {};
+  let topWindow;
+  let topScreen;
+  let topUrl;
+  let ggad;
+  let ggdeal;
+  let ns;
+
+  function getNetworkSpeed () {
+    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
+    const Mbps = connection && (connection.downlink || connection.bandwidth);
+    return Mbps ? Math.round(Mbps * 1024) : null;
   }
-  function getOgURL() {
-    let ogURL = ''
-    const ogURLSelector = "meta[property='og:url']"
-    const head = document && document.getElementsByTagName('head')[0]
-    const ogURLElement = head.querySelector(ogURLSelector)
-    ogURL = ogURLElement ? ogURLElement.content : null
-    return ogURL
+
+  function getOgURL () {
+    let ogURL = '';
+    const ogURLSelector = "meta[property='og:url']";
+    const head = document && document.getElementsByTagName('head')[0];
+    const ogURLElement = head.querySelector(ogURLSelector);
+    ogURL = ogURLElement ? ogURLElement.content : null;
+    return ogURL;
   }
-  if (browserParams.vw) {
-    // we've already initialized browserParams, just return it.
-    return browserParams
+
+  function stripGGParams (url) {
+    const params = [
+      'ggad',
+      'ggdeal'
+    ];
+
+    return params.reduce((result, param) => {
+      const matches = url.match(paramRegex(param));
+      if (!matches) return result;
+      matches[1] && (result = result.replace(matches[1], ''));
+      matches[3] && (result = result.replace(matches[3], ''));
+      return result;
+    }, url);
   }
 
   try {
@@ -51,7 +67,7 @@ function _getBrowserParams(topWindowUrl) {
     topUrl = topWindowUrl || '';
   } catch (error) {
     logError(error);
-    return browserParams
+    return browserParams;
   }
 
   browserParams = {
@@ -59,23 +75,25 @@ function _getBrowserParams(topWindowUrl) {
     vh: topWindow.innerHeight,
     sw: topScreen.width,
     sh: topScreen.height,
-    pu: topUrl,
+    pu: stripGGParams(topUrl),
     ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
     jcsi: JSON.stringify(JCSI),
     ogu: getOgURL()
-  }
+  };
 
-  ns = getNetworkSpeed()
+  ns = getNetworkSpeed();
   if (ns) {
-    browserParams.ns = ns
+    browserParams.ns = ns;
   }
 
-  ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
-  if (ggad) {
-    browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad
-  }
-  return browserParams
+  ggad = (topUrl.match(paramRegex('ggad')) || [0, 0, 0])[2];
+  if (ggad) browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad;
+
+  ggdeal = (topUrl.match(paramRegex('ggdeal')) || [0, 0, 0])[2];
+  if (ggdeal) browserParams.ggdeal = ggdeal;
+
+  return browserParams;
 }
 
 function getWrapperCode(wrapper, data) {
@@ -293,7 +311,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     const eids = getEids(userId);
     let sizes = [1, 1];
     let data = {};
-    let gpid = '';
+    let gpid;
 
     const date = new Date();
     const lt = date.getTime();
@@ -310,10 +328,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     for (const eid in eids) data[eid] = eids[eid];
 
     // ADJS-1024 & ADSS-1297
-    if (deepAccess(ortb2Imp, 'ext.data.pbadslot')) {
-      gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot')
-    } else if (deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
-      gpid = ortb2Imp.ext.data.adserver.adslot
+    if (gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot')) {
+      data.gpid = gpid;
+    } else if (gpid = deepAccess(ortb2Imp, 'ext.data.adserver.adslot')) {
+      data.gpid = gpid;
     }
 
     if (mediaTypes.banner) {
@@ -384,7 +402,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), { gpid })
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId))
     })
   });
   return bids;
