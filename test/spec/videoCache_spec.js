@@ -259,8 +259,8 @@ describe('The video cache', function () {
         getAuctionId() {
           return '1234-56789-abcde';
         },
-        getProperties() {
-          return { timestamp: 1510852447530 }
+        getAuctionStart() {
+          return 1510852447530;
         }
       }]))
       try {

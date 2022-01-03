@@ -1276,7 +1276,7 @@ describe('auctionmanager.js', function () {
       getAuctionId: () => '1',
       addBidReceived: () => true,
       getTimeout: () => 1000,
-      getProperties: () => ({})
+      getAuctionStart: () => 1,
     }
   }
 

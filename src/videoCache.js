@@ -77,7 +77,7 @@ function toStorageRequest(bid, {index = auctionManager.index} = {}) {
   }
 
   if (auction != null) {
-    payload.timestamp = auction.getProperties().timestamp;
+    payload.timestamp = auction.getAuctionStart();
   }
 
   if (typeof bid.customCacheKey === 'string' && bid.customCacheKey !== '') {

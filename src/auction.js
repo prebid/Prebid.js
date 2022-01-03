@@ -347,11 +347,13 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getTimeout: () => _timeout,
     getAuctionId: () => _auctionId,
     getAuctionStatus: () => _auctionStatus,
+    getAuctionStart: () => _auctionStart,
     getAdUnits: () => _adUnits,
     getAdUnitCodes: () => _adUnitCodes,
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
-    getNoBids: () => _noBids
+    getNoBids: () => _noBids,
+
   }
 }
 
