@@ -60,7 +60,7 @@ describe('adnuntiusRtdProvider is a RTD provider that', function () {
       adnuntiusSubmodule.getBidRequestData({ adUnits: adUnits }, callback, config);
       request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(data));
-      expect(request.url).to.be.include(`https://data.adnuntius.com/usr?tzo=0&s=site123&browserId=mike`);
+      expect(request.url).to.be.include(`&s=site123&browserId=mike`);
       expect(adUnits).to.length(2);
       expect(adUnits[0]).to.be.eq(adUnitsOriginal[0]);
     });
