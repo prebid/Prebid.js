@@ -119,11 +119,13 @@ function _buildPostBody(bidRequests) {
       floor: _getFloor(bidRequest)
     };
     // remove the else to support multi-imp
-    if (_isInstreamBidRequest(bidRequest)) {
+    if (_videoMediaType(bidRequest) === 'instream') {
       imp.video = _getORTBVideo(bidRequest);
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
-    };
+    } else if (_videoMediaType(bidRequest) === 'outstream') {
+      imp.video = _getORTBVideo(bidRequest);
+    }
     if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
     }
@@ -151,13 +153,25 @@ function _buildPostBody(bidRequests) {
   return data;
 }
 
-function _isInstreamBidRequest(bidRequest) {
+function _isVideoBidRequest(bidRequest) {
   if (!bidRequest.mediaTypes.video) return false;
   if (!bidRequest.mediaTypes.video.context) return false;
-  if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
+  if (
+    bidRequest.mediaTypes.video.context.toLowerCase() === 'instream' ||
+    bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream'
+  ) {
     return true;
   } else {
     return false;
+  }
+}
+
+function _videoMediaType(bidRequest) {
+  if (!_isVideoBidRequest(bidRequest)) return null
+  if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
+    return 'instream'
+  } else if (bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream') {
+    return 'outstream'
   }
 }
 
@@ -167,6 +181,7 @@ function _getORTBVideo(bidRequest) {
   if (!video.w) video.w = video.playerSize[0][0];
   if (!video.h) video.h = video.playerSize[0][1];
   if (video.context === 'instream') video.placement = 1;
+  if (video.context === 'outstream') video.placement = 3;
   // clean up oRTB object
   delete video.playerSize;
   return video;
@@ -177,7 +192,7 @@ function _getFloor (bid) {
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: 'USD',
-      mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
+      mediaType: _isVideoBidRequest(bid) ? 'video' : 'banner',
       size: '*'
     });
     if (typeof floorInfo === 'object' &&
@@ -335,7 +350,7 @@ function _buildResponseObject(bidderRequest, bid) {
       meta: {}
     };
 
-    if (_isInstreamBidRequest(breq)) {
+    if (_isVideoBidRequest(breq)) {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
       bidResponse.ttl = INSTREAM_TIME_TO_LIVE;
