@@ -385,8 +385,8 @@ function handleBid(profile, site, bid) {
       break;
     default:
       logMessage('unsupported bidder "', bidder, '", trying via bidder ortb2 fpd');
-
-      const base = 'ortb2.' + ((site) ? 'site' : 'user') + '.ext.data.';
+      const section = ((site) ? 'site' : 'user');
+      const base = `ortb2.${section}.ext.data.`;
 
       assignProfileToObject(bid, base, profile);
   }
@@ -399,7 +399,8 @@ function handleBid(profile, site, bid) {
  * @returns {void}
  */
 function setGlobalOrtb2(profile, site) {
-  const base = ((site) ? 'site' : 'user') + '.ext.data.';
+  const section = ((site) ? 'site' : 'user');
+  const base = `${section}.ext.data.`;
   const addOrtb2 = {};
 
   assignProfileToObject(addOrtb2, base, profile);
@@ -416,7 +417,7 @@ function setGlobalOrtb2(profile, site) {
 /**
  * assign profile to object
  * @param {Object} destination
- * @param {path} base
+ * @param {string} base
  * @param {Object} profile
  * @returns {void}
  */
@@ -536,7 +537,7 @@ function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
   queryString = tryAppendQueryString(queryString, 'token', token);
   queryString = tryAppendQueryString(queryString, 'url', targetURL);
 
-  const url = 'https://ctx.weborama.com/api/profile?' + queryString;
+  const url = `https://ctx.weborama.com/api/profile?${queryString}`;
 
   ajax(url, {
     success: function(response, req) {
