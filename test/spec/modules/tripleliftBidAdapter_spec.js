@@ -431,7 +431,6 @@ describe('triplelift adapter', function () {
     it('should be a post request and populate the payload', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
-      console.log(JSON.stringify(payload))
       expect(payload).to.exist;
       expect(payload.imp[0].tagid).to.equal('12345');
       expect(payload.imp[0].floor).to.equal(1.0);
