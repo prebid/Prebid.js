@@ -334,7 +334,8 @@ function setBidRequestProfile(adUnits, profile, site) {
 
   adUnits.forEach(adUnit => {
     if (adUnit.hasOwnProperty('bids')) {
-      adUnit.bids.forEach(bid => handleBid(profile, site, bid));
+      const adUnitCode = adUnit.code || 'no code';
+      adUnit.bids.forEach(bid => handleBid(adUnitCode, profile, site, bid));
     }
   });
 }
@@ -355,15 +356,16 @@ const SMARTADSERVER = 'smartadserver';
 const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 
 /** handle individual bid
+ * @param {string} adUnitCode
  * @param {Object} profile
  * @param {Boolean} site true if site centric, else it is user centric
  * @param {Object} bid
  * @returns {void}
  */
-function handleBid(profile, site, bid) {
+function handleBid(adUnitCode, profile, site, bid) {
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-  logMessage(`handle bidder '${bidder}' and bid`, bid);
+  logMessage(`handling on adunit '${adUnitCode}', bidder '${bidder}' and bid`, bid );
 
   switch (bidder) {
     case APPNEXUS:

@@ -141,7 +141,7 @@ We also set the bidder and global ortb2 `site` and `user` sections. The followin
 
 To view an example of available segments returned by Weborama's backends:
 
-`gulp serve --modules=rtdModule,weboramaRtdProvider,smartadserverBidAdapter,pubmaticBidAdapter,appnexusBidAdapter,rubiconBidAdapter`
+`gulp serve --notest --nolint --modules=rtdModule,weboramaRtdProvider,smartadserverBidAdapter,pubmaticBidAdapter,appnexusBidAdapter,rubiconBidAdapter,criteoBidAdapter`
 
 and then point your browser at:
 
