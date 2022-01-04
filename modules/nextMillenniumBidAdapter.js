@@ -31,7 +31,7 @@ export const spec = {
               'id': getBidIdParameter('placement_id', bid.params)
             }
           },
-          'nextMillennium':{
+          'nextMillennium': {
             'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
           }
         }
