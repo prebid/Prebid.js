@@ -363,7 +363,7 @@ const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 function handleBid(profile, site, bid) {
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-  logMessage('handle bidder and bid', bidder, bid);
+  logMessage(`handle bidder '${bidder}' and bid`, bid);
 
   switch (bidder) {
     case APPNEXUS:
@@ -385,7 +385,7 @@ function handleBid(profile, site, bid) {
 
       break;
     default:
-      logMessage('unsupported bidder "', bidder, '", trying via bidder ortb2 fpd');
+      logMessage(`unsupported bidder '${bidder}', trying via bidder ortb2 fpd`);
       const section = ((site) ? 'site' : 'user');
       const base = `ortb2.${section}.ext.data`;
 
