@@ -218,7 +218,7 @@ export function isNativeOpenRTBBidValid(bidORTB, bidRequestORTB) {
 
   const match = requiredAssetIds.every(assetId => includes(returnedAssetIds, assetId));
   if (!match) {
-    logError(`didn't receive a bit with all required assets. Required ids: ${requiredAssetIds}, but received ids in response: ${returnedAssetIds}`);
+    logError(`didn't receive a bid with all required assets. Required ids: ${requiredAssetIds}, but received ids in response: ${returnedAssetIds}`);
   }
 
   return match;
