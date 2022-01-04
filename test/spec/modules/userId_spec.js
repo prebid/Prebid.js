@@ -2922,4 +2922,41 @@ describe('User ID', function () {
       });
     });
   });
+
+  describe('Handle SSO Login', function() {
+    beforeEach(function () {
+      (getGlobal()).setUserIdentities({});
+    });
+
+    xit('Email hashes are stored in userIdentities Object on SSO login if ssoEnabled is true', function () {
+      function getEmail() {
+        return 'abc@def.com';
+      }
+      function getBasicProfile() {
+        return { 'getEmail': getEmail }
+      }
+      var dummyGoogleUserObject = { 'getBasicProfile': getBasicProfile }
+      console.log('***************** window.PWT = ', window.PWT);
+      window.PWT = window.PWT || {};
+      window.PWT.ssoEnabled = true;
+      expect(typeof (getGlobal()).onSSOLogin).to.equal('function');
+      getGlobal().onSSOLogin({'provider': 'google', 'googleUserObject': dummyGoogleUserObject});
+      expect((getGlobal()).getUserIdentities().emailHash).to.exist;
+    });
+
+    xit('Email hashes are not stored in userIdentities Object on SSO login if ssoEnabled is false', function () {
+      function getEmail() {
+        return 'abc@def.com';
+      }
+      function getBasicProfile() {
+        return { 'getEmail': getEmail }
+      }
+      var dummyGoogleUserObject = { 'getBasicProfile': getBasicProfile }
+      window.PWT.ssoEnabled = false;
+
+      expect(typeof (getGlobal()).onSSOLogin).to.equal('function');
+      getGlobal().onSSOLogin({'provider': 'google', 'googleUserObject': dummyGoogleUserObject});
+      expect((getGlobal()).getUserIdentities().emailHash).to.not.exist;
+    });
+  });
 });

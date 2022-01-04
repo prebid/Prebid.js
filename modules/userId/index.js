@@ -142,6 +142,9 @@ import { createEidsArray, buildEidPermissions } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
 import {getPrebidInternal} from '../../src/utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
+import MD5 from 'crypto-js/md5.js';
+import SHA1 from 'crypto-js/sha1.js';
+import SHA256 from 'crypto-js/sha256.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -501,9 +504,9 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
 
   // initializedSubmodulesUpdated - flag to identify if any module has been added from the page post module initialization. This is specifically for OW use case
   if (initializedSubmodulesUpdated && initializedSubmodules !== undefined) {
-      for (var index in initializedSubmodules) {
-       submodules.push(initializedSubmodules[index]);
-      }
+    for (var index in initializedSubmodules) {
+      submodules.push(initializedSubmodules[index]);
+    }
   }
 
   // initialize submodules only when undefined
@@ -601,7 +604,7 @@ function refreshUserIds(options, callback, moduleUpdated) {
   if (moduleUpdated !== undefined) {
     initializedSubmodulesUpdated = moduleUpdated;
   }
-  
+
   let submoduleNames = options ? options.submoduleNames : null;
   if (!submoduleNames) {
     submoduleNames = [];
@@ -654,6 +657,76 @@ function getUserIdentities() {
   return userIdentity;
 }
 
+/**
+ * This function is used to read sso information from facebook and google apis.
+ * @param {String} provider SSO provider for which the api call is to be made
+ * @param {Object} userObject Google's user object, passed from google's callback function
+ */
+function onSSOLogin(data) {
+  var refThis = this;
+  var email;
+  var emailHash = {};
+
+  if (!window.PWT || !window.PWT.ssoEnabled) return;
+
+  switch (data.provider) {
+    case undefined:
+    case 'facebook':
+      var timeout = data.provider === 'facebook' ? 0 : 2000;
+      setTimeout(function() {
+        window.FB && window.FB.getLoginStatus(function (response) {
+          if (response.status === 'connected') {
+            window.PWT = window.PWT || {};
+            window.PWT.fbAt = response.authResponse.accessToken;
+            window.FB && window.FB.api('/me?fields=email&access_token=' + window.PWT.fbAt, function (response) {
+              utils.logInfo('SSO - Data received from FB API');
+
+              if (response.error) {
+                utils.logInfo('SSO - User information could not be retrieved by facebook api [', response.error.message, ']');
+                return;
+              }
+
+              email = response.email || undefined;
+              utils.logInfo('SSO - Information successfully retrieved by Facebook API.');
+              generateEmailHash(email, emailHash);
+              refThis.setUserIdentities({
+                emailHash: emailHash
+              });
+            });
+          } else {
+            utils.logInfo('SSO - Error fetching login information from facebook');
+          }
+        }, true);
+      }, timeout);
+    break;ß
+    case 'google':
+      var profile = data.googleUserObject.getBasicProfile();
+      email = profile.getEmail() || undefined;
+      utils.logInfo('SSO - Information successfully retrieved by Google API');
+      generateEmailHash(email, emailHash);
+      refThis.setUserIdentities({
+        emailHash: emailHash
+      });
+      break;
+  }
+}
+
+/**
+ * This function is used to clear user login information once user logs out.
+ */
+function onSSOLogout() {
+  this.setUserIdentities({});
+}
+
+function generateEmailHash(email, emailHash) {
+  email = email !== undefined ? email.trim().toLowerCase() : '';
+  var regex = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
+  if (regex.test(email)) {
+    emailHash.MD5 = MD5(email).toString();
+    emailHash.SHA1 = SHA1(email).toString();
+    emailHash.SHA256 = SHA256(email).toString();
+  }
+}
 /**
  * This hook returns updated list of submodules which are allowed to do get user id based on TCF 2 enforcement rules configured
  */
@@ -858,7 +931,8 @@ export function init(config) {
   (getGlobal()).refreshUserIds = refreshUserIds;
   (getGlobal()).setUserIdentities = setUserIdentities;
   (getGlobal()).getUserIdentities = getUserIdentities;
-
+  (getGlobal()).onSSOLogin = onSSOLogin;
+  (getGlobal()).onSSOLogout = onSSOLogout;
 }
 
 // init config update listener to start the application
