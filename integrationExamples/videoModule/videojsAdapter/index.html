@@ -1,13 +1,10 @@
-<!--
-
--->
-
 <html>
 
 <head>
-    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="../../../build/dev/prebid.js"></script>
     <link href="https://vjs.zencdn.net/7.17.0/video-js.css" rel="stylesheet" />
 
+    <!-- Setup ad units -->
     <script>
       var adUnits = [{
         code: 'div-gpt-ad-51545-0',
@@ -31,7 +28,6 @@
             }
           },
         },
-
         // Replace this object to test a new Adapter!
         bids: [{
           bidder: 'ix',
@@ -45,82 +41,67 @@
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
     </script>
-    <script>
-      pbjs.que.push(function () {
-        pbjs.onEvent('adImpression', event => {
-          console.log('adImpression: ', event);
-        });
-        pbjs.addAdUnits(adUnits);
-        pbjs.setConfig({
-          video: {
-            providers: [{
-              divId: 'vid-div-1',
-              vendorCode: 1,
-              playerConfig: {
-                licenseKey: "INSERT LICENSE KEY HERE",
-                params: {
-                  vendorConfig: {
-                    "file": "http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4",
-                    mediaid: 'd9J2zcaA',
-                    "advertising": {
-                      "adscheduleid": "00000000",
-                      client: 'vast',
-                      "offset": "10",
-                      "tag": [
-                        "http://playertest.longtailvideo.com/pre-bad.xml",
-                        "http://playertest.longtailvideo.com/mid.xml"
-                      ],
-                    }
-                  }
-                }
+
+<script>
+  pbjs.que.push(function () {
+    pbjs.onEvent('adImpression', event => {
+      console.log('adImpression: ', event);
+    });
+    pbjs.addAdUnits(adUnits);
+    pbjs.setConfig({
+      video: {
+        providers: [{
+          divId: 'vid-div-1',
+          // vendorCode for videoJS
+          vendorCode: 2,
+          playerConfig: {
+            params: {
+              mediaid: 'd9J2zcaA',
+              advertising: {
+                "adscheduleid": "00000000",
+                client: 'vast',
+                "offset": "10",
+                "tag": [
+                  "http://playertest.longtailvideo.com/pre-bad.xml",
+                  "http://playertest.longtailvideo.com/mid.xml"
+                ],
               }
-            }, {
-              divId: 'vid-div-2',
-              vendorCode: 1,
-              playerConfig: {
-                licenseKey: "INSERT LICENSE KEY HERE",
-                params: {
-                  vendorConfig: {
-                    "file": "http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4",
-                    mediaid: 'd9J2zcaA',
-                    "advertising": {
-                      "adscheduleid": "00000000",
-                      client: 'vast',
-                      "offset": "10",
-                      "tag": [
-                        "http://playertest.longtailvideo.com/pre-bad.xml",
-                        "http://playertest.longtailvideo.com/mid.xml"
-                      ],
-                    }
-                  }
-                }
-              }
-            }]
+            }
           }
-        });
-        pbjs.requestBids();
-      });
-    </script>
+        }]
+      }
+    });
+    pbjs.requestBids();
+  });
+</script>
+
+
 </head>
 
 <body>
-    <h2>Prebid.js Test</h2>
+    <h2>VideoJS Adapter Test</h2>
+    
     <h5>Div-1 existing Player</h5>
     <div id='vid-div-1'>
-        <video class="video-js"
-        controls
-        preload="auto"
-        src="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_2MB.mp4"
-        data-setup="{}"
-        >
-        </video>
+      <video class="video-js" data-setup='{"controls": true, "autoplay": false, "preload": "auto"}'>
+        <source src="http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4" type="video/mp4">
+      </video>
     </div>
-    <h5>Div-2 controlled Player</h5>
-    <div id='vid-div-2'></div>
+
+    <h5>Div-2 existing player without automatic setup</h5>
+    <div id='vid-div-2'>
+      <video-js>
+        <source src="http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4" type="video/mp4">
+      </video-js>
+    </div>
+
+    <h5>Div-3 controlled Player</h5>
+    <div id='vid-div-3'></div>
 
 
     <script src="https://vjs.zencdn.net/7.17.0/video.min.js"></script>
-
+    <script>
+    </script>
 </body>
 
 </html>
