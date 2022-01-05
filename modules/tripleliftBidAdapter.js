@@ -119,7 +119,7 @@ function _buildPostBody(bidRequests) {
       floor: _getFloor(bidRequest)
     };
     // Check for video bidrequest
-    if (_videoMediaType(bidRequest) === 'instream' || _videoMediaType(bidRequest) === 'outstream') {
+    if (_isVideoBidRequest(bidRequest)) {
       imp.video = _getORTBVideo(bidRequest);
     }
     // append banner if applicable and request is not for instream
