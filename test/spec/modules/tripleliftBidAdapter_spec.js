@@ -375,6 +375,37 @@ describe('triplelift adapter', function () {
           userId: {},
           schain,
         },
+        // banner and incomplete outstream (missing size)
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream'
+            },
+            banner: {
+              sizes: [
+                [970, 250],
+                [1, 1]
+              ]
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
       ];
 
       bidderRequest = {
@@ -439,9 +470,10 @@ describe('triplelift adapter', function () {
       expect(payload.imp[1].floor).to.equal(1.0);
       expect(payload.imp[1].video).to.exist.and.to.be.a('object');
       // banner and outstream video
-      expect(payload.imp[2]).to.not.have.property('video');
+      expect(payload.imp[2]).to.have.property('video');
       expect(payload.imp[2]).to.have.property('banner');
       expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[2].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
       // banner and incomplete video
       expect(payload.imp[3]).to.not.have.property('video');
       expect(payload.imp[3]).to.have.property('banner');
@@ -455,13 +487,19 @@ describe('triplelift adapter', function () {
       expect(payload.imp[5]).to.have.property('video');
       expect(payload.imp[5].video).to.exist.and.to.be.a('object');
       // banner and outream video and native
-      expect(payload.imp[6]).to.not.have.property('video');
+      expect(payload.imp[6]).to.have.property('video');
       expect(payload.imp[6]).to.have.property('banner');
       expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[6].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
       // outstream video only
       expect(payload.imp[7]).to.have.property('video');
       expect(payload.imp[7]).to.not.have.property('banner');
       expect(payload.imp[7].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
+      // banner and incomplete outstream (missing size); video request is permitted so banner can still monetize
+      expect(payload.imp[8]).to.have.property('video');
+      expect(payload.imp[8]).to.have.property('banner');
+      expect(payload.imp[8].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[8].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'context': 'outstream', 'placement': 3});
     });
 
     it('should add tdid to the payload if included', function () {

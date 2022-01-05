@@ -118,14 +118,15 @@ function _buildPostBody(bidRequests) {
       tagid: bidRequest.params.inventoryCode,
       floor: _getFloor(bidRequest)
     };
-    // remove the else to support multi-imp
-    if (_videoMediaType(bidRequest) === 'instream') {
-      imp.video = _getORTBVideo(bidRequest);
-    } else if (bidRequest.mediaTypes.banner) {
-      imp.banner = { format: _sizes(bidRequest.sizes) };
-    } else if (_videoMediaType(bidRequest) === 'outstream') {
+    // Check for video bidrequest
+    if (_videoMediaType(bidRequest) === 'instream' || _videoMediaType(bidRequest) === 'outstream') {
       imp.video = _getORTBVideo(bidRequest);
     }
+    // append banner if applicable and request is not for instream
+    if (bidRequest.mediaTypes.banner && _videoMediaType(bidRequest) !== 'instream') {
+      imp.banner = { format: _sizes(bidRequest.sizes) };
+    }
+
     if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
     }
@@ -178,8 +179,12 @@ function _videoMediaType(bidRequest) {
 function _getORTBVideo(bidRequest) {
   // give precedent to mediaTypes.video
   let video = { ...bidRequest.params.video, ...bidRequest.mediaTypes.video };
-  if (!video.w) video.w = video.playerSize[0][0];
-  if (!video.h) video.h = video.playerSize[0][1];
+  try {
+    if (!video.w) video.w = video.playerSize[0][0];
+    if (!video.h) video.h = video.playerSize[0][1];
+  } catch (err) {
+    logWarn('Video size not defined', err);
+  }
   if (video.context === 'instream') video.placement = 1;
   if (video.context === 'outstream') video.placement = 3;
   // clean up oRTB object
@@ -364,6 +369,7 @@ function _buildResponseObject(bidderRequest, bid) {
       bidResponse.meta.advertiserDomains = bid.adomain;
     }
 
+    // what should this be for outstream?
     if (bid.tl_source && bid.tl_source == 'hdx') {
       bidResponse.meta.mediaType = 'banner';
     }
