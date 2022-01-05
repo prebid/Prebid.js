@@ -31,10 +31,7 @@ let adomikAdapter = Object.assign(adapter({}),
           break;
 
         case bidResponse:
-          adomikAdapter.bucketEvents.push({
-            type: 'response',
-            event: adomikAdapter.buildBidResponse(args)
-          });
+          adomikAdapter.saveBidResponse(args);
           break;
 
         case bidWon:
@@ -68,6 +65,18 @@ let adomikAdapter = Object.assign(adapter({}),
 
 adomikAdapter.initializeBucketEvents = function() {
   adomikAdapter.bucketEvents = [];
+}
+
+adomikAdapter.saveBidResponse = function(args) {
+  let responseSaved = adomikAdapter.bucketEvents.find((bucketEvent) =>
+    bucketEvent.type == 'response' && bucketEvent.event.id == args.id
+  );
+  if (responseSaved)
+    return true;
+  adomikAdapter.bucketEvents.push({
+    type: 'response',
+    event: adomikAdapter.buildBidResponse(args)
+  });
 }
 
 adomikAdapter.maxPartLength = function () {
@@ -133,6 +142,9 @@ adomikAdapter.sendTypedEvent = function() {
 adomikAdapter.sendWonEvent = function (wonEvent) {
   let keyValues = { testId: adomikAdapter.currentContext.testId, testValue: adomikAdapter.currentContext.testValue }
   wonEvent = {...wonEvent, ...keyValues}
+
+  adomikAdapter.saveBidResponse(wonEvent);
+
   const stringWonEvent = JSON.stringify(wonEvent)
   logInfo('Won event sent to adomik prebid analytic ' + stringWonEvent);
 
