@@ -9,6 +9,8 @@ import {
 } from './videoModule/constants/events.js';
 import stateFactory from './videoModule/shared/state.js';
 import { adStateFactory, timeStateFactory,  callbackStorageFactory} from './jwplayerVideoProvider.js';
+import { VIDEO_JS_VENDOR } from './videoModule/constants/vendorCodes.js';
+import { videoVendorDirectory } from './videoModule/vendorDirectory.js';
 
 export function VideojsProvider(config, videojs_, adState_, timeState_, callbackStorage_, utils) {
   let videojs = videojs_;
@@ -116,8 +118,7 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
   };
 }
 
-import { VIDEO_JS_VENDOR } from './videoModule/constants/vendorCodes.js';
-import { videoVendorDirectory } from './videoModule/vendorDirectory.js';
+
 
 const videojsSubmoduleFactory = function (config) {
     const adState = adStateFactory();
