@@ -3,7 +3,6 @@
 <head>
     <script async src="../../../build/dev/prebid.js"></script>
     <link href="https://vjs.zencdn.net/7.17.0/video-js.css" rel="stylesheet" />
-
     <!-- Setup ad units -->
     <script>
       var adUnits = [{
@@ -28,7 +27,7 @@
             }
           },
         },
-        // Replace this object to test a new Adapter!
+
         bids: [{
           bidder: 'ix',
           params: {
@@ -40,42 +39,40 @@
 
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
-    </script>
 
-<script>
-  pbjs.que.push(function () {
-    pbjs.onEvent('adImpression', event => {
-      console.log('adImpression: ', event);
-    });
-    pbjs.addAdUnits(adUnits);
-    pbjs.setConfig({
-      video: {
-        providers: [{
-          divId: 'vid-div-1',
-          // vendorCode for videoJS
-          vendorCode: 2,
-          playerConfig: {
-            params: {
-              mediaid: 'd9J2zcaA',
-              advertising: {
-                "adscheduleid": "00000000",
-                client: 'vast',
-                "offset": "10",
-                "tag": [
-                  "http://playertest.longtailvideo.com/pre-bad.xml",
-                  "http://playertest.longtailvideo.com/mid.xml"
-                ],
+      pbjs.que.push(function () {
+        pbjs.onEvent('adImpression', event => {
+          console.log('adImpression: ', event);
+        });
+        pbjs.addAdUnits(adUnits);
+        pbjs.setConfig({
+          video: {
+            providers: [{
+              divId: 'vid-div-1',
+              // vendorCode for videojs
+              vendorCode: 2,
+              playerConfig: {
+                params: {
+                  vendorConfig: {
+                    mediaid: 'd9J2zcaA',
+                    advertising: {
+                      adscheduleid: "00000000",
+                      client: 'vast',
+                      offset: "10",
+                      tag: [
+                        "http://playertest.longtailvideo.com/pre-bad.xml",
+                        "http://playertest.longtailvideo.com/mid.xml"
+                      ],
+                    }
+                  }
+                }
               }
-            }
+            },]
           }
-        }]
-      }
-    });
-    pbjs.requestBids();
-  });
-</script>
-
-
+        });
+        pbjs.requestBids();
+      });
+    </script>
 </head>
 
 <body>
@@ -83,14 +80,14 @@
     
     <h5>Div-1 existing Player</h5>
     <div id='vid-div-1'>
-      <video class="video-js" data-setup='{"controls": true, "autoplay": false, "preload": "auto"}'>
+      <video class="video-js vjs-big-play-centered" data-setup='{"controls": true, "autoplay": false, "preload": "auto"}'>
         <source src="http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4" type="video/mp4">
       </video>
     </div>
 
     <h5>Div-2 existing player without automatic setup</h5>
     <div id='vid-div-2'>
-      <video-js>
+      <video-js data-setup='{"controls": true}'>
         <source src="http://content.bitsontherun.com/videos/3XnJSIm4-52qL9xLP.mp4" type="video/mp4">
       </video-js>
     </div>

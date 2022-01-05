@@ -91,7 +91,8 @@
     "video": {
       "files": [ "./index.js" ],
       "dependants": [
-        "jwplayerVideoProvider"
+        "jwplayerVideoProvider",
+        "videojsVideoProvider"
       ]
     }
   }
