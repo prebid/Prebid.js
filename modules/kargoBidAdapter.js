@@ -73,7 +73,7 @@ export const spec = {
       let meta;
       if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
         meta = {
-          clickUrl: adUnit.metadata.landingPageDomain,
+          clickUrl: adUnit.metadata.landingPageDomain[0],
           advertiserDomains: adUnit.metadata.landingPageDomain
         };
       }
