@@ -1,4 +1,4 @@
-import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, isGptPubadsDefined, _each, deepSetValue, deepClone } from '../src/utils.js';
+import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, isGptPubadsDefined, _each, deepSetValue, deepClone, logInfo } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -6,6 +6,7 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
+import events from '../src/events';
 
 const RUBICON_GVL_ID = 52;
 export const storage = getStorageManager(RUBICON_GVL_ID, 'rubicon');
@@ -23,6 +24,9 @@ const pbsErrorMap = {
 }
 
 let prebidGlobal = getGlobal();
+prebidGlobal.emitEvent = events.emit;
+prebidGlobal.generateUUID = generateUUID;
+
 const {
   EVENTS: {
     AUCTION_INIT,
@@ -128,6 +132,9 @@ function getBillingPayload(event) {
   let billingEvent = deepClone(event);
   billingEvent.type = 'general';
   billingEvent.accountId = accountId;
+  // mark as sent
+  deepSetValue(cache.billing, `${event.vendor}.${event.billingId}`, true);
+  logInfo(`${MODULE_NAME}: Remaining Billing Events:`, deepClone(cache.billing));
   return billingEvent;
 }
 
@@ -354,8 +361,9 @@ function sendMessage(auctionId, bidWonId, trigger) {
   }
 
   // if we have not sent any billingEvents send them
-  if (auctionCache && auctionCache.billing && auctionCache.billing.length) {
-    message.billableEvents = auctionCache.billing.map(getBillingPayload);
+  const pendingBillingEvents = getPendingBillingEvents(auctionCache);
+  if (pendingBillingEvents && pendingBillingEvents.length) {
+    message.billableEvents = pendingBillingEvents;
   }
 
   ajax(
@@ -366,6 +374,17 @@ function sendMessage(auctionId, bidWonId, trigger) {
       contentType: 'application/json'
     }
   );
+}
+
+function getPendingBillingEvents(auctionCache) {
+  if (auctionCache && auctionCache.billing && auctionCache.billing.length) {
+    return auctionCache.billing.reduce((accum, billingEvent) => {
+      if (deepAccess(cache.billing, `${billingEvent.vendor}.${billingEvent.billingId}`) === false) {
+        accum.push(getBillingPayload(billingEvent));
+      }
+      return accum;
+    }, []);
+  }
 }
 
 function adUnitIsOnlyInstream(adUnit) {
