@@ -139,3 +139,5 @@ export function pbVideoFactory() {
   pbVideo.init();
   return pbVideo;
 }
+
+pbVideoFactory();
