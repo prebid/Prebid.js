@@ -134,12 +134,6 @@ describe('Tappx bid adapter', function () {
       assert.isTrue(spec.isBidRequestValid(c_BIDREQUEST.bids[0]), JSON.stringify(c_BIDREQUEST));
     });
 
-    it('should return false when params are missing', function () {
-      let badBidRequestParam = JSON.parse(JSON.stringify(c_BIDREQUEST));
-      delete badBidRequestParam.bids[0].params;
-      assert.isFalse(spec.isBidRequestValid(badBidRequestParam.bids[0]));
-    });
-
     it('should return false when tappxkey is missing', function () {
       let badBidRequestTpxkey = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
       delete badBidRequestTpxkey.bids[0].params.tappxkey;
