@@ -74,7 +74,7 @@ export const spec = {
       if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
         meta = {
           clickUrl: adUnit.metadata.landingPageDomain,
-          advertiserDomains: [adUnit.metadata.landingPageDomain]
+          advertiserDomains: adUnit.metadata.landingPageDomain
         };
       }
       bidResponses.push({
