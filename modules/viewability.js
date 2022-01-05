@@ -17,7 +17,7 @@ const observers = {};
 
 function isValid(vid, element, tracker, criteria) {
   if (!element) {
-    logWarn(`${MODULE_NAME}: provide an html element to track`);
+    logWarn(`${MODULE_NAME}: no html element provided`);
     return false;
   }
 
@@ -37,11 +37,37 @@ function isValid(vid, element, tracker, criteria) {
   }
 
   if (!vid || observers[vid]) {
-    logWarn(`${MODULE_NAME}: provide an unregistered vid`, vid);
+    logWarn(`${MODULE_NAME}: must provide an unregistered vid`, vid);
     return false;
   }
 
   return true;
+}
+
+function stopObserving(observer, vid, element) {
+  observer.unobserve(element);
+  observers[vid].done = true;
+}
+
+function fireViewabilityTracker(element, tracker) {
+  switch (tracker.method) {
+    case 'img':
+      triggerPixel(tracker.value, () => {
+        logInfo(`${MODULE_NAME}: viewability pixel fired`, tracker.value);
+      });
+      break;
+    case 'js':
+      insertHtmlIntoIframe(`<script src="${tracker.value}"></script>`);
+      break;
+    case 'callback':
+      tracker.value(element);
+      break;
+  }
+}
+
+function viewabilityCriteriaMet(observer, vid, element, tracker) {
+  stopObserving(observer, vid, element);
+  fireViewabilityTracker(element, tracker);
 }
 
 /**
@@ -58,7 +84,7 @@ export function startMeasurement(vid, element, tracker, criteria) {
     return;
   }
 
-  let options = {
+  const options = {
     root: null,
     rootMargin: '0px',
     threshold: criteria.inViewThreshold,
@@ -71,23 +97,7 @@ export function startMeasurement(vid, element, tracker, criteria) {
 
     if (viewable) {
       observers[vid].timeoutId = window.setTimeout(() => {
-        // stop observing
-        observer.unobserve(element);
-        observers[vid].done = true;
-
-        switch (tracker.method) {
-          case 'img':
-            triggerPixel(tracker.value, () => {
-              logInfo(`${MODULE_NAME}: viewability pixel fired`, tracker.value);
-            });
-            break;
-          case 'js':
-            insertHtmlIntoIframe(`<script src="${tracker.value}"></script>`);
-            break;
-          case 'callback':
-            tracker.value(element);
-            break;
-        }
+        viewabilityCriteriaMet(observer, vid, element, tracker);
       }, criteria.timeInView);
     } else if (observers[vid].timeoutId) {
       window.clearTimeout(observers[vid].timeoutId);
@@ -103,6 +113,8 @@ export function startMeasurement(vid, element, tracker, criteria) {
   };
 
   observer.observe(element);
+
+  logInfo(`${MODULE_NAME}: startMeasurement called with:`, arguments);
 }
 
 /**
@@ -111,7 +123,7 @@ export function startMeasurement(vid, element, tracker, criteria) {
  */
 export function stopMeasurement(vid) {
   if (!vid || !observers[vid]) {
-    logWarn(`${MODULE_NAME}: provide a registered vid`, vid);
+    logWarn(`${MODULE_NAME}: must provide a registered vid`, vid);
     return;
   }
 

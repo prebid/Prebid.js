@@ -73,7 +73,7 @@ describe('viewability test', () => {
 
       viewability.startMeasurement('4', {}, { method: 'js', value: 'http://my.tracker/123.js' }, { inViewThreshold: 0.5, timeInView: 1000 });
       expect(logWarnSpy.callCount).to.equal(1);
-      expect(logWarnSpy.calledWith(`${viewability.MODULE_NAME}: provide an unregistered vid`, '4')).to.equal(true);
+      expect(logWarnSpy.calledWith(`${viewability.MODULE_NAME}: must provide an unregistered vid`, '4')).to.equal(true);
     });
 
     it('should check for valid criteria', () => {
@@ -94,7 +94,7 @@ describe('viewability test', () => {
       let logWarnSpy = sandbox.spy(utils, 'logWarn');
       viewability.startMeasurement('7', undefined, { method: 'js', value: 'http://my.tracker/123.js' }, { timeInView: 1000 });
       expect(logWarnSpy.callCount).to.equal(1);
-      expect(logWarnSpy.calledWith(`${viewability.MODULE_NAME}: provide an html element to track`)).to.equal(true);
+      expect(logWarnSpy.calledWith(`${viewability.MODULE_NAME}: no html element provided`)).to.equal(true);
     });
   });
 
@@ -162,7 +162,7 @@ describe('viewability test', () => {
       let logWarnSpy = sandbox.spy(utils, 'logWarn');
       viewability.stopMeasurement('100');
       expect(logWarnSpy.callCount).to.equal(1);
-      expect(logWarnSpy.calledWith(`${viewability.MODULE_NAME}: provide a registered vid`, '100')).to.equal(true);
+      expect(logWarnSpy.calledWith(`${viewability.MODULE_NAME}: must provide a registered vid`, '100')).to.equal(true);
     });
   });
 
