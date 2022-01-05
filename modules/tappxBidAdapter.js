@@ -176,10 +176,6 @@ function validMediaType(bid) {
       logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Video context not supported.');
       return false;
     }
-    if (typeof video.mimes == 'undefined') {
-      logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Mimes param is mandatory.');
-      return false;
-    }
   }
 
   return true;
