@@ -492,6 +492,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Get ids from Prebid User ID Modules
   let eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'), deepAccess(validBidRequests, '0.userId.flocId'));
   let userEids = eidInfo.toSend;
+  const pageUrl = getPageUrl() || deepAccess(bidderRequest, 'refererInfo.referer');
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
@@ -590,8 +591,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       deepSetValue(r, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidderRequest.refererInfo) {
-      r.site.page = bidderRequest.refererInfo.referer;
+    if (pageUrl) {
+      r.site.page = pageUrl;
     }
   }
 
@@ -927,6 +928,20 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
 
   if (ixConfig.hasOwnProperty('detectMissingSizes') && ixConfig.detectMissingSizes) {
     updateMissingSizes(validBidRequest, missingBannerSizes, imp);
+  }
+}
+
+/**
+ * Returns the `pageUrl` set by publisher on the page if it is an valid url
+ */
+function getPageUrl() {
+  const pageUrl = config.getConfig('pageUrl');
+  try {
+    const url = new URL(pageUrl);
+    return url.href;
+  } catch (_) {
+    logWarn(`IX Bid Adapter: invalid pageUrl config property value set: ${pageUrl}`);
+    return undefined;
   }
 }
 

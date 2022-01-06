@@ -1490,6 +1490,14 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.imp).to.have.lengthOf(1);
     });
 
+    it('payload should set site.page to pageUrl when it exists in config object', function () {
+      const url = 'https://example.com/index.html';
+      config.setConfig({ pageUrl: url });
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0].data;
+      const payload = JSON.parse(request.r);
+      expect(payload.site.page).to.contains(url);
+    });
+
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {
       const bidWithIntId = utils.deepClone(DEFAULT_BANNER_VALID_BID);
       bidWithIntId[0].bidderRequestId = 123456;
@@ -1699,6 +1707,10 @@ describe('IndexexchangeAdapter', function () {
     });
 
     describe('first party data', () => {
+      beforeEach(() => {
+        config.resetConfig();
+      });
+
       it('should add first party data to page url in bid request if it exists in config', function () {
         config.setConfig({
           ix: {
