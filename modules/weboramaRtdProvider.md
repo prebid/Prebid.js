@@ -10,8 +10,6 @@ Maintainer: prebid-support@weborama.com
 
 Weborama provides a Semantic AI Contextual API that classifies in Real-time a web page seen by a web user within generic and custom topics. It enables publishers to better monetize their inventory and unlock it to programmatic.
 
-TODO: add text about user-centric profile/wam2gam
-
 Contact prebid-support@weborama.com for information.
 
 ### Publisher Usage
