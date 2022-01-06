@@ -303,7 +303,6 @@ function buildRequests(validBidRequests, bidderRequest) {
     data.lt = lt;
     data.to = to;
 
-
     // ADTS-169 add adUnitCode to requests
     if (adUnitCode) data.aun = adUnitCode
 
