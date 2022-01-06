@@ -1376,6 +1376,10 @@ describe('IndexexchangeAdapter', function () {
     const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
     const queryWithoutSchain = requestWithoutSchain.data;
 
+    afterEach(() => {
+      config.resetConfig();
+    });
+
     it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
       expect(requestUrl).to.equal(IX_SECURE_ENDPOINT);
@@ -1488,6 +1492,14 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
+    });
+
+    it('payload should set site.page to pageUrl when it exists in config object', function () {
+      const url = 'https://example.com/index.html';
+      config.setConfig({ pageUrl: url });
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0].data;
+      const payload = JSON.parse(request.r);
+      expect(payload.site.page).to.equal(url);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {

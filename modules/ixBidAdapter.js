@@ -591,7 +591,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     }
 
     if (bidderRequest.refererInfo) {
-      r.site.page = bidderRequest.refererInfo.referer;
+      r.site.page = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
     }
   }
 
