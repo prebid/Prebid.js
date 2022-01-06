@@ -20,6 +20,7 @@ const SUPPORTED_USER_ID_SOURCES = [
   'verizonmedia.com', // Verizon Media ConnectID
   'pubcid.org' // PubCommon ID
 ];
+const DEFAULT_MAX_TTL = 420; // 7 minutes
 export const spec = {
   code: 'synacormedia',
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -244,16 +245,16 @@ export const spec = {
             });
           }
 
-          let ttl = bid.exp;
-          if (!ttl && bidRequest.data && bidRequest.data.imp && bidRequest.data.imp.length > 0) {
-            bidRequest.data.imp.forEach(req => {
-              if (bid.impid === req.id) {
-                ttl = req.exp;
-              }
-            });
+          let max_ttl = DEFAULT_MAX_TTL;
+          if (bid.ext && bid.ext["imds.tv"] && bid.ext["imds.tv"].ttl) {
+            const bid_ttl_max = parseInt(bid.ext["imds.tv"].ttl, 10);
+            max_ttl = !isNaN(bid_ttl_max) && bid_ttl_max > 0 ? bid_ttl_max : DEFAULT_MAX_TTL;
           }
-          if (!ttl) {
-            ttl = 60;
+
+          let ttl = max_ttl;
+          if (bid.exp) {
+            const bid_ttl = parseInt(bid.exp, 10);
+            ttl = !isNaN(bid_ttl) && bid_ttl > 0 ? Math.min(ttl, max_ttl) : max_ttl;
           }
 
           const bidObj = {
@@ -266,7 +267,7 @@ export const spec = {
             netRevenue: true,
             mediaType: isVideo ? VIDEO : BANNER,
             ad: creative,
-            ttl: parseInt(ttl, 10)
+            ttl,
           };
 
           if (bid.adomain != undefined || bid.adomain != null) {

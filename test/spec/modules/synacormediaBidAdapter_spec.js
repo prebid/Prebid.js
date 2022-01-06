@@ -929,6 +929,14 @@ describe('synacormediaBidAdapter ', function () {
       };
     });
 
+    // TODO: CAP-2474 add tests for `bid.exp` and `bid.ext["imds.tv"].ttl`
+    // for no ttl_max config (bid.ext["imds.tv"].ttl), and also with a config value specified:
+    //   it('should return DEFAULT_TTL_MAX if bid.exp is undefined', function () {})
+    //   it('should return DEFAULT_TTL_MAX if bid.exp is an invalid value', function () {})
+    //   it('should return bid.exp if bid.exp valid and less than or equal to DEFAULT_TTL_MAX', function () {})
+    //   it('should return DEFAULT_TTL_MAX if bid.exp valid and greater than DEFAULT_TTL_MAX', function () {})
+    // test invalid and undefined bid.ext["imds.tv"].ttl values (ttl_max should be used as default)
+
     it('should return 1 video bid when 1 bid is in the video response', function () {
       bidRequest = {
         data: {
