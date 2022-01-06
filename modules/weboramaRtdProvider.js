@@ -9,7 +9,7 @@
 
 /**
  * @typedef {Object} ModuleParams
- * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default undefined)
+ * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default undefined)
  * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default undefined)
  * @property {?WeboCtxConf} weboCtxConf
  * @property {?WeboUserDataConf} weboUserDataConf
@@ -19,7 +19,7 @@
  * @typedef {Object} WeboCtxConf
  * @property {string} token required token to be used on bigsea contextual API requests
  * @property {?string} targetURL specify the target url instead use the referer
- * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default params.setPrebidTargeting or true)
+ * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default params.setPrebidTargeting or true)
  * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default params.sendToBidders or true)
  * @property {?object} defaultProfile to be used if the profile is not found
  */
@@ -27,7 +27,7 @@
 /**
  * @typedef {Object} WeboUserDataConf
  * @property {?number} accountId wam account id
- * @property {?Boolean} setPrebidTargeting if true will set the GAM targeting (default params.setPrebidTargeting or true)
+ * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default params.setPrebidTargeting or true)
  * @property {?Boolean} sendToBidders if true, will send the user-centric profile to all bidders (default params.sendToBidders or true)
  * @property {?object} defaultProfile to be used if the profile is not found
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
