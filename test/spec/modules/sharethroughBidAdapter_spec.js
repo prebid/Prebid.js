@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config';
@@ -486,10 +487,15 @@ describe('sharethrough adapter spec', function () {
           },
         };
 
+        let configStub;
+
         beforeEach(() => {
-          config.setConfig({
-            ortb2: firstPartyData,
-          });
+          configStub = sinon.stub(config, 'getConfig');
+          configStub.withArgs('ortb2').returns(firstPartyData);
+        });
+
+        afterEach(() => {
+          configStub.restore();
         });
 
         it('should include first party data in open rtb request, site section', () => {
