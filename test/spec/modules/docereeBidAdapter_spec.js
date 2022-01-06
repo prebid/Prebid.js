@@ -31,6 +31,8 @@ describe('BidlabBidAdapter', function () {
     bidder: 'doceree',
     params: {
       placementId: 'DOC_7jm9j5eqkl0xvc5w',
+      gdpr: '1',
+      gdprConsent: 'CPQfU1jPQfU1jG0AAAENAwCAAAAAAAAAAAAAAAAAAAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g'
     }
   };
 
@@ -41,6 +43,12 @@ describe('BidlabBidAdapter', function () {
     it('Should return false if placementId is not present', function () {
       delete bid.params.placementId;
       expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+  });
+
+  describe('isGdprConsentPresent', function () {
+    it('Should return true if gdpr consent is present', function () {
+      expect(spec.isGdprConsentPresent(bid)).to.be.true;
     });
   });
 
@@ -56,7 +64,7 @@ describe('BidlabBidAdapter', function () {
       expect(serverRequest.method).to.equal('GET');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://bidder.doceree.com/v1/adrequest?id=DOC_7jm9j5eqkl0xvc5w&pubRequestedURL=undefined&loggedInUser=JTdCJTIyZ2VuZGVyJTIyJTNBJTIyJTIyJTJDJTIyZW1haWwlMjIlM0ElMjIlMjIlMkMlMjJoYXNoZWRFbWFpbCUyMiUzQSUyMiUyMiUyQyUyMmZpcnN0TmFtZSUyMiUzQSUyMiUyMiUyQyUyMmxhc3ROYW1lJTIyJTNBJTIyJTIyJTJDJTIybnBpJTIyJTNBJTIyJTIyJTJDJTIyaGFzaGVkTlBJJTIyJTNBJTIyJTIyJTJDJTIyY2l0eSUyMiUzQSUyMiUyMiUyQyUyMnppcENvZGUlMjIlM0ElMjIlMjIlMkMlMjJzcGVjaWFsaXphdGlvbiUyMiUzQSUyMiUyMiU3RA%3D%3D&prebidjs=true&requestId=testing&');
+      expect(serverRequest.url).to.equal('https://bidder.doceree.com/v1/adrequest?id=DOC_7jm9j5eqkl0xvc5w&pubRequestedURL=undefined&loggedInUser=JTdCJTIyZ2VuZGVyJTIyJTNBJTIyJTIyJTJDJTIyZW1haWwlMjIlM0ElMjIlMjIlMkMlMjJoYXNoZWRFbWFpbCUyMiUzQSUyMiUyMiUyQyUyMmZpcnN0TmFtZSUyMiUzQSUyMiUyMiUyQyUyMmxhc3ROYW1lJTIyJTNBJTIyJTIyJTJDJTIybnBpJTIyJTNBJTIyJTIyJTJDJTIyaGFzaGVkTlBJJTIyJTNBJTIyJTIyJTJDJTIyY2l0eSUyMiUzQSUyMiUyMiUyQyUyMnppcENvZGUlMjIlM0ElMjIlMjIlMkMlMjJzcGVjaWFsaXphdGlvbiUyMiUzQSUyMiUyMiU3RA%3D%3D&prebidjs=true&requestId=testing&gdpr=1&gdpr_consent=CPQfU1jPQfU1jG0AAAENAwCAAAAAAAAAAAAAAAAAAAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g&');
     });
   });
   describe('interpretResponse', function () {

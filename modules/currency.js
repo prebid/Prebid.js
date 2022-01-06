@@ -1,7 +1,7 @@
 import { logInfo, logWarn, logError, logMessage } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { createBid } from '../src/bidfactory.js';
-import { STATUS } from '../src/constants.json';
+import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
@@ -219,7 +219,7 @@ function wrapFunction(fn, context, params) {
         }
       } catch (e) {
         logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
-        params[1] = createBid(STATUS.NO_BID, {
+        params[1] = createBid(CONSTANTS.STATUS.NO_BID, {
           bidder: bid.bidderCode || bid.bidder,
           bidId: bid.requestId
         });

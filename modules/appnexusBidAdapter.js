@@ -1,4 +1,4 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, logError, logInfo, deepAccess, logMessage, convertTypes, isStr, getParameterByName, deepClone, chunk, logWarn, getBidRequest, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, getMaxValueFromArray, fill, getMinValueFromArray, isArrayOfNums, isFn } from '../src/utils.js';
+import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, logError, logInfo, deepAccess, logMessage, convertTypes, isStr, getParameterByName, deepClone, chunk, logWarn, getBidRequest, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, getMaxValueFromArray, fill, getMinValueFromArray, isArrayOfNums, isFn, isAllowZeroCpmBidsEnabled } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
 import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
@@ -78,7 +78,6 @@ export const spec = {
     { code: 'districtm', gvlid: 144 },
     { code: 'adasta' },
     { code: 'beintoo', gvlid: 618 },
-    { code: 'targetVideo' },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -293,7 +292,8 @@ export const spec = {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
-          if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+          const cpmCheck = (isAllowZeroCpmBidsEnabled(bidderRequest.bidderCode)) ? rtbBid.cpm >= 0 : rtbBid.cpm > 0;
+          if (cpmCheck && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
@@ -596,6 +596,22 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
   if (rtbBid.advertiser_id) {
     bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
+  }
+
+  // temporary function; may remove at later date if/when adserver fully supports dchain
+  function setupDChain(rtbBid) {
+    let dchain = {
+      ver: '1.0',
+      complete: 0,
+      nodes: [{
+        bsid: rtbBid.buyer_member_id.toString()
+      }],
+    };
+
+    return dchain;
+  }
+  if (rtbBid.buyer_member_id) {
+    bid.meta = Object.assign({}, bid.meta, {dchain: setupDChain(rtbBid)});
   }
 
   if (rtbBid.brand_id) {

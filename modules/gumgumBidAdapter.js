@@ -286,7 +286,8 @@ function buildRequests(validBidRequests, bidderRequest) {
       schain,
       transactionId,
       userId = {},
-      ortb2Imp
+      ortb2Imp,
+      adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
@@ -295,12 +296,15 @@ function buildRequests(validBidRequests, bidderRequest) {
     let gpid = '';
 
     const date = new Date();
-    const lt = date && date.getTime();
-    const to = date && date.getTimezoneOffset();
+    const lt = date.getTime();
+    const to = date.getTimezoneOffset();
     if (to) {
       lt && (data.lt = lt);
       data.to = to;
     }
+
+    // ADTS-169 add adUnitCode to requests
+    if (adUnitCode) data.aun = adUnitCode
 
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
