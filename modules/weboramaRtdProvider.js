@@ -149,17 +149,11 @@ function initWeboUserData(moduleParams, weboUserDataConf) {
   return true;
 }
 
-/** @type {string} */
-const setPrebidTargetingPropertyName = 'setPrebidTargeting';
-
-/** @type {string} */
-const sendToBiddersPropertyName = 'sendToBidders';
-
-/** @type {Boolean} */
-const setPrebidTargetingDefaultValue = true;
-
-/** @type {Boolean} */
-const sendToBiddersDefaultValue = true;
+/** @type {Object} */
+const globalDefaults = {
+  setPrebidTargeting: true,
+  sendToBidders: true,
+}
 
 /** normalize submodule configuration
  * @param {ModuleParams} moduleParams
@@ -167,14 +161,12 @@ const sendToBiddersDefaultValue = true;
  * @return {void}
  */
 function normalizeConf(moduleParams, submoduleParams) {
-  if (!submoduleParams.hasOwnProperty(setPrebidTargetingPropertyName)) {
-    const hasModuleParam = moduleParams.hasOwnProperty(setPrebidTargetingPropertyName);
-    submoduleParams.setPrebidTargeting = (hasModuleParam) ? moduleParams.setPrebidTargeting : setPrebidTargetingDefaultValue;
-  }
-  if (!submoduleParams.hasOwnProperty(sendToBiddersPropertyName)) {
-    const hasModuleParam = moduleParams.hasOwnProperty(sendToBiddersPropertyName);
-    submoduleParams.sendToBidders = (hasModuleParam) ? moduleParams.sendToBidders : sendToBiddersDefaultValue;
-  }
+  Object.entries(globalDefaults).forEach(([propertyName, globalDefaultValue]) => {
+    if (!submoduleParams.hasOwnProperty(propertyName)) {
+      const hasModuleParam = moduleParams.hasOwnProperty(propertyName);
+      submoduleParams[propertyName] = (hasModuleParam) ? moduleParams[propertyName] : globalDefaultValue;
+    }
+  })
 }
 
 /** function that provides ad server targeting data to RTD-core
@@ -365,7 +357,7 @@ const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 function handleBid(adUnitCode, profile, site, bid) {
   const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-  logMessage(`handling on adunit '${adUnitCode}', bidder '${bidder}' and bid`, bid );
+  logMessage(`handling on adunit '${adUnitCode}', bidder '${bidder}' and bid`, bid);
 
   switch (bidder) {
     case APPNEXUS:
