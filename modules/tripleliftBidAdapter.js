@@ -355,7 +355,8 @@ function _buildResponseObject(bidderRequest, bid) {
       meta: {}
     };
 
-    if (_isVideoBidRequest(breq)) {
+    // replace includes with something better; write tests
+    if (_isVideoBidRequest(breq) && bid.ad.includes('VAST')) {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
       bidResponse.ttl = VIDEO_TIME_TO_LIVE;
@@ -369,9 +370,11 @@ function _buildResponseObject(bidderRequest, bid) {
       bidResponse.meta.advertiserDomains = bid.adomain;
     }
 
-    // what should this be for outstream?
     if (bid.tl_source && bid.tl_source == 'hdx') {
       bidResponse.meta.mediaType = 'banner';
+      if (_isVideoBidRequest(breq) && bid.ad.includes('VAST')) {
+        bidResponse.meta.mediaType = 'video'
+      }
     }
 
     if (bid.tl_source && bid.tl_source == 'tlx') {
