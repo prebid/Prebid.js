@@ -245,16 +245,16 @@ export const spec = {
             });
           }
 
-          let max_ttl = DEFAULT_MAX_TTL;
-          if (bid.ext && bid.ext["imds.tv"] && bid.ext["imds.tv"].ttl) {
-            const bid_ttl_max = parseInt(bid.ext["imds.tv"].ttl, 10);
-            max_ttl = !isNaN(bid_ttl_max) && bid_ttl_max > 0 ? bid_ttl_max : DEFAULT_MAX_TTL;
+          let maxTtl = DEFAULT_MAX_TTL;
+          if (bid.ext && bid.ext['imds.tv'] && bid.ext['imds.tv'].ttl) {
+            const bidTtlMax = parseInt(bid.ext['imds.tv'].ttl, 10);
+            maxTtl = !isNaN(bidTtlMax) && bidTtlMax > 0 ? bidTtlMax : DEFAULT_MAX_TTL;
           }
 
-          let ttl = max_ttl;
+          let ttl = maxTtl;
           if (bid.exp) {
-            const bid_ttl = parseInt(bid.exp, 10);
-            ttl = !isNaN(bid_ttl) && bid_ttl > 0 ? Math.min(ttl, max_ttl) : max_ttl;
+            const bidTtl = parseInt(bid.exp, 10);
+            ttl = !isNaN(bidTtl) && bidTtl > 0 ? Math.min(bidTtl, maxTtl) : maxTtl;
           }
 
           const bidObj = {
