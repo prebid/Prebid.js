@@ -72,6 +72,7 @@ function handleRenderRequest(ev, data, adObject) {
       id: data.adId,
       bid: adObject
     });
+    return;
   }
 
   // save winning bids
