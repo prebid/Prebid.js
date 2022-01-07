@@ -4,9 +4,8 @@
 
 let windowLocation = window.location;
 var urlParser = document.createElement('a');
-var publisherDomain = urlParser.protocol + '//' + urlParser.hostname;
-
 urlParser.href = '%%PATTERN:url%%';
+var publisherDomain = urlParser.protocol + '//' + urlParser.hostname;
 const adId = '%%PATTERN:hb_adid%%';
 
 function renderAd(ev) {

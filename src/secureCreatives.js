@@ -63,7 +63,16 @@ function handleRenderRequest(ev, data, adObject) {
     }
   }
 
-  _sendAdToCreative(adObject, ev);
+  try {
+    _sendAdToCreative(adObject, ev);
+  } catch (e) {
+    emitAdRenderFail({
+      reason: constants.AD_RENDER_FAILED_REASON.EXCEPTION,
+      message: e.message,
+      id: data.adId,
+      bid: adObject
+    });
+  }
 
   // save winning bids
   auctionManager.addWinningBid(adObject);

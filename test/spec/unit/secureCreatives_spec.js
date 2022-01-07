@@ -1,6 +1,7 @@
 import {
   _sendAdToCreative, receiveMessage
 } from 'src/secureCreatives.js';
+import * as secureCreatives from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import {getAdUnits, getBidRequests, getBidResponses} from 'test/fixtures/fixtures.js';
 import {auctionManager} from 'src/auctionManager.js';
@@ -251,7 +252,25 @@ describe('secureCreatives', () => {
           reason: CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
           adId: 'missing'
         }));
-      })
+      });
+
+      it('should emit AD_RENDER_FAILED if creative can\'t be sent to rendering frame', () => {
+        pushBidResponseToAuction({});
+        const ev = {
+          source: {
+            postMessage: sinon.stub().callsFake(() => { throw new Error(); })
+          },
+          data: JSON.stringify({
+            message: 'Prebid Request',
+            adId: bidId
+          })
+        }
+        receiveMessage(ev)
+        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.AD_RENDER_FAILED, sinon.match({
+          reason: CONSTANTS.AD_RENDER_FAILED_REASON.EXCEPTION,
+          adId: bidId
+        }));
+      });
     });
 
     describe('Prebid Native', function() {
