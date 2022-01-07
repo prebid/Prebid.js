@@ -1,8 +1,9 @@
+
 /**
  * This module sets default values and validates ortb2 first part data
  * @module modules/firstPartyData
  */
-import * as utils from '../src/utils.js';
+import { timestamp, mergeDeep } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getCoreStorageManager } from '../src/storageManager.js';
@@ -32,7 +33,7 @@ export function findRootDomain(fullDomain = window.location.hostname) {
   const TEST_COOKIE_VALUE = 'writeable';
   do {
     rootDomain = domainParts.slice(startIndex).join('.');
-    let expirationDate = new Date(utils.timestamp() + 10 * 1000).toUTCString();
+    let expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
 
     // Write a test cookie
     coreStorage.setCookie(
@@ -69,14 +70,14 @@ export function findRootDomain(fullDomain = window.location.hostname) {
  * Checks for referer and if exists merges into ortb2 global data
  */
 function setReferer() {
-  if (getRefererInfo().referer) utils.mergeDeep(ortb2, { site: { ref: getRefererInfo().referer } });
+  if (getRefererInfo().referer) mergeDeep(ortb2, { site: { ref: getRefererInfo().referer } });
 }
 
 /**
  * Checks for canonical url and if exists merges into ortb2 global data
  */
 function setPage() {
-  if (getRefererInfo().canonicalUrl) utils.mergeDeep(ortb2, { site: { page: getRefererInfo().canonicalUrl } });
+  if (getRefererInfo().canonicalUrl) mergeDeep(ortb2, { site: { page: getRefererInfo().canonicalUrl } });
 }
 
 /**
@@ -94,8 +95,8 @@ function setDomain() {
   let domain = parseDomain(getRefererInfo().canonicalUrl)
 
   if (domain) {
-    utils.mergeDeep(ortb2, { site: { domain: domain } });
-    utils.mergeDeep(ortb2, { site: { publisher: { domain: findRootDomain(domain) } } });
+    mergeDeep(ortb2, { site: { domain: domain } });
+    mergeDeep(ortb2, { site: { publisher: { domain: findRootDomain(domain) } } });
   };
 }
 
@@ -114,7 +115,7 @@ function setDimensions() {
     height = window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight;
   }
 
-  utils.mergeDeep(ortb2, { device: { w: width, h: height } });
+  mergeDeep(ortb2, { device: { w: width, h: height } });
 }
 
 /**
@@ -129,7 +130,7 @@ function setKeywords() {
     keywords = window.document.querySelector("meta[name='keywords']");
   }
 
-  if (keywords && keywords.content) utils.mergeDeep(ortb2, { site: { keywords: keywords.content.replace(/\s/g, '') } });
+  if (keywords && keywords.content) mergeDeep(ortb2, { site: { keywords: keywords.content.replace(/\s/g, '') } });
 }
 
 /**
@@ -153,7 +154,7 @@ function runEnrichments() {
 export function initSubmodule(fpdConf, data) {
   resetOrtb2();
 
-  return (!fpdConf.skipEnrichments) ? utils.mergeDeep(runEnrichments(), data) : data;
+  return (!fpdConf.skipEnrichments) ? mergeDeep(runEnrichments(), data) : data;
 }
 
 /** @type {firstPartyDataSubmodule} */

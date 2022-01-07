@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, deepSetValue, deepClone, logWarn, logError } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
@@ -43,7 +43,7 @@ const BB_HELPERS = {
     if (!request.device.h) request.device.h = window.innerHeight;
   },
   addSchain: function(request, validBidRequests) {
-    const schain = utils.deepAccess(validBidRequests, '0.schain');
+    const schain = deepAccess(validBidRequests, '0.schain');
     if (schain) request.source.ext = { schain: schain };
   },
   addCurrency: function(request) {
@@ -52,11 +52,11 @@ const BB_HELPERS = {
     else if (Array.isArray(adServerCur) && adServerCur.length) request.cur = [adServerCur[0]];
   },
   addUserIds: function(request, validBidRequests) {
-    const bidUserId = utils.deepAccess(validBidRequests, '0.userId');
+    const bidUserId = deepAccess(validBidRequests, '0.userId');
     const eids = createEidsArray(bidUserId);
 
     if (eids.length) {
-      utils.deepSetValue(request, 'user.ext.eids', eids);
+      deepSetValue(request, 'user.ext.eids', eids);
     }
   },
   substituteUrl: function (url, publication, renderer) {
@@ -72,7 +72,7 @@ const BB_HELPERS = {
     return BB_HELPERS.substituteUrl(BB_CONSTANTS.RENDERER_URL, publication, renderer);
   },
   transformVideoParams: function(videoParams, videoParamsExt) {
-    videoParams = utils.deepClone(videoParams);
+    videoParams = deepClone(videoParams);
 
     let playerSize = videoParams.playerSize || [BB_CONSTANTS.DEFAULT_WIDTH, BB_CONSTANTS.DEFAULT_HEIGHT];
     if (Array.isArray(playerSize[0])) playerSize = playerSize[0];
@@ -105,8 +105,8 @@ const BB_HELPERS = {
       ttl: BB_CONSTANTS.DEFAULT_TTL
     };
 
-    const extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
-    const extPrebidCache = utils.deepAccess(bid, 'ext.prebid.cache');
+    const extPrebidTargeting = deepAccess(bid, 'ext.prebid.targeting');
+    const extPrebidCache = deepAccess(bid, 'ext.prebid.cache');
 
     if (extPrebidCache && typeof extPrebidCache.vastXml === 'object' && extPrebidCache.vastXml.cacheId && extPrebidCache.vastXml.url) {
       bidObject.videoCacheKey = extPrebidCache.vastXml.cacheId;
@@ -139,12 +139,12 @@ const BB_RENDERER = {
     else if (bid.vastUrl) config.vastUrl = bid.vastUrl;
 
     if (!bid.vastXml && !bid.vastUrl) {
-      utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: No vastXml or vastUrl on bid, bailing...`);
+      logWarn(`${BB_CONSTANTS.BIDDER_CODE}: No vastXml or vastUrl on bid, bailing...`);
       return;
     }
 
     if (!(window.bluebillywig && window.bluebillywig.renderers)) {
-      utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: renderer code failed to initialize...`);
+      logWarn(`${BB_CONSTANTS.BIDDER_CODE}: renderer code failed to initialize...`);
       return;
     }
 
@@ -153,7 +153,7 @@ const BB_RENDERER = {
     const renderer = find(window.bluebillywig.renderers, r => r._id === rendererId);
 
     if (renderer) renderer.bootstrap(config, ele, bid.rendererSettings || {});
-    else utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Couldn't find a renderer with ${rendererId}`);
+    else logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Couldn't find a renderer with ${rendererId}`);
   },
   newRenderer: function(rendererUrl, adUnitCode) {
     const renderer = Renderer.install({
@@ -165,7 +165,7 @@ const BB_RENDERER = {
     try {
       renderer.setRender(BB_RENDERER.outstreamRender);
     } catch (err) {
-      utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Error tying to setRender on renderer`, err);
+      logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Error tying to setRender on renderer`, err);
     }
 
     return renderer;
@@ -189,70 +189,70 @@ export const spec = {
     const rendererRegex = /^[\w+_]+$/;
 
     if (!bid.params) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no params set on bid. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: no params set on bid. Rejecting bid: `, bid);
       return false;
     }
 
     if (!bid.params.hasOwnProperty('publicationName') || typeof bid.params.publicationName !== 'string') {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no publicationName specified in bid params, or it's not a string. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: no publicationName specified in bid params, or it's not a string. Rejecting bid: `, bid);
       return false;
     } else if (!publicationNameRegex.test(bid.params.publicationName)) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: publicationName must be in format 'publication' or 'publication.environment'. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: publicationName must be in format 'publication' or 'publication.environment'. Rejecting bid: `, bid);
       return false;
     }
 
     if ((!bid.params.hasOwnProperty('rendererCode') || typeof bid.params.rendererCode !== 'string')) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no rendererCode was specified in bid params. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: no rendererCode was specified in bid params. Rejecting bid: `, bid);
       return false;
     } else if (!rendererRegex.test(bid.params.rendererCode)) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: rendererCode must be alphanumeric, including underscores. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: rendererCode must be alphanumeric, including underscores. Rejecting bid: `, bid);
       return false;
     }
 
     if (!bid.params.accountId) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no accountId specified in bid params. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: no accountId specified in bid params. Rejecting bid: `, bid);
       return false;
     }
 
     if (bid.params.hasOwnProperty('connections')) {
       if (!Array.isArray(bid.params.connections)) {
-        utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: connections is not of type array. Rejecting bid: `, bid);
+        logError(`${BB_CONSTANTS.BIDDER_CODE}: connections is not of type array. Rejecting bid: `, bid);
         return false;
       } else {
         for (let i = 0; i < bid.params.connections.length; i++) {
           if (!bid.params.hasOwnProperty(bid.params.connections[i])) {
-            utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: connection specified in params.connections, but not configured in params. Rejecting bid: `, bid);
+            logError(`${BB_CONSTANTS.BIDDER_CODE}: connection specified in params.connections, but not configured in params. Rejecting bid: `, bid);
             return false;
           }
         }
       }
     } else {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no connections specified in bid. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: no connections specified in bid. Rejecting bid: `, bid);
       return false;
     }
 
     if (bid.params.hasOwnProperty('video') && (bid.params.video === null || typeof bid.params.video !== 'object')) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: params.video must be of type object. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: params.video must be of type object. Rejecting bid: `, bid);
       return false;
     }
 
     if (bid.params.hasOwnProperty('rendererSettings') && (bid.params.rendererSettings === null || typeof bid.params.rendererSettings !== 'object')) {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: params.rendererSettings must be of type object. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: params.rendererSettings must be of type object. Rejecting bid: `, bid);
       return false;
     }
 
     if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
       if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
-        utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no context specified in bid. Rejecting bid: `, bid);
+        logError(`${BB_CONSTANTS.BIDDER_CODE}: no context specified in bid. Rejecting bid: `, bid);
         return false;
       }
 
       if (bid.mediaTypes[VIDEO].context !== 'outstream') {
-        utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: video.context is invalid, must be "outstream". Rejecting bid: `, bid);
+        logError(`${BB_CONSTANTS.BIDDER_CODE}: video.context is invalid, must be "outstream". Rejecting bid: `, bid);
         return false;
       }
     } else {
-      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: mediaTypes or mediaTypes.video is not specified. Rejecting bid: `, bid);
+      logError(`${BB_CONSTANTS.BIDDER_CODE}: mediaTypes or mediaTypes.video is not specified. Rejecting bid: `, bid);
       return false;
     }
 
@@ -273,7 +273,7 @@ export const spec = {
         return extBuilder;
       }, {});
 
-      const videoParams = BB_HELPERS.transformVideoParams(utils.deepAccess(validBidRequest, 'mediaTypes.video'), utils.deepAccess(validBidRequest, 'params.video'));
+      const videoParams = BB_HELPERS.transformVideoParams(deepAccess(validBidRequest, 'mediaTypes.video'), deepAccess(validBidRequest, 'params.video'));
       imps.push({ id: validBidRequest.bidId, ext, secure: window.location.protocol === 'https' ? 1 : 0, video: videoParams });
     });
 
@@ -294,16 +294,16 @@ export const spec = {
     if (bidderRequest.gdprConsent) {
       let gdprApplies = 0;
       if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
-      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
+      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
     }
 
     if (bidderRequest.uspConsent) {
-      utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       this.syncStore.uspConsent = bidderRequest.uspConsent;
     }
 
-    if (getConfig('coppa') == true) utils.deepSetValue(request, 'regs.coppa', 1);
+    if (getConfig('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
 
     // Enrich the request with any external data we may have
     BB_HELPERS.addSiteAppDevice(request, bidderRequest.refererInfo && bidderRequest.refererInfo.referer);

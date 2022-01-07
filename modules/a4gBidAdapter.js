@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
+import { _each } from '../src/utils.js';
 
 const A4G_BIDDER_CODE = 'a4g';
 const A4G_CURRENCY = 'USD';
@@ -28,7 +28,7 @@ export const spec = {
     const sizeParams = [];
     const zoneIds = [];
 
-    utils._each(validBidRequests, function(bid) {
+    _each(validBidRequests, function(bid) {
       if (!deliveryUrl && typeof bid.params.deliveryUrl === 'string') {
         deliveryUrl = bid.params.deliveryUrl;
       }
@@ -66,7 +66,7 @@ export const spec = {
 
   interpretResponse: function(serverResponses, request) {
     const bidResponses = [];
-    utils._each(serverResponses.body, function(response) {
+    _each(serverResponses.body, function(response) {
       if (response.cpm > 0) {
         const bidResponse = {
           requestId: response.id,

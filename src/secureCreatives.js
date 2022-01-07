@@ -60,7 +60,6 @@ export function receiveMessage(ev) {
       if (data.action === 'assetRequest') {
         const message = getAssetMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
-        return;
       } else if (data.action === 'allAssetRequest') {
         const message = getAllAssetsMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
@@ -68,13 +67,13 @@ export function receiveMessage(ev) {
         adObject.height = data.height;
         adObject.width = data.width;
         resizeRemoteCreative(adObject);
+      } else {
+        const trackerType = fireNativeTrackers(data, adObject);
+        if (trackerType === 'click') { return; }
+
+        auctionManager.addWinningBid(adObject);
+        events.emit(BID_WON, adObject);
       }
-
-      const trackerType = fireNativeTrackers(data, adObject);
-      if (trackerType === 'click') { return; }
-
-      auctionManager.addWinningBid(adObject);
-      events.emit(BID_WON, adObject);
     }
   }
 }
@@ -128,11 +127,12 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   }
 
   function getDfpElementId(adId) {
-    return find(window.googletag.pubads().getSlots(), slot => {
+    const slot = find(window.googletag.pubads().getSlots(), slot => {
       return find(slot.getTargetingKeys(), key => {
         return includes(slot.getTargeting(key), adId);
       });
-    }).getSlotElementId();
+    });
+    return slot ? slot.getSlotElementId() : null;
   }
 
   function getAstElementId(adUnitCode) {

@@ -4,7 +4,7 @@ import { ajax } from '../src/ajax.js';
 import CONSTANTS from '../src/constants.json';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
+import { logMessage } from '../src/utils.js';
 
 // Object.entries polyfill
 const entries = Object.entries || function(obj) {
@@ -62,7 +62,7 @@ scaleableAnalytics.enableAnalytics = config => {
   scaleableAnalytics.originEnableAnalytics(config);
 
   scaleableAnalytics.enableAnalytics = function _enable() {
-    return utils.logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
+    return logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
   };
 }
 
