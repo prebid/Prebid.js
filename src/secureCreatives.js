@@ -188,11 +188,12 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   }
 
   function getDfpElementId(adId) {
-    return find(window.googletag.pubads().getSlots(), slot => {
+    const slot = find(window.googletag.pubads().getSlots(), slot => {
       return find(slot.getTargetingKeys(), key => {
         return includes(slot.getTargeting(key), adId);
       });
-    }).getSlotElementId();
+    });
+    return slot ? slot.getSlotElementId() : null;
   }
 
   function getAstElementId(adUnitCode) {
