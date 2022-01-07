@@ -16,7 +16,7 @@ import {
 } from '../src/utils.js';
 
 const BIDDER_VERSION = '1.1.0';
-const BASE_URL = 'https://ortb.adpearl.io';
+const BASE_URL = 'https://auction.adpearl.io';
 
 export const spec = {
   code: 'pubgenius',

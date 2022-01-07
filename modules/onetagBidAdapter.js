@@ -206,8 +206,8 @@ function getPageInfo() {
         ? topmostFrame.document.referrer
         : null,
     ancestorOrigin:
-      window.location.ancestorOrigins && window.location.ancestorOrigins[0] != null
-        ? window.location.ancestorOrigins[0]
+      window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0
+        ? window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1]
         : null,
     masked: currentFrameNesting,
     wWidth: topmostFrame.innerWidth,
@@ -347,10 +347,12 @@ function getSizes(sizes) {
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   let syncs = [];
   let params = '';
-  if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-    params += '&gdpr_consent=' + gdprConsent.consentString;
+  if (gdprConsent) {
     if (typeof gdprConsent.gdprApplies === 'boolean') {
       params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+    }
+    if (typeof gdprConsent.consentString === 'string') {
+      params += '&gdpr_consent=' + gdprConsent.consentString;
     }
   }
   if (uspConsent && typeof uspConsent === 'string') {

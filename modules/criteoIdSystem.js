@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { timestamp, parseUrl, triggerPixel, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { submodule } from '../src/hook.js';
@@ -20,10 +20,10 @@ const bundleStorageKey = 'cto_bundle';
 const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
 
 const pastDateString = new Date(0).toString();
-const expirationString = new Date(utils.timestamp() + cookiesMaxAge).toString();
+const expirationString = new Date(timestamp() + cookiesMaxAge).toString();
 
 function extractProtocolHost (url, returnOnlyHost = false) {
-  const parsedUrl = utils.parseUrl(url, {noDecodeWholeURL: true})
+  const parsedUrl = parseUrl(url, {noDecodeWholeURL: true})
   return returnOnlyHost
     ? `${parsedUrl.hostname}`
     : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
@@ -33,15 +33,37 @@ function getFromAllStorages(key) {
   return storage.getCookie(key) || storage.getDataFromLocalStorage(key);
 }
 
-function saveOnAllStorages(key, value) {
+function saveOnAllStorages(key, value, hostname) {
   if (key && value) {
-    storage.setCookie(key, value, expirationString);
     storage.setDataInLocalStorage(key, value);
+    setCookieOnAllDomains(key, value, expirationString, hostname, true);
   }
 }
 
-function deleteFromAllStorages(key) {
-  storage.setCookie(key, '', pastDateString);
+function setCookieOnAllDomains(key, value, expiration, hostname, stopOnSuccess) {
+  const subDomains = hostname.split('.');
+  for (let i = 0; i < subDomains.length; ++i) {
+    // Try to write the cookie on this subdomain (we want it to be stored only on the TLD+1)
+    const domain = subDomains.slice(subDomains.length - i - 1, subDomains.length).join('.');
+
+    try {
+      storage.setCookie(key, value, expiration, null, '.' + domain);
+
+      if (stopOnSuccess) {
+        // Try to read the cookie to check if we wrote it
+        const ck = storage.getCookie(key);
+        if (ck && ck === value) {
+          break;
+        }
+      }
+    } catch (error) {
+
+    }
+  }
+}
+
+function deleteFromAllStorages(key, hostname) {
+  setCookieOnAllDomains(key, '', pastDateString, hostname, true);
   storage.removeDataFromLocalStorage(key);
 }
 
@@ -87,22 +109,22 @@ function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
       const jsonResponse = JSON.parse(response);
       if (jsonResponse.acwsUrl) {
         const urlsToCall = typeof jsonResponse.acwsUrl === 'string' ? [jsonResponse.acwsUrl] : jsonResponse.acwsUrl;
-        urlsToCall.forEach(url => utils.triggerPixel(url));
+        urlsToCall.forEach(url => triggerPixel(url));
       } else if (jsonResponse.bundle) {
-        saveOnAllStorages(bundleStorageKey, jsonResponse.bundle);
+        saveOnAllStorages(bundleStorageKey, jsonResponse.bundle, domain);
       }
 
       if (jsonResponse.bidId) {
-        saveOnAllStorages(bididStorageKey, jsonResponse.bidId);
+        saveOnAllStorages(bididStorageKey, jsonResponse.bidId, domain);
         const criteoId = { criteoId: jsonResponse.bidId };
         callback(criteoId);
       } else {
-        deleteFromAllStorages(bididStorageKey);
+        deleteFromAllStorages(bididStorageKey, domain);
         callback();
       }
     },
     error: error => {
-      utils.logError(`criteoIdSystem: unable to sync user id`, error);
+      logError(`criteoIdSystem: unable to sync user id`, error);
       callback();
     }
   };

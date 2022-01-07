@@ -285,6 +285,26 @@ pbjs.setConfig({
             params: {
                 cid: 5126 // Set your Intimate Merger Customer ID here for production
             }
+        },
+        {
+            name: 'connectId',
+            params: {
+              pixelId: 58776,
+              he: '0bef996248d63cea1529cb86de31e9547a712d9f380146e98bbd39beec70355a'
+            },
+            storage: {
+              name: 'connectId',
+              type: 'html5',
+              expires: 15
+            }
+        }
+        {
+            name: "qid",
+            storage: {
+                type: "html5",
+                name: "qid",
+                expires: 365
+            }
         }],
         syncDelay: 5000
     }
