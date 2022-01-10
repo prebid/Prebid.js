@@ -122,12 +122,13 @@ export const spec = {
 
     let values = {};
 
-    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      values['consent'] = gdprConsent.consentString;
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        values['gdpr'] = Number(gdprConsent.gdprApplies);
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      values['gdpr'] = Number(gdprConsent.gdprApplies);
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        values['consent'] = gdprConsent.consentString;
       }
     }
+
     if (uspConsent) {
       values['usp'] = uspConsent;
     }
