@@ -1,4 +1,4 @@
-import { _each, getBidIdParameter, isArray, deepClone, parseUrl, getUniqueIdentifierStr, deepSetValue, logError, deepAccess } from '../src/utils.js';
+import { _each, getBidIdParameter, isArray, deepClone, parseUrl, getUniqueIdentifierStr, deepSetValue, logError, deepAccess, isInteger, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js'
 import { createEidsArray } from './userId/eids.js';
@@ -6,22 +6,22 @@ import {config} from '../src/config.js';
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
-  'minduration': (value) => utils.isInteger(value),
-  'maxduration': (value) => utils.isInteger(value),
+  'minduration': (value) => isInteger(value),
+  'maxduration': (value) => isInteger(value),
   'protocols': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 10),
-  'w': (value) => utils.isInteger(value),
-  'h': (value) => utils.isInteger(value),
-  'startdelay': (value) => utils.isInteger(value),
+  'w': (value) => isInteger(value),
+  'h': (value) => isInteger(value),
+  'startdelay': (value) => isInteger(value),
   'placement': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
   'linearity': (value) => [1, 2].indexOf(value) !== -1,
   'skip': (value) => [0, 1].indexOf(value) !== -1,
-  'skipmin': (value) => utils.isInteger(value),
-  'skipafter': (value) => utils.isInteger(value),
-  'sequence': (value) => utils.isInteger(value),
+  'skipmin': (value) => isInteger(value),
+  'skipafter': (value) => isInteger(value),
+  'sequence': (value) => isInteger(value),
   'battr': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 17),
-  'maxextended': (value) => utils.isInteger(value),
-  'minbitrate': (value) => utils.isInteger(value),
-  'maxbitrate': (value) => utils.isInteger(value),
+  'maxextended': (value) => isInteger(value),
+  'minbitrate': (value) => isInteger(value),
+  'maxbitrate': (value) => isInteger(value),
   'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
   'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
   'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
@@ -86,14 +86,14 @@ export const spec = {
         const imp = {
           adunitcode: bid.adUnitCode,
           id: bid.bidId,
-          tagid: String(utils.getBidIdParameter('tagid', bid.params)),
+          tagid: String(getBidIdParameter('tagid', bid.params)),
           bidfloor: floorInfo.floor
         }
 
-        if (utils.deepAccess(bid, 'mediaTypes.banner')) {
-          let bidSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes
-          bidSizes = (utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes]
-          bidSizes = bidSizes.filter(size => utils.isArray(size))
+        if (deepAccess(bid, 'mediaTypes.banner')) {
+          let bidSizes = deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes
+          bidSizes = (isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]
+          bidSizes = bidSizes.filter(size => isArray(size))
           const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
 
           imp.banner = {
@@ -103,8 +103,8 @@ export const spec = {
           };
         }
         if (
-          utils.deepAccess(bid, 'mediaTypes.video') &&
-          utils.deepAccess(bid, 'mediaTypes.video.context') !== ADPOD
+          deepAccess(bid, 'mediaTypes.video') &&
+          deepAccess(bid, 'mediaTypes.video.context') !== ADPOD
         ) {
           imp.video = _buildVideoRequestObj(bid);
         }
@@ -254,8 +254,8 @@ export const spec = {
 
 function _buildVideoRequestObj(bid) {
   const videoObj = {}
-  const videoAdUnitParams = utils.deepAccess(bid, 'mediaTypes.video', {})
-  const videoBidderParams = utils.deepAccess(bid, 'params.video', {})
+  const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {})
+  const videoBidderParams = deepAccess(bid, 'params.video', {})
   const computedParams = {}
 
   if (Array.isArray(videoAdUnitParams.playerSize)) {
@@ -275,7 +275,7 @@ function _buildVideoRequestObj(bid) {
       if (ORTB_VIDEO_PARAMS[paramName](videoParams[paramName])) {
         videoObj[paramName] = videoParams[paramName]
       } else {
-        utils.logWarn(`The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
+        logWarn(`The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
       }
     }
   })
