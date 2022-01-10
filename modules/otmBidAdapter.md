@@ -1,37 +1,36 @@
 # Overview
 
-**Module Name**: OTM Bidder Adapter
-**Module Type**: Bidder Adapter  
-**Maintainer**: e.kretsu@otm-r.com
+Module Name: OTM Bidder Adapter
+Module Type: Bidder Adapter
+Maintainer: ?
 
 # Description
 
-OTM Bidder Adapter for Prebid.js. About: https://otm-r.com
+You can use this adapter to get a bid from otm-r.com.
 
-Use `otm` as bidder:
+About us : http://otm-r.com
 
-# Params
-- `tid` required, specific id AdUnit slot.
-- `domain` optional, specific custom domain.
-- `bidfloor` optional.
 
-## AdUnits configuration example
-```
-    var adUnits = [{
-      code: 'your-slot', //use exactly the same code as your slot div id.
-      mediaTypes: {
-          banner: {
-              sizes: [[320, 480]]
-          }
-      },
-      bids: [{
-        bidder: 'otm',
-        params: { 
-            tid: 'XXXXX',
-            domain: 'specific custom domain, if needed',
-            bidfloor: 20
+# Test Parameters
+```javascript
+    var adUnits = [
+        {
+            code: 'div-otm-example',
+            sizes: [[320, 480]],
+            bids: [
+                {
+                    bidder: "otm",
+                    params: {
+                        tid: "99",
+                        bidfloor: 20
+                    }
+                }
+            ]
         }
-      }]
-    }];
-
+    ];
 ```
+
+Where:
+
+* tid - A tag id (should have low cardinality)
+* bidfloor - Floor price

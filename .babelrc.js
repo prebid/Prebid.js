@@ -14,7 +14,16 @@ module.exports = {
     [
       useLocal('@babel/preset-env'),
       {
-        "useBuiltIns": "entry"
+        "targets": {
+          "browsers": [
+            "chrome >= 75",
+            "safari >=10",
+            "edge >= 70",
+            "ff >= 70",
+            "ie >= 11",
+            "ios >= 11"
+          ]
+        }
       }
     ]
   ],

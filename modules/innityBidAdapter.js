@@ -1,4 +1,4 @@
-import { parseSizesInput, timestamp } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'innity';
@@ -11,13 +11,13 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      let parseSized = parseSizesInput(bidRequest.sizes);
+      let parseSized = utils.parseSizesInput(bidRequest.sizes);
       let arrSize = parseSized[0].split('x');
       return {
         method: 'GET',
         url: ENDPOINT,
         data: {
-          cb: timestamp(),
+          cb: utils.timestamp(),
           ver: 2,
           hb: 1,
           output: 'js',

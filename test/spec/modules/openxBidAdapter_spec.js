@@ -1085,7 +1085,7 @@ describe('OpenxAdapter', function () {
         intentIqId: '1111-intentiqid',
         lipb: {lipbid: '1111-lipb'},
         lotamePanoramaId: '1111-lotameid',
-        merkleId: {id: '1111-merkleid'},
+        merkleId: '1111-merkleid',
         netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
         parrableId: { eid: 'eidVersion.encryptionKeyReference.encryptedValue' },
         pubcid: '1111-pubcid',
@@ -1102,11 +1102,6 @@ describe('OpenxAdapter', function () {
         mwOpenLinkId: '1111-mwopenlinkid',
         dapId: '1111-dapId',
         amxId: '1111-amxid',
-        kpuid: '1111-kpuid',
-        publinkId: '1111-publinkid',
-        naveggId: '1111-naveggid',
-        imuid: '1111-imuid',
-        adtelligentId: '1111-adtelligentid'
       };
 
       // generates the same set of tests for each id provider
@@ -1144,9 +1139,6 @@ describe('OpenxAdapter', function () {
             let userIdValue;
             // handle cases where userId key refers to an object
             switch (userIdProviderKey) {
-              case 'merkleId':
-                userIdValue = EXAMPLE_DATA_BY_ATTR.merkleId.id;
-                break;
               case 'flocId':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.flocId.id;
                 break;
@@ -1553,7 +1545,7 @@ describe('OpenxAdapter', function () {
       describe('with segments', function () {
         const TESTS = [
           {
-            name: 'should send proprietary segment data from ortb2.user.data',
+            name: 'should send proprietary segment data from first party config',
             config: {
               ortb2: {
                 user: {
@@ -1564,51 +1556,10 @@ describe('OpenxAdapter', function () {
                 }
               }
             },
-            expect: {sm: 'dmp1/4:foo|bar,dmp2:baz'},
+            expect: 'dmp1/4:foo|bar,dmp2:baz',
           },
           {
-            name: 'should send proprietary segment data from ortb2.site.content.data',
-            config: {
-              ortb2: {
-                site: {
-                  content: {
-                    data: [
-                      {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
-                      {name: 'dmp2', segment: [{id: 'baz'}]},
-                    ]
-                  }
-                }
-              }
-            },
-            expect: {scsm: 'dmp1/4:foo|bar,dmp2:baz'},
-          },
-          {
-            name: 'should send proprietary segment data from both ortb2.site.content.data and ortb2.user.data',
-            config: {
-              ortb2: {
-                user: {
-                  data: [
-                    {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
-                    {name: 'dmp2', segment: [{id: 'baz'}]},
-                  ]
-                },
-                site: {
-                  content: {
-                    data: [
-                      {name: 'dmp3', ext: {segtax: 5}, segment: [{id: 'foo2'}, {id: 'bar2'}]},
-                      {name: 'dmp4', segment: [{id: 'baz2'}]},
-                    ]
-                  }
-                }
-              }
-            },
-            expect: {
-              sm: 'dmp1/4:foo|bar,dmp2:baz',
-              scsm: 'dmp3/5:foo2|bar2,dmp4:baz2'
-            },
-          },
-          {
-            name: 'should combine same provider segment data from ortb2.user.data',
+            name: 'should combine same provider segment data from first party config',
             config: {
               ortb2: {
                 user: {
@@ -1619,23 +1570,7 @@ describe('OpenxAdapter', function () {
                 }
               }
             },
-            expect: {sm: 'dmp1/4:foo|bar,dmp1:baz'},
-          },
-          {
-            name: 'should combine same provider segment data from ortb2.site.content.data',
-            config: {
-              ortb2: {
-                site: {
-                  content: {
-                    data: [
-                      {name: 'dmp1', ext: {segtax: 4}, segment: [{id: 'foo'}, {id: 'bar'}]},
-                      {name: 'dmp1', ext: {}, segment: [{id: 'baz'}]},
-                    ]
-                  }
-                }
-              }
-            },
-            expect: {scsm: 'dmp1/4:foo|bar,dmp1:baz'},
+            expect: 'dmp1/4:foo|bar,dmp1:baz',
           },
           {
             name: 'should not send any segment data if first party config is incomplete',
@@ -1660,14 +1595,6 @@ describe('OpenxAdapter', function () {
                     {name: 'dmp1', segment: [{id: 'foo'}, {id: 'bar'}]},
                     {name: 'dmp2', segment: [{id: 'baz'}]},
                   ]
-                },
-                site: {
-                  content: {
-                    data: [
-                      {name: 'dmp3', ext: {segtax: 5}, segment: [{id: 'foo2'}, {id: 'bar2'}]},
-                      {name: 'dmp4', segment: [{id: 'baz2'}]},
-                    ]
-                  }
                 }
               }
             },
@@ -1679,10 +1606,7 @@ describe('OpenxAdapter', function () {
                 },
               },
             },
-            expect: {
-              sm: 'dmp1:foo|bar,dmp2:baz,liveintent:l1|l2',
-              scsm: 'dmp3/5:foo2|bar2,dmp4:baz2'
-            },
+            expect: 'dmp1:foo|bar,dmp2:baz,liveintent:l1|l2',
           },
           {
             name: 'should send just liveintent segment from request if no first party config',
@@ -1695,7 +1619,7 @@ describe('OpenxAdapter', function () {
                 },
               },
             },
-            expect: {sm: 'liveintent:l1|l2'},
+            expect: 'liveintent:l1|l2',
           },
           {
             name: 'should send nothing if lipb section does not contain segments',
@@ -1712,11 +1636,13 @@ describe('OpenxAdapter', function () {
         utils._each(TESTS, (t) => {
           context('in ortb2.user.data', function () {
             let bidRequests;
+            let configStub;
+
             beforeEach(function () {
               let fpdConfig = t.config
-              sinon
+              configStub = sinon
                 .stub(config, 'getConfig')
-                .withArgs(sinon.match(/^ortb2\.user\.data$|^ortb2\.site\.content\.data$/))
+                .withArgs('ortb2.user.data')
                 .callsFake((key) => {
                   return utils.deepAccess(fpdConfig, key);
                 });
@@ -1732,13 +1658,10 @@ describe('OpenxAdapter', function () {
               const request = spec.buildRequests(bidRequests, mockBidderRequest)
               expect(request.length).to.equal(1);
               if (t.expect) {
-                for (const key in t.expect) {
-                  expect(request[0].data[key]).to.exist;
-                  expect(request[0].data[key]).to.equal(t.expect[key]);
-                }
+                expect(request[0].data.sm).to.exist;
+                expect(request[0].data.sm).to.equal(encodeURIComponent(t.expect));
               } else {
                 expect(request[0].data.sm).to.not.exist;
-                expect(request[0].data.scsm).to.not.exist;
               }
             });
           });

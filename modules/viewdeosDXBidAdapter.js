@@ -1,4 +1,4 @@
-import { deepAccess, isArray, flatten, logError, parseSizesInput } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO, BANNER} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
@@ -16,7 +16,7 @@ export const spec = {
   gvlid: 924,
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
-    return !!deepAccess(bid, 'params.aid');
+    return !!utils.deepAccess(bid, 'params.aid');
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
@@ -43,9 +43,9 @@ export const spec = {
     }
 
     if (syncOptions.pixelEnabled || syncOptions.iframeEnabled) {
-      isArray(serverResponses) && serverResponses.forEach((response) => {
+      utils.isArray(serverResponses) && serverResponses.forEach((response) => {
         if (response.body) {
-          if (isArray(response.body)) {
+          if (utils.isArray(response.body)) {
             response.body.forEach(b => {
               addSyncs(b);
             })
@@ -81,12 +81,12 @@ export const spec = {
     serverResponse = serverResponse.body;
     let bids = [];
 
-    if (!isArray(serverResponse)) {
+    if (!utils.isArray(serverResponse)) {
       return parseRTBResponse(serverResponse, bidderRequest);
     }
 
     serverResponse.forEach(serverBidResponse => {
-      bids = flatten(bids, parseRTBResponse(serverBidResponse, bidderRequest));
+      bids = utils.flatten(bids, parseRTBResponse(serverBidResponse, bidderRequest));
     });
 
     return bids;
@@ -94,7 +94,7 @@ export const spec = {
 };
 
 function parseRTBResponse(serverResponse, bidderRequest) {
-  const isInvalidValidResp = !serverResponse || !isArray(serverResponse.bids);
+  const isInvalidValidResp = !serverResponse || !utils.isArray(serverResponse.bids);
 
   const bids = [];
 
@@ -102,7 +102,7 @@ function parseRTBResponse(serverResponse, bidderRequest) {
     const extMessage = serverResponse && serverResponse.ext && serverResponse.ext.message ? `: ${serverResponse.ext.message}` : '';
     const errorMessage = `in response for ${bidderRequest.bidderCode} adapter ${extMessage}`;
 
-    logError(errorMessage);
+    utils.logError(errorMessage);
 
     return bids;
   }
@@ -125,15 +125,15 @@ function parseRTBResponse(serverResponse, bidderRequest) {
 
 function bidToTag(bidRequests, bidderRequest) {
   const tag = {
-    domain: deepAccess(bidderRequest, 'refererInfo.referer')
+    domain: utils.deepAccess(bidderRequest, 'refererInfo.referer')
   };
 
-  if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
+  if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
     tag.gdpr = 1;
-    tag.gdpr_consent = deepAccess(bidderRequest, 'gdprConsent.consentString');
+    tag.gdpr_consent = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
   }
 
-  if (deepAccess(bidderRequest, 'bidderRequest.uspConsent')) {
+  if (utils.deepAccess(bidderRequest, 'bidderRequest.uspConsent')) {
     tag.us_privacy = bidderRequest.uspConsent;
   }
 
@@ -151,14 +151,14 @@ function bidToTag(bidRequests, bidderRequest) {
  * @returns {object}
  */
 function prepareRTBRequestParams(_index, bid) {
-  const mediaType = deepAccess(bid, 'mediaTypes.video') ? VIDEO : DISPLAY;
+  const mediaType = utils.deepAccess(bid, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const index = !_index ? '' : `${_index + 1}`;
-  const sizes = bid.sizes ? bid.sizes : (mediaType === VIDEO ? deepAccess(bid, 'mediaTypes.video.playerSize') : deepAccess(bid, 'mediaTypes.banner.sizes'));
+  const sizes = bid.sizes ? bid.sizes : (mediaType === VIDEO ? utils.deepAccess(bid, 'mediaTypes.video.playerSize') : utils.deepAccess(bid, 'mediaTypes.banner.sizes'));
   return {
     ['callbackId' + index]: bid.bidId,
     ['aid' + index]: bid.params.aid,
     ['ad_type' + index]: mediaType,
-    ['sizes' + index]: parseSizesInput(sizes).join()
+    ['sizes' + index]: utils.parseSizesInput(sizes).join()
   };
 }
 
@@ -168,8 +168,8 @@ function prepareRTBRequestParams(_index, bid) {
  * @returns {object}
  */
 function getMediaType(bidderRequest) {
-  const videoMediaType = deepAccess(bidderRequest, 'mediaTypes.video');
-  const context = deepAccess(bidderRequest, 'mediaTypes.video.context');
+  const videoMediaType = utils.deepAccess(bidderRequest, 'mediaTypes.video');
+  const context = utils.deepAccess(bidderRequest, 'mediaTypes.video.context');
 
   return !videoMediaType ? DISPLAY : context === OUTSTREAM ? OUTSTREAM : VIDEO;
 }

@@ -7,19 +7,17 @@ describe('SmartyadsAdapter', function () {
     bidId: '23fhj33i987f',
     bidder: 'smartyads',
     params: {
-      host: 'prebid',
-      sourceid: '0',
-      accountid: '0',
+      placementId: 0,
       traffic: 'banner'
     }
   };
 
   describe('isBidRequestValid', function () {
-    it('Should return true if there are bidId, params and sourceid parameters present', function () {
+    it('Should return true if there are bidId, params and placementId parameters present', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
     it('Should return false if at least one of parameters is not present', function () {
-      delete bid.params.sourceid;
+      delete bid.params.placementId;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
@@ -36,7 +34,7 @@ describe('SmartyadsAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js');
+      expect(serverRequest.url).to.equal('https://ssp-nj.webtradehub.com/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -50,8 +48,8 @@ describe('SmartyadsAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'publisherId');
-      expect(placement.placementId).to.equal('0');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes');
+      expect(placement.placementId).to.equal(0);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal('banner');
     });
@@ -243,18 +241,13 @@ describe('SmartyadsAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    const syncUrl = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a&gdpr=0&gdpr_consent=&type=iframe&us_privacy=';
-    const syncOptions = {
-      iframeEnabled: true
-    };
-    let userSync = spec.getUserSyncs(syncOptions);
+    let userSync = spec.getUserSyncs();
     it('Returns valid URL and type', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
-      expect(userSync).to.deep.equal([
-        { type: 'iframe', url: syncUrl }
-      ]);
+      expect(userSync[0].type).to.be.equal('image');
+      expect(userSync[0].url).to.be.equal('https://ssp-nj.webtradehub.com/?c=o&m=cookie');
     });
   });
 });

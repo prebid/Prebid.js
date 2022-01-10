@@ -9,8 +9,7 @@ describe('limelightDigitalAdapter', function () {
     params: {
       host: 'exchange.ortb.net',
       adUnitId: 123,
-      adUnitType: 'banner',
-      publisherId: 'perfectPublisher'
+      adUnitType: 'banner'
     },
     placementCode: 'placement_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
@@ -19,17 +18,7 @@ describe('limelightDigitalAdapter', function () {
         sizes: [[300, 250]]
       }
     },
-    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
-    userIdAsEids: [
-      {
-        source: 'test1.org',
-        uids: [
-          {
-            id: '123',
-          }
-        ]
-      }
-    ]
+    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
   }
   const bid2 = {
     bidId: '58ee9870c3164a',
@@ -43,17 +32,7 @@ describe('limelightDigitalAdapter', function () {
     placementCode: 'placement_1',
     auctionId: '482f88de-29ab-45c8-981a-d25e39454a34',
     sizes: [[350, 200]],
-    transactionId: '068867d1-46ec-40bb-9fa0-e24611786fb4',
-    userIdAsEids: [
-      {
-        source: 'test2.org',
-        uids: [
-          {
-            id: '234',
-          }
-        ]
-      }
-    ]
+    transactionId: '068867d1-46ec-40bb-9fa0-e24611786fb4'
   }
   const bid3 = {
     bidId: '019645c7d69460',
@@ -62,26 +41,12 @@ describe('limelightDigitalAdapter', function () {
     params: {
       host: 'exchange.ortb.net',
       adUnitId: 789,
-      adUnitType: 'video',
-      publisherId: 'secondPerfectPublisher'
+      adUnitType: 'video'
     },
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
     sizes: [[800, 600]],
-    transactionId: '738d5915-6651-43b9-9b6b-d50517350917',
-    userIdAsEids: [
-      {
-        source: 'test3.org',
-        uids: [
-          {
-            id: '345',
-          },
-          {
-            id: '456',
-          }
-        ]
-      }
-    ]
+    transactionId: '738d5915-6651-43b9-9b6b-d50517350917'
   }
   const bid4 = {
     bidId: '019645c7d69460',
@@ -97,17 +62,7 @@ describe('limelightDigitalAdapter', function () {
     video: {
       playerSize: [800, 600]
     },
-    transactionId: '738d5915-6651-43b9-9b6b-d50517350917',
-    userIdAsEids: [
-      {
-        source: 'test.org',
-        uids: [
-          {
-            id: '111',
-          }
-        ]
-      }
-    ]
+    transactionId: '738d5915-6651-43b9-9b6b-d50517350917'
   }
 
   describe('buildRequests', function () {
@@ -127,33 +82,19 @@ describe('limelightDigitalAdapter', function () {
         expect(serverRequest.method).to.equal('POST')
       })
       it('Returns valid data if array of bids is valid', function () {
-        let data = serverRequest.data;
-        expect(data).to.be.an('object');
-        expect(data).to.have.all.keys(
-          'deviceWidth',
-          'deviceHeight',
-          'secure',
-          'adUnits'
-        );
-        expect(data.deviceWidth).to.be.a('number');
-        expect(data.deviceHeight).to.be.a('number');
-        expect(data.secure).to.be.a('boolean');
+        let data = serverRequest.data
+        expect(data).to.be.an('object')
+        expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'secure', 'adUnits')
+        expect(data.deviceWidth).to.be.a('number')
+        expect(data.deviceHeight).to.be.a('number')
+        expect(data.secure).to.be.a('boolean')
         data.adUnits.forEach(adUnit => {
-          expect(adUnit).to.have.all.keys(
-            'id',
-            'bidId',
-            'type',
-            'sizes',
-            'transactionId',
-            'publisherId',
-            'userIdAsEids'
-          );
-          expect(adUnit.id).to.be.a('number');
-          expect(adUnit.bidId).to.be.a('string');
-          expect(adUnit.type).to.be.a('string');
-          expect(adUnit.transactionId).to.be.a('string');
-          expect(adUnit.sizes).to.be.an('array');
-          expect(adUnit.userIdAsEids).to.be.an('array');
+          expect(adUnit).to.have.all.keys('id', 'bidId', 'type', 'sizes', 'transactionId')
+          expect(adUnit.id).to.be.a('number')
+          expect(adUnit.bidId).to.be.a('string')
+          expect(adUnit.type).to.be.a('string')
+          expect(adUnit.transactionId).to.be.a('string')
+          expect(adUnit.sizes).to.be.an('array')
         })
       })
     })
@@ -251,7 +192,7 @@ describe('limelightDigitalAdapter', function () {
         expect(dataItem.meta.advertiserDomains).to.be.an('array');
         expect(dataItem.meta.mediaType).to.be.a('string');
       }
-      it('should return an empty array if invalid response is passed', function () {
+      it('Returns an empty array if invalid response is passed', function () {
         serverResponses = spec.interpretResponse('invalid_response');
         expect(serverResponses).to.be.an('array').that.is.empty;
       });
@@ -358,167 +299,13 @@ describe('limelightDigitalAdapter', function () {
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
     });
   });
-  describe('getUserSyncs', function () {
-    const serverResponses = [
-      {
-        body: [
-          {
-            ext: {
-              sync: {
-                iframe: 'iframeUrl',
-              }
-            }
-          },
-          {
-            ext: {
-              sync: {
-                pixel: 'pixelUrl'
-              }
-            }
-          },
-          {},
-          {
-            ext: {}
-          },
-          {
-            ext: {
-              sync: {}
-            }
-          },
-          {
-            ext: {
-              sync: {
-                iframe: 'iframeUrl2',
-                pixel: 'pixelUrl3'
-              }
-            }
-          }
-        ]
-      },
-      {
-        body: [
-          {
-            ext: {
-              sync: {
-                iframe: 'iframeUrl2',
-                pixel: 'pixelUrl2'
-              }
-            }
-          },
-          {
-            ext: {
-              sync: {
-                iframe: 'iframeUrl3',
-                pixel: 'pixelUrl3'
-              }
-            }
-          }
-        ]
-      }
-    ];
-    it('should return empty array if server responses do not contain sync urls', function () {
-      const syncOptions = {
-        iframeEnabled: true,
-        pixelEnabled: true
-      };
-      const serverResponsesWithoutSyncUrls = serverResponses.map(serverResponse => {
-        const serverResponseWithoutSyncUrls = Object.assign({}, serverResponse);
-        serverResponseWithoutSyncUrls.body = serverResponse.body.map(serverResponseBody => {
-          const serverResponseBodyWithoutSyncUrls = Object.assign({}, serverResponseBody);
-          delete serverResponseBodyWithoutSyncUrls.ext;
-          return serverResponseBodyWithoutSyncUrls;
-        });
-        return serverResponseWithoutSyncUrls;
-      });
-      expect(spec.getUserSyncs(syncOptions, serverResponsesWithoutSyncUrls)).to.be.an('array').that.is.empty;
-    });
-    it('should return empty array if all sync types are disabled', function () {
-      const syncOptions = {
-        iframeEnabled: false,
-        pixelEnabled: false
-      };
-      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty;
-    });
-    it('should return iframe sync urls if iframe sync is enabled', function () {
-      const syncOptions = {
-        iframeEnabled: true,
-        pixelEnabled: false
-      };
-      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
-        {
-          type: 'iframe',
-          url: 'iframeUrl'
-        },
-        {
-          type: 'iframe',
-          url: 'iframeUrl2'
-        },
-        {
-          type: 'iframe',
-          url: 'iframeUrl3'
-        }
-      ]);
-    });
-    it('should return image sync urls if pixel sync is enabled', function () {
-      const syncOptions = {
-        iframeEnabled: false,
-        pixelEnabled: true
-      };
-      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
-        {
-          type: 'image',
-          url: 'pixelUrl'
-        },
-        {
-          type: 'image',
-          url: 'pixelUrl3'
-        },
-        {
-          type: 'image',
-          url: 'pixelUrl2'
-        }
-      ]);
-    });
-    it('should return all sync urls if all sync types are enabled', function () {
-      const syncOptions = {
-        iframeEnabled: true,
-        pixelEnabled: true
-      }
-      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
-        {
-          type: 'iframe',
-          url: 'iframeUrl'
-        },
-        {
-          type: 'iframe',
-          url: 'iframeUrl2'
-        },
-        {
-          type: 'iframe',
-          url: 'iframeUrl3'
-        },
-        {
-          type: 'image',
-          url: 'pixelUrl'
-        },
-        {
-          type: 'image',
-          url: 'pixelUrl3'
-        },
-        {
-          type: 'image',
-          url: 'pixelUrl2'
-        }
-      ]);
-    });
-  });
 });
 
 function validateAdUnit(adUnit, bid) {
-  expect(adUnit.id).to.equal(bid.params.adUnitId);
-  expect(adUnit.bidId).to.equal(bid.bidId);
-  expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase());
-  expect(adUnit.transactionId).to.equal(bid.transactionId);
+  expect(adUnit.id).to.equal(bid.params.adUnitId)
+  expect(adUnit.bidId).to.equal(bid.bidId)
+  expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase())
+  expect(adUnit.transactionId).to.equal(bid.transactionId)
   let bidSizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
@@ -536,7 +323,5 @@ function validateAdUnit(adUnit, bid) {
       width: size[0],
       height: size[1]
     }
-  }));
-  expect(adUnit.publisherId).to.equal(bid.params.publisherId);
-  expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
+  }))
 }

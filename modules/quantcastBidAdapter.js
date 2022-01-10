@@ -1,4 +1,4 @@
-import { deepAccess, logInfo, logError, isEmpty, isArray } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -24,8 +24,8 @@ export const QUANTCAST_FPA = '__qca';
 export const storage = getStorageManager(QUANTCAST_VENDOR_ID, BIDDER_CODE);
 
 function makeVideoImp(bid) {
-  const videoInMediaType = deepAccess(bid, 'mediaTypes.video') || {};
-  const videoInParams = deepAccess(bid, 'params.video') || {};
+  const videoInMediaType = utils.deepAccess(bid, 'mediaTypes.video') || {};
+  const videoInParams = utils.deepAccess(bid, 'params.video') || {};
   const video = Object.assign({}, videoInParams, videoInMediaType);
 
   if (video.playerSize) {
@@ -142,10 +142,10 @@ export const spec = {
    */
   buildRequests(bidRequests, bidderRequest) {
     const bids = bidRequests || [];
-    const gdprConsent = deepAccess(bidderRequest, 'gdprConsent') || {};
-    const uspConsent = deepAccess(bidderRequest, 'uspConsent');
-    const referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-    const page = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || deepAccess(window, 'location.href');
+    const gdprConsent = utils.deepAccess(bidderRequest, 'gdprConsent') || {};
+    const uspConsent = utils.deepAccess(bidderRequest, 'uspConsent');
+    const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
+    const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
     const domain = getDomain(page);
 
     // Check for GDPR consent for purpose 1, and drop request if consent has not been given
@@ -153,11 +153,11 @@ export const spec = {
     if (gdprConsent.gdprApplies) {
       if (gdprConsent.vendorData) {
         if (gdprConsent.apiVersion === 1 && !checkTCFv1(gdprConsent.vendorData)) {
-          logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v1`);
+          utils.logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v1`);
           return;
         }
         if (gdprConsent.apiVersion === 2 && !checkTCFv2(gdprConsent.vendorData)) {
-          logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v2`);
+          utils.logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v2`);
           return;
         }
       }
@@ -174,7 +174,7 @@ export const spec = {
           imp = makeBannerImp(bid);
         } else {
           // Unsupported mediaType
-          logInfo(`${BIDDER_CODE}: No supported mediaTypes found in ${JSON.stringify(bid.mediaTypes)}`);
+          utils.logInfo(`${BIDDER_CODE}: No supported mediaTypes found in ${JSON.stringify(bid.mediaTypes)}`);
           return;
         }
       } else {
@@ -231,18 +231,18 @@ export const spec = {
    */
   interpretResponse(serverResponse) {
     if (serverResponse === undefined) {
-      logError('Server Response is undefined');
+      utils.logError('Server Response is undefined');
       return [];
     }
 
     const response = serverResponse['body'];
 
     if (response === undefined || !response.hasOwnProperty('bids')) {
-      logError('Sub-optimal JSON received from Quantcast server');
+      utils.logError('Sub-optimal JSON received from Quantcast server');
       return [];
     }
 
-    if (isEmpty(response.bids)) {
+    if (utils.isEmpty(response.bids)) {
       // Shortcut response handling if no bids are present
       return [];
     }
@@ -271,7 +271,7 @@ export const spec = {
         result['dealId'] = dealId;
       }
 
-      if (meta !== undefined && meta.advertiserDomains && isArray(meta.advertiserDomains)) {
+      if (meta !== undefined && meta.advertiserDomains && utils.isArray(meta.advertiserDomains)) {
         result.meta = {};
         result.meta.advertiserDomains = meta.advertiserDomains;
       }
@@ -289,11 +289,11 @@ export const spec = {
     const syncs = []
     if (!hasUserSynced && syncOptions.pixelEnabled) {
       const responseWithUrl = find(serverResponses, serverResponse =>
-        deepAccess(serverResponse.body, 'userSync.url')
+        utils.deepAccess(serverResponse.body, 'userSync.url')
       );
 
       if (responseWithUrl) {
-        const url = deepAccess(responseWithUrl.body, 'userSync.url')
+        const url = utils.deepAccess(responseWithUrl.body, 'userSync.url')
         syncs.push({
           type: 'image',
           url: url

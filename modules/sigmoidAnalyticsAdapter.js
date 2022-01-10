@@ -5,9 +5,10 @@ import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { generateUUID, logInfo, logError } from '../src/utils.js';
 
 const storage = getStorageManager();
+
+const utils = require('../src/utils.js');
 
 const url = 'https://kinesis.us-east-1.amazonaws.com/';
 const analyticsType = 'endpoint';
@@ -55,7 +56,7 @@ function buildSessionIdTimeoutLocalStorageKey() {
 
 function updateSessionId() {
   if (isSessionIdTimeoutExpired()) {
-    let newSessionId = generateUUID();
+    let newSessionId = utils.generateUUID();
     storage.setDataInLocalStorage(buildSessionIdLocalStorageKey(), newSessionId);
   }
   initOptions.sessionId = getSessionId();
@@ -205,7 +206,7 @@ sigmoidAdapter.originEnableAnalytics = sigmoidAdapter.enableAnalytics;
 sigmoidAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
   initOptions.utmTagData = this.buildUtmTagData();
-  logInfo('Sigmoid Analytics enabled with config', initOptions);
+  utils.logInfo('Sigmoid Analytics enabled with config', initOptions);
   sigmoidAdapter.originEnableAnalytics(config);
 };
 
@@ -245,7 +246,7 @@ function send(eventType, data, sendDataType) {
   AWS.config.credentials.get(function(err) {
     // attach event listener
     if (err) {
-      logError(err);
+      utils.logError(err);
       return;
     }
     // create kinesis service object

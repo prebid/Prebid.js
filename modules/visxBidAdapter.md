@@ -3,7 +3,7 @@
 ```
 Module Name:    YOC VIS.X Bidder Adapter
 Module Type:    Bidder Adapter
-Maintainer:     supply.partners@yoc.com
+Maintainer:     service@yoc.com
 ```
 
 # Description
@@ -47,14 +47,16 @@ var adUnits = [
             }
         ]
     },
-    // In-stream video adUnit
+    // YOC In-stream adUnit
     {
         code: 'instream-test-div',
         mediaTypes: {
             video: {
                 context: 'instream',
-                playerSize: [400, 300]
-            }
+                playerSize: [400, 300],
+                mimes: ['video/mp4'],
+                protocols: [3, 6]
+            },
         },
         bids: [
             {

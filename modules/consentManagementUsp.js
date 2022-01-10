@@ -4,7 +4,7 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import { isFn, logInfo, logWarn, isStr, isNumber, isPlainObject, logError } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 
@@ -111,15 +111,15 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   // - else assume prebid is in an iframe, and use the locator to see if the CMP is located in a higher parent window. This works in cross domain iframes.
   // - if USPAPI is not found, the iframe function will call the uspError exit callback to abort the rest of the USPAPI workflow
 
-  if (isFn(uspapiFunction)) {
-    logInfo('Detected USP CMP is directly accessible, calling it now...');
+  if (utils.isFn(uspapiFunction)) {
+    utils.logInfo('Detected USP CMP is directly accessible, calling it now...');
     uspapiFunction(
       'getUSPData',
       USPAPI_VERSION,
       callbackHandler.consentDataCallback
     );
   } else {
-    logInfo(
+    utils.logInfo(
       'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
     );
     callUspApiWhileInIframe(
@@ -185,7 +185,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   };
 
   if (!uspCallMap[consentAPI]) {
-    logWarn(`USP framework (${consentAPI}) is not a supported framework. Aborting consentManagement module and resuming auction.`);
+    utils.logWarn(`USP framework (${consentAPI}) is not a supported framework. Aborting consentManagement module and resuming auction.`);
     return hookConfig.nextFn.apply(hookConfig.context, hookConfig.args);
   }
 
@@ -275,7 +275,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
     let nextFn = hookConfig.nextFn;
 
     if (errMsg) {
-      logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.', extraArgs);
+      utils.logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.', extraArgs);
     }
     nextFn.apply(context, args);
   }
@@ -297,31 +297,31 @@ export function resetConsentData() {
 export function setConsentConfig(config) {
   config = config && config.usp;
   if (!config || typeof config !== 'object') {
-    logWarn('consentManagement.usp config not defined, exiting usp consent manager');
+    utils.logWarn('consentManagement.usp config not defined, exiting usp consent manager');
     return;
   }
-  if (isStr(config.cmpApi)) {
+  if (utils.isStr(config.cmpApi)) {
     consentAPI = config.cmpApi;
   } else {
     consentAPI = DEFAULT_CONSENT_API;
-    logInfo(`consentManagement.usp config did not specify cmpApi. Using system default setting (${DEFAULT_CONSENT_API}).`);
+    utils.logInfo(`consentManagement.usp config did not specify cmpApi. Using system default setting (${DEFAULT_CONSENT_API}).`);
   }
 
-  if (isNumber(config.timeout)) {
+  if (utils.isNumber(config.timeout)) {
     consentTimeout = config.timeout;
   } else {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
-    logInfo(`consentManagement.usp config did not specify timeout. Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
+    utils.logInfo(`consentManagement.usp config did not specify timeout. Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
 
-  logInfo('USPAPI consentManagement module has been activated...');
+  utils.logInfo('USPAPI consentManagement module has been activated...');
 
   if (consentAPI === 'static') {
-    if (isPlainObject(config.consentData) && isPlainObject(config.consentData.getUSPData)) {
+    if (utils.isPlainObject(config.consentData) && utils.isPlainObject(config.consentData.getUSPData)) {
       if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };
       consentTimeout = 0;
     } else {
-      logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
+      utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
   if (!addedConsentHook) {

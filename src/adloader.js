@@ -1,5 +1,5 @@
 import includes from 'core-js-pure/features/array/includes.js';
-import { logError, logWarn, insertElement } from './utils.js';
+import * as utils from './utils.js';
 
 const _requestCache = {};
 // The below list contains modules or vendors whom Prebid allows to load external JS.
@@ -20,11 +20,11 @@ const _approvedLoadExternalJSList = [
  */
 export function loadExternalScript(url, moduleCode, callback) {
   if (!moduleCode || !url) {
-    logError('cannot load external script without url and moduleCode');
+    utils.logError('cannot load external script without url and moduleCode');
     return;
   }
   if (!includes(_approvedLoadExternalJSList, moduleCode)) {
-    logError(`${moduleCode} not whitelisted for loading external JavaScript`);
+    utils.logError(`${moduleCode} not whitelisted for loading external JavaScript`);
     return;
   }
   // only load each asset once
@@ -49,7 +49,7 @@ export function loadExternalScript(url, moduleCode, callback) {
     _requestCache[url].callbacks.push(callback);
   }
 
-  logWarn(`module ${moduleCode} is loading external JavaScript`);
+  utils.logWarn(`module ${moduleCode} is loading external JavaScript`);
   return requestResource(url, function () {
     _requestCache[url].loaded = true;
     try {
@@ -57,7 +57,7 @@ export function loadExternalScript(url, moduleCode, callback) {
         _requestCache[url].callbacks[i]();
       }
     } catch (e) {
-      logError('Error executing callback', 'adloader.js:loadExternalScript', e);
+      utils.logError('Error executing callback', 'adloader.js:loadExternalScript', e);
     }
   });
 
@@ -84,7 +84,7 @@ export function loadExternalScript(url, moduleCode, callback) {
     jptScript.src = tagSrc;
 
     // add the new script tag to the page
-    insertElement(jptScript);
+    utils.insertElement(jptScript);
 
     return jptScript;
   }

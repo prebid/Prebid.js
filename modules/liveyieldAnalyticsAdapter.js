@@ -1,7 +1,7 @@
-import { logError } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
+import * as utils from '../src/utils.js';
 
 const {
   EVENTS: { BID_REQUESTED, BID_TIMEOUT, BID_RESPONSE, BID_WON }
@@ -198,7 +198,7 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
               args.bidderCode
             );
           } catch (e) {
-            logError(e);
+            utils.logError(e);
           }
         });
         break;
@@ -220,7 +220,7 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
             args.statusMessage !== 'Bid available'
           );
         } catch (e) {
-          logError(e);
+          utils.logError(e);
         }
         break;
       case BID_TIMEOUT:
@@ -243,7 +243,7 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
             )
           );
           if (!ad) {
-            logError(
+            utils.logError(
               'Cannot find ad by unit name: ' +
                 liveyield.instanceConfig.getAdUnitName(
                   liveyield.instanceConfig.getPlacementOrAdUnitCode(
@@ -255,7 +255,7 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
             break;
           }
           if (!args.bidderCode || !args.cpm) {
-            logError('Bidder code or cpm is not valid');
+            utils.logError('Bidder code or cpm is not valid');
             break;
           }
           const resolution = { targetings: [] };
@@ -280,7 +280,7 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
             resolutionToUse
           );
         } catch (e) {
-          logError(e);
+          utils.logError(e);
         }
         break;
     }
@@ -310,27 +310,27 @@ liveyield.originEnableAnalytics = liveyield.enableAnalytics;
  */
 liveyield.enableAnalytics = function(config) {
   if (!config || !config.provider || config.provider !== 'liveyield') {
-    logError('expected config.provider to equal liveyield');
+    utils.logError('expected config.provider to equal liveyield');
     return;
   }
   if (!config.options) {
-    logError('options must be defined');
+    utils.logError('options must be defined');
     return;
   }
   if (!config.options.customerId) {
-    logError('options.customerId is required');
+    utils.logError('options.customerId is required');
     return;
   }
   if (!config.options.customerName) {
-    logError('options.customerName is required');
+    utils.logError('options.customerName is required');
     return;
   }
   if (!config.options.customerSite) {
-    logError('options.customerSite is required');
+    utils.logError('options.customerSite is required');
     return;
   }
   if (!config.options.sessionTimezoneOffset) {
-    logError('options.sessionTimezoneOffset is required');
+    utils.logError('options.sessionTimezoneOffset is required');
     return;
   }
   liveyield.instanceConfig = Object.assign(
@@ -340,7 +340,7 @@ liveyield.enableAnalytics = function(config) {
   );
 
   if (typeof window[liveyield.instanceConfig.rtaFunctionName] !== 'function') {
-    logError(
+    utils.logError(
       `Function ${liveyield.instanceConfig.rtaFunctionName} is not defined.` +
         `Make sure that LiveYield snippet in included before the Prebid Analytics configuration.`
     );

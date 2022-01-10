@@ -1,7 +1,7 @@
-import { deepAccess, getWindowTop, getWindowSelf, getAdUnitSizes } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import * as utils from '../src/utils.js';
 
 export const BIDDER_CODE = 'aduptech';
 export const ENDPOINT_URL_PUBLISHER_PLACEHOLDER = '{PUBLISHER}';
@@ -37,7 +37,7 @@ export const internal = {
    * @returns {string}
    */
   extractPageUrl: (bidderRequest) => {
-    if (bidderRequest && deepAccess(bidderRequest, 'refererInfo.canonicalUrl')) {
+    if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl')) {
       return bidderRequest.refererInfo.canonicalUrl;
     }
 
@@ -46,9 +46,9 @@ export const internal = {
     }
 
     try {
-      return getWindowTop().location.href;
+      return utils.getWindowTop().location.href;
     } catch (e) {
-      return getWindowSelf().location.href;
+      return utils.getWindowSelf().location.href;
     }
   },
 
@@ -59,14 +59,14 @@ export const internal = {
    * @returns {string}
    */
   extractReferrer: (bidderRequest) => {
-    if (bidderRequest && deepAccess(bidderRequest, 'refererInfo.referer')) {
+    if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
       return bidderRequest.refererInfo.referer;
     }
 
     try {
-      return getWindowTop().document.referrer;
+      return utils.getWindowTop().document.referrer;
     } catch (e) {
-      return getWindowSelf().document.referrer;
+      return utils.getWindowSelf().document.referrer;
     }
   },
 
@@ -77,7 +77,7 @@ export const internal = {
    * @returns {null|Object.<string, *>}
    */
   extractBannerConfig: (bidRequest) => {
-    const sizes = getAdUnitSizes(bidRequest);
+    const sizes = utils.getAdUnitSizes(bidRequest);
     if (Array.isArray(sizes) && sizes.length > 0) {
       return { sizes: sizes };
     }
@@ -92,7 +92,7 @@ export const internal = {
    * @returns {null|Object.<string, *>}
    */
   extractNativeConfig: (bidRequest) => {
-    if (bidRequest && deepAccess(bidRequest, 'mediaTypes.native')) {
+    if (bidRequest && utils.deepAccess(bidRequest, 'mediaTypes.native')) {
       return bidRequest.mediaTypes.native;
     }
 
@@ -267,7 +267,7 @@ export const spec = {
     const bidResponses = [];
 
     // stop here on invalid or empty data
-    if (!response || !deepAccess(response, 'body.bids') || response.body.bids.length === 0) {
+    if (!response || !utils.deepAccess(response, 'body.bids') || response.body.bids.length === 0) {
       return bidResponses;
     }
 

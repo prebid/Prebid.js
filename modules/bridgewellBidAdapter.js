@@ -1,4 +1,4 @@
-import { _each, inIframe, deepSetValue } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
@@ -40,7 +40,7 @@ export const spec = {
     var bidderUrl = REQUEST_ENDPOINT + Math.random();
     var userIds;
 
-    _each(validBidRequests, function (bid) {
+    utils._each(validBidRequests, function (bid) {
       userIds = bid.userId;
 
       if (bid.params.cid) {
@@ -83,7 +83,7 @@ export const spec = {
           prebid: '$prebid.version$',
           bridgewell: BIDDER_VERSION
         },
-        inIframe: inIframe(),
+        inIframe: utils.inIframe(),
         url: topUrl,
         referrer: getTopWindowReferrer(),
         adUnits: adUnits,
@@ -104,7 +104,7 @@ export const spec = {
     const bidResponses = [];
 
     // map responses to requests
-    _each(bidRequest.validBidRequests, function (req) {
+    utils._each(bidRequest.validBidRequests, function (req) {
       const bidResponse = {};
 
       if (!serverResponse.body) {
@@ -168,7 +168,7 @@ export const spec = {
         bidResponse.mediaType = matchedResponse.mediaType;
 
         if (matchedResponse.adomain) {
-          deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(matchedResponse.adomain) ? matchedResponse.adomain : [matchedResponse.adomain]);
+          utils.deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(matchedResponse.adomain) ? matchedResponse.adomain : [matchedResponse.adomain]);
         }
 
         // check required parameters by matchedResponse.mediaType

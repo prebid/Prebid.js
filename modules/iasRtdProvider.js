@@ -1,18 +1,11 @@
 import { submodule } from '../src/hook.js';
-import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import * as utils from '../src/utils.js';
+import { ajaxBuilder } from '../src/ajax.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'ias';
-const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
-export let iasTargeting = {};
-const BRAND_SAFETY_OBJECT_FIELD_NAME = 'brandSafety';
-const FRAUD_FIELD_NAME = 'fr';
-const SLOTS_OBJECT_FIELD_NAME = 'slots';
-const CUSTOM_FIELD_NAME = 'custom';
-const IAS_KW = 'ias-kw';
 
 /**
  * Module init
@@ -21,11 +14,6 @@ const IAS_KW = 'ias-kw';
  * @return {boolean}
  */
 export function init(config, userConsent) {
-  const params = config.params;
-  if (!params || !params.pubId) {
-    utils.logError('missing pubId param for IAS provider');
-    return false;
-  }
   return true;
 }
 
@@ -42,11 +30,9 @@ function stringifySlotSizes(sizes) {
 }
 
 function stringifySlot(bidRequest) {
-  const sizes = utils.getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
-  const ss = stringifySlotSizes(sizes);
-  const adSlot = utils.getGptSlotInfoForAdUnitCode(bidRequest.code);
-  const p = utils.isEmpty(adSlot) ? bidRequest.code : adSlot.gptSlot;
+  const ss = stringifySlotSizes(bidRequest.sizes);
+  const p = bidRequest.bids[0].params.adUnitPath;
   const slot = { id, ss, p };
   const keyValues = utils.getKeys(slot).map(function (key) {
     return [key, slot[key]].join(':');
@@ -62,24 +48,31 @@ function stringifyScreenSize() {
   return [(window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1].join('.');
 }
 
-function formatTargetingData(adUnit) {
+function getPageLevelKeywords(response) {
   let result = {};
-  if (iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]) {
-    utils.mergeDeep(result, iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]);
+  if (response.brandSafety) {
+    shallowMerge(result, response.brandSafety);
   }
-  if (iasTargeting[FRAUD_FIELD_NAME]) {
-    result[FRAUD_FIELD_NAME] = iasTargeting[FRAUD_FIELD_NAME];
-  }
-  if (iasTargeting[CUSTOM_FIELD_NAME] && IAS_KW in iasTargeting[CUSTOM_FIELD_NAME]) {
-    result[IAS_KW] = iasTargeting[CUSTOM_FIELD_NAME][IAS_KW];
-  }
-  if (iasTargeting[SLOTS_OBJECT_FIELD_NAME] && adUnit in iasTargeting[SLOTS_OBJECT_FIELD_NAME]) {
-    utils.mergeDeep(result, iasTargeting[SLOTS_OBJECT_FIELD_NAME][adUnit]);
-  }
+  result.fr = response.fr;
+  result.custom = response.custom;
   return result;
 }
 
-function constructQueryString(anId, adUnits) {
+function shallowMerge(dest, src) {
+  utils.getKeys(src).reduce((dest, srcKey) => {
+    dest[srcKey] = src[srcKey];
+    return dest;
+  }, dest);
+}
+
+function getBidRequestData(reqBidsConfigObj, callback, config) {
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+
+  let isFinish = false;
+
+  const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
+  const { pubId } = config.params;
+  const anId = pubId;
   let queries = [];
   queries.push(['anId', anId]);
 
@@ -92,68 +85,39 @@ function constructQueryString(anId, adUnits) {
   queries.push(['sr', stringifyScreenSize()]);
   queries.push(['url', encodeURIComponent(window.location.href)]);
 
-  return encodeURI(queries.map(qs => qs.join('=')).join('&'));
-}
+  const queryString = encodeURI(queries.map(qs => qs.join('=')).join('&'));
 
-function parseResponse(result) {
-  let iasResponse = {};
-  try {
-    iasResponse = JSON.parse(result);
-  } catch (err) {
-    utils.logError('error', err);
-  }
-  iasTargeting = iasResponse;
-}
+  const ajax = ajaxBuilder();
 
-function getTargetingData(adUnits, config, userConsent) {
-  const targeting = {};
-  try {
-    if (!utils.isEmpty(iasTargeting)) {
-      adUnits.forEach(function (adUnit) {
-        targeting[adUnit] = formatTargetingData(adUnit);
-      });
-    }
-  } catch (err) {
-    utils.logError('error', err);
-  }
-  utils.logInfo('IAS targeting', targeting);
-  return targeting;
-}
-
-export function getApiCallback() {
-  return {
-    success: function (response, req) {
-      if (req.status === 200) {
-        try {
-          parseResponse(response);
-        } catch (e) {
-          utils.logError('Unable to parse IAS response.', e);
+  ajax(`${IAS_HOST}?${queryString}`, {
+    success: function (response, request) {
+      if (!isFinish) {
+        if (request.status === 200) {
+          const iasResponse = JSON.parse(response);
+          adUnits.forEach(adUnit => {
+            adUnit.bids.forEach(bid => {
+              const rtd = bid.rtd || {};
+              const iasRtd = {};
+              iasRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], getPageLevelKeywords(iasResponse));
+              bid.rtd = Object.assign({}, rtd, iasRtd);
+            });
+          });
         }
+        isFinish = true;
       }
+      callback();
     },
     error: function () {
-      utils.logError('failed to retrieve IAS data');
+      utils.logError('failed to retrieve targeting information');
+      callback();
     }
-  }
-}
-
-function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
-  const { pubId } = config.params;
-  const queryString = constructQueryString(pubId, adUnits);
-  ajax(
-    `${IAS_HOST}?${queryString}`,
-    getApiCallback(),
-    undefined,
-    { method: 'GET' }
-  );
+  });
 }
 
 /** @type {RtdSubmodule} */
 export const iasSubModule = {
   name: SUBMODULE_NAME,
   init: init,
-  getTargetingData: getTargetingData,
   getBidRequestData: getBidRequestData
 };
 

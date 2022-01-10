@@ -1,7 +1,6 @@
-
 'use strict';
 
-import { deepAccess, getDNT, parseSizesInput, isArray } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -42,13 +41,13 @@ function RhythmOneBidAdapter() {
       impObj.bidfloor = 0;
       impObj.secure = isSecure;
 
-      if (deepAccess(BRs[i], 'mediaTypes.banner') || deepAccess(BRs[i], 'mediaType') === 'banner') {
+      if (utils.deepAccess(BRs[i], 'mediaTypes.banner') || utils.deepAccess(BRs[i], 'mediaType') === 'banner') {
         let banner = frameBanner(BRs[i]);
         if (banner) {
           impObj.banner = banner;
         }
       }
-      if (deepAccess(BRs[i], 'mediaTypes.video') || deepAccess(BRs[i], 'mediaType') === 'video') {
+      if (utils.deepAccess(BRs[i], 'mediaTypes.video') || utils.deepAccess(BRs[i], 'mediaType') === 'video') {
         impObj.video = frameVideo(BRs[i]);
       }
       if (!(impObj.banner || impObj.video)) {
@@ -86,7 +85,7 @@ function RhythmOneBidAdapter() {
     return {
       ua: navigator.userAgent,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
-      dnt: getDNT() ? 1 : 0,
+      dnt: utils.getDNT() ? 1 : 0,
     }
   }
 
@@ -106,7 +105,7 @@ function RhythmOneBidAdapter() {
     if (adUnit.mediaTypes && adUnit.mediaTypes.banner) {
       sizeList = adUnit.mediaTypes.banner.sizes;
     }
-    var sizeStringList = parseSizesInput(sizeList);
+    var sizeStringList = utils.parseSizesInput(sizeList);
     var format = [];
     sizeStringList.forEach(function(size) {
       if (size) {
@@ -130,9 +129,9 @@ function RhythmOneBidAdapter() {
 
   function frameVideo(bid) {
     var size = [];
-    if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
+    if (utils.deepAccess(bid, 'mediaTypes.video.playerSize')) {
       var dimensionSet = bid.mediaTypes.video.playerSize;
-      if (isArray(bid.mediaTypes.video.playerSize[0])) {
+      if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
         dimensionSet = bid.mediaTypes.video.playerSize[0];
       }
       var validSize = getValidSizeSet(dimensionSet)
@@ -141,15 +140,15 @@ function RhythmOneBidAdapter() {
       }
     }
     return {
-      mimes: deepAccess(bid, 'mediaTypes.video.mimes') || SUPPORTED_VIDEO_MIMES,
-      protocols: deepAccess(bid, 'mediaTypes.video.protocols') || SUPPORTED_VIDEO_PROTOCOLS,
+      mimes: utils.deepAccess(bid, 'mediaTypes.video.mimes') || SUPPORTED_VIDEO_MIMES,
+      protocols: utils.deepAccess(bid, 'mediaTypes.video.protocols') || SUPPORTED_VIDEO_PROTOCOLS,
       w: size[0],
       h: size[1],
-      startdelay: deepAccess(bid, 'mediaTypes.video.startdelay') || 0,
-      skip: deepAccess(bid, 'mediaTypes.video.skip') || 0,
-      playbackmethod: deepAccess(bid, 'mediaTypes.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS,
-      delivery: deepAccess(bid, 'mediaTypes.video.delivery') || SUPPORTED_VIDEO_DELIVERY,
-      api: deepAccess(bid, 'mediaTypes.video.api') || SUPPORTED_VIDEO_API,
+      startdelay: utils.deepAccess(bid, 'mediaTypes.video.startdelay') || 0,
+      skip: utils.deepAccess(bid, 'mediaTypes.video.skip') || 0,
+      playbackmethod: utils.deepAccess(bid, 'mediaTypes.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS,
+      delivery: utils.deepAccess(bid, 'mediaTypes.video.delivery') || SUPPORTED_VIDEO_DELIVERY,
+      api: utils.deepAccess(bid, 'mediaTypes.video.api') || SUPPORTED_VIDEO_API,
     }
   }
 
@@ -171,14 +170,14 @@ function RhythmOneBidAdapter() {
       device: frameDevice(),
       user: {
         ext: {
-          consent: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? bidderRequest.gdprConsent.consentString : ''
+          consent: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? bidderRequest.gdprConsent.consentString : ''
         }
       },
       at: 1,
       tmax: 1000,
       regs: {
         ext: {
-          gdpr: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false
+          gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false
         }
       }
     };

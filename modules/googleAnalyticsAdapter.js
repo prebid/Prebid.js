@@ -2,8 +2,8 @@
  * ga.js - analytics adapter for google analytics
  */
 
-import { _each, logMessage } from '../src/utils.js';
 var events = require('../src/events.js');
+var utils = require('../src/utils.js');
 var CONSTANTS = require('../src/constants.json');
 var adapterManager = require('../src/adapterManager.js').default;
 
@@ -54,7 +54,7 @@ adapter.enableAnalytics = function ({ provider, options }) {
 
     var existingEvents = events.getEvents();
 
-    _each(existingEvents, function (eventObj) {
+    utils._each(existingEvents, function (eventObj) {
       if (typeof eventObj !== 'object') {
         return;
       }
@@ -98,12 +98,12 @@ adapter.enableAnalytics = function ({ provider, options }) {
       sendBidWonToGa(bid);
     });
   } else {
-    logMessage('Prebid.js google analytics disabled by sampling');
+    utils.logMessage('Prebid.js google analytics disabled by sampling');
   }
 
   // finally set this function to return log message, prevents multiple adapter listeners
   this.enableAnalytics = function _enable() {
-    return logMessage(`Analytics adapter already enabled, unnecessary call to \`enableAnalytics\`.`);
+    return utils.logMessage(`Analytics adapter already enabled, unnecessary call to \`enableAnalytics\`.`);
   };
 };
 
@@ -129,7 +129,7 @@ function checkAnalytics() {
     _enableCheck = false;
   }
 
-  logMessage('event count sent to GA: ' + _eventCount);
+  utils.logMessage('event count sent to GA: ' + _eventCount);
 }
 
 function convertToCents(dollars) {
@@ -242,7 +242,7 @@ function sendBidResponseToGa(bid) {
 
 function sendBidTimeouts(timedOutBidders) {
   _analyticsQueue.push(function () {
-    _each(timedOutBidders, function (bidderCode) {
+    utils._each(timedOutBidders, function (bidderCode) {
       _eventCount++;
       var bidderName = bidderCode.bidder;
       window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderName, _disableInteraction);

@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { logMessage, logError } from '../src/utils.js';
+import * as utils from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -29,7 +29,7 @@ export const akamaiDAPIdSubmodule = {
     * @returns {{dapId:string}}
     */
   decode(value) {
-    logMessage('akamaiDAPId [decode] value=', value);
+    utils.logMessage('akamaiDAPId [decode] value=', value);
     return { dapId: value };
   },
 
@@ -43,23 +43,23 @@ export const akamaiDAPIdSubmodule = {
   getId(config, consentData) {
     const configParams = (config && config.params);
     if (!configParams) {
-      logError('User ID - akamaiDAPId submodule requires a valid configParams');
+      utils.logError('User ID - akamaiDAPId submodule requires a valid configParams');
       return;
     } else if (typeof configParams.apiHostname !== 'string') {
-      logError('User ID - akamaiDAPId submodule requires a valid configParams.apiHostname');
+      utils.logError('User ID - akamaiDAPId submodule requires a valid configParams.apiHostname');
       return;
     } else if (typeof configParams.domain !== 'string') {
-      logError('User ID - akamaiDAPId submodule requires a valid configParams.domain');
+      utils.logError('User ID - akamaiDAPId submodule requires a valid configParams.domain');
       return;
     } else if (typeof configParams.type !== 'string') {
-      logError('User ID - akamaiDAPId submodule requires a valid configParams.type');
+      utils.logError('User ID - akamaiDAPId submodule requires a valid configParams.type');
       return;
     }
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
     const uspConsent = uspDataHandler.getConsentData();
     if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
-      logError('User ID - akamaiDAPId submodule requires consent string to call API');
+      utils.logError('User ID - akamaiDAPId submodule requires consent string to call API');
       return;
     }
     // XXX: retrieve first-party data here if needed
@@ -99,14 +99,14 @@ export const akamaiDAPIdSubmodule = {
         storage.setDataInLocalStorage(STORAGE_KEY, token);
       },
       error: error => {
-        logError('akamaiDAPId [getId:ajax.error] failed to retrieve ' + tokenName, error);
+        utils.logError('akamaiDAPId [getId:ajax.error] failed to retrieve ' + tokenName, error);
       }
     };
 
     ajax(url, cb, JSON.stringify(postData), { contentType: 'application/json' });
 
     let token = storage.getDataFromLocalStorage(STORAGE_KEY);
-    logMessage('akamaiDAPId [getId] returning', token);
+    utils.logMessage('akamaiDAPId [getId] returning', token);
 
     return { id: token };
   }

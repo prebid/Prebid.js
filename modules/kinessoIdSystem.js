@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { logError, logInfo } from '../src/utils.js';
+import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {coppaDataHandler, uspDataHandler} from '../src/adapterManager.js';
@@ -111,7 +111,7 @@ function encodeTime(now, len) {
  * @returns {Error}
  */
 function createError(message) {
-  logError(message);
+  utils.logError(message);
   const err = new Error(message);
   err.source = 'kinessoId';
   return err;
@@ -147,10 +147,10 @@ function detectPrng(root) {
 function syncId(storedId) {
   return {
     success: function (responseBody) {
-      logInfo('KinessoId: id to be synced: ' + storedId);
+      utils.logInfo('KinessoId: id to be synced: ' + storedId);
     },
     error: function () {
-      logInfo('KinessoId: Sync error for id : ' + storedId);
+      utils.logInfo('KinessoId: Sync error for id : ' + storedId);
     }
   }
 }
@@ -165,7 +165,7 @@ function encodeId(value) {
   const knssoId = (value && typeof value === 'string') ? value : undefined;
   if (knssoId) {
     result.kpuid = knssoId;
-    logInfo('KinessoId: Decoded value ' + JSON.stringify(result));
+    utils.logInfo('KinessoId: Decoded value ' + JSON.stringify(result));
     return result;
   }
   return knssoId;
@@ -180,7 +180,7 @@ function kinessoSyncUrl(accountId, consentData) {
   const usPrivacyString = uspDataHandler.getConsentData();
   let kinessoSyncUrl = `${ID_SVC}?accountid=${accountId}`;
   if (usPrivacyString) {
-    kinessoSyncUrl = `${kinessoSyncUrl}&us_privacy=${usPrivacyString}`;
+    kinessoSyncUrl = `${kinessoSyncUrl}?us_privacy=${usPrivacyString}`;
   }
   if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return kinessoSyncUrl;
 
@@ -217,17 +217,17 @@ export const kinessoIdSubmodule = {
   getId(config, consentData) {
     const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.accountid !== 'number') {
-      logError('User ID - KinessoId submodule requires a valid accountid to be defined');
+      utils.logError('User ID - KinessoId submodule requires a valid accountid to be defined');
       return;
     }
     const coppa = coppaDataHandler.getCoppa();
     if (coppa) {
-      logInfo('KinessoId: IDs not provided for coppa requests, exiting KinessoId');
+      utils.logInfo('KinessoId: IDs not provided for coppa requests, exiting KinessoId');
       return;
     }
     const accountId = configParams.accountid;
     const knnsoId = id();
-    logInfo('KinessoId: generated id ' + knnsoId);
+    utils.logInfo('KinessoId: generated id ' + knnsoId);
     const kinessoIdPayload = {};
     kinessoIdPayload.id = knnsoId;
     const payloadString = JSON.stringify(kinessoIdPayload);

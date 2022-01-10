@@ -1,5 +1,6 @@
 import { config } from './config.js';
-import { logMessage, logError, parseUrl, buildUrl, _each } from './utils.js';
+
+var utils = require('./utils.js');
 
 const XHR_DONE = 4;
 
@@ -24,10 +25,10 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
 
       let callbacks = typeof callback === 'object' && callback !== null ? callback : {
         success: function() {
-          logMessage('xhr success');
+          utils.logMessage('xhr success');
         },
         error: function(e) {
-          logError('xhr error', null, e);
+          utils.logError('xhr error', null, e);
         }
       };
 
@@ -54,14 +55,14 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
       if (!config.getConfig('disableAjaxTimeout')) {
         x.ontimeout = function () {
-          logError('  xhr timeout after ', x.timeout, 'ms');
+          utils.logError('  xhr timeout after ', x.timeout, 'ms');
         };
       }
 
       if (method === 'GET' && data) {
-        let urlInfo = parseUrl(url, options);
+        let urlInfo = utils.parseUrl(url, options);
         Object.assign(urlInfo.search, data);
-        url = buildUrl(urlInfo);
+        url = utils.buildUrl(urlInfo);
       }
 
       x.open(method, url, true);
@@ -74,7 +75,7 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       if (options.withCredentials) {
         x.withCredentials = true;
       }
-      _each(options.customHeaders, (value, header) => {
+      utils._each(options.customHeaders, (value, header) => {
         x.setRequestHeader(header, value);
       });
       if (options.preflight) {
@@ -92,7 +93,7 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
         x.send();
       }
     } catch (error) {
-      logError('xhr construction', error);
+      utils.logError('xhr construction', error);
       typeof callback === 'object' && callback !== null && callback.error(error);
     }
   }

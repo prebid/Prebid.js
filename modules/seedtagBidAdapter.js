@@ -1,4 +1,4 @@
-import { isArray, _map, triggerPixel } from '../src/utils.js';
+import * as utils from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
 
@@ -13,11 +13,6 @@ const ALLOWED_PLACEMENTS = {
   banner: true,
   video: true
 }
-
-// Global Vendor List Id
-// https://iabeurope.eu/vendor-list-tcf-v2-0/
-const GVLID = 157;
-
 const mediaTypesMap = {
   [BANNER]: 'display',
   [VIDEO]: 'video'
@@ -67,13 +62,13 @@ function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid)
 
   return hasVideoMediaType(bid) && !!videoParams.playerSize &&
-    isArray(videoParams.playerSize) &&
+    utils.isArray(videoParams.playerSize) &&
     videoParams.playerSize.length > 0;
 }
 
 function buildBidRequest(validBidRequest) {
   const params = validBidRequest.params;
-  const mediaTypes = _map(
+  const mediaTypes = utils._map(
     Object.keys(validBidRequest.mediaTypes),
     function (pbjsType) {
       return mediaTypesMap[pbjsType];
@@ -150,8 +145,8 @@ function buildBidResponse(seedtagBid) {
 export function getTimeoutUrl (data) {
   let queryParams = '';
   if (
-    isArray(data) && data[0] &&
-    isArray(data[0].params) && data[0].params[0]
+    utils.isArray(data) && data[0] &&
+    utils.isArray(data[0].params) && data[0].params[0]
   ) {
     const params = data[0].params[0];
     queryParams =
@@ -163,7 +158,6 @@ export function getTimeoutUrl (data) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   aliases: [SEEDTAG_ALIAS],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
@@ -192,7 +186,7 @@ export const spec = {
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
-      bidRequests: _map(validBidRequests, buildBidRequest)
+      bidRequests: utils._map(validBidRequests, buildBidRequest)
     };
 
     if (payload.cmp) {
@@ -217,8 +211,8 @@ export const spec = {
    */
   interpretResponse: function(serverResponse) {
     const serverBody = serverResponse.body;
-    if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
-      return _map(serverBody.bids, function(bid) {
+    if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
+      return utils._map(serverBody.bids, function(bid) {
         return buildBidResponse(bid);
       });
     } else {
@@ -249,7 +243,7 @@ export const spec = {
    */
   onTimeout(data) {
     const url = getTimeoutUrl(data);
-    triggerPixel(url);
+    utils.triggerPixel(url);
   },
 
   /**
@@ -258,7 +252,7 @@ export const spec = {
    */
   onBidWon: function (bid) {
     if (bid && bid.nurl) {
-      triggerPixel(bid.nurl);
+      utils.triggerPixel(bid.nurl);
     }
   }
 }

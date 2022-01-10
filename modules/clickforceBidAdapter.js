@@ -1,4 +1,4 @@
-import { _each } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'clickforce';
@@ -25,7 +25,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests) {
     const bidParams = [];
-    _each(validBidRequests, function(bid) {
+    utils._each(validBidRequests, function(bid) {
       bidParams.push({
         z: bid.params.zone,
         bidId: bid.bidId
@@ -51,12 +51,12 @@ export const spec = {
     const bidRequestList = [];
 
     if (typeof bidRequest != 'undefined') {
-      _each(bidRequest.validBidRequests, function(req) {
+      utils._each(bidRequest.validBidRequests, function(req) {
         bidRequestList[req.bidId] = req;
       });
     }
 
-    _each(serverResponse.body, function(response) {
+    utils._each(serverResponse.body, function(response) {
       if (response.requestId != null) {
         // native ad size
         if (response.width == 3) {

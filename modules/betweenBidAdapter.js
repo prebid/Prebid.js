@@ -1,16 +1,14 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
+import { getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'between';
-let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
-const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
+const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 
-const includes = require('core-js-pure/features/array/includes.js');
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['btw'],
-  supportedMediaTypes: ['banner', 'video'],
+  supportedMediaTypes: ['banner'],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -23,7 +21,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequest?pbjs_debug=trues[]} - an array of bids
+   * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -31,32 +29,21 @@ export const spec = {
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
     const refInfo = getRefererInfo();
 
-    validBidRequests.forEach((i) => {
-      const video = i.mediaTypes && i.mediaTypes.video;
-
+    validBidRequests.forEach(i => {
       let params = {
-        eids: getUsersIds(i),
         sizes: parseSizesInput(getAdUnitSizes(i)),
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
         fl: getFl(),
         rr: getRr(),
-        s: i.params && i.params.s,
+        shid: getSharedId(i)('id'),
+        shid3: getSharedId(i)('third'),
+        s: i.params.s,
         bidid: i.bidId,
         transactionid: i.transactionId,
         auctionid: i.auctionId
       };
-
-      if (video) {
-        params.mediaType = 2;
-        params.maxd = video.maxd;
-        params.mind = video.mind;
-        params.pos = 'atf';
-        ENDPOINT += '&jst=pvc';
-        params.codeType = includes(CODE_TYPES, video.codeType) ? video.codeType : 'inpage';
-      }
-
       if (i.params.itu !== undefined) {
         params.itu = i.params.itu;
       }
@@ -107,15 +94,12 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
-
     for (var i = 0; i < serverResponse.body.length; i++) {
       let bidResponse = {
         requestId: serverResponse.body[i].bidid,
         cpm: serverResponse.body[i].cpm || 0,
         width: serverResponse.body[i].w,
         height: serverResponse.body[i].h,
-        vastXml: serverResponse.body[i].vastXml,
-        mediaType: serverResponse.body[i].mediaType,
         ttl: serverResponse.body[i].ttl,
         creativeId: serverResponse.body[i].creativeid,
         currency: serverResponse.body[i].currency || 'RUB',
@@ -125,7 +109,6 @@ export const spec = {
           advertiserDomains: serverResponse.body[i].adomain ? serverResponse.body[i].adomain : []
         }
       };
-
       bidResponses.push(bidResponse);
     }
     return bidResponses;
@@ -166,8 +149,13 @@ export const spec = {
   }
 }
 
-function getUsersIds({ userIdAsEids }) {
-  return (userIdAsEids && userIdAsEids.length !== 0) ? userIdAsEids : [];
+function getSharedId(bid) {
+  const id = deepAccess(bid, 'userId.sharedid.id');
+  const third = deepAccess(bid, 'userId.sharedid.third');
+  return function(kind) {
+    if (kind === 'id') return id || '';
+    return third || '';
+  }
 }
 
 function getRr() {

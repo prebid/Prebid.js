@@ -1,4 +1,4 @@
-import { getAdUnitSizes } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -32,7 +32,7 @@ export const spec = {
     }
 
     return validBidRequests.map(bidRequest => {
-      const sizes = getAdUnitSizes(bidRequest);
+      const sizes = utils.getAdUnitSizes(bidRequest);
       const payload = {
         placementId: bidRequest.params.placementId,
         sizes: sizes,

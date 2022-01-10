@@ -3,7 +3,7 @@
  * stored in the page's domain.  When the module is included, an id is generated if needed,
  * persisted as a cookie, and automatically appended to all the bidRequest as bid.crumbs.pubcid.
  */
-import { logMessage, parseUrl, buildUrl, triggerPixel, generateUUID, isArray } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
@@ -44,7 +44,7 @@ export function setStorageItem(key, val, expires) {
 
     storage.setDataInLocalStorage(key, val);
   } catch (e) {
-    logMessage(e);
+    utils.logMessage(e);
   }
 }
 
@@ -74,7 +74,7 @@ export function getStorageItem(key) {
       }
     }
   } catch (e) {
-    logMessage(e);
+    utils.logMessage(e);
   }
 
   return val;
@@ -89,7 +89,7 @@ export function removeStorageItem(key) {
     storage.removeDataFromLocalStorage(key + EXP_SUFFIX);
     storage.removeDataFromLocalStorage(key);
   } catch (e) {
-    logMessage(e);
+    utils.logMessage(e);
   }
 }
 
@@ -141,13 +141,13 @@ function queuePixelCallback(pixelUrl, id) {
   id = id || '';
 
   // Use pubcid as a cache buster
-  const urlInfo = parseUrl(pixelUrl);
+  const urlInfo = utils.parseUrl(pixelUrl);
   urlInfo.search.id = encodeURIComponent('pubcid:' + id);
-  const targetUrl = buildUrl(urlInfo);
+  const targetUrl = utils.buildUrl(urlInfo);
 
   events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
     events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
-    triggerPixel(targetUrl);
+    utils.triggerPixel(targetUrl);
   });
 
   return true;
@@ -177,7 +177,7 @@ export function requestBidHook(next, config) {
   if (typeof window[PUB_COMMON] === 'object') {
     // If the page includes its own pubcid object, then use that instead.
     pubcid = window[PUB_COMMON].getId();
-    logMessage(PUB_COMMON + ': pubcid = ' + pubcid);
+    utils.logMessage(PUB_COMMON + ': pubcid = ' + pubcid);
   } else {
     // Otherwise get the existing cookie
     pubcid = readValue(ID_NAME);
@@ -190,7 +190,7 @@ export function requestBidHook(next, config) {
         }
         // Generate a new id
         if (!pubcid) {
-          pubcid = generateUUID();
+          pubcid = utils.generateUUID();
         }
         // Update the cookie/storage with the latest expiration date
         writeValue(ID_NAME, pubcid, pubcidConfig.interval);
@@ -205,14 +205,14 @@ export function requestBidHook(next, config) {
       }
     }
 
-    logMessage('pbjs: pubcid = ' + pubcid);
+    utils.logMessage('pbjs: pubcid = ' + pubcid);
   }
 
   // Append pubcid to each bid object, which will be incorporated
   // into bid requests later.
   if (adUnits && pubcid) {
     adUnits.forEach((unit) => {
-      if (unit.bids && isArray(unit.bids)) {
+      if (unit.bids && utils.isArray(unit.bids)) {
         unit.bids.forEach((bid) => {
           Object.assign(bid, {crumbs: {pubcid}});
         });

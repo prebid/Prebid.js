@@ -1,6 +1,6 @@
 'use strict';
 
-import { getAdUnitSizes, logWarn, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
+import { getAdUnitSizes, logWarn, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js';
@@ -67,7 +67,11 @@ export const spec = {
       } else {
         seatId = bid.params.seatId;
       }
-      const tagIdOrPlacementId = bid.params.tagId || bid.params.placementId;
+      const tagIdOrplacementId = bid.params.tagId || bid.params.placementId;
+      const bidFloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
+      if (isNaN(bidFloor)) {
+        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+      }
       let pos = parseInt(bid.params.pos, 10);
       if (isNaN(pos)) {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
@@ -79,9 +83,9 @@ export const spec = {
 
       let imps = [];
       if (videoOrBannerKey === 'banner') {
-        imps = this.buildBannerImpressions(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey);
+        imps = this.buildBannerImpressions(adSizes, bid, tagIdOrplacementId, pos, bidFloor, videoOrBannerKey);
       } else if (videoOrBannerKey === 'video') {
-        imps = this.buildVideoImpressions(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey);
+        imps = this.buildVideoImpressions(adSizes, bid, tagIdOrplacementId, pos, bidFloor, videoOrBannerKey);
       }
       if (imps.length > 0) {
         imps.forEach(i => openRtbBidRequest.imp.push(i));
@@ -124,7 +128,7 @@ export const spec = {
     return eids;
   },
 
-  buildBannerImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
+  buildBannerImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, bidFloor, videoOrBannerKey) {
     let format = [];
     let imps = [];
     adSizes.forEach((size, i) => {
@@ -147,10 +151,6 @@ export const spec = {
         },
         tagid: tagIdOrPlacementId,
       };
-      const bidFloor = getBidFloor(bid, 'banner', '*');
-      if (isNaN(bidFloor)) {
-        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
-      }
       if (bidFloor !== null && !isNaN(bidFloor)) {
         imp.bidfloor = bidFloor;
       }
@@ -159,7 +159,7 @@ export const spec = {
     return imps;
   },
 
-  buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
+  buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, bidFloor, videoOrBannerKey) {
     let imps = [];
     adSizes.forEach((size, i) => {
       if (!size || size.length != 2) {
@@ -171,11 +171,6 @@ export const spec = {
         id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
         tagid: tagIdOrPlacementId
       };
-      const bidFloor = getBidFloor(bid, 'video', size);
-      if (isNaN(bidFloor)) {
-        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
-      }
-
       if (bidFloor !== null && !isNaN(bidFloor)) {
         imp.bidfloor = bidFloor;
       }
@@ -291,21 +286,5 @@ export const spec = {
     return syncs;
   }
 };
-
-function getBidFloor(bid, mediaType, size) {
-  if (!isFn(bid.getFloor)) {
-    return bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
-  }
-  let floor = bid.getFloor({
-    currency: 'USD',
-    mediaType,
-    size
-  });
-
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
-}
 
 registerBidder(spec);

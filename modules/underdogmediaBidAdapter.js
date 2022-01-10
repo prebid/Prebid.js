@@ -1,4 +1,4 @@
-import { logMessage, flatten, parseSizesInput } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'underdogmedia';
@@ -7,7 +7,7 @@ const UDM_VENDOR_ID = '159';
 const prebidVersion = '$prebid.version$';
 let USER_SYNCED = false;
 
-logMessage(`Initializing UDM Adapter. PBJS Version: ${prebidVersion} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 20191028`);
+utils.logMessage(`Initializing UDM Adapter. PBJS Version: ${prebidVersion} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 20191028`);
 
 // helper function for testing user syncs
 export function resetUserSync() {
@@ -29,7 +29,7 @@ export const spec = {
 
     validBidRequests.forEach(bidParam => {
       let bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
-      sizes = flatten(sizes, parseSizesInput(bidParamSizes));
+      sizes = utils.flatten(sizes, utils.parseSizesInput(bidParamSizes));
       siteId = bidParam.params.siteId;
     });
 
@@ -99,7 +99,7 @@ export const spec = {
 
         var sizeNotFound = true;
         const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes
-        parseSizesInput(bidParamSizes).forEach(size => {
+        utils.parseSizesInput(bidParamSizes).forEach(size => {
           if (size === mid.width + 'x' + mid.height) {
             sizeNotFound = false;
           }

@@ -1,4 +1,4 @@
-import { deepAccess, isStr, replaceAuctionPrice, triggerPixel, isArray, parseQueryStringParameters, getWindowSelf } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -60,34 +60,34 @@ export const interpretResponse = function (serverResponse) {
 export const onBidWon = function (bid) {
   const cpm = bid.cpm || 0;
   const cpmCurrency = bid.currency || SUPPORTED_CURRENCY;
-  const adServerPrice = deepAccess(bid, 'adserverTargeting.hb_pb', 0);
+  const adServerPrice = utils.deepAccess(bid, 'adserverTargeting.hb_pb', 0);
   const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
-  if (isStr(bid.nurl) && bid.nurl !== '') {
-    const winNotificationUrl = replaceAuctionPrice(bid.nurl, cpm)
+  if (utils.isStr(bid.nurl) && bid.nurl !== '') {
+    const winNotificationUrl = utils.replaceAuctionPrice(bid.nurl, cpm)
       .replace(/\${AUCTION_PRICE_CURRENCY}/g, cpmCurrency)
       .replace(/\${AD_SERVER_PRICE}/g, adServerPrice)
       .replace(/\${AD_SERVER_PRICE_CURRENCY}/g, adServerPriceCurrency);
-    triggerPixel(winNotificationUrl);
+    utils.triggerPixel(winNotificationUrl);
   }
 };
 
 export const onTimeout = function (timeoutDataArray) {
-  if (isArray(timeoutDataArray)) {
+  if (utils.isArray(timeoutDataArray)) {
     const refererInfo = getRefererInfo();
     const pageUrl = (refererInfo && refererInfo.referer)
       ? refererInfo.referer
       : window.location.href;
     timeoutDataArray.forEach(timeoutData => {
-      const query = parseQueryStringParameters({
+      const query = utils.parseQueryStringParameters({
         ad_unit_code: timeoutData.adUnitCode,
         auction_id: timeoutData.auctionId,
         bid_id: timeoutData.bidId,
         timeout: timeoutData.timeout,
-        placement_id: deepAccess(timeoutData, 'params.0.placementId'),
+        placement_id: utils.deepAccess(timeoutData, 'params.0.placementId'),
         page_url: pageUrl,
       });
       const timeoutNotificationUrl = `${TIMEOUT_NOTIFICATION_ENDPOINT}?${query}`;
-      triggerPixel(timeoutNotificationUrl);
+      utils.triggerPixel(timeoutNotificationUrl);
     });
   }
 };
@@ -143,7 +143,7 @@ function buildOpenRtbImpObject(validBidRequest) {
 }
 
 function getDevice() {
-  const ws = getWindowSelf();
+  const ws = utils.getWindowSelf();
   const ua = ws.navigator.userAgent;
 
   if (/(tablet|ipad|playbook|silk|android 3.0|xoom|sch-i800|kindle)|(android(?!.*mobi))/i
@@ -171,8 +171,8 @@ function getTest(validBidRequest) {
 }
 
 function getSizes(validBidRequest) {
-  const sizes = deepAccess(validBidRequest, 'mediaTypes.banner.sizes', validBidRequest.sizes);
-  if (isArray(sizes) && sizes.length > 0) {
+  const sizes = utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes', validBidRequest.sizes);
+  if (utils.isArray(sizes) && sizes.length > 0) {
     return sizes;
   }
 

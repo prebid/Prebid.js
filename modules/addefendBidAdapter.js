@@ -19,7 +19,6 @@ export const spec = {
       v: $$PREBID_GLOBAL$$.version,
       auctionId: false,
       pageId: false,
-      gdpr_applies: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : 'true',
       gdpr_consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : '',
       referer: bidderRequest.refererInfo.referer,
       bids: [],

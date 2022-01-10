@@ -1,4 +1,5 @@
-import { deepAccess, getBidIdParameter, logWarn, logError } from '../src/utils.js';
+
+import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -25,11 +26,11 @@ export const spec = {
 
   getMediaType: function (bidRequest) {
     if (bidRequest == null) return BANNER;
-    return !deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
+    return !utils.deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
   },
 
   getPlayerSize: function (bidRequest) {
-    var playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    var playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
     if (playerSize == null) return [640, 440];
     if (playerSize[0] != null) playerSize = playerSize[0];
     if (playerSize == null || playerSize[0] == null || playerSize[1] == null) return [640, 440];
@@ -47,13 +48,13 @@ export const spec = {
     for (var i = 0; i < validBidRequests.length; i++) {
       var bidRequest = validBidRequests[i];
       var referer = encodeURIComponent(bidderRequest.refererInfo.referer);
-      var e = getBidIdParameter('endpoint', bidRequest.params);
+      var e = utils.getBidIdParameter('endpoint', bidRequest.params);
       var ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
       var mediaType = spec.getMediaType(bidRequest);
       var playerSize = spec.getPlayerSize(bidRequest);
       var videoArgs = '&fv=0' + (playerSize ? ('&w=' + playerSize[0] + '&h=' + playerSize[1]) : '');
       var url = ENDPOINT + '?media=' + mediaType + (mediaType == VIDEO ? videoArgs : '') +
-        '&json=c_b&mv=1&poolid=' + getBidIdParameter('placementId', bidRequest.params) +
+        '&json=c_b&mv=1&poolid=' + utils.getBidIdParameter('placementId', bidRequest.params) +
         '&reachedTop=' + encodeURIComponent(bidderRequest.refererInfo.reachedTop) +
         '&requestid=' + bidRequest.bidId +
         '&referer=' + encodeURIComponent(referer);
@@ -116,13 +117,13 @@ export const spec = {
       var raw = serverResponse.body[i];
       var rawBid = raw.creatives[0];
       if (!rawBid) {
-        logWarn('cpmstarBidAdapter: server response failed check');
+        utils.logWarn('cpmstarBidAdapter: server response failed check');
         return;
       }
       var cpm = (parseFloat(rawBid.cpm) || 0);
 
       if (!cpm) {
-        logWarn('cpmstarBidAdapter: server response failed check. Missing cpm')
+        utils.logWarn('cpmstarBidAdapter: server response failed check. Missing cpm')
         return;
       }
 
@@ -155,7 +156,7 @@ export const spec = {
         bidResponse.mediaType = VIDEO;
         bidResponse.vastXml = rawBid.creativemacros.HTML5VID_VASTSTRING;
       } else {
-        return logError('bad response', rawBid);
+        return utils.logError('bad response', rawBid);
       }
 
       bidResponses.push(bidResponse);

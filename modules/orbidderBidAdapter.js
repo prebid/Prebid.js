@@ -1,7 +1,7 @@
-import { isFn, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const storageManager = getStorageManager();
 
@@ -146,7 +146,7 @@ export const spec = {
  * @returns {float||undefined}
  */
 function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
+  if (!utils.isFn(bid.getFloor)) {
     return bid.params.bidfloor;
   }
 
@@ -155,7 +155,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
     return floor.floor;
   }
   return undefined;

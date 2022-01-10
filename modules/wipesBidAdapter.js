@@ -1,4 +1,4 @@
-import { logWarn } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -13,7 +13,7 @@ function isBidRequestValid(bid) {
     case !!(bid.params.asid):
       break;
     default:
-      logWarn(`isBidRequestValid Error. ${bid.params}, please check your implementation.`);
+      utils.logWarn(`isBidRequestValid Error. ${bid.params}, please check your implementation.`);
       return false;
   }
   return true;

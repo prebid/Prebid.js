@@ -85,21 +85,7 @@ export const ORTB_MAP = {
       },
       publisher: {
         type: TYPES.object,
-        isArray: false,
-        children: {
-          id: { type: TYPES.string },
-          name: { type: TYPES.string },
-          cat: {
-            type: TYPES.object,
-            isArray: true,
-            childType: TYPES.string
-          },
-          domain: { type: TYPES.string },
-          ext: {
-            type: TYPES.object,
-            isArray: false
-          }
-        }
+        isArray: false
       },
     }
   },
@@ -135,15 +121,5 @@ export const ORTB_MAP = {
         }
       }
     }
-  },
-  bcat: {
-    type: TYPES.object,
-    isArray: true,
-    childType: TYPES.string
-  },
-  badv: {
-    type: TYPES.object,
-    isArray: true,
-    childType: TYPES.string
   }
 }

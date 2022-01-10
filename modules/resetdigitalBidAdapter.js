@@ -1,7 +1,8 @@
 
-import { timestamp, deepAccess, getOrigin } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getOrigin} from '../src/utils.js';
 const BIDDER_CODE = 'resetdigital';
 
 export const spec = {
@@ -19,7 +20,7 @@ export const spec = {
       ? config.getConfig('userSync').syncsPerBidder : 5
 
     const payload = {
-      start_time: timestamp(),
+      start_time: utils.timestamp(),
       language: window.navigator.userLanguage || window.navigator.language,
       site: {
         domain: getOrigin(),
@@ -50,7 +51,7 @@ export const spec = {
         imp_id: req.transactionId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,
-        media_types: deepAccess(req, 'mediaTypes')
+        media_types: utils.deepAccess(req, 'mediaTypes')
       });
     }
 

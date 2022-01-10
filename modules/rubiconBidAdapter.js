@@ -1,4 +1,4 @@
-import { mergeDeep, _each, logError, deepAccess, deepSetValue, isStr, isNumber, logWarn, convertTypes, isArray, parseSizesInput, logMessage, formatQS } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -15,7 +15,7 @@ let rubiConf = {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
-  mergeDeep(rubiConf, config.rubicon);
+  utils.mergeDeep(rubiConf, config.rubicon);
 });
 
 const GVLID = 52;
@@ -110,19 +110,9 @@ var sizeMap = {
   548: '500x1000',
   550: '980x480',
   552: '300x200',
-  558: '640x640',
-  562: '300x431',
-  564: '320x431',
-  566: '320x300',
-  568: '300x150',
-  570: '300x125',
-  572: '250x350',
-  574: '620x891',
-  576: '610x877',
-  578: '980x552',
-  580: '505x656'
+  558: '640x640'
 };
-_each(sizeMap, (item, key) => sizeMap[item] = key);
+utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
   code: 'rubicon',
@@ -140,7 +130,7 @@ export const spec = {
     for (let i = 0, props = ['accountId', 'siteId', 'zoneId']; i < props.length; i++) {
       bid.params[props[i]] = parseInt(bid.params[props[i]])
       if (isNaN(bid.params[props[i]])) {
-        logError('Rubicon: wrong format of accountId or siteId or zoneId.')
+        utils.logError('Rubicon: wrong format of accountId or siteId or zoneId.')
         return false
       }
     }
@@ -180,7 +170,7 @@ export const spec = {
           ext: {
             [bidRequest.bidder]: bidRequest.params
           },
-          video: deepAccess(bidRequest, 'mediaTypes.video') || {}
+          video: utils.deepAccess(bidRequest, 'mediaTypes.video') || {}
         }],
         ext: {
           prebid: {
@@ -217,7 +207,7 @@ export const spec = {
 
       let modules = (getGlobal()).installedModules;
       if (modules && (!modules.length || modules.indexOf('rubiconAnalyticsAdapter') !== -1)) {
-        deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
+        utils.deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
       }
 
       let bidFloor;
@@ -230,11 +220,11 @@ export const spec = {
             size: parseSizes(bidRequest, 'video')
           });
         } catch (e) {
-          logError('Rubicon: getFloor threw an error: ', e);
+          utils.logError('Rubicon: getFloor threw an error: ', e);
         }
         bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
       } else {
-        bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+        bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
       }
       if (!isNaN(bidFloor)) {
         data.imp[0].bidfloor = bidFloor;
@@ -253,36 +243,36 @@ export const spec = {
           gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
         }
 
-        deepSetValue(data, 'regs.ext.gdpr', gdprApplies);
-        deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+        utils.deepSetValue(data, 'regs.ext.gdpr', gdprApplies);
+        utils.deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       }
 
       if (bidderRequest.uspConsent) {
-        deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+        utils.deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      const eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+      const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       if (eids && eids.length) {
-        deepSetValue(data, 'user.ext.eids', eids);
+        utils.deepSetValue(data, 'user.ext.eids', eids);
       }
 
       // set user.id value from config value
       const configUserId = config.getConfig('user.id');
       if (configUserId) {
-        deepSetValue(data, 'user.id', configUserId);
+        utils.deepSetValue(data, 'user.id', configUserId);
       }
 
       if (config.getConfig('coppa') === true) {
-        deepSetValue(data, 'regs.coppa', 1);
+        utils.deepSetValue(data, 'regs.coppa', 1);
       }
 
       if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
-        deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+        utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
       const multibid = config.getConfig('multibid');
       if (multibid) {
-        deepSetValue(data, 'ext.prebid.multibid', multibid.reduce((result, i) => {
+        utils.deepSetValue(data, 'ext.prebid.multibid', multibid.reduce((result, i) => {
           let obj = {};
 
           Object.keys(i).forEach(key => {
@@ -299,11 +289,11 @@ export const spec = {
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
-        deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
+        utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
       }
 
       // set ext.prebid.auctiontimestamp using auction time
-      deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
+      utils.deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
 
       return {
         method: 'POST',
@@ -322,14 +312,14 @@ export const spec = {
           url: `https://${rubiConf.bannerHost || 'fastlane'}.rubiconproject.com/a/api/fastlane.json`,
           data: spec.getOrderedParams(bidParams).reduce((paramString, key) => {
             const propValue = bidParams[key];
-            return ((isStr(propValue) && propValue !== '') || isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
+            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
           }, '') + `slots=1&rand=${Math.random()}`,
           bidRequest
         };
       }));
     } else {
       // single request requires bids to be grouped by site id into a single request
-      // note: groupBy wasn't used because deep property access was needed
+      // note: utils.groupBy wasn't used because deep property access was needed
       const nonVideoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner');
       const groupedBidRequests = nonVideoRequests.reduce((groupedBids, bid) => {
         (groupedBids[bid.params['siteId']] = groupedBids[bid.params['siteId']] || []).push(bid);
@@ -353,7 +343,7 @@ export const spec = {
             url: `https://${rubiConf.bannerHost || 'fastlane'}.rubiconproject.com/a/api/fastlane.json`,
             data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
               const propValue = combinedSlotParams[key];
-              return ((isStr(propValue) && propValue !== '') || isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
+              return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
             }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
             bidRequest: bidsInGroup
           });
@@ -485,7 +475,7 @@ export const spec = {
           size: '*'
         });
       } catch (e) {
-        logError('Rubicon: getFloor threw an error: ', e);
+        utils.logError('Rubicon: getFloor threw an error: ', e);
       }
       data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
@@ -493,7 +483,7 @@ export const spec = {
     // add p_pos only if specified and valid
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     let posMapping = {1: 'atf', 3: 'btf'};
-    let pos = posMapping[deepAccess(bidRequest, 'mediaTypes.banner.pos')] || '';
+    let pos = posMapping[utils.deepAccess(bidRequest, 'mediaTypes.banner.pos')] || '';
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : pos;
 
     // pass publisher provided userId if configured
@@ -532,7 +522,7 @@ export const spec = {
             }
           }
         } catch (e) {
-          logWarn('Rubicon: error reading eid:', eid, e);
+          utils.logWarn('Rubicon: error reading eid:', eid, e);
         }
       });
     }
@@ -605,9 +595,9 @@ export const spec = {
 
     // video response from PBS Java openRTB
     if (responseObj.seatbid) {
-      const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
+      const responseErrors = utils.deepAccess(responseObj, 'ext.errors.rubicon');
       if (Array.isArray(responseErrors) && responseErrors.length > 0) {
-        logWarn('Rubicon: Error in video response');
+        utils.logWarn('Rubicon: Error in video response');
       }
       const bids = [];
       responseObj.seatbid.forEach(seatbid => {
@@ -620,8 +610,8 @@ export const spec = {
             bidderCode: seatbid.seat,
             ttl: 300,
             netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
-            width: bid.w || deepAccess(bidRequest, 'mediaTypes.video.w') || deepAccess(bidRequest, 'params.video.playerWidth'),
-            height: bid.h || deepAccess(bidRequest, 'mediaTypes.video.h') || deepAccess(bidRequest, 'params.video.playerHeight'),
+            width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
+            height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
           };
 
           if (bid.id) {
@@ -633,22 +623,22 @@ export const spec = {
           }
 
           if (bid.adomain) {
-            deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
+            utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
           }
 
-          if (deepAccess(bid, 'ext.bidder.rp.advid')) {
-            deepSetValue(bidObject, 'meta.advertiserId', bid.ext.bidder.rp.advid);
+          if (utils.deepAccess(bid, 'ext.bidder.rp.advid')) {
+            utils.deepSetValue(bidObject, 'meta.advertiserId', bid.ext.bidder.rp.advid);
           }
 
-          let serverResponseTimeMs = deepAccess(responseObj, 'ext.responsetimemillis.rubicon');
+          let serverResponseTimeMs = utils.deepAccess(responseObj, 'ext.responsetimemillis.rubicon');
           if (bidRequest && serverResponseTimeMs) {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
           }
 
-          if (deepAccess(bid, 'ext.prebid.type') === VIDEO) {
+          if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
-            deepSetValue(bidObject, 'meta.mediaType', VIDEO);
-            const extPrebidTargeting = deepAccess(bid, 'ext.prebid.targeting');
+            utils.deepSetValue(bidObject, 'meta.mediaType', VIDEO);
+            const extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
 
             // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
             if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
@@ -670,12 +660,12 @@ export const spec = {
             if (bid.nurl) { bidObject.vastUrl = bid.nurl; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
 
-            const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
+            const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
             if (videoContext.toLowerCase() === 'outstream') {
               bidObject.renderer = outstreamRenderer(bidObject);
             }
           } else {
-            logWarn('Rubicon: video response received non-video media type');
+            utils.logWarn('Rubicon: video response received non-video media type');
           }
 
           bids.push(bidObject);
@@ -754,7 +744,7 @@ export const spec = {
 
         bids.push(bid);
       } else {
-        logError(`Rubicon: bidRequest undefined at index position:${i}`, bidRequest, responseObj);
+        utils.logError(`Rubicon: bidRequest undefined at index position:${i}`, bidRequest, responseObj);
       }
 
       return bids;
@@ -765,22 +755,20 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
-      let params = {};
+      let params = '';
 
-      if (gdprConsent) {
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params['gdpr'] = Number(gdprConsent.gdprApplies);
-        }
-        if (typeof gdprConsent.consentString === 'string') {
-          params['gdpr_consent'] = gdprConsent.consentString;
+          params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params += `?gdpr_consent=${gdprConsent.consentString}`;
         }
       }
 
       if (uspConsent) {
-        params['us_privacy'] = encodeURIComponent(uspConsent);
+        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
       }
-
-      params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
       hasSynced = true;
       return {
@@ -796,7 +784,7 @@ export const spec = {
    * @return {Object} params bid params
    */
   transformBidParams: function(params, isOpenRtb) {
-    return convertTypes({
+    return utils.convertTypes({
       'accountId': 'number',
       'siteId': 'number',
       'zoneId': 'number'
@@ -887,7 +875,7 @@ function outstreamRenderer(rtbBid) {
   try {
     renderer.setRender(renderBid);
   } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
   }
 
   return renderer;
@@ -902,7 +890,7 @@ function parseSizes(bid, mediaType) {
         params.video.playerWidth,
         params.video.playerHeight
       ];
-    } else if (Array.isArray(deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
+    } else if (Array.isArray(utils.deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
       size = bid.mediaTypes.video.playerSize[0];
     } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
@@ -914,12 +902,12 @@ function parseSizes(bid, mediaType) {
   let sizes = [];
   if (Array.isArray(params.sizes)) {
     sizes = params.sizes;
-  } else if (typeof deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+  } else if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     sizes = mapSizes(bid.sizes)
   } else {
-    logWarn('Rubicon: no sizes are setup or found');
+    utils.logWarn('Rubicon: no sizes are setup or found');
   }
 
   return masSizeOrdering(sizes);
@@ -948,11 +936,7 @@ function appendSiteAppDevice(data, bidRequest, bidderRequest) {
   if (bidRequest.params.video.language) {
     ['site', 'device'].forEach(function(param) {
       if (data[param]) {
-        if (param === 'site') {
-          data[param].content = Object.assign({language: bidRequest.params.video.language}, data[param].content)
-        } else {
-          data[param] = Object.assign({language: bidRequest.params.video.language}, data[param])
-        }
+        data[param].content = Object.assign({language: bidRequest.params.video.language}, data[param].content)
       }
     });
   }
@@ -990,18 +974,16 @@ function applyFPD(bidRequest, mediaType, data) {
     site: {ext: {data: {...bidRequest.params.inventory}}}
   };
 
-  if (bidRequest.params.keywords) BID_FPD.site.keywords = (isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
+  if (bidRequest.params.keywords) BID_FPD.site.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
-  let fpd = mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
-  let impData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
-
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
+  let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
   const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
     if (key === 'data' && Array.isArray(prop)) {
-      return prop.filter(name => name.segment && deepAccess(name, 'ext.segtax') && SEGTAX[parentName] &&
-        SEGTAX[parentName].indexOf(deepAccess(name, 'ext.segtax')) !== -1).map(value => {
+      return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.segtax') && SEGTAX[parentName] &&
+        SEGTAX[parentName].indexOf(utils.deepAccess(name, 'ext.segtax')) !== -1).map(value => {
         let segments = value.segment.filter(obj => obj.id).reduce((result, obj) => {
           result.push(obj.id);
           return result;
@@ -1009,12 +991,12 @@ function applyFPD(bidRequest, mediaType, data) {
         if (segments.length > 0) return segments.toString();
       }).toString();
     } else if (typeof prop === 'object' && !Array.isArray(prop)) {
-      logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
+      utils.logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
     } else if (typeof prop !== 'undefined') {
       return (Array.isArray(prop)) ? prop.filter(value => {
         if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
 
-        logWarn('Rubicon: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
+        utils.logWarn('Rubicon: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
       }).toString() : prop.toString();
     }
   };
@@ -1023,6 +1005,16 @@ function applyFPD(bidRequest, mediaType, data) {
     let loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
   }
+
+  Object.keys(impData).forEach((key) => {
+    if (key === 'adserver') {
+      ['name', 'adslot'].forEach(prop => {
+        if (impData[key][prop]) impData[key][prop] = impData[key][prop].toString().replace(/^\/+/, '');
+      });
+    } else if (key === 'pbadslot') {
+      impData[key] = impData[key].toString().replace(/^\/+/, '');
+    }
+  });
 
   if (mediaType === BANNER) {
     ['site', 'user'].forEach(name => {
@@ -1039,32 +1031,14 @@ function applyFPD(bidRequest, mediaType, data) {
       });
     });
     Object.keys(impData).forEach((key) => {
-      if (key !== 'adserver') {
-        addBannerData(impData[key], 'site', key);
-      } else if (impData[key].name === 'gam') {
-        addBannerData(impData[key].adslot, name, key)
-      }
+      (key === 'adserver') ? addBannerData(impData[key].adslot, name, key) : addBannerData(impData[key], 'site', key);
     });
-
-    // add in gpid
-    if (gpid) {
-      data['p_gpid'] = gpid;
-    }
-
-    // only send one of pbadslot or dfp adunit code (prefer pbadslot)
-    if (data['tg_i.pbadslot']) {
-      delete data['tg_i.dfp_ad_unit_code'];
-    }
   } else {
     if (Object.keys(impData).length) {
-      mergeDeep(data.imp[0].ext, {data: impData});
-    }
-    // add in gpid
-    if (gpid) {
-      data.imp[0].ext.gpid = gpid;
+      utils.mergeDeep(data.imp[0].ext, {data: impData});
     }
 
-    mergeDeep(data, fpd);
+    utils.mergeDeep(data, fpd);
   }
 }
 
@@ -1073,7 +1047,7 @@ function applyFPD(bidRequest, mediaType, data) {
  * @returns {*}
  */
 function mapSizes(sizes) {
-  return parseSizesInput(sizes)
+  return utils.parseSizesInput(sizes)
   // map sizes while excluding non-matches
     .reduce((result, size) => {
       let mappedSize = parseInt(sizeMap[size], 10);
@@ -1091,10 +1065,10 @@ function mapSizes(sizes) {
  * @returns {boolean}
  */
 export function hasVideoMediaType(bidRequest) {
-  if (typeof deepAccess(bidRequest, 'params.video') !== 'object') {
+  if (typeof utils.deepAccess(bidRequest, 'params.video') !== 'object') {
     return false;
   }
-  return (typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
+  return (typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
 }
 
 /**
@@ -1108,9 +1082,9 @@ function bidType(bid, log = false) {
   if (hasVideoMediaType(bid)) {
     // Removed legacy mediaType support. new way using mediaTypes.video object is now required
     // We require either context as instream or outstream
-    if (['outstream', 'instream'].indexOf(deepAccess(bid, `mediaTypes.${VIDEO}.context`)) === -1) {
+    if (['outstream', 'instream'].indexOf(utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`)) === -1) {
       if (log) {
-        logError('Rubicon: mediaTypes.video.context must be outstream or instream');
+        utils.logError('Rubicon: mediaTypes.video.context must be outstream or instream');
       }
       return;
     }
@@ -1118,13 +1092,13 @@ function bidType(bid, log = false) {
     // we require playerWidth and playerHeight to come from one of params.playerWidth/playerHeight or mediaTypes.video.playerSize or adUnit.sizes
     if (parseSizes(bid, 'video').length < 2) {
       if (log) {
-        logError('Rubicon: could not determine the playerSize of the video');
+        utils.logError('Rubicon: could not determine the playerSize of the video');
       }
       return;
     }
 
     if (log) {
-      logMessage('Rubicon: making video request for adUnit', bid.adUnitCode);
+      utils.logMessage('Rubicon: making video request for adUnit', bid.adUnitCode);
     }
     return 'video';
   } else {
@@ -1132,14 +1106,14 @@ function bidType(bid, log = false) {
     // if we cannot determine them, we reject it!
     if (parseSizes(bid, 'banner').length === 0) {
       if (log) {
-        logError('Rubicon: could not determine the sizes for banner request');
+        utils.logError('Rubicon: could not determine the sizes for banner request');
       }
       return;
     }
 
     // everything looks good for banner so lets do it
     if (log) {
-      logMessage('Rubicon: making banner request for adUnit', bid.adUnitCode);
+      utils.logMessage('Rubicon: making banner request for adUnit', bid.adUnitCode);
     }
     return 'banner';
   }
@@ -1171,13 +1145,13 @@ export function masSizeOrdering(sizes) {
 
 export function determineRubiconVideoSizeId(bid) {
   // If we have size_id in the bid then use it
-  let rubiconSizeId = parseInt(deepAccess(bid, 'params.video.size_id'));
+  let rubiconSizeId = parseInt(utils.deepAccess(bid, 'params.video.size_id'));
   if (!isNaN(rubiconSizeId)) {
     return rubiconSizeId;
   }
   // otherwise 203 for outstream and 201 for instream
   // When this function is used we know it has to be one of outstream or instream
-  return deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : 201;
+  return utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : 201;
 }
 
 /**
@@ -1220,9 +1194,9 @@ export function hasValidVideoParams(bid) {
   }
   // loop through each param and verify it has the correct
   Object.keys(requiredParams).forEach(function(param) {
-    if (Object.prototype.toString.call(deepAccess(bid, 'mediaTypes.video.' + param)) !== requiredParams[param]) {
+    if (Object.prototype.toString.call(utils.deepAccess(bid, 'mediaTypes.video.' + param)) !== requiredParams[param]) {
       isValid = false;
-      logError('Rubicon: mediaTypes.video.' + param + ' is required and must be of type: ' + requiredParams[param]);
+      utils.logError('Rubicon: mediaTypes.video.' + param + ' is required and must be of type: ' + requiredParams[param]);
     }
   })
   return isValid;
@@ -1241,7 +1215,7 @@ export function hasValidSupplyChainParams(schain) {
     if (!status) return status;
     return requiredFields.every(field => node.hasOwnProperty(field));
   }, true);
-  if (!isValid) logError('Rubicon: required schain params missing');
+  if (!isValid) utils.logError('Rubicon: required schain params missing');
   return isValid;
 }
 

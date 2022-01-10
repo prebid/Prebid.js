@@ -1,8 +1,5 @@
 import { Renderer } from '../src/Renderer.js';
-import {
-  logError, convertTypes, convertCamelToUnderscore, isArray, deepClone, logWarn, logMessage, getBidRequest, deepAccess,
-  isStr, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, chunk, isArrayOfNums
-} from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -148,7 +145,7 @@ export const spec = {
     if (!serverResponse || serverResponse.error) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
       if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
-      logError(errorMessage);
+      utils.logError(errorMessage);
       return bids;
     }
 
@@ -169,9 +166,9 @@ export const spec = {
   },
 
   transformBidParams: function(params, isOpenRtb) {
-    params = convertTypes({
+    params = utils.convertTypes({
       'placementId': 'number',
-      'keywords': transformBidderParamKeywords
+      'keywords': utils.transformBidderParamKeywords
     }, params);
 
     if (isOpenRtb) {
@@ -183,7 +180,7 @@ export const spec = {
       }
 
       Object.keys(params).forEach(paramKey => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
+        let convertedKey = utils.convertCamelToUnderscore(paramKey);
         if (convertedKey !== paramKey) {
           params[convertedKey] = params[paramKey];
           delete params[paramKey];
@@ -196,7 +193,7 @@ export const spec = {
 }
 
 function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
+  return !!(utils.isArray(arr) && arr.length > 0);
 }
 
 function deleteValues(keyPairObj) {
@@ -209,9 +206,9 @@ function formatRequest(payload, bidderRequest) {
   let request = [];
 
   if (payload.tags.length > MAX_IMPS_PER_REQUEST) {
-    const clonedPayload = deepClone(payload);
+    const clonedPayload = utils.deepClone(payload);
 
-    chunk(payload.tags, MAX_IMPS_PER_REQUEST).forEach(tags => {
+    utils.chunk(payload.tags, MAX_IMPS_PER_REQUEST).forEach(tags => {
       clonedPayload.tags = tags;
       const payloadString = JSON.stringify(clonedPayload);
       request.push({
@@ -246,14 +243,14 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
   }
 
   renderer.setEventHandlers({
-    impression: () => logMessage('AdRelevantis outstream video impression event'),
-    loaded: () => logMessage('AdRelevantis outstream video loaded event'),
+    impression: () => utils.logMessage('AdRelevantis outstream video impression event'),
+    loaded: () => utils.logMessage('AdRelevantis outstream video loaded event'),
     ended: () => {
-      logMessage('AdRelevantis outstream renderer video event');
+      utils.logMessage('AdRelevantis outstream renderer video event');
       document.querySelector(`#${adUnitCode}`).style.display = 'none';
     }
   });
@@ -298,7 +295,7 @@ function handleOutstreamRendererEvents(bid, id, eventName) {
  * @return Bid
  */
 function newBid(serverBid, rtbBid, bidderRequest) {
-  const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
+  const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
@@ -327,7 +324,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       ttl: 3600
     });
 
-    const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
+    const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
     switch (videoContext) {
       case OUTSTREAM:
         bid.adResponse = serverBid;
@@ -337,7 +334,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
         if (rtbBid.renderer_url) {
           const videoBid = find(bidderRequest.bids, bid => bid.bidId === serverBid.uuid);
-          const rendererOptions = deepAccess(videoBid, 'renderer.options');
+          const rendererOptions = utils.deepAccess(videoBid, 'renderer.options');
           bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
         }
         break;
@@ -357,7 +354,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
     if (jsTrackers == undefined) {
       jsTrackers = jsTrackerDisarmed;
-    } else if (isStr(jsTrackers)) {
+    } else if (utils.isStr(jsTrackers)) {
       jsTrackers = [jsTrackers, jsTrackerDisarmed];
     } else {
       jsTrackers.push(jsTrackerDisarmed);
@@ -405,10 +402,10 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     });
     try {
       const url = rtbBid.rtb.trackers[0].impression_urls[0];
-      const tracker = createTrackPixelHtml(url);
+      const tracker = utils.createTrackPixelHtml(url);
       bid.ad += tracker;
     } catch (error) {
-      logError('Error appending tracking pixel', error);
+      utils.logError('Error appending tracking pixel', error);
     }
   }
 
@@ -452,8 +449,8 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
+  if (!utils.isEmpty(bid.params.keywords)) {
+    let keywords = utils.transformBidderParamKeywords(bid.params.keywords);
 
     if (keywords.length > 0) {
       keywords.forEach(deleteValues);
@@ -464,7 +461,7 @@ function bidToTag(bid) {
     tag.category = bid.params.category;
   }
 
-  if (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`)) {
+  if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
     tag.ad_types.push(NATIVE);
     if (tag.sizes.length === 0) {
       tag.sizes = transformSizes([1, 1]);
@@ -476,8 +473,8 @@ function bidToTag(bid) {
     }
   }
 
-  const videoMediaType = deepAccess(bid, `mediaTypes.${VIDEO}`);
-  const context = deepAccess(bid, 'mediaTypes.video.context');
+  const videoMediaType = utils.deepAccess(bid, `mediaTypes.${VIDEO}`);
+  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
 
   tag.hb_source = 1;
   if (bid.mediaType === VIDEO || videoMediaType) {
@@ -502,7 +499,7 @@ function bidToTag(bid) {
   }
 
   if (
-    (isEmpty(bid.mediaType) && isEmpty(bid.mediaTypes)) ||
+    (utils.isEmpty(bid.mediaType) && utils.isEmpty(bid.mediaTypes)) ||
     (bid.mediaType === BANNER || (bid.mediaTypes && bid.mediaTypes[BANNER]))
   ) {
     tag.ad_types.push(BANNER);
@@ -516,8 +513,8 @@ function transformSizes(requestSizes) {
   let sizes = [];
   let sizeObj = {};
 
-  if (isArray(requestSizes) && requestSizes.length === 2 &&
-    !isArray(requestSizes[0])) {
+  if (utils.isArray(requestSizes) && requestSizes.length === 2 &&
+    !utils.isArray(requestSizes[0])) {
     sizeObj.width = parseInt(requestSizes[0], 10);
     sizeObj.height = parseInt(requestSizes[1], 10);
     sizes.push(sizeObj);
@@ -578,7 +575,7 @@ function buildNativeRequest(params) {
     const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
     if (isImageAsset && request[requestKey].sizes) {
       let sizes = request[requestKey].sizes;
-      if (isArrayOfNums(sizes) || (isArray(sizes) && sizes.length > 0 && sizes.every(sz => isArrayOfNums(sz)))) {
+      if (utils.isArrayOfNums(sizes) || (utils.isArray(sizes) && sizes.length > 0 && sizes.every(sz => utils.isArrayOfNums(sz)))) {
         request[requestKey].sizes = transformSizes(request[requestKey].sizes);
       }
     }

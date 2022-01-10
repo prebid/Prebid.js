@@ -1,4 +1,4 @@
-import { isArray, deepAccess, getOrigin, logError } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import includes from 'core-js-pure/features/array/includes.js';
@@ -82,7 +82,7 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, originalRequest) {
     const responseBody = serverResponse.body;
-    if (!isArray(responseBody)) {
+    if (!utils.isArray(responseBody)) {
       return [];
     }
 
@@ -145,7 +145,7 @@ function mapImpression(slot) {
  */
 function mapBanner(slot) {
   if (slot.mediaType === 'banner' ||
-    deepAccess(slot, 'mediaTypes.banner') ||
+    utils.deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
     var sizes = slot.sizes || slot.mediaTypes.banner.sizes;
     return {
@@ -165,26 +165,16 @@ function mapBanner(slot) {
  * @returns {object} Site by OpenRTB 2.5 §3.2.13
  */
 function mapSite(slot, bidderRequest) {
-  let pubId = 'unknown';
-  let channel = null;
-  if (slot && slot.length > 0) {
-    pubId = slot[0].params.publisherId;
-    channel = slot[0].params.channel &&
-    slot[0].params.channel
-      .toString()
-      .slice(0, 50);
-  }
-  let siteData = {
+  const pubId = slot && slot.length > 0
+    ? slot[0].params.publisherId
+    : 'unknown';
+  return {
     publisher: {
       id: pubId.toString(),
     },
     page: bidderRequest.refererInfo.referer,
-    name: getOrigin()
-  };
-  if (channel) {
-    siteData.channel = channel;
+    name: utils.getOrigin()
   }
-  return siteData;
 }
 
 /**
@@ -208,7 +198,7 @@ function mapSchain(schain) {
     return null;
   }
   if (!validateSchain(schain)) {
-    logError('RTB House: required schain params missing');
+    utils.logError('RTB House: required schain params missing');
     return null;
   }
   return schain;
@@ -233,7 +223,7 @@ function validateSchain(schain) {
  * @returns {object} Request by OpenRTB Native Ads 1.1 §4
  */
 function mapNative(slot) {
-  if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
+  if (slot.mediaType === 'native' || utils.deepAccess(slot, 'mediaTypes.native')) {
     return {
       request: {
         assets: mapNativeAssets(slot)
@@ -248,7 +238,7 @@ function mapNative(slot) {
  * @returns {array} Request Assets by OpenRTB Native Ads 1.1 §4.2
  */
 function mapNativeAssets(slot) {
-  const params = slot.nativeParams || deepAccess(slot, 'mediaTypes.native');
+  const params = slot.nativeParams || utils.deepAccess(slot, 'mediaTypes.native');
   const assets = [];
   if (params.title) {
     assets.push({

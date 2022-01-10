@@ -1,4 +1,4 @@
-import { logWarn } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
@@ -24,30 +24,30 @@ export const spec = {
     if (!(bid &&
           bid.bidId &&
           bid.params)) {
-      logWarn('Invalid bid request - missing required bid data');
+      utils.logWarn('Invalid bid request - missing required bid data');
       return false;
     }
 
     if (!(bid.params.user &&
           bid.params.user.buyeruid)) {
-      logWarn('Invalid bid request - missing required user data');
+      utils.logWarn('Invalid bid request - missing required user data');
       return false;
     }
 
     if (!(bid.params.device &&
           bid.params.device.ip)) {
-      logWarn('Invalid bid request - missing required device data');
+      utils.logWarn('Invalid bid request - missing required device data');
       return false;
     }
 
     if (!(bid.params.device.geo &&
           bid.params.device.geo.country)) {
-      logWarn('Invalid bid request - missing required geo data');
+      utils.logWarn('Invalid bid request - missing required geo data');
       return false;
     }
 
     if (!bid.params.definerId) {
-      logWarn('Invalid bid request - missing required definer data');
+      utils.logWarn('Invalid bid request - missing required definer data');
       return false;
     }
 

@@ -18,7 +18,7 @@
  * @property {string} device
  */
 
-import { logInfo, logError } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 
@@ -74,7 +74,7 @@ export let fetchScoreFile = true;
  * Make the request for the Score File.
  */
 export function scoreFileRequest() {
-  logInfo('Fetch Optimera score file.');
+  utils.logInfo('Fetch Optimera score file.');
   const ajax = ajaxBuilder();
   ajax(scoresURL,
     {
@@ -83,14 +83,14 @@ export function scoreFileRequest() {
           try {
             setScores(res);
           } catch (err) {
-            logError('Unable to parse Optimera Score File.', err);
+            utils.logError('Unable to parse Optimera Score File.', err);
           }
         } else if (req.status === 403) {
-          logError('Unable to fetch the Optimera Score File - 403');
+          utils.logError('Unable to fetch the Optimera Score File - 403');
         }
       },
       error: () => {
-        logError('Unable to fetch the Optimera Score File.');
+        utils.logError('Unable to fetch the Optimera Score File.');
       }
     });
 }
@@ -108,9 +108,9 @@ export function returnTargetingData(adUnits, config) {
       }
     });
   } catch (err) {
-    logError('error', err);
+    utils.logError('error', err);
   }
-  logInfo('Apply Optimera targeting');
+  utils.logInfo('Apply Optimera targeting');
   return targeting;
 }
 
@@ -143,7 +143,7 @@ export function init(moduleConfig) {
     return true;
   } else {
     if (!_moduleParams.clientID) {
-      logError('Optimera clientID is missing in the Optimera RTD configuration.');
+      utils.logError('Optimera clientID is missing in the Optimera RTD configuration.');
     }
     return false;
   }
@@ -173,9 +173,7 @@ export function setScoresURL() {
 }
 
 /**
- * Set the scores for the device if given.
- * Add any any insights to the winddow.optimeraInsights object.
- *
+ * Set the scores for the divice if given.
  * @param {*} result
  * @returns {string} JSON string of Optimera Scores.
  */
@@ -186,13 +184,8 @@ export function setScores(result) {
     if (device !== 'default' && scores.device[device]) {
       scores = scores.device[device];
     }
-    logInfo(scores);
-    if (scores.insights) {
-      window.optimeraInsights = window.optimeraInsights || {};
-      window.optimeraInsights.data = scores.insights;
-    }
   } catch (e) {
-    logError('Optimera score file could not be parsed.');
+    utils.logError('Optimera score file could not be parsed.');
   }
   optimeraTargeting = scores;
 }

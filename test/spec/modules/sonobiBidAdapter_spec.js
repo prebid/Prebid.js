@@ -238,17 +238,14 @@ describe('SonobiBidAdapter', function () {
   });
 
   describe('.buildRequests', function () {
-    let sandbox;
     beforeEach(function() {
       sinon.stub(userSync, 'canBidderRegisterSync');
       sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .onFirstCall().returns({gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id'});
-      sandbox = sinon.createSandbox();
+        .onFirstCall().returns({gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id'})
     });
     afterEach(function() {
       userSync.canBidderRegisterSync.restore();
       utils.getGptSlotInfoForAdUnitCode.restore();
-      sandbox.restore();
     });
     let bidRequest = [{
       'schain': {
@@ -335,36 +332,6 @@ describe('SonobiBidAdapter', function () {
       },
       uspConsent: 'someCCPAString'
     };
-
-    it('should set fpd if there is any data in ortb2', function() {
-      const ortb2 = {
-        site: {
-          ext: {
-            data: {
-              pageType: 'article',
-              category: 'tools'
-            }
-          }
-        },
-        user: {
-          ext: {
-            data: {
-              registered: true,
-              interests: ['cars']
-            }
-          }
-        }
-      };
-
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          ortb2: ortb2
-        };
-        return utils.deepAccess(config, key);
-      });
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.fpd).to.equal(JSON.stringify(ortb2));
-    });
 
     it('should populate coppa as 1 if set in config', function () {
       config.setConfig({coppa: true});
@@ -785,7 +752,6 @@ describe('SonobiBidAdapter', function () {
           expect(resp.width).to.equal(prebidResponse[i].width);
           expect(resp.height).to.equal(prebidResponse[i].height);
           expect(resp.renderer).to.be.ok;
-          expect(resp.ad).to.equal(undefined);
         } else if (resp.mediaType === 'video') {
           expect(resp.vastUrl.indexOf('vast.xml')).to.be.greaterThan(0);
           expect(resp.ad).to.be.undefined;

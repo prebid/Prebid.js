@@ -2,7 +2,6 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'adhese';
 const GVLID = 553;
@@ -21,15 +20,11 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return null;
     }
-
     const { gdprConsent, refererInfo } = bidderRequest;
 
-    const adheseConfig = config.getConfig('adhese');
     const gdprParams = (gdprConsent && gdprConsent.consentString) ? { xt: [gdprConsent.consentString] } : {};
     const refererParams = (refererInfo && refererInfo.referer) ? { xf: [base64urlEncode(refererInfo.referer)] } : {};
-    const globalCustomParams = (adheseConfig && adheseConfig.globalTargets) ? cleanTargets(adheseConfig.globalTargets) : {};
-    const commonParams = { ...globalCustomParams, ...gdprParams, ...refererParams };
-    const vastContentAsUrl = !(adheseConfig && adheseConfig.vastContentAsUrl == false);
+    const commonParams = { ...gdprParams, ...refererParams };
 
     const slots = validBidRequests.map(bid => ({
       slotname: bidToSlotName(bid),
@@ -39,7 +34,7 @@ export const spec = {
     const payload = {
       slots: slots,
       parameters: commonParams,
-      vastContentAsUrl: vastContentAsUrl,
+      vastContentAsUrl: true,
       user: {
         ext: {
           eids: getEids(validBidRequests),

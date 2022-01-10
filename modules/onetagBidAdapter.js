@@ -7,7 +7,6 @@ import find from 'core-js-pure/features/array/find.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { createEidsArray } from './userId/eids.js';
-import { deepClone } from '../src/utils.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -206,8 +205,8 @@ function getPageInfo() {
         ? topmostFrame.document.referrer
         : null,
     ancestorOrigin:
-      window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0
-        ? window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1]
+      window.location.ancestorOrigins && window.location.ancestorOrigins[0] != null
+        ? window.location.ancestorOrigins[0]
         : null,
     masked: currentFrameNesting,
     wWidth: topmostFrame.innerWidth,
@@ -240,10 +239,15 @@ function requestsToBids(bidRequests) {
     // Pass parameters
     // Context: instream - outstream - adpod
     videoObj['context'] = bidRequest.mediaTypes.video.context;
+    // MIME Video Types
+    videoObj['mimes'] = bidRequest.mediaTypes.video.mimes;
     // Sizes
     videoObj['playerSize'] = parseVideoSize(bidRequest);
     // Other params
-    videoObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.video);
+    videoObj['protocols'] = bidRequest.mediaTypes.video.protocols;
+    videoObj['maxDuration'] = bidRequest.mediaTypes.video.maxduration;
+    videoObj['api'] = bidRequest.mediaTypes.video.api;
+    videoObj['playbackmethod'] = bidRequest.mediaTypes.video.playbackmethod || [];
     videoObj['type'] = VIDEO;
     return videoObj;
   });
@@ -252,7 +256,6 @@ function requestsToBids(bidRequests) {
     setGeneralInfo.call(bannerObj, bidRequest);
     bannerObj['sizes'] = parseSizes(bidRequest);
     bannerObj['type'] = BANNER;
-    bannerObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.banner);
     return bannerObj;
   });
   return videoBidRequests.concat(bannerBidRequests);
@@ -347,12 +350,10 @@ function getSizes(sizes) {
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   let syncs = [];
   let params = '';
-  if (gdprConsent) {
+  if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+    params += '&gdpr_consent=' + gdprConsent.consentString;
     if (typeof gdprConsent.gdprApplies === 'boolean') {
       params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-    }
-    if (typeof gdprConsent.consentString === 'string') {
-      params += '&gdpr_consent=' + gdprConsent.consentString;
     }
   }
   if (uspConsent && typeof uspConsent === 'string') {

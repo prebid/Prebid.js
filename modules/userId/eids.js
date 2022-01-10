@@ -1,4 +1,4 @@
-import { pick, isFn, isStr, isPlainObject, deepAccess } from '../../src/utils.js';
+import * as utils from '../../src/utils.js';
 
 // Each user-id sub-module is expected to mention respective config here
 const USER_IDS_CONFIG = {
@@ -8,12 +8,6 @@ const USER_IDS_CONFIG = {
   // intentIqId
   'intentIqId': {
     source: 'intentiq.com',
-    atype: 1
-  },
-
-  // naveggId
-  'naveggId': {
-    source: 'navegg.com',
     atype: 1
   },
 
@@ -64,7 +58,7 @@ const USER_IDS_CONFIG = {
       return null;
     },
     getUidExt: function(parrableId) {
-      const extendedData = pick(parrableId, [
+      const extendedData = utils.pick(parrableId, [
         'ibaOptout',
         'ccpaOptout'
       ]);
@@ -181,18 +175,15 @@ const USER_IDS_CONFIG = {
     source: 'neustar.biz',
     atype: 1
   },
-
   // MediaWallah OpenLink
   'mwOpenLinkId': {
     source: 'mediawallahscript.com',
     atype: 1
   },
-
   'tapadId': {
     source: 'tapad.com',
     atype: 1
   },
-
   // Novatiq Snowflake
   'novatiq': {
     getValue: function(data) {
@@ -201,7 +192,6 @@ const USER_IDS_CONFIG = {
     source: 'novatiq.com',
     atype: 1
   },
-
   'uid2': {
     source: 'uidapi.com',
     atype: 3,
@@ -209,61 +199,37 @@ const USER_IDS_CONFIG = {
       return data.id;
     }
   },
-
+  'deepintentId': {
+    source: 'deepintent.com',
+    atype: 3
+  },
   // Akamai Data Activation Platform (DAP)
   'dapId': {
     source: 'akamai.com',
     atype: 1
   },
-
-  'deepintentId': {
-    source: 'deepintent.com',
-    atype: 3
-  },
-
   // Admixer Id
   'admixerId': {
     source: 'admixer.net',
     atype: 3
   },
-
   // Adtelligent Id
   'adtelligentId': {
     source: 'adtelligent.com',
     atype: 3
   },
-
   amxId: {
     source: 'amxrtb.com',
     atype: 1,
   },
-
-  'publinkId': {
-    source: 'epsilon.com',
-    atype: 3
-  },
-
   'kpuid': {
     source: 'kpuid.com',
     atype: 3
   },
-
   'imuid': {
     source: 'intimatemerger.com',
     atype: 1
-  },
-
-  // Yahoo ConnectID
-  'connectId': {
-    source: 'yahoo.com',
-    atype: 3
-  },
-
-  // Adquery ID
-  'qid': {
-    source: 'adquery.io',
-    atype: 1
-  },
+  }
 };
 
 // this function will create an eid object for the given UserId sub-module
@@ -272,11 +238,11 @@ function createEidObject(userIdData, subModuleKey) {
   if (conf && userIdData) {
     let eid = {};
     eid.source = conf['source'];
-    const value = isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
-    if (isStr(value)) {
+    const value = utils.isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
+    if (utils.isStr(value)) {
       const uid = { id: value, atype: conf['atype'] };
       // getUidExt
-      if (isFn(conf['getUidExt'])) {
+      if (utils.isFn(conf['getUidExt'])) {
         const uidExt = conf['getUidExt'](userIdData);
         if (uidExt) {
           uid.ext = uidExt;
@@ -284,7 +250,7 @@ function createEidObject(userIdData, subModuleKey) {
       }
       eid.uids = [uid];
       // getEidExt
-      if (isFn(conf['getEidExt'])) {
+      if (utils.isFn(conf['getEidExt'])) {
         const eidExt = conf['getEidExt'](userIdData);
         if (eidExt) {
           eid.ext = eidExt;
@@ -321,11 +287,11 @@ export function createEidsArray(bidRequestUserId) {
  */
 export function buildEidPermissions(submodules) {
   let eidPermissions = [];
-  submodules.filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length)
+  submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .forEach(i => {
       Object.keys(i.idObj).forEach(key => {
-        if (deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
-          deepAccess(USER_IDS_CONFIG, key + '.source')) {
+        if (utils.deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
+          utils.deepAccess(USER_IDS_CONFIG, key + '.source')) {
           eidPermissions.push(
             {
               source: USER_IDS_CONFIG[key].source,

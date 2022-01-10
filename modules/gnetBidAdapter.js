@@ -1,5 +1,5 @@
-import { _each, parseSizesInput, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'gnet';
@@ -29,7 +29,7 @@ export const spec = {
     const bidRequests = [];
     const referer = bidderRequest.refererInfo.referer;
 
-    _each(validBidRequests, (request) => {
+    utils._each(validBidRequests, (request) => {
       const data = {};
 
       data.referer = referer;
@@ -37,7 +37,7 @@ export const spec = {
       data.bidId = request.bidId;
       data.transactionId = request.transactionId;
 
-      data.sizes = parseSizesInput(request.sizes);
+      data.sizes = utils.parseSizesInput(request.sizes);
 
       data.params = request.params;
 
@@ -70,13 +70,13 @@ export const spec = {
 
     const res = serverResponse && serverResponse.body;
 
-    if (isEmpty(res)) {
+    if (utils.isEmpty(res)) {
       return [];
     }
 
     if (res.bids) {
       const bids = [];
-      _each(res.bids, (bidData) => {
+      utils._each(res.bids, (bidData) => {
         const bid = {
           requestId: bidData.bidId,
           cpm: bidData.cpm,

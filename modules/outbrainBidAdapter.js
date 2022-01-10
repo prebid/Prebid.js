@@ -5,7 +5,7 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 
@@ -29,7 +29,7 @@ export const spec = {
   isBidRequestValid: (bid) => {
     return (
       !!config.getConfig('outbrain.bidderUrl') &&
-      !!deepAccess(bid, 'params.publisher.id') &&
+      !!utils.deepAccess(bid, 'params.publisher.id') &&
       !!(bid.nativeParams || bid.sizes)
     );
   },
@@ -40,7 +40,6 @@ export const spec = {
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const bcat = setOnAny(validBidRequests, 'params.bcat');
     const badv = setOnAny(validBidRequests, 'params.badv');
-    const eids = setOnAny(validBidRequests, 'userIdAsEids')
     const cur = CURRENCY;
     const endpointUrl = config.getConfig('outbrain.bidderUrl');
     const timeout = bidderRequest.timeout;
@@ -95,19 +94,15 @@ export const spec = {
       request.test = 1;
     }
 
-    if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
-      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
-      deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
+    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
+      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
     }
     if (bidderRequest.uspConsent) {
-      deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+      utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
     }
     if (config.getConfig('coppa') === true) {
-      deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
-    }
-
-    if (eids) {
-      deepSetValue(request, 'user.ext.eids', eids);
+      utils.deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
     }
 
     return {
@@ -182,7 +177,7 @@ export const spec = {
     // for native requests we put the nurl as an imp tracker, otherwise if the auction takes place on prebid server
     // the server JS adapter puts the nurl in the adm as a tracking pixel and removes the attribute
     if (bid.nurl) {
-      ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm))
+      ajax(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm))
     }
   }
 };
@@ -221,7 +216,7 @@ function parseNative(bid) {
 
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
+    result = utils.deepAccess(collection[i], key);
     if (result) {
       return result;
     }
@@ -233,7 +228,7 @@ function flatten(arr) {
 }
 
 function getNativeAssets(bid) {
-  return _map(bid.nativeParams, (bidParams, key) => {
+  return utils._map(bid.nativeParams, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
     const asset = {
       required: bidParams.required & 1,
@@ -271,16 +266,16 @@ function getNativeAssets(bid) {
 
 /* Turn bid request sizes into ut-compatible format */
 function transformSizes(requestSizes) {
-  if (!isArray(requestSizes)) {
+  if (!utils.isArray(requestSizes)) {
     return [];
   }
 
-  if (requestSizes.length === 2 && !isArray(requestSizes[0])) {
+  if (requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
     return [{
       w: parseInt(requestSizes[0], 10),
       h: parseInt(requestSizes[1], 10)
     }];
-  } else if (isArray(requestSizes[0])) {
+  } else if (utils.isArray(requestSizes[0])) {
     return requestSizes.map(item =>
       ({
         w: parseInt(item[0], 10),

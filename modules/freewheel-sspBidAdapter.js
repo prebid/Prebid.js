@@ -1,4 +1,4 @@
-import { logWarn, isArray } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -72,7 +72,7 @@ function getPricing(xmlNode) {
       price: priceNode.textContent || priceNode.innerText
     };
   } else {
-    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
+    utils.logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
   }
 
   return princingData;
@@ -312,12 +312,6 @@ export const spec = {
         requestParams._fw_us_privacy = bidderRequest.uspConsent;
       }
 
-      // Add schain object
-      var schain = currentBidRequest.schain;
-      if (schain) {
-        requestParams.schain = schain;
-      }
-
       var vastParams = currentBidRequest.params.vastUrlParams;
       if (typeof vastParams === 'object') {
         for (var key in vastParams) {
@@ -335,7 +329,7 @@ export const spec = {
       var playerSize = [];
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-        if (isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
+        if (utils.isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
           playerSize = currentBidRequest.mediaTypes.video.playerSize[0];
         } else {
           playerSize = currentBidRequest.mediaTypes.video.playerSize;
@@ -377,7 +371,7 @@ export const spec = {
     var playerSize = [];
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-      if (isArray(bidrequest.mediaTypes.video.playerSize[0])) {
+      if (utils.isArray(bidrequest.mediaTypes.video.playerSize[0])) {
         playerSize = bidrequest.mediaTypes.video.playerSize[0];
       } else {
         playerSize = bidrequest.mediaTypes.video.playerSize;
@@ -399,7 +393,7 @@ export const spec = {
       var parser = new DOMParser();
       xmlDoc = parser.parseFromString(serverResponse, 'application/xml');
     } catch (err) {
-      logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
+      utils.logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
       return;
     }
 
@@ -426,7 +420,7 @@ export const spec = {
         currency: princingData.currency,
         netRevenue: true,
         ttl: 360,
-        meta: { advertiserDomains: princingData.adomain && isArray(princingData.adomain) ? princingData.adomain : [] },
+        meta: { advertiserDomains: princingData.adomain && utils.isArray(princingData.adomain) ? princingData.adomain : [] },
         dealId: dealId,
         campaignId: campaignId,
         bannerId: bannerId

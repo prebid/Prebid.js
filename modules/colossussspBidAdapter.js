@@ -1,7 +1,6 @@
-import { getWindowTop, deepAccess, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
@@ -60,17 +59,17 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    const winTop = getWindowTop();
+    const winTop = utils.getWindowTop();
     const location = winTop.location;
     let placements = [];
     let request = {
-      deviceWidth: winTop.screen.width,
-      deviceHeight: winTop.screen.height,
-      language: (navigator && navigator.language) ? navigator.language : '',
-      secure: location.protocol === 'https:' ? 1 : 0,
-      host: location.host,
-      page: location.pathname,
-      placements: placements,
+      'deviceWidth': winTop.screen.width,
+      'deviceHeight': winTop.screen.height,
+      'language': (navigator && navigator.language) ? navigator.language : '',
+      'secure': location.protocol === 'https:' ? 1 : 0,
+      'host': location.host,
+      'page': location.pathname,
+      'placements': placements,
     };
 
     if (bidderRequest) {
@@ -88,7 +87,6 @@ export const spec = {
       let traff = bid.params.traffic || BANNER
       let placement = {
         placementId: bid.params.placement_id,
-        groupId: bid.params.group_id,
         bidId: bid.bidId,
         sizes: bid.mediaTypes[traff].sizes,
         traffic: traff,
@@ -111,15 +109,10 @@ export const spec = {
       if (bid.schain) {
         placement.schain = bid.schain;
       }
-      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
-      if (gpid) {
-        placement.gpid = gpid;
-      }
       if (bid.userId) {
         getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
         getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
-        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
-        getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
+        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com')
         getUserId(placement.eids, bid.userId.tdid, 'adserver.org', {
           rtiPartner: 'TDID'
         });
@@ -170,7 +163,7 @@ export const spec = {
         }
       }
     } catch (e) {
-      logMessage(e);
+      utils.logMessage(e);
     };
     return response;
   },
@@ -180,12 +173,6 @@ export const spec = {
       type: 'image',
       url: G_URL_SYNC
     }];
-  },
-
-  onBidWon: (bid) => {
-    if (bid.nurl) {
-      ajax(bid.nurl, null);
-    }
   }
 };
 

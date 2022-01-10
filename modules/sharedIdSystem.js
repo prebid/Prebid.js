@@ -5,13 +5,13 @@
  * @requires module:modules/userId
  */
 
-import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import { coppaDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const GVLID = 887;
-export const storage = getStorageManager(GVLID, 'pubCommonId');
+const storage = getStorageManager(GVLID, 'pubCommonId');
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -53,12 +53,12 @@ function queuePixelCallback(pixelUrl, id = '', callback) {
   }
 
   // Use pubcid as a cache buster
-  const urlInfo = parseUrl(pixelUrl);
+  const urlInfo = utils.parseUrl(pixelUrl);
   urlInfo.search.id = encodeURIComponent('pubcid:' + id);
-  const targetUrl = buildUrl(urlInfo);
+  const targetUrl = utils.buildUrl(urlInfo);
 
   return function () {
-    triggerPixel(targetUrl);
+    utils.triggerPixel(targetUrl);
   };
 }
 
@@ -89,10 +89,10 @@ export const sharedIdSystemSubmodule = {
    */
   decode(value, config) {
     if (hasOptedOut()) {
-      logInfo('PubCommonId decode: Has opted-out');
+      utils.logInfo('PubCommonId decode: Has opted-out');
       return undefined;
     }
-    logInfo(' Decoded value PubCommonId ' + value);
+    utils.logInfo(' Decoded value PubCommonId ' + value);
     const idObj = {'pubcid': value};
     return idObj;
   },
@@ -106,13 +106,13 @@ export const sharedIdSystemSubmodule = {
    */
   getId: function (config = {}, consentData, storedId) {
     if (hasOptedOut()) {
-      logInfo('PubCommonId: Has opted-out');
+      utils.logInfo('PubCommonId: Has opted-out');
       return;
     }
     const coppa = coppaDataHandler.getCoppa();
 
     if (coppa) {
-      logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      utils.logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
     const {params: {create = true, pixelUrl} = {}} = config;
@@ -126,7 +126,7 @@ export const sharedIdSystemSubmodule = {
       } catch (e) {
       }
 
-      if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
+      if (!newId) newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
     }
 
     const pixelCallback = queuePixelCallback(pixelUrl, newId);
@@ -153,12 +153,12 @@ export const sharedIdSystemSubmodule = {
    */
   extendId: function(config = {}, consentData, storedId) {
     if (hasOptedOut()) {
-      logInfo('PubCommonId: Has opted-out');
+      utils.logInfo('PubCommonId: Has opted-out');
       return {id: undefined};
     }
     const coppa = coppaDataHandler.getCoppa();
     if (coppa) {
-      logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      utils.logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
     const {params: {extend = false, pixelUrl} = {}} = config;
@@ -171,33 +171,7 @@ export const sharedIdSystemSubmodule = {
         return {id: storedId};
       }
     }
-  },
-
-  domainOverride: function () {
-    const domainElements = document.domain.split('.');
-    const cookieName = `_gd${Date.now()}`;
-    for (let i = 0, topDomain, testCookie; i < domainElements.length; i++) {
-      const nextDomain = domainElements.slice(i).join('.');
-
-      // write test cookie
-      storage.setCookie(cookieName, '1', undefined, undefined, nextDomain);
-
-      // read test cookie to verify domain was valid
-      testCookie = storage.getCookie(cookieName);
-
-      // delete test cookie
-      storage.setCookie(cookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, nextDomain);
-
-      if (testCookie === '1') {
-        // cookie was written successfully using test domain so the topDomain is updated
-        topDomain = nextDomain;
-      } else {
-        // cookie failed to write using test domain so exit by returning the topDomain
-        return topDomain;
-      }
-    }
   }
-
 };
 
 submodule('userId', sharedIdSystemSubmodule);

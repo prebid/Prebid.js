@@ -7,7 +7,7 @@ import {
 import {
   NATIVE, BANNER, VIDEO
 } from '../src/mediaTypes.js';
-import { mergeDeep, _map, deepAccess, parseSizesInput, deepSetValue } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 
@@ -58,11 +58,7 @@ export const spec = {
   aliases: BIDDER_ALIAS,
   gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
-  isBidRequestValid: (bid) => {
-    const params = bid.params || {};
-    const { mid, inv, mname } = params;
-    return !!(mid || (inv && mname));
-  },
+  isBidRequestValid: bid => !!bid.params.mid,
   buildRequests: (validBidRequests, bidderRequest) => {
     let app, site;
 
@@ -72,12 +68,12 @@ export const spec = {
     if (typeof getConfig('app') === 'object') {
       app = getConfig('app') || {};
       if (commonFpd.app) {
-        mergeDeep(app, commonFpd.app);
+        utils.mergeDeep(app, commonFpd.app);
       }
     } else {
       site = getConfig('site') || {};
       if (commonFpd.site) {
-        mergeDeep(site, commonFpd.site);
+        utils.mergeDeep(site, commonFpd.site);
       }
 
       if (!site.page) {
@@ -103,27 +99,12 @@ export const spec = {
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
 
-      const floorInfo = bid.getFloor ? bid.getFloor({
-        currency: currency || 'USD'
-      }) : {};
-      const bidfloor = floorInfo.floor;
-      const bidfloorcur = floorInfo.currency;
-      const { mid, inv, mname } = bid.params;
-
       const imp = {
         id: id + 1,
-        tagid: mid,
-        bidfloor,
-        bidfloorcur,
-        ext: {
-          bidder: {
-            inv,
-            mname
-          }
-        }
+        tagid: bid.params.mid
       };
 
-      const assets = _map(bid.nativeParams, (bidParams, key) => {
+      const assets = utils._map(bid.nativeParams, (bidParams, key) => {
         const props = NATIVE_PARAMS[key];
         const asset = {
           required: bidParams.required & 1,
@@ -164,12 +145,15 @@ export const spec = {
             assets
           }
         };
+
+        bid.mediaType = NATIVE;
+        return imp;
       }
 
-      const bannerParams = deepAccess(bid, 'mediaTypes.banner');
+      const bannerParams = utils.deepAccess(bid, 'mediaTypes.banner');
 
       if (bannerParams && bannerParams.sizes) {
-        const sizes = parseSizesInput(bannerParams.sizes);
+        const sizes = utils.parseSizesInput(bannerParams.sizes);
         const format = sizes.map(size => {
           const [ width, height ] = size.split('x');
           const w = parseInt(width, 10);
@@ -180,14 +164,18 @@ export const spec = {
         imp.banner = {
           format
         };
+        bid.mediaType = BANNER;
+
+        return imp;
       }
 
-      const videoParams = deepAccess(bid, 'mediaTypes.video');
+      const videoParams = utils.deepAccess(bid, 'mediaTypes.video');
       if (videoParams) {
         imp.video = videoParams;
-      }
+        bid.mediaType = VIDEO;
 
-      return imp;
+        return imp;
+      }
     });
 
     const request = {
@@ -206,21 +194,21 @@ export const spec = {
       request.is_debug = !!test;
       request.test = 1;
     }
-    if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
-      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
+    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
+      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
     }
 
     if (bidderRequest.uspConsent) {
-      deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
     if (eids) {
-      deepSetValue(request, 'user.ext.eids', eids);
+      utils.deepSetValue(request, 'user.ext.eids', eids);
     }
 
     if (schain) {
-      deepSetValue(request, 'source.ext.schain', schain);
+      utils.deepSetValue(request, 'source.ext.schain', schain);
     }
 
     return {
@@ -247,7 +235,6 @@ export const spec = {
     return bids.map((bid, id) => {
       const bidResponse = bidResponses[id];
       if (bidResponse) {
-        const mediaType = deepAccess(bidResponse, 'ext.prebid.type');
         const result = {
           requestId: bid.bidId,
           cpm: bidResponse.price,
@@ -255,12 +242,12 @@ export const spec = {
           ttl: 360,
           netRevenue: bid.netRevenue === 'net',
           currency: cur,
-          mediaType,
+          mediaType: bid.mediaType,
           width: bidResponse.w,
           height: bidResponse.h,
           dealId: bidResponse.dealid,
           meta: {
-            mediaType,
+            mediaType: bid.mediaType,
             advertiserDomains: bidResponse.adomain
           }
         };
@@ -268,10 +255,10 @@ export const spec = {
         if (bidResponse.native) {
           result.native = parseNative(bidResponse);
         } else {
-          result[ mediaType === VIDEO ? 'vastXml' : 'ad' ] = bidResponse.adm;
+          result[ bid.mediaType === VIDEO ? 'vastXml' : 'ad' ] = bidResponse.adm;
         }
 
-        if (!bid.renderer && mediaType === VIDEO && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
+        if (!bid.renderer && bid.mediaType === VIDEO && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
           result.renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
           result.renderer.setRender(renderer);
         }
@@ -305,7 +292,7 @@ function parseNative(bid) {
 
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
+    result = utils.deepAccess(collection[i], key);
     if (result) {
       return result;
     }

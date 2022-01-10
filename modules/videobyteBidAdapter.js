@@ -1,5 +1,5 @@
-import { logMessage, logError, deepAccess, isFn, isPlainObject, isStr, isNumber, isArray, deepSetValue } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 import {VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'videobyte';
@@ -27,7 +27,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO],
   VERSION: '1.0.0',
-  ENDPOINT: 'https://x.videobyte.com/ortbhb',
+  ENDPOINT: 'https://x.videobyte.com/ortb/',
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -53,22 +53,13 @@ export const spec = {
     return bidRequests.map(bidRequest => {
       const {params} = bidRequest;
       let pubId = params.pubId;
-      const placementId = params.placementId;
-      const nId = params.nid;
       if (bidRequest.params.video && bidRequest.params.video.e2etest) {
-        logMessage('E2E test mode enabled');
+        utils.logMessage('E2E test mode enabled');
         pubId = 'e2etest'
-      }
-      let baseEndpoint = spec.ENDPOINT + '?pid=' + pubId;
-      if (placementId) {
-        baseEndpoint += '&placementId=' + placementId
-      }
-      if (nId) {
-        baseEndpoint += '&nid=' + nId
       }
       return {
         method: 'POST',
-        url: baseEndpoint,
+        url: spec.ENDPOINT + pubId,
         data: JSON.stringify(buildRequestData(bidRequest, bidderRequest)),
       }
     });
@@ -106,6 +97,8 @@ export const spec = {
         };
         bidResponses.push(bidResponse)
       }
+    } else {
+      utils.logError('invalid server response received');
     }
     return bidResponses;
   },
@@ -125,7 +118,7 @@ export const spec = {
     }
 
     serverResponses.forEach(resp => {
-      const userSync = deepAccess(resp, 'body.ext.usersync');
+      const userSync = utils.deepAccess(resp, 'body.ext.usersync');
       if (userSync) {
         let syncDetails = [];
         Object.keys(userSync).forEach(key => {
@@ -159,8 +152,8 @@ export const spec = {
 function buildRequestData(bidRequest, bidderRequest) {
   const {params} = bidRequest;
 
-  const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
+  const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
+  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
 
   const videoParams = {
     ...videoAdUnit,
@@ -201,7 +194,7 @@ function buildRequestData(bidRequest, bidderRequest) {
     size: '*'
   };
   let floorData = bidRequest.params
-  if (isFn(bidRequest.getFloor)) {
+  if (utils.isFn(bidRequest.getFloor)) {
     floorData = bidRequest.getFloor(bidFloorRequest);
   } else {
     if (params.bidfloor) {
@@ -233,41 +226,41 @@ function buildRequestData(bidRequest, bidderRequest) {
   };
 
   // content
-  if (videoParams.content && isPlainObject(videoParams.content)) {
+  if (videoParams.content && utils.isPlainObject(videoParams.content)) {
     openrtbRequest.site.content = {};
-    const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language', 'url'];
+    const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
     const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
     const contentArrayKeys = ['cat'];
     const contentObjectKeys = ['ext'];
     for (const contentKey in videoBidderParams.content) {
       if (
-        (contentStringKeys.indexOf(contentKey) > -1 && isStr(videoParams.content[contentKey])) ||
-        (contentNumberkeys.indexOf(contentKey) > -1 && isNumber(videoParams.content[contentKey])) ||
-        (contentObjectKeys.indexOf(contentKey) > -1 && isPlainObject(videoParams.content[contentKey])) ||
-        (contentArrayKeys.indexOf(contentKey) > -1 && isArray(videoParams.content[contentKey]) &&
-          videoParams.content[contentKey].every(catStr => isStr(catStr)))) {
+        (contentStringKeys.indexOf(contentKey) > -1 && utils.isStr(videoParams.content[contentKey])) ||
+        (contentNumberkeys.indexOf(contentKey) > -1 && utils.isNumber(videoParams.content[contentKey])) ||
+        (contentObjectKeys.indexOf(contentKey) > -1 && utils.isPlainObject(videoParams.content[contentKey])) ||
+        (contentArrayKeys.indexOf(contentKey) > -1 && utils.isArray(videoParams.content[contentKey]) &&
+          videoParams.content[contentKey].every(catStr => utils.isStr(catStr)))) {
         openrtbRequest.site.content[contentKey] = videoParams.content[contentKey];
       } else {
-        logMessage('videobyte bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
+        utils.logMessage('videobyte bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
       }
     }
   }
 
   // adding schain object
   if (bidRequest.schain) {
-    deepSetValue(openrtbRequest, 'source.ext.schain', bidRequest.schain);
+    utils.deepSetValue(openrtbRequest, 'source.ext.schain', bidRequest.schain);
     openrtbRequest.source.ext.schain.nodes[0].rid = openrtbRequest.id;
   }
 
   // Attaching GDPR Consent Params
   if (bidderRequest.gdprConsent) {
-    deepSetValue(openrtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-    deepSetValue(openrtbRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+    utils.deepSetValue(openrtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+    utils.deepSetValue(openrtbRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
   }
 
   // CCPA
   if (bidderRequest.uspConsent) {
-    deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    utils.deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
   return openrtbRequest;
 }
@@ -278,12 +271,12 @@ function validateVideo(bidRequest) {
   }
 
   if (!bidRequest.params.pubId) {
-    logError('failed validation: pubId not declared');
+    utils.logError('failed validation: publisher id not declared');
     return false;
   }
 
-  const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
+  const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
+  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
 
   if (videoBidderParams && videoBidderParams.e2etest) {
     return true;
@@ -295,16 +288,16 @@ function validateVideo(bidRequest) {
   };
 
   if (!videoParams.context) {
-    logError('failed validation: context id not declared');
+    utils.logError('failed validation: context id not declared');
     return false;
   }
   if (videoParams.context !== 'instream') {
-    logError('failed validation: only context instream is supported ');
+    utils.logError('failed validation: only context instream is supported ');
     return false;
   }
 
   if (typeof videoParams.playerSize === 'undefined' || !Array.isArray(videoParams.playerSize) || !Array.isArray(videoParams.playerSize[0])) {
-    logError('failed validation: player size not declared or is not in format [[w,h]]');
+    utils.logError('failed validation: player size not declared or is not in format [[w,h]]');
     return false;
   }
 

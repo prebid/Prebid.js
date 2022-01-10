@@ -274,9 +274,6 @@ describe('Seedtag Adapter', function() {
           expect(data.ga).to.equal(true)
           expect(data.cd).to.equal('consentString')
         })
-        it('should expose gvlid', function() {
-          expect(spec.gvlid).to.equal(157)
-        })
       })
     })
 

@@ -1,8 +1,8 @@
-import { getWindowLocation, generateUUID, parseUrl, buildUrl, logInfo, parseSizesInput, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
+import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import strIncludes from 'core-js-pure/features/string/includes.js';
@@ -17,7 +17,7 @@ const events = {
 };
 const localStoragePrefix = 'yuktamediaAnalytics_';
 const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-const location = getWindowLocation();
+const location = utils.getWindowLocation();
 const referer = getRefererInfo().referer;
 const _pageInfo = {
   userAgent: window.navigator.userAgent,
@@ -25,13 +25,13 @@ const _pageInfo = {
   language: window.navigator.language,
   screenWidth: window.screen.width,
   screenHeight: window.screen.height,
-  pageViewId: generateUUID(),
+  pageViewId: utils.generateUUID(),
   host: location.host,
   path: location.pathname,
   search: location.search,
   hash: location.hash,
   referer: referer,
-  refererDomain: parseUrl(referer).host,
+  refererDomain: utils.parseUrl(referer).host,
   yuktamediaAnalyticsVersion: yuktamediaAnalyticsVersion,
   prebidVersion: $$PREBID_GLOBAL$$.version
 };
@@ -53,7 +53,7 @@ function isNavigatorSendBeaconSupported() {
 
 function updateSessionId() {
   if (isSessionIdTimeoutExpired()) {
-    let newSessionId = generateUUID();
+    let newSessionId = utils.generateUUID();
     storage.setDataInLocalStorage(localStoragePrefix.concat('session_id'), newSessionId);
   }
   initOptions.sessionId = getSessionId();
@@ -80,7 +80,7 @@ function isUtmTimeoutExpired() {
 
 function send(data, status) {
   data.initOptions = Object.assign(_pageInfo, initOptions);
-  const yuktamediaAnalyticsRequestUrl = buildUrl({
+  const yuktamediaAnalyticsRequestUrl = utils.buildUrl({
     protocol: 'https',
     hostname: 'analytics-prebid.yuktamedia.com',
     pathname: '/api/bids'
@@ -97,13 +97,13 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
     if (typeof args !== 'undefined') {
       switch (eventType) {
         case CONSTANTS.EVENTS.AUCTION_INIT:
-          logInfo(localStoragePrefix + 'AUCTION_INIT:', JSON.stringify(args));
+          utils.logInfo(localStoragePrefix + 'AUCTION_INIT:', JSON.stringify(args));
           if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
             events.auctions[args.auctionId] = { bids: {} };
           }
           break;
         case CONSTANTS.EVENTS.BID_REQUESTED:
-          logInfo(localStoragePrefix + 'BID_REQUESTED:', JSON.stringify(args));
+          utils.logInfo(localStoragePrefix + 'BID_REQUESTED:', JSON.stringify(args));
           if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
             if (typeof events.auctions[args.auctionId] === 'undefined') {
               events.auctions[args.auctionId] = { bids: {} };
@@ -113,7 +113,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
               events.auctions[args.auctionId]['bids'][bidRequest.bidId] = {
                 bidder: bidRequest.bidder,
                 adUnit: bidRequest.adUnitCode,
-                sizes: parseSizesInput(bidRequest.sizes).toString(),
+                sizes: utils.parseSizesInput(bidRequest.sizes).toString(),
                 isBid: false,
                 won: false,
                 timeout: false,
@@ -132,7 +132,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
           }
           break;
         case CONSTANTS.EVENTS.BID_RESPONSE:
-          logInfo(localStoragePrefix + 'BID_RESPONSE:', JSON.stringify(args));
+          utils.logInfo(localStoragePrefix + 'BID_RESPONSE:', JSON.stringify(args));
           if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
             if (typeof events.auctions[args.auctionId] === 'undefined') {
               events.auctions[args.auctionId] = { bids: {} };
@@ -162,7 +162,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
           }
           break;
         case CONSTANTS.EVENTS.NO_BID:
-          logInfo(localStoragePrefix + 'NO_BID:', JSON.stringify(args));
+          utils.logInfo(localStoragePrefix + 'NO_BID:', JSON.stringify(args));
           if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
             if (typeof events.auctions[args.auctionId] === 'undefined') {
               events.auctions[args.auctionId] = { bids: {} };
@@ -173,7 +173,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
           }
           break;
         case CONSTANTS.EVENTS.BID_WON:
-          logInfo(localStoragePrefix + 'BID_WON:', JSON.stringify(args));
+          utils.logInfo(localStoragePrefix + 'BID_WON:', JSON.stringify(args));
           if (typeof initOptions.enableSession !== 'undefined' && initOptions.enableSession) {
             updateSessionId();
           }
@@ -189,7 +189,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
           }
           break;
         case CONSTANTS.EVENTS.BID_TIMEOUT:
-          logInfo(localStoragePrefix + 'BID_TIMEOUT:', JSON.stringify(args));
+          utils.logInfo(localStoragePrefix + 'BID_TIMEOUT:', JSON.stringify(args));
           if (args.length) {
             args.forEach(timeout => {
               if (typeof timeout !== 'undefined' && typeof timeout.auctionId !== 'undefined' && timeout.auctionId.length) {
@@ -205,7 +205,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
           }
           break;
         case CONSTANTS.EVENTS.AUCTION_END:
-          logInfo(localStoragePrefix + 'AUCTION_END:', JSON.stringify(args));
+          utils.logInfo(localStoragePrefix + 'AUCTION_END:', JSON.stringify(args));
           if (typeof initOptions.enableSession !== 'undefined' && initOptions.enableSession) {
             updateSessionId();
           }
@@ -249,7 +249,7 @@ yuktamediaAnalyticsAdapter.originEnableAnalytics = yuktamediaAnalyticsAdapter.en
 yuktamediaAnalyticsAdapter.enableAnalytics = function (config) {
   if (config && config.options) {
     if (typeof config.options.pubId === 'undefined' || typeof config.options.pubKey === 'undefined') {
-      logError('Need pubId and pubKey to log auction results. Please contact a YuktaMedia representative if you do not know your pubId and pubKey.');
+      utils.logError('Need pubId and pubKey to log auction results. Please contact a YuktaMedia representative if you do not know your pubId and pubKey.');
       return;
     }
   }

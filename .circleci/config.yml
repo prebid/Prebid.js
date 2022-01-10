@@ -52,7 +52,7 @@ aliases:
   - &unit_test_steps
     - checkout
     - restore_cache: *restore_dep_cache
-    - run: npm ci
+    - run: npm install
     - save_cache: *save_dep_cache
     - run: *install
     - run: *setup_browserstack

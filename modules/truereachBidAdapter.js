@@ -1,4 +1,4 @@
-import { deepAccess, getUniqueIdentifierStr } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -13,7 +13,7 @@ export const spec = {
 
   isBidRequestValid: function (bidRequest) {
     return (bidRequest.params.site_id && bidRequest.params.bidfloor &&
-    deepAccess(bidRequest, 'mediaTypes.banner') && (deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0));
+    utils.deepAccess(bidRequest, 'mediaTypes.banner') && (utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0));
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -23,7 +23,7 @@ export const spec = {
 
     let queryParams = buildCommonQueryParamsFromBids(validBidRequests, bidderRequest);
 
-    let siteId = deepAccess(validBidRequests[0], 'params.site_id');
+    let siteId = utils.deepAccess(validBidRequests[0], 'params.site_id');
 
     let url = BIDDER_URL + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
 
@@ -121,7 +121,7 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
   let page = window.location.host + window.location.pathname + location.search + location.hash;
 
   let defaultParams = {
-    id: getUniqueIdentifierStr(),
+    id: utils.getUniqueIdentifierStr(),
     imp: [
       {
         id: validBidRequests[0].bidId,

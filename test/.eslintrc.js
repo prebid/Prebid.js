@@ -8,8 +8,7 @@ module.exports = {
     '$$PREBID_GLOBAL$$': false
   },
   parserOptions: {
-    sourceType: 'module',
-    ecmaVersion: 2018
+    sourceType: 'module'
   },
   rules: {
     'comma-dangle': 'off',

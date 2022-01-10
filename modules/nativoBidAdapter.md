@@ -29,6 +29,7 @@ var adUnits = [
             bids: [{
                 bidder: 'nativo',
                 params: {
+                    placementId: 1125609,
                     url: 'https://test-sites.internal.nativo.net/testing/prebid_adpater.html'
                 }
             }]

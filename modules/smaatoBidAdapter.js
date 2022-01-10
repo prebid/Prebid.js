@@ -1,11 +1,11 @@
-import { deepAccess, getDNT, deepSetValue, logInfo, logError, isEmpty, getAdUnitSizes, fill, chunk, getMaxValueFromArray, getMinValueFromArray } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.6'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.4'
 const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
@@ -17,7 +17,7 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     site: {
       id: window.location.hostname,
       publisher: {
-        id: deepAccess(bidRequest, 'params.publisherId')
+        id: utils.deepAccess(bidRequest, 'params.publisherId')
       },
       domain: window.location.hostname,
       page: window.location.href,
@@ -26,7 +26,7 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     device: {
       language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
       ua: navigator.userAgent,
-      dnt: getDNT() ? 1 : 0,
+      dnt: utils.getDNT() ? 1 : 0,
       h: screen.height,
       w: screen.width
     },
@@ -36,11 +36,6 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     },
     user: {
       ext: {}
-    },
-    source: {
-      ext: {
-        schain: bidRequest.schain
-      }
     },
     ext: {
       client: SMAATO_CLIENT
@@ -52,34 +47,34 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   Object.assign(requestTemplate.site, ortb2.site);
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
-    deepSetValue(requestTemplate, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
-    deepSetValue(requestTemplate, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+    utils.deepSetValue(requestTemplate, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+    utils.deepSetValue(requestTemplate, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
   if (bidderRequest.uspConsent !== undefined) {
-    deepSetValue(requestTemplate, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    utils.deepSetValue(requestTemplate, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
-  if (deepAccess(bidRequest, 'params.app')) {
-    const geo = deepAccess(bidRequest, 'params.app.geo');
-    deepSetValue(requestTemplate, 'device.geo', geo);
-    const ifa = deepAccess(bidRequest, 'params.app.ifa')
-    deepSetValue(requestTemplate, 'device.ifa', ifa);
+  if (utils.deepAccess(bidRequest, 'params.app')) {
+    const geo = utils.deepAccess(bidRequest, 'params.app.geo');
+    utils.deepSetValue(requestTemplate, 'device.geo', geo);
+    const ifa = utils.deepAccess(bidRequest, 'params.app.ifa')
+    utils.deepSetValue(requestTemplate, 'device.ifa', ifa);
   }
 
-  const eids = deepAccess(bidRequest, 'userIdAsEids');
+  const eids = utils.deepAccess(bidRequest, 'userIdAsEids');
   if (eids && eids.length) {
-    deepSetValue(requestTemplate, 'user.ext.eids', eids);
+    utils.deepSetValue(requestTemplate, 'user.ext.eids', eids);
   }
 
   let requests = [];
 
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+  if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
     const bannerRequest = Object.assign({}, requestTemplate, createBannerImp(bidRequest));
     requests.push(bannerRequest);
   }
 
-  const videoMediaType = deepAccess(bidRequest, 'mediaTypes.video');
+  const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
   if (videoMediaType) {
     if (videoMediaType.context === ADPOD) {
       const adPodRequest = Object.assign({}, requestTemplate, createAdPodImp(bidRequest, videoMediaType));
@@ -95,7 +90,7 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
 }
 
 const buildServerRequest = (validBidRequest, data) => {
-  logInfo('[SMAATO] OpenRTB Request:', data);
+  utils.logInfo('[SMAATO] OpenRTB Request:', data);
   return {
     method: 'POST',
     url: validBidRequest.params.endpoint || SMAATO_ENDPOINT,
@@ -119,47 +114,47 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     if (typeof bid.params !== 'object') {
-      logError('[SMAATO] Missing params object');
+      utils.logError('[SMAATO] Missing params object');
       return false;
     }
 
     if (typeof bid.params.publisherId !== 'string') {
-      logError('[SMAATO] Missing mandatory publisherId param');
+      utils.logError('[SMAATO] Missing mandatory publisherId param');
       return false;
     }
 
-    if (deepAccess(bid, 'mediaTypes.video.context') === ADPOD) {
-      logInfo('[SMAATO] Verifying adpod bid request');
+    if (utils.deepAccess(bid, 'mediaTypes.video.context') === ADPOD) {
+      utils.logInfo('[SMAATO] Verifying adpod bid request');
 
       if (typeof bid.params.adbreakId !== 'string') {
-        logError('[SMAATO] Missing for adpod request mandatory adbreakId param');
+        utils.logError('[SMAATO] Missing for adpod request mandatory adbreakId param');
         return false;
       }
 
       if (bid.params.adspaceId) {
-        logError('[SMAATO] The adspaceId param is not allowed in an adpod bid request');
+        utils.logError('[SMAATO] The adspaceId param is not allowed in an adpod bid request');
         return false;
       }
     } else {
-      logInfo('[SMAATO] Verifying a non adpod bid request');
+      utils.logInfo('[SMAATO] Verifying a non adpod bid request');
 
       if (typeof bid.params.adspaceId !== 'string') {
-        logError('[SMAATO] Missing mandatory adspaceId param');
+        utils.logError('[SMAATO] Missing mandatory adspaceId param');
         return false;
       }
 
       if (bid.params.adbreakId) {
-        logError('[SMAATO] The adbreakId param is only allowed in an adpod bid request');
+        utils.logError('[SMAATO] The adbreakId param is only allowed in an adpod bid request');
         return false;
       }
     }
 
-    logInfo('[SMAATO] Verification done, all good');
+    utils.logInfo('[SMAATO] Verification done, all good');
     return true;
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    logInfo('[SMAATO] Client version:', SMAATO_CLIENT);
+    utils.logInfo('[SMAATO] Client version:', SMAATO_CLIENT);
 
     return validBidRequests.map((validBidRequest) => {
       const openRtbBidRequests = buildOpenRtbBidRequest(validBidRequest, bidderRequest);
@@ -174,19 +169,19 @@ export const spec = {
    */
   interpretResponse: (serverResponse, bidRequest) => {
     // response is empty (HTTP 204)
-    if (isEmpty(serverResponse.body)) {
-      logInfo('[SMAATO] Empty response body HTTP 204, no bids');
+    if (utils.isEmpty(serverResponse.body)) {
+      utils.logInfo('[SMAATO] Empty response body HTTP 204, no bids');
       return []; // no bids
     }
 
     const serverResponseHeaders = serverResponse.headers;
 
     const smtExpires = serverResponseHeaders.get('X-SMT-Expires');
-    logInfo('[SMAATO] Expires:', smtExpires);
+    utils.logInfo('[SMAATO] Expires:', smtExpires);
     const ttlInSec = smtExpires ? Math.floor((smtExpires - Date.now()) / 1000) : 300;
 
     const response = serverResponse.body;
-    logInfo('[SMAATO] OpenRTB Response:', response);
+    utils.logInfo('[SMAATO] OpenRTB Response:', response);
 
     const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
     const bids = [];
@@ -200,7 +195,7 @@ export const spec = {
           ttl: ttlInSec,
           creativeId: bid.crid,
           dealId: bid.dealid || null,
-          netRevenue: deepAccess(bid, 'ext.net', true),
+          netRevenue: utils.deepAccess(bid, 'ext.net', true),
           currency: response.cur,
           meta: {
             advertiserDomains: bid.adomain,
@@ -209,7 +204,7 @@ export const spec = {
           }
         };
 
-        const videoContext = deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context')
+        const videoContext = utils.deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context')
         if (videoContext === ADPOD) {
           resultingBid.vastXml = bid.adm;
           resultingBid.mediaType = VIDEO;
@@ -239,14 +234,14 @@ export const spec = {
               bids.push(resultingBid);
               break;
             default:
-              logInfo('[SMAATO] Invalid ad type:', smtAdType);
+              utils.logInfo('[SMAATO] Invalid ad type:', smtAdType);
           }
         }
         resultingBid.meta.mediaType = resultingBid.mediaType;
       });
     });
 
-    logInfo('[SMAATO] Prebid bids:', bids);
+    utils.logInfo('[SMAATO] Prebid bids:', bids);
     return bids;
   },
 
@@ -297,14 +292,13 @@ const createRichmediaAd = (adm) => {
 };
 
 function createBannerImp(bidRequest) {
-  const adUnitSizes = getAdUnitSizes(bidRequest);
+  const adUnitSizes = utils.getAdUnitSizes(bidRequest);
   const sizes = adUnitSizes.map((size) => ({w: size[0], h: size[1]}));
   return {
     imp: [{
       id: bidRequest.bidId,
-      tagid: deepAccess(bidRequest, 'params.adspaceId'),
+      tagid: utils.deepAccess(bidRequest, 'params.adspaceId'),
       bidfloor: getBidFloor(bidRequest, BANNER, adUnitSizes),
-      instl: deepAccess(bidRequest.ortb2Imp, 'instl'),
       banner: {
         w: sizes[0].w,
         h: sizes[0].h,
@@ -318,9 +312,8 @@ function createVideoImp(bidRequest, videoMediaType) {
   return {
     imp: [{
       id: bidRequest.bidId,
-      tagid: deepAccess(bidRequest, 'params.adspaceId'),
+      tagid: utils.deepAccess(bidRequest, 'params.adspaceId'),
       bidfloor: getBidFloor(bidRequest, VIDEO, videoMediaType.playerSize),
-      instl: deepAccess(bidRequest.ortb2Imp, 'instl'),
       video: {
         mimes: videoMediaType.mimes,
         minduration: videoMediaType.minduration,
@@ -342,13 +335,12 @@ function createVideoImp(bidRequest, videoMediaType) {
 }
 
 function createAdPodImp(bidRequest, videoMediaType) {
-  const tagid = deepAccess(bidRequest, 'params.adbreakId')
+  const tagid = utils.deepAccess(bidRequest, 'params.adbreakId')
   const bce = config.getConfig('adpod.brandCategoryExclusion')
   let imp = {
     id: bidRequest.bidId,
     tagid: tagid,
     bidfloor: getBidFloor(bidRequest, VIDEO, videoMediaType.playerSize),
-    instl: deepAccess(bidRequest.ortb2Imp, 'instl'),
     video: {
       w: videoMediaType.playerSize[0][0],
       h: videoMediaType.playerSize[0][1],
@@ -367,13 +359,13 @@ function createAdPodImp(bidRequest, videoMediaType) {
   }
 
   const numberOfPlacements = getAdPodNumberOfPlacements(videoMediaType)
-  let imps = fill(imp, numberOfPlacements)
+  let imps = utils.fill(imp, numberOfPlacements)
 
   const durationRangeSec = videoMediaType.durationRangeSec
   if (videoMediaType.requireExactDuration) {
     // equal distribution of numberOfPlacement over all available durations
     const divider = Math.ceil(numberOfPlacements / durationRangeSec.length)
-    const chunked = chunk(imps, divider)
+    const chunked = utils.chunk(imps, divider)
 
     // each configured duration is set as min/maxduration for a subset of requests
     durationRangeSec.forEach((duration, index) => {
@@ -386,7 +378,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
     });
   } else {
     // all maxdurations should be the same
-    const maxDuration = getMaxValueFromArray(durationRangeSec);
+    const maxDuration = utils.getMaxValueFromArray(durationRangeSec);
     imps.map((imp, index) => {
       const sequence = index + 1;
       imp.video.maxduration = maxDuration
@@ -401,7 +393,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
 
 function getAdPodNumberOfPlacements(videoMediaType) {
   const {adPodDurationSec, durationRangeSec, requireExactDuration} = videoMediaType
-  const minAllowedDuration = getMinValueFromArray(durationRangeSec)
+  const minAllowedDuration = utils.getMinValueFromArray(durationRangeSec)
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration)
 
   return requireExactDuration
@@ -431,7 +423,7 @@ const addOptionalAdpodParameters = (request, videoMediaType) => {
     content.livestream = videoMediaType.contentMode === 'live' ? 1 : 0
   }
 
-  if (!isEmpty(content)) {
+  if (!utils.isEmpty(content)) {
     request.site.content = content
   }
 }

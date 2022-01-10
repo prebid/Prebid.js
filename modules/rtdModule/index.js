@@ -42,10 +42,10 @@
  * @function?
  * @summary modify bid request data
  * @name RtdSubmodule#getBidRequestData
- * @param {Object} reqBidsConfigObj
- * @param {function} callback
  * @param {SubmoduleConfig} config
  * @param {UserConsentData} userConsent
+ * @param {Object} reqBidsConfigObj
+ * @param {function} callback
  */
 
 /**
@@ -99,15 +99,6 @@
  */
 
 /**
- * @function?
- * @summary on bid requested event
- * @name RtdSubmodule#onBidRequestEvent
- * @param {Object} data
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
- */
-
-/**
  * @interface ModuleConfig
  */
 
@@ -152,7 +143,7 @@
 
 import {config} from '../../src/config.js';
 import {module} from '../../src/hook.js';
-import {logError, logInfo, logWarn} from '../../src/utils.js';
+import * as utils from '../../src/utils.js';
 import events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
@@ -173,55 +164,17 @@ let _dataProviders = [];
 let _userConsent;
 
 /**
- * Register a RTD submodule.
- *
+ * enable submodule in User ID
  * @param {RtdSubmodule} submodule
- * @returns {function()} a de-registration function that will unregister the module when called.
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
-  return function detach() {
-    const idx = registeredSubModules.indexOf(submodule)
-    if (idx >= 0) {
-      registeredSubModules.splice(idx, 1);
-      initSubModules();
-    }
-  }
 }
-
-/**
- * call each sub module event function by config order
- */
-const setEventsListeners = (function () {
-  let registered = false;
-  return function setEventsListeners() {
-    if (!registered) {
-      Object.entries({
-        [CONSTANTS.EVENTS.AUCTION_INIT]: ['onAuctionInitEvent'],
-        [CONSTANTS.EVENTS.AUCTION_END]: ['onAuctionEndEvent', getAdUnitTargeting],
-        [CONSTANTS.EVENTS.BID_RESPONSE]: ['onBidResponseEvent'],
-        [CONSTANTS.EVENTS.BID_REQUESTED]: ['onBidRequestEvent']
-      }).forEach(([ev, [handler, preprocess]]) => {
-        events.on(ev, (args) => {
-          preprocess && preprocess(args);
-          subModules.forEach(sm => {
-            try {
-              sm[handler] && sm[handler](args, sm.config, _userConsent)
-            } catch (e) {
-              logError(`RTD provider '${sm.name}': error in '${handler}':`, e);
-            }
-          });
-        })
-      });
-      registered = true;
-    }
-  }
-})();
 
 export function init(config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
     if (!realTimeData.dataProviders) {
-      logError('missing parameters for real time module');
+      utils.logError('missing parameters for real time module');
       return;
     }
     confListener(); // unsubscribe config listener
@@ -256,7 +209,22 @@ function initSubModules() {
     }
   });
   subModules = subModulesByOrder;
-  logInfo(`Real time data module enabled, using submodules: ${subModules.map((m) => m.name).join(', ')}`);
+}
+
+/**
+ * call each sub module event function by config order
+ */
+function setEventsListeners() {
+  events.on(CONSTANTS.EVENTS.AUCTION_INIT, (args) => {
+    subModules.forEach(sm => { sm.onAuctionInitEvent && sm.onAuctionInitEvent(args, sm.config, _userConsent) })
+  });
+  events.on(CONSTANTS.EVENTS.AUCTION_END, (args) => {
+    getAdUnitTargeting(args);
+    subModules.forEach(sm => { sm.onAuctionEndEvent && sm.onAuctionEndEvent(args, sm.config, _userConsent) })
+  });
+  events.on(CONSTANTS.EVENTS.BID_RESPONSE, (args) => {
+    subModules.forEach(sm => { sm.onBidResponseEvent && sm.onBidResponseEvent(args, sm.config, _userConsent) })
+  });
 }
 
 /**
@@ -346,7 +314,7 @@ export function getAdUnitTargeting(auction) {
     if (smTargeting && typeof smTargeting === 'object') {
       targeting.push(smTargeting);
     } else {
-      logWarn('invalid getTargetingData response for sub module', relevantSubModules[i].name);
+      utils.logWarn('invalid getTargetingData response for sub module', relevantSubModules[i].name);
     }
   }
   // place data on auction adUnits

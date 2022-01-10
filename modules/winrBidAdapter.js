@@ -1,4 +1,4 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, deepAccess, logError, convertTypes, getParameterByName, getBidRequest, isEmpty, transformBidderParamKeywords, isFn } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -139,16 +139,16 @@ export const spec = {
       Object.keys(userObjBid.params.user)
         .filter((param) => includes(USER_PARAMS, param))
         .forEach((param) => {
-          let uparam = convertCamelToUnderscore(param);
+          let uparam = utils.convertCamelToUnderscore(param);
           if (
             param === 'segments' &&
-            isArray(userObjBid.params.user[param])
+            utils.isArray(userObjBid.params.user[param])
           ) {
             let segs = [];
             userObjBid.params.user[param].forEach((val) => {
-              if (isNumber(val)) {
+              if (utils.isNumber(val)) {
                 segs.push({ id: val });
-              } else if (isPlainObject(val)) {
+              } else if (utils.isPlainObject(val)) {
                 segs.push(val);
               }
             });
@@ -228,12 +228,12 @@ export const spec = {
     if (bidRequests[0].userId) {
       let eids = [];
 
-      addUserId(eids, deepAccess(bidRequests[0], `userId.flocId.id`), 'chrome.com', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
-      addUserId(eids, deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.flocId.id`), 'chrome.com', null);
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
 
       if (eids.length) {
         payload.eids = eids;
@@ -262,7 +262,7 @@ export const spec = {
       if (serverResponse && serverResponse.error) {
         errorMessage += `: ${serverResponse.error}`;
       }
-      logError(errorMessage);
+      utils.logError(errorMessage);
       return bids;
     }
 
@@ -297,12 +297,12 @@ export const spec = {
   },
 
   transformBidParams: function (params, isOpenRtb) {
-    params = convertTypes(
+    params = utils.convertTypes(
       {
         member: 'string',
         invCode: 'string',
         placementId: 'number',
-        keywords: transformBidderParamKeywords,
+        keywords: utils.transformBidderParamKeywords,
         publisherId: 'number',
       },
       params
@@ -322,7 +322,7 @@ export const spec = {
       }
 
       Object.keys(params).forEach((paramKey) => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
+        let convertedKey = utils.convertCamelToUnderscore(paramKey);
         if (convertedKey !== paramKey) {
           params[convertedKey] = params[paramKey];
           delete params[paramKey];
@@ -335,7 +335,7 @@ export const spec = {
 };
 
 function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
+  return !!(utils.isArray(arr) && arr.length > 0);
 }
 
 function deleteValues(keyPairObj) {
@@ -352,7 +352,7 @@ function hasPurpose1Consent(bidderRequest) {
       bidderRequest.gdprConsent.apiVersion === 2
     ) {
       result = !!(
-        deepAccess(
+        utils.deepAccess(
           bidderRequest.gdprConsent,
           'vendorData.purpose.consents.1'
         ) === true
@@ -375,7 +375,7 @@ function formatRequest(payload, bidderRequest) {
   }
 
   if (
-    getParameterByName('apn_test').toUpperCase() === 'TRUE' ||
+    utils.getParameterByName('apn_test').toUpperCase() === 'TRUE' ||
     config.getConfig('apn_test') === true
   ) {
     options.customHeaders = {
@@ -403,7 +403,7 @@ function formatRequest(payload, bidderRequest) {
  * @return Bid
  */
 function newBid(serverBid, rtbBid, bidderRequest) {
-  const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
+  const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     adType: rtbBid.ad_type,
     requestId: serverBid.uuid,
@@ -463,7 +463,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       });
     }
   } catch (error) {
-    logError('Error assigning ad', error);
+    utils.logError('Error assigning ad', error);
   }
   return bid;
 }
@@ -502,8 +502,8 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
+  if (!utils.isEmpty(bid.params.keywords)) {
+    let keywords = utils.transformBidderParamKeywords(bid.params.keywords);
 
     if (keywords.length > 0) {
       keywords.forEach(deleteValues);
@@ -511,7 +511,7 @@ function bidToTag(bid) {
     tag.keywords = keywords;
   }
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -531,9 +531,9 @@ function transformSizes(requestSizes) {
   let sizeObj = {};
 
   if (
-    isArray(requestSizes) &&
+    utils.isArray(requestSizes) &&
     requestSizes.length === 2 &&
-    !isArray(requestSizes[0])
+    !utils.isArray(requestSizes[0])
   ) {
     sizeObj.width = parseInt(requestSizes[0], 10);
     sizeObj.height = parseInt(requestSizes[1], 10);
@@ -596,7 +596,7 @@ function addUserId(eids, id, source, rti) {
 }
 
 function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
+  if (!utils.isFn(bid.getFloor)) {
     return (bid.params.reserve) ? bid.params.reserve : null;
   }
 
@@ -605,7 +605,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
     return floor.floor;
   }
   return null;

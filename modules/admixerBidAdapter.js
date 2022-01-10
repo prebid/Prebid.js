@@ -1,15 +1,14 @@
-import { logError } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'admixer';
-const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads'];
+const ALIASES = ['go2net', 'adblender', 'adsyield'];
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
-  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
    */
@@ -20,20 +19,9 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    */
   buildRequests: function (validRequest, bidderRequest) {
-    let w;
-    let docRef;
-    do {
-      w = w ? w.parent : window;
-      try {
-        docRef = w.document.referrer;
-      } catch (e) {
-        break;
-      }
-    } while (w !== window.top);
     const payload = {
       imps: [],
       ortb2: config.getConfig('ortb2'),
-      docReferrer: docRef,
     };
     let endpointUrl;
     if (bidderRequest) {
@@ -58,10 +46,11 @@ export const spec = {
       Object.keys(bid).forEach(key => imp[key] = bid[key]);
       payload.imps.push(imp);
     });
+    const payloadString = JSON.stringify(payload);
     return {
-      method: 'POST',
+      method: 'GET',
       url: endpointUrl || ENDPOINT_URL,
-      data: payload,
+      data: `data=${payloadString}`,
     };
   },
   /**
@@ -73,7 +62,7 @@ export const spec = {
       const {body: {ads = []} = {}} = serverResponse;
       ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
-      logError(e);
+      utils.logError(e);
     }
     return bidResponses;
   },

@@ -1,4 +1,4 @@
-import { getBidIdParameter } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
@@ -16,7 +16,7 @@ export const spec = {
       return {
         requestId: bid.bidId,
         adUnitCode: bid.adUnitCode,
-        adUnitId: getBidIdParameter('adUnitId', bid.params),
+        adUnitId: utils.getBidIdParameter('adUnitId', bid.params),
         sizes: bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes
       };
     });

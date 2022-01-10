@@ -1,6 +1,6 @@
-import { generateUUID, deepAccess, logWarn, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'bmtm';
@@ -38,7 +38,7 @@ export const spec = {
     };
 
     validBidRequests.forEach((bid) => {
-      oRTBRequest['id'] = generateUUID();
+      oRTBRequest['id'] = utils.generateUUID();
       oRTBRequest['imp'] = [
         {
           id: '1',
@@ -52,7 +52,7 @@ export const spec = {
         },
       ];
 
-      if (deepAccess(bid, 'mediaTypes.banner')) {
+      if (utils.deepAccess(bid, 'mediaTypes.banner')) {
         if (bid.mediaTypes.banner.sizes) {
           size = bid.mediaTypes.banner.sizes[0];
         }
@@ -106,7 +106,7 @@ export const spec = {
     }
 
     if (!response || !bid || !bid.adm || !bid.price) {
-      logWarn(`Bidder ${spec.code} no valid bid`);
+      utils.logWarn(`Bidder ${spec.code} no valid bid`);
       return [];
     }
 
@@ -117,7 +117,7 @@ export const spec = {
       width: bid.w,
       height: bid.h,
       creativeId: bid.crid,
-      mediaType: deepAccess(bidRequest, 'mediaTypes.banner') ? BANNER : VIDEO,
+      mediaType: utils.deepAccess(bidRequest, 'mediaTypes.banner') ? BANNER : VIDEO,
       ttl: 3000,
       netRevenue: true,
       meta: {
@@ -157,12 +157,12 @@ function buildSite(bidderRequest) {
   };
 
   if (bidderRequest && bidderRequest.refererInfo) {
-    deepSetValue(
+    utils.deepSetValue(
       site,
       'page',
       bidderRequest.refererInfo.referer.href ? bidderRequest.refererInfo.referer.href : '',
     );
-    deepSetValue(
+    utils.deepSetValue(
       site,
       'ref',
       bidderRequest.refererInfo.referer ? bidderRequest.refererInfo.referer : '',
@@ -189,12 +189,12 @@ function buildRegs(bidderRequest) {
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    deepSetValue(
+    utils.deepSetValue(
       regs,
       'ext.gdpr',
       bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
     );
-    deepSetValue(
+    utils.deepSetValue(
       regs,
       'ext.gdprConsentString',
       bidderRequest.gdprConsent.consentString || 'ALL',
@@ -202,7 +202,7 @@ function buildRegs(bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.uspConsent) {
-    deepSetValue(regs,
+    utils.deepSetValue(regs,
       'ext.us_privacy',
       bidderRequest.uspConsent);
   }

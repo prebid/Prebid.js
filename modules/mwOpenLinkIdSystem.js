@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { timestamp, logError, deepClone, generateUUID, isPlainObject } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -18,20 +18,20 @@ const openLinkID = {
 const storage = getStorageManager();
 
 function getExpirationDate() {
-  return (new Date(timestamp() + openLinkID.cookie_expiration)).toGMTString();
+  return (new Date(utils.timestamp() + openLinkID.cookie_expiration)).toGMTString();
 }
 
 function isValidConfig(configParams) {
   if (!configParams) {
-    logError('User ID - mwOlId submodule requires configParams');
+    utils.logError('User ID - mwOlId submodule requires configParams');
     return false;
   }
   if (!configParams.accountId) {
-    logError('User ID - mwOlId submodule requires accountId to be defined');
+    utils.logError('User ID - mwOlId submodule requires accountId to be defined');
     return false;
   }
   if (!configParams.partnerId) {
-    logError('User ID - mwOlId submodule requires partnerId to be defined');
+    utils.logError('User ID - mwOlId submodule requires partnerId to be defined');
     return false;
   }
   return true;
@@ -96,7 +96,7 @@ function register(configParams, olid) {
 function setID(configParams) {
   if (!isValidConfig(configParams)) return undefined;
   const mwOlId = readCookie();
-  const newMwOlId = mwOlId ? deepClone(mwOlId) : {eid: generateUUID()};
+  const newMwOlId = mwOlId ? utils.deepClone(mwOlId) : {eid: utils.generateUUID()};
   writeCookie(newMwOlId);
   register(configParams, newMwOlId.eid);
   return {
@@ -122,7 +122,7 @@ export const mwOpenLinkIdSubModule = {
      * @return {(Object|undefined}
      */
   decode(mwOlId) {
-    const id = mwOlId && isPlainObject(mwOlId) ? mwOlId.eid : undefined;
+    const id = mwOlId && utils.isPlainObject(mwOlId) ? mwOlId.eid : undefined;
     return id ? { 'mwOpenLinkId': id } : undefined;
   },
 

@@ -1,6 +1,6 @@
-import { deepAccess, convertTypes, isArray, inIframe, _map, deepSetValue, _each, parseSizesInput, parseUrl } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js'
 
@@ -42,12 +42,7 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   novatiq: 'novatiqid', // Novatiq ID
   mwOpenLinkId: 'mwopenlinkid', // MediaWallah OpenLink ID
   dapId: 'dapid', // Akamai DAP ID
-  amxId: 'amxid', // AMX RTB ID
-  kpuid: 'kpuid', // Kinesso ID
-  publinkId: 'publinkid', // Publisher Link
-  naveggId: 'naveggid', // Navegg ID
-  imuid: 'imuid', // IM-UID by Intimate Merger
-  adtelligentId: 'adtelligentid' // Adtelligent ID
+  amxId: 'amxid' // AMX RTB ID
 };
 
 export const spec = {
@@ -56,8 +51,8 @@ export const spec = {
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
     const hasDelDomainOrPlatform = bidRequest.params.delDomain || bidRequest.params.platform;
-    if (deepAccess(bidRequest, 'mediaTypes.banner') && hasDelDomainOrPlatform) {
-      return !!bidRequest.params.unit || deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
+    if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && hasDelDomainOrPlatform) {
+      return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
     }
 
     return !!(bidRequest.params.unit && hasDelDomainOrPlatform);
@@ -92,8 +87,8 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
       let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-      let url = deepAccess(responses, '0.body.ads.pixels') ||
-        deepAccess(responses, '0.body.pixels') ||
+      let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
+        utils.deepAccess(responses, '0.body.pixels') ||
         generateDefaultSyncUrl(gdprConsent, uspConsent);
 
       return [{
@@ -103,7 +98,7 @@ export const spec = {
     }
   },
   transformBidParams: function(params, isOpenRtb) {
-    return convertTypes({
+    return utils.convertTypes({
       'unit': 'string',
       'customFloor': 'number'
     }, params);
@@ -128,7 +123,7 @@ function generateDefaultSyncUrl(gdprConsent, uspConsent) {
 }
 
 function isVideoRequest(bidRequest) {
-  return (deepAccess(bidRequest, 'mediaTypes.video') && !deepAccess(bidRequest, 'mediaTypes.banner')) || bidRequest.mediaType === VIDEO;
+  return (utils.deepAccess(bidRequest, 'mediaTypes.video') && !utils.deepAccess(bidRequest, 'mediaTypes.banner')) || bidRequest.mediaType === VIDEO;
 }
 
 function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
@@ -220,7 +215,7 @@ function getViewportDimensions(isIfr) {
 
 function formatCustomParms(customKey, customParams) {
   let value = customParams[customKey];
-  if (isArray(value)) {
+  if (utils.isArray(value)) {
     // if value is an array, join them with commas first
     value = value.join(',');
   }
@@ -245,7 +240,7 @@ function getMediaTypeFromRequest(serverRequest) {
 }
 
 function buildCommonQueryParamsFromBids(bids, bidderRequest) {
-  const isInIframe = inIframe();
+  const isInIframe = utils.inIframe();
   let defaultParams;
 
   defaultParams = {
@@ -257,18 +252,31 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     tws: getViewportDimensions(isInIframe),
     be: 1,
     bc: bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`,
-    dddid: _map(bids, bid => bid.transactionId).join(','),
+    dddid: utils._map(bids, bid => bid.transactionId).join(','),
     nocache: new Date().getTime()
   };
 
-  const userDataSegments = buildFpdQueryParams('ortb2.user.data');
-  if (userDataSegments.length > 0) {
-    defaultParams.sm = userDataSegments;
-  }
-
-  const siteContentDataSegments = buildFpdQueryParams('ortb2.site.content.data');
-  if (siteContentDataSegments.length > 0) {
-    defaultParams.scsm = siteContentDataSegments;
+  const firstPartyData = config.getConfig('ortb2.user.data')
+  if (Array.isArray(firstPartyData) && firstPartyData.length > 0) {
+    // extract and merge valid segments by provider/taxonomy
+    const fpd = firstPartyData
+      .filter(
+        data => (Array.isArray(data.segment) &&
+                data.segment.length > 0 &&
+                data.name !== undefined &&
+                data.name.length > 0)
+      )
+      .reduce((acc, data) => {
+        const name = typeof data.ext === 'object' && data.ext.segtax ? `${data.name}/${data.ext.segtax}` : data.name;
+        acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
+        return acc;
+      }, {})
+    const sm = Object.keys(fpd)
+      .map((name, _) => name + ':' + fpd[name].join('|'))
+      .join(',')
+    if (sm.length > 0) {
+      defaultParams.sm = encodeURIComponent(sm);
+    }
   }
 
   if (bids[0].params.platform) {
@@ -296,8 +304,8 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   }
 
   // normalize publisher common id
-  if (deepAccess(bids[0], 'crumbs.pubcid')) {
-    deepSetValue(bids[0], 'userId.pubcid', deepAccess(bids[0], 'crumbs.pubcid'));
+  if (utils.deepAccess(bids[0], 'crumbs.pubcid')) {
+    utils.deepSetValue(bids[0], 'userId.pubcid', utils.deepAccess(bids[0], 'crumbs.pubcid'));
   }
   defaultParams = appendUserIdsToQueryParams(defaultParams, bids[0].userId);
 
@@ -309,37 +317,12 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   return defaultParams;
 }
 
-function buildFpdQueryParams(fpdPath) {
-  const firstPartyData = config.getConfig(fpdPath);
-  if (!Array.isArray(firstPartyData) || !firstPartyData.length) {
-    return '';
-  }
-  const fpd = firstPartyData
-    .filter(
-      data => (Array.isArray(data.segment) &&
-            data.segment.length > 0 &&
-            data.name !== undefined &&
-            data.name.length > 0)
-    )
-    .reduce((acc, data) => {
-      const name = typeof data.ext === 'object' && data.ext.segtax ? `${data.name}/${data.ext.segtax}` : data.name;
-      acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
-      return acc;
-    }, {})
-  return Object.keys(fpd)
-    .map((name, _) => name + ':' + fpd[name].join('|'))
-    .join(',')
-}
-
 function appendUserIdsToQueryParams(queryParams, userIds) {
-  _each(userIds, (userIdObjectOrValue, userIdProviderKey) => {
+  utils._each(userIds, (userIdObjectOrValue, userIdProviderKey) => {
     const key = USER_ID_CODE_TO_QUERY_ARG[userIdProviderKey];
 
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
       switch (userIdProviderKey) {
-        case 'merkleId':
-          queryParams[key] = userIdObjectOrValue.id;
-          break;
         case 'flocId':
           queryParams[key] = userIdObjectOrValue.id;
           break;
@@ -350,7 +333,7 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
           queryParams[key] = userIdObjectOrValue.lipbid;
           if (Array.isArray(userIdObjectOrValue.segments) && userIdObjectOrValue.segments.length > 0) {
             const liveIntentSegments = 'liveintent:' + userIdObjectOrValue.segments.join('|')
-            queryParams.sm = `${queryParams.sm ? queryParams.sm + ',' : ''}${liveIntentSegments}`;
+            queryParams.sm = `${queryParams.sm ? queryParams.sm + encodeURIComponent(',') : ''}${encodeURIComponent(liveIntentSegments)}`;
           }
           break;
         case 'parrableId':
@@ -388,13 +371,13 @@ function buildOXBannerRequest(bids, bidderRequest) {
   let customParamsForAllBids = [];
   let hasCustomParam = false;
   let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
-  let auids = _map(bids, bid => bid.params.unit);
+  let auids = utils._map(bids, bid => bid.params.unit);
 
-  queryParams.aus = _map(bids, bid => parseSizesInput(bid.mediaTypes.banner.sizes).join(',')).join('|');
-  queryParams.divids = _map(bids, bid => encodeURIComponent(bid.adUnitCode)).join(',');
+  queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.mediaTypes.banner.sizes).join(',')).join('|');
+  queryParams.divids = utils._map(bids, bid => encodeURIComponent(bid.adUnitCode)).join(',');
   // gpid
-  queryParams.aucs = _map(bids, function (bid) {
-    let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  queryParams.aucs = utils._map(bids, function (bid) {
+    let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
     return encodeURIComponent(gpid || '')
   }).join(',');
 
@@ -412,7 +395,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
 
   bids.forEach(function (bid) {
     if (bid.params.customParams) {
-      let customParamsForBid = _map(Object.keys(bid.params.customParams), customKey => formatCustomParms(customKey, bid.params.customParams));
+      let customParamsForBid = utils._map(Object.keys(bid.params.customParams), customKey => formatCustomParms(customKey, bid.params.customParams));
       let formattedCustomParams = window.btoa(customParamsForBid.join('&'));
       hasCustomParam = true;
       customParamsForAllBids.push(formattedCustomParams);
@@ -452,22 +435,22 @@ function buildOXVideoRequest(bid, bidderRequest) {
 }
 
 function generateVideoParameters(bid, bidderRequest) {
-  const videoMediaType = deepAccess(bid, `mediaTypes.video`);
+  const videoMediaType = utils.deepAccess(bid, `mediaTypes.video`);
   let queryParams = buildCommonQueryParamsFromBids([bid], bidderRequest);
-  let oxVideoConfig = deepAccess(bid, 'params.video') || {};
-  let context = deepAccess(bid, 'mediaTypes.video.context');
-  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  let oxVideoConfig = utils.deepAccess(bid, 'params.video') || {};
+  let context = utils.deepAccess(bid, 'mediaTypes.video.context');
+  let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
   let width;
   let height;
 
   // normalize config for video size
-  if (isArray(bid.sizes) && bid.sizes.length === 2 && !isArray(bid.sizes[0])) {
+  if (utils.isArray(bid.sizes) && bid.sizes.length === 2 && !utils.isArray(bid.sizes[0])) {
     width = parseInt(bid.sizes[0], 10);
     height = parseInt(bid.sizes[1], 10);
-  } else if (isArray(bid.sizes) && isArray(bid.sizes[0]) && bid.sizes[0].length === 2) {
+  } else if (utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0]) && bid.sizes[0].length === 2) {
     width = parseInt(bid.sizes[0][0], 10);
     height = parseInt(bid.sizes[0][1], 10);
-  } else if (isArray(playerSize) && playerSize.length === 2) {
+  } else if (utils.isArray(playerSize) && playerSize.length === 2) {
     width = parseInt(playerSize[0], 10);
     height = parseInt(playerSize[1], 10);
   }
@@ -480,7 +463,7 @@ function generateVideoParameters(bid, bidderRequest) {
     legacyParams = legacyParams.openrtb;
   }
   // support for video object or full openrtb object
-  if (isArray(legacyParams.imp)) {
+  if (utils.isArray(legacyParams.imp)) {
     legacyParams = legacyParams.imp[0].video;
   }
   Object.keys(legacyParams)
@@ -519,7 +502,7 @@ function generateVideoParameters(bid, bidderRequest) {
     queryParams.vtest = 1;
   }
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     queryParams.aucs = encodeURIComponent(gpid)
   }
@@ -534,7 +517,7 @@ function createVideoBidResponses(response, {bid, startTime}) {
   let bidResponses = [];
 
   if (response !== undefined && response.vastUrl !== '' && response.pub_rev > 0) {
-    let vastQueryParams = parseUrl(response.vastUrl).search || {};
+    let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
     if (response.deal_id) {

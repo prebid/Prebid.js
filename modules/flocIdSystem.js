@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { logInfo, logError } from '../src/utils.js';
+import * as utils from '../src/utils.js'
 import {submodule} from '../src/hook.js'
 
 const MODULE_NAME = 'flocId';
@@ -45,7 +45,7 @@ function encodeId(value) {
   const result = {};
   if (value) {
     result.flocId = value;
-    logInfo('Decoded value ' + JSON.stringify(result));
+    utils.logInfo('Decoded value ' + JSON.stringify(result));
     return result;
   }
   return undefined;
@@ -78,7 +78,7 @@ export const flocIdSubmodule = {
     // Block usage of storage of cohort ID
     const checkStorage = (config && config.storage);
     if (checkStorage) {
-      logError('User ID - flocId submodule storage should not defined');
+      utils.logError('User ID - flocId submodule storage should not defined');
       return;
     }
     // Validate feature is enabled
@@ -94,10 +94,10 @@ export const flocIdSubmodule = {
       let returnCallback = (cb) => {
         getFlocData((data) => {
           returnCallback = () => { return data; }
-          logInfo('Cohort id: ' + JSON.stringify(data));
+          utils.logInfo('Cohort id: ' + JSON.stringify(data));
           cb(data);
         }, (err) => {
-          logInfo(err);
+          utils.logInfo(err);
           cb(undefined);
         });
       };

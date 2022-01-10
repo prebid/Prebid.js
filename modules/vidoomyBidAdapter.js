@@ -1,44 +1,31 @@
-import { logError, deepAccess, parseSizesInput } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import * as utils from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const BIDDER_CODE = 'vidoomy';
 const GVLID = 380;
-
-const COOKIE_SYNC_FALLBACK_URLS = [
-  'https://x.bidswitch.net/sync?ssp=vidoomy',
-  'https://ib.adnxs.com/getuid?https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadnxs%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
-  'https://pixel-sync.sitescout.com/dmp/pixelSync?nid=120&redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DCEN%26uid%3D%7BuserId%7D',
-  'https://sync.1rx.io/usersync2/vidoomy?redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DUN%26uid%3D%5BRX_UUID%5D',
-  'https://rtb.openx.net/sync/prebid?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&r=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dopenx%26uid%3D$%7BUID%7D',
-  'https://ads.pubmatic.com/AdServer/js/user_sync.html?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&us_privacy=&predirect=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dpubmatic%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D',
-  'https://cm.adform.net/cookie?redirect_url=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadf%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
-  'https://ups.analytics.yahoo.com/ups/58531/occ?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}',
-  'https://ap.lijit.com/pixel?redir=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dsovrn%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID'
-];
-
 const isBidRequestValid = bid => {
   if (!bid.params) {
-    logError(BIDDER_CODE + ': bid.params should be non-empty');
+    utils.logError(BIDDER_CODE + ': bid.params should be non-empty');
     return false;
   }
 
   if (!+bid.params.pid) {
-    logError(BIDDER_CODE + ': bid.params.pid should be non-empty Number');
+    utils.logError(BIDDER_CODE + ': bid.params.pid should be non-empty Number');
     return false;
   }
 
   if (!+bid.params.id) {
-    logError(BIDDER_CODE + ': bid.params.id should be non-empty Number');
+    utils.logError(BIDDER_CODE + ': bid.params.id should be non-empty Number');
     return false;
   }
 
   if (bid.params && bid.params.mediaTypes && bid.params.mediaTypes.video && bid.params.mediaTypes.video.context === INSTREAM && !bid.params.mediaTypes.video.playerSize) {
-    logError(BIDDER_CODE + ': bid.params.mediaType.video should have a playerSize property to tell player size when is INSTREAM');
+    utils.logError(BIDDER_CODE + ': bid.params.mediaType.video should have a playerSize property to tell player size when is INSTREAM');
     return false;
   }
 
@@ -46,14 +33,14 @@ const isBidRequestValid = bid => {
 };
 
 const isBidResponseValid = bid => {
-  if (!bid || !bid.requestId || !bid.cpm || !bid.ttl || !bid.currency) {
+  if (!bid.requestId || !bid.cpm || !bid.ttl || !bid.currency) {
     return false;
   }
   switch (bid.mediaType) {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return Boolean(bid.vastUrl || bid.vastXml);
+      return Boolean(bid.vastUrl);
     default:
       return false;
   }
@@ -62,50 +49,56 @@ const isBidResponseValid = bid => {
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
     let adType = BANNER;
-    let sizes;
+    let w, h;
     if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
-      sizes = bid.mediaTypes[BANNER].sizes;
+      [w, h] = bid.mediaTypes[BANNER].sizes[0];
       adType = BANNER;
     } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
-      sizes = bid.mediaTypes[VIDEO].playerSize;
+      [w, h] = bid.mediaTypes[VIDEO].playerSize;
       adType = VIDEO;
     }
-    const [w, h] = (parseSizesInput(sizes)[0] || '0x0').split('x');
 
-    const aElement = document.createElement('a');
-    aElement.href = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || top.location.href;
-    const hostname = aElement.hostname
-
-    const videoContext = deepAccess(bid, 'mediaTypes.video.context');
-
-    const queryParams = {
-      id: bid.params.id,
-      adtype: adType,
-      auc: bid.adUnitCode,
-      w,
-      h,
-      pos: parseInt(bid.params.position) || 1,
-      ua: navigator.userAgent,
-      l: navigator.language && navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : '',
-      dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
-      pid: bid.params.pid,
-      requestId: bid.bidId,
-      d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
-      sp: encodeURIComponent(aElement.href),
-      usp: bidderRequest.uspConsent || '',
-      coppa: !!config.getConfig('coppa'),
-      videoContext: videoContext || ''
-    };
-
-    if (bidderRequest.gdprConsent) {
-      queryParams.gdpr = bidderRequest.gdprConsent.gdprApplies;
-      queryParams.gdprcs = bidderRequest.gdprConsent.consentString;
+    let host = '';
+    try {
+      host = bidderRequest.refererInfo.referer.split('#')[0].replace(/^(https\:\/\/|http\:\/\/)|(\/)$/g, '').split('/')[0];
+    } catch (eBidRequest) {
+      try {
+        host = window.location.href.replace(/^(https\:\/\/|http\:\/\/)|(\/)$/g, '').split('/')[0];
+      } catch (eLocationHref) {
+        host = window.location.href;
+      }
     }
+    const hostname = host.split(':')[0];
 
+    const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
+
+    const queryParams = [];
+    queryParams.push(['id', bid.params.id]);
+    queryParams.push(['adtype', adType]);
+    queryParams.push(['w', w]);
+    queryParams.push(['h', h]);
+    queryParams.push(['pos', parseInt(bid.params.position) || 1]);
+    queryParams.push(['ua', navigator.userAgent]);
+    queryParams.push(['l', navigator.language && navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : '']);
+    queryParams.push(['dt', /Mobi/.test(navigator.userAgent) ? 2 : 1]);
+    queryParams.push(['pid', bid.params.pid]);
+    queryParams.push(['requestId', bid.bidId]);
+    queryParams.push(['d', hostname]);
+    queryParams.push(['sp', encodeURIComponent(bidderRequest.refererInfo.referer)]);
+    if (bidderRequest.gdprConsent) {
+      queryParams.push(['gdpr', bidderRequest.gdprConsent.gdprApplies]);
+      queryParams.push(['gdprcs', bidderRequest.gdprConsent.consentString]);
+    }
+    queryParams.push(['usp', bidderRequest.uspConsent || '']);
+    queryParams.push(['coppa', !!config.getConfig('coppa')]);
+
+    const rawQueryParams = queryParams.map(qp => qp.join('=')).join('&');
+
+    const url = `${ENDPOINT}?${rawQueryParams}`;
     return {
       method: 'GET',
-      url: ENDPOINT,
-      data: queryParams
+      url: url,
+      data: {videoContext}
     }
   });
   return serverRequests;
@@ -127,9 +120,8 @@ const render = (bid) => {
 const interpretResponse = (serverResponse, bidRequest) => {
   try {
     let responseBody = serverResponse.body;
-    if (!responseBody) return;
     if (responseBody.mediaType === 'video') {
-      responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
+      responseBody.ad = responseBody.vastUrl;
       const videoContext = bidRequest.data.videoContext;
 
       if (videoContext === OUTSTREAM) {
@@ -145,12 +137,13 @@ const interpretResponse = (serverResponse, bidRequest) => {
 
           responseBody.renderer = renderer;
         } catch (e) {
-          responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
-          logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
+          responseBody.ad = responseBody.vastUrl;
+          utils.logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
         }
       }
     }
     const bid = {
+      vastUrl: responseBody.vastUrl,
       ad: responseBody.ad,
       renderer: responseBody.renderer,
       mediaType: responseBody.mediaType,
@@ -179,39 +172,19 @@ const interpretResponse = (serverResponse, bidRequest) => {
         secondaryCatIds: responseBody.meta.secondaryCatIds
       }
     };
-    if (responseBody.vastUrl) {
-      bid.vastUrl = responseBody.vastUrl;
-    } else if (responseBody.vastXml) {
-      bid.vastXml = responseBody.vastXml;
-    }
 
     const bids = [];
 
     if (isBidResponseValid(bid)) {
       bids.push(bid);
     } else {
-      logError(BIDDER_CODE + ': server returns invalid response');
+      utils.logError(BIDDER_CODE + ': server returns invalid response');
     }
 
     return bids;
   } catch (e) {
-    logError(BIDDER_CODE + ': error parsing server response to Prebid format');
+    utils.logError(BIDDER_CODE + ': error parsing server response to Prebid format');
     return [];
-  }
-};
-
-function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
-  if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
-    const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
-    const urls = deepAccess(responses, '0.body.pixels') || COOKIE_SYNC_FALLBACK_URLS;
-
-    return [].concat(urls).map(url => ({
-      type: pixelType,
-      url: url
-        .replace('{{GDPR}}', gdprConsent ? (gdprConsent.gdprApplies ? '1' : '0') : '0')
-        .replace('{{GDPR_CONSENT}}', gdprConsent ? encodeURIComponent(gdprConsent.consentString) : '')
-        .replace('{{USP_CONSENT}}', uspConsent ? encodeURIComponent(uspConsent) : '')
-    }));
   }
 };
 
@@ -222,19 +195,6 @@ export const spec = {
   buildRequests,
   interpretResponse,
   gvlid: GVLID,
-  getUserSyncs,
 };
 
 registerBidder(spec);
-
-function getDomainWithoutSubdomain (hostname) {
-  const parts = hostname.split('.');
-  const newParts = [];
-  for (let i = parts.length - 1; i >= 0; i--) {
-    newParts.push(parts[i]);
-    if (newParts.length !== 1 && parts[i].length > 3) {
-      break;
-    }
-  }
-  return newParts.reverse().join('.');
-}

@@ -1,13 +1,11 @@
-import { tryAppendQueryString, logMessage, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
-const BANNER_TIME_TO_LIVE = 300;
-const INSTREAM_TIME_TO_LIVE = 3600;
 let gdprApplies = true;
 let consentString = null;
 
@@ -23,41 +21,41 @@ export const tripleliftAdapterSpec = {
     let tlCall = STR_ENDPOINT;
     let data = _buildPostBody(bidRequests);
 
-    tlCall = tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = tryAppendQueryString(tlCall, 'v', '$prebid.version$');
+    tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
+    tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let referrer = bidderRequest.refererInfo.referer;
-      tlCall = tryAppendQueryString(tlCall, 'referrer', referrer);
+      tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
     }
 
     if (bidderRequest && bidderRequest.timeout) {
-      tlCall = tryAppendQueryString(tlCall, 'tmax', bidderRequest.timeout);
+      tlCall = utils.tryAppendQueryString(tlCall, 'tmax', bidderRequest.timeout);
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
         gdprApplies = bidderRequest.gdprConsent.gdprApplies;
-        tlCall = tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString());
+        tlCall = utils.tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString());
       }
       if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
         consentString = bidderRequest.gdprConsent.consentString;
-        tlCall = tryAppendQueryString(tlCall, 'cmp_cs', consentString);
+        tlCall = utils.tryAppendQueryString(tlCall, 'cmp_cs', consentString);
       }
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
+      tlCall = utils.tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
     if (config.getConfig('coppa') === true) {
-      tlCall = tryAppendQueryString(tlCall, 'coppa', true);
+      tlCall = utils.tryAppendQueryString(tlCall, 'coppa', true);
     }
 
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
       tlCall = tlCall.substring(0, tlCall.length - 1);
     }
-    logMessage('tlCall request built: ' + tlCall);
+    utils.logMessage('tlCall request built: ' + tlCall);
 
     return {
       method: 'POST',
@@ -81,17 +79,17 @@ export const tripleliftAdapterSpec = {
     let syncEndpoint = 'https://eb2.3lift.com/sync?';
 
     if (syncType === 'image') {
-      syncEndpoint = tryAppendQueryString(syncEndpoint, 'px', 1);
-      syncEndpoint = tryAppendQueryString(syncEndpoint, 'src', 'prebid');
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'px', 1);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'src', 'prebid');
     }
 
     if (consentString !== null) {
-      syncEndpoint = tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies);
-      syncEndpoint = tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
     }
 
     if (usPrivacy) {
-      syncEndpoint = tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
     }
 
     return [{
@@ -124,7 +122,7 @@ function _buildPostBody(bidRequests) {
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
     };
-    if (!isEmpty(bidRequest.ortb2Imp)) {
+    if (!utils.isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
     }
     return imp;
@@ -145,7 +143,7 @@ function _buildPostBody(bidRequests) {
 
   let ext = _getExt(schain, globalFpd);
 
-  if (!isEmpty(ext)) {
+  if (!utils.isEmpty(ext)) {
     data.ext = ext;
   }
   return data;
@@ -200,10 +198,10 @@ function _getGlobalFpd() {
   _addEntries(context, fpdContext);
   _addEntries(user, fpdUser);
 
-  if (!isEmpty(context)) {
+  if (!utils.isEmpty(context)) {
     fpd.context = context;
   }
-  if (!isEmpty(user)) {
+  if (!utils.isEmpty(user)) {
     fpd.user = user;
   }
   return fpd;
@@ -215,7 +213,7 @@ function _getAdUnitFpd(adUnitFpd) {
 
   _addEntries(context, adUnitFpd.ext);
 
-  if (!isEmpty(context)) {
+  if (!utils.isEmpty(context)) {
     fpd.context = context;
   }
 
@@ -223,7 +221,7 @@ function _getAdUnitFpd(adUnitFpd) {
 }
 
 function _addEntries(target, source) {
-  if (!isEmpty(source)) {
+  if (!utils.isEmpty(source)) {
     Object.keys(source).forEach(key => {
       if (source[key] != null) {
         target[key] = source[key];
@@ -234,10 +232,10 @@ function _addEntries(target, source) {
 
 function _getExt(schain, fpd) {
   let ext = {};
-  if (!isEmpty(schain)) {
+  if (!utils.isEmpty(schain)) {
     ext.schain = { ...schain };
   }
-  if (!isEmpty(fpd)) {
+  if (!utils.isEmpty(fpd)) {
     ext.fpd = { ...fpd };
   }
   return ext;
@@ -262,36 +260,19 @@ function getPubCommonEids(bidRequest) {
 function getEids(bidRequest, type, source, rtiPartner) {
   return bidRequest
     .map(getUserId(type)) // bids -> userIds of a certain type
-    .filter(filterEids(type)) // filter out unqualified userIds
+    .filter((x) => !!x) // filter out null userIds
     .map(formatEid(source, rtiPartner)); // userIds -> eid objects
 }
 
-const filterEids = type => (userId, i, arr) => {
-  let isValidUserId =
-    !!userId && // is not null nor empty
-    (isStr(userId)
-      ? !!userId
-      : isPlainObject(userId) && // or, is object
-        !isArray(userId) && // not an array
-        !isEmpty(userId) && // is not empty
-        userId.id && // contains nested id field
-        isStr(userId.id) && // nested id field is a string
-        !!userId.id); // that is not empty
-  if (!isValidUserId && arr[0] !== undefined) {
-    logWarn(`Triplelift: invalid ${type} userId format`);
-  }
-  return isValidUserId;
-};
-
 function getUserId(type) {
-  return bid => bid && bid.userId && bid.userId[type];
+  return (bid) => (bid && bid.userId && bid.userId[type]);
 }
 
 function formatEid(source, rtiPartner) {
-  return (userId) => ({
+  return (id) => ({
     source,
     uids: [{
-      id: userId.id ? userId.id : userId,
+      id,
       ext: { rtiPartner }
     }]
   });
@@ -330,7 +311,7 @@ function _buildResponseObject(bidderRequest, bid) {
       creativeId: creativeId,
       dealId: dealId,
       currency: 'USD',
-      ttl: BANNER_TIME_TO_LIVE,
+      ttl: 300,
       tl_source: bid.tl_source,
       meta: {}
     };
@@ -338,7 +319,6 @@ function _buildResponseObject(bidderRequest, bid) {
     if (_isInstreamBidRequest(breq)) {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
-      bidResponse.ttl = INSTREAM_TIME_TO_LIVE;
     };
 
     if (bid.advertiser_name) {

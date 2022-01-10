@@ -16,21 +16,20 @@ function validateBuiltServerRequest(builtReq, expectedReq) {
 describe('33acrossBidAdapter:', function () {
   const BIDDER_CODE = '33across';
   const SITE_ID = 'sample33xGUID123456789';
+  const PRODUCT_ID = 'siab';
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 
   let element, win;
   let bidRequests;
   let sandbox;
 
-  function TtxRequestBuilder(siteId = SITE_ID) {
+  function TtxRequestBuilder() {
     const ttxRequest = {
-      imp: [{
-        id: 'b1'
-      }],
+      imp: [{}],
       site: {
-        id: siteId
+        id: SITE_ID
       },
-      id: 'r1',
+      id: 'b1',
       regs: {
         ext: {
           gdpr: 0
@@ -47,83 +46,66 @@ describe('33acrossBidAdapter:', function () {
       }
     };
 
-    this.addImp = (id = 'b2') => {
-      ttxRequest.imp.push({ id });
-
-      return this;
-    }
-
     this.withBanner = () => {
-      ttxRequest.imp.forEach((imp) => {
-        Object.assign(imp, {
-          banner: {
-            format: [
-              {
-                w: 300,
-                h: 250
-              },
-              {
-                w: 728,
-                h: 90
-              }
-            ],
-            ext: {
-              ttx: {
-                viewability: {
-                  amount: 100
-                }
+      Object.assign(ttxRequest.imp[0], {
+        banner: {
+          format: [
+            {
+              w: 300,
+              h: 250
+            },
+            {
+              w: 728,
+              h: 90
+            }
+          ],
+          ext: {
+            ttx: {
+              viewability: {
+                amount: 100
               }
             }
           }
-        });
+        }
       });
+
       return this;
     };
 
     this.withBannerSizes = this.withSizes = sizes => {
-      ttxRequest.imp.forEach((imp) => {
-        Object.assign(imp.banner, { format: sizes });
-      });
-
+      Object.assign(ttxRequest.imp[0].banner, { format: sizes });
       return this;
     };
 
     this.withVideo = (params = {}) => {
-      ttxRequest.imp.forEach((imp) => {
-        Object.assign(imp, {
-          video: {
-            w: 300,
-            h: 250,
-            placement: 2,
-            ...params
-          }
-        });
+      Object.assign(ttxRequest.imp[0], {
+        video: {
+          w: 300,
+          h: 250,
+          placement: 2,
+          ...params
+        }
       });
 
       return this;
     };
 
     this.withViewability = (viewability, format = 'banner') => {
-      ttxRequest.imp.forEach((imp) => {
-        Object.assign(imp[format], {
-          ext: {
-            ttx: { viewability }
-          }
-        });
+      Object.assign(ttxRequest.imp[0][format], {
+        ext: {
+          ttx: { viewability }
+        }
       });
-
       return this;
     };
 
-    this.withProduct = (prod = 'siab') => {
-      ttxRequest.imp.forEach((imp) => {
-        Object.assign(imp, {
-          ext: {
-            ttx: {
-              prod
-            }
+    this.withProduct = (prod = PRODUCT_ID) => {
+      Object.assign(ttxRequest.imp[0], {
+        ext: {
+          ttx: {
+            prod
           }
-        });
+        }
       });
 
       return this;
@@ -267,7 +249,7 @@ describe('33acrossBidAdapter:', function () {
         bidderRequestId: 'b1a',
         params: {
           siteId: SITE_ID,
-          productId: 'siab'
+          productId: PRODUCT_ID
         },
         adUnitCode: 'div-id',
         auctionId: 'r1',
@@ -276,61 +258,35 @@ describe('33acrossBidAdapter:', function () {
       }
     ];
 
-    this.addBid = (bidParams = {}) => {
-      bidRequests.push({
-        bidId: 'b2',
-        bidder: '33across',
-        bidderRequestId: 'b1b',
-        params: {
-          siteId: SITE_ID,
-          productId: 'siab'
-        },
-        adUnitCode: 'div-id',
-        auctionId: 'r1',
-        mediaTypes: {},
-        transactionId: 't2',
-        ...bidParams
-      });
-
-      return this;
-    };
-
     this.withBanner = () => {
-      bidRequests.forEach((bid) => {
-        bid.mediaTypes.banner = {
-          sizes: [
-            [300, 250],
-            [728, 90]
-          ]
-        };
-      });
+      bidRequests[0].mediaTypes.banner = {
+        sizes: [
+          [300, 250],
+          [728, 90]
+        ]
+      };
 
       return this;
     };
 
     this.withProduct = (prod) => {
-      bidRequests.forEach((bid) => {
-        bid.params.productId = prod;
-      });
+      bidRequests[0].params.productId = prod;
+
       return this;
     };
 
     this.withVideo = (params) => {
-      bidRequests.forEach((bid) => {
-        bid.mediaTypes.video = {
-          playerSize: [[300, 250]],
-          context: 'outstream',
-          ...params
-        };
-      });
+      bidRequests[0].mediaTypes.video = {
+        playerSize: [[300, 250]],
+        context: 'outstream',
+        ...params
+      };
 
       return this;
     }
 
     this.withUserIds = (eids) => {
-      bidRequests.forEach((bid) => {
-        bid.userIdAsEids = eids;
-      });
+      bidRequests[0].userIdAsEids = eids;
 
       return this;
     };
@@ -359,7 +315,6 @@ describe('33acrossBidAdapter:', function () {
       }
     };
     win = {
-      parent: null,
       document: {
         visibilityState: 'visible'
       },
@@ -376,7 +331,7 @@ describe('33acrossBidAdapter:', function () {
 
     sandbox = sinon.sandbox.create();
     sandbox.stub(Date, 'now').returns(1);
-    sandbox.stub(document, 'getElementById').returns(element);
+    sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
   });
@@ -1421,146 +1376,10 @@ describe('33acrossBidAdapter:', function () {
         });
       });
     });
-
-    context('when SRA mode is enabled', function() {
-      it('builds a single request with multiple imps corresponding to each group {siteId, productId}', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
-            enableSRAMode: true
-          }
-        });
-
-        const bidRequests = new BidRequestsBuilder()
-          .addBid()
-          .addBid({
-            bidId: 'b3',
-            adUnitCode: 'div-id',
-            params: {
-              siteId: 'sample33xGUID123456780',
-              productId: 'siab'
-            }
-          })
-          .addBid({
-            bidId: 'b4',
-            adUnitCode: 'div-id',
-            params: {
-              siteId: 'sample33xGUID123456780',
-              productId: 'inview'
-            }
-          })
-          .withBanner()
-          .withVideo({context: 'outstream'})
-          .build();
-
-        const req1 = new TtxRequestBuilder()
-          .addImp()
-          .withProduct('siab')
-          .withBanner()
-          .withVideo()
-          .build();
-
-        const req2 = new TtxRequestBuilder('sample33xGUID123456780')
-          .withProduct('siab')
-          .withBanner()
-          .withVideo()
-          .build();
-
-        req2.imp[0].id = 'b3';
-
-        const req3 = new TtxRequestBuilder('sample33xGUID123456780')
-          .withProduct('inview')
-          .withBanner()
-          .withVideo()
-          .build();
-
-        req3.imp[0].id = 'b4';
-
-        const serverReq1 = new ServerRequestBuilder()
-          .withData(req1)
-          .build();
-
-        const serverReq2 = new ServerRequestBuilder()
-          .withData(req2)
-          .withUrl('https://ssc.33across.com/api/v1/hb?guid=sample33xGUID123456780')
-          .build();
-
-        const serverReq3 = new ServerRequestBuilder()
-          .withData(req3)
-          .withUrl('https://ssc.33across.com/api/v1/hb?guid=sample33xGUID123456780')
-          .build();
-
-        const builtServerRequests = spec.buildRequests(bidRequests, {});
-
-        expect(builtServerRequests).to.deep.equal([serverReq1, serverReq2, serverReq3]);
-      });
-    });
-
-    context('when SRA mode is not enabled', function() {
-      it('builds multiple requests, one corresponding to each Ad Unit', function() {
-        const bidRequests = new BidRequestsBuilder()
-          .addBid()
-          .addBid({
-            bidId: 'b3',
-            adUnitCode: 'div-id',
-            params: {
-              siteId: 'sample33xGUID123456780',
-              productId: 'siab'
-            }
-          })
-          .withBanner()
-          .withVideo({context: 'outstream'})
-          .build();
-
-        const req1 = new TtxRequestBuilder()
-          .withProduct('siab')
-          .withBanner()
-          .withVideo()
-          .build();
-
-        const req2 = new TtxRequestBuilder()
-          .withProduct('siab')
-          .withBanner()
-          .withVideo()
-          .build();
-
-        req2.imp[0].id = 'b2';
-
-        const req3 = new TtxRequestBuilder('sample33xGUID123456780')
-          .withProduct('siab')
-          .withBanner()
-          .withVideo()
-          .build();
-
-        req3.imp[0].id = 'b3';
-
-        const serverReq1 = new ServerRequestBuilder()
-          .withData(req1)
-          .build();
-
-        const serverReq2 = new ServerRequestBuilder()
-          .withData(req2)
-          .build();
-
-        const serverReq3 = new ServerRequestBuilder()
-          .withData(req3)
-          .withUrl('https://ssc.33across.com/api/v1/hb?guid=sample33xGUID123456780')
-          .build();
-
-        const builtServerRequests = spec.buildRequests(bidRequests, {});
-
-        expect(builtServerRequests)
-          .to.deep.equal([
-            serverReq1,
-            serverReq2,
-            serverReq3
-          ]);
-      });
-    });
   });
 
   describe('interpretResponse', function() {
     let ttxRequest, serverRequest;
-    const videoBid = '<VAST version="3.0"><Ad></Ad></VAST>';
 
     beforeEach(function() {
       ttxRequest = new TtxRequestBuilder()
@@ -1571,7 +1390,6 @@ describe('33acrossBidAdapter:', function () {
           page: 'https://test-url.com'
         })
         .build();
-
       serverRequest = new ServerRequestBuilder()
         .withUrl('https://staging-ssc.33across.com/api/v1/hb')
         .withData(ttxRequest)
@@ -1587,12 +1405,11 @@ describe('33acrossBidAdapter:', function () {
         const serverResponse = {
           cur: 'USD',
           ext: {},
-          id: 'r1',
+          id: 'b1',
           seatbid: [
             {
               bid: [{
                 id: '1',
-                impid: 'b1',
                 adm: '<html><h3>I am an ad</h3></html>',
                 crid: 1,
                 h: 250,
@@ -1624,15 +1441,15 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('interprets and returns the single video bid response', function() {
+        const videoBid = '<VAST version="3.0"><Ad></Ad></VAST>';
         const serverResponse = {
           cur: 'USD',
           ext: {},
-          id: 'r1',
+          id: 'b1',
           seatbid: [
             {
               bid: [{
                 id: '1',
-                impid: 'b1',
                 adm: videoBid,
                 ext: {
                   ttx: {
@@ -1680,7 +1497,6 @@ describe('33acrossBidAdapter:', function () {
               {
                 bid: [{
                   id: '1',
-                  impid: 'b1',
                   adm: '<html><h3>I am an ad</h3></html>',
                   crid: 1,
                   h: 250,
@@ -1717,7 +1533,7 @@ describe('33acrossBidAdapter:', function () {
         const serverResponse = {
           cur: 'USD',
           ext: {},
-          id: 'r1',
+          id: 'b1',
           seatbid: []
         };
 
@@ -1726,16 +1542,15 @@ describe('33acrossBidAdapter:', function () {
     });
 
     context('when more than one bids are returned', function() {
-      it('interprets and returns all bids', function() {
+      it('interprets and returns the the first bid of the first seatbid', function() {
         const serverResponse = {
           cur: 'USD',
           ext: {},
-          id: 'r1',
+          id: 'b1',
           seatbid: [
             {
               bid: [{
                 id: '1',
-                impid: 'b1',
                 adm: '<html><h3>I am an ad</h3></html>',
                 crid: 1,
                 h: 250,
@@ -1744,7 +1559,6 @@ describe('33acrossBidAdapter:', function () {
               },
               {
                 id: '2',
-                impid: 'b2',
                 adm: '<html><h3>I am an ad</h3></html>',
                 crid: 2,
                 h: 250,
@@ -1756,14 +1570,7 @@ describe('33acrossBidAdapter:', function () {
             {
               bid: [{
                 id: '3',
-                impid: 'b3',
-                adm: videoBid,
-                ext: {
-                  ttx: {
-                    mediaType: 'video',
-                    vastType: 'xml'
-                  }
-                },
+                adm: '<html><h3>I am an ad</h3></html>',
                 crid: 3,
                 h: 250,
                 w: 300,
@@ -1772,50 +1579,21 @@ describe('33acrossBidAdapter:', function () {
             }
           ]
         };
-        const bidResponse = [
-          {
-            requestId: 'b1',
-            bidderCode: BIDDER_CODE,
-            cpm: 0.0940,
-            width: 300,
-            height: 250,
-            ad: '<html><h3>I am an ad</h3></html>',
-            ttl: 60,
-            creativeId: 1,
-            mediaType: 'banner',
-            currency: 'USD',
-            netRevenue: true
-          },
-          {
-            requestId: 'b2',
-            bidderCode: BIDDER_CODE,
-            cpm: 0.0938,
-            width: 300,
-            height: 250,
-            ad: '<html><h3>I am an ad</h3></html>',
-            ttl: 60,
-            creativeId: 2,
-            mediaType: 'banner',
-            currency: 'USD',
-            netRevenue: true
-          },
-          {
-            requestId: 'b3',
-            bidderCode: BIDDER_CODE,
-            cpm: 0.0938,
-            width: 300,
-            height: 250,
-            ad: videoBid,
-            vastXml: '<VAST version=\"3.0\"><Ad></Ad></VAST>',
-            ttl: 60,
-            creativeId: 3,
-            mediaType: 'video',
-            currency: 'USD',
-            netRevenue: true
-          }
-        ];
+        const bidResponse = {
+          requestId: 'b1',
+          bidderCode: BIDDER_CODE,
+          cpm: 0.0940,
+          width: 300,
+          height: 250,
+          ad: '<html><h3>I am an ad</h3></html>',
+          ttl: 60,
+          creativeId: 1,
+          mediaType: 'banner',
+          currency: 'USD',
+          netRevenue: true
+        };
 
-        expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal(bidResponse);
+        expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
       });
     });
   });

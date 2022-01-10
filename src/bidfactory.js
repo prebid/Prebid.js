@@ -1,4 +1,4 @@
-import { getUniqueIdentifierStr } from './utils.js';
+var utils = require('./utils.js');
 
 /**
  Required paramaters
@@ -22,7 +22,7 @@ function Bid(statusCode, bidRequest) {
   this.width = 0;
   this.height = 0;
   this.statusMessage = _getStatus();
-  this.adId = getUniqueIdentifierStr();
+  this.adId = utils.getUniqueIdentifierStr();
   this.requestId = bidRequest && bidRequest.bidId;
   this.mediaType = 'banner';
   this.source = _bidSrc;

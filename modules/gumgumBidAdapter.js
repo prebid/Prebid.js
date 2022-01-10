@@ -1,5 +1,6 @@
+import * as utils from '../src/utils.js'
+
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { _each, deepAccess, logError, logWarn, parseSizesInput } from '../src/utils.js';
 
 import { config } from '../src/config.js'
 import { getStorageManager } from '../src/storageManager.js';
@@ -50,7 +51,7 @@ function _getBrowserParams(topWindowUrl) {
     topScreen = topWindow.screen;
     topUrl = topWindowUrl || '';
   } catch (error) {
-    logError(error);
+    utils.logError(error);
     return browserParams
   }
 
@@ -130,7 +131,7 @@ function isBidRequestValid(bid) {
   const id = legacyParamID || params.slot || params.native || params.zone || params.pubID;
 
   if (invalidRequestIds[id]) {
-    logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
+    utils.logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
     return false;
   }
 
@@ -145,12 +146,12 @@ function isBidRequestValid(bid) {
     case !!(params.inVideo): break;
     case !!(params.videoPubID): break;
     default:
-      logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
+      utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
   }
 
   if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
-    logWarn('[GumGum] bidfloor must be a Number');
+    utils.logWarn('[GumGum] bidfloor must be a Number');
     return false;
   }
 
@@ -172,7 +173,7 @@ function _getVidParams(attributes) {
     protocols = [],
     playerSize = []
   } = attributes;
-  const sizes = parseSizesInput(playerSize);
+  const sizes = utils.parseSizesInput(playerSize);
   const [viw, vih] = sizes[0] && sizes[0].split('x');
   let pr = '';
 
@@ -278,7 +279,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const timeout = config.getConfig('bidderTimeout');
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  _each(validBidRequests, bidRequest => {
+  utils._each(validBidRequests, bidRequest => {
     const {
       bidId,
       mediaTypes = {},
@@ -286,8 +287,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       schain,
       transactionId,
       userId = {},
-      ortb2Imp,
-      adUnitCode = ''
+      ortb2Imp
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
@@ -295,24 +295,11 @@ function buildRequests(validBidRequests, bidderRequest) {
     let data = {};
     let gpid = '';
 
-    const date = new Date();
-    const lt = date.getTime();
-    const to = date.getTimezoneOffset();
-
-    // ADTS-174 Removed unnecessary checks to fix failing test
-    data.lt = lt;
-    data.to = to;
-
-    // ADTS-169 add adUnitCode to requests
-    if (adUnitCode) data.aun = adUnitCode
-
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
 
-    // ADJS-1024 & ADSS-1297
-    if (deepAccess(ortb2Imp, 'ext.data.pbadslot')) {
-      gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot')
-    } else if (deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
+    // ADJS-1024
+    if (utils.deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
       gpid = ortb2Imp.ext.data.adserver.adslot
     }
 
@@ -349,11 +336,11 @@ function buildRequests(validBidRequests, bidderRequest) {
         const [maxw, maxh] = getGreatestDimensions(sizes);
         data.maxw = maxw;
         data.maxh = maxh;
-        data.si = params.slot;
+        data.si = parseInt(params.slot, 10);
         data.pi = 3;
         data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
       } else if (params.native) {
-        data.ni = params.native;
+        data.ni = parseInt(params.native, 10);
         data.pi = 5;
       } else if (mediaTypes.video) {
         data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
@@ -404,12 +391,12 @@ function handleLegacyParams(params, sizes) {
     const [maxw, maxh] = getGreatestDimensions(sizes);
     data.maxw = maxw;
     data.maxh = maxh;
-    data.si = params.inSlot;
+    data.si = parseInt(params.inSlot, 10);
     data.pi = 3;
     data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
   }
   if (params.ICV) {
-    data.ni = params.ICV;
+    data.ni = parseInt(params.ICV, 10);
     data.pi = 5;
   }
   if (params.videoPubID) {
@@ -446,7 +433,7 @@ function interpretResponse(serverResponse, bidRequest) {
     setTimeout(() => {
       !!invalidRequestIds[id] && delete invalidRequestIds[id];
     }, delayTime);
-    logWarn(`[GumGum] Please check the implementation for ${id}`);
+    utils.logWarn(`[GumGum] Please check the implementation for ${id}`);
   }
 
   const defaultResponse = {
@@ -494,19 +481,14 @@ function interpretResponse(serverResponse, bidRequest) {
     advertiserDomains: advertiserDomains || [],
     mediaType: type || mediaType
   };
-  let sizes = parseSizesInput(bidRequest.sizes);
+  let sizes = utils.parseSizesInput(bidRequest.sizes);
 
   if (maxw && maxh) {
     sizes = [`${maxw}x${maxh}`];
   } else if (product === 5 && includes(sizes, '1x1')) {
     sizes = ['1x1'];
   } else if (product === 2 && includes(sizes, '1x1')) {
-    const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
-      const [ width, height ] = current;
-      if (responseWidth === width || responseHeight === height) result.push(current.join('x'));
-      return result
-    }, [])) || [];
-    sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
+    sizes = responseWidth && responseHeight ? [`${responseWidth}x${responseHeight}`] : utils.parseSizesInput(bidRequest.sizes)
   }
 
   let [width, height] = sizes[0].split('x');

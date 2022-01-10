@@ -1,13 +1,9 @@
 # Overview
 
 ```
-Module Name: Undertone Bidder Adapter
+Module Name: Example Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: RampProgrammatic@perion.com
-gdpr_supported: true
-usp_supported: true
-schain_supported: true
-media_types: video, native
 ```
 # Description
 

@@ -1,14 +1,13 @@
-import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import {ajax} from '../src/ajax.js';
-import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
-const DEFAULT_VIDEO_HEIGHT = 360;
+const DEFAULT_VIDEO_HEIGHT = 480;
 const ORIGIN = 'https://sonic.impactify.media';
 const LOGGER_URI = 'https://logger.impactify.media';
 const AUCTIONURI = '/bidder';
@@ -33,24 +32,12 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     id: bidderRequest.auctionId,
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
-    imp: [],
-    source: {tid: bidderRequest.auctionId}
+    imp: []
   };
 
   // Force impactify debugging parameter
-  if (window.localStorage.getItem('_im_db_bidder') != null) {
-    request.test = Number(window.localStorage.getItem('_im_db_bidder'));
-  }
-
-  // Set Schain in request
-  let schain = deepAccess(validBidRequests, '0.schain');
-  if (schain) request.source.ext = { schain: schain };
-
-  // Set eids
-  let bidUserId = deepAccess(validBidRequests, '0.userId');
-  let eids = createEidsArray(bidUserId);
-  if (eids.length) {
-    deepSetValue(request, 'user.ext.eids', eids);
+  if (window.localStorage.getItem('_im_db_bidder') == 3) {
+    request.test = 3;
   }
 
   // Set device/user/site
@@ -71,23 +58,23 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   let gdprApplies = 0;
   if (bidderRequest.gdprConsent) {
     if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-    deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+    utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
-  deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
+  utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
 
   if (bidderRequest.uspConsent) {
-    deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     this.syncStore.uspConsent = bidderRequest.uspConsent;
   }
 
-  if (GETCONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
+  if (GETCONFIG('coppa') == true) utils.deepSetValue(request, 'regs.coppa', 1);
 
   if (bidderRequest.uspConsent) {
-    deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
   // Set buyer uid
-  deepSetValue(request, 'user.buyeruid', generateUUID());
+  utils.deepSetValue(request, 'user.buyeruid', utils.generateUUID());
 
   // Create imps with bids
   validBidRequests.forEach((bid) => {
@@ -119,7 +106,7 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: ['video', 'banner'],
+  supportedMediaTypes: ['video'],
   aliases: BIDDER_ALIAS,
 
   /**

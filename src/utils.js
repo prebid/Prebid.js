@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
-import { getGlobal } from './prebidGlobal.js';
 import clone from 'just-clone';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
@@ -483,42 +482,15 @@ export function insertElement(elm, doc, target, asLastChildChild) {
 }
 
 /**
- * Returns a promise that completes when the given element triggers a 'load' or 'error' DOM event, or when
- * `timeout` milliseconds have elapsed.
- *
- * @param {HTMLElement} element
- * @param {Number} [timeout]
- * @returns {Promise}
- */
-export function waitForElementToLoad(element, timeout) {
-  let timer = null;
-  return new Promise((resolve) => {
-    const onLoad = function() {
-      element.removeEventListener('load', onLoad);
-      element.removeEventListener('error', onLoad);
-      if (timer != null) {
-        window.clearTimeout(timer);
-      }
-      resolve();
-    };
-    element.addEventListener('load', onLoad);
-    element.addEventListener('error', onLoad);
-    if (timeout != null) {
-      timer = window.setTimeout(onLoad, timeout);
-    }
-  });
-}
-
-/**
  * Inserts an image pixel with the specified `url` for cookie sync
  * @param {string} url URL string of the image pixel to load
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
- * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
  */
-export function triggerPixel(url, done, timeout) {
+export function triggerPixel(url, done) {
   const img = new Image();
   if (done && internal.isFn(done)) {
-    waitForElementToLoad(img, timeout).then(done);
+    img.addEventListener('load', done);
+    img.addEventListener('error', done);
   }
   img.src = url;
 }
@@ -566,18 +538,18 @@ export function insertHtmlIntoIframe(htmlCode) {
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
- * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
-export function insertUserSyncIframe(url, done, timeout) {
+export function insertUserSyncIframe(url, done) {
   let iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
   if (done && internal.isFn(done)) {
-    waitForElementToLoad(iframe, timeout).then(done);
+    iframe.addEventListener('load', done);
+    iframe.addEventListener('error', done);
   }
   internal.insertElement(iframe, document, 'html', true);
-}
+};
 
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
@@ -1272,18 +1244,7 @@ export function mergeDeep(target, ...sources) {
         if (!target[key]) {
           Object.assign(target, { [key]: source[key] });
         } else if (isArray(target[key])) {
-          source[key].forEach(obj => {
-            let addItFlag = 1;
-            for (let i = 0; i < target[key].length; i++) {
-              if (deepEqual(target[key][i], obj)) {
-                addItFlag = 0;
-                break;
-              }
-            }
-            if (addItFlag) {
-              target[key].push(obj);
-            }
-          });
+          target[key] = target[key].concat(source[key]);
         }
       } else {
         Object.assign(target, { [key]: source[key] });
@@ -1332,10 +1293,4 @@ export function cyrb53Hash(str, seed = 0) {
   h1 = imul(h1 ^ (h1 >>> 16), 2246822507) ^ imul(h2 ^ (h2 >>> 13), 3266489909);
   h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
-}
-
-export function isAllowZeroCpmBidsEnabled(bidderCode) {
-  const bidderSettings = getGlobal().bidderSettings;
-  return ((bidderSettings[bidderCode] && bidderSettings[bidderCode].allowZeroCpmBids === true) ||
-   (bidderSettings.standard && bidderSettings.standard.allowZeroCpmBids === true));
 }

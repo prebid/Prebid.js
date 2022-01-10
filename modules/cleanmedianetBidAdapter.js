@@ -1,4 +1,4 @@
-import { getDNT, inIframe, isArray, isNumber, logError, deepAccess, logWarn } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
@@ -76,7 +76,7 @@ export const spec = {
         },
         device: {
           ua: navigator.userAgent,
-          dnt: getDNT() ? 1 : 0,
+          dnt: utils.getDNT() ? 1 : 0,
           h: screen.height,
           w: screen.width,
           language: navigator.language
@@ -129,7 +129,7 @@ export const spec = {
               w: sizes.length ? sizes[0][0] : 300,
               h: sizes.length ? sizes[0][1] : 250,
               pos: params.pos || 0,
-              topframe: inIframe() ? 0 : 1
+              topframe: utils.inIframe() ? 0 : 1
             }
           });
           rtbBidRequest.imp.push(bannerImp);
@@ -147,10 +147,10 @@ export const spec = {
           };
 
           let playerSize = mediaTypes.video.playerSize || sizes;
-          if (isArray(playerSize[0])) {
+          if (utils.isArray(playerSize[0])) {
             videoImp.video.w = playerSize[0][0];
             videoImp.video.h = playerSize[0][1];
-          } else if (isNumber(playerSize[0])) {
+          } else if (utils.isNumber(playerSize[0])) {
             videoImp.video.w = playerSize[0];
             videoImp.video.h = playerSize[1];
           } else {
@@ -179,7 +179,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse && serverResponse.body;
     if (!response) {
-      logError('empty response');
+      utils.logError('empty response');
       return [];
     }
 
@@ -203,7 +203,7 @@ export const spec = {
       };
 
       if (
-        deepAccess(
+        utils.deepAccess(
           bidRequest.bidRequest,
           'mediaTypes.' + outBid.mediaType
         )
@@ -211,7 +211,7 @@ export const spec = {
         if (outBid.mediaType === BANNER) {
           outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
         } else if (outBid.mediaType === VIDEO) {
-          const context = deepAccess(
+          const context = utils.deepAccess(
             bidRequest.bidRequest,
             'mediaTypes.video.context'
           );
@@ -287,7 +287,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
   try {
     renderer.setRender(renderOutstream);
   } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
 }

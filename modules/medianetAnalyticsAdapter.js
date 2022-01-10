@@ -1,7 +1,7 @@
-import { triggerPixel, deepAccess, getWindowTop, uniques, groupBy, isEmpty, _map, isPlainObject, logInfo, logError } from '../src/utils.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
+import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity } from '../src/auction.js';
@@ -42,9 +42,16 @@ const VALID_URL_KEY = ['canonical_url', 'og_url', 'twitter_url'];
 const DEFAULT_URL_KEY = 'page';
 
 const LOG_TYPE = {
+  AP: 'AP',
+  PR: 'PR',
   APPR: 'APPR',
   RA: 'RA'
 };
+
+const BATCHING = {
+  SINGLE: 'SINGLE',
+  MULTI: 'MULTI'
+}
 
 let auctions = {};
 let config;
@@ -59,6 +66,7 @@ class ErrorLogger {
     this.project = 'prebidanalytics';
     this.dn = pageDetails.domain || '';
     this.requrl = pageDetails.requrl || '';
+    this.event = this.event;
     this.pbversion = PREBID_VERSION;
     this.cid = config.cid || '';
     this.rd = additionalData;
@@ -66,7 +74,7 @@ class ErrorLogger {
 
   send() {
     let url = EVENT_PIXEL_URL + '?' + formatQS(this);
-    triggerPixel(url);
+    utils.triggerPixel(url);
   }
 }
 
@@ -81,8 +89,16 @@ class Configure {
     this.gdprConsent = undefined;
     this.gdprApplies = undefined;
     this.uspConsent = undefined;
+    this.pixelWaitTime = 0;
+    this.apLoggingPct = 0;
+    this.prLoggingPct = 0;
+    this.batching = BATCHING.SINGLE;
     this.shouldBeLogged = {};
     this.mnetDebugConfig = '';
+  }
+
+  set publisherLper(plper) {
+    this.pubLper = plper;
   }
 
   getLoggingData() {
@@ -123,10 +139,24 @@ class Configure {
     if (!isNaN(parseInt(response.percentage, 10))) {
       this.loggingPercent = response.percentage;
     }
+
+    if (!isNaN(parseInt(response.pixelwaittime, 10))) {
+      this.pixelWaitTime = response.pixelwaittime;
+    }
+
+    if (!isNaN(parseInt(response.aplper, 10))) {
+      this.apLoggingPct = response.aplper;
+      this.batching = BATCHING.MULTI;
+    }
+
+    if (!isNaN(parseInt(response.prlper, 10))) {
+      this.prLoggingPct = response.prlper;
+      this.batching = BATCHING.MULTI;
+    }
   }
 
   overrideDomainLevelData(response) {
-    const domain = deepAccess(response, 'domain.' + pageDetails.domain);
+    const domain = utils.deepAccess(response, 'domain.' + pageDetails.domain);
     if (domain) {
       this.setDataFromResponse(domain);
     }
@@ -149,14 +179,14 @@ class Configure {
   init() {
     // Forces Logging % to 100%
     let urlObj = URL.parseUrl(pageDetails.page);
-    if (deepAccess(urlObj, 'search.medianet_test') || urlObj.hostname === 'localhost') {
+    if (utils.deepAccess(urlObj, 'search.medianet_test') || urlObj.hostname === 'localhost') {
       this.loggingPercent = 100;
       this.ajaxState = CONFIG_PASS;
       this.debug = true;
       return;
     }
-    if (deepAccess(urlObj, 'search.mnet_setconfig')) {
-      this.mnetDebugConfig = deepAccess(urlObj, 'search.mnet_setconfig');
+    if (utils.deepAccess(urlObj, 'search.mnet_setconfig')) {
+      this.mnetDebugConfig = utils.deepAccess(urlObj, 'search.mnet_setconfig');
     }
     ajax(
       this._configURL(),
@@ -201,7 +231,7 @@ class PageDetail {
 
   _getAttributeFromSelector(selector, attribute) {
     try {
-      let doc = getWindowTop().document;
+      let doc = utils.getWindowTop().document;
       let element = doc.querySelector(selector);
       if (element !== null && element[attribute]) {
         return element[attribute];
@@ -210,7 +240,7 @@ class PageDetail {
   }
 
   _getAbsoluteUrl(url) {
-    let aTag = getWindowTop().document.createElement('a');
+    let aTag = utils.getWindowTop().document.createElement('a');
     aTag.href = url;
 
     return aTag.href;
@@ -238,14 +268,18 @@ class AdSlot {
     this.context = context;
     this.adext = adext;
     this.logged = {};
+    this.logged[LOG_TYPE.PR] = false;
+    this.logged[LOG_TYPE.AP] = false;
+    this.logged[LOG_TYPE.APPR] = false;
     this.targeting = undefined;
     this.medianetPresent = 0;
   }
 
   getShouldBeLogged(logType) {
     if (!config.shouldBeLogged.hasOwnProperty(logType)) {
-      config.shouldBeLogged[logType] = isSampled();
+      config.shouldBeLogged[logType] = isSampled(logType);
     }
+    config.shouldBeLogged[logType] = isSampled(logType);
     return config.shouldBeLogged[logType];
   }
 
@@ -309,7 +343,7 @@ class Bid {
       bdp: this.cpm,
       cbdp: this.dfpbd,
       dfpbd: this.dfpbd,
-      szs: this.allMediaTypeSizes.join('|'),
+      szs: this.allMediaTypeSizes.map(sz => sz.join('x')).join('|'),
       size: this.size,
       mtype: this.mediaType,
       dId: this.dealId,
@@ -358,8 +392,8 @@ class Auction {
       flrdata: this._mergeFieldsToLog({
         ln: this.floorData.location,
         skp: this.floorData.skipped,
-        enfj: deepAccess(this.floorData, 'enforcements.enforceJS'),
-        enfd: deepAccess(this.floorData, 'enforcements.floorDeals'),
+        enfj: utils.deepAccess(this.floorData, 'enforcements.enforceJS'),
+        enfd: utils.deepAccess(this.floorData, 'enforcements.floorDeals'),
         sr: this.floorData.skipRate,
         fs: this.floorData.fetchStatus
       }),
@@ -411,7 +445,7 @@ function auctionInitHandler({auctionId, adUnits, timeout, timestamp, bidderReque
     auctions[auctionId].auctionInitTime = timestamp;
   }
   addAddSlots(auctionId, adUnits, timeout);
-  const floorData = deepAccess(bidderRequests, '0.bids.0.floorData');
+  const floorData = utils.deepAccess(bidderRequests, '0.bids.0.floorData');
   if (floorData) {
     auctions[auctionId].floorData = {...floorData};
   }
@@ -419,10 +453,10 @@ function auctionInitHandler({auctionId, adUnits, timeout, timestamp, bidderReque
 
 function addAddSlots(auctionId, adUnits, tmax) {
   adUnits = adUnits || [];
-  const groupedAdUnits = groupBy(adUnits, 'code');
+  const groupedAdUnits = utils.groupBy(adUnits, 'code');
   Object.keys(groupedAdUnits).forEach((adUnitCode) => {
     const adUnits = groupedAdUnits[adUnitCode];
-    const supplyAdCode = deepAccess(adUnits, '0.adUnitCode') || adUnitCode;
+    const supplyAdCode = utils.deepAccess(adUnits, '0.adUnitCode') || adUnitCode;
     let context = '';
     let adext = {};
 
@@ -430,20 +464,21 @@ function addAddSlots(auctionId, adUnits, tmax) {
     const oSizes = {banner: [], video: []};
     adUnits.forEach(({mediaTypes, sizes, ext}) => {
       mediaTypes = mediaTypes || {};
-      adext = Object.assign(adext, ext || deepAccess(mediaTypes, 'banner.ext'));
-      context = deepAccess(mediaTypes, 'video.context') || context;
+      adext = Object.assign(adext, ext || utils.deepAccess(mediaTypes, 'banner.ext'));
+      context = utils.deepAccess(mediaTypes, 'video.context') || context;
       Object.keys(mediaTypes).forEach((mediaType) => mediaTypeMap[mediaType] = 1);
       const sizeObject = _getSizes(mediaTypes, sizes);
       sizeObject.banner.forEach(size => oSizes.banner.push(size));
       sizeObject.video.forEach(size => oSizes.video.push(size));
     });
 
-    adext = isEmpty(adext) ? undefined : adext;
-    oSizes.banner = oSizes.banner.filter(uniques);
-    oSizes.video = oSizes.video.filter(uniques);
-    oSizes.native = mediaTypeMap.native === 1 ? [[1, 1].join('x')] : [];
+    adext = utils.isEmpty(adext) ? undefined : adext;
+    oSizes.banner = oSizes.banner.filter(utils.uniques);
+    oSizes.video = oSizes.video.filter(utils.uniques);
+    oSizes.native = mediaTypeMap.native === 1 ? [[1, 1]] : [];
     const allMediaTypeSizes = [].concat(oSizes.banner, oSizes.native, oSizes.video);
     const mediaTypes = Object.keys(mediaTypeMap).join('|');
+
     auctions[auctionId].addSlot({adUnitCode, supplyAdCode, mediaTypes, allMediaTypeSizes, context, tmax, adext});
   });
 }
@@ -468,26 +503,22 @@ function bidRequestedHandler({ auctionId, auctionStart, bids, start, uspConsent,
     const bidObj = new Bid(bidId, bidder, src, start, adUnitCode, mediaTypes && Object.keys(mediaTypes).join('|'), requestSizes);
     auctions[auctionId].addBid(bidObj);
     if (bidder === MEDIANET_BIDDER_CODE) {
-      bidObj.crid = deepAccess(bid, 'params.crid');
-      bidObj.pubcrid = deepAccess(bid, 'params.crid');
+      bidObj.crid = utils.deepAccess(bid, 'params.crid');
+      bidObj.pubcrid = utils.deepAccess(bid, 'params.crid');
       auctions[auctionId].adSlots[adUnitCode].medianetPresent = 1;
     }
   });
 }
 
 function _getSizes(mediaTypes, sizes) {
-  const banner = deepAccess(mediaTypes, 'banner.sizes') || sizes || [];
-  const native = deepAccess(mediaTypes, 'native') ? [[1, 1]] : [];
-  const playerSize = deepAccess(mediaTypes, 'video.playerSize') || [];
+  const banner = utils.deepAccess(mediaTypes, 'banner.sizes') || sizes || [];
+  const native = utils.deepAccess(mediaTypes, 'native') ? [[1, 1]] : [];
+  const playerSize = utils.deepAccess(mediaTypes, 'video.playerSize') || [];
   let video = [];
   if (playerSize.length === 2) {
     video = [playerSize]
   }
-  return {
-    banner: banner.map(size => size.join('x')),
-    native: native.map(size => size.join('x')),
-    video: video.map(size => size.join('x'))
-  }
+  return { banner, native, video }
 }
 
 function bidResponseHandler(bid) {
@@ -506,10 +537,10 @@ function bidResponseHandler(bid) {
     { cpm, width, height, mediaType, timeToRespond, dealId, creativeId },
     { adId, currency }
   );
-  bidObj.floorPrice = deepAccess(bid, 'floorData.floorValue');
-  bidObj.floorRule = deepAccess(bid, 'floorData.floorRule');
+  bidObj.floorPrice = utils.deepAccess(bid, 'floorData.floorValue');
+  bidObj.floorRule = utils.deepAccess(bid, 'floorData.floorRule');
   bidObj.originalCpm = originalCpm || cpm;
-  let dfpbd = deepAccess(bid, 'adserverTargeting.hb_pb');
+  let dfpbd = utils.deepAccess(bid, 'adserverTargeting.hb_pb');
   if (!dfpbd) {
     let priceGranularity = getPriceGranularity(mediaType, bid);
     let priceGranularityKey = PRICE_GRANULARITY[priceGranularity];
@@ -562,12 +593,18 @@ function bidTimeoutHandler(timedOutBids) {
   })
 }
 
-function auctionEndHandler({auctionId, auctionEnd}) {
+function auctionEndHandler({auctionId, auctionEnd, adUnitCodes}) {
   if (!(auctions[auctionId] instanceof Auction)) {
     return;
   }
   auctions[auctionId].status = AUCTION_COMPLETED;
   auctions[auctionId].auctionEndTime = auctionEnd;
+
+  if (config.batching === BATCHING.MULTI) {
+    adUnitCodes.forEach(function (adUnitCode) {
+      sendEvent(auctionId, adUnitCode, LOG_TYPE.PR);
+    });
+  }
 }
 
 function setTargetingHandler(params) {
@@ -598,13 +635,32 @@ function setTargetingHandler(params) {
       auctionObj.bids.forEach(bid => {
         if (bid.bidder === DUMMY_BIDDER && bid.adUnitCode === adunit) {
           bid.iwb = bidAdIds.length === 0 ? 0 : 1;
-          bid.width = deepAccess(winningBid, 'width');
-          bid.height = deepAccess(winningBid, 'height');
+          bid.width = utils.deepAccess(winningBid, 'width');
+          bid.height = utils.deepAccess(winningBid, 'height');
         }
       });
-      sendEvent(auctionId, adunit, LOG_TYPE.APPR);
+      sendEvent(auctionId, adunit, getLogType());
     }
   }
+}
+
+function getLogType() {
+  if (config.batching === BATCHING.SINGLE) {
+    return LOG_TYPE.APPR;
+  }
+  return LOG_TYPE.AP;
+}
+
+function setBidderDone(params) {
+  if (config.pixelWaitTime != null && config.pixelWaitTime > 0) {
+    setTimeout(fireApAfterWait, config.pixelWaitTime, params)
+  }
+}
+
+function fireApAfterWait(params) {
+  params.bids.forEach(function (adUnit) {
+    sendEvent(params.auctionId, adUnit.adUnitCode, LOG_TYPE.AP);
+  });
 }
 
 function bidWonHandler(bid) {
@@ -621,8 +677,20 @@ function bidWonHandler(bid) {
   sendEvent(auctionId, adUnitCode, LOG_TYPE.RA);
 }
 
-function isSampled() {
-  return Math.random() * 100 < parseFloat(config.loggingPercent);
+function isSampled(logType) {
+  return Math.random() * 100 < parseFloat(getLogPercentage(logType));
+}
+
+function getLogPercentage(logType) {
+  let logPercentage = config.loggingPercent;
+  if (config.batching === BATCHING.MULTI) {
+    if (logType === LOG_TYPE.AP) {
+      logPercentage = config.apLoggingPct;
+    } else if (logType === LOG_TYPE.PR) {
+      logPercentage = config.prLoggingPct;
+    }
+  }
+  return logPercentage;
 }
 
 function isValidAuctionAdSlot(acid, adtag) {
@@ -643,8 +711,13 @@ function sendEvent(id, adunit, logType) {
 function fireApPrLog(auctionId, adUnitName, logType) {
   const adSlot = auctions[auctionId].adSlots[adUnitName];
   if (adSlot.getShouldBeLogged(logType) && !adSlot.logged[logType]) {
+    if (config.batching === BATCHING.SINGLE) {
+      adSlot.logged[LOG_TYPE.AP] = true;
+      adSlot.logged[LOG_TYPE.PR] = true;
+    } else {
+      adSlot.logged[logType] = true;
+    }
     fireAuctionLog(auctionId, adUnitName, logType);
-    adSlot.logged[logType] = true;
   }
 }
 
@@ -658,7 +731,7 @@ function getCommonLoggingData(acid, adtag) {
 function fireAuctionLog(acid, adtag, logType) {
   let commonParams = getCommonLoggingData(acid, adtag);
   commonParams.lgtp = logType;
-  let targeting = deepAccess(commonParams, 'targ');
+  let targeting = utils.deepAccess(commonParams, 'targ');
 
   Object.keys(commonParams).forEach((key) => (commonParams[key] == null) && delete commonParams[key]);
   delete commonParams.targ;
@@ -686,11 +759,11 @@ function fireAuctionLog(acid, adtag, logType) {
 }
 
 function formatQS(data) {
-  return _map(data, (value, key) => {
+  return utils._map(data, (value, key) => {
     if (value === undefined) {
       return key + '=';
     }
-    if (isPlainObject(value)) {
+    if (utils.isPlainObject(value)) {
       value = JSON.stringify(value);
     }
     return key + '=' + encodeURIComponent(value);
@@ -699,7 +772,7 @@ function formatQS(data) {
 
 function firePixel(qs) {
   logsQueue.push(ENDPOINT + '&' + qs);
-  triggerPixel(ENDPOINT + '&' + qs);
+  utils.triggerPixel(ENDPOINT + '&' + qs);
 }
 
 class URL {
@@ -740,7 +813,7 @@ let medianetAnalytics = Object.assign(adapter({URL, analyticsType}), {
   },
   track({ eventType, args }) {
     if (config.debug) {
-      logInfo(eventType, args);
+      utils.logInfo(eventType, args);
     }
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT: {
@@ -771,6 +844,10 @@ let medianetAnalytics = Object.assign(adapter({URL, analyticsType}), {
         setTargetingHandler(args);
         break;
       }
+      case CONSTANTS.EVENTS.BIDDER_DONE : {
+        setBidderDone(args);
+        break;
+      }
       case CONSTANTS.EVENTS.BID_WON: {
         bidWonHandler(args);
         break;
@@ -782,7 +859,7 @@ medianetAnalytics.originEnableAnalytics = medianetAnalytics.enableAnalytics;
 
 medianetAnalytics.enableAnalytics = function (configuration) {
   if (!configuration || !configuration.options || !configuration.options.cid) {
-    logError('Media.net Analytics adapter: cid is required.');
+    utils.logError('Media.net Analytics adapter: cid is required.');
     return;
   }
   $$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
@@ -791,7 +868,7 @@ medianetAnalytics.enableAnalytics = function (configuration) {
   pageDetails = new PageDetail();
 
   config = new Configure(configuration.options.cid);
-  config.pubLper = configuration.options.sampling || '';
+  config.publisherLper = configuration.options.sampling || '';
   config.init();
   configuration.options.sampling = 1;
   medianetAnalytics.originEnableAnalytics(configuration);

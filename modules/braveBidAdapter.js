@@ -1,4 +1,4 @@
-import { parseUrl, isEmpty, isStr, triggerPixel } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -90,7 +90,7 @@ export const spec = {
         ua: navigator.userAgent,
       },
       site: {
-        domain: parseUrl(page).hostname,
+        domain: utils.parseUrl(page).hostname,
         page: page,
       },
       tmax: bidderRequest.timeout || config.getConfig('bidderTimeout') || 500,
@@ -134,7 +134,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse) => {
-    if (!serverResponse || isEmpty(serverResponse.body)) return [];
+    if (!serverResponse || utils.isEmpty(serverResponse.body)) return [];
 
     let bids = [];
     serverResponse.body.seatbid.forEach(response => {
@@ -173,8 +173,8 @@ export const spec = {
   },
 
   onBidWon: (bid) => {
-    if (isStr(bid.nurl) && bid.nurl !== '') {
-      triggerPixel(bid.nurl);
+    if (utils.isStr(bid.nurl) && bid.nurl !== '') {
+      utils.triggerPixel(bid.nurl);
     }
   }
 };

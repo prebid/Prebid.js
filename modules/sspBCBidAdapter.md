@@ -7,7 +7,7 @@ Maintainer: wojciech.bialy@grupawp.pl
 # Description
 
 Module that connects to Wirtualna Polska Media header bidding endpoint to fetch bids.
-Supports Banner, Video (instream) and Native formats 
+Only banner format is supported.
 Supported currencies: USD, EUR, PLN
 
 Required parameters:
