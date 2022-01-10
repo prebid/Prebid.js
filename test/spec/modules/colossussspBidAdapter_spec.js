@@ -61,6 +61,7 @@ describe('ColossussspAdapter', function () {
     });
     it('Should return false when placement_id is not a number', function () {
       bid.params.placement_id = 'aaa';
+      delete bid.params.group_id;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
