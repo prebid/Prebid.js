@@ -529,8 +529,8 @@ Object.assign(ORTB2.prototype, {
       this.adUnitsByImp[impressionId] = adUnit;
 
       const nativeParams = adUnit.nativeParams;
-      let nativeAssets;
-      if (nativeParams) {
+      let nativeAssets = nativeAssetCache[impressionId] = deepAccess(nativeParams, 'ortb.assets');
+      if (nativeParams && !nativeAssets) {
         try {
           nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
             let params = nativeParams[type];
@@ -981,30 +981,36 @@ Object.assign(ORTB2.prototype, {
             }
 
             if (isPlainObject(adm) && Array.isArray(adm.assets)) {
-              let origAssets = nativeAssetCache[bid.impid];
-              bidObject.native = cleanObj(adm.assets.reduce((native, asset) => {
-                let origAsset = origAssets[asset.id];
-                if (isPlainObject(asset.img)) {
-                  native[origAsset.img.type ? nativeImgIdMap[origAsset.img.type] : 'image'] = pick(
-                    asset.img,
-                    ['url', 'w as width', 'h as height']
-                  );
-                } else if (isPlainObject(asset.title)) {
-                  native['title'] = asset.title.text
-                } else if (isPlainObject(asset.data)) {
-                  nativeDataNames.forEach(dataType => {
-                    if (nativeDataIdMap[dataType] === origAsset.data.type) {
-                      native[dataType] = asset.data.value;
-                    }
-                  });
+              if (deepAccess(bidRequest, 'mediaTypes.native.ortb')) {
+                bidObject.native = {
+                  ortb: adm,
                 }
-                return native;
-              }, cleanObj({
-                clickUrl: adm.link,
-                clickTrackers: deepAccess(adm, 'link.clicktrackers'),
-                impressionTrackers: trackers[nativeEventTrackerMethodMap.img],
-                javascriptTrackers: trackers[nativeEventTrackerMethodMap.js]
-              })));
+              } else {
+                let origAssets = nativeAssetCache[bid.impid];
+                bidObject.native = cleanObj(adm.assets.reduce((native, asset) => {
+                  let origAsset = origAssets[asset.id];
+                  if (isPlainObject(asset.img)) {
+                    native[origAsset.img.type ? nativeImgIdMap[origAsset.img.type] : 'image'] = pick(
+                      asset.img,
+                      ['url', 'w as width', 'h as height']
+                    );
+                  } else if (isPlainObject(asset.title)) {
+                    native['title'] = asset.title.text
+                  } else if (isPlainObject(asset.data)) {
+                    nativeDataNames.forEach(dataType => {
+                      if (nativeDataIdMap[dataType] === origAsset.data.type) {
+                        native[dataType] = asset.data.value;
+                      }
+                    });
+                  }
+                  return native;
+                }, cleanObj({
+                  clickUrl: adm.link,
+                  clickTrackers: deepAccess(adm, 'link.clicktrackers'),
+                  impressionTrackers: trackers[nativeEventTrackerMethodMap.img],
+                  javascriptTrackers: trackers[nativeEventTrackerMethodMap.js]
+                })));
+              }
             } else {
               logError('prebid server native response contained no assets');
             }
