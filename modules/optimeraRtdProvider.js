@@ -173,7 +173,9 @@ export function setScoresURL() {
 }
 
 /**
- * Set the scores for the divice if given.
+ * Set the scores for the device if given.
+ * Add any any insights to the winddow.optimeraInsights object.
+ *
  * @param {*} result
  * @returns {string} JSON string of Optimera Scores.
  */
@@ -183,6 +185,11 @@ export function setScores(result) {
     scores = JSON.parse(result);
     if (device !== 'default' && scores.device[device]) {
       scores = scores.device[device];
+    }
+    logInfo(scores);
+    if (scores.insights) {
+      window.optimeraInsights = window.optimeraInsights || {};
+      window.optimeraInsights.data = scores.insights;
     }
   } catch (e) {
     logError('Optimera score file could not be parsed.');
