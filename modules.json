@@ -11,6 +11,7 @@
   "adotBidAdapter",
   "aniviewBidAdapter",
   "appnexusBidAdapter",
+  "bliinkBidAdapter",
   "criteoBidAdapter",
   "digitekaVideoBidAdapter",
   "freewheel-sspBidAdapter",
