@@ -155,45 +155,19 @@ function _buildPostBody(bidRequests) {
 }
 
 function _isVideoBidRequest(bidRequest) {
-  if (_isValidVideoObject(bidRequest)) {
-    if (_IsInstream(bidRequest) || _IsOutstream(bidRequest)) {
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
-}
-
-function _IsInstream(bidRequest) {
-  if (_isValidVideoObject(bidRequest)) {
-    if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
+  return _isValidVideoObject(bidRequest) && (_IsInstream(bidRequest) || _IsOutstream(bidRequest));
 }
 
 function _IsOutstream(bidRequest) {
-  if (_isValidVideoObject(bidRequest)) {
-    if (bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream') {
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
+  return _isValidVideoObject(bidRequest) && bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream';
+}
+
+function _IsInstream(bidRequest) {
+  return _isValidVideoObject(bidRequest) && bidRequest.mediaTypes.video.context.toLowerCase() === 'instream';
 }
 
 function _isValidVideoObject(bidRequest) {
-  if (!bidRequest.mediaTypes.video) return false;
-  if (!bidRequest.mediaTypes.video.context) return false;
-  return true;
+  return bidRequest.mediaTypes.video && bidRequest.mediaTypes.video.context;
 }
 
 function _getORTBVideo(bidRequest) {
