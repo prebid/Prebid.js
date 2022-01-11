@@ -1,15 +1,14 @@
 /**
- * This module adds trustpid to the User ID module
- * The {@link module:modules/userId} module is required
- * @module modules/trustpidSystem
- * @requires module:modules/userId
- */
-import {submodule} from '../src/hook.js'
+* This module adds TrustPid provided by Vodafone Sales and Services Limited to the User ID module
+* The {@link module:modules/userId} module is required
+* @module modules/trustpidSystem
+* @requires module:modules/userId
+*/
+import {submodule} from '../src/hook.js';
 
-const MODULE_NAME = 'trustpid'
-
-let mnoAcronym = ''
-let mnoDomain = ''
+const MODULE_NAME = 'trustpid';
+let mnoAcronym = '';
+let mnoDomain = '';
 
 /**
  * Handle an event for an iframe.
@@ -18,113 +17,134 @@ let mnoDomain = ''
  * @param event
  */
 function messageHandler(event) {
-  let msg
+  let msg;
   try {
-    msg = JSON.parse(event.data)
+    msg = JSON.parse(event.data);
   } catch (e) {
-    debugModeConsoleLog('error', e)
-    return
+    return;
   }
   if (msg.msgType === 'MNOSELECTOR') {
     if (typeof msg.body.url !== 'undefined' && msg.body.url) {
-      let URL = msg.body.url.split('//')
-      let domainURL = URL[1].split('/')
-      mnoDomain = domainURL[0]
-      debugModeConsoleLog('info', `messageHandler - set domain as: ${mnoDomain}`)
-      const prefix = '-'
+      let URL = msg.body.url.split('//');
+      let domainURL = URL[1].split('/');
+      mnoDomain = domainURL[0];
+      debugModeConsoleLog('info', `messageHandler set domain: ${mnoDomain}`);
+      let acronym = '';
+      const prefix = '-';
       switch (mnoDomain) {
         case 'tmi.mno.link':
-          mnoAcronym = prefix + 'ndye'
-          break
+          acronym = 'ndye';
+          break;
         case 'tmi.vodafone.de':
-          mnoAcronym = prefix + 'pqnx'
-          break
+          acronym = 'pqnx';
+          break;
         case 'tmi.telekom.de':
-          mnoAcronym = prefix + 'avgw'
-          break
+          acronym = 'avgw';
+          break;
         case 'tmi.tmid.es':
-          mnoAcronym = prefix + 'kjws'
-          break
+          acronym = 'kjws';
+          break;
         case 'uat.mno.link':
-          mnoAcronym = prefix + 'xxxx'
-          break
+          acronym = 'xxxx';
+          break;
         case 'es.tmiservice.orange.com':
-          mnoAcronym = prefix + 'aplw'
-          break
+          acronym = 'aplw';
+          break;
         default:
-          return 'none'
+          return 'none';
       }
+      return mnoAcronym = prefix + acronym;
     }
   }
 }
 
 // Set a listener to handle the iframe response message.
-window.addEventListener('message', messageHandler, false)
+window.addEventListener('message', messageHandler, false);
 
 /**
- * Get the "umid" from html5 local storage to make it available for Trustpid module.
+ * Get the "umid" from html5 local storage to make it available to the UserId module.
  * @param config
  * @returns {{trustpid: (*|string), acr: (string)}}
  */
 function getTrustpidFromStorage(config) {
-  const fcIdConnectDomain = JSON.parse(window.localStorage.getItem('fcIdConnectDomain'))
-  let domain = fcIdConnectDomain || mnoDomain
+  // Get the domain value from available places
+  let domain = JSON.parse(window.localStorage.getItem('fcIdConnectDomain')) ||
+    mnoDomain;
+
   if (!domain &&
     typeof config.params !== 'undefined' &&
     typeof config.params.mnoDomainFallback !== 'undefined') {
-    domain = config.params.mnoDomainFallback
+    domain = config.params.mnoDomainFallback;
   }
+  // Get the acronym value from above or use fallback
   let acronym = mnoAcronym;
   if (!acronym &&
     typeof config.params !== 'undefined' &&
     typeof config.params.acrFallback !== 'undefined') {
-    acronym = config.params.acrFallback
+    acronym = config.params.acrFallback;
   }
+
   if (!domain) {
-    debugModeConsoleLog('info', 'getTrustpid - no domain')
+    debugModeConsoleLog('info', `getTrustpid domain: no domain`);
     return {
       trustpid: undefined,
       acr: acronym,
-    }
+    };
   }
-  let fcIdConnectObject
-  let fcIdConnectData = JSON.parse(window.localStorage.getItem('fcIdConnectData'))
-  debugModeConsoleLog('info', `getTrustpid - fcIdConnectData result: ${fcIdConnectData}`)
+
+  let fcIdConnectObject;
+  let fcIdConnectData = JSON.parse(
+    window.localStorage.getItem('fcIdConnectData'));
+  debugModeConsoleLog('info', `getTrustpid fcIdConnectData:
+    ${JSON.stringify(fcIdConnectData)}`);
+
   if (fcIdConnectData &&
     fcIdConnectData.connectId &&
     Array.isArray(fcIdConnectData.connectId.idGraph) &&
     fcIdConnectData.connectId.idGraph.length > 0) {
     fcIdConnectObject = fcIdConnectData.connectId.idGraph.find(item => {
-      return item.domain === domain
-    })
+      return item.domain === domain;
+    });
   }
-  debugModeConsoleLog('info', `getTrustpid - fcIdConnectData.idGraph match for fcIdConnectDomain result: ${fcIdConnectObject}`)
+  debugModeConsoleLog('info', `getTrustpid fcIdConnectObject idGraph object:
+    ${JSON.stringify(fcIdConnectObject)}`);
+
   return {
     trustpid: (fcIdConnectObject && fcIdConnectObject.umid !== undefined)
       ? fcIdConnectObject.umid
       : undefined,
     acr: acronym,
-  }
+  };
 }
 
+/**
+ * Returns whether we are in Prebid debug mode or not.
+ * @returns {boolean}
+ */
 function isDebugMode() {
-  return (window.location.href.indexOf('?debug=true') > -1) || window.location.href.indexOf('&debug=true') > -1
+  return (window.location.href.indexOf('?pbjs_debug=true') > -1) || window.location.href.indexOf('&pbjs_debug=true') > -1
 }
 
+/**
+ * Show debugging messages in browser developer console.
+ * @param type
+ * @param data
+ */
 function debugModeConsoleLog(type = 'info', data) {
   if (isDebugMode()) {
-    /* eslint-disable */
     switch (type) {
       case 'info':
-        console.info(data)
-        break
+        // eslint-disable-next-line no-console
+        console.info(data);
+        break;
       case 'error':
-        console.error(data)
-        break
+        // eslint-disable-next-line no-console
+        console.error(data);
+        break;
       default:
-        console.log(data)
+        // eslint-disable-next-line no-console
+        console.log(data);
     }
-    /* eslint-enable */
   }
 }
 
@@ -141,19 +161,20 @@ export const trustpidSubmodule = {
    * @returns {{trustpid: string} | undefined}
    */
   decode(bidId) {
-    debugModeConsoleLog('info', `decode - bidId result: ${JSON.stringify(bidId)}`)
-    return bidId.trustpid ? bidId : undefined
+    debugModeConsoleLog('info', `decode ${JSON.stringify(bidId)}`);
+    return bidId.trustpid ? bidId : undefined;
   },
   /**
    * Get the id from helper function and initiate a new user sync.
    * @param config
    * @returns {{callback: result}|{id: {trustpid: string}}}
    */
-  getId: function (config) {
+  getId: function(config) {
     const data = getTrustpidFromStorage(config);
     if (typeof data.trustpid !== 'undefined') {
-      debugModeConsoleLog('info', `getId - step 1 result: ${JSON.stringify({id: {trustpid: data.trustpid + data.acr}})}`);
-      return {id: {trustpid: data.trustpid + data.acr}}
+      debugModeConsoleLog('info',
+        `getId result 1: ${JSON.stringify(data)}`);
+      return {id: {trustpid: data.trustpid + data.acr}};
     } else {
       if (!config) {
         config = {};
@@ -168,25 +189,26 @@ export const trustpidSubmodule = {
       let timeSpend = 0;
       const result = (callback) => {
         const data = getTrustpidFromStorage(config);
-        debugModeConsoleLog('info', `getTrustPid - result: ${JSON.stringify(data)}`);
         if (typeof data.trustpid === 'undefined') {
           if (timeSpend > config.params.maxDelayTime) {
-            debugModeConsoleLog('info', `getId - step 3 result: undefined`);
+            debugModeConsoleLog('info', `getId result 3: undefined`);
             callback(undefined);
           } else {
             timeSpend += step;
             setTimeout(() => {
               result(callback);
-            }, step)
+            }, step);
           }
         } else {
-          debugModeConsoleLog('info', `getId - step 2 result: ${JSON.stringify({trustpid: data.trustpid + data.acr})}`);
-          callback(Object.create({trustpid: data.trustpid + data.acr}));
+          debugModeConsoleLog('info', `getId result 2:`,
+            JSON.stringify({trustpid: data.trustpid + data.acr}));
+          const dataToReturn = {trustpid: data.trustpid + data.acr};
+          callback(dataToReturn);
         }
       };
       return {callback: result};
     }
-  }
-}
+  },
+};
 
 submodule('userId', trustpidSubmodule);
