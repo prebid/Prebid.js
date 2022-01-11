@@ -1,5 +1,5 @@
+import { _each, deepAccess, logWarn, tryAppendQueryString, inIframe, getWindowTop, parseUrl, parseSizesInput, isFn, getDNT, deepSetValue } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
@@ -22,16 +22,16 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     let serverRequests = [];
 
-    utils._each(validBidRequests, bidRequest => {
+    _each(validBidRequests, bidRequest => {
       const payload = createBasePayload(bidRequest, bidderRequest);
 
-      const bannerParams = utils.deepAccess(bidRequest, 'mediaTypes.banner');
-      const videoParams = utils.deepAccess(bidRequest, 'mediaTypes.video');
+      const bannerParams = deepAccess(bidRequest, 'mediaTypes.banner');
+      const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
 
       let imp;
 
       if (bannerParams && videoParams) {
-        utils.logWarn('Please note, multiple mediaTypes are not supported. The only banner will be used.')
+        logWarn('Please note, multiple mediaTypes are not supported. The only banner will be used.')
       }
 
       if (bannerParams) {
@@ -93,7 +93,7 @@ export const spec = {
       bid.ad = serverBid.adm;
     } else if (bid.mediaType === VIDEO) {
       bid.vastXml = serverBid.adm;
-      if (utils.deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream') {
+      if (deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream') {
         bid.adResponse = {
           content: bid.vastXml,
         };
@@ -112,25 +112,25 @@ export const spec = {
     if (serverResponses && serverResponses.length !== 0) {
       let query = '';
       if (gdprConsent) {
-        query = utils.tryAppendQueryString(query, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
-        query = utils.tryAppendQueryString(query, 'consents_str', gdprConsent.consentString);
+        query = tryAppendQueryString(query, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
+        query = tryAppendQueryString(query, 'consents_str', gdprConsent.consentString);
         const consentsIds = getConsentsIds(gdprConsent);
         if (consentsIds) {
-          query = utils.tryAppendQueryString(query, 'consents', consentsIds);
+          query = tryAppendQueryString(query, 'consents', consentsIds);
         }
       }
 
       if (uspConsent) {
-        query = utils.tryAppendQueryString(query, 'us_privacy', uspConsent);
+        query = tryAppendQueryString(query, 'us_privacy', uspConsent);
       }
 
-      utils._each(serverResponses, resp => {
-        const userSyncs = utils.deepAccess(resp, 'body.ext.user_syncs');
+      _each(serverResponses, resp => {
+        const userSyncs = deepAccess(resp, 'body.ext.user_syncs');
         if (!userSyncs) {
           return;
         }
 
-        utils._each(userSyncs, us => {
+        _each(userSyncs, us => {
           urls.push({
             type: us.type,
             url: us.url + (query ? '?' + query : '')
@@ -159,7 +159,7 @@ function createRenderer(bid, url) {
     id: bid.bidId,
     url: url,
     loaded: false,
-    config: utils.deepAccess(bid, 'renderer.options'),
+    config: deepAccess(bid, 'renderer.options'),
     adUnitCode: bid.adUnitCode
   });
   renderer.setRender(outstreamRender);
@@ -172,16 +172,16 @@ function getUrlsInfo(bidderRequest) {
 
   const {refererInfo} = bidderRequest;
 
-  if (utils.inIframe()) {
+  if (inIframe()) {
     page = refererInfo.referer;
   } else {
-    const w = utils.getWindowTop();
+    const w = getWindowTop();
     page = w.location.href;
     referrer = w.document.referrer || '';
   }
 
   page = config.getConfig('pageUrl') || page;
-  const url = utils.parseUrl(page);
+  const url = parseUrl(page);
   const domain = url.hostname;
 
   return {
@@ -192,7 +192,7 @@ function getUrlsInfo(bidderRequest) {
 }
 
 function getSize(paramSizes) {
-  const parsedSizes = utils.parseSizesInput(paramSizes);
+  const parsedSizes = parseSizesInput(paramSizes);
   const sizes = parsedSizes.map(size => {
     const [width, height] = size.split('x');
     const w = parseInt(width, 10);
@@ -204,7 +204,7 @@ function getSize(paramSizes) {
 }
 
 function getBidFloor(bidRequest, size) {
-  if (!utils.isFn(bidRequest.getFloor)) {
+  if (!isFn(bidRequest.getFloor)) {
     return null;
   }
 
@@ -245,7 +245,7 @@ function createBannerImp(bidRequest, bannerParams) {
   imp.banner = {
     w: size.w,
     h: size.h,
-    topframe: utils.inIframe() ? 0 : 1
+    topframe: inIframe() ? 0 : 1
   }
 
   return imp;
@@ -284,7 +284,7 @@ function getEnpoint(bidRequest) {
 }
 
 function getConsentsIds(gdprConsent) {
-  const consents = utils.deepAccess(gdprConsent, 'vendorData.purpose.consents', []);
+  const consents = deepAccess(gdprConsent, 'vendorData.purpose.consents', []);
   let consentsIds = [];
 
   Object.keys(consents).forEach(function (key) {
@@ -310,7 +310,7 @@ function createBasePayload(bidRequest, bidderRequest) {
       ref: urlsInfo.referrer
     },
     device: {
-      dnt: utils.getDNT() ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       h: window.innerHeight,
       w: window.innerWidth,
     },
@@ -320,29 +320,29 @@ function createBasePayload(bidRequest, bidderRequest) {
   };
 
   if (bidRequest.params.attr) {
-    utils.deepSetValue(payload, 'site.ext.attr', bidRequest.params.attr);
+    deepSetValue(payload, 'site.ext.attr', bidRequest.params.attr);
   }
 
   if (bidderRequest.gdprConsent) {
-    utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+    deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
     const consentsIds = getConsentsIds(bidderRequest.gdprConsent);
     if (consentsIds) {
-      utils.deepSetValue(payload, 'user.ext.consents', consentsIds);
+      deepSetValue(payload, 'user.ext.consents', consentsIds);
     }
-    utils.deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
+    deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
   }
 
   if (bidderRequest.uspConsent) {
-    utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
   if (config.getConfig('coppa')) {
-    utils.deepSetValue(payload, 'regs.coppa', 1);
+    deepSetValue(payload, 'regs.coppa', 1);
   }
 
-  const eids = utils.deepAccess(bidRequest, 'userIdAsEids');
+  const eids = deepAccess(bidRequest, 'userIdAsEids');
   if (eids && eids.length) {
-    utils.deepSetValue(payload, 'user.ext.eids', eids);
+    deepSetValue(payload, 'user.ext.eids', eids);
   }
 
   return payload;

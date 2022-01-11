@@ -1,6 +1,6 @@
 'use strict';
 
-import * as utils from '../src/utils.js';
+import { tryAppendQueryString } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -128,11 +128,11 @@ export const spec = {
   },
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     if (gdprConsent && SYNC_ENDPOINT.indexOf('gdpr') === -1) {
-      SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
+      SYNC_ENDPOINT = tryAppendQueryString(SYNC_ENDPOINT, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
     }
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string' && SYNC_ENDPOINT.indexOf('gdpr_consent') === -1) {
-      SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'gdpr_consent', gdprConsent.consentString);
+      SYNC_ENDPOINT = tryAppendQueryString(SYNC_ENDPOINT, 'gdpr_consent', gdprConsent.consentString);
     }
 
     if (SYNC_ENDPOINT.slice(-1) === '&') {
@@ -140,7 +140,7 @@ export const spec = {
     }
 
     /*     if (uspConsent) {
-      SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'us_privacy', uspConsent);
+      SYNC_ENDPOINT = tryAppendQueryString(SYNC_ENDPOINT, 'us_privacy', uspConsent);
     } */
     let syncs = [];
     if (syncOptions.iframeEnabled) {

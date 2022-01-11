@@ -95,6 +95,40 @@ describe('Adyoulike Adapter', function () {
     }
   ];
 
+  const bidRequestWithMultipleMediatype = [
+    {
+      'bidId': 'bid_id_0',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-0',
+      'params': {
+        'placement': 'placement_0'
+      },
+      'sizes': '300x250',
+      'mediaTypes': {
+        'banner': {
+          'sizes': ['640x480']
+        },
+        'video': {
+          'playerSize': [640, 480],
+          'context': 'outstream'
+        },
+        'native': {
+          'image': {
+            'required': true,
+          },
+          'title': {
+            'required': true,
+            'len': 80
+          },
+          'cta': {
+            'required': false
+          },
+        }
+      },
+      'transactionId': 'bid_id_0_transaction_id'
+    }
+  ];
+
   const bidRequestWithNativeImageType = [
     {
       'bidId': 'bid_id_0',
@@ -154,6 +188,17 @@ describe('Adyoulike Adapter', function () {
           'required': true,
           'sizes': []
         }
+      }
+    }
+  };
+
+  const sentBidVideo = {
+    'bid_id_0': {
+      'PlacementID': 'e622af275681965d3095808561a1e510',
+      'TransactionID': 'e8355240-d976-4cd5-a493-640656fe08e8',
+      'AvailableSizes': '',
+      'Video': {
+        playerSize: [640, 480]
       }
     }
   };
@@ -382,6 +427,28 @@ describe('Adyoulike Adapter', function () {
     meta: testMetaObject
   }];
 
+  const responseWithSingleVideo = [{
+    'BidID': 'bid_id_0',
+    'Placement': 'placement_0',
+    'Vast': 'PFZBU1Q+RW1wdHkgc2FtcGxlPC92YXN0Pg==',
+    'Price': 0.5,
+    'Height': 600,
+  }];
+
+  const videoResult = [{
+    cpm: 0.5,
+    creativeId: undefined,
+    currency: 'USD',
+    netRevenue: true,
+    requestId: 'bid_id_0',
+    ttl: 3600,
+    mediaType: 'video',
+    meta: {
+      advertiserDomains: []
+    },
+    vastXml: '<VAST>Empty sample</vast>'
+  }];
+
   const responseWithMultiplePlacements = [
     {
       'BidID': 'bid_id_0',
@@ -422,6 +489,17 @@ describe('Adyoulike Adapter', function () {
       'transactionId': 'bid_id_1_transaction_id'
     };
 
+    let bidWSize = {
+      'bidId': 'bid_id_1',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-1',
+      'params': {
+        'placement': 'placement_1',
+        'size': [250, 300],
+      },
+      'transactionId': 'bid_id_1_transaction_id'
+    };
+
     let nativeBid = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
@@ -439,6 +517,10 @@ describe('Adyoulike Adapter', function () {
 
     it('should return true when required params found', function () {
       expect(!!spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true when required params found with size in bid params', function () {
+      expect(!!spec.isBidRequestValid(bidWSize)).to.equal(true);
     });
 
     it('should return true when required params found for native ad', function () {
@@ -542,6 +624,32 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent.consentRequired).to.be.null;
     });
 
+    it('should add userid eids information to the request', function () {
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'userId': {
+          pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
+          unsuported: '666'
+        }
+      };
+
+      bidderRequest.bids = bidRequestWithSinglePlacement;
+
+      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.userId).to.exist;
+      expect(payload.userId).to.deep.equal([{
+        'source': 'pubcid.org',
+        'uids': [{
+          'atype': 1,
+          'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+        }]
+      }]);
+    });
+
     it('sends bid request to endpoint with single placement', function () {
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
       const payload = JSON.parse(request.data);
@@ -561,6 +669,21 @@ describe('Adyoulike Adapter', function () {
     it('sends bid request to endpoint with single placement without canonical', function () {
       canonicalQuery.restore();
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(request.url).to.contain(getEndpoint());
+      expect(request.method).to.equal('POST');
+
+      expect(request.url).to.not.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
+      expect(payload.Version).to.equal('1.0');
+      expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
+      expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
+    });
+
+    it('sends bid request to endpoint with single placement multiple mediatype', function () {
+      canonicalQuery.restore();
+      const request = spec.buildRequests(bidRequestWithMultipleMediatype, bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(request.url).to.contain(getEndpoint());
@@ -673,6 +796,14 @@ describe('Adyoulike Adapter', function () {
       noMeta[0].meta = { advertiserDomains: [] };
 
       expect(result).to.deep.equal(noMeta);
+    });
+
+    it('receive Vast reponse with Video ad', function () {
+      serverResponse.body = responseWithSingleVideo;
+      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidVideo) + '}'});
+
+      expect(result.length).to.equal(1);
+      expect(result).to.deep.equal(videoResult);
     });
   });
 });

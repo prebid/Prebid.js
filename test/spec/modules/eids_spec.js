@@ -283,6 +283,20 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+  it('kpuid', function() {
+    const userId = {
+      kpuid: 'Sample_Token'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'kpuid.com',
+      uids: [{
+        id: 'Sample_Token',
+        atype: 3
+      }]
+    });
+  });
   it('pubProvidedId', function() {
     const userId = {
       pubProvidedId: [{
@@ -331,6 +345,21 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{
         atype: 1,
         id,
+      }]
+    });
+  });
+
+  it('qid', function() {
+    const userId = {
+      qid: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'adquery.io',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
       }]
     });
   });

@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { logMessage, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -29,7 +29,7 @@ export const akamaiDAPIdSubmodule = {
     * @returns {{dapId:string}}
     */
   decode(value) {
-    utils.logMessage('akamaiDAPId [decode] value=', value);
+    logMessage('akamaiDAPId [decode] value=', value);
     return { dapId: value };
   },
 
@@ -43,60 +43,70 @@ export const akamaiDAPIdSubmodule = {
   getId(config, consentData) {
     const configParams = (config && config.params);
     if (!configParams) {
-      utils.logError('User ID - akamaiDAPId submodule requires a valid configParams');
+      logError('User ID - akamaiDAPId submodule requires a valid configParams');
       return;
     } else if (typeof configParams.apiHostname !== 'string') {
-      utils.logError('User ID - akamaiDAPId submodule requires a valid configParams.apiHostname');
+      logError('User ID - akamaiDAPId submodule requires a valid configParams.apiHostname');
       return;
     } else if (typeof configParams.domain !== 'string') {
-      utils.logError('User ID - akamaiDAPId submodule requires a valid configParams.domain');
+      logError('User ID - akamaiDAPId submodule requires a valid configParams.domain');
       return;
     } else if (typeof configParams.type !== 'string') {
-      utils.logError('User ID - akamaiDAPId submodule requires a valid configParams.type');
+      logError('User ID - akamaiDAPId submodule requires a valid configParams.type');
       return;
     }
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
     const uspConsent = uspDataHandler.getConsentData();
     if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
-      utils.logError('User ID - akamaiDAPId submodule requires consent string to call API');
+      logError('User ID - akamaiDAPId submodule requires consent string to call API');
       return;
     }
     // XXX: retrieve first-party data here if needed
     let url = '';
     let postData;
     let tokenName = '';
-    if (configParams.type.indexOf('dap-signature:') == 0) {
-      let parts = configParams.type.split(':');
-      let v = parts[1];
-      url = `https://${configParams.apiHostname}/data-activation/v1/domain/${configParams.domain}/signature?v=${v}&gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
-      tokenName = 'SigToken';
+    if (configParams.apiVersion === 'v1') {
+      if (configParams.type.indexOf('dap-signature:') == 0) {
+        let parts = configParams.type.split(':');
+        let v = parts[1];
+        url = `https://${configParams.apiHostname}/data-activation/v1/domain/${configParams.domain}/signature?v=${v}&gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
+        tokenName = 'SigToken';
+      } else {
+        url = `https://${configParams.apiHostname}/data-activation/v1/identity/tokenize?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
+        postData = {
+          'version': 1,
+          'domain': configParams.domain,
+          'identity': configParams.identity,
+          'type': configParams.type
+        };
+        tokenName = 'PubToken';
+      }
     } else {
-      url = `https://${configParams.apiHostname}/data-activation/v1/identity/tokenize?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
+      url = `https://${configParams.apiHostname}/data-activation/x1/domain/${configParams.domain}/identity/tokenize?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}&us_privacy=${uspConsent}`;
       postData = {
-        'version': 1,
-        'domain': configParams.domain,
+        'version': configParams.apiVersion,
         'identity': configParams.identity,
-        'type': configParams.type
+        'type': configParams.type,
+        'attributes': configParams.attributes
       };
-      tokenName = 'PubToken';
+      tokenName = 'x1Token';
     }
 
-    utils.logInfo('akamaiDAPId[getId] making API call for ' + tokenName);
-
     let cb = {
-      success: response => {
-        storage.setDataInLocalStorage(STORAGE_KEY, response);
+      success: (response, request) => {
+        var token = (response === '') ? request.getResponseHeader('Akamai-DAP-Token') : response;
+        storage.setDataInLocalStorage(STORAGE_KEY, token);
       },
       error: error => {
-        utils.logError('akamaiDAPId [getId:ajax.error] failed to retrieve ' + tokenName, error);
+        logError('akamaiDAPId [getId:ajax.error] failed to retrieve ' + tokenName, error);
       }
     };
 
     ajax(url, cb, JSON.stringify(postData), { contentType: 'application/json' });
 
     let token = storage.getDataFromLocalStorage(STORAGE_KEY);
-    utils.logMessage('akamaiDAPId [getId] returning', token);
+    logMessage('akamaiDAPId [getId] returning', token);
 
     return { id: token };
   }

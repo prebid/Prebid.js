@@ -3,7 +3,7 @@
  * @module modules/firstPartyData
  */
 import { config } from '../../src/config.js';
-import * as utils from '../../src/utils.js';
+import { isEmpty, isNumber, logWarn, deepAccess } from '../../src/utils.js';
 import { ORTB_MAP } from './config.js';
 import { submodule } from '../../src/hook.js';
 import { getStorageManager } from '../../src/storageManager.js';
@@ -19,9 +19,9 @@ let optout;
 function isEmptyData(data) {
   let check = true;
 
-  if (typeof data === 'object' && !utils.isEmpty(data)) {
+  if (typeof data === 'object' && !isEmpty(data)) {
     check = false;
-  } else if (typeof data !== 'object' && (utils.isNumber(data) || data)) {
+  } else if (typeof data !== 'object' && (isNumber(data) || data)) {
     check = false;
   }
 
@@ -42,7 +42,7 @@ function getRequiredData(obj, required, parent, i) {
   required.forEach(key => {
     if (!obj[key] || isEmptyData(obj[key])) {
       check = false;
-      utils.logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: missing required property ${key}`);
+      logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: missing required property ${key}`);
     }
   });
 
@@ -91,21 +91,22 @@ export function filterArrayData(arr, child, path, parent) {
       return true;
     }
 
-    utils.logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: expected type ${child.type}`);
+    logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: expected type ${child.type}`);
   }).filter((index, i) => {
     let requiredCheck = true;
-    let mapping = utils.deepAccess(ORTB_MAP, path);
+    let mapping = deepAccess(ORTB_MAP, path);
 
     if (mapping && mapping.required) requiredCheck = getRequiredData(index, mapping.required, parent, i);
 
     if (requiredCheck) return true;
   }).reduce((result, value, i) => {
     let typeBool = false;
-    let mapping = utils.deepAccess(ORTB_MAP, path);
+    let mapping = deepAccess(ORTB_MAP, path);
 
     switch (child.type) {
       case 'string':
         result.push(value);
+        typeBool = true;
         break;
       case 'object':
         if (mapping && mapping.children) {
@@ -125,7 +126,7 @@ export function filterArrayData(arr, child, path, parent) {
         break;
     }
 
-    if (!typeBool) utils.logWarn(`Filtered ${parent}[] value at index ${i}  in ortb2 data: expected type ${child.type}`);
+    if (!typeBool) logWarn(`Filtered ${parent}[] value at index ${i}  in ortb2 data: expected type ${child.type}`);
 
     return result;
   }, []);
@@ -145,26 +146,26 @@ export function validateFpd(fpd, path = '', parent = '') {
 
   // Filter out imp property if exists
   let validObject = Object.assign({}, Object.keys(fpd).filter(key => {
-    let mapping = utils.deepAccess(ORTB_MAP, path + key);
+    let mapping = deepAccess(ORTB_MAP, path + key);
 
     if (!mapping || !mapping.invalid) return key;
 
-    utils.logWarn(`Filtered ${parent}${key} property in ortb2 data: invalid property`);
+    logWarn(`Filtered ${parent}${key} property in ortb2 data: invalid property`);
   }).filter(key => {
-    let mapping = utils.deepAccess(ORTB_MAP, path + key);
+    let mapping = deepAccess(ORTB_MAP, path + key);
     // let typeBool = false;
     let typeBool = (mapping) ? typeValidation(fpd[key], {type: mapping.type, isArray: mapping.isArray}) : true;
 
     if (typeBool || !mapping) return key;
 
-    utils.logWarn(`Filtered ${parent}${key} property in ortb2 data: expected type ${(mapping.isArray) ? 'array' : mapping.type}`);
+    logWarn(`Filtered ${parent}${key} property in ortb2 data: expected type ${(mapping.isArray) ? 'array' : mapping.type}`);
   }).reduce((result, key) => {
-    let mapping = utils.deepAccess(ORTB_MAP, path + key);
+    let mapping = deepAccess(ORTB_MAP, path + key);
     let modified = {};
 
     if (mapping) {
       if (mapping.optoutApplies && optout) {
-        utils.logWarn(`Filtered ${parent}${key} data: pubcid optout found`);
+        logWarn(`Filtered ${parent}${key} data: pubcid optout found`);
         return result;
       }
 
@@ -175,7 +176,7 @@ export function validateFpd(fpd, path = '', parent = '') {
 
       // Check if modified data has data and return
       (!isEmptyData(modified)) ? result[key] = modified
-        : utils.logWarn(`Filtered ${parent}${key} property in ortb2 data: empty data found`);
+        : logWarn(`Filtered ${parent}${key} property in ortb2 data: empty data found`);
     } else {
       result[key] = fpd[key];
     }

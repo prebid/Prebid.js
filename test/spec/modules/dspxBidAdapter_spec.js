@@ -358,4 +358,27 @@ describe('dspxAdapter', function () {
       expect(userSync[2].type).to.be.equal('image');
     });
   });
+
+  describe(`getUserSyncs test usage in passback response`, function () {
+    let serverResponses;
+
+    beforeEach(function () {
+      serverResponses = [{
+        body: {
+          reason: 8002,
+          status: 'error',
+          msg: 'passback',
+        }
+      }];
+    });
+
+    it(`check for zero array when iframeEnabled`, function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true })).to.be.an('array');
+      expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses).length).to.be.equal(0);
+    });
+    it(`check for zero array when iframeEnabled`, function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true })).to.be.an('array');
+      expect(spec.getUserSyncs({ pixelEnabled: true }, serverResponses).length).to.be.equal(0);
+    });
+  });
 });
