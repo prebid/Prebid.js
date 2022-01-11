@@ -123,7 +123,7 @@ function _buildPostBody(bidRequests) {
       imp.video = _getORTBVideo(bidRequest);
     }
     // append banner if applicable and request is not for instream
-    if (bidRequest.mediaTypes.banner && !_IsInstream(bidRequest)) {
+    if (bidRequest.mediaTypes.banner && !_isInstream(bidRequest)) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
     }
 
@@ -155,14 +155,14 @@ function _buildPostBody(bidRequests) {
 }
 
 function _isVideoBidRequest(bidRequest) {
-  return _isValidVideoObject(bidRequest) && (_IsInstream(bidRequest) || _IsOutstream(bidRequest));
+  return _isValidVideoObject(bidRequest) && (_isInstream(bidRequest) || _isOutstream(bidRequest));
 }
 
-function _IsOutstream(bidRequest) {
+function _isOutstream(bidRequest) {
   return _isValidVideoObject(bidRequest) && bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream';
 }
 
-function _IsInstream(bidRequest) {
+function _isInstream(bidRequest) {
   return _isValidVideoObject(bidRequest) && bidRequest.mediaTypes.video.context.toLowerCase() === 'instream';
 }
 
