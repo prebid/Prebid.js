@@ -28,20 +28,16 @@ function init (config, userConsent) {
 function checkConsent (userConsent) {
   let consent = false;
 
-  const gdprApplies = (userConsent && userConsent.gdpr) ? userConsent.gdpr.gdprApplies : false;
-  const usp = userConsent.usp
-
   if (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies) {
     const gdpr = userConsent.gdpr
 
     if (gdpr.vendorData) {
-
       const vendor = gdpr.vendorData.vendor;
       const purpose = gdpr.vendorData.purpose;
 
       let vendorConsent = false;
 
-      if (v.consents) {
+      if (vendor.consents) {
         vendorConsent = vendor.consents[GVL_ID];
       }
 
@@ -55,11 +51,12 @@ function checkConsent (userConsent) {
       const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length;
 
       if (vendorConsent && purposesValid) {
-          consent = true;
+        consent = true;
       }
-  }
+    }
   } else if (userConsent.usp) {
-    consent = uspData.uspString[1] !== 'N' && uspData.uspString[2] !== 'Y'
+    const usp = userConsent.usp;
+    consent = usp[1] !== 'N' && usp[2] !== 'Y'
   }
 
   return consent;

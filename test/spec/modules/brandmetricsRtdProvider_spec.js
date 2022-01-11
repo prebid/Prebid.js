@@ -23,6 +23,48 @@ const NO_SCRIPTID_CONFIG = {
   waitForIt: true
 };
 
+const USER_CONSENT = {
+  gdpr: {
+    vendorData: {
+      vendor: {
+        consents: {
+          422: true
+        }
+      },
+      purpose: {
+        consents: {
+          1: true,
+          7: true
+        }
+      }
+    },
+    gdprApplies: true
+  }
+};
+
+const NO_TCF_CONSENT = {
+  gdpr: {
+    vendorData: {
+      vendor: {
+        consents: {
+          422: false
+        }
+      },
+      purpose: {
+        consents: {
+          1: false,
+          7: false
+        }
+      }
+    },
+    gdprApplies: true
+  }
+};
+
+const NO_USP_CONSENT = {
+  usp: '1NYY'
+};
+
 function mockSurveyLoaded(surveyConf) {
   const commands = window._brandmetrics || [];
   commands.forEach(command => {
@@ -56,28 +98,34 @@ describe('BrandmetricsRTD module', () => {
   });
 
   it('should init and return true', () => {
-    expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG)).to.equal(true);
+    expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, USER_CONSENT)).to.equal(true);
     expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/00000000-0000-0000-0000-000000000000.js')).to.equal(true);
   });
 
   it('should init and return true even if bidders is not included', () => {
-    expect(brandmetricsRTD.brandmetricsSubmodule.init(NO_BIDDERS_CONFIG)).to.equal(true);
+    expect(brandmetricsRTD.brandmetricsSubmodule.init(NO_BIDDERS_CONFIG, USER_CONSENT)).to.equal(true);
     expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/00000000-0000-0000-0000-000000000000.js')).to.equal(true);
   });
 
   it('should not add any script- tag when script- id is not defined', () => {
-    expect(brandmetricsRTD.brandmetricsSubmodule.init(NO_SCRIPTID_CONFIG)).to.equal(true);
+    expect(brandmetricsRTD.brandmetricsSubmodule.init(NO_SCRIPTID_CONFIG, USER_CONSENT)).to.equal(true);
     expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/undefined.js')).to.equal(false);
     expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/null.js')).to.equal(false);
     expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/00000000-0000-0000-0000-000000000000.js')).to.equal(false);
   });
+
+  it('should not add any script- tag when there is no TCF- consent', () => {
+    expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, NO_TCF_CONSENT)).to.equal(true);
+    expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/00000000-0000-0000-0000-000000000000.js')).to.equal(false);
+  });
+
+  it('should not add any script- tag when there is no usp- consent', () => {
+    expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, NO_USP_CONSENT)).to.equal(true);
+    expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/00000000-0000-0000-0000-000000000000.js')).to.equal(false);
+  });
 });
 
-describe('getBidRequetData', () => {
-  /* beforeEach(function () {
-    window._brandmetrics = [];
-  }); */
-
+describe('getBidRequestData', () => {
   it('should set targeting keys for specified bidders only', () => {
     const conf = {
       adUnits: [{
