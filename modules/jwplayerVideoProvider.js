@@ -132,6 +132,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     if (!player) {
       return;
     }
+
+    if (player.getPlugin('bidding')) {
+      return;
+    }
+
     player.playAd(adTagUrl || options.adXml, options);
   }
 
