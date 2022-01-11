@@ -152,7 +152,7 @@
 
 import {config} from '../../src/config.js';
 import {module} from '../../src/hook.js';
-import {logError, logWarn} from '../../src/utils.js';
+import {logError, logInfo, logWarn} from '../../src/utils.js';
 import events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
@@ -256,6 +256,7 @@ function initSubModules() {
     }
   });
   subModules = subModulesByOrder;
+  logInfo(`Real time data module enabled, using submodules: ${subModules.map((m) => m.name).join(', ')}`);
 }
 
 /**
