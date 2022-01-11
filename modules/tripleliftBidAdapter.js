@@ -123,7 +123,7 @@ function _buildPostBody(bidRequests) {
       imp.video = _getORTBVideo(bidRequest);
     }
     // append banner if applicable and request is not for instream
-    if (bidRequest.mediaTypes.banner && _videoMediaType(bidRequest) !== 'instream') {
+    if (bidRequest.mediaTypes.banner && !_IsInstream(bidRequest)) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
     }
 
@@ -155,25 +155,45 @@ function _buildPostBody(bidRequests) {
 }
 
 function _isVideoBidRequest(bidRequest) {
-  if (!bidRequest.mediaTypes.video) return false;
-  if (!bidRequest.mediaTypes.video.context) return false;
-  if (
-    bidRequest.mediaTypes.video.context.toLowerCase() === 'instream' ||
-    bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream'
-  ) {
-    return true;
+  if (_isValidVideoObject(bidRequest)) {
+    if (_IsInstream(bidRequest) || _IsOutstream(bidRequest)) {
+      return true;
+    } else {
+      return false;
+    }
   } else {
     return false;
   }
 }
 
-function _videoMediaType(bidRequest) {
-  if (!_isVideoBidRequest(bidRequest)) return null
-  if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
-    return 'instream'
-  } else if (bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream') {
-    return 'outstream'
+function _IsInstream(bidRequest) {
+  if (_isValidVideoObject(bidRequest)) {
+    if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
   }
+}
+
+function _IsOutstream(bidRequest) {
+  if (_isValidVideoObject(bidRequest)) {
+    if (bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream') {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+
+function _isValidVideoObject(bidRequest) {
+  if (!bidRequest.mediaTypes.video) return false;
+  if (!bidRequest.mediaTypes.video.context) return false;
+  return true;
 }
 
 function _getORTBVideo(bidRequest) {
