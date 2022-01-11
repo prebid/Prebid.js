@@ -40,28 +40,21 @@ export const spec = {
    * @returns {ServerRequest}
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    const demo = config.getConfig('glimpse.demo') || false
-    const account = config.getConfig('glimpse.account') || -1
-    const demand = config.getConfig('glimpse.demand') || 'glimpse'
-    const keywords = config.getConfig('glimpse.keywords') || {}
-
     const auth = getVaultJwt()
     const referer = getReferer(bidderRequest)
     const gdprConsent = getGdprConsentChoice(bidderRequest)
-    const bids = validBidRequests.map((bidRequest) => {
-      return processBidRequest(bidRequest, keywords)
-    })
+    const bidRequests = validBidRequests.map(processBidRequest)
+    const firstPartyData = getFirstPartyData()
 
     const data = {
       auth,
       data: {
-        bidderCode: spec.code,
-        demo,
-        account,
-        demand,
         referer,
         gdprConsent,
-        bids,
+        bidRequests,
+        site: firstPartyData.site,
+        user: firstPartyData.user,
+        bidderCode: spec.code,
       }
     }
 
@@ -91,35 +84,12 @@ export const spec = {
   },
 }
 
-function processBidRequest(bidRequest, globalKeywords) {
-  const sizes = normalizeSizes(bidRequest.sizes)
-  const bidKeywords = bidRequest.params.keywords || {}
-  const keywords = {
-    ...globalKeywords,
-    ...bidKeywords,
-  }
-
-  return {
-    unitCode: bidRequest.adUnitCode,
-    bidId: bidRequest.bidId,
-    placementId: bidRequest.params.placementId,
-    keywords,
-    sizes,
-  }
+function setVaultJwt(auth) {
+  storageManager.setDataInLocalStorage(LOCAL_STORAGE_KEY.vault.jwt, auth)
 }
 
-function normalizeSizes(sizes) {
-  const isSingleSize =
-    isArray(sizes) &&
-    sizes.length === 2 &&
-    !isArray(sizes[0]) &&
-    !isArray(sizes[1])
-
-  if (isSingleSize) {
-    return [sizes]
-  }
-
-  return sizes
+function getVaultJwt() {
+  return storageManager.getDataFromLocalStorage(LOCAL_STORAGE_KEY.vault.jwt) || ''
 }
 
 function getReferer(bidderRequest) {
@@ -138,11 +108,17 @@ function getReferer(bidderRequest) {
 function getGdprConsentChoice(bidderRequest) {
   const hasGdprConsent =
     hasValue(bidderRequest) &&
-    hasValue(bidderRequest.gdprConsent) &&
-    hasStringValue(bidderRequest.gdprConsent.consentString)
+    hasValue(bidderRequest.gdprConsent)
 
   if (hasGdprConsent) {
-    return bidderRequest.gdprConsent
+    const gdprConsent = bidderRequest.gdprConsent
+    const hasGdprApplies = hasBooleanValue(gdprConsent.gdprApplies)
+
+    return {
+      consentString: gdprConsent.consentString || '',
+      vendorData: gdprConsent.vendorData || {},
+      gdprApplies: hasGdprApplies ? gdprConsent.gdprApplies : true,
+    }
   }
 
   return {
@@ -152,12 +128,64 @@ function getGdprConsentChoice(bidderRequest) {
   }
 }
 
-function setVaultJwt(auth) {
-  storageManager.setDataInLocalStorage(LOCAL_STORAGE_KEY.vault.jwt, auth)
+function processBidRequest(bidRequest) {
+  const demand = bidRequest.params.demand || 'glimpse'
+  const sizes = normalizeSizes(bidRequest.sizes)
+  const keywords = bidRequest.params.keywords || {}
+
+  return {
+    demand,
+    sizes,
+    keywords,
+    bidId: bidRequest.bidId,
+    placementId: bidRequest.params.placementId,
+    unitCode: bidRequest.adUnitCode,
+  }
 }
 
-function getVaultJwt() {
-  return storageManager.getDataFromLocalStorage(LOCAL_STORAGE_KEY.vault.jwt) || ''
+function normalizeSizes(sizes) {
+  const isSingleSize =
+    isArray(sizes) &&
+    sizes.length === 2 &&
+    !isArray(sizes[0]) &&
+    !isArray(sizes[1])
+
+  if (isSingleSize) {
+    return [sizes]
+  }
+
+  return sizes
+}
+
+function getFirstPartyData() {
+  const siteKeywords = parseGlobalKeywords('site')
+  const userKeywords = parseGlobalKeywords('user')
+
+  const siteAttributes = getConfig('ortb2.site.ext.data', {})
+  const userAttributes = getConfig('ortb2.user.ext.data', {})
+
+  return {
+    site: {
+      keywords: siteKeywords,
+      attributes: siteAttributes,
+    },
+    user: {
+      keywords: userKeywords,
+      attributes: userAttributes,
+    },
+  }
+}
+
+function parseGlobalKeywords(scope) {
+  const keywords = getConfig(`ortb2.${scope}.keywords`, '')
+
+  return keywords
+    .split(', ')
+    .filter((keyword) => keyword !== '')
+}
+
+function getConfig(path, defaultValue) {
+  return config.getConfig(path) || defaultValue
 }
 
 function isValidBidResponse(bidResponse) {
@@ -174,6 +202,13 @@ function hasValue(value) {
   return (
     value !== undefined &&
     value !== null
+  )
+}
+
+function hasBooleanValue(value) {
+  return (
+    hasValue(value) &&
+    typeof value === 'boolean'
   )
 }
 
