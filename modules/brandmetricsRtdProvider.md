@@ -30,20 +30,11 @@ pbjs.setConfig({
 })
 ```
 
-## Supported bidders
-
-The module currently supports the following bidders:
-
-| Bidder | Id    |
-| ------ | ----- |
-| Ozone  | ozone |
-
-
 ## Parameters
 | Name              | Type                 | Description        | Default        |
 | ----------------- | -------------------- | ------------------ | ------------------ |
 | name              | String               | This should always be `brandmetrics` | - |
 | waitForIt         | Boolean              | Should be `true` if there's an `auctionDelay` defined (recommended) | `false` |
 | params            | Object               |                 | - |
-| params.bidders    | String[]             | An array of bidders which should targeting keys. | `[]` |
+| params.bidders    | String[]             | An array of bidders which should receive targeting keys. | `[]` |
 | params.scriptId   | String               | A script- id GUID if the brandmetrics- script should be initialized. | `undefined` |

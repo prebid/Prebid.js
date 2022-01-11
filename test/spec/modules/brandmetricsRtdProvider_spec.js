@@ -1,5 +1,5 @@
 import * as brandmetricsRTD from '../../../modules/brandmetricsRtdProvider.js';
-import { cloneDeep } from 'lodash';
+import {config} from 'src/config.js';
 
 const VALID_CONFIG = {
   name: 'brandmetrics',
@@ -99,49 +99,34 @@ describe('BrandmetricsRTD module', () => {
 
   it('should init and return true', () => {
     expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, USER_CONSENT)).to.equal(true);
-    expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/00000000-0000-0000-0000-000000000000.js')).to.equal(true);
   });
 
   it('should init and return true even if bidders is not included', () => {
     expect(brandmetricsRTD.brandmetricsSubmodule.init(NO_BIDDERS_CONFIG, USER_CONSENT)).to.equal(true);
-    expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/00000000-0000-0000-0000-000000000000.js')).to.equal(true);
   });
 
-  it('should not add any script- tag when script- id is not defined', () => {
+  it('should init even if script- id is not configured', () => {
     expect(brandmetricsRTD.brandmetricsSubmodule.init(NO_SCRIPTID_CONFIG, USER_CONSENT)).to.equal(true);
-    expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/undefined.js')).to.equal(false);
-    expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/null.js')).to.equal(false);
-    expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/00000000-0000-0000-0000-000000000000.js')).to.equal(false);
   });
 
-  it('should not add any script- tag when there is no TCF- consent', () => {
-    expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, NO_TCF_CONSENT)).to.equal(true);
-    expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/00000000-0000-0000-0000-000000000000.js')).to.equal(false);
+  it('should not init when there is no TCF- consent', () => {
+    expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, NO_TCF_CONSENT)).to.equal(false);
   });
 
-  it('should not add any script- tag when there is no usp- consent', () => {
-    expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, NO_USP_CONSENT)).to.equal(true);
-    expect(scriptTagExists('https://cdn.brandmetrics.com/survey/script/00000000-0000-0000-0000-000000000000.js')).to.equal(false);
+  it('should not init when there is no usp- consent', () => {
+    expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, NO_USP_CONSENT)).to.equal(false);
   });
 });
 
 describe('getBidRequestData', () => {
-  it('should set targeting keys for specified bidders only', () => {
-    const conf = {
-      adUnits: [{
-        bids: [{
-          bidder: 'ozone'
-        }]
-      }, {
-        bids: [{
-          bidder: 'unspecified'
-        }]
-      }]
-    };
+  it('should set targeting keys for specified bidders', () => {
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {
+      const bidderConfig = config.getBidderConfig()
+      const expected = VALID_CONFIG.params.bidders
 
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData(conf, () => {
-      expect(conf.adUnits[0].bids[0].params.customData[0].targeting.mockTargetKey).to.equal('mockMeasurementId');
-      expect(conf.adUnits[1].bids[0].params).to.be.undefined;
+      expected.forEach(exp => {
+        expect(bidderConfig[exp].ortb2.user.ext.data.mockTargetKey).to.equal('mockMeasurementId')
+      })
     }, VALID_CONFIG);
 
     mockSurveyLoaded({
@@ -159,21 +144,9 @@ describe('getBidRequestData', () => {
   });
 
   it('should only set targeting keys when the brandmetrics survey- type is "pbjs"', () => {
-    const conf = {
-      adUnits: [{
-        bids: [{
-          bidder: 'ozone'
-        }]
-      }, {
-        bids: [{
-          bidder: 'unspecified'
-        }]
-      }]
-    };
-
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData(conf, () => {
-      expect(conf.adUnits[0].bids[0].params).to.be.undefined;
-      expect(conf.adUnits[1].bids[0].params).to.be.undefined;
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {
+      const bidderConfig = config.getBidderConfig()
+      expect(Object.keys(bidderConfig).length).to.equal(0)
     }, VALID_CONFIG);
 
     mockSurveyLoaded({
@@ -191,23 +164,20 @@ describe('getBidRequestData', () => {
   });
 
   it('should use a default targeting key name if the brandmetrics- configuration does not include one', () => {
-    const conf = {
-      adUnits: [{
-        bids: [{
-          bidder: 'ozone'
-        }]
-      }]
-    };
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {
+      const bidderConfig = config.getBidderConfig()
+      const expected = VALID_CONFIG.params.bidders
 
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData(conf, () => {
-      expect(conf.adUnits[0].bids[0].params.customData[0].targeting.brandmetrics_survey).to.equal('mockMeasurementId');
+      expected.forEach(exp => {
+        expect(bidderConfig[exp].ortb2.user.ext.data.mockTargetKey).to.equal('brandmetrics_survfey')
+      })
     }, VALID_CONFIG);
 
     mockSurveyLoaded({
       available: true,
       conf: {
         displayOption: {
-          type: 'pbjs'
+          type: 'pbjs',
         }
       },
       survey: {

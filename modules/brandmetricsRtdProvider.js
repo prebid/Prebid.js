@@ -5,61 +5,62 @@
  * @module modules/brandmetricsRtdProvider
  * @requires module:modules/realTimeData
  */
-import { getGlobal } from '../src/prebidGlobal.js'
+import { config } from '../src/config.js'
 import { submodule } from '../src/hook.js'
-import { deepSetValue, mergeDeep, logError } from '../src/utils.js'
+import { deepSetValue, mergeDeep, logError, deepAccess } from '../src/utils.js'
+import {loadExternalScript} from '../src/adloader.js'
 const MODULE_NAME = 'brandmetrics'
+const MODULE_CODE = MODULE_NAME
 const RECEIVED_EVENTS = []
 const GVL_ID = 422
 const TCF_PURPOSES = [1, 7]
 
-let hasConsent = false;
-
 function init (config, userConsent) {
-  hasConsent = checkConsent(userConsent);
+  const hasConsent = checkConsent(userConsent)
 
   if (hasConsent) {
-    const moduleConfig = getMergedConfig(config);
-    initializeBrandmetrics(moduleConfig.params.scriptId);
+    const moduleConfig = getMergedConfig(config)
+    initializeBrandmetrics(moduleConfig.params.scriptId)
   }
-  return true
+  return hasConsent
 }
 
+/**
+ * Checks TCF and USP consents
+ * @param {Object} userConsent
+ * @returns {boolean}
+ */
 function checkConsent (userConsent) {
-  let consent = false;
+  let consent = false
 
   if (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies) {
     const gdpr = userConsent.gdpr
 
     if (gdpr.vendorData) {
-      const vendor = gdpr.vendorData.vendor;
-      const purpose = gdpr.vendorData.purpose;
+      const vendor = gdpr.vendorData.vendor
+      const purpose = gdpr.vendorData.purpose
 
-      let vendorConsent = false;
-
+      let vendorConsent = false
       if (vendor.consents) {
-        vendorConsent = vendor.consents[GVL_ID];
+        vendorConsent = vendor.consents[GVL_ID]
       }
 
       if (vendor.legitimateInterests) {
-        vendorConsent = vendorConsent || vendor.legitimateInterests[GVL_ID];
+        vendorConsent = vendorConsent || vendor.legitimateInterests[GVL_ID]
       }
 
       const purposes = TCF_PURPOSES.map(id => {
         return (purpose.consents && purpose.consents[id]) || (purpose.legitimateInterests && purpose.legitimateInterests[id])
       })
-      const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length;
-
-      if (vendorConsent && purposesValid) {
-        consent = true;
-      }
+      const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length
+      consent = vendorConsent && purposesValid
     }
   } else if (userConsent.usp) {
-    const usp = userConsent.usp;
+    const usp = userConsent.usp
     consent = usp[1] !== 'N' && usp[2] !== 'Y'
   }
 
-  return consent;
+  return consent
 }
 
 /**
@@ -72,30 +73,30 @@ function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
     if (event.available && event.conf) {
       const targetingConf = event.conf.displayOption || {}
       if (targetingConf.type === 'pbjs') {
-        setBidTargeting(reqBidsConfigObj, moduleConfig, targetingConf.targetKey || 'brandmetrics_survey', event.survey.measurementId)
+        setBidderTargeting(reqBidsConfigObj, moduleConfig, targetingConf.targetKey || 'brandmetrics_survey', event.survey.measurementId)
       }
     }
-    callback();
-  };
+    callback()
+  }
 
   if (RECEIVED_EVENTS.length > 0) {
-    callBidTargeting(RECEIVED_EVENTS[RECEIVED_EVENTS.length - 1]);
+    callBidTargeting(RECEIVED_EVENTS[RECEIVED_EVENTS.length - 1])
   } else {
-    window._brandmetrics = window._brandmetrics || [];
+    window._brandmetrics = window._brandmetrics || []
     window._brandmetrics.push({
       cmd: '_addeventlistener',
       val: {
         event: 'surveyloaded',
         reEmitLast: true,
         handler: (ev) => {
-          RECEIVED_EVENTS.push(ev);
+          RECEIVED_EVENTS.push(ev)
           if (RECEIVED_EVENTS.length === 1) {
             // Call bid targeting only for the first received event, if called subsequently, last event from the RECEIVED_EVENTS array is used
-            callBidTargeting(ev);
+            callBidTargeting(ev)
           }
         },
       }
-    });
+    })
   }
 }
 
@@ -105,22 +106,16 @@ function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
  * @param {string} key Targeting key
  * @param {string} val Targeting value
  */
-function setBidTargeting (reqBidsConfigObj, moduleConfig, key, val) {
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits
-  adUnits.forEach(adUnit => {
-    adUnit.bids.forEach(bid => {
-      const bidder = bid.bidder
-      if (moduleConfig.params.bidders.indexOf(bidder) !== -1) {
-        switch (bidder) {
-          case 'ozone':
-            deepSetValue(bid, 'params.customData.0.targeting.' + key, val)
-            break;
-          default:
-            break;
-        }
-      }
+function setBidderTargeting (reqBidsConfigObj, moduleConfig, key, val) {
+  const bidders = deepAccess(moduleConfig, 'params.bidders')
+  if (bidders && bidders.length > 0) {
+    const ortb2 = {}
+    deepSetValue(ortb2, 'ortb2.user.ext.data.' + key, val)
+    config.setBidderConfig({
+      bidders: bidders,
+      config: ortb2
     })
-  })
+  }
 }
 
 /**
@@ -129,15 +124,11 @@ function setBidTargeting (reqBidsConfigObj, moduleConfig, key, val) {
  */
 function initializeBrandmetrics(scriptId) {
   if (scriptId) {
-    const path = 'https://cdn.brandmetrics.com/survey/script/';
-    const file = scriptId + '.js';
+    const path = 'https://cdn.brandmetrics.com/survey/script/'
+    const file = scriptId + '.js'
+    const url = path + file
 
-    const el = document.createElement('script');
-    el.type = 'text/javascript';
-    el.async = true;
-    el.src = path + file;
-
-    document.getElementsByTagName('head')[0].appendChild(el);
+    loadExternalScript(url, MODULE_CODE)
   }
 }
 
@@ -153,7 +144,7 @@ function getMergedConfig(customConfig) {
       bidders: [],
       scriptId: undefined,
     }
-  }, customConfig);
+  }, customConfig)
 }
 
 /** @type {RtdSubmodule} */
@@ -161,11 +152,11 @@ export const brandmetricsSubmodule = {
   name: MODULE_NAME,
   getBidRequestData: function (reqBidsConfigObj, callback, customConfig) {
     try {
-      const moduleConfig = getMergedConfig(customConfig);
-      if (moduleConfig.waitForIt && hasConsent) {
-        processBrandmetricsEvents(reqBidsConfigObj, moduleConfig, callback);
+      const moduleConfig = getMergedConfig(customConfig)
+      if (moduleConfig.waitForIt) {
+        processBrandmetricsEvents(reqBidsConfigObj, moduleConfig, callback)
       } else {
-        callback();
+        callback()
       }
     } catch (e) {
       logError(e)
