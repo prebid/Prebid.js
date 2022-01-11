@@ -11,7 +11,7 @@ const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TRACKER_URL = 'https://bdr.wpcdn.pl/tag/jstracker.js';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.4';
+const BIDDER_VERSION = '5.41';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
@@ -126,12 +126,12 @@ const applyClientHints = ortbRequest => {
     }];
 
   const ch = { data };
-  ortbRequest.user = {...ortbRequest.user, ...ch };
+  ortbRequest.user = { ...ortbRequest.user, ...ch };
 };
 
 const applyUserIds = (validBidRequest, ortbRequest) => {
   const eids = validBidRequest.userIdAsEids
-  if (eids && eids.length){ 
+  if (eids && eids.length) {
     const ids = { eids };
     ortbRequest.user = { ...ortbRequest.user, ...ids };
   }
@@ -146,8 +146,8 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
   if (gdprConsent) {
     const { apiVersion, gdprApplies, consentString } = gdprConsent;
     consentApiVersion = apiVersion;
-    ortbRequest.regs = Object.assign(ortbRequest.regs, { '[ortb_extensions.gdpr]': gdprApplies ? 1 : 0 });
-    ortbRequest.user = Object.assign(ortbRequest.user, { '[ortb_extensions.consent]': consentString });
+    ortbRequest.regs = Object.assign(ortbRequest.regs, { 'gdpr': gdprApplies ? 1 : 0 });
+    ortbRequest.user = Object.assign(ortbRequest.user, { 'consent': consentString });
   }
 }
 
