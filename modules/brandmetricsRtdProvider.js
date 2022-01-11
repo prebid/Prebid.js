@@ -9,13 +9,60 @@ import { getGlobal } from '../src/prebidGlobal.js'
 import { submodule } from '../src/hook.js'
 import { deepSetValue, mergeDeep, logError } from '../src/utils.js'
 const MODULE_NAME = 'brandmetrics'
+const RECEIVED_EVENTS = []
+const GVL_ID = 422
+const TCF_PURPOSES = [1, 7]
 
-const RECEIVED_EVENTS = [];
+let hasConsent = false;
 
 function init (config, userConsent) {
-  const moduleConfig = getMergedConfig(config);
-  initializeBrandmetrics(moduleConfig.params.scriptId);
+  hasConsent = checkConsent(userConsent);
+
+  if (hasConsent) {
+    const moduleConfig = getMergedConfig(config);
+    initializeBrandmetrics(moduleConfig.params.scriptId);
+  }
   return true
+}
+
+function checkConsent (userConsent) {
+  let consent = false;
+
+  const gdprApplies = (userConsent && userConsent.gdpr) ? userConsent.gdpr.gdprApplies : false;
+  const usp = userConsent.usp
+
+  if (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies) {
+    const gdpr = userConsent.gdpr
+
+    if (gdpr.vendorData) {
+
+      const vendor = gdpr.vendorData.vendor;
+      const purpose = gdpr.vendorData.purpose;
+
+      let vendorConsent = false;
+
+      if (v.consents) {
+        vendorConsent = vendor.consents[GVL_ID];
+      }
+
+      if (vendor.legitimateInterests) {
+        vendorConsent = vendorConsent || vendor.legitimateInterests[GVL_ID];
+      }
+
+      const purposes = TCF_PURPOSES.map(id => {
+        return (purpose.consents && purpose.consents[id]) || (purpose.legitimateInterests && purpose.legitimateInterests[id])
+      })
+      const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length;
+
+      if (vendorConsent && purposesValid) {
+          consent = true;
+      }
+  }
+  } else if (userConsent.usp) {
+    consent = uspData.uspString[1] !== 'N' && uspData.uspString[2] !== 'Y'
+  }
+
+  return consent;
 }
 
 /**
@@ -118,7 +165,7 @@ export const brandmetricsSubmodule = {
   getBidRequestData: function (reqBidsConfigObj, callback, customConfig) {
     try {
       const moduleConfig = getMergedConfig(customConfig);
-      if (moduleConfig.waitForIt) {
+      if (moduleConfig.waitForIt && hasConsent) {
         processBrandmetricsEvents(reqBidsConfigObj, moduleConfig, callback);
       } else {
         callback();
