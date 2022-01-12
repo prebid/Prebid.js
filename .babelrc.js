@@ -14,12 +14,13 @@ module.exports = {
     [
       useLocal('@babel/preset-env'),
       {
-        "useBuiltIns": "entry"
+        "useBuiltIns": "entry",
+        "modules": "commonjs"
       }
     ]
   ],
   "plugins": [
     path.resolve(__dirname, './plugins/pbjsGlobals.js'),
-    useLocal('babel-plugin-transform-object-assign')
-  ]
+    useLocal('babel-plugin-transform-object-assign'),
+  ],
 };
