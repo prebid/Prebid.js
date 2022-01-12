@@ -101,6 +101,7 @@ describe('KubientAdapter', function () {
     uspConsent: uspConsentData
   };
   describe('buildRequestBanner', function () {
+    config.setConfig({});
     let serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
     config.resetConfig();
     it('Creates a ServerRequest object with method, URL and data', function () {
@@ -143,6 +144,7 @@ describe('KubientAdapter', function () {
     }
   });
   describe('buildRequestVideo', function () {
+    config.setConfig({});
     let serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
     config.resetConfig();
     it('Creates a ServerRequest object with method, URL and data', function () {
@@ -275,19 +277,28 @@ describe('KubientAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('Should return true when required params are found', function () {
+      config.setConfig({});
       expect(spec.isBidRequestValid(bidBanner)).to.be.true;
+      config.resetConfig();
+      config.setConfig({});
       expect(spec.isBidRequestValid(bidVideo)).to.be.true;
       config.resetConfig();
     });
     it('Should return false when required params are not found', function () {
+      config.setConfig({});
       expect(spec.isBidRequestValid(bidBanner)).to.be.true;
+      config.resetConfig();
+      config.setConfig({});
       expect(spec.isBidRequestValid(bidVideo)).to.be.true;
       config.resetConfig();
     });
     it('Should return false when params are not found', function () {
       delete bidBanner.params;
+      config.setConfig({});
       expect(spec.isBidRequestValid(bidBanner)).to.be.false;
+      config.resetConfig();
       delete bidVideo.params;
+      config.setConfig({});
       expect(spec.isBidRequestValid(bidVideo)).to.be.false;
       config.resetConfig();
     });
@@ -318,6 +329,7 @@ describe('KubientAdapter', function () {
             ]
           }
       };
+      config.setConfig({});
       let bannerResponses = spec.interpretResponse(serverResponse);
       config.resetConfig();
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
@@ -337,6 +349,7 @@ describe('KubientAdapter', function () {
     });
 
     it('Should return no ad when not given a server response', function () {
+      config.setConfig({});
       const ads = spec.interpretResponse(null);
       config.resetConfig();
       expect(ads).to.be.an('array').and.to.have.length(0);
@@ -369,6 +382,7 @@ describe('KubientAdapter', function () {
             ]
           }
       };
+      config.setConfig({});
       let bannerResponses = spec.interpretResponse(serverResponse);
       config.resetConfig();
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
@@ -390,6 +404,7 @@ describe('KubientAdapter', function () {
     });
 
     it('Should return no ad when not given a server response', function () {
+      config.setConfig({});
       const ads = spec.interpretResponse(null);
       config.resetConfig();
       expect(ads).to.be.an('array').and.to.have.length(0);
@@ -482,6 +497,7 @@ describe('KubientAdapter', function () {
           }
         }
       });
+      config.setConfig({});
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
       config.resetConfig();
       values['gdpr'] = 1;
