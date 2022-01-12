@@ -197,12 +197,13 @@ const setEventsListeners = (function () {
   return function setEventsListeners() {
     if (!registered) {
       Object.entries({
-        [CONSTANTS.EVENTS.AUCTION_INIT]: 'onAuctionInitEvent',
-        [CONSTANTS.EVENTS.AUCTION_END]: 'onAuctionEndEvent',
-        [CONSTANTS.EVENTS.BID_RESPONSE]: 'onBidResponseEvent',
-        [CONSTANTS.EVENTS.BID_REQUESTED]: 'onBidRequestEvent'
-      }).forEach(([ev, handler]) => {
+        [CONSTANTS.EVENTS.AUCTION_INIT]: ['onAuctionInitEvent'],
+        [CONSTANTS.EVENTS.AUCTION_END]: ['onAuctionEndEvent', getAdUnitTargeting],
+        [CONSTANTS.EVENTS.BID_RESPONSE]: ['onBidResponseEvent'],
+        [CONSTANTS.EVENTS.BID_REQUESTED]: ['onBidRequestEvent']
+      }).forEach(([ev, [handler, preprocess]]) => {
         events.on(ev, (args) => {
+          preprocess && preprocess(args);
           subModules.forEach(sm => {
             try {
               sm[handler] && sm[handler](args, sm.config, _userConsent)
