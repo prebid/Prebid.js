@@ -32,7 +32,7 @@ export const spec = {
     if (!sizeConfirmed) {
       return false
     }
-    return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
+    return !!(bid.params.placementId);
   },
   /**
          * Make a server request from the list of BidRequests.
@@ -42,8 +42,8 @@ export const spec = {
          */
   buildRequests: function (validBidRequests, bidderRequest) {
     let payloadItems = {};
-    let sizes = [];
     validBidRequests.forEach(bidRequest => {
+      let sizes = [];
       let placementId = this.setPlacementID(bidRequest.params.placementId)
       payloadItems[placementId] = {}
       if (bidRequest.sizes.length > 0) {
@@ -105,7 +105,8 @@ export const spec = {
         ad: serverBody.ad,
         mediaType: 'banner',
         meta: {
-          mediaType: 'banner'
+          mediaType: 'banner',
+          advertiserDomains: serverBody.advertiserDomains
         }
       }
       bidResponses.push(bidResponse)
@@ -122,7 +123,8 @@ export const spec = {
         vastUrl: serverBody.vastUrl,
         mediaType: 'video',
         meta: {
-          mediaType: 'video'
+          mediaType: 'video',
+          advertiserDomains: serverBody.advertiserDomains
         }
       }
       bidResponses.push(bidResponse)
@@ -136,10 +138,8 @@ export const spec = {
    * @param {string[]} The placement ID/s in an array
    */
   setPlacementID: function (placementId) {
-    if (Array.isArray) {
-      if (Array.isArray(placementId)) {
-        return placementId.join('#')
-      }
+    if (Array.isArray(placementId)) {
+      return placementId.join('#')
     }
     return placementId
   },
