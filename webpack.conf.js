@@ -16,7 +16,7 @@ if (argv.analyze) {
 }
 
 module.exports = {
-  mode: 'production',
+  mode: 'none',
   devtool: 'source-map',
   resolve: {
     modules: [
