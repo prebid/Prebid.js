@@ -296,12 +296,12 @@ function buildRequests(validBidRequests, bidderRequest) {
     let gpid = '';
 
     const date = new Date();
-    const lt = date && date.getTime();
-    const to = date && date.getTimezoneOffset();
-    if (to) {
-      lt && (data.lt = lt);
-      data.to = to;
-    }
+    const lt = date.getTime();
+    const to = date.getTimezoneOffset();
+
+    // ADTS-174 Removed unnecessary checks to fix failing test
+    data.lt = lt;
+    data.to = to;
 
     // ADTS-169 add adUnitCode to requests
     if (adUnitCode) data.aun = adUnitCode
