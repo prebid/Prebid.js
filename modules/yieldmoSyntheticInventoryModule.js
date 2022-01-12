@@ -1,10 +1,10 @@
 import { config } from '../src/config.js';
 import { isGptPubadsDefined, isFn } from '../src/utils.js';
+import * as ajax from '../src/ajax.js'
 import strIncludes from 'core-js-pure/features/string/includes.js';
 
 export const MODULE_NAME = 'Yieldmo Synthetic Inventory Module';
 export const AD_SERVER_ENDPOINT = 'https://ads.yieldmo.com/v002/t_ads/ads';
-export const AD_REQUEST_TYPE = 'GET';
 const USPAPI_VERSION = 1;
 
 let cmpVersion = 0;
@@ -23,7 +23,22 @@ export function init(config) {
           window.top.googletag = window.top.googletag || {};
           window.top.googletag.cmd = window.top.googletag.cmd || [];
         }
-        getAd(`${AD_SERVER_ENDPOINT}?${serialize(collectData(config.placementId, consentDataObj))}`, config);
+        ajax.ajaxBuilder()(`${AD_SERVER_ENDPOINT}?${serialize(collectData(config.placementId, consentDataObj))}`, {
+          success: (responceText, responseObj) => {
+            window.top.__ymAds = processResponse(responseObj);
+            const googletag = window.top.googletag;
+            googletag.cmd.push(() => {
+              if (window.top.document.body) {
+                googletagCmd(config, googletag);
+              } else {
+                window.top.document.addEventListener('DOMContentLoaded', () => googletagCmd(config, googletag));
+              }
+            });
+          },
+          error: (message, err) => {
+            throw err;
+          }
+        });
       }
     }
   };
@@ -58,11 +73,6 @@ function collectData(placementId, consentDataObj) {
   const connection = window.navigator.connection || {};
   const description = Array.prototype.slice.call(document.getElementsByTagName('meta'))
     .filter((meta) => meta.getAttribute('name') === 'description')[0];
-  const pageDimensions = {
-    density: window.top.devicePixelRatio || 0,
-    height: window.top.screen.height || window.top.screen.availHeight || window.top.outerHeight || window.top.innerHeight || 481,
-    width: window.top.screen.width || window.top.screen.availWidth || window.top.outerWidth || window.top.innerWidth || 321,
-  };
 
   return {
     bust: timeStamp,
@@ -74,15 +84,15 @@ function collectData(placementId, consentDataObj) {
     p: placementId,
     description: description ? description.content.substring(0, 1000) : '',
     title: document.title,
-    scrd: pageDimensions.density,
-    h: pageDimensions.height,
-    w: pageDimensions.width,
+    scrd: window.top.devicePixelRatio || 0,
+    h: window.top.screen.height || window.top.screen.availHeight || window.top.outerHeight || window.top.innerHeight || 481,
+    w: window.top.screen.width || window.top.screen.availWidth || window.top.outerWidth || window.top.innerWidth || 321,
     pft: timeStamp,
     ct: timeStamp,
-    connect: connection.effectiveType,
-    bwe: connection.downlink ? connection.downlink + 'Mb/sec' : '',
-    rtt: connection.rtt,
-    sd: connection.saveData,
+    connect: typeof connection.effectiveType !== 'undefined' ? connection.effectiveType : undefined,
+    bwe: typeof connection.downlink !== 'undefined' ? connection.downlink + 'Mb/sec' : undefined,
+    rtt: typeof connection.rtt !== 'undefined' ? String(connection.rtt) : undefined,
+    sd: typeof connection.saveData !== 'undefined' ? String(connection.saveData) : undefined,
     us_privacy: (consentDataObj.usp && consentDataObj.usp.usPrivacy) || '',
     cmp: (consentDataObj.cmp && consentDataObj.cmp.tcString) || ''
   };
@@ -98,35 +108,20 @@ function serialize(dataObj) {
   return str.join('&');
 }
 
-function processResponse(response) {
-  let responseBody;
+function processResponse(res) {
+  let parsedResponseBody;
   try {
-    responseBody = JSON.parse(response.responseText);
+    parsedResponseBody = JSON.parse(res.responseText);
   } catch (err) {
-    throw new Error(`${MODULE_NAME}: response body is not valid JSON`);
+    throw new Error(`${MODULE_NAME}: response is not valid JSON`);
   }
-  if (response.status !== 200 || !responseBody.data || !responseBody.data.length || !responseBody.data[0].ads || !responseBody.data[0].ads.length) {
-    throw new Error(`${MODULE_NAME}: NOAD`);
+  if (res && res.status === 204) {
+    throw new Error(`${MODULE_NAME}: no content success status`);
   }
-  return responseBody;
-}
-
-function getAd(url, config) {
-  const req = new XMLHttpRequest();
-  req.open(AD_REQUEST_TYPE, url, true);
-  req.onload = (e) => {
-    const response = processResponse(e.target);
-    window.top.__ymAds = response;
-    const googletag = window.top.googletag;
-    googletag.cmd.push(() => {
-      if (window.top.document.body) {
-        googletagCmd(config, googletag);
-      } else {
-        window.top.document.addEventListener('DOMContentLoaded', () => googletagCmd(config, googletag));
-      }
-    });
-  };
-  req.send(null);
+  if (parsedResponseBody.data && parsedResponseBody.data.length && parsedResponseBody.data[0].error_code) {
+    throw new Error(`${MODULE_NAME}: no ad, error_code: ${parsedResponseBody.data[0].error_code}`);
+  }
+  return parsedResponseBody;
 }
 
 function checkSandbox(w) {

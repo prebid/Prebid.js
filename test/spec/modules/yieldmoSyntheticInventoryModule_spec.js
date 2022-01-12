@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as ajax from 'src/ajax.js';
 import {
   init,
   MODULE_NAME,
@@ -68,16 +69,15 @@ describe('Yieldmo Synthetic Inventory Module', function() {
     }).throw(`${MODULE_NAME}: adUnitPath required`);
   });
 
-  describe('getAd', () => {
-    let requestMock = {
-      open: sinon.stub(),
-      send: sinon.stub(),
-    };
-    const originalXMLHttpRequest = window.XMLHttpRequest;
-    const originalConnection = window.navigator.connection;
-    let clock;
-    let adServerRequest;
-    let response;
+  describe('Ajax ad request', () => {
+    let sandbox;
+
+    const setAjaxStub = (cb) => {
+      const ajaxStub = sandbox.stub().callsFake(cb);
+      sandbox.stub(ajax, 'ajaxBuilder').callsFake(() => ajaxStub);
+      return ajaxStub;
+    }
+
     const responseData = {
       data: [{
         ads: [{
@@ -87,118 +87,92 @@ describe('Yieldmo Synthetic Inventory Module', function() {
     };
 
     beforeEach(() => {
-      window.XMLHttpRequest = function FakeXMLHttpRequest() {
-        this.open = requestMock.open;
-        this.send = requestMock.send;
-
-        adServerRequest = this;
-      };
-
-      response = {
-        target: {
-          responseText: JSON.stringify(responseData),
-          status: 200,
-        }
-      };
-
-      clock = sinon.useFakeTimers();
-      Object.defineProperty(window.navigator, 'connection', { value: {}, writable: true });
+      sandbox = sinon.sandbox.create();
     });
 
     afterEach(() => {
-      window.XMLHttpRequest = originalXMLHttpRequest;
-
-      requestMock.open.resetBehavior();
-      requestMock.open.resetHistory();
-      requestMock.send.resetBehavior();
-      requestMock.send.resetHistory();
-
-      adServerRequest = undefined;
-
-      clock.restore();
-    });
-
-    after(() => {
-      window.navigator.connection = originalConnection;
+      sandbox.restore();
     });
 
     it('should open ad request to ad server', () => {
+      const ajaxStub = setAjaxStub((url, callbackObj) => {});
+
       init(mockedYmConfig);
 
-      const adServerHost = (new URL(requestMock.open.getCall(0).args[1])).host;
-      expect(adServerHost).to.be.equal('ads.yieldmo.com');
+      expect((new URL(ajaxStub.getCall(0).args[0])).host).to.be.equal('ads.yieldmo.com');
     });
 
     it('should properly combine ad request query', () => {
-      const pageDimensions = {
-        density: window.top.devicePixelRatio || 0,
-        height: window.top.screen.height || window.screen.top.availHeight || window.top.outerHeight || window.top.innerHeight || 481,
-        width: window.top.screen.width || window.screen.top.availWidth || window.top.outerWidth || window.top.innerWidth || 321,
-      };
+      const title = 'Test title value';
+      const ajaxStub = setAjaxStub((url, callbackObj) => {});
+      const documentStubTitle = sandbox.stub(document, 'title').value(title);
+      const connection = window.navigator.connection || {};
 
       init(mockedYmConfig);
-
-      const queryParams = getQuearyParamsFromUrl(requestMock.open.getCall(0).args[1]);
-
+      const queryParams = getQuearyParamsFromUrl(ajaxStub.getCall(0).args[0]);
       const timeStamp = queryParams.bust;
 
-      expect(queryParams).to.deep.equal({
+      const paramsToCompare = {
+        title,
         _s: '1',
         dnt: 'false',
         e: '4',
-        h: `${pageDimensions.height}`,
         p: mockedYmConfig.placementId,
         page_url: window.top.location.href,
         pr: window.top.location.href,
-        scrd: `${pageDimensions.density}`,
-        w: `${pageDimensions.width}`,
-        title: document.title,
-      });
+        bust: timeStamp,
+        pft: timeStamp,
+        ct: timeStamp,
+        connect: typeof connection.effectiveType !== 'undefined' ? connection.effectiveType : undefined,
+        bwe: typeof connection.downlink !== 'undefined' ? connection.downlink + 'Mb/sec' : undefined,
+        rtt: typeof connection.rtt !== 'undefined' ? String(connection.rtt) : undefined,
+        sd: typeof connection.saveData !== 'undefined' ? String(connection.saveData) : undefined,
+        scrd: String(window.top.devicePixelRatio || 0),
+        h: String(window.top.screen.height || window.screen.top.availHeight || window.top.outerHeight || window.top.innerHeight || 481),
+        w: String(window.top.screen.width || window.screen.top.availWidth || window.top.outerWidth || window.top.innerWidth || 321),
+      };
+
+      expect(queryParams).to.eql(JSON.parse(JSON.stringify(paramsToCompare)));
     });
 
     it('should send ad request to ad server', () => {
+      const ajaxStub = setAjaxStub((url, callbackObj) => {});
+
       init(mockedYmConfig);
 
-      expect(requestMock.send.calledOnceWith(null)).to.be.true;
+      expect(ajaxStub.calledOnce).to.be.true;
     });
 
     it('should throw an error if can not parse response', () => {
-      response.target.responseText = undefined;
+      const ajaxStub = setAjaxStub((url, callbackObj) => {
+        callbackObj.success('', {responseText: '__invalid_JSON__', status: 200});
+      });
 
-      init(mockedYmConfig);
-
-      expect(() => adServerRequest.onload(response)).to.throw();
+      expect(() => init(mockedYmConfig)).to.throw('Yieldmo Synthetic Inventory Module: response is not valid JSON');
     });
 
-    it('should throw an error if status is not 200', () => {
-      response.target.status = 500;
+    it('should throw an error if status is 204', () => {
+      const ajaxStub = setAjaxStub((url, callbackObj) => {
+        callbackObj.success('', {status: 204, responseText: '{}'});
+      });
 
-      init(mockedYmConfig);
-
-      expect(() => adServerRequest.onload(response)).to.throw();
+      expect(() => init(mockedYmConfig)).to.throw('Yieldmo Synthetic Inventory Module: no content success status');
     });
 
-    it('should throw an error if there is no data in response', () => {
-      response.target.responseText = '{}';
+    it('should throw an error if error_code present in the ad response', () => {
+      const ajaxStub = setAjaxStub((url, callbackObj) => {
+        callbackObj.success('', {status: 200, responseText: '{"data": [{"error_code": "NOAD"}]}'});
+      });
 
-      init(mockedYmConfig);
-
-      expect(() => adServerRequest.onload(response)).to.throw();
-    });
-
-    it('should throw an error if there is no ads in response data', () => {
-      response.target.responseText = '{ data: [{}] }';
-
-      init(mockedYmConfig);
-
-      expect(() => adServerRequest.onload(response)).to.throw();
+      expect(() => init(mockedYmConfig)).to.throw('Yieldmo Synthetic Inventory Module: no ad, error_code: NOAD');
     });
 
     it('should store ad response in window object', () => {
+      const ajaxStub = setAjaxStub((url, callbackObj) => {
+        callbackObj.success(JSON.stringify(responseData), {status: 200, responseText: JSON.stringify(responseData)});
+      });
+
       init(mockedYmConfig);
-
-      adServerRequest.onload(response);
-
       expect(window.top.__ymAds).to.deep.equal(responseData);
     });
 
@@ -206,9 +180,11 @@ describe('Yieldmo Synthetic Inventory Module', function() {
       const containerName = 'ym_sim_container_' + mockedYmConfig.placementId;
       const gtag = setGoogletag();
 
-      init(mockedYmConfig);
+      const ajaxStub = setAjaxStub((url, callbackObj) => {
+        callbackObj.success(JSON.stringify(responseData), {status: 200, responseText: '{"data": [{"ads": []}]}'});
+      });
 
-      adServerRequest.onload(response);
+      init(mockedYmConfig);
 
       expect(gtag.cmd.length).to.equal(1);
 
@@ -252,6 +228,7 @@ describe('Yieldmo Synthetic Inventory Module', function() {
       window.XMLHttpRequest = function FakeXMLHttpRequest() {
         this.open = requestMock.open;
         this.send = requestMock.send;
+        this.setRequestHeader = () => {};
       };
 
       clock = sinon.useFakeTimers();
@@ -426,6 +403,7 @@ describe('Yieldmo Synthetic Inventory Module', function() {
       window.XMLHttpRequest = function FakeXMLHttpRequest() {
         this.open = requestMock.open;
         this.send = requestMock.send;
+        this.setRequestHeader = () => {};
       };
 
       clock = sinon.useFakeTimers();
