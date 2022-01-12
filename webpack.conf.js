@@ -2,19 +2,11 @@ var prebid = require('./package.json');
 var path = require('path');
 var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
-var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
-var allowedModules = require('./allowedModules.js');
-
-// list of module names to never include in the common bundle chunk
-var neverBundle = [
-  'AnalyticsAdapter.js'
-];
 
 var plugins = [
-  //new RequireEnsureWithoutJsonp(),
-  //new webpack.EnvironmentPlugin(['LiveConnectMode'])
+  new webpack.EnvironmentPlugin({'LiveConnectMode': null})
 ];
 
 if (argv.analyze) {
