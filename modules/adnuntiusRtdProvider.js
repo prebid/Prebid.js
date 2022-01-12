@@ -1,8 +1,7 @@
 import { getGlobal } from '../src/prebidGlobal.js';
 import { submodule } from '../src/hook.js'
-import { logError, logInfo } from '../src/utils.js'
+import { logError, logInfo, mergeDeep } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
-import { mergeBidderConfig, mergeConfig } from '../src/config.js'
 
 const GVLID = 855;
 
@@ -52,12 +51,12 @@ function setGlobalConfig(config, segments) {
     }
   }
   if (config.params && config.params.bidders) {
-    pbjsG.setBidderConfig(mergeBidderConfig({
+    pbjsG.setBidderConfig(mergeDeep(pbjsG, {
       bidders: config.params.bidders,
       config: ortbSegments
     }));
   } else {
-    pbjsG.setConfig(mergeConfig(ortbSegments));
+    pbjsG.setConfig(mergeDeep(pbjsG, ortbSegments));
   }
 }
 
