@@ -311,6 +311,14 @@ pbjs.setConfig({
               type: 'html5',
               expires: 15
             }
+        }
+        {
+            name: "qid",
+            storage: {
+                type: "html5",
+                name: "qid",
+                expires: 365
+            }
         }],
         syncDelay: 5000
     }

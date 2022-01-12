@@ -272,7 +272,13 @@ const USER_IDS_CONFIG = {
   'connectId': {
     source: 'yahoo.com',
     atype: 3
-  }
+  },
+
+  // Adquery ID
+  'qid': {
+    source: 'adquery.io',
+    atype: 1
+  },
 };
 
 // this function will create an eid object for the given UserId sub-module
