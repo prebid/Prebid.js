@@ -15,7 +15,8 @@ module.exports = {
       useLocal('@babel/preset-env'),
       {
         "useBuiltIns": "entry",
-        "modules": "commonjs"
+        "modules": "commonjs",
+        "corejs": "3"
       }
     ]
   ],

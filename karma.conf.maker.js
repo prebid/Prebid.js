@@ -11,6 +11,7 @@ function newWebpackConfig(codeCoverage) {
   var webpackConfig = _.cloneDeep(webpackConf);
 
   webpackConfig.devtool = 'inline-source-map';
+  delete webpackConfig.entry;
 
   if (codeCoverage) {
     webpackConfig.module.rules.push({
