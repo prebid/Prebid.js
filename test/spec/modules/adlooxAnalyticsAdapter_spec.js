@@ -2,7 +2,7 @@ import adapterManager from 'src/adapterManager.js';
 import analyticsAdapter, { command as analyticsCommand, COMMAND } from 'modules/adlooxAnalyticsAdapter.js';
 import { AUCTION_COMPLETED } from 'src/auction.js';
 import { expect } from 'chai';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';

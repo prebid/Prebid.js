@@ -2,7 +2,7 @@ import adapterManager from 'src/adapterManager.js';
 import analyticsAdapter from 'modules/adlooxAnalyticsAdapter.js';
 import { config as _config } from 'src/config.js';
 import { expect } from 'chai';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import { subModuleObj as rtdProvider } from 'modules/adlooxRtdProvider.js';
 import * as utils from 'src/utils.js';

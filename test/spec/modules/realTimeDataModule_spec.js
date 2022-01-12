@@ -2,7 +2,7 @@ import * as rtdModule from 'modules/rtdModule/index.js';
 import {config} from 'src/config.js';
 import * as sinon from 'sinon';
 import {default as CONSTANTS} from '../../../src/constants.json';
-import {default as events} from '../../../src/events.js';
+import * as events from '../../../src/events.js';
 import 'src/prebid.js';
 
 const getBidRequestDataSpy = sinon.spy();

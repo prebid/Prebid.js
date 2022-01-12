@@ -3,7 +3,7 @@
    access to a publisher page from creative payloads.
  */
 
-import events from './events.js';
+import * as events from './events.js';
 import { fireNativeTrackers, getAssetMessage, getAllAssetsMessage } from './native.js';
 import constants from './constants.json';
 import { logWarn, replaceAuctionPrice, deepAccess, isGptPubadsDefined, isApnGetTagDefined } from './utils.js';

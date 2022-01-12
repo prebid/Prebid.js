@@ -132,7 +132,7 @@
 
 import find from 'core-js-pure/features/array/find.js';
 import { config } from '../../src/config.js';
-import events from '../../src/events.js';
+import * as events from '../../src/events.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import { gdprDataHandler } from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';

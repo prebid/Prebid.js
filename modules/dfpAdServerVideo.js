@@ -9,7 +9,7 @@ import { config } from '../src/config.js';
 import { getHook, submodule } from '../src/hook.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
 /**

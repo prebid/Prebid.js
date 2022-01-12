@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import sortableAnalyticsAdapter, {TIMEOUT_FOR_REGISTRY, DEFAULT_PBID_TIMEOUT} from 'modules/sortableAnalyticsAdapter.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import {server} from 'test/mocks/xhr.js';

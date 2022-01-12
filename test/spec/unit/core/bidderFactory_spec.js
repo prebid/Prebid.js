@@ -7,7 +7,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import CONSTANTS from 'src/constants.json';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {

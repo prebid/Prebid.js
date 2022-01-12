@@ -153,7 +153,7 @@
 import {config} from '../../src/config.js';
 import {module} from '../../src/hook.js';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
-import events from '../../src/events.js';
+import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
 import find from 'core-js-pure/features/array/find.js';

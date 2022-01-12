@@ -16,8 +16,7 @@ var idPaths = CONSTANTS.EVENT_ID_PATHS;
 
 // keep a record of all events fired
 var eventsFired = [];
-
-module.exports = (function () {
+const _public = (function () {
   var _handlers = {};
   var _public = {};
 
@@ -149,3 +148,5 @@ module.exports = (function () {
 
   return _public;
 }());
+
+export const {on, off, get, getEvents, emit} = _public;

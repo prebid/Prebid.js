@@ -6,7 +6,7 @@ import { userSync } from '../userSync.js';
 import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
-import events from '../events.js';
+import * as events from '../events.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';

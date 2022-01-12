@@ -26,7 +26,6 @@ function validate(message) {
   expect(validator.errors).to.deep.equal(null);
 }
 
-// using es6 "import * as events from 'src/events.js'" causes the events.getEvents stub not to work...
 let events = require('src/events.js');
 let utils = require('src/utils.js');
 

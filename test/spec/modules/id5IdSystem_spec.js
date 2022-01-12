@@ -13,7 +13,7 @@ import {
 import { init, requestBidsHook, setSubmoduleRegistry, coreStorage } from 'modules/userId/index.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 

@@ -1,7 +1,7 @@
 import * as utils from 'src/utils.js';
 import pubstackAnalytics from '../../../modules/pubstackAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
-import events from 'src/events';
+import * as events from 'src/events';
 import constants from 'src/constants.json'
 
 describe('Pubstack Analytics Adapter', () => {
