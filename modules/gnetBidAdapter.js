@@ -3,7 +3,7 @@ import * as utils from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'gnet';
-const ENDPOINT = 'https://adserver.gnetproject.com/prebid.php';
+const ENDPOINT = 'https://service.gnetrtb.com/api/adrequest';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -16,7 +16,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.websiteId);
+    return !!(bid.params.websiteId && bid.params.adunitId);
   },
 
   /**
