@@ -10,9 +10,6 @@ function newWebpackConfig(codeCoverage) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
   var webpackConfig = _.cloneDeep(webpackConf);
 
-  // remove optimize plugin for tests
-  webpackConfig.plugins.pop()
-
   webpackConfig.devtool = 'inline-source-map';
 
   if (codeCoverage) {

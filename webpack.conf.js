@@ -13,8 +13,8 @@ var neverBundle = [
 ];
 
 var plugins = [
-  new RequireEnsureWithoutJsonp(),
-  new webpack.EnvironmentPlugin(['LiveConnectMode'])
+  //new RequireEnsureWithoutJsonp(),
+  //new webpack.EnvironmentPlugin(['LiveConnectMode'])
 ];
 
 if (argv.analyze) {
@@ -23,27 +23,8 @@ if (argv.analyze) {
   )
 }
 
-plugins.push( // this plugin must be last so it can be easily removed for karma unit tests
-  new webpack.optimize.CommonsChunkPlugin({
-    name: 'prebid',
-    filename: 'prebid-core.js',
-    minChunks: function(module) {
-      return (
-        (
-          module.context && module.context.startsWith(path.resolve('./src')) &&
-          !(module.resource && neverBundle.some(name => module.resource.includes(name)))
-        ) ||
-        (
-          module.resource && (allowedModules.src.concat(['core-js'])).some(
-            name => module.resource.includes(path.resolve('./node_modules/' + name))
-          )
-        )
-      );
-    }
-  })
-);
-
 module.exports = {
+  mode: 'none',
   devtool: 'source-map',
   resolve: {
     modules: [
@@ -51,8 +32,26 @@ module.exports = {
       'node_modules'
     ],
   },
+  entry: (() => {
+    const entry = {
+      'prebid-core': {
+        import: './src/prebid.js'
+      }
+    };
+    const selectedModules = new Set(helpers.getArgModules());
+    Object.entries(helpers.getModules()).forEach(([fn, mod]) => {
+      if (selectedModules.size === 0 || selectedModules.has(mod)) {
+        entry[mod] = {
+          import: fn,
+          dependOn: 'prebid-core'
+        }
+      }
+    });
+    return entry;
+  })(),
   output: {
-    jsonpFunction: prebid.globalVarName + 'Chunk'
+    chunkLoadingGlobal: prebid.globalVarName + 'Chunk',
+    chunkLoading: 'jsonp',
   },
   module: {
     rules: [
