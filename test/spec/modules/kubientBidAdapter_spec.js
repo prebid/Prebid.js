@@ -7,7 +7,7 @@ function encodeQueryData(data) {
   return Object.keys(data).map(function(key) {
     return [key, data[key]].map(encodeURIComponent).join('=');
   }).join('&');
-};
+}
 
 describe('KubientAdapter', function () {
   let bidBanner = {
@@ -102,6 +102,7 @@ describe('KubientAdapter', function () {
   };
   describe('buildRequestBanner', function () {
     let serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
+    config.resetConfig();
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequests).to.be.an('array');
     });
@@ -143,6 +144,7 @@ describe('KubientAdapter', function () {
   });
   describe('buildRequestVideo', function () {
     let serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
+    config.resetConfig();
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequests).to.be.an('array');
     });
@@ -275,16 +277,19 @@ describe('KubientAdapter', function () {
     it('Should return true when required params are found', function () {
       expect(spec.isBidRequestValid(bidBanner)).to.be.true;
       expect(spec.isBidRequestValid(bidVideo)).to.be.true;
+      config.resetConfig();
     });
     it('Should return false when required params are not found', function () {
       expect(spec.isBidRequestValid(bidBanner)).to.be.true;
       expect(spec.isBidRequestValid(bidVideo)).to.be.true;
+      config.resetConfig();
     });
     it('Should return false when params are not found', function () {
       delete bidBanner.params;
       expect(spec.isBidRequestValid(bidBanner)).to.be.false;
       delete bidVideo.params;
       expect(spec.isBidRequestValid(bidVideo)).to.be.false;
+      config.resetConfig();
     });
   });
 
@@ -314,6 +319,7 @@ describe('KubientAdapter', function () {
           }
       };
       let bannerResponses = spec.interpretResponse(serverResponse);
+      config.resetConfig();
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'ad', 'creativeId', 'width', 'height', 'currency', 'netRevenue', 'ttl', 'meta');
@@ -332,6 +338,7 @@ describe('KubientAdapter', function () {
 
     it('Should return no ad when not given a server response', function () {
       const ads = spec.interpretResponse(null);
+      config.resetConfig();
       expect(ads).to.be.an('array').and.to.have.length(0);
     });
   });
@@ -363,6 +370,7 @@ describe('KubientAdapter', function () {
           }
       };
       let bannerResponses = spec.interpretResponse(serverResponse);
+      config.resetConfig();
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'ad', 'creativeId', 'width', 'height', 'currency', 'netRevenue', 'ttl', 'meta', 'mediaType', 'vastXml');
@@ -383,6 +391,7 @@ describe('KubientAdapter', function () {
 
     it('Should return no ad when not given a server response', function () {
       const ads = spec.interpretResponse(null);
+      config.resetConfig();
       expect(ads).to.be.an('array').and.to.have.length(0);
     });
   });
