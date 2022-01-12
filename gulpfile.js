@@ -118,6 +118,7 @@ viewReview.displayName = 'view-review';
 function makeDevpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
   cloned.devtool = 'source-map';
+  cloned.mode = 'development';
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();

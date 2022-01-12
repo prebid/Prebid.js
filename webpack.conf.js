@@ -16,7 +16,7 @@ if (argv.analyze) {
 }
 
 module.exports = {
-  mode: 'none',
+  mode: 'production',
   devtool: 'source-map',
   resolve: {
     modules: [
@@ -67,6 +67,10 @@ module.exports = {
         ],
       }
     ]
+  },
+  optimization: {
+    usedExports: true,
+    sideEffects: true,
   },
   plugins
 };
