@@ -2,12 +2,12 @@ import { getGlobal } from '../src/prebidGlobal.js';
 import { submodule } from '../src/hook.js'
 import { logError, logInfo } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
+import { mergeBidderConfig, mergeConfig } from '../src/config.js'
 
 const GVLID = 855;
 
 function init(config, userConsent) {
-  if (!config.params) return false
-  if (!config.params.providers) return false
+  if (!config.params || !config.params.providers) return false
   logInfo(userConsent)
   return true;
 }
@@ -52,22 +52,21 @@ function setGlobalConfig(config, segments) {
     }
   }
   if (config.params && config.params.bidders) {
-    pbjsG.setBidderConfig({
+    pbjsG.setBidderConfig(mergeBidderConfig({
       bidders: config.params.bidders,
       config: ortbSegments
-    });
+    }));
   } else {
-    pbjsG.setConfig(ortbSegments)
+    pbjsG.setConfig(mergeConfig(ortbSegments));
   }
 }
 
 function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
+  const gdpr = userConsent && userConsent.gdpr;
   let allowedToRun = true
-  if (userConsent && userConsent.gdpr) {
-    logInfo('USR', userConsent.gdpr.gdprApplies)
-    logInfo('USR', userConsent.gdpr)
+  if (gdpr) {
     if (userConsent.gdpr.gdprApplies) {
-      if (!userConsent.gdpr.vendorData.vendorConsents[GVLID]) allowedToRun = false;
+      if (gdpr.gdprApplies && !gdpr.vendorData.vendorConsents[GVLID]) allowedToRun = false;
     }
   }
   if (allowedToRun) {
