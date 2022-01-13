@@ -3,7 +3,7 @@ import {
   auctionCallbacks,
   AUCTION_COMPLETED,
   adjustBids,
-  getMediaTypeGranularity,
+  getMediaTypeGranularity, addBidResponse,
 } from 'src/auction.js';
 import CONSTANTS from 'src/constants.json';
 import * as auctionModule from 'src/auction.js';
@@ -14,6 +14,10 @@ import * as store from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import find from 'core-js-pure/features/array/find.js';
 import { server } from 'test/mocks/xhr.js';
+import {expect} from 'chai';
+import {hook} from '../../src/hook.js';
+import 'src/debugging.js'
+import {synchronizePromise} from '../helpers/syncPromise.js'; // some of these tests require debugging hooks to be loaded
 
 var assert = require('assert');
 
@@ -124,6 +128,27 @@ function mockAjaxBuilder() {
 }
 
 describe('auctionmanager.js', function () {
+  let promiseSandbox;
+
+  before(() => {
+    // hooks are global and their side effects depend on what has been loaded... not ideal for unit tests
+    [
+      auctionModule.addBidResponse,
+      auctionModule.addBidderRequests,
+      auctionModule.bidsBackCallback
+    ].forEach((h) => h.getHooks().remove())
+    hook.ready();
+  });
+
+  beforeEach(() => {
+    promiseSandbox = sinon.createSandbox();
+    synchronizePromise(promiseSandbox);
+  });
+
+  afterEach(() => {
+    promiseSandbox.restore();
+  })
+
   describe('getKeyValueTargetingPairs', function () {
     const DEFAULT_BID = {
       cpm: 5.578,
@@ -1259,12 +1284,7 @@ describe('auctionmanager.js', function () {
     let bids = TEST_BIDS;
     let bidRequests;
     let doneSpy;
-    let auction = {
-      getBidRequests: () => bidRequests,
-      getAuctionId: () => '1',
-      addBidReceived: () => true,
-      getTimeout: () => 1000
-    }
+    let auction;
 
     beforeEach(() => {
       doneSpy = sinon.spy();
@@ -1272,12 +1292,21 @@ describe('auctionmanager.js', function () {
         cache: {
           url: 'https://prebid.adnxs.com/pbc/v1/cache'
         }
-      })
+      });
+      const start = Date.now();
+      auction = {
+        getBidRequests: () => bidRequests,
+        getAuctionId: () => '1',
+        addBidReceived: () => true,
+        getTimeout: () => 1000,
+        getAuctionStart: () => start,
+      }
     });
 
     afterEach(() => {
       doneSpy.resetHistory();
       config.resetConfig();
+      bidRequests = null;
     });
 
     it('should call auction done after bid is added to auction for mediaType banner', function () {
@@ -1328,19 +1357,114 @@ describe('auctionmanager.js', function () {
       const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;
       server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
       assert.equal(doneSpy.callCount, 1);
-    })
+    });
+
+    describe('when addBidResponse hook returns promises', () => {
+      let resolvers, callbacks, bids;
+
+      function hook(next, ...args) {
+        next.bail(new Promise((resolve, reject) => {
+          resolvers.resolve.push(resolve);
+          resolvers.reject.push(reject);
+        }).finally(() => next(...args)));
+      }
+
+      function invokeCallbacks() {
+        bids.forEach((bid, i) => callbacks.addBidResponse.call(bidRequests[i], ADUNIT_CODE, bid));
+        bidRequests.forEach(bidRequest => callbacks.adapterDone.call(bidRequest));
+      }
+
+      function delay(ms = 0) {
+        return new Promise((resolve) => {
+          setTimeout(resolve, ms)
+        });
+      }
+
+      beforeEach(() => {
+        promiseSandbox.restore();
+        bids = [
+          mockBid({bidderCode: BIDDER_CODE1}),
+          mockBid({bidderCode: BIDDER_CODE})
+        ]
+        bidRequests = bids.map((b) => mockBidRequest(b));
+        resolvers = {resolve: [], reject: []};
+        addBidResponse.before(hook);
+        callbacks = auctionCallbacks(doneSpy, auction);
+        Object.assign(auction, {
+          addNoBid: sinon.spy()
+        });
+      });
+
+      afterEach(() => {
+        addBidResponse.getHooks({hook: hook}).remove();
+      });
+
+      Object.entries({
+        'all succeed': ['resolve', 'resolve'],
+        'some fail': ['resolve', 'reject'],
+        'all fail': ['reject', 'reject']
+      }).forEach(([test, results]) => {
+        describe(`(and ${test})`, () => {
+          it('should wait for them to complete before calling auctionDone', () => {
+            invokeCallbacks();
+            return delay().then(() => {
+              expect(doneSpy.called).to.be.false;
+              expect(auction.addNoBid.called).to.be.false;
+              resolvers[results[0]][0]();
+              return delay();
+            }).then(() => {
+              expect(doneSpy.called).to.be.false;
+              expect(auction.addNoBid.called).to.be.false;
+              resolvers[results[1]][1]();
+              return delay();
+            }).then(() => {
+              expect(doneSpy.called).to.be.true;
+            });
+          });
+        });
+      });
+
+      Object.entries({
+        bidder: (timeout) => {
+          bidRequests.forEach((r) => r.timeout = timeout);
+          auction.getTimeout = () => timeout + 10000
+        },
+        auction: (timeout) => {
+          auction.getTimeout = () => timeout;
+          bidRequests.forEach((r) => r.timeout = timeout + 10000)
+        }
+      }).forEach(([test, setTimeout]) => {
+        it(`should respect ${test} timeout if they never complete`, () => {
+          const start = Date.now() - 2900;
+          auction.getAuctionStart = () => start;
+          setTimeout(3000);
+          invokeCallbacks();
+          return delay().then(() => {
+            expect(doneSpy.called).to.be.false;
+            return delay(100);
+          }).then(() => {
+            expect(doneSpy.called).to.be.true;
+          });
+        });
+
+        it(`should not wait if ${test} has already timed out`, () => {
+          const start = Date.now() - 2000;
+          auction.getAuctionStart = () => start;
+          setTimeout(1000);
+          invokeCallbacks();
+          return delay().then(() => {
+            expect(doneSpy.called).to.be.true;
+          });
+        });
+      })
+    });
   });
 
   describe('auctionOptions', function() {
     let bidRequests;
     let doneSpy;
     let clock;
-    let auction = {
-      getBidRequests: () => bidRequests,
-      getAuctionId: () => '1',
-      addBidReceived: () => true,
-      getTimeout: () => 1000
-    }
+    let auction;
     let requiredBidder = BIDDER_CODE;
     let requiredBidder1 = BIDDER_CODE1;
     let secondaryBidder = 'doNotWaitForMe';
@@ -1352,7 +1476,15 @@ describe('auctionmanager.js', function () {
         'auctionOptions': {
           secondaryBidders: [ secondaryBidder ]
         }
-      })
+      });
+      const start = Date.now();
+      auction = {
+        getBidRequests: () => bidRequests,
+        getAuctionId: () => '1',
+        addBidReceived: () => true,
+        getTimeout: () => 1000,
+        getAuctionStart: () => start,
+      }
     });
 
     afterEach(() => {
