@@ -298,10 +298,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     const date = new Date();
     const lt = date.getTime();
     const to = date.getTimezoneOffset();
-    if (to) {
-      lt && (data.lt = lt);
-      data.to = to;
-    }
+
+    // ADTS-174 Removed unnecessary checks to fix failing test
+    data.lt = lt;
+    data.to = to;
 
     // ADTS-169 add adUnitCode to requests
     if (adUnitCode) data.aun = adUnitCode
