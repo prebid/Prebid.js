@@ -21,30 +21,31 @@ export function VideojsProvider(config, videojs_, adState_, timeState_, callback
   let adState = adState_;
   let timeState = timeState_;
   let callbackStorage = callbackStorage_;
-  let minimumSupportedPlayerVersion = 'v7.17.0';
+  // TODO: test with older videojs versions
+  let minimumSupportedPlayerVersion = '7.17.0';
 
 
   function init() {
-    console.log("Initialized videojs provider")
-
     if (!videojs) {
+      console.log("not founds videojs")
       triggerSetupFailure(-1); // TODO: come up with code for player absent
       return;
     }
+    console.log("VideoJS found")
 
-    // playerVersion = videojs.version;
+    playerVersion = videojs.VERSION;
+    
 
-    // if (playerVersion < minimumSupportedPlayerVersion) {
-    //   triggerSetupFailure(-2); // TODO: come up with code for version not supported
-    //   return;
-    // }
+    if (playerVersion < minimumSupportedPlayerVersion) {
+      triggerSetupFailure(-2); // TODO: come up with code for version not supported
+      return;
+    }
 
-    // player = videojs(divId);
-    // if (player.getState() === undefined) {
-    //   setupPlayer(playerConfig);
-    // } else {
-    //   setupCompleteCallback && setupCompleteCallback(SETUP_COMPLETE, getSetupCompletePayload());
-    // }
+    // returns the player if it exists, or attempts to instantiate a new one
+    player = videojs(divId, playerConfig, function(){
+        //setup complete
+    })
+    
   }
 
   function getId() {
@@ -124,7 +125,7 @@ const videojsSubmoduleFactory = function (config) {
     const adState = adStateFactory();
     const timeState = timeStateFactory();
     const callbackStorage = callbackStorageFactory();
-    return VideojsProvider(config, null, adState, timeState, callbackStorage, {});
+    return VideojsProvider(config, videojs, adState, timeState, callbackStorage, {});
 }
 videojsSubmoduleFactory.vendorCode = VIDEO_JS_VENDOR;
 
