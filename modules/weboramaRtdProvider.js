@@ -7,10 +7,19 @@
  * @requires module:modules/realTimeData
  */
 
+/** onData callback type
+ * @callback dataCallback
+ * @param {Object} data profile data
+ * @param {Boolean} site true if site, else it is user
+ * @param {?Boolean} default if present, may diferentiate default profile than real one
+ * @returns {void}
+ */
+
 /**
  * @typedef {Object} ModuleParams
  * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default undefined)
  * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default undefined)
+ * @property {?dataCallback} onData callback
  * @property {?WeboCtxConf} weboCtxConf
  * @property {?WeboUserDataConf} weboUserDataConf
  */
@@ -21,6 +30,7 @@
  * @property {?string} targetURL specify the target url instead use the referer
  * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default params.setPrebidTargeting or true)
  * @property {?Boolean} sendToBidders if true, will send the contextual profile to all bidders (default params.sendToBidders or true)
+ * @property {?dataCallback} onData callback
  * @property {?object} defaultProfile to be used if the profile is not found
  */
 
@@ -30,6 +40,7 @@
  * @property {?Boolean} setPrebidTargeting if true, will set the GAM targeting (default params.setPrebidTargeting or true)
  * @property {?Boolean} sendToBidders if true, will send the user-centric profile to all bidders (default params.sendToBidders or true)
  * @property {?object} defaultProfile to be used if the profile is not found
+ * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
  */
 
@@ -44,7 +55,8 @@ import {
   logError,
   logWarn,
   tryAppendQueryString,
-  logMessage
+  logMessage,
+  isFn
 } from '../src/utils.js';
 import {
   submodule
@@ -153,6 +165,7 @@ function initWeboUserData(moduleParams, weboUserDataConf) {
 const globalDefaults = {
   setPrebidTargeting: true,
   sendToBidders: true,
+  onData: (data, kind, def) => logMessage('onData(data,kind,default)', data, kind, def),
 }
 
 /** normalize submodule configuration
@@ -312,6 +325,25 @@ function handleBidRequestData(adUnits, moduleParams) {
     if (!isEmpty(weboUserDataProfile)) {
       setBidRequestProfile(adUnits, weboUserDataProfile, false);
     }
+  }
+
+  handleOnData(weboCtxConf, weboUserDataConf);
+}
+
+/** function that handle with onData callbacks
+ * @param {WeboCtxConf} weboCtxConf
+ * @param {WeboUserDataConf} weboUserDataConf
+ */
+
+function handleOnData(weboCtxConf, weboUserDataConf) {
+  if (weboCtxConf.onData && isFn(weboCtxConf.onData)) {
+    const contextualProfile = getContextualProfile(weboCtxConf);
+    weboCtxConf.onData(contextualProfile, true);
+  }
+
+  if (weboUserDataConf.onData && isFn(weboUserDataConf.onData)) {
+    const weboUserDataProfile = getWeboUserDataProfile(weboUserDataConf);
+    weboUserDataConf.onData(weboUserDataProfile, false);
   }
 }
 
