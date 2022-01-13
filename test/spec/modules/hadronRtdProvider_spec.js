@@ -1,10 +1,10 @@
 import {config} from 'src/config.js';
-import {HALOID_LOCAL_NAME, RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, haloSubmodule, storage} from 'modules/haloRtdProvider.js';
+import {HALOID_LOCAL_NAME, RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, hadronSubmodule, storage} from 'modules/hadronRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
 
 const responseHeader = {'Content-Type': 'application/json'};
 
-describe('haloRtdProvider', function() {
+describe('hadronRtdProvider', function() {
   let getDataFromLocalStorageStub;
 
   beforeEach(function() {
@@ -16,9 +16,9 @@ describe('haloRtdProvider', function() {
     getDataFromLocalStorageStub.restore();
   });
 
-  describe('haloSubmodule', function() {
+  describe('hadronSubmodule', function() {
     it('successfully instantiates', function () {
-		  expect(haloSubmodule.init()).to.equal(true);
+		  expect(hadronSubmodule.init()).to.equal(true);
     });
   });
 
@@ -711,7 +711,7 @@ describe('haloRtdProvider', function() {
       const rtdConfig = {
         params: {
           segmentCache: false,
-          usePubHalo: true,
+          usePubHadron: true,
           requestParams: {
             publisherId: 'testPub1'
           }
@@ -746,13 +746,13 @@ describe('haloRtdProvider', function() {
         }
       };
 
-      getDataFromLocalStorageStub.withArgs(HALOID_LOCAL_NAME).returns('testHaloId1');
+      getDataFromLocalStorageStub.withArgs(HALOID_LOCAL_NAME).returns('testHadronId1');
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
 
       let request = server.requests[0];
       let postData = JSON.parse(request.requestBody);
       expect(postData.config).to.have.deep.property('publisherId', 'testPub1');
-      expect(postData.userIds).to.have.deep.property('haloId', 'testHaloId1');
+      expect(postData.userIds).to.have.deep.property('hadronId', 'testHadronId1');
 
       request.respond(200, responseHeader, JSON.stringify(data));
 

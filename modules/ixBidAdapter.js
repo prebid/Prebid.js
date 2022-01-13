@@ -57,14 +57,14 @@ const SOURCE_RTI_MAPPING = {
   'id5-sync.com': '', // ID5 Universal ID, configured as id5Id
   'crwdcntrl.net': '', // Lotame Panorama ID, lotamePanoramaId
   'epsilon.com': '', // Publisher Link, publinkId
-  'audigent.com': '', // Halo ID from Audigent, haloId
+  'audigent.com': '', // Hadron ID from Audigent, hadronId
   'pubcid.org': '' // SharedID, pubcid
 };
 const PROVIDERS = [
   'britepoolid',
   'id5id',
   'lipbid',
-  'haloId',
+  'hadronId',
   'criteoId',
   'lotamePanoramaId',
   'merkleId',

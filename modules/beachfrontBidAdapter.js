@@ -22,7 +22,7 @@ export const SUPPORTED_USER_IDS = [
   { key: 'tdid', source: 'adserver.org', rtiPartner: 'TDID', queryParam: 'tdid' },
   { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
   { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' },
-  { key: 'haloId', source: 'audigent.com', atype: 1, queryParam: 'haloid' }
+  { key: 'hadronId', source: 'audigent.com', atype: 1, queryParam: 'hadronid' }
 ];
 
 let appId = '';

@@ -146,8 +146,8 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // haloId
-  'haloId': {
+  // hadronId
+  'hadronId': {
     source: 'audigent.com',
     atype: 1
   },

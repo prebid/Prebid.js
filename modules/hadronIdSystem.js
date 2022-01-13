@@ -1,7 +1,7 @@
 /**
- * This module adds HaloID to the User ID module
+ * This module adds HadronID to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/haloIdSystem
+ * @module modules/hadronIdSystem
  * @requires module:modules/userId
  */
 
@@ -10,10 +10,10 @@ import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import { isFn, isStr, isPlainObject, logError } from '../src/utils.js';
 
-const MODULE_NAME = 'haloId';
+const MODULE_NAME = 'hadronId';
 const AU_GVLID = 561;
 
-export const storage = getStorageManager(AU_GVLID, 'halo');
+export const storage = getStorageManager(AU_GVLID, 'hadron');
 
 /**
  * Param or default.
@@ -30,7 +30,7 @@ function paramOrDefault(param, defaultVal, arg) {
 }
 
 /** @type {Submodule} */
-export const haloIdSubmodule = {
+export const hadronIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -40,14 +40,14 @@ export const haloIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {{value:string}} value
-   * @returns {{haloId:Object}}
+   * @returns {{hadronId:Object}}
    */
   decode(value) {
-    let haloId = storage.getDataFromLocalStorage('auHaloId');
-    if (isStr(haloId)) {
-      return {haloId: haloId};
+    let hadronId = storage.getDataFromLocalStorage('auHadronId');
+    if (isStr(hadronId)) {
+      return {hadronId: hadronId};
     }
-    return (value && typeof value['haloId'] === 'string') ? { 'haloId': value['haloId'] } : undefined;
+    return (value && typeof value['hadronId'] === 'string') ? { 'hadronId': value['hadronId'] } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -60,13 +60,13 @@ export const haloIdSubmodule = {
       config.params = {};
     }
     const url = paramOrDefault(config.params.url,
-      `https://id.halo.ad.gt/api/v1/pbhid`,
+      `https://id.hadron.ad.gt/api/v1/pbhid`,
       config.params.urlArg);
 
     const resp = function (callback) {
-      let haloId = storage.getDataFromLocalStorage('auHaloId');
-      if (isStr(haloId)) {
-        const responseObj = {haloId: haloId};
+      let hadronId = storage.getDataFromLocalStorage('auHadronId');
+      if (isStr(hadronId)) {
+        const responseObj = {hadronId: hadronId};
         callback(responseObj);
       } else {
         const callbacks = {
@@ -93,4 +93,4 @@ export const haloIdSubmodule = {
   }
 };
 
-submodule('userId', haloIdSubmodule);
+submodule('userId', hadronIdSubmodule);

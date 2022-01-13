@@ -1,8 +1,8 @@
 /**
- * This module adds the Audigent Halo provider to the real time data module
+ * This module adds the Audigent Hadron provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
  * The module will fetch real-time data from Audigent
- * @module modules/haloRtdProvider
+ * @module modules/hadronRtdProvider
  * @requires module:modules/realTimeData
  */
 import {ajax} from '../src/ajax.js';
@@ -13,11 +13,11 @@ import {submodule} from '../src/hook.js';
 import {isFn, isStr, isArray, deepEqual, isPlainObject, logError} from '../src/utils.js';
 
 const MODULE_NAME = 'realTimeData';
-const SUBMODULE_NAME = 'halo';
+const SUBMODULE_NAME = 'hadron';
 const AU_GVLID = 561;
 
-export const HALOID_LOCAL_NAME = 'auHaloId';
-export const RTD_LOCAL_NAME = 'auHaloRtd';
+export const HALOID_LOCAL_NAME = 'auHadronId';
+export const RTD_LOCAL_NAME = 'auHadronRtd';
 export const storage = getStorageManager(AU_GVLID, SUBMODULE_NAME);
 
 /**
@@ -163,22 +163,22 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
 
   const userIds = (getGlobal()).getUserIds();
 
-  let haloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
-  if (isStr(haloId)) {
-    (getGlobal()).refreshUserIds({submoduleNames: 'haloId'});
-    userIds.haloId = haloId;
+  let hadronId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
+  if (isStr(hadronId)) {
+    (getGlobal()).refreshUserIds({submoduleNames: 'hadronId'});
+    userIds.hadronId = hadronId;
     getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {
     var script = document.createElement('script');
     script.type = 'text/javascript';
 
-    window.pubHaloCb = (haloId) => {
-      userIds.haloId = haloId;
+    window.pubHadronCb = (hadronId) => {
+      userIds.hadronId = hadronId;
       getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
     }
 
-    const haloIdUrl = rtdConfig.params && rtdConfig.params.haloIdUrl;
-    script.src = paramOrDefault(haloIdUrl, 'https://id.halo.ad.gt/api/v1/haloid', userIds);
+    const hadronIdUrl = rtdConfig.params && rtdConfig.params.hadronIdUrl;
+    script.src = paramOrDefault(hadronIdUrl, 'https://id.hadron.ad.gt/api/v1/hadronid', userIds);
     document.getElementsByTagName('head')[0].appendChild(script);
   }
 }
@@ -198,11 +198,11 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
     reqParams = rtdConfig.params.requestParams;
   }
 
-  if (isPlainObject(window.pubHaloPm)) {
-    reqParams.pubHaloPm = window.pubHaloPm;
+  if (isPlainObject(window.pubHadronPm)) {
+    reqParams.pubHadronPm = window.pubHadronPm;
   }
 
-  const url = `https://seg.halo.ad.gt/api/v1/rtd`;
+  const url = `https://seg.hadron.ad.gt/api/v1/rtd`;
   ajax(url, {
     success: function (response, req) {
       if (req.status === 200) {
@@ -245,10 +245,10 @@ function init(provider, userConsent) {
 }
 
 /** @type {RtdSubmodule} */
-export const haloSubmodule = {
+export const hadronSubmodule = {
   name: SUBMODULE_NAME,
   getBidRequestData: getRealTimeData,
   init: init
 };
 
-submodule(MODULE_NAME, haloSubmodule);
+submodule(MODULE_NAME, hadronSubmodule);

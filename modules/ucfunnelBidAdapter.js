@@ -337,9 +337,9 @@ function addUserId(bidData, userId) {
   bidData['eids'] = '';
   _each(userId, (userIdObjectOrValue, userIdProviderKey) => {
     switch (userIdProviderKey) {
-      case 'haloId':
-        if (userIdObjectOrValue.haloId) {
-          bidData[userIdProviderKey + 'haloId'] = userIdObjectOrValue.haloId;
+      case 'hadronId':
+        if (userIdObjectOrValue.hadronId) {
+          bidData[userIdProviderKey + 'hadronId'] = userIdObjectOrValue.hadronId;
         }
         if (userIdObjectOrValue.auSeg) {
           bidData[userIdProviderKey + '_auSeg'] = userIdObjectOrValue.auSeg;

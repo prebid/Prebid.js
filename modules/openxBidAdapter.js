@@ -18,7 +18,7 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   britepoolid: 'britepoolid', // BritePool ID
   criteoId: 'criteoid', // CriteoID
   fabrickId: 'nuestarid', // Fabrick ID by Nuestar
-  haloId: 'audigentid', // Halo ID from Audigent
+  hadronId: 'audigentid', // Hadron ID from Audigent
   id5id: 'id5id', // ID5 ID
   idl_env: 'lre', // LiveRamp IdentityLink
   IDP: 'zeotapid', // zeotapIdPlus ID+
