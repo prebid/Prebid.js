@@ -53,7 +53,14 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: function(bid) {
-    return validBasic(bid) && validMediaType(bid)
+    // bid.params.host
+    if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) { // New endpoint
+      if ((new RegExp(`^(zz.*)\\.*$`, 'i')).test(bid.params.host)) return validBasic(bid)
+      else return validBasic(bid) && validMediaType(bid)
+    } else { // This is backward compatible feature. It will be remove in the future
+      if ((new RegExp(`^(ZZ.*)\\.*$`, 'i')).test(bid.params.endpoint)) return validBasic(bid)
+      else return validBasic(bid) && validMediaType(bid)
+    }
   },
 
   /**
@@ -167,10 +174,6 @@ function validMediaType(bid) {
   if (typeof video !== 'undefined') {
     if (VIDEO_SUPPORT.indexOf(video.context) === -1) {
       logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Video context not supported.');
-      return false;
-    }
-    if (typeof video.mimes == 'undefined') {
-      logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Mimes param is mandatory.');
       return false;
     }
   }

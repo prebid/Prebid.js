@@ -56,6 +56,8 @@ export const spec = {
     const requests = [];
     const request = [];
     const ortb2 = config.getConfig('ortb2');
+    const bidderConfig = config.getConfig();
+
     const adnMeta = handleMeta()
     const usi = getUsi(adnMeta, ortb2, bidderRequest)
     const segments = getSegmentsFromOrtb(ortb2);
@@ -68,7 +70,7 @@ export const spec = {
     if (gdprApplies !== undefined) request.push('consentString=' + consentString);
     if (segments.length > 0) request.push('segments=' + segments.join(','));
     if (usi) request.push('userId=' + usi);
-
+    if (bidderConfig.useCookie === false) request.push('noCookies=true')
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
       const network = bid.params.network || 'network';
