@@ -119,6 +119,10 @@ describe('BrandmetricsRTD module', () => {
 });
 
 describe('getBidRequestData', () => {
+  beforeEach(function () {
+    config.resetConfig()
+  })
+
   it('should set targeting keys for specified bidders', () => {
     brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {
       const bidderConfig = config.getBidderConfig()
@@ -144,11 +148,6 @@ describe('getBidRequestData', () => {
   });
 
   it('should only set targeting keys when the brandmetrics survey- type is "pbjs"', () => {
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {
-      const bidderConfig = config.getBidderConfig()
-      expect(Object.keys(bidderConfig).length).to.equal(0)
-    }, VALID_CONFIG);
-
     mockSurveyLoaded({
       available: true,
       conf: {
@@ -161,18 +160,13 @@ describe('getBidRequestData', () => {
         measurementId: 'mockMeasurementId'
       }
     });
+
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {}, VALID_CONFIG);
+    const bidderConfig = config.getBidderConfig()
+    expect(Object.keys(bidderConfig).length).to.equal(0)
   });
 
   it('should use a default targeting key name if the brandmetrics- configuration does not include one', () => {
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {
-      const bidderConfig = config.getBidderConfig()
-      const expected = VALID_CONFIG.params.bidders
-
-      expected.forEach(exp => {
-        expect(bidderConfig[exp].ortb2.user.ext.data.mockTargetKey).to.equal('brandmetrics_survfey')
-      })
-    }, VALID_CONFIG);
-
     mockSurveyLoaded({
       available: true,
       conf: {
@@ -184,5 +178,14 @@ describe('getBidRequestData', () => {
         measurementId: 'mockMeasurementId'
       }
     });
+
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {}, VALID_CONFIG);
+
+    const bidderConfig = config.getBidderConfig()
+    const expected = VALID_CONFIG.params.bidders
+
+    expected.forEach(exp => {
+      expect(bidderConfig[exp].ortb2.user.ext.data.brandmetrics_survey).to.equal('mockMeasurementId')
+    })
   });
 });
