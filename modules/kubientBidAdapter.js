@@ -124,8 +124,8 @@ export const spec = {
 
     if (typeof gdprConsent.gdprApplies === 'boolean') {
       values['gdpr'] = Number(gdprConsent.gdprApplies);
-      values['consent'] = gdprConsent.consentString;
-    } else {
+    }
+    if (typeof gdprConsent.consentString === 'string') {
       values['consent'] = gdprConsent.consentString;
     }
 
