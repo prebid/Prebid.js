@@ -4,8 +4,8 @@ import {
 } from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import find from 'poly/find.js';
+import includes from 'poly/includes.js';
 import {config} from '../src/config.js';
 
 /*

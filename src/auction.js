@@ -68,8 +68,8 @@ import { Renderer } from './Renderer.js';
 import { config } from './config.js';
 import { userSync } from './userSync.js';
 import { hook } from './hook.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import find from 'poly/find.js';
+import includes from 'poly/includes.js';
 import { OUTSTREAM } from './video.js';
 import { VIDEO } from './mediaTypes.js';
 

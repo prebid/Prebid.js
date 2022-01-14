@@ -16,7 +16,7 @@ import {
   logWarn,
 } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'poly/find.js';
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';

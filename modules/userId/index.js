@@ -130,7 +130,7 @@
   * @property {(string[]|undefined)} submoduleNames - submodules to refresh
   */
 
-import find from 'core-js-pure/features/array/find.js';
+import find from 'poly/find.js';
 import { config } from '../../src/config.js';
 import events from '../../src/events.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
@@ -143,7 +143,7 @@ import {
   getPrebidInternal, isPlainObject, logError, isArray, cyrb53Hash, deepAccess, timestamp, delayExecution, logInfo, isFn,
   logWarn, isEmptyStr, isNumber, isGptPubadsDefined
 } from '../../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import includes from 'poly/includes.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';

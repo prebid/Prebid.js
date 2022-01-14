@@ -4,8 +4,8 @@ import adaptermanager from '../src/adapterManager.js'
 import CONSTANTS from '../src/constants.json'
 import {ajaxBuilder} from '../src/ajax.js'
 import {config} from '../src/config.js'
-import find from 'core-js-pure/features/array/find.js'
-import includes from 'core-js-pure/features/array/includes.js'
+import find from 'poly/find.js'
+import includes from 'poly/includes.js'
 
 const ajax = ajaxBuilder(0)
 

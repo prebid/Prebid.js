@@ -4,7 +4,7 @@
 
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
-import find from 'core-js-pure/features/array/find.js';
+import find from 'poly/find.js';
 
 const defaultCfg = {
   dealIdPattern: /^MASS/i

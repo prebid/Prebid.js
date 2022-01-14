@@ -2,8 +2,8 @@
 import { config } from './config.js';
 import { getGlobal } from './prebidGlobal.js';
 import clone from 'just-clone';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import find from 'poly/find.js';
+import includes from 'poly/includes.js';
 
 const CONSTANTS = require('./constants.json');
 

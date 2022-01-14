@@ -1,4 +1,4 @@
-import includes from 'core-js-pure/features/array/includes.js';
+import includes from 'poly/includes.js';
 import { logError, logWarn, insertElement } from './utils.js';
 
 const _requestCache = {};

@@ -30,7 +30,10 @@ plugins.push( // this plugin must be last so it can be easily removed for karma 
     minChunks: function(module) {
       return (
         (
-          module.context && module.context.startsWith(path.resolve('./src')) &&
+          module.context && (
+            module.context.startsWith(path.resolve('./src')) ||
+            module.context.startsWith(path.resolve('./poly'))
+          ) &&
           !(module.resource && neverBundle.some(name => module.resource.includes(name)))
         ) ||
         (
