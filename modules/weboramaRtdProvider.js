@@ -11,7 +11,6 @@
  * @callback dataCallback
  * @param {Object} data profile data
  * @param {Boolean} site true if site, else it is user
- * @param {?Boolean} default if present, may diferentiate default profile than real one
  * @returns {void}
  */
 
