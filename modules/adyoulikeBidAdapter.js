@@ -1,6 +1,7 @@
 import { deepAccess, buildUrl, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import { createEidsArray } from './userId/eids.js';
 import find from 'core-js-pure/features/array/find.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
@@ -97,15 +98,19 @@ export const spec = {
       PageRefreshed: getPageRefreshed()
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentString: bidderRequest.gdprConsent.consentString,
         consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : null
       };
     }
 
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       payload.uspConsent = bidderRequest.uspConsent;
+    }
+
+    if (deepAccess(bidderRequest, 'userId')) {
+      payload.userId = createEidsArray(bidderRequest.userId);
     }
 
     const data = JSON.stringify(payload);
@@ -175,11 +180,13 @@ function getCanonicalUrl() {
 
 /* Get mediatype from bidRequest */
 function getMediatype(bidRequest) {
+  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+    return BANNER;
+  }
   if (deepAccess(bidRequest, 'mediaTypes.video')) {
     return VIDEO;
-  } else if (deepAccess(bidRequest, 'mediaTypes.banner')) {
-    return BANNER;
-  } else if (deepAccess(bidRequest, 'mediaTypes.native')) {
+  }
+  if (deepAccess(bidRequest, 'mediaTypes.native')) {
     return NATIVE;
   }
 }
@@ -340,7 +347,7 @@ function getTrackers(eventsArray, jsTrackers) {
 
 function getVideoAd(response) {
   var adJson = {};
-  if (typeof response.Ad === 'string') {
+  if (typeof response.Ad === 'string' && response.Ad.indexOf('\/\*PREBID\*\/') > 0) {
     adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
     return deepAccess(adJson, 'Content.MainVideo.Vast');
   }
@@ -473,13 +480,15 @@ function createBid(response, bidRequests) {
     meta: response.Meta || { advertiserDomains: [] }
   };
 
-  if (request && request.Native) {
+  // retreive video response if present
+  const vast64 = response.Vast || getVideoAd(response);
+  if (vast64) {
+    bid.vastXml = window.atob(vast64);
+    bid.mediaType = 'video';
+  } else if (request.Native) {
+    // format Native response if Native was requested
     bid.native = getNativeAssets(response, request.Native);
     bid.mediaType = 'native';
-  } else if (request && request.Video) {
-    const vast64 = response.Vast || getVideoAd(response);
-    bid.vastXml = vast64 ? window.atob(vast64) : '';
-    bid.mediaType = 'video';
   } else {
     bid.width = response.Width;
     bid.height = response.Height;

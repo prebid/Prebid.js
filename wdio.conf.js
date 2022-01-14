@@ -9,7 +9,7 @@ function getCapabilities() {
     return platformMap[os];
   }
 
-  // only IE 11, Chrome 80 & Firefox 73 run as part of functional tests
+  // only Chrome 80 & Firefox 73 run as part of functional tests
   // rest of the browsers are discarded.
   delete browsers['bs_chrome_79_windows_10'];
   delete browsers['bs_firefox_72_windows_10'];

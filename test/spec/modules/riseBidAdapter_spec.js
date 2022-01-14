@@ -257,7 +257,7 @@ describe('riseAdapter', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (const request of requests) {
         expect(request.data).to.be.an('object');
-        expect(request.data).to.have.property('schain', '1.0,1!indirectseller.com,00001,,,,');
+        expect(request.data).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
       }
     });
 
