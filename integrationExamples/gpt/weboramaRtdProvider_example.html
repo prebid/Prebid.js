@@ -26,6 +26,10 @@
                         params: {
                             setPrebidTargeting: true, // optional
                             sendToBidders: true,      // optional
+                            onData: function (data, site) { // optional
+                                var kind = (site) ? 'site' : 'user';
+                                console.log('onData', kind, data);
+                            },
                             weboCtxConf: {
                                 token: "to-be-defined", // mandatory
                                 targetURL: "https://prebid.org", // default is document.URL
@@ -35,6 +39,7 @@
                                     webo_ctx: ['moon'],
                                     webo_ds: ['bar']
                                 }
+                                //, onData: function (data, ...) { ...}
                             },
                             weboUserDataConf: {
                                 accountId: 12345,         // optional
@@ -45,6 +50,7 @@
                                     webo_audiences: ['bam']
                                 },
                                 localStorageProfileKey: 'webo_wam2gam_entry' // default
+                                //, onData: function (data,...) { ...}
                             }
                         }
                     }]
