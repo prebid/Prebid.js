@@ -397,7 +397,7 @@ describe('KubientAdapter', function () {
         }
       });
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      // values['consent'] = consentString;
+      values['consent'] = consentString;
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + encodeQueryData(values));
@@ -487,7 +487,7 @@ describe('KubientAdapter', function () {
         }
       });
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      // values['consent'] = consentString;
+      values['consent'] = consentString;
       values['usp'] = uspConsent;
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
