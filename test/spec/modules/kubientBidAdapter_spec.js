@@ -101,25 +101,20 @@ describe('KubientAdapter', function () {
     uspConsent: uspConsentData
   };
   describe('buildRequestBanner', function () {
-    let serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
-    config.resetConfig();
-    it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequests).to.be.an('array');
+    beforeEach(function () {
+      config.resetConfig();
     });
-    for (let i = 0; i < serverRequests.length; i++) {
-      let serverRequest = serverRequests[i];
-      it('Creates a ServerRequest object with method, URL and data', function () {
+    it('Creates Banner 1 ServerRequest object with method, URL and data', function () {
+      config.setConfig({'coppa': false});
+      let serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
+      expect(serverRequests).to.be.an('array');
+      for (let i = 0; i < serverRequests.length; i++) {
+        let serverRequest = serverRequests[i];
         expect(serverRequest.method).to.be.a('string');
         expect(serverRequest.url).to.be.a('string');
         expect(serverRequest.data).to.be.a('string');
-      });
-      it('Returns POST method', function () {
         expect(serverRequest.method).to.equal('POST');
-      });
-      it('Returns valid URL', function () {
         expect(serverRequest.url).to.equal('https://kssp.kbntx.ch/kubprebidjs');
-      });
-      it('Returns valid data if array of bids is valid', function () {
         let data = JSON.parse(serverRequest.data);
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys('v', 'requestId', 'adSlots', 'gdpr', 'referer', 'tmax', 'consent', 'consentGiven', 'uspConsent');
@@ -139,29 +134,24 @@ describe('KubientAdapter', function () {
           expect(adSlot.schain).to.be.an('object');
           expect(adSlot.banner).to.be.an('object');
         }
-      });
-    }
+      }
+    });
   });
   describe('buildRequestVideo', function () {
-    let serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
-    config.resetConfig();
-    it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequests).to.be.an('array');
+    beforeEach(function () {
+      config.resetConfig();
     });
-    for (let i = 0; i < serverRequests.length; i++) {
-      let serverRequest = serverRequests[i];
-      it('Creates a ServerRequest object with method, URL and data', function () {
+    it('Creates Video 1 ServerRequest object with method, URL and data', function () {
+      config.setConfig({'coppa': false});
+      let serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
+      expect(serverRequests).to.be.an('array');
+      for (let i = 0; i < serverRequests.length; i++) {
+        let serverRequest = serverRequests[i];
         expect(serverRequest.method).to.be.a('string');
         expect(serverRequest.url).to.be.a('string');
         expect(serverRequest.data).to.be.a('string');
-      });
-      it('Returns POST method', function () {
         expect(serverRequest.method).to.equal('POST');
-      });
-      it('Returns valid URL', function () {
         expect(serverRequest.url).to.equal('https://kssp.kbntx.ch/kubprebidjs');
-      });
-      it('Returns valid data if array of bids is valid', function () {
         let data = JSON.parse(serverRequest.data);
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys('v', 'requestId', 'adSlots', 'gdpr', 'referer', 'tmax', 'consent', 'consentGiven', 'uspConsent');
@@ -181,30 +171,24 @@ describe('KubientAdapter', function () {
           expect(adSlot.schain).to.be.an('object');
           expect(adSlot.video).to.be.an('object');
         }
-      });
-    }
+      }
+    });
   });
   describe('buildRequestBanner', function () {
-    config.setConfig({coppa: true});
-    let serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
-    config.resetConfig();
-    it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequests).to.be.an('array');
+    beforeEach(function () {
+      config.resetConfig();
     });
-    for (let i = 0; i < serverRequests.length; i++) {
-      let serverRequest = serverRequests[i];
-      it('Creates a ServerRequest object with method, URL and data', function () {
+    it('Creates Banner 2 ServerRequest object with method, URL and data with bidBanner', function () {
+      config.setConfig({'coppa': true});
+      let serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
+      expect(serverRequests).to.be.an('array');
+      for (let i = 0; i < serverRequests.length; i++) {
+        let serverRequest = serverRequests[i];
         expect(serverRequest.method).to.be.a('string');
         expect(serverRequest.url).to.be.a('string');
         expect(serverRequest.data).to.be.a('string');
-      });
-      it('Returns POST method', function () {
         expect(serverRequest.method).to.equal('POST');
-      });
-      it('Returns valid URL', function () {
         expect(serverRequest.url).to.equal('https://kssp.kbntx.ch/kubprebidjs');
-      });
-      it('Returns valid data if array of bids is valid', function () {
         let data = JSON.parse(serverRequest.data);
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys('v', 'requestId', 'adSlots', 'gdpr', 'coppa', 'referer', 'tmax', 'consent', 'consentGiven', 'uspConsent');
@@ -225,30 +209,24 @@ describe('KubientAdapter', function () {
           expect(adSlot.schain).to.be.an('object');
           expect(adSlot.banner).to.be.an('object');
         }
-      });
-    }
+      }
+    });
   });
   describe('buildRequestVideo', function () {
-    config.setConfig({coppa: true});
-    let serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
-    config.resetConfig();
-    it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequests).to.be.an('array');
+    beforeEach(function () {
+      config.resetConfig();
     });
-    for (let i = 0; i < serverRequests.length; i++) {
-      let serverRequest = serverRequests[i];
-      it('Creates a ServerRequest object with method, URL and data', function () {
+    it('Creates Video 2 ServerRequest object with method, URL and data', function () {
+      config.setConfig({'coppa': true});
+      let serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
+      expect(serverRequests).to.be.an('array');
+      for (let i = 0; i < serverRequests.length; i++) {
+        let serverRequest = serverRequests[i];
         expect(serverRequest.method).to.be.a('string');
         expect(serverRequest.url).to.be.a('string');
         expect(serverRequest.data).to.be.a('string');
-      });
-      it('Returns POST method', function () {
         expect(serverRequest.method).to.equal('POST');
-      });
-      it('Returns valid URL', function () {
         expect(serverRequest.url).to.equal('https://kssp.kbntx.ch/kubprebidjs');
-      });
-      it('Returns valid data if array of bids is valid', function () {
         let data = JSON.parse(serverRequest.data);
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys('v', 'requestId', 'adSlots', 'gdpr', 'coppa', 'referer', 'tmax', 'consent', 'consentGiven', 'uspConsent');
@@ -269,31 +247,32 @@ describe('KubientAdapter', function () {
           expect(adSlot.schain).to.be.an('object');
           expect(adSlot.video).to.be.an('object');
         }
-      });
-    }
+      }
+    });
   });
-
   describe('isBidRequestValid', function () {
+    beforeEach(function () {
+      config.resetConfig();
+    });
     it('Should return true when required params are found', function () {
       expect(spec.isBidRequestValid(bidBanner)).to.be.true;
       expect(spec.isBidRequestValid(bidVideo)).to.be.true;
-      config.resetConfig();
     });
     it('Should return false when required params are not found', function () {
       expect(spec.isBidRequestValid(bidBanner)).to.be.true;
       expect(spec.isBidRequestValid(bidVideo)).to.be.true;
-      config.resetConfig();
     });
     it('Should return false when params are not found', function () {
       delete bidBanner.params;
       expect(spec.isBidRequestValid(bidBanner)).to.be.false;
       delete bidVideo.params;
       expect(spec.isBidRequestValid(bidVideo)).to.be.false;
-      config.resetConfig();
     });
   });
-
   describe('interpretResponse', function () {
+    beforeEach(function () {
+      config.resetConfig();
+    });
     it('Should interpret response', function () {
       const serverResponse = {
         body:
@@ -319,7 +298,6 @@ describe('KubientAdapter', function () {
           }
       };
       let bannerResponses = spec.interpretResponse(serverResponse);
-      config.resetConfig();
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'ad', 'creativeId', 'width', 'height', 'currency', 'netRevenue', 'ttl', 'meta');
@@ -335,15 +313,16 @@ describe('KubientAdapter', function () {
       expect(dataItem.meta).to.exist.and.to.be.a('object');
       expect(dataItem.meta.advertiserDomains).to.exist.and.to.be.a('array').and.to.equal(serverResponse.body.seatbid[0].bid[0].meta.adomain);
     });
-
     it('Should return no ad when not given a server response', function () {
       const ads = spec.interpretResponse(null);
-      config.resetConfig();
       expect(ads).to.be.an('array').and.to.have.length(0);
     });
   });
 
   describe('interpretResponse Video', function () {
+    beforeEach(function () {
+      config.resetConfig();
+    });
     it('Should interpret response', function () {
       const serverResponse = {
         body:
@@ -370,7 +349,6 @@ describe('KubientAdapter', function () {
           }
       };
       let bannerResponses = spec.interpretResponse(serverResponse);
-      config.resetConfig();
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'ad', 'creativeId', 'width', 'height', 'currency', 'netRevenue', 'ttl', 'meta', 'mediaType', 'vastXml');
@@ -388,15 +366,16 @@ describe('KubientAdapter', function () {
       expect(dataItem.mediaType).to.exist.and.to.equal(VIDEO);
       expect(dataItem.vastXml).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].adm);
     });
-
     it('Should return no ad when not given a server response', function () {
       const ads = spec.interpretResponse(null);
-      config.resetConfig();
       expect(ads).to.be.an('array').and.to.have.length(0);
     });
   });
 
   describe('getUserSyncs', function () {
+    beforeEach(function () {
+      config.resetConfig();
+    });
     it('should register the sync image without gdpr', function () {
       let syncOptions = {
         pixelEnabled: true
@@ -418,7 +397,6 @@ describe('KubientAdapter', function () {
         }
       });
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      config.resetConfig();
       // values['consent'] = consentString;
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
@@ -446,7 +424,6 @@ describe('KubientAdapter', function () {
         }
       });
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      config.resetConfig();
       values['gdpr'] = 1;
       values['consent'] = consentString;
       expect(syncs).to.be.an('array').and.to.have.length(1);
@@ -483,7 +460,6 @@ describe('KubientAdapter', function () {
         }
       });
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      config.resetConfig();
       values['gdpr'] = 1;
       values['consent'] = consentString;
       expect(syncs).to.be.an('array').and.to.have.length(1);
@@ -511,7 +487,6 @@ describe('KubientAdapter', function () {
         }
       });
       let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
-      config.resetConfig();
       // values['consent'] = consentString;
       values['usp'] = uspConsent;
       expect(syncs).to.be.an('array').and.to.have.length(1);
