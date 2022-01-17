@@ -20,17 +20,15 @@ function messageHandler(event) {
   let msg;
   try {
     msg = JSON.parse(event.data);
-  } catch (e) {
-    return;
-  }
-  if (msg.msgType === 'MNOSELECTOR') {
-    if (typeof msg.body.url !== 'undefined' && msg.body.url) {
+    if (msg.msgType === 'MNOSELECTOR' && msg.body?.url) {
       let URL = msg.body.url.split('//');
       let domainURL = URL[1].split('/');
       mnoDomain = domainURL[0];
       debugModeConsoleLog('info', `messageHandler set domain: ${mnoDomain}`);
       getDomainAcronym(mnoDomain);
     }
+  } catch (e) {
+    return;
   }
 }
 
@@ -82,8 +80,8 @@ function getTrustpidFromStorage() {
   if (!domain) {
     debugModeConsoleLog('info', `getTrustpid domain: no domain`);
     return {
-      trustpid: undefined,
-      acr: undefined,
+      trustpid: null,
+      acr: null,
     };
   }
 
@@ -98,14 +96,13 @@ function getTrustpidFromStorage() {
   // Domain is correct in both local storage and idGraph, but no acronym is existing for the domain
   if (domain && !acronym) {
     return {
-      trustpid: undefined,
-      acr: undefined
+      trustpid: null,
+      acr: null
     }
   }
 
   let fcIdConnectObject;
-  let fcIdConnectData = JSON.parse(
-    window.localStorage.getItem('fcIdConnectData'));
+  let fcIdConnectData = JSON.parse(window.localStorage.getItem('fcIdConnectData'));
   debugModeConsoleLog('info', `getTrustpid fcIdConnectData:
   ${JSON.stringify(fcIdConnectData)}`);
 
@@ -121,9 +118,9 @@ function getTrustpidFromStorage() {
   ${JSON.stringify(fcIdConnectObject)}`);
 
   return {
-    trustpid: (fcIdConnectObject && fcIdConnectObject.umid !== undefined)
+    trustpid: (fcIdConnectObject && fcIdConnectObject.umid)
       ? fcIdConnectObject.umid
-      : undefined,
+      : null,
     acr: acronym,
   };
 }
@@ -169,11 +166,11 @@ export const trustpidSubmodule = {
   /**
    * Decodes the stored id value for passing to bid requests.
    * @function
-   * @returns {{trustpid: string} | undefined}
+   * @returns {{trustpid: string} | null}
    */
   decode(bidId) {
     debugModeConsoleLog('info', `decode ${JSON.stringify(bidId)}`);
-    return bidId.trustpid ? bidId : undefined;
+    return bidId.trustpid ? bidId : null;
   },
   /**
    * Get the id from helper function and initiate a new user sync.
@@ -182,7 +179,7 @@ export const trustpidSubmodule = {
    */
   getId: function(config) {
     const data = getTrustpidFromStorage();
-    if (typeof data.trustpid !== 'undefined') {
+    if (data.trustpid) {
       debugModeConsoleLog('info', `getId result 1:
       ${JSON.stringify(data)}`);
       return {id: {trustpid: data.trustpid + data.acr}};
@@ -193,17 +190,17 @@ export const trustpidSubmodule = {
       if (!config.params) {
         config.params = {};
       }
-      if (typeof config.params.maxDelayTime === 'undefined') {
+      if (typeof config.params.maxDelayTime === 'undefined' || config.params.maxDelayTime === null) {
         config.params.maxDelayTime = 1000;
       }
       let timeSpend = 0;
       const step = 50;
       const result = (callback) => {
         const data = getTrustpidFromStorage();
-        if (typeof data.trustpid === 'undefined') {
+        if (!data.trustpid) {
           if (timeSpend > config.params.maxDelayTime) {
-            debugModeConsoleLog('info', `getId result 3: undefined`);
-            callback(undefined);
+            debugModeConsoleLog('info', `getId result 3: null`);
+            callback(null);
           } else {
             timeSpend += step;
             setTimeout(() => {
