@@ -335,15 +335,25 @@ function handleBidRequestData(adUnits, moduleParams) {
  */
 
 function handleOnData(weboCtxConf, weboUserDataConf) {
-  if (weboCtxConf.onData && isFn(weboCtxConf.onData)) {
-    const contextualProfile = getContextualProfile(weboCtxConf);
-    weboCtxConf.onData(contextualProfile, true);
-  }
+  const callbacks = [{
+    onData: weboCtxConf.onData,
+    fetchData: () => getContextualProfile(weboCtxConf),
+    site: true,
+  }, {
+    onData: weboUserDataConf.onData,
+    fetchData: () => getWeboUserDataProfile(weboUserDataConf),
+    site: false,
+  }];
 
-  if (weboUserDataConf.onData && isFn(weboUserDataConf.onData)) {
-    const weboUserDataProfile = getWeboUserDataProfile(weboUserDataConf);
-    weboUserDataConf.onData(weboUserDataProfile, false);
-  }
+  callbacks.filter(obj => isFn(obj.onData)).forEach(obj => {
+    try {
+      const data = obj.fetchData();
+      obj.onData(data, obj.site);
+    } catch (e) {
+      const kind = (obj.site) ? 'site' : 'user';
+      logError(`error while executure onData callback with ${kind}-based data:`, e);
+    }
+  });
 }
 
 /** function that set bid request data on each segment (site or user centric)
