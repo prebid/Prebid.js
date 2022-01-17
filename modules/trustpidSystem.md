@@ -18,7 +18,7 @@ pbjs.setConfig({
         name: 'trustpid',
         params: {
           maxDelayTime: 1000, 
-        }
+        },
         bidders: ["adf"],
         storage: {
           type: "html5",
