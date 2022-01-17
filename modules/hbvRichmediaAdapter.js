@@ -1,14 +1,14 @@
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { spec as baseAdapter } from './appnexusBidAdapter.js'; // eslint-disable-line prebid/validate-imports
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {spec as baseAdapter} from './appnexusBidAdapter.js'; // eslint-disable-line prebid/validate-imports
 
 const BIDDER_CODE = 'hbv-richmedia';
 
 const metadataByRequestId = {};
 
 export const spec = {
-  version: '1.2.0',
+  version: '1.3.0',
   code: BIDDER_CODE,
   gvlid: baseAdapter.GVLID, // use base adapter gvlid
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -58,6 +58,7 @@ export const spec = {
       const { width = 1, height = 1, ad, creativeId = '', cpm, vastXml, vastUrl } = bid;
       const bidRequest = params.bidderRequest.bids.find(({ bidId }) => bidId === bid.requestId);
       const format = (bidRequest && bidRequest.params && bidRequest.params.format) || 'video-sticky-footer';
+      const isReplayable = bidRequest && bidRequest.params && bidRequest.params.isReplayable;
       const customSelector = bidRequest && bidRequest.params && bidRequest.params.customSelector;
       const renderParams = {
         adm: ad,
@@ -71,7 +72,8 @@ export const spec = {
         bidder,
         cpm,
         format,
-        customSelector
+        customSelector,
+        isReplayable
       };
       const encoded = window.btoa(JSON.stringify(renderParams));
       bid.ad = `<script src="//cdn.hubvisor.io/wrapper/${publisherId}/richmedia-renderer.js" async="true"></script>
