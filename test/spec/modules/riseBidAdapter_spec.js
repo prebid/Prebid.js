@@ -402,4 +402,28 @@ describe('riseAdapter', function () {
       expect(syncs).to.deep.equal([]);
     });
   })
+
+  describe('onBidWon', function() {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+    it('Should trigger pixel if bid nurl', function() {
+      const bid = {
+        'bidder': spec.code,
+        'adUnitCode': 'adunit-code',
+        'sizes': [['640', '480']],
+        'nurl': 'http://example.com/win/1234',
+        'params': {
+          'org': 'jdye8weeyirk00000001'
+        }
+      };
+
+      spec.onBidWon(bid);
+      expect(utils.triggerPixel.callCount).to.equal(1)
+    })
+  })
 });
