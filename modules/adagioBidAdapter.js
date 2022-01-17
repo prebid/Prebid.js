@@ -268,8 +268,6 @@ function getSite(bidderRequest) {
   } else if (refererInfo.stack && refererInfo.stack.length && refererInfo.stack[0]) {
     // important note check if refererInfo.stack[0] is 'thruly' because a `null` value
     // will be considered as "localhost" by the parseUrl function.
-    // As the isBidRequestValid returns false when it does not reach the referer
-    // this should never called.
     const url = parseUrl(refererInfo.stack[0]);
     domain = url.hostname;
   }
@@ -308,7 +306,7 @@ function getElementFromTopWindow(element, currentWindow) {
 function autoDetectAdUnitElementIdFromGpt(adUnitCode) {
   const autoDetectedAdUnit = getGptSlotInfoForAdUnitCode(adUnitCode);
 
-  if (autoDetectedAdUnit && autoDetectedAdUnit.divId) {
+  if (autoDetectedAdUnit.divId) {
     return autoDetectedAdUnit.divId;
   }
 };
@@ -872,12 +870,6 @@ export const spec = {
     bid.params = bid.params || {};
 
     autoFillParams(bid);
-
-    if (!internal.getRefererInfo().reachedTop) {
-      logWarn(`${LOG_PREFIX} the main page url is unreachabled.`);
-      // internal.enqueue(debugData());
-      return false;
-    }
 
     if (!(bid.params.organizationId && bid.params.site && bid.params.placement)) {
       logWarn(`${LOG_PREFIX} at least one required param is missing.`);

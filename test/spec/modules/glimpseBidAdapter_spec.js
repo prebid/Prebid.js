@@ -1,3 +1,4 @@
+import { BANNER } from '../../../src/mediaTypes'
 import { expect } from 'chai'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { spec } from 'modules/glimpseBidAdapter.js'
@@ -78,6 +79,20 @@ function getDeepCopy(object) {
 
 describe('GlimpseProtocolAdapter', () => {
   const glimpseAdapter = newBidder(spec)
+
+  describe('spec', () => {
+    it('Has defined the glimpse gvlid', () => {
+      expect(spec.gvlid).to.equal(1012)
+    })
+
+    it('Has defined glimpse as the bidder', () => {
+      expect(spec.code).to.equal('glimpse')
+    })
+
+    it('Has defined valid mediaTypes', () => {
+      expect(spec.supportedMediaTypes).to.deep.equal([BANNER])
+    })
+  })
 
   describe('Inherited functions', () => {
     it('Functions exist and are valid types', () => {

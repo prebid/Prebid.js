@@ -24,7 +24,7 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 113;
+export const FAST_BID_VERSION_CURRENT = 117;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
@@ -281,6 +281,7 @@ function checkNativeSendId(bidRequest) {
  */
 function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
+  let schain;
   const request = {
     publisher: {
       url: context.url,
@@ -288,6 +289,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
+      schain = bidRequest.schain || schain;
       const slot = {
         impid: bidRequest.adUnitCode,
         transactionid: bidRequest.transactionId,
@@ -344,6 +346,13 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (networkId) {
     request.publisher.networkid = networkId;
   }
+  if (schain) {
+    request.source = {
+      ext: {
+        schain: schain
+      }
+    }
+  };
   request.user = {
     ext: bidderRequest.userExt
   };
