@@ -62,6 +62,7 @@ export const spec = {
       netRevenue: body.netRevenue,
       ttl: body.ttl || TTL,
       vastXml: body.vastXml,
+      nurl: body.nurl,
       mediaType: VIDEO
     };
 
@@ -94,17 +95,17 @@ export const spec = {
     }
     return syncs;
   },
-  onBidWon: function (bidRequest) {
-    if (bidRequest == null) {
+  onBidWon: function (bid) {
+    if (bid == null) {
       return;
     }
 
-    logInfo('onBidWon:', bidRequest);
-    if (bidRequest.hasOwnProperty('nurl') && bidRequest.nurl.length > 0) {
-      triggerPixel(bidRequest.nurl);
+    logInfo('onBidWon:', bid);
+    if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
+      triggerPixel(bid.nurl);
     }
-  }
-};
+  },
+}
 
 registerBidder(spec);
 
