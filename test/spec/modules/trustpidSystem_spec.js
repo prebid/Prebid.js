@@ -1,18 +1,9 @@
 import {expect} from 'chai';
 import {trustpidSubmodule} from 'modules/trustpidSystem.js';
 
-describe('trustpidSubmodule', () => {
-  const domain = 'www.example.com'
-  const domain2 = 'www.example2.com'
-  const cookieName = 'fcIdConnectData';
-  const cookieDomainName = 'fcIdConnectDomain';
-  const umid = '15d26568'
-  const idGraphData = {
-    'domain': domain,
-    'umid': umid,
-  };
-  const prefix = '-'
-  const acronym = 'telco_acr'
+describe('trustpid System', () => {
+  const connectDataKey = 'fcIdConnectData';
+  const connectDomainKey = 'fcIdConnectDomain';
 
   const getStorageData = (idGraph) => {
     if (!idGraph) {
@@ -25,89 +16,94 @@ describe('trustpidSubmodule', () => {
     }
   };
 
-  function invokeGetIdAPI(configParams, consentData = undefined, cacheIdObj = undefined) {
-    configParams.acrFallback = prefix + acronym
-    return trustpidSubmodule.getId({
-      params: configParams
-    }, consentData, cacheIdObj)
-  }
-
   it('should have the correct module name declared', () => {
     expect(trustpidSubmodule.name).to.equal('trustpid');
   });
 
-  describe('getId()', () => {
+  describe('trustpid getId()', () => {
     afterEach(() => {
-      window.localStorage.removeItem(cookieName);
-      window.localStorage.removeItem(cookieDomainName);
+      window.localStorage.removeItem(connectDataKey);
+      window.localStorage.removeItem(connectDomainKey);
     });
 
     it('it should return object with key callback', () => {
-      expect(invokeGetIdAPI({})).to.have.property('callback');
+      expect(trustpidSubmodule.getId()).to.have.property('callback');
     });
 
     it('should return object with key callback with value type - function', () => {
-      window.localStorage.setItem(cookieName, JSON.stringify(getStorageData()));
-      expect(invokeGetIdAPI({})).to.have.property('callback');
-      expect(typeof invokeGetIdAPI({}).callback).to.be.equal('function');
-    });
-
-    it('tests if mock data are in a right shape', () => {
-      expect(getStorageData(idGraphData).connectId).to.have.property('idGraph');
-      expect(getStorageData(idGraphData).connectId.idGraph[0]).to.have.property('umid');
+      window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData()));
+      expect(trustpidSubmodule.getId()).to.have.property('callback');
+      expect(typeof trustpidSubmodule.getId().callback).to.be.equal('function');
     });
 
     it('tests if localstorage & JSON works properly ', () => {
-      window.localStorage.setItem(cookieName, JSON.stringify(getStorageData(idGraphData)));
-      expect(JSON.parse(window.localStorage.getItem(cookieName))).to.have.property('connectId');
+      const idGraph = {
+        'domain': 'domainValue',
+        'umid': 'umidValue',
+      };
+      window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
+      expect(JSON.parse(window.localStorage.getItem(connectDataKey))).to.have.property('connectId');
     });
 
     it('returns {callback: func} if domains don\'t match', () => {
-      window.localStorage.setItem(cookieDomainName, JSON.stringify(domain2));
-      window.localStorage.setItem(cookieName, JSON.stringify(getStorageData(idGraphData)));
-      expect(invokeGetIdAPI({})).to.have.property('callback');
+      const idGraph = {
+        'domain': 'domainValue',
+        'umid': 'umidValue',
+      };
+      window.localStorage.setItem(connectDomainKey, JSON.stringify('differentDomainValue'));
+      window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
+      expect(trustpidSubmodule.getId()).to.have.property('callback');
     });
 
     it('returns {id: {trustpid: data.trustpid}} if we have the right data stored in the localstorage ', () => {
-      window.localStorage.setItem(cookieDomainName, JSON.stringify(domain));
-      window.localStorage.setItem(cookieName, JSON.stringify(getStorageData(idGraphData)));
-      const response = invokeGetIdAPI({});
+      const idGraph = {
+        'domain': 'uat.mno.link',
+        'umid': 'umidValue',
+      };
+      window.localStorage.setItem(connectDomainKey, JSON.stringify('uat.mno.link'));
+      window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
+      const response = trustpidSubmodule.getId();
       expect(response).to.have.property('id');
       expect(response.id).to.have.property('trustpid');
-      expect(response.id.trustpid).to.be.equal(`${umid}-${acronym}`);
+      expect(response.id.trustpid).to.be.equal('umidValue-xxxx');
     });
 
     it('returns {trustpid: data.trustpid} if we have the right data stored in the localstorage right after the callback is called', (done) => {
-      const response = invokeGetIdAPI({});
+      const idGraph = {
+        'domain': 'uat.mno.link',
+        'umid': 'umidValue',
+      };
+      const response = trustpidSubmodule.getId();
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
       if (typeof response.callback === 'function') {
-        window.localStorage.setItem(cookieDomainName, JSON.stringify(domain));
-        window.localStorage.setItem(cookieName, JSON.stringify(getStorageData(idGraphData)));
+        window.localStorage.setItem(connectDomainKey, JSON.stringify('uat.mno.link'));
+        window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         response.callback(function (result) {
           expect(result).to.not.be.undefined;
           expect(result).to.have.property('trustpid');
-          expect(result.trustpid).to.be.equal(`${umid}-${acronym}`);
+          expect(result.trustpid).to.be.equal('umidValue-xxxx');
           done()
         })
       }
     });
 
     it('returns "undefined" if domains don\'t match', (done) => {
-      window.localStorage.setItem(cookieDomainName, JSON.stringify(domain2));
+      const idGraph = {
+        'domain': 'uat.mno.link',
+        'umid': 'umidValue',
+      };
+      window.localStorage.setItem(connectDomainKey, JSON.stringify('differentDomainValue'));
+      window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
 
-      const response = invokeGetIdAPI({});
+      const response = trustpidSubmodule.getId();
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
-      expect(JSON.parse(window.localStorage.getItem(cookieDomainName))).to.be.equal(domain2);
 
       if (typeof response.callback === 'function') {
-        window.localStorage.setItem(cookieDomainName, JSON.stringify(domain2));
         setTimeout(() => {
-          window.localStorage.setItem(cookieDomainName, JSON.stringify(domain2));
-          window.localStorage.setItem(cookieName, JSON.stringify(getStorageData(idGraphData)));
-          expect(JSON.parse(window.localStorage.getItem(cookieDomainName))).to.be.equal(domain2);
+          expect(JSON.parse(window.localStorage.getItem(connectDomainKey))).to.be.equal('differentDomainValue');
         }, 100)
         response.callback(function (result) {
           expect(result).to.be.undefined;
@@ -117,33 +113,43 @@ describe('trustpidSubmodule', () => {
     });
 
     it('returns {trustpid: data.trustpid} if we have the right data stored in the localstorage right after 500ms delay', (done) => {
-      const response = invokeGetIdAPI({});
+      const idGraph = {
+        'domain': 'uat.mno.link',
+        'umid': 'umidValue',
+      };
+
+      const response = trustpidSubmodule.getId();
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
       if (typeof response.callback === 'function') {
         setTimeout(() => {
-          window.localStorage.setItem(cookieDomainName, JSON.stringify(domain));
-          window.localStorage.setItem(cookieName, JSON.stringify(getStorageData(idGraphData)));
+          window.localStorage.setItem(connectDomainKey, JSON.stringify('uat.mno.link'));
+          window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
           expect(result).to.not.be.undefined;
           expect(result).to.have.property('trustpid');
-          expect(result.trustpid).to.be.equal(`${umid}-${acronym}`);
+          expect(result.trustpid).to.be.equal('umidValue-xxxx');
           done()
         })
       }
     });
 
     it('returns undefined if we have the data stored in the localstorage after 500ms delay and the max (waiting) delay is only 200ms ', (done) => {
-      const response = invokeGetIdAPI({maxDelayTime: 200});
+      const idGraph = {
+        'domain': 'uat.mno.link',
+        'umid': 'umidValue',
+      };
+
+      const response = trustpidSubmodule.getId({params: {maxDelayTime: 200}});
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
       if (typeof response.callback === 'function') {
         setTimeout(() => {
-          window.localStorage.setItem(cookieDomainName, JSON.stringify(domain));
-          window.localStorage.setItem(cookieName, JSON.stringify(getStorageData(idGraphData)));
+          window.localStorage.setItem(connectDomainKey, JSON.stringify('uat.mno.link'));
+          window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
           expect(result).to.be.undefined;
@@ -153,7 +159,7 @@ describe('trustpidSubmodule', () => {
     });
   });
 
-  describe('decode()', () => {
+  describe('trustpid decode()', () => {
     const VALID_API_RESPONSES = [
       {
         expected: '32a97f612',
@@ -179,6 +185,46 @@ describe('trustpidSubmodule', () => {
     [{}, '', {foo: 'bar'}].forEach((response) => {
       it(`should return undefined for an invalid response "${JSON.stringify(response)}"`, () => {
         expect(trustpidSubmodule.decode(response)).to.be.undefined;
+      });
+    });
+  });
+
+  describe('trustpid messageHandler for acronyms', () => {
+    afterEach(() => {
+      window.localStorage.removeItem(connectDataKey);
+      window.localStorage.removeItem(connectDomainKey);
+    });
+
+    const domains = [
+      {domain: 'tmi.mno.link', acronym: 'ndye'},
+      {domain: 'tmi.vodafone.de', acronym: 'pqnx'},
+      {domain: 'tmi.telekom.de', acronym: 'avgw'},
+      {domain: 'tmi.tmid.es', acronym: 'kjws'},
+      {domain: 'uat.mno.link', acronym: 'xxxx'},
+      {domain: 'es.tmiservice.orange.com', acronym: 'aplw'},
+    ];
+
+    domains.forEach(({domain, acronym}) => {
+      it(`correctly sets trustpid value and acronym to ${acronym} for ${domain} domain`, (done) => {
+        const idGraph = {
+          'domain': domain,
+          'umid': 'umidValue',
+        };
+
+        window.localStorage.setItem(connectDomainKey, JSON.stringify(domain));
+        window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
+
+        const eventData = {
+          data: `{\"msgType\":\"MNOSELECTOR\",\"body\":{\"url\":\"https://${domain}/some/path\"}}`
+        };
+
+        window.dispatchEvent(new MessageEvent('message', eventData));
+
+        const response = trustpidSubmodule.getId();
+        expect(response).to.have.property('id');
+        expect(response.id).to.have.property('trustpid');
+        expect(response.id.trustpid).to.be.equal(`umidValue-${acronym}`);
+        done();
       });
     });
   });
