@@ -81,7 +81,7 @@ describe('trustpid System', () => {
         window.localStorage.setItem(connectDomainKey, JSON.stringify('uat.mno.link'));
         window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         response.callback(function (result) {
-          expect(result).to.not.be.undefined;
+          expect(result).to.not.be.null;
           expect(result).to.have.property('trustpid');
           expect(result.trustpid).to.be.equal('umidValue-xxxx');
           done()
@@ -89,7 +89,7 @@ describe('trustpid System', () => {
       }
     });
 
-    it('returns "undefined" if domains don\'t match', (done) => {
+    it('returns null if domains don\'t match', (done) => {
       const idGraph = {
         'domain': 'uat.mno.link',
         'umid': 'umidValue',
@@ -106,7 +106,7 @@ describe('trustpid System', () => {
           expect(JSON.parse(window.localStorage.getItem(connectDomainKey))).to.be.equal('differentDomainValue');
         }, 100)
         response.callback(function (result) {
-          expect(result).to.be.undefined;
+          expect(result).to.be.null;
           done()
         })
       }
@@ -128,7 +128,7 @@ describe('trustpid System', () => {
           window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
-          expect(result).to.not.be.undefined;
+          expect(result).to.not.be.null;
           expect(result).to.have.property('trustpid');
           expect(result.trustpid).to.be.equal('umidValue-xxxx');
           done()
@@ -136,7 +136,7 @@ describe('trustpid System', () => {
       }
     });
 
-    it('returns undefined if we have the data stored in the localstorage after 500ms delay and the max (waiting) delay is only 200ms ', (done) => {
+    it('returns null if we have the data stored in the localstorage after 500ms delay and the max (waiting) delay is only 200ms ', (done) => {
       const idGraph = {
         'domain': 'uat.mno.link',
         'umid': 'umidValue',
@@ -152,7 +152,7 @@ describe('trustpid System', () => {
           window.localStorage.setItem(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
-          expect(result).to.be.undefined;
+          expect(result).to.be.null;
           done()
         })
       }
@@ -183,8 +183,8 @@ describe('trustpid System', () => {
     });
 
     [{}, '', {foo: 'bar'}].forEach((response) => {
-      it(`should return undefined for an invalid response "${JSON.stringify(response)}"`, () => {
-        expect(trustpidSubmodule.decode(response)).to.be.undefined;
+      it(`should return null for an invalid response "${JSON.stringify(response)}"`, () => {
+        expect(trustpidSubmodule.decode(response)).to.be.null;
       });
     });
   });

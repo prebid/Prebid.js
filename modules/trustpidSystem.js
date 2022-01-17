@@ -20,7 +20,7 @@ function messageHandler(event) {
   let msg;
   try {
     msg = JSON.parse(event.data);
-    if (msg.msgType === 'MNOSELECTOR' && msg.body?.url) {
+    if (msg.msgType === 'MNOSELECTOR' && msg.body && msg.body.url) {
       let URL = msg.body.url.split('//');
       let domainURL = URL[1].split('/');
       mnoDomain = domainURL[0];
@@ -28,7 +28,7 @@ function messageHandler(event) {
       getDomainAcronym(mnoDomain);
     }
   } catch (e) {
-    return;
+
   }
 }
 
