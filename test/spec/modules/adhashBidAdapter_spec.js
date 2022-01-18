@@ -7,7 +7,7 @@ describe('adhashBidAdapter', function () {
       bidder: 'adhash',
       params: {
         publisherId: '0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb',
-        platformURL: 'https://adhash.org/p/struma/'
+        platformURL: 'https://adhash.com/p/struma/'
       },
       mediaTypes: {
         banner: {
@@ -115,18 +115,30 @@ describe('adhashBidAdapter', function () {
         adUnitCode: 'adunit-code',
         sizes: [[300, 250]],
         params: {
-          platformURL: 'https://adhash.org/p/struma/'
+          platformURL: 'https://adhash.com/p/struma/'
         }
       }
     };
 
+    let bodyStub;
+
+    const serverResponse = {
+      body: {
+        creatives: [{ costEUR: 1.234 }],
+        advertiserDomains: 'adhash.com',
+        badWords: [
+          ['onqjbeq1', 'full', 1],
+          ['onqjbeq2', 'partial', 1],
+        ],
+        maxScore: 2
+      }
+    };
+
+    afterEach(function() {
+      bodyStub && bodyStub.restore();
+    });
+
     it('should interpret the response correctly', function () {
-      const serverResponse = {
-        body: {
-          creatives: [{ costEUR: 1.234 }],
-          advertiserDomains: 'adhash.org'
-        }
-      };
       const result = spec.interpretResponse(serverResponse, request);
       expect(result.length).to.equal(1);
       expect(result[0].requestId).to.equal('12345678901234');
@@ -137,7 +149,49 @@ describe('adhashBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(true);
       expect(result[0].currency).to.equal('EUR');
       expect(result[0].ttl).to.equal(60);
-      expect(result[0].meta.advertiserDomains).to.eql(['adhash.org']);
+      expect(result[0].meta.advertiserDomains).to.eql(['adhash.com']);
+    });
+
+    it('should return empty array when there are bad words (full)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text badWord1 badWord1 example badWord1 text';
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (partial)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text partialBadWord2 badword2 example BadWord2text';
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return non-empty array when there are not enough bad words (full)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text badWord1 badWord1 example text';
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
+    });
+
+    it('should return non-empty array when there are not enough bad words (partial)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text partialBadWord2 example';
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
+    });
+
+    it('should return non-empty array when there are no-bad word matches', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text partialBadWord1 example text';
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
+    });
+
+    it('should return non-empty array when there is a problem with the brand-safety', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return null;
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });
 
     it('should return empty array when there are no creatives returned', function () {
