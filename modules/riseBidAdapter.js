@@ -1,16 +1,16 @@
-import { logWarn, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter } from '../src/utils.js';
+import { logWarn, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, generateUUID } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
-const SUPPORTED_AD_TYPES = [VIDEO];
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'rise';
-const ADAPTER_VERSION = '5.0.0';
+const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
 const CURRENCY = 'USD';
 const SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
 const MODES = {
-  PRODUCTION: 'hb',
+  PRODUCTION: 'hb-multi',
   TEST: 'hb-test'
 }
 const SUPPORTED_SYNC_METHODS = {
@@ -36,18 +36,38 @@ export const spec = {
 
     return true;
   },
-  buildRequests: function (bidRequests, bidderRequest) {
-    if (bidRequests.length === 0) {
-      return [];
+  buildRequests: function (validBidRequests, bidderRequest) {
+    const adUnitsParameters = [];
+    const impArray = [];
+    const combinedRequestsObject = {};
+
+    if (validBidRequests.length) {
+      validBidRequests.forEach(bid => {
+        adUnitsParameters.push(generateParameters(bid, bidderRequest));
+      });
     }
 
-    const requests = [];
+    // build the imp param, using all adUnits data
+    adUnitsParameters.forEach(adUnit => {
+      adUnitData = {
+        id: adUnit.bid_id || null,
+        height: adUnit.height || null,
+        width: adUnit.width || null,
+        floorPrice: adUnit.floor_price || null,
+        unitType: adUnit.mediaType || null
+      }
+      impArray.push(adUnitData);
+    })
 
-    bidRequests.forEach(bid => {
-      requests.push(buildVideoRequest(bid, bidderRequest));
-    });
+    // append imp param to the first adUnit data, so that old logic on seller will not be affected
+    adUnitsParameters[0].data.imp = impArray;
+    combinedRequestsObject = adUnitsParameters[0].data;
 
-    return requests;
+    return {
+      method: 'POST',
+      url: getEndpoint(validBidRequests[0].params.testMode),
+      data: combinedRequestsObject
+    }
   },
   interpretResponse: function({body}) {
     const bidResponses = [];
@@ -116,16 +136,17 @@ function getFloor(bid) {
 }
 
 /**
- * Build the video request
+ * Build the request
  * @param bid {bid}
  * @param bidderRequest {bidderRequest}
  * @returns {Object}
  */
-function buildVideoRequest(bid, bidderRequest) {
+// TODO: remove this function as it is no longer relevant
+function constructAdUnitData(bid, bidderRequest) {
   const sellerParams = generateParameters(bid, bidderRequest);
   const {params} = bid;
   return {
-    method: 'GET',
+    method: 'POST',
     url: getEndpoint(params.testMode),
     data: sellerParams
   };
@@ -136,13 +157,16 @@ function buildVideoRequest(bid, bidderRequest) {
  * @param bid {bid}
  * @returns {Array}
  */
-function getSizes(bid) {
-  if (deepAccess(bid, 'mediaTypes.video.sizes')) {
-    return bid.mediaTypes.video.sizes[0];
-  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    return bid.sizes[0];
+function getSizes(bid, mediaType) {
+  const sizeArray = []
+
+  if (deepAccess(bid, `mediaTypes.${mediaType}.sizes`)) {
+    sizeArray = bid.mediaTypes[mediaType].sizes[0];
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length) {
+    sizeArray = bid.sizes[0];
   }
-  return [];
+
+  return sizeArray;
 }
 
 /**
@@ -247,9 +271,10 @@ function getDeviceType(ua) {
  */
 function generateParameters(bid, bidderRequest) {
   const {params} = bid;
+  const mediaType = isBanner(bid) ? 'banner' : 'video';
   const timeout = config.getConfig('bidderTimeout');
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
-  const [width, height] = getSizes(bid);
+  const [width, height] = getSizes(bid, mediaType);
   const {bidderCode} = bidderRequest;
   const domain = window.location.hostname;
 
@@ -278,7 +303,8 @@ function generateParameters(bid, bidderRequest) {
     publisher_name: domain,
     site_domain: domain,
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
-    device_type: getDeviceType(navigator.userAgent)
+    device_type: getDeviceType(navigator.userAgent),
+    mediaType
   };
 
   const userIdsParam = getBidIdParameter('userId', bid);
@@ -357,4 +383,8 @@ function generateParameters(bid, bidderRequest) {
   }
 
   return requestParams;
+}
+
+function isBanner(bid) {
+  return bid.mediaTypes && bid.mediaTypes.banner;
 }
