@@ -142,23 +142,6 @@ function getFloor(bid) {
 }
 
 /**
- * Build the request
- * @param bid {bid}
- * @param bidderRequest {bidderRequest}
- * @returns {Object}
- */
-// TODO: remove this function as it is no longer relevant
-function constructAdUnitData(bid, bidderRequest) {
-  const sellerParams = generateParameters(bid, bidderRequest);
-  const {params} = bid;
-  return {
-    method: 'POST',
-    url: getEndpoint(params.testMode),
-    data: sellerParams
-  };
-}
-
-/**
  * Get the the ad size from the bid
  * @param bid {bid}
  * @returns {Array}
