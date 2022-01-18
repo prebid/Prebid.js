@@ -1,4 +1,4 @@
-import { logWarn, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, generateUUID } from '../src/utils.js';
+import { logWarn, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -42,6 +42,9 @@ export const spec = {
     const combinedRequestsObject = {};
 
     if (validBidRequests.length) {
+      // test mode is configured according to the param received in the first bid of the `validBidRequests` array
+      const testMode = validBidRequests[0].params && validBidRequests[0].params.testMode;
+
       validBidRequests.forEach(bid => {
         adUnitsParameters.push(generateParameters(bid, bidderRequest));
       });
@@ -60,12 +63,12 @@ export const spec = {
     })
 
     // append imp param to the first adUnit data, so that old logic on seller will not be affected
-    adUnitsParameters[0].data.imp = impArray;
-    combinedRequestsObject = adUnitsParameters[0].data;
+    adUnitsParameters[0].imp = impArray;
+    combinedRequestsObject = adUnitsParameters[0];
 
     return {
       method: 'POST',
-      url: getEndpoint(validBidRequests[0].params.testMode),
+      url: getEndpoint(testMode),
       data: combinedRequestsObject
     }
   },
