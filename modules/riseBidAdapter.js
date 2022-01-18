@@ -54,17 +54,17 @@ export const spec = {
     adUnitsParameters.forEach(adUnit => {
       adUnitData = {
         id: adUnit.bid_id || null,
-        height: adUnit.height || null,
-        width: adUnit.width || null,
-        floorPrice: adUnit.floor_price || null,
-        unitType: adUnit.mediaType || null
+        h: adUnit.height || null,
+        w: adUnit.width || null,
+        fp: adUnit.floor_price || null,
+        mt: adUnit.mediaType || null
       }
       impArray.push(adUnitData);
     })
 
-    // append imp param to the first adUnit data, so that old logic on seller will not be affected
-    adUnitsParameters[0].imp = impArray;
-    combinedRequestsObject = adUnitsParameters[0];
+    //  send the first adUnit data params as the general params, so that old logic on seller will not be affected
+    combinedRequestsObject.params = adUnitsParameters[0]
+    combinedRequestsObject.imp = impArray;
 
     return {
       method: 'POST',
@@ -75,25 +75,28 @@ export const spec = {
   interpretResponse: function({body}) {
     const bidResponses = [];
 
-    const bidResponse = {
-      requestId: body.requestId,
-      cpm: body.cpm,
-      width: body.width,
-      height: body.height,
-      creativeId: body.requestId,
-      currency: body.currency,
-      netRevenue: body.netRevenue,
-      ttl: body.ttl || TTL,
-      vastXml: body.vastXml,
-      mediaType: VIDEO
-    };
-
-    if (body.adomain && body.adomain.length) {
-      bidResponse.meta = {};
-      bidResponse.meta.advertiserDomains = body.adomain
+    if (body) {
+      body.forEach(adUnit => {
+        const bidResponse = {
+          requestId: adUnit.requestId,
+          cpm: adUnit.cpm,
+          width: adUnit.width,
+          height: adUnit.height,
+          creativeId: adUnit.requestId,
+          currency: adUnit.currency,
+          netRevenue: adUnit.netRevenue,
+          ttl: adUnit.ttl || TTL,
+          vastXml: adUnit.vastXml,
+          mediaType: adUnit.mediaType
+        };
+        
+        if (adUnit.adomain && adUnit.adomain.length) {
+          bidResponse.meta = {};
+          bidResponse.meta.advertiserDomains = body.adomain
+        }
+        bidResponses.push(bidResponse);
+      })
     }
-    bidResponses.push(bidResponse);
-
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses) {
