@@ -35,17 +35,30 @@ describe('Optimera RTD score file properly sets targeting values', () => {
       'de': {
         'div-0': ['A5', 'A6'],
         'div-1': ['A7', 'A8'],
+        'insights': {
+          'ilv': ['div-0'],
+          'miv': ['div-4'],
+        }
       },
       'mo': {
         'div-0': ['A9', 'B0'],
         'div-1': ['B1', 'B2'],
+        'insights': {
+          'ilv': ['div-1'],
+          'miv': ['div-2'],
+        }
       }
+    },
+    'insights': {
+      'ilv': ['div-5'],
+      'miv': ['div-6'],
     }
   };
-  it('Properly set the score file url', () => {
+  it('Properly set the score file url and scores', () => {
     optimeraRTD.setScores(JSON.stringify(scores));
     expect(optimeraRTD.optimeraTargeting['div-0']).to.include.ordered.members(['A5', 'A6']);
     expect(optimeraRTD.optimeraTargeting['div-1']).to.include.ordered.members(['A7', 'A8']);
+    expect(window.optimeraInsights.data['ilv']).to.include.ordered.members(['div-0']);
   });
 });
 

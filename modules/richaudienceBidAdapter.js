@@ -1,4 +1,4 @@
-import { isEmpty, deepAccess, isStr } from '../src/utils.js';
+import {isEmpty, deepAccess, isStr} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -52,7 +52,8 @@ export const spec = {
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: (!isEmpty(bid.params.keywords) ? bid.params.keywords : null)
+        kws: (!isEmpty(bid.params.keywords) ? bid.params.keywords : null),
+        schain: bid.schain
       };
 
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
