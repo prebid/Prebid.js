@@ -40,10 +40,11 @@ export const spec = {
     const adUnitsParameters = [];
     const impArray = [];
     const combinedRequestsObject = {};
+    let testMode = false;
 
     if (validBidRequests.length) {
       // test mode is configured according to the param received in the first bid of the `validBidRequests` array
-      const testMode = validBidRequests[0].params && validBidRequests[0].params.testMode;
+      testMode = validBidRequests[0].params && validBidRequests[0].params.testMode;
 
       validBidRequests.forEach(bid => {
         adUnitsParameters.push(generateParameters(bid, bidderRequest));
