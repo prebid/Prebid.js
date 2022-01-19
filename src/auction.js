@@ -59,7 +59,7 @@
 
 import {
   flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl, generateUUID,
-  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr, cache, isAllowZeroCpmBidsEnabled
+  logMessage, bind, logError, logInfo, logWarn, isEmpty, _each, isFn, isEmptyStr, isAllowZeroCpmBidsEnabled
 } from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
 import { getNativeTargeting } from './native.js';
@@ -692,7 +692,7 @@ function createKeyVal(key, value) {
   };
 }
 
-const defaultAdserverTargeting = cache(() => {
+function defaultAdserverTargeting() {
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   return [
     createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
@@ -704,7 +704,7 @@ const defaultAdserverTargeting = cache(() => {
     createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
     createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
   ]
-})
+}
 
 /**
  * @param {string} mediaType

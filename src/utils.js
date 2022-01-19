@@ -1339,26 +1339,3 @@ export function isAllowZeroCpmBidsEnabled(bidderCode) {
   return ((bidderSettings[bidderCode] && bidderSettings[bidderCode].allowZeroCpmBids === true) ||
     (bidderSettings.standard && bidderSettings.standard.allowZeroCpmBids === true));
 }
-
-/**
- * Return a memoized version of the given function that uses the first argument as cache key.
- */
-export function memoize1(fun) {
-  const cache = {};
-  return function (a0, ...rest) {
-    if (!cache.hasOwnProperty(a0)) {
-      cache[a0] = fun(a0, ...rest);
-    }
-    return cache[a0];
-  }
-}
-
-/**
- * Return a memoized version of the given zero-arg function.
- */
-export function cache(fun) {
-  const f = memoize1((arg) => fun());
-  return function () {
-    return f(null);
-  }
-}
