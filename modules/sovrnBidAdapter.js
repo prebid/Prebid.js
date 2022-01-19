@@ -26,7 +26,7 @@ const ORTB_VIDEO_PARAMS = {
   'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
   'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
   'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'pos': (value) => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
+  'pos': (value) => Array.isArray(value) && value.every(v => v >= 0 && v <= 7),
   'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
 }
 
@@ -41,7 +41,12 @@ export const spec = {
    * @return boolean for whether or not a bid is valid
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.tagid && !isNaN(parseFloat(bid.params.tagid)) && isFinite(bid.params.tagid))
+    return !!(
+      bid.params.tagid &&
+      !isNaN(parseFloat(bid.params.tagid)) &&
+      isFinite(bid.params.tagid) &&
+      deepAccess(bid, 'mediaTypes.video.context') !== ADPOD
+    )
   },
 
   /**
@@ -102,10 +107,7 @@ export const spec = {
             h: 1,
           };
         }
-        if (
-          deepAccess(bid, 'mediaTypes.video') &&
-          deepAccess(bid, 'mediaTypes.video.context') !== ADPOD
-        ) {
+        if (deepAccess(bid, 'mediaTypes.video')) {
           imp.video = _buildVideoRequestObj(bid);
         }
 
