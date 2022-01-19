@@ -61,7 +61,7 @@ export const spec = {
         mt: adUnit.mediaType || null
       }
       impArray.push(adUnitData);
-    })
+    });
 
     //  send the first adUnit data params as the general params, so that old logic on seller will not be affected
     combinedRequestsObject.params = adUnitsParameters[0]
@@ -87,16 +87,22 @@ export const spec = {
           currency: adUnit.currency,
           netRevenue: adUnit.netRevenue,
           ttl: adUnit.ttl || TTL,
-          vastXml: adUnit.vastXml,
           mediaType: adUnit.mediaType
         };
+
+        if (adUnit.mediaType === VIDEO) {
+          bidResponse.vastXml = adUnit.vastXml;
+        } else if (adUnit.mediaType === BANNER) {
+          // TODO: verify naming on seller - prebid doc is 'ad', but seller might call it 'html'
+          bidResponse.ad = adUnit.ad;
+        }
         
         if (adUnit.adomain && adUnit.adomain.length) {
           bidResponse.meta = {};
           bidResponse.meta.advertiserDomains = body.adomain
         }
         bidResponses.push(bidResponse);
-      })
+      });
     }
     return bidResponses;
   },
