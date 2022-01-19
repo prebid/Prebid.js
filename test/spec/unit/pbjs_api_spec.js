@@ -16,6 +16,7 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { _sendAdToCreative } from 'src/secureCreatives.js';
 import find from 'core-js-pure/features/array/find.js';
+import {synchronizePromise} from '../../helpers/syncPromise.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -190,13 +191,16 @@ window.apntag = {
 }
 
 describe('Unit: Prebid Module', function () {
-  let bidExpiryStub;
+  let bidExpiryStub, promiseSandbox;
   beforeEach(function () {
+    promiseSandbox = sinon.createSandbox();
+    synchronizePromise(promiseSandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
   });
 
   afterEach(function() {
+    promiseSandbox.restore();
     $$PREBID_GLOBAL$$.adUnits = [];
     bidExpiryStub.restore();
     configObj.setConfig({ useBidCache: false });
@@ -1135,13 +1139,15 @@ describe('Unit: Prebid Module', function () {
             height: 0
           }
         },
-        getElementsByTagName: sinon.stub()
+        getElementsByTagName: sinon.stub(),
+        querySelector: sinon.stub()
       };
 
       elStub = {
         insertBefore: sinon.stub()
       };
       doc.getElementsByTagName.returns([elStub]);
+      doc.querySelector.returns(elStub);
 
       spyLogError = sinon.spy(utils, 'logError');
       spyLogMessage = sinon.spy(utils, 'logMessage');
@@ -1852,11 +1858,23 @@ describe('Unit: Prebid Module', function () {
                   pos: 2
                 }
               }
+            },
+            {
+              code: 'test6',
+              bids: [],
+              sizes: [300, 250],
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 250],
+                  pos: 0
+                }
+              }
             }];
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: adUnit
             });
             expect(auctionArgs.adUnits[0].mediaTypes.banner.pos).to.equal(2);
+            expect(auctionArgs.adUnits[1].mediaTypes.banner.pos).to.equal(0);
           });
         });
 

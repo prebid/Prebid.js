@@ -477,6 +477,8 @@ const testsBuildRequests = [
         refererInfo: getConfigBuildRequest('banner').refererInfo
       },
       data: {
+        gdpr: false,
+        gdpr_consent: '',
         height: 250,
         width: 300,
         keywords: '',

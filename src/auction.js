@@ -250,10 +250,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
         let callbacks = auctionCallbacks(auctionDone, this);
         adapterManager.callBids(_adUnits, bidRequests, function(...args) {
-          addBidResponse.apply({
-            dispatch: callbacks.addBidResponse,
-            bidderRequest: this
-          }, args)
+          callbacks.addBidResponse.apply(this, args);
         }, callbacks.adapterDone, {
           request(source, origin) {
             increment(outstandingRequests, origin);
@@ -344,6 +341,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     addWinningBid,
     setBidTargeting,
     getWinningBids: () => _winningBids,
+    getAuctionStart: () => _auctionStart,
     getTimeout: () => _timeout,
     getAuctionId: () => _auctionId,
     getAuctionStatus: () => _auctionStatus,
@@ -355,8 +353,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 }
 
-export const addBidResponse = hook('async', function(adUnitCode, bid) {
-  this.dispatch.call(this.bidderRequest, adUnitCode, bid);
+/**
+ * addBidResponse may return a Promise; if it does, the auction will attempt to
+ * wait for it to complete (successfully or not) before closing.
+ */
+export const addBidResponse = hook('sync', function(adUnitCode, bid) {
+  return this.dispatch.call(this.bidderRequest, adUnitCode, bid);
 }, 'addBidResponse');
 
 export const addBidderRequests = hook('sync', function(bidderRequests) {
@@ -374,6 +376,32 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   let allAdapterCalledDone = false;
   let bidderRequestsDone = new Set();
   let bidResponseMap = {};
+  const ready = {};
+
+  function waitFor(bidderRequest, result) {
+    const id = bidderRequest.bidderRequestId;
+    if (ready[id] == null) {
+      ready[id] = Promise.resolve();
+    }
+    ready[id] = ready[id].then(() => Promise.resolve(result).catch(() => {}))
+  }
+
+  function guard(bidderRequest, fn) {
+    let timeout = bidderRequest.timeout;
+    if (timeout == null || timeout > auctionInstance.getTimeout()) {
+      timeout = auctionInstance.getTimeout();
+    }
+    const timeRemaining = auctionInstance.getAuctionStart() + timeout - Date.now();
+    const wait = ready[bidderRequest.bidderRequestId];
+    if (wait != null && timeRemaining > 0) {
+      Promise.race([
+        new Promise((resolve) => setTimeout(resolve, timeRemaining)),
+        wait
+      ]).then(fn);
+    } else {
+      fn();
+    }
+  }
 
   function afterBidAdded() {
     outstandingBidsAdded--;
@@ -382,7 +410,7 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
     }
   }
 
-  function addBidResponse(adUnitCode, bid) {
+  function handleBidResponse(adUnitCode, bid) {
     let bidderRequest = this;
 
     bidResponseMap[bid.requestId] = true;
@@ -429,8 +457,15 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   }
 
   return {
-    addBidResponse,
-    adapterDone
+    addBidResponse: function (...args) {
+      waitFor(this, addBidResponse.apply({
+        dispatch: handleBidResponse,
+        bidderRequest: this
+      }, args));
+    },
+    adapterDone: function () {
+      guard(this, adapterDone.bind(this))
+    }
   }
 }
 
@@ -569,7 +604,7 @@ function setupBidTargeting(bidObject, bidderRequest) {
   let keyValues;
   const cpmCheck = (isAllowZeroCpmBidsEnabled(bidObject.bidderCode)) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
   if (bidObject.bidderCode && (cpmCheck || bidObject.dealId)) {
-    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode);
+    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode && bid.bidId === bidObject.requestId);
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
@@ -744,7 +779,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
     var value = kvPair.val;
 
     if (keyValues[key]) {
-      logWarn('The key: ' + key + ' is getting ovewritten');
+      logWarn('The key: ' + key + ' is being overwritten');
     }
 
     if (isFn(value)) {
