@@ -88,25 +88,32 @@ function handleNativeRequest(ev, data, adObject) {
   //   adId: '%%PATTERN:hb_adid%%'
   // }), '*');
   if (adObject == null) {
-    logError(`Cannot find ad '${data.adId}' for x-origin event request`)
+    logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
   }
-  if (data.action === 'assetRequest') {
-    const message = getAssetMessage(data, adObject);
-    ev.source.postMessage(JSON.stringify(message), ev.origin);
-  } else if (data.action === 'allAssetRequest') {
-    const message = getAllAssetsMessage(data, adObject);
-    ev.source.postMessage(JSON.stringify(message), ev.origin);
-  } else if (data.action === 'resizeNativeHeight') {
-    adObject.height = data.height;
-    adObject.width = data.width;
-    resizeRemoteCreative(adObject);
-  } else {
-    const trackerType = fireNativeTrackers(data, adObject);
-    if (trackerType === 'click') { return; }
+  switch (data.action) {
+    case 'assetRequest':
+      reply(getAssetMessage(data, adObject));
+      break;
+    case 'allAssetRequest':
+      reply(getAllAssetsMessage(data, adObject));
+      break;
+    case 'resizeNativeHeight':
+      adObject.height = data.height;
+      adObject.width = data.width;
+      resizeRemoteCreative(adObject);
+      break;
+    default:
+      const trackerType = fireNativeTrackers(data, adObject);
+      if (trackerType === 'click') {
+        return;
+      }
+      auctionManager.addWinningBid(adObject);
+      events.emit(BID_WON, adObject);
+  }
 
-    auctionManager.addWinningBid(adObject);
-    events.emit(BID_WON, adObject);
+  function reply(message) {
+    ev.source.postMessage(JSON.stringify(message), ev.origin);
   }
 }
 

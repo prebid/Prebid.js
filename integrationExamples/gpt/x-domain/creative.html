@@ -2,14 +2,14 @@
 // this script can be returned by an ad server delivering a cross domain iframe, into which the
 // creative will be rendered, e.g. DFP delivering a SafeFrame
 
-let windowLocation = window.location;
-var urlParser = document.createElement('a');
+const windowLocation = window.location;
+const urlParser = document.createElement('a');
 urlParser.href = '%%PATTERN:url%%';
-var publisherDomain = urlParser.protocol + '//' + urlParser.hostname;
+const publisherDomain = urlParser.protocol + '//' + urlParser.hostname;
 const adId = '%%PATTERN:hb_adid%%';
 
 function renderAd(ev) {
-  let key = ev.message ? 'message' : 'data';
+  const key = ev.message ? 'message' : 'data';
   let adObject = {};
   try {
     adObject = JSON.parse(ev[key]);
@@ -17,16 +17,16 @@ function renderAd(ev) {
     return;
   }
 
-  let origin = ev.origin || ev.originalEvent.origin;
+  const origin = ev.origin || ev.originalEvent.origin;
   if (adObject.message && adObject.message === 'Prebid Response' &&
     publisherDomain === origin &&
     adObject.adId === adId) {
     try {
-      let body = window.document.body;
-      let ad = adObject.ad;
-      let url = adObject.adUrl;
-      let width = adObject.width;
-      let height = adObject.height;
+      const body = window.document.body;
+      const ad = adObject.ad;
+      const url = adObject.adUrl;
+      const width = adObject.width;
+      const height = adObject.height;
 
       if (adObject.mediaType === 'video') {
         signalRenderResult(false, {
@@ -35,7 +35,7 @@ function renderAd(ev) {
         });
         console.log('Error trying to write ad.');
       } else if (ad) {
-        var frame = document.createElement('iframe');
+        const frame = document.createElement('iframe');
         frame.setAttribute('FRAMEBORDER', 0);
         frame.setAttribute('SCROLLING', 'no');
         frame.setAttribute('MARGINHEIGHT', 0);
