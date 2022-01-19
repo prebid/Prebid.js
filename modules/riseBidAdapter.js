@@ -11,7 +11,7 @@ const CURRENCY = 'USD';
 const SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
 const MODES = {
   PRODUCTION: 'hb-multi',
-  TEST: 'hb-test'
+  TEST: 'hb-multi-test'
 }
 const SUPPORTED_SYNC_METHODS = {
   IFRAME: 'iframe',
@@ -130,13 +130,13 @@ registerBidder(spec);
  * @param bid {bid}
  * @returns {Number}
  */
-function getFloor(bid) {
+function getFloor(bid, mediaType) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
   let floorResult = bid.getFloor({
     currency: CURRENCY,
-    mediaType: VIDEO,
+    mediaType: mediaType,
     size: '*'
   });
   return floorResult.currency === CURRENCY && floorResult.floor ? floorResult.floor : 0;
@@ -261,7 +261,7 @@ function getDeviceType(ua) {
  */
 function generateParameters(bid, bidderRequest) {
   const {params} = bid;
-  const mediaType = isBanner(bid) ? 'banner' : 'video';
+  const mediaType = isBanner(bid) ? BANNER : VIDEO;
   const timeout = config.getConfig('bidderTimeout');
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const [width, height] = getSizes(bid, mediaType);
@@ -284,7 +284,7 @@ function generateParameters(bid, bidderRequest) {
     width: width,
     height: height,
     publisher_id: params.org,
-    floor_price: Math.max(getFloor(bid), params.floorPrice),
+    floor_price: Math.max(getFloor(bid, mediaType), params.floorPrice),
     ua: navigator.userAgent,
     bid_id: getBidIdParameter('bidId', bid),
     bidder_request_id: getBidIdParameter('bidderRequestId', bid),
@@ -310,37 +310,38 @@ function generateParameters(bid, bidderRequest) {
     requestParams.user_metadata = JSON.stringify(ortb2Metadata.user);
   }
 
-  const playbackMethod = deepAccess(bid, 'mediaTypes.video.playbackmethod');
+  const playbackMethod = deepAccess(bid, `mediaTypes.${mediaType}.playbackmethod`);
   if (playbackMethod) {
     requestParams.playback_method = playbackMethod;
   }
-  const placement = deepAccess(bid, 'mediaTypes.video.placement');
+  const placement = deepAccess(bid, `mediaTypes.${mediaType}.placement`);
   if (placement) {
     requestParams.placement = placement;
   }
-  const pos = deepAccess(bid, 'mediaTypes.video.pos');
+  const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
   if (pos) {
     requestParams.pos = pos;
   }
-  const minduration = deepAccess(bid, 'mediaTypes.video.minduration');
+  const minduration = deepAccess(bid, `mediaTypes.${mediaType}.minduration`);
   if (minduration) {
     requestParams.min_duration = minduration;
   }
-  const maxduration = deepAccess(bid, 'mediaTypes.video.maxduration');
+  const maxduration = deepAccess(bid, `mediaTypes.${mediaType}.maxduration`);
   if (maxduration) {
     requestParams.max_duration = maxduration;
   }
-  const skip = deepAccess(bid, 'mediaTypes.video.skip');
+  const skip = deepAccess(bid, `mediaTypes.${mediaType}.skip`);
   if (skip) {
     requestParams.skip = skip;
   }
-  const linearity = deepAccess(bid, 'mediaTypes.video.linearity');
+  const linearity = deepAccess(bid, `mediaTypes.${mediaType}.linearity`);
   if (linearity) {
     requestParams.linearity = linearity;
   }
 
-  if (params.placementId) {
-    requestParams.placement_id = params.placementId;
+  const placement_id = params.placementId || deepAccess(bid, 'mediaTypes.banner.name');
+  if (placement_id) {
+    requestParams.placement_id = placement_id;
   }
 
   if (syncEnabled) {
