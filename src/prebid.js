@@ -147,7 +147,7 @@ function validateNativeMediaType(adUnit) {
 function validateAdUnitPos(adUnit, mediaType) {
   let pos = deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
 
-  if (!pos || !isNumber(pos) || !isFinite(pos)) {
+  if (!isNumber(pos) || isNaN(pos) || !isFinite(pos)) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);

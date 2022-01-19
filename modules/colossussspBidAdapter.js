@@ -47,7 +47,10 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.placement_id));
+    const validPlacamentId = bid.params && !isNaN(bid.params.placement_id);
+    const validGroupId = bid.params && !isNaN(bid.params.group_id);
+
+    return Boolean(bid.bidId && (validPlacamentId || validGroupId));
   },
 
   /**
