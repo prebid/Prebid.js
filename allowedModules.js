@@ -1,9 +1,9 @@
 
 const sharedWhiteList = [
-  'poly/arrayFrom',
-  'poly/find',
-  'poly/findIndex',
-  'poly/includes',
+  'prebidjs-polyfill/arrayFrom',
+  'prebidjs-polyfill/find',
+  'prebidjs-polyfill/findIndex',
+  'prebidjs-polyfill/includes',
 ];
 
 module.exports = {

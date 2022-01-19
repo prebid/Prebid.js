@@ -2,10 +2,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, deepAccess, isEmpty, transformBidderParamKeywords, isFn } from '../src/utils.js';
 import { auctionManager } from '../src/auctionManager.js';
-import find from 'poly/find.js';
+import find from 'prebidjs-polyfill/find.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager();

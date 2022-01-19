@@ -4,10 +4,10 @@ import { config } from '../src/config.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager, validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
-import find from 'poly/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'ix';

@@ -8,8 +8,8 @@ import { auctionManager } from './auctionManager.js';
 import { sizeSupported } from './sizeMapping.js';
 import { ADPOD } from './mediaTypes.js';
 import { hook } from './hook.js';
-import includes from 'poly/includes.js';
-import find from 'poly/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
+import find from 'prebidjs-polyfill/find.js';
 
 var CONSTANTS = require('./constants.json');
 

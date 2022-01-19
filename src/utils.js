@@ -2,8 +2,8 @@
 import { config } from './config.js';
 import { getGlobal } from './prebidGlobal.js';
 import clone from 'just-clone';
-import find from 'poly/find.js';
-import includes from 'poly/includes.js';
+import find from 'prebidjs-polyfill/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const CONSTANTS = require('./constants.json');
 

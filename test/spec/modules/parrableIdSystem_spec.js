@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import find from 'poly/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { newStorageManager } from 'src/storageManager.js';

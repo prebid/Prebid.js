@@ -3,7 +3,7 @@ import {
   logWarn, isStr, isSafariBrowser
 } from './utils.js';
 import { config } from './config.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 import { getCoreStorageManager } from './storageManager.js';
 
 export const USERSYNC_DEFAULT_CONFIG = {

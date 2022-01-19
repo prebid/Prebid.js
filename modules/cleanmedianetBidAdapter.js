@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 export const helper = {
   getTopWindowDomain: function (url) {

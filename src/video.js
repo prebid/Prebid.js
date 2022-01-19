@@ -1,7 +1,7 @@
 import adapterManager from './adapterManager.js';
 import { getBidRequest, deepAccess, logError } from './utils.js';
 import { config } from '../src/config.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 import { hook } from './hook.js';
 
 const VIDEO_MEDIA_TYPE = 'video';

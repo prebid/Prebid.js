@@ -1,4 +1,4 @@
-import includes from 'poly/includes.js'
+import includes from 'prebidjs-polyfill/includes.js'
 import cloneDeep from 'lodash/cloneDeep'
 import unset from 'lodash/unset'
 import { expect } from 'chai'

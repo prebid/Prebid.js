@@ -3,8 +3,8 @@ import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
-import find from 'poly/find.js';
-import includes from 'poly/includes.js';
+import find from 'prebidjs-polyfill/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 export const AUCTION_STATES = {
   INIT: 'initialized', // auction has initialized

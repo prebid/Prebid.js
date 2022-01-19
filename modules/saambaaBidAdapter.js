@@ -2,8 +2,8 @@ import { deepAccess, isFn, generateUUID, parseUrl, isEmpty, parseSizesInput } fr
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import find from 'poly/find.js';
-import includes from 'poly/includes.js';
+import find from 'prebidjs-polyfill/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'saambaa';

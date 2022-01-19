@@ -11,8 +11,8 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { setSizeConfig } from 'src/sizeMapping.js';
-import find from 'poly/find.js';
-import includes from 'poly/includes.js';
+import find from 'prebidjs-polyfill/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
 import s2sTesting from 'modules/s2sTesting.js';
 var events = require('../../../../src/events');
 

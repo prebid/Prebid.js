@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/widespaceBidAdapter.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 describe('+widespaceAdatperTest', function () {
   // Dummy bid request

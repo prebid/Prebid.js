@@ -20,9 +20,9 @@ import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {getStorageManager} from '../src/storageManager.js';
-import find from 'poly/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const storage = getStorageManager();
 

@@ -4,8 +4,8 @@ import {
   parseQueryStringParameters,
   parseSizesInput
 } from '../src/utils.js';
-import includes from 'poly/includes.js';
-import find from 'poly/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
+import find from 'prebidjs-polyfill/find.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 export const storage = getStorageManager();

@@ -8,7 +8,7 @@
 import { logInfo, isFn, getAdUnitSizes, logWarn, isStr, isPlainObject, logError, isNumber } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;

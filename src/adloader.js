@@ -1,4 +1,4 @@
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 import { logError, logWarn, insertElement } from './utils.js';
 
 const _requestCache = {};

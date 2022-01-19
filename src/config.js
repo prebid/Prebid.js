@@ -13,14 +13,14 @@
  */
 
 import { isValidPriceConfig } from './cpmBucketManager.js';
-import find from 'poly/find.js';
-import includes from 'poly/includes.js';
+import find from 'prebidjs-polyfill/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
 import {
   mergeDeep, deepClone, getParameterByName, isPlainObject, logMessage, logWarn, logError,
   isArray, isStr, isBoolean, deepAccess, bind
 } from './utils.js';
 
-const from = require('poly/arrayFrom.js');
+const from = require('prebidjs-polyfill/arrayFrom.js');
 const CONSTANTS = require('./constants.json');
 
 const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';

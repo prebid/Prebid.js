@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { resolveStatus, setSizeConfig, sizeSupported } from 'src/sizeMapping.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 let utils = require('src/utils');
 let deepClone = utils.deepClone;

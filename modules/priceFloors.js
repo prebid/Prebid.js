@@ -6,7 +6,7 @@ import events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getHook } from '../src/hook.js';
 import { createBid } from '../src/bidfactory.js';
-import find from 'poly/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 /**

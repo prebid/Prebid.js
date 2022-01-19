@@ -2,21 +2,15 @@
 let path = require('path');
 let _ = require('lodash');
 let resolveFrom = require('resolve-from');
-const fs = require('fs');
-
-const ROOT = path.resolve(path.join(__dirname, '..', '..'));
 
 function flagErrors(context, node, importPath) {
-  let absImportPath = path.resolve(path.join(ROOT, importPath));
-  if (importPath.startsWith('.') || !fs.existsSync(absImportPath)) {
-    let absFileDir = path.dirname(context.getFilename());
-    absImportPath = path.resolve(absFileDir, importPath);
+  let absFileDir = path.dirname(context.getFilename());
+  let absImportPath = path.resolve(absFileDir, importPath);
 
-    try {
-      resolveFrom(absFileDir, importPath);
-    } catch (e) {
-      return context.report(node, `import "${importPath}" cannot be resolved`);
-    }
+  try {
+    resolveFrom(absFileDir, importPath);
+  } catch (e) {
+    return context.report(node, `import "${importPath}" cannot be resolved`);
   }
 
   if (

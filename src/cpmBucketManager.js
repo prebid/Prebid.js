@@ -1,4 +1,4 @@
-import find from 'poly/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import { isEmpty } from './utils.js';
 
 const _defaultPrecision = 2;

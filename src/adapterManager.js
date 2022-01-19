@@ -11,8 +11,8 @@ import { newBidder } from './adapters/bidderFactory.js';
 import { ajaxBuilder } from './ajax.js';
 import { config, RANDOM } from './config.js';
 import { hook } from './hook.js';
-import includes from 'poly/includes.js';
-import find from 'poly/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
+import find from 'prebidjs-polyfill/find.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
 

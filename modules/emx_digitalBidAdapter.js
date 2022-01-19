@@ -2,8 +2,8 @@ import { isArray, logWarn, logError, parseUrl, deepAccess, isStr, _each, getBidI
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import includes from 'poly/includes.js';
-import find from 'poly/find.js';
+import includes from 'prebidjs-polyfill/includes.js';
+import find from 'prebidjs-polyfill/find.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';

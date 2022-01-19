@@ -30,14 +30,11 @@ plugins.push( // this plugin must be last so it can be easily removed for karma 
     minChunks: function(module) {
       return (
         (
-          module.context && (
-            module.context.startsWith(path.resolve('./src')) ||
-            module.context.startsWith(path.resolve('./poly'))
-          ) &&
+          module.context && module.context.startsWith(path.resolve('./src')) &&
           !(module.resource && neverBundle.some(name => module.resource.includes(name)))
         ) ||
         (
-          module.resource && (allowedModules.src.concat(['core-js'])).some(
+          module.resource && (allowedModules.src.concat(['core-js', 'prebidjs-polyfill'])).some(
             name => module.resource.includes(path.resolve('./node_modules/' + name))
           )
         )

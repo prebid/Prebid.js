@@ -1,7 +1,7 @@
 import { isStr, isEmptyStr, logError, mergeDeep, isFn, insertElement } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 
 const MODULE_NAME = 'medianet';
 const SOURCE = MODULE_NAME + 'rtd';

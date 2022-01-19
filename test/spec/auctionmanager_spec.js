@@ -12,7 +12,7 @@ import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
 import * as store from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
-import find from 'poly/find.js';
+import find from 'prebidjs-polyfill/find.js';
 import { server } from 'test/mocks/xhr.js';
 import {expect} from 'chai';
 import {hook} from '../../src/hook.js';

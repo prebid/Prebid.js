@@ -3,7 +3,7 @@
 import { getAdUnitSizes, logWarn, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import includes from 'poly/includes.js';
+import includes from 'prebidjs-polyfill/includes.js';
 import {config} from '../src/config.js';
 
 const BID_SCHEME = 'https://';
