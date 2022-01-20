@@ -1,5 +1,5 @@
+import { logInfo } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js'
-import * as utils from '../src/utils.js'
 import {BANNER} from '../src/mediaTypes.js'
 import {ajax} from '../src/ajax.js'
 
@@ -78,7 +78,9 @@ export const spec = {
             requestId: bid.impid,
             cpm: bid.price,
             ad: bid.adm,
-            adDomain: bid.adomain[0],
+            meta: {
+              advertiserDomains: bid.adomain
+            },
             currency: DEFAULT_CURRENCY,
             ttl: DEFAULT_BID_TTL,
             creativeId: bid.crid,
@@ -90,7 +92,7 @@ export const spec = {
         })
       })
     } else {
-      utils.logInfo('automatad :: no valid responses to interpret')
+      logInfo('automatad :: no valid responses to interpret')
     }
 
     return bidResponses

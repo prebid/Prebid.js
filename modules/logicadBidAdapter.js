@@ -62,6 +62,7 @@ function newBidRequest(bid, bidderRequest) {
     prebidJsVersion: '$prebid.version$',
     referrer: bidderRequest.refererInfo.referer,
     auctionStartTime: bidderRequest.auctionStart,
+    eids: bid.userIdAsEids,
   };
 }
 

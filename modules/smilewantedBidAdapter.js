@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isArray, logError, logWarn, isFn, isPlainObject } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -29,7 +29,6 @@ export const spec = {
       var payload = {
         zoneId: bid.params.zoneId,
         currencyCode: config.getConfig('currency.adServerCurrency') || 'EUR',
-        bidfloor: bid.params.bidfloor || 0.0,
         tagId: bid.adUnitCode,
         sizes: bid.sizes.map(size => ({
           w: size[0],
@@ -38,8 +37,18 @@ export const spec = {
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
+        positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$'
       };
+
+      const floor = getBidFloor(bid);
+      if (floor) {
+        payload.bidfloor = floor;
+      }
+
+      if (bid.params.bidfloor) {
+        payload.bidfloor = bid.params.bidfloor;
+      }
 
       if (bidderRequest && bidderRequest.refererInfo) {
         payload.pageDomain = bidderRequest.refererInfo.referer || '';
@@ -70,6 +79,7 @@ export const spec = {
 
     try {
       if (response) {
+        const dealId = response.dealId || '';
         const bidResponse = {
           requestId: JSON.parse(bidRequest.data).bidId,
           cpm: response.cpm,
@@ -93,10 +103,18 @@ export const spec = {
           bidResponse['renderer'] = newRenderer(JSON.parse(bidRequest.data), response);
         }
 
+        if (dealId.length > 0) {
+          bidResponse.dealId = dealId;
+        }
+
+        bidResponse.meta = {};
+        if (response.meta && response.meta.advertiserDomains && isArray(response.meta.advertiserDomains)) {
+          bidResponse.meta.advertiserDomains = response.meta.advertiserDomains;
+        }
         bidResponses.push(bidResponse);
       }
     } catch (error) {
-      utils.logError('Error while parsing smilewanted response', error);
+      logError('Error while parsing smilewanted response', error);
     }
     return bidResponses;
   },
@@ -108,16 +126,31 @@ export const spec = {
    * @param {*} serverResponses A successful response from the server.
    * @return {Syncs[]} An array of syncs that should be executed.
    */
-  getUserSyncs: function(syncOptions, serverResponses) {
-    const syncs = []
-    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
-      if (serverResponses[0].body.cSyncUrl === 'https://csync.smilewanted.com') {
-        syncs.push({
-          type: 'iframe',
-          url: serverResponses[0].body.cSyncUrl
-        });
+  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
+    let params = '';
+
+    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      // add 'gdpr' only if 'gdprApplies' is defined
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        params += `?gdpr_consent=${gdprConsent.consentString}`;
       }
     }
+
+    if (uspConsent) {
+      params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
+    }
+
+    const syncs = []
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'https://csync.smilewanted.com' + params
+      });
+    }
+
     return syncs;
   }
 }
@@ -137,7 +170,7 @@ function newRenderer(bidRequest, bidResponse) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+    logWarn('Prebid Error calling setRender on newRenderer', err);
   }
   return renderer;
 }
@@ -155,6 +188,26 @@ function outstreamRender(bid) {
       elId: bid.adUnitCode
     });
   });
+}
+
+/**
+ * Get the floor price from bid.params for backward compatibility.
+ * If not found, then check floor module.
+ * @param bid A valid bid object
+ * @returns {*|number} floor price
+ */
+function getBidFloor(bid) {
+  if (isFn(bid.getFloor)) {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: 'banner',
+      size: bid.sizes.map(size => ({ w: size[0], h: size[1] }))
+    });
+    if (isPlainObject(floorInfo) && !isNaN(floorInfo.floor) && floorInfo.currency === 'USD') {
+      return parseFloat(floorInfo.floor);
+    }
+  }
+  return null;
 }
 
 registerBidder(spec);

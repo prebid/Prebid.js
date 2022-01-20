@@ -1,0 +1,132 @@
+<html>
+  <head>
+      <script>
+        window.massConfig = {
+          inskin: {
+            default: {
+              plr_PubfileId: '000000/mass'
+            }
+          }
+        };
+
+        var PREBID_TIMEOUT = 3300;
+  
+        var adUnits = [{
+          code: 'div-gpt-ad-1460505748561-0',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]],
+            }
+          },
+          bids: [{
+            bidder: 'ix',
+            params: {
+              siteId: '123456',
+              size: [300, 250]
+            }
+          }]
+        }];
+  
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+      </script>
+
+      <script>
+        pbjs.que.push(function() {
+          pbjs.setConfig({
+            mass: {
+              enabled: true,
+
+              // official MASS-supported config:
+              dealIdPattern: /^MASS/i,
+              renderUrl: 'https://cdn.massplatform.net/bootloader.js',
+
+              // custom configs:
+              custom: [
+                // simple:
+                {
+                  dealIdPattern: /^abc/i,
+                  renderUrl: 'https://my.domain.com/script.js'
+                },
+
+                // flexible:
+                {
+                  match: function(bid) {
+                    // return true or false, based on given bid
+                  },
+
+                  render: function(payload) {
+                    // render the ad
+                  }
+                }
+              ]
+            }
+          });
+        });
+      </script>
+  
+      <script type="text/javascript" src="/build/dev/prebid.js" async></script>
+      <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function() {
+          googletag.pubads().disableInitialLoad();
+        });
+  
+        pbjs.que.push(function() {
+          pbjs.addAdUnits(adUnits);
+          pbjs.requestBids({
+            bidsBackHandler: sendAdserverRequest
+          });
+        });
+  
+        function sendAdserverRequest() {
+          if (pbjs.adserverRequestSent) return;
+          pbjs.adserverRequestSent = true;
+          googletag.cmd.push(function() {
+            pbjs.que.push(function() {
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads().refresh();
+            });
+          });
+        }
+  
+        setTimeout(function() {
+          sendAdserverRequest();
+        }, PREBID_TIMEOUT);
+      </script>
+  
+      <script>
+        (function () {
+          var gads = document.createElement('script');
+          gads.async = true;
+          gads.type = 'text/javascript';
+          var useSSL = 'https:' == document.location.protocol;
+          gads.src = (useSSL ? 'https:' : 'http:') +
+            '//securepubads.g.doubleclick.net/tag/js/gpt.js';
+          var node = document.getElementsByTagName('script')[0];
+          node.parentNode.insertBefore(gads, node);
+        })();
+      </script>
+  
+      <script>
+        googletag.cmd.push(function () {
+          googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+  
+          googletag.pubads().enableSingleRequest();
+          googletag.enableServices();
+        });
+      </script>
+  </head>
+  
+  <body style="margin: 0;">
+    <div id="content" style="width: 920px; padding: 20px; height: 2500px; margin: 0 auto; background-color: #222; color: #fff;">
+      <p>Note: for this example to work, you need access to a bid simulation tool from your MASS enabled Exchange partner.</p>
+      <div id="div-gpt-ad-1460505748561-0">
+        <script type="text/javascript">
+          googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+        </script>
+      </div>
+    </div>
+  </body>
+</html>

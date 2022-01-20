@@ -1,13 +1,13 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 
 /**
  * Version of the FeedAd bid adapter
  * @type {string}
  */
-const VERSION = '1.0.0';
+const VERSION = '1.0.2';
 
 /**
  * @typedef {object} FeedAdApiBidRequest
@@ -62,6 +62,11 @@ const VERSION = '1.0.0';
  */
 
 /**
+ * The IAB TCF 2.0 vendor ID for the FeedAd GmbH
+ */
+const TCF_VENDOR_ID = 781;
+
+/**
  * Bidder network identity code
  * @type {string}
  */
@@ -71,7 +76,7 @@ const BIDDER_CODE = 'feedad';
  * The media types supported by FeedAd
  * @type {MediaType[]}
  */
-const MEDIA_TYPES = [VIDEO, BANNER];
+const MEDIA_TYPES = [BANNER];
 
 /**
  * Tag for logging
@@ -102,15 +107,15 @@ const BID_METADATA = {};
  * @return {boolean} true if the bid is valid
  */
 function isBidRequestValid(bid) {
-  const clientToken = utils.deepAccess(bid, 'params.clientToken');
+  const clientToken = deepAccess(bid, 'params.clientToken');
   if (!clientToken || !isValidClientToken(clientToken)) {
-    utils.logWarn(TAG, "missing or invalid parameter 'clientToken'. found value:", clientToken);
+    logWarn(TAG, "missing or invalid parameter 'clientToken'. found value:", clientToken);
     return false;
   }
 
-  const placementId = utils.deepAccess(bid, 'params.placementId');
+  const placementId = deepAccess(bid, 'params.placementId');
   if (!placementId || !isValidPlacementId(placementId)) {
-    utils.logWarn(TAG, "missing or invalid parameter 'placementId'. found value:", placementId);
+    logWarn(TAG, "missing or invalid parameter 'placementId'. found value:", placementId);
     return false;
   }
 
@@ -171,13 +176,13 @@ function isMediaTypesEmpty(mediaTypes) {
  * @return {FeedAdApiBidRequest}
  */
 function createApiBidRParams(request) {
-  return {
+  return Object.assign({}, request.params, {
     ad_type: 0,
     client_token: request.params.clientToken,
     placement_id: request.params.placementId,
     sdk_version: `prebid_${VERSION}`,
     app_hybrid: false,
-  };
+  });
 }
 
 /**
@@ -204,6 +209,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     referer: data.refererInfo.referer,
     transactionId: bid.transactionId
   });
+  if (bidderRequest.gdprConsent) {
+    data.consentIabTcf = bidderRequest.gdprConsent.consentString;
+    data.gdprApplies = bidderRequest.gdprConsent.gdprApplies;
+  }
   return {
     method: 'POST',
     url: `${API_ENDPOINT}${API_PATH_BID_REQUEST}`,
@@ -279,6 +288,7 @@ function trackingHandlerFactory(klass) {
  */
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: TCF_VENDOR_ID,
   supportedMediaTypes: MEDIA_TYPES,
   isBidRequestValid,
   buildRequests,

@@ -45,7 +45,11 @@ var videoAdUnit = {
 	mediaTypes: {
 	  video: {
 	  	playerSize : [[320, 480]], 
-	  	context: 'instream'
+	  	context: 'instream',
+		  skip: 1,
+      mimes : ['video/mp4', 'application/javascript'],
+      playbackmethod : [2,6],
+      maxduration: 30
 	  }
 	},
     bids: [
@@ -54,14 +58,7 @@ var videoAdUnit = {
       	params: {
         	pubid: '121ab139faf7ac67428a23f1d0a9a71b',
 			placement: 1234,
-			size: "320x480",
-        	video: {
-            	id: 123,
-            	skip: 1,
-            	mimes : ['video/mp4', 'application/javascript'],
-            	playbackmethod : [2,6],
-            	maxduration: 30
-          	}
+			size: "320x480"
       	}
       }
     ]

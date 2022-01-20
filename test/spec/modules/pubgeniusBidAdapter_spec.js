@@ -173,7 +173,7 @@ describe('pubGENIUS adapter', () => {
 
       expectedRequest = {
         method: 'POST',
-        url: 'https://ortb.adpearl.io/prebid/auction',
+        url: 'https://auction.adpearl.io/prebid/auction',
         data: {
           id: 'fake-auction-id',
           imp: [
@@ -225,8 +225,8 @@ describe('pubGENIUS adapter', () => {
       expect(buildRequests([bidRequest, bidRequest1], bidderRequest)).to.deep.equal(expectedRequest);
     });
 
-    it('should take bid floor in bidder params', () => {
-      bidRequest.params.bidFloor = 0.5;
+    it('should take bid floor from getFloor interface', () => {
+      bidRequest.getFloor = () => ({ floor: 0.5, currency: 'USD' });
       expectedRequest.data.imp[0].bidfloor = 0.5;
 
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
@@ -370,6 +370,8 @@ describe('pubGENIUS adapter', () => {
           protocols: [2, 3],
           api: [1, 2],
           playbackmethod: [3, 4],
+          maxduration: 10,
+          linearity: 1,
         },
       };
       bidRequest.params.video = {
@@ -394,6 +396,7 @@ describe('pubGENIUS adapter', () => {
         skipafter: 1,
         playbackmethod: [3, 4],
         api: [1, 2],
+        linearity: 1,
       };
 
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
@@ -490,7 +493,7 @@ describe('pubGENIUS adapter', () => {
       };
       expectedSync = {
         type: 'iframe',
-        url: 'https://ortb.adpearl.io/usersync/pixels.html?',
+        url: 'https://auction.adpearl.io/usersync/pixels.html?',
       };
     });
 
@@ -548,7 +551,7 @@ describe('pubGENIUS adapter', () => {
       onTimeout(timeoutData);
 
       expect(server.requests[0].method).to.equal('POST');
-      expect(server.requests[0].url).to.equal('https://ortb.adpearl.io/prebid/events?type=timeout');
+      expect(server.requests[0].url).to.equal('https://auction.adpearl.io/prebid/events?type=timeout');
       expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(timeoutData);
     });
   });

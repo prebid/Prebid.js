@@ -6,19 +6,21 @@
 import events from './events.js';
 import { fireNativeTrackers, getAssetMessage, getAllAssetsMessage } from './native.js';
 import constants from './constants.json';
-import { logWarn, replaceAuctionPrice } from './utils.js';
+import { logWarn, replaceAuctionPrice, deepAccess, isGptPubadsDefined, isApnGetTagDefined } from './utils.js';
 import { auctionManager } from './auctionManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
 import includes from 'core-js-pure/features/array/includes.js';
+import { config } from './config.js';
 
 const BID_WON = constants.EVENTS.BID_WON;
+const STALE_RENDER = constants.EVENTS.STALE_RENDER;
 
 export function listenMessagesFromCreative() {
   window.addEventListener('message', receiveMessage, false);
 }
 
-function receiveMessage(ev) {
+export function receiveMessage(ev) {
   var key = ev.message ? 'message' : 'data';
   var data = {};
   try {
@@ -33,6 +35,14 @@ function receiveMessage(ev) {
     });
 
     if (adObject && data.message === 'Prebid Request') {
+      if (adObject.status === constants.BID_STATUS.RENDERED) {
+        logWarn(`Ad id ${adObject.adId} has been rendered before`);
+        events.emit(STALE_RENDER, adObject);
+        if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
+          return;
+        }
+      }
+
       _sendAdToCreative(adObject, ev);
 
       // save winning bids
@@ -50,7 +60,6 @@ function receiveMessage(ev) {
       if (data.action === 'assetRequest') {
         const message = getAssetMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
-        return;
       } else if (data.action === 'allAssetRequest') {
         const message = getAllAssetsMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
@@ -58,13 +67,13 @@ function receiveMessage(ev) {
         adObject.height = data.height;
         adObject.width = data.width;
         resizeRemoteCreative(adObject);
+      } else {
+        const trackerType = fireNativeTrackers(data, adObject);
+        if (trackerType === 'click') { return; }
+
+        auctionManager.addWinningBid(adObject);
+        events.emit(BID_WON, adObject);
       }
-
-      const trackerType = fireNativeTrackers(data, adObject);
-      if (trackerType === 'click') { return; }
-
-      auctionManager.addWinningBid(adObject);
-      events.emit(BID_WON, adObject);
     }
   }
 }
@@ -108,9 +117,9 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   }
 
   function getElementIdBasedOnAdServer(adId, adUnitCode) {
-    if (window.googletag) {
+    if (isGptPubadsDefined()) {
       return getDfpElementId(adId)
-    } else if (window.apntag) {
+    } else if (isApnGetTagDefined()) {
       return getAstElementId(adUnitCode)
     } else {
       return adUnitCode;
@@ -118,11 +127,12 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   }
 
   function getDfpElementId(adId) {
-    return find(window.googletag.pubads().getSlots(), slot => {
+    const slot = find(window.googletag.pubads().getSlots(), slot => {
       return find(slot.getTargetingKeys(), key => {
         return includes(slot.getTargeting(key), adId);
       });
-    }).getSlotElementId();
+    });
+    return slot ? slot.getSlotElementId() : null;
   }
 
   function getAstElementId(adUnitCode) {

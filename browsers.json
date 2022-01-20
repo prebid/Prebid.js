@@ -1,74 +1,51 @@
 {
-  "bs_edge_17_windows_10": {
+  "bs_edge_latest_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "edge",
-    "browser_version": "17.0",
+    "browser_version": "latest",
     "device": null,
     "os": "Windows"
   },
-  "bs_edge_18_windows_10": {
-    "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "edge",
-    "browser_version": "18.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_ie_11_windows_10": {
-    "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "ie",
-    "browser_version": "11.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_chrome_80_windows_10": {
+  "bs_chrome_latest_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
-    "browser_version": "80.0",
+    "browser_version": "latest",
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_79_windows_10": {
+  "bs_chrome_87_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
-    "browser_version": "79.0",
+    "browser_version": "87.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_73_windows_10": {
+  "bs_firefox_latest_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "firefox",
-    "browser_version": "73.0",
+    "browser_version": "latest",
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_72_windows_10": {
+  "bs_safari_latest_mac_bigsur": {
     "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "firefox",
-    "browser_version": "72.0",
+    "os_version": "Big Sur",
+    "browser": "safari",
+    "browser_version": "latest",
     "device": null,
-    "os": "Windows"
+    "os": "OS X"
   },
-  "bs_safari_11_mac_catalina": {
+  "bs_safari_15_catalina": {
     "base": "BrowserStack",
     "os_version": "Catalina",
     "browser": "safari",
-    "browser_version": "13.0",
-    "device": null,
-    "os": "OS X"
-  },
-  "bs_safari_12_mac_mojave": {
-    "base": "BrowserStack",
-    "os_version": "Mojave",
-    "browser": "safari",
-    "browser_version": "12.0",
+    "browser_version": "13.1",
     "device": null,
     "os": "OS X"
   }
+  
 }
